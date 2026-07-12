@@ -235,6 +235,7 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
     vectorNetwork: src.vectorNetwork ? cloneVectorNetwork(src.vectorNetwork) : null,
     textPicture: src.textPicture ? new Uint8Array(src.textPicture) : null,
     figmaDerivedTextGlyphs: copyDerivedGlyphs(src.figmaDerivedTextGlyphs),
+    textPathBox: src.textPathBox ? { ...src.textPathBox } : null,
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null
   }
 }

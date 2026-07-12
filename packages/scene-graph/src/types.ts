@@ -497,6 +497,13 @@ export interface SceneNode {
 
   textPicture: Uint8Array | null
   figmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
+  /**
+   * Node-local rect that an imported TEXT_PATH layout path (rawNodeFields
+   * vectorData, in normalizedSize space) maps onto. Set at import (accounts
+   * for the expandPathTextLayoutBox shift), scaled on resize so text can be
+   * re-laid out along the scaled path. Null for non-path text.
+   */
+  textPathBox: Rect | null
 }
 
 export type ComponentPropertyType = 'VARIANT' | 'TEXT' | 'BOOLEAN' | 'INSTANCE_SWAP'

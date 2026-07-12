@@ -55,6 +55,7 @@ export interface OrigChildState {
   strokeGeometry: GeometryPath[]
   figmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
   strokes: Stroke[]
+  textPathBox: Rect | null
 }
 
 export interface DragResize {
@@ -70,6 +71,7 @@ export interface DragResize {
   origStrokeGeometry: GeometryPath[]
   origFigmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
   origStrokes: Stroke[]
+  origTextPathBox: Rect | null
   origChildren: Map<string, OrigChildState> | null
 }
 

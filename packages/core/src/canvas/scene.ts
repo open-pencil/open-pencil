@@ -20,7 +20,11 @@ import {
   getStrokeCapEntity,
   getStrokeJoinEntity
 } from './strokes'
-import { drawFigmaDerivedText } from './text-derived'
+import {
+  drawFigmaDerivedText,
+  drawReflowedPathTextSilhouettes,
+  isReflowedPathText
+} from './text-derived'
 import { textNodeToOutlinePath } from './text-outlines'
 
 function drawVisibleFills(
@@ -631,16 +635,25 @@ export function renderShapeUncached(
   const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
   const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   const pathTextStrokeFirst = isPathTextWithStrokeGeometry(node)
+  // Reflowed path text has no strokeGeometry (mutually exclusive with
+  // pathTextStrokeFirst) — strokes come from per-glyph silhouettes instead;
+  // paintNodeStrokes must not run or its empty-sg fallback strokes the AABB.
+  const reflowedPathText = isReflowedPathText(node)
 
   // Default Figma/Skia order is fill then stroke. Path text is the exception
   // (see isPathTextWithStrokeGeometry) — invert only for that case.
   if (pathTextStrokeFirst) {
     paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
   }
+  if (reflowedPathText) {
+    forVisibleStrokes(r, node, graph, (stroke, color) =>
+      drawReflowedPathTextSilhouettes(r, canvas, node, stroke, color)
+    )
+  }
 
   drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
 
-  if (!pathTextStrokeFirst) {
+  if (!pathTextStrokeFirst && !reflowedPathText) {
     paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
   }
   r.renderEffects(canvas, node, rect, hasRadius, 'front', shadowChild)

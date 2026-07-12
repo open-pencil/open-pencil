@@ -8,6 +8,7 @@ import { bytesToHex } from '#core/bytes/hex'
 
 import {
   applyExportSettingsPluginData,
+  applyTextPathBoxPluginData,
   mergePluginData,
   NODE_TYPE_PLUGIN_KEY,
   serializePluginRelaunchData,
@@ -349,12 +350,38 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
   'parameterConsumptionMap'
 ])
 
+/**
+ * Resize reflowed this path-text node (glyphs regenerated, strokeGeometry
+ * cleared). The raw strokeGeometry silhouettes are still at the pre-resize
+ * size, so exporting them would paint stale full-size outlines.
+ */
+function isReflowedPathText(node: SceneNode): boolean {
+  if (node.type !== 'TEXT' || node.source.fig.kiwiNodeType !== 'TEXT_PATH') return false
+  if ((node.figmaDerivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
+  if (node.strokeGeometry.length !== 0) return false
+  // Only when the node diverged from import: the raw payload still carries
+  // baked silhouettes the node no longer has. Fill-only path text (never had
+  // silhouettes) is untouched and keeps its raw derivedTextData verbatim.
+  const rawStroke = (node.source.fig.rawNodeFields as { strokeGeometry?: unknown }).strokeGeometry
+  return Array.isArray(rawStroke) && rawStroke.length > 0
+}
+
 function applyRawFigmaNodeFields(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
   nc: KiwiNodeChange
 ): void {
-  const materialized = materializeFigmaPayload(node.source.fig.rawNodeFields, context.blobs, {
+  let rawFields = node.source.fig.rawNodeFields
+  if (isReflowedPathText(node)) {
+    // Strip before materializing so the stale blobs never enter the file:
+    // silhouettes are re-derived from glyphs by Figma/reimport, and
+    // derivedTextData was rebuilt from the reflowed glyphs by
+    // serializeTextProps (raw would clobber the new positions).
+    rawFields = { ...rawFields }
+    delete rawFields.strokeGeometry
+    delete rawFields.derivedTextData
+  }
+  const materialized = materializeFigmaPayload(rawFields, context.blobs, {
     blobIndexByHex: context.blobIndexByHex,
     includePaintVariables: true,
     includeVariableMaps: true
@@ -730,6 +757,7 @@ export function sceneNodeToKiwiWithContext(
   applyRawFigmaNodeFields(context, node, nc)
 
   applyExportSettingsPluginData(node)
+  applyTextPathBoxPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {

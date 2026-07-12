@@ -18,7 +18,7 @@ export function convertFigmaDerivedTextGlyphs(
         x: glyph.position.x,
         y: glyph.position.y,
         fontSize: glyph.fontSize,
-        rotation: glyph.rotation ?? 0
+        rotation: glyph.rotation
       }
     })
     .filter((glyph): glyph is NonNullable<typeof glyph> => !!glyph)

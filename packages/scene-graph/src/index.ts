@@ -61,6 +61,23 @@ function removeStaleBindings(
     changes.boundVariables = { ...node.boundVariables }
   }
 }
+/** Drop baked text pictures / glyphs when an update invalidates them. */
+function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode>): void {
+  if (node.type !== 'TEXT') return
+  const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
+  if (node.textPicture && textChanged) node.textPicture = null
+  // See TEXT_DERIVED_GLYPH_INVALIDATION_KEYS. Skip clear when the caller is
+  // replacing glyphs in the same update (resize supplies scaled copies).
+  const glyphsInvalidated = Object.keys(changes).some((k) =>
+    TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(k)
+  )
+  if (node.figmaDerivedTextGlyphs && glyphsInvalidated && !('figmaDerivedTextGlyphs' in changes)) {
+    node.figmaDerivedTextGlyphs = null
+    // Export must not claim TEXT_PATH without baked glyphs.
+    if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
+  }
+}
+
 let nextLocalID = 1
 
 export function generateId(): string {

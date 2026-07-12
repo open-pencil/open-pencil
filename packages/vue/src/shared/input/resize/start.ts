@@ -16,7 +16,8 @@ function snapshotNodeGeometry(node: SceneNode): OrigChildState {
     fillGeometry: copyGeometryPaths(node.fillGeometry),
     strokeGeometry: copyGeometryPaths(node.strokeGeometry),
     figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
-    strokes: copyStrokes(node.strokes)
+    strokes: copyStrokes(node.strokes),
+    textPathBox: node.textPathBox ? { ...node.textPathBox } : null
   }
 }
 
@@ -67,6 +68,7 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
         origStrokeGeometry: snap.strokeGeometry,
         origFigmaDerivedTextGlyphs: snap.figmaDerivedTextGlyphs,
         origStrokes: snap.strokes,
+        origTextPathBox: snap.textPathBox,
         origChildren: collectDescendants(id, editor)
       }
     }

@@ -1,6 +1,14 @@
-import type { Canvas, Paint } from 'canvaskit-wasm'
+import type { Canvas, Paint, Path } from 'canvaskit-wasm'
 
-import type { Fill, SceneNode, StyleRun, TextDecorationStyle } from '@open-pencil/scene-graph'
+import type {
+  Color,
+  Fill,
+  FigmaDerivedTextGlyph,
+  SceneNode,
+  Stroke,
+  StyleRun,
+  TextDecorationStyle
+} from '@open-pencil/scene-graph'
 
 import { geometryBlobToPath } from '#core/vector'
 
@@ -221,6 +229,121 @@ export function hasRotatedFigmaDerivedGlyphs(
   node: Pick<SceneNode, 'figmaDerivedTextGlyphs'>
 ): boolean {
   return node.figmaDerivedTextGlyphs?.some((glyph) => (glyph.rotation ?? 0) !== 0) === true
+}
+
+/**
+ * Resize-reflowed TEXT_PATH node: glyphs were re-laid along the path and the
+ * baked node-level strokeGeometry was cleared — strokes must be re-derived
+ * per glyph (see drawReflowedPathTextSilhouettes).
+ */
+export function isReflowedPathText(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
+    node.textPathBox !== null &&
+    node.strokeGeometry.length === 0 &&
+    node.source.fig.kiwiNodeType === 'TEXT_PATH'
+  )
+}
+
+function djb2(bytes: Uint8Array): number {
+  let hash = 5381
+  for (const byte of bytes) {
+    hash = ((hash * 33) ^ byte) >>> 0
+  }
+  return hash
+}
+
+interface GlyphSilhouette {
+  path: Path
+  cached: boolean
+}
+
+/**
+ * Silhouette = glyph outline dilated by the stroke weight, unioned with the
+ * glyph itself (font units, so one cache entry serves every placement).
+ * Cached paths are never deleted — the cache is content-keyed and bounded by
+ * the number of distinct glyph outlines.
+ */
+function getGlyphSilhouette(
+  r: SkiaRenderer,
+  glyph: FigmaDerivedTextGlyph,
+  stroke: Stroke
+): GlyphSilhouette {
+  const blob = glyph.commandsBlob
+  const relativeWeight = stroke.weight / glyph.fontSize
+  const key = `${djb2(blob)}:${blob.length}:${relativeWeight.toFixed(5)}`
+  const cached = r.glyphSilhouetteCache.get(key)
+  if (cached) return { path: cached, cached: true }
+
+  const base = geometryBlobToPath(r.ck, blob, 'NONZERO')
+  const outline = base.copy()
+  // Round join/cap: miter spikes on glyph cusps (e.g. 'A' apex) shoot far
+  // outside the letterform. Width doubles because half the band is swallowed
+  // by the union with the glyph body (OUTSIDE-stroke look).
+  const stroked = outline.stroke({
+    width: relativeWeight * 2,
+    join: r.ck.StrokeJoin.Round,
+    cap: r.ck.StrokeCap.Round
+  })
+  // stroke()/op() mutate `outline` in place; both report failure, not a new path.
+  const merged = stroked?.op(base, r.ck.PathOp.Union)
+  if (!merged) {
+    // Degenerate outline — draw the bare glyph, uncached so callers free it.
+    outline.delete()
+    return { path: base, cached: false }
+  }
+  base.delete()
+  // ponytail: crude bound — a live stroke-weight drag mints a key per tick;
+  // wholesale clear beats an LRU here since rebuild is cheap.
+  if (r.glyphSilhouetteCache.size >= 512) {
+    for (const path of r.glyphSilhouetteCache.values()) path.delete()
+    r.glyphSilhouetteCache.clear()
+  }
+  r.glyphSilhouetteCache.set(key, outline)
+  return { path: outline, cached: true }
+}
+
+/**
+ * Paint per-glyph stroke silhouettes under a reflowed path-text node.
+ * Transform chain mirrors drawFigmaDerivedText exactly so silhouettes and
+ * fills stay registered.
+ */
+export function drawReflowedPathTextSilhouettes(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  stroke: Stroke,
+  color: Color
+): void {
+  const glyphs = node.figmaDerivedTextGlyphs
+  if (!glyphs?.length || stroke.weight <= 0) return
+
+  const snapBaselines = !hasRotatedFigmaDerivedGlyphs(node)
+  const paint = new r.ck.Paint()
+  paint.setAntiAlias(true)
+  paint.setStyle(r.ck.PaintStyle.Fill)
+  paint.setColor(r.ck.Color4f(color.r, color.g, color.b, color.a))
+  paint.setAlphaf(stroke.opacity)
+  try {
+    for (const glyph of glyphs) {
+      if (glyph.fontSize <= 0) continue
+      const silhouette = getGlyphSilhouette(r, glyph, stroke)
+      canvas.save()
+      canvas.translate(glyph.x, snapBaselines ? snapFigmaDerivedGlyphBaseline(glyph.y) : glyph.y)
+      const scaleX = glyph.scaleX ?? 1
+      const scaleY = glyph.scaleY ?? 1
+      if (scaleX !== 1 || scaleY !== 1) canvas.scale(scaleX, scaleY)
+      const rotation = glyph.rotation ?? 0
+      if (rotation !== 0) canvas.rotate((-rotation * 180) / Math.PI, 0, 0)
+      canvas.scale(glyph.fontSize, -glyph.fontSize)
+      canvas.drawPath(silhouette.path, paint)
+      canvas.restore()
+      if (!silhouette.cached) silhouette.path.delete()
+    }
+  } finally {
+    paint.delete()
+  }
 }
 
 /**

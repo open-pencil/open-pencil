@@ -149,6 +149,7 @@ export function createDefaultNode(
     flipY: false,
     textPicture: null,
     figmaDerivedTextGlyphs: null,
+    textPathBox: null,
     ...overrides
   }
 }

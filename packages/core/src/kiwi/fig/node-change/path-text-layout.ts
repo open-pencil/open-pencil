@@ -1,5 +1,4 @@
-import type { GeometryPath, SceneNode } from '@open-pencil/scene-graph'
-import { transformGeometryPaths } from '@open-pencil/scene-graph/copy'
+import type { FigmaDerivedTextGlyph, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
 import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
 
 /**
@@ -8,30 +7,46 @@ import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
  */
 function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): GeometryPath[] {
   if (dx === 0 && dy === 0) return paths
-  return transformGeometryPaths(paths, 1, 0, 0, 1, dx, dy)
+  return paths.map((g) => {
+    const scaled = g.commandsBlob.slice()
+    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
+    let offset = 0
+    while (offset < scaled.length) {
+      const command = scaled[offset++]
+      let coords = 0
+      if (command === 1 || command === 2) coords = 1
+      else if (command === 3)
+        coords = 2 // quadTo — glyph-derived blobs use quads
+      else if (command === 4) coords = 3
+      for (let i = 0; i < coords; i++) {
+        if (offset + 8 > scaled.length) break
+        dv.setFloat32(offset, dv.getFloat32(offset, true) + dx, true)
+        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) + dy, true)
+        offset += 8
+      }
+    }
+    return {
+      windingRule: g.windingRule,
+      commandsBlob: scaled,
+      ...(g.styleID != null ? { styleID: g.styleID } : {}),
+      ...(g.fills ? { fills: g.fills } : {})
+    }
+  })
 }
 
-/**
- * Figma often sizes the TEXT_PATH layout box tighter than the painted outlines
- * (DomeSticker strokeGeometry minX ≈ -37). That is fine inside Figma's own
- * painter, but our frames honor `clipsContent` against child *layout* extents
- * during resize/cull — overflowing lettering on the left/bottom got clipped.
- *
- * Grow width/height to cover strokeGeometry + glyph pads, then shift local
- * geometry by (dx, dy) and compensate with x/y so the design does not jump.
- */
-interface ContentBounds {
-  minX: number
-  minY: number
-  maxX: number
-  maxY: number
+interface BoxOverflow {
+  left: number
+  top: number
+  right: number
+  bottom: number
 }
 
-function pathTextContentBounds(
+/** How far painted geometry + glyph pads spill past the width×height box. */
+function measurePathTextOverflow(
   props: Partial<SceneNode>,
   width: number,
   height: number
-): ContentBounds {
+): BoxOverflow {
   const paths: GeometryPath[] = [...(props.fillGeometry ?? []), ...(props.strokeGeometry ?? [])]
   const geom = paths.length > 0 ? geometryBlobBounds(paths) : null
 
@@ -41,19 +56,25 @@ function pathTextContentBounds(
   let maxY = geom ? geom.y + geom.height : height
 
   // Baselines only — pad with fontSize so ascent/side-bearings are covered.
-  for (const g of props.figmaDerivedTextGlyphs ?? []) {
+  for (const g of (props.figmaDerivedTextGlyphs as FigmaDerivedTextGlyph[] | null) ?? []) {
     const pad = g.fontSize || 0
     minX = Math.min(minX, g.x - pad * 0.25)
     minY = Math.min(minY, g.y - pad)
     maxX = Math.max(maxX, g.x + pad)
     maxY = Math.max(maxY, g.y + pad * 0.35)
   }
-  return { minX, minY, maxX, maxY }
+
+  const pad = 1
+  return {
+    left: Math.max(0, -minX + (minX < 0 ? pad : 0)),
+    top: Math.max(0, -minY + (minY < 0 ? pad : 0)),
+    right: Math.max(0, maxX - width + (maxX > width ? pad : 0)),
+    bottom: Math.max(0, maxY - height + (maxY > height ? pad : 0))
+  }
 }
 
-/** Shift local geometry so world positions survive the origin move. */
-function shiftLocalGeometry(props: Partial<SceneNode>, dx: number, dy: number): void {
-  if (dx === 0 && dy === 0) return
+/** Shift local geometry + glyph baselines by (dx, dy) after the origin moved. */
+function shiftPathTextGeometry(props: Partial<SceneNode>, dx: number, dy: number): void {
   if (props.strokeGeometry && props.strokeGeometry.length > 0) {
     props.strokeGeometry = translateGeometryPaths(props.strokeGeometry, dx, dy)
   }
@@ -69,28 +90,41 @@ function shiftLocalGeometry(props: Partial<SceneNode>, dx: number, dy: number): 
   }
 }
 
+/**
+ * Figma often sizes the TEXT_PATH layout box tighter than the painted outlines
+ * (DomeSticker strokeGeometry minX ≈ -37). That is fine inside Figma's own
+ * painter, but our frames honor `clipsContent` against child *layout* extents
+ * during resize/cull — overflowing lettering on the left/bottom got clipped.
+ *
+ * Grow width/height to cover strokeGeometry + glyph pads, then shift local
+ * geometry by (dx, dy) and compensate with x/y so the design does not jump.
+ */
 export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: string }): void {
   if (props.nodeType !== 'TEXT') return
   if (props.source?.fig.kiwiNodeType !== 'TEXT_PATH') return
 
   const width = props.width ?? 0
   const height = props.height ?? 0
-  const { minX, minY, maxX, maxY } = pathTextContentBounds(props, width, height)
-
-  const pad = 1
-  const overflowLeft = Math.max(0, -minX + (minX < 0 ? pad : 0))
-  const overflowTop = Math.max(0, -minY + (minY < 0 ? pad : 0))
-  const overflowRight = Math.max(0, maxX - width + (maxX > width ? pad : 0))
-  const overflowBottom = Math.max(0, maxY - height + (maxY > height ? pad : 0))
-  if (overflowLeft === 0 && overflowTop === 0 && overflowRight === 0 && overflowBottom === 0) {
+  // The layout path (rawNodeFields vectorData) maps onto the ORIGINAL Figma
+  // box; anchor it before the box grows so reflow can evaluate the path in
+  // current node-local coordinates.
+  props.textPathBox = { x: 0, y: 0, width, height }
+  const overflow = measurePathTextOverflow(props, width, height)
+  if (overflow.left === 0 && overflow.top === 0 && overflow.right === 0 && overflow.bottom === 0) {
     return
   }
 
   // New origin is (oldOrigin - (overflowLeft, overflowTop)) in parent space;
   // add the same delta to local geometry so world positions are unchanged.
-  props.x = (props.x ?? 0) - overflowLeft
-  props.y = (props.y ?? 0) - overflowTop
-  props.width = width + overflowLeft + overflowRight
-  props.height = height + overflowTop + overflowBottom
-  shiftLocalGeometry(props, overflowLeft, overflowTop)
+  const dx = overflow.left
+  const dy = overflow.top
+  props.x = (props.x ?? 0) - dx
+  props.y = (props.y ?? 0) - dy
+  props.width = width + overflow.left + overflow.right
+  props.height = height + overflow.top + overflow.bottom
+
+  if (dx !== 0 || dy !== 0) {
+    props.textPathBox = { x: dx, y: dy, width, height }
+    shiftPathTextGeometry(props, dx, dy)
+  }
 }

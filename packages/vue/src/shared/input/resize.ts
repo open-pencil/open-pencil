@@ -4,10 +4,15 @@ import { toRaw } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { computeLayout } from '@open-pencil/core/layout'
+import {
+  calibratePathTextLayout,
+  getTextPathData,
+  reflowPathTextGlyphs
+} from '@open-pencil/core/text'
+import { regenerateFillGeometry } from '@open-pencil/core/vector'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { FigmaDerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
-  copyDerivedGlyphs,
   copyGeometryPaths,
   copyStroke,
   copyStrokes,
@@ -48,6 +53,44 @@ function scaleStrokes(strokes: Stroke[], sx: number, sy: number): Stroke[] {
 }
 
 /**
+ * Figma resize semantics for imported text-on-path: constant font size,
+ * glyphs re-placed along the scaled path (see core/text/path-layout). Used
+ * instead of geometric glyph/silhouette scaling whenever the node still has
+ * its layout path. Baked node-level silhouettes cannot follow re-placed
+ * glyphs, so strokeGeometry is cleared — the renderer rebuilds silhouettes
+ * per glyph — and stroke weight stays constant like the font size.
+ */
+function reflowedPathTextChanges(
+  editor: Editor,
+  nodeId: string,
+  orig: Pick<OrigChildState, 'textPathBox' | 'figmaDerivedTextGlyphs' | 'strokes'>,
+  sx: number,
+  sy: number
+): Partial<SceneNode> | null {
+  if (!orig.textPathBox || !orig.figmaDerivedTextGlyphs?.length) return null
+  const node = editor.graph.getNode(nodeId)
+  if (!node) return null
+  const data = getTextPathData(node)
+  if (!data) return null
+  const layout = calibratePathTextLayout(orig.figmaDerivedTextGlyphs, data, orig.textPathBox)
+  if (!layout) return null
+  const box = {
+    x: orig.textPathBox.x * sx,
+    y: orig.textPathBox.y * sy,
+    width: orig.textPathBox.width * sx,
+    height: orig.textPathBox.height * sy
+  }
+  const glyphs = reflowPathTextGlyphs(orig.figmaDerivedTextGlyphs, data, layout, box)
+  if (!glyphs) return null
+  return {
+    figmaDerivedTextGlyphs: glyphs,
+    textPathBox: box,
+    strokeGeometry: [],
+    strokes: copyStrokes(orig.strokes)
+  }
+}
+
+/**
  * All geometry that must track a width/height change. Historically only
  * vectorNetwork + fillGeometry were updated — path-text strokeGeometry and
  * glyphs stayed at the pre-resize size, so shrinking a sticker made the white
@@ -76,9 +119,14 @@ function scaledGeometryChanges(
     width,
     height
   )
-  if (resizedVN) changes.vectorNetwork = resizedVN
-  // fillGeometry blobs must track the scaled node or exports keep the old size.
-  if (orig.fillGeometry.length > 0) {
+  if (resizedVN) {
+    changes.vectorNetwork = resizedVN
+    // Multi-color / imported vectors paint from fillGeometry blobs, not the
+    // live network — rebuild so fills follow the scaled vertices.
+    if (orig.fillGeometry.length > 0) {
+      changes.fillGeometry = regenerateFillGeometry(resizedVN, orig.fillGeometry)
+    }
+  } else if (orig.fillGeometry.length > 0) {
     changes.fillGeometry = scaleGeometryPaths(orig.fillGeometry, sx, sy)
   }
 
@@ -117,6 +165,35 @@ function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean
   return { changes, newRect }
 }
 
+function applyChildResizes(d: DragResize, editor: Editor, sx: number, sy: number) {
+  if (!d.origChildren) return
+  for (const [childId, orig] of d.origChildren) {
+    const childWidth = Math.round(Math.max(1, orig.width * sx))
+    const childHeight = Math.round(Math.max(1, orig.height * sy))
+    const childChanges: Partial<SceneNode> = {
+      x: Math.round(orig.x * sx),
+      y: Math.round(orig.y * sy),
+      width: childWidth,
+      height: childHeight,
+      ...scaledGeometryChanges(orig, orig.width, orig.height, childWidth, childHeight)
+    }
+    if (orig.width > 0 && orig.height > 0) {
+      const reflow = reflowedPathTextChanges(
+        editor,
+        childId,
+        orig,
+        childWidth / orig.width,
+        childHeight / orig.height
+      )
+      if (reflow) Object.assign(childChanges, reflow)
+    }
+    editor.graph.updateNodePreview(childId, childChanges)
+    if (childChanges.fillGeometry || childChanges.strokeGeometry || childChanges.vectorNetwork) {
+      editor.renderer?.invalidateVectorPath(childId)
+    }
+  }
+}
+
 export function applyResize(
   dragState: DragResize,
   cx: number,
@@ -130,29 +207,28 @@ export function applyResize(
   // DataCloneError. Unwrap once — also keeps the drag hot path off proxies.
   const d = toRaw(dragState)
   const { changes, newRect } = resizeChanges(d, cx, cy, constrain)
-  editor.graph.updateNodePreview(d.nodeId, changes)
-  if (changes.fillGeometry || changes.strokeGeometry || changes.vectorNetwork) {
-    editor.renderer?.invalidateVectorPath(d.nodeId)
-  }
-
-  if (d.origChildren && d.origRect.width > 0 && d.origRect.height > 0) {
+  if (d.origRect.width > 0 && d.origRect.height > 0) {
     const sx = newRect.width / d.origRect.width
     const sy = newRect.height / d.origRect.height
-    for (const [childId, orig] of d.origChildren) {
-      const childWidth = Math.round(Math.max(1, orig.width * sx))
-      const childHeight = Math.round(Math.max(1, orig.height * sy))
-      const childChanges: Partial<SceneNode> = {
-        x: Math.round(orig.x * sx),
-        y: Math.round(orig.y * sy),
-        width: childWidth,
-        height: childHeight,
-        ...scaledGeometryChanges(orig, orig.width, orig.height, childWidth, childHeight)
-      }
-      editor.graph.updateNodePreview(childId, childChanges)
-      if (childChanges.fillGeometry || childChanges.strokeGeometry || childChanges.vectorNetwork) {
-        editor.renderer?.invalidateVectorPath(childId)
-      }
-    }
+    const reflow = reflowedPathTextChanges(
+      editor,
+      d.nodeId,
+      {
+        textPathBox: d.origTextPathBox,
+        figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs,
+        strokes: d.origStrokes
+      },
+      sx,
+      sy
+    )
+    if (reflow) Object.assign(changes, reflow)
+    editor.graph.updateNodePreview(d.nodeId, changes)
+    applyChildResizes(d, editor, sx, sy)
+  } else {
+    editor.graph.updateNodePreview(d.nodeId, changes)
+  }
+  if (changes.fillGeometry || changes.strokeGeometry || changes.vectorNetwork) {
+    editor.renderer?.invalidateVectorPath(d.nodeId)
   }
 
   const node = editor.graph.getNode(d.nodeId)
@@ -163,11 +239,11 @@ export function applyResize(
 }
 
 /**
- * Deep-copy geometry read back from a previewed node — preview values can be
- * reactivity-wrapped, and storing proxies breaks structuredClone snapshots
+ * Deep-copy geometry read back from a previewed node — preview values can
+ * be reactivity-wrapped, and storing proxies breaks structuredClone snapshots
  * (delete/undo would throw DataCloneError).
  */
-function finalGeometrySnapshot(node: SceneNode): Partial<SceneNode> {
+function snapshotResizeFinal(node: SceneNode): Partial<SceneNode> {
   const final: Partial<SceneNode> = {
     x: node.x,
     y: node.y,
@@ -176,12 +252,45 @@ function finalGeometrySnapshot(node: SceneNode): Partial<SceneNode> {
   }
   if (node.vectorNetwork) final.vectorNetwork = cloneVectorNetwork(node.vectorNetwork)
   if (node.fillGeometry.length > 0) final.fillGeometry = copyGeometryPaths(node.fillGeometry)
-  if (node.strokeGeometry.length > 0) final.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
-  if (node.figmaDerivedTextGlyphs?.length) {
-    final.figmaDerivedTextGlyphs = copyDerivedGlyphs(node.figmaDerivedTextGlyphs)
+  // Path-text reflow legitimately EMPTIES strokeGeometry (textPathBox marks
+  // those nodes) — commit it so the pre-resize silhouettes don't resurrect.
+  // Everything else keeps the length guard: a spurious strokeGeometry key on
+  // plain nodes would clear their raw Figma payload on commit.
+  if (node.strokeGeometry.length > 0 || node.textPathBox) {
+    final.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
   }
+  if (node.figmaDerivedTextGlyphs?.length) {
+    final.figmaDerivedTextGlyphs = node.figmaDerivedTextGlyphs.map((g) => ({
+      ...g,
+      commandsBlob: new Uint8Array(g.commandsBlob)
+    }))
+  }
+  if (node.textPathBox) final.textPathBox = { ...node.textPathBox }
   if (node.strokes.length > 0) final.strokes = copyStrokes(node.strokes)
   return final
+}
+
+/**
+ * Resize commits run inside preserveSourceMetadataDuring so the raw Figma
+ * payload (vectorData, textPathStart, effects, ...) survives — but the
+ * geometry-derived raw fields are now stale and export PREFERS them over
+ * node values (rawSize would resurrect the pre-resize dimensions in the
+ * exported file). Invalidate exactly those.
+ */
+function clearResizedRawGeometry(editor: Editor, nodeId: string): void {
+  const node = editor.graph.getNode(nodeId)
+  if (!node) return
+  node.source.fig.rawSize = null
+  node.source.fig.rawTransform = null
+  const raw = node.source.fig.rawNodeFields
+  delete raw.fillGeometry
+  delete raw.strokeGeometry
+  delete raw.strokeWeight
+  // vectorData is dual-use: for VECTOR nodes it gates nodeForGeometryExport —
+  // leaving it makes export pair stale raw vectorData with styleID-less
+  // explicit paths (multi-color icons turn gray). For TEXT it is the
+  // TEXT_PATH layout path and must survive or reflow dies.
+  if (node.type !== 'TEXT') delete raw.vectorData
 }
 
 export function commitResizePreview(dragState: DragResize, editor: Editor) {
@@ -189,29 +298,50 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
   const d = toRaw(dragState)
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return
-  const finalChanges = finalGeometrySnapshot(node)
+  const finalChanges = snapshotResizeFinal(node)
 
   if (d.origChildren) {
     const finalChildren = new Map<string, Partial<SceneNode>>()
     for (const [childId] of d.origChildren) {
       const child = editor.graph.getNode(childId)
       if (!child) continue
-      finalChildren.set(childId, finalGeometrySnapshot(child))
+      finalChildren.set(childId, snapshotResizeFinal(child))
     }
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
     for (const [childId, orig] of d.origChildren) {
-      // OrigChildState is exactly the geometry-tracked field set.
-      editor.graph.updateNodePreview(childId, { ...orig })
+      editor.graph.updateNodePreview(childId, {
+        x: orig.x,
+        y: orig.y,
+        width: orig.width,
+        height: orig.height,
+        vectorNetwork: orig.vectorNetwork,
+        fillGeometry: orig.fillGeometry,
+        strokeGeometry: orig.strokeGeometry,
+        figmaDerivedTextGlyphs: orig.figmaDerivedTextGlyphs,
+        strokes: orig.strokes,
+        textPathBox: orig.textPathBox
+      })
     }
-    editor.updateNode(d.nodeId, finalChanges)
-    for (const [childId, final] of finalChildren) {
-      editor.updateNode(childId, final)
-    }
+    // Resize is geometric — the raw Figma import payload (vectorData,
+    // textPathStart, effects, ...) must survive or path-text reflow works
+    // exactly once and export fidelity degrades.
+    editor.graph.preserveSourceMetadataDuring(() => {
+      editor.updateNode(d.nodeId, finalChanges)
+      for (const [childId, final] of finalChildren) {
+        editor.updateNode(childId, final)
+      }
+    })
+    clearResizedRawGeometry(editor, d.nodeId)
+    for (const [childId] of finalChildren) clearResizedRawGeometry(editor, childId)
     editor.commitGroupResize(d.nodeId, d.origRect, d.origChildren)
     editor.requestRepaint()
   } else {
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
-    editor.updateNode(d.nodeId, finalChanges)
+    // See the group branch — raw import payload survives geometric commits.
+    editor.graph.preserveSourceMetadataDuring(() => {
+      editor.updateNode(d.nodeId, finalChanges)
+    })
+    clearResizedRawGeometry(editor, d.nodeId)
     editor.commitResize(d.nodeId, {
       ...d.origRect,
       ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {}),
@@ -220,7 +350,8 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
       ...(d.origFigmaDerivedTextGlyphs?.length
         ? { figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs }
         : {}),
-      ...(d.origStrokes.length > 0 ? { strokes: d.origStrokes } : {})
+      ...(d.origStrokes.length > 0 ? { strokes: d.origStrokes } : {}),
+      ...(d.origTextPathBox ? { textPathBox: d.origTextPathBox } : {})
     })
   }
 }

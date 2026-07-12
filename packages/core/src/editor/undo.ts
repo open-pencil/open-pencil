@@ -29,12 +29,18 @@ type ResizeSnapshot = Pick<
   | 'strokeGeometry'
   | 'figmaDerivedTextGlyphs'
   | 'strokes'
+  | 'textPathBox'
 >
 type ResizeOriginal = Rect &
   Partial<
     Pick<
       SceneNode,
-      'vectorNetwork' | 'fillGeometry' | 'strokeGeometry' | 'figmaDerivedTextGlyphs' | 'strokes'
+      | 'vectorNetwork'
+      | 'fillGeometry'
+      | 'strokeGeometry'
+      | 'figmaDerivedTextGlyphs'
+      | 'strokes'
+      | 'textPathBox'
     >
   >
 
@@ -48,7 +54,8 @@ function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
     fillGeometry: copyGeometryPaths(node.fillGeometry),
     strokeGeometry: copyGeometryPaths(node.strokeGeometry),
     figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
-    strokes: copyStrokes(node.strokes)
+    strokes: copyStrokes(node.strokes),
+    textPathBox: node.textPathBox ? { ...node.textPathBox } : null
   }
 }
 
@@ -133,11 +140,12 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
-        ctx.graph.updateNode(nodeId, final)
+        // Geometric replay — keep the raw Figma payload (see commitResizePreview).
+        ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, final))
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, original)
+        ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, original))
         ctx.runLayoutForNode(nodeId)
       }
     })
@@ -159,13 +167,18 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
-        ctx.graph.updateNode(nodeId, finalRect)
-        for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
+        // Geometric replay — keep the raw Figma payload (see commitResizePreview).
+        ctx.graph.preserveSourceMetadataDuring(() => {
+          ctx.graph.updateNode(nodeId, finalRect)
+          for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
+        })
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, origRect)
-        for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
+        ctx.graph.preserveSourceMetadataDuring(() => {
+          ctx.graph.updateNode(nodeId, origRect)
+          for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
+        })
         ctx.runLayoutForNode(nodeId)
       }
     })

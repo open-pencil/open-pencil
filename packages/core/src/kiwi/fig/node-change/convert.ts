@@ -18,6 +18,7 @@ export { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './te
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractTextPathBox,
   extractPluginData,
   extractPluginRelaunchData,
   getOpenPencilPluginValue,
@@ -622,6 +623,19 @@ export function nodeChangeToProps(
   // See path-text-layout.ts — expand layout box before the node is created so
   // clipsContent parents don't shave overflowing path lettering at first paint.
   expandPathTextLayoutBox(props)
+  // A saved OpenPencil doc carries the true textPathBox (reflow may have
+  // scaled it); the expand-time reconstruction is only right for pristine
+  // Figma exports. Plugin box is in pre-expansion local coords — expand's
+  // shift is textPathBox.x/y by construction, so re-home it.
+  const pluginBox = extractTextPathBox(nc)
+  if (pluginBox && props.textPathBox) {
+    props.textPathBox = {
+      x: pluginBox.x + props.textPathBox.x,
+      y: pluginBox.y + props.textPathBox.y,
+      width: pluginBox.width,
+      height: pluginBox.height
+    }
+  }
   return props
 }
 
