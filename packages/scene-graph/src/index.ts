@@ -16,6 +16,7 @@ import * as HitTest from './hit-test'
 import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
+import { toRawDeep } from './raw'
 import { clearEditedSourceMetadata } from './source-metadata'
 import { invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
@@ -282,7 +283,7 @@ export class SceneGraph {
     return node
   }
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
-    const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
+    const node = createDefaultNode(() => this.generateNodeId(), type, toRawDeep(overrides))
     this.nodes.get(parentId)?.childIds.push(node.id)
     return this.registerNode(node, parentId)
   }
@@ -292,7 +293,7 @@ export class SceneGraph {
     parentId: string | null,
     overrides: Partial<SceneNode> = {}
   ): SceneNode {
-    const node = createDefaultNode(() => id, type, overrides)
+    const node = createDefaultNode(() => id, type, toRawDeep(overrides))
     node.id = id
     const parent = parentId ? this.nodes.get(parentId) : undefined
     if (parent && !parent.childIds.includes(id)) parent.childIds.push(id)
@@ -364,6 +365,8 @@ export class SceneGraph {
     if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)
   }
   updateNode(id: string, changes: Partial<SceneNode>): void {
+    // The graph must never store Vue reactive proxies — see toRawDeep.
+    changes = toRawDeep(changes)
     if (this.previewMutationDepth > 0) {
       this.updateNodePreview(id, changes)
       return
