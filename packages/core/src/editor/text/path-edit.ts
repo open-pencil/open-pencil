@@ -47,8 +47,11 @@ export function pathTextEditChanges(
     metrics.map((m) => ({
       commandsBlob: encodePathCommandsBlob(m.commands, node.fontSize),
       fontSize: node.fontSize,
-      // Pen walk expects em advances (it multiplies by fontSize); metrics are px.
-      advance: m.advance / node.fontSize
+      // Pen walk expects em advances (it multiplies by fontSize); metrics and
+      // letterSpacing are px. Folding letterSpacing in here (rather than
+      // threading it through layoutPathTextFromAdvances) keeps that function's
+      // em-advance contract unchanged for its one caller.
+      advance: (m.advance + node.letterSpacing) / node.fontSize
     }))
   )
   // Baked silhouettes belong to the OLD string — clear them so the renderer

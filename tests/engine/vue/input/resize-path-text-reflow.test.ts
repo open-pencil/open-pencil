@@ -1,10 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
 import type { Editor } from '@open-pencil/core/editor'
+import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Fill, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-graph'
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 
+import { exportFigFile } from '#core/io/formats/fig/export'
 import { getTextPathData, layoutPathTextFromAdvances } from '#core/text/path-layout'
 import { encodeVectorNetworkBlob } from '#core/vector'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
@@ -204,5 +206,233 @@ describe('group resize reflows path text instead of squashing it', () => {
     // nodes must not carry proxies or non-clonable values.
     expect(() => structuredClone(committed)).not.toThrow()
     expect(() => structuredClone(expectDefined(graph.getNode(group.id)))).not.toThrow()
+  })
+})
+
+describe('direct (non-group) resize reflows path text instead of squashing it', () => {
+  test('dragging a TEXT_PATH node itself scales the box, clears strokeGeometry, glyphs carry no scale', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const box = { x: 0, y: 0, width: 256, height: 256 }
+    const text = graph.createNode('TEXT', page.id, {
+      x: 0,
+      y: 0,
+      width: 256,
+      height: 256,
+      text: 'abc',
+      fills: [BLACK],
+      strokes: [WHITE_STROKE],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareGeometryBlob(256) }],
+      textPathBox: { ...box }
+    })
+    text.source.fig.kiwiNodeType = 'TEXT_PATH'
+    text.source.fig.rawNodeFields = {
+      vectorData: {
+        vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
+        normalizedSize: { x: 256, y: 256 }
+      },
+      textPathStart: { tValue: 0.25, forward: false }
+    }
+
+    const data = expectDefined(getTextPathData(text), 'synthetic path data')
+    const seeds = expectDefined(
+      layoutPathTextFromAdvances(data, box, 0.25, 0, [
+        { commandsBlob: glyphBlob(), fontSize: 40, advance: 0.6 },
+        { commandsBlob: glyphBlob(), fontSize: 40, advance: 0.6 },
+        { commandsBlob: glyphBlob(), fontSize: 40, advance: 0.6 }
+      ]),
+      'seed glyphs'
+    )
+    text.figmaDerivedTextGlyphs = seeds.map((g) => ({
+      ...g,
+      commandsBlob: new Uint8Array(g.commandsBlob)
+    }))
+
+    const editor = {
+      graph,
+      renderer: undefined,
+      requestRepaint: () => undefined,
+      updateNode: (id: string, changes: Partial<SceneNode>) => graph.updateNode(id, changes),
+      commitResize: () => undefined,
+      commitGroupResize: () => undefined
+    } as Editor
+
+    const drag: DragResize = {
+      type: 'resize',
+      handle: 'se',
+      startX: 256,
+      startY: 256,
+      origRect: { x: 0, y: 0, width: 256, height: 256 },
+      nodeId: text.id,
+      origVectorNetwork: null,
+      origFillGeometry: [],
+      origStrokeGeometry: copyGeometryPaths(text.strokeGeometry),
+      origFigmaDerivedTextGlyphs: seeds.map((g) => ({
+        ...g,
+        commandsBlob: new Uint8Array(g.commandsBlob)
+      })),
+      origStrokes: copyStrokes(text.strokes),
+      origTextPathBox: { ...box },
+      origChildren: null
+    }
+
+    // Drag the SE handle right by 256px: 256x256 -> 512x256 (non-uniform).
+    applyResize(drag, 512, 256, false, editor)
+    commitResizePreview(drag, editor)
+
+    const committed = expectDefined(graph.getNode(text.id), 'committed text node')
+    expect(committed.width).toBe(512)
+    expect(committed.height).toBe(256)
+
+    const tpb = expectDefined(committed.textPathBox, 'committed textPathBox')
+    expect(tpb.width).toBeCloseTo(512, 3)
+    expect(tpb.height).toBeCloseTo(256, 3)
+
+    // Reflow cleared the baked silhouettes — the renderer rebuilds per glyph.
+    expect(committed.strokeGeometry).toEqual([])
+
+    const glyphs = expectDefined(committed.figmaDerivedTextGlyphs, 'committed glyphs')
+    expect(glyphs).toHaveLength(3)
+    for (const g of glyphs) {
+      expect(g.scaleX).toBeUndefined()
+      expect(g.scaleY).toBeUndefined()
+      expect(g.fontSize).toBeCloseTo(40, 3)
+    }
+    // The wider path actually re-placed the glyphs.
+    expect(glyphs.some((g, i) => Math.hypot(g.x - seeds[i].x, g.y - seeds[i].y) > 1)).toBe(true)
+
+    // Reflow keeps stroke weight constant (like font size).
+    expect(committed.strokes[0]?.weight).toBeCloseTo(4, 3)
+
+    expect(() => structuredClone(committed)).not.toThrow()
+  })
+})
+
+describe('resize + export integration: real commit path clears stale raw payload', () => {
+  test('reflowed derivedTextData exports fresh positions, not the stale pre-resize raw blob', async () => {
+    // Regression test for the bug where clearResizedRawGeometry (which deletes
+    // rawNodeFields.strokeGeometry on every commit) broke export's reflow
+    // detection, letting stale raw derivedTextData resurrect pre-resize glyph
+    // positions in the exported file. Unlike the gated fixture test, this
+    // drives the REAL resize.ts commit path (not a bare graph.updateNode), so
+    // clearResizedRawGeometry actually runs before export sees the node.
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const box = { x: 0, y: 0, width: 256, height: 256 }
+    const text = graph.createNode('TEXT', page.id, {
+      x: 0,
+      y: 0,
+      width: 256,
+      height: 256,
+      text: 'abc',
+      fills: [BLACK],
+      strokes: [WHITE_STROKE],
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareGeometryBlob(256) }],
+      textPathBox: { ...box }
+    })
+    // applyRawFigmaNodeFields only force-overwrites nc.derivedTextData from raw
+    // when node.source.id is set — that's the imported-node marker a real .fig
+    // import stamps. A freshly created (non-imported) node doesn't reach the
+    // buggy branch, so this must mimic a genuine import to be a real regression
+    // guard.
+    text.source.id = '1:2'
+    text.source.fig.kiwiNodeType = 'TEXT_PATH'
+    text.source.fig.rawNodeFields = {
+      vectorData: {
+        vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
+        normalizedSize: { x: 256, y: 256 }
+      },
+      textPathStart: { tValue: 0.25, forward: false }
+    }
+
+    const data = expectDefined(getTextPathData(text), 'synthetic path data')
+    const seeds = expectDefined(
+      layoutPathTextFromAdvances(data, box, 0.25, 0, [
+        { commandsBlob: glyphBlob(), fontSize: 40, advance: 0.6 },
+        { commandsBlob: glyphBlob(), fontSize: 40, advance: 0.6 },
+        { commandsBlob: glyphBlob(), fontSize: 40, advance: 0.6 }
+      ]),
+      'seed glyphs'
+    )
+    text.figmaDerivedTextGlyphs = seeds.map((g) => ({
+      ...g,
+      commandsBlob: new Uint8Array(g.commandsBlob)
+    }))
+
+    // The rest of the raw payload a real .fig import would carry: stale baked
+    // derivedTextData + strokeGeometry silhouettes matching the pre-resize seeds.
+    text.source.fig.rawNodeFields = {
+      ...text.source.fig.rawNodeFields,
+      derivedTextData: {
+        glyphs: seeds.map((g) => ({
+          commandsBlob: { __openPencilFigmaBlob: new Uint8Array(g.commandsBlob) },
+          position: { x: g.x, y: g.y },
+          fontSize: g.fontSize,
+          rotation: g.rotation ?? 0
+        }))
+      },
+      strokeGeometry: [
+        { windingRule: 'NONZERO', commandsBlob: { __openPencilFigmaBlob: squareGeometryBlob(256) } }
+      ]
+    }
+
+    const editor = {
+      graph,
+      renderer: undefined,
+      requestRepaint: () => undefined,
+      updateNode: (id: string, changes: Partial<SceneNode>) => graph.updateNode(id, changes),
+      commitResize: () => undefined,
+      commitGroupResize: () => undefined
+    } as Editor
+
+    const drag: DragResize = {
+      type: 'resize',
+      handle: 'se',
+      startX: 256,
+      startY: 256,
+      origRect: { x: 0, y: 0, width: 256, height: 256 },
+      nodeId: text.id,
+      origVectorNetwork: null,
+      origFillGeometry: [],
+      origStrokeGeometry: copyGeometryPaths(text.strokeGeometry),
+      origFigmaDerivedTextGlyphs: seeds.map((g) => ({
+        ...g,
+        commandsBlob: new Uint8Array(g.commandsBlob)
+      })),
+      origStrokes: copyStrokes(text.strokes),
+      origTextPathBox: { ...box },
+      origChildren: null
+    }
+
+    // Drag the SE handle right by 256px: 256x256 -> 512x256 (non-uniform).
+    applyResize(drag, 512, 256, false, editor)
+    commitResizePreview(drag, editor)
+
+    const committed = expectDefined(graph.getNode(text.id), 'committed text node')
+    const committedGlyphs = expectDefined(committed.figmaDerivedTextGlyphs, 'committed glyphs')
+    // Sanity: the real resize path actually reflowed (moved) the glyphs.
+    expect(committedGlyphs.some((g, i) => Math.hypot(g.x - seeds[i].x, g.y - seeds[i].y) > 1)).toBe(
+      true
+    )
+
+    const out = await exportFigFile(graph)
+    const reparsed = parseFigBuffer(out)
+    const exported = expectDefined(reparsed.nodeChanges.find((nc) => nc.type === 'TEXT_PATH'))
+
+    // No stale silhouette geometry resurrected from the raw payload.
+    expect(exported.strokeGeometry).toBeUndefined()
+
+    // Exported derivedTextData must match the REFLOWED positions, not the
+    // stale pre-resize raw blob set up above.
+    const exportedGlyphs = expectDefined(exported.derivedTextData?.glyphs, 'exported glyphs')
+    expect(exportedGlyphs.length).toBe(committedGlyphs.length)
+    for (let i = 0; i < committedGlyphs.length; i++) {
+      expect(expectDefined(exportedGlyphs[i]?.position?.x)).toBeCloseTo(committedGlyphs[i].x, 2)
+      expect(expectDefined(exportedGlyphs[i]?.position?.y)).toBeCloseTo(committedGlyphs[i].y, 2)
+    }
+    // ...and specifically NOT the stale seed positions (the bug this guards against).
+    expect(exportedGlyphs.some((g, i) => Math.abs((g.position?.x ?? 0) - seeds[i].x) > 5)).toBe(
+      true
+    )
   })
 })

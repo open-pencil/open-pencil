@@ -2,13 +2,15 @@ import { describe, expect, test } from 'bun:test'
 import { existsSync, readFileSync } from 'node:fs'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { VectorNetwork } from '@open-pencil/scene-graph'
+import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 
 import { parseFigFile } from '#core/io/formats/fig/read'
 import {
   calibratePathTextLayout,
+  fitTextPathBoxToGlyphs,
   getTextPathData,
   layoutPathTextFromAdvances,
+  pointAtArc,
   reflowPathTextGlyphs,
   sampleTextPath
 } from '#core/text/path-layout'
@@ -21,7 +23,7 @@ function angleDiff(a: number, b: number): number {
   return Math.atan2(Math.sin(a - b), Math.cos(a - b))
 }
 
-const LOCAL_CIRCLE_TEXT = '/Users/rcoenen/Downloads/ArnoWithCircleText.fig'
+const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
 describe('path-text reflow — real fixture (optional local)', () => {
   test('identity reflow reproduces baked glyphs; anisotropic reflow re-places without touching outlines', async () => {
@@ -83,6 +85,76 @@ describe('path-text reflow — real fixture (optional local)', () => {
     // Glyphs moved relative to each other — the layout changed, the shapes did not.
     expect(pairs).toBeGreaterThan(0)
     expect(changedPairs).toBeGreaterThan(0)
+  })
+
+  // Task 3.3 / 4.1: the selection overlay strokes sampleTextPath(data, fitted),
+  // where `fitted` = fitTextPathBoxToGlyphs. Guard that the fitted curve tracks
+  // the imported glyph baselines TIGHTLY — the raw textPathBox is ~4% too small
+  // and sits ~30px off (the visible offset bug this fit corrects).
+  function maxGlyphToPath(
+    path: { xs: Float64Array; ys: Float64Array },
+    glyphs: SceneNode['figmaDerivedTextGlyphs'] & object
+  ) {
+    let max = 0
+    for (const g of glyphs) {
+      let best = Infinity
+      for (let s = 0; s < path.xs.length; s++) {
+        best = Math.min(best, Math.hypot(path.xs[s] - g.x, path.ys[s] - g.y))
+      }
+      max = Math.max(max, best)
+    }
+    return max
+  }
+
+  test('fitted overlay curve + start marker track the imported glyph baselines', async () => {
+    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
+      console.log('skip: ArnoWithCircleText.fig not present')
+      return
+    }
+    const bytes = readFileSync(LOCAL_CIRCLE_TEXT)
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    const graph = await parseFigFile(ab)
+    const node = expectDefined(
+      [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art'),
+      'path text node'
+    )
+    const data = expectDefined(getTextPathData(node), 'text path data')
+    const box = expectDefined(node.textPathBox, 'textPathBox')
+    const glyphs = expectDefined(node.figmaDerivedTextGlyphs, 'imported glyphs')
+
+    // Raw textPathBox path is materially off the glyphs (the bug).
+    const rawPath = expectDefined(sampleTextPath(data, box), 'raw path')
+    expect(maxGlyphToPath(rawPath, glyphs)).toBeGreaterThan(15)
+
+    // The fitted box lands the path ON the glyph baselines.
+    const fitted = expectDefined(fitTextPathBoxToGlyphs(data, glyphs), 'fitted box')
+    expect(fitted.width).toBeCloseTo(data.normalizedSize.x, 3)
+    const path = expectDefined(sampleTextPath(data, fitted), 'fitted overlay path')
+    expect(maxGlyphToPath(path, glyphs)).toBeLessThan(12)
+
+    // Start marker (overlay uses pointAtArc at tValue * length) lands on the
+    // fitted curve near the first glyph.
+    const start = pointAtArc(path, Math.min(Math.max(data.tValue, 0), 1) * path.length)
+    expect(Math.hypot(start.x - glyphs[0].x, start.y - glyphs[0].y)).toBeLessThan(
+      glyphs[0].fontSize
+    )
+  })
+
+  test('fitTextPathBoxToGlyphs returns null with no glyphs to fit', async () => {
+    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
+      console.log('skip: ArnoWithCircleText.fig not present')
+      return
+    }
+    const bytes = readFileSync(LOCAL_CIRCLE_TEXT)
+    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    const graph = await parseFigFile(ab)
+    const node = expectDefined(
+      [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art'),
+      'path text node'
+    )
+    const data = expectDefined(getTextPathData(node), 'text path data')
+    expect(fitTextPathBoxToGlyphs(data, [])).toBeNull()
+    expect(fitTextPathBoxToGlyphs(data, null)).toBeNull()
   })
 })
 
@@ -206,5 +278,82 @@ describe('path-text reflow — synthetic circle', () => {
 
     // The wider path actually moved the glyphs.
     expect(reflowed.some((g, i) => Math.hypot(g.x - seeds[i].x, g.y - seeds[i].y) > 1)).toBe(true)
+  })
+})
+
+// --- Selection overlay: shared path helpers + eligibility (task 3.1/3.2) ---
+
+/** Build the synthetic circle TEXT_PATH node used across overlay tests. */
+function makeCircleTextPathNode(tValue = 0, forward = true): SceneNode {
+  const graph = new SceneGraph()
+  const page = expectDefined(graph.getPages()[0])
+  const node = graph.createNode('TEXT', page.id, {
+    x: 0,
+    y: 0,
+    width: 256,
+    height: 256,
+    text: 'abc',
+    textPathBox: { x: 0, y: 0, width: 256, height: 256 }
+  })
+  node.source.fig.kiwiNodeType = 'TEXT_PATH'
+  node.source.fig.rawNodeFields = {
+    vectorData: {
+      vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
+      normalizedSize: { x: 256, y: 256 }
+    },
+    textPathStart: { tValue, forward }
+  }
+  return node
+}
+
+describe('selection overlay — path helpers', () => {
+  test('pointAtArc lands on the curve at an arc fraction (start-marker geometry)', () => {
+    const node = makeCircleTextPathNode()
+    const data = expectDefined(getTextPathData(node), 'data')
+    const box = expectDefined(node.textPathBox, 'box')
+    const path = expectDefined(sampleTextPath(data, box), 'path')
+
+    // Radius-100 circle centered at (128,128): every arc point is 100 from center.
+    const start = pointAtArc(path, 0)
+    expect(Math.hypot(start.x - 128, start.y - 128)).toBeCloseTo(100, 0)
+
+    const mid = pointAtArc(path, 0.25 * path.length)
+    expect(Math.hypot(mid.x - 128, mid.y - 128)).toBeCloseTo(100, 0)
+    // Moved along the arc from the start.
+    expect(Math.hypot(mid.x - start.x, mid.y - start.y)).toBeGreaterThan(1)
+  })
+
+  test('eligible node samples the curve (not a rectangle); dataless node falls back', () => {
+    const node = makeCircleTextPathNode()
+    // Overlay eligibility seam: retained data + a node-local box are both present.
+    const data = expectDefined(getTextPathData(node), 'data')
+    const box = expectDefined(node.textPathBox, 'box')
+    const path = expectDefined(sampleTextPath(data, box), 'path')
+
+    // Curve, not rectangle: every sample sits at ~radius 100 from box center;
+    // a bounding rectangle would give corner distances ~181 and edges 100.
+    let rMin = Infinity
+    let rMax = 0
+    for (let i = 0; i < path.xs.length; i++) {
+      const rr = Math.hypot(path.xs[i] - 128, path.ys[i] - 128)
+      rMin = Math.min(rMin, rr)
+      rMax = Math.max(rMax, rr)
+    }
+    expect(rMax - rMin).toBeLessThan(1)
+    expect(Math.abs(rMax - 100)).toBeLessThan(1)
+
+    // Ineligible: a TEXT_PATH marker with no retained vectorData → null → the
+    // overlay branch is skipped and drawNodeSelection (rectangle) runs.
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const bare = graph.createNode('TEXT', page.id, {
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 40,
+      text: 'x'
+    })
+    bare.source.fig.kiwiNodeType = 'TEXT_PATH'
+    expect(getTextPathData(bare)).toBeNull()
   })
 })

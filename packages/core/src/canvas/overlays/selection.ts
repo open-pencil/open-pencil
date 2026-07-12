@@ -8,6 +8,12 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { HANDLE_HALF_SIZE, SELECTION_DASH_ALPHA } from '#core/constants'
+import {
+  fitTextPathBoxToGlyphs,
+  getTextPathData,
+  pointAtArc,
+  sampleTextPath
+} from '#core/text/path-layout'
 
 function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
   const chain: SceneNode[] = []
@@ -111,6 +117,16 @@ export function drawSelection(
 
     const rotation =
       overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
+    // Imported text-on-path node → draw the path curve overlay. The cheap
+    // two-field check is the gate; drawTextPathSelection re-checks the retained
+    // data and falls back to the plain rectangle if it can't be sampled, so we
+    // don't decode the vector blob here just to decide.
+    if (node.source.fig.kiwiNodeType === 'TEXT_PATH' && node.textPathBox !== null) {
+      drawTextPathSelection(r, canvas, node, rotation, graph)
+      r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+      r.selectionPaint.setColor(r.selColor())
+      return
+    }
     r.drawNodeSelection(canvas, node, rotation, graph)
     r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
 
@@ -161,6 +177,65 @@ function withNodeBounds(
   draw(0, 0, node.width, node.height)
 
   canvas.restore()
+}
+
+/**
+ * Text-on-path selection overlay: the sampled path curve the lettering
+ * follows, a faint dashed box + handles, a center crosshair, and a start marker
+ * at `textPathStart`. Bounds come from the glyph-fitted path box (see
+ * fitTextPathBoxToGlyphs), so the circle tracks the lettering rather than the
+ * ~4%-off textPathBox. Display-only — reads retained data, mutates nothing.
+ */
+function drawTextPathSelection(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  rotation: number,
+  graph: SceneGraph
+): void {
+  const data = getTextPathData(node)
+  // Prefer the box fit to the glyph baselines; fall back to textPathBox when
+  // there are no glyphs to fit against.
+  const box =
+    (data && fitTextPathBoxToGlyphs(data, node.figmaDerivedTextGlyphs)) ?? node.textPathBox
+  // Eligibility gated data/box, but sampleTextPath can still fail (bad vertex /
+  // zero length) — any null falls back to the standard rectangle, no throw.
+  const sampled = data && box ? sampleTextPath(data, box) : null
+  if (!data || !box || !sampled) {
+    r.drawNodeSelection(canvas, node, rotation, graph)
+    return
+  }
+
+  withNodeBounds(r, canvas, node, rotation, graph, () => {
+    // Faint dashed bounds + resize/rotate handles from the fitted path box.
+    r.auxStroke.setStrokeWidth(1 / r.zoom)
+    r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
+    r.auxStroke.setPathEffect(r.ck.PathEffect.MakeDash([4 / r.zoom, 4 / r.zoom], 0))
+    canvas.drawRect(r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height), r.auxStroke)
+    r.auxStroke.setPathEffect(null) // auxStroke is shared — never leave a dash effect on it.
+    drawBoundsHandles(r, canvas, box.x, box.y, box.x + box.width, box.y + box.height)
+
+    // The path curve itself (node-local sampled polyline).
+    const path = new r.ck.Path()
+    path.moveTo(sampled.xs[0], sampled.ys[0])
+    for (let i = 1; i < sampled.xs.length; i++) path.lineTo(sampled.xs[i], sampled.ys[i])
+    if (sampled.closed) path.close()
+    canvas.drawPath(path, r.selectionPaint)
+    path.delete()
+
+    // Center crosshair at the fitted path box center (screen-constant size).
+    const cx = box.x + box.width / 2
+    const cy = box.y + box.height / 2
+    const arm = (HANDLE_HALF_SIZE * 2) / r.zoom
+    canvas.drawLine(cx - arm, cy, cx + arm, cy, r.selectionPaint)
+    canvas.drawLine(cx, cy - arm, cx, cy + arm, r.selectionPaint)
+
+    // Start-point marker on the curve at textPathStart.tValue (arc fraction).
+    // forward only flips travel direction, which the display-only marker ignores.
+    const s = Math.min(Math.max(data.tValue, 0), 1) * sampled.length
+    const start = pointAtArc(sampled, s)
+    drawHandle(r, canvas, start.x, start.y)
+  })
 }
 
 function drawBoundsHandles(

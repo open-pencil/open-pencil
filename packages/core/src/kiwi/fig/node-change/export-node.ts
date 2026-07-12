@@ -359,11 +359,16 @@ function isReflowedPathText(node: SceneNode): boolean {
   if (node.type !== 'TEXT' || node.source.fig.kiwiNodeType !== 'TEXT_PATH') return false
   if ((node.figmaDerivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
   if (node.strokeGeometry.length !== 0) return false
-  // Only when the node diverged from import: the raw payload still carries
-  // baked silhouettes the node no longer has. Fill-only path text (never had
-  // silhouettes) is untouched and keeps its raw derivedTextData verbatim.
-  const rawStroke = (node.source.fig.rawNodeFields as { strokeGeometry?: unknown }).strokeGeometry
-  return Array.isArray(rawStroke) && rawStroke.length > 0
+  // Only when the node has stroke paint but its baked silhouettes were
+  // cleared by reflow (see resize.ts). Fill-only path text (no stroke paint,
+  // so strokeGeometry is always empty) is untouched and keeps its raw
+  // derivedTextData verbatim.
+  //
+  // This must key off live node.strokes, not rawNodeFields.strokeGeometry:
+  // clearResizedRawGeometry (resize.ts) deletes that raw field on every
+  // resize commit, so it's already gone by the time a reflowed node reaches
+  // export and can never be used to detect reflow here.
+  return node.strokes.length > 0
 }
 
 function applyRawFigmaNodeFields(

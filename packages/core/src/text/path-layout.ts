@@ -127,7 +127,13 @@ interface PathPoint {
   s: number
 }
 
-function pointAtArc(path: SampledPath, sIn: number): PathPoint {
+/**
+ * Node-local point (+ unit tangent along increasing arc length) at absolute
+ * arc length `sIn`. Shared by layout and the selection overlay's start marker
+ * (pass `fraction * path.length`). Callers already holding a sampled path use
+ * this directly rather than re-sampling.
+ */
+export function pointAtArc(path: SampledPath, sIn: number): PathPoint {
   let s = sIn
   if (path.closed) {
     s = ((s % path.length) + path.length) % path.length
@@ -302,4 +308,59 @@ export function reflowPathTextGlyphs(
       scaleY: undefined
     }
   })
+}
+
+/**
+ * Node-local box that maps the layout path onto the glyph baselines.
+ *
+ * `SceneNode.textPathBox` maps the path onto the node's ORIGINAL Figma box, but
+ * the path's own space is `normalizedSize` (~4% larger), so a path sampled from
+ * textPathBox sits ~30px off the lettering. This recovers the box that lands the
+ * path ON the glyphs, for display (the selection overlay) without disturbing the
+ * import/reflow use of textPathBox. Size is fixed to normalizedSize (correct
+ * scale — network vertices span [0,normalizedSize]); only the origin is fit, by
+ * ICP translation against the baselines (a few iterations converge from ~30px).
+ * Returns null when there are no glyphs to fit against or the path can't sample.
+ */
+export function fitTextPathBoxToGlyphs(
+  data: TextPathData,
+  glyphs: readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y'>[] | null | undefined
+): Rect | null {
+  if (!glyphs?.length) return null
+  const w = data.normalizedSize.x
+  const h = data.normalizedSize.y
+  // Sample once at origin 0; width === normalizedSize so scale is 1 and moving
+  // the box origin translates the path 1:1 — the fit is a pure translation.
+  const ref = sampleTextPath(data, { x: 0, y: 0, width: w, height: h })
+  if (!ref) return null
+  let ox = 0
+  let oy = 0
+  for (let iter = 0; iter < 8; iter++) {
+    let sumX = 0
+    let sumY = 0
+    for (const g of glyphs) {
+      const gx = g.x - ox
+      const gy = g.y - oy
+      let bestD = Infinity
+      let bx = 0
+      let by = 0
+      for (let i = 0; i < ref.xs.length; i++) {
+        const d = (ref.xs[i] - gx) ** 2 + (ref.ys[i] - gy) ** 2
+        if (d < bestD) {
+          bestD = d
+          bx = ref.xs[i]
+          by = ref.ys[i]
+        }
+      }
+      sumX += g.x - bx
+      sumY += g.y - by
+    }
+    const nx = sumX / glyphs.length
+    const ny = sumY / glyphs.length
+    const converged = Math.abs(nx - ox) < 0.05 && Math.abs(ny - oy) < 0.05
+    ox = nx
+    oy = ny
+    if (converged) break
+  }
+  return { x: ox, y: oy, width: w, height: h }
 }

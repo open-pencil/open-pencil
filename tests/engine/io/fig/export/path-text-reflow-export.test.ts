@@ -13,7 +13,7 @@ import {
 
 import { expectDefined } from '#tests/helpers/assert'
 
-const LOCAL_CIRCLE_TEXT = '/Users/rcoenen/Downloads/ArnoWithCircleText.fig'
+const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
 async function loadFixtureGraph() {
   const bytes = readFileSync(LOCAL_CIRCLE_TEXT)

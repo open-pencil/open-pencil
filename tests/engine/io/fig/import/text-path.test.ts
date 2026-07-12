@@ -9,6 +9,7 @@ import { exportFigFile } from '#core/io/formats/fig/export'
 import { parseFigFile } from '#core/io/formats/fig/read'
 import { nodeChangeToProps } from '#core/kiwi/fig/node-change/convert'
 import { convertFigmaDerivedTextGlyphs } from '#core/kiwi/fig/node-change/derived-text-glyphs'
+import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -75,7 +76,7 @@ describe('TEXT_PATH import mapping', () => {
   })
 })
 
-const LOCAL_CIRCLE_TEXT = '/Users/rcoenen/Downloads/ArnoWithCircleText.fig'
+const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
 describe('TEXT_PATH real fixture (optional local)', () => {
   test('imports circular path text without RECTANGLE occlusion type', async () => {
@@ -170,6 +171,55 @@ describe('TEXT_PATH resize export', () => {
     const view = new DataView(blob.buffer, blob.byteOffset)
     expect(view.getFloat32(2 * 9 + 1, true)).toBeCloseTo(1, 4)
     expect(view.getFloat32(2 * 9 + 5, true)).toBeCloseTo(0.5, 4)
+  })
+})
+
+describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
+  test('vectorData + textPathStart survive .fig export unchanged', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const networkBlob = encodeVectorNetworkBlob({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 }
+      ],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+      regions: []
+    })
+    const node = graph.createNode('TEXT', page.id, {
+      text: 'A',
+      width: 100,
+      height: 100,
+      figmaDerivedTextGlyphs: [
+        { commandsBlob: unitSquareBlob(), x: 10, y: 20, fontSize: 40, rotation: 0 }
+      ]
+    })
+    node.source.fig.kiwiNodeType = 'TEXT_PATH'
+    node.source.fig.rawNodeFields = {
+      vectorData: {
+        vectorNetworkBlob: { __openPencilFigmaBlob: networkBlob },
+        normalizedSize: { x: 100, y: 100 }
+      },
+      textPathStart: { tValue: 0.3, forward: false }
+    }
+
+    const out = await exportFigFile(graph)
+    const reparsed = parseFigBuffer(out)
+    const exported = expectDefined(reparsed.nodeChanges.find((nc) => nc.type === 'TEXT_PATH'))
+
+    const rawExported = exported as typeof exported & Record<string, unknown>
+    const vectorData = rawExported.vectorData as {
+      vectorNetworkBlob?: number
+      normalizedSize?: { x: number; y: number }
+    }
+    expect(vectorData.normalizedSize).toEqual({ x: 100, y: 100 })
+    const blobIndex = expectDefined(vectorData.vectorNetworkBlob, 'vectorNetworkBlob index')
+    const exportedBlob = expectDefined(reparsed.blobs[blobIndex], 'exported network blob')
+    expect(Buffer.from(exportedBlob).equals(Buffer.from(networkBlob))).toBe(true)
+
+    const textPathStart = rawExported.textPathStart as { tValue?: number; forward?: boolean }
+    expect(textPathStart.tValue).toBeCloseTo(0.3, 6)
+    expect(textPathStart.forward).toBe(false)
   })
 })
 
