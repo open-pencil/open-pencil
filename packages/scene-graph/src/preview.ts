@@ -1,4 +1,4 @@
-import { TEXT_DERIVED_GLYPH_INVALIDATION_KEYS, TEXT_PICTURE_KEYS } from './text-picture'
+import { invalidateTextCaches } from './text-picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -55,23 +55,7 @@ export function updateNodePreview(
   }
   const affectsLayout = Object.keys(changes).some((key) => LAYOUT_AFFECTING_KEYS.has(key))
   if (affectsLayout) graph.clearAbsPosCache()
-  if (node.type === 'TEXT') {
-    const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
-    if (node.textPicture && textChanged) node.textPicture = null
-    // Mirror SceneGraph.updateNode: geometric resize must not wipe path glyphs
-    // (see TEXT_DERIVED_GLYPH_INVALIDATION_KEYS). Preview is on the hot path for drag.
-    const glyphsInvalidated = Object.keys(changes).some((key) =>
-      TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(key)
-    )
-    if (
-      node.figmaDerivedTextGlyphs &&
-      glyphsInvalidated &&
-      !('figmaDerivedTextGlyphs' in changes)
-    ) {
-      node.figmaDerivedTextGlyphs = null
-      if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
-    }
-  }
+  if (node.type === 'TEXT') invalidateTextCaches(node, changes)
   const normalizedChanges = changes.vectorNetwork
     ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     : changes

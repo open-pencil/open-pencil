@@ -5,6 +5,7 @@ import { computeLayout } from '@open-pencil/core/layout'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { FigmaDerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
+  copyDerivedGlyphs,
   copyGeometryPaths,
   copyStroke,
   copyStrokes,
@@ -170,10 +171,7 @@ function finalGeometrySnapshot(node: SceneNode): Partial<SceneNode> {
   if (node.fillGeometry.length > 0) final.fillGeometry = copyGeometryPaths(node.fillGeometry)
   if (node.strokeGeometry.length > 0) final.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
   if (node.figmaDerivedTextGlyphs?.length) {
-    final.figmaDerivedTextGlyphs = node.figmaDerivedTextGlyphs.map((g) => ({
-      ...g,
-      commandsBlob: new Uint8Array(g.commandsBlob)
-    }))
+    final.figmaDerivedTextGlyphs = copyDerivedGlyphs(node.figmaDerivedTextGlyphs)
   }
   if (node.strokes.length > 0) final.strokes = copyStrokes(node.strokes)
   return final
@@ -193,17 +191,8 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
     }
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
     for (const [childId, orig] of d.origChildren) {
-      editor.graph.updateNodePreview(childId, {
-        x: orig.x,
-        y: orig.y,
-        width: orig.width,
-        height: orig.height,
-        vectorNetwork: orig.vectorNetwork,
-        fillGeometry: orig.fillGeometry,
-        strokeGeometry: orig.strokeGeometry,
-        figmaDerivedTextGlyphs: orig.figmaDerivedTextGlyphs,
-        strokes: orig.strokes
-      })
+      // OrigChildState is exactly the geometry-tracked field set.
+      editor.graph.updateNodePreview(childId, { ...orig })
     }
     editor.updateNode(d.nodeId, finalChanges)
     for (const [childId, final] of finalChildren) {

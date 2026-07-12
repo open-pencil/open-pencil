@@ -20,6 +20,7 @@ import type {
   Stroke,
   StyleRun
 } from './'
+import { geometryCommandCoordCount } from './geometry'
 import { cloneVectorNetwork } from './vector-network'
 
 // --- Individual copy functions ---
@@ -112,10 +113,8 @@ export function transformGeometryBlob(
   let offset = 0
   while (offset < out.length) {
     const command = out[offset++]
-    let coords = 0
-    if (command === 1 || command === 2) coords = 1
-    else if (command === 3) coords = 2
-    else if (command === 4) coords = 3
+    const coords = geometryCommandCoordCount(command)
+    if (coords == null) break
     for (let i = 0; i < coords; i++) {
       if (offset + 8 > out.length) break
       const x = dv.getFloat32(offset, true)
@@ -179,7 +178,10 @@ function copyPropertyDefs(
   )
 }
 
-function copyGlyphs(glyphs: FigmaDerivedTextGlyph[] | null): FigmaDerivedTextGlyph[] | null {
+/** Deep-copy path-text glyphs (fresh commandsBlob buffers). */
+export function copyDerivedGlyphs(
+  glyphs: FigmaDerivedTextGlyph[] | null
+): FigmaDerivedTextGlyph[] | null {
   return glyphs ? glyphs.map((g) => ({ ...g, commandsBlob: new Uint8Array(g.commandsBlob) })) : null
 }
 
@@ -232,7 +234,7 @@ export function cloneNodeProps(src: SceneNode, componentId: string | null): Part
     arcData: src.arcData ? copyArcData(src.arcData) : null,
     vectorNetwork: src.vectorNetwork ? cloneVectorNetwork(src.vectorNetwork) : null,
     textPicture: src.textPicture ? new Uint8Array(src.textPicture) : null,
-    figmaDerivedTextGlyphs: copyGlyphs(src.figmaDerivedTextGlyphs),
+    figmaDerivedTextGlyphs: copyDerivedGlyphs(src.figmaDerivedTextGlyphs),
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null
   }
 }

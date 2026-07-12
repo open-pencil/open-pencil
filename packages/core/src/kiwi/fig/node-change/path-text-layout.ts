@@ -1,4 +1,4 @@
-import type { FigmaDerivedTextGlyph, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
+import type { GeometryPath, SceneNode } from '@open-pencil/scene-graph'
 import { transformGeometryPaths } from '@open-pencil/scene-graph/copy'
 import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
 
@@ -41,7 +41,7 @@ function pathTextContentBounds(
   let maxY = geom ? geom.y + geom.height : height
 
   // Baselines only — pad with fontSize so ascent/side-bearings are covered.
-  for (const g of (props.figmaDerivedTextGlyphs as FigmaDerivedTextGlyph[] | null) ?? []) {
+  for (const g of props.figmaDerivedTextGlyphs ?? []) {
     const pad = g.fontSize || 0
     minX = Math.min(minX, g.x - pad * 0.25)
     minY = Math.min(minY, g.y - pad)

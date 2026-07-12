@@ -254,10 +254,15 @@ export function intersectVisualBounds(a: VisualBounds, b: VisualBounds): VisualB
   return minX < maxX && minY < maxY ? { minX, minY, maxX, maxY } : null
 }
 
-function geometryCommandCoordCount(command: number): number | null {
+/**
+ * Coordinate pairs per path blob command: 0=close, 1=move, 2=line,
+ * 3=quad (glyph-derived blobs are quad-heavy), 4=cubic. Unknown → null so
+ * walkers stop instead of desyncing into coordinate bytes.
+ */
+export function geometryCommandCoordCount(command: number): number | null {
   if (command === 0) return 0
   if (command === 1 || command === 2) return 1
-  if (command === 3) return 2 // quadTo — glyph-derived blobs use quads
+  if (command === 3) return 2
   if (command === 4) return 3
   return null
 }

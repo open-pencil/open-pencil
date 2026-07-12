@@ -1,7 +1,7 @@
 import { pick } from 'es-toolkit/object'
 
 import { cloneVectorNetwork, type SceneNode } from '@open-pencil/scene-graph'
-import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
@@ -47,12 +47,7 @@ function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
     vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
     fillGeometry: copyGeometryPaths(node.fillGeometry),
     strokeGeometry: copyGeometryPaths(node.strokeGeometry),
-    figmaDerivedTextGlyphs: node.figmaDerivedTextGlyphs
-      ? node.figmaDerivedTextGlyphs.map((g) => ({
-          ...g,
-          commandsBlob: new Uint8Array(g.commandsBlob)
-        }))
-      : null,
+    figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
     strokes: copyStrokes(node.strokes)
   }
 }

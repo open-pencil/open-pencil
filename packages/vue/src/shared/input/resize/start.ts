@@ -1,18 +1,10 @@
 import type { Editor } from '@open-pencil/core/editor'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
-import type { FigmaDerivedTextGlyph, SceneNode } from '@open-pencil/scene-graph'
-import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import type { DragResize, OrigChildState } from '#vue/shared/input/types'
-
-function copyDerivedGlyphs(glyphs: FigmaDerivedTextGlyph[] | null): FigmaDerivedTextGlyph[] | null {
-  if (!glyphs) return null
-  return glyphs.map((g) => ({
-    ...g,
-    commandsBlob: new Uint8Array(g.commandsBlob)
-  }))
-}
 
 function snapshotNodeGeometry(node: SceneNode): OrigChildState {
   return {
@@ -48,7 +40,10 @@ function collectDescendants(id: string, editor: Editor): Map<string, OrigChildSt
     const child = editor.graph.getNode(childId)
     if (!child) continue
     map.set(childId, snapshotNodeGeometry(child))
-    stack.push(...child.childIds)
+    // Auto-layout subtrees reflow via computeLayout — geometric child scaling
+    // would fight the layout engine, so stop the descent at their boundary.
+    const childIsAutoLayoutFrame = child.type === 'FRAME' && child.layoutMode !== 'NONE'
+    if (!childIsAutoLayoutFrame) stack.push(...child.childIds)
   }
   return map.size > 0 ? map : null
 }
