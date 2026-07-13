@@ -16,7 +16,7 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { parseFigFile } from '#core/io/formats/fig/read'
 
-import { loadFigFixture } from '#tests/helpers/fig-fixture'
+import { loadFigFixture } from '#tests/helpers/fig-fixtures'
 
 function worldCorners(graph: SceneGraph, name: string) {
   const node = [...graph.getAllNodes()].find((n) => n.name === name)

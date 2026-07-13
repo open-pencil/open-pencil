@@ -11,7 +11,7 @@ import { convertFigmaDerivedTextGlyphs } from '#core/kiwi/fig/node-change/derive
 import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig-fixture'
+import { loadFigFixture } from '#tests/helpers/fig-fixtures'
 
 /** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */
 function reparse(out: Uint8Array) {

@@ -10,7 +10,7 @@ import {
 } from '#core/text/path-layout'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig-fixture'
+import { loadFigFixture } from '#tests/helpers/fig-fixtures'
 
 const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 

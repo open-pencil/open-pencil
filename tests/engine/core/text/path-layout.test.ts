@@ -16,7 +16,7 @@ import {
 import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig-fixture'
+import { loadFigFixture } from '#tests/helpers/fig-fixtures'
 
 /** Signed shortest angular difference a - b. */
 function angleDiff(a: number, b: number): number {
