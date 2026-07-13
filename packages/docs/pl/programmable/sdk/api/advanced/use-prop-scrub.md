@@ -11,5 +11,5 @@ Użyj go przy budowaniu kontrolek liczbowych, które bezpośrednio przeciągają
 
 ## Powiązane API
 
-- [ScrubInputRoot](../components/scrub-input-root)
+- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

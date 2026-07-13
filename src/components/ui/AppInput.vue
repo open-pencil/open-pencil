@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { tv } from 'tailwind-variants'
 
-import { useInputUI } from '@/components/ui/input'
+import theme from '@/theme/input'
 
 interface AppInputProps {
   type?: 'text' | 'password' | 'number' | 'search'
@@ -12,10 +13,9 @@ interface AppInputProps {
   min?: number
   max?: number
   step?: number
-  ui?: {
-    base?: string
-  }
+  tone?: 'default' | 'panel'
   size?: 'sm' | 'md'
+  state?: 'idle' | 'mixed' | 'bound' | 'invalid'
 }
 
 const {
@@ -27,11 +27,12 @@ const {
   min,
   max,
   step,
-  ui,
-  size = 'md'
+  tone = 'default',
+  size = 'md',
+  state = 'idle'
 } = defineProps<AppInputProps>()
 
-const inputClass = computed(() => useInputUI({ size, ui }).base)
+const inputClass = computed(() => tv(theme)({ tone, size, state }))
 
 const modelValue = defineModel<string | number>({ required: true })
 const emit = defineEmits<{

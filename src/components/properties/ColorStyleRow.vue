@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, useAttrs } from 'vue'
 
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import IconButton from '@/components/ui/IconButton.vue'
@@ -53,7 +53,7 @@ const unbindDataTestId = computed(() => `${testPrefix.value}-unbind-variable`)
     </div>
 
     <Tip :label="panels.opacity">
-      <ScrubInput
+      <NumberField
         class="w-12 shrink-0"
         suffix="%"
         :model-value="opacityPercent(item.opacity)"

@@ -26,6 +26,24 @@ For list-style panels, use:
 - `useStrokeControls()`
 - `useEffectsControls()`
 
+## Binding-aware fields
+
+Compose `BindableValueRoot` around fields that can reference variables or external design tokens.
+The primitive is presentation-agnostic, but binding-aware interfaces should keep focus
+non-destructive:
+
+- Show variable identity while the field is idle; expose the resolved value in supporting UI such
+  as a tooltip.
+- Focusing or opening the picker must not detach a binding.
+- Apply `detach-on-edit`, `readonly-when-bound`, or `edit-variable` only when the user actually
+  changes the value.
+- Put explicit detach actions in the picker rather than on a destructive one-click field icon.
+- Keep binding replacement, detach-on-edit, and multi-target changes in one provider batch.
+
+OpenPencil's app skin uses a violet variable-name pill at rest and reveals the resolved numeric
+value when NumberField enters editing mode. Custom editor shells can present the same headless
+state differently.
+
 ## Example: position panel
 
 ```vue
@@ -49,19 +67,31 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import {
+  PropertyListRoot,
+  useEditorPropertyList,
+  useFillControls
+} from '@open-pencil/vue'
 
 const fillControls = useFillControls()
+const fills = useEditorPropertyList('fills')
 </script>
 
 <template>
-  <PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
+  <PropertyListRoot
+    prop-key="fills"
+    :items="fills.items.value"
+    :mixed="fills.isMixed.value"
+    @add="fills.actions.add"
+    @remove="fills.actions.remove"
+    v-slot="{ items, actions }"
+  >
     <div v-for="(fill, index) in items" :key="index">
       {{ fill.type }}
-      <button @click="remove(index)">Remove</button>
+      <button @click="actions.remove(index)">Remove</button>
     </div>
 
-    <button @click="add(fillControls.defaultFill)">Add fill</button>
+    <button @click="actions.add(fillControls.defaultFill)">Add fill</button>
   </PropertyListRoot>
 </template>
 ```

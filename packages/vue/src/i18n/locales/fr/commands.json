@@ -31,5 +31,7 @@
   "flipVertical": "Retourner verticalement",
   "flattenSelection": "Aplatir",
   "outlineText": "Vectoriser le texte",
-  "outlineStroke": "Vectoriser le contour"
+  "outlineStroke": "Vectoriser le contour",
+  "useAsMask": "Utiliser comme masque",
+  "removeMask": "Retirer le masque"
 }

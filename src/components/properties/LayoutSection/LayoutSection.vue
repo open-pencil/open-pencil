@@ -7,7 +7,7 @@ import FlexControls from '@/components/properties/LayoutSection/FlexControls.vue
 import GridControls from '@/components/properties/LayoutSection/GridControls.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
 import SizeControls from '@/components/properties/LayoutSection/SizeControls.vue'
-import PanelSection from '@/components/ui/PanelSection.vue'
+import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 const { panels } = useI18n()
 

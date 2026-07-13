@@ -11,5 +11,5 @@ Utilisez-le pour construire des contrôles numériques qui modifient directement
 
 ## API associées
 
-- [ScrubInputRoot](../components/scrub-input-root)
+- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

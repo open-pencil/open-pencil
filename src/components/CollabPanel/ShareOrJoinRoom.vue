@@ -37,7 +37,7 @@ const collab = useCollabPanelContext()
       v-model="collab.joinInput"
       data-test-id="collab-join-input"
       :placeholder="collab.dialogs.pasteRoomLinkOrId"
-      :ui="{ base: 'min-w-0 flex-1' }"
+      class="min-w-0 flex-1"
       @enter="collab.join"
     />
     <button

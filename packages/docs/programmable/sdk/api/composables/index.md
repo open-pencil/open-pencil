@@ -27,6 +27,7 @@ These are the main composables most `@open-pencil/vue` consumers will use.
 - [usePosition](./use-position)
 - [useLayout](./use-layout)
 - [useAppearance](./use-appearance)
+- [useMask](./use-mask)
 - [useTypography](./use-typography)
 - [useExport](./use-export)
 - [useFillControls](./use-fill-controls)

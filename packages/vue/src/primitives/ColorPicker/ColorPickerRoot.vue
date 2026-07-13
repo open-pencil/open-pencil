@@ -5,14 +5,14 @@ import { colorToCSS } from '@open-pencil/core/color'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-export interface ColorPickerUi {
+export interface ColorPickerUI {
   content?: string
   swatch?: string
 }
 
 const { color, ui } = defineProps<{
   color: Color
-  ui?: ColorPickerUi
+  ui?: ColorPickerUI
 }>()
 
 const emit = defineEmits<{ update: [color: Color] }>()

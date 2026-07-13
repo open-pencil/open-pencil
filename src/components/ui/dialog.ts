@@ -10,14 +10,14 @@ export const dialog = tv({
   }
 })
 
-interface DialogUi {
+interface DialogUI {
   overlay?: string
   content?: string
   title?: string
   description?: string
 }
 
-export function useDialogUI(ui?: DialogUi) {
+export function useDialogUI(ui?: DialogUI) {
   const cls = dialog()
   return {
     overlay: cls.overlay({ class: ui?.overlay }),
