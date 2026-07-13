@@ -1,8 +1,8 @@
 import type { Paragraph } from 'canvaskit-wasm'
+import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneNode, StyleRun } from '@open-pencil/scene-graph'
 import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
 export type TextEditSizeSnapshot = Partial<Pick<SceneNode, 'width' | 'height'>>
 
@@ -92,22 +92,5 @@ function fillsEqual(
   b: NonNullable<StyleRun['style']['fills']>
 ) {
   if (a.length !== b.length) return false
-  return a.every((fill, index) => deepEqual(fill, b[index]))
-}
-
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true
-  if (typeof a !== typeof b) return false
-  if (a === null || b === null) return false
-  if (typeof a !== 'object' || typeof b !== 'object') return false
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
-    return a.every((item, index) => deepEqual(item, b[index]))
-  }
-  const aRecord = a as JsonObject
-  const bRecord = b as JsonObject
-  const aKeys = Object.keys(aRecord)
-  const bKeys = Object.keys(bRecord)
-  if (aKeys.length !== bKeys.length) return false
-  return aKeys.every((key) => Object.hasOwn(bRecord, key) && deepEqual(aRecord[key], bRecord[key]))
+  return a.every((fill, index) => isEqual(fill, b[index]))
 }

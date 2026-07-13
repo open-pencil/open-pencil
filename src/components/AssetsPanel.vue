@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, ref, watch } from 'vue'
+import { useObjectUrl } from '@vueuse/core'
+import { computed, ref, shallowRef, watch } from 'vue'
 import {
   DialogClose,
   DialogContent,
@@ -38,7 +39,8 @@ const { panels, commands } = useI18n()
 const query = ref('')
 const detailsOpen = ref(false)
 const selectedAssetId = ref<string | null>(null)
-const previewUrl = ref<string | null>(null)
+const previewBlob = shallowRef<Blob | null>(null)
+const previewUrl = useObjectUrl(previewBlob)
 const previewLoading = ref(false)
 let previewRequestId = 0
 const insertButton = useButtonUI({ tone: 'ghost', size: 'iconSm' })
@@ -98,23 +100,21 @@ const selectedAsset = computed(
 )
 const selectedPreviewNodeId = computed(() => selectedAsset.value?.componentId ?? null)
 
-function revokePreview() {
-  if (!previewUrl.value) return
-  URL.revokeObjectURL(previewUrl.value)
-  previewUrl.value = null
+function clearPreview() {
+  previewBlob.value = null
 }
 
 async function updatePreview() {
   const requestId = ++previewRequestId
   const nodeId = selectedPreviewNodeId.value
   if (!detailsOpen.value || !nodeId) {
-    revokePreview()
+    clearPreview()
     return
   }
 
   const node = editor.getNode(nodeId)
   if (!node) {
-    revokePreview()
+    clearPreview()
     return
   }
 
@@ -124,8 +124,7 @@ async function updatePreview() {
     const scale = Math.min(176 / maxSize, 2)
     const data = await editor.renderExportImage([nodeId], scale, 'PNG')
     if (requestId !== previewRequestId) return
-    revokePreview()
-    if (data) previewUrl.value = URL.createObjectURL(new Blob([data], { type: 'image/png' }))
+    previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
   } finally {
     if (requestId === previewRequestId) previewLoading.value = false
   }
@@ -134,8 +133,6 @@ async function updatePreview() {
 watch([detailsOpen, selectedPreviewNodeId, () => editor.state.sceneVersion], updatePreview, {
   flush: 'post'
 })
-
-onScopeDispose(revokePreview)
 
 function openDetails(asset: LocalAsset) {
   selectedAssetId.value = asset.id

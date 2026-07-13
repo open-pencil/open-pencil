@@ -1,4 +1,5 @@
 import { wcagLuminance } from 'culori'
+import { sumBy } from 'es-toolkit/math'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
@@ -70,7 +71,7 @@ function checkAlignmentIssues(ctx: LayoutContext): void {
       return Math.abs(dim - (isRow ? children[0].width : children[0].height)) < 2
     })
   if (allSameSize && node.primaryAxisAlign === 'MIN' && node.itemSpacing === 0) {
-    const total = children.reduce((s, c) => s + (isRow ? c.width : c.height), 0)
+    const total = sumBy(children, (child) => (isRow ? child.width : child.height))
     const pad = isRow ? node.paddingLeft + node.paddingRight : node.paddingTop + node.paddingBottom
     if (total < ((isRow ? node.width : node.height) - pad) * 0.7) {
       issues.push({

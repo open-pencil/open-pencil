@@ -1,3 +1,5 @@
+import { safeDestr } from 'destr'
+
 import { normalizeVectorNetwork, validateVectorNetwork } from '@open-pencil/scene-graph'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 
@@ -26,7 +28,7 @@ export const createVector = defineTool({
     if (args.path) {
       let parsed: VectorNetwork
       try {
-        parsed = JSON.parse(args.path) as VectorNetwork
+        parsed = safeDestr<VectorNetwork>(args.path)
       } catch {
         return { error: 'Invalid JSON in path parameter' }
       }

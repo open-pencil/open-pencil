@@ -1,4 +1,5 @@
 import { orderBy, sortBy } from 'es-toolkit/array'
+import { meanBy } from 'es-toolkit/math'
 
 import { defineTool } from '#core/tools/schema'
 
@@ -88,8 +89,8 @@ export const analyzeClusters = defineTool({
       [...signatureMap.entries()]
         .filter(([, nodes]) => nodes.length >= minCount)
         .map(([signature, nodes]) => {
-          const avgWidth = nodes.reduce((sum, node) => sum + node.width, 0) / nodes.length
-          const avgHeight = nodes.reduce((sum, node) => sum + node.height, 0) / nodes.length
+          const avgWidth = meanBy(nodes, (node) => node.width)
+          const avgHeight = meanBy(nodes, (node) => node.height)
           const widths = nodes.map((node) => node.width)
           const heights = nodes.map((node) => node.height)
           const widthRange = Math.max(...widths) - Math.min(...widths)

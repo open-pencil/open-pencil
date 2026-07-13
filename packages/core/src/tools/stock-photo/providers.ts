@@ -1,3 +1,5 @@
+import { ofetch } from 'ofetch'
+
 export interface StockPhotoResult {
   url: string
   width: number
@@ -76,10 +78,17 @@ const pexelsProvider: StockPhotoProvider = {
   name: 'pexels',
   async search(query, { perPage, orientation, targetDim }) {
     if (!pexelsApiKey) throw new Error('Pexels API key not configured')
-    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&orientation=${orientation}`
-    const resp = await fetch(url, { headers: { Authorization: pexelsApiKey } })
-    if (!resp.ok) throw new Error(`Pexels ${resp.status}`)
-    const data = (await resp.json()) as { photos: PexelsPhoto[] }
+    const response = await ofetch.raw<{ photos: PexelsPhoto[] }>(
+      'https://api.pexels.com/v1/search',
+      {
+        headers: { Authorization: pexelsApiKey },
+        ignoreResponseError: true,
+        query: { query, per_page: perPage, orientation },
+        retry: 0
+      }
+    )
+    if (!response.ok) throw new Error(`Pexels ${response.status}`)
+    const data = response._data as { photos: PexelsPhoto[] }
     return data.photos.map((photo) => ({
       url: pickPexelsSize(photo.src, targetDim),
       width: photo.width,
@@ -120,15 +129,20 @@ const unsplashProvider: StockPhotoProvider = {
   async search(query, { perPage, orientation }) {
     if (!unsplashAccessKey) throw new Error('Unsplash access key not configured')
     const orient = orientation === 'square' ? 'squarish' : orientation
-    const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&orientation=${orient}`
-    const resp = await fetch(url, {
-      headers: {
-        Authorization: `Client-ID ${unsplashAccessKey}`,
-        'Accept-Version': 'v1'
+    const response = await ofetch.raw<{ results: UnsplashPhoto[] }>(
+      'https://api.unsplash.com/search/photos',
+      {
+        headers: {
+          Authorization: `Client-ID ${unsplashAccessKey}`,
+          'Accept-Version': 'v1'
+        },
+        ignoreResponseError: true,
+        query: { query, per_page: perPage, orientation: orient },
+        retry: 0
       }
-    })
-    if (!resp.ok) throw new Error(`Unsplash ${resp.status}`)
-    const data = (await resp.json()) as { results: UnsplashPhoto[] }
+    )
+    if (!response.ok) throw new Error(`Unsplash ${response.status}`)
+    const data = response._data as { results: UnsplashPhoto[] }
     return data.results.map((photo) => ({
       url: pickUnsplashSize(photo.urls, 1080),
       width: photo.width,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
-import { refAutoReset } from '@vueuse/core'
+import { refAutoReset, useClipboard } from '@vueuse/core'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
 import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/app/ai/acp/transport'
@@ -23,6 +23,7 @@ import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 const IS_DEV = import.meta.env.DEV
 
 const { isConfigured, ensureChat, resetChat } = useAIChat()
+const { copy } = useClipboard()
 const { dialogs } = useI18n()
 
 const chat = ref<Chat<UIMessage> | null>(null)
@@ -112,7 +113,7 @@ async function handleCopyDebug() {
 async function handleCopyAcpLog() {
   const text = getAcpDebugText()
   if (!text) return
-  await navigator.clipboard.writeText(text)
+  await copy(text)
   acpLogCopied.value = true
 }
 

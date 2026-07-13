@@ -1,4 +1,5 @@
 import { orderBy } from 'es-toolkit/array'
+import { sumBy } from 'es-toolkit/math'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -99,7 +100,7 @@ export const analyzeColors = defineTool({
         if (cluster.length > 1) {
           clusters.push({
             colors: cluster.map((c) => c.hex),
-            totalCount: cluster.reduce((sum, c) => sum + c.count, 0),
+            totalCount: sumBy(cluster, (color) => color.count),
             suggestedHex: color.hex
           })
         }

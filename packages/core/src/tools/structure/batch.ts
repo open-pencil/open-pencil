@@ -1,3 +1,5 @@
+import { safeDestr } from 'destr'
+
 import type { FigmaNodeProxy } from '#core/figma-api'
 import { defineTool } from '#core/tools/schema'
 
@@ -103,7 +105,7 @@ export const batchUpdate = defineTool({
   execute: (figma, { operations }) => {
     let ops: BatchOp[]
     try {
-      ops = JSON.parse(String(operations))
+      ops = safeDestr<BatchOp[]>(String(operations))
     } catch {
       return { error: 'Invalid JSON in operations' }
     }

@@ -1,41 +1,65 @@
+import { createFetch } from 'ofetch'
+
 import type { IconifyResponse, IconSearchResult } from './types'
 
 const ICONIFY_API = 'https://api.iconify.design'
 const FETCH_TIMEOUT_MS = 10_000
 
-function fetchWithTimeout(url: string): Promise<Response> {
-  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+export function createIconifyAPIClient(
+  fetcher: typeof globalThis.fetch = globalThis.fetch,
+  baseURL = ICONIFY_API
+) {
+  const iconifyApi = createFetch({ fetch: fetcher }).create({
+    baseURL,
+    retry: 0,
+    timeout: FETCH_TIMEOUT_MS
+  })
+
+  return {
+    async fetchCollection(prefix: string, iconNames: string[]): Promise<IconifyResponse> {
+      const response = await iconifyApi.raw<IconifyResponse>(`/${prefix}.json`, {
+        ignoreResponseError: true,
+        query: { icons: iconNames.join(',') }
+      })
+      if (!response.ok) {
+        throw new Error(`Iconify API error: ${response.status} for prefix "${prefix}"`)
+      }
+      return response._data as IconifyResponse
+    },
+
+    async search(
+      query: string,
+      options?: { limit?: number; prefix?: string }
+    ): Promise<IconSearchResult> {
+      const response = await iconifyApi.raw<IconSearchResult>('/search', {
+        ignoreResponseError: true,
+        query: { query, limit: options?.limit, prefix: options?.prefix }
+      })
+      if (!response.ok) throw new Error(`Iconify search error: ${response.status}`)
+
+      const data = response._data
+      const limit = options?.limit ?? 5
+      return {
+        icons: data?.icons.slice(0, limit) ?? [],
+        total: data?.total ?? 0,
+        collections: data?.collections ?? {}
+      }
+    }
+  }
 }
 
-export async function fetchIconifyCollection(
+const iconifyAPIClient = createIconifyAPIClient()
+
+export function fetchIconifyCollection(
   prefix: string,
   iconNames: string[]
 ): Promise<IconifyResponse> {
-  const url = `${ICONIFY_API}/${prefix}.json?icons=${iconNames.map(encodeURIComponent).join(',')}`
-  const response = await fetchWithTimeout(url)
-  if (!response.ok) throw new Error(`Iconify API error: ${response.status} for prefix "${prefix}"`)
-  return (await response.json()) as IconifyResponse
+  return iconifyAPIClient.fetchCollection(prefix, iconNames)
 }
 
-export async function searchIconify(
+export function searchIconify(
   query: string,
-  options?: {
-    limit?: number
-    prefix?: string
-  }
+  options?: { limit?: number; prefix?: string }
 ): Promise<IconSearchResult> {
-  const params = new URLSearchParams({ query })
-  if (options?.limit) params.set('limit', String(options.limit))
-  if (options?.prefix) params.set('prefix', options.prefix)
-
-  const response = await fetchWithTimeout(`${ICONIFY_API}/search?${params}`)
-  if (!response.ok) throw new Error(`Iconify search error: ${response.status}`)
-  const data = await response.json()
-  const icons: string[] = data.icons ?? []
-  const limit = options?.limit ?? 5
-  return {
-    icons: icons.slice(0, limit),
-    total: data.total ?? 0,
-    collections: data.collections ?? {}
-  }
+  return iconifyAPIClient.search(query, options)
 }

@@ -1,9 +1,11 @@
+import { safeDestr } from 'destr'
+
 import type { PhotoRequest } from './apply'
 
 export function parsePhotoRequests(value: unknown): PhotoRequest[] | { error: string } {
   let parsed: unknown
   try {
-    parsed = JSON.parse(String(value))
+    parsed = safeDestr(String(value))
   } catch {
     return { error: 'Invalid JSON in requests' }
   }

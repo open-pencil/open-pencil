@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useEventListener } from '@vueuse/core'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { useEventListener, useTimeoutFn } from '@vueuse/core'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import { useTooltipUI } from '@/components/ui/tooltip'
 
@@ -26,7 +26,6 @@ const triggerRef = ref<HTMLElement>()
 const contentRef = ref<HTMLElement>()
 const open = ref(false)
 const position = ref({ x: 0, y: 0 })
-let openTimer: ReturnType<typeof setTimeout> | undefined
 
 const canOpen = computed(() => Boolean(label) && !disabled)
 const contentStyle = computed(() => ({
@@ -34,11 +33,14 @@ const contentStyle = computed(() => ({
   top: `${position.value.y}px`
 }))
 
-function clearOpenTimer() {
-  if (!openTimer) return
-  clearTimeout(openTimer)
-  openTimer = undefined
-}
+const { start: startOpenTimer, stop: stopOpenTimer } = useTimeoutFn(
+  () => {
+    open.value = true
+    void nextTick(refreshPosition)
+  },
+  TOOLTIP_OPEN_DELAY_MS,
+  { immediate: false }
+)
 
 function anchorElement() {
   const root = triggerRef.value
@@ -91,15 +93,12 @@ function refreshPosition() {
 
 function show() {
   if (!canOpen.value) return
-  clearOpenTimer()
-  openTimer = setTimeout(() => {
-    open.value = true
-    void nextTick(refreshPosition)
-  }, TOOLTIP_OPEN_DELAY_MS)
+  stopOpenTimer()
+  startOpenTimer()
 }
 
 function hide() {
-  clearOpenTimer()
+  stopOpenTimer()
   open.value = false
 }
 
@@ -140,8 +139,6 @@ useEventListener(document, 'click', hide, { capture: true })
 watch(canOpen, (value) => {
   if (!value) hide()
 })
-
-onBeforeUnmount(hide)
 </script>
 
 <template>

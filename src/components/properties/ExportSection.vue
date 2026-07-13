@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onScopeDispose } from 'vue'
+import { useObjectUrl } from '@vueuse/core'
+import { computed, ref, shallowRef, watch } from 'vue'
 
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
@@ -36,7 +37,8 @@ const FORMAT_OPTIONS: { value: ExportFormatId; label: string }[] = [
   { value: 'pdf', label: 'PDF' }
 ]
 
-const previewUrl = ref<string | null>(null)
+const previewBlob = shallowRef<Blob | null>(null)
+const previewUrl = useObjectUrl(previewBlob)
 const showPreview = ref(false)
 const exporting = ref(false)
 
@@ -76,8 +78,7 @@ async function updatePreview() {
       : editorStore.graph.getChildren(editorStore.state.currentPageId).map((n) => n.id)
 
   if (ids.length === 0) {
-    if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
-    previewUrl.value = null
+    previewBlob.value = null
     return
   }
 
@@ -88,11 +89,7 @@ async function updatePreview() {
   }
   const scale = maxW > 0 ? Math.min(PREVIEW_WIDTH / maxW, 2) : 1
   const data = await editorStore.renderExportImage(ids, scale, 'PNG')
-  if (data) {
-    const prev = previewUrl.value
-    previewUrl.value = URL.createObjectURL(new Blob([data], { type: 'image/png' }))
-    if (prev) URL.revokeObjectURL(prev)
-  }
+  previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
 }
 
 const previewKey = computed(
@@ -106,10 +103,6 @@ const previewKey = computed(
 
 watch(() => showPreview.value, updatePreview, { flush: 'post' })
 watch(previewKey, updatePreview, { flush: 'post' })
-
-onScopeDispose(() => {
-  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
-})
 </script>
 
 <template>

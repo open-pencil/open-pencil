@@ -1,3 +1,4 @@
+import { safeDestr } from 'destr'
 import { createTwoFilesPatch } from 'diff'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -193,7 +194,7 @@ export const diffShow = defineTool({
 
     let newProps: Record<string, unknown>
     try {
-      newProps = JSON.parse(args.props)
+      newProps = safeDestr<Record<string, unknown>>(args.props)
     } catch {
       return { error: 'Invalid JSON in props' }
     }
