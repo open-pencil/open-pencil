@@ -7,11 +7,11 @@ export const tooltip = tv({
   }
 })
 
-interface TooltipUi {
+interface TooltipUI {
   content?: string
 }
 
-export function useTooltipUI(ui?: TooltipUi) {
+export function useTooltipUI(ui?: TooltipUI) {
   const cls = tooltip()
   return {
     content: cls.content({ class: ui?.content })

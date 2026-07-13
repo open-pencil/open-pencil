@@ -11,5 +11,5 @@ Verwenden Sie es beim Erstellen numerischer Steuerelemente, die ausgewählte Kno
 
 ## Verwandte APIs
 
-- [ScrubInputRoot](../components/scrub-input-root)
+- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

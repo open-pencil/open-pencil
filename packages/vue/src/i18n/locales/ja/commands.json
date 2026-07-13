@@ -31,5 +31,7 @@
   "flipVertical": "垂直方向に反転",
   "flattenSelection": "フラット化",
   "outlineText": "テキストのアウトライン化",
-  "outlineStroke": "線の境界線をプレビュー (パスのアウトライン化)"
+  "outlineStroke": "線の境界線をプレビュー (パスのアウトライン化)",
+  "useAsMask": "マスクとして使用",
+  "removeMask": "マスクを解除"
 }

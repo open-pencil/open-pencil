@@ -42,4 +42,4 @@ Te API są publiczne, ale są bardziej wyspecjalizowane niż główna powierzchn
 - [useLayerTree](./use-layer-tree)
 - [useToolbar](./use-toolbar)
 - [usePropertyList](./use-property-list)
-- [useScrubInput](./use-scrub-input)
+- [useNumberField](/programmable/sdk/api/advanced/use-number-field)

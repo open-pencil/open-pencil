@@ -2,8 +2,9 @@ import { computed } from 'vue'
 import type { ComputedRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { BlendMode, SceneNode } from '@open-pencil/scene-graph'
 
+import type { CornerRadiusKey } from '#vue/controls/appearance/types'
 import { MIXED, type MixedValue } from '#vue/controls/node-props/use'
 
 const CORNER_RADIUS_TYPES = new Set([
@@ -25,6 +26,14 @@ type AppearanceActionOptions = AppearanceStateOptions & {
   editor: Editor
 }
 
+function hasUnequalCorners(node: SceneNode) {
+  return !(
+    node.topLeftRadius === node.topRightRadius &&
+    node.topLeftRadius === node.bottomRightRadius &&
+    node.topLeftRadius === node.bottomLeftRadius
+  )
+}
+
 export function createAppearanceState({ node, nodes, isMulti, merged }: AppearanceStateOptions) {
   const hasCornerRadius = computed(() => {
     if (isMulti.value) return nodes.value.every((n) => CORNER_RADIUS_TYPES.has(n.type))
@@ -34,6 +43,12 @@ export function createAppearanceState({ node, nodes, isMulti, merged }: Appearan
   const independentCorners = computed(() => {
     if (isMulti.value) return merged('independentCorners')
     return node.value?.independentCorners ?? false
+  })
+
+  const showIndependentCorners = computed(() => {
+    if (isMulti.value) return false
+    const selected = node.value
+    return selected ? selected.independentCorners || hasUnequalCorners(selected) : false
   })
 
   const cornerRadiusValue = computed(() => {
@@ -46,16 +61,43 @@ export function createAppearanceState({ node, nodes, isMulti, merged }: Appearan
     return v === MIXED ? MIXED : Math.round(v * 100)
   })
 
+  const blendModeValue = computed(() => {
+    const v = merged('blendMode')
+    return v === MIXED ? MIXED : v
+  })
+
   const visibilityState = computed<'visible' | 'hidden' | 'mixed'>(() => {
     const v = merged('visible')
     if (v === MIXED) return 'mixed'
     return v ? 'visible' : 'hidden'
   })
 
-  return { hasCornerRadius, independentCorners, cornerRadiusValue, opacityPercent, visibilityState }
+  return {
+    hasCornerRadius,
+    independentCorners,
+    showIndependentCorners,
+    cornerRadiusValue,
+    opacityPercent,
+    blendModeValue,
+    visibilityState
+  }
 }
 
 export function createAppearanceActions({ editor, node, nodes, isMulti }: AppearanceActionOptions) {
+  function setBlendMode(value: BlendMode) {
+    const selected = node.value
+    const targets = isMulti.value ? nodes.value : []
+    if (!isMulti.value && selected) targets.push(selected)
+    const changed = targets.filter((target) => target.blendMode !== value)
+    if (changed.length === 0) return
+
+    editor.undo.runBatch('Change blend mode', () => {
+      for (const target of changed) {
+        editor.updateNodeWithUndo(target.id, { blendMode: value }, 'Change blend mode')
+      }
+    })
+  }
+
   function toggleVisibility() {
     if (isMulti.value) {
       const liveNodes = nodes.value
@@ -80,40 +122,51 @@ export function createAppearanceActions({ editor, node, nodes, isMulti }: Appear
 
   function toggleIndependentCorners() {
     const selected = node.value
-    const singleTarget = selected ? [selected] : []
-    const targets = isMulti.value ? nodes.value : singleTarget
-    for (const n of targets) {
-      if (n.independentCorners) {
-        const uniform = n.topLeftRadius
-        editor.updateNodeWithUndo(
-          n.id,
-          {
-            independentCorners: false,
-            cornerRadius: uniform,
-            topLeftRadius: uniform,
-            topRightRadius: uniform,
-            bottomRightRadius: uniform,
-            bottomLeftRadius: uniform
-          } as Partial<SceneNode>,
-          'Uniform corner radius'
-        )
-      } else {
-        editor.updateNodeWithUndo(
-          n.id,
-          {
-            independentCorners: true,
-            topLeftRadius: n.cornerRadius,
-            topRightRadius: n.cornerRadius,
-            bottomRightRadius: n.cornerRadius,
-            bottomLeftRadius: n.cornerRadius
-          } as Partial<SceneNode>,
-          'Independent corner radii'
-        )
+    const targets = isMulti.value ? [...nodes.value] : []
+    if (!isMulti.value && selected) targets.push(selected)
+    if (targets.length === 0) return
+    const makeIndependent = !targets.every(
+      (target) => target.independentCorners || hasUnequalCorners(target)
+    )
+
+    editor.undo.runBatch(
+      makeIndependent ? 'Independent corner radii' : 'Uniform corner radius',
+      () => {
+        for (const target of targets) {
+          if (makeIndependent) {
+            if (target.independentCorners) continue
+            editor.updateNodeWithUndo(
+              target.id,
+              {
+                independentCorners: true,
+                topLeftRadius: target.cornerRadius,
+                topRightRadius: target.cornerRadius,
+                bottomRightRadius: target.cornerRadius,
+                bottomLeftRadius: target.cornerRadius
+              } as Partial<SceneNode>,
+              'Independent corner radii'
+            )
+          } else {
+            const uniform = target.topLeftRadius
+            editor.updateNodeWithUndo(
+              target.id,
+              {
+                independentCorners: false,
+                cornerRadius: uniform,
+                topLeftRadius: uniform,
+                topRightRadius: uniform,
+                bottomRightRadius: uniform,
+                bottomLeftRadius: uniform
+              } as Partial<SceneNode>,
+              'Uniform corner radius'
+            )
+          }
+        }
       }
-    }
+    )
   }
 
-  function updateCornerProp(key: string, value: number) {
+  function updateCornerProp(key: CornerRadiusKey, value: number) {
     if (isMulti.value) {
       for (const n of nodes.value) editor.updateNode(n.id, { [key]: value })
     } else {
@@ -122,11 +175,13 @@ export function createAppearanceActions({ editor, node, nodes, isMulti }: Appear
     }
   }
 
-  function commitCornerProp(key: string, _value: number, previous: number) {
+  function commitCornerProp(key: CornerRadiusKey, _value: number, previous: number) {
     if (isMulti.value) {
-      for (const n of nodes.value) {
-        editor.commitNodeUpdate(n.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
-      }
+      editor.undo.runBatch(`Change ${key}`, () => {
+        for (const n of nodes.value) {
+          editor.commitNodeUpdate(n.id, { [key]: previous } as Partial<SceneNode>, `Change ${key}`)
+        }
+      })
     } else {
       const n = node.value
       if (n) {
@@ -135,5 +190,11 @@ export function createAppearanceActions({ editor, node, nodes, isMulti }: Appear
     }
   }
 
-  return { toggleVisibility, toggleIndependentCorners, updateCornerProp, commitCornerProp }
+  return {
+    setBlendMode,
+    toggleVisibility,
+    toggleIndependentCorners,
+    updateCornerProp,
+    commitCornerProp
+  }
 }

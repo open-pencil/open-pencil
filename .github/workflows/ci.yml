@@ -28,6 +28,9 @@ jobs:
       - name: Lint, typecheck, architecture, package, and tooling checks
         run: bun run check
 
+      - name: Build Storybook
+        run: bun run build-storybook
+
   unit-tests:
     runs-on: ubuntu-latest
     strategy:

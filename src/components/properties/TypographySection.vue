@@ -3,11 +3,11 @@ import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
 import FontPicker from '@/components/font-picker/FontPicker.vue'
 import FontSettingsPopover from '@/components/FontSettings/FontSettingsPopover.vue'
-import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import IconButton from '@/components/ui/IconButton.vue'
-import PanelRow from '@/components/ui/PanelRow.vue'
-import PanelSection from '@/components/ui/PanelSection.vue'
+import PanelRow from '@/components/ui/panel/PanelRow.vue'
+import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { loadFont } from '@/app/editor/fonts'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
@@ -52,7 +52,7 @@ const fontLoader = { load: loadFont }
           :options="ctx.weights"
           @update:model-value="ctx.actions.setWeight(+$event)"
         />
-        <VariableScrubInput
+        <VariableNumberField
           class="flex-1"
           :model-value="ctx.node.value.fontSize"
           :min="1"
@@ -65,7 +65,7 @@ const fontLoader = { load: loadFont }
       </PanelRow>
 
       <PanelRow cols="two" class="mb-1.5">
-        <VariableScrubInput
+        <VariableNumberField
           class="flex-1"
           :model-value="
             ctx.node.value.lineHeight ?? Math.round((ctx.node.value.fontSize || 14) * 1.2)
@@ -79,8 +79,8 @@ const fontLoader = { load: loadFont }
           <template #icon>
             <icon-lucide-baseline class="size-3" />
           </template>
-        </VariableScrubInput>
-        <VariableScrubInput
+        </VariableNumberField>
+        <VariableNumberField
           class="flex-1"
           suffix="%"
           :model-value="ctx.node.value.letterSpacing"
@@ -92,7 +92,7 @@ const fontLoader = { load: loadFont }
           <template #icon>
             <icon-lucide-a-large-small class="size-3" />
           </template>
-        </VariableScrubInput>
+        </VariableNumberField>
       </PanelRow>
 
       <div class="mb-1.5">

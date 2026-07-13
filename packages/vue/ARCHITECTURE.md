@@ -2,7 +2,7 @@
 
 ## Folder conventions
 
-- `Canvas/`, `ColorPicker/`, `FillPicker/`, `FontPicker/`, `GradientEditor/`, `LayerTree/`, `PageList/`, `PropertyList/`, `ScrubInput/`, `Toolbar/` — component families and colocated helpers for structural/headless primitives
+- `Canvas/`, `ColorPicker/`, `FillPicker/`, `FontPicker/`, `GradientEditor/`, `LayerTree/`, `PageList/`, `PropertyList/`, `NumberField/`, `Toolbar/` — component families and colocated helpers for structural/headless primitives
 - `controls/` — editor control composables used by app property panels (`useAppearance`, `useLayout`, `usePosition`, `useTypography`, `useFillControls`, `useStrokeControls`, `useEffectsControls`, `useExport`, `useNodeProps`, `usePropScrub`)
 - `VariablesEditor/` — variables domain composables and table wiring
 - `selection/` — selection-focused composables (`useSelectionState`, `useSelectionCapabilities`)

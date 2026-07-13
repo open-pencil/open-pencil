@@ -1,19 +1,24 @@
-import { twMerge } from 'tailwind-merge'
 import { tv } from 'tailwind-variants'
 
-const iconButtonStyles = tv({
-  base: 'flex cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface',
-  variants: {
-    size: {
-      sm: 'size-5 text-sm leading-none',
-      md: 'size-7 border border-border bg-input'
-    }
-  },
-  defaultVariants: { size: 'sm' }
-})
+import theme from '@/theme/icon-button'
 
-export function useIconButtonUI(options?: { size?: 'sm' | 'md'; ui?: { base?: string } }) {
+export interface IconButtonUI {
+  base?: string
+}
+
+export function useIconButtonUI(options?: {
+  size?: keyof typeof theme.variants.size
+  active?: boolean
+  disabled?: boolean
+  ui?: IconButtonUI
+}) {
+  const iconButton = tv(theme)
   return {
-    base: twMerge(iconButtonStyles({ size: options?.size }), options?.ui?.base)
+    base: iconButton({
+      size: options?.size,
+      active: options?.active,
+      disabled: options?.disabled,
+      class: options?.ui?.base
+    })
   }
 }

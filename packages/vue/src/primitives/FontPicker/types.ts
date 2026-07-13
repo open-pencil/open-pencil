@@ -1,4 +1,4 @@
-export interface FontPickerUi {
+export interface FontPickerUI {
   trigger?: string
   content?: string
   item?: string

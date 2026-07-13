@@ -28,7 +28,9 @@ This package is organized by domain.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
-- `ScrubInput/`
+- `PropertySection/`
+- `SegmentedControl/`
+- `NumberField/`
 - `Toolbar/`
 
 These contain structural/headless primitives and local helpers.
@@ -47,6 +49,7 @@ These contain structural/headless primitives and local helpers.
 - `useEffectsControls`
 - `useNodeProps`
 - `usePropScrub`
+- `useEditorPropertyList`
 
 ### Variables
 
@@ -82,11 +85,13 @@ Examples:
 
 - `PageListRoot`
 - `PropertyListRoot`
+- `PropertySectionRoot`
+- `SegmentedControlRoot`
 - `ToolbarRoot`
 
 ### Avoid broad context-dump slots
 
-Prefer focused slot props or direct composable usage over giant `v-slot="ctx"` payloads.
+Prefer focused slot props or direct composable usage over giant `v-slot="ctx"` payloads. Controlled primitives such as `PropertyListRoot` emit semantic events; editor selection and undo wiring belongs in an adapter or control composable, not the primitive.
 
 ## App vs SDK responsibility
 

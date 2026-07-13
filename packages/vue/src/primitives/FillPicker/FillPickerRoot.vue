@@ -6,14 +6,14 @@ import { useFillPicker } from '#vue/primitives/FillPicker/useFillPicker'
 
 import type { Fill } from '@open-pencil/scene-graph'
 
-export interface FillPickerUi {
+export interface FillPickerUI {
   content?: string
   swatch?: string
 }
 
 const { fill, ui } = defineProps<{
   fill: Fill
-  ui?: FillPickerUi
+  ui?: FillPickerUI
 }>()
 
 const emit = defineEmits<{ update: [fill: Fill] }>()

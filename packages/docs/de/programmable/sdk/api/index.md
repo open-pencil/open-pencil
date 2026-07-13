@@ -8,7 +8,7 @@ description: Referenzdokumentation für @open-pencil/vue Komponenten, Composable
 Die Vue SDK-Referenz ist in drei Bereiche unterteilt.
 
 <SdkCardGroup>
-  <SdkCard title="Komponenten" to="/programmable/sdk/api/components/" description="Headless strukturelle Primitive wie CanvasRoot, ToolbarRoot, FontPickerRoot und ScrubInputRoot." />
+  <SdkCard title="Komponenten" to="/programmable/sdk/api/components/" description="Headless strukturelle Primitive wie CanvasRoot, ToolbarRoot, FontPickerRoot und NumberFieldRoot." />
   <SdkCard title="Composables" to="/programmable/sdk/api/composables/" description="Editor-seitige Composables für Kontext, Canvas-Verdrahtung, Auswahl, Befehle und Eigenschafts-Panels." />
   <SdkCard title="Erweitert" to="/programmable/sdk/api/advanced/" description="Hilfsmittel auf niedrigerem Level, Primitive-Kontexte und spezialisierte APIs für fortgeschrittene Integrationen." />
 </SdkCardGroup>
