@@ -8,6 +8,13 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import { HANDLE_HALF_SIZE, SELECTION_DASH_ALPHA } from '#core/constants'
+import {
+  fitTextPathBoxToGlyphs,
+  getTextPathData,
+  pathTextSelectionBand,
+  pointAtArc,
+  sampleTextPath
+} from '#core/text/path-layout'
 
 function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
   const chain: SceneNode[] = []
@@ -86,6 +93,45 @@ export function drawEnteredContainer(
   r.auxStroke.setPathEffect(null)
 }
 
+/** Single-node selection overlay: path-text curve/band for imported TEXT_PATH,
+ *  the standard rect+handles otherwise. */
+function drawSingleSelection(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  id: string,
+  selectedIds: Set<string>,
+  overlays: RenderOverlays
+): void {
+  const node = graph.getNode(id)
+  if (!node) return
+
+  // Imported text-on-path node → path curve overlay. The cheap two-field check
+  // is the gate; drawTextPathSelection re-checks the retained data and falls
+  // back to the plain rectangle if it can't be sampled.
+  const isPathText = node.source.fig.kiwiNodeType === 'TEXT_PATH' && node.textPathBox !== null
+  const editing = overlays.editingTextId === id
+  // While editing: normal text hands off to the flat text-edit overlay, but path
+  // text keeps its path overlay (curved band + path) — its flat text-edit overlay
+  // is suppressed (see drawTextEditOverlay) since it can't follow the path.
+  if (editing && !isPathText) return
+
+  const useComponentColor = r.isComponentType(node.type)
+  r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
+  r.selectionPaint.setStrokeWidth(1 / r.zoom)
+
+  const rotation =
+    overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
+  if (isPathText) {
+    drawTextPathSelection(r, canvas, node, rotation, graph)
+    if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+  } else {
+    r.drawNodeSelection(canvas, node, rotation, graph)
+    r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+  }
+  r.selectionPaint.setColor(r.selColor())
+}
+
 export function drawSelection(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -100,21 +146,7 @@ export function drawSelection(
 
   if (selectedIds.size === 1) {
     const id = [...selectedIds][0]
-    if (overlays.editingTextId === id) return
-    if (nodeEditId === id) return
-    const node = graph.getNode(id)
-    if (!node) return
-
-    const useComponentColor = r.isComponentType(node.type)
-    r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
-    r.selectionPaint.setStrokeWidth(1 / r.zoom)
-
-    const rotation =
-      overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
-    r.drawNodeSelection(canvas, node, rotation, graph)
-    r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
-
-    r.selectionPaint.setColor(r.selColor())
+    if (nodeEditId !== id) drawSingleSelection(r, canvas, graph, id, selectedIds, overlays)
     return
   }
 
@@ -161,6 +193,89 @@ function withNodeBounds(
   draw(0, 0, node.width, node.height)
 
   canvas.restore()
+}
+
+/**
+ * Text-on-path selection overlay: the sampled path curve the lettering
+ * follows, a faint dashed box + handles, a center crosshair, and a start marker
+ * at `textPathStart`. Bounds come from the glyph-fitted path box (see
+ * fitTextPathBoxToGlyphs), so the circle tracks the lettering rather than the
+ * ~4%-off textPathBox. Display-only — reads retained data, mutates nothing.
+ */
+function drawTextPathSelection(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  rotation: number,
+  graph: SceneGraph
+): void {
+  const data = getTextPathData(node)
+  // Prefer the box fit to the glyph baselines; fall back to textPathBox when
+  // there are no glyphs to fit against.
+  const box =
+    (data &&
+      node.textPathBox &&
+      fitTextPathBoxToGlyphs(data, node.textPathBox, node.figmaDerivedTextGlyphs)) ??
+    node.textPathBox
+  // Eligibility gated data/box, but sampleTextPath can still fail (bad vertex /
+  // zero length) — any null falls back to the standard rectangle, no throw.
+  const sampled = data && box ? sampleTextPath(data, box) : null
+  if (!data || !box || !sampled) {
+    r.drawNodeSelection(canvas, node, rotation, graph)
+    return
+  }
+
+  withNodeBounds(r, canvas, node, rotation, graph, () => {
+    // Figma-style selection band: a filled ribbon that hugs the lettering along
+    // the path (replaces the flat, path-blind text-edit selection rects).
+    const bandPoly = pathTextSelectionBand(data, box, node.figmaDerivedTextGlyphs, sampled)
+    if (bandPoly && bandPoly.length >= 6) {
+      const band = new r.ck.Path()
+      band.moveTo(bandPoly[0], bandPoly[1])
+      for (let i = 2; i < bandPoly.length; i += 2) band.lineTo(bandPoly[i], bandPoly[i + 1])
+      band.close()
+      r.auxFill.setColor(r.selColor(0.16))
+      canvas.drawPath(band, r.auxFill)
+      r.auxStroke.setStrokeWidth(1 / r.zoom)
+      r.auxStroke.setColor(r.selColor())
+      r.auxStroke.setPathEffect(null)
+      canvas.drawPath(band, r.auxStroke)
+      band.delete()
+    }
+
+    // Faint dashed bounds + resize/rotate handles from the fitted path box.
+    r.auxStroke.setStrokeWidth(1 / r.zoom)
+    r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
+    // MakeDash allocates a WASM PathEffect the JS GC won't reclaim; this runs
+    // every repaint while a TEXT_PATH node is selected, so free it explicitly.
+    const dash = r.ck.PathEffect.MakeDash([4 / r.zoom, 4 / r.zoom], 0)
+    r.auxStroke.setPathEffect(dash)
+    canvas.drawRect(r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height), r.auxStroke)
+    r.auxStroke.setPathEffect(null) // auxStroke is shared — never leave a dash effect on it.
+    dash.delete()
+    drawBoundsHandles(r, canvas, box.x, box.y, box.x + box.width, box.y + box.height)
+
+    // The path curve itself (node-local sampled polyline).
+    const path = new r.ck.Path()
+    path.moveTo(sampled.xs[0], sampled.ys[0])
+    for (let i = 1; i < sampled.xs.length; i++) path.lineTo(sampled.xs[i], sampled.ys[i])
+    if (sampled.closed) path.close()
+    canvas.drawPath(path, r.selectionPaint)
+    path.delete()
+
+    // Center crosshair at the fitted path box center (screen-constant size).
+    const cx = box.x + box.width / 2
+    const cy = box.y + box.height / 2
+    const arm = (HANDLE_HALF_SIZE * 2) / r.zoom
+    canvas.drawLine(cx - arm, cy, cx + arm, cy, r.selectionPaint)
+    canvas.drawLine(cx, cy - arm, cx, cy + arm, r.selectionPaint)
+
+    // Start-point marker on the curve at textPathStart.tValue (arc fraction).
+    // forward only flips travel direction, which the display-only marker ignores.
+    const s = Math.min(Math.max(data.tValue, 0), 1) * sampled.length
+    const start = pointAtArc(sampled, s)
+    drawHandle(r, canvas, start.x, start.y)
+  })
 }
 
 function drawBoundsHandles(

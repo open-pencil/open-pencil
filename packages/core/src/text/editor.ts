@@ -114,6 +114,11 @@ export class TextEditor {
     return s !== null && s.selectionAnchor !== null && s.selectionAnchor !== s.cursor
   }
 
+  /** Character index of the caret, or null when not editing. */
+  get caretIndex(): number | null {
+    return this._state?.cursor ?? null
+  }
+
   getSelectionRange(): [number, number] | null {
     const s = this._state
     if (!s || s.selectionAnchor === null || s.selectionAnchor === s.cursor) return null

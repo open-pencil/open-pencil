@@ -20,7 +20,11 @@ import {
   getStrokeCapEntity,
   getStrokeJoinEntity
 } from './strokes'
-import { drawFigmaDerivedText } from './text-derived'
+import {
+  drawFigmaDerivedText,
+  drawReflowedPathTextSilhouettes,
+  isReflowedPathText
+} from './text-derived'
 import { textNodeToOutlinePath } from './text-outlines'
 
 function drawVisibleFills(
@@ -48,10 +52,17 @@ function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number):
   if (!canCull) return false
 
   const vp = r.worldViewport
+  // Leaf cull uses width×height only. TEXT_PATH stroke/glyphs often sit outside
+  // that box (negative x, past height) — without padding we cull a node whose
+  // lettering is still on-screen (especially when zoomed on the outline alone).
+  let pad = 0
+  if (node.strokeGeometry.length > 0 || (node.figmaDerivedTextGlyphs?.length ?? 0) > 0) {
+    pad = Math.max(node.width, node.height, 64) * 0.25
+  }
   const bw = node.width
   const bh = node.height
   if (node.rotation !== 0) {
-    const diag = Math.hypot(bw, bh)
+    const diag = Math.hypot(bw, bh) + pad * 2
     const cx = absX + bw / 2
     const cy = absY + bh / 2
     return (
@@ -61,7 +72,12 @@ function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number):
       cy + diag / 2 < vp.y
     )
   }
-  return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
+  return (
+    absX - pad > vp.x + vp.w ||
+    absY - pad > vp.y + vp.h ||
+    absX + bw + pad < vp.x ||
+    absY + bh + pad < vp.y
+  )
 }
 
 function applyNodeTransforms(
@@ -535,7 +551,12 @@ function drawNodeStroke(
     return
   }
   if (stroke.align !== 'INSIDE') {
-    if (node.type === 'VECTOR') drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+    // Figma bakes OUTSIDE/CENTER strokes into strokeGeometry command blobs.
+    // Filling those paths is the correct paint (not canvas.stroke of the AABB).
+    // TEXT_PATH circular outlines live here — without this branch they became a
+    // white rectangular border around the text box.
+    if (node.type === 'VECTOR' || node.type === 'TEXT')
+      drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
     else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
     return
   }
@@ -556,23 +577,36 @@ function drawNodeStroke(
   canvas.restore()
 }
 
-export function renderShapeUncached(
+/**
+ * Path text with a baked OUTSIDE stroke: Figma's strokeGeometry for these nodes
+ * is often a *solid letter silhouette* (outer contour of fill+stroke), not a
+ * thin ring. If we paint fills first then strokeGeometry, white covers the
+ * black glyph interiors → solid white letters. Stroke-then-fill keeps black
+ * bodies inside the white outline (DomeSticker / ArnoCoenen.art).
+ */
+function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    // Only TEXT_PATH stand-ins want stroke-first painting; ordinary text can
+    // also carry glyphs (missing-font paint) + a stroke, where fill-then-stroke
+    // is correct — don't invert its paint order.
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
+    node.strokeGeometry.length > 0
+  )
+}
+
+function paintNodeStrokes(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  graph: SceneGraph
+  graph: SceneGraph,
+  rect: Float32Array,
+  hasRadius: boolean,
+  sg: Path[] | null,
+  vectorPaths: Path[] | null,
+  vectorStroke: Path[] | null
 ): void {
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-  const hasRadius = nodeHasRadius(node)
-
-  const shadowChild = getShadowShapeChild(node, graph)
-  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
-
-  drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
-
-  const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
-  const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
-  const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     if (
       stroke.dashPattern &&
@@ -587,6 +621,45 @@ export function renderShapeUncached(
     }
     drawNodeStroke(r, canvas, node, rect, hasRadius, stroke, color, sg, vectorPaths, vectorStroke)
   })
+}
+
+export function renderShapeUncached(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): void {
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
+  const hasRadius = nodeHasRadius(node)
+
+  const shadowChild = getShadowShapeChild(node, graph)
+  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
+
+  const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
+  const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
+  const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
+  const pathTextStrokeFirst = isPathTextWithStrokeGeometry(node)
+  // Reflowed path text has no strokeGeometry (mutually exclusive with
+  // pathTextStrokeFirst) — strokes come from per-glyph silhouettes instead;
+  // paintNodeStrokes must not run or its empty-sg fallback strokes the AABB.
+  const reflowedPathText = isReflowedPathText(node)
+
+  // Default Figma/Skia order is fill then stroke. Path text is the exception
+  // (see isPathTextWithStrokeGeometry) — invert only for that case.
+  if (pathTextStrokeFirst) {
+    paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
+  }
+  if (reflowedPathText) {
+    forVisibleStrokes(r, node, graph, (stroke, color) =>
+      drawReflowedPathTextSilhouettes(r, canvas, node, stroke, color)
+    )
+  }
+
+  drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
+
+  if (!pathTextStrokeFirst && !reflowedPathText) {
+    paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
+  }
   r.renderEffects(canvas, node, rect, hasRadius, 'front', shadowChild)
 }
 
@@ -643,13 +716,30 @@ function drawGradientText(
   }
 }
 
+/**
+ * FIXED/TRUNCATE text normally clips to the layout box (Figma-like wrapping).
+ * Imported path text is different: Figma still draws glyphs/OUTSIDE strokes that
+ * sit outside width×height (e.g. x≈-37 on DomeSticker). Clipping here shaved
+ * the left of the circular arc even when the parent frame had room.
+ */
+function shouldClipTextToLayoutBox(node: SceneNode): boolean {
+  // Only TEXT_PATH lettering legitimately paints outside width×height; an
+  // ordinary missing-font text box (which also carries glyphs/strokeGeometry)
+  // set to Fixed/Truncate must still clip, or its overflow spills out.
+  const hasOverflowTextPaint =
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 || node.strokeGeometry.length > 0)
+  return (
+    !hasOverflowTextPaint && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
+  )
+}
+
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   const text = node.text
   if (!text) return
 
   canvas.save()
-  const shouldClipText = node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE'
-  if (shouldClipText) {
+  if (shouldClipTextToLayoutBox(node)) {
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }
 

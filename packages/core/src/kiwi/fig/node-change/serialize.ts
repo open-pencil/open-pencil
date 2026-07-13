@@ -15,6 +15,7 @@ export { buildFontDigestMap } from './font/digests'
 
 import type { NodeChange, Paint, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { transformGeometryBlob } from '@open-pencil/scene-graph/copy'
 import type { Color, GUID, JsonObject, Matrix } from '@open-pencil/scene-graph/primitives'
 
 import { guidToString, stringToGuid, VARIABLE_BINDING_FIELDS } from './convert'
@@ -110,6 +111,29 @@ function appendGlyphBlob(
   return index
 }
 
+/**
+ * Bake accumulated resize scale into a glyph blob (font units). The Kiwi
+ * Glyph schema has no scaleX/scaleY, so exporting them any other way loses
+ * the scale on reload — positions and strokeGeometry persist scaled while
+ * glyph shapes revert, garbling path text (DomeSticker save/reopen bug).
+ * Paint order is T·S·R(−θ)·F (see drawFigmaDerivedText); rewriting points as
+ * p' = F⁻¹·R(θ)·S·R(−θ)·F·p lets the same world transform hold without S.
+ */
+function bakeGlyphScale(
+  blob: Uint8Array,
+  scaleX: number,
+  scaleY: number,
+  rotation: number
+): Uint8Array {
+  if (scaleX === 1 && scaleY === 1) return blob
+  const cos = Math.cos(rotation)
+  const sin = Math.sin(rotation)
+  const m00 = scaleX * cos * cos + scaleY * sin * sin
+  const m01 = (scaleY - scaleX) * sin * cos
+  const m11 = scaleX * sin * sin + scaleY * cos * cos
+  return transformGeometryBlob(blob, m00, m01, m01, m11)
+}
+
 function buildDerivedTextData(
   node: SceneNode,
   digestMap: Map<string, Uint8Array>,
@@ -150,7 +174,16 @@ function buildDerivedTextData(
   const glyphs =
     derivedGlyphs.length > 0
       ? derivedGlyphs.map((glyph, index) => ({
-          commandsBlob: appendGlyphBlob(blobs, glyphBlobMap, glyph.commandsBlob),
+          commandsBlob: appendGlyphBlob(
+            blobs,
+            glyphBlobMap,
+            bakeGlyphScale(
+              glyph.commandsBlob,
+              glyph.scaleX ?? 1,
+              glyph.scaleY ?? 1,
+              glyph.rotation ?? 0
+            )
+          ),
           position: { x: glyph.x, y: glyph.y },
           fontSize: glyph.fontSize,
           firstCharacter: index,
@@ -158,7 +191,8 @@ function buildDerivedTextData(
             index + 1 < derivedGlyphs.length
               ? Math.max(derivedGlyphs[index + 1].x - glyph.x, 0)
               : glyphAdvance,
-          rotation: 0
+          // Preserve path-text radians; hardcoding 0 used to flatten circular text on re-export.
+          rotation: glyph.rotation ?? 0
         }))
       : (
           getGlyphOutlineMetricsSync(
@@ -481,6 +515,23 @@ function computeExportTransform(node: SceneNode): Matrix {
   const m01 = -sin
   const m10 = sin * sx
   const m11 = cos
+
+  // This must be the exact inverse of the import decode (convert.ts). For a
+  // rotated, unflipped node the decode treats rotation as about the node CENTER
+  // (x = m02 - (w/2)(1-cos) - sin(h/2)), so encode the same way — otherwise a
+  // rotated node's origin drifts on every export→reimport. The AABB min-corner
+  // form below only matches the decode's rotation==0 / flipped branch.
+  if (node.rotation !== 0 && !node.flipX) {
+    return {
+      m00,
+      m01,
+      m02: node.x + (node.width / 2) * (1 - cos) + sin * (node.height / 2),
+      m10,
+      m11,
+      m12: node.y + (node.height / 2) * (1 - cos) - sin * (node.width / 2)
+    }
+  }
+
   const corners = [
     { x: 0, y: 0 },
     { x: node.width, y: 0 },

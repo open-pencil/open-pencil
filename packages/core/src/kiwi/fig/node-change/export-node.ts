@@ -8,6 +8,7 @@ import { bytesToHex } from '#core/bytes/hex'
 
 import {
   applyExportSettingsPluginData,
+  applyTextPathBoxPluginData,
   mergePluginData,
   NODE_TYPE_PLUGIN_KEY,
   serializePluginRelaunchData,
@@ -349,12 +350,63 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
   'parameterConsumptionMap'
 ])
 
+/**
+ * Resize reflowed this path-text node (glyphs regenerated, strokeGeometry
+ * cleared). The raw strokeGeometry silhouettes are still at the pre-resize
+ * size, so exporting them would paint stale full-size outlines.
+ */
+function isReflowedStrokedPathText(node: SceneNode): boolean {
+  if (node.type !== 'TEXT' || node.source.fig.kiwiNodeType !== 'TEXT_PATH') return false
+  if ((node.figmaDerivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
+  if (node.strokeGeometry.length !== 0) return false
+  // Only when the node has stroke paint but its baked silhouettes were
+  // cleared by reflow (see resize.ts). Fill-only path text (no stroke paint,
+  // so strokeGeometry is always empty) is untouched and keeps its raw
+  // derivedTextData verbatim.
+  //
+  // This must key off live node.strokes, not rawNodeFields.strokeGeometry:
+  // clearResizedRawGeometry (resize.ts) deletes that raw field on every
+  // resize commit, so it's already gone by the time a reflowed node reaches
+  // export and can never be used to detect reflow here.
+  return node.strokes.length > 0
+}
+
+/**
+ * An imported path-text node that was edited after import — moving/rotating
+ * clears rawTransform (see clearEditedSourceMetadata), so the transform + size
+ * are recomputed from the node's post-expand box (exportNodeTransform /
+ * exportNodeSize). But the raw derivedTextData + baked silhouettes are still the
+ * PRE-expand (un-shifted) payload — exporting them against the shifted box
+ * re-triggers the import expand on reimport and drifts the node. Rebuild
+ * derivedTextData from the live (shifted) glyphs and re-derive silhouettes,
+ * exactly like the reflow path. rawTransform === null is the "edited" signal;
+ * pristine nodes keep rawTransform and their raw payload verbatim.
+ */
+function isEditedPathText(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    node.source.fig.rawTransform === null &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+  )
+}
+
 function applyRawFigmaNodeFields(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
   nc: KiwiNodeChange
 ): void {
-  const materialized = materializeFigmaPayload(node.source.fig.rawNodeFields, context.blobs, {
+  let rawFields = node.source.fig.rawNodeFields
+  if (isReflowedStrokedPathText(node) || isEditedPathText(node)) {
+    // Strip before materializing so the stale blobs never enter the file:
+    // silhouettes are re-derived from glyphs by Figma/reimport, and
+    // derivedTextData was rebuilt from the reflowed glyphs by
+    // serializeTextProps (raw would clobber the new positions).
+    rawFields = { ...rawFields }
+    delete rawFields.strokeGeometry
+    delete rawFields.derivedTextData
+  }
+  const materialized = materializeFigmaPayload(rawFields, context.blobs, {
     blobIndexByHex: context.blobIndexByHex,
     includePaintVariables: true,
     includeVariableMaps: true
@@ -542,7 +594,14 @@ function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
 }
 
 function exportNodeSize(node: SceneNode): Vector {
-  return node.source.fig.rawSize
+  // rawSize and rawTransform are a matched pair describing the ORIGINAL Figma
+  // box. Editing a node (move/rotate) clears rawTransform, so exportNodeTransform
+  // recomputes it from node dims via computeExportTransform. Pairing that
+  // node-dims transform with an un-expanded rawSize disagrees about the box
+  // (different origin, and for rotation a different centre) and the node drifts
+  // on reimport. Use rawSize only while rawTransform still backs it; once edited,
+  // size comes from node dims to match the recomputed transform.
+  return node.source.fig.rawSize && node.source.fig.rawTransform
     ? { ...node.source.fig.rawSize }
     : { x: node.width, y: node.height }
 }
@@ -677,13 +736,24 @@ export function sceneNodeToKiwiWithContext(
 
   const strokePaints = createStrokePaints(context, node)
 
+  // Import maps TEXT_PATH → TEXT. Re-emit Kiwi type 41 only while path fidelity
+  // remains (marker + baked glyphs). After the user edits characters we clear
+  // both — exporting TEXT_PATH without glyphs would be a lie to Figma.
+  const kiwiNodeType = node.source.fig.kiwiNodeType
+  const exportType =
+    kiwiNodeType === 'TEXT_PATH' &&
+    node.type === 'TEXT' &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+      ? 'TEXT_PATH'
+      : context.mapToFigmaType(node.type)
+
   const nc: KiwiNodeChange = {
     guid,
     parentIndex: {
       guid: parentGuid,
       position: node.source.orderKey ?? context.fractionalPosition(childIndex)
     },
-    type: context.mapToFigmaType(node.type),
+    type: exportType,
     name: node.name,
     visible: node.visible,
     opacity: node.opacity,
@@ -719,6 +789,7 @@ export function sceneNodeToKiwiWithContext(
   applyRawFigmaNodeFields(context, node, nc)
 
   applyExportSettingsPluginData(node)
+  applyTextPathBoxPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {

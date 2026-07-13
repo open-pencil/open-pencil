@@ -61,6 +61,17 @@ function getParsedFont(family: string, style: string): OutlineFont | null {
   }
 }
 
+/**
+ * True when the font is available AND parseable for glyph-outline extraction —
+ * i.e. getGlyphOutlineMetricsSync can produce outlines for it. Availability is
+ * currently local (fontManager), but the contract is provider-agnostic so a
+ * future remote source can satisfy it. Path-text editing needs this to reflow;
+ * without it the text is a baked graphic.
+ */
+export function hasGlyphOutlines(family: string, style: string): boolean {
+  return getParsedFont(family, style) !== null
+}
+
 export function measureTextWithOpenType(
   text: string,
   fontSize: number,

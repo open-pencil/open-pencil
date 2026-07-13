@@ -30,7 +30,8 @@ export function createDefaultNode(
         componentPropAssignments: [],
         derivedSymbolData: [],
         derivedSymbolDataLayoutVersion: null,
-        uniformScaleFactor: null
+        uniformScaleFactor: null,
+        kiwiNodeType: null
       }
     },
     figmaDerivedLayout: null,
@@ -148,6 +149,7 @@ export function createDefaultNode(
     flipY: false,
     textPicture: null,
     figmaDerivedTextGlyphs: null,
+    textPathBox: null,
     ...overrides
   }
 }

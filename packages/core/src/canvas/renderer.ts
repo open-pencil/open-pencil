@@ -84,6 +84,8 @@ export class SkiaRenderer {
   vectorStrokeOutlineCache = new Map<string, Path[]>()
   fillGeometryCache = new Map<string, Path[]>()
   strokeGeometryCache = new Map<string, Path[]>()
+  /** Path-text glyph silhouettes (stroke-and-union, font units) keyed by blob hash + relative weight. */
+  glyphSilhouetteCache = new Map<string, Path>()
   scenePicture: SkPicture | null = null
   scenePictureVersion = -1
   scenePicturePositionPreviewVersion = -1

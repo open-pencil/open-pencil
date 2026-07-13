@@ -167,7 +167,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           componentPropAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
-          uniformScaleFactor: null
+          uniformScaleFactor: null,
+          kiwiNodeType: null
         }
       }
     }
@@ -218,7 +219,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           componentPropAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
-          uniformScaleFactor: null
+          uniformScaleFactor: null,
+          kiwiNodeType: null
         }
       }
     }
