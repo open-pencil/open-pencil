@@ -326,12 +326,30 @@ export function reflowPathTextGlyphs(
  * that corrects the ~4% and repositions without over-fitting the arc. Returns
  * null with no glyphs, a degenerate box, or an unsampleable path.
  */
+const fittedBoxCache = new WeakMap<object, { box0: Rect; result: Rect | null }>()
+
 export function fitTextPathBoxToGlyphs(
   data: TextPathData,
   box0: Rect,
   glyphs: readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y'>[] | null | undefined
 ): Rect | null {
   if (!glyphs?.length) return null
+  // The selection overlay calls this every repaint (pan/zoom) with the node's
+  // stable textPathBox/glyphs references, but the 8-iteration fit is unchanged
+  // until resize/reflow produces new objects. Memoize on the glyphs array (the
+  // WeakMap entry drops when that array is replaced) and re-check box0 identity.
+  const memo = fittedBoxCache.get(glyphs)
+  if (memo && memo.box0 === box0) return memo.result
+  const result = computeFittedBox(data, box0, glyphs)
+  fittedBoxCache.set(glyphs, { box0, result })
+  return result
+}
+
+function computeFittedBox(
+  data: TextPathData,
+  box0: Rect,
+  glyphs: readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y'>[]
+): Rect | null {
   const bw = box0.width
   const bh = box0.height
   if (!(bw > 0) || !(bh > 0)) return null
@@ -383,7 +401,10 @@ export function fitTextPathBoxToGlyphs(
     const bBarY = sby / n
     const varA = saa - n * (aBarX * aBarX + aBarY * aBarY)
     const covAB = sab - n * (aBarX * bBarX + aBarY * bBarY)
-    const newC = varA > 1e-6 ? covAB / varA : c
+    // Clamp before deriving translation so a degenerate fit can't pair an
+    // unbounded scale's tx/ty with the clamped scale and shift the box.
+    const fittedC = varA > 1e-6 ? covAB / varA : c
+    const newC = Math.min(Math.max(fittedC, 0.5), 2)
     const newTx = bBarX - newC * aBarX
     const newTy = bBarY - newC * aBarY
     const converged =
@@ -393,8 +414,6 @@ export function fitTextPathBoxToGlyphs(
     ty = newTy
     if (converged) break
   }
-  // Guard a degenerate fit from exploding the box.
-  c = Math.min(Math.max(c, 0.5), 2)
   return {
     x: cx0 - (bw * c) / 2 + tx,
     y: cy0 - (bh * c) / 2 + ty,

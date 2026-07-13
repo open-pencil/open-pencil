@@ -133,7 +133,8 @@ export function createUndoActions(ctx: EditorContext) {
       'fillGeometry' in original ||
       'strokeGeometry' in original ||
       'figmaDerivedTextGlyphs' in original ||
-      'strokes' in original
+      'strokes' in original ||
+      'textPathBox' in original
     const final: ResizeOriginal = hasGeometry
       ? createResizeSnapshot(node)
       : { x: node.x, y: node.y, width: node.width, height: node.height }

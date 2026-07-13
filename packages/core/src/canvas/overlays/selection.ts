@@ -252,7 +252,7 @@ function drawTextPathSelection(
     r.auxStroke.setPathEffect(dash)
     canvas.drawRect(r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height), r.auxStroke)
     r.auxStroke.setPathEffect(null) // auxStroke is shared — never leave a dash effect on it.
-    dash?.delete()
+    dash.delete()
     drawBoundsHandles(r, canvas, box.x, box.y, box.x + box.width, box.y + box.height)
 
     // The path curve itself (node-local sampled polyline).

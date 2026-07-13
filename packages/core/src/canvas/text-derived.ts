@@ -264,6 +264,13 @@ interface GlyphSilhouette {
  * glyph itself (font units, so one cache entry serves every placement).
  * Cached paths are never deleted — the cache is content-keyed and bounded by
  * the number of distinct glyph outlines.
+ *
+ * ponytail: approximates every stroke.align as OUTSIDE (full-weight band
+ * outside the glyph, backfilled by the union). Matches the baked path-text
+ * stroke pipeline, which is OUTSIDE-oriented too, so it's consistent — but
+ * CENTER sits too far out and INSIDE shows a band the fill should cover. Full
+ * parity means per-align geometry (+ align in the cache key); deferred as the
+ * reflow fallback only fires on resized stroked path text.
  */
 function getGlyphSilhouette(
   r: SkiaRenderer,

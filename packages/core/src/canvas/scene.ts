@@ -587,6 +587,10 @@ function drawNodeStroke(
 function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
   return (
     node.type === 'TEXT' &&
+    // Only TEXT_PATH stand-ins want stroke-first painting; ordinary text can
+    // also carry glyphs (missing-font paint) + a stroke, where fill-then-stroke
+    // is correct — don't invert its paint order.
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
     (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
     node.strokeGeometry.length > 0
   )
@@ -719,10 +723,12 @@ function drawGradientText(
  * the left of the circular arc even when the parent frame had room.
  */
 function shouldClipTextToLayoutBox(node: SceneNode): boolean {
+  // Only TEXT_PATH lettering legitimately paints outside width×height; an
+  // ordinary missing-font text box (which also carries glyphs/strokeGeometry)
+  // set to Fixed/Truncate must still clip, or its overflow spills out.
   const hasOverflowTextPaint =
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' ||
-    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 ||
-    node.strokeGeometry.length > 0
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 || node.strokeGeometry.length > 0)
   return (
     !hasOverflowTextPaint && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
   )

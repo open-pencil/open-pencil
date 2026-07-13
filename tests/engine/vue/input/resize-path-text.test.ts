@@ -105,7 +105,8 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
         ...g,
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
-      strokes: copyStrokes(text.strokes)
+      strokes: copyStrokes(text.strokes),
+      textPathBox: null
     }
 
     const drag: DragResize = {
@@ -120,6 +121,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origStrokeGeometry: [],
       origFigmaDerivedTextGlyphs: null,
       origStrokes: [],
+      origTextPathBox: null,
       origChildren: new Map([[text.id, origChild]])
     }
 
@@ -189,7 +191,8 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
         ...g,
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
-      strokes: copyStrokes(text.strokes)
+      strokes: copyStrokes(text.strokes),
+      textPathBox: null
     }
     const drag: DragResize = reactive({
       type: 'resize',
@@ -203,6 +206,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origStrokeGeometry: [],
       origFigmaDerivedTextGlyphs: null,
       origStrokes: [],
+      origTextPathBox: null,
       origChildren: new Map([[text.id, origChild]])
     }) as DragResize
 

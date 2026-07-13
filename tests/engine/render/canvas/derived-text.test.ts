@@ -402,7 +402,25 @@ describe('rotated derived glyphs (text-on-path)', () => {
         }),
         'png'
       )
-      expect(png.byteLength).toBeGreaterThan(0)
+      // A blank canvas also yields a non-empty PNG, so decode and require the
+      // rotated glyph to actually paint pixels — not merely render without throwing.
+      const image = expectDefined(ck.MakeImageFromEncoded(png), 'image')
+      const pixels = expectDefined(
+        image.readPixels(0, 0, {
+          alphaType: ck.AlphaType.Unpremul,
+          colorType: ck.ColorType.RGBA_8888,
+          colorSpace: ck.ColorSpace.SRGB,
+          width: image.width(),
+          height: image.height()
+        }),
+        'pixels'
+      )
+      let paintedPixels = 0
+      for (let index = 3; index < pixels.length; index += 4) {
+        if ((pixels[index] ?? 0) > 0) paintedPixels++
+      }
+      image.delete()
+      expect(paintedPixels).toBeGreaterThan(0)
     } finally {
       surface.delete()
     }
