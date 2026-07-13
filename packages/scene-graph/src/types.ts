@@ -34,9 +34,10 @@ export interface FigmaSourcePayload {
    * Figma Kiwi type when the engine type is a stand-in (TEXT_PATH → TEXT).
    * Export re-emits this while path-text fidelity remains; cleared when the
    * user edits text content (glyphs invalidated). Not an OpenPencil plugin key
-   * — Figma would ignore that for native node type.
+   * — Figma would ignore that for native node type. Widen this union if another
+   * Figma type ever needs a stand-in.
    */
-  kiwiNodeType: string | null
+  kiwiNodeType: 'TEXT_PATH' | null
 }
 
 export interface SourceMetadata {
