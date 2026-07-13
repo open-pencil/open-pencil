@@ -12,6 +12,14 @@ import {
 export const WEB_FONT_PROVIDER_IDS = ['google', 'fontsource', 'bunny', 'fontshare'] as const
 export type WebFontProviderId = (typeof WEB_FONT_PROVIDER_IDS)[number]
 
+/** Browser without Tauri proxy: prefer CORS-safe TTF hosts before Google metadata. */
+export const BROWSER_WEB_FONT_PROVIDER_ORDER = [
+  'fontsource',
+  'google',
+  'bunny',
+  'fontshare'
+] as const satisfies readonly WebFontProviderId[]
+
 export const WEB_FONT_PROVIDER_LABELS: Record<WebFontProviderId, string> = {
   google: 'Google Fonts',
   fontsource: 'Fontsource',
@@ -27,6 +35,19 @@ export const DEFAULT_WEB_FONT_PROVIDER_SETTINGS: Record<WebFontProviderId, boole
 }
 
 export type WebFontFetch = (url: string, init?: RequestInit) => Promise<Response>
+
+/** Pure ordering helper — unit-testable without browser globals. */
+export function resolveWebFontProviderOrder(
+  enabled: readonly WebFontProviderId[],
+  options: { preferCorsSafeTtf: boolean }
+): WebFontProviderId[] {
+  if (enabled.length === 0) return []
+  const enabledSet = new Set(enabled)
+  if (options.preferCorsSafeTtf) {
+    return BROWSER_WEB_FONT_PROVIDER_ORDER.filter((provider) => enabledSet.has(provider))
+  }
+  return WEB_FONT_PROVIDER_IDS.filter((provider) => enabledSet.has(provider))
+}
 
 const DEFAULT_WEB_FONT_SUBSETS = [
   'latin',
@@ -118,7 +139,18 @@ export class WebFontResolver {
     return WEB_FONT_PROVIDER_IDS.filter((provider) => this.enabled.has(provider))
   }
 
+  /**
+   * Provider try-order for on-demand `fetchFont`.
+   * Browser without remoteFetch: Fontsource first (CORS TTF). Else catalog order (Google first).
+   */
+  resolveProviderOrder(): WebFontProviderId[] {
+    return resolveWebFontProviderOrder(this.enabledProviders(), {
+      preferCorsSafeTtf: IS_BROWSER && !this.remoteFetch
+    })
+  }
+
   preloadFamilies(): void {
+    // Catalog preload stays desktop/proxy-only — Google metadata is not CORS-safe in browsers.
     if (IS_BROWSER && !this.remoteFetch) return
     for (const provider of this.enabledProviders()) void this.listFamilies(provider)
   }
@@ -136,8 +168,11 @@ export class WebFontResolver {
   }
 
   async fetchFont(families: string[], style: string, characters = ''): Promise<ArrayBuffer[]> {
-    const providers = this.enabledProviders()
-    if (providers.length === 0 || (IS_BROWSER && !this.remoteFetch)) return []
+    // On-demand fetch works in browsers without a proxy — resolveProviderOrder puts the
+    // CORS-safe hosts first. Only the catalog listing stays proxy-gated.
+    if (typeof fetch === 'undefined' && !this.remoteFetch) return []
+    const providers = this.resolveProviderOrder()
+    if (providers.length === 0) return []
 
     for (const family of families) {
       for (const provider of providers) {
@@ -193,6 +228,7 @@ export class WebFontResolver {
   }
 
   private async loadFamilies(provider: WebFontProviderId): Promise<string[]> {
+    // Keep catalog listing gated on web without proxy (Google metadata has no CORS).
     if (typeof fetch === 'undefined' || (IS_BROWSER && !this.remoteFetch)) return []
 
     try {

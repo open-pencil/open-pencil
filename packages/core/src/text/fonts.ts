@@ -72,6 +72,16 @@ export class FontManager {
     }
   }
 
+  /**
+   * Bind the manager to the renderer's live TypefaceFontProvider.
+   * Paragraph building must use the same provider instance fonts are registered on.
+   */
+  bindProvider(canvasKit: CanvasKit, provider: TypefaceFontProvider | null): void {
+    if (!provider) return
+    if (this.fontProvider === provider) return
+    this.attachProvider(canvasKit, provider)
+  }
+
   detachProvider(provider?: TypefaceFontProvider | null): void {
     if (!provider) {
       this.fontProviders.clear()
