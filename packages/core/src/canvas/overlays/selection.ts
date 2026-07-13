@@ -246,9 +246,13 @@ function drawTextPathSelection(
     // Faint dashed bounds + resize/rotate handles from the fitted path box.
     r.auxStroke.setStrokeWidth(1 / r.zoom)
     r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
-    r.auxStroke.setPathEffect(r.ck.PathEffect.MakeDash([4 / r.zoom, 4 / r.zoom], 0))
+    // MakeDash allocates a WASM PathEffect the JS GC won't reclaim; this runs
+    // every repaint while a TEXT_PATH node is selected, so free it explicitly.
+    const dash = r.ck.PathEffect.MakeDash([4 / r.zoom, 4 / r.zoom], 0)
+    r.auxStroke.setPathEffect(dash)
     canvas.drawRect(r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height), r.auxStroke)
     r.auxStroke.setPathEffect(null) // auxStroke is shared — never leave a dash effect on it.
+    dash?.delete()
     drawBoundsHandles(r, canvas, box.x, box.y, box.x + box.width, box.y + box.height)
 
     // The path curve itself (node-local sampled polyline).
