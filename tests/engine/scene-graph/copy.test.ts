@@ -98,6 +98,33 @@ describe('copy helpers — mutation isolation', () => {
     expect(original[0].commandsBlob[0]).toBe(1)
   })
 
+  test('copyGeometryPaths: keeps path-level styleID and fills (multi-color vectors)', () => {
+    // Clone, instance sync, and identity constraint scale use this helper.
+    // Dropping fills collapses multi-color vectors to a single node paint.
+    const orange: Fill = {
+      type: 'SOLID',
+      color: { r: 1, g: 0.32, b: 0, a: 1 },
+      opacity: 1,
+      visible: true
+    }
+    const original: GeometryPath[] = [
+      {
+        windingRule: 'NONZERO',
+        commandsBlob: new Uint8Array([1, 2, 3]),
+        styleID: 5,
+        fills: [orange]
+      },
+      { windingRule: 'EVENODD', commandsBlob: new Uint8Array([4, 5, 6]) }
+    ]
+    const copy = copyGeometryPaths(original)
+    expect(copy[0]?.styleID).toBe(5)
+    expect(copy[0]?.fills?.[0]?.color.r).toBeCloseTo(1, 2)
+    expect(copy[1]?.styleID).toBeUndefined()
+    expect(copy[1]?.fills).toBeUndefined()
+    expectDefined(copy[0]?.fills?.[0], 'copied path fill').color.r = 0
+    expect(original[0]?.fills?.[0]?.color.r).toBe(1)
+  })
+
   test('copyFills: array independence', () => {
     const originals: Fill[] = [
       { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true },

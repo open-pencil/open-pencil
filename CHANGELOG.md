@@ -26,6 +26,7 @@
 
 ### Fixes
 
+- Fix multi-color vector fills on `.fig` import (Figma `fillGeometry` styleIDs / style overrides, e.g. FedEx purple + orange), including clone and constraint-scale copies that previously dropped path-level paints.
 - Fix live CLI and MCP automation drifting to the wrong open document or page when multiple files are open.
 - Improve Chinese, Japanese, and Korean text rendering with glyph-aware fallback fonts and outline rendering when needed.
 - Preserve imported Figma text sizing more accurately, especially auto-sized text inside auto-layout frames.

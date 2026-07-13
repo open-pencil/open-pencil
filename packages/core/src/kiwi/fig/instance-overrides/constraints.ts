@@ -1,5 +1,5 @@
 import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import { copyFills, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { buildClonesMap } from './sync'
 import type { OverrideContext } from './types'
@@ -63,16 +63,29 @@ function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): Geome
     let offset = 0
     while (offset < scaled.length) {
       const command = scaled[offset++]
-      let coords = 0
-      if (command === 1 || command === 2) coords = 1
+      // 0=CLOSE (0 pairs), 1=move/2=line (1), 3=quad (2), 4=cubic (3).
+      // Unknown → stop (do not treat float bytes as opcodes).
+      let coords: number | null = null
+      if (command === 0) coords = 0
+      else if (command === 1 || command === 2) coords = 1
+      else if (command === 3) coords = 2
       else if (command === 4) coords = 3
+      if (coords == null) break
       for (let i = 0; i < coords; i++) {
+        if (offset + 8 > scaled.length) break
         dv.setFloat32(offset, dv.getFloat32(offset, true) * sx, true)
         dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) * sy, true)
         offset += 8
       }
     }
-    return { windingRule: g.windingRule, commandsBlob: scaled }
+    // Keep styleID + path-level fills (multi-color vectors). Dropping them makes
+    // constraint-scaled instances paint as a single node fill.
+    return {
+      windingRule: g.windingRule,
+      commandsBlob: scaled,
+      ...(g.styleID != null ? { styleID: g.styleID } : {}),
+      ...(g.fills ? { fills: copyFills(g.fills) } : {})
+    }
   })
 }
 
