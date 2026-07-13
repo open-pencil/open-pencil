@@ -16,7 +16,7 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { parseFigFile } from '#core/io/formats/fig/read'
 
-import { loadFigFixture } from '#tests/helpers/fig-fixtures'
+import { loadFigFixture, readFigFixture } from '#tests/helpers/fig-fixtures'
 
 function worldCorners(graph: SceneGraph, name: string) {
   const node = [...graph.getAllNodes()].find((n) => n.name === name)
@@ -73,6 +73,9 @@ describe('rotated node transform round-trip', () => {
 // rebuilt from the shifted graph glyphs). Editing one — rotate OR move — used to
 // slide it out of its frame clip on reimport.
 const CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
+// Skip *visibly* when the LFS fixture isn't fetched (contributor checkout). A
+// helper early-return would let Bun report these as passed with 0 assertions.
+const describeWithFixture = readFigFixture(CIRCLE_TEXT) ? describe : describe.skip
 
 function glyphWorld(graph: SceneGraph) {
   const node = [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art')
@@ -83,7 +86,7 @@ function glyphWorld(graph: SceneGraph) {
 
 async function assertEditKeepsGlyphs(edit: (node: SceneNode) => Partial<SceneNode>) {
   const graph = await loadFigFixture(CIRCLE_TEXT)
-  if (!graph) return
+  if (!graph) throw new Error('circle-text.fig fixture unavailable')
   const node = [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art')
   if (!node) throw new Error('node missing')
   graph.updateNode(node.id, edit(node))
@@ -99,7 +102,7 @@ async function assertEditKeepsGlyphs(edit: (node: SceneNode) => Partial<SceneNod
   expect(maxDrift).toBeLessThan(0.05)
 }
 
-describe('edited imported text-on-path round-trip', () => {
+describeWithFixture('edited imported text-on-path round-trip', () => {
   test.each([0, 30, -55, 90])('rotation %i° keeps glyph world positions', async (rotation) => {
     await assertEditKeepsGlyphs(() => ({ rotation }))
   })
