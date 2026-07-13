@@ -63,10 +63,16 @@ function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): Geome
     let offset = 0
     while (offset < scaled.length) {
       const command = scaled[offset++]
-      let coords = 0
-      if (command === 1 || command === 2) coords = 1
+      // 0=CLOSE (0 pairs), 1=move/2=line (1), 3=quad (2), 4=cubic (3).
+      // Unknown → stop (do not treat float bytes as opcodes).
+      let coords: number | null = null
+      if (command === 0) coords = 0
+      else if (command === 1 || command === 2) coords = 1
+      else if (command === 3) coords = 2
       else if (command === 4) coords = 3
+      if (coords == null) break
       for (let i = 0; i < coords; i++) {
+        if (offset + 8 > scaled.length) break
         dv.setFloat32(offset, dv.getFloat32(offset, true) * sx, true)
         dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) * sy, true)
         offset += 8
