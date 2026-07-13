@@ -313,54 +313,178 @@ export function reflowPathTextGlyphs(
 /**
  * Node-local box that maps the layout path onto the glyph baselines.
  *
- * `SceneNode.textPathBox` maps the path onto the node's ORIGINAL Figma box, but
- * the path's own space is `normalizedSize` (~4% larger), so a path sampled from
- * textPathBox sits ~30px off the lettering. This recovers the box that lands the
- * path ON the glyphs, for display (the selection overlay) without disturbing the
- * import/reflow use of textPathBox. Size is fixed to normalizedSize (correct
- * scale — network vertices span [0,normalizedSize]); only the origin is fit, by
- * ICP translation against the baselines (a few iterations converge from ~30px).
- * Returns null when there are no glyphs to fit against or the path can't sample.
+ * `SceneNode.textPathBox` is ~4% too small (import maps the path onto the node's
+ * ORIGINAL Figma box, not its own normalizedSize space), so a path sampled from
+ * it sits ~30px off the lettering. This recovers the box that lands the path ON
+ * the glyphs, for display (the selection overlay) without disturbing the
+ * import/reflow use of textPathBox.
+ *
+ * It fits from `box0` (the node's current textPathBox) so the box **aspect ratio
+ * is preserved** — after a non-uniform resize textPathBox is an oval, and the
+ * overlay must oval with it (using normalizedSize would force a circle). Only a
+ * uniform scale (about box0's centre) + translation are fit — a 3-DOF similarity
+ * that corrects the ~4% and repositions without over-fitting the arc. Returns
+ * null with no glyphs, a degenerate box, or an unsampleable path.
  */
 export function fitTextPathBoxToGlyphs(
   data: TextPathData,
+  box0: Rect,
   glyphs: readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y'>[] | null | undefined
 ): Rect | null {
   if (!glyphs?.length) return null
-  const w = data.normalizedSize.x
-  const h = data.normalizedSize.y
-  // Sample once at origin 0; width === normalizedSize so scale is 1 and moving
-  // the box origin translates the path 1:1 — the fit is a pure translation.
-  const ref = sampleTextPath(data, { x: 0, y: 0, width: w, height: h })
+  const bw = box0.width
+  const bh = box0.height
+  if (!(bw > 0) || !(bh > 0)) return null
+  const ref = sampleTextPath(data, box0)
   if (!ref) return null
-  let ox = 0
-  let oy = 0
+
+  const cx0 = box0.x + bw / 2
+  const cy0 = box0.y + bh / 2
+  let c = 1
+  let tx = 0
+  let ty = 0
   for (let iter = 0; iter < 8; iter++) {
-    let sumX = 0
-    let sumY = 0
+    // Least-squares uniform-scale + translation over the current correspondence:
+    // a transformed ref point is P = centre + c·(ref − centre) + t, so minimising
+    // |g − P|² gives c = cov(a,b)/var(a), t = mean(b) − c·mean(a).
+    let saa = 0
+    let sab = 0
+    let sax = 0
+    let say = 0
+    let sbx = 0
+    let sby = 0
     for (const g of glyphs) {
-      const gx = g.x - ox
-      const gy = g.y - oy
       let bestD = Infinity
-      let bx = 0
-      let by = 0
+      let ai = 0
+      let aj = 0
       for (let i = 0; i < ref.xs.length; i++) {
-        const d = (ref.xs[i] - gx) ** 2 + (ref.ys[i] - gy) ** 2
+        const px = cx0 + c * (ref.xs[i] - cx0) + tx
+        const py = cy0 + c * (ref.ys[i] - cy0) + ty
+        const d = (px - g.x) ** 2 + (py - g.y) ** 2
         if (d < bestD) {
           bestD = d
-          bx = ref.xs[i]
-          by = ref.ys[i]
+          ai = ref.xs[i] - cx0
+          aj = ref.ys[i] - cy0
         }
       }
-      sumX += g.x - bx
-      sumY += g.y - by
+      const bx = g.x - cx0
+      const by = g.y - cy0
+      saa += ai * ai + aj * aj
+      sab += ai * bx + aj * by
+      sax += ai
+      say += aj
+      sbx += bx
+      sby += by
     }
-    const nx = sumX / glyphs.length
-    const ny = sumY / glyphs.length
-    const converged = Math.abs(nx - ox) < 0.05 && Math.abs(ny - oy) < 0.05
-    ox = nx
-    oy = ny
+    const n = glyphs.length
+    const aBarX = sax / n
+    const aBarY = say / n
+    const bBarX = sbx / n
+    const bBarY = sby / n
+    const varA = saa - n * (aBarX * aBarX + aBarY * aBarY)
+    const covAB = sab - n * (aBarX * bBarX + aBarY * bBarY)
+    const newC = varA > 1e-6 ? covAB / varA : c
+    const newTx = bBarX - newC * aBarX
+    const newTy = bBarY - newC * aBarY
+    const converged =
+      Math.abs(newC - c) < 1e-4 && Math.abs(newTx - tx) < 0.05 && Math.abs(newTy - ty) < 0.05
+    c = newC
+    tx = newTx
+    ty = newTy
     if (converged) break
   }
-  return { x: ox, y: oy, width: w, height: h }
+  // Guard a degenerate fit from exploding the box.
+  c = Math.min(Math.max(c, 0.5), 2)
+  return {
+    x: cx0 - (bw * c) / 2 + tx,
+    y: cy0 - (bh * c) / 2 + ty,
+    width: bw * c,
+    height: bh * c
+  }
+}
+
+/**
+ * A closed ribbon polygon (node-local, flat `[x0,y0,x1,y1,...]`) that hugs the
+ * lettering along the path — the Figma-style "selection band" for text on a
+ * path. It runs along the arc the glyphs occupy, offset out to ~cap height and
+ * in to ~descender, so a filled/stroked polygon traces the text instead of the
+ * flat axis-aligned selection rects (which float over the artwork). Returns null
+ * with no glyphs or an unsampleable path.
+ *
+ * The outward side is chosen per-sample as the normal pointing away from the box
+ * centre (correct for the common circular/arc case); the band straddles the
+ * baseline so it covers the glyphs without needing per-font ascent metrics.
+ */
+export function pathTextSelectionBand(
+  data: TextPathData,
+  box: Rect,
+  glyphs:
+    | readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y' | 'fontSize' | 'rotation'>[]
+    | null
+    | undefined
+): number[] | null {
+  if (!glyphs?.length) return null
+  const sampled = sampleTextPath(data, box)
+  if (!sampled) return null
+  const { xs, ys, cum, length } = sampled
+
+  let sMin = Infinity
+  let sMax = -Infinity
+  let fontSize = 0
+  for (const g of glyphs) {
+    let best = Infinity
+    let bi = 0
+    for (let i = 0; i < xs.length; i++) {
+      const d = (xs[i] - g.x) ** 2 + (ys[i] - g.y) ** 2
+      if (d < best) {
+        best = d
+        bi = i
+      }
+    }
+    if (cum[bi] < sMin) sMin = cum[bi]
+    if (cum[bi] > sMax) sMax = cum[bi]
+    fontSize = Math.max(fontSize, g.fontSize || 0)
+  }
+  if (!(fontSize > 0) || !(sMax > sMin)) return null
+
+  // Pad the span a little so the first/last glyph bodies are covered.
+  sMin = Math.max(0, sMin - fontSize * 0.3)
+  sMax = Math.min(length, sMax + fontSize * 0.3)
+  const capH = fontSize * 0.72 // out to ~cap height
+  const descH = fontSize * 0.14 // in to ~descender
+  const cx = box.x + box.width / 2
+  const cy = box.y + box.height / 2
+
+  // Point the normal toward the glyphs' ascenders. The letters sit on one side
+  // of the baseline path; average each glyph's "up" (from its rotation) and pick
+  // the path normal that agrees with it, so the band covers the text for both
+  // inward- and outward-reading path text.
+  let upX = 0
+  let upY = 0
+  for (const g of glyphs) {
+    const rot = g.rotation ?? 0
+    upX += -Math.sin(rot)
+    upY += -Math.cos(rot)
+  }
+  // Fallback to the away-from-centre normal if the glyphs carry no rotation.
+  const haveUp = upX !== 0 || upY !== 0
+
+  const steps = 48
+  const outer: number[] = []
+  const inner: number[] = []
+  for (let i = 0; i <= steps; i++) {
+    const p = pointAtArc(sampled, sMin + ((sMax - sMin) * i) / steps)
+    let nx = -p.ty
+    let ny = p.tx
+    const toward = haveUp ? nx * upX + ny * upY : (p.x - cx) * nx + (p.y - cy) * ny
+    if (toward < 0) {
+      nx = -nx
+      ny = -ny
+    }
+    outer.push(p.x + nx * capH, p.y + ny * capH)
+    inner.push(p.x - nx * descH, p.y - ny * descH)
+  }
+  const poly = outer.slice()
+  for (let i = inner.length - 2; i >= 0; i -= 2) poly.push(inner[i], inner[i + 1])
+  return poly
 }

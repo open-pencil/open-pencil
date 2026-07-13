@@ -127,8 +127,10 @@ describe('path-text reflow — real fixture (optional local)', () => {
     expect(maxGlyphToPath(rawPath, glyphs)).toBeGreaterThan(15)
 
     // The fitted box lands the path ON the glyph baselines.
-    const fitted = expectDefined(fitTextPathBoxToGlyphs(data, glyphs), 'fitted box')
-    expect(fitted.width).toBeCloseTo(data.normalizedSize.x, 3)
+    const fitted = expectDefined(fitTextPathBoxToGlyphs(data, box, glyphs), 'fitted box')
+    // Aspect preserved from textPathBox, so the overlay ovals under a non-uniform
+    // resize instead of forcing a circle.
+    expect(fitted.width / fitted.height).toBeCloseTo(box.width / box.height, 3)
     const path = expectDefined(sampleTextPath(data, fitted), 'fitted overlay path')
     expect(maxGlyphToPath(path, glyphs)).toBeLessThan(12)
 
@@ -153,8 +155,9 @@ describe('path-text reflow — real fixture (optional local)', () => {
       'path text node'
     )
     const data = expectDefined(getTextPathData(node), 'text path data')
-    expect(fitTextPathBoxToGlyphs(data, [])).toBeNull()
-    expect(fitTextPathBoxToGlyphs(data, null)).toBeNull()
+    const box = expectDefined(node.textPathBox, 'textPathBox')
+    expect(fitTextPathBoxToGlyphs(data, box, [])).toBeNull()
+    expect(fitTextPathBoxToGlyphs(data, box, null)).toBeNull()
   })
 })
 

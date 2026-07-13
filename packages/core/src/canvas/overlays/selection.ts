@@ -11,6 +11,7 @@ import { HANDLE_HALF_SIZE, SELECTION_DASH_ALPHA } from '#core/constants'
 import {
   fitTextPathBoxToGlyphs,
   getTextPathData,
+  pathTextSelectionBand,
   pointAtArc,
   sampleTextPath
 } from '#core/text/path-layout'
@@ -106,10 +107,20 @@ export function drawSelection(
 
   if (selectedIds.size === 1) {
     const id = [...selectedIds][0]
-    if (overlays.editingTextId === id) return
     if (nodeEditId === id) return
     const node = graph.getNode(id)
     if (!node) return
+
+    // Imported text-on-path node → path curve overlay. The cheap two-field
+    // check is the gate; drawTextPathSelection re-checks the retained data and
+    // falls back to the plain rectangle if it can't be sampled.
+    const isPathText = node.source.fig.kiwiNodeType === 'TEXT_PATH' && node.textPathBox !== null
+    const editing = overlays.editingTextId === id
+    // While editing: normal text hands off to the flat text-edit overlay, but
+    // path text keeps its path overlay (curved band + path) — its flat text-edit
+    // overlay is suppressed (see drawTextEditOverlay) since it can't follow the
+    // path.
+    if (editing && !isPathText) return
 
     const useComponentColor = r.isComponentType(node.type)
     r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
@@ -117,13 +128,9 @@ export function drawSelection(
 
     const rotation =
       overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
-    // Imported text-on-path node → draw the path curve overlay. The cheap
-    // two-field check is the gate; drawTextPathSelection re-checks the retained
-    // data and falls back to the plain rectangle if it can't be sampled, so we
-    // don't decode the vector blob here just to decide.
-    if (node.source.fig.kiwiNodeType === 'TEXT_PATH' && node.textPathBox !== null) {
+    if (isPathText) {
       drawTextPathSelection(r, canvas, node, rotation, graph)
-      r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+      if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
       r.selectionPaint.setColor(r.selColor())
       return
     }
@@ -197,7 +204,10 @@ function drawTextPathSelection(
   // Prefer the box fit to the glyph baselines; fall back to textPathBox when
   // there are no glyphs to fit against.
   const box =
-    (data && fitTextPathBoxToGlyphs(data, node.figmaDerivedTextGlyphs)) ?? node.textPathBox
+    (data &&
+      node.textPathBox &&
+      fitTextPathBoxToGlyphs(data, node.textPathBox, node.figmaDerivedTextGlyphs)) ??
+    node.textPathBox
   // Eligibility gated data/box, but sampleTextPath can still fail (bad vertex /
   // zero length) — any null falls back to the standard rectangle, no throw.
   const sampled = data && box ? sampleTextPath(data, box) : null
@@ -207,6 +217,23 @@ function drawTextPathSelection(
   }
 
   withNodeBounds(r, canvas, node, rotation, graph, () => {
+    // Figma-style selection band: a filled ribbon that hugs the lettering along
+    // the path (replaces the flat, path-blind text-edit selection rects).
+    const bandPoly = pathTextSelectionBand(data, box, node.figmaDerivedTextGlyphs)
+    if (bandPoly && bandPoly.length >= 6) {
+      const band = new r.ck.Path()
+      band.moveTo(bandPoly[0], bandPoly[1])
+      for (let i = 2; i < bandPoly.length; i += 2) band.lineTo(bandPoly[i], bandPoly[i + 1])
+      band.close()
+      r.auxFill.setColor(r.selColor(0.16))
+      canvas.drawPath(band, r.auxFill)
+      r.auxStroke.setStrokeWidth(1 / r.zoom)
+      r.auxStroke.setColor(r.selColor())
+      r.auxStroke.setPathEffect(null)
+      canvas.drawPath(band, r.auxStroke)
+      band.delete()
+    }
+
     // Faint dashed bounds + resize/rotate handles from the fitted path box.
     r.auxStroke.setStrokeWidth(1 / r.zoom)
     r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
