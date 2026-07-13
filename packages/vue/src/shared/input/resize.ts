@@ -82,11 +82,12 @@ function reflowedPathTextChanges(
   }
   const glyphs = reflowPathTextGlyphs(orig.figmaDerivedTextGlyphs, data, layout, box)
   if (!glyphs) return null
+  const strokes = orig.strokes ?? []
   return {
     figmaDerivedTextGlyphs: glyphs,
     textPathBox: box,
     strokeGeometry: [],
-    strokes: copyStrokes(orig.strokes)
+    strokes: copyStrokes(strokes)
   }
 }
 
@@ -95,6 +96,9 @@ function reflowedPathTextChanges(
  * vectorNetwork + fillGeometry were updated — path-text strokeGeometry and
  * glyphs stayed at the pre-resize size, so shrinking a sticker made the white
  * OUTSIDE outlines look massively thick (DomeSticker resize bug).
+ *
+ * Geometry arrays are treated as optional at runtime: incomplete DragResize
+ * fixtures (or older callers) may omit strokeGeometry/strokes — never throw.
  */
 function scaledGeometryChanges(
   orig: Pick<
@@ -125,12 +129,16 @@ function scaledGeometryChanges(
     height
   )
   if (resizedVN) changes.vectorNetwork = resizedVN
-  if (orig.fillGeometry.length > 0) {
-    changes.fillGeometry = scaleGeometryPaths(orig.fillGeometry, sx, sy)
-  }
 
-  if (orig.strokeGeometry.length > 0) {
-    changes.strokeGeometry = scaleGeometryPaths(orig.strokeGeometry, sx, sy)
+  const fillGeometry = orig.fillGeometry ?? []
+  const strokeGeometry = orig.strokeGeometry ?? []
+  const strokes = orig.strokes ?? []
+
+  if (fillGeometry.length > 0) {
+    changes.fillGeometry = scaleGeometryPaths(fillGeometry, sx, sy)
+  }
+  if (strokeGeometry.length > 0) {
+    changes.strokeGeometry = scaleGeometryPaths(strokeGeometry, sx, sy)
   }
   if (orig.figmaDerivedTextGlyphs?.length) {
     changes.figmaDerivedTextGlyphs = scaleDerivedGlyphs(orig.figmaDerivedTextGlyphs, sx, sy)
@@ -146,8 +154,8 @@ function scaledGeometryChanges(
       }
     }
   }
-  if (orig.strokes.length > 0) {
-    changes.strokes = scaleStrokes(orig.strokes, sx, sy)
+  if (strokes.length > 0) {
+    changes.strokes = scaleStrokes(strokes, sx, sy)
   }
   return changes
 }
