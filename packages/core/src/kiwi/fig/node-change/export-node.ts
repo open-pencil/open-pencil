@@ -355,7 +355,7 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
  * cleared). The raw strokeGeometry silhouettes are still at the pre-resize
  * size, so exporting them would paint stale full-size outlines.
  */
-function isReflowedPathText(node: SceneNode): boolean {
+function isReflowedStrokedPathText(node: SceneNode): boolean {
   if (node.type !== 'TEXT' || node.source.fig.kiwiNodeType !== 'TEXT_PATH') return false
   if ((node.figmaDerivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
   if (node.strokeGeometry.length !== 0) return false
@@ -397,7 +397,7 @@ function applyRawFigmaNodeFields(
   nc: KiwiNodeChange
 ): void {
   let rawFields = node.source.fig.rawNodeFields
-  if (isReflowedPathText(node) || isEditedPathText(node)) {
+  if (isReflowedStrokedPathText(node) || isEditedPathText(node)) {
     // Strip before materializing so the stale blobs never enter the file:
     // silhouettes are re-derived from glyphs by Figma/reimport, and
     // derivedTextData was rebuilt from the reflowed glyphs by

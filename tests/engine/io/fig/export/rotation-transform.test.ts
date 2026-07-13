@@ -7,7 +7,6 @@
  * on reimport (and a rotated text-on-path sticker slid out of its frame clip).
  */
 import { describe, expect, test } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -16,6 +15,8 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { parseFigFile } from '#core/io/formats/fig/read'
+
+import { loadFigFixture } from '#tests/helpers/fig-fixture'
 
 function worldCorners(graph: SceneGraph, name: string) {
   const node = [...graph.getAllNodes()].find((n) => n.name === name)
@@ -73,11 +74,6 @@ describe('rotated node transform round-trip', () => {
 // slide it out of its frame clip on reimport.
 const CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
-function loadFig(path: string) {
-  const bytes = readFileSync(path)
-  return parseFigFile(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength))
-}
-
 function glyphWorld(graph: SceneGraph) {
   const node = [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art')
   if (!node?.figmaDerivedTextGlyphs) throw new Error('path-text node not found')
@@ -86,7 +82,8 @@ function glyphWorld(graph: SceneGraph) {
 }
 
 async function assertEditKeepsGlyphs(edit: (node: SceneNode) => Partial<SceneNode>) {
-  const graph = await loadFig(CIRCLE_TEXT)
+  const graph = await loadFigFixture(CIRCLE_TEXT)
+  if (!graph) return
   const node = [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art')
   if (!node) throw new Error('node missing')
   graph.updateNode(node.id, edit(node))
@@ -104,12 +101,10 @@ async function assertEditKeepsGlyphs(edit: (node: SceneNode) => Partial<SceneNod
 
 describe('edited imported text-on-path round-trip', () => {
   test.each([0, 30, -55, 90])('rotation %i° keeps glyph world positions', async (rotation) => {
-    if (!existsSync(CIRCLE_TEXT)) return
     await assertEditKeepsGlyphs(() => ({ rotation }))
   })
 
   test('move (rotation 0) keeps glyph world positions', async () => {
-    if (!existsSync(CIRCLE_TEXT)) return
     await assertEditKeepsGlyphs((node) => ({ x: node.x + 120, y: node.y - 45 }))
   })
 })

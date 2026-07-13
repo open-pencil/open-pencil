@@ -1,10 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 
-import { parseFigFile } from '#core/io/formats/fig/read'
 import {
   calibratePathTextLayout,
   fitTextPathBoxToGlyphs,
@@ -18,6 +16,7 @@ import {
 import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { loadFigFixture } from '#tests/helpers/fig-fixture'
 
 /** Signed shortest angular difference a - b. */
 function angleDiff(a: number, b: number): number {
@@ -28,14 +27,8 @@ const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
 describe('path-text reflow — real fixture (optional local)', () => {
   test('identity reflow reproduces baked glyphs; anisotropic reflow re-places without touching outlines', async () => {
-    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
-      console.log('skip: ArnoWithCircleText.fig not present')
-      return
-    }
-
-    const bytes = readFileSync(LOCAL_CIRCLE_TEXT)
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    const graph = await parseFigFile(ab)
+    const graph = await loadFigFixture(LOCAL_CIRCLE_TEXT)
+    if (!graph) return
     const node = expectDefined(
       [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art'),
       'path text node'
@@ -108,13 +101,8 @@ describe('path-text reflow — real fixture (optional local)', () => {
   }
 
   test('fitted overlay curve + start marker track the imported glyph baselines', async () => {
-    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
-      console.log('skip: ArnoWithCircleText.fig not present')
-      return
-    }
-    const bytes = readFileSync(LOCAL_CIRCLE_TEXT)
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    const graph = await parseFigFile(ab)
+    const graph = await loadFigFixture(LOCAL_CIRCLE_TEXT)
+    if (!graph) return
     const node = expectDefined(
       [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art'),
       'path text node'
@@ -144,13 +132,8 @@ describe('path-text reflow — real fixture (optional local)', () => {
   })
 
   test('fitTextPathBoxToGlyphs returns null with no glyphs to fit', async () => {
-    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
-      console.log('skip: ArnoWithCircleText.fig not present')
-      return
-    }
-    const bytes = readFileSync(LOCAL_CIRCLE_TEXT)
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    const graph = await parseFigFile(ab)
+    const graph = await loadFigFixture(LOCAL_CIRCLE_TEXT)
+    if (!graph) return
     const node = expectDefined(
       [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art'),
       'path text node'

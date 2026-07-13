@@ -98,7 +98,12 @@ function reflowedPathTextChanges(
 function scaledGeometryChanges(
   orig: Pick<
     OrigChildState,
-    'vectorNetwork' | 'fillGeometry' | 'strokeGeometry' | 'figmaDerivedTextGlyphs' | 'strokes'
+    | 'vectorNetwork'
+    | 'fillGeometry'
+    | 'strokeGeometry'
+    | 'figmaDerivedTextGlyphs'
+    | 'strokes'
+    | 'textPathBox'
   >,
   origWidth: number,
   origHeight: number,
@@ -128,6 +133,17 @@ function scaledGeometryChanges(
   }
   if (orig.figmaDerivedTextGlyphs?.length) {
     changes.figmaDerivedTextGlyphs = scaleDerivedGlyphs(orig.figmaDerivedTextGlyphs, sx, sy)
+    // Keep the layout/selection box in sync with the scaled glyphs. reflow
+    // overrides this when it applies; this covers the fallback where reflow
+    // returns null (no path data) so the box doesn't carry a stale size.
+    if (orig.textPathBox) {
+      changes.textPathBox = {
+        x: orig.textPathBox.x * sx,
+        y: orig.textPathBox.y * sy,
+        width: orig.textPathBox.width * sx,
+        height: orig.textPathBox.height * sy
+      }
+    }
   }
   if (orig.strokes.length > 0) {
     changes.strokes = scaleStrokes(orig.strokes, sx, sy)
@@ -147,7 +163,8 @@ function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean
         fillGeometry: d.origFillGeometry,
         strokeGeometry: d.origStrokeGeometry,
         figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs,
-        strokes: d.origStrokes
+        strokes: d.origStrokes,
+        textPathBox: d.origTextPathBox
       },
       origRect.width,
       origRect.height,

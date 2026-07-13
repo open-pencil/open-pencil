@@ -13,11 +13,12 @@ function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): 
     let offset = 0
     while (offset < scaled.length) {
       const command = scaled[offset++]
-      let coords = 0
+      let coords: number
       if (command === 1 || command === 2) coords = 1
       else if (command === 3)
         coords = 2 // quadTo — glyph-derived blobs use quads
       else if (command === 4) coords = 3
+      else break // unknown command — stop rather than desync the byte walk
       for (let i = 0; i < coords; i++) {
         if (offset + 8 > scaled.length) break
         dv.setFloat32(offset, dv.getFloat32(offset, true) + dx, true)

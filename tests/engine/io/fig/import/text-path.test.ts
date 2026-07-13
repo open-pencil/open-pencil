@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
@@ -7,12 +6,17 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
-import { parseFigFile } from '#core/io/formats/fig/read'
 import { nodeChangeToProps } from '#core/kiwi/fig/node-change/convert'
 import { convertFigmaDerivedTextGlyphs } from '#core/kiwi/fig/node-change/derived-text-glyphs'
 import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { loadFigFixture } from '#tests/helpers/fig-fixture'
+
+/** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */
+function reparse(out: Uint8Array) {
+  return parseFigBuffer(out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength))
+}
 
 function emptyBlob(size = 8): Uint8Array {
   return new Uint8Array(size)
@@ -81,14 +85,8 @@ const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
 describe('TEXT_PATH real fixture (optional local)', () => {
   test('imports circular path text without RECTANGLE occlusion type', async () => {
-    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
-      console.log('skip: ArnoWithCircleText.fig not present')
-      return
-    }
-
-    const bytes = readFileSync(LOCAL_CIRCLE_TEXT)
-    const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    const graph = await parseFigFile(ab)
+    const graph = await loadFigFixture(LOCAL_CIRCLE_TEXT)
+    if (!graph) return
 
     const pathText = expectDefined(
       [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art'),
@@ -111,7 +109,7 @@ describe('TEXT_PATH real fixture (optional local)', () => {
 
     // Unedited export preserves TEXT_PATH type
     const out = await exportFigFile(graph)
-    const reparsed = parseFigBuffer(out)
+    const reparsed = reparse(out)
     const exported = reparsed.nodeChanges.find((nc) => nc.name === 'ArnoCoenen.art')
     expect(exported?.type).toBe('TEXT_PATH')
     const rotations = exported?.derivedTextData?.glyphs?.map((g) => g.rotation ?? 0) ?? []
@@ -161,7 +159,7 @@ describe('TEXT_PATH resize export', () => {
     node.source.fig.kiwiNodeType = 'TEXT_PATH'
 
     const out = await exportFigFile(graph)
-    const reparsed = parseFigBuffer(out)
+    const reparsed = reparse(out)
     const exported = expectDefined(reparsed.nodeChanges.find((nc) => nc.type === 'TEXT_PATH'))
     const glyph = expectDefined(exported.derivedTextData?.glyphs?.[0])
     const blob = expectDefined(reparsed.blobs[expectDefined(glyph.commandsBlob)])
@@ -205,7 +203,7 @@ describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
     }
 
     const out = await exportFigFile(graph)
-    const reparsed = parseFigBuffer(out)
+    const reparsed = reparse(out)
     const exported = expectDefined(reparsed.nodeChanges.find((nc) => nc.type === 'TEXT_PATH'))
 
     const rawExported = exported as typeof exported & Record<string, unknown>

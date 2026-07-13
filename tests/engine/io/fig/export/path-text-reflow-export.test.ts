@@ -1,10 +1,8 @@
 import { describe, expect, test } from 'bun:test'
-import { existsSync, readFileSync } from 'node:fs'
 
 import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
-import { parseFigFile } from '#core/io/formats/fig/read'
 import {
   calibratePathTextLayout,
   getTextPathData,
@@ -12,23 +10,20 @@ import {
 } from '#core/text/path-layout'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { loadFigFixture } from '#tests/helpers/fig-fixture'
 
 const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 
-async function loadFixtureGraph() {
-  const bytes = readFileSync(LOCAL_CIRCLE_TEXT)
-  const ab = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-  return parseFigFile(ab)
+/** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */
+function reparse(out: Uint8Array) {
+  return parseFigBuffer(out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength))
 }
 
 describe('TEXT_PATH reflow export hygiene (optional local)', () => {
   test('reflowed node exports no strokeGeometry and reflowed glyph positions', async () => {
-    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
-      console.log('skip: ArnoWithCircleText.fig not present')
-      return
-    }
+    const graph = await loadFigFixture(LOCAL_CIRCLE_TEXT)
+    if (!graph) return
 
-    const graph = await loadFixtureGraph()
     const node = expectDefined(
       [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art'),
       'path text node'
@@ -67,7 +62,7 @@ describe('TEXT_PATH reflow export hygiene (optional local)', () => {
     expect('strokeGeometry' in updated.source.fig.rawNodeFields).toBe(true)
 
     const out = await exportFigFile(graph)
-    const reparsed = parseFigBuffer(out)
+    const reparsed = reparse(out)
     const exported = expectDefined(
       reparsed.nodeChanges.find((nc) => nc.name === 'ArnoCoenen.art'),
       'exported node change'
@@ -93,14 +88,11 @@ describe('TEXT_PATH reflow export hygiene (optional local)', () => {
   })
 
   test('unmodified fixture still round-trips WITH strokeGeometry', async () => {
-    if (!existsSync(LOCAL_CIRCLE_TEXT)) {
-      console.log('skip: ArnoWithCircleText.fig not present')
-      return
-    }
+    const graph = await loadFigFixture(LOCAL_CIRCLE_TEXT)
+    if (!graph) return
 
-    const graph = await loadFixtureGraph()
     const out = await exportFigFile(graph)
-    const reparsed = parseFigBuffer(out)
+    const reparsed = reparse(out)
     const exported = expectDefined(
       reparsed.nodeChanges.find((nc) => nc.name === 'ArnoCoenen.art'),
       'exported node change'
