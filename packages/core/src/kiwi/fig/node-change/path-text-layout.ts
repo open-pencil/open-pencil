@@ -1,38 +1,18 @@
 import type { FigmaDerivedTextGlyph, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
-import { geometryBlobBounds, geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
+import { transformGeometryPaths } from '@open-pencil/scene-graph/copy'
+import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
 
 /**
  * Shift geometry command blobs in node space. Used when we grow the layout box
  * left/top so content must move with the new origin (parent-space art stays put).
  *
- * Command 0 (CLOSE) has zero coordinate pairs — must continue walking the blob.
- * Breaking on 0 left strokeGeometry only partially shifted while glyph x/y fully
- * shifted (DomeSticker white outline desynced from black fills).
+ * Delegates to transformGeometryPaths so CLOSE (command 0) and path-level paint
+ * metadata stay intact — a hand-rolled walker that broke on CLOSE left stroke
+ * silhouettes only partially shifted (DomeSticker white outline desynced).
  */
 function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): GeometryPath[] {
   if (dx === 0 && dy === 0) return paths
-  return paths.map((g) => {
-    const scaled = g.commandsBlob.slice()
-    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
-    let offset = 0
-    while (offset < scaled.length) {
-      const command = scaled[offset++]
-      const coords = geometryCommandCoordCount(command)
-      // Unknown command → stop (avoids treating float bytes as opcodes).
-      // CLOSE (0) returns 0 coords and continues.
-      if (coords == null) break
-      for (let i = 0; i < coords; i++) {
-        if (offset + 8 > scaled.length) break
-        dv.setFloat32(offset, dv.getFloat32(offset, true) + dx, true)
-        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) + dy, true)
-        offset += 8
-      }
-    }
-    return {
-      windingRule: g.windingRule,
-      commandsBlob: scaled
-    }
-  })
+  return transformGeometryPaths(paths, 1, 0, 0, 1, dx, dy)
 }
 
 interface BoxOverflow {

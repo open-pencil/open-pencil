@@ -80,6 +80,14 @@ export interface VectorNetwork {
 export interface GeometryPath {
   windingRule: WindingRule
   commandsBlob: Uint8Array
+  /**
+   * Optional Figma fillGeometry styleID. 0 / omitted → node fills.
+   * Non-zero pairs with path-level `fills` for multi-color vectors.
+   * Geometry copy/scale/transform must preserve these (resize snapshots).
+   */
+  styleID?: number
+  /** Path-level paints when styleID maps to a style override. */
+  fills?: Fill[]
 }
 
 export type NodeType =
