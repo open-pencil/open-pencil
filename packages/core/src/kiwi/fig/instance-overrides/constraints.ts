@@ -1,5 +1,5 @@
 import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import { copyFills, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { buildClonesMap } from './sync'
 import type { OverrideContext } from './types'
@@ -72,7 +72,14 @@ function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): Geome
         offset += 8
       }
     }
-    return { windingRule: g.windingRule, commandsBlob: scaled }
+    // Keep styleID + path-level fills (multi-color vectors). Dropping them makes
+    // constraint-scaled instances paint as a single node fill.
+    return {
+      windingRule: g.windingRule,
+      commandsBlob: scaled,
+      ...(g.styleID != null ? { styleID: g.styleID } : {}),
+      ...(g.fills ? { fills: copyFills(g.fills) } : {})
+    }
   })
 }
 
