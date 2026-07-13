@@ -12,6 +12,7 @@ import {
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { FigmaDerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
+  copyDerivedGlyphs,
   copyGeometryPaths,
   copyStroke,
   copyStrokes,
@@ -270,10 +271,7 @@ function snapshotResizeFinal(node: SceneNode): Partial<SceneNode> {
     final.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
   }
   if (node.figmaDerivedTextGlyphs?.length) {
-    final.figmaDerivedTextGlyphs = node.figmaDerivedTextGlyphs.map((g) => ({
-      ...g,
-      commandsBlob: new Uint8Array(g.commandsBlob)
-    }))
+    final.figmaDerivedTextGlyphs = copyDerivedGlyphs(node.figmaDerivedTextGlyphs)
   }
   if (node.textPathBox) final.textPathBox = { ...node.textPathBox }
   if (node.strokes.length > 0) final.strokes = copyStrokes(node.strokes)
