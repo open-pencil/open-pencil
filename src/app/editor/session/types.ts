@@ -17,7 +17,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     cursorCanvasX: null,
     cursorCanvasY: null,
     nodeEditState: null,
-    scrubInputFocused: false
+    numberFieldFocused: false
   }
 }
 
@@ -34,5 +34,5 @@ export type AppEditorState = EditorState & {
   cursorCanvasX: number | null
   cursorCanvasY: number | null
   nodeEditState: NodeEditState | null
-  scrubInputFocused: boolean
+  numberFieldFocused: boolean
 }

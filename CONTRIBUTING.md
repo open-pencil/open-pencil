@@ -124,7 +124,7 @@ Every interactive or structurally significant element must have a `data-test-id`
 | `editor-` | Editor root | `editor-root`, `editor-document-name`, `editor-show-ui` |
 | `app-` | App chrome | `app-logo`, `app-document-name`, `app-toggle-ui`, `app-select-trigger` |
 | `tabbar-` | Tab bar | `tabbar-tab`, `tabbar-new`, `tabbar-close` |
-| `scrub-input` | Scrub input | `scrub-input`, `scrub-input-field` |
+| `number-field` | Number field | `number-field`, `number-field-input` |
 | `toast-` | Toast notifications | `toast-item`, `toast-close`, `toast-copy-error` |
 | `safari-banner` | Safari warning | `safari-banner`, `safari-banner-dismiss` |
 

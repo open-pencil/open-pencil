@@ -6,7 +6,7 @@ import { toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
-import type { ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
+import type { ToolbarUI, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
 const { tools, activeTool, toolIcons, toolLabels, toolShortcuts, ui } = defineProps<{
   tools: EditorToolDef[]
@@ -14,7 +14,7 @@ const { tools, activeTool, toolIcons, toolLabels, toolShortcuts, ui } = definePr
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
-  ui?: ToolbarUi
+  ui?: ToolbarUI
 }>()
 
 const emit = defineEmits<{

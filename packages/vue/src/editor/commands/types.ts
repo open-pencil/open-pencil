@@ -15,6 +15,7 @@ export type EditorCommandId =
   | 'selection.detachInstance'
   | 'selection.goToMainComponent'
   | 'selection.wrapInAutoLayout'
+  | 'selection.toggleMask'
   | 'selection.bringToFront'
   | 'selection.sendToBack'
   | 'selection.toggleVisibility'

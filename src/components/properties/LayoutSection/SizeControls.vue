@@ -12,8 +12,8 @@ import {
   SelectViewport
 } from 'reka-ui'
 
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
-import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useSelectUI } from '@/components/ui/select'
@@ -165,7 +165,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   <div class="flex gap-1.5">
     <div ref="widthFieldRef" class="min-w-0 flex-1">
       <Tip :label="panels.width">
-        <ScrubInput
+        <NumberField
           data-test-id="layout-width-input"
           icon="W"
           :model-value="Math.round(resolvedBoundNumber('width') ?? ctx.node.width)"
@@ -242,13 +242,13 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </ScrubInput>
+        </NumberField>
       </Tip>
     </div>
 
     <div ref="heightFieldRef" class="min-w-0 flex-1">
       <Tip :label="panels.height">
-        <ScrubInput
+        <NumberField
           data-test-id="layout-height-input"
           icon="H"
           :model-value="Math.round(resolvedBoundNumber('height') ?? ctx.node.height)"
@@ -325,7 +325,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </ScrubInput>
+        </NumberField>
       </Tip>
     </div>
   </div>
@@ -341,7 +341,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   >
     <template v-for="(item, index) in visibleSizeLimits" :key="item.prop">
       <div :ref="limitFieldRefs.set" class="min-w-0">
-        <VariableScrubInput
+        <VariableNumberField
           v-if="ctx.node"
           :data-test-id="item.testHook"
           :icon="item.icon()"
@@ -384,8 +384,8 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </VariableScrubInput>
-        <ScrubInput
+        </VariableNumberField>
+        <NumberField
           v-else
           :data-test-id="item.testHook"
           :icon="item.icon()"
@@ -426,7 +426,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </ScrubInput>
+        </NumberField>
       </div>
     </template>
   </div>

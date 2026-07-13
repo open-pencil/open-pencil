@@ -11,5 +11,5 @@ Usalo quando costruisci controlli numerici che aggiornano direttamente le propri
 
 ## API correlate
 
-- [ScrubInputRoot](../components/scrub-input-root)
+- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

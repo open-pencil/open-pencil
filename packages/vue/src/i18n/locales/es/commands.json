@@ -31,5 +31,7 @@
   "flipVertical": "Voltear verticalmente",
   "flattenSelection": "Aplanar",
   "outlineText": "Contornear texto",
-  "outlineStroke": "Cortornear trazo"
+  "outlineStroke": "Cortornear trazo",
+  "useAsMask": "Usar como máscara",
+  "removeMask": "Quitar máscara"
 }

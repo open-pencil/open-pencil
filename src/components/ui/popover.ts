@@ -9,14 +9,14 @@ export const popover = tv({
   }
 })
 
-interface PopoverUi {
+interface PopoverUI {
   content?: string
   header?: string
   body?: string
   footer?: string
 }
 
-export function usePopoverUI(ui?: PopoverUi) {
+export function usePopoverUI(ui?: PopoverUI) {
   const cls = popover()
   return {
     content: cls.content({ class: ui?.content }),

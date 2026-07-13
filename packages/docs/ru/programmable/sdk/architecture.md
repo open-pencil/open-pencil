@@ -28,7 +28,7 @@ description: Структура папок, границы публичного 
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
-- `ScrubInput/`
+- `NumberField/`
 - `Toolbar/`
 
 Содержат структурные/headless-примитивы и локальные вспомогательные функции.

@@ -18,6 +18,7 @@ const emit = defineEmits<{
   <Tip :label="label">
     <button
       v-bind="$attrs"
+      :aria-label="label"
       class="shrink-0 cursor-pointer border-none bg-transparent p-0 text-violet-400 hover:text-surface"
       @click="emit('detach')"
     >

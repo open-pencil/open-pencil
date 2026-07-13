@@ -82,6 +82,7 @@ export { usePosition } from '#vue/controls/position/use'
 export { useLayout } from '#vue/controls/layout/use'
 export type { SizeLimitProp } from '#vue/controls/layout/helpers'
 export { useAppearance } from '#vue/controls/appearance/use'
+export { useMask } from '#vue/controls/mask/use'
 export { useTypography } from '#vue/controls/typography/use'
 export type { UseTypographyOptions } from '#vue/controls/typography/use'
 export { useExport } from '#vue/document/export/use'
@@ -134,7 +135,7 @@ export {
 export type { ColorFieldFormat, OkHCLControls } from '#vue/primitives/ColorPicker'
 export { FillPickerRoot } from '#vue/primitives/FillPicker'
 export { FontPickerRoot } from '#vue/primitives/FontPicker'
-export type { FontFamilyOption, FontPickerUi } from '#vue/primitives/FontPicker'
+export type { FontFamilyOption, FontPickerUI } from '#vue/primitives/FontPicker'
 export {
   GradientEditorRoot,
   GradientEditorBar,
@@ -145,17 +146,136 @@ export type { LayerDragInstruction, LayerTreeContext, LayerNode } from '#vue/pri
 export { LayoutControlsRoot, useLayoutControlsContext } from '#vue/primitives/LayoutControls'
 export type { LayoutControlsContext } from '#vue/primitives/LayoutControls'
 export { AppearanceControlsRoot } from '#vue/primitives/AppearanceControls'
+export type {
+  AppearanceControlsActions,
+  AppearanceControlsRootSlotProps,
+  AppearanceControlsRootSlots
+} from '#vue/primitives/AppearanceControls'
+export type { CornerRadiusKey } from '#vue/controls/appearance/types'
 export { PageListRoot } from '#vue/primitives/PageList'
 export { PositionControlsRoot } from '#vue/primitives/PositionControls'
-export { PropertyListRoot, PropertyListItem, usePropertyList } from '#vue/primitives/PropertyList'
-export type { PropertyListContext } from '#vue/primitives/PropertyList'
+export { useEditorPropertyList } from '#vue/controls/property-list'
 export {
-  ScrubInputRoot,
-  ScrubInputField,
-  ScrubInputDisplay,
-  useScrubInput
-} from '#vue/primitives/ScrubInput'
-export type { ScrubInputContext } from '#vue/primitives/ScrubInput'
+  PropertyListRoot,
+  PropertyListItem,
+  PropertyListAdd,
+  PropertyListRemove,
+  PropertyListVisibility,
+  usePropertyList
+} from '#vue/primitives/PropertyList'
+export type {
+  PropertyListActions,
+  PropertyListContext,
+  PropertyListIdentity,
+  PropertyListItemActions,
+  PropertyListItemFor,
+  PropertyListItemMap,
+  PropertyListItemSlotProps,
+  PropertyListKey,
+  PropertyListPartProps,
+  PropertyListPatchFor,
+  PropertyListRootProps,
+  PropertyListRootSlotProps,
+  PropertyListRootSlots
+} from '#vue/primitives/PropertyList'
+export {
+  PropertySectionRoot,
+  PropertySectionHeader,
+  PropertySectionTitle,
+  PropertySectionActions,
+  PropertySectionContent,
+  PropertySectionEmptyAction,
+  usePropertySection
+} from '#vue/primitives/PropertySection'
+export type {
+  PropertySectionActionAPI,
+  PropertySectionContext,
+  PropertySectionPartProps,
+  PropertySectionRootProps,
+  PropertySectionRootSlots,
+  PropertySectionSlotProps,
+  PropertySectionStateAttrs
+} from '#vue/primitives/PropertySection'
+export {
+  SegmentedControlRoot,
+  SegmentedControlItem,
+  useSegmentedControl
+} from '#vue/primitives/SegmentedControl'
+export type {
+  SegmentedControlContext,
+  SegmentedControlItemProps,
+  SegmentedControlItemSlotProps,
+  SegmentedControlItemSlots,
+  SegmentedControlMode,
+  SegmentedControlOrientation,
+  SegmentedControlRootProps,
+  SegmentedControlRootSlots
+} from '#vue/primitives/SegmentedControl'
+export {
+  BindableValueRoot,
+  BindableValueTrigger,
+  BindableValuePicker,
+  useBindableValue,
+  useOptionalBindableValue
+} from '#vue/primitives/BindableValue'
+export type {
+  BindableValueActions,
+  BindableValueContext,
+  BindableValueRootProps,
+  BindableValueRootSlots,
+  BindableValueSlotProps,
+  BindableValueStateAttrs,
+  BindableValueTriggerProps
+} from '#vue/primitives/BindableValue'
+export {
+  provideBindingProvider,
+  useBindingProvider,
+  useOpenPencilBindingProvider,
+  useNumberBindingProvider
+} from '#vue/controls/binding-provider'
+export type {
+  BindingMutationSource,
+  BindingProvider,
+  BindingState,
+  BindingTarget,
+  BoundEditPolicy,
+  OpenPencilBindingProviderOptions
+} from '#vue/controls/binding-provider'
+export {
+  NumberFieldRoot,
+  NumberFieldInput,
+  NumberFieldValue,
+  NumberFieldLeading,
+  NumberFieldUnit,
+  NumberFieldTrailing,
+  NumberFieldMenu,
+  useNumberField
+} from '#vue/primitives/NumberField'
+export type {
+  NumberFieldActions,
+  NumberFieldContext,
+  NumberFieldEditPolicy,
+  NumberFieldMutationSource,
+  NumberFieldRootAttrs,
+  NumberFieldRootEmits,
+  NumberFieldRootProps,
+  NumberFieldRootSlots,
+  NumberFieldSlotProps,
+  NumberFieldState,
+  NumberFieldStateAttrs,
+  NumberFieldValueSlots
+} from '#vue/primitives/NumberField'
+export {
+  clampNumberValue,
+  evaluateNumberExpression,
+  normalizeNumberValue,
+  stepNumberValue
+} from '#vue/controls/number-expression'
+export type {
+  NumberExpressionError,
+  NumberExpressionOptions,
+  NumberExpressionResult
+} from '#vue/controls/number-expression'
 export { TypographyControlsRoot } from '#vue/primitives/TypographyControls'
 export { ToolbarRoot, ToolbarItem, useToolbar } from '#vue/primitives/Toolbar'
 export type { ToolbarContext } from '#vue/primitives/Toolbar'

@@ -11,5 +11,5 @@ description: Низкоуровневый хелпер для обновлени
 
 ## Связанные API
 
-- [ScrubInputRoot](../components/scrub-input-root)
+- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

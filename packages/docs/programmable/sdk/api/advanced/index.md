@@ -42,4 +42,4 @@ These APIs are public, but they are more specialized than the main component and
 - [useLayerTree](./use-layer-tree)
 - [useToolbar](./use-toolbar)
 - [usePropertyList](./use-property-list)
-- [useScrubInput](./use-scrub-input)
+- [useNumberField](./use-number-field)

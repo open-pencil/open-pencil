@@ -40,6 +40,7 @@ test-results/
 playwright-report/
 .playwright-mcp/
 blob-report/
+storybook-static/
 .vite/
 .turbo/
 

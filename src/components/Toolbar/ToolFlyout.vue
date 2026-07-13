@@ -22,7 +22,7 @@ import {
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
-import type { ToolbarUi, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
+import type { ToolbarUI, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
 const {
   tool,
@@ -38,7 +38,7 @@ const {
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
-  ui?: ToolbarUi
+  ui?: ToolbarUI
   mobile?: boolean
 }>()
 
