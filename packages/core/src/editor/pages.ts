@@ -2,6 +2,8 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import { computeAllLayouts } from '#core/layout'
+import { textNeededFallbackScripts } from '#core/text/coverage'
+import type { FontFallbackScript } from '#core/text/fallbacks'
 import { fontManager } from '#core/text/fonts'
 
 import { createPageViewportStore } from './page-viewports'
@@ -26,14 +28,30 @@ export function createPageActions(ctx: EditorContext) {
 
     const populated = populateLazyFigImportRoots(ctx.graph, [pageId])
 
-    const toLoad = fontManager.collectFontKeys(
-      ctx.graph,
-      ctx.graph.getChildren(pageId).map((n) => n.id)
-    )
-    if (toLoad.length > 0) {
-      await Promise.all(toLoad.map(([family, style]) => ctx.loadFont(family, style)))
+    // Load every text face on this page (open + lazy multi-page populate).
+    // collectFontKeys walks the page subtree including styleRuns.
+    const pageRootIds = [pageId]
+    const toLoad = fontManager.collectFontKeys(ctx.graph, pageRootIds)
+    const loadResults =
+      toLoad.length > 0
+        ? await Promise.all(toLoad.map(([family, style]) => ctx.loadFont(family, style)))
+        : []
+    const anyLoaded = loadResults.some((result) => result != null)
+
+    const fallbackScripts = collectFallbackScriptsForRoots(ctx.graph, pageRootIds)
+    let fallbacksLoaded = false
+    if (fallbackScripts.length > 0) {
+      const packs = await fontManager.ensureFallbackPack(fallbackScripts)
+      fallbacksLoaded = Object.values(packs).some((families) => (families?.length ?? 0) > 0)
     }
-    if (ctx.getRenderer() || populated) {
+
+    if (anyLoaded || fallbacksLoaded) {
+      for (const [, node] of ctx.graph.nodes) {
+        if (node.type === 'TEXT') node.textPicture = null
+      }
+    }
+
+    if (ctx.getRenderer() || populated || anyLoaded || fallbacksLoaded) {
       computeAllLayouts(ctx.graph, pageId)
     }
     ctx.requestRender()
@@ -89,4 +107,21 @@ export function createPageActions(ctx: EditorContext) {
     setPageColor,
     clearPageViewports: pageViewportStore.clearPageViewports
   }
+}
+
+function collectFallbackScriptsForRoots(
+  graph: EditorContext['graph'],
+  rootIds: string[]
+): FontFallbackScript[] {
+  const scripts = new Set<FontFallbackScript>()
+  const walk = (id: string) => {
+    const node = graph.getNode(id)
+    if (!node) return
+    if (node.type === 'TEXT') {
+      for (const script of textNeededFallbackScripts(node)) scripts.add(script)
+    }
+    for (const childId of node.childIds) walk(childId)
+  }
+  for (const id of rootIds) walk(id)
+  return [...scripts]
 }

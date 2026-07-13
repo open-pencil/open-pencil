@@ -26,6 +26,8 @@
 
 ### Fixes
 
+- Web app can **on-demand download document fonts** (e.g. Google families via Fontsource) when opening a `.fig` or switching pages, instead of treating them as unavailable and toasting that online fonts require the desktop app. Catalog browsing of Google’s full list may still be limited in the browser; latin-subset TTF resolve only.
+- Keep downloaded faces registered for **live text edit** (CanvasKit paragraph) so editing no longer falls back to Inter after Figma derived glyphs are cleared.
 - Fix live CLI and MCP automation drifting to the wrong open document or page when multiple files are open.
 - Improve Chinese, Japanese, and Korean text rendering with glyph-aware fallback fonts and outline rendering when needed.
 - Preserve imported Figma text sizing more accurately, especially auto-sized text inside auto-layout frames.

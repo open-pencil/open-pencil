@@ -319,6 +319,9 @@ export function buildParagraph(
   { halfLeading = false }: { halfLeading?: boolean } = {}
 ): Paragraph {
   const ck = r.ck
+  // ParagraphBuilder uses r.fontProvider — keep FontManager registrations on the same instance.
+  if (r.fontProvider) fontManager.bindProvider(ck, r.fontProvider)
+
   const baseColor = color ?? ck.BLACK
   const baseFontSize = node.fontSize || DEFAULT_FONT_SIZE
   const cjkFallbacks = fontManager.getCJKFallbackFamilies()

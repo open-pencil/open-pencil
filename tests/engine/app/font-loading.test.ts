@@ -39,4 +39,34 @@ describe('app font loading', () => {
       fontManager.ensureFallbackPack = originalEnsureFallbackPack
     }
   })
+
+  test('ensureGraphFonts invalidates text pictures when a missing face loads', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const text = graph.createNode('TEXT', page.id, {
+      text: 'Hello',
+      fontFamily: 'EnsureLoadFace',
+      fontSize: 24,
+      textPicture: new Uint8Array([9, 9, 9])
+    })
+
+    const originalLoadFont = fontManager.loadFont.bind(fontManager)
+    fontManager.loadFont = async (family, style) => {
+      if (family === 'EnsureLoadFace') {
+        const data = new ArrayBuffer(8)
+        fontManager.markLoaded(family, style ?? 'Regular', data)
+        return data
+      }
+      return originalLoadFont(family, style ?? 'Regular')
+    }
+
+    try {
+      const changed = await ensureGraphFonts(graph, [page.id])
+      expect(changed).toBe(true)
+      expect(fontManager.isStyleLoaded('EnsureLoadFace', 'Regular')).toBe(true)
+      expect(expectDefined(graph.getNode(text.id), 'text node').textPicture).toBeNull()
+    } finally {
+      fontManager.loadFont = originalLoadFont
+    }
+  })
 })

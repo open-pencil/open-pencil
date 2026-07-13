@@ -12,14 +12,12 @@ import {
   type WebFontProviderId
 } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { dialogMessages } from '@open-pencil/vue'
 
 import {
   clearDownloadedFontCache as clearTauriDownloadedFontCache,
   createTauriDownloadedFontCache,
   downloadedFontCacheSummary as tauriDownloadedFontCacheSummary
 } from '@/app/editor/fonts/cache'
-import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
 
@@ -53,14 +51,6 @@ watch(
 )
 
 let tauriFontCacheConfigured = false
-let webFontUnavailableToastShown = false
-
-function showWebFontUnavailableToast(): void {
-  if (webFontUnavailableToastShown || isTauri() || !onlineFontsEnabled.value) return
-  if (!WEB_FONT_PROVIDER_IDS.some((provider) => fontProviderSettings.value[provider])) return
-  webFontUnavailableToastShown = true
-  toast.warning(dialogMessages.get().webFontProvidersRequireDesktopApp)
-}
 
 function configureTauriFontCache() {
   if (tauriFontCacheConfigured || !isTauri()) return
@@ -149,7 +139,8 @@ export async function listFamilies(): Promise<FontFamilyOption[]> {
       byFamily.set(font.family, { family: font.family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
-  showWebFontUnavailableToast()
+  // Web: list local + bundled (+ online catalogs when a future CORS-safe list path exists).
+  // On-demand fetch for document fonts does not require the full provider catalog.
   return fontManager.listFamilyOptions()
 }
 
@@ -221,7 +212,7 @@ export async function loadFont(family: string, style = 'Regular'): Promise<Array
     }
   }
 
-  const loaded = await fontManager.loadFont(family, style)
-  if (!loaded) showWebFontUnavailableToast()
-  return loaded
+  // On-demand online fetch runs inside fontManager (Fontsource-first on web).
+  // True misses surface via missing-font UI — do not claim desktop is required.
+  return fontManager.loadFont(family, style)
 }

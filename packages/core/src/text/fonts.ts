@@ -1,6 +1,6 @@
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
 import { fontFaceRenderFamily, parseFontStyle } from '#core/text/face'
@@ -132,6 +132,22 @@ export function weightToFigmaStyle(weight: number, italic = false): string {
   return italic ? `${label} Italic` : label
 }
 
+/** Distinct family|style pairs used by a TEXT node (base + style runs). */
+export function collectTextNodeFontStyles(
+  node: Pick<SceneNode, 'fontFamily' | 'fontWeight' | 'italic' | 'styleRuns'>
+): Array<[string, string]> {
+  const keys = new Set<string>()
+  const baseFamily = node.fontFamily || DEFAULT_FONT_FAMILY
+  keys.add(`${baseFamily}\0${weightToStyle(node.fontWeight || 400, node.italic)}`)
+  for (const run of node.styleRuns ?? []) {
+    const family = run.style.fontFamily ?? baseFamily
+    const weight = run.style.fontWeight ?? node.fontWeight ?? 400
+    const italic = run.style.italic ?? node.italic
+    keys.add(`${family}\0${weightToStyle(weight, italic)}`)
+  }
+  return [...keys].map((k) => k.split('\0') as [string, string])
+}
+
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private fontProvider: TypefaceFontProvider | null = null
@@ -149,11 +165,17 @@ export class FontManager {
 
   attachProvider(_canvasKit: CanvasKit, provider: TypefaceFontProvider): void {
     this.fontProvider = provider
-    this.registeredRenderFamilies.clear()
-    for (const [cacheKey, data] of this.loadedFamilies) {
-      const family = cacheKey.slice(0, cacheKey.indexOf('|'))
-      this.registerFontInCanvasKit(family, data)
-    }
+    this.reregisterAllOnProvider()
+  }
+
+  /**
+   * Bind the manager to the renderer’s live TypefaceFontProvider.
+   * Paragraph building must use the same provider instance fonts are registered on.
+   */
+  bindProvider(canvasKit: CanvasKit, provider: TypefaceFontProvider | null): void {
+    if (!provider) return
+    if (this.fontProvider === provider) return
+    this.attachProvider(canvasKit, provider)
   }
 
   detachProvider(provider?: TypefaceFontProvider | null): void {
@@ -323,9 +345,31 @@ export class FontManager {
     await this.loadFont(family, weightToStyle(weight))
   }
 
+  /**
+   * Load and register every face used by a TEXT node (base + style runs)
+   * onto the active CanvasKit provider so live paragraph/edit paint can use them.
+   */
+  async ensureTextNodeFonts(
+    node: Pick<
+      SceneNode,
+      'type' | 'fontFamily' | 'fontWeight' | 'italic' | 'styleRuns' | 'text'
+    >,
+    renderer?: { ck: CanvasKit; fontProvider: TypefaceFontProvider | null } | null
+  ): Promise<void> {
+    if (node.type !== 'TEXT') return
+    if (renderer?.fontProvider) this.bindProvider(renderer.ck, renderer.fontProvider)
+
+    const styles = collectTextNodeFontStyles(node)
+    await Promise.all(styles.map(([family, style]) => this.loadFont(family, style)))
+    for (const [family, style] of styles) {
+      // Force synthetic style registration for paragraph fontFamilies lists.
+      this.renderFamily(family, style)
+    }
+  }
+
   markLoaded(family: string, style: string, data: ArrayBuffer): void {
     this.loadedFamilies.set(`${family}|${style}`, data)
-    this.registerFontInCanvasKit(family, data)
+    this.registerStyleOnProvider(family, style, data)
   }
 
   isLoaded(family: string): boolean {
@@ -353,6 +397,26 @@ export class FontManager {
       }
     }
     return renderFamily
+  }
+
+  /** Re-register every cached face (family + style-specific render name) on the current provider. */
+  private reregisterAllOnProvider(): void {
+    this.registeredRenderFamilies.clear()
+    for (const [cacheKey, data] of this.loadedFamilies) {
+      const sep = cacheKey.indexOf('|')
+      if (sep < 0) continue
+      const family = cacheKey.slice(0, sep)
+      const style = cacheKey.slice(sep + 1)
+      this.registerStyleOnProvider(family, style, data)
+    }
+  }
+
+  private registerStyleOnProvider(family: string, style: string, data: ArrayBuffer): void {
+    this.registerFontInCanvasKit(family, data)
+    const renderName = fontFaceRenderFamily(family, style)
+    if (this.registerFontInCanvasKit(renderName, data)) {
+      this.registeredRenderFamilies.add(renderName)
+    }
   }
 
   collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[string, string]> {
@@ -518,7 +582,7 @@ export class FontManager {
 
   private registerAndCache(family: string, style: string, buffer: ArrayBuffer): ArrayBuffer | null {
     this.loadedFamilies.set(`${family}|${style}`, buffer)
-    this.registerFontInCanvasKit(family, buffer)
+    this.registerStyleOnProvider(family, style, buffer)
     this.registerFontInBrowser(family, style, buffer)
     return buffer
   }
@@ -526,7 +590,8 @@ export class FontManager {
   private registerFontInCanvasKit(family: string, data: ArrayBuffer): boolean {
     if (!this.fontProvider || data.byteLength < 4) return false
     try {
-      this.fontProvider.registerFont(data, family)
+      // Copy so WASM / FontFace consumers cannot detach the cached buffer.
+      this.fontProvider.registerFont(data.slice(0), family)
       return true
     } catch {
       return false
