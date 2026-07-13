@@ -515,6 +515,23 @@ function computeExportTransform(node: SceneNode): Matrix {
   const m01 = -sin
   const m10 = sin * sx
   const m11 = cos
+
+  // This must be the exact inverse of the import decode (convert.ts). For a
+  // rotated, unflipped node the decode treats rotation as about the node CENTER
+  // (x = m02 - (w/2)(1-cos) - sin(h/2)), so encode the same way — otherwise a
+  // rotated node's origin drifts on every export→reimport. The AABB min-corner
+  // form below only matches the decode's rotation==0 / flipped branch.
+  if (node.rotation !== 0 && !node.flipX) {
+    return {
+      m00,
+      m01,
+      m02: node.x + (node.width / 2) * (1 - cos) + sin * (node.height / 2),
+      m10,
+      m11,
+      m12: node.y + (node.height / 2) * (1 - cos) - sin * (node.width / 2)
+    }
+  }
+
   const corners = [
     { x: 0, y: 0 },
     { x: node.width, y: 0 },

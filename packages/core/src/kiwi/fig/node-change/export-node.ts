@@ -371,13 +371,33 @@ function isReflowedPathText(node: SceneNode): boolean {
   return node.strokes.length > 0
 }
 
+/**
+ * An imported path-text node that was edited after import — moving/rotating
+ * clears rawTransform (see clearEditedSourceMetadata), so the transform + size
+ * are recomputed from the node's post-expand box (exportNodeTransform /
+ * exportNodeSize). But the raw derivedTextData + baked silhouettes are still the
+ * PRE-expand (un-shifted) payload — exporting them against the shifted box
+ * re-triggers the import expand on reimport and drifts the node. Rebuild
+ * derivedTextData from the live (shifted) glyphs and re-derive silhouettes,
+ * exactly like the reflow path. rawTransform === null is the "edited" signal;
+ * pristine nodes keep rawTransform and their raw payload verbatim.
+ */
+function isEditedPathText(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    node.source.fig.rawTransform === null &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+  )
+}
+
 function applyRawFigmaNodeFields(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
   nc: KiwiNodeChange
 ): void {
   let rawFields = node.source.fig.rawNodeFields
-  if (isReflowedPathText(node)) {
+  if (isReflowedPathText(node) || isEditedPathText(node)) {
     // Strip before materializing so the stale blobs never enter the file:
     // silhouettes are re-derived from glyphs by Figma/reimport, and
     // derivedTextData was rebuilt from the reflowed glyphs by
@@ -574,7 +594,14 @@ function applyComponentMetadata(node: SceneNode, nc: KiwiNodeChange): void {
 }
 
 function exportNodeSize(node: SceneNode): Vector {
-  return node.source.fig.rawSize
+  // rawSize and rawTransform are a matched pair describing the ORIGINAL Figma
+  // box. Editing a node (move/rotate) clears rawTransform, so exportNodeTransform
+  // recomputes it from node dims via computeExportTransform. Pairing that
+  // node-dims transform with an un-expanded rawSize disagrees about the box
+  // (different origin, and for rotation a different centre) and the node drifts
+  // on reimport. Use rawSize only while rawTransform still backs it; once edited,
+  // size comes from node dims to match the recomputed transform.
+  return node.source.fig.rawSize && node.source.fig.rawTransform
     ? { ...node.source.fig.rawSize }
     : { x: node.width, y: node.height }
 }
