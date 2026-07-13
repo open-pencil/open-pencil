@@ -1,9 +1,13 @@
 import type { FigmaDerivedTextGlyph, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
-import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
+import { geometryBlobBounds, geometryCommandCoordCount } from '@open-pencil/scene-graph/geometry'
 
 /**
  * Shift geometry command blobs in node space. Used when we grow the layout box
  * left/top so content must move with the new origin (parent-space art stays put).
+ *
+ * Command 0 (CLOSE) has zero coordinate pairs — must continue walking the blob.
+ * Breaking on 0 left strokeGeometry only partially shifted while glyph x/y fully
+ * shifted (DomeSticker white outline desynced from black fills).
  */
 function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): GeometryPath[] {
   if (dx === 0 && dy === 0) return paths
@@ -13,12 +17,10 @@ function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): 
     let offset = 0
     while (offset < scaled.length) {
       const command = scaled[offset++]
-      let coords: number
-      if (command === 1 || command === 2) coords = 1
-      else if (command === 3)
-        coords = 2 // quadTo — glyph-derived blobs use quads
-      else if (command === 4) coords = 3
-      else break // unknown command — stop rather than desync the byte walk
+      const coords = geometryCommandCoordCount(command)
+      // Unknown command → stop (avoids treating float bytes as opcodes).
+      // CLOSE (0) returns 0 coords and continues.
+      if (coords == null) break
       for (let i = 0; i < coords; i++) {
         if (offset + 8 > scaled.length) break
         dv.setFloat32(offset, dv.getFloat32(offset, true) + dx, true)
