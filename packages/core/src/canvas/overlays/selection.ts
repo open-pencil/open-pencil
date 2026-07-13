@@ -93,6 +93,45 @@ export function drawEnteredContainer(
   r.auxStroke.setPathEffect(null)
 }
 
+/** Single-node selection overlay: path-text curve/band for imported TEXT_PATH,
+ *  the standard rect+handles otherwise. */
+function drawSingleSelection(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  id: string,
+  selectedIds: Set<string>,
+  overlays: RenderOverlays
+): void {
+  const node = graph.getNode(id)
+  if (!node) return
+
+  // Imported text-on-path node → path curve overlay. The cheap two-field check
+  // is the gate; drawTextPathSelection re-checks the retained data and falls
+  // back to the plain rectangle if it can't be sampled.
+  const isPathText = node.source.fig.kiwiNodeType === 'TEXT_PATH' && node.textPathBox !== null
+  const editing = overlays.editingTextId === id
+  // While editing: normal text hands off to the flat text-edit overlay, but path
+  // text keeps its path overlay (curved band + path) — its flat text-edit overlay
+  // is suppressed (see drawTextEditOverlay) since it can't follow the path.
+  if (editing && !isPathText) return
+
+  const useComponentColor = r.isComponentType(node.type)
+  r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
+  r.selectionPaint.setStrokeWidth(1 / r.zoom)
+
+  const rotation =
+    overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
+  if (isPathText) {
+    drawTextPathSelection(r, canvas, node, rotation, graph)
+    if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+  } else {
+    r.drawNodeSelection(canvas, node, rotation, graph)
+    r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
+  }
+  r.selectionPaint.setColor(r.selColor())
+}
+
 export function drawSelection(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -107,37 +146,7 @@ export function drawSelection(
 
   if (selectedIds.size === 1) {
     const id = [...selectedIds][0]
-    if (nodeEditId === id) return
-    const node = graph.getNode(id)
-    if (!node) return
-
-    // Imported text-on-path node → path curve overlay. The cheap two-field
-    // check is the gate; drawTextPathSelection re-checks the retained data and
-    // falls back to the plain rectangle if it can't be sampled.
-    const isPathText = node.source.fig.kiwiNodeType === 'TEXT_PATH' && node.textPathBox !== null
-    const editing = overlays.editingTextId === id
-    // While editing: normal text hands off to the flat text-edit overlay, but
-    // path text keeps its path overlay (curved band + path) — its flat text-edit
-    // overlay is suppressed (see drawTextEditOverlay) since it can't follow the
-    // path.
-    if (editing && !isPathText) return
-
-    const useComponentColor = r.isComponentType(node.type)
-    r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
-    r.selectionPaint.setStrokeWidth(1 / r.zoom)
-
-    const rotation =
-      overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
-    if (isPathText) {
-      drawTextPathSelection(r, canvas, node, rotation, graph)
-      if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
-      r.selectionPaint.setColor(r.selColor())
-      return
-    }
-    r.drawNodeSelection(canvas, node, rotation, graph)
-    r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
-
-    r.selectionPaint.setColor(r.selColor())
+    if (nodeEditId !== id) drawSingleSelection(r, canvas, graph, id, selectedIds, overlays)
     return
   }
 

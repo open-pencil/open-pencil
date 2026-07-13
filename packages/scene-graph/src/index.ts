@@ -61,32 +61,6 @@ function removeStaleBindings(
     changes.boundVariables = { ...node.boundVariables }
   }
 }
-/** Drop baked text pictures / glyphs when an update invalidates them. */
-function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode>): void {
-  if (node.type !== 'TEXT') return
-  const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
-  if (node.textPicture && textChanged) node.textPicture = null
-  // See TEXT_DERIVED_GLYPH_INVALIDATION_KEYS. Skip clear when the caller is
-  // replacing glyphs in the same update (resize supplies scaled copies).
-  const glyphsInvalidated = Object.keys(changes).some((k) =>
-    TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(k)
-  )
-  // Path text glyphs ARE the layout (placed along textPathBox), not a
-  // re-derivable paragraph cache — nulling them destroys the on-path lettering
-  // (and its TEXT_PATH identity). A successful path-text edit supplies reflowed
-  // glyphs in `changes` (so this branch is already skipped); when the edit can't
-  // reflow, keep the existing glyphs instead of wiping them.
-  if (
-    node.figmaDerivedTextGlyphs &&
-    glyphsInvalidated &&
-    !('figmaDerivedTextGlyphs' in changes) &&
-    !node.textPathBox
-  ) {
-    node.figmaDerivedTextGlyphs = null
-    // Export must not claim TEXT_PATH without baked glyphs.
-    if (node.source.fig.kiwiNodeType === 'TEXT_PATH') node.source.fig.kiwiNodeType = null
-  }
-}
 
 let nextLocalID = 1
 

@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import { parseFigFile } from '#core/io/formats/fig/read'
@@ -210,7 +211,7 @@ describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
     const rawExported = exported as typeof exported & Record<string, unknown>
     const vectorData = rawExported.vectorData as {
       vectorNetworkBlob?: number
-      normalizedSize?: { x: number; y: number }
+      normalizedSize?: Vector
     }
     expect(vectorData.normalizedSize).toEqual({ x: 100, y: 100 })
     const blobIndex = expectDefined(vectorData.vectorNetworkBlob, 'vectorNetworkBlob index')

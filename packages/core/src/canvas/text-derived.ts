@@ -305,6 +305,21 @@ function getGlyphSilhouette(
 }
 
 /**
+ * Push a glyph's on-path transform: baseline → non-uniform scale → rotate →
+ * font-units→px (Y-flipped). The fill and silhouette passes share it so they
+ * stay registered; see drawFigmaDerivedText for the order rationale.
+ */
+function applyGlyphEmTransform(canvas: Canvas, glyph: FigmaDerivedTextGlyph, glyphY: number): void {
+  canvas.translate(glyph.x, glyphY)
+  const scaleX = glyph.scaleX ?? 1
+  const scaleY = glyph.scaleY ?? 1
+  if (scaleX !== 1 || scaleY !== 1) canvas.scale(scaleX, scaleY)
+  const rotation = glyph.rotation ?? 0
+  if (rotation !== 0) canvas.rotate((-rotation * 180) / Math.PI, 0, 0)
+  canvas.scale(glyph.fontSize, -glyph.fontSize)
+}
+
+/**
  * Paint per-glyph stroke silhouettes under a reflowed path-text node.
  * Transform chain mirrors drawFigmaDerivedText exactly so silhouettes and
  * fills stay registered.
@@ -330,13 +345,11 @@ export function drawReflowedPathTextSilhouettes(
       if (glyph.fontSize <= 0) continue
       const silhouette = getGlyphSilhouette(r, glyph, stroke)
       canvas.save()
-      canvas.translate(glyph.x, snapBaselines ? snapFigmaDerivedGlyphBaseline(glyph.y) : glyph.y)
-      const scaleX = glyph.scaleX ?? 1
-      const scaleY = glyph.scaleY ?? 1
-      if (scaleX !== 1 || scaleY !== 1) canvas.scale(scaleX, scaleY)
-      const rotation = glyph.rotation ?? 0
-      if (rotation !== 0) canvas.rotate((-rotation * 180) / Math.PI, 0, 0)
-      canvas.scale(glyph.fontSize, -glyph.fontSize)
+      applyGlyphEmTransform(
+        canvas,
+        glyph,
+        snapBaselines ? snapFigmaDerivedGlyphBaseline(glyph.y) : glyph.y
+      )
       canvas.drawPath(silhouette.path, paint)
       canvas.restore()
       if (!silhouette.cached) silhouette.path.delete()
@@ -372,13 +385,7 @@ export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: Scen
     underlineBaselineY = Math.max(underlineBaselineY, glyphY)
     const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
     canvas.save()
-    canvas.translate(glyph.x, glyphY)
-    const scaleX = glyph.scaleX ?? 1
-    const scaleY = glyph.scaleY ?? 1
-    if (scaleX !== 1 || scaleY !== 1) canvas.scale(scaleX, scaleY)
-    const rotation = glyph.rotation ?? 0
-    if (rotation !== 0) canvas.rotate((-rotation * 180) / Math.PI, 0, 0)
-    canvas.scale(glyph.fontSize, -glyph.fontSize)
+    applyGlyphEmTransform(canvas, glyph, glyphY)
     const shouldUseHardCoverage = shouldUseHardFigmaDerivedGlyphCoverage(node)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(false)
     canvas.drawPath(path, r.fillPaint)

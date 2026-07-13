@@ -27,9 +27,7 @@ function translateGeometryPaths(paths: GeometryPath[], dx: number, dy: number): 
     }
     return {
       windingRule: g.windingRule,
-      commandsBlob: scaled,
-      ...(g.styleID != null ? { styleID: g.styleID } : {}),
-      ...(g.fills ? { fills: g.fills } : {})
+      commandsBlob: scaled
     }
   })
 }

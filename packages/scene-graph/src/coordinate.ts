@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode } from './index'
 import Matrix, { type Mat3 } from './matrix'
-import type { Vector } from './primitives'
+import type { Rect, Vector } from './primitives'
 
 export function getWorldMatrix(node: SceneNode, graph: SceneGraph): Mat3 {
   const chain: SceneNode[] = []
@@ -166,11 +166,7 @@ export function getNodeWorldBounds(node: SceneNode) {
  * or the visible handles are ~25px off and unclickable. Defaults to full node
  * bounds.
  */
-export function getWorldHandles(
-  node: SceneNode,
-  graph: SceneGraph,
-  localRect?: { x: number; y: number; width: number; height: number }
-) {
+export function getWorldHandles(node: SceneNode, graph: SceneGraph, localRect?: Rect) {
   const matrix = getWorldMatrix(node, graph)
 
   const x0 = localRect?.x ?? 0

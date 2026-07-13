@@ -9,7 +9,6 @@ import {
   getTextPathData,
   reflowPathTextGlyphs
 } from '@open-pencil/core/text'
-import { regenerateFillGeometry } from '@open-pencil/core/vector'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { FigmaDerivedTextGlyph, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
@@ -119,14 +118,8 @@ function scaledGeometryChanges(
     width,
     height
   )
-  if (resizedVN) {
-    changes.vectorNetwork = resizedVN
-    // Multi-color / imported vectors paint from fillGeometry blobs, not the
-    // live network — rebuild so fills follow the scaled vertices.
-    if (orig.fillGeometry.length > 0) {
-      changes.fillGeometry = regenerateFillGeometry(resizedVN, orig.fillGeometry)
-    }
-  } else if (orig.fillGeometry.length > 0) {
+  if (resizedVN) changes.vectorNetwork = resizedVN
+  if (orig.fillGeometry.length > 0) {
     changes.fillGeometry = scaleGeometryPaths(orig.fillGeometry, sx, sy)
   }
 
