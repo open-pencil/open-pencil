@@ -26,12 +26,22 @@ function run(command: string[], cwd = rootDir): string {
   return stdout.trim()
 }
 
+const EVAL_TIMEOUT_S = 30
+
 function nodeEval(code: string, cwd: string): void {
-  run(['node', '--input-type=module', '--eval', code], cwd)
+  const args =
+    process.platform === 'win32'
+      ? ['node', '--input-type=module', '--eval', code]
+      : ['timeout', String(EVAL_TIMEOUT_S), 'node', '--input-type=module', '--eval', code]
+  run(args, cwd)
 }
 
 function bunEval(code: string, cwd: string): void {
-  run(['bun', '--eval', code], cwd)
+  const args =
+    process.platform === 'win32'
+      ? ['bun', '--eval', code]
+      : ['timeout', String(EVAL_TIMEOUT_S), 'bun', '--eval', code]
+  run(args, cwd)
 }
 
 function writeTypeConsumer(cwd: string): void {
@@ -239,7 +249,13 @@ try {
   run(['npm', 'init', '-y'], tempDir)
   run(['npm', 'install', '--ignore-scripts', '--no-audit', '--no-fund', ...tarballs], tempDir)
 
+  // @open-pencil/mcp/stdio is a CLI entry point that creates a WebSocket
+  // connection on import. It is verified via the openpencil-mcp --help
+  // command below, not via import eval.
+  const evalSkipSpecifiers = new Set(['@open-pencil/mcp/stdio'])
+
   for (const specifier of [...publicImportSpecifiers].sort()) {
+    if (evalSkipSpecifiers.has(specifier)) continue
     nodeEval(`await import(${JSON.stringify(specifier)})`, tempDir)
     bunEval(`await import(${JSON.stringify(specifier)})`, tempDir)
   }
@@ -288,7 +304,7 @@ try {
       [
         'node',
         'node_modules/.bin/openpencil',
-        'dom',
+        'import',
         cliDomInput,
         '--format',
         'json',
