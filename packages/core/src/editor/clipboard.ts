@@ -206,6 +206,7 @@ export function createClipboardActions(ctx: EditorContext) {
 
     const prevSelection = new Set(ctx.state.selectedIds)
     for (const { id } of entries) ctx.graph.deleteNode(id)
+    for (const { id } of syncedInstanceEntries) ctx.graph.deleteNode(id)
     relayoutParents()
 
     ctx.undo.push({

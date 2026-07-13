@@ -6,7 +6,10 @@ import { fontManager } from '#core/text/fonts'
 export function createClipboardFontActions(ctx: EditorContext) {
   async function loadFontsForNodes(nodeIds: string[]) {
     const toLoad = fontManager.collectFontKeys(ctx.graph, nodeIds)
-    if (toLoad.length === 0) return []
+    if (toLoad.length === 0) {
+      await ensureTextFallbackPacksForNodes(ctx.graph, nodeIds)
+      return []
+    }
 
     const results = await Promise.all(toLoad.map(([family, style]) => ctx.loadFont(family, style)))
     await ensureTextFallbackPacksForNodes(ctx.graph, nodeIds)

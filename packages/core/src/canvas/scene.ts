@@ -628,6 +628,7 @@ function nodeTextNeedsParagraphFeatures(node: SceneNode): boolean {
   if (hasArrayItems(node.fontVariations)) return true
   if (node.textDecoration !== 'NONE') return true
   if (hasVisibleFill(node.textDecorationFills)) return true
+  if (node.maxLines != null && node.maxLines > 0) return true
 
   return node.styleRuns.some((run) => {
     const style = run.style

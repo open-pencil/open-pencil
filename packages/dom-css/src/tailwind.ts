@@ -32,7 +32,7 @@ function tailwindCompilerCSS(css: string | undefined): string {
 }
 
 function containsTailwindImport(css: string): boolean {
-  return /@import\s+(?:"tailwindcss"|'tailwindcss')/.test(css)
+  return /@import\s+(?:"tailwindcss(?:\/[^"]*)?"|'tailwindcss(?:\/[^']*)?')/.test(css)
 }
 
 function normalizeClasses(classes: string | Iterable<string>): string[] {
