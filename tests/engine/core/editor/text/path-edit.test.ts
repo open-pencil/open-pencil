@@ -126,4 +126,46 @@ describe('pathTextEditChanges — reflow on character edit', () => {
     // No textPathBox / rawNodeFields.vectorData — not reflowable.
     expect(pathTextEditChanges(node, { text: 'Edited' })).toEqual({})
   })
+
+  test('uses pending fontSize from the same update batch', async () => {
+    const font = await fontManager.fetchBundledFont('/Inter-Regular.ttf')
+    expect(font).toBeTruthy()
+    if (!font) return
+    fontManager.markLoaded('Inter', 'Regular', font)
+
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const box = { x: 0, y: 0, width: 400, height: 100 }
+    const node = graph.createNode('TEXT', page.id, {
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 100,
+      text: 'AB',
+      fontFamily: 'Inter',
+      fontWeight: 400,
+      italic: false,
+      fontSize: 20,
+      textPathBox: { ...box },
+      figmaDerivedTextGlyphs: [
+        { commandsBlob: new Uint8Array(4), x: 50, y: 50, fontSize: 20, rotation: 0 },
+        { commandsBlob: new Uint8Array(4), x: 90, y: 50, fontSize: 20, rotation: 0 }
+      ]
+    })
+    node.source.fig.kiwiNodeType = 'TEXT_PATH'
+    node.source.fig.rawNodeFields = {
+      vectorData: {
+        vectorNetworkBlob: encodeVectorNetworkBlob(straightLineNetwork()),
+        normalizedSize: { x: 400, y: 100 }
+      },
+      textPathStart: { tValue: 0, forward: true }
+    }
+
+    const changes = pathTextEditChanges(node, { text: 'Hi', fontSize: 48 })
+    const glyphs = expectDefined(changes.figmaDerivedTextGlyphs, 'reflowed glyphs')
+    expect(glyphs.length).toBe(2)
+    for (const g of glyphs) {
+      expect(g.fontSize).toBe(48)
+    }
+  })
 })

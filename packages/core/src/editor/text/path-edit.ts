@@ -27,11 +27,19 @@ export function pathTextEditChanges(
   const data = getTextPathData(node)
   if (!data) return {}
 
+  // Prefer pending typography from the same update batch over the pre-update
+  // node so { text, fontSize/fontFamily/... } stays consistent for reflow.
+  const fontFamily = changes.fontFamily ?? node.fontFamily
+  const fontWeight = changes.fontWeight ?? node.fontWeight
+  const italic = changes.italic ?? node.italic
+  const fontSize = changes.fontSize ?? node.fontSize
+  const letterSpacing = changes.letterSpacing ?? node.letterSpacing
+
   const metrics = getGlyphOutlineMetricsSync(
-    node.fontFamily,
-    weightToStyle(node.fontWeight, node.italic),
+    fontFamily,
+    weightToStyle(fontWeight, italic),
     changes.text,
-    node.fontSize
+    fontSize
   )
   if (!metrics) return {}
 
@@ -45,13 +53,13 @@ export function pathTextEditChanges(
     layout.anchor,
     offset,
     metrics.map((m) => ({
-      commandsBlob: encodePathCommandsBlob(m.commands, node.fontSize),
-      fontSize: node.fontSize,
+      commandsBlob: encodePathCommandsBlob(m.commands, fontSize),
+      fontSize,
       // Pen walk expects em advances (it multiplies by fontSize); metrics and
       // letterSpacing are px. Folding letterSpacing in here (rather than
       // threading it through layoutPathTextFromAdvances) keeps that function's
       // em-advance contract unchanged for its one caller.
-      advance: (m.advance + node.letterSpacing) / node.fontSize
+      advance: (m.advance + letterSpacing) / fontSize
     }))
   )
   // Baked silhouettes belong to the OLD string — clear them so the renderer
