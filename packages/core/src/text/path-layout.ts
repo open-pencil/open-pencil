@@ -428,8 +428,10 @@ export function pathTextSelectionBand(
   if (!sampled) return null
   const { xs, ys, cum, length } = sampled
 
-  let sMin = Infinity
-  let sMax = -Infinity
+  // Each glyph → its arc-length position on the path + its ascender ("up")
+  // direction (from the glyph rotation). Positions pick the arc the band spans;
+  // up-vectors pick which side of the baseline to inflate toward.
+  const gs: { s: number; ux: number; uy: number }[] = []
   let fontSize = 0
   for (const g of glyphs) {
     let best = Infinity
@@ -441,43 +443,78 @@ export function pathTextSelectionBand(
         bi = i
       }
     }
-    if (cum[bi] < sMin) sMin = cum[bi]
-    if (cum[bi] > sMax) sMax = cum[bi]
+    const rot = g.rotation ?? 0
+    gs.push({ s: cum[bi], ux: -Math.sin(rot), uy: -Math.cos(rot) })
     fontSize = Math.max(fontSize, g.fontSize || 0)
   }
-  if (!(fontSize > 0) || !(sMax > sMin)) return null
+  if (!(fontSize > 0)) return null
 
-  // Pad the span a little so the first/last glyph bodies are covered.
-  sMin = Math.max(0, sMin - fontSize * 0.3)
-  sMax = Math.min(length, sMax + fontSize * 0.3)
+  // Arc the glyphs actually cover. On a closed path the run can straddle the
+  // seam (s=0), so a plain [min,max] would trace the empty COMPLEMENT arc — the
+  // "huge empty band over the top of the circle" bug. Find the largest gap
+  // between consecutive glyph positions (including the wrap gap back through the
+  // seam); the glyphs span everything EXCEPT that gap.
+  let sStart: number
+  let sEnd: number
+  if (sampled.closed && gs.length > 1) {
+    const ss = gs.map((g) => g.s).sort((a, b) => a - b)
+    // Seed with the wrap gap (last → first through the seam). If it wins, the
+    // run doesn't straddle and the band is the direct [first, last] arc.
+    let maxGap = ss[0] + length - ss[ss.length - 1]
+    sStart = ss[0]
+    sEnd = ss[ss.length - 1]
+    for (let i = 0; i + 1 < ss.length; i++) {
+      const gap = ss[i + 1] - ss[i]
+      if (gap > maxGap) {
+        maxGap = gap
+        sStart = ss[i + 1]
+        sEnd = ss[i] + length // straddles: wrap forward through the seam
+      }
+    }
+  } else {
+    let mn = Infinity
+    let mx = -Infinity
+    for (const g of gs) {
+      if (g.s < mn) mn = g.s
+      if (g.s > mx) mx = g.s
+    }
+    sStart = mn
+    sEnd = mx
+  }
+
+  // Pad so the first/last glyph bodies are covered; clamp to one full loop so a
+  // near-complete circle doesn't overlap itself at the seam.
+  sStart -= fontSize * 0.3
+  sEnd += fontSize * 0.3
+  const span = Math.min(sEnd - sStart, length)
+  if (!(span > 0)) return null
+
   const capH = fontSize * 0.72 // out to ~cap height
   const descH = fontSize * 0.14 // in to ~descender
-  const cx = box.x + box.width / 2
-  const cy = box.y + box.height / 2
-
-  // Point the normal toward the glyphs' ascenders. The letters sit on one side
-  // of the baseline path; average each glyph's "up" (from its rotation) and pick
-  // the path normal that agrees with it, so the band covers the text for both
-  // inward- and outward-reading path text.
-  let upX = 0
-  let upY = 0
-  for (const g of glyphs) {
-    const rot = g.rotation ?? 0
-    upX += -Math.sin(rot)
-    upY += -Math.cos(rot)
-  }
-  // Fallback to the away-from-centre normal if the glyphs carry no rotation.
-  const haveUp = upX !== 0 || upY !== 0
 
   const steps = 48
   const outer: number[] = []
   const inner: number[] = []
   for (let i = 0; i <= steps; i++) {
-    const p = pointAtArc(sampled, sMin + ((sMax - sMin) * i) / steps)
+    const p = pointAtArc(sampled, sStart + (span * i) / steps)
+    // Offset direction from the NEAREST glyph's up-vector — not a global average,
+    // which for text wrapping most of a circle cancels to ~0 and flips the sign
+    // test, spawning a stray detached quad.
+    let ux = 0
+    let uy = 0
+    let bd = Infinity
+    for (const g of gs) {
+      let ds = Math.abs(g.s - p.s)
+      if (sampled.closed) ds = Math.min(ds, length - ds)
+      if (ds < bd) {
+        bd = ds
+        ux = g.ux
+        uy = g.uy
+      }
+    }
     let nx = -p.ty
     let ny = p.tx
-    const toward = haveUp ? nx * upX + ny * upY : (p.x - cx) * nx + (p.y - cy) * ny
-    if (toward < 0) {
+    if (nx * ux + ny * uy < 0) {
       nx = -nx
       ny = -ny
     }

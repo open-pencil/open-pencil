@@ -10,6 +10,7 @@ import {
   fitTextPathBoxToGlyphs,
   getTextPathData,
   layoutPathTextFromAdvances,
+  pathTextSelectionBand,
   pointAtArc,
   reflowPathTextGlyphs,
   sampleTextPath
@@ -358,5 +359,37 @@ describe('selection overlay — path helpers', () => {
     })
     bare.source.fig.kiwiNodeType = 'TEXT_PATH'
     expect(getTextPathData(bare)).toBeNull()
+  })
+
+  test('selection band hugs a glyph run that straddles the path seam', () => {
+    const node = makeCircleTextPathNode()
+    const data = expectDefined(getTextPathData(node), 'data')
+    const box = expectDefined(node.textPathBox, 'box')
+
+    // Seam s=0 sits at 3 o'clock (228,128). A run at angles −30°..+30° straddles
+    // it: min/max arc-length would trace the whole opposite (empty) arc, so the
+    // band must instead hug this right-side cluster.
+    const glyphs = [-30, -20, -10, 10, 20, 30].map((deg) => {
+      const a = (deg * Math.PI) / 180
+      return { x: 128 + 100 * Math.cos(a), y: 128 + 100 * Math.sin(a), fontSize: 40, rotation: 0 }
+    })
+
+    const poly = expectDefined(pathTextSelectionBand(data, box, glyphs), 'band')
+    expect(poly.length).toBeGreaterThanOrEqual(6)
+
+    // Centroid on the glyph side (right of centre); the old complement arc gave
+    // a centroid near 9 o'clock (x < 128).
+    let bx = 0
+    for (let i = 0; i < poly.length; i += 2) bx += poly[i]
+    bx /= poly.length / 2
+    expect(bx).toBeGreaterThan(140)
+
+    // Every band vertex hugs some glyph; the complement arc would sit ~2·radius
+    // (~200px) away.
+    for (let i = 0; i < poly.length; i += 2) {
+      let best = Infinity
+      for (const g of glyphs) best = Math.min(best, Math.hypot(poly[i] - g.x, poly[i + 1] - g.y))
+      expect(best).toBeLessThan(60)
+    }
   })
 })

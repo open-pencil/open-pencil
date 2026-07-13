@@ -7,7 +7,12 @@
  */
 import { describe, expect, test } from 'bun:test'
 
-import { getWorldMatrix, SceneGraph, TransformMatrix } from '@open-pencil/scene-graph'
+import {
+  getWorldHandles,
+  getWorldMatrix,
+  SceneGraph,
+  TransformMatrix
+} from '@open-pencil/scene-graph'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -305,5 +310,46 @@ describe('world transform — corner mapping', () => {
     const opposite = TransformMatrix.mapPoints(wmx, [80, 60])
     expect(opposite[0]).toBeCloseTo(110, 8)
     expect(opposite[1]).toBeCloseTo(170, 8)
+  })
+})
+
+describe('getWorldHandles — localRect override', () => {
+  test('defaults to full node bounds', () => {
+    const graph = new SceneGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'R',
+      x: 100,
+      y: 200,
+      width: 500,
+      height: 400
+    })
+    const h = getWorldHandles(node, graph)
+    expect(h.nw).toEqual({ x: 100, y: 200 })
+    expect(h.se).toEqual({ x: 600, y: 600 })
+    expect(h.n).toEqual({ x: 350, y: 200 })
+  })
+
+  // Text-on-path handles sit on the glyph-fitted path box (inset from node
+  // bounds), not the node rectangle — passing that box must move every handle
+  // to the box corners or the visible handles are unclickable.
+  test('localRect insets handles to the given box', () => {
+    const graph = new SceneGraph()
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'T',
+      x: 100,
+      y: 200,
+      width: 500,
+      height: 400
+    })
+    const box = { x: 20, y: 30, width: 400, height: 300 }
+    const h = getWorldHandles(node, graph, box)
+    // nw = node origin + box origin
+    expect(h.nw).toEqual({ x: 120, y: 230 })
+    // se = node origin + box far corner
+    expect(h.se).toEqual({ x: 520, y: 530 })
+    // e = right edge, vertical midpoint of the box
+    expect(h.e).toEqual({ x: 520, y: 380 })
+    // n = horizontal midpoint of the box, top edge
+    expect(h.n).toEqual({ x: 320, y: 230 })
   })
 })
