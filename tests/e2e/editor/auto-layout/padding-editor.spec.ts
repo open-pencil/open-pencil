@@ -80,7 +80,7 @@ test('double-clicking an auto-layout padding handle opens a scrub editor', async
   const editor = page.getByTestId('auto-layout-padding-editor')
   await expect(editor).toBeVisible()
 
-  await canvas.dragScrubInput(editor.getByTestId('auto-layout-padding-input'), 40)
+  await canvas.dragNumberField(editor.getByTestId('auto-layout-padding-input'), 40)
 
   await expect(editor).toHaveCount(0)
   const changedPadding = await framePaddingTop(page, frameId)

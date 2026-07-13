@@ -57,7 +57,7 @@ test('independent corners toggle shows per-corner inputs', async () => {
   expect((await getSelectedNodeFlags())?.independentCorners).toBe(true)
   const grid = page.getByTestId('independent-corners-grid')
   await expect(grid).toBeVisible()
-  const cornerInputs = grid.getByTestId('scrub-input')
+  const cornerInputs = grid.getByTestId('number-field')
   expect(await cornerInputs.count()).toBe(4)
 
   await toggle.click()
@@ -79,7 +79,7 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
 
   const sectionInputsBefore = await page
     .getByTestId('stroke-section')
-    .getByTestId('scrub-input')
+    .getByTestId('number-field')
     .count()
 
   await toggle.click()
@@ -87,7 +87,7 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
 
   const sectionInputsAfter = await page
     .getByTestId('stroke-section')
-    .getByTestId('scrub-input')
+    .getByTestId('number-field')
     .count()
   expect(sectionInputsAfter).toBeGreaterThan(sectionInputsBefore)
 
@@ -96,7 +96,7 @@ test('stroke sides toggle shows per-side weight inputs', async () => {
 
   const sectionInputsFinal = await page
     .getByTestId('stroke-section')
-    .getByTestId('scrub-input')
+    .getByTestId('number-field')
     .count()
   expect(sectionInputsFinal).toBe(sectionInputsBefore)
 })

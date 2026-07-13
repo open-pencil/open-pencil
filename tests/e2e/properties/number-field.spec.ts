@@ -5,12 +5,12 @@ import { getSelectedNode } from '#tests/helpers/store'
 const editor = useEditorSetup()
 
 function xField() {
-  return editor.page.getByTestId('position-section').getByTestId('scrub-input').first()
+  return editor.page.getByTestId('position-section').getByTestId('number-field').first()
 }
 
 async function editField(field: ReturnType<typeof xField>) {
   await field.click()
-  return field.getByTestId('scrub-input-field')
+  return field.getByTestId('number-field-input')
 }
 
 async function numericFieldValue(field: ReturnType<typeof xField>): Promise<number> {

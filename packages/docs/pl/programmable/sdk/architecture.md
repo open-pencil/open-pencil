@@ -28,7 +28,7 @@ Pakiet jest zorganizowany według domeny.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
-- `ScrubInput/`
+- `NumberField/`
 - `Toolbar/`
 
 Zawierają prymitywy strukturalne/bezstanowe i lokalne pomocniki.

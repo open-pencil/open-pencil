@@ -42,4 +42,4 @@ Ces API sont publiques, mais elles sont plus spécialisées que la surface princ
 - [useLayerTree](./use-layer-tree)
 - [useToolbar](./use-toolbar)
 - [usePropertyList](./use-property-list)
-- [useScrubInput](./use-scrub-input)
+- [useNumberField](/programmable/sdk/api/advanced/use-number-field)

@@ -43,4 +43,3 @@ These APIs are public, but they are more specialized than the main component and
 - [useToolbar](./use-toolbar)
 - [usePropertyList](./use-property-list)
 - [useNumberField](./use-number-field)
-- [useScrubInput](./use-scrub-input) (deprecated alias)

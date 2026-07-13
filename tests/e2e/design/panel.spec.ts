@@ -79,7 +79,7 @@ test('selecting a rectangle shows design panel with type and name', async () => 
 test('position section shows X, Y, rotation inputs', async () => {
   await expect(positionSection()).toBeVisible()
 
-  const inputs = positionSection().getByTestId('scrub-input')
+  const inputs = positionSection().getByTestId('number-field')
   const count = await inputs.count()
   expect(count).toBeGreaterThanOrEqual(3)
 })

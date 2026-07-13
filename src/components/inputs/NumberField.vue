@@ -2,11 +2,11 @@
 import type { NumberExpressionError, NumberFieldEditPolicy } from '@open-pencil/vue'
 
 import type { ComponentUI } from '@/components/ui/types'
-import type { ScrubInputTheme } from '@/theme/scrub-input'
+import type { NumberFieldTheme } from '@/theme/number-field'
 
-export type ScrubInputUI = ComponentUI<ScrubInputTheme>
+export type NumberFieldUI = ComponentUI<NumberFieldTheme>
 
-export interface ScrubInputProps {
+export interface NumberFieldProps {
   modelValue: number | symbol
   min?: number
   max?: number
@@ -19,22 +19,22 @@ export interface ScrubInputProps {
   disabled?: boolean
   bound?: boolean
   editPolicy?: NumberFieldEditPolicy
-  ui?: ScrubInputUI
+  ui?: NumberFieldUI
 }
 </script>
 
 <script setup lang="ts">
 import { computed, normalizeClass, useAttrs, useSlots } from 'vue'
 import { tv } from 'tailwind-variants'
-import { ScrubInputRoot, ScrubInputField, ScrubInputDisplay, testId } from '@open-pencil/vue'
+import { NumberFieldRoot, NumberFieldInput, NumberFieldValue, testId } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
-import theme from '@/theme/scrub-input'
+import theme from '@/theme/number-field'
 
 const attrs = useAttrs()
 const slots = useSlots()
 const store = useEditorStore()
 
-const rootTestId = computed(() => (attrs['data-test-id'] as string | undefined) ?? 'scrub-input')
+const rootTestId = computed(() => (attrs['data-test-id'] as string | undefined) ?? 'number-field')
 
 const {
   modelValue,
@@ -50,7 +50,7 @@ const {
   bound,
   editPolicy,
   ui
-} = defineProps<ScrubInputProps>()
+} = defineProps<NumberFieldProps>()
 const accessibleLabel = computed(() => {
   const ariaLabel = attrs['aria-label']
   return typeof ariaLabel === 'string' ? ariaLabel : (label ?? icon)
@@ -69,8 +69,8 @@ defineOptions({ inheritAttrs: false })
 </script>
 
 <template>
-  <ScrubInputRoot
-    v-slot="{ editing, disabled: isDisabled, actions, attrs: rootAttrs, placeholder: ph }"
+  <NumberFieldRoot
+    v-slot="{ editing, actions, attrs: rootAttrs, placeholder: ph }"
     :model-value="modelValue"
     :min="min"
     :max="max"
@@ -89,7 +89,7 @@ defineOptions({ inheritAttrs: false })
     @detach-request="emit('detach-request', $event)"
     @editing-change="
       (editing: boolean) => {
-        store.state.scrubInputFocused = editing
+        store.state.numberFieldFocused = editing
         emit('editing-change', editing)
       }
     "
@@ -97,26 +97,25 @@ defineOptions({ inheritAttrs: false })
     <div
       v-bind="{ ...attrs, ...rootAttrs, ...testId(rootTestId) }"
       :class="styles.root({ class: [ui?.root, normalizeClass(attrs.class)] })"
-      :style="{ cursor: editing || isDisabled ? 'auto' : 'ew-resize' }"
       @pointerdown="
         !editing &&
         !($event.target as HTMLElement)?.closest?.('button') &&
         actions.startScrub($event)
       "
     >
-      <span v-if="attrs['data-test-id']" data-test-id="scrub-input" class="hidden" />
+      <span v-if="attrs['data-test-id']" data-test-id="number-field" class="hidden" />
       <span :class="styles.leading({ class: ui?.leading })">
         <slot name="icon">
           <span v-if="icon" class="text-[11px] leading-none">{{ icon }}</span>
         </slot>
         <span v-if="label" class="text-[11px] leading-none">{{ label }}</span>
       </span>
-      <ScrubInputField
-        data-test-id="scrub-input-field"
+      <NumberFieldInput
+        data-test-id="number-field-input"
         :class="styles.field({ class: ui?.field })"
       />
       <slot v-if="editing" name="suffix" />
-      <ScrubInputDisplay :class="styles.display({ class: ui?.display })">
+      <NumberFieldValue :class="styles.display({ class: ui?.display })">
         <template #default="{ value, isMixed: mixed }">
           <span v-if="mixed" :class="styles.mixed({ class: ui?.mixed })">{{ ph }}</span>
           <template v-else>
@@ -125,7 +124,7 @@ defineOptions({ inheritAttrs: false })
           </template>
           <slot name="suffix" />
         </template>
-      </ScrubInputDisplay>
+      </NumberFieldValue>
     </div>
-  </ScrubInputRoot>
+  </NumberFieldRoot>
 </template>

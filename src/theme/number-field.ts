@@ -1,8 +1,11 @@
 import { panelFieldBase } from './panel/field'
 
-const scrubInputTheme = {
+const numberFieldTheme = {
   slots: {
-    root: [panelFieldBase, 'group flex flex-1 items-center tabular-nums'],
+    root: [
+      panelFieldBase,
+      'group flex flex-1 cursor-ew-resize items-center tabular-nums data-[disabled]:cursor-auto data-[editing]:cursor-auto'
+    ],
     leading:
       'flex shrink-0 items-center justify-center self-stretch px-[5px] text-muted select-none [&>*]:pointer-events-none',
     field:
@@ -20,5 +23,5 @@ const scrubInputTheme = {
   }
 }
 
-export type ScrubInputTheme = typeof scrubInputTheme
-export default scrubInputTheme
+export type NumberFieldTheme = typeof numberFieldTheme
+export default numberFieldTheme

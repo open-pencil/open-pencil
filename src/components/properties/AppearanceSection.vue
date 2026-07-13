@@ -3,8 +3,8 @@ import { computed, ref } from 'vue'
 
 import { MIXED, useAppearance, useI18n } from '@open-pencil/vue'
 
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
-import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -113,7 +113,7 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
       </Tip>
 
       <Tip :label="panels.opacity">
-        <VariableScrubInput
+        <VariableNumberField
           v-if="node"
           suffix="%"
           :model-value="opacityPercent"
@@ -127,8 +127,8 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
           <template #icon>
             <icon-lucide-blend class="size-3" />
           </template>
-        </VariableScrubInput>
-        <ScrubInput
+        </VariableNumberField>
+        <NumberField
           v-else
           suffix="%"
           :model-value="opacityPercent"
@@ -140,13 +140,13 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
           <template #icon>
             <icon-lucide-blend class="size-3" />
           </template>
-        </ScrubInput>
+        </NumberField>
       </Tip>
     </div>
 
     <div v-if="hasCornerRadius" class="mt-1.5 flex gap-1.5">
       <Tip :label="panels.radius">
-        <VariableScrubInput
+        <VariableNumberField
           v-if="!showIndependentCorners && node"
           data-test-id="corner-radius-input"
           :model-value="cornerRadiusValue"
@@ -159,8 +159,8 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
           <template #icon>
             <icon-lucide-square-round-corner class="size-3" />
           </template>
-        </VariableScrubInput>
-        <ScrubInput
+        </VariableNumberField>
+        <NumberField
           v-else-if="!showIndependentCorners"
           data-test-id="corner-radius-input"
           :model-value="cornerRadiusValue"
@@ -171,7 +171,7 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
           <template #icon>
             <icon-lucide-square-round-corner class="size-3" />
           </template>
-        </ScrubInput>
+        </NumberField>
       </Tip>
 
       <IconButton
@@ -191,7 +191,7 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
       data-test-id="independent-corners-grid"
       class="mt-1.5 grid grid-cols-2 gap-1.5"
     >
-      <VariableScrubInput
+      <VariableNumberField
         data-test-id="corner-tl-input"
         label="TL"
         :model-value="node.topLeftRadius"
@@ -201,7 +201,7 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
         @update:model-value="updateCornerProp('topLeftRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('topLeftRadius', v, p)"
       />
-      <VariableScrubInput
+      <VariableNumberField
         data-test-id="corner-tr-input"
         label="TR"
         :model-value="node.topRightRadius"
@@ -211,7 +211,7 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
         @update:model-value="updateCornerProp('topRightRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('topRightRadius', v, p)"
       />
-      <VariableScrubInput
+      <VariableNumberField
         data-test-id="corner-bl-input"
         label="BL"
         :model-value="node.bottomLeftRadius"
@@ -221,7 +221,7 @@ const blendModeSelectValue = computed<BlendModeSelectValue>({
         @update:model-value="updateCornerProp('bottomLeftRadius', $event)"
         @commit="(v: number, p: number) => commitCornerProp('bottomLeftRadius', v, p)"
       />
-      <VariableScrubInput
+      <VariableNumberField
         data-test-id="corner-br-input"
         label="BR"
         :model-value="node.bottomRightRadius"

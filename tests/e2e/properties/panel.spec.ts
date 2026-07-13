@@ -4,14 +4,14 @@ import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
 const editor = useEditorSetup()
 
-test('ScrubInput drag changes X position', async () => {
+test('NumberField drag changes X position', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(100, 100, 80, 80)
   const before = await getSelectedNode(editor.page)
   const initialX = expectDefined(before, 'selected rectangle before drag').x
 
-  const xScrub = editor.page.getByTestId('position-section').getByTestId('scrub-input').first()
-  await editor.canvas.dragScrubInput(xScrub, 50)
+  const xField = editor.page.getByTestId('position-section').getByTestId('number-field').first()
+  await editor.canvas.dragNumberField(xField, 50)
 
   const after = await getSelectedNode(editor.page)
   expect(after?.x).not.toBe(initialX)
@@ -25,7 +25,7 @@ test('corner radius uniform sets cornerRadius', async () => {
   const scrubContainer = editor.page.getByTestId('corner-radius-input')
   await scrubContainer.click()
   await editor.canvas.waitForRender()
-  const input = editor.page.getByTestId('corner-radius-input').getByTestId('scrub-input-field')
+  const input = editor.page.getByTestId('corner-radius-input').getByTestId('number-field-input')
   await input.fill('12')
   await input.press('Enter')
   await editor.canvas.waitForRender()
@@ -185,7 +185,7 @@ test('width can create, bind, and detach a number variable', async () => {
 
   const widthField = editor.page.getByTestId('layout-width-input')
   await widthField.click()
-  const widthInput = widthField.getByTestId('scrub-input-field')
+  const widthInput = widthField.getByTestId('number-field-input')
   await widthInput.fill('120')
   await widthInput.press('Enter')
   await editor.canvas.waitForRender()

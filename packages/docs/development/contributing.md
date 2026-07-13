@@ -34,6 +34,12 @@ bun run dev          # Editor at localhost:1420
 bun run docs:dev     # Docs at localhost:5173
 ```
 
+## SDK documentation
+
+VitePress is the canonical public documentation, while Storybook is the internal component-state workshop. Shared Vue demos live beside their SDK primitives and are embedded in both surfaces. The docs Tailwind entry scans these demos, so examples use the same utility-first styling in both environments.
+
+Component API tables are extracted from Vue source and JSDoc with `vue-component-meta`. Keep descriptions next to the public props, events, and slots instead of duplicating signatures in Markdown. VitePress processes SDK code examples with Twoslash so imports and types stay aligned with the public package API.
+
 ## Code Style
 
 ### Tooling
@@ -53,7 +59,7 @@ bun run check
 ### Conventions
 
 - **File names** — kebab-case (`scene-graph.ts`, `use-canvas-input.ts`)
-- **Components** — PascalCase Vue SFCs (`EditorCanvas.vue`, `ScrubInput.vue`)
+- **Components** — PascalCase Vue SFCs (`EditorCanvas.vue`, `NumberField.vue`)
 - **Constants** — SCREAMING_SNAKE_CASE
 - **Functions/variables** — camelCase
 - **Types/interfaces** — PascalCase

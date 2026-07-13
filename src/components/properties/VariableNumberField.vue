@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useI18n, useNumberVariableBinding } from '@open-pencil/vue'
@@ -67,7 +67,7 @@ defineOptions({ inheritAttrs: true })
 </script>
 
 <template>
-  <ScrubInput
+  <NumberField
     v-bind="$attrs"
     :icon="icon"
     :label="label"
@@ -111,5 +111,5 @@ defineOptions({ inheritAttrs: true })
       </span>
       <slot name="after-variable" />
     </template>
-  </ScrubInput>
+  </NumberField>
 </template>

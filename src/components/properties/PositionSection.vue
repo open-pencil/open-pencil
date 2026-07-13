@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelRow from '@/components/ui/panel/PanelRow.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -86,7 +86,7 @@ function handleAlign(
 
       <PanelRow cols="two">
         <Tip :label="panels.xAxis">
-          <ScrubInput
+          <NumberField
             icon="X"
             :model-value="xValue"
             @update:model-value="actions.updateProp('x', $event)"
@@ -94,7 +94,7 @@ function handleAlign(
           />
         </Tip>
         <Tip :label="panels.yAxis">
-          <ScrubInput
+          <NumberField
             icon="Y"
             :model-value="yValue"
             @update:model-value="actions.updateProp('y', $event)"
@@ -105,7 +105,7 @@ function handleAlign(
 
       <PanelRow v-if="isMulti" cols="two" class="mt-1.5">
         <Tip :label="panels.width">
-          <ScrubInput
+          <NumberField
             icon="W"
             :model-value="wValue"
             :min="1"
@@ -114,7 +114,7 @@ function handleAlign(
           />
         </Tip>
         <Tip :label="panels.height">
-          <ScrubInput
+          <NumberField
             icon="H"
             :model-value="hValue"
             :min="1"
@@ -126,7 +126,7 @@ function handleAlign(
 
       <PanelRow cols="fill" class="mt-1.5">
         <Tip :label="panels.rotation">
-          <ScrubInput
+          <NumberField
             class="flex-1"
             suffix="°"
             :model-value="rotationValue"
@@ -138,7 +138,7 @@ function handleAlign(
             <template #icon>
               <icon-lucide-rotate-cw class="size-3" />
             </template>
-          </ScrubInput>
+          </NumberField>
         </Tip>
         <IconButton
           :label="panels.flipHorizontal"

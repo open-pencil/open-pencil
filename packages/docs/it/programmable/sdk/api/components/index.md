@@ -40,7 +40,5 @@ description: Riferimento ai componenti per le primitive Vue headless in @open-pe
   <SdkCard title="GradientEditorRoot" to="/programmable/sdk/api/components/gradient-editor-root" description="Primitiva root per l'editor del gradiente." />
   <SdkCard title="GradientEditorBar" to="/programmable/sdk/api/components/gradient-editor-bar" description="Primitiva barra trascinabile per il gradiente." />
   <SdkCard title="GradientEditorStop" to="/programmable/sdk/api/components/gradient-editor-stop" description="Primitiva per un singolo stop del gradiente." />
-  <SdkCard title="ScrubInputRoot" to="/programmable/sdk/api/components/scrub-input-root" description="Root per input numerico con trascinamento scrub." />
-  <SdkCard title="ScrubInputField" to="/programmable/sdk/api/components/scrub-input-field" description="Primitiva campo di input per la modifica." />
-  <SdkCard title="ScrubInputDisplay" to="/programmable/sdk/api/components/scrub-input-display" description="Primitiva di visualizzazione non in modifica." />
+  <SdkCard title="NumberField" to="/programmable/sdk/api/components/number-field" description="Numeric field with scrubbing, expressions, and keyboard stepping." />
 </SdkCardGroup>

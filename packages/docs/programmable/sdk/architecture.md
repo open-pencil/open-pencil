@@ -28,7 +28,7 @@ This package is organized by domain.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
-- `NumberField/` (`ScrubInput/` remains as deprecated aliases)
+- `NumberField/`
 - `Toolbar/`
 
 These contain structural/headless primitives and local helpers.

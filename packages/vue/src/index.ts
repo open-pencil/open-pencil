@@ -178,13 +178,6 @@ export type {
   NumberExpressionOptions,
   NumberExpressionResult
 } from '#vue/controls/number-expression'
-export {
-  ScrubInputRoot,
-  ScrubInputField,
-  ScrubInputDisplay,
-  useScrubInput
-} from '#vue/primitives/ScrubInput'
-export type { ScrubInputContext } from '#vue/primitives/ScrubInput'
 export { TypographyControlsRoot } from '#vue/primitives/TypographyControls'
 export { ToolbarRoot, ToolbarItem, useToolbar } from '#vue/primitives/Toolbar'
 export type { ToolbarContext } from '#vue/primitives/Toolbar'

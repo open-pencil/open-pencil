@@ -17,9 +17,7 @@ const SDK_COMPONENT_PAGES = [
   { text: 'GradientEditorRoot', slug: 'gradient-editor-root' },
   { text: 'GradientEditorBar', slug: 'gradient-editor-bar' },
   { text: 'GradientEditorStop', slug: 'gradient-editor-stop' },
-  { text: 'ScrubInputRoot', slug: 'scrub-input-root' },
-  { text: 'ScrubInputField', slug: 'scrub-input-field' },
-  { text: 'ScrubInputDisplay', slug: 'scrub-input-display' },
+  { text: 'NumberField', slug: 'number-field' },
   { text: 'LayoutControlsRoot', slug: 'layout-controls-root' },
   { text: 'AppearanceControlsRoot', slug: 'appearance-controls-root' },
   { text: 'PositionControlsRoot', slug: 'position-controls-root' },
@@ -67,7 +65,7 @@ const SDK_ADVANCED_PAGES = [
   { text: 'useLayerTree', slug: 'use-layer-tree' },
   { text: 'useToolbar', slug: 'use-toolbar' },
   { text: 'usePropertyList', slug: 'use-property-list' },
-  { text: 'useScrubInput', slug: 'use-scrub-input' }
+  { text: 'useNumberField', slug: 'use-number-field' }
 ] as const
 
 export const sdkSidebar = (prefix: string): DefaultTheme.SidebarItem[] => [

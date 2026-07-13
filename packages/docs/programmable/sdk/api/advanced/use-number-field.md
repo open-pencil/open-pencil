@@ -18,5 +18,3 @@ field.actions.startEdit()
 ```
 
 See [NumberField](../components/number-field) for the complete context and anatomy.
-
-`useScrubInput()` remains as a deprecated alias.

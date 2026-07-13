@@ -10,8 +10,12 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
-    "vitepress": "^1.6.4",
-    "vitepress-plugin-llms": "1.12.2"
+    "@shikijs/vitepress-twoslash": "^4.3.1",
+    "@tailwindcss/vite": "^4.2.1",
+    "vitepress": "^2.0.0-alpha.17",
+    "vitepress-plugin-llms": "1.12.2",
+    "vue": "^3.5.29",
+    "vue-component-meta": "^3.3.7"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0"

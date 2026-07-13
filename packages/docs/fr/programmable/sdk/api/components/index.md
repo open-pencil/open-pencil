@@ -40,7 +40,5 @@ description: Référence des composants pour les primitives Vue headless dans @o
   <SdkCard title="GradientEditorRoot" to="/programmable/sdk/api/components/gradient-editor-root" description="Primitive racine pour l'édition de dégradés." />
   <SdkCard title="GradientEditorBar" to="/programmable/sdk/api/components/gradient-editor-bar" description="Primitive de barre de dégradé déplaçable." />
   <SdkCard title="GradientEditorStop" to="/programmable/sdk/api/components/gradient-editor-stop" description="Primitive pour un point d'arrêt de dégradé." />
-  <SdkCard title="ScrubInputRoot" to="/programmable/sdk/api/components/scrub-input-root" description="Racine d'entrée numérique par glissement." />
-  <SdkCard title="ScrubInputField" to="/programmable/sdk/api/components/scrub-input-field" description="Primitive de champ de saisie en mode édition." />
-  <SdkCard title="ScrubInputDisplay" to="/programmable/sdk/api/components/scrub-input-display" description="Primitive d'affichage en mode non-édition." />
+  <SdkCard title="NumberField" to="/programmable/sdk/api/components/number-field" description="Numeric field with scrubbing, expressions, and keyboard stepping." />
 </SdkCardGroup>

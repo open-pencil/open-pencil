@@ -90,8 +90,7 @@ Main structural primitives include:
 
 These components coordinate structure and state, but do not impose app styling. `NumberField`
 adds pointer scrubbing, Arrow-key stepping, mixed/bound state attributes, and safe arithmetic
-expressions such as `+10`, `*2`, `50%`, and `12*8+4`. The former `ScrubInput` API remains as
-deprecated aliases during migration.
+expressions such as `+10`, `*2`, `50%`, and `12*8+4`.
 
 ## Public API tiers
 
@@ -180,7 +179,6 @@ These are mostly useful when extending SDK primitives rather than building from 
 - `useToolbar()`
 - `usePropertyList()`
 - `useNumberField()`
-- `useScrubInput()` (deprecated alias)
 - `locale`
 - `localeSetting`
 - `setLocale()`

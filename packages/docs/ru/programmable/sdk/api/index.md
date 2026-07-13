@@ -8,7 +8,7 @@ description: Справочная документация по компонен
 Справочник Vue SDK разбит на три раздела.
 
 <SdkCardGroup>
-  <SdkCard title="Компоненты" to="/programmable/sdk/api/components/" description="Headless-структурные примитивы: CanvasRoot, ToolbarRoot, FontPickerRoot, ScrubInputRoot и другие." />
+  <SdkCard title="Компоненты" to="/programmable/sdk/api/components/" description="Headless-структурные примитивы: CanvasRoot, ToolbarRoot, FontPickerRoot, NumberFieldRoot и другие." />
   <SdkCard title="Компосаблы" to="/programmable/sdk/api/composables/" description="Компосаблы для контекста редактора, подключения холста, выделения, команд и панелей свойств." />
   <SdkCard title="Расширенные" to="/programmable/sdk/api/advanced/" description="Низкоуровневые хелперы, контексты примитивов и специализированные API для продвинутых интеграций." />
 </SdkCardGroup>

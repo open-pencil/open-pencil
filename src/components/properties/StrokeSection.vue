@@ -14,7 +14,7 @@ import ColorStyleRow from '@/components/properties/ColorStyleRow.vue'
 import { boundVariableColor } from '@/components/properties/color-style-row'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -126,7 +126,7 @@ function onToggleSides(activeNode: SceneNode | null) {
           @update:model-value="strokeCtx.updateAlign($event as Stroke['align'], activeNode)"
         />
         <Tip :label="panels.strokeWeight">
-          <ScrubInput
+          <NumberField
             v-if="!expandedSides"
             class="flex-1"
             icon="W"
@@ -162,7 +162,7 @@ function onToggleSides(activeNode: SceneNode | null) {
           </span>
         </IconButton>
         <template v-if="strokeCtx.dashState(items[0]).on">
-          <ScrubInput
+          <NumberField
             class="flex-1"
             icon="D"
             :model-value="items[0]?.dashPattern?.[0] ?? 6"
@@ -170,7 +170,7 @@ function onToggleSides(activeNode: SceneNode | null) {
             data-test-id="stroke-dash-length"
             @update:model-value="actions.patch(0, strokeCtx.setDash(items[0], $event))"
           />
-          <ScrubInput
+          <NumberField
             class="flex-1"
             icon="G"
             :model-value="items[0]?.dashPattern?.[1] ?? items[0]?.dashPattern?.[0] ?? 6"
@@ -185,7 +185,7 @@ function onToggleSides(activeNode: SceneNode | null) {
         v-if="!isMixed && items.length > 0 && expandedSides"
         class="mt-1.5 grid grid-cols-2 gap-1.5"
       >
-        <ScrubInput
+        <NumberField
           v-for="side in strokeCtx.borderSides"
           :key="side"
           :label="side[0].toUpperCase()"

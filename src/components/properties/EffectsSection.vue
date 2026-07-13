@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppSelect from '@/components/ui/AppSelect.vue'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -98,7 +98,7 @@ const { panels } = useI18n()
           <template v-if="effectsCtx.isShadow(effect.type)">
             <div class="flex items-center gap-1.5">
               <Tip :label="panels.xAxis">
-                <ScrubInput
+                <NumberField
                   icon="X"
                   :model-value="effect.offset.x"
                   @update:model-value="
@@ -114,7 +114,7 @@ const { panels } = useI18n()
                 />
               </Tip>
               <Tip :label="panels.yAxis">
-                <ScrubInput
+                <NumberField
                   icon="Y"
                   :model-value="effect.offset.y"
                   @update:model-value="
@@ -133,7 +133,7 @@ const { panels } = useI18n()
 
             <div class="flex items-center gap-1.5">
               <Tip :label="panels.radius">
-                <ScrubInput
+                <NumberField
                   icon="B"
                   :model-value="effect.radius"
                   :min="0"
@@ -142,7 +142,7 @@ const { panels } = useI18n()
                 />
               </Tip>
               <Tip :label="panels.spread">
-                <ScrubInput
+                <NumberField
                   icon="S"
                   :model-value="effect.spread"
                   @update:model-value="effectsCtx.scrubEffect(activeNode, i, { spread: $event })"
@@ -158,7 +158,7 @@ const { panels } = useI18n()
                 @update="effectsCtx.updateColor(actions.patch, i, $event)"
               />
               <Tip :label="panels.opacity">
-                <ScrubInput
+                <NumberField
                   class="w-14"
                   suffix="%"
                   :model-value="Math.round(effect.color.a * 100)"
@@ -180,7 +180,7 @@ const { panels } = useI18n()
           </template>
 
           <template v-else>
-            <ScrubInput
+            <NumberField
               class="w-24 flex-none"
               icon="B"
               :model-value="effect.radius"
