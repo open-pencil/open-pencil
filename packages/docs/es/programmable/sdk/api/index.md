@@ -8,7 +8,7 @@ description: Documentación de referencia para los componentes, composables y AP
 La referencia del SDK de Vue está organizada en tres secciones.
 
 <SdkCardGroup>
-  <SdkCard title="Componentes" to="/programmable/sdk/api/components/" description="Primitivos estructurales headless como CanvasRoot, ToolbarRoot, FontPickerRoot y ScrubInputRoot." />
+  <SdkCard title="Componentes" to="/programmable/sdk/api/components/" description="Primitivos estructurales headless como CanvasRoot, ToolbarRoot, FontPickerRoot y NumberFieldRoot." />
   <SdkCard title="Composables" to="/programmable/sdk/api/composables/" description="Composables orientados al editor para contexto, cableado del canvas, selección, comandos y paneles de propiedades." />
   <SdkCard title="Avanzado" to="/programmable/sdk/api/advanced/" description="Helpers de bajo nivel, contextos de primitivos y APIs especializadas para integraciones avanzadas." />
 </SdkCardGroup>

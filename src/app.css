@@ -29,7 +29,21 @@
 }
 
 @theme {
+  --spacing-control: 26px;
+  --spacing-panel-x: 12px;
+  --spacing-panel-y: 8px;
+  --spacing-panel: 6px;
+  --spacing-panel-rail: 26px;
+  --spacing-panel-icon: 14px;
+  --radius-panel: 4px;
+
   --color-panel: #2a2a2a;
+  --color-panel-secondary: #242424;
+  --color-panel-field: #333333;
+  --color-panel-field-hover: #3b3b3b;
+  --color-panel-focus: #4c8dff;
+  --color-panel-selected: #0d64d8;
+  --color-panel-selected-muted: #344054;
   --color-canvas: #1e1e1e;
   --color-border: #3a3a3a;
   --color-hover: #353535;
@@ -60,6 +74,12 @@
 
 html[data-theme='light'] {
   --color-panel: #ffffff;
+  --color-panel-secondary: #f7f8fa;
+  --color-panel-field: #f0f1f3;
+  --color-panel-field-hover: #e7e9ed;
+  --color-panel-focus: #2563eb;
+  --color-panel-selected: #dbeafe;
+  --color-panel-selected-muted: #e5e7eb;
   --color-canvas: #f3f4f6;
   --color-border: #d8dce3;
   --color-hover: #eef1f5;

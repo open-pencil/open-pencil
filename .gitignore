@@ -39,6 +39,7 @@ Caddyfile.dev
 test-results/
 playwright-report/
 blob-report/
+storybook-static/
 .vite/
 .turbo/
 

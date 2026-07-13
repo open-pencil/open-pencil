@@ -148,11 +148,11 @@ export class CanvasHelper {
     await this.waitForRender()
   }
 
-  /** Point `locator` at the outer ScrubInput container, not the inner `<input>`. */
-  async dragScrubInput(locator: Locator, deltaX: number) {
+  /** Point `locator` at the outer NumberField container, not the inner `<input>`. */
+  async dragNumberField(locator: Locator, deltaX: number) {
     await locator.scrollIntoViewIfNeeded()
     const box = await locator.boundingBox()
-    if (!box) throw new Error('dragScrubInput: element has no bounding box')
+    if (!box) throw new Error('dragNumberField: element has no bounding box')
     const cx = box.x + box.width / 2
     const cy = box.y + box.height / 2
     await this.page.mouse.move(cx, cy)

@@ -8,7 +8,7 @@ description: Dokumentacja referencyjna komponentów, kompozytów i zaawansowanyc
 Dokumentacja Vue SDK jest zorganizowana w trzy sekcje.
 
 <SdkCardGroup>
-  <SdkCard title="Komponenty" to="/programmable/sdk/api/components/" description="Bezstanowe prymitywy strukturalne jak CanvasRoot, ToolbarRoot, FontPickerRoot i ScrubInputRoot." />
+  <SdkCard title="Komponenty" to="/programmable/sdk/api/components/" description="Bezstanowe prymitywy strukturalne jak CanvasRoot, ToolbarRoot, FontPickerRoot i NumberFieldRoot." />
   <SdkCard title="Kompozyty" to="/programmable/sdk/api/composables/" description="Kompozyty zorientowane na edytor dla kontekstu, okablowania kanvasu, selekcji, poleceń i paneli właściwości." />
   <SdkCard title="Zaawansowane" to="/programmable/sdk/api/advanced/" description="Pomocniki niższego poziomu, konteksty prymitywów i wyspecjalizowane API dla zaawansowanych integracji." />
 </SdkCardGroup>

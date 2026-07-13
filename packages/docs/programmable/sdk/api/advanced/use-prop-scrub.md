@@ -11,5 +11,5 @@ Use it when building numeric controls that scrub selected node properties direct
 
 ## Related APIs
 
-- [ScrubInputRoot](../components/scrub-input-root)
+- [NumberField](../components/number-field)
 - [useNodeProps](./use-node-props)

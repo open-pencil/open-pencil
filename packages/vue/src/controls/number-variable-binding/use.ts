@@ -1,9 +1,5 @@
-import { randomHex } from '@open-pencil/core/random'
-import type { VariableCollection } from '@open-pencil/scene-graph'
-
+import { createAndBindNumberVariable } from '#vue/controls/binding-provider/number'
 import { useVariableBinding } from '#vue/controls/variable-binding/use'
-
-const FALLBACK_NUMBER_VARIABLE_NAME = 'New number'
 
 export type NumberBindingPath =
   | 'width'
@@ -37,44 +33,8 @@ export function useNumberVariableBinding(path: NumberBindingPath) {
     path
   })
 
-  function numberCollection(): VariableCollection {
-    const existing = binding.store
-      .getCollections()
-      .find((collection) =>
-        collection.variableIds.some(
-          (variableId) => binding.store.getVariable(variableId)?.type === 'FLOAT'
-        )
-      )
-    if (existing) return existing
-
-    const collection: VariableCollection = {
-      id: `col:${randomHex(8)}`,
-      name: 'Numbers',
-      modes: [{ modeId: 'default', name: 'Mode 1' }],
-      defaultModeId: 'default',
-      variableIds: []
-    }
-    binding.store.addCollection(collection)
-    return collection
-  }
-
-  function createAndBindVariable(
-    nodeId: string,
-    value: number,
-    name = FALLBACK_NUMBER_VARIABLE_NAME
-  ) {
-    const collection = numberCollection()
-    const id = `var:${randomHex(8)}`
-    binding.store.addVariable({
-      id,
-      name: name.trim() || FALLBACK_NUMBER_VARIABLE_NAME,
-      type: 'FLOAT',
-      collectionId: collection.id,
-      valuesByMode: Object.fromEntries(collection.modes.map((mode) => [mode.modeId, value])),
-      description: '',
-      hiddenFromPublishing: false
-    })
-    binding.bindVariable(nodeId, id)
+  function createAndBindVariable(nodeId: string, value: number, name?: string) {
+    createAndBindNumberVariable(binding.store, { nodeId, path: binding.bindingPath() }, value, name)
   }
 
   return {

@@ -63,12 +63,12 @@ test('direction button toggles to VERTICAL', async () => {
   canvas.assertNoErrors()
 })
 
-test('gap ScrubInput sets itemSpacing', async () => {
+test('gap NumberField sets itemSpacing', async () => {
   await selectFrame()
   const before = await getNodeById(page, frameId)
   const initialSpacing = expectDefined(before, 'before').itemSpacing
 
-  await canvas.dragScrubInput(page.getByTestId('layout-gap-input'), 40)
+  await canvas.dragNumberField(page.getByTestId('layout-gap-input'), 40)
 
   const after = await getNodeById(page, frameId)
   expect(expectDefined(after, 'after').itemSpacing).toBeGreaterThan(initialSpacing + 5)
@@ -105,7 +105,7 @@ test('wrap mode exposes cross-axis gap control', async () => {
 
   const before = await getNodeById(page, frameId)
   const initialSpacing = expectDefined(before, 'before').counterAxisSpacing
-  await canvas.dragScrubInput(page.getByTestId('layout-cross-gap-input'), 40)
+  await canvas.dragNumberField(page.getByTestId('layout-cross-gap-input'), 40)
 
   const after = await getNodeById(page, frameId)
   expect(expectDefined(after, 'after').layoutWrap).toBe('WRAP')
@@ -120,16 +120,14 @@ test('padding controls set horizontal and vertical padding pairs', async () => {
   await canvas.waitForRender()
   const horizontalInput = page
     .getByTestId('layout-horizontal-padding-input')
-    .getByTestId('scrub-input-field')
+    .getByRole('spinbutton')
   await horizontalInput.fill('24')
   await horizontalInput.press('Enter')
   await canvas.waitForRender()
 
   await page.getByTestId('layout-vertical-padding-input').click()
   await canvas.waitForRender()
-  const verticalInput = page
-    .getByTestId('layout-vertical-padding-input')
-    .getByTestId('scrub-input-field')
+  const verticalInput = page.getByTestId('layout-vertical-padding-input').getByRole('spinbutton')
   await verticalInput.fill('16')
   await verticalInput.press('Enter')
   await canvas.waitForRender()

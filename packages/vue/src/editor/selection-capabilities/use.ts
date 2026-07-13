@@ -37,6 +37,7 @@ export function useSelectionCapabilities() {
     canCreateComponentSet: selection.canCreateComponentSet,
     canDetachInstance: computed(() => selection.isInstance.value),
     canWrapInAutoLayout: computed(() => hasSelection.value),
+    canToggleMask: computed(() => hasSelection.value),
     canBringToFront: computed(() => hasSelection.value),
     canSendToBack: computed(() => hasSelection.value),
     canToggleVisibility: computed(() => hasSelection.value),

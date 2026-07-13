@@ -31,5 +31,7 @@
   "flipVertical": "Rifletti verticalmente",
   "flattenSelection": "Appiattisci",
   "outlineText": "Converti testo in tracciato",
-  "outlineStroke": "Converti traccia in contorno"
+  "outlineStroke": "Converti traccia in contorno",
+  "useAsMask": "Usa come maschera",
+  "removeMask": "Rimuovi maschera"
 }

@@ -52,9 +52,8 @@ test('create component from selection (⌘⌥K)', async () => {
   componentId = selectedId
 })
 
-test('component shows purple label in design panel', async () => {
-  const header = editor.page.getByTestId('design-node-header')
-  await expect(header).toContainText('COMPONENT')
+test('component shows its type icon in the design panel', async () => {
+  await expect(editor.page.getByRole('img', { name: 'COMPONENT' })).toBeVisible()
 })
 
 test('component visible in layers panel', async () => {
@@ -103,8 +102,7 @@ test('instance shows INSTANCE type in design panel', async () => {
   }, instance.id)
   await editor.canvas.waitForRender()
 
-  const header = editor.page.getByTestId('design-node-header')
-  await expect(header).toContainText('INSTANCE')
+  await expect(editor.page.getByRole('img', { name: 'INSTANCE' })).toBeVisible()
 })
 
 test('instance has "Go to Main Component" button', async () => {

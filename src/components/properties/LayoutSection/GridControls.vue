@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppSelect from '@/components/ui/AppSelect.vue'
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
@@ -32,7 +32,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
       </div>
       <div class="flex flex-col gap-1">
         <div v-for="(track, i) in ctx.node[trackProp]" :key="i" class="flex items-center gap-1">
-          <ScrubInput
+          <NumberField
             v-if="track.sizing !== 'AUTO'"
             class="flex-1"
             :icon="`${trackProp === 'gridTemplateColumns' ? 'C' : 'R'}${i + 1}`"
@@ -61,7 +61,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
   </template>
 
   <div class="mt-2 grid grid-cols-2 gap-1.5">
-    <ScrubInput
+    <NumberField
       :model-value="Math.round(ctx.node.gridColumnGap)"
       :min="0"
       @update:model-value="ctx.updateProp('gridColumnGap', $event)"
@@ -70,8 +70,8 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
       <template #icon>
         <icon-lucide-move-horizontal class="size-3" />
       </template>
-    </ScrubInput>
-    <ScrubInput
+    </NumberField>
+    <NumberField
       :model-value="Math.round(ctx.node.gridRowGap)"
       :min="0"
       @update:model-value="ctx.updateProp('gridRowGap', $event)"
@@ -80,6 +80,6 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
       <template #icon>
         <icon-lucide-move-vertical class="size-3" />
       </template>
-    </ScrubInput>
+    </NumberField>
   </div>
 </template>

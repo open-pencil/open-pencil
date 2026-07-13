@@ -1,21 +1,24 @@
-import { twMerge } from 'tailwind-merge'
 import { tv } from 'tailwind-variants'
 
-const input = tv({
-  base: 'w-full rounded border border-border bg-input text-surface outline-none focus:border-accent',
-  variants: {
-    size: {
-      sm: 'px-2 py-1 text-[11px]',
-      md: 'px-2 py-1 text-xs'
-    }
-  },
-  defaultVariants: {
-    size: 'md'
-  }
-})
+import theme from '@/theme/input'
 
-export function useInputUI(options?: { size?: 'sm' | 'md'; ui?: { base?: string } }) {
+export interface InputUI {
+  base?: string
+}
+
+export function useInputUI(options?: {
+  tone?: keyof typeof theme.variants.tone
+  size?: keyof typeof theme.variants.size
+  state?: keyof typeof theme.variants.state
+  ui?: InputUI
+}) {
+  const input = tv(theme)
   return {
-    base: twMerge(input(options), options?.ui?.base)
+    base: input({
+      tone: options?.tone,
+      size: options?.size,
+      state: options?.state,
+      class: options?.ui?.base
+    })
   }
 }
