@@ -489,10 +489,13 @@ export function pathTextSelectionBand(
   glyphs:
     | readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y' | 'fontSize' | 'rotation'>[]
     | null
-    | undefined
+    | undefined,
+  // Callers that already sampled this data/box (the selection overlay) pass it
+  // in to avoid re-sampling the curve every repaint.
+  presampled?: SampledPath | null
 ): number[] | null {
   if (!glyphs?.length) return null
-  const sampled = sampleTextPath(data, box)
+  const sampled = presampled ?? sampleTextPath(data, box)
   if (!sampled) return null
   const { length } = sampled
 

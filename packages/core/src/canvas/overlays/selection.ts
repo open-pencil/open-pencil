@@ -228,7 +228,7 @@ function drawTextPathSelection(
   withNodeBounds(r, canvas, node, rotation, graph, () => {
     // Figma-style selection band: a filled ribbon that hugs the lettering along
     // the path (replaces the flat, path-blind text-edit selection rects).
-    const bandPoly = pathTextSelectionBand(data, box, node.figmaDerivedTextGlyphs)
+    const bandPoly = pathTextSelectionBand(data, box, node.figmaDerivedTextGlyphs, sampled)
     if (bandPoly && bandPoly.length >= 6) {
       const band = new r.ck.Path()
       band.moveTo(bandPoly[0], bandPoly[1])
