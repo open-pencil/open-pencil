@@ -136,7 +136,7 @@ function styleRunsChangeGlyphGeometry(
   return previous.some((signature, index) => signature !== next[index])
 }
 
-function changesInvalidateFigmaDerivedTextGlyphs(
+export function changesInvalidateFigmaDerivedTextGlyphs(
   node: SceneNode,
   changes: Partial<SceneNode>
 ): boolean {
