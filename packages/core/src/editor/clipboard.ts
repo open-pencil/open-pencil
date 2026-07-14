@@ -22,6 +22,7 @@ import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboa
 import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
+import { findAncestorComponentId } from './component-sync'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -232,7 +233,7 @@ export function createClipboardActions(ctx: EditorContext) {
     const containingComponentIds = new Set<string>()
     for (const entry of entries) {
       for (const id of entry.subtree.keys()) {
-        const componentId = containingComponentIdForNode(id)
+        const componentId = findAncestorComponentId(ctx.graph, id)
         if (!componentId || componentId === id) continue
         deletedComponentNodeIds.add(id)
         containingComponentIds.add(componentId)
@@ -248,15 +249,6 @@ export function createClipboardActions(ctx: EditorContext) {
       }
     }
     return sideEffects
-  }
-
-  function containingComponentIdForNode(id: string): string | null {
-    let current = ctx.graph.getNode(id)
-    while (current) {
-      if (current.type === 'COMPONENT') return current.id
-      current = current.parentId ? ctx.graph.getNode(current.parentId) : undefined
-    }
-    return null
   }
 
   function collectMappedInstanceDeletes(

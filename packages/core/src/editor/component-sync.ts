@@ -2,6 +2,15 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { computeAllLayouts } from '#core/layout'
 
+export function findAncestorComponentId(graph: SceneGraph, nodeId: string): string | null {
+  let current = graph.getNode(nodeId)
+  while (current) {
+    if (current.type === 'COMPONENT') return current.id
+    current = current.parentId ? graph.getNode(current.parentId) : undefined
+  }
+  return null
+}
+
 export function createComponentSyncScheduler(
   getGraph: () => SceneGraph,
   requestRender: () => void
@@ -14,14 +23,8 @@ export function createComponentSyncScheduler(
     nodeId: string,
     componentIds: Set<string>
   ) {
-    let current = graph.getNode(nodeId)
-    while (current) {
-      if (current.type === 'COMPONENT') {
-        componentIds.add(current.id)
-        break
-      }
-      current = current.parentId ? graph.getNode(current.parentId) : undefined
-    }
+    const componentId = findAncestorComponentId(graph, nodeId)
+    if (componentId) componentIds.add(componentId)
   }
 
   function collectInstanceAncestorComponents(
