@@ -116,7 +116,9 @@ function snapshotFontManagerState() {
   }
   return {
     manager,
-    cjkFallbackFamilies: new Map(manager.cjkFallbackFamilies),
+    cjkFallbackFamilies: new Map(
+      [...manager.cjkFallbackFamilies.entries()].map(([k, v]) => [k, [...v]])
+    ),
     loadedFamilies: new Map(manager.loadedFamilies)
   }
 }

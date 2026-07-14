@@ -77,11 +77,15 @@ export async function prepareForExport(
   const previousTextMeasurer = getTextMeasurer()
   setTextMeasurer((node, maxWidth) => r.measureTextNode(node, maxWidth))
 
-  const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
-  await Promise.all(fontKeys.map(([family, style]) => fontManager.loadFont(family, style)))
-  await ensureTextFallbackPacksForNodes(graph, nodeIds)
-
-  computeAllLayouts(graph, pageId)
+  try {
+    const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
+    await Promise.all(fontKeys.map(([family, style]) => fontManager.loadFont(family, style)))
+    await ensureTextFallbackPacksForNodes(graph, nodeIds)
+    computeAllLayouts(graph, pageId)
+  } catch (error) {
+    setTextMeasurer(previousTextMeasurer)
+    throw error
+  }
 
   return () => setTextMeasurer(previousTextMeasurer)
 }

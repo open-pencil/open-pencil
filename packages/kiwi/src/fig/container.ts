@@ -43,8 +43,9 @@ export function decompressFigKiwiData(compressed: Uint8Array): Uint8Array {
 
 export async function decompressFigKiwiDataAsync(compressed: Uint8Array): Promise<Uint8Array> {
   if (isZstdCompressed(compressed)) {
-    const { decompress } = await import('fzstd')
-    return decompress(compressed)
+    const bunDecompressed = bunZstdDecompressSync(compressed)
+    if (bunDecompressed) return bunDecompressed
+    return fzstdDecompressSync(compressed)
   }
   try {
     return inflateSync(compressed)
