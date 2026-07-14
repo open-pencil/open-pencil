@@ -389,8 +389,9 @@ export class FontManager {
 
     const promise = this.ensureFallbackFamilies(script, target, {
       allowVariableLocalFonts: true
-    }).finally(() => {
+    }).catch((err) => {
       this.cjkFallbackPromises.delete(script)
+      throw err
     })
     this.cjkFallbackPromises.set(script, promise)
     return promise

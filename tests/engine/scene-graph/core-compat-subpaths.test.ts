@@ -10,9 +10,7 @@ import { SceneGraph } from '@open-pencil/core/scene-graph'
 import type { Color, Matrix, Rect } from '@open-pencil/core/types'
 
 function firstPageId(graph: SceneGraph): string {
-  const [page] = graph.getPages()
-  if (!page) throw new Error('SceneGraph did not create a default page')
-  return page.id
+  return graph.getPages()[0].id
 }
 
 describe('@open-pencil/core compatibility subpaths', () => {
