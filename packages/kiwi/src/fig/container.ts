@@ -48,8 +48,7 @@ export async function decompressFigKiwiDataAsync(compressed: Uint8Array): Promis
   try {
     return inflateSync(compressed)
   } catch {
-    const { decompress } = await import('fzstd')
-    return decompress(compressed)
+    throw new Error('Failed to decompress fig-kiwi data')
   }
 }
 

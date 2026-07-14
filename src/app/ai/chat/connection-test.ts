@@ -2,8 +2,7 @@ import { generateText } from 'ai'
 
 import { createLanguageModel, resolveLanguageModelID, type ModelConfig } from '@/app/ai/chat/model'
 import { isTauri } from '@/app/tauri/env'
-
-const PROVIDER_CONNECTION_TEST_TIMEOUT_MS = 15_000
+import { PROVIDER_CONNECTION_TEST_TIMEOUT_MS } from '@/constants'
 
 export type ProviderConnectionTestResult =
   | { ok: true }
