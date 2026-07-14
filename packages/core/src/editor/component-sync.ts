@@ -35,16 +35,10 @@ export function createComponentSyncScheduler(
     const instanceIds = graph.instanceIndex.get(componentId)
     if (!instanceIds) return
     for (const instanceId of instanceIds) {
-      let parentId = graph.getNode(instanceId)?.parentId ?? null
-      while (parentId) {
-        const parent = graph.getNode(parentId)
-        if (!parent) break
-        if (parent.type === 'COMPONENT') {
-          componentIds.add(parent.id)
-          break
-        }
-        parentId = parent.parentId
-      }
+      const parentId = graph.getNode(instanceId)?.parentId
+      if (!parentId) continue
+      const ancestorId = findAncestorComponentId(graph, parentId)
+      if (ancestorId) componentIds.add(ancestorId)
     }
   }
 

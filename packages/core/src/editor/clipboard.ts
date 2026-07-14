@@ -232,12 +232,23 @@ export function createClipboardActions(ctx: EditorContext) {
     const deletedComponentNodeIds = new Set<string>()
     const containingComponentIds = new Set<string>()
     for (const entry of entries) {
-      for (const id of entry.subtree.keys()) {
-        const componentId = findAncestorComponentId(ctx.graph, id)
-        if (!componentId || componentId === id) continue
-        deletedComponentNodeIds.add(id)
-        containingComponentIds.add(componentId)
+      const rootNode = entry.subtree.get(entry.id)
+      const rootOwnerId = rootNode?.parentId
+        ? findAncestorComponentId(ctx.graph, rootNode.parentId)
+        : null
+
+      const collect = (nodeId: string, ownerId: string | null) => {
+        const node = entry.subtree.get(nodeId)
+        if (!node) return
+        if (ownerId) {
+          deletedComponentNodeIds.add(nodeId)
+          containingComponentIds.add(ownerId)
+        }
+        const nextOwnerId = node.type === 'COMPONENT' ? null : ownerId
+        for (const childId of node.childIds) collect(childId, nextOwnerId)
       }
+
+      collect(entry.id, rootOwnerId)
     }
     if (deletedComponentNodeIds.size === 0 || containingComponentIds.size === 0) return []
 
