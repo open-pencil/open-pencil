@@ -14,8 +14,8 @@ export type ColorVariableBindingApi = {
   createAndBindVariable?: (nodeId: string, index: number, color: Color, name?: string) => void
 }
 
-export function opacityPercent(opacity: number) {
-  return Math.round(opacity * 100)
+export function opacityPercent(opacity: number | undefined) {
+  return Math.round((opacity ?? 1) * 100)
 }
 
 export function opacityFromPercent(percent: number) {

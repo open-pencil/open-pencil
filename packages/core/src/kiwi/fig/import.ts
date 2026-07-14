@@ -390,7 +390,7 @@ function applyStyleRefs(changeMap: Map<string, NodeChange>): void {
 }
 
 export interface FigImportOptions {
-  populate?: 'all' | 'first-page'
+  populate?: 'all' | 'first-page' | 'none'
 }
 
 function rememberLazyFigImportContext(
@@ -405,6 +405,27 @@ function rememberLazyFigImportContext(
     guidToNodeId,
     blobs,
     populatedRootIds: new Set(populatedRootIds)
+  })
+}
+
+function populateImportedInstances(
+  graph: SceneGraph,
+  changeMap: Map<string, NodeChange>,
+  guidToNodeId: Map<string, string>,
+  blobs: Uint8Array[],
+  activeRootIds: string[] | undefined,
+  shouldPopulateInstances: boolean
+): void {
+  if (!shouldPopulateInstances) return
+
+  graph.preserveSourceMetadataDuring(() => {
+    populateAndApplyOverrides(
+      graph,
+      changeMap as Map<string, InstanceNodeChange>,
+      guidToNodeId,
+      blobs,
+      activeRootIds
+    )
   })
 }
 
@@ -480,17 +501,17 @@ export function importNodeChanges(
       ? [firstPageId, ...componentPageIds].filter(isNotNil)
       : undefined
 
-  graph.preserveSourceMetadataDuring(() => {
-    populateAndApplyOverrides(
-      graph,
-      changeMap as Map<string, InstanceNodeChange>,
-      guidToNodeId,
-      blobs,
-      activeRootIds
-    )
-  })
+  const shouldPopulateInstances = options.populate !== 'none'
+  populateImportedInstances(
+    graph,
+    changeMap,
+    guidToNodeId,
+    blobs,
+    activeRootIds,
+    shouldPopulateInstances
+  )
 
-  if (activeRootIds)
+  if (shouldPopulateInstances && activeRootIds)
     rememberLazyFigImportContext(graph, changeMap, guidToNodeId, blobs, activeRootIds)
 
   setVariableColorResolver(null)

@@ -5,10 +5,9 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import type { LanguageModel } from 'ai'
 
-import type { AIProviderID } from '@open-pencil/core/constants'
+import { IS_TAURI, type AIProviderDef, type AIProviderID } from '@open-pencil/core/constants'
 
-import { isTauri } from '@/app/tauri/env'
-import { tauriFetch } from '@/app/tauri/http'
+import { createTauriFetch, tauriFetch } from '@/app/tauri/http'
 
 export type ModelConfig = {
   providerID: AIProviderID
@@ -30,13 +29,29 @@ export function resolveLanguageModelID(
   return config.modelID
 }
 
-function desktopFetch(): typeof fetch | undefined {
-  return isTauri() ? tauriFetch : undefined
+export function providerRequiresCustomModelID(
+  providerID: AIProviderID,
+  providerDef: Pick<AIProviderDef, 'supportsCustomModel'>
+): boolean {
+  return !!providerDef.supportsCustomModel && providerID !== 'openrouter'
 }
 
-export function createLanguageModel(config: ModelConfig): LanguageModel {
+interface CreateLanguageModelOptions {
+  requestTimeoutMs?: number
+}
+
+function desktopFetch(timeoutMs?: number): typeof fetch | undefined {
+  if (!IS_TAURI) return undefined
+  if (timeoutMs !== undefined) return createTauriFetch({ timeoutMs })
+  return tauriFetch
+}
+
+export function createLanguageModel(
+  config: ModelConfig,
+  options: CreateLanguageModelOptions = {}
+): LanguageModel {
   const effectiveModelID = resolveLanguageModelID(config)
-  const fetch = desktopFetch()
+  const fetch = desktopFetch(options.requestTimeoutMs)
 
   switch (config.providerID) {
     case 'openrouter': {

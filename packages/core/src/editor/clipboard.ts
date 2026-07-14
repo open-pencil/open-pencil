@@ -11,12 +11,18 @@ import { computeAllLayouts } from '#core/layout'
 import { createClipboardCopyActions } from './clipboard/copy'
 import { createClipboardExportActions } from './clipboard/export'
 import { createClipboardFontActions } from './clipboard/fonts'
-import { deleteIds, recreateSnapshots, restoreDeletedEntries } from './clipboard/history'
+import {
+  deleteIds,
+  type DeletedEntry,
+  recreateSnapshots,
+  restoreDeletedEntries
+} from './clipboard/history'
 import { createClipboardImageActions } from './clipboard/images'
 import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboard/paste-replace'
 import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
+import { findAncestorComponentId } from './component-sync'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -179,12 +185,7 @@ export function createClipboardActions(ctx: EditorContext) {
   }
 
   function deleteSelected() {
-    const entries: Array<{
-      id: string
-      parentId: string
-      index: number
-      subtree: Map<string, SceneNode>
-    }> = []
+    const entries: DeletedEntry[] = []
     for (const id of ctx.state.selectedIds) {
       const node = ctx.graph.getNode(id)
       if (!node || node.locked) continue
@@ -195,30 +196,105 @@ export function createClipboardActions(ctx: EditorContext) {
     }
     if (entries.length === 0) return
 
+    const syncedInstanceEntries = collectSyncedInstanceDeleteEntries(entries)
+    const relayoutEntries = [...entries, ...syncedInstanceEntries]
+
     const relayoutParents = () => {
-      for (const parentId of new Set(entries.map((entry) => entry.parentId))) {
+      for (const parentId of new Set(relayoutEntries.map((entry) => entry.parentId))) {
         ctx.runLayoutForNode(parentId)
       }
     }
 
     const prevSelection = new Set(ctx.state.selectedIds)
     for (const { id } of entries) ctx.graph.deleteNode(id)
+    for (const { id } of syncedInstanceEntries) ctx.graph.deleteNode(id)
     relayoutParents()
 
     ctx.undo.push({
       label: 'Delete',
       forward: () => {
         for (const { id } of entries) ctx.graph.deleteNode(id)
+        for (const { id } of syncedInstanceEntries) ctx.graph.deleteNode(id)
         relayoutParents()
         ctx.setSelectedIds(new Set())
       },
       inverse: () => {
         restoreDeletedEntries(ctx, entries)
+        restoreDeletedEntries(ctx, syncedInstanceEntries)
         relayoutParents()
         ctx.setSelectedIds(prevSelection)
       }
     })
     ctx.setSelectedIds(new Set())
+  }
+
+  function collectSyncedInstanceDeleteEntries(entries: readonly DeletedEntry[]): DeletedEntry[] {
+    const deletedComponentNodeIds = new Set<string>()
+    const containingComponentIds = new Set<string>()
+    for (const entry of entries) {
+      const rootNode = entry.subtree.get(entry.id)
+      const rootOwnerId = rootNode?.parentId
+        ? findAncestorComponentId(ctx.graph, rootNode.parentId)
+        : null
+
+      const collect = (nodeId: string, ownerId: string | null) => {
+        const node = entry.subtree.get(nodeId)
+        if (!node) return
+        if (ownerId) {
+          deletedComponentNodeIds.add(nodeId)
+          containingComponentIds.add(ownerId)
+        }
+        const nextOwnerId = node.type === 'COMPONENT' ? null : ownerId
+        for (const childId of node.childIds) collect(childId, nextOwnerId)
+      }
+
+      collect(entry.id, rootOwnerId)
+    }
+    if (deletedComponentNodeIds.size === 0 || containingComponentIds.size === 0) return []
+
+    const collected = new Set<string>()
+    const sideEffects: DeletedEntry[] = []
+    for (const componentId of containingComponentIds) {
+      for (const instanceId of ctx.graph.instanceIndex.get(componentId) ?? []) {
+        collectMappedInstanceDeletes(instanceId, deletedComponentNodeIds, collected, sideEffects)
+      }
+    }
+    return sideEffects
+  }
+
+  function collectMappedInstanceDeletes(
+    nodeId: string,
+    deletedComponentNodeIds: ReadonlySet<string>,
+    collected: Set<string>,
+    sideEffects: DeletedEntry[],
+    hasDeletedMappedAncestor = false
+  ): void {
+    const node = ctx.graph.getNode(nodeId)
+    if (!node) return
+    const isDeletedMapping = Boolean(
+      node.componentId && deletedComponentNodeIds.has(node.componentId)
+    )
+    if (isDeletedMapping && !hasDeletedMappedAncestor && !collected.has(node.id)) {
+      const parentId = node.parentId ?? ctx.state.currentPageId
+      const parent = ctx.graph.getNode(parentId)
+      sideEffects.push({
+        id: node.id,
+        parentId,
+        index: parent?.childIds.indexOf(node.id) ?? -1,
+        subtree: snapshotSubtree(ctx.graph, node.id)
+      })
+      collected.add(node.id)
+    }
+    const nextHasDeletedMappedAncestor = hasDeletedMappedAncestor || isDeletedMapping
+    for (const childId of node.childIds) {
+      collectMappedInstanceDeletes(
+        childId,
+        deletedComponentNodeIds,
+        collected,
+        sideEffects,
+        nextHasDeletedMappedAncestor
+      )
+    }
   }
 
   const copyActions = createClipboardCopyActions(ctx)

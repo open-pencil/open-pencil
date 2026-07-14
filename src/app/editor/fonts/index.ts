@@ -4,9 +4,9 @@ import { watch } from 'vue'
 import {
   DEFAULT_WEB_FONT_PROVIDER_SETTINGS,
   WEB_FONT_PROVIDER_IDS,
+  ensureTextFallbackPacksForNodes,
   fontManager,
   styleToWeight,
-  textNeededFallbackScripts,
   type FontFamilyOption,
   type LocalFontAccessState,
   type WebFontProviderId
@@ -166,28 +166,11 @@ export async function ensureGraphFonts(graph: SceneGraph, nodeIds: string[]): Pr
   const missing = fontKeys.filter(([family, style]) => !fontManager.isStyleLoaded(family, style))
   const results = await Promise.all(missing.map(([family, style]) => loadFont(family, style)))
   const loaded = results.some((result) => result !== null)
-  const fallbackScripts = neededFallbackScriptsForNodes(graph, nodeIds)
-  if (fallbackScripts.length > 0) {
-    const fallbacks = await fontManager.ensureFallbackPack(fallbackScripts)
-    if (Object.values(fallbacks).some((families) => families.length > 0)) clearTextPictures(graph)
-  } else if (loaded) {
+  const fallbackLoaded = await ensureTextFallbackPacksForNodes(graph, nodeIds)
+  if (loaded || fallbackLoaded) {
     clearTextPictures(graph)
   }
-  return loaded || fallbackScripts.length > 0
-}
-
-function neededFallbackScriptsForNodes(graph: SceneGraph, nodeIds: string[]) {
-  const scripts = new Set<ReturnType<typeof textNeededFallbackScripts>[number]>()
-  const collect = (id: string) => {
-    const node = graph.getNode(id)
-    if (!node) return
-    if (node.type === 'TEXT') {
-      for (const script of textNeededFallbackScripts(node)) scripts.add(script)
-    }
-    for (const childId of node.childIds) collect(childId)
-  }
-  for (const id of nodeIds) collect(id)
-  return [...scripts]
+  return loaded || fallbackLoaded
 }
 
 function clearTextPictures(graph: SceneGraph): void {

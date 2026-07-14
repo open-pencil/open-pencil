@@ -1,11 +1,12 @@
-import { useEventListener } from '@vueuse/core'
+import { tryOnScopeDispose, useEventListener } from '@vueuse/core'
 
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import {
   copySelectionToTauriClipboard,
-  pasteFromTauriClipboard
+  pasteFromTauriClipboard,
+  trackClipboardEditableFocus
 } from '@/app/editor/clipboard/system'
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { isTauri } from '@/app/tauri/env'
@@ -16,6 +17,9 @@ function cursorPosition(store: EditorStore) {
 }
 
 export function bindEditorClipboard(store: EditorStore) {
+  const stopTrackingEditableFocus = trackClipboardEditableFocus()
+  tryOnScopeDispose(stopTrackingEditableFocus)
+
   useEventListener(window, 'copy', (e: ClipboardEvent) => {
     if (isEditing(e)) return
     e.preventDefault()

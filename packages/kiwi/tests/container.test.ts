@@ -11,7 +11,7 @@ import {
 } from '../src/fig/container'
 
 describe('Figma FIG Kiwi container helpers', () => {
-  test('builds and parses fig-kiwi chunks', () => {
+  test('builds and parses fig-kiwi chunks', async () => {
     const schemaDeflated = new Uint8Array([1, 2, 3])
     const dataRaw = new TextEncoder().encode('payload')
     const binary = buildFigKiwi(schemaDeflated, dataRaw)
@@ -20,7 +20,11 @@ describe('Figma FIG Kiwi container helpers', () => {
 
     expect(chunks).not.toBeNull()
     expect(chunks?.[0]).toEqual(schemaDeflated)
-    expect(chunks?.[1]).toEqual(deflateSync(dataRaw))
+    expect(chunks?.[1].length).toBeGreaterThan(0)
+    expect(decompressFigKiwiData(chunks?.[1] ?? new Uint8Array())).toEqual(dataRaw)
+    await expect(decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())).resolves.toEqual(
+      dataRaw
+    )
   })
 
   test('uses the default container version', () => {

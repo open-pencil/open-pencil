@@ -1,14 +1,15 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
-import type { FontFallbackScript } from '#core/text/fallbacks'
-import { weightToStyle } from '#core/text/fonts'
-import { fontGlyphCoverageSync } from '#core/text/opentype'
+
+import type { FontFallbackScript } from './fallbacks'
+import { fontManager, weightToStyle } from './fonts'
+import { fontGlyphCoverageSync } from './opentype'
 
 const CJK_IDEOGRAPH_CHAR_RE = /[\u3400-\u9fff\uf900-\ufaff]/u
 const CJK_HIRAGANA_KATAKANA_RE = /[\u3040-\u30ff]/u
 const CJK_HANGUL_RE = /[\uac00-\ud7af]/u
-const CJK_CHAR_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
+export const CJK_CHAR_RE = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
 const ARABIC_CHAR_RE = /[\u0600-\u06ff\u0750-\u077f\u08a0-\u08ff\ufb50-\ufdff\ufe70-\ufeff]/u
 
 // Common Traditional-only characters. This is a heuristic for fallback order, not language ID.
@@ -37,7 +38,16 @@ function fallbackScriptForCJKChar(char: string): FontFallbackScript {
   return 'cjk-sc'
 }
 
-function styleForCharacter(node: SceneNode, index: number): { family: string; style: string } {
+export function fallbackScriptsForCharacter(char: string): FontFallbackScript[] {
+  if (ARABIC_CHAR_RE.test(char)) return ['arabic']
+  if (CJK_CHAR_RE.test(char)) return [fallbackScriptForCJKChar(char)]
+  return []
+}
+
+export function textFontStyleForCharacter(
+  node: SceneNode,
+  index: number
+): { family: string; style: string } {
   const baseFamily = node.fontFamily || DEFAULT_FONT_FAMILY
   let family = baseFamily
   let weight = node.fontWeight
@@ -64,7 +74,7 @@ export function textNeedsFallbackScript(node: SceneNode, script: FontFallbackScr
   for (let index = 0; index < node.text.length; index++) {
     const char = node.text[index]
     if (!char || !regex.test(char)) continue
-    const { family, style } = styleForCharacter(node, index)
+    const { family, style } = textFontStyleForCharacter(node, index)
     if (fontGlyphCoverageSync(family, style, char) === 'missing') return true
   }
 
@@ -80,7 +90,7 @@ export function textNeededFallbackScripts(node: SceneNode): FontFallbackScript[]
   for (let index = 0; index < node.text.length; index++) {
     const char = node.text[index]
     if (!char || !CJK_CHAR_RE.test(char)) continue
-    const { family, style } = styleForCharacter(node, index)
+    const { family, style } = textFontStyleForCharacter(node, index)
     if (fontGlyphCoverageSync(family, style, char) !== 'missing') continue
 
     if (CJK_IDEOGRAPH_CHAR_RE.test(char)) {
@@ -94,4 +104,36 @@ export function textNeededFallbackScripts(node: SceneNode): FontFallbackScript[]
   if (missingIdeograph) scripts.add(missingTraditionalIdeograph ? 'cjk-tc' : 'cjk-sc')
 
   return [...scripts]
+}
+
+export function collectTextNeededFallbackScripts(
+  graph: SceneGraph,
+  nodeIds: string[]
+): FontFallbackScript[] {
+  const scripts = new Set<FontFallbackScript>()
+  const visit = (id: string) => {
+    const node = graph.getNode(id)
+    if (!node) return
+    if (node.type === 'TEXT') {
+      for (const script of textNeededFallbackScripts(node)) scripts.add(script)
+    }
+    for (const childId of node.childIds) visit(childId)
+  }
+
+  for (const id of nodeIds) visit(id)
+  return [...scripts]
+}
+
+export async function ensureTextFallbackPacksForNodes(
+  graph: SceneGraph,
+  nodeIds: string[]
+): Promise<boolean> {
+  const fallbackScripts = collectTextNeededFallbackScripts(graph, nodeIds)
+  const missingFallbackScripts = fallbackScripts.filter(
+    (script) => !fontManager.hasFallbackForScript(script)
+  )
+  if (missingFallbackScripts.length === 0) return false
+
+  const fallbacks = await fontManager.ensureFallbackPack(missingFallbackScripts)
+  return missingFallbackScripts.some((script) => (fallbacks[script]?.length ?? 0) > 0)
 }

@@ -9,6 +9,7 @@ import {
   SECTION_TITLE_FONT_SIZE,
   SIZE_FONT_SIZE
 } from '#core/constants'
+import { ensureTextFallbackPacksForNodes } from '#core/text/coverage'
 import { fontManager } from '#core/text/fonts'
 
 export function getFontProvider(r: SkiaRenderer) {
@@ -76,10 +77,15 @@ export async function prepareForExport(
   const previousTextMeasurer = getTextMeasurer()
   setTextMeasurer((node, maxWidth) => r.measureTextNode(node, maxWidth))
 
-  const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
-  await Promise.all(fontKeys.map(([family, style]) => fontManager.loadFont(family, style)))
-
-  computeAllLayouts(graph, pageId)
+  try {
+    const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
+    await Promise.all(fontKeys.map(([family, style]) => fontManager.loadFont(family, style)))
+    await ensureTextFallbackPacksForNodes(graph, nodeIds)
+    computeAllLayouts(graph, pageId)
+  } catch (error) {
+    setTextMeasurer(previousTextMeasurer)
+    throw error
+  }
 
   return () => setTextMeasurer(previousTextMeasurer)
 }

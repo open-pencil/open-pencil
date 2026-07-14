@@ -1,10 +1,32 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
 import { pageId, rect } from './helpers'
+
+const decorationFill = {
+  type: 'SOLID' as const,
+  color: { r: 1, g: 0, b: 0, a: 1 },
+  visible: true,
+  opacity: 1
+}
+
+const advancedTextInvalidationCases: Array<[string, Partial<SceneNode>]> = [
+  ['textAutoResize', { textAutoResize: 'TRUNCATE' }],
+  ['textDecorationStyle', { textDecorationStyle: 'DOTTED' }],
+  ['textDecorationThickness', { textDecorationThickness: 2 }],
+  ['textDecorationFills', { textDecorationFills: [decorationFill] }],
+  ['textDecorationSkipInk', { textDecorationSkipInk: false }],
+  ['textUnderlineOffset', { textUnderlineOffset: 4 }],
+  ['leadingTrim', { leadingTrim: 'CAP_HEIGHT' }],
+  ['maxLines', { maxLines: 1 }],
+  ['fontVariations', { fontVariations: [{ axis: 'wght', value: 700 }] }],
+  ['fontFeatures', { fontFeatures: [{ tag: 'liga', enabled: false }] }],
+  ['textTruncation', { textTruncation: 'ENDING' }]
+]
 
 describe('updateNode', () => {
   test('non-layout change does not clear absPosCache', () => {
@@ -205,6 +227,31 @@ describe('updateNode', () => {
     expect(expectDefined(graph.getNode(textId), 'updated node').figmaDerivedTextGlyphs).toBeNull()
   })
 
+  test('advanced text rendering properties clear both text caches', () => {
+    for (const [label, changes] of advancedTextInvalidationCases) {
+      const graph = new SceneGraph()
+      const page = pageId(graph)
+      const textId = graph.createNode('TEXT', page, {
+        name: `Advanced ${label}`,
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 20
+      }).id
+      const textNode = expectDefined(graph.getNode(textId), 'text node')
+      textNode.textPicture = new Uint8Array([1, 2, 3])
+      textNode.figmaDerivedTextGlyphs = [
+        { commandsBlob: new Uint8Array([4, 5, 6]), x: 0, y: 10, fontSize: 14 }
+      ]
+
+      graph.updateNode(textId, changes)
+
+      const updated = expectDefined(graph.getNode(textId), `updated ${label} node`)
+      expect([label, updated.textPicture]).toEqual([label, null])
+      expect([label, updated.figmaDerivedTextGlyphs]).toEqual([label, null])
+    }
+  })
+
   test('figmaDerivedTextGlyphs survive non-text property change on TEXT node', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)
@@ -222,6 +269,129 @@ describe('updateNode', () => {
     graph.updateNode(textId, { opacity: 0.5 })
 
     expect(expectDefined(graph.getNode(textId), 'updated node').figmaDerivedTextGlyphs).toBe(glyphs)
+  })
+
+  test('fill updates clear textPicture but preserve imported glyph geometry', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const textId = graph.createNode('TEXT', page, {
+      name: 'Imported text',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20
+    }).id
+    const fakePicture = new Uint8Array([1, 2, 3])
+    const glyphs = [{ commandsBlob: new Uint8Array([4, 5, 6]), x: 0, y: 10, fontSize: 14 }]
+    const textNode = expectDefined(graph.getNode(textId), 'text node')
+    textNode.textPicture = fakePicture
+    textNode.figmaDerivedTextGlyphs = glyphs
+
+    graph.updateNode(textId, {
+      fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    })
+
+    const updated = expectDefined(graph.getNode(textId), 'updated node')
+    expect(updated.textPicture).toBeNull()
+    expect(updated.figmaDerivedTextGlyphs).toBe(glyphs)
+  })
+
+  test('range fill styleRuns updates clear textPicture but preserve imported glyph geometry', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const textId = graph.createNode('TEXT', page, {
+      name: 'Range painted imported text',
+      text: 'Import',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20,
+      styleRuns: [
+        {
+          start: 0,
+          length: 6,
+          style: { fontSize: 14 }
+        }
+      ]
+    }).id
+    const fakePicture = new Uint8Array([1, 2, 3])
+    const glyphs = [{ commandsBlob: new Uint8Array([4, 5, 6]), x: 0, y: 10, fontSize: 14 }]
+    const textNode = expectDefined(graph.getNode(textId), 'text node')
+    textNode.textPicture = fakePicture
+    textNode.figmaDerivedTextGlyphs = glyphs
+
+    graph.updateNode(textId, {
+      styleRuns: [
+        { start: 0, length: 2, style: { fontSize: 14 } },
+        {
+          start: 2,
+          length: 2,
+          style: {
+            fontSize: 14,
+            fills: [
+              { type: 'SOLID', color: { r: 0, g: 0.5, b: 1, a: 1 }, visible: true, opacity: 1 }
+            ]
+          }
+        },
+        { start: 4, length: 2, style: { fontSize: 14 } }
+      ]
+    })
+
+    const updated = expectDefined(graph.getNode(textId), 'updated node')
+    expect(updated.textPicture).toBeNull()
+    expect(updated.figmaDerivedTextGlyphs).toBe(glyphs)
+  })
+
+  test('range font styleRuns updates clear imported glyph geometry', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const textId = graph.createNode('TEXT', page, {
+      name: 'Range font imported text',
+      text: 'Import',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20,
+      styleRuns: []
+    }).id
+    const textNode = expectDefined(graph.getNode(textId), 'text node')
+    textNode.textPicture = new Uint8Array([1, 2, 3])
+    textNode.figmaDerivedTextGlyphs = [
+      { commandsBlob: new Uint8Array([4, 5, 6]), x: 0, y: 10, fontSize: 14 }
+    ]
+
+    graph.updateNode(textId, {
+      styleRuns: [{ start: 0, length: 6, style: { fontFamily: 'Noto Sans SC' } }]
+    })
+
+    const updated = expectDefined(graph.getNode(textId), 'updated node')
+    expect(updated.textPicture).toBeNull()
+    expect(updated.figmaDerivedTextGlyphs).toBeNull()
+  })
+
+  test('preview fill updates clear textPicture but preserve imported glyph geometry', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const textId = graph.createNode('TEXT', page, {
+      name: 'Preview imported text',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 20
+    }).id
+    const fakePicture = new Uint8Array([1, 2, 3])
+    const glyphs = [{ commandsBlob: new Uint8Array([4, 5, 6]), x: 0, y: 10, fontSize: 14 }]
+    const textNode = expectDefined(graph.getNode(textId), 'text node')
+    textNode.textPicture = fakePicture
+    textNode.figmaDerivedTextGlyphs = glyphs
+
+    graph.updateNodePreview(textId, {
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+
+    const updated = expectDefined(graph.getNode(textId), 'updated node')
+    expect(updated.textPicture).toBeNull()
+    expect(updated.figmaDerivedTextGlyphs).toBe(glyphs)
   })
 
   test('textPicture survives non-text property change on TEXT node', () => {
@@ -261,5 +431,73 @@ describe('updateNode', () => {
     const afterUpdate = graph.getNode(textId)
     expect(afterUpdate).toBeDefined()
     expect(expectDefined(afterUpdate, 'updated node').textPicture).toBeNull()
+  })
+
+  test('syncInstances clears stale text pictures when text props are copied', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const component = graph.createNode('COMPONENT', page, {
+      name: 'Label component',
+      x: 0,
+      y: 0,
+      width: 120,
+      height: 40
+    })
+    const componentText = graph.createNode('TEXT', component.id, {
+      text: 'Before',
+      fontFamily: 'Inter',
+      width: 120,
+      height: 40
+    })
+    const instance = graph.createInstance(component.id, page)
+    const instanceText = expectDefined(
+      graph.getChildren(expectDefined(instance, 'instance').id)[0],
+      'instance text'
+    )
+    instanceText.textPicture = new Uint8Array([1, 2, 3])
+    instanceText.figmaDerivedTextGlyphs = []
+
+    graph.updateNode(componentText.id, { text: 'After' })
+    graph.syncInstances(component.id)
+
+    const syncedText = expectDefined(graph.getNode(instanceText.id), 'synced text')
+    expect(syncedText.text).toBe('After')
+    expect(syncedText.textPicture).toBeNull()
+    expect(syncedText.figmaDerivedTextGlyphs).toBeNull()
+  })
+
+  test('syncInstances preserves imported glyph geometry when only text fills change', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const component = graph.createNode('COMPONENT', page, {
+      name: 'Painted label component',
+      x: 0,
+      y: 0,
+      width: 120,
+      height: 40
+    })
+    const componentText = graph.createNode('TEXT', component.id, {
+      text: 'Imported',
+      fontFamily: 'Unavailable Import Font',
+      width: 120,
+      height: 40
+    })
+    const instance = graph.createInstance(component.id, page)
+    const instanceText = expectDefined(
+      graph.getChildren(expectDefined(instance, 'instance').id)[0],
+      'instance text'
+    )
+    const glyphs = [{ commandsBlob: new Uint8Array([7, 8, 9]), x: 0, y: 10, fontSize: 14 }]
+    instanceText.textPicture = new Uint8Array([1, 2, 3])
+    instanceText.figmaDerivedTextGlyphs = glyphs
+
+    graph.updateNode(componentText.id, {
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0.5, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+    graph.syncInstances(component.id)
+
+    const syncedText = expectDefined(graph.getNode(instanceText.id), 'synced text')
+    expect(syncedText.textPicture).toBeNull()
+    expect(syncedText.figmaDerivedTextGlyphs).toBe(glyphs)
   })
 })

@@ -6,8 +6,15 @@ import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
 import type { StyleRun } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
+import type { FontFallbackScript } from '@open-pencil/core/text'
+import { fontManager } from '@open-pencil/core/text'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
+import { repoPath } from '#tests/helpers/paths'
+
+type FallbackTestFontManager = typeof fontManager & {
+  cjkFallbackFamilies: Map<FontFallbackScript, string[]>
+}
 
 function setup() {
   const graph = new SceneGraph()
@@ -101,6 +108,36 @@ describe('text edit undo', () => {
 
     undo.redo()
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('Hello World')
+  })
+
+  test('commitTextEdit requests script-specific CJK fallback packs', async () => {
+    const data = await Bun.file(repoPath('public/Inter-Regular.ttf')).arrayBuffer()
+    const manager = fontManager as FallbackTestFontManager
+    const originalFallbackFamilies = new Map(manager.cjkFallbackFamilies)
+    const originalEnsureFallbackPack = fontManager.ensureFallbackPack.bind(fontManager)
+    const requests: FontFallbackScript[][] = []
+
+    try {
+      manager.cjkFallbackFamilies = new Map()
+      fontManager.markLoaded('Inter', 'Regular', data)
+      fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
+        requests.push([...scripts])
+        return { 'cjk-sc': ['Manual CJK Fallback'] }
+      }
+
+      const { graph, textEditor, textNode, actions } = setup()
+      graph.updateNode(textNode.id, { text: '', fontFamily: 'Inter', fontWeight: 400 })
+
+      actions.startTextEditing(textNode.id)
+      textEditor.insert('你好世界', getNodeOrThrow(graph, textNode.id))
+      actions.commitTextEdit()
+
+      await Promise.resolve()
+      expect(requests).toEqual([['cjk-sc']])
+    } finally {
+      fontManager.ensureFallbackPack = originalEnsureFallbackPack
+      manager.cjkFallbackFamilies = originalFallbackFamilies
+    }
   })
 
   test('commitTextEdit preserves auto-height text bounds', () => {

@@ -77,7 +77,7 @@ export function parseFigKiwiContainer(data: Uint8Array): FigKiwiPayload | null {
     try {
       dataRaw = inflateSync(compressed)
     } catch {
-      dataRaw = compressed
+      throw new Error('Failed to decompress fig-kiwi data chunk')
     }
   }
 

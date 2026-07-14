@@ -10,7 +10,7 @@ import {
 } from '@open-pencil/core'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { parseFixture } from '#tests/helpers/fig-fixtures'
+import { parseFixture, uint8ArrayToArrayBuffer } from '#tests/helpers/fig-fixtures'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -27,7 +27,7 @@ describe('variable roundtrip', () => {
     graph.createVariable('label', 'STRING', col.id, 'Hello')
 
     const exported = await exportFigFile(graph)
-    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+    const reimported = await parseFigFile(uint8ArrayToArrayBuffer(exported))
 
     expect(reimported.variables.size).toBe(4)
     expect(reimported.variableCollections.size).toBe(1)
@@ -106,7 +106,7 @@ describe('variable roundtrip', () => {
     graph.bindVariable(rect.id, 'strokes/0/color', strokeVar.id)
 
     const exported = await exportFigFile(graph)
-    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+    const reimported = await parseFigFile(uint8ArrayToArrayBuffer(exported))
 
     const reimportedRect = [...reimported.getAllNodes()].find((n) => n.name === 'Bound Rect')
     expect(reimportedRect).toBeDefined()
@@ -120,10 +120,10 @@ describe('variable roundtrip', () => {
   test.if(runsHeavyTests)(
     'material3.fig variables survive round-trip',
     async () => {
-      const original = await parseFixture('material3.fig')
+      const original = await parseFixture('material3.fig', { populate: 'none' })
 
       const exported = await exportFigFile(original)
-      const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+      const reimported = await parseFigFile(uint8ArrayToArrayBuffer(exported), { populate: 'none' })
 
       expect(reimported.variables.size).toBe(original.variables.size)
       expect(reimported.variableCollections.size).toBeGreaterThanOrEqual(
@@ -150,7 +150,7 @@ describe('variable roundtrip', () => {
 
     // Round-trip through the codec
     const exported = await exportFigFile(graph)
-    const reimported = await parseFigFile(exported.buffer as ArrayBuffer)
+    const reimported = await parseFigFile(uint8ArrayToArrayBuffer(exported))
 
     // Find all nodes with pluginData
     let nodesWithPluginData = 0

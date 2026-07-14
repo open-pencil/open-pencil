@@ -9,6 +9,9 @@ import {
   type OutlineCommand
 } from '#core/text/opentype'
 
+import { CJK_CHAR_RE, fallbackScriptsForCharacter } from './coverage'
+import { cjkFallbackFamiliesForScripts } from './fallback-order'
+
 export type TextOutlineUnsupportedReason =
   | 'not-text'
   | 'empty-text'
@@ -74,7 +77,7 @@ function textStyleAt(node: SceneNode, index: number): TextStyle {
 
 function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
   if (fontHasGlyphSync(style.fontFamily, styleName(style), char)) return style
-  const family = fallbackFamilies().find((candidate) => {
+  const family = fallbackFamilies(char).find((candidate) => {
     const next = fallbackStyle(style, candidate)
     return (
       fontManager.loadedData(next.fontFamily, styleName(next)) &&
@@ -84,8 +87,18 @@ function resolvedGlyphStyle(style: TextStyle, char: string): TextStyle | null {
   return family ? fallbackStyle(style, family) : null
 }
 
-function fallbackFamilies(): string[] {
-  return [...fontManager.getCJKFallbackFamilies(), ...fontManager.getArabicFallbackFamilies()]
+function fallbackFamilies(char: string): string[] {
+  const scripts = fallbackScriptsForCharacter(char)
+  if (scripts.length === 0) {
+    return [...fontManager.getCJKFallbackFamilies(), ...fontManager.getArabicFallbackFamilies()]
+  }
+
+  const families: string[] = []
+  if (scripts.some((script) => script !== 'arabic')) {
+    families.push(...cjkFallbackFamiliesForScripts(fontManager, scripts))
+  }
+  if (scripts.includes('arabic')) families.push(...fontManager.getArabicFallbackFamilies())
+  return families
 }
 
 function fallbackStyle(style: TextStyle, family: string): TextStyle {
@@ -184,7 +197,9 @@ function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
 function textLines(node: SceneNode): TextLine[] {
   const hardLines = hardTextLines(node.text)
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return hardLines
-  if (node.styleRuns.length > 0) return hardLines.flatMap((line) => wrapStyledLine(node, line))
+  if (node.styleRuns.length > 0 || hardLines.some((line) => CJK_CHAR_RE.test(line.text))) {
+    return hardLines.flatMap((line) => wrapStyledLine(node, line))
+  }
 
   const result: TextLine[] = []
   for (const hardLine of hardLines) {

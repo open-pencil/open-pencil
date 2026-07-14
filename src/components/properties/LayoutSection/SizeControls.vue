@@ -17,12 +17,7 @@ import VariableNumberField from '@/components/properties/VariableNumberField.vue
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useSelectUI } from '@/components/ui/select'
-import {
-  vTestId,
-  useI18n,
-  useLayoutControlsContext,
-  useNumberVariableBinding
-} from '@open-pencil/vue'
+import { useI18n, useLayoutControlsContext, useNumberVariableBinding } from '@open-pencil/vue'
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
 import type { SizeLimitProp, TestId } from '@open-pencil/vue'
@@ -348,7 +343,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
       <div :ref="limitFieldRefs.set" class="min-w-0">
         <VariableNumberField
           v-if="ctx.node"
-          v-test-id="item.testHook"
+          :data-test-id="item.testHook"
           :icon="item.icon()"
           :model-value="Math.round(item.value() ?? 0)"
           :min="0"
@@ -363,7 +358,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
             >
               <SelectTrigger
-                v-test-id="`${item.testHook}-menu`"
+                :data-test-id="`${item.testHook}-menu`"
                 :reference="limitFieldAnchor(index)"
                 class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
                 @pointerdown.stop
@@ -392,7 +387,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
         </VariableNumberField>
         <NumberField
           v-else
-          v-test-id="item.testHook"
+          :data-test-id="item.testHook"
           :icon="item.icon()"
           :model-value="Math.round(item.value() ?? 0)"
           :min="0"
@@ -405,7 +400,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               @update:model-value="(value) => handleLimitSelect(item.prop, value as string)"
             >
               <SelectTrigger
-                v-test-id="`${item.testHook}-menu`"
+                :data-test-id="`${item.testHook}-menu`"
                 :reference="limitFieldAnchor(index)"
                 class="flex shrink-0 cursor-pointer items-center self-stretch border-none bg-transparent px-1 text-[11px] text-muted outline-none"
                 @pointerdown.stop

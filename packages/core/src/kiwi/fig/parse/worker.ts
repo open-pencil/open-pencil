@@ -1,6 +1,6 @@
 import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 
-import { importNodeChanges } from '#core/kiwi/fig/import'
+import { importNodeChanges, type FigImportOptions } from '#core/kiwi/fig/import'
 import {
   serializeSceneGraph,
   serializedSceneGraphTransferList
@@ -8,7 +8,7 @@ import {
 
 interface WorkerParseRequest {
   buffer: ArrayBuffer
-  options?: { populate?: 'all' | 'first-page' }
+  options?: FigImportOptions
 }
 
 type WorkerScope = typeof self & {

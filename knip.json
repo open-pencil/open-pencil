@@ -5,7 +5,7 @@
     "**/dist/**",
     "**/node_modules/**"
   ],
-  "ignoreWorkspaces": ["packages/acp", "packages/demos"],
+  "ignoreWorkspaces": ["packages/demos"],
   "ignoreUnresolved": [
     "~icons/*",
     "/packages/core/src/text/fonts.ts",

@@ -5,6 +5,7 @@ import {
   testProviderConnection,
   type ProviderConnectionTestFailureReason
 } from '@/app/ai/chat/connection-test'
+import { providerRequiresCustomModelID } from '@/app/ai/chat/model'
 import { useAIChat } from '@/app/ai/chat/use'
 
 function createProviderSettingsContext() {
@@ -39,7 +40,12 @@ function createProviderSettingsContext() {
     if (isACP.value) return false
     if (!effectiveAPIKey.value.trim()) return false
     if (providerDef.value.supportsCustomBaseURL && !baseURLInput.value.trim()) return false
-    if (providerDef.value.supportsCustomModel && !customModelInput.value.trim()) return false
+    if (
+      providerRequiresCustomModelID(providerID.value, providerDef.value) &&
+      !customModelInput.value.trim()
+    ) {
+      return false
+    }
     return true
   })
 

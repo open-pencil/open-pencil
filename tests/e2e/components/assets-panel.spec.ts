@@ -175,7 +175,10 @@ test('assets panel groups component sets and inserts the default variant', async
 
   await expect(page.getByTestId('variant-section')).toBeVisible()
 
-  await page.getByTestId('variant-section').getByTestId('app-select-trigger').click()
+  await page
+    .getByTestId('variant-section')
+    .getByTestId(/variant-select-/)
+    .click()
   await page.getByRole('option', { name: 'Primary' }).click()
 
   expectDefined(inserted?.id, 'inserted instance id')

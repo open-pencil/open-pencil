@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolveLanguageModelID } from '@/app/ai/chat/model'
+import { providerRequiresCustomModelID, resolveLanguageModelID } from '@/app/ai/chat/model'
 import { normalizeOpenRouterModel } from '@/app/ai/chat/provider-models'
 
 describe('resolveLanguageModelID', () => {
@@ -22,6 +22,25 @@ describe('resolveLanguageModelID', () => {
         customModelID: '  meta-llama/llama-3.3-70b-instruct  '
       })
     ).toBe('meta-llama/llama-3.3-70b-instruct')
+  })
+})
+
+describe('providerRequiresCustomModelID', () => {
+  test('lets OpenRouter use the selected model when the custom model field is empty', () => {
+    expect(providerRequiresCustomModelID('openrouter', { supportsCustomModel: true })).toBe(false)
+  })
+
+  test('requires custom model IDs for compatible providers without curated model lists', () => {
+    expect(providerRequiresCustomModelID('openai-compatible', { supportsCustomModel: true })).toBe(
+      true
+    )
+    expect(
+      providerRequiresCustomModelID('anthropic-compatible', { supportsCustomModel: true })
+    ).toBe(true)
+  })
+
+  test('does not require a custom model for fixed-model providers', () => {
+    expect(providerRequiresCustomModelID('anthropic', {})).toBe(false)
   })
 })
 

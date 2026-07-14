@@ -10,7 +10,7 @@ export {
   svgFormat,
   jsxFormat
 } from './formats'
-export { exportFigFile, parseFigFile, readFigFile } from './formats/fig'
+export { exportFigFile, parseFigFile, readFigFile, type ParseFigFileOptions } from './formats/fig'
 export { parsePenFile, readPenFile } from './formats/pen'
 export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './formats/jsx'
 export {

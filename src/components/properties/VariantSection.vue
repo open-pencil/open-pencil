@@ -56,6 +56,7 @@ function switchVariant(propertyName: string, newValue: string) {
       >
         <label class="text-[10px] text-muted">{{ propName }}</label>
         <AppSelect
+          :data-test-id="`variant-select-${propName}`"
           :model-value="currentValues[propName] ?? ''"
           :options="[...options].map((v) => ({ value: v, label: v }))"
           @update:model-value="switchVariant(propName, $event)"

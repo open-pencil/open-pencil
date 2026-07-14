@@ -30,6 +30,7 @@ export function restoreSubtree(
   parentId: string,
   index: Map<string, SceneNode>
 ): void {
+  if (graph.getNode(snapshot.id)) return
   const { parentId: _parentId, childIds, ...rest } = snapshot
   graph.createNode(snapshot.type, parentId, { ...rest, id: snapshot.id })
   for (const childId of childIds) {

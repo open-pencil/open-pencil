@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseFigKiwiContainer } from '#core/kiwi/fig/parse/core'
+import { parseFigKiwiContainer } from '@open-pencil/kiwi/fig/parse'
 
 /**
  * Build a minimal fig-kiwi container with a valid header + schema chunk

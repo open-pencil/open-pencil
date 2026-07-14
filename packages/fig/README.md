@@ -22,8 +22,6 @@ Non-goals:
 - low-level Kiwi schema/runtime/codec internals — use `@open-pencil/kiwi`
 - editor actions, renderer behavior, Vue/app UI, CLI formatting, or MCP transport
 
-See `packages/docs/development/fig-package-plan.md` for the staged migration plan.
-
 ## Checks
 
 ```sh

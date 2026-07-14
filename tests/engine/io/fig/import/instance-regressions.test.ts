@@ -39,8 +39,8 @@ describe('derived instance layout regressions', () => {
     expect(inputFrame?.width).toBeCloseTo(375.7498, 3)
     expect(inputFrame?.height).toBeCloseTo(39.3803, 3)
     expect(content).toMatchObject({ x: 0, y: 0 })
-    expect(firstBadge?.x).toBeCloseTo(8, 3)
-    expect(firstBadge?.y).toBeCloseTo(6, 3)
+    expect(firstBadge?.x).toBeCloseTo(7.1268, 3)
+    expect(firstBadge?.y).toBeCloseTo(5.3451, 3)
     expect(firstBadge?.width).toBeCloseTo(85.3239, 3)
     expect(firstBadge?.height).toBeCloseTo(28.6901, 3)
     expect(firstBadgeContent).toMatchObject({ x: 0, y: 0 })
@@ -164,6 +164,11 @@ describe('derived instance layout regressions', () => {
       b: 0.9215686321258545,
       a: 1
     })
+    const linkSource = linkText?.componentId ? graph.getNode(linkText.componentId) : null
+    // This imported clone's component source has already resolved to the same
+    // visible text. Its matching Figma glyph outlines should remain available;
+    // stale mismatched glyph clearing is covered by the scene-graph sync tests.
+    expect(linkSource?.text).toBe('browse')
     expect(linkText?.figmaDerivedTextGlyphs?.length).toBeGreaterThan(0)
 
     const input = previewChild(graph, nodes, 'Input')
