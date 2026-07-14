@@ -213,8 +213,6 @@ export async function cleanupSocket(socketPath: string | null): Promise<void> {
           // Only ECONNREFUSED and ENOENT mean "nobody is listening".
           // All other errors (EACCES, ECONNRESET, etc.) are treated as
           // "alive" to avoid unlinking a live replacement server's socket.
-          // This mirrors the conservative error handling in testSocketConnection
-          // (packages/mcp/src/transport/discovery.ts).
           const isDead = err.code === 'ECONNREFUSED' || err.code === 'ENOENT'
           finish(!isDead)
         })
