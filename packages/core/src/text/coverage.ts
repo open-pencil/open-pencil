@@ -1,10 +1,10 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
-import { fontGlyphCoverageSync } from '#core/text/opentype'
 
 import type { FontFallbackScript } from './fallbacks'
 import { fontManager, weightToStyle } from './fonts'
+import { fontGlyphCoverageSync } from './opentype'
 
 const CJK_IDEOGRAPH_CHAR_RE = /[\u3400-\u9fff\uf900-\ufaff]/u
 const CJK_HIRAGANA_KATAKANA_RE = /[\u3040-\u30ff]/u

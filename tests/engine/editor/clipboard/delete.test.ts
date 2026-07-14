@@ -4,13 +4,8 @@ import { createEditor } from '@open-pencil/core/editor'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
+import { flushComponentSync } from '#tests/helpers/component-sync'
 import { autoFrame, rect } from '#tests/helpers/layout'
-
-async function flushComponentSync(): Promise<void> {
-  await Promise.resolve()
-  await Promise.resolve()
-  await Promise.resolve()
-}
 
 describe('deleteSelected', () => {
   test('reflows fixed vertical auto-layout siblings', () => {
