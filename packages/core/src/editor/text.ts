@@ -1,3 +1,4 @@
+import { computeAllLayouts } from '#core/layout'
 import { ensureTextFallbackPacksForNodes } from '#core/text/coverage'
 
 import {
@@ -16,6 +17,7 @@ export function createTextActions(ctx: EditorContext) {
     void ensureTextFallbackPacksForNodes(ctx.graph, [nodeId]).then((loaded) => {
       if (loaded) {
         ctx.getRenderer()?.invalidateAllPictures()
+        computeAllLayouts(ctx.graph, ctx.state.currentPageId)
         ctx.requestRender()
       }
       return undefined

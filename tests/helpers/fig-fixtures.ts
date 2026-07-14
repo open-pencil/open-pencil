@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { parseFigFile } from '@open-pencil/core'
-import type { SceneGraph, SceneNode } from '@open-pencil/core'
+import { parseFigFile, type ParseFigFileOptions, type SceneGraph, type SceneNode } from '@open-pencil/core'
 
 import { collectAllNodes } from './fig-traversal'
 
@@ -44,8 +43,11 @@ export function readFixtureArrayBuffer(name: string): ArrayBuffer {
   return copy.buffer
 }
 
-export async function parseFixture(name: string): Promise<SceneGraph> {
-  return parseFigFile(readFixtureArrayBuffer(name))
+export async function parseFixture(
+  name: string,
+  options?: ParseFigFileOptions
+): Promise<SceneGraph> {
+  return parseFigFile(readFixtureArrayBuffer(name), options)
 }
 
 export async function parseGoldPreviewFixture(): Promise<{
