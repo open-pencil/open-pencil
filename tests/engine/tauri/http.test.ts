@@ -69,7 +69,7 @@ describe('tauriFetch', () => {
     expect(captured.request.url).toBe('https://example.test/check')
     expect(captured.request.method).toBe('POST')
     expect(captured.request.timeoutMs).toBe(15_000)
-    expect(captured.request.body).toEqual([...new TextEncoder().encode('{"ok":true}')])
+    expect(captured.request.body).toEqual(new TextEncoder().encode('{"ok":true}'))
   })
 
   test('forwards bodies from Request inputs', async () => {
