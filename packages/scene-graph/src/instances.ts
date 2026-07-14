@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import type { SceneGraph, SceneNode } from './'
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
 import { invalidatesFigmaDerivedTextGlyphs, invalidatesTextPicture } from './text-picture'
@@ -51,8 +53,6 @@ const INSTANCE_TEXT_SYNC_PROPS = [
   'textDirection'
 ] as const satisfies readonly (keyof SceneNode)[]
 
-type ComparableObject = { [key: string]: unknown }
-
 function setSceneProp<K extends keyof SceneNode>(
   target: Partial<SceneNode>,
   key: K,
@@ -86,37 +86,12 @@ function copyProp(
   }
 }
 
-function valuesEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true
-  if (a === null || b === null) return false
-  if (typeof a !== typeof b) return false
-
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b)) return false
-    if (a.length !== b.length) return false
-    return a.every((item, index) => valuesEqual(item, b[index]))
-  }
-
-  if (isComparableObject(a) && isComparableObject(b)) {
-    const aKeys = Object.keys(a)
-    const bKeys = Object.keys(b)
-    if (aKeys.length !== bKeys.length) return false
-    return aKeys.every((key) => Object.hasOwn(b, key) && valuesEqual(a[key], b[key]))
-  }
-
-  return false
-}
-
-function isComparableObject(value: unknown): value is ComparableObject {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
 function copyPropIfChanged(
   target: Partial<SceneNode> | SceneNode,
   source: SceneNode,
   key: keyof SceneNode
 ): boolean {
-  if (valuesEqual(target[key], source[key])) return false
+  if (isEqual(target[key], source[key])) return false
   copyProp(target, source, key)
   return true
 }

@@ -14,14 +14,20 @@ export function createTextActions(ctx: EditorContext) {
   let activeSession: TextEditSession | null = null
 
   function requestTextFallbackFonts(nodeId: string): void {
-    void ensureTextFallbackPacksForNodes(ctx.graph, [nodeId]).then((loaded) => {
-      if (loaded) {
-        ctx.getRenderer()?.invalidateAllPictures()
-        computeAllLayouts(ctx.graph, ctx.state.currentPageId)
-        ctx.requestRender()
-      }
-      return undefined
-    })
+    void ensureTextFallbackPacksForNodes(ctx.graph, [nodeId])
+      .then((loaded) => {
+        if (loaded) {
+          ctx.getRenderer()?.invalidateAllPictures()
+          computeAllLayouts(ctx.graph, ctx.state.currentPageId)
+          ctx.requestRender()
+        }
+        return undefined
+      })
+      .catch((err) => {
+        process.stderr.write(
+          `Failed to load fallback fonts: ${err instanceof Error ? err.message : String(err)}\n`
+        )
+      })
   }
 
   function startTextEditing(nodeId: string) {

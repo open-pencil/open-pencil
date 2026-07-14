@@ -10,7 +10,7 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 
-import { readFixtureArrayBuffer } from '#tests/helpers/fig-fixtures'
+import { readFixtureArrayBuffer, uint8ArrayToArrayBuffer } from '#tests/helpers/fig-fixtures'
 import { heavy } from '#tests/helpers/test-utils'
 
 const FIG_EXPORT_ROUNDTRIP_TIMEOUT_MS = 120_000
@@ -18,17 +18,6 @@ const FIG_EXPORT_ROUNDTRIP_TIMEOUT_MS = 120_000
 setDefaultTimeout(30_000)
 
 const CUSTOM_FIG_KIWI_VERSION = 77
-
-function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
-  const buffer = bytes.buffer
-  if (buffer instanceof ArrayBuffer) {
-    return buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-  }
-
-  const copy = new Uint8Array(bytes.byteLength)
-  copy.set(bytes)
-  return copy.buffer
-}
 
 function canvasFigVersion(figData: Uint8Array): number {
   const zip = unzipSync(figData)
@@ -148,7 +137,7 @@ heavy('fig export roundtrip', () => {
     'exported file can be parsed back',
     async () => {
       const exported = await exportFigFile(parsed)
-      const reparsed = await parseFigFile(toArrayBuffer(exported))
+      const reparsed = await parseFigFile(uint8ArrayToArrayBuffer(exported))
       expect(reparsed).toBeInstanceOf(SceneGraph)
       expect(reparsed.getPages().length).toBeGreaterThan(0)
     },

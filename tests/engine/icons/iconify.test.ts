@@ -106,8 +106,8 @@ async function withMockedIconifyApi(
   }
 }
 
-const iconifyTest: typeof test = (name, fn, timeout) =>
-  test(name, () => withMockedIconifyApi(() => (fn as () => Promise<void>)()), timeout)
+const iconifyTest = (name: string, fn: () => Promise<void>, timeout?: number): void =>
+  test(name, () => withMockedIconifyApi(() => fn()), timeout)
 
 describe('fetchIcon', () => {
   iconifyTest('fetches mdi:home', async () => {

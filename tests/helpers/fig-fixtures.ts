@@ -1,7 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { parseFigFile, type ParseFigFileOptions, type SceneGraph, type SceneNode } from '@open-pencil/core'
+import {
+  parseFigFile,
+  type ParseFigFileOptions,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/core'
 
 import { collectAllNodes } from './fig-traversal'
 
@@ -32,8 +37,7 @@ export function readFixtureBytes(name: string): Uint8Array {
   return readFileSync(resolve(FIXTURES, name))
 }
 
-export function readFixtureArrayBuffer(name: string): ArrayBuffer {
-  const bytes = readFixtureBytes(name)
+export function uint8ArrayToArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const buffer = bytes.buffer
   if (buffer instanceof ArrayBuffer)
     return buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
@@ -41,6 +45,10 @@ export function readFixtureArrayBuffer(name: string): ArrayBuffer {
   const copy = new Uint8Array(bytes.byteLength)
   copy.set(bytes)
   return copy.buffer
+}
+
+export function readFixtureArrayBuffer(name: string): ArrayBuffer {
+  return uint8ArrayToArrayBuffer(readFixtureBytes(name))
 }
 
 export async function parseFixture(

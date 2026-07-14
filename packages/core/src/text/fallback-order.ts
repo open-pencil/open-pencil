@@ -1,4 +1,4 @@
-import type { FontFallbackScript } from '#core/text/fallbacks'
+import type { FontFallbackScript } from './fallbacks'
 
 interface CJKFallbackFamilySource {
   getCJKFallbackFamilies(): string[]
@@ -14,15 +14,12 @@ export function cjkFallbackFamiliesForScripts(
   if (requested.length === 0) return source.getCJKFallbackFamilies()
 
   const generic = source.getDirectFallbackFamiliesForScript('cjk')
-  const families: string[] = []
-  const add = (family: string) => {
-    if (!families.includes(family)) families.push(family)
-  }
+  const families = new Set<string>()
 
   for (const script of requested) {
     if (script === 'cjk') continue
-    for (const family of source.getDirectFallbackFamiliesForScript(script)) add(family)
+    for (const family of source.getDirectFallbackFamiliesForScript(script)) families.add(family)
   }
-  for (const family of generic) add(family)
-  return families
+  for (const family of generic) families.add(family)
+  return [...families]
 }

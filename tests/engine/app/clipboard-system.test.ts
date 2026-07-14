@@ -81,7 +81,7 @@ interface SelectableTextInputStub {
   setSelectionRange(start: number, end: number): void
 }
 
-class HTMLInputElementStub extends HTMLElementStub implements SelectableTextInputStub {
+class SelectableTextElementStub extends HTMLElementStub implements SelectableTextInputStub {
   selectionStart: number | null = 0
   selectionEnd: number | null = 0
   selectionRanges: Array<[number, number]> = []
@@ -93,17 +93,9 @@ class HTMLInputElementStub extends HTMLElementStub implements SelectableTextInpu
   }
 }
 
-class HTMLTextAreaElementStub extends HTMLElementStub implements SelectableTextInputStub {
-  selectionStart: number | null = 0
-  selectionEnd: number | null = 0
-  selectionRanges: Array<[number, number]> = []
+class HTMLInputElementStub extends SelectableTextElementStub {}
 
-  setSelectionRange(start: number, end: number) {
-    this.selectionStart = start
-    this.selectionEnd = end
-    this.selectionRanges.push([start, end])
-  }
-}
+class HTMLTextAreaElementStub extends SelectableTextElementStub {}
 
 class DataTransferStub {
   private readonly data = new Map<string, string>()
