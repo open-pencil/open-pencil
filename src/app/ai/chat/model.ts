@@ -5,9 +5,8 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 import type { LanguageModel } from 'ai'
 
-import type { AIProviderDef, AIProviderID } from '@open-pencil/core/constants'
+import { IS_TAURI, type AIProviderDef, type AIProviderID } from '@open-pencil/core/constants'
 
-import { isTauri } from '@/app/tauri/env'
 import { createTauriFetch, tauriFetch } from '@/app/tauri/http'
 
 export type ModelConfig = {
@@ -42,7 +41,7 @@ interface CreateLanguageModelOptions {
 }
 
 function desktopFetch(timeoutMs?: number): typeof fetch | undefined {
-  if (!isTauri()) return undefined
+  if (!IS_TAURI) return undefined
   if (timeoutMs !== undefined) return createTauriFetch({ timeoutMs })
   return tauriFetch
 }

@@ -72,9 +72,6 @@ function errorStatus(error: unknown): number | null {
 
 function errorText(error: unknown): string {
   if (error instanceof Error) return `${error.name}: ${error.message}`
-  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
-    return `${error.name}: ${error.message}`
-  }
   return String(error)
 }
 
