@@ -122,14 +122,10 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
   let discoveryPath: string
   try {
     discoveryPath = await getDiscoveryPath()
-  } catch (e) {
-    console.log(`[isSocketLiveViaTcp] getDiscoveryPath failed: ${e instanceof Error ? e.message : String(e)}`)
+  } catch {
     return false
   }
-  const raw = await readFile(discoveryPath, 'utf-8').catch((e) => {
-    console.log(`[isSocketLiveViaTcp] readFile(${discoveryPath}) failed: ${e instanceof Error ? e.message : String(e)}`)
-    return null
-  })
+  const raw = await readFile(discoveryPath, 'utf-8').catch(() => null)
   if (!raw) return false
   let info: DiscoveryInfo | null = null
   try {
@@ -137,33 +133,15 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
     if (parsed && typeof parsed === 'object') {
       info = validateDiscoveryFields(parsed as { [key: string]: unknown })
     }
-  } catch (e) {
-    console.log(`[isSocketLiveViaTcp] JSON.parse failed: ${e instanceof Error ? e.message : String(e)}`)
+  } catch {
     return false
   }
-  if (!info) {
-    console.log(`[isSocketLiveViaTcp] validateDiscoveryFields returned null`)
-    return false
-  }
-  if (info.socketPath !== socketPath) {
-    console.log(`[isSocketLiveViaTcp] socketPath mismatch: discovery=${info.socketPath} actual=${socketPath}`)
-    return false
-  }
-  if (info.httpPort <= 0) {
-    console.log(`[isSocketLiveViaTcp] httpPort <= 0: ${info.httpPort}`)
-    return false
-  }
+  if (!info || info.socketPath !== socketPath || info.httpPort <= 0) return false
   return fetch(`http://127.0.0.1:${info.httpPort}/health`, {
     signal: AbortSignal.timeout(2000)
   })
-    .then((res) => {
-      console.log(`[isSocketLiveViaTcp] fetch /health status=${res.status}`)
-      return res.ok
-    })
-    .catch((e) => {
-      console.log(`[isSocketLiveViaTcp] fetch /health failed: ${e instanceof Error ? e.message : String(e)}`)
-      return false
-    })
+    .then((res) => res.ok)
+    .catch(() => false)
 }
 
 /**
@@ -182,23 +160,20 @@ export async function removeStaleSocket(socketPathOverride?: string): Promise<vo
     exists = false
   }
 
-  console.log(`[removeStaleSocket] socketPath=${socketPath} exists=${exists}`)
-
   if (!exists) return
 
+  // Verify the path is actually a socket before unlinking it.
+  // A misconfigured OPENPENCIL_MCP_SOCKET could point at a regular file;
+  // we must never delete non-socket paths.
   const stat = await lstat(socketPath).catch((e) => {
     if (isEnoent(e)) return null
     throw e
   })
-  if (!stat) {
-    console.log(`[removeStaleSocket] stat returned null (file disappeared)`)
-    return
-  }
+  if (!stat) return
   if (!stat.isSocket()) {
     throw new Error(`Refusing to remove non-socket path: ${socketPath}`)
   }
 
-  console.log(`[removeStaleSocket] calling isSocketLiveViaTcp...`)
   if (await isSocketLiveViaTcp(socketPath)) return
 
   // No live server claims this socket — remove the stale file.

@@ -1,4 +1,4 @@
-import { chmod, mkdir, readFile, unlink } from 'node:fs/promises'
+import { access, chmod, constants, mkdir, readFile, unlink } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import type { Server as HttpServer } from 'node:http'
 import { connect } from 'node:net'
@@ -61,6 +61,20 @@ export async function startSocketListener(
     await getSocketDir()
   }
   await removeStaleSocket(resolvedPath)
+
+  // Bun on Linux silently replaces existing Unix socket files on listen().
+  // If removeStaleSocket left the file in place (live server detected),
+  // throw EADDRINUSE to match Node.js/macOS behavior.
+  const socketStillExists = await access(resolvedPath, constants.F_OK)
+    .then(() => true)
+    .catch(() => false)
+  if (socketStillExists) {
+    const err = new Error(
+      `listen EADDRINUSE: address already in use ${resolvedPath}`
+    ) as NodeJS.ErrnoException
+    err.code = 'EADDRINUSE'
+    throw err
+  }
 
   const server = createAppServer(app)
   wireUpgrade(server, wss)
