@@ -2,14 +2,15 @@ import { prepareWithSegments, layoutWithLines } from '@chenglou/pretext'
 
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
 
-import { fallbackScriptsForCharacter } from '#core/text/coverage'
-import { cjkFallbackFamiliesForScripts } from '#core/text/fallback-order'
 import { fontManager, weightToStyle } from '#core/text/fonts'
 import {
   fontHasGlyphSync,
   getGlyphOutlineMetricsSync,
   type OutlineCommand
 } from '#core/text/opentype'
+
+import { fallbackScriptsForCharacter } from './coverage'
+import { cjkFallbackFamiliesForScripts } from './fallback-order'
 
 export type TextOutlineUnsupportedReason =
   | 'not-text'

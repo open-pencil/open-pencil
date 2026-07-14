@@ -24,8 +24,8 @@ export function createTextActions(ctx: EditorContext) {
         return undefined
       })
       .catch((err) => {
-        process.stderr.write(
-          `Failed to load fallback fonts: ${err instanceof Error ? err.message : String(err)}\n`
+        console.error(
+          `Failed to load fallback fonts: ${err instanceof Error ? err.message : String(err)}`
         )
       })
   }

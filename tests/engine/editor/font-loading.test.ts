@@ -28,7 +28,7 @@ describe('editor font loading', () => {
     fontManager.ensureFallbackPack = originalEnsureFallbackPack
   })
 
-  test('clipboard font loading requests script-specific CJK fallback packs', async () => {
+  test('text-node font loading requests script-specific CJK fallback packs', async () => {
     const data = await interData()
     const requests: FontFallbackScript[][] = []
     installFallbackRecorder(requests)
