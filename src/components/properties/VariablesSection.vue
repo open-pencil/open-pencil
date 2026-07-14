@@ -23,13 +23,9 @@ const { panels } = useI18n()
 </script>
 
 <template>
-  <PanelSection :label="panels.variables" data-test-id="variables-section">
+  <PanelSection :label="panels.variables" :empty="!hasVariables">
     <template #actions>
-      <IconButton
-        :label="panels.openVariables"
-        data-test-id="variables-section-open"
-        @click="emit('openDialog')"
-      >
+      <IconButton :label="panels.openVariables" @click="emit('openDialog')">
         <icon-lucide-settings-2 class="size-3.5" />
       </IconButton>
     </template>

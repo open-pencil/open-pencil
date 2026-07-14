@@ -53,7 +53,7 @@ test('typography section appears for text node', async () => {
   await editor.canvas.click(200, 200)
   await editor.canvas.waitForRender()
 
-  const typoSection = editor.page.getByTestId('typography-section')
+  const typoSection = editor.page.getByRole('region', { name: 'Typography' })
   await expect(typoSection).toBeVisible()
 })
 

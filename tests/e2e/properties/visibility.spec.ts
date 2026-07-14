@@ -40,8 +40,17 @@ test('fill visibility supports repeat click and undo redo', async () => {
   )
 })
 
+test('empty list sections expose semantic empty state', async () => {
+  await expect(propertySection(editor.page, 'Fill')).not.toHaveAttribute('data-empty')
+  await expect(propertySection(editor.page, 'Stroke')).toHaveAttribute('data-empty', '')
+  await expect(propertySection(editor.page, 'Effects')).toHaveAttribute('data-empty', '')
+  await expect(propertySection(editor.page, 'Export')).toHaveAttribute('data-empty', '')
+})
+
 test('stroke visibility supports repeat click and undo redo', async () => {
-  await propertySection(editor.page, 'Stroke').getByRole('button', { name: 'Add stroke' }).click()
+  const strokeSection = propertySection(editor.page, 'Stroke')
+  await strokeSection.getByRole('button', { name: 'Add stroke' }).click()
+  await expect(strokeSection).not.toHaveAttribute('data-empty')
   await editor.canvas.waitForRender()
 
   const strokeButton = propertyItems(editor.page, 'strokes')

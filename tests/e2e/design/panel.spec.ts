@@ -257,15 +257,16 @@ test('mask action toggles mask section and mask type control', async () => {
   const maskAction = editor.page.getByTestId('selection-toggle-mask')
   await expect(maskAction).toBeVisible()
 
-  await expect(editor.page.getByTestId('mask-section')).toHaveCount(0)
+  await expect(propertySection(editor.page, 'Mask')).toHaveCount(0)
   await maskAction.click()
   await editor.canvas.waitForRender()
 
   let node = await getNode(expectDefined(id, 'selected id'))
   expect(expectDefined(node, 'node').isMask).toBe(true)
-  await expect(editor.page.getByTestId('mask-section')).toBeVisible()
+  const maskSection = propertySection(editor.page, 'Mask')
+  await expect(maskSection).toBeVisible()
 
-  const maskTypeSelect = editor.page.getByTestId('mask-type-select')
+  const maskTypeSelect = maskSection.getByRole('combobox', { name: 'Mask type' })
   await maskTypeSelect.click()
   await editor.page.getByRole('option', { name: 'Luminance' }).click()
   await editor.canvas.waitForRender()
@@ -277,7 +278,7 @@ test('mask action toggles mask section and mask type control', async () => {
   await editor.canvas.waitForRender()
   node = await getNode(expectDefined(id, 'selected id'))
   expect(expectDefined(node, 'node').isMask).toBe(false)
-  await expect(editor.page.getByTestId('mask-section')).toHaveCount(0)
+  await expect(propertySection(editor.page, 'Mask')).toHaveCount(0)
 })
 
 test('visibility toggle in appearance section works', async () => {

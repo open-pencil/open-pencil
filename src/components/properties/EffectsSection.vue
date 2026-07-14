@@ -32,7 +32,7 @@ function effectPreview(effect: Effect): Fill {
     prop-key="effects"
     :label="panels.effects"
   >
-    <PanelSection :label="panels.effects">
+    <PanelSection :label="panels.effects" :empty="!isMixed && items.length === 0">
       <template #actions>
         <IconButton
           :label="panels.addEffect"

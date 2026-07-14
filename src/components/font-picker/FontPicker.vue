@@ -15,6 +15,7 @@ import { WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 
 import type { FontPickerUI } from '@open-pencil/vue'
 
+const { label = 'Font family' } = defineProps<{ label?: string }>()
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
 
@@ -62,7 +63,12 @@ function loadPreviewFont(family: string, source: string) {
     @select="emit('select', $event)"
   >
     <template #trigger>
-      <button data-test-id="font-picker-trigger" :class="selectCls.trigger">
+      <button
+        type="button"
+        data-test-id="font-picker-trigger"
+        :aria-label="label"
+        :class="selectCls.trigger"
+      >
         <span class="truncate">{{ modelValue }}</span>
         <icon-lucide-chevron-down class="size-3 shrink-0 text-muted" />
       </button>

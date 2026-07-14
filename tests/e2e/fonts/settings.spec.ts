@@ -13,11 +13,18 @@ test('font settings popover exposes web font access without desktop-only cache a
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('TEXT', 120, 120, 240, 40)
-    store.updateNode(id, { characters: 'Font settings smoke' })
+    store.updateNode(id, {
+      characters: 'Font settings smoke',
+      fontFamily: 'Missing Test Sans'
+    })
     store.select([id])
   })
 
-  await expect(page.getByTestId('typography-section')).toBeVisible()
+  const typography = page.getByRole('region', { name: 'Typography' })
+  await expect(typography).toBeVisible()
+  await expect(
+    typography.getByRole('img', { name: /Missing font: Missing Test Sans/ })
+  ).toBeVisible()
   const fontSettings = page.getByTestId('font-settings-trigger')
   await fontSettings.hover()
   await expect(page.locator('[role=tooltip]').filter({ hasText: 'Font settings' })).toBeVisible()

@@ -66,7 +66,7 @@ function updateSolidColor(
     prop-key="fills"
     :label="panels.fill"
   >
-    <PanelSection :label="panels.fill">
+    <PanelSection :label="panels.fill" :empty="!isMixed && items.length === 0">
       <template #actions>
         <IconButton :label="panels.addFill" @click="actions.add({ ...fillCtx.defaultFill })">
           <icon-lucide-plus class="size-3.5" />

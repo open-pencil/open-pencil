@@ -4,8 +4,8 @@ import { computed } from 'vue'
 import { useI18n, useMask } from '@open-pencil/vue'
 
 import AppSelect from '@/components/ui/AppSelect.vue'
+import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-import Tip from '@/components/ui/Tip.vue'
 
 import type { MaskType } from '@open-pencil/scene-graph'
 
@@ -25,15 +25,14 @@ const selectedMaskType = computed<MaskType>({
 </script>
 
 <template>
-  <PanelSection v-if="active" :label="panels.mask" data-test-id="mask-section">
-    <Tip :label="panels.maskType">
+  <PanelSection v-if="active" :label="panels.mask">
+    <PanelFieldGroup :label="panels.maskType">
       <AppSelect
-        class="w-full"
-        :label="panels.maskType"
         v-model="selectedMaskType"
+        :label="panels.maskType"
         :options="maskTypeOptions"
-        data-test-id="mask-type-select"
+        data-property="mask-type"
       />
-    </Tip>
+    </PanelFieldGroup>
   </PanelSection>
 </template>

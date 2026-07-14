@@ -23,6 +23,7 @@
 - Replace the fragmented Vue SDK color-picker model helpers with `useColorModel()`, providing precise Reka bridges, extensible formats, and shared RGB, HSL, HSB, and OkHCL channel behavior.
 - Add accessible color-channel sliders, binding-aware fill primitives, and keyboard-operable gradient stops while separating fill state from popover composition.
 - Rebuild Fill, Stroke, Effects, and Export controls with shared compact item rows, semantic actions, binding-aware paint fields, and reversible color-picker edits.
+- Finish the Design panel migration with compact labeled Typography, Variant, Mask, and Page controls plus semantic empty-section states.
 - Upgrade Vue SDK documentation with shared Tailwind demos, source-generated component API tables, and type-aware Twoslash examples in VitePress.
 - Add desktop image drag-and-drop into the Tauri app window.
 - Add open-document discovery for live CLI and MCP automation so agents can target the intended document and page.

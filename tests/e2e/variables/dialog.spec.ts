@@ -19,10 +19,16 @@ function variableRows() {
   return editor.page.getByTestId('variable-row')
 }
 
+function openVariables() {
+  return editor.page
+    .getByRole('region', { name: 'Variables' })
+    .getByRole('button', { name: 'Open variables' })
+}
+
 test('variables dialog opens', async () => {
   await createColorVariable('primary-color')
 
-  await editor.page.getByTestId('variables-section-open').click()
+  await openVariables().click()
   await expect(editor.page.getByTestId('variables-dialog')).toBeVisible()
   editor.canvas.assertNoErrors()
 })
@@ -87,7 +93,7 @@ test('color swatch opens color picker', async () => {
   // close dialog if open from previous test
   await editor.page.keyboard.press('Escape')
   await editor.page.waitForTimeout(200)
-  await editor.page.getByTestId('variables-section-open').click()
+  await openVariables().click()
   await expect(editor.page.getByTestId('variables-dialog')).toBeVisible({ timeout: 3000 })
 
   const swatch = editor.page

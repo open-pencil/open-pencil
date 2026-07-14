@@ -44,6 +44,34 @@ test('double-click enters text edit mode', async () => {
   canvas.assertNoErrors()
 })
 
+test('typography controls use compact labeled anatomy', async () => {
+  await canvas.pressKey('Escape')
+  await canvas.waitForRender()
+  await canvas.click(275, 215)
+  await canvas.waitForRender()
+
+  const typography = page.getByRole('region', { name: 'Typography' })
+  await expect(typography.getByRole('button', { name: 'Font family' })).toBeVisible()
+  await expect(typography.getByRole('combobox', { name: 'Font weight' })).toBeVisible()
+  await expect(typography.getByRole('spinbutton', { name: 'Font size' })).toBeVisible()
+  await expect(typography.getByRole('spinbutton', { name: 'Line height' })).toBeVisible()
+  await expect(typography.getByRole('spinbutton', { name: 'Letter spacing' })).toBeVisible()
+  await expect(typography.getByRole('combobox', { name: 'Direction' })).toBeVisible()
+
+  const alignment = typography.getByRole('group', { name: 'Text alignment' })
+  await expect(alignment.getByRole('button', { name: 'Align left' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  )
+  await alignment.getByRole('button', { name: 'Align center horizontally' }).click()
+  await canvas.waitForRender()
+  await expect(
+    alignment.getByRole('button', { name: 'Align center horizontally' })
+  ).toHaveAttribute('aria-pressed', 'true')
+
+  await expect(typography).toHaveScreenshot('typography-panel.png')
+})
+
 test('bold button toggles fontWeight to 700 then back to 400', async () => {
   await canvas.pressKey('Escape')
   await canvas.waitForRender()
@@ -62,7 +90,9 @@ test('bold button toggles fontWeight to 700 then back to 400', async () => {
   }, nodeId)
   await canvas.waitForRender()
 
-  const boldBtn = page.getByTestId('typography-bold-button')
+  const boldBtn = page.getByRole('toolbar', { name: 'Text formatting' }).getByRole('button', {
+    name: /^Bold/
+  })
   await expect(boldBtn).toBeVisible({ timeout: 3000 })
   await page.waitForTimeout(200)
   await boldBtn.click()
@@ -72,7 +102,7 @@ test('bold button toggles fontWeight to 700 then back to 400', async () => {
   const bold = await getNodeById(page, nodeId)
   expect(bold?.fontWeight).toBe(700)
 
-  await page.getByTestId('typography-bold-button').click()
+  await boldBtn.click()
   await page.waitForTimeout(500)
   await canvas.waitForRender()
 

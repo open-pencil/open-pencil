@@ -108,7 +108,7 @@ watch(previewKey, updatePreview, { flush: 'post' })
 </script>
 
 <template>
-  <PanelSection :label="panels.export">
+  <PanelSection :label="panels.export" :empty="activeSettings.length === 0">
     <template #actions>
       <IconButton :label="panels.addExport" @click="addSetting">
         <icon-lucide-plus class="size-3.5" />

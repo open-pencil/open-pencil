@@ -85,7 +85,7 @@ function onToggleSides(activeNode: SceneNode | null) {
     prop-key="strokes"
     :label="panels.stroke"
   >
-    <PanelSection :label="panels.stroke">
+    <PanelSection :label="panels.stroke" :empty="!isMixed && items.length === 0">
       <template #actions>
         <IconButton :label="panels.addStroke" @click="actions.add(strokeCtx.defaultStroke)">
           <icon-lucide-plus class="size-3.5" />
