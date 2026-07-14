@@ -29,8 +29,10 @@ describe('canvas text font readiness', () => {
   test('accepts loaded generic CJK fallbacks for render readiness without marking script packs loaded', async () => {
     const manager = fontManager as typeof fontManager & {
       cjkFallbackFamilies: Map<string, string[]>
+      loadedFamilies: Map<string, ArrayBuffer>
     }
     const originalFallbacks = new Map(manager.cjkFallbackFamilies)
+    const originalLoaded = new Map(manager.loadedFamilies)
     const inter = await Bun.file(repoPath('public/Inter-Regular.ttf')).arrayBuffer()
     const noto = await Bun.file(
       repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
@@ -55,14 +57,17 @@ describe('canvas text font readiness', () => {
       expect(isNodeFontLoaded({} as Parameters<typeof isNodeFontLoaded>[0], node)).toBe(true)
     } finally {
       manager.cjkFallbackFamilies = originalFallbacks
+      manager.loadedFamilies = originalLoaded
     }
   })
 
   test('rejects generic CJK fallbacks that do not cover the requested script glyphs', async () => {
     const manager = fontManager as typeof fontManager & {
       cjkFallbackFamilies: Map<string, string[]>
+      loadedFamilies: Map<string, ArrayBuffer>
     }
     const originalFallbacks = new Map(manager.cjkFallbackFamilies)
+    const originalLoaded = new Map(manager.loadedFamilies)
     const inter = await Bun.file(repoPath('public/Inter-Regular.ttf')).arrayBuffer()
     const noto = await Bun.file(
       repoPath('tests/fixtures/fonts/NotoSansSC-Regular.ttf')
@@ -87,6 +92,7 @@ describe('canvas text font readiness', () => {
       expect(isNodeFontLoaded({} as Parameters<typeof isNodeFontLoaded>[0], node)).toBe(false)
     } finally {
       manager.cjkFallbackFamilies = originalFallbacks
+      manager.loadedFamilies = originalLoaded
     }
   })
 })

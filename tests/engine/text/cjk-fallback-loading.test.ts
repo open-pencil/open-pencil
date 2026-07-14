@@ -52,6 +52,11 @@ describe('CJK fallback loading and readiness', () => {
   })
 
   test('fallback pack returns correct families for cjk-sc script', async () => {
+    const originalCjkFamilies = new Map(manager.cjkFallbackFamilies)
+    const originalCjkPromises = new Map(manager.cjkFallbackPromises)
+    const originalArabicFamilies = manager.arabicFallbackFamilies
+    const originalArabicPromise = manager.arabicFallbackPromise
+
     manager.cjkFallbackFamilies.clear()
     manager.cjkFallbackPromises.clear()
     manager.arabicFallbackFamilies = []
@@ -66,10 +71,10 @@ describe('CJK fallback loading and readiness', () => {
       const result = await fontManager.ensureFallbackPack(['cjk-sc'])
       expect(result['cjk-sc']).toEqual(['Regression CJK Fallback'])
     } finally {
-      manager.cjkFallbackFamilies.clear()
-      manager.cjkFallbackPromises.clear()
-      manager.arabicFallbackFamilies = []
-      manager.arabicFallbackPromise = null
+      manager.cjkFallbackFamilies = originalCjkFamilies
+      manager.cjkFallbackPromises = originalCjkPromises
+      manager.arabicFallbackFamilies = originalArabicFamilies
+      manager.arabicFallbackPromise = originalArabicPromise
     }
   })
 
