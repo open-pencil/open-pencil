@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, normalizeClass, useAttrs } from 'vue'
+import { tv } from 'tailwind-variants'
 
-import { useIconButtonUI } from '@/components/ui/icon-button'
+import theme from '@/theme/icon-button'
 import Tip from '@/components/ui/Tip.vue'
 
 const {
@@ -29,18 +30,8 @@ const buttonAttrs = computed(() => {
   return rest
 })
 
-const cls = computed(
-  () =>
-    useIconButtonUI({
-      size,
-      ui: {
-        base: normalizeClass([
-          attrs.class,
-          active ? 'border-accent text-accent' : '',
-          disabled ? 'cursor-not-allowed opacity-50 hover:bg-transparent hover:text-muted' : ''
-        ])
-      }
-    }).base
+const cls = computed(() =>
+  tv(theme)({ size, active, disabled, class: normalizeClass(attrs.class) })
 )
 </script>
 
@@ -48,6 +39,7 @@ const cls = computed(
   <Tip :label="label" :side="side" :disabled="disabled || !label">
     <button
       v-bind="buttonAttrs"
+      data-slot="icon-button"
       :type="type"
       :disabled="disabled"
       :aria-label="label"

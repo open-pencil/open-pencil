@@ -37,7 +37,7 @@ export const menu = tv({
   }
 })
 
-interface MenuUi {
+interface MenuUI {
   content?: string
   item?: string
   separator?: string
@@ -46,7 +46,7 @@ interface MenuUi {
   subTrigger?: string
 }
 
-export function useMenuUI(ui?: MenuUi) {
+export function useMenuUI(ui?: MenuUI) {
   const cls = menu()
   return {
     content: cls.content({ class: ui?.content }),

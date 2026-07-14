@@ -8,6 +8,8 @@ const SDK_COMPONENT_PAGES = [
   { text: 'ToolbarRoot', slug: 'toolbar-root' },
   { text: 'ToolbarItem', slug: 'toolbar-item' },
   { text: 'PageListRoot', slug: 'page-list-root' },
+  { text: 'PropertySection', slug: 'property-section', canonical: true },
+  { text: 'SegmentedControl', slug: 'segmented-control', canonical: true },
   { text: 'PropertyListRoot', slug: 'property-list-root' },
   { text: 'PropertyListItem', slug: 'property-list-item' },
   { text: 'ColorPickerRoot', slug: 'color-picker-root' },
@@ -17,9 +19,8 @@ const SDK_COMPONENT_PAGES = [
   { text: 'GradientEditorRoot', slug: 'gradient-editor-root' },
   { text: 'GradientEditorBar', slug: 'gradient-editor-bar' },
   { text: 'GradientEditorStop', slug: 'gradient-editor-stop' },
-  { text: 'ScrubInputRoot', slug: 'scrub-input-root' },
-  { text: 'ScrubInputField', slug: 'scrub-input-field' },
-  { text: 'ScrubInputDisplay', slug: 'scrub-input-display' },
+  { text: 'NumberField', slug: 'number-field', canonical: true },
+  { text: 'BindableValue', slug: 'bindable-value', canonical: true },
   { text: 'LayoutControlsRoot', slug: 'layout-controls-root' },
   { text: 'AppearanceControlsRoot', slug: 'appearance-controls-root' },
   { text: 'PositionControlsRoot', slug: 'position-controls-root' },
@@ -67,7 +68,7 @@ const SDK_ADVANCED_PAGES = [
   { text: 'useLayerTree', slug: 'use-layer-tree' },
   { text: 'useToolbar', slug: 'use-toolbar' },
   { text: 'usePropertyList', slug: 'use-property-list' },
-  { text: 'useScrubInput', slug: 'use-scrub-input' }
+  { text: 'useNumberField', slug: 'use-number-field' }
 ] as const
 
 export const sdkSidebar = (prefix: string): DefaultTheme.SidebarItem[] => [
@@ -90,7 +91,7 @@ export const sdkSidebar = (prefix: string): DefaultTheme.SidebarItem[] => [
               { text: 'Overview', link: `${prefix}/programmable/sdk/api/components/` },
               ...SDK_COMPONENT_PAGES.map((page) => ({
                 text: page.text,
-                link: `${prefix}/programmable/sdk/api/components/${page.slug}`
+                link: `${'canonical' in page ? '' : prefix}/programmable/sdk/api/components/${page.slug}`
               }))
             ]
           },

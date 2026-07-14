@@ -26,11 +26,11 @@ const pickerSlider = tv({
   }
 })
 
-export type PickerSliderUi = Partial<
+export type PickerSliderUI = Partial<
   Record<'root' | 'label' | 'track' | 'gradient' | 'range' | 'thumb' | 'input', string>
 >
 
-export function usePickerSliderUI(options?: { checkerboard?: boolean; ui?: PickerSliderUi }) {
+export function usePickerSliderUI(options?: { checkerboard?: boolean; ui?: PickerSliderUI }) {
   const slots = pickerSlider({ checkerboard: options?.checkerboard })
   return {
     root: twMerge(slots.root(), options?.ui?.root),

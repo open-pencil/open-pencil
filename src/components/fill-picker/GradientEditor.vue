@@ -2,7 +2,7 @@
 import AppSelect from '@/components/ui/AppSelect.vue'
 import Tip from '@/components/ui/Tip.vue'
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
 import { colorToCSS } from '@open-pencil/core/color'
 import {
   GradientEditorRoot,
@@ -81,7 +81,7 @@ const { panels } = useI18n()
             :class="{ 'rounded bg-hover/50': s.active }"
             @click="s.actions.select"
           >
-            <ScrubInput
+            <NumberField
               class="w-11"
               suffix="%"
               :model-value="s.positionPercent"
@@ -102,7 +102,7 @@ const { panels } = useI18n()
               @change="s.actions.updateColor(inputValue($event))"
               @click.stop
             />
-            <ScrubInput
+            <NumberField
               class="w-9"
               suffix="%"
               :model-value="s.opacityPercent"

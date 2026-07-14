@@ -31,7 +31,7 @@ import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
 import IconLucidePanelTop from '~icons/lucide/panel-top'
 import CanvasMenu from './canvas/CanvasMenu.vue'
-import ScrubInput from './inputs/ScrubInput.vue'
+import NumberField from './inputs/NumberField.vue'
 
 const store = useEditorStore()
 const collab = useCollabInjected()
@@ -146,7 +146,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
               @keydown.escape.prevent="cancelAutoLayoutPaddingEdit"
               @open-auto-focus.prevent
             >
-              <ScrubInput
+              <NumberField
                 :model-value="autoLayoutPaddingEdit.value"
                 :min="0"
                 :step="1"
@@ -163,7 +163,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
                 <template #icon>
                   <component :is="paddingEditorIcon" class="size-3.5" />
                 </template>
-              </ScrubInput>
+              </NumberField>
             </PopoverContent>
           </PopoverPortal>
         </PopoverRoot>

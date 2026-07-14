@@ -34,6 +34,12 @@ bun run dev          # Editor at localhost:1420
 bun run docs:dev     # Docs at localhost:5173
 ```
 
+## SDK documentation
+
+VitePress is the canonical public documentation, while Storybook is the internal component-state workshop. Shared Vue demos live beside their SDK primitives and are embedded in both surfaces. The docs Tailwind entry scans these demos, so examples use the same utility-first styling in both environments.
+
+Component API tables are extracted from Vue source and JSDoc with `vue-component-meta`. Keep descriptions next to the public props, events, and slots instead of duplicating signatures in Markdown. VitePress processes SDK code examples with Twoslash so imports and types stay aligned with the public package API.
+
 ## Code Style
 
 ### Tooling
@@ -53,10 +59,21 @@ bun run check
 ### Conventions
 
 - **File names** — kebab-case (`scene-graph.ts`, `use-canvas-input.ts`)
-- **Components** — PascalCase Vue SFCs (`EditorCanvas.vue`, `ScrubInput.vue`)
+- **Components** — PascalCase Vue SFCs (`EditorCanvas.vue`, `NumberField.vue`)
 - **Constants** — SCREAMING_SNAKE_CASE
 - **Functions/variables** — camelCase
 - **Types/interfaces** — PascalCase
+
+### Test selectors
+
+Playwright tests should locate behavior the way users and assistive technology do: prefer roles and
+accessible names, labels, and visible text. Scope repeated controls to a named region. Multi-part UI
+components expose local `data-slot` anatomy, while stable app concepts may expose semantic
+attributes such as `data-property`, `data-command`, or `data-node-id`.
+
+Reserve `data-test-id` for integration boundaries that have no meaningful user-facing or domain
+identity. Do not add test-ID props to reusable components or generate compound IDs from current
+component nesting.
 
 ### AI Agent Conventions
 

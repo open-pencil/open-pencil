@@ -31,5 +31,7 @@
   "flipVertical": "垂直翻转",
   "flattenSelection": "扁平化",
   "outlineText": "文本转轮廓",
-  "outlineStroke": "描边转轮廓"
+  "outlineStroke": "描边转轮廓",
+  "useAsMask": "用作蒙版",
+  "removeMask": "取消蒙版"
 }

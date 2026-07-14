@@ -13,7 +13,7 @@ import {
 
 import AppSelect from '@/components/ui/AppSelect.vue'
 
-import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
 import { useSelectUI } from '@/components/ui/select'
@@ -58,7 +58,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
 
   <div class="mt-2 flex items-center gap-1.5">
     <template v-if="ctx.node.layoutWrap === 'WRAP'">
-      <VariableScrubInput
+      <VariableNumberField
         data-test-id="layout-gap-input"
         class="min-w-0 flex-1"
         :label="ctx.node.layoutMode === 'VERTICAL' ? panels.verticalGap : panels.horizontalGap"
@@ -76,8 +76,8 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
           />
           <icon-lucide-align-horizontal-space-between v-else class="size-3.5" />
         </template>
-      </VariableScrubInput>
-      <VariableScrubInput
+      </VariableNumberField>
+      <VariableNumberField
         data-test-id="layout-cross-gap-input"
         class="min-w-0 flex-1"
         :label="ctx.node.layoutMode === 'VERTICAL' ? panels.horizontalGap : panels.verticalGap"
@@ -95,7 +95,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
           />
           <icon-lucide-align-vertical-space-between v-else class="size-3.5" />
         </template>
-      </VariableScrubInput>
+      </VariableNumberField>
     </template>
     <template v-else>
       <div
@@ -146,7 +146,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
         </SelectRoot>
       </div>
       <div v-else ref="gapFieldRef" class="min-w-0 flex-1">
-        <VariableScrubInput
+        <VariableNumberField
           data-test-id="layout-gap-input"
           class="w-full"
           :model-value="Math.round(ctx.node.itemSpacing)"
@@ -197,7 +197,7 @@ function isAlignmentActive(primary: LayoutAlign, counter: string) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </VariableScrubInput>
+        </VariableNumberField>
       </div>
     </template>
     <button

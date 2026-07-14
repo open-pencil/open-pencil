@@ -63,7 +63,7 @@ export function createNodePropSelectionState(store: Editor) {
     return store.getSelectedNodes()
   })
   const isMulti = computed(() => nodes.value.length > 1)
-  const active = computed(() => node.value || isMulti.value)
+  const active = computed(() => node.value !== null || isMulti.value)
   const activeNode = computed(() => node.value ?? (nodes.value[0] as SceneNode | undefined) ?? null)
 
   function merged<K extends keyof SceneNode>(key: K): MixedValue<SceneNode[K]> {

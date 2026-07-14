@@ -12,7 +12,8 @@ It exposes selection-derived UI state for:
 - visibility
 - opacity
 - corner radius
-- independent corner radii
+- independent corner radii, including imported unequal-corner state
+- blend mode
 
 ## Usage
 
@@ -29,6 +30,7 @@ const {
   visibilityState,
   opacityPercent,
   cornerRadiusValue,
+  showIndependentCorners,
   toggleVisibility,
   toggleIndependentCorners,
 } = useAppearance()
@@ -48,6 +50,10 @@ appearance.toggleVisibility()
 appearance.updateCornerProp('topLeftRadius', 12)
 appearance.commitCornerProp('topLeftRadius', 12, 8)
 ```
+
+Render the per-corner editor from `showIndependentCorners`. It accounts for both the explicit
+scene-node flag and imported nodes whose corner values differ. Multi-selection toggles and commits
+are grouped into one undo entry.
 
 ## Related APIs
 

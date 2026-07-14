@@ -11,5 +11,5 @@ description: Helper de bajo nivel para actualizaciones de propiedades con arrast
 
 ## APIs relacionadas
 
-- [ScrubInputRoot](../components/scrub-input-root)
+- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

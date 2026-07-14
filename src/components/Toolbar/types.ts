@@ -8,7 +8,7 @@ export interface ToolbarActionItem {
   action: () => void
 }
 
-export interface ToolbarUi {
+export interface ToolbarUI {
   flyoutContent?: string
 }
 

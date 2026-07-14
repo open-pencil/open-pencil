@@ -31,5 +31,7 @@
   "flipVertical": "Vertikal spiegeln",
   "flattenSelection": "Abflachen",
   "outlineText": "Text in Pfade umwandeln",
-  "outlineStroke": "Kontur in Pfad umwandeln"
+  "outlineStroke": "Kontur in Pfad umwandeln",
+  "useAsMask": "Als Maske verwenden",
+  "removeMask": "Maske entfernen"
 }

@@ -90,7 +90,7 @@ function handleSubmit(e: Event) {
           v-model="input"
           data-test-id="chat-input"
           :placeholder="dialogs.describeChange"
-          :ui="{ base: 'min-w-0 flex-1 placeholder:text-muted' }"
+          class="min-w-0 flex-1 placeholder:text-muted"
           :disabled="isStreaming"
           @paste.stop
           @copy.stop

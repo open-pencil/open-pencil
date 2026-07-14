@@ -41,7 +41,7 @@ function shouldIgnoreShortcut(event: KeyboardEvent, options: KeyboardShortcutOpt
     isEditing(event) ||
     options.inputFocused.value ||
     !!options.store.state.editingTextId ||
-    !!options.store.state.scrubInputFocused
+    !!options.store.state.numberFieldFocused
   )
 }
 
@@ -77,6 +77,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       'selection.createComponent',
       'selection.detachInstance',
       'selection.createComponentSet',
+      'selection.toggleMask',
       'selection.toggleVisibility',
       'selection.toggleLock',
       'selection.flipHorizontal',

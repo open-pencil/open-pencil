@@ -28,7 +28,7 @@ Este paquete está organizado por dominio.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
-- `ScrubInput/`
+- `NumberField/`
 - `Toolbar/`
 
 Contienen primitivos estructurales/headless y helpers locales.

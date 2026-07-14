@@ -13,7 +13,7 @@ import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
 import type {
   ToolbarActionItem,
-  ToolbarUi,
+  ToolbarUI,
   ToolIconMap,
   ToolLabels
 } from '@/components/Toolbar/types'
@@ -37,7 +37,7 @@ const {
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
-  ui?: ToolbarUi
+  ui?: ToolbarUI
   mobileCategory: number
   slideDirection: number
   hasPrev: boolean
