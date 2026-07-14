@@ -33,7 +33,7 @@ function tailwindCompilerCSS(css: string | undefined): string {
 
 function containsTailwindImport(css: string): boolean {
   const withoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
-  return /@import\s+(?:"tailwindcss(?:\/[^"]*)?"|'tailwindcss(?:\/[^']*)?')/.test(withoutComments)
+  return /^\s*@import\s+(?:"tailwindcss(?:\/[^"]*)?"|'tailwindcss(?:\/[^']*)?')/m.test(withoutComments)
 }
 
 function normalizeClasses(classes: string | Iterable<string>): string[] {
