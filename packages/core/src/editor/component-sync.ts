@@ -54,10 +54,7 @@ export function createComponentSyncScheduler(
         collectContainingComponent(graph, id, componentIds)
       }
 
-      const syncedComponentIds = new Set<string>()
       for (const compId of componentIds) {
-        if (syncedComponentIds.has(compId)) continue
-        syncedComponentIds.add(compId)
         graph.syncInstances(compId)
         collectInstanceAncestorComponents(graph, compId, componentIds)
       }

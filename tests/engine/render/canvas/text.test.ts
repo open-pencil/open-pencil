@@ -1,4 +1,4 @@
-import { describe, test, expect, mock } from 'bun:test'
+import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test'
 
 import {
   detectTextDirection,
@@ -109,6 +109,23 @@ async function loadCJKOutlineFonts(): Promise<void> {
   fontManager.setCJKFallbackFamily('Noto Sans SC')
 }
 
+function snapshotFontManagerState() {
+  const manager = fontManager as typeof fontManager & {
+    cjkFallbackFamilies: Map<string, string[]>
+    loadedFamilies: Map<string, ArrayBuffer>
+  }
+  return {
+    manager,
+    cjkFallbackFamilies: new Map(manager.cjkFallbackFamilies),
+    loadedFamilies: new Map(manager.loadedFamilies)
+  }
+}
+
+function restoreFontManagerState(state: ReturnType<typeof snapshotFontManagerState>) {
+  state.manager.cjkFallbackFamilies = state.cjkFallbackFamilies
+  state.manager.loadedFamilies = state.loadedFamilies
+}
+
 async function createTextRenderer() {
   const ck = await initCanvasKit()
   const surface = expectDefined(ck.MakeSurface(400, 120), 'surface')
@@ -117,6 +134,14 @@ async function createTextRenderer() {
 }
 
 describe('renderText', () => {
+  let fontState: ReturnType<typeof snapshotFontManagerState>
+  beforeEach(() => {
+    fontState = snapshotFontManagerState()
+  })
+  afterEach(() => {
+    restoreFontManagerState(fontState)
+  })
+
   test('uses buildParagraph when fonts are loaded and node font is available', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()

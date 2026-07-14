@@ -39,7 +39,6 @@ export interface TauriFetchOptions {
 
 function abortError(reason?: unknown): Error | DOMException {
   if (reason instanceof Error) return reason
-  if (typeof DOMException !== 'undefined' && reason instanceof DOMException) return reason
   if (typeof DOMException !== 'undefined') {
     return new DOMException('The operation was aborted.', 'AbortError')
   }

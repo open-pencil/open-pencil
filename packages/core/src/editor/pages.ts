@@ -29,10 +29,14 @@ export function createPageActions(ctx: EditorContext) {
 
     const nodeIds = ctx.graph.getChildren(pageId).map((n) => n.id)
     const toLoad = fontManager.collectFontKeys(ctx.graph, nodeIds)
-    if (toLoad.length > 0) {
-      await Promise.all(toLoad.map(([family, style]) => ctx.loadFont(family, style)))
+    try {
+      if (toLoad.length > 0) {
+        await Promise.all(toLoad.map(([family, style]) => ctx.loadFont(family, style)))
+      }
+      await ensureTextFallbackPacksForNodes(ctx.graph, nodeIds)
+    } catch (err) {
+      console.error('Failed to load fonts during page switch:', err)
     }
-    await ensureTextFallbackPacksForNodes(ctx.graph, nodeIds)
     if (ctx.getRenderer() || populated) {
       computeAllLayouts(ctx.graph, pageId)
     }

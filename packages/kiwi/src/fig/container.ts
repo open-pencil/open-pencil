@@ -1,4 +1,5 @@
 import { deflateSync, inflateSync } from 'fflate'
+import { decompress as fzstdDecompressSync } from 'fzstd'
 
 import { isZstdCompressed } from './protocol'
 
@@ -30,7 +31,7 @@ export function decompressFigKiwiData(compressed: Uint8Array): Uint8Array {
   if (isZstdCompressed(compressed)) {
     const decompressed = bunZstdDecompressSync(compressed)
     if (decompressed) return decompressed
-    throw new Error('Cannot synchronously decompress zstd fig-kiwi data without Bun')
+    return fzstdDecompressSync(compressed)
   }
 
   try {
