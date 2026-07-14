@@ -114,6 +114,58 @@ export async function removeDiscoveryFile(): Promise<void> {
   }
 }
 
+// TCP health check is more reliable than Unix socket connections in some
+// runtimes (Bun on Linux). We read the discovery file directly instead of
+// using readDiscoveryFile() to bypass the isProcessAlive PID check — the
+// TCP fetch is a stronger liveness probe than process.kill(pid, 0).
+async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
+  let discoveryPath: string
+  try {
+    discoveryPath = await getDiscoveryPath()
+  } catch (e) {
+    console.log(`[isSocketLiveViaTcp] getDiscoveryPath failed: ${e instanceof Error ? e.message : String(e)}`)
+    return false
+  }
+  const raw = await readFile(discoveryPath, 'utf-8').catch((e) => {
+    console.log(`[isSocketLiveViaTcp] readFile(${discoveryPath}) failed: ${e instanceof Error ? e.message : String(e)}`)
+    return null
+  })
+  if (!raw) return false
+  let info: DiscoveryInfo | null = null
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (parsed && typeof parsed === 'object') {
+      info = validateDiscoveryFields(parsed as { [key: string]: unknown })
+    }
+  } catch (e) {
+    console.log(`[isSocketLiveViaTcp] JSON.parse failed: ${e instanceof Error ? e.message : String(e)}`)
+    return false
+  }
+  if (!info) {
+    console.log(`[isSocketLiveViaTcp] validateDiscoveryFields returned null`)
+    return false
+  }
+  if (info.socketPath !== socketPath) {
+    console.log(`[isSocketLiveViaTcp] socketPath mismatch: discovery=${info.socketPath} actual=${socketPath}`)
+    return false
+  }
+  if (info.httpPort <= 0) {
+    console.log(`[isSocketLiveViaTcp] httpPort <= 0: ${info.httpPort}`)
+    return false
+  }
+  return fetch(`http://127.0.0.1:${info.httpPort}/health`, {
+    signal: AbortSignal.timeout(2000)
+  })
+    .then((res) => {
+      console.log(`[isSocketLiveViaTcp] fetch /health status=${res.status}`)
+      return res.ok
+    })
+    .catch((e) => {
+      console.log(`[isSocketLiveViaTcp] fetch /health failed: ${e instanceof Error ? e.message : String(e)}`)
+      return false
+    })
+}
+
 /**
  * Removes a stale Unix domain socket file if it exists and is not live.
  * A socket is considered stale if no process is listening on it.
@@ -130,25 +182,24 @@ export async function removeStaleSocket(socketPathOverride?: string): Promise<vo
     exists = false
   }
 
+  console.log(`[removeStaleSocket] socketPath=${socketPath} exists=${exists}`)
+
   if (!exists) return
 
-  // Verify the path is actually a socket before unlinking it.
-  // A misconfigured OPENPENCIL_MCP_SOCKET could point at a regular file;
-  // we must never delete non-socket paths.
   const stat = await lstat(socketPath).catch((e) => {
     if (isEnoent(e)) return null
     throw e
   })
-  if (!stat) return
+  if (!stat) {
+    console.log(`[removeStaleSocket] stat returned null (file disappeared)`)
+    return
+  }
   if (!stat.isSocket()) {
     throw new Error(`Refusing to remove non-socket path: ${socketPath}`)
   }
 
-  // Check if the socket is live by reading the discovery file.
-  // readDiscoveryFile returns null if the PID is dead or the file is missing,
-  // so a non-null result with a matching socketPath means a live server owns it.
-  const discovery = await readDiscoveryFile().catch(() => null)
-  if (discovery && discovery.socketPath === socketPath) return
+  console.log(`[removeStaleSocket] calling isSocketLiveViaTcp...`)
+  if (await isSocketLiveViaTcp(socketPath)) return
 
   // No live server claims this socket — remove the stale file.
   try {
