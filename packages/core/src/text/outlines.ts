@@ -9,7 +9,7 @@ import {
   type OutlineCommand
 } from '#core/text/opentype'
 
-import { fallbackScriptsForCharacter } from './coverage'
+import { CJK_CHAR_RE, fallbackScriptsForCharacter } from './coverage'
 import { cjkFallbackFamiliesForScripts } from './fallback-order'
 
 export type TextOutlineUnsupportedReason =
@@ -36,7 +36,6 @@ export interface TextOutlineLayout {
 }
 
 const COMPLEX_SCRIPT_PATTERN = /[\u0590-\u08ff\u0900-\u0dff\ufb1d-\ufdff\ufe70-\ufeff]/
-const CJK_TEXT_PATTERN = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff\uac00-\ud7af]/u
 
 type TextStyle = Required<
   Pick<
@@ -198,7 +197,7 @@ function wrapStyledLine(node: SceneNode, line: TextLine): TextLine[] {
 function textLines(node: SceneNode): TextLine[] {
   const hardLines = hardTextLines(node.text)
   if (node.textAutoResize === 'WIDTH_AND_HEIGHT') return hardLines
-  if (node.styleRuns.length > 0 || hardLines.some((line) => CJK_TEXT_PATTERN.test(line.text))) {
+  if (node.styleRuns.length > 0 || hardLines.some((line) => CJK_CHAR_RE.test(line.text))) {
     return hardLines.flatMap((line) => wrapStyledLine(node, line))
   }
 

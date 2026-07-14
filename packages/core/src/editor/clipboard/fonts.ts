@@ -8,6 +8,7 @@ export function createClipboardFontActions(ctx: EditorContext) {
     const toLoad = fontManager.collectFontKeys(ctx.graph, nodeIds)
     if (toLoad.length === 0) {
       await ensureTextFallbackPacksForNodes(ctx.graph, nodeIds)
+      computeAllLayouts(ctx.graph, ctx.state.currentPageId)
       return []
     }
 
