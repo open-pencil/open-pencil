@@ -81,6 +81,7 @@ function walkExports(
 ): void {
   if (typeof value === 'string') {
     const key = path.at(-1)
+    if (key === 'bun') return
     if (key === 'types') {
       checkIncludedTypePath(packageName, `exports.${path.join('.')}`, value, files)
     } else {
