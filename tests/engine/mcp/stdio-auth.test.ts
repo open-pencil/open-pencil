@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'bun:test'
 import { existsSync } from 'node:fs'
 import { mkdir, rm, writeFile, unlink } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
@@ -6,24 +6,24 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 import { createStdioRpcBridge } from '#mcp/stdio-bridge'
-import { getDiscoveryPath } from '#mcp/transport/paths'
 
 const TEST_DIR = join(tmpdir(), `openpencil-test-stdio-auth-${process.pid}`)
 const TEST_SOCKET = join(TEST_DIR, 'mcp-test.sock')
+const TEST_DISCOVERY_PATH = join(TEST_DIR, 'test-mcp.json')
 const AUTH_TOKEN = 'test-auto-token'
 
 /**
- * Writes a mock discovery file at the platform discovery path so the
- * bridge's readDiscoveryFile() finds it.
+ * Writes a mock discovery file at the test-isolated discovery path so the
+ * bridge's readDiscoveryFile() finds it without touching the developer's
+ * real mcp.json.
  */
 async function writeMockDiscovery(
   socketPath: string,
   authToken: string | null,
   httpPort: number = 0
 ): Promise<void> {
-  const discoveryPath = await getDiscoveryPath()
   await writeFile(
-    discoveryPath,
+    TEST_DISCOVERY_PATH,
     JSON.stringify({
       pid: process.pid,
       socketPath,
@@ -132,9 +132,31 @@ const isUnix = process.platform !== 'win32'
 
 describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retry', () => {
   let httpServer: Server | null = null
+  let bridges: Array<ReturnType<typeof createStdioRpcBridge>> = []
   const origSocketEnv = process.env.OPENPENCIL_MCP_SOCKET
+  const origDiscoveryEnv = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+
+  beforeAll(() => {
+    process.env.OPENPENCIL_MCP_DISCOVERY_PATH = TEST_DISCOVERY_PATH
+  })
+
+  afterAll(() => {
+    if (origDiscoveryEnv === undefined) {
+      delete process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+    } else {
+      process.env.OPENPENCIL_MCP_DISCOVERY_PATH = origDiscoveryEnv
+    }
+  })
 
   afterEach(async () => {
+    for (const bridge of bridges) {
+      try {
+        bridge.close()
+      } catch {
+        void 0
+      }
+    }
+    bridges = []
     if (httpServer) {
       await new Promise<void>((resolve) => {
         httpServer?.close(() => resolve())
@@ -149,13 +171,12 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
     try {
       if (existsSync(TEST_SOCKET)) await unlink(TEST_SOCKET)
     } catch {
-      void 0 // best-effort cleanup
+      void 0
     }
     try {
-      const discoveryPath = await getDiscoveryPath()
-      if (existsSync(discoveryPath)) await unlink(discoveryPath)
+      if (existsSync(TEST_DISCOVERY_PATH)) await unlink(TEST_DISCOVERY_PATH)
     } catch {
-      void 0 // best-effort cleanup
+      void 0
     }
     await rm(TEST_DIR, { recursive: true, force: true })
   })
@@ -173,6 +194,7 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
     const bridge = await createBridgeAndWaitForReady({
       socketPath: TEST_SOCKET
     })
+    bridges.push(bridge)
 
     const result = await bridge.sendRpc({ command: 'test' })
     expect(result).toEqual({ result: 'ok-1' })
@@ -191,6 +213,7 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
       socketPath: TEST_SOCKET
       // No authToken — auto-discovered
     })
+    bridges.push(bridge)
 
     // The bridge is ready. sendRpc hits the server:
     //   Attempt 1 → 401 → bridge re-reads discovery, retries
@@ -211,6 +234,7 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
       authToken: 'wrong-token',
       reconnectDelayMs: 500
     })
+    bridges.push(bridge)
 
     await expect(bridge.sendRpc({ command: 'test' })).rejects.toThrow(
       'Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'
@@ -228,6 +252,7 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
       authToken: 'explicit-token',
       reconnectDelayMs: 500
     })
+    bridges.push(bridge)
 
     const result = await bridge.sendRpc({ command: 'test' })
     expect(result).toEqual({ result: 'ok-1' })
@@ -245,6 +270,7 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
     const bridge = await createBridgeAndWaitForReady({
       socketPath: TEST_SOCKET
     })
+    bridges.push(bridge)
 
     const result = await bridge.sendRpc({ command: 'test' })
     expect(result).toEqual({ result: 'ok-1' })
@@ -255,6 +281,7 @@ describe.skipIf(!isUnix)('Fix 4 - Auth token auto-discovery and transparent retr
       authToken: 'invalid-token',
       reconnectDelayMs: 500
     })
+    bridges.push(badBridge)
 
     await expect(badBridge.sendRpc({ command: 'test' })).rejects.toThrow(
       'Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'

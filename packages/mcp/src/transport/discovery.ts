@@ -205,7 +205,12 @@ function isProcessAlive(pid: number): boolean {
   try {
     process.kill(pid, 0)
     return true
-  } catch {
+  } catch (e) {
+    // EPERM means the process exists but we don't have permission to signal it
+    // — treat as alive. ESRCH means the process doesn't exist — treat as dead.
+    if (e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code === 'EPERM') {
+      return true
+    }
     return false
   }
 }
