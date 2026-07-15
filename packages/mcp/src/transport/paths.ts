@@ -85,8 +85,10 @@ export async function getSocketDir(): Promise<string> {
 
   if (socketOverride) {
     const dir = dirname(socketOverride)
+    // Create missing parents with restrictive permissions. Do NOT chmod
+    // existing directories — the override path is user-controlled and
+    // may be in a shared directory (e.g. /tmp for tests).
     await mkdir(dir, { recursive: true, mode: 0o700 })
-    if (!isWindows) await chmod(dir, 0o700)
     return dir
   }
 
@@ -135,7 +137,6 @@ export async function getDiscoveryPath(): Promise<string> {
   if (override) {
     const dir = dirname(override)
     await mkdir(dir, { recursive: true, mode: 0o700 })
-    if (!isWindows) await chmod(dir, 0o700)
     return override
   }
   const dir = await getPlatformDir()

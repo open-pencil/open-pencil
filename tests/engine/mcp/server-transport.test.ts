@@ -3,6 +3,8 @@ import { stat, mkdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import type { WebSocket } from 'ws'
+
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer, type ServerHandle } from '#mcp/server'
@@ -220,22 +222,19 @@ describe('MCP WebSocket stdio bridge routing', () => {
       mcpRoot: null
     })
 
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const graph = new SceneGraph()
-    const browser = await connectMockBrowser(httpPort, graph, authToken)
-    await waitForBrowserRegistration(httpPort)
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
-
+    let browser: MockBrowser | undefined
+    let clientWs: WebSocket | undefined
     try {
+      const httpPort = handle.httpPort
+      if (!httpPort) throw new Error('withTcp: true did not produce an HTTP port')
+
+      const graph = new SceneGraph()
+      browser = await connectMockBrowser(httpPort, graph, authToken)
+      await waitForBrowserRegistration(httpPort)
+      clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
+
       const register = await readWsJson<{ type: string; token?: string | null }>(clientWs)
       expect(register.type).toBe('register')
-      // Token is null in the prompt — the browser sends its known token
-      // proactively, not from this prompt.
       expect(register.token).toBeNull()
 
       clientWs.send(
@@ -259,8 +258,8 @@ describe('MCP WebSocket stdio bridge routing', () => {
       expect(response.result?.name).toBe('Page 1')
       expect(browser.requests.at(-1)?.command).toBe('tool')
     } finally {
-      clientWs.close()
-      browser.close()
+      clientWs?.close()
+      browser?.close()
       await handle.close()
     }
   })
@@ -276,16 +275,13 @@ describe('MCP WebSocket stdio bridge routing', () => {
       mcpRoot: null
     })
 
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, 'bridge-test-token')
-
+    let clientWs: WebSocket | undefined
     try {
-      // Consume the initial register message sent on connection
+      const httpPort = handle.httpPort
+      if (!httpPort) throw new Error('withTcp: true did not produce an HTTP port')
+
+      clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, 'bridge-test-token')
+
       const register = await readWsJson<{ type: string; token?: string | null }>(clientWs)
       expect(register.type).toBe('register')
 
@@ -309,7 +305,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       expect(response.ok).toBe(false)
       expect(response.error).toContain('OpenPencil app is not connected')
     } finally {
-      clientWs.close()
+      clientWs?.close()
       await handle.close()
     }
   }, 20_000)
@@ -326,33 +322,26 @@ describe('MCP WebSocket stdio bridge routing', () => {
       mcpRoot: null
     })
 
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
-    const graph = new SceneGraph()
-    let browser: MockBrowser | null = null
-
+    let clientWs: WebSocket | undefined
+    let browser: MockBrowser | undefined
     try {
-      // Read the initial register prompt sent on connection (before browser)
+      const httpPort = handle.httpPort
+      if (!httpPort) throw new Error('withTcp: true did not produce an HTTP port')
+
+      clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
+      const graph = new SceneGraph()
+
       const initialRegister = await readWsJson<{ type: string; token?: string | null }>(clientWs)
       expect(initialRegister.type).toBe('register')
-      // Token is null — the browser app sends its token proactively
       expect(initialRegister.token).toBeNull()
 
-      // Set up the broadcast listener BEFORE registering the browser,
-      // otherwise the message can be lost (ws doesn't buffer messages).
       const broadcastPromise = readWsJson<{ type: string; token?: string | null }>(clientWs, 3_000)
       browser = await connectMockBrowser(httpPort, graph, authToken)
-      // Read the broadcast register notification sent when browser connects
       const broadcastRegister = await broadcastPromise
       expect(broadcastRegister.type).toBe('register')
       expect(broadcastRegister.token).toBeNull()
     } finally {
-      clientWs.close()
+      clientWs?.close()
       browser?.close()
       await handle.close()
     }
@@ -370,23 +359,20 @@ describe('MCP WebSocket stdio bridge routing', () => {
       mcpRoot: null
     })
 
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    // Connect a WebSocket client (NOT a browser — no register message yet)
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
-
+    let clientWs: WebSocket | undefined
+    let browser: MockBrowser | undefined
     try {
-      // Read the initial register prompt
-      const initReg = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      const httpPort = handle.httpPort
+      if (!httpPort) throw new Error('withTcp: true did not produce an HTTP port')
+
+      clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
+      const ws = clientWs
+
+      const initReg = await readWsJson<{ type: string; token?: string | null }>(ws)
       expect(initReg.type).toBe('register')
 
-      // Send a request BEFORE the browser connects
       const requestPromise = (async () => {
-        clientWs.send(
+        ws.send(
           JSON.stringify({
             type: 'request',
             id: 'wait-test-1',
@@ -399,25 +385,23 @@ describe('MCP WebSocket stdio bridge routing', () => {
           id: string
           ok?: boolean
           result?: { name: string }
-        }>(clientWs, 15_000)
+        }>(ws, 15_000)
       })()
 
-      // Wait briefly, then connect the browser
       await new Promise<void>((r) => {
         setTimeout(r, 500)
       })
       const graph = new SceneGraph()
-      const browser = await connectMockBrowser(httpPort, graph, authToken)
+      browser = await connectMockBrowser(httpPort, graph, authToken)
 
       const response = await requestPromise
       expect(response.type).toBe('response')
       expect(response.id).toBe('wait-test-1')
       expect(response.ok).toBe(true)
       expect(response.result?.name).toBe('Page 1')
-
-      browser.close()
     } finally {
-      clientWs.close()
+      clientWs?.close()
+      browser?.close()
       await handle.close()
     }
   }, 20_000)
@@ -434,60 +418,53 @@ describe('MCP WebSocket stdio bridge routing', () => {
       mcpRoot: null
     })
 
-    const httpPort = handle.httpPort
-    if (!httpPort) {
-      await handle.close()
-      throw new Error('withTcp: true did not produce an HTTP port')
-    }
-
-    const waitForHealth = async (
-      predicate: (status: string) => boolean,
-      timeoutMs = 2000
-    ): Promise<{ status: string }> => {
-      const sleep = (ms: number) =>
-        new Promise<void>((resolve) => {
-          setTimeout(resolve, ms)
-        })
-      const start = Date.now()
-      let last: { status: string } = { status: 'unknown' }
-      while (Date.now() - start < timeoutMs) {
-        const r = await fetch(`http://127.0.0.1:${httpPort}/health`)
-        last = (await r.json()) as { status: string }
-        if (predicate(last.status)) return last
-        await sleep(25)
-      }
-      throw new Error(
-        `Health predicate never matched within ${timeoutMs}ms (last status: ${last.status})`
-      )
-    }
-
-    // Connect the first browser, then close it to simulate a disconnect.
-    const firstGraph = new SceneGraph()
-    const firstBrowser = await connectMockBrowser(httpPort, firstGraph, authToken)
-    // Confirm the first browser is registered.
-    await waitForHealth((s) => s === 'ok')
-    firstBrowser.close()
-
-    // Wait for the server to detect the disconnect (status flips back to 'no_app')
-    await waitForHealth((s) => s === 'no_app')
-
-    // Connect the second browser
-    const secondGraph = new SceneGraph()
-    const secondBrowser = await connectMockBrowser(httpPort, secondGraph, authToken)
-
-    // Wait for the second browser to register
-    await waitForHealth((s) => s === 'ok')
-
-    const clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
-
+    let clientWs: WebSocket | undefined
+    let secondBrowser: MockBrowser | undefined
     try {
-      // Read the initial register message (token is null for security —
-      // the browser app sends the token proactively, not from this prompt)
-      const initReg = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      const httpPort = handle.httpPort
+      if (!httpPort) throw new Error('withTcp: true did not produce an HTTP port')
+
+      const waitForHealth = async (
+        predicate: (status: string) => boolean,
+        timeoutMs = 2000
+      ): Promise<{ status: string }> => {
+        const sleep = (ms: number) =>
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, ms)
+          })
+        const start = Date.now()
+        let last: { status: string } = { status: 'unknown' }
+        while (Date.now() - start < timeoutMs) {
+          const r = await fetch(`http://127.0.0.1:${httpPort}/health`)
+          last = (await r.json()) as { status: string }
+          if (predicate(last.status)) return last
+          await sleep(25)
+        }
+        throw new Error(
+          `Health predicate never matched within ${timeoutMs}ms (last status: ${last.status})`
+        )
+      }
+
+      const firstGraph = new SceneGraph()
+      const firstBrowser = await connectMockBrowser(httpPort, firstGraph, authToken)
+      await waitForHealth((s) => s === 'ok')
+      firstBrowser.close()
+
+      await waitForHealth((s) => s === 'no_app')
+
+      const secondGraph = new SceneGraph()
+      secondBrowser = await connectMockBrowser(httpPort, secondGraph, authToken)
+      const browser2 = secondBrowser
+      await waitForHealth((s) => s === 'ok')
+
+      clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
+      const ws = clientWs
+
+      const initReg = await readWsJson<{ type: string; token?: string | null }>(ws)
       expect(initReg.type).toBe('register')
       expect(initReg.token).toBeNull()
 
-      clientWs.send(
+      ws.send(
         JSON.stringify({
           type: 'request',
           id: 'stdio-after-reconnect',
@@ -495,15 +472,15 @@ describe('MCP WebSocket stdio bridge routing', () => {
           args: { name: 'get_current_page', args: {} }
         })
       )
-      const response = await readNextResponse<{ type: string; id: string; ok?: boolean }>(clientWs)
+      const response = await readNextResponse<{ type: string; id: string; ok?: boolean }>(ws)
 
       expect(response.type).toBe('response')
       expect(response.id).toBe('stdio-after-reconnect')
       expect(response.ok).toBe(true)
-      expect(secondBrowser.requests.at(-1)?.command).toBe('tool')
+      expect(browser2.requests.at(-1)?.command).toBe('tool')
     } finally {
-      clientWs.close()
-      secondBrowser.close()
+      clientWs?.close()
+      secondBrowser?.close()
       await handle.close()
     }
   }, 10000)

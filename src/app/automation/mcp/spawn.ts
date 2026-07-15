@@ -105,17 +105,22 @@ async function computeExpectedDiscoveryPath(): Promise<string> {
 async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<string> {
   const expected = await computeExpectedDiscoveryPath()
   if (healthDiscoveryPath && healthDiscoveryPath !== expected) {
-    // Only trust the server-reported path when the locally computed path
-    // is confirmed unusable (file doesn't exist on disk). This prevents an
-    // unauthenticated /health response from redirecting file reads to an
-    // attacker-controlled path when the local path is actually valid.
     const localExists = await discoveryFileExists(expected)
     if (!localExists) {
-      console.warn(
-        `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}" ` +
-          'and local path does not exist. Using server-reported path (server is on localhost).'
-      )
-      return healthDiscoveryPath
+      // Validate the server-reported path before accepting it. The /health
+      // endpoint is unauthenticated, so we only accept paths within the
+      // user's home directory ending in mcp.json.
+      const { homeDir } = await import('@tauri-apps/api/path')
+      const home = await homeDir()
+      const isSafe =
+        healthDiscoveryPath.endsWith('mcp.json') && healthDiscoveryPath.startsWith(home)
+      if (isSafe) {
+        console.warn(
+          `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}" ` +
+            'and local path does not exist. Using server-reported path (server is on localhost).'
+        )
+        return healthDiscoveryPath
+      }
     }
   }
   return expected

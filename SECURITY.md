@@ -28,4 +28,4 @@ The MCP server uses a Unix domain socket as the primary transport on macOS and L
 
 The HTTP transport (`openpencil-mcp-http`) binds to `127.0.0.1` by default with `eval` disabled, CORS disabled, and file access restricted to the working directory. See [MCP docs](https://openpencil.dev/reference/mcp-tools) for configuration.
 
-The stdio bridge (`openpencil-mcp`) connects to the MCP server via Unix domain socket on macOS/Linux (with TCP fallback on Windows) and sends the auth token on every request. It inherits the same auth requirements as direct connections.
+The stdio bridge (`openpencil-mcp`) connects to the MCP server via Unix domain socket on macOS/Linux (with TCP on Windows, where Unix sockets are unavailable) and sends the auth token on every request. It inherits the same auth requirements as direct connections.

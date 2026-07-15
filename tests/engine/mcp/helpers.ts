@@ -14,7 +14,7 @@ export interface HealthResponse {
   status: string
   version: string
   authRequired: boolean
-  discoveryPath: string
+  discoveryPath?: string
 }
 
 export interface MockBrowserRequest {

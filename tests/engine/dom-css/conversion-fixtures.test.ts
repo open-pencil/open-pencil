@@ -85,11 +85,9 @@ describe('@open-pencil/dom-css conversion fixtures', () => {
     )
     const graph = designDocumentToSceneGraph(document)
     const page = graph.getPages()[0]
-    const [nav, input] = page ? graph.getChildren(page.id) : []
-
-    expect(nav?.type).toBe('FRAME')
-    expect(input?.type).toBe('FRAME')
-    if (nav?.type !== 'FRAME' || input?.type !== 'FRAME') return
+    const children = page ? graph.getChildren(page.id) : []
+    const nav = expectFrame(children[0])
+    const input = expectFrame(children[1])
     expect(nav.width).toBe(384)
     expect(nav.height).toBe(48)
     expect(nav.layoutMode).toBe('HORIZONTAL')
@@ -97,9 +95,7 @@ describe('@open-pencil/dom-css conversion fixtures', () => {
     expect(nav.counterAxisAlign).toBe('CENTER')
     expect(nav.cornerRadius).toBe(12)
 
-    const badge = graph.getChildren(nav.id)[1]
-    expect(badge?.type).toBe('FRAME')
-    if (badge?.type !== 'FRAME') return
+    const badge = expectFrame(graph.getChildren(nav.id)[1])
     expect(badge.height).toBe(24)
     expect(badge.layoutMode).toBe('HORIZONTAL')
     expect(badge.primaryAxisAlign).toBe('CENTER')
@@ -121,10 +117,7 @@ describe('@open-pencil/dom-css conversion fixtures', () => {
     )
     const graph = designDocumentToSceneGraph(document)
     const page = graph.getPages()[0]
-    const card = page ? graph.getChildren(page.id)[0] : undefined
-
-    expect(card?.type).toBe('FRAME')
-    if (card?.type !== 'FRAME') return
+    const card = expectFrame(page ? graph.getChildren(page.id)[0] : undefined)
     expect(card.width).toBe(320)
     expect(card.height).toBe(176)
     expect(card.layoutMode).toBe('VERTICAL')

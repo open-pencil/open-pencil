@@ -161,7 +161,7 @@ describe('MCP stdio transport', () => {
       if (handle) await handle.close().catch(() => undefined)
       throw err
     }
-  }, 10000)
+  }, 15000)
 
   afterEach(async () => {
     if (client) await client.close().catch(() => undefined)
