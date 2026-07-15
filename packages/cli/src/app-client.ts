@@ -109,8 +109,6 @@ function isTransientError(err: unknown): boolean {
   if (err instanceof Error) {
     const msg = err.message
     if (msg.includes('ECONNREFUSED') || msg.includes('ENOENT')) return true
-    if (msg.includes('timed out')) return true
-    if (msg.includes('socket hang up')) return true
   }
   return false
 }

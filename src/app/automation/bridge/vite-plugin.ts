@@ -20,10 +20,14 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
       // socket listen that cannot succeed.
       const socketPath = platformHasUnixSockets() ? await getSocketPath() : null
 
+      const childEnv = { ...process.env }
+      delete childEnv.OPENPENCIL_MCP_SOCKET
+      delete childEnv.OPENPENCIL_MCP_AUTH_TOKEN
+
       child = spawn('bun', ['run', 'packages/mcp/src/index.ts'], {
         stdio: ['ignore', 'inherit', 'pipe'],
         env: {
-          ...process.env,
+          ...childEnv,
           PORT: String(AUTOMATION_HTTP_PORT),
           OPENPENCIL_MCP_TCP: '1',
           ...(socketPath ? { OPENPENCIL_MCP_SOCKET: socketPath } : {}),

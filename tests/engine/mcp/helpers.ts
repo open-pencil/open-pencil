@@ -231,12 +231,14 @@ export function connectMockBrowser(
       ws.send(JSON.stringify({ type: 'register', token }))
 
       ws.on('message', async (raw) => {
-        let msg: { type: string; id: string; command: string; args?: unknown }
+        let parsed: unknown
         try {
-          msg = JSON.parse(raw.toString())
+          parsed = JSON.parse(raw.toString())
         } catch {
           return // Ignore malformed payloads
         }
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return
+        const msg = parsed as { type: string; id: string; command: string; args?: unknown }
         if (msg.type !== 'request') return
 
         try {
@@ -260,10 +262,16 @@ export function connectMockBrowser(
         // Wait for the server to confirm browser registration before resolving.
         // Without this, follow-up test traffic can start before the server marks
         // the browser as connected, causing race conditions.
-        void waitForBrowserRegistration(port).then(() => {
-          resolve({ ws, graph, requests, close: () => ws.close() })
-          return undefined
-        }, reject)
+        void waitForBrowserRegistration(port).then(
+          () => {
+            resolve({ ws, graph, requests, close: () => ws.close() })
+            return undefined
+          },
+          (err) => {
+            ws.close()
+            reject(err)
+          }
+        )
       }
     })
 

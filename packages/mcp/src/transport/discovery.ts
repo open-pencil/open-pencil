@@ -136,12 +136,22 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
   } catch {
     return false
   }
-  if (!info || info.socketPath !== socketPath || info.httpPort <= 0) return false
+  if (!info || info.socketPath !== socketPath) return false
+
+  // If TCP is disabled (httpPort <= 0), fall back to PID-based liveness check
+  if (info.httpPort <= 0) {
+    return isProcessAlive(info.pid)
+  }
+
   return fetch(`http://127.0.0.1:${info.httpPort}/health`, {
     signal: AbortSignal.timeout(2000)
   })
     .then((res) => res.ok)
-    .catch(() => false)
+    .catch((e) => {
+      // A timeout means the process is likely alive but slow — don't delete its socket
+      if (e instanceof Error && e.name === 'TimeoutError') return true
+      return false
+    })
 }
 
 /**

@@ -240,13 +240,18 @@ export function createBrowserRpcBridge({ authToken, onConnectionChange }: Browse
 
   function handleMessage(data: string, ws: WebSocket) {
     if (bridgeClosed) return
-    let msg: BrowserMessage
+    let parsed: unknown
     try {
-      msg = JSON.parse(data) as BrowserMessage
+      parsed = JSON.parse(data)
     } catch (e) {
       console.warn('Malformed automation message:', e)
       return
     }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      ws.close()
+      return
+    }
+    const msg = parsed as BrowserMessage
 
     if (msg.type === 'auth') {
       // Authenticate a stdio bridge client without registering it as the

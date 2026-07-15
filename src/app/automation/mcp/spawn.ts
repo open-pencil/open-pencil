@@ -269,16 +269,18 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
     assertCompatibleMcpVersion(health)
     const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
     const discovered = await readDiscoveryToken(discoveryPath)
-    runtimeAutomationAuthToken = discovered ?? authToken
+    const token = discovered ?? authToken
+    runtimeAutomationAuthToken = token
     return {
       disconnect: () => {
-        // Send SIGTERM to the child process. Fire-and-forget to avoid blocking
-        // if the child is hung. Errors are logged for debugging.
         void child.kill().catch((e) => {
           console.error('[MCP] Failed to kill server:', e)
         })
+        if (runtimeAutomationAuthToken === token) {
+          runtimeAutomationAuthToken = null
+        }
       },
-      authToken: runtimeAutomationAuthToken
+      authToken: token
     }
   }
 

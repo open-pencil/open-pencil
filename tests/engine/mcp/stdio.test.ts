@@ -23,10 +23,13 @@ const SOCKET_PATH = isUnix ? join(SOCKET_DIR, 'mcp.sock') : null
 async function createStdioClient(socketPath: string, authToken: string | null) {
   const { Client } = await import('@modelcontextprotocol/sdk/client/index.js')
   const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js')
-  const env: Record<string, string> = {
-    ...(process.env as Record<string, string>),
-    PATH: process.env.PATH ?? ''
+  const env: Record<string, string> = {}
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!key.startsWith('OPENPENCIL_MCP_') && value !== undefined) {
+      env[key] = value
+    }
   }
+  env.PATH = process.env.PATH ?? ''
   // Only set OPENPENCIL_MCP_SOCKET when a socket path exists.
   // An empty string on Windows would break the stdio bridge's transport
   // discovery (it would try to connect to an empty socket path).

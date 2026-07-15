@@ -15,7 +15,6 @@ import type { RpcJsonObject } from '#mcp/json'
 import { preprocessRpc } from '#mcp/jsx-preprocess'
 import { createMcpSessionManager } from '#mcp/mcp-sessions'
 import { registerTools } from '#mcp/tool/registration'
-import { getDiscoveryPath } from '#mcp/transport/paths'
 
 import packageJson from '../package.json' with { type: 'json' }
 import {
@@ -115,8 +114,7 @@ function createHonoApp(options: {
       status: browserRpc.isConnected() ? 'ok' : 'no_app',
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
-      authRequired: authToken !== null,
-      discoveryPath: await getDiscoveryPath()
+      authRequired: authToken !== null
     })
   )
 

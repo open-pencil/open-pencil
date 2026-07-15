@@ -108,6 +108,7 @@ describe('MCP server unified transport', () => {
   if (isUnix) {
     describe('Unix domain socket endpoint', () => {
       it('responds to /health via socket', async () => {
+        if (!handle) throw new Error('Server handle not initialized')
         const socketPath = handle.socketPath
         expect(socketPath).toBeTruthy()
         if (!socketPath) throw new Error('socketPath is null')
@@ -118,6 +119,7 @@ describe('MCP server unified transport', () => {
       })
 
       it('socket file has restrictive permissions', async () => {
+        if (!handle) throw new Error('Server handle not initialized')
         const socketPath = handle.socketPath
         expect(socketPath).toBeTruthy()
         if (!socketPath) throw new Error('socketPath is null')

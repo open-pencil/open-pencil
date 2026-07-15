@@ -138,7 +138,12 @@ async function resolveDanglingSymlink(
     // Recursively validate the target (handles nested symlinks).
     // Pass the already-canonical realRoot so the recursive call skips
     // redundant assertNarrowRoot + realpath(root) work.
-    const targetResult = await resolveSafePath(resolvedTarget, root, symlinkDepth + 1, realRoot)
+    const targetResult = await resolveSafePathInternal(
+      resolvedTarget,
+      root,
+      symlinkDepth + 1,
+      realRoot
+    )
     return targetResult.realPath
   } catch (e) {
     if (e instanceof Error) {
@@ -158,30 +163,22 @@ async function resolveDanglingSymlink(
   }
 }
 
-export async function resolveSafePath(
+async function resolveSafePathInternal(
   filePath: string,
   root: string,
-  _symlinkDepth?: number,
-  _realRoot?: string
+  symlinkDepth: number,
+  realRoot?: string
 ): Promise<SafePathResult> {
-  const symlinkDepth = _symlinkDepth ?? 0
   if (symlinkDepth >= MAX_SYMLINK_DEPTH) {
     throw new Error(
       `Symlink resolution depth limit exceeded (possible circular symlinks): ${filePath}`
     )
   }
 
-  // Resolve root to its real (symlink-aware) canonical form.
-  // When _realRoot is provided (recursive call from resolveDanglingSymlink),
-  // skip the redundant assertNarrowRoot + realpath(root) work — the root was
-  // already validated and canonicalized by the outer call.
   const normalizedRoot = resolve(root)
   const resolved = isAbsolute(filePath) ? resolve(filePath) : resolve(normalizedRoot, filePath)
 
-  let realRoot: string
-  if (_realRoot) {
-    realRoot = _realRoot
-  } else {
+  if (!realRoot) {
     assertNarrowRoot(root, root)
 
     try {
@@ -192,19 +189,16 @@ export async function resolveSafePath(
       realRoot = remainder ? join(realAncestor, remainder.slice(osSep.length)) : realAncestor
     }
 
-    // Re-check the broad-root guard after resolving symlinks.
     assertNarrowRoot(realRoot, root)
   }
 
   const realSep = realRoot.endsWith('/') || realRoot.endsWith('\\') ? '' : osSep
 
-  // Resolve the file path to its real canonical form for security validation.
   let realPath: string
   try {
     realPath = await realpath(resolved)
   } catch (e) {
     if (!isMissingPathError(e)) throw e
-    // realpath failed — may be a dangling symlink or a non-existent file.
     const symlinkRealPath = await resolveDanglingSymlink(resolved, root, realRoot, symlinkDepth)
     realPath = symlinkRealPath ?? (await resolveRealPath(resolved))
   }
@@ -213,6 +207,10 @@ export async function resolveSafePath(
     throw new Error(`Path is outside the allowed root: ${root}`)
   }
   return { resolved, realPath }
+}
+
+export async function resolveSafePath(filePath: string, root: string): Promise<SafePathResult> {
+  return resolveSafePathInternal(filePath, root, 0)
 }
 
 export async function writeToolOutput(
