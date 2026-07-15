@@ -12,8 +12,8 @@ import {
   SelectViewport
 } from 'reka-ui'
 
-import ScrubInput from '@/components/inputs/ScrubInput.vue'
-import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import BoundVariableButton from '@/components/properties/BoundVariableButton.vue'
 import VariablePickerPopover from '@/components/properties/VariablePickerPopover.vue'
 import { useSelectUI } from '@/components/ui/select'
@@ -170,7 +170,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   <div class="flex gap-1.5">
     <div ref="widthFieldRef" class="min-w-0 flex-1">
       <Tip :label="panels.width">
-        <ScrubInput
+        <NumberField
           data-test-id="layout-width-input"
           icon="W"
           :model-value="Math.round(resolvedBoundNumber('width') ?? ctx.node.width)"
@@ -192,11 +192,10 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               :trigger-label="panels.applyVariable"
               :search-placeholder="dialogs.search"
               :empty-label="panels.noVariablesFound"
-              :trigger-data-test-id="'layout-width-apply-variable'"
+              data-test-id="layout-width-apply-variable"
               :create-label="panels.createNumberVariable({ value: Math.round(ctx.node.width) })"
               :create-name-placeholder="panels.variableName"
               :create-submit-label="panels.create"
-              :create-data-test-id="'layout-width-apply-variable-create'"
               @select="bindSizeVariable('width', $event.id)"
               @create="createAndBindSizeVariable('width', $event)"
             />
@@ -248,13 +247,13 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </ScrubInput>
+        </NumberField>
       </Tip>
     </div>
 
     <div ref="heightFieldRef" class="min-w-0 flex-1">
       <Tip :label="panels.height">
-        <ScrubInput
+        <NumberField
           data-test-id="layout-height-input"
           icon="H"
           :model-value="Math.round(resolvedBoundNumber('height') ?? ctx.node.height)"
@@ -276,11 +275,10 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               :trigger-label="panels.applyVariable"
               :search-placeholder="dialogs.search"
               :empty-label="panels.noVariablesFound"
-              :trigger-data-test-id="'layout-height-apply-variable'"
+              data-test-id="layout-height-apply-variable"
               :create-label="panels.createNumberVariable({ value: Math.round(ctx.node.height) })"
               :create-name-placeholder="panels.variableName"
               :create-submit-label="panels.create"
-              :create-data-test-id="'layout-height-apply-variable-create'"
               @select="bindSizeVariable('height', $event.id)"
               @create="createAndBindSizeVariable('height', $event)"
             />
@@ -332,7 +330,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </ScrubInput>
+        </NumberField>
       </Tip>
     </div>
   </div>
@@ -348,7 +346,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   >
     <template v-for="(item, index) in visibleSizeLimits" :key="item.prop">
       <div :ref="limitFieldRefs.set" class="min-w-0">
-        <VariableScrubInput
+        <VariableNumberField
           v-if="ctx.node"
           v-test-id="item.testHook"
           :icon="item.icon()"
@@ -391,8 +389,8 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </VariableScrubInput>
-        <ScrubInput
+        </VariableNumberField>
+        <NumberField
           v-else
           v-test-id="item.testHook"
           :icon="item.icon()"
@@ -433,7 +431,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
               </SelectPortal>
             </SelectRoot>
           </template>
-        </ScrubInput>
+        </NumberField>
       </div>
     </template>
   </div>

@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T extends string | number">
+import { tv } from 'tailwind-variants'
 import {
   SelectContent,
   SelectItem,
@@ -11,52 +12,48 @@ import {
   SelectViewport
 } from 'reka-ui'
 
-import { useSelectUI } from '@/components/ui/select'
-import type { SelectUi } from '@/components/ui/select'
-
-interface AppSelectUi extends SelectUi {
-  viewport?: string
-  indicator?: string
-}
+import theme from '@/theme/app-select'
+import type { AppSelectTheme } from '@/theme/app-select'
+import type { ComponentUI } from '@/components/ui/types'
 
 interface AppSelectProps<TValue extends string | number> {
   label?: string
   options: { value: TValue; label: string }[]
   placeholder?: string
-  ui?: AppSelectUi
+  ui?: ComponentUI<AppSelectTheme>
 }
 
 defineOptions({ inheritAttrs: false })
 
 const { options, label, placeholder, ui } = defineProps<AppSelectProps<T>>()
-
 const modelValue = defineModel<T>({ required: true })
-
-const select = useSelectUI({
-  trigger: ui?.trigger ?? 'min-w-0 flex-1 rounded px-1.5 py-1 text-xs',
-  content: ui?.content ?? 'max-h-56',
-  item: ui?.item ?? 'rounded py-1.5 pr-2 pl-6 text-xs'
-})
-const viewport = ui?.viewport ?? 'p-0.5'
-const indicator = ui?.indicator ?? 'absolute left-1.5 inline-flex items-center justify-center'
+const styles = tv(theme)()
 </script>
 
 <template>
   <SelectRoot v-model="modelValue">
-    <SelectTrigger v-bind="$attrs" :class="select.trigger" :aria-label="label">
-      <SelectValue :placeholder="placeholder" />
+    <SelectTrigger
+      v-bind="$attrs"
+      :class="styles.trigger({ class: ui?.trigger })"
+      :aria-label="label"
+    >
+      <SelectValue :placeholder="placeholder" :class="styles.value({ class: ui?.value })" />
       <icon-lucide-chevron-down class="ml-1 size-3 shrink-0 text-muted" />
     </SelectTrigger>
     <SelectPortal>
-      <SelectContent position="popper" :side-offset="2" :class="select.content">
-        <SelectViewport :class="viewport">
+      <SelectContent
+        position="popper"
+        :side-offset="2"
+        :class="styles.content({ class: ui?.content })"
+      >
+        <SelectViewport :class="styles.viewport({ class: ui?.viewport })">
           <SelectItem
             v-for="opt in options"
             :key="String(opt.value)"
             :value="opt.value"
-            :class="select.item"
+            :class="styles.item({ class: ui?.item })"
           >
-            <SelectItemIndicator :class="indicator">
+            <SelectItemIndicator :class="styles.indicator({ class: ui?.indicator })">
               <icon-lucide-check class="size-3 text-accent" />
             </SelectItemIndicator>
             <SelectItemText>{{ opt.label }}</SelectItemText>

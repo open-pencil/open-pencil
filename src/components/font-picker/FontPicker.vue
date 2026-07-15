@@ -13,7 +13,7 @@ import {
 
 import { WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 
-import type { FontPickerUi } from '@open-pencil/vue'
+import type { FontPickerUI } from '@open-pencil/vue'
 
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
@@ -26,7 +26,7 @@ const selectCls = useSelectUI({
   item: 'w-full gap-2 px-3 py-2.5 text-sm leading-tight'
 })
 
-const ui = computed<FontPickerUi>(() => ({
+const ui = computed<FontPickerUI>(() => ({
   trigger: selectCls.trigger,
   content: cls.content,
   item: selectCls.item,

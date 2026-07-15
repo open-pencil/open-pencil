@@ -82,12 +82,24 @@ Main structural primitives include:
 - `LayerTreeRoot`
 - `PageListRoot`
 - `PropertyListRoot`
+- `PropertySectionRoot`
+- `SegmentedControlRoot`
 - `ToolbarRoot`
 - `ColorPickerRoot`
 - `FillPickerRoot`
 - `FontPickerRoot`
+- `NumberFieldRoot` / `NumberFieldInput` / `NumberFieldValue`
+- `BindableValueRoot` / `BindableValueTrigger` / `BindableValuePicker`
 
-These components coordinate structure and state, but do not impose app styling.
+These components coordinate structure and state, but do not impose app styling. `NumberField`
+adds pointer scrubbing, Arrow-key stepping, mixed/bound state attributes, and safe arithmetic
+expressions such as `+10`, `*2`, `50%`, and `12*8+4`. `BindableValue` composes fields with a
+generic `BindingProvider` and supports detach-on-edit, read-only, and edit-variable policies.
+Focusing a bound NumberField is non-destructive; the configured policy begins only on the first
+value mutation. `AppearanceControlsRoot` exposes selection-derived independent-corner presentation
+state so consumers do not need parallel expansion heuristics. `PropertyListRoot` is controlled and
+editor-agnostic; OpenPencil panels connect it to selection and undo through
+`useEditorPropertyList()`.
 
 ## Public API tiers
 
@@ -115,6 +127,7 @@ These are the main APIs most SDK consumers should start with.
 - `usePosition()`
 - `useLayout()`
 - `useAppearance()`
+- `useMask()`
 - `useTypography()`
 - `useExport()`
 - `useFillControls()`
@@ -133,15 +146,34 @@ These are the main APIs most SDK consumers should start with.
 - `LayerTreeRoot`
 - `PageListRoot`
 - `PropertyListRoot`
+- `PropertyListItem`
+- `PropertyListAdd` / `PropertyListRemove` / `PropertyListVisibility`
+- `PropertySectionRoot` / `PropertySectionHeader` / `PropertySectionTitle`
+- `PropertySectionActions` / `PropertySectionContent` / `PropertySectionEmptyAction`
+- `SegmentedControlRoot` / `SegmentedControlItem`
 - `ToolbarRoot`
+- `NumberFieldRoot`
+- `NumberFieldInput`
+- `NumberFieldValue`
+- `NumberFieldLeading`
+- `NumberFieldUnit`
+- `NumberFieldTrailing`
+- `NumberFieldMenu`
+- `BindableValueRoot`
+- `BindableValueTrigger`
+- `BindableValuePicker`
 
 ### Advanced API
 
 These exports are intentionally public, but they are lower-level or more specialized.
 
 - `useNodeProps()`
+- `useEditorPropertyList()`
 - `useSceneComputed()`
 - `useColorVariableBinding()`
+- `provideBindingProvider()`
+- `useBindingProvider()`
+- `useNumberBindingProvider()`
 - `useFillPicker()`
 - `useGradientStops()`
 - `useFontPicker()`
@@ -167,7 +199,7 @@ These are mostly useful when extending SDK primitives rather than building from 
 - `useLayerTree()`
 - `useToolbar()`
 - `usePropertyList()`
-- `useScrubInput()`
+- `useNumberField()`
 - `locale`
 - `localeSetting`
 - `setLocale()`

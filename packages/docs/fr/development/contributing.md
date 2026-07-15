@@ -55,7 +55,7 @@ bun run check
 ### Conventions
 
 - **Noms de fichiers** — kebab-case (`scene-graph.ts`, `use-canvas-input.ts`)
-- **Composants** — PascalCase Vue SFCs (`EditorCanvas.vue`, `ScrubInput.vue`)
+- **Composants** — PascalCase Vue SFCs (`EditorCanvas.vue`, `NumberField.vue`)
 - **Constantes** — SCREAMING_SNAKE_CASE
 - **Fonctions/variables** — camelCase
 - **Types/interfaces** — PascalCase

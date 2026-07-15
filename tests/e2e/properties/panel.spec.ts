@@ -1,17 +1,33 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
+import { propertyField, propertySection } from '#tests/helpers/properties'
 import { getPageChildren, getSelectedNode } from '#tests/helpers/store'
 
 const editor = useEditorSetup()
 
-test('ScrubInput drag changes X position', async () => {
+test('property sections collapse and reopen from their title', async () => {
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
+
+  const section = propertySection(editor.page, 'Appearance')
+  const title = section.getByRole('button', { name: 'Appearance' })
+  const blendMode = section.getByRole('combobox', { name: 'Blend mode' })
+  await expect(blendMode).toBeVisible()
+  await title.click()
+  await expect(blendMode).toBeHidden()
+  await expect(title).toHaveAttribute('data-state', 'closed')
+  await title.click()
+  await expect(blendMode).toBeVisible()
+})
+
+test('NumberField drag changes X position', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(100, 100, 80, 80)
   const before = await getSelectedNode(editor.page)
   const initialX = expectDefined(before, 'selected rectangle before drag').x
 
-  const xScrub = editor.page.getByTestId('position-section').getByTestId('scrub-input').first()
-  await editor.canvas.dragScrubInput(xScrub, 50)
+  const xField = propertyField(editor.page, 'x')
+  await editor.canvas.dragNumberField(xField, 50)
 
   const after = await getSelectedNode(editor.page)
   expect(after?.x).not.toBe(initialX)
@@ -22,10 +38,10 @@ test('corner radius uniform sets cornerRadius', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(200, 200, 80, 80)
 
-  const scrubContainer = editor.page.getByTestId('corner-radius-input')
+  const scrubContainer = propertyField(editor.page, 'cornerRadius')
   await scrubContainer.click()
   await editor.canvas.waitForRender()
-  const input = editor.page.getByTestId('corner-radius-input').getByTestId('scrub-input-field')
+  const input = scrubContainer.getByRole('spinbutton', { name: 'Radius' })
   await input.fill('12')
   await input.press('Enter')
   await editor.canvas.waitForRender()
@@ -36,13 +52,15 @@ test('corner radius uniform sets cornerRadius', async () => {
 })
 
 test('independent corners toggle shows four corner inputs', async () => {
-  await editor.page.getByTestId('independent-corners-toggle').click()
+  await propertySection(editor.page, 'Appearance')
+    .getByRole('button', { name: 'Independent corner radii' })
+    .click()
   await editor.canvas.waitForRender()
 
-  await expect(editor.page.getByTestId('corner-tl-input')).toBeVisible()
-  await expect(editor.page.getByTestId('corner-tr-input')).toBeVisible()
-  await expect(editor.page.getByTestId('corner-br-input')).toBeVisible()
-  await expect(editor.page.getByTestId('corner-bl-input')).toBeVisible()
+  await expect(propertyField(editor.page, 'topLeftRadius')).toBeVisible()
+  await expect(propertyField(editor.page, 'topRightRadius')).toBeVisible()
+  await expect(propertyField(editor.page, 'bottomRightRadius')).toBeVisible()
+  await expect(propertyField(editor.page, 'bottomLeftRadius')).toBeVisible()
   editor.canvas.assertNoErrors()
 })
 
@@ -185,7 +203,7 @@ test('width can create, bind, and detach a number variable', async () => {
 
   const widthField = editor.page.getByTestId('layout-width-input')
   await widthField.click()
-  const widthInput = widthField.getByTestId('scrub-input-field')
+  const widthInput = widthField.getByRole('spinbutton')
   await widthInput.fill('120')
   await widthInput.press('Enter')
   await editor.canvas.waitForRender()
@@ -202,6 +220,66 @@ test('width can create, bind, and detach a number variable', async () => {
   editor.canvas.assertNoErrors()
 })
 
+test('bound NumberField detach edit is one undo step', async () => {
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
+
+  const field = propertyField(editor.page, 'cornerRadius')
+  await field.getByLabel('Apply variable').click()
+  await editor.page.getByText('Create number variable from 0').click()
+  await editor.page.getByPlaceholder('Variable name').fill('Radius/default')
+  await editor.page.getByRole('button', { name: 'Create', exact: true }).click()
+  await editor.canvas.waitForRender()
+  await expect(field.getByText('Radius/default')).toBeVisible()
+
+  const readState = () =>
+    editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const id = [...store.state.selectedIds][0]
+      const node = id ? store.getNode(id) : null
+      const variableId = node?.boundVariables.cornerRadius
+      return node
+        ? {
+            radius: node.cornerRadius,
+            binding: variableId ? store.getVariable(variableId)?.name : null
+          }
+        : null
+    })
+
+  await field.click({ position: { x: 40, y: 13 } })
+  const input = field.getByRole('spinbutton', { name: 'Radius' })
+  await input.press('Tab')
+  expect(await readState()).toEqual({ radius: 0, binding: 'Radius/default' })
+  await editor.canvas.pressKey('Meta+z')
+  await editor.canvas.waitForRender()
+  expect(await readState()).toEqual({ radius: 0, binding: null })
+  await editor.canvas.pressKey('Meta+Shift+z')
+  await editor.canvas.waitForRender()
+  expect(await readState()).toEqual({ radius: 0, binding: 'Radius/default' })
+
+  await field.getByLabel('Apply variable').click()
+  await expect(editor.page.getByPlaceholder('Search')).toBeVisible()
+  await editor.page.getByPlaceholder('Search').press('Escape')
+  expect(await readState()).toEqual({ radius: 0, binding: 'Radius/default' })
+
+  await field.click({ position: { x: 40, y: 13 } })
+  await input.fill('12')
+  await input.press('Escape')
+  await editor.canvas.waitForRender()
+  expect(await readState()).toEqual({ radius: 0, binding: 'Radius/default' })
+
+  await field.click({ position: { x: 40, y: 13 } })
+  await input.fill('24')
+  await input.press('Enter')
+  await editor.canvas.waitForRender()
+  expect(await readState()).toEqual({ radius: 24, binding: null })
+  await editor.canvas.pressKey('Meta+z')
+  await editor.canvas.waitForRender()
+  expect(await readState()).toEqual({ radius: 0, binding: 'Radius/default' })
+  editor.canvas.assertNoErrors()
+})
+
 test('alignment buttons align nodes to same X', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(50, 200, 60, 60)
@@ -209,7 +287,7 @@ test('alignment buttons align nodes to same X', async () => {
   await editor.canvas.pressKey('Meta+a')
   await editor.canvas.waitForRender()
 
-  await editor.page.getByTestId('position-align-left').click()
+  await propertySection(editor.page, 'Position').getByRole('button', { name: 'Align left' }).click()
   await editor.canvas.waitForRender()
 
   const children = await getPageChildren(editor.page)
@@ -222,7 +300,9 @@ test('flip horizontal sets flipX', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(200, 200, 80, 80)
 
-  await editor.page.getByTestId('position-flip-horizontal').click()
+  await propertySection(editor.page, 'Position')
+    .getByRole('button', { name: 'Flip horizontal' })
+    .click()
   await editor.canvas.waitForRender()
 
   const node = await getSelectedNode(editor.page)

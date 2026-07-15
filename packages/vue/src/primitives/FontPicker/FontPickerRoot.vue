@@ -21,13 +21,13 @@ import {
   type FontFamilyOption
 } from '#vue/primitives/FontPicker/useFontPicker'
 
-import type { FontPickerUi } from '#vue/primitives/FontPicker/types'
+import type { FontPickerUI } from '#vue/primitives/FontPicker/types'
 
 const { listFamilies, localFontAccess, ui, emptySearchText, emptyFontsText, emptyFontsHint } =
   defineProps<{
     listFamilies: () => Promise<string[] | FontFamilyOption[]>
     localFontAccess?: FontAccessController
-    ui?: FontPickerUi
+    ui?: FontPickerUI
     emptySearchText?: string
     emptyFontsText?: string
     emptyFontsHint?: string

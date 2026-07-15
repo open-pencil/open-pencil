@@ -22,6 +22,8 @@ description: Component reference for headless Vue primitives in @open-pencil/vue
 ## Property panel primitives
 
 <SdkCardGroup>
+  <SdkCard title="PropertySection" to="/programmable/sdk/api/components/property-section" description="Collapsible property-section anatomy and empty states." />
+  <SdkCard title="SegmentedControl" to="/programmable/sdk/api/components/segmented-control" description="Accessible selection and action-only segment groups." />
   <SdkCard title="PropertyListRoot" to="/programmable/sdk/api/components/property-list-root" description="Headless property list primitive." />
   <SdkCard title="PropertyListItem" to="/programmable/sdk/api/components/property-list-item" description="Single fills, strokes, or effects row primitive." />
   <SdkCard title="PositionControlsRoot" to="/programmable/sdk/api/components/position-controls-root" description="Position, size, and transform controls." />
@@ -40,7 +42,6 @@ description: Component reference for headless Vue primitives in @open-pencil/vue
   <SdkCard title="GradientEditorRoot" to="/programmable/sdk/api/components/gradient-editor-root" description="Root primitive for gradient editing." />
   <SdkCard title="GradientEditorBar" to="/programmable/sdk/api/components/gradient-editor-bar" description="Draggable gradient bar primitive." />
   <SdkCard title="GradientEditorStop" to="/programmable/sdk/api/components/gradient-editor-stop" description="Single gradient stop primitive." />
-  <SdkCard title="ScrubInputRoot" to="/programmable/sdk/api/components/scrub-input-root" description="Drag-to-scrub numeric input root." />
-  <SdkCard title="ScrubInputField" to="/programmable/sdk/api/components/scrub-input-field" description="Editing input field primitive." />
-  <SdkCard title="ScrubInputDisplay" to="/programmable/sdk/api/components/scrub-input-display" description="Non-editing display primitive." />
+  <SdkCard title="NumberField" to="/programmable/sdk/api/components/number-field" description="Numeric field anatomy with scrubbing, expressions, and keyboard stepping." />
+  <SdkCard title="BindableValue" to="/programmable/sdk/api/components/bindable-value" description="Provider-driven variable and token binding composition." />
 </SdkCardGroup>

@@ -1,53 +1,25 @@
-import { twMerge } from 'tailwind-merge'
 import { tv } from 'tailwind-variants'
 
-const trigger = tv({
-  base: 'flex items-center justify-between border border-border bg-input text-surface outline-none hover:bg-hover'
-})
+import type { ComponentUI } from '@/components/ui/types'
+import theme from '@/theme/select'
 
-const content = tv({
-  base: 'z-[110] min-w-[var(--reka-select-trigger-width)] overflow-hidden border border-border bg-panel',
-  variants: {
-    radius: {
-      md: 'rounded-md',
-      lg: 'rounded-lg'
-    },
-    elevation: {
-      lg: 'shadow-lg',
-      xl: 'shadow-xl'
-    },
-    padding: {
-      none: '',
-      sm: 'p-0.5',
-      md: 'p-1'
-    }
-  },
-  defaultVariants: {
-    radius: 'md',
-    elevation: 'lg',
-    padding: 'sm'
-  }
-})
-
-const item = tv({
-  base: 'relative flex cursor-pointer items-center text-surface outline-none data-[highlighted]:bg-hover'
-})
-
-export interface SelectUi {
-  trigger?: string
-  content?: string
-  contentVariants?: {
-    radius?: 'md' | 'lg'
-    elevation?: 'lg' | 'xl'
-    padding?: 'none' | 'sm' | 'md'
-  }
-  item?: string
+export interface SelectContentVariants {
+  radius?: keyof typeof theme.variants.radius
+  elevation?: keyof typeof theme.variants.elevation
+  padding?: keyof typeof theme.variants.padding
 }
 
-export function useSelectUI(ui?: SelectUi) {
+export type SelectUI = ComponentUI<typeof theme> & {
+  contentVariants?: SelectContentVariants
+}
+
+export function useSelectUI(ui?: SelectUI) {
+  const styles = tv(theme)(ui?.contentVariants)
   return {
-    trigger: twMerge(trigger(), ui?.trigger),
-    content: twMerge(content(ui?.contentVariants), ui?.content),
-    item: twMerge(item(), ui?.item)
+    trigger: styles.trigger({ class: ui?.trigger }),
+    value: styles.value({ class: ui?.value }),
+    content: styles.content({ class: ui?.content }),
+    viewport: styles.viewport({ class: ui?.viewport }),
+    item: styles.item({ class: ui?.item })
   }
 }

@@ -1,14 +1,11 @@
 import { expect, expectInViewport, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { expectDefined } from '#tests/helpers/assert'
+import { propertySection } from '#tests/helpers/properties'
 
 const editor = useEditorSetup()
 
 function designPanel() {
   return editor.page.getByTestId('design-panel-single')
-}
-
-function nodeHeader() {
-  return editor.page.getByTestId('design-node-header')
 }
 
 function fillSection() {
@@ -20,7 +17,7 @@ function strokeSection() {
 }
 
 function positionSection() {
-  return editor.page.getByTestId('position-section')
+  return propertySection(editor.page, 'Position')
 }
 
 function effectsSection() {
@@ -39,6 +36,9 @@ function getNode(id: string) {
       effects: n.effects,
       opacity: n.opacity,
       visible: n.visible,
+      blendMode: n.blendMode,
+      isMask: n.isMask,
+      maskType: n.maskType,
       x: n.x,
       y: n.y,
       width: n.width,
@@ -56,19 +56,28 @@ function getSelectedId() {
   })
 }
 
+function getSelectedIds() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return [...store.state.selectedIds]
+  })
+}
+
 test('selecting a rectangle shows design panel with type and name', async () => {
   await editor.canvas.drawRect(100, 100, 120, 80)
   await editor.canvas.waitForRender()
 
   await expect(designPanel()).toBeVisible()
-  await expect(nodeHeader()).toContainText('RECTANGLE')
-  await expect(nodeHeader()).toContainText('Rectangle')
+  await expect(designPanel().getByRole('img', { name: 'RECTANGLE' })).toBeVisible()
+  await expect(designPanel().getByRole('heading', { name: 'Rectangle' })).toBeVisible()
+  await expect(designPanel()).toHaveScreenshot('design-panel-position-appearance.png')
 })
 
 test('position section shows X, Y, rotation inputs', async () => {
   await expect(positionSection()).toBeVisible()
 
-  const inputs = positionSection().getByTestId('scrub-input')
+  const inputs = propertySection(editor.page, 'Position').getByRole('spinbutton')
   const count = await inputs.count()
   expect(count).toBeGreaterThanOrEqual(3)
 })
@@ -152,8 +161,91 @@ test('adding a second fill shows two fill items', async () => {
   expect(expectDefined(node, 'node node').fills.length).toBe(2)
 })
 
+test('blend mode select updates the selected layer', async () => {
+  const id = await getSelectedId()
+  const blendModeSelect = propertySection(editor.page, 'Appearance').getByRole('combobox', {
+    name: 'Blend mode'
+  })
+  await expect(blendModeSelect).toBeVisible()
+
+  await blendModeSelect.click()
+  await editor.page.getByRole('option', { name: 'Multiply' }).click()
+  await editor.canvas.waitForRender()
+
+  const node = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(node, 'node').blendMode).toBe('MULTIPLY')
+})
+
+test('multi-select blend mode change is one undo step', async () => {
+  await editor.canvas.drawRect(300, 100, 60, 60)
+  await editor.canvas.drawRect(400, 100, 60, 60)
+  await editor.canvas.selectAll()
+  await editor.canvas.waitForRender()
+
+  const ids = await getSelectedIds()
+  expect(ids.length).toBeGreaterThanOrEqual(2)
+  const previousBlendModes = await Promise.all(
+    ids.map(async (id) => expectDefined(await getNode(id), 'selected node').blendMode)
+  )
+
+  const blendModeSelect = propertySection(editor.page, 'Appearance').getByRole('combobox', {
+    name: 'Blend mode'
+  })
+  await blendModeSelect.click()
+  await editor.page.getByRole('option', { name: 'Multiply' }).click()
+  await editor.canvas.waitForRender()
+
+  for (const id of ids) {
+    expect(expectDefined(await getNode(id), 'selected node').blendMode).toBe('MULTIPLY')
+  }
+
+  await editor.canvas.undo()
+  const afterUndo = await Promise.all(
+    ids.map(async (id) => expectDefined(await getNode(id), 'selected node').blendMode)
+  )
+  expect(afterUndo).toEqual(previousBlendModes)
+
+  await editor.canvas.redo()
+  const afterRedo = await Promise.all(
+    ids.map(async (id) => expectDefined(await getNode(id), 'selected node').blendMode)
+  )
+  expect(afterRedo).toEqual(ids.map(() => 'MULTIPLY'))
+})
+
+test('mask action toggles mask section and mask type control', async () => {
+  await editor.canvas.drawRect(500, 100, 60, 60)
+  await editor.canvas.waitForRender()
+  const id = await getSelectedId()
+  const maskAction = editor.page.getByTestId('selection-toggle-mask')
+  await expect(maskAction).toBeVisible()
+
+  await expect(editor.page.getByTestId('mask-section')).toHaveCount(0)
+  await maskAction.click()
+  await editor.canvas.waitForRender()
+
+  let node = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(node, 'node').isMask).toBe(true)
+  await expect(editor.page.getByTestId('mask-section')).toBeVisible()
+
+  const maskTypeSelect = editor.page.getByTestId('mask-type-select')
+  await maskTypeSelect.click()
+  await editor.page.getByRole('option', { name: 'Luminance' }).click()
+  await editor.canvas.waitForRender()
+
+  node = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(node, 'node').maskType).toBe('LUMINANCE')
+
+  await maskAction.click()
+  await editor.canvas.waitForRender()
+  node = await getNode(expectDefined(id, 'selected id'))
+  expect(expectDefined(node, 'node').isMask).toBe(false)
+  await expect(editor.page.getByTestId('mask-section')).toHaveCount(0)
+})
+
 test('visibility toggle in appearance section works', async () => {
-  const visBtn = editor.page.getByTestId('appearance-visibility')
+  const visBtn = propertySection(editor.page, 'Appearance').getByRole('button', {
+    name: 'Toggle visibility'
+  })
   await expect(visBtn).toBeVisible()
 
   const id = await getSelectedId()
@@ -300,10 +392,10 @@ test('multi-select shows mixed header and boolean operations', async () => {
   await editor.canvas.selectAll()
   await editor.canvas.waitForRender()
 
-  const multiHeader = editor.page.getByTestId('design-multi-header')
+  const multiHeader = editor.page
+    .getByTestId('design-panel-multi')
+    .getByRole('heading', { name: /layers/ })
   await expect(multiHeader).toBeVisible()
-  await expect(multiHeader).toContainText('Mixed')
-  await expect(multiHeader).toContainText('layers')
 
   const booleanOperations = editor.page.getByTestId('boolean-operations-trigger')
   await booleanOperations.hover()

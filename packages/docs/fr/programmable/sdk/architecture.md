@@ -28,7 +28,7 @@ Ce package est organisé par domaine.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
-- `ScrubInput/`
+- `NumberField/`
 - `Toolbar/`
 
 Ces dossiers contiennent des primitives structurelles/headless et des helpers locaux.

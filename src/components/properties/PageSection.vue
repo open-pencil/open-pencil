@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
-import PanelSection from '@/components/ui/PanelSection.vue'
+import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 

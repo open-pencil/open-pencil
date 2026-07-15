@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import VariableScrubInput from '@/components/properties/VariableScrubInput.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import { useLayoutControlsContext } from '@open-pencil/vue'
 
 import type { PaddingProp } from '@/components/properties/LayoutSection/types'
@@ -19,7 +19,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
     v-if="!ctx.showIndividualPadding && ctx.hasSymmetricPadding"
     class="mt-1.5 grid grid-cols-2 gap-1.5"
   >
-    <VariableScrubInput
+    <VariableNumberField
       data-test-id="layout-horizontal-padding-input"
       :model-value="Math.round(ctx.node.paddingLeft)"
       :min="0"
@@ -31,8 +31,8 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
       <template #icon>
         <icon-lucide-separator-vertical class="size-3.5" />
       </template>
-    </VariableScrubInput>
-    <VariableScrubInput
+    </VariableNumberField>
+    <VariableNumberField
       data-test-id="layout-vertical-padding-input"
       :model-value="Math.round(ctx.node.paddingTop)"
       :min="0"
@@ -44,11 +44,11 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
       <template #icon>
         <icon-lucide-separator-horizontal class="size-3.5" />
       </template>
-    </VariableScrubInput>
+    </VariableNumberField>
   </div>
 
   <div v-else-if="ctx.isGrid || ctx.isFlex" class="mt-1.5 grid grid-cols-2 gap-1.5">
-    <VariableScrubInput
+    <VariableNumberField
       v-for="side in paddingSides"
       :key="side.prop"
       :model-value="Math.round(ctx.node[side.prop])"
@@ -64,6 +64,6 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
         <icon-lucide-panel-bottom v-else-if="side.icon === 'bottom'" class="size-3.5" />
         <icon-lucide-panel-left v-else class="size-3.5" />
       </template>
-    </VariableScrubInput>
+    </VariableNumberField>
   </div>
 </template>

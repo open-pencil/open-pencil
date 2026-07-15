@@ -28,7 +28,7 @@ Dieses Paket ist nach Domänen organisiert.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
-- `ScrubInput/`
+- `NumberField/`
 - `Toolbar/`
 
 Diese enthalten strukturelle/headless Primitive und lokale Hilfsmittel.
