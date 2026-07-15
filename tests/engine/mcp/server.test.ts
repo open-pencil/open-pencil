@@ -332,9 +332,11 @@ describe('MCP server lifecycle', () => {
       enableEval: false,
       mcpRoot: null
     })
-    expect(await Bun.file(discoveryPath).exists()).toBe(true)
-
-    await handle.close()
+    try {
+      expect(await Bun.file(discoveryPath).exists()).toBe(true)
+    } finally {
+      await handle.close()
+    }
     expect(await Bun.file(discoveryPath).exists()).toBe(false)
   })
 
@@ -352,10 +354,12 @@ describe('MCP server lifecycle', () => {
       enableEval: false,
       mcpRoot: null
     })
-    const info = await stat(socketPath)
-    expect(info.isSocket()).toBe(true)
-
-    await handle.close()
+    try {
+      const info = await stat(socketPath)
+      expect(info.isSocket()).toBe(true)
+    } finally {
+      await handle.close()
+    }
     await expect(stat(socketPath)).rejects.toThrow()
   })
 
@@ -364,7 +368,6 @@ describe('MCP server lifecycle', () => {
     await mkdir(SOCKET_DIR, { recursive: true })
     const socketPath = testSocketPath()
 
-    // Start the first server on the socket path
     const handle1 = await startServer({
       httpPort: 0,
       withTcp: false,
@@ -373,11 +376,11 @@ describe('MCP server lifecycle', () => {
       enableEval: false,
       mcpRoot: null
     })
-    expect(handle1.socketPath).toBe(socketPath)
-
-    // Close the first server. After it stops listening, the socket file
-    // should be removed (nothing is listening on it).
-    await handle1.close()
+    try {
+      expect(handle1.socketPath).toBe(socketPath)
+    } finally {
+      await handle1.close()
+    }
     await expect(stat(socketPath)).rejects.toThrow()
   })
 
@@ -411,10 +414,12 @@ describe('MCP server lifecycle', () => {
       throw new Error('withTcp: true did not produce an HTTP port')
     }
 
-    const healthyResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
-    expect(healthyResp.status).toBe(200)
-
-    await handle.close()
+    try {
+      const healthyResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
+      expect(healthyResp.status).toBe(200)
+    } finally {
+      await handle.close()
+    }
 
     await expect(fetch(`http://127.0.0.1:${httpPort}/health`)).rejects.toThrow()
   })
