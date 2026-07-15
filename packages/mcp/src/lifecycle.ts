@@ -80,6 +80,7 @@ export async function startSocketListener(
   wireUpgrade(server, wss)
 
   const ss = server
+  ss.on('error', (err) => console.error('[MCP] Socket server error:', err))
   await new Promise<void>((resolve, reject) => {
     ss.on('error', reject)
     ss.listen(resolvedPath, () => {
@@ -87,21 +88,8 @@ export async function startSocketListener(
       resolve()
     })
   }).catch((err) => {
-    // If listen() fails (e.g. EADDRINUSE), close the server to prevent
-    // a leak. The caller's catch block in startServer calls
-    // shutdownRuntime, but state.socketResult is null at that point
-    // because this function hasn't returned yet.
-    //
-    // Remove the dangling 'error' listener (only added on the success
-    // path at ss.off above) for cleanup hygiene — the server is being
-    // discarded. Provide a no-op callback to close(): Node.js passes
-    // ERR_SERVER_NOT_RUNNING to the callback when the server never
-    // listened, which we intentionally discard.
     ss.removeAllListeners('error')
-    server.close(() => {
-      // Intentionally empty: discards the ERR_SERVER_NOT_RUNNING error
-      // that Node.js passes to the callback on a non-listening server.
-    })
+    server.close(() => { void 0 })
     throw err
   })
 
@@ -139,6 +127,7 @@ export async function startTcpListener(
   wireUpgrade(server, wss)
 
   const ts = server
+  ts.on('error', (err) => console.error('[MCP] TCP server error:', err))
   const actualPort = await new Promise<number>((resolve, reject) => {
     ts.on('error', reject)
     ts.listen(httpPort, host, () => {
@@ -148,19 +137,8 @@ export async function startTcpListener(
       resolve(port)
     })
   }).catch((err) => {
-    // If listen() fails, close the server to prevent a leak.
-    // teardownListeners in the caller won't find it because
-    // state.tcpResult is still null at this point.
-    //
-    // Remove the dangling 'error' listener for cleanup hygiene — the
-    // server is being discarded. Provide a no-op callback to close():
-    // Node.js passes ERR_SERVER_NOT_RUNNING to the callback when the
-    // server never listened, which we intentionally discard.
     ts.removeAllListeners('error')
-    server.close(() => {
-      // Intentionally empty: discards the ERR_SERVER_NOT_RUNNING error
-      // that Node.js passes to the callback on a non-listening server.
-    })
+    server.close(() => { void 0 })
     throw err
   })
 
@@ -268,23 +246,20 @@ export async function cleanupDiscovery(
   const discoveryPath = await getDiscoveryPath()
   try {
     const raw = await readFile(discoveryPath, 'utf-8')
-    const info = JSON.parse(raw) as {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return
+    const info = parsed as {
       authToken: string | null
       socketPath?: string | null
       httpPort?: number
       startedAt?: string
     }
-    // If any identifying field doesn't match, another server owns the file.
-    // Compare unconditionally (not truthy-gated) so that null/0 values
-    // are treated as required equality checks, not wildcards.
     if (info.authToken !== ownAuthToken) return
     if (info.socketPath !== ownSocketPath) return
     if (info.httpPort !== ownHttpPort) return
     if (info.startedAt !== ownStartedAt) return
   } catch {
-    // File doesn't exist or can't be parsed — fall through to removeDiscoveryFile
-    // which handles ENOENT gracefully.
-    void 0
+    return
   }
   await removeDiscoveryFile().catch((e) => {
     process.stderr.write(`  Discovery: cleanup warning (${e instanceof Error ? e.message : e})\n`)
