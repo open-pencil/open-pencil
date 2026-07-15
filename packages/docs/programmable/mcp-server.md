@@ -172,7 +172,7 @@ Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/inde
 
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
-| `/health` | GET | No | Server status, version, install command, discovery path |
+| `/health` | GET | No | Server status, version, install command |
 | `/rpc` | POST | Bearer token | JSON-RPC bridge to the running app |
 | `/mcp` | POST, DELETE | Bearer token or `x-mcp-token` header | MCP Streamable HTTP. Sessions via `mcp-session-id` header. DELETE closes a session |
 
@@ -185,7 +185,7 @@ An auth token is **auto-generated on startup** (32-hex random from `crypto.rando
 | Scenario | Where the token comes from |
 |----------|---------------------------|
 | Stdio bridge (`openpencil-mcp`) | Reads `authToken` from the discovery file automatically |
-| App-internal (Tauri/browser) | Reads discovery file via `/health` → `discoveryPath` |
+| App-internal (Tauri/browser) | Computes discovery file path locally |
 | Custom HTTP client | Set `OPENPENCIL_MCP_AUTH_TOKEN` on both server and client, or read the discovery file |
 
 To **disable** auth entirely (e.g. local development behind a firewall), set `OPENPENCIL_MCP_AUTH_TOKEN=""` before starting the server:
