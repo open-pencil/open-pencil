@@ -10,8 +10,8 @@
     "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo",
     "types": ["bun"],
     "paths": {
-      "@open-pencil/common": ["../common/src/index.ts"],
-      "@open-pencil/common/*": ["../common/src/*"]
+      "@open-pencil/common": ["./src/index.ts"],
+      "@open-pencil/common/*": ["./src/*"]
     }
   },
   "include": ["src"]

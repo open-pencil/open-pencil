@@ -1,6 +1,6 @@
+import { configurationManager } from '@open-pencil/common'
 import type { SceneGraph, SceneNode, NodeType } from '@open-pencil/scene-graph'
 
-import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
 import {
@@ -242,7 +242,7 @@ function collectTextSizingProps(
 function collectTextNodeProps(node: SceneNode, props: [string, unknown][]): void {
   const direction = resolveNodeTextDirection(node)
   if (node.fontSize !== 14) props.push(['size', node.fontSize])
-  if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY)
+  if (node.fontFamily && node.fontFamily !== configurationManager.getConfig().DEFAULT_FONT_FAMILY)
     props.push(['font', node.fontFamily])
   if (node.fontWeight !== 400) {
     if (node.fontWeight === 700) props.push(['weight', 'bold'])
