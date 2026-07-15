@@ -5,7 +5,7 @@ import { join } from 'node:path'
 
 import { startServer, type ServerHandle } from '#mcp/server'
 
-import { type HealthResponse } from './helpers'
+import { socketRequest, type HealthResponse } from './helpers'
 
 const isUnix = process.platform !== 'win32'
 const SOCKET_DIR = join(tmpdir(), `openpencil-test-lifecycle-${process.pid}`)
@@ -76,7 +76,7 @@ describe('MCP lifecycle failure cleanup', () => {
       // Start the first server on the socket path
       const handle1 = await startServer({
         httpPort: 0,
-        withTcp: true,
+        withTcp: false,
         socketPath,
         authToken: TEST_AUTH_TOKEN,
         enableEval: false,
@@ -99,8 +99,9 @@ describe('MCP lifecycle failure cleanup', () => {
           })
         ).rejects.toThrow()
 
-        // The first server must still be healthy
-        const health = await fetch(`http://127.0.0.1:${handle1.httpPort}/health`)
+        // The first server must still be healthy — verify via Unix socket
+        // since withTcp:false means no HTTP port is available.
+        const health = await socketRequest(socketPath, 'GET', '/health')
         expect(health.status).toBe(200)
       } finally {
         await handle1.close()

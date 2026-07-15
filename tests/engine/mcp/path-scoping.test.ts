@@ -71,7 +71,7 @@ describe('MCP path scoping', () => {
     )
   })
 
-  test.skipIf(!isUnix)('rejects dangling symlink pointing outside root', async () => {
+  test.skipIf(!isUnix)('rejects non-dangling symlink pointing outside root', async () => {
     const testDir = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-test')
     const linkPath = `${testDir}/escape.fig`
     const outsideTarget = resolve(tmpdir(), 'mcp-' + TEST_ID + '-symlink-outside-target')
