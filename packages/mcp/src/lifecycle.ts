@@ -89,7 +89,9 @@ export async function startSocketListener(
     })
   }).catch((err) => {
     ss.removeAllListeners('error')
-    server.close(() => { void 0 })
+    server.close(() => {
+      void 0
+    })
     throw err
   })
 
@@ -138,7 +140,9 @@ export async function startTcpListener(
     })
   }).catch((err) => {
     ts.removeAllListeners('error')
-    server.close(() => { void 0 })
+    server.close(() => {
+      void 0
+    })
     throw err
   })
 
