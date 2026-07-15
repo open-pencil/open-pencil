@@ -144,7 +144,7 @@ export async function getDiscoveryPath(): Promise<string> {
  * platforms but not on native Windows. WSL is detected as Linux.
  */
 export function platformHasUnixSockets(): boolean {
-  return process.platform !== 'win32'
+  return !isWindows
 }
 
 /**
