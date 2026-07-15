@@ -64,6 +64,7 @@ export const PARENT_OUTLINE_ALPHA = 0.5
 export const PARENT_OUTLINE_DASH = 4
 export const DEFAULT_FONT_FAMILY = 'Inter'
 export const DEFAULT_FONT_SIZE = 14
+export const DEFAULT_FONT_LINE_HEIGHT = null
 export const DEFAULT_STROKE_MITER_LIMIT = 4
 export const LABEL_FONT_SIZE = 11
 export const SIZE_FONT_SIZE = 10

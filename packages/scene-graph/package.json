@@ -157,7 +157,8 @@
   "dependencies": {
     "es-toolkit": "^1.46.1",
     "nanoevents": "^9.1.0",
-    "svgpath": "^2.6.0"
+    "svgpath": "^2.6.0",
+    "@open-pencil/common": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",

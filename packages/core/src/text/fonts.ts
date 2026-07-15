@@ -1,8 +1,9 @@
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
+import { configurationManager } from '@open-pencil/common'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
+import { IS_BROWSER } from '#core/constants'
 import { fontFaceRenderFamily, parseFontStyle } from '#core/text/face'
 import { fontFallbackEntry } from '#core/text/fallbacks'
 import type { FontFallbackScript } from '#core/text/fallbacks'
@@ -243,7 +244,10 @@ export class FontManager {
       }))
     )
     const byFamily = new Map<string, FontFamilyOption>()
-    byFamily.set(DEFAULT_FONT_FAMILY, { family: DEFAULT_FONT_FAMILY, source: 'bundled' })
+    byFamily.set(configurationManager.getConfig().DEFAULT_FONT_FAMILY, {
+      family: configurationManager.getConfig().DEFAULT_FONT_FAMILY,
+      source: 'bundled'
+    })
     for (const { provider, families } of webFontFamilies) {
       for (const family of families) {
         if (!byFamily.has(family)) byFamily.set(family, { family, source: provider })
@@ -289,7 +293,9 @@ export class FontManager {
     const downloadedBuffer = await this.loadCachedFont(family, style)
     if (downloadedBuffer) return downloadedBuffer
 
-    const localBuffer = await this.findLocalFont(family, style)
+    const localBuffer = await this.findLocalFont(family, style, {
+      allowVariable: true
+    })
     if (localBuffer) return this.registerAndCache(family, style, localBuffer)
 
     const bundledUrl = BUNDLED_FONTS[cacheKey]
@@ -361,7 +367,7 @@ export class FontManager {
       const node = graph.getNode(id)
       if (!node) return
       if (node.type === 'TEXT') {
-        const family = node.fontFamily || DEFAULT_FONT_FAMILY
+        const family = node.fontFamily || configurationManager.getConfig().DEFAULT_FONT_FAMILY
         fontKeys.add(`${family}\0${weightToStyle(node.fontWeight || 400, node.italic)}`)
         for (const run of node.styleRuns) {
           const f = run.style.fontFamily ?? family

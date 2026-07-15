@@ -2,7 +2,7 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
-import { DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
+import { DEFAULT_STROKE_MITER_LIMIT } from '#core/constants'
 import { styleToWeight } from '#core/text/fonts'
 
 import { convertEffects, convertFills, convertStrokes } from './paint'
@@ -27,6 +27,7 @@ import {
 import { resolveGeometryPaths, resolveVectorNetwork } from './vector-geometry'
 export { resolveGeometryPaths } from './vector-geometry'
 
+import { configurationManager } from '@open-pencil/common'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type {
   SceneNode,
@@ -363,7 +364,7 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
   return {
     text: nc.textData?.characters ?? '',
     fontSize: nc.fontSize ?? 14,
-    fontFamily: nc.fontName?.family ?? DEFAULT_FONT_FAMILY,
+    fontFamily: nc.fontName?.family ?? configurationManager.getConfig().DEFAULT_FONT_FAMILY,
     fontWeight: styleToWeight(nc.fontName?.style ?? ''),
     italic: nc.fontName?.style.toLowerCase().includes('italic') ?? false,
     textAlignHorizontal: (nc.textAlignHorizontal ?? 'LEFT') as

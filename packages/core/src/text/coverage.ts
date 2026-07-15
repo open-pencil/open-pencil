@@ -1,6 +1,6 @@
+import { configurationManager } from '@open-pencil/common'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import type { FontFallbackScript } from '#core/text/fallbacks'
 import { weightToStyle } from '#core/text/fonts'
 import { fontGlyphCoverageSync } from '#core/text/opentype'
@@ -38,7 +38,7 @@ function fallbackScriptForCJKChar(char: string): FontFallbackScript {
 }
 
 function styleForCharacter(node: SceneNode, index: number): { family: string; style: string } {
-  const baseFamily = node.fontFamily || DEFAULT_FONT_FAMILY
+  const baseFamily = node.fontFamily || configurationManager.getConfig().DEFAULT_FONT_FAMILY
   let family = baseFamily
   let weight = node.fontWeight
   let italic = node.italic

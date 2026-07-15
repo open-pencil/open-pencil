@@ -19,6 +19,8 @@
       "@open-pencil/vue": ["./src/index.ts"],
       "@open-pencil/core": ["../core/src/index.ts"],
       "@open-pencil/core/*": ["../core/src/*"],
+      "@open-pencil/common": ["../common/src/index.ts"],
+      "@open-pencil/common/*": ["../common/src/*"],
       "@open-pencil/core/editor": ["../core/src/editor/index.ts"],
       "@open-pencil/core/render": ["../core/src/render/index.ts"],
       "@open-pencil/core/color": ["../core/src/color.ts"]

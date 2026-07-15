@@ -1,4 +1,6 @@
-import { BLACK, DEFAULT_FONT_FAMILY, DEFAULT_STROKE_MITER_LIMIT } from './constants'
+import { DEFAULT_STROKE_MITER_LIMIT, configurationManager } from '@open-pencil/common'
+
+import { BLACK } from './constants'
 import type { NodeType, SceneNode } from './types'
 
 export function createDefaultNode(
@@ -6,7 +8,8 @@ export function createDefaultNode(
   type: NodeType,
   overrides: Partial<SceneNode> = {}
 ): SceneNode {
-  return {
+  const config = configurationManager.getConfig()
+  return <SceneNode>{
     id: generateId(),
     type,
     name: type.charAt(0) + type.slice(1).toLowerCase(),
@@ -50,14 +53,14 @@ export function createDefaultNode(
     locked: false,
     clipsContent: false,
     text: '',
-    fontSize: 14,
-    fontFamily: DEFAULT_FONT_FAMILY,
+    fontSize: type === 'TEXT' ? config.DEFAULT_FONT_SIZE : null,
+    fontFamily: config.DEFAULT_FONT_FAMILY,
     fontWeight: 400,
     italic: false,
     textAlignHorizontal: 'LEFT',
     textDirection: 'AUTO',
     leadingTrim: 'NONE',
-    lineHeight: null,
+    lineHeight: type === 'TEXT' ? config.DEFAULT_FONT_LINE_HEIGHT : null,
     letterSpacing: 0,
     layoutMode: 'NONE',
     layoutDirection: 'AUTO',

@@ -1,9 +1,9 @@
 import { twirl } from 'twirlwind'
 
+import { configurationManager } from '@open-pencil/common'
 import type { GridTrack, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { colorToCSSCompact } from '#core/color'
-import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { resolveNodeTextDirection } from '#core/text/direction'
 
 import { formatTrack, getNodeContext, solidFillColor, solidStroke } from './helpers'
@@ -140,7 +140,8 @@ function applyAppearanceStyle(style: Record<string, string>, node: SceneNode): v
 function applyTextStyle(style: Record<string, string>, node: SceneNode): void {
   if (node.type !== 'TEXT') return
   style.fontSize = px(node.fontSize)
-  if (node.fontFamily && node.fontFamily !== DEFAULT_FONT_FAMILY) style.fontFamily = node.fontFamily
+  if (node.fontFamily && node.fontFamily !== configurationManager.getConfig().DEFAULT_FONT_FAMILY)
+    style.fontFamily = node.fontFamily
   if (node.fontWeight !== 400) style.fontWeight = String(node.fontWeight)
   if (node.textAlignHorizontal !== 'LEFT') style.textAlign = node.textAlignHorizontal.toLowerCase()
   const textColor = solidFillColor(node.fills)

@@ -55,6 +55,12 @@
       "@open-pencil/core/*": [
         "./packages/core/src/*"
       ],
+      "@open-pencil/common": [
+        "./packages/common/src/index.ts"
+      ],
+      "@open-pencil/common/*": [
+        "./packages/common/src/*"
+      ],
       "@open-pencil/dom-css": [
         "./packages/dom-css/src/index.ts"
       ],
