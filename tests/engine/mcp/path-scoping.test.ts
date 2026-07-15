@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test'
 import { randomUUID } from 'node:crypto'
 import { mkdir, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 
 import { resolveSafePath } from '#mcp/tool/output'
 
@@ -20,7 +20,7 @@ describe('MCP path scoping', () => {
       // realPath is the canonical form (realpath-resolved), which may differ
       // from resolve() on macOS where /var -> /private/var
       const canonicalRoot = await realpath(root)
-      expect(result.realPath).toBe(`${canonicalRoot}/design.fig`)
+      expect(result.realPath).toBe(join(canonicalRoot, 'design.fig'))
     } finally {
       await rm(root, { recursive: true, force: true })
     }
@@ -102,7 +102,7 @@ describe('MCP path scoping', () => {
       expect(result.resolved).toBe(resolve(linkPath))
       // realPath should resolve to the target's canonical parent + filename
       const canonicalParent = await realpath(testDir)
-      expect(result.realPath).toBe(`${canonicalParent}/nonexistent-target.fig`)
+      expect(result.realPath).toBe(join(canonicalParent, 'nonexistent-target.fig'))
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }
@@ -153,7 +153,7 @@ describe('MCP path scoping', () => {
       expect(result.resolved).toBe(resolve(filePath))
       // realPath uses the canonical parent directory + filename
       const canonicalParent = await realpath(testDir)
-      expect(result.realPath).toBe(`${canonicalParent}/new.fig`)
+      expect(result.realPath).toBe(join(canonicalParent, 'new.fig'))
     } finally {
       await rm(testDir, { recursive: true, force: true })
     }

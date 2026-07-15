@@ -47,6 +47,7 @@ export function createStdioRpcBridge({
   let connectPromise: Promise<void> | null = null
   let closed = false
   let authFailure = false
+  let socketFailed = false
 
   // Socket path resolution has two tiers:
   //   Explicit: socketPathOverride parameter — authoritative pin, never
@@ -117,6 +118,13 @@ export function createStdioRpcBridge({
     // Also capture httpPort as fallback
     if (info?.httpPort) {
       resolvedHttpPort = info.httpPort
+    }
+
+    // If the socket previously failed and TCP is available, use TCP
+    // instead of retrying the same stale socket indefinitely.
+    if (!hasExplicitSocketPath && socketFailed && resolvedHttpPort) {
+      transportMode = 'tcp'
+      return
     }
 
     transportMode = 'socket'
@@ -243,6 +251,7 @@ export function createStdioRpcBridge({
     authFailure = false
     if (appConnected) {
       ready = true
+      socketFailed = false
       connectPromise = null
       if (wasConnected) {
         onReconnect?.()
@@ -257,6 +266,7 @@ export function createStdioRpcBridge({
       // Server is up — we can send RPC requests and let the server
       // wait for the desktop app to connect.
       ready = true
+      socketFailed = false
       connectPromise = null
       if (!wasConnected) {
         wasConnected = true
@@ -348,10 +358,7 @@ export function createStdioRpcBridge({
                           return undefined
                         }
                         clearTimeout(timer)
-                        // The discovery file exists but has no token; treat
-                        // this like a reconnection event and clear any
-                        // auto-discovered transport state so the next connect()
-                        // starts from a clean slate.
+                        authFailure = true
                         transportMode = null
                         if (!hasExplicitSocketPath) resolvedSocketPath = null
                         resolvedHttpPort = null
@@ -380,6 +387,7 @@ export function createStdioRpcBridge({
                   // Explicit token was rejected (config error), or auto-retry
                   // already failed — surface the error immediately.
                   clearTimeout(timer)
+                  authFailure = true
                   if (!hasExplicitAuth) {
                     resolvedAuthToken = null
                   }
@@ -410,6 +418,9 @@ export function createStdioRpcBridge({
               .catch(() => {
                 if (settled) return
                 clearTimeout(timer)
+                if (!hasExplicitSocketPath && transportMode === 'socket') {
+                  socketFailed = true
+                }
                 transportMode = null
                 // Clear auto-discovered transport params so resolveTransport()
                 // picks up fresh values from the discovery file on reconnect.
