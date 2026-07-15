@@ -27,7 +27,7 @@ import { tauriFetch } from '@/app/tauri/http'
 // Capture the real global fetch before any test harness or font proxy replaces
 // it, so the Tauri web-font fetcher can fall back to plain HTTP when it runs
 // outside a Tauri window (e.g. after Tauri mocks are cleared in unit tests).
-const globalFetch = globalThis.fetch
+const globalFetch = globalThis.fetch.bind(globalThis)
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)

@@ -25,9 +25,10 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
   }
 
   function connect() {
+    let socket: WebSocket
     try {
-      // WebSocket upgrade now happens on the same HTTP port (unified server)
-      ws = new WebSocket(`ws://127.0.0.1:${AUTOMATION_HTTP_PORT}`)
+      socket = new WebSocket(`ws://127.0.0.1:${AUTOMATION_HTTP_PORT}`)
+      ws = socket
     } catch (e) {
       console.error(
         '[Automation] WebSocket constructor failed:',
@@ -37,12 +38,12 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
       return
     }
 
-    ws.onopen = () => {
+    socket.onopen = () => {
       console.debug('[Automation] WebSocket connected to MCP server')
-      ws?.send(JSON.stringify({ type: 'register', token }))
+      socket.send(JSON.stringify({ type: 'register', token }))
     }
 
-    ws.onmessage = async (event) => {
+    socket.onmessage = async (event) => {
       try {
         const msg = JSON.parse(event.data) as {
           type: string
@@ -53,9 +54,9 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
         if (msg.type !== 'request' || !msg.id) return
         try {
           const result = await handleRequest(msg.id, msg.command, msg.args)
-          ws?.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
+          socket.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
         } catch (e) {
-          ws?.send(
+          socket.send(
             JSON.stringify({
               type: 'response',
               id: msg.id,
@@ -69,20 +70,16 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
       }
     }
 
-    ws.onclose = (event) => {
-      ws = null
+    socket.onclose = (event) => {
+      if (ws === socket) ws = null
       if (intentionalDisconnect || event.code === 1000) return
-      // A close without a status (1005) is normal when the MCP server replaces an
-      // older browser connection, or when the browser page is torn down. The
-      // bridge reconnects automatically, so treat this as a warning rather than
-      // an application error.
       console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()
     }
 
-    ws.onerror = (event) => {
+    socket.onerror = (event) => {
       console.warn('[Automation] WebSocket error:', event)
-      ws?.close()
+      socket.close()
     }
   }
 

@@ -115,7 +115,7 @@ describe('MCP lifecycle failure cleanup', () => {
 // ---------------------------------------------------------------------------
 
 describe('MCP DELETE session cleanup', () => {
-  let handle: ServerHandle
+  let handle: ServerHandle | undefined
   let httpPort: number
 
   beforeAll(async () => {
@@ -136,7 +136,7 @@ describe('MCP DELETE session cleanup', () => {
   })
 
   afterAll(async () => {
-    await handle.close()
+    await handle?.close()
   })
 
   test('DELETE removes the session so subsequent DELETE returns 404', async () => {
