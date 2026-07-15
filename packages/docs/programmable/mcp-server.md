@@ -236,8 +236,16 @@ Another OpenPencil instance (or another process) is using port 7600. Either:
 
 If the app crashes without clean shutdown, the socket file may remain. The server cleans up stale sockets on startup (tests if the socket is live before removing). If cleanup fails:
 
+Check the `socketPath` field in your `mcp.json` discovery file and remove that file. For example, on macOS:
+
 ```sh
 rm ~/Library/Application\ Support/OpenPencil/mcp.sock
+```
+
+On Linux:
+
+```sh
+rm $XDG_RUNTIME_DIR/openpencil/mcp.sock
 ```
 
 ### Version mismatch

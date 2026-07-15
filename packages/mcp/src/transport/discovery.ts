@@ -146,7 +146,7 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
   return fetch(`http://127.0.0.1:${info.httpPort}/health`, {
     signal: AbortSignal.timeout(2000)
   })
-    .then((res) => res.ok)
+    .then(() => true)
     .catch((e) => {
       // A timeout means the process is likely alive but slow — don't delete its socket
       if (e instanceof Error && e.name === 'TimeoutError') return true

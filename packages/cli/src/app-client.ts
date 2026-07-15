@@ -141,11 +141,18 @@ export async function rpc<T = unknown>(command: string, args: unknown = {}): Pro
       info.httpPort > 0 &&
       isSocketConnectionError(err)
     ) {
-      return doRpc<T>(info, command, args, true)
+      try {
+        return await doRpc<T>(info, command, args, true)
+      } catch (tcpErr) {
+        // If TCP also fails with a transient error, fall through to
+        // discovery re-read instead of masking the original error.
+        if (!isTransientError(tcpErr) && !isSocketConnectionError(tcpErr)) throw tcpErr
+      }
     }
 
-    // Auth token rotation: re-read the discovery file and retry once.
-    if (!isTransientError(err)) throw err
+    // Auth token rotation or both socket and TCP failed: re-read
+    // discovery and retry once.
+    if (!isTransientError(err) && !isSocketConnectionError(err)) throw err
     cachedInfo = null
     return doRpc<T>(await resolveDiscovery(), command, args)
   }

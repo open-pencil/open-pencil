@@ -112,8 +112,9 @@ async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<strin
       // user's home directory ending in mcp.json.
       const { homeDir } = await import('@tauri-apps/api/path')
       const home = await homeDir()
+      const sep = home.includes('\\') ? '\\' : '/'
       const isSafe =
-        healthDiscoveryPath.endsWith('mcp.json') && healthDiscoveryPath.startsWith(home)
+        healthDiscoveryPath.endsWith('mcp.json') && healthDiscoveryPath.startsWith(home + sep)
       if (isSafe) {
         console.warn(
           `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}" ` +
@@ -175,7 +176,11 @@ async function pollHealth(retries: number, delayMs: number): Promise<AutomationH
 export async function getAutomationAuthToken(): Promise<string | null> {
   if (runtimeAutomationAuthToken) return runtimeAutomationAuthToken
   const health = await readHealth()
-  if (!health) return null
+  if (!health) {
+    throw new Error(
+      'MCP server is not reachable. Ensure the desktop app is running and the MCP server has started.'
+    )
+  }
   assertCompatibleMcpVersion(health)
   const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
   const token = await readDiscoveryToken(discoveryPath)
@@ -263,29 +268,40 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
     console.error('[MCP]', decodeTauriStderr(raw))
   })
 
+  let spawnedToken: string | null = null
   command.on('close', (data: { code: number | null }) => {
     console.error(`[MCP] Server exited (code ${data.code ?? 'null'})`)
+    if (spawnedToken && runtimeAutomationAuthToken === spawnedToken) {
+      runtimeAutomationAuthToken = null
+    }
   })
 
   const child = await command.spawn()
   const health = await pollHealth(5, 1000)
 
   if (health) {
-    assertCompatibleMcpVersion(health)
-    const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
-    const discovered = await readDiscoveryToken(discoveryPath)
-    const token = discovered ?? authToken
-    runtimeAutomationAuthToken = token
-    return {
-      disconnect: () => {
-        void child.kill().catch((e) => {
-          console.error('[MCP] Failed to kill server:', e)
-        })
-        if (runtimeAutomationAuthToken === token) {
-          runtimeAutomationAuthToken = null
-        }
-      },
-      authToken: token
+    try {
+      assertCompatibleMcpVersion(health)
+      const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
+      const discovered = await readDiscoveryToken(discoveryPath)
+      const token = discovered ?? authToken
+      spawnedToken = token
+      runtimeAutomationAuthToken = token
+      return {
+        disconnect: () => {
+          void child.kill().catch((e) => {
+            console.error('[MCP] Failed to kill server:', e)
+          })
+          if (runtimeAutomationAuthToken === token) {
+            runtimeAutomationAuthToken = null
+          }
+        },
+        authToken: token
+      }
+    } catch (err) {
+      await child.kill().catch(() => undefined)
+      runtimeAutomationAuthToken = null
+      throw err
     }
   }
 
