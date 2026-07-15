@@ -285,7 +285,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   }
 
   try {
-    await child.kill()
+    await child.kill().catch(() => undefined)
   } finally {
     runtimeAutomationAuthToken = null
   }
