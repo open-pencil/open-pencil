@@ -80,9 +80,23 @@ async function createTestClient() {
     graph,
     handle,
     close: async () => {
-      await safeClient?.close()
-      safeBrowser?.close()
-      await handle.close()
+      const errors: unknown[] = []
+      try {
+        await safeClient?.close()
+      } catch (e) {
+        errors.push(e)
+      }
+      try {
+        safeBrowser?.close()
+      } catch (e) {
+        errors.push(e)
+      }
+      try {
+        await handle.close()
+      } catch (e) {
+        errors.push(e)
+      }
+      if (errors.length > 0) throw errors[0]
     }
   }
 }
@@ -437,7 +451,7 @@ describe('MCP server concurrent startServer', () => {
     // Use unique socket paths so the two servers don't fight over the
     // socket file. The test still covers discovery atomicity by writing
     // to the same shared discovery path.
-    const [a, b] = await Promise.all([
+    const results = await Promise.allSettled([
       startServer({
         httpPort: 0,
         withTcp: true,
@@ -455,6 +469,15 @@ describe('MCP server concurrent startServer', () => {
         mcpRoot: null
       })
     ])
+
+    const a = results[0].status === 'fulfilled' ? results[0].value : null
+    const b = results[1].status === 'fulfilled' ? results[1].value : null
+
+    if (!a || !b) {
+      if (a) await a.close()
+      if (b) await b.close()
+      throw new Error('Multi-server startup failed')
+    }
 
     try {
       // Both servers are listening on their own ephemeral ports.
@@ -498,14 +521,20 @@ describe('MCP server concurrent startServer', () => {
       enableEval: false,
       mcpRoot: null
     })
-    const b = await startServer({
-      httpPort: 0,
-      withTcp: true,
-      socketPath: testSocketPath(),
-      authToken: 'token-b',
-      enableEval: false,
-      mcpRoot: null
-    })
+    let b: ServerHandle | undefined
+    try {
+      b = await startServer({
+        httpPort: 0,
+        withTcp: true,
+        socketPath: testSocketPath(),
+        authToken: 'token-b',
+        enableEval: false,
+        mcpRoot: null
+      })
+    } catch (err) {
+      await a.close()
+      throw err
+    }
 
     try {
       // Close server a — its discovery cleanup should NOT remove the file

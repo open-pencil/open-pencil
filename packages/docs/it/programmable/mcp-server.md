@@ -275,7 +275,7 @@ npx skills add open-pencil/skills@open-pencil
 
 Funziona con Claude Code, Cursor, Windsurf, Codex e qualsiasi agente che supporti [skills](https://skills.sh). Lo skill copre il CLI, strumenti MCP, rendering JSX, eval e il bridge di automazione dell'app.
 
-## Strumenti (91)
+## Strumenti (105)
 
 ### Documento
 

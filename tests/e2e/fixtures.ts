@@ -13,7 +13,12 @@ import { E2E_SLOW_TEST_TIMEOUT_MS } from '#tests/helpers/e2e-timeouts'
  */
 const externalApiCache = new Map<string, { status: number; body: Buffer; contentType: string }>()
 
-const EXTERNAL_API_PATTERNS = ['https://www.googleapis.com/**', 'https://api.iconify.design/**']
+const EXTERNAL_API_PATTERNS = [
+  'https://www.googleapis.com/**',
+  'https://api.iconify.design/**',
+  'https://fonts.google.com/metadata/**',
+  'https://fonts.googleapis.com/**'
+]
 
 /** Set up route handlers that cache external API responses on the page. */
 async function setupExternalApiCache(page: Page): Promise<void> {

@@ -19,7 +19,7 @@ graph TB
                 Kiwi --- SVG[SVG export]
             end
         end
-        MCP["MCP Server (90 tools, stdio+HTTP)"]
+        MCP["MCP Server (105 tools, stdio+HTTP)"]
         Collab["P2P Collab (Trystero + Yjs)"]
     end
 `
@@ -76,7 +76,7 @@ Les outils sont définis une seule fois dans `packages/core/src/tools/`, découp
 - **Serveur MCP** — schémas zod, transports stdio + HTTP
 - **CLI** — accessible via la commande `eval`
 
-90+ outils core + 3 outils de gestion de fichiers MCP. Inclut requête XPath (`query_nodes`), inspection JSX (`get_jsx`, `diff_jsx`), description sémantique (`describe`) et vérification visuelle (`export_image` renvoie des images au modèle).
+105+ outils core + 3 outils de gestion de fichiers MCP. Inclut requête XPath (`query_nodes`), inspection JSX (`get_jsx`, `diff_jsx`), description sémantique (`describe`) et vérification visuelle (`export_image` renvoie des images au modèle).
 
 ### Annuler/Rétablir
 
@@ -98,7 +98,7 @@ Lorsque l’application de bureau est lancée, les commandes CLI s’y connecten
 
 ### Ensemble complet d’outils figma-use
 
-Le serveur MCP expose actuellement 90 outils. L’implémentation de référence dans [figma-use](https://github.com/dannote/figma-use) en compte 118. Les outils restants couvrent les contraintes de layout avancées, les connexions de prototype, l’édition avancée des propriétés de composants et les opérations en masse sur les documents.
+Le serveur MCP expose actuellement 105 outils. L’implémentation de référence dans [figma-use](https://github.com/dannote/figma-use) en compte 118. Les outils restants couvrent les contraintes de layout avancées, les connexions de prototype, l’édition avancée des propriétés de composants et les opérations en masse sur les documents.
 
 ### Outillage de design pour la CI
 
