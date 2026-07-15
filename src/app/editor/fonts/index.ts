@@ -100,6 +100,7 @@ export function preloadFonts(): void {
     void getTauriFonts().then(registerFontFaces)
     return
   }
+  requestLocalFontAccess()
   if (onlineFontsEnabled.value) fontManager.preloadWebFontFamilies()
 }
 

@@ -6,6 +6,7 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { DROP_HIGHLIGHT_ALPHA, DROP_HIGHLIGHT_STROKE, SECTION_CORNER_RADIUS } from '#core/constants'
+import { fontManager } from '#core/text'
 import { vectorNetworkToCenterlinePath } from '#core/vector'
 
 import { figmaBlendModeToSkia, needsIsolatedBlendLayer } from './blend'
@@ -663,22 +664,12 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
       return
     }
   }
-  if (drawFigmaDerivedText(r, canvas, node)) {
-    canvas.restore()
-    return
-  }
 
   if (!r.isNodeFontLoaded(node)) {
     canvas.restore()
     return
   }
-  if (
-    (shouldRenderTextAsOutline(fill) || shouldRenderCJKAsOutline(node)) &&
-    drawOutlinedText(r, canvas, node)
-  ) {
-    canvas.restore()
-    return
-  }
+
   if (isGradientFill(fill) && drawGradientText(r, canvas, node, paragraphY)) {
     canvas.restore()
     return
@@ -692,6 +683,18 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     paragraph.delete()
   } else if (r.textFont) {
     canvas.drawText(text, 0, node.fontSize || r.DEFAULT_FONT_SIZE, r.fillPaint, r.textFont)
+  } else {
+    if (
+      (shouldRenderTextAsOutline(fill) || shouldRenderCJKAsOutline(node)) &&
+      drawOutlinedText(r, canvas, node)
+    ) {
+      canvas.restore()
+      return
+    }
+    if (drawFigmaDerivedText(r, canvas, node)) {
+      canvas.restore()
+      return
+    }
   }
 
   canvas.restore()
