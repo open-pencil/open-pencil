@@ -132,12 +132,8 @@ describe('MCP server unified transport', () => {
 
   describe('Discovery', () => {
     it('writes a discovery file matching the running server', async () => {
-      // Derive the discovery path from the running server's /health endpoint
-      // rather than calling getDiscoveryPath() independently, ensuring we
-      // validate the actual server instance's discovery file.
-      const healthResp = await fetch(`http://127.0.0.1:${sharedPort}/health`)
-      const health = (await healthResp.json()) as { discoveryPath: string }
-      const discoveryPath = health.discoveryPath
+      const { getDiscoveryPath } = await import('#mcp/transport/paths')
+      const discoveryPath = await getDiscoveryPath()
       const file = Bun.file(discoveryPath)
       expect(await file.exists()).toBe(true)
       const info = (await file.json()) as {
