@@ -253,7 +253,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     try {
       automationAuthToken = await getAutomationAuthToken()
     } catch (e) {
-      await child.kill()
+      await child.kill().catch(() => undefined)
       throw new Error(formatConnectionError(e, this.agentDef))
     }
 
@@ -278,7 +278,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         ]
       })
     } catch (e) {
-      await child.kill()
+      await child.kill().catch(() => undefined)
       throw new Error(formatConnectionError(e, this.agentDef))
     }
 

@@ -28,9 +28,7 @@ export class CanvasHelper {
    * unavailable (uses fallback fonts/icons).
    */
   assertNoErrors() {
-    const real = this.errors.filter(
-      (msg) => !msg.includes('status of 429') && !this.status429s.has(429)
-    )
+    const real = this.errors.filter((msg) => !msg.includes('status of 429'))
     this.errors.length = 0
     this.status429s.clear()
     if (real.length > 0) {

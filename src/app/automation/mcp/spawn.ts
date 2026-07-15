@@ -113,8 +113,11 @@ async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<strin
       const { homeDir } = await import('@tauri-apps/api/path')
       const home = await homeDir()
       const sep = home.includes('\\') ? '\\' : '/'
+      const hasTraversal = healthDiscoveryPath.split(/[\\/]/).some((segment) => segment === '..')
       const isSafe =
-        healthDiscoveryPath.endsWith('mcp.json') && healthDiscoveryPath.startsWith(home + sep)
+        healthDiscoveryPath.endsWith('mcp.json') &&
+        !hasTraversal &&
+        healthDiscoveryPath.startsWith(home + sep)
       if (isSafe) {
         console.warn(
           `[MCP] Server discovery path "${healthDiscoveryPath}" differs from expected "${expected}" ` +
