@@ -26,6 +26,8 @@ import {
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
 import type { SizeLimitProp, TestId } from '@open-pencil/vue'
+import PanelRow from '@/components/ui/PanelRow.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
 
@@ -164,9 +166,39 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
   if (action === 'add') ctx.addSizeLimit(prop)
   else ctx.removeSizeLimit(prop)
 }
+
+function handleAutoTextSizeSelect(e: 'NONE' | 'HEIGHT' | 'WIDTH_AND_HEIGHT') {
+  ctx.setTextAutoResize(e)
+}
 </script>
 
 <template>
+  <PanelRow gap="sm" class="mb-1.5" v-if="ctx.node.type === 'TEXT'">
+    <IconButton
+      :label="panels.textAutoWidth"
+      size="md"
+      :active="ctx.node.textAutoResize === 'WIDTH_AND_HEIGHT'"
+      @click="handleAutoTextSizeSelect('WIDTH_AND_HEIGHT')"
+    >
+      <icon-lucide-arrow-right-from-line class="size-3.5" />
+    </IconButton>
+    <IconButton
+      :label="panels.textAutoHeight"
+      size="md"
+      :active="ctx.node.textAutoResize === 'HEIGHT'"
+      @click="handleAutoTextSizeSelect('HEIGHT')"
+    >
+      <icon-lucide-list-chevrons-up-down class="size-3.5" />
+    </IconButton>
+    <IconButton
+      :label="panels.textFixedSize"
+      size="md"
+      :active="ctx.node.textAutoResize === 'NONE'"
+      @click="handleAutoTextSizeSelect('NONE')"
+    >
+      <icon-lucide-square-chart-gantt class="size-3.5" />
+    </IconButton>
+  </PanelRow>
   <div class="flex gap-1.5">
     <div ref="widthFieldRef" class="min-w-0 flex-1">
       <Tip :label="panels.width">

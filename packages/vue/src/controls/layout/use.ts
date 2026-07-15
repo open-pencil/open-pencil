@@ -74,6 +74,7 @@ export function useLayout() {
     commitProp: layoutActions.commitProp,
     setWidthSizing: layoutActions.setWidthSizing,
     setHeightSizing: layoutActions.setHeightSizing,
+    setTextAutoResize: layoutActions.setTextAutoResize,
     setHorizontalPadding,
     commitHorizontalPadding,
     setVerticalPadding,

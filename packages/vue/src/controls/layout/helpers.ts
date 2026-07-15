@@ -188,6 +188,13 @@ export function createLayoutActions({
   function updateProp(key: string, value: number | string) {
     if (node.value) editor.updateNode(node.value.id, { [key]: value })
   }
+  function setTextAutoResize(value: SceneNode['textAutoResize']) {
+    if (node.value?.type !== 'TEXT') {
+      return
+    }
+
+    editor.updateNode(node.value.id, { textAutoResize: value })
+  }
 
   function updateSizeLimit(prop: SizeLimitProp, value: number) {
     if (!node.value) return
@@ -297,7 +304,8 @@ export function createLayoutActions({
     setHeightSizing,
     setAlignment,
     setGapAuto,
-    setLayoutDirection
+    setLayoutDirection,
+    setTextAutoResize
   }
 }
 

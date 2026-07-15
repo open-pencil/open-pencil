@@ -142,3 +142,27 @@ test('Enter key opens text editing and selects all without erasing', async () =>
   })
   expect(after).toBe('Keep this text')
 })
+
+test('text node auto sizing default', async () => {
+  await editor.page.keyboard.press('Escape')
+  await editor.canvas.waitForRender()
+
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+
+    const node = store.graph.createNode('TEXT', store.state.currentPageId, {
+      text: 'This is a test text node',
+      x: 0,
+      y: 0,
+      width: 20,
+      height: 10
+    })
+    store.select([node.id])
+    store.requestRender()
+    return node.id
+  })
+  await editor.canvas.waitForRender()
+  const node = await getSelectedNode(editor.page)
+  expect(node.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+})

@@ -644,8 +644,7 @@ function drawGradientText(
 }
 
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
-  const text = node.text
-  if (!text) return
+  const text = node.text || ''
 
   canvas.save()
   const shouldClipText = node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE'
