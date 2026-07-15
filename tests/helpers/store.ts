@@ -35,32 +35,7 @@ export function getSelectedNode(page: Page) {
     const n = store.graph.getNode(id)
     if (!n) return null
     return {
-      id: n.id,
-      type: n.type,
-      name: n.name,
-      text: n.text,
-      x: n.x,
-      y: n.y,
-      width: n.width,
-      height: n.height,
-      rotation: n.rotation,
-      visible: n.visible,
-      layoutMode: n.layoutMode,
-      primaryAxisAlign: n.primaryAxisAlign,
-      counterAxisAlign: n.counterAxisAlign,
-      itemSpacing: n.itemSpacing,
-      childIds: n.childIds,
-      cornerRadius: n.cornerRadius,
-      independentCorners: n.independentCorners,
-      independentStrokeWeights: n.independentStrokeWeights,
-      flipX: n.flipX,
-      clipsContent: n.clipsContent,
-      fills: n.fills,
-      strokes: n.strokes,
-      fontSize: n.fontSize,
-      fontFamily: n.fontFamily,
-      fontWeight: n.fontWeight,
-      italic: n.italic
+      ...n
     }
   })
 }

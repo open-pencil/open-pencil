@@ -43,7 +43,11 @@ export class TextEditor {
   private replaceRange(start: number, end: number, text: string): TextEditorState | null {
     const s = this._state
     if (!s) return null
+    const oldText = s.text
     s.text = s.text.slice(0, start) + text + s.text.slice(end)
+    if (text === '\n' && !oldText.endsWith('\n')) {
+      s.text = s.text + '\n'
+    }
     s.cursor = start + text.length
     s.selectionAnchor = null
     return s
@@ -362,6 +366,20 @@ export class TextEditor {
     const rects = s.paragraph.getRectsForRange(
       range[0],
       range[1],
+      this.ck.RectHeightStyle.Max,
+      this.ck.RectWidthStyle.Tight
+    )
+    return rects.map((r) => {
+      const [left, top, right, bottom] = r.rect
+      return { x: left, y: top, width: right - left, height: bottom - top }
+    })
+  }
+  getParagraphRects(): Rect[] {
+    const s = this._state
+    if (!s?.paragraph) return []
+    const rects = s.paragraph.getRectsForRange(
+      0,
+      s.text.length,
       this.ck.RectHeightStyle.Max,
       this.ck.RectWidthStyle.Tight
     )

@@ -5,6 +5,8 @@ import type { Editor } from '@open-pencil/core/editor'
 import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { DEFAULT_TEXT_WIDTH } from '#core/constants'
+
 const CARET_BLINK_MS = 530
 
 export function createCaretBlink(store: Editor) {
@@ -141,11 +143,26 @@ export function createTextEditActions(store: Editor) {
   }
 
   function syncText(nodeId: string, text: string, runs?: SceneNode['styleRuns']) {
+    const node = store.graph.getNode(nodeId)
+    if (!node) return
+
     const changes: Partial<SceneNode> = { text }
     if (runs !== undefined) changes.styleRuns = runs
+
+    const newNode = { ...node, ...changes }
+    store.textEditor?.rebuildParagraph(newNode)
+
+    if (node.textAutoResize !== 'NONE') {
+      const ranges = store.textEditor?.getParagraphRects()
+      const width = ranges?.reduce((pre, r) => Math.max(pre, r.width || 0), 0) ?? DEFAULT_TEXT_WIDTH
+      const height = ranges?.reduce((pre, r) => pre + (r.height || 0), 0) ?? 0
+      if (node.textAutoResize === 'WIDTH_AND_HEIGHT') {
+        changes.width = width
+      }
+      changes.height = height
+    }
     store.graph.updateNode(nodeId, changes)
-    const updated = store.graph.getNode(nodeId)
-    if (updated) store.textEditor?.rebuildParagraph(updated)
+
     store.requestRender()
   }
 
@@ -160,7 +177,9 @@ export function createTextEditActions(store: Editor) {
     } else {
       runs = adjustRunsForInsert(runs, editor.state?.cursor ?? 0, text.length)
     }
+
     editor.insert(text, node)
+
     syncText(node.id, editor.state?.text ?? '', runs)
   }
 

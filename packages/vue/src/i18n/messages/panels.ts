@@ -165,6 +165,9 @@ export const panelMessageDefaults = {
   setToCurrentHeight: 'Set to current height',
   sizingFillFr: 'Fill (fr)',
   sizingFixedPx: 'Fixed (px)',
+  textAutoWidth: 'Auto width',
+  textAutoHeight: 'Auto height',
+  textFixedSize: 'Fixed size',
   searchFonts: 'Search fonts...'
 } as const
 
