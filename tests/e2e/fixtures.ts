@@ -60,9 +60,9 @@ export function useEditorSetup(url = '/') {
     test.setTimeout(E2E_SLOW_TEST_TIMEOUT_MS)
 
     page = await browser.newPage()
+    canvas = new CanvasHelper(page)
     await setupExternalApiCache(page)
     await page.goto(url)
-    canvas = new CanvasHelper(page)
     await canvas.waitForInit()
   })
 

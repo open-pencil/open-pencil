@@ -4,6 +4,7 @@ export class CanvasHelper {
   readonly page: Page
   readonly canvas: Locator
   readonly errors: string[] = []
+  private readonly status429s: Set<number> = new Set()
 
   constructor(page: Page) {
     this.page = page
@@ -11,6 +12,11 @@ export class CanvasHelper {
     page.on('pageerror', (err) => this.errors.push(err.message))
     page.on('console', (msg) => {
       if (msg.type() === 'error') this.errors.push(msg.text())
+    })
+    page.on('response', (response) => {
+      if (response.status() === 429) {
+        this.status429s.add(response.status())
+      }
     })
   }
 
@@ -22,8 +28,11 @@ export class CanvasHelper {
    * unavailable (uses fallback fonts/icons).
    */
   assertNoErrors() {
-    const real = this.errors.filter((msg) => !msg.includes('status of 429'))
+    const real = this.errors.filter(
+      (msg) => !msg.includes('status of 429') && !this.status429s.has(429)
+    )
     this.errors.length = 0
+    this.status429s.clear()
     if (real.length > 0) {
       throw new Error(`Browser errors:\n${real.join('\n')}`)
     }

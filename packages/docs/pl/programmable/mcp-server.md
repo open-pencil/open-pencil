@@ -236,8 +236,16 @@ Inna instancja OpenPencil (lub inny proces) używa portu 7600. Można:
 
 Jeśli aplikacja ulegnie awarii bez czystego zamknięcia, plik gniazda może pozostać. Serwer czyści nieaktualne gniazda przy uruchomieniu (sprawdza, czy gniazdo jest aktywne przed usunięciem). Jeśli czyszczenie nie powiedzie się:
 
+Sprawdź pole `socketPath` w pliku `mcp.json` i usuń ten plik. Na przykład, na macOS:
+
 ```sh
 rm ~/Library/Application\ Support/OpenPencil/mcp.sock
+```
+
+Na Linux:
+
+```sh
+rm $XDG_RUNTIME_DIR/openpencil/mcp.sock
 ```
 
 ### Niezgodność wersji
