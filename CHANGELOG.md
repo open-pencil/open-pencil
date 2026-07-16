@@ -2,8 +2,11 @@
 
 ## Unreleased
 
-### Changed
+### Added
 
+- MCP server uses Unix domain socket as the primary transport on macOS/Linux, with optional TCP fallback for browser connections; Windows uses TCP exclusively
+- Discovery file (`mcp.json`) for stdio bridge and CLI auto-connection, stored with `0o600` permissions at the platform-default path
+- `OPENPENCIL_MCP_SOCKET` environment variable overrides the socket path in the discovery file; TCP is controlled by `PORT` (>0 = on, 0 = off)
 - Add Figma-style page management in the Pages panel, including rename/delete actions and drag-and-drop page reordering.
 - Add DOM/CSS import and authoring support so HTML, CSS, Tailwind, and JSX can be converted into editable OpenPencil documents from the app, CLI, and SDK.
 - Add Tailwind class serialization for DOM/CSS HTML export in the SDK and CLI.
@@ -24,8 +27,28 @@
 - Add open-document discovery for live CLI and MCP automation so agents can target the intended document and page.
 - Publish lower-level SceneGraph, Pen, Kiwi, Fig, and DOM/CSS functionality through clearer package boundaries for SDK and automation consumers.
 
+### Security
+
+- Auth token comparison uses `crypto.timingSafeEqual` to prevent timing attacks (applied to HTTP endpoints and WebSocket browser registration)
+- Auth token auto-generated on startup (32-hex random); no longer exposed via `/health` endpoint; stored in discovery file with `0o600` permissions
+- Restrictive file permissions: socket `0o600`, directory `0o700` (best-effort; subject to process umask); prevents access from other users but not from same-user processes
+- Path traversal protection hardened against symlink attacks via `fs.realpath` in `resolveSafePath`; symlink targets are validated against root before returning the user-provided normalized path
+
+### Changed
+
+- Stdio bridge connects via discovery-driven HTTP over a Unix socket or TCP instead of WebSocket
+- WebSocket upgrades happen on the same HTTP port (no separate WS_PORT)
+- Discovery file checks if the recorded PID is still running to detect stale entries (note: PID recycling may cause false positives on long-running systems)
+
+### Breaking
+
+- `startServer()` is now async, returns `Promise<ServerHandle { app, server, socketPath, httpPort, close }>` instead of `{ app, wss, httpPort, close }`
+- `WS_PORT` removed and `AUTOMATION_WS_PORT` constant removed; WebSocket uses the unified HTTP port
+
 ### Fixes
 
+- Fix MCP tool calls failing immediately on first connect when the desktop app has not registered yet — `sendRpc` now waits up to 10 seconds for the app to connect before returning an error
+- Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup
 - Fix live CLI and MCP automation drifting to the wrong open document or page when multiple files are open.
 - Improve Chinese, Japanese, and Korean text rendering with glyph-aware fallback fonts and outline rendering when needed.
 - Preserve imported Figma text sizing more accurately, especially auto-sized text inside auto-layout frames.
@@ -53,6 +76,9 @@
 
 ### Fixes
 
+- Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.
+- Preserve rotated Figma transform origins for imported vector nodes.
+- Render complex text fills through vector glyph outlines so imported Figma text can use the normal fill pipeline for gradients, images, patterns, and other non-solid paints.
 - Fix the published MCP package so global installs include the `openpencil-mcp` and `openpencil-mcp-http` launchers required by desktop app integrations.
 
 ## 0.13.1 — 2026-05-29

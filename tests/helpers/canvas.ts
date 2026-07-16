@@ -14,11 +14,18 @@ export class CanvasHelper {
     })
   }
 
+  /**
+   * Assert no browser errors occurred since the last call.
+   * Transient 429 (Too Many Requests) errors from external APIs (Google Fonts,
+   * Iconify) are filtered out — they are environmental rate-limiting, not
+   * application bugs. The app gracefully degrades when these APIs are
+   * unavailable (uses fallback fonts/icons).
+   */
   assertNoErrors() {
-    if (this.errors.length > 0) {
-      const messages = this.errors.join('\n')
-      this.errors.length = 0
-      throw new Error(`Browser errors:\n${messages}`)
+    const real = this.errors.filter((msg) => !msg.includes('status of 429'))
+    this.errors.length = 0
+    if (real.length > 0) {
+      throw new Error(`Browser errors:\n${real.join('\n')}`)
     }
   }
 

@@ -1,6 +1,6 @@
 # Architecture
 
-## Vue d'ensemble du système
+## Vue d’ensemble du système
 
 `mermaid
 graph TB
@@ -19,19 +19,19 @@ graph TB
                 Kiwi --- SVG[SVG export]
             end
         end
-        MCP["MCP Server (90 tools, stdio+HTTP)"]
+        MCP["MCP Server (105 tools, stdio+HTTP)"]
         Collab["P2P Collab (Trystero + Yjs)"]
     end
 `
 
-## Disposition de l'éditeur
+## Disposition de l’éditeur
 
-L'interface suit le layout UI3 de Figma — barre d'outils en bas, navigation à gauche, propriétés à droite :
+L’interface suit le layout UI3 de Figma — barre d’outils en bas, navigation à gauche, propriétés à droite :
 
 - **Panneau de navigation (gauche)** — Arbre des calques, panneau des pages
 - **Canvas (centre)** — Canvas infini avec rendu CanvasKit, zoom/pan
 - **Panneau de propriétés (droite)** — Sections contextuelles : Apparence, Remplissage, Contour, Typographie, Layout, Position
-- **Barre d'outils (bas)** — Sélection d'outil : Sélectionner, Frame, Section, Rectangle, Ellipse, Ligne, Texte, Plume, Main
+- **Barre d’outils (bas)** — Sélection d’outil : Sélectionner, Frame, Section, Rectangle, Ellipse, Ligne, Texte, Plume, Main
 
 ## Composants
 
@@ -45,7 +45,7 @@ Le renderer est découpé en modules spécialisés dans `packages/core/src/rende
 
 `Map<string, Node>` plat indexé par des chaînes GUID. Structure en arbre via des références `parentIndex`. Fournit une recherche O(1), un parcours efficace, du hit testing et des requêtes par zone rectangulaire pour la sélection par marquise.
 
-Le graphe émet des événements typés via nanoevents : `node:created`, `node:updated`, `node:deleted`, `node:reparented`, `node:reordered`. Les sous-systèmes s'y abonnent au lieu d'un câblage manuel — l'éditeur les utilise pour l'invalidation du rendu et la synchronisation d'instances de composants batchée par microtâche, le système de collaboration pour la propagation Yjs.
+Le graphe émet des événements typés via nanoevents : `node:created`, `node:updated`, `node:deleted`, `node:reparented`, `node:reordered`. Les sous-systèmes s’y abonnent au lieu d’un câblage manuel — l’éditeur les utilise pour l’invalidation du rendu et la synchronisation d’instances de composants batchée par microtâche, le système de collaboration pour la propagation Yjs.
 
 Voir la [Référence du graphe de scène](/reference/scene-graph) pour les détails internes.
 
@@ -64,7 +64,7 @@ Yoga de Meta fournit le calcul de layout CSS flexbox et grid via un [fork](https
 
 ### Format de fichier (Kiwi binaire)
 
-Réutilise le codec binaire Kiwi de Figma avec 194 définitions de message/enum/struct. Import : analyser l'en-tête → décompresser Zstd → décoder Kiwi → `NodeChange`[] → graphe de scène. L'export inverse le processus avec génération de miniature.
+Réutilise le codec binaire Kiwi de Figma avec 194 définitions de message/enum/struct. Import : analyser l’en-tête → décompresser Zstd → décoder Kiwi → `NodeChange`[] → graphe de scène. L’export inverse le processus avec génération de miniature.
 
 Voir la [Référence du format de fichier](/reference/file-format) pour plus de détails.
 
@@ -76,29 +76,29 @@ Les outils sont définis une seule fois dans `packages/core/src/tools/`, découp
 - **Serveur MCP** — schémas zod, transports stdio + HTTP
 - **CLI** — accessible via la commande `eval`
 
-90+ outils core + 3 outils de gestion de fichiers MCP. Inclut requête XPath (`query_nodes`), inspection JSX (`get_jsx`, `diff_jsx`), description sémantique (`describe`) et vérification visuelle (`export_image` renvoie des images au modèle).
+105 outils au total. Inclut requête XPath (`query_nodes`), inspection JSX (`get_jsx`, `diff_jsx`), description sémantique (`describe`) et vérification visuelle (`export_image` renvoie des images au modèle).
 
 ### Annuler/Rétablir
 
-Patron de commande inverse. Avant d'appliquer tout changement, les champs concernés sont capturés en snapshot. Le snapshot devient l'opération inverse. Le batching regroupe les changements rapides (comme le glissement) en entrées d'annulation uniques.
+Patron de commande inverse. Avant d’appliquer tout changement, les champs concernés sont capturés en snapshot. Le snapshot devient l’opération inverse. Le batching regroupe les changements rapides (comme le glissement) en entrées d’annulation uniques.
 
 ### Presse-papiers
 
-Presse-papiers bidirectionnel compatible Figma. Encode/décode le binaire Kiwi (même format que les fichiers .fig) via les événements natifs copier/coller du navigateur. Gère le redimensionnement des chemins vectoriels, les enfants d'instances, la détection des ensembles de composants et l'application des surcharges.
+Presse-papiers bidirectionnel compatible Figma. Encode/décode le binaire Kiwi (même format que les fichiers .fig) via les événements natifs copier/coller du navigateur. Gère le redimensionnement des chemins vectoriels, les enfants d’instances, la détection des ensembles de composants et l’application des surcharges.
 
 ### Collaboration P2P
 
-Collaboration peer-to-peer en temps réel via Trystero (WebRTC) + Yjs CRDT. Sans serveur relais — signalisation via des brokers MQTT publics, STUN/TURN pour le traversal NAT. Le protocole d'awareness fournit des curseurs en direct, des sélections et de la présence. Persistance locale via y-indexeddb.
+Collaboration peer-to-peer en temps réel via Trystero (WebRTC) + Yjs CRDT. Sans serveur relais — signalisation via des brokers MQTT publics, STUN/TURN pour le traversal NAT. Le protocole d’awareness fournit des curseurs en direct, des sélections et de la présence. Persistance locale via y-indexeddb.
 
 ### Pont RPC CLI-vers-application
 
-Lorsque l'application de bureau est lancée, les commandes CLI s'y connectent via WebSocket au lieu de nécessiter un fichier .fig. Le serveur d'automatisation tourne sur `127.0.0.1:7600` (HTTP) et `127.0.0.1:7601` (WebSocket). Les commandes s'exécutent sur l'état en direct de l'éditeur, permettant aux scripts d'automatisation et aux agents IA d'interagir avec l'application en cours d'exécution.
+Lorsque l’application de bureau est lancée, les commandes CLI s’y connectent via le serveur MCP au lieu de nécessiter un fichier .fig. Sur macOS et Linux, le serveur MCP écoute sur un socket de domaine Unix avec TCP optionnel sur `127.0.0.1:7600` (HTTP + WebSocket). Sur Windows, le serveur se lie uniquement en TCP sur `127.0.0.1:7600`. Les commandes s’exécutent sur l’état en direct de l’éditeur, permettant aux scripts d’automatisation et aux agents IA d’interagir avec l’application en cours d’exécution.
 
 ## Prochaines étapes
 
-### Ensemble complet d'outils figma-use
+### Ensemble complet d’outils figma-use
 
-Le serveur MCP expose actuellement 90 outils. L'implémentation de référence dans [figma-use](https://github.com/dannote/figma-use) en compte 118. Les outils restants couvrent les contraintes de layout avancées, les connexions de prototype, l'édition avancée des propriétés de composants et les opérations en masse sur les documents.
+Le serveur MCP expose actuellement 105 outils. L’implémentation de référence dans [figma-use](https://github.com/dannote/figma-use) en compte 118. Les outils restants couvrent les contraintes de layout avancées, les connexions de prototype, l’édition avancée des propriétés de composants et les opérations en masse sur les documents.
 
 ### Outillage de design pour la CI
 
@@ -106,8 +106,8 @@ Le CLI headless supporte déjà `analyze colors/typography/spacing/clusters`. Pr
 
 ### Prototypage
 
-Transitions frame-à-frame, déclencheurs d'interaction (clic, survol, glissement), gestion des overlays et mode aperçu plein écran.
+Transitions frame-à-frame, déclencheurs d’interaction (clic, survol, glissement), gestion des overlays et mode aperçu plein écran.
 
 ### Signature de code Windows
 
-Les binaires macOS sont signés et notarisés depuis la v0.6.0. La signature Authenticode Windows via Azure Code Signing est prévue pour supprimer l'avertissement SmartScreen.
+Les binaires macOS sont signés et notarisés depuis la v0.6.0. La signature Authenticode Windows via Azure Code Signing est prévue pour supprimer l’avertissement SmartScreen.

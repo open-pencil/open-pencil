@@ -73,6 +73,7 @@ function loadPreviewFont(family: string, source: string) {
         data-test-id="font-picker-item"
         class="flex min-w-0 flex-1 items-center gap-2"
         @vue:mounted="loadPreviewFont(family, source)"
+        @vue:updated="loadPreviewFont(family, source)"
       >
         <icon-lucide-check v-if="selected" class="size-3 shrink-0 text-accent" />
         <span v-else class="size-3 shrink-0" />

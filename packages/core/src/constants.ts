@@ -336,7 +336,6 @@ export const DEFAULT_AI_PROVIDER: AIProviderID = 'openrouter'
 export const DEFAULT_AI_MODEL = AI_PROVIDERS[0].defaultModel
 
 export const AUTOMATION_HTTP_PORT = 7600
-export const AUTOMATION_WS_PORT = 7601
 
 export const GOOGLE_FONTS_API_KEY = 'AIzaSyD1tYDR_dUEiV-Tw1vksEhZbUytgKW5pc8'
 

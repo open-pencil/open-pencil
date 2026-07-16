@@ -348,7 +348,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
       <div :ref="limitFieldRefs.set" class="min-w-0">
         <VariableNumberField
           v-if="ctx.node"
-          v-test-id="item.testHook"
+          :data-test-id="item.testHook"
           :icon="item.icon()"
           :model-value="Math.round(item.value() ?? 0)"
           :min="0"
@@ -392,7 +392,7 @@ function handleSizeSelect(axis: 'width' | 'height', value: SizeSelectValue) {
         </VariableNumberField>
         <NumberField
           v-else
-          v-test-id="item.testHook"
+          :data-test-id="item.testHook"
           :icon="item.icon()"
           :model-value="Math.round(item.value() ?? 0)"
           :min="0"

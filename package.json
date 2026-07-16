@@ -165,6 +165,7 @@
   },
   "overrides": {
     "brace-expansion": "5.0.6",
-    "protobufjs": "7.5.5"
+    "protobufjs": "7.5.5",
+    "websocket-driver": ">=0.7.5"
   }
 }

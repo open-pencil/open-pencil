@@ -12,11 +12,12 @@ import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
-import { isTauri } from '@/app/tauri/env'
+import { IS_TAURI } from '@/constants'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
+import { toast } from '@/app/shell/ui'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -77,7 +78,7 @@ async function openPendingAssociatedFiles() {
 }
 
 async function bindAssociatedFileOpen() {
-  if (!isTauri()) return
+  if (!IS_TAURI) return
   const { listen } = await import('@tauri-apps/api/event')
   fileAssociationCleanup.value = await listen('open-associated-files', () => {
     void openPendingAssociatedFiles().catch((e) => console.error('[Open With]', e))
@@ -85,16 +86,27 @@ async function bindAssociatedFileOpen() {
   await openPendingAssociatedFiles()
 }
 
+let disposed = false
+
 onMounted(async () => {
   try {
     const mcp = await spawnMCPIfNeeded()
+    if (disposed) {
+      mcp?.disconnect()
+      return
+    }
     mcpCleanup.value = mcp?.disconnect ?? null
-    const tauri = isTauri()
-    if (import.meta.env.DEV || tauri) {
+    if (import.meta.env.DEV || IS_TAURI) {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
     }
   } catch (e) {
-    console.warn('[MCP]', e)
+    // Surface the failure to the user — without a visible signal, ACP
+    // agents and automation silently fail and the user can't tell why.
+    const message = e instanceof Error ? e.message : String(e)
+    console.warn('[MCP]', message, e)
+    if (IS_TAURI) {
+      toast.error(`MCP server failed to start: ${message}`)
+    }
   }
 
   try {
@@ -105,6 +117,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  disposed = true
   mcpCleanup.value?.()
   automationCleanup.value?.()
   fileAssociationCleanup.value?.()

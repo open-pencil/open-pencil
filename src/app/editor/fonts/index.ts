@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { watch } from 'vue'
 
+import { IS_BROWSER } from '@open-pencil/core/constants'
 import {
   DEFAULT_WEB_FONT_PROVIDER_SETTINGS,
   WEB_FONT_PROVIDER_IDS,
@@ -22,6 +23,11 @@ import {
 import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
+
+// Capture the real global fetch before any test harness or font proxy replaces
+// it, so the Tauri web-font fetcher can fall back to plain HTTP when it runs
+// outside a Tauri window (e.g. after Tauri mocks are cleared in unit tests).
+const globalFetch = globalThis.fetch.bind(globalThis)
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)
@@ -63,10 +69,21 @@ function showWebFontUnavailableToast(): void {
 }
 
 function configureTauriFontCache() {
-  if (tauriFontCacheConfigured || !isTauri()) return
+  // Mark configured immediately so a later Tauri-mocked test cannot re-enter
+  // this path and leave a Tauri-specific fetcher attached to the shared
+  // fontManager after the mock is torn down.
+  if (tauriFontCacheConfigured) return
   tauriFontCacheConfigured = true
+  if (!isTauri()) return
+
   fontManager.setDownloadedFontCache(createTauriDownloadedFontCache())
-  fontManager.setWebFontFetch(tauriFetch)
+  fontManager.setWebFontFetch(async (url: string, init?: RequestInit) => {
+    // Re-check at call time: Tauri mocks may have been cleared since this
+    // fetcher was registered. Fall back to the original fetch to avoid
+    // referencing a removed window.__TAURI_INTERNALS__.
+    if (!isTauri()) return globalFetch(url, init)
+    return tauriFetch(url, init)
+  })
   fontManager.setHostFallbackFontLoader(loadFont)
 }
 
@@ -99,6 +116,18 @@ export function preloadFonts(): void {
   if (isTauri()) {
     void getTauriFonts().then(registerFontFaces)
     return
+  }
+  // In browser tests, `window.fetch` is mocked to serve Google Fonts data.
+  // Set up a remote-fetch proxy so WebFontResolver doesn't short-circuit
+  // on the `IS_BROWSER && !this.remoteFetch` guard.
+  if (IS_BROWSER) {
+    const testFetch = (window as Window & { __OPENPENCIL_TEST_WEB_FONT_FETCH?: boolean })
+      .__OPENPENCIL_TEST_WEB_FONT_FETCH
+    if (testFetch) {
+      fontManager.setWebFontFetch(async (url: string, init?: RequestInit) => {
+        return globalFetch(url, init)
+      })
+    }
   }
   if (onlineFontsEnabled.value) fontManager.preloadWebFontFamilies()
 }

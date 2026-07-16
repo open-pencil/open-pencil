@@ -8,7 +8,7 @@ import type {
 } from '@agentclientprotocol/sdk'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 
-import type { ACPAgentDef } from '@open-pencil/core/constants'
+import { AUTOMATION_HTTP_PORT, type ACPAgentDef } from '@open-pencil/core/constants'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
 
@@ -249,12 +249,23 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
     const connection = new ClientSideConnection((_agent: Agent) => clientImpl, stream)
     const { getAutomationAuthToken } = await import('@/app/automation/mcp/spawn')
-    const automationAuthToken = await getAutomationAuthToken()
+    let automationAuthToken: string | null
+    try {
+      automationAuthToken = await getAutomationAuthToken()
+    } catch (e) {
+      await child.kill().catch(() => undefined)
+      throw new Error(formatConnectionError(e, this.agentDef))
+    }
 
-    await connection.initialize({
-      protocolVersion: PROTOCOL_VERSION,
-      clientCapabilities: {}
-    })
+    try {
+      await connection.initialize({
+        protocolVersion: PROTOCOL_VERSION,
+        clientCapabilities: {}
+      })
+    } catch (e) {
+      await child.kill().catch(() => undefined)
+      throw new Error(formatConnectionError(e, this.agentDef))
+    }
 
     let sessionResult
     try {
@@ -264,7 +275,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
           {
             type: 'http' as const,
             name: 'open-pencil',
-            url: 'http://127.0.0.1:7600/mcp',
+            url: `http://127.0.0.1:${AUTOMATION_HTTP_PORT}/mcp`,
             headers: automationAuthToken
               ? [{ name: 'Authorization', value: `Bearer ${automationAuthToken}` }]
               : []
@@ -272,7 +283,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         ]
       })
     } catch (e) {
-      await child.kill()
+      await child.kill().catch(() => undefined)
       throw new Error(formatConnectionError(e, this.agentDef))
     }
 

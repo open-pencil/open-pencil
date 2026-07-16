@@ -92,7 +92,7 @@ Real-time peer-to-peer collaboration via Trystero (WebRTC) + Yjs CRDT. No server
 
 ### CLI-to-App RPC Bridge
 
-When the desktop app is running, CLI commands connect to it via WebSocket instead of requiring a .fig file. The automation server runs on `127.0.0.1:7600` (HTTP) and `127.0.0.1:7601` (WebSocket). Commands execute against the live editor state, enabling automation scripts and AI agents to interact with the running app.
+When the desktop app is running, CLI commands connect to it via the MCP server instead of requiring a .fig file. On macOS and Linux, the MCP server listens on a Unix domain socket with optional TCP on `127.0.0.1:7600` (HTTP + WebSocket). On Windows, the server binds TCP-only to `127.0.0.1:7600`. Commands execute against the live editor state, enabling automation scripts and AI agents to interact with the running app.
 
 ## What's Next
 

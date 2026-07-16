@@ -147,7 +147,7 @@ test('clicking AI tab shows provider setup when no key set', async () => {
 test('saving API key shows chat interface', async () => {
   const key = USE_REAL_LLM ? OPENROUTER_KEY : 'sk-or-test-key-12345'
   await apiKeyInput().fill(key)
-  await page.locator('button:has-text("Connect")').click()
+  await page.getByTestId('api-key-save').click()
 
   await expect(chatInput()).toBeVisible()
   await expect(page.getByText('Describe what you want to create or change.')).toBeVisible()

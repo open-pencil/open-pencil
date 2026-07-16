@@ -1,16 +1,15 @@
 import { expect, setDefaultTimeout, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
 
 import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 
 import { importNodeChanges } from '#core/kiwi'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { readFixtureArrayBuffer } from '#tests/helpers/fig-fixtures'
 import { heavy } from '#tests/helpers/test-utils'
 
 function importFixture(name: string) {
-  const buffer = readFileSync(`tests/fixtures/${name}`).buffer
-  const { nodeChanges, blobs, images } = parseFigBuffer(buffer)
+  const { nodeChanges, blobs, images } = parseFigBuffer(readFixtureArrayBuffer(name))
   return importNodeChanges(nodeChanges, blobs, new Map(images))
 }
 

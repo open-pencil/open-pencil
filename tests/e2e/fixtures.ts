@@ -1,22 +1,81 @@
 import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { E2E_SLOW_TEST_TIMEOUT_MS } from '#tests/helpers/e2e-timeouts'
+
+/**
+ * Module-level cache for external API responses, shared across all test files.
+ * The app fetches font metadata from Google Fonts and icons from Iconify at
+ * runtime. Without caching, every new browser page triggers fresh API requests,
+ * which causes 429 (Too Many Requests) errors during test runs. This cache
+ * ensures each unique URL is fetched at most once; subsequent requests are
+ * served from memory, eliminating rate-limit failures.
+ */
+const externalApiCache = new Map<string, { status: number; body: Buffer; contentType: string }>()
+
+const EXTERNAL_API_PATTERNS = [
+  'https://www.googleapis.com/**',
+  'https://api.iconify.design/**',
+  'https://fonts.google.com/metadata/**',
+  'https://fonts.googleapis.com/**'
+]
+
+/** Set up route handlers that cache external API responses on the page. */
+async function setupExternalApiCache(page: Page): Promise<void> {
+  for (const pattern of EXTERNAL_API_PATTERNS) {
+    await page.route(pattern, async (route) => {
+      const url = route.request().url()
+      const cached = externalApiCache.get(url)
+      if (cached) {
+        await route.fulfill({
+          status: cached.status,
+          body: cached.body,
+          contentType: cached.contentType
+        })
+        return
+      }
+      try {
+        const response = await route.fetch()
+        const body = Buffer.from(await response.body())
+        const contentType = response.headers()['content-type'] ?? 'application/json'
+        if (response.ok()) {
+          externalApiCache.set(url, { status: response.status(), body, contentType })
+        }
+        await route.fulfill({ status: response.status(), body, contentType })
+      } catch {
+        // route.fetch() can reject on DNS failure, connection reset, etc.
+        // Fulfill with an empty fallback so the route handler doesn't abort.
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'external API unavailable' })
+        })
+      }
+    })
+  }
+}
 
 export function useEditorSetup(url = '/') {
   let page: Page
   let canvas: CanvasHelper
 
-  test.describe.configure({ mode: 'serial' })
+  test.describe.configure({ mode: 'serial', timeout: E2E_SLOW_TEST_TIMEOUT_MS })
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(E2E_SLOW_TEST_TIMEOUT_MS)
+
     page = await browser.newPage()
-    await page.goto(url)
     canvas = new CanvasHelper(page)
+    await setupExternalApiCache(page)
+    await page.goto(url)
     await canvas.waitForInit()
   })
 
   test.afterAll(async () => {
-    await page.close()
+    if (page) {
+      await page.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => undefined)
+      await page.close()
+    }
   })
 
   return {

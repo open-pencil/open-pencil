@@ -4,7 +4,7 @@
  * Connects to the bridge via WebSocket, receives RPC requests,
  * executes them against the live EditorStore, and sends results back.
  */
-import { AUTOMATION_WS_PORT } from '@open-pencil/core/constants'
+import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
@@ -25,8 +25,10 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
   }
 
   function connect() {
+    let socket: WebSocket
     try {
-      ws = new WebSocket(`ws://127.0.0.1:${AUTOMATION_WS_PORT}`)
+      socket = new WebSocket(`ws://127.0.0.1:${AUTOMATION_HTTP_PORT}`)
+      ws = socket
     } catch (e) {
       console.error(
         '[Automation] WebSocket constructor failed:',
@@ -36,12 +38,12 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
       return
     }
 
-    ws.onopen = () => {
+    socket.onopen = () => {
       console.debug('[Automation] WebSocket connected to MCP server')
-      ws?.send(JSON.stringify({ type: 'register', token }))
+      socket.send(JSON.stringify({ type: 'register', token }))
     }
 
-    ws.onmessage = async (event) => {
+    socket.onmessage = async (event) => {
       try {
         const msg = JSON.parse(event.data) as {
           type: string
@@ -52,9 +54,9 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
         if (msg.type !== 'request' || !msg.id) return
         try {
           const result = await handleRequest(msg.id, msg.command, msg.args)
-          ws?.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
+          socket.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
         } catch (e) {
-          ws?.send(
+          socket.send(
             JSON.stringify({
               type: 'response',
               id: msg.id,
@@ -68,16 +70,16 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
       }
     }
 
-    ws.onclose = (event) => {
-      ws = null
+    socket.onclose = (event) => {
+      if (ws === socket) ws = null
       if (intentionalDisconnect || event.code === 1000) return
-      console.error('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
+      console.warn('[Automation] WebSocket closed:', `code=${event.code} reason=${event.reason}`)
       scheduleReconnect()
     }
 
-    ws.onerror = (event) => {
-      console.error('[Automation] WebSocket error:', event)
-      ws?.close()
+    socket.onerror = (event) => {
+      console.warn('[Automation] WebSocket error:', event)
+      socket.close()
     }
   }
 

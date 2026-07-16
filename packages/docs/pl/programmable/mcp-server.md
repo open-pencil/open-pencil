@@ -1,18 +1,126 @@
-# MCP Server
+---
+title: Serwer MCP
+description: Łączenie narzędzi AI do kodowania z OpenPencil umożliwiające inspekcję i edycję projektów za pomocą protokołu Model Context Protocol.
+---
 
-OpenPencil includes an MCP (Model Context Protocol) server that lets AI coding tools — Claude Code, Cursor, Windsurf, etc. — read and modify `.fig` files headlessly.
+# Serwer MCP
 
-Two transports: **stdio** for MCP clients, **HTTP** for everything else.
+OpenPencil dostarcza serwer MCP, który pozwala narzędziom AI do kodowania — Claude Code, Cursor, Windsurf itp. — odczytywać i modyfikować projekty w uruchomionej aplikacji. Dwa pliki binarne:
 
-## Install
+- **`openpencil-mcp`** — transport stdio dla klientów MCP
+- **`openpencil-mcp-http`** — serwer HTTP + WebSocket dla przeglądarek, skryptów i wewnętrznego mostu aplikacji
+
+## Wymagania wstępne
+
+Przed podłączeniem jakiegokolwiek klienta upewnij się, że:
+
+1. Aplikacja desktopowa OpenPencil jest uruchomiona **z otwartym dokumentem**. Serwer MCP jest bezużyteczny bez połączenia z aplikacją — jest mostem, a nie rendererem.
+2. Wersja pakietu MCP odpowiada wersji aplikacji. Endpoint `/health` zgłasza wersje, dzięki czemu klienci mogą wykryć niezgodności.
+
+Serwer MCP uruchamia się automatycznie po uruchomieniu aplikacji desktopowej (wersje produkcyjne Tauri uruchamiają `openpencil-mcp-http`; tryb deweloperski używa wtyczki Vite). Można go również uruchomić samodzielnie.
+
+## Architektura
+
+```text
+  MCP Client          MCP Server              OpenPencil App
+  (Claude Code,       (openpencil-mcp-http)   (desktop / browser)
+   Cursor, etc.)
+                      ┌──────────────┐
+  stdio ◄───────────► │  /rpc (HTTP) │ ◄──── JSON-RPC ─────► Stdio bridge
+                      │              │
+                      │  /    (WS)   │ ◄──── WebSocket ────► Browser tab
+  (openpencil-mcp)    │              │
+                      │  /mcp (HTTP) │ ◄── Streamable HTTP ──► External tools
+                      │              │
+                      │  /health     │
+                      └──────┬───────┘
+                             │
+                    socket or TCP (127.0.0.1)
+```
+
+Most stdio (`openpencil-mcp`) łączy się z serwerem HTTP przez gniazdo domeny Unix (na macOS/Linux) lub przez port HTTP z pliku odkrywania (`httpPort`, w systemie Windows lub konfiguracjach bez gniazda). **Nie** komunikuje się bezpośrednio MCP z aplikacją — tuneluje wywołania narzędzi MCP przez HTTP do serwera, który przekazuje je do uruchomionej aplikacji przez WebSocket.
+
+## Jak działa połączenie
+
+Serwer zapisuje **plik odkrywania** przy uruchomieniu. Most stdio odczytuje ten plik, aby znaleźć serwer. Nie jest wymagana ręczna konfiguracja.
+
+### Lokalizacja pliku odkrywania
+
+| Platforma | Ścieżka |
+|-----------|---------|
+| macOS | `~/Library/Application Support/OpenPencil/mcp.json` |
+| Linux | `$XDG_RUNTIME_DIR/openpencil/mcp.json` (alternatywa: `~/.openpencil/mcp.json`) |
+| Windows | `%LOCALAPPDATA%\OpenPencil\mcp.json` |
+
+`OPENPENCIL_MCP_SOCKET` nadpisuje jedynie ścieżkę gniazda. Domyślnie plik odkrywania pozostaje na ścieżce platformy podanej powyżej, chyba że ustawiono `OPENPENCIL_MCP_DISCOVERY_PATH`.
+
+### Zawartość pliku odkrywania
+
+```json
+{
+  "pid": 12345,
+  "socketPath": "~/Library/Application Support/OpenPencil/mcp.sock",
+  "httpPort": 7600,
+  "authRequired": true,
+  "authToken": "<redacted-auth-token>",
+  "version": "0.13.2",
+  "startedAt": "2026-06-01T12:00:00.000Z"
+}
+```
+
+Plik odkrywania jest zapisywany z uprawnieniami `0o600` (tylko odczyt/zapis dla właściciela). Zapobiega to innym użytkownikom systemu odczytaniu tokenu uwierzytelniającego, ale każdy proces działający jako **Twój użytkownik** może go odczytać. Dlatego gniazdo jest preferowane zamiast TCP — uprawnienia pliku gniazda stanowią dodatkową granicę dostępu w systemie Unix.
+
+### Wybór transportu
+
+| Platforma | Podstawowy | Alternatywny |
+|-----------|------------|--------------|
+| macOS / Linux | Gniazdo domeny Unix | TCP na `127.0.0.1:7600` |
+| Windows | TCP na `127.0.0.1:7600` | — |
+
+Most stdio preferuje gniazdo. Jeśli serwer został uruchomiony tylko z TCP (bez gniazda), most przełącza się na `httpPort` z pliku odkrywania.
+
+## Instalacja
 
 ```sh
 npm install -g @open-pencil/mcp
 ```
 
-## Stdio (Claude Code, Cursor, etc.)
+## Stdio (Claude Code, Cursor itp.)
 
-Add to your MCP config (e.g. `~/.claude/settings.json` or `.cursor/mcp.json`):
+Most stdio automatycznie odkrywa uruchomiony serwer MCP za pomocą pliku odkrywania. Nie jest wymagana konfiguracja ścieżki gniazda ani portu — wystarczy upewnić się, że aplikacja jest otwarta.
+
+### Claude Code
+
+```sh
+npm install -g @open-pencil/mcp
+claude mcp add --scope user open-pencil -- openpencil-mcp
+```
+
+Weryfikacja:
+
+```sh
+claude mcp list
+```
+
+Claude Code pyta przed użyciem każdego narzędzia MCP. Aby automatycznie zatwierdzać narzędzia OpenPencil, dodaj do `~/.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["mcp__open-pencil__*"]
+  }
+}
+```
+
+Przykładowy prompt:
+
+```text
+Use the open-pencil MCP server to inspect the current page and create a small hero section on the canvas.
+```
+
+### Inni klienci MCP
+
+Dodaj do konfiguracji MCP (np. `.cursor/mcp.json`):
 
 ```json
 {
@@ -24,9 +132,10 @@ Add to your MCP config (e.g. `~/.claude/settings.json` or `.cursor/mcp.json`):
 }
 ```
 
-Or run from source without installing:
+Uruchomienie ze źródeł bez instalacji:
 
 ::: code-group
+
 ```json [Bun]
 {
   "mcpServers": {
@@ -51,201 +160,287 @@ Or run from source without installing:
 
 ## HTTP
 
-For browser extensions, scripts, CI, or any HTTP client:
+Dla rozszerzeń przeglądarki, skryptów, CI lub dowolnego klienta HTTP:
 
 ```sh
 openpencil-mcp-http
 ```
 
-Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/index.ts`
+Lub ze źródeł: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/index.ts`
 
-Security defaults (HTTP transport):
+### Endpointy
 
-- Binds to `127.0.0.1` by default (`HOST` to override)
-- `eval` tool is disabled
-- File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to current working directory)
-- CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow one origin
-- Optional auth token: `OPENPENCIL_MCP_AUTH_TOKEN` (client sends `Authorization: Bearer <token>` or `x-mcp-token`)
+| Endpoint | Metoda | Uwierzytelnienie | Opis |
+|----------|--------|-------------------|------|
+| `/health` | GET | Nie | Status serwera, wersja, komenda instalacyjna, ścieżka odkrywania |
+| `/rpc` | POST | Bearer token | Most JSON-RPC do uruchomionej aplikacji |
+| `/mcp` | POST, DELETE | Bearer token lub nagłówek `x-mcp-token` | MCP Streamable HTTP. Sesje poprzez nagłówek `mcp-session-id`. DELETE zamyka sesję |
 
-Server starts on port 7600 (override with `PORT` env var). Endpoints:
+Uwaga: Endpoint `/mcp` używa wyłącznie transportu Streamable HTTP. Starszy transport SSE nie jest obsługiwany.
 
-- `GET /health` — server status
-- `POST /mcp` — MCP Streamable HTTP (SSE). Sessions via `mcp-session-id` header.
+### Uwierzytelnianie
 
-## Workflow
+Token uwierzytelniający jest **automatycznie generowany przy uruchomieniu** (32-heksadowy losowy z `crypto.randomBytes`). Klienci muszą go wysłać jako `Authorization: Bearer <token>` dla endpointów `/rpc` i `/mcp`. Porównanie tokenów używa porównania stałoczasowego (`crypto.timingSafeEqual`) w celu zapobiegania atakom czasowym.
 
-1. **Open** — `open_file` to load an existing `.fig`, or `new_document` for a blank canvas
-2. **Read** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
-3. **Create** — `create_shape`, `render` (JSX)
-4. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
-5. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
-6. **Save** — `save_file` to write back to `.fig`
+| Scenariusz | Skąd pochodzi token |
+|------------|---------------------|
+| Most stdio (`openpencil-mcp`) | Odczytuje `authToken` z pliku odkrywania automatycznie |
+| Wewnętrzny aplikacji (Tauri/przeglądarka) | Odczytuje plik odkrywania poprzez `/health` → `discoveryPath` |
+| Niestandardowy klient HTTP | Ustaw `OPENPENCIL_MCP_AUTH_TOKEN` na serwerze i kliencie lub odczytaj plik odkrywania |
 
-## AI Agent Skill
+Aby **całkowicie wyłączyć** uwierzytelnianie (np. lokalny rozwój za zaporą sieciową), ustaw `OPENPENCIL_MCP_AUTH_TOKEN=""` przed uruchomieniem serwera:
 
-Teach your AI coding agent to use OpenPencil tools:
+```sh
+OPENPENCIL_MCP_AUTH_TOKEN="" openpencil-mcp-http
+```
+
+### Zmienne środowiskowe
+
+| Zmienna | Domyślna | Opis |
+|---------|----------|------|
+| `PORT` | `7600` | Port TCP. Ustaw `0`, aby wyłączyć TCP (tylko gniazdo na macOS/Linux). ⚠️ W systemie Windows `PORT=0` wyłącza jedyny dostępny transport, przez co serwer staje się nieosiągalny. |
+| `OPENPENCIL_MCP_SOCKET` | Domyślna dla platformy | Nadpisuje ścieżkę gniazda (tylko macOS/Linux — Windows nie obsługuje gniazd Unix) |
+| `OPENPENCIL_MCP_DISCOVERY_PATH` | Domyślna dla platformy | Nadpisuje lokalizację pliku odkrywania (`mcp.json`) (tylko serwer/test; aplikacja desktopowa oblicza własną domyślną ścieżkę dla platformy) |
+| `OPENPENCIL_MCP_TCP` | Przestarzała | Brak efektu — TCP jest kontrolowane przez `PORT` (>0 = włączone, 0 = wyłączone) |
+| `OPENPENCIL_MCP_AUTH_TOKEN` | Automatycznie generowany | Token uwierzytelniający serwera. Jeśli nieustawiony, jest generowany przy uruchomieniu. Jeśli ustawiony na pusty ciąg (`""`), uwierzytelnianie jest wyłączone. |
+| `OPENPENCIL_MCP_ROOT` | `cwd()` | Zakres katalogu dla narzędzi `open_file`, `new_document` i eksportu zapisującego pliki. `save_file` jest zawsze dostępne; ścieżka jest walidowana względem tego katalogu, gdy jest ustawiony |
+| `OPENPENCIL_MCP_EVAL` | Wyłączone | Ustaw `1`, aby włączyć narzędzie `eval` (tylko stdio, nigdy HTTP) |
+| `OPENPENCIL_MCP_CORS_ORIGIN` | Wyłączone | Dozwolone źródło CORS dla dostępu z przeglądarki |
+
+### Domyślne ustawienia bezpieczeństwa
+
+- Wiąże się z `127.0.0.1` — nie jest eksponowany do sieci
+- Narzędzie `eval` jest domyślnie wyłączone; dostępne tylko przez stdio, nigdy przez HTTP
+- Operacje plikowe ograniczone do `OPENPENCIL_MCP_ROOT` — dowiązania symboliczne są rozwiązywane w celu zapobiegania traversalu ścieżek
+- CORS jest domyślnie wyłączony
+- Uprawnienia pliku gniazda `0o600` w systemie Unix — ogranicza dostęp do Twojego użytkownika
+- Uprawnienia pliku odkrywania `0o600` — takie samo ograniczenie
+
+**Znane ograniczenie:** W systemie Unix istnieje krótkie okno między `listen()` a `chmod(0o600)`, w którym gniazdo ma domyślne uprawnienia. Token uwierzytelniający łagodzi to ryzyko — nawet jeśli inny proces połączy się w tym oknie, nadal potrzebuje tokenu. Nie istnieje łagodzenie, gdy uwierzytelnianie jest wyłączone (`OPENPENCIL_MCP_AUTH_TOKEN=""`) na współdzielonych maszynach.
+
+## Rozwiązywanie problemów
+
+### "OpenPencil app is not connected"
+
+Serwer MCP działa, ale żadna karta przeglądarki nie jest z nim połączona. **Otwórz aplikację desktopową OpenPencil** (lub przejdź do adresu URL aplikacji w przeglądarce) i upewnij się, że dokument jest załadowany. Aplikacja łączy się z serwerem przez WebSocket po otwarciu.
+
+### "Port 7600 already in use"
+
+Inna instancja OpenPencil (lub inny proces) używa portu 7600. Można:
+
+- Zamknąć drugą instancję
+- Ustawić `PORT=7601` (lub dowolny wolny port) przed uruchomieniem
+- Na macOS/Linux: ustawić `PORT=0`, aby wyłączyć TCP i używać transportu tylko przez gniazdo (na Windows `PORT=0` wyłącza jedyny dostępny transport — wybierz inny wolny port)
+
+### Błędy "Stale socket" na macOS/Linux
+
+Jeśli aplikacja ulegnie awarii bez czystego zamknięcia, plik gniazda może pozostać. Serwer czyści nieaktualne gniazda przy uruchomieniu (sprawdza, czy gniazdo jest aktywne przed usunięciem). Jeśli czyszczenie nie powiedzie się:
+
+Sprawdź pole `socketPath` w pliku `mcp.json` i usuń ten plik. Na przykład, na macOS:
+
+```sh
+rm ~/Library/Application\ Support/OpenPencil/mcp.sock
+```
+
+Na Linux:
+
+```sh
+rm $XDG_RUNTIME_DIR/openpencil/mcp.sock
+```
+
+### Niezgodność wersji
+
+Endpoint `/health` zwraca `version` serwera. Aplikacja sprawdza to przy połączeniu i ostrzega, jeśli wersje się nie zgadzają. Napraw, aktualizując pakiet globalny:
+
+```sh
+npm install -g @open-pencil/mcp@latest
+```
+
+### Most stdio nie może znaleźć serwera
+
+Most odczytuje plik odkrywania, aby zlokalizować serwer. Jeśli plik odkrywania brakuje lub jest nieaktualny (PID nie jest już aktywny):
+
+1. Sprawdź, czy plik odkrywania istnieje na ścieżce platformy podanej powyżej
+2. Jeśli TCP jest włączone (`PORT` nie jest `0`), zweryfikuj, że serwer działa: `curl http://127.0.0.1:${PORT:-7600}/health`
+3. W systemie Windows (transport wyłącznie TCP, brak obsługi gniazd Unix), zweryfikuj, że `httpPort` serwera jest osiągalny. Ustawienie `PORT=0` na Windows wyłącza jedyny dostępny transport
+
+## Przepływ pracy
+
+1. **Otwórz** — `open_file` aby załadować istniejący plik `.fig`, lub `new_document` dla pustej kanwy
+2. **Odczytaj** — `get_page_tree`, `find_nodes`, `get_node`, `list_pages`
+3. **Utwórz** — `create_shape`, `render` (JSX)
+4. **Modyfikuj** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
+5. **Strukturyzuj** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
+6. **Zapisz** — `save_file` aby zapisać z powrotem do `.fig`
+
+## Umiejętność agenta AI
+
+Naucz swojego agenta AI do kodowania korzystania z narzędzi OpenPencil:
 
 ```sh
 npx skills add open-pencil/skills@open-pencil
 ```
 
-Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [skills](https://skills.sh). The skill covers the CLI, MCP tools, JSX rendering, eval, and the running app's automation bridge.
+Działa z Claude Code, Cursor, Windsurf, Codex i każdym agentem obsługującym [skills](https://skills.sh). Umiejętność obejmuje CLI, narzędzia MCP, renderowanie JSX, eval oraz most automatyzacji uruchomionej aplikacji.
 
-## Tools (90)
+## Narzędzia (91)
 
-### Document
+### Dokument
 
-| Tool | Description |
-|------|-------------|
-| `open_file` | Open a `.fig` file for editing |
-| `save_file` | Save the current document to a `.fig` file |
-| `new_document` | Create a new empty document |
+| Narzędzie | Opis |
+|-----------|------|
+| `open_file` | Otwórz plik `.fig` do edycji |
+| `save_file` | Zapisz bieżący dokument do pliku `.fig` |
+| `new_document` | Utwórz nowy pusty dokument |
+| `list_documents` | Wylistuj otwarte dokumenty/karty aplikacji i ich strony |
 
-### Read
+Uwaga: `open_file`, `new_document` oraz narzędzia eksportu zapisujące pliki są zawsze dostępne — ich ścieżki są ograniczone do `OPENPENCIL_MCP_ROOT`, które domyślnie przyjmuje bieżący katalog roboczy (`cwd()`) gdy nie jest ustawione. `save_file` jest zawsze dostępne; jego ścieżka jest walidowana względem `OPENPENCIL_MCP_ROOT` tylko gdy katalog główny jest skonfigurowany.
 
-| Tool | Description |
-|------|-------------|
-| `get_selection` | Get currently selected nodes |
-| `get_page_tree` | Get the full node tree of the current page |
-| `get_current_page` | Get the current page name and ID |
-| `get_node` | Get detailed properties of a node by ID |
-| `find_nodes` | Find nodes by name pattern and/or type |
-| `get_components` | List all components in the document |
-| `list_pages` | List all pages |
-| `list_variables` | List design variables |
-| `list_collections` | List variable collections |
-| `list_fonts` | List fonts used in the current page |
-| `page_bounds` | Get bounding box of all objects on the current page |
-| `node_bounds` | Get bounding box of a node |
-| `node_ancestors` | Get ancestor chain of a node |
-| `node_children` | Get direct children of a node |
-| `node_tree` | Get the subtree rooted at a node |
-| `node_bindings` | Get variable bindings on a node |
+### Odczyt
 
-### Create
+| Narzędzie | Opis |
+|-----------|------|
+| `get_selection` | Pobierz aktualnie zaznaczone węzły |
+| `get_page_tree` | Pobierz pełne drzewo węzłów bieżącej strony |
+| `get_current_page` | Pobierz nazwę i ID bieżącej strony |
+| `get_node` | Pobierz szczegółowe właściwości węzła po ID |
+| `find_nodes` | Znajdź węzły według wzorca nazwy i/lub typu |
+| `get_components` | Lista wszystkich komponentów w dokumencie |
+| `list_pages` | Lista wszystkich stron |
+| `list_variables` | Lista zmiennych projektowych |
+| `list_collections` | Lista kolekcji zmiennych |
+| `list_fonts` | Lista czcionek używanych na bieżącej stronie |
+| `page_bounds` | Pobierz obszar ograniczający wszystkich obiektów na bieżącej stronie |
+| `node_bounds` | Pobierz obszar ograniczający węzła |
+| `node_ancestors` | Pobierz łańcuch przodków węzła |
+| `node_children` | Pobierz bezpośrednie dzieci węzła |
+| `node_tree` | Pobierz poddrzewo zakorzenione w węźle |
+| `node_bindings` | Pobierz powiązania zmiennych w węźle |
 
-| Tool | Description |
-|------|-------------|
-| `create_shape` | Create a shape (`FRAME`, `RECTANGLE`, `ELLIPSE`, `TEXT`, `LINE`, `STAR`, `POLYGON`, `SECTION`) |
-| `create_vector` | Create a vector node from a path string |
-| `create_slice` | Create an export slice |
-| `create_page` | Create a new page |
-| `render` | Render JSX to design nodes — create entire component trees in one call |
-| `create_component` | Convert a frame/group into a component |
-| `create_instance` | Create an instance of a component |
-| `node_to_component` | Convert an existing node into a component in-place |
+### Tworzenie
 
-### Modify
+| Narzędzie | Opis |
+|-----------|------|
+| `create_shape` | Utwórz kształt (`FRAME`, `RECTANGLE`, `ELLIPSE`, `TEXT`, `LINE`, `STAR`, `POLYGON`, `SECTION`) |
+| `create_vector` | Utwórz węzeł wektorowy z ciągu ścieżki |
+| `create_slice` | Utwórz wycinek eksportu |
+| `create_page` | Utwórz nową stronę |
+| `render` | Renderuj JSX do węzłów projektowych — twórz całe drzewa komponentów w jednym wywołaniu |
+| `create_component` | Konwertuj ramkę/grupę na komponent |
+| `create_instance` | Utwórz instancję komponentu |
+| `node_to_component` | Konwertuj istniejący węzeł na komponent w miejscu |
 
-| Tool | Description |
-|------|-------------|
-| `set_fill` | Set fill color (hex) |
-| `set_stroke` | Set stroke color, weight, alignment |
-| `set_effects` | Add shadow or blur effects |
-| `update_node` | Update position, size, opacity, corner radius, text, font |
-| `set_layout` | Set auto-layout (flexbox) — direction, spacing, padding, alignment |
-| `set_constraints` | Set resize constraints |
-| `set_rotation` | Set rotation angle in degrees |
-| `set_opacity` | Set opacity (0–1) |
-| `set_radius` | Set corner radius (uniform or per-corner) |
-| `set_minmax` | Set min/max width and height constraints |
-| `set_text` | Set text content of a `TEXT` node |
-| `set_font` | Set font family and weight |
-| `set_font_range` | Set font properties on a character range |
-| `set_text_resize` | Set text auto-resize mode (fixed/auto-width/auto-height) |
-| `set_visible` | Show or hide a node |
-| `set_blend` | Set blend mode |
-| `set_locked` | Lock or unlock a node |
-| `set_stroke_align` | Set stroke alignment (inside/center/outside) |
-| `set_text_properties` | Set text layout: alignment, auto-resize, text case, decoration, truncation |
-| `set_layout_child` | Configure auto-layout child: sizing, grow, alignment, absolute positioning |
-| `node_move` | Move a node to a new position |
-| `node_resize` | Resize a node |
-| `node_replace_with` | Replace a node with another node |
-| `arrange` | Align or distribute selected nodes |
+### Modyfikacja
 
-### Structure
+| Narzędzie | Opis |
+|-----------|------|
+| `set_fill` | Ustaw kolor wypełnienia (hex) |
+| `set_stroke` | Ustaw kolor obrysu, grubość, wyrównanie |
+| `set_effects` | Dodaj efekty cienia lub rozmycia |
+| `update_node` | Aktualizuj pozycję, rozmiar, krycie, promień narożnika, tekst, czcionkę |
+| `set_layout` | Ustaw auto-layout (flexbox) — kierunek, odstępy, padding, wyrównanie |
+| `set_constraints` | Ustaw ograniczenia zmiany rozmiaru |
+| `set_rotation` | Ustaw kąt obrotu w stopniach |
+| `set_opacity` | Ustaw krycie (0–1) |
+| `set_radius` | Ustaw promień narożnika (jednolity lub per-narożnik) |
+| `set_minmax` | Ustaw ograniczenia minimalnej/maksymalnej szerokości i wysokości |
+| `set_text` | Ustaw zawartość tekstową węzła `TEXT` |
+| `set_font` | Ustaw rodzinę i wagę czcionki |
+| `set_font_range` | Ustaw właściwości czcionki w zakresie znaków |
+| `set_text_resize` | Ustaw tryb automatycznej zmiany rozmiaru tekstu (stały/auto-szerokość/auto-wysokość) |
+| `set_visible` | Pokaż lub ukryj węzeł |
+| `set_blend` | Ustaw tryb mieszania |
+| `set_locked` | Zablokuj lub odblokuj węzeł |
+| `set_stroke_align` | Ustaw wyrównanie obrysu (wewnątrz/środek/zewnątrz) |
+| `set_text_properties` | Ustaw układ tekstu: wyrównanie, automatyczna zmiana rozmiaru, wielkość liter, dekoracja, obcinanie |
+| `set_layout_child` | Konfiguruj dziecko auto-layout: rozmiarowanie, grow, wyrównanie, pozycjonowanie absolutne |
+| `node_move` | Przenieś węzeł na nową pozycję |
+| `node_resize` | Zmień rozmiar węzła |
+| `node_replace_with` | Zastąp węzeł innym węzłem |
+| `arrange` | Wyrównaj lub rozdziel zaznaczone węzły |
 
-| Tool | Description |
-|------|-------------|
-| `delete_node` | Delete a node |
-| `clone_node` | Duplicate a node |
-| `rename_node` | Rename a node |
-| `reparent_node` | Move a node into a different parent |
-| `select_nodes` | Select nodes by ID |
-| `group_nodes` | Group nodes |
-| `ungroup_node` | Ungroup a group |
-| `flatten_nodes` | Flatten nodes into a single vector |
-| `boolean_union` | Boolean union of two or more nodes |
-| `boolean_subtract` | Boolean subtraction |
-| `boolean_intersect` | Boolean intersection |
-| `boolean_exclude` | Boolean exclusion |
+### Struktura
 
-### Vector Path
+| Narzędzie | Opis |
+|-----------|------|
+| `delete_node` | Usuń węzeł |
+| `clone_node` | Duplikuj węzeł |
+| `rename_node` | Zmień nazwę węzła |
+| `reparent_node` | Przenieś węzeł do innego rodzica |
+| `select_nodes` | Zaznacz węzły po ID |
+| `group_nodes` | Grupuj węzły |
+| `ungroup_node` | Rozgrupuj grupę |
+| `flatten_nodes` | Spłaszcz węzły do pojedynczego wektora |
+| `boolean_union` | Suma logiczna dwóch lub więcej węzłów |
+| `boolean_subtract` | Odejmowanie logiczne |
+| `boolean_intersect` | Część wspólna logiczna |
+| `boolean_exclude` | Wykluczenie logiczne |
 
-| Tool | Description |
-|------|-------------|
-| `path_get` | Get the path data of a vector node |
-| `path_set` | Set the path data of a vector node |
-| `path_scale` | Scale a vector path |
-| `path_flip` | Flip a vector path horizontally or vertically |
-| `path_move` | Translate a vector path |
+### Ścieżka wektorowa
 
-### Export
+| Narzędzie | Opis |
+|-----------|------|
+| `path_get` | Pobierz dane ścieżki węzła wektorowego |
+| `path_set` | Ustaw dane ścieżki węzła wektorowego |
+| `path_scale` | Skaluj ścieżkę wektorową |
+| `path_flip` | Odbij ścieżkę wektorową poziomo lub pionowo |
+| `path_move` | Przesuń ścieżkę wektorową |
 
-| Tool | Description |
-|------|-------------|
-| `export_image` | Export nodes as PNG, JPG, or WEBP. Returns base64-encoded image data |
-| `export_svg` | Export nodes as SVG markup |
+### Eksport
+
+| Narzędzie | Opis |
+|-----------|------|
+| `export_image` | Eksportuj węzły jako PNG, JPG lub WEBP. Zwraca dane obrazu zakodowane w base64 |
+| `export_svg` | Eksportuj węzły jako znaczniki SVG |
 
 ### Viewport
 
-| Tool | Description |
-|------|-------------|
-| `viewport_get` | Get current viewport position and zoom level |
-| `viewport_set` | Set viewport position and zoom |
-| `viewport_zoom_to_fit` | Zoom viewport to fit specified nodes |
+| Narzędzie | Opis |
+|-----------|------|
+| `viewport_get` | Pobierz bieżącą pozycję i poziom przybliżenia viewportu |
+| `viewport_set` | Ustaw pozycję i przybliżenie viewportu |
+| `viewport_zoom_to_fit` | Dopasuj przybliżenie viewportu do określonych węzłów |
 
-### Variables
+### Zmienne
 
-| Tool | Description |
-|------|-------------|
-| `get_variable` | Get a variable by ID or name |
-| `find_variables` | Find variables by name pattern or type |
-| `create_variable` | Create a new variable in a collection |
-| `set_variable` | Set a variable value in a mode |
-| `delete_variable` | Delete a variable |
-| `bind_variable` | Bind a variable to a node property |
-| `get_collection` | Get a variable collection by ID or name |
-| `create_collection` | Create a new variable collection |
-| `delete_collection` | Delete a variable collection |
+| Narzędzie | Opis |
+|-----------|------|
+| `get_variable` | Pobierz zmienną po ID lub nazwie |
+| `find_variables` | Znajdź zmienne według wzorca nazwy lub typu |
+| `create_variable` | Utwórz nową zmienną w kolekcji |
+| `set_variable` | Ustaw wartość zmiennej w trybie |
+| `delete_variable` | Usuń zmienną |
+| `bind_variable` | Powiąż zmienną z właściwością węzła |
+| `get_collection` | Pobierz kolekcję zmiennych po ID lub nazwie |
+| `create_collection` | Utwórz nową kolekcję zmiennych |
+| `delete_collection` | Usuń kolekcję zmiennych |
 
-### Analyze
+### Analiza
 
-| Tool | Description |
-|------|-------------|
-| `analyze_colors` | Analyze color palette usage across the document |
-| `analyze_typography` | Analyze font/size/weight distribution |
-| `analyze_spacing` | Analyze gap and padding values |
-| `analyze_clusters` | Detect repeated patterns (potential components) |
+| Narzędzie | Opis |
+|-----------|------|
+| `analyze_colors` | Analizuj użycie palety kolorów w dokumencie |
+| `analyze_typography` | Analizuj rozkład czcionek/rozmiarów/wag |
+| `analyze_spacing` | Analizuj wartości odstępów i paddingu |
+| `analyze_clusters` | Wykrywaj powtarzające się wzorce (potencjalne komponenty) |
 
 ### Diff
 
-| Tool | Description |
-|------|-------------|
-| `diff_create` | Create a snapshot of the current document state |
-| `diff_show` | Show differences between the current state and a snapshot |
+| Narzędzie | Opis |
+|-----------|------|
+| `diff_create` | Utwórz migawkę bieżącego stanu dokumentu |
+| `diff_show` | Pokaż różnice między bieżącym stanem a migawką |
 
-### Navigation
+### Nawigacja
 
-| Tool | Description |
-|------|-------------|
-| `switch_page` | Switch to a page by name or ID |
+| Narzędzie | Opis |
+|-----------|------|
+| `switch_page` | Przełącz na stronę po nazwie lub ID |
 
-### Escape Hatch
+### Klapka ratunkowa
 
-| Tool | Description |
-|------|-------------|
-| `eval` | Execute JavaScript with full Figma Plugin API access |
+| Narzędzie | Opis |
+|-----------|------|
+| `eval` | Wykonaj JavaScript z pełnym dostępem do Figma Plugin API |
 
-Note: `eval` is available over stdio, but disabled in HTTP mode for security.
+Uwaga: `eval` jest dostępny przez stdio, ale wyłączony w trybie HTTP ze względów bezpieczeństwa.
