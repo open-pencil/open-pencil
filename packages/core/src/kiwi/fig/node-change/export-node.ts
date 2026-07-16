@@ -618,6 +618,17 @@ function applyNodeVisualProps(
         `fills/${index}/color`
       )
     )
+    node.fills.forEach((it) => {
+      if (it.type === 'IMAGE' && it?.imageHash) {
+        const hash = it?.imageHash
+
+        const find = context.graph.images.get(hash)
+
+        if (find) {
+          context.blobs.push(find)
+        }
+      }
+    })
   }
 
   context.serializeCornerRadii(node, nc)

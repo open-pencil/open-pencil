@@ -1,4 +1,4 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { computeImageHash, type SceneNode } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -66,18 +66,39 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
-  function pushPasteUndo(created: string[], prevSelection: Set<string>) {
+  function pushPasteUndo(created: string[], prevSelection: Set<string>, imageIds?: string[]) {
     const allNodes = collectSubtrees(ctx.graph, created)
     const pageId = ctx.state.currentPageId
+    let imageMap: Map<string, Uint8Array<ArrayBufferLike>> | undefined
     ctx.undo.push({
       label: 'Paste',
       forward: () => {
         recreateSnapshots(ctx, allNodes, pageId)
         computeAllLayouts(ctx.graph, pageId)
+        if (imageIds?.length && imageMap) {
+          for (const id of imageIds) {
+            const image = imageMap?.get(id)
+            if (image) {
+              ctx.graph.images.set(id, image)
+            }
+          }
+        }
+        imageMap = undefined
         ctx.setSelectedIds(new Set(created))
       },
       inverse: () => {
         deleteIds(ctx, created)
+        imageMap = new Map()
+        if (imageIds?.length) {
+          for (const id of [...imageIds].reverse()) {
+            const image = ctx.graph.images.get(id)
+            if (image) {
+              imageMap.set(id, image)
+            }
+            ctx.graph.images.delete(id)
+          }
+        }
+
         computeAllLayouts(ctx.graph, pageId)
         ctx.setSelectedIds(prevSelection)
       }
@@ -92,11 +113,22 @@ export function createClipboardActions(ctx: EditorContext) {
     }
 
     const figma = await parseFigmaClipboard(html)
+
+    const imageIds: string[] = []
     if (figma) {
       const prevSelection = new Set(ctx.state.selectedIds)
       const replacementTargets = options.replaceSelection ? selectedReplacementTargets(ctx) : []
       const pasteTarget = replacementTargets[0]?.parentId ?? resolvePasteTarget(ctx)
       const created = importClipboardNodes(figma.nodes, ctx.graph, pasteTarget, 0, 0, figma.blobs)
+
+      if (figma.blobs) {
+        figma.blobs.forEach((it) => {
+          const hash = computeImageHash(it)
+          ctx.graph.images.set(hash, it)
+          imageIds.push(hash)
+        })
+      }
+
       if (created.length > 0) {
         if (replacementTargets.length > 0) {
           replaceTargetsWithCreated(
@@ -118,7 +150,7 @@ export function createClipboardActions(ctx: EditorContext) {
         computeAllLayouts(ctx.graph, ctx.state.currentPageId)
         ctx.setSelectedIds(new Set(created))
 
-        pushPasteUndo(created, prevSelection)
+        pushPasteUndo(created, prevSelection, imageIds)
         void fontActions.loadFontsForNodes(created)
         warnMissingImages(created)
         ctx.requestRender()
