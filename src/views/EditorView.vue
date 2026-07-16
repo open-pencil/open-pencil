@@ -86,9 +86,15 @@ async function bindAssociatedFileOpen() {
   await openPendingAssociatedFiles()
 }
 
+let disposed = false
+
 onMounted(async () => {
   try {
     const mcp = await spawnMCPIfNeeded()
+    if (disposed) {
+      mcp?.disconnect()
+      return
+    }
     mcpCleanup.value = mcp?.disconnect ?? null
     if (import.meta.env.DEV || IS_TAURI) {
       automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
@@ -111,6 +117,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  disposed = true
   mcpCleanup.value?.()
   automationCleanup.value?.()
   fileAssociationCleanup.value?.()

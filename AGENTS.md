@@ -134,7 +134,7 @@ Release commits are the exception: keep using `Release v0.x.y`.
 - `stdio-bridge.ts` connects to the MCP server via discovery-driven HTTP transport: HTTP-over-Unix-socket when available, otherwise TCP fallback. Auth token comes from `OPENPENCIL_MCP_AUTH_TOKEN` or the discovery file.
 - Auth token comparison uses `crypto.timingSafeEqual`; the token is generated on startup, stored in the discovery file, and not exposed via `/health`. Same-user processes can still read same-user files, so this is local hardening rather than a sandbox.
 - Path scoping (`resolveSafePath`) resolves symlinks with `fs.realpath` so a symlink inside the configured root cannot escape that root.
-- MCP-only tools such as `open_file`, `new_document`, `save_file`, and `get_codegen_prompt` are registered directly in `server.ts` because they need server filesystem access or are not scene-graph tools.
+- MCP-only tools such as `open_file`, `new_document`, `save_file`, and `get_codegen_prompt` are registered via `registerTools()` in `packages/mcp/src/tool/registration.ts` because they need server filesystem access or are not scene-graph tools.
 - `open_file` and `new_document` are only registered when the MCP server has an `mcpRoot`. Export tools can write files under that root when given a `path`.
 - Core codegen prompts live as markdown under `packages/core/src/tools/prompts/`; app chat/ACP prompts live under `src/app/ai/**` markdown files.
 - `FigmaAPI` (`packages/core/src/figma-api/`) is the execution target for tools and CLI eval. It is Figma Plugin API compatible and uses Symbols for hidden internals.

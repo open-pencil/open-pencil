@@ -36,7 +36,7 @@
 
 ### Changed
 
-- Stdio bridge connects via HTTP-over-socket instead of WebSocket
+- Stdio bridge connects via discovery-driven HTTP over a Unix socket or TCP instead of WebSocket
 - WebSocket upgrades happen on the same HTTP port (no separate WS_PORT)
 - Discovery file checks if the recorded PID is still running to detect stale entries (note: PID recycling may cause false positives on long-running systems)
 

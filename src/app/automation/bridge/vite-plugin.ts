@@ -72,7 +72,14 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
         starting = null
       }
     },
-    buildEnd() {
+    async buildEnd() {
+      if (starting) {
+        try {
+          await starting
+        } catch {
+          void 0
+        }
+      }
       child?.kill()
       child = null
       starting = null

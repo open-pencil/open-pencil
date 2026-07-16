@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { access, constants, lstat, readFile, rename, unlink, writeFile } from 'node:fs/promises'
+import { Socket } from 'node:net'
 
 import { getDiscoveryPath, getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
 
@@ -155,6 +156,35 @@ async function isSocketLiveViaTcp(socketPath: string): Promise<boolean> {
 }
 
 /**
+ * Direct Unix-socket connection probe. A server binds the socket before
+ * writeDiscovery(), so isSocketLiveViaTcp() can return false during that
+ * window. This probe connects directly to the socket path — a successful
+ * connection or timeout means the socket is live; only ECONNREFUSED means
+ * no process is listening.
+ */
+function probeSocketLive(socketPath: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false
+    const socket = new Socket()
+    const finish = (result: boolean) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      socket.destroy()
+      // oxlint-disable-next-line no-multiple-resolved -- settled flag guarantees single resolution
+      resolve(result)
+    }
+    const timer = setTimeout(() => finish(true), 1000)
+    socket.once('connect', () => finish(true))
+    socket.once('error', (err) => {
+      const code = (err as NodeJS.ErrnoException).code
+      finish(code !== 'ECONNREFUSED')
+    })
+    socket.connect(socketPath)
+  })
+}
+
+/**
  * Removes a stale Unix domain socket file if it exists and is not live.
  * A socket is considered stale if no process is listening on it.
  */
@@ -184,6 +214,7 @@ export async function removeStaleSocket(socketPathOverride?: string): Promise<vo
     throw new Error(`Refusing to remove non-socket path: ${socketPath}`)
   }
 
+  if (await probeSocketLive(socketPath)) return
   if (await isSocketLiveViaTcp(socketPath)) return
 
   // No live server claims this socket — remove the stale file.

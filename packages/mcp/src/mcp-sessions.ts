@@ -161,7 +161,7 @@ export function createMcpSessionManager({
         })
       }
     }
-    if (sessions.size + creating.size >= MAX_MCP_SESSIONS) {
+    if (sessions.size + creating.size + closing.size >= MAX_MCP_SESSIONS) {
       return Promise.resolve({ error: 'too_many' })
     }
     return createSession(sessionId ?? randomUUID()).catch((e) => {
