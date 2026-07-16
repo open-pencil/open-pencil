@@ -226,14 +226,11 @@ export async function writeToolOutput(
   // realpath-validated path ensures the write lands inside root.
   const parentDir = dirname(realPath)
   await mkdir(parentDir, { recursive: true })
-  // TOCTOU mitigation: verify the parent directory is still a real directory
-  // (not a symlink) after mkdir. An attacker who replaces a directory
-  // component with a symlink between resolveSafePath and the write would be
-  // detected here. This narrows the race window significantly.
-  const parentStat = await lstat(parentDir)
-  if (parentStat.isSymbolicLink()) {
-    throw new Error(`Security: parent directory replaced with symlink: ${parentDir}`)
-  }
+  // TOCTOU mitigation: re-verify the parent directory still resolves inside
+  // the root after mkdir. An attacker who replaces an ancestor directory
+  // with a symlink between resolveSafePath and the write would be detected
+  // here — realpath follows the ancestor symlink and resolves outside root.
+  await resolveSafePath(parentDir, root)
   if (toolName === 'export_svg' && typeof result.svg === 'string') {
     await writeFile(realPath, result.svg, 'utf8')
     return ok({ written: resolved, byteLength: Buffer.byteLength(result.svg, 'utf8') })

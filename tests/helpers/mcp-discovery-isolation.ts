@@ -41,14 +41,19 @@ if (!process.env.OPENPENCIL_MCP_DISCOVERY_PATH) {
  * process exists, so its temp dir must never be deleted. (Root never sees
  * EPERM — it bypasses permission checks, so `kill` succeeds for any live PID
  * regardless of owner. EPERM only arises for a non-root user probing another
- * user's live PID, e.g. on a shared, non-sticky temp directory.) Any other
- * error shape is treated as "not alive".
+ * user's live PID, e.g. on a shared, non-sticky temp directory.) Unknown
+ * error shapes are also treated as "alive" — conservative: don't clean up
+ * resources if we're not sure the process is dead. Only ESRCH (no such
+ * process) is treated as "not alive".
  *
  * Exported (and kept pure) so the EPERM branch is unit-testable without
  * monkey-patching `process.kill`.
  */
 export function isAliveFromKillError(e: unknown): boolean {
-  return e instanceof Error && 'code' in e && (e as NodeJS.ErrnoException).code === 'EPERM'
+  if (e instanceof Error && 'code' in e) {
+    return (e as NodeJS.ErrnoException).code !== 'ESRCH'
+  }
+  return true
 }
 
 /**

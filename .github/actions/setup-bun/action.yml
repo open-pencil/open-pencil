@@ -21,7 +21,7 @@ runs:
       env:
         HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
       run: |
-        git lfs install --force
+        git lfs install --force || echo "::warning::git lfs install failed — LFS fixtures may be unavailable"
         # Try the configured LFS endpoint first (R2 proxy via .lfsconfig).
         # If that fails (e.g. fork PR CI runners can't authenticate with the
         # upstream's LFS proxy), fall back to the PR branch's own GitHub LFS
@@ -31,7 +31,7 @@ runs:
         if ! git lfs pull; then
           echo "::warning::LFS pull from configured endpoint failed, falling back to GitHub LFS for $HEAD_REPO..."
           git config --local lfs.url "https://github.com/${HEAD_REPO}.git/info/lfs"
-          git lfs install --force
+          git lfs install --force || echo "::warning::git lfs install (fallback) failed — LFS fixtures may be unavailable"
           git lfs pull
         fi
 

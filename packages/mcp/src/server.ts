@@ -91,7 +91,7 @@ function createHonoApp(options: {
   corsOrigin: string | null
   browserRpc: ReturnType<typeof createBrowserRpcBridge>
   mcpSessions: ReturnType<typeof createMcpSessionManager>
-  sendToBrowser: (msg: RpcJsonObject) => Promise<RpcJsonObject>
+  sendToBrowser: (msg: RpcJsonObject) => Promise<unknown>
 }): Hono {
   const { authToken, corsOrigin, browserRpc, mcpSessions, sendToBrowser } = options
 
@@ -136,7 +136,7 @@ function createHonoApp(options: {
   // need to handle 502 equivalently.
   app.post('/rpc', async (c) => {
     let body = await c.req.json().catch(() => null)
-    if (!body || typeof body !== 'object') {
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return c.json({ error: 'Invalid request body' }, 400)
     }
     try {
@@ -181,7 +181,18 @@ function createHonoApp(options: {
         mcpSessions.deleteSession(sessionId)
       }
     }
-    const transport = await mcpSessions.resolveTransport(sessionId)
+    if (sessionId) {
+      const existing = mcpSessions.getExistingTransport(sessionId)
+      if ('error' in existing) {
+        if (existing.error === 'closed') {
+          return c.json({ error: 'MCP server is shutting down' }, 503)
+        }
+        return c.json({ error: 'MCP session not found' }, 404)
+      }
+      mcpSessions.touch(sessionId, existing)
+      return existing.handleRequest(c.req.raw)
+    }
+    const transport = await mcpSessions.resolveTransport(undefined)
     if ('error' in transport) {
       if (transport.error === 'closed') {
         return c.json({ error: 'MCP server is shutting down' }, 503)
@@ -191,7 +202,7 @@ function createHonoApp(options: {
         { status: 503, headers: { 'Retry-After': '5' } }
       )
     }
-    mcpSessions.touch(sessionId, transport)
+    mcpSessions.touch(undefined, transport)
     return transport.handleRequest(c.req.raw)
   })
 
@@ -304,10 +315,29 @@ async function shutdownRuntime(
   wss: WebSocketServer,
   state: ListenerState
 ): Promise<void> {
-  browserRpc.close()
-  await mcpSessions.clear()
-  await closeWssGracefully(wss)
-  await teardownListeners(state)
+  const errors: unknown[] = []
+  try {
+    browserRpc.close()
+  } catch (e) {
+    errors.push(e)
+  }
+  try {
+    await mcpSessions.clear()
+  } catch (e) {
+    errors.push(e)
+  }
+  try {
+    await closeWssGracefully(wss)
+  } catch (e) {
+    errors.push(e)
+  }
+  try {
+    await teardownListeners(state)
+  } catch (e) {
+    errors.push(e)
+  }
+  if (errors.length === 1) throw errors[0]
+  if (errors.length > 1) throw new AggregateError(errors, 'Multiple shutdown errors')
 }
 
 function buildHandle(

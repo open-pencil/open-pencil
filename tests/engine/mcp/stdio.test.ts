@@ -29,6 +29,9 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
       env[key] = value
     }
   }
+  if (process.env.OPENPENCIL_MCP_DISCOVERY_PATH) {
+    env.OPENPENCIL_MCP_DISCOVERY_PATH = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
+  }
   env.PATH = process.env.PATH ?? ''
   // Only set OPENPENCIL_MCP_SOCKET when a socket path exists.
   // An empty string on Windows would break the stdio bridge's transport
@@ -116,6 +119,7 @@ describe('MCP stdio transport', () => {
   let browser: MockBrowser | undefined
   let client: Client | undefined
   let transport: StdioClientTransport | undefined
+  let stderrText: (() => string) | undefined
 
   beforeEach(async () => {
     // Fail-safe: clean up any leftover state from a failed previous test
@@ -154,6 +158,7 @@ describe('MCP stdio transport', () => {
       const ctx = await createStdioClient(socketPath, AUTH_TOKEN)
       client = ctx.client
       transport = ctx.transport
+      stderrText = ctx.stderrText
     } catch (err) {
       if (client) await client.close().catch(() => undefined)
       if (browser) browser.close()
@@ -173,6 +178,7 @@ describe('MCP stdio transport', () => {
     browser = undefined
     client = undefined
     transport = undefined
+    stderrText = undefined
   })
 
   function requireClient(): Client {
@@ -293,20 +299,12 @@ describe('MCP stdio transport', () => {
   }, 10000)
 
   test('stderr does not contain JSON-RPC', async () => {
-    const stderrChunks: string[] = []
-    const stderr = transport?.stderr
-    if (stderr && 'on' in stderr) {
-      ;(stderr as NodeJS.ReadableStream).on('data', (chunk: Buffer) => {
-        stderrChunks.push(chunk.toString())
-      })
-    }
-
     await requireClient().callTool({
       name: 'create_shape',
       arguments: { type: 'FRAME', x: 0, y: 0, width: 100, height: 100 }
     })
 
-    const allStderr = stderrChunks.join('')
+    const allStderr = stderrText?.() ?? ''
     expect(allStderr).not.toContain('"jsonrpc"')
     expect(allStderr).not.toContain('"method"')
   }, 10000)

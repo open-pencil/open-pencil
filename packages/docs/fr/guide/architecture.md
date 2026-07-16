@@ -76,7 +76,7 @@ Les outils sont définis une seule fois dans `packages/core/src/tools/`, découp
 - **Serveur MCP** — schémas zod, transports stdio + HTTP
 - **CLI** — accessible via la commande `eval`
 
-105+ outils core + 3 outils de gestion de fichiers MCP. Inclut requête XPath (`query_nodes`), inspection JSX (`get_jsx`, `diff_jsx`), description sémantique (`describe`) et vérification visuelle (`export_image` renvoie des images au modèle).
+105 outils au total. Inclut requête XPath (`query_nodes`), inspection JSX (`get_jsx`, `diff_jsx`), description sémantique (`describe`) et vérification visuelle (`export_image` renvoie des images au modèle).
 
 ### Annuler/Rétablir
 

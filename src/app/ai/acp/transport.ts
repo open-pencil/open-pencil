@@ -257,10 +257,15 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       throw new Error(formatConnectionError(e, this.agentDef))
     }
 
-    await connection.initialize({
-      protocolVersion: PROTOCOL_VERSION,
-      clientCapabilities: {}
-    })
+    try {
+      await connection.initialize({
+        protocolVersion: PROTOCOL_VERSION,
+        clientCapabilities: {}
+      })
+    } catch (e) {
+      await child.kill().catch(() => undefined)
+      throw new Error(formatConnectionError(e, this.agentDef))
+    }
 
     let sessionResult
     try {

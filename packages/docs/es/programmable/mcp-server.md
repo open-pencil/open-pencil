@@ -15,7 +15,7 @@ OpenPencil incluye un servidor MCP (Model Context Protocol) que permite a herram
 Antes de conectar cualquier cliente:
 
 1. La app de escritorio OpenPencil debe estar ejecutándose **con un documento abierto**. El servidor MCP es un puente, no un renderizador — no funciona sin la app.
-2. La versión del paquete MCP debe coincidir con la versión de la app. El endpoint `/health` reporta las versiones para que los clientes puedan detectar incompatibilidades.
+2. La versión del paquete MCP debe coincidir con la versión de la app. El endpoint `/health` reporta la versión del servidor para que los clientes puedan detectar incompatibilidades.
 
 El servidor MCP se inicia automáticamente al abrir la app de escritorio (los builds Tauri ejecutan `openpencil-mcp-http`; en modo dev usa un plugin de Vite). También puedes ejecutarlo de forma independiente.
 
@@ -172,7 +172,7 @@ O desde el código fuente: `bun packages/mcp/src/index.ts` / `npx tsx packages/m
 
 | Endpoint | Método | Auth | Descripción |
 |----------|--------|------|-------------|
-| `/health` | GET | No | Estado del servidor, versión, comando de instalación, ruta de descubrimiento |
+| `/health` | GET | No | Estado del servidor, versión, comando de instalación, si requiere auth |
 | `/rpc` | POST | Bearer token | Puente JSON-RPC a la app en ejecución |
 | `/mcp` | POST, DELETE | Bearer token o `x-mcp-token` | MCP Streamable HTTP. Sesiones vía header `mcp-session-id`. DELETE cierra una sesión |
 
@@ -185,7 +185,7 @@ Un token de autenticación se **genera automáticamente al iniciar** (32-hex ale
 | Escenario | De dónde viene el token |
 |-----------|------------------------|
 | Puente stdio (`openpencil-mcp`) | Lee `authToken` del archivo de descubrimiento automáticamente |
-| Interno (Tauri/browser) | Lee el archivo de descubrimiento vía `/health` → `discoveryPath` |
+| Interno (Tauri/browser) | Lee el archivo de descubrimiento directamente |
 | Cliente HTTP personalizado | Configura `OPENPENCIL_MCP_AUTH_TOKEN` en servidor y cliente, o lee el archivo de descubrimiento |
 
 Para **desactivar** la autenticación (ej. desarrollo local detrás de un firewall), configura `OPENPENCIL_MCP_AUTH_TOKEN=""` antes de iniciar el servidor:

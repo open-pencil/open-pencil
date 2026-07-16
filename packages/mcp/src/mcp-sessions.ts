@@ -65,6 +65,13 @@ export function createMcpSessionManager({
   registerTools
 }: McpSessionManagerOptions) {
   const sessions = new Map<string, MCPSession>()
+  const closing = new Set<Promise<void>>()
+
+  function scheduleClose(session: MCPSession): Promise<void> {
+    const task = closeSession(session).finally(() => closing.delete(task))
+    closing.add(task)
+    return task
+  }
 
   function notifyToolsChanged() {
     for (const session of sessions.values()) {
@@ -81,7 +88,7 @@ export function createMcpSessionManager({
     for (const [id, session] of sessions) {
       if (now - session.lastSeen > MCP_SESSION_TTL_MS) {
         sessions.delete(id)
-        void closeSession(session)
+        void scheduleClose(session)
       }
     }
   }
@@ -189,23 +196,28 @@ export function createMcpSessionManager({
   }
 
   function deleteSession(sessionId: string | undefined) {
+    if (closed) return
     if (!sessionId) return
     const session = sessions.get(sessionId)
     if (!session) return
     sessions.delete(sessionId)
-    void closeSession(session)
+    void scheduleClose(session)
   }
 
   async function clear() {
     closed = true
+    // Collect sessions before awaiting in-flight creations so new sessions
+    // can't be added during shutdown.
+    const all = [...sessions.values()]
+    sessions.clear()
     // Wait for in-flight session creations to finish (they will check
     // `closed` and clean up without storing the session).
     const inFlight = [...creating.values()]
     await Promise.allSettled(inFlight)
-    const all = [...sessions.values()]
-    sessions.clear()
     creating.clear()
-    await Promise.all(all.map(closeSession))
+    // Await both previously-scheduled closes (from cleanupExpired/deleteSession)
+    // and closes for sessions still alive at clear() time.
+    await Promise.allSettled([...closing, ...all.map(scheduleClose)])
   }
 
   return { clear, deleteSession, getExistingTransport, notifyToolsChanged, resolveTransport, touch }

@@ -16,7 +16,9 @@ export const TEXT_PICTURE_KEYS: ReadonlySet<string> = new Set([
   'styleRuns',
   'fills',
   'width',
-  'height'
+  'height',
+  'fontVariations',
+  'fontFeatures'
 ])
 
 /**

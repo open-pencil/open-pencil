@@ -22,11 +22,11 @@ describe('mcp-discovery-isolation > isProcessAlive', () => {
     expect(isAliveFromKillError(err)).toBe(false)
   })
 
-  it('treats an error without a code as dead', () => {
-    expect(isAliveFromKillError(new Error('unknown'))).toBe(false)
+  it('treats an error without a code as alive', () => {
+    expect(isAliveFromKillError(new Error('unknown'))).toBe(true)
   })
 
-  it('treats a non-Error throw as dead', () => {
-    expect(isAliveFromKillError('not an error')).toBe(false)
+  it('treats a non-Error throw as alive', () => {
+    expect(isAliveFromKillError('not an error')).toBe(true)
   })
 })
