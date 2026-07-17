@@ -17,6 +17,7 @@ import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboa
 import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
 import { collectSubtrees, restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
+import { createClipboardSvgActions } from './clipboard/svg'
 import type { EditorContext } from './types'
 
 type PasteOptions = {
@@ -227,6 +228,7 @@ export function createClipboardActions(ctx: EditorContext) {
   const exportActions = createClipboardExportActions(ctx)
   const fontActions = createClipboardFontActions(ctx)
   const imageActions = createClipboardImageActions(ctx)
+  const svgActions = createClipboardSvgActions(ctx)
   const placementActions = createClipboardPlacementActions(ctx)
 
   return {
@@ -239,6 +241,7 @@ export function createClipboardActions(ctx: EditorContext) {
     warnMissingImages,
     deleteSelected,
     ...imageActions,
+    ...svgActions,
     ...exportActions
   }
 }

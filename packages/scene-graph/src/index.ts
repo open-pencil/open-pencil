@@ -41,7 +41,7 @@ import type {
   VariableValue
 } from './types'
 
-export { cloneVectorNetwork, normalizeVectorNetwork, validateVectorNetwork } from './vector-network'
+export * from './vector-network'
 
 function removeStaleBindings(
   node: SceneNode,

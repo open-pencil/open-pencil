@@ -24,7 +24,12 @@ import {
   NODE_TYPE_PLUGIN_KEY,
   TEXT_DIRECTION_PLUGIN_KEY
 } from './plugin-data'
-import { resolveGeometryPaths, resolveVectorNetwork } from './vector-geometry'
+import {
+  resolveGeometryPaths,
+  resolveVectorNetwork,
+  styleOverrideFillsById,
+  type VectorStyleOverride
+} from './vector-geometry'
 export { resolveGeometryPaths } from './vector-geometry'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
@@ -504,9 +509,13 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const vectorNetwork = resolveVectorNetwork(nc, blobs)
   const strokeCap = getVectorStrokeCap(nc, vectorNetwork)
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
+  // Multi-color vectors (e.g. FedEx purple + orange) store per-path paints on
+  // vectorData.styleOverrideTable, referenced by fillGeometry[].styleID.
+  const vectorData = nc.vectorData as { styleOverrideTable?: VectorStyleOverride[] } | undefined
+  const styleFills = styleOverrideFillsById(vectorData?.styleOverrideTable)
   return {
     vectorNetwork,
-    fillGeometry: resolveGeometryPaths(nc.fillGeometry, blobs),
+    fillGeometry: resolveGeometryPaths(nc.fillGeometry, blobs, styleFills),
     strokeGeometry: resolveGeometryPaths(nc.strokeGeometry, blobs),
     arcData: mapArcData(nc.arcData as Partial<ArcData> | undefined),
     strokeCap,
