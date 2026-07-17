@@ -7,12 +7,7 @@ const VUE_DIRECTIVE_NODE = 7
 const DYNAMIC_CLASS_ALLOWLIST = new Set([
   'src/components/CollabPanel/CollabAvatarStack.vue:37',
   'src/components/CollabPanel/CollabSharePopover.vue:20',
-  'src/components/LayersPanel.vue:27',
-  'src/components/LayersPanel.vue:35',
   'src/components/MobileHud/MobilePresencePopover.vue:52',
-  'src/components/PagesPanel.vue:99',
-  'src/components/PagesPanel.vue:133',
-  'src/components/TabBar.vue:53',
   'src/components/Toolbar/MobileToolbar.vue:79',
   'src/components/Toolbar/MobileToolbar.vue:171',
   'src/components/Toolbar/ToolButton.vue:20',
