@@ -42,6 +42,7 @@
 - Preserve imported Figma text sizing more accurately, especially auto-sized text inside auto-layout frames.
 - Match Figma auto-layout reflow when deleting children, hiding optional instance slots, or syncing component changes.
 - Fix desktop clipboard copy, cut, and paste when browser clipboard events are unavailable.
+- Fetch image fills when pasting from Figma in the desktop app and warn when referenced images remain unavailable.
 - Fix desktop "Share This File" links so they use the public app URL.
 - Fix collaborators joining a room without receiving the current document contents.
 - Fix `.fig` round-trips that could corrupt files because of duplicate generated IDs.

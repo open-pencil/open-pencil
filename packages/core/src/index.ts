@@ -7,11 +7,13 @@ export * from './constants'
 
 export { createDefaultEditorState, createEditor, EDITOR_TOOLS, TOOL_SHORTCUTS } from './editor'
 export type {
+  ClipboardImageResolution,
   Editor,
   EditorContext,
   EditorOptions,
   EditorState,
   EditorToolDef,
+  FigmaClipboardImageResolver,
   Tool
 } from './editor'
 

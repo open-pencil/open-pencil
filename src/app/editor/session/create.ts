@@ -9,6 +9,8 @@ import {
   setActiveEditorStore,
   useEditorStore
 } from '@/app/editor/active-store'
+import { resolveFigmaClipboardImages } from '@/app/editor/clipboard/figma-images'
+import { bindClipboardNotifications } from '@/app/editor/clipboard/notifications'
 import { loadFont } from '@/app/editor/fonts'
 import {
   createEditorComputedRefs,
@@ -16,6 +18,7 @@ import {
   defineEditorStoreAccessors
 } from '@/app/editor/session/modules'
 import { createInitialAppEditorState, type AppEditorState } from '@/app/editor/session/types'
+import { isTauri } from '@/app/tauri/env'
 
 export { EDITOR_TOOLS as TOOLS, TOOL_SHORTCUTS } from '@open-pencil/core/editor'
 export type { EditorToolDef as ToolDef, Tool } from '@open-pencil/core/editor'
@@ -30,6 +33,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     graph,
     state,
     loadFont,
+    resolveFigmaClipboardImages: isTauri() ? resolveFigmaClipboardImages : undefined,
     skipInitialGraphSetup: !!initialGraph,
     getViewportSize: () =>
       viewportSize.width > 0 && viewportSize.height > 0
@@ -37,6 +41,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
         : { width: window.innerWidth, height: window.innerHeight }
   })
   const io = new IORegistry(BUILTIN_IO_FORMATS)
+  bindClipboardNotifications(editor)
 
   if (initialGraph) {
     editor.subscribeToGraph()

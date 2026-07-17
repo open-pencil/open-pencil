@@ -87,6 +87,17 @@ export interface EditorState {
   cursorCanvasY?: number | null
 }
 
+export interface ClipboardImageResolution {
+  total: number
+  missing: number
+  fetchAttempted: boolean
+}
+
+export type FigmaClipboardImageResolver = (
+  fileKey: string,
+  hashes: string[]
+) => Promise<ReadonlyMap<string, Uint8Array>>
+
 export interface EditorEvents extends SceneGraphEvents {
   'render:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
   'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
@@ -94,6 +105,7 @@ export interface EditorEvents extends SceneGraphEvents {
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
   'page:changed': (pageId: string, previousPageId: string) => void
+  'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
   'viewport:changed': (
     viewport: { panX: number; panY: number; zoom: number },
     previous: { panX: number; panY: number; zoom: number }
@@ -106,6 +118,7 @@ export interface EditorOptions {
   graph?: SceneGraph
   state?: EditorState
   loadFont?: (family: string, style: string, characters?: string) => Promise<ArrayBuffer | null>
+  resolveFigmaClipboardImages?: FigmaClipboardImageResolver
   getViewportSize?: () => { width: number; height: number }
   skipInitialGraphSetup?: boolean
 }
@@ -116,6 +129,7 @@ export interface EditorContext {
   undo: UndoManager
   state: EditorState
   loadFont: (family: string, style: string, characters?: string) => Promise<ArrayBuffer | null>
+  resolveFigmaClipboardImages: FigmaClipboardImageResolver | null
   getViewportSize: () => { width: number; height: number }
   getCk: () => CanvasKit | null
   getRenderer: () => SkiaRenderer | null

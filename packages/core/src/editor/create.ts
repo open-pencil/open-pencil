@@ -138,6 +138,7 @@ export function createEditor(options?: EditorOptions) {
     undo,
     state,
     loadFont: _loadFont,
+    resolveFigmaClipboardImages: options?.resolveFigmaClipboardImages ?? null,
     getViewportSize: _getViewportSize,
     getCk: () => _ck,
     getRenderer: () => _renderer,
