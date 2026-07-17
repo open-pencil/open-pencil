@@ -1,5 +1,5 @@
-import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { copyGeometryPaths, scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { buildClonesMap } from './sync'
 import type { OverrideContext } from './types'
@@ -53,27 +53,6 @@ function resolveScaleBasis(
   }
 
   return null
-}
-
-function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): GeometryPath[] {
-  if (sx === 1 && sy === 1) return copyGeometryPaths(geom)
-  return geom.map((g) => {
-    const scaled = g.commandsBlob.slice()
-    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
-    let offset = 0
-    while (offset < scaled.length) {
-      const command = scaled[offset++]
-      let coords = 0
-      if (command === 1 || command === 2) coords = 1
-      else if (command === 4) coords = 3
-      for (let i = 0; i < coords; i++) {
-        dv.setFloat32(offset, dv.getFloat32(offset, true) * sx, true)
-        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) * sy, true)
-        offset += 8
-      }
-    }
-    return { windingRule: g.windingRule, commandsBlob: scaled }
-  })
 }
 
 function scaleVectorNetwork(
@@ -142,10 +121,10 @@ function scaleChildren(
     const shapeScaleX = hScale ? sx : 1
     const shapeScaleY = vScale ? sy : 1
     if (source.fillGeometry.length > 0) {
-      updates.fillGeometry = scaleGeometryBlobs(source.fillGeometry, shapeScaleX, shapeScaleY)
+      updates.fillGeometry = scaleGeometryPaths(source.fillGeometry, shapeScaleX, shapeScaleY)
     }
     if (source.strokeGeometry.length > 0) {
-      updates.strokeGeometry = scaleGeometryBlobs(source.strokeGeometry, shapeScaleX, shapeScaleY)
+      updates.strokeGeometry = scaleGeometryPaths(source.strokeGeometry, shapeScaleX, shapeScaleY)
     }
     if (source.vectorNetwork) {
       updates.vectorNetwork = scaleVectorNetwork(source.vectorNetwork, shapeScaleX, shapeScaleY)

@@ -21,8 +21,9 @@ import type {
   WindingRule
 } from '@open-pencil/scene-graph'
 
-import { addOpenSegmentsToPath, addSegmentDirected } from './path-helpers'
+import { addLoopToPath, addOpenSegmentsToPath } from './path-helpers'
 export { vectorNetworkToCenterlinePath, fitCircleArc, isClosedThinCrescent } from './centerline'
+export { regenerateFillGeometry } from './fill-geometry'
 
 // --- vectorNetworkBlob binary format ---
 // Header:  [numVertices:u32, numSegments:u32, numRegions:u32]  (12 bytes)
@@ -237,43 +238,6 @@ export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path
   const path = new ck.Path()
   addOpenSegmentsToPath(path, segments, vertices)
   return [path]
-}
-
-function addLoopToPath(
-  path: Path,
-  loop: number[],
-  segments: VectorSegment[],
-  vertices: VectorVertex[]
-): void {
-  if (loop.length === 0) return
-
-  const firstSeg = segments[loop[0]]
-
-  // Determine the starting vertex — if the loop has multiple segments,
-  // the first segment's direction is determined by which vertex connects
-  // to the second segment.
-  let current: number
-  if (loop.length === 1) {
-    current = firstSeg.start
-  } else {
-    const secondSeg = segments[loop[1]]
-    if (firstSeg.end === secondSeg.start || firstSeg.end === secondSeg.end) {
-      current = firstSeg.start
-    } else {
-      current = firstSeg.end
-    }
-  }
-
-  path.moveTo(vertices[current].x, vertices[current].y)
-
-  for (const segIdx of loop) {
-    const seg = segments[segIdx]
-    const forward = seg.start === current
-    addSegmentDirected(path, seg, vertices, forward)
-    current = forward ? seg.end : seg.start
-  }
-
-  path.close()
 }
 
 const CMD_CLOSE = 0

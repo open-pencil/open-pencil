@@ -3,6 +3,7 @@ import { findAllHandles, findOppositeHandle, mirrorHandle } from '@open-pencil/c
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { constrainContinuousTangent } from './handles'
+import { pushNodeEditHistory } from './history'
 import { getLiveNetwork } from './network'
 import type { NodeEditState } from './types'
 
@@ -127,6 +128,7 @@ export function createVectorEditHandleActions(editor: Editor, getNodeEditState: 
   function nodeEditZeroVertexHandles(vertexIndex: number) {
     const es = getNodeEditState()
     if (!es) return
+    pushNodeEditHistory(es)
     const live = getLiveNetwork(es)
     const handles = findAllHandles(live, vertexIndex)
     for (const h of handles) {

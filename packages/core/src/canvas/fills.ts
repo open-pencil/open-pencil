@@ -3,8 +3,62 @@ import type { Canvas, Paint } from 'canvaskit-wasm'
 import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
+import { figmaBlendModeToSkia } from './blend'
 import type { SkiaRenderer } from './renderer'
 import { makeSmoothRRectPath, nodeHasSmoothCorners } from './shapes'
+
+/** Any fillGeometry path carrying its own fills (Figma styleOverrideTable)? */
+function hasPathLevelFills(node: SceneNode): boolean {
+  return node.fillGeometry.some((g) => g.fills && g.fills.length > 0)
+}
+
+/**
+ * Apply each visible fill to the shared fill paint and invoke draw with it,
+ * resetting shader/blend state after every fill.
+ */
+export function paintFills(
+  r: SkiaRenderer,
+  fills: readonly Fill[],
+  node: SceneNode,
+  graph: SceneGraph,
+  draw: (fill: Fill) => void
+): void {
+  for (let fi = 0; fi < fills.length; fi++) {
+    const fill = fills[fi]
+    if (!fill.visible) continue
+    if (!r.applyFill(fill, node, graph, fi)) continue
+    r.fillPaint.setAlphaf(fill.opacity)
+    r.fillPaint.setBlendMode(figmaBlendModeToSkia(r.ck, fill.blendMode))
+    draw(fill)
+    r.fillPaint.setShader(null)
+    r.fillPaint.setBlendMode(r.ck.BlendMode.SrcOver)
+  }
+}
+
+/**
+ * Paint a VECTOR with per-path fills from fillGeometry (Figma styleOverrideTable).
+ * Paths without path.fills use node.fills. Returns true when handled.
+ */
+export function drawVectorMultiStyleFills(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): boolean {
+  if (node.type !== 'VECTOR' || node.fillGeometry.length === 0) return false
+  if (!hasPathLevelFills(node)) return false
+
+  const paths = r.getFillGeometry(node)
+  if (!paths) return false
+
+  for (let i = 0; i < node.fillGeometry.length; i++) {
+    const g = node.fillGeometry[i]
+    const path = paths[i]
+    const fills = g.fills && g.fills.length > 0 ? g.fills : node.fills
+    paintFills(r, fills, node, graph, () => canvas.drawPath(path, r.fillPaint))
+  }
+  return true
+}
 
 export function drawNodeFill(
   r: SkiaRenderer,
@@ -16,6 +70,8 @@ export function drawNodeFill(
 ): void {
   switch (node.type) {
     case 'VECTOR': {
+      // When path-level fills exist, multi-style drawing is handled separately.
+      if (hasPathLevelFills(node)) break
       const fg = r.getFillGeometry(node)
       if (fg) {
         for (const p of fg) canvas.drawPath(p, r.fillPaint)

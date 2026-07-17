@@ -2,7 +2,10 @@ export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
 import type { Editor } from '@open-pencil/core/editor'
 import { computeLayout } from '@open-pencil/core/layout'
+import { regenerateFillGeometry } from '@open-pencil/core/vector'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
 import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
@@ -21,7 +24,14 @@ function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean
     newRect.width,
     newRect.height
   )
-  if (resizedVectorNetwork) changes.vectorNetwork = resizedVectorNetwork
+  if (resizedVectorNetwork) {
+    changes.vectorNetwork = resizedVectorNetwork
+    // Vectors render from fillGeometry blobs when present — rebuild them from
+    // the scaled network or the artwork stays at its old size.
+    if (d.origFillGeometry.length > 0) {
+      changes.fillGeometry = regenerateFillGeometry(resizedVectorNetwork, d.origFillGeometry)
+    }
+  }
   return { changes, newRect }
 }
 
@@ -34,6 +44,7 @@ export function applyResize(
 ) {
   const { changes, newRect } = resizeChanges(d, cx, cy, constrain)
   editor.graph.updateNodePreview(d.nodeId, changes)
+  if (changes.fillGeometry) editor.renderer?.invalidateVectorPath(d.nodeId)
 
   if (d.origChildren && d.origRect.width > 0 && d.origRect.height > 0) {
     const sx = newRect.width / d.origRect.width
@@ -55,7 +66,12 @@ export function applyResize(
           childWidth,
           childHeight
         )
-        if (scaledVN) childChanges.vectorNetwork = scaledVN
+        if (scaledVN) {
+          childChanges.vectorNetwork = scaledVN
+          if (orig.fillGeometry.length > 0) {
+            childChanges.fillGeometry = regenerateFillGeometry(scaledVN, orig.fillGeometry)
+          }
+        }
       }
       editor.graph.updateNodePreview(childId, childChanges)
       editor.renderer?.invalidateVectorPath(childId)
@@ -78,7 +94,11 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
     width: node.width,
     height: node.height
   }
-  if (node.vectorNetwork) finalChanges.vectorNetwork = node.vectorNetwork
+  // Deep-copy geometry read back from the previewed node — preview values can
+  // be reactivity-wrapped, and storing proxies breaks structuredClone snapshots
+  // (delete/undo would throw DataCloneError).
+  if (node.vectorNetwork) finalChanges.vectorNetwork = cloneVectorNetwork(node.vectorNetwork)
+  if (node.fillGeometry.length > 0) finalChanges.fillGeometry = copyGeometryPaths(node.fillGeometry)
 
   if (d.origChildren) {
     const finalChildren = new Map<string, Partial<SceneNode>>()
@@ -91,7 +111,8 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
         width: child.width,
         height: child.height
       }
-      if (child.vectorNetwork) final.vectorNetwork = child.vectorNetwork
+      if (child.vectorNetwork) final.vectorNetwork = cloneVectorNetwork(child.vectorNetwork)
+      if (child.fillGeometry.length > 0) final.fillGeometry = copyGeometryPaths(child.fillGeometry)
       finalChildren.set(childId, final)
     }
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
@@ -109,7 +130,8 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
     editor.updateNode(d.nodeId, finalChanges)
     editor.commitResize(d.nodeId, {
       ...d.origRect,
-      ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {})
+      ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {}),
+      ...(d.origFillGeometry.length > 0 ? { fillGeometry: d.origFillGeometry } : {})
     })
   }
 }

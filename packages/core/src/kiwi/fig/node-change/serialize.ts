@@ -31,6 +31,7 @@ import {
   upsertPluginData
 } from './plugin-data'
 import { exportTextData, fontVariationToKiwi } from './text-data-export'
+import type { VectorStyleOverride } from './vector-geometry'
 
 export function mapToFigmaType(type: SceneNode['type']): string {
   switch (type) {
@@ -409,16 +410,27 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
     nc.maskType = node.maskType
     if (node.maskIsOutline) nc.maskIsOutline = true
   }
+  // Re-emit per-path fill overrides (multi-color vectors, e.g. FedEx purple +
+  // orange) so path colors survive export → import once raw metadata is gone.
+  const pathStyleIds = new Map<number, number>() // imported styleID → exported styleID
   if (node.vectorNetwork && node.type === 'VECTOR') {
     const { table, mirroringToId } = buildStyleOverrideTable(node.vectorNetwork)
+    // Mirroring entries own styleIDs 1..table.length; fill entries continue after.
+    const overrideTable: VectorStyleOverride[] = [...table]
+    for (const g of node.fillGeometry) {
+      if (g.styleID == null || !g.fills?.length || pathStyleIds.has(g.styleID)) continue
+      const styleID = overrideTable.length + 1
+      overrideTable.push({ styleID, fillPaints: g.fills.map(fillToKiwiPaint) })
+      pathStyleIds.set(g.styleID, styleID)
+    }
     const blobIdx = blobs.length
     blobs.push(encodeVectorNetworkBlob(node.vectorNetwork, mirroringToId))
     const vectorData: Record<string, unknown> = {
       vectorNetworkBlob: blobIdx,
       normalizedSize: { x: node.width, y: node.height }
     }
-    if (table.length > 0) {
-      vectorData.styleOverrideTable = table
+    if (overrideTable.length > 0) {
+      vectorData.styleOverrideTable = overrideTable
     }
     nc.vectorData = vectorData
   }
@@ -426,7 +438,10 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
     nc.fillGeometry = node.fillGeometry.map((g) => {
       const blobIdx = blobs.length
       blobs.push(g.commandsBlob)
-      return { windingRule: g.windingRule, commandsBlob: blobIdx }
+      const styleID = g.styleID != null ? pathStyleIds.get(g.styleID) : undefined
+      return styleID != null
+        ? { windingRule: g.windingRule, commandsBlob: blobIdx, styleID }
+        : { windingRule: g.windingRule, commandsBlob: blobIdx }
     })
   }
   if (node.strokeGeometry.length > 0) {

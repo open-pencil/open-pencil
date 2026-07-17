@@ -1,6 +1,7 @@
 import type { Editor } from '@open-pencil/core/editor'
 import { breakAtVertex, deleteVertex } from '@open-pencil/core/vector'
 
+import { pushNodeEditHistory } from './history'
 import { getLiveNetwork, setNodeEditNetwork } from './network'
 import type { VectorEditState } from './types'
 
@@ -26,6 +27,7 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
   function nodeEditAlignVertices(axis: 'horizontal' | 'vertical', align: 'min' | 'center' | 'max') {
     const es = getNodeEditState()
     if (!es || es.selectedVertexIndices.size < 2) return
+    pushNodeEditHistory(es)
 
     const indices = [...es.selectedVertexIndices]
     const prop = axis === 'horizontal' ? 'x' : 'y'
@@ -50,6 +52,8 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
   function nodeEditDeleteSelected() {
     const es = getNodeEditState()
     if (!es) return
+    if (es.selectedHandles.size === 0 && es.selectedVertexIndices.size === 0) return
+    pushNodeEditHistory(es)
     let live = getLiveNetwork(es)
 
     for (const key of es.selectedHandles) {
@@ -76,6 +80,7 @@ export function createVectorEditSelectionActions(editor: Editor, state: VectorEd
   function nodeEditBreakAtVertex() {
     const es = getNodeEditState()
     if (!es || es.selectedVertexIndices.size === 0) return
+    pushNodeEditHistory(es)
     const [vertexIndex] = es.selectedVertexIndices
     const live = getLiveNetwork(es)
     const next = breakAtVertex(live, vertexIndex)
