@@ -50,8 +50,7 @@ function tooltip(variableName: string, resolvedValue: unknown) {
       <div
         v-bind="{ ...attrs, ...binding.stateAttrs }"
         data-story-control
-        class="group/binding flex h-control min-w-0 items-center rounded-panel border border-transparent bg-panel-field text-xs text-surface outline-none hover:bg-panel-field-hover focus-within:border-panel-focus"
-        :class="derived ? 'text-muted' : ''"
+        class="group/binding flex h-control min-w-0 items-center rounded-panel border border-transparent bg-panel-field text-xs text-surface outline-none hover:bg-panel-field-hover focus-within:border-panel-focus data-[derived]:text-muted"
         :data-derived="derived ? '' : undefined"
         @pointerdown="
           !editing &&

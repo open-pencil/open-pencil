@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
+
+import toolbarTheme from '@/theme/toolbar'
 import { vTestId } from '@open-pencil/vue'
 
-import type { ToolbarActionItem } from '@/components/Toolbar/types'
+import type { ToolbarActionItem, ToolbarUI } from '@/components/Toolbar/types'
 
-const { actions, testPrefix } = defineProps<{
+const { actions, testPrefix, ui } = defineProps<{
   actions: ToolbarActionItem[]
   testPrefix: string
+  ui?: ToolbarUI
 }>()
+
+const styles = tv(toolbarTheme)()
 
 const emit = defineEmits<{
   action: [item: ToolbarActionItem]
@@ -18,9 +24,9 @@ const emit = defineEmits<{
     v-for="item in actions"
     :key="item.label"
     v-test-id="`${testPrefix}-${item.label.toLowerCase()}`"
-    class="flex size-8 cursor-pointer items-center justify-center rounded-[6px] border-none bg-transparent text-muted transition-colors select-none active:bg-hover active:text-surface"
+    :class="styles.action({ class: ui?.action })"
     @click="emit('action', item)"
   >
-    <component :is="item.icon" class="size-4" />
+    <component :is="item.icon" :class="styles.actionIcon({ class: ui?.actionIcon })" />
   </button>
 </template>

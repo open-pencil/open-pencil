@@ -4,23 +4,6 @@ import { createTextRule } from './support.ts'
 
 const VUE_DIRECTIVE_NODE = 7
 
-const DYNAMIC_CLASS_ALLOWLIST = new Set([
-  'src/components/CollabPanel/CollabAvatarStack.vue:37',
-  'src/components/CollabPanel/CollabSharePopover.vue:20',
-  'src/components/MobileHud/MobilePresencePopover.vue:52',
-  'src/components/Toolbar/MobileToolbar.vue:79',
-  'src/components/Toolbar/MobileToolbar.vue:171',
-  'src/components/Toolbar/ToolButton.vue:20',
-  'src/components/Toolbar/ToolFlyout.vue:81',
-  'src/components/Toolbar/ToolFlyout.vue:104',
-  'src/components/chat/ProviderConnectionTestButton.vue:67',
-  'src/components/fill-picker/GradientEditor.vue:52',
-  'src/components/properties/LayoutSection/FlexControls.vue:225',
-  'src/components/properties/binding/demo/BindingFieldDemoItem.vue:54',
-  'src/components/variables/VariablesDialog.vue:269',
-  'src/components/variables/VariablesDialog.vue:324'
-])
-
 type UnknownRecord = Record<string, unknown>
 type ExpressionNode = UnknownRecord & { type: string }
 type VueTemplateNode = {
@@ -119,7 +102,6 @@ export function dynamicClassDiagnostics(sourceRel: string, content: string) {
       return
     }
     const line = node.loc?.start?.line
-    if (line && DYNAMIC_CLASS_ALLOWLIST.has(`${sourceRel}:${line}`)) return
     diagnostics.push({
       message:
         'Move visual-state Tailwind classes into a typed src/theme/** Tailwind Variants theme and bind semantic data-* state.',

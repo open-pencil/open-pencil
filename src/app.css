@@ -57,6 +57,7 @@
   --color-warning-text: #fde68a;
   --color-warning-action: #fcd34d;
   --color-success: #4ade80;
+  --color-error: #f87171;
   --color-success-bg: #16a34a;
   --color-success-bg-hover: #15803d;
   --color-code-tag: #7dd3fc;
@@ -93,6 +94,7 @@ html[data-theme='light'] {
   --color-warning-text: #92400e;
   --color-warning-action: #78350f;
   --color-success: #15803d;
+  --color-error: #b91c1c;
   --color-success-bg: #16a34a;
   --color-success-bg-hover: #15803d;
   --color-code-tag: #0369a1;

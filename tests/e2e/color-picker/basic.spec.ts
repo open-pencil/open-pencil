@@ -158,7 +158,9 @@ test('hsb saturation and brightness sliders both affect fill color', async () =>
 
 test('gradient stops support keyboard nudging and removal', async () => {
   await openFillPicker()
-  await page.getByTestId('fill-picker-tab-gradient').click()
+  const gradientTab = page.getByTestId('fill-picker-tab-gradient')
+  await gradientTab.click()
+  await expect(gradientTab).toHaveAttribute('data-active', 'true')
   await page.getByTestId('fill-picker-add-stop').click()
 
   const stops = page.getByTestId('fill-picker-gradient-bar').getByRole('slider')

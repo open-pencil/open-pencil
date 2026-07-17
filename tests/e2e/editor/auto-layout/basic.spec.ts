@@ -256,6 +256,7 @@ test('alignment grid center sets CENTER alignment', async () => {
   const centerCell = page.getByTestId('layout-alignment-grid').locator('button').nth(4)
   await centerCell.click()
   await canvas.waitForRender()
+  await expect(centerCell).toHaveAttribute('data-active', 'true')
 
   const frame = await getNodeById(page, frameId)
   expect(expectDefined(frame, 'frame').primaryAxisAlign).toBe('CENTER')

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { AnimatePresence, motion } from 'motion-v'
 
 import IconChevronLeft from '~icons/lucide/chevron-left'
@@ -7,6 +8,7 @@ import IconChevronRight from '~icons/lucide/chevron-right'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
 import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
+import toolbarTheme from '@/theme/toolbar'
 import { toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
@@ -46,6 +48,9 @@ const {
   arrangeActions: ToolbarActionItem[]
 }>()
 
+const toolbar = tv(toolbarTheme)
+const styles = toolbar()
+
 const emit = defineEmits<{
   setTool: [tool: Tool]
   prev: []
@@ -62,6 +67,10 @@ const slideVariants = {
 function activeKeyForTool(tool: EditorToolDef) {
   return tool.flyout?.includes(activeTool) ? activeTool : tool.key
 }
+
+function navigationClass(disabled: boolean) {
+  return toolbar({ disabled }).navigationAction({ class: ui?.navigationAction })
+}
 </script>
 
 <template>
@@ -75,13 +84,14 @@ function activeKeyForTool(tool: EditorToolDef) {
   >
     <motion.button
       data-test-id="mobile-toolbar-prev"
-      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel shadow-sm select-none"
-      :class="hasPrev ? 'text-muted' : 'pointer-events-none'"
+      :disabled="!hasPrev"
+      :data-disabled="!hasPrev || undefined"
+      :class="navigationClass(!hasPrev)"
       :animate="{ opacity: hasPrev ? 1 : 0 }"
       :transition="{ duration: 0.15 }"
       @click="emit('prev')"
     >
-      <IconChevronLeft class="size-3.5" />
+      <IconChevronLeft :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
     </motion.button>
 
     <motion.div
@@ -121,6 +131,7 @@ function activeKeyForTool(tool: EditorToolDef) {
                 :data-test-id="toolbarToolTestId(tool.key, true)"
                 :icon="toolIcons[tool.key]"
                 :active="active || activeKeyForTool(tool) === activeTool"
+                :ui="ui"
                 @click="actions.select"
               />
             </ToolbarItem>
@@ -140,6 +151,7 @@ function activeKeyForTool(tool: EditorToolDef) {
         >
           <ToolbarActionGroup
             :actions="editActions"
+            :ui="ui"
             test-prefix="mobile-toolbar"
             @action="emit('action', $event)"
           />
@@ -158,6 +170,7 @@ function activeKeyForTool(tool: EditorToolDef) {
         >
           <ToolbarActionGroup
             :actions="arrangeActions"
+            :ui="ui"
             test-prefix="mobile-toolbar"
             @action="emit('action', $event)"
           />
@@ -167,13 +180,14 @@ function activeKeyForTool(tool: EditorToolDef) {
 
     <motion.button
       data-test-id="mobile-toolbar-next"
-      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full border border-border bg-panel shadow-sm select-none"
-      :class="hasNext ? 'text-muted' : 'pointer-events-none'"
+      :disabled="!hasNext"
+      :data-disabled="!hasNext || undefined"
+      :class="navigationClass(!hasNext)"
       :animate="{ opacity: hasNext ? 1 : 0 }"
       :transition="{ duration: 0.15 }"
       @click="emit('next')"
     >
-      <IconChevronRight class="size-3.5" />
+      <IconChevronRight :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
     </motion.button>
   </div>
 </template>

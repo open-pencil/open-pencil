@@ -1,6 +1,10 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import { getPageChildren } from '#tests/helpers/store'
-import { toolbarFlyoutItemTestId, toolbarFlyoutTestId } from '#tests/helpers/test-ids'
+import {
+  toolbarFlyoutItemTestId,
+  toolbarFlyoutTestId,
+  toolbarToolTestId
+} from '#tests/helpers/test-ids'
 
 const editor = useEditorSetup()
 
@@ -12,6 +16,10 @@ test('shapes flyout opens', async () => {
 
 test('Polygon tool creates POLYGON node', async () => {
   await editor.page.getByTestId(toolbarFlyoutItemTestId('POLYGON')).click()
+  await expect(editor.page.getByTestId(toolbarToolTestId('POLYGON'))).toHaveAttribute(
+    'data-active',
+    'true'
+  )
   await editor.canvas.drag(300, 200, 400, 300)
   await editor.canvas.waitForRender()
 

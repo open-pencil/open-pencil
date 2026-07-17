@@ -1,13 +1,22 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { tv } from 'tailwind-variants'
+
+import toolbarTheme from '@/theme/toolbar'
+
 import type { Component } from 'vue'
+import type { ToolbarUI } from '@/components/Toolbar/types'
 
 interface ToolButtonProps {
   icon: Component
   active?: boolean
   mobile?: boolean
+  ui?: ToolbarUI
 }
 
-const { icon, active = false, mobile = false } = defineProps<ToolButtonProps>()
+const { icon, active = false, mobile = false, ui } = defineProps<ToolButtonProps>()
+const toolbar = tv(toolbarTheme)
+const styles = computed(() => toolbar({ active, mobile }))
 
 const emit = defineEmits<{
   click: []
@@ -16,17 +25,11 @@ const emit = defineEmits<{
 
 <template>
   <button
-    class="flex size-8 cursor-pointer items-center justify-center border-none transition-colors"
-    :class="[
-      mobile ? 'rounded-[6px] select-none' : 'rounded-lg',
-      active
-        ? 'bg-accent text-white'
-        : mobile
-          ? 'bg-transparent text-muted active:bg-hover'
-          : 'bg-transparent text-muted hover:bg-hover hover:text-surface'
-    ]"
+    :data-active="active || undefined"
+    :data-mobile="mobile || undefined"
+    :class="styles.button({ class: ui?.button })"
     @click="emit('click')"
   >
-    <component :is="icon" class="size-4" />
+    <component :is="icon" :class="styles.icon({ class: ui?.icon })" />
   </button>
 </template>

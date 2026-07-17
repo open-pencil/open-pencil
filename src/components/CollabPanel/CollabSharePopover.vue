@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { tv } from 'tailwind-variants'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 
 import ConnectedRoom from '@/components/CollabPanel/ConnectedRoom.vue'
@@ -6,9 +8,17 @@ import JoinRoomPrompt from '@/components/CollabPanel/JoinRoomPrompt.vue'
 import ShareOrJoinRoom from '@/components/CollabPanel/ShareOrJoinRoom.vue'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
 import { usePopoverUI } from '@/components/ui/popover'
+import collaborationTheme from '@/theme/collaboration'
 
 const collab = useCollabPanelContext()
 const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
+const connection = computed(() => {
+  if (collab.state.connected) return 'connected'
+  if (collab.isJoining) return 'joining'
+  return 'idle'
+})
+const collaboration = tv(collaborationTheme)
+const styles = computed(() => collaboration({ connection: connection.value }))
 </script>
 
 <template>
@@ -16,14 +26,8 @@ const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
     <PopoverTrigger as-child>
       <button
         data-test-id="collab-share-button"
-        class="flex h-7 cursor-pointer items-center gap-1.5 rounded-md border-none px-3 text-xs font-medium transition-colors"
-        :class="
-          collab.state.connected
-            ? 'bg-[var(--color-success-bg)] text-white hover:bg-[var(--color-success-bg-hover)]'
-            : collab.isJoining
-              ? 'animate-pulse border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]'
-              : 'bg-accent text-white hover:bg-accent/90'
-        "
+        :data-connection="connection"
+        :class="styles.shareButton()"
       >
         <icon-lucide-share-2 class="size-3.5" />
         {{

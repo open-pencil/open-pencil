@@ -30,6 +30,7 @@ test('variables dialog opens', async () => {
 
   await openVariables().click()
   await expect(editor.page.getByTestId('variables-dialog')).toBeVisible()
+  await expect(editor.page.locator('[data-default="true"]')).toHaveCount(1)
   editor.canvas.assertNoErrors()
 })
 

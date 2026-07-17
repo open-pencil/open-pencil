@@ -58,6 +58,7 @@ function activeKeyForTool(tool: EditorToolDef) {
               :data-test-id="toolbarToolTestId(tool.key)"
               :icon="toolIcons[tool.key]"
               :active="active || isActive(tool)"
+              :ui="ui"
               @click="actions.select"
             />
           </Tip>
