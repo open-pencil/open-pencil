@@ -1,5 +1,6 @@
 import type { Canvas, Path } from 'canvaskit-wasm'
 
+import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -35,7 +36,7 @@ function resetEffectLayerPaint(r: SkiaRenderer): void {
 
 function rawNoiseEffects(node: SceneNode): RawNoiseEffect[] {
   const source = (node as Partial<SceneNode>).source
-  const effects = source?.fig.rawNodeFields.effects
+  const effects = source ? readEffectiveFigmaRawField(node, 'effects') : undefined
   if (!Array.isArray(effects)) return []
   return effects.filter(
     (effect): effect is RawNoiseEffect =>

@@ -5,8 +5,11 @@ import {
   type ExportFormatId,
   type ExportSetting,
   type PluginDataEntry,
-  type PluginRelaunchDataEntry
+  type PluginRelaunchDataEntry,
+  type SceneNode
 } from '@open-pencil/scene-graph'
+
+import { readEffectiveFigmaRawField } from '../source-metadata'
 
 export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
@@ -34,15 +37,13 @@ export function upsertPluginData(
   node.pluginData = pluginData
 }
 
-export function applyExportSettingsPluginData(node: {
-  exportSettings: ExportSetting[]
-  pluginData: PluginDataEntry[]
-  source?: { fig?: { rawNodeFields?: Record<string, unknown> } }
-}): void {
+export function applyExportSettingsPluginData(
+  node: Pick<SceneNode, 'exportSettings' | 'pluginData' | 'source'>
+): void {
   if (node.exportSettings.length === 0) return
   if (
     !hasOpenPencilExportSettingsPluginData(node.pluginData) &&
-    Array.isArray(node.source?.fig?.rawNodeFields?.exportSettings)
+    Array.isArray(readEffectiveFigmaRawField(node, 'exportSettings'))
   ) {
     return
   }

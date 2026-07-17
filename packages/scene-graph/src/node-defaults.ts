@@ -21,6 +21,7 @@ export function createDefaultNode(
       format: null,
       id: null,
       orderKey: null,
+      editedFields: [],
       fig: {
         rawSize: null,
         rawTransform: null,

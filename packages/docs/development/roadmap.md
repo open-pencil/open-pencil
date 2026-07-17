@@ -224,8 +224,9 @@ These are parsed or visible in Figma docs and most likely to cause visible diffe
 | Concern                      | Files                                                                                                          |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Scene graph fields           | `packages/scene-graph/src/types.ts`                                                                            |
-| Source metadata invalidation | `packages/scene-graph/src/source-metadata.ts`                                                                  |
-| Kiwi import mapping          | `packages/core/src/kiwi/fig/node-change/convert.ts`                                                            |
+| Source edit tracking         | `packages/scene-graph/src/source-metadata.ts`                                                                  |
+| `.fig` metadata policy       | `packages/fig/src/source-metadata.ts`                                                                           |
+| Kiwi import mapping          | `packages/fig/src/node-change/convert.ts`                                                                       |
 | Kiwi export mapping          | `packages/core/src/kiwi/fig/node-change/export-node.ts`, `packages/core/src/kiwi/fig/node-change/serialize.ts` |
 | Kiwi schema                  | `packages/kiwi/src/fig/schema/fig.kiwi`, `tests/engine/io/fig/import/schema-coverage.test.ts`                   |
 | Renderer dispatch            | `packages/core/src/canvas/scene.ts`                                                                            |

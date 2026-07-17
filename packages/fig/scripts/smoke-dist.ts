@@ -6,6 +6,7 @@ const nodeChange = await import('../dist/node-change.js')
 
 if (
   mod.FIG_PACKAGE_STATUS !== 'archive-api' ||
+  typeof mod.effectiveFigmaRawNodeFields !== 'function' ||
   typeof mod.parseFigBuffer !== 'function' ||
   typeof mod.writeFigArchive !== 'function' ||
   typeof instanceOverrides.populateAndApplyOverrides !== 'function' ||

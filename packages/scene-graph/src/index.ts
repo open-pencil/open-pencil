@@ -21,7 +21,7 @@ import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
 import { styleDetachmentChanges } from './shared-styles'
-import { clearEditedSourceMetadata } from './source-metadata'
+import { markSourceFieldsEdited } from './source-metadata'
 import { TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
@@ -390,7 +390,7 @@ export class SceneGraph {
       entries.filter(([, value]) => value !== undefined)
     ) as Partial<SceneNode>
     if (this.sourceMetadataPreservationDepth === 0) {
-      clearEditedSourceMetadata(node, Object.keys(changes))
+      markSourceFieldsEdited(node, Object.keys(changes))
     }
     if (changes.vectorNetwork) {
       changes = { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }

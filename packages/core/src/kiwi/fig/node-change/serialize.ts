@@ -1,3 +1,5 @@
+import { effectiveFigmaRawNodeFields } from '@open-pencil/fig'
+
 import { bytesToHex, hexToBytes } from '#core/bytes/hex'
 import { encodePathCommandsBlob } from '#core/kiwi/fig/node-change/path-commands'
 import { buildDerivedTextData as buildSharedDerivedTextData } from '#core/text/derived-text/data'
@@ -247,7 +249,8 @@ function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
     // the raw Figma data. Figma may emit per-corner radii without setting the
     // independent flag (preserve rectangleCornerRadiiIndependent).
     const rawIndependent = node.source.id
-      ? (node.source.fig.rawNodeFields as JsonObject | undefined)?.rectangleCornerRadiiIndependent
+      ? (effectiveFigmaRawNodeFields(node) as JsonObject | undefined)
+          ?.rectangleCornerRadiiIndependent
       : undefined
     nc.rectangleCornerRadiiIndependent =
       typeof rawIndependent === 'boolean' ? rawIndependent : node.independentCorners
@@ -256,7 +259,7 @@ function serializeCornerRadii(node: SceneNode, nc: KiwiNodeChange): void {
     nc.rectangleBottomLeftCornerRadius = node.bottomLeftRadius
     nc.rectangleBottomRightCornerRadius = node.bottomRightRadius
   }
-  if (node.cornerSmoothing > 0 || 'cornerSmoothing' in node.source.fig.rawNodeFields) {
+  if (node.cornerSmoothing > 0 || 'cornerSmoothing' in effectiveFigmaRawNodeFields(node)) {
     nc.cornerSmoothing = node.cornerSmoothing
   }
 }

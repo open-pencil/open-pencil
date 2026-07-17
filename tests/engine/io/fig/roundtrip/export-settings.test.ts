@@ -8,7 +8,7 @@ import {
   SceneGraph,
   type NodeChange
 } from '@open-pencil/core'
-import { parseFigBuffer } from '@open-pencil/fig'
+import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
 import { MAX_EXPORT_SCALE } from '@open-pencil/scene-graph'
 
 function decodeExport(bytes: Uint8Array) {
@@ -129,10 +129,11 @@ describe('fig roundtrip export settings', () => {
     if (!node) throw new Error('imported frame not found')
     expect(node.exportSettings).toEqual([{ scale: 2, format: 'png' }])
 
-    // User removes every export row; the raw native settings must be dropped so they
-    // don't come back via the import fallback on reopen.
+    // User removes every export row; the raw native settings become stale so they
+    // cannot come back through the import fallback on reopen.
     graph.updateNode(node.id, { exportSettings: [] })
-    expect(node.source.fig.rawNodeFields?.exportSettings).toBeUndefined()
+    expect(effectiveFigmaRawNodeFields(node).exportSettings).toBeUndefined()
+    expect(node.source.fig.rawNodeFields.exportSettings).toBeDefined()
 
     const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
     const reNode = [...reimported.getAllNodes()].find((n) => n.name === 'Export settings frame')

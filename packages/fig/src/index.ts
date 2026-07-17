@@ -6,6 +6,12 @@ export {
   type FigParseResult,
   type WriteFigArchiveInput
 } from './archive'
+export {
+  effectiveFigmaRawNodeFields,
+  effectiveFigmaSourcePayload,
+  readEffectiveFigmaRawField,
+  staleFigmaRawFields
+} from './source-metadata'
 
 import {
   FIG_KIWI_DEFAULT_VERSION,

@@ -36,6 +36,7 @@ export interface SourceMetadata {
   format: 'fig' | null
   id: string | null
   orderKey: string | null
+  editedFields: string[]
   fig: FigmaSourcePayload
 }
 

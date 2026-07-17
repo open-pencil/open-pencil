@@ -1,3 +1,4 @@
+import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '@open-pencil/fig'
 import {
   applyExportSettingsPluginData,
   mergePluginData,
@@ -363,7 +364,7 @@ function applyRawFigmaNodeFields(
   node: SceneNode,
   nc: KiwiNodeChange
 ): void {
-  const materialized = materializeFigmaPayload(node.source.fig.rawNodeFields, context.blobs, {
+  const materialized = materializeFigmaPayload(effectiveFigmaRawNodeFields(node), context.blobs, {
     blobIndexByHex: context.blobIndexByHex,
     includePaintVariables: true,
     includeVariableMaps: true
@@ -543,7 +544,7 @@ function shouldSerializeRawBackedField(
   hasValue: boolean,
   alreadySerialized = false
 ): boolean {
-  return hasValue && !(rawField in node.source.fig.rawNodeFields) && !alreadySerialized
+  return hasValue && !(rawField in effectiveFigmaRawNodeFields(node)) && !alreadySerialized
 }
 
 function applyComponentMetadata(
@@ -629,26 +630,22 @@ function applyComponentMetadata(
 }
 
 function exportNodeSize(node: SceneNode): Vector {
-  return node.source.fig.rawSize
-    ? { ...node.source.fig.rawSize }
-    : { x: node.width, y: node.height }
+  const rawSize = effectiveFigmaSourcePayload(node).rawSize
+  return rawSize ? { ...rawSize } : { x: node.width, y: node.height }
 }
 
 function exportNodeTransform(context: SceneNodeToKiwiContext, node: SceneNode): Matrix {
-  return node.source.fig.rawTransform
-    ? { ...node.source.fig.rawTransform }
-    : context.computeExportTransform(node)
+  const rawTransform = effectiveFigmaSourcePayload(node).rawTransform
+  return rawTransform ? { ...rawTransform } : context.computeExportTransform(node)
 }
 
 function hasRawGeometryPayload(node: SceneNode): boolean {
-  return (
-    'fillGeometry' in node.source.fig.rawNodeFields ||
-    'strokeGeometry' in node.source.fig.rawNodeFields
-  )
+  const rawNodeFields = effectiveFigmaRawNodeFields(node)
+  return 'fillGeometry' in rawNodeFields || 'strokeGeometry' in rawNodeFields
 }
 
 function hasRawVectorPayload(node: SceneNode): boolean {
-  return 'vectorData' in node.source.fig.rawNodeFields
+  return 'vectorData' in effectiveFigmaRawNodeFields(node)
 }
 
 const SUPPORTED_NORMALIZED_EFFECT_TYPES = new Set([
@@ -660,7 +657,7 @@ const SUPPORTED_NORMALIZED_EFFECT_TYPES = new Set([
 ])
 
 function hasRawUnsupportedEffects(node: SceneNode): boolean {
-  const effects = node.source.fig.rawNodeFields.effects
+  const effects = effectiveFigmaRawNodeFields(node).effects
   return (
     Array.isArray(effects) &&
     effects.some(
@@ -747,13 +744,11 @@ function applyNodeVisualProps(
   if (node.horizontalConstraint !== 'MIN') nc.horizontalConstraint = node.horizontalConstraint
   if (node.verticalConstraint !== 'MIN') nc.verticalConstraint = node.verticalConstraint
   if (node.strokeCap !== 'NONE') nc.strokeCap = node.strokeCap
-  if (node.strokeJoin !== 'MITER' || 'strokeJoin' in node.source.fig.rawNodeFields) {
+  const rawNodeFields = effectiveFigmaRawNodeFields(node)
+  if (node.strokeJoin !== 'MITER' || 'strokeJoin' in rawNodeFields) {
     nc.strokeJoin = node.strokeJoin
   }
-  if (
-    node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT ||
-    'miterLimit' in node.source.fig.rawNodeFields
-  ) {
+  if (node.strokeMiterLimit !== DEFAULT_STROKE_MITER_LIMIT || 'miterLimit' in rawNodeFields) {
     nc.miterLimit = node.strokeMiterLimit
   }
   if (node.dashPattern.length > 0) nc.dashPattern = node.dashPattern

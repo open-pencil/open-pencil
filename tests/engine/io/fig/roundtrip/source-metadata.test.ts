@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile, SceneGraph } from '@open-pencil/core'
-import { parseFigBuffer } from '@open-pencil/fig'
+import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
 import { guidToString } from '@open-pencil/fig/node-change'
 
 function decodeExport(bytes: Uint8Array) {
@@ -256,11 +256,12 @@ describe('fig roundtrip source metadata', () => {
       ]
     })
 
-    expect(frame.source.fig.rawNodeFields).toEqual({
+    expect(effectiveFigmaRawNodeFields(frame)).toEqual({
       layoutGrids: [{ type: 'MIN', axis: 'X', visible: true }],
       exportSettings: [{ suffix: '@2x' }],
       prototypeInteractions: [{ trigger: 'ON_CLICK' }]
     })
+    expect(frame.source.fig.rawNodeFields.fillPaints).toEqual([{ type: 'SOLID' }])
   })
 
   test('preserves imported unsupported effect payloads for round-trip', async () => {
@@ -306,7 +307,7 @@ describe('fig roundtrip source metadata', () => {
     expect(exported?.effects?.[0]?.density).toBeCloseTo(0.4)
   })
 
-  test('clears raw unsupported effects when normalized effects are edited', () => {
+  test('ignores raw unsupported effects when normalized effects are edited', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const rect = graph.createNode('RECTANGLE', page.id, { name: 'Edited effect metadata' })
@@ -339,10 +340,11 @@ describe('fig roundtrip source metadata', () => {
       ]
     })
 
-    expect(rect.source.fig.rawNodeFields.effects).toBeUndefined()
+    expect(effectiveFigmaRawNodeFields(rect).effects).toBeUndefined()
+    expect(rect.source.fig.rawNodeFields.effects).toBeDefined()
   })
 
-  test('clears raw geometry payloads when independent stroke weights are edited', () => {
+  test('ignores raw geometry payloads when independent stroke weights are edited', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const rect = graph.createNode('RECTANGLE', page.id, { name: 'Independent stroke metadata' })
@@ -359,12 +361,13 @@ describe('fig roundtrip source metadata', () => {
       borderLeftWeight: 8
     })
 
-    expect(rect.source.fig.rawNodeFields).toEqual({
+    expect(effectiveFigmaRawNodeFields(rect)).toEqual({
       fillGeometry: [{ windingRule: 'NONZERO', commands: [] }]
     })
+    expect(rect.source.fig.rawNodeFields.strokeGeometry).toBeDefined()
   })
 
-  test('clears raw font variation payloads when normalized axes are edited', async () => {
+  test('ignores raw font variation payloads when normalized axes are edited', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const text = graph.createNode('TEXT', page.id, {
@@ -383,7 +386,8 @@ describe('fig roundtrip source metadata', () => {
       (nodeChange) => nodeChange.guid && guidToString(nodeChange.guid) === '4:501'
     )
 
-    expect(text.source.fig.rawNodeFields.fontVariations).toBeUndefined()
+    expect(effectiveFigmaRawNodeFields(text).fontVariations).toBeUndefined()
+    expect(text.source.fig.rawNodeFields.fontVariations).toBeDefined()
     expect(exported?.fontVariations).toEqual([
       { axisTag: 0x77676874, axisName: 'wght', value: 650 }
     ])
