@@ -3,7 +3,6 @@ import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FONT_FAMILY, IS_BROWSER } from '#core/constants'
-import { fontFaceRenderFamily } from '#core/text/face'
 import {
   chooseLocalFontMatch,
   isVariableFont,
@@ -52,9 +51,6 @@ export class FontManager {
   private fallbackUserAgent: string | undefined
   private hostFontLoader: HostFontLoader | null = null
   private webFonts = new WebFontResolver()
-  private registeredRenderFamilies = new Set<string>()
-  private renderFamilyAliases = new Map<string, string>()
-  private renderFamilyRevisions = new Map<string, number>()
   private cjkFallbackFamilies: string[] = []
   private cjkFallbackPromise: Promise<string[]> | null = null
   private arabicFallbackFamilies: string[] = []
@@ -64,18 +60,13 @@ export class FontManager {
     this.fontProvider = provider
     this.registrationGeneration++
     this.providerRegistrations.clear()
-    this.registeredRenderFamilies.clear()
-    this.renderFamilyAliases.clear()
-    this.renderFamilyRevisions.clear()
     for (const [cacheKey, data] of this.loadedFamilies) {
       const separator = cacheKey.indexOf('|')
       const family = cacheKey.slice(0, separator)
-      const style = cacheKey.slice(separator + 1)
       this.registerFontInCanvasKit(family, data)
       for (const supplemental of this.supplementalFamilyData.get(cacheKey) ?? []) {
         this.registerFontInCanvasKit(family, supplemental)
       }
-      this.registerInitialRenderFamily(family, style, data)
     }
   }
 
@@ -333,22 +324,11 @@ export class FontManager {
     return this.loadedFamilies.get(`${family}|${style}`) ?? null
   }
 
-  renderFamily(family: string, style: string): string {
-    const data = this.loadedData(family, style)
-    if (!data) return family
-
-    const key = `${family}|${style}`
-    const renderFamily = this.renderFamilyAliases.get(key) ?? fontFaceRenderFamily(family, style)
-    if (!this.registeredRenderFamilies.has(renderFamily)) {
-      if (this.registerFontInCanvasKit(renderFamily, data)) {
-        this.renderFamilyAliases.set(key, renderFamily)
-        this.renderFamilyRevisions.set(key, 1)
-        this.registeredRenderFamilies.add(renderFamily)
-      } else {
-        return family
-      }
-    }
-    return renderFamily
+  renderFamily(family: string, _style: string): string {
+    // CanvasKit can shape metrics but paint no glyphs for some CJK/Arabic faces registered under a
+    // synthetic alias. Keep every shard under the font's source family; character-aware remote
+    // requests already fetch cumulative coverage before replacing the primary buffer.
+    return family
   }
 
   collectFontKeys(graph: SceneGraph, nodeIds: string[]): Array<[string, string]> {
@@ -535,29 +515,8 @@ export class FontManager {
     if (existing) this.registerSupplemental(family, style, existing)
     this.loadedFamilies.set(key, buffer)
     this.registerFontInCanvasKit(family, buffer)
-    const currentRenderFamily = this.renderFamilyAliases.get(key)
-    if (currentRenderFamily) {
-      const revision = (this.renderFamilyRevisions.get(key) ?? 1) + 1
-      const renderFamily = `${fontFaceRenderFamily(family, style)}__${revision}`
-      if (this.registerFontInCanvasKit(renderFamily, buffer)) {
-        this.renderFamilyAliases.set(key, renderFamily)
-        this.renderFamilyRevisions.set(key, revision)
-        this.registeredRenderFamilies.add(renderFamily)
-      }
-    } else {
-      this.registerInitialRenderFamily(family, style, buffer)
-    }
     this.registerFontInBrowser(family, style, buffer)
     return buffer
-  }
-
-  private registerInitialRenderFamily(family: string, style: string, data: ArrayBuffer): void {
-    const key = `${family}|${style}`
-    const renderFamily = fontFaceRenderFamily(family, style)
-    if (!this.registerFontInCanvasKit(renderFamily, data)) return
-    this.renderFamilyAliases.set(key, renderFamily)
-    this.renderFamilyRevisions.set(key, 1)
-    this.registeredRenderFamilies.add(renderFamily)
   }
 
   private registerFontInCanvasKit(family: string, data: ArrayBuffer): boolean {

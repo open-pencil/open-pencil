@@ -132,16 +132,10 @@ describe('FontManager loaded font cache', () => {
 
     manager.attachProvider(canvasKit, first.provider)
     manager.markLoaded('ProviderLifecycle', 'Regular', new ArrayBuffer(12))
-    expect(first.registrations).toEqual([
-      { family: 'ProviderLifecycle', byteLength: 12 },
-      { family: '__op_font__ProviderLifecycle__Regular', byteLength: 12 }
-    ])
+    expect(first.registrations).toEqual([{ family: 'ProviderLifecycle', byteLength: 12 }])
 
     manager.attachProvider(canvasKit, second.provider)
-    expect(second.registrations).toEqual([
-      { family: 'ProviderLifecycle', byteLength: 12 },
-      { family: '__op_font__ProviderLifecycle__Regular', byteLength: 12 }
-    ])
+    expect(second.registrations).toEqual([{ family: 'ProviderLifecycle', byteLength: 12 }])
     manager.detachProvider(first.provider)
     expect(manager.provider()).toBe(second.provider)
 
@@ -149,7 +143,7 @@ describe('FontManager loaded font cache', () => {
     expect(manager.provider()).toBeNull()
   })
 
-  test('registers loaded faces under exact render families', () => {
+  test('renders loaded faces under their source families', () => {
     const manager = new FontManager()
     const recording = createRecordingProvider()
 
@@ -158,13 +152,10 @@ describe('FontManager loaded font cache', () => {
 
     const renderFamily = manager.renderFamily('Inter', 'SemiBold')
 
-    expect(renderFamily).toBe('__op_font__Inter__SemiBold')
-    expect(recording.registrations).toEqual([
-      { family: 'Inter', byteLength: 12 },
-      { family: '__op_font__Inter__SemiBold', byteLength: 12 }
-    ])
+    expect(renderFamily).toBe('Inter')
+    expect(recording.registrations).toEqual([{ family: 'Inter', byteLength: 12 }])
     expect(manager.renderFamily('Inter', 'SemiBold')).toBe(renderFamily)
-    expect(recording.registrations).toHaveLength(2)
+    expect(recording.registrations).toHaveLength(1)
   })
 
   test('prefers local font data before downloaded cache', async () => {
@@ -206,10 +197,7 @@ describe('FontManager loaded font cache', () => {
     })
 
     await expect(manager.loadFont('DownloadedCache', 'Regular')).resolves.toBe(data)
-    expect(recording.registrations).toEqual([
-      { family: 'DownloadedCache', byteLength: 16 },
-      { family: '__op_font__DownloadedCache__Regular', byteLength: 16 }
-    ])
+    expect(recording.registrations).toEqual([{ family: 'DownloadedCache', byteLength: 16 }])
     expect(writes).toBe(0)
   })
 
@@ -226,10 +214,7 @@ describe('FontManager loaded font cache', () => {
       const data = await manager.loadFont('Inter', 'ExtraBold')
 
       expect(data?.byteLength).toBeGreaterThan(0)
-      expect(recording.registrations).toEqual([
-        { family: 'Inter', byteLength: data?.byteLength },
-        { family: '__op_font__Inter__ExtraBold', byteLength: data?.byteLength }
-      ])
+      expect(recording.registrations).toEqual([{ family: 'Inter', byteLength: data?.byteLength }])
     } finally {
       globalThis.fetch = originalFetch
     }

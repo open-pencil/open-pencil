@@ -8,7 +8,6 @@
   "ignoreWorkspaces": ["packages/acp", "packages/demos"],
   "ignoreUnresolved": [
     "~icons/*",
-    "/packages/core/src/text/fonts.ts",
     "/src/app/editor/fonts/index.ts",
     "#core/*"
   ],

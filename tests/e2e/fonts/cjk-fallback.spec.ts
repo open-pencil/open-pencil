@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test'
 
+import type { FontManager } from '#core/text/fonts'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test('tool-created CJK text requests fallback through app font loading', async ({ page }) => {
@@ -13,13 +15,20 @@ test('tool-created CJK text requests fallback through app font loading', async (
 
     const { ensureGraphFonts, loadFont } = await import('/src/app/editor/fonts/index.ts')
     await loadFont('Inter', 'Regular')
-    const { fontManager } = await import('/packages/core/src/text/fonts.ts')
+    const fontModuleUrl = performance
+      .getEntriesByType('resource')
+      .map((entry) => entry.name)
+      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+    if (!fontModuleUrl) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+      fontManager: FontManager
+    }
     const originalEnsureFallbackPack = fontManager.ensureFallbackPack.bind(fontManager)
     let requestedScripts: string[] = []
 
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
       requestedScripts = [...scripts]
-      return { cjk: ['Regression CJK Fallback'], arabic: [] }
+      return { cjk: ['Noto Sans CJK SC'], arabic: [] }
     }
 
     const pageNode = store.graph.getNode(store.state.currentPageId)
@@ -66,9 +75,16 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     const store = window.openPencil?.getStore?.()
     if (!store?.renderer) throw new Error('OpenPencil renderer not initialized')
     const renderer = store.renderer
-    const response = await fetch('/tests/fixtures/fonts/NotoSansSC-Regular.ttf')
+    const response = await fetch('/tests/fixtures/fonts/NotoSansCJK-Test.otf')
     const fallbackData = await response.arrayBuffer()
-    const { fontManager } = await import('/packages/core/src/text/fonts.ts')
+    const fontModuleUrl = performance
+      .getEntriesByType('resource')
+      .map((entry) => entry.name)
+      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+    if (!fontModuleUrl) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+      fontManager: FontManager
+    }
     const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }
     const originalFamilies = [...manager.cjkFallbackFamilies]
     const originalEnsureFallbackPack = fontManager.ensureFallbackPack.bind(fontManager)
@@ -84,9 +100,9 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     const originalRender = renderer.renderFromEditorState.bind(renderer)
     fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
       await fallbackGate
-      fontManager.markLoaded('Regression CJK Fallback', 'Regular', fallbackData)
-      fontManager.setCJKFallbackFamily('Regression CJK Fallback')
-      return Object.fromEntries(scripts.map((script) => [script, ['Regression CJK Fallback']]))
+      fontManager.markLoaded('Noto Sans CJK SC', 'Regular', fallbackData)
+      fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
+      return Object.fromEntries(scripts.map((script) => [script, ['Noto Sans CJK SC']]))
     }
     renderer.renderFromEditorState = (
       ...args: Parameters<typeof renderer.renderFromEditorState>
@@ -101,7 +117,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
       y: 80,
       width: 300,
       height: 60,
-      text: '上班打卡App',
+      text: '你好世界App',
       textLanguage: 'zh-Hans',
       fontSize: 32,
       fontFamily: 'Inter',
@@ -131,6 +147,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
       return {
         loadedBeforeFallback,
         loadedAfterFallback: renderer.isNodeFontLoaded(text),
+        readiness: renderer.nodeFontReadiness(text),
         fallbackRenderCount,
         renderCount
       }
@@ -142,6 +159,7 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
   })
 
   expect(result.loadedBeforeFallback).toBe(false)
+  expect(result.readiness).toBe('ready')
   expect(result.loadedAfterFallback).toBe(true)
   expect(result.fallbackRenderCount).toBe(1)
   expect(result.renderCount).toBeGreaterThan(0)

@@ -25,10 +25,10 @@ describe('font lifecycle', () => {
     expect(providerGeneration).toBeGreaterThan(0)
     expect(registrationGeneration).toBeGreaterThan(providerGeneration)
     expect(manager.generation()).toBe(registrationGeneration)
-    expect(registrations).toEqual(['Generation Test', '__op_font__Generation_Test__Regular'])
+    expect(registrations).toEqual(['Generation Test'])
   })
 
-  test('moves replaced subset fonts to a fresh render family', () => {
+  test('keeps cumulative subset registrations under the source family', () => {
     const manager = new FontManager()
     const registrations: string[] = []
     const provider = {
@@ -39,13 +39,12 @@ describe('font lifecycle', () => {
 
     manager.attachProvider({} as CanvasKit, provider)
     manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(8))
-    const firstRenderFamily = manager.renderFamily('Subset Font', 'Regular')
+    const firstGeneration = manager.generation()
     manager.markLoaded('Subset Font', 'Regular', new ArrayBuffer(12))
-    const secondRenderFamily = manager.renderFamily('Subset Font', 'Regular')
 
-    expect(firstRenderFamily).toBe('__op_font__Subset_Font__Regular')
-    expect(secondRenderFamily).toBe('__op_font__Subset_Font__Regular__2')
-    expect(registrations).toContain(secondRenderFamily)
+    expect(manager.renderFamily('Subset Font', 'Regular')).toBe('Subset Font')
+    expect(manager.generation()).toBeGreaterThan(firstGeneration)
+    expect(registrations).toEqual(['Subset Font', 'Subset Font'])
   })
 
   test('tracks nodes gated by pre-render font resolution', () => {
