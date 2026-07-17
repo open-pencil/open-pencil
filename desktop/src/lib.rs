@@ -71,14 +71,100 @@ fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
+/// Collapse runs of consecutive forward slashes into a single slash.
+fn collapse_duplicate_slashes(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut prev_slash = false;
+    for ch in s.chars() {
+        if ch == '/' {
+            if prev_slash {
+                continue;
+            }
+            prev_slash = true;
+        } else {
+            prev_slash = false;
+        }
+        out.push(ch);
+    }
+    out
+}
+
+fn strip_trailing_slash(s: &str) -> &str {
+    s.strip_suffix('/').unwrap_or(s)
+}
+
+/// Normalise a path for identity comparison on the current platform.
+///
+/// - On Windows and macOS the filesystem is case-insensitive by default, so the
+///   key is lowercased.
+/// - On Linux the key preserves the original casing.
+/// - Duplicate forward slashes are collapsed and a single trailing forward
+///   slash is removed on all platforms.
+/// - Backslashes are converted to forward slashes only on Windows.
+/// - Windows verbatim prefixes (`\\?\` and `\\?\UNC\`) are stripped, and plain
+///   UNC paths (`\\server\share`) keep their leading `//` after normalization.
+/// - Non-UTF-8 bytes are replaced with the lossy replacement character; this is
+///   a best-effort key and is unavoidable because `PendingOpenFile.path` is a
+///   string sent to the frontend.
+fn path_identity_key(path: &Path) -> String {
+    let lossy = path.to_string_lossy();
+    #[cfg(target_os = "windows")]
+    {
+        // Canonicalized Windows paths may carry the extended-length (`\\?\`) or
+        // extended-length UNC (`\\?\UNC\`) verbatim prefix. Strip it before
+        // slash normalization so the identity key matches ordinary paths sent
+        // by the frontend. Plain UNC paths (`\\server\share`) keep their leading
+        // `//` after normalization.
+        let raw = lossy.into_owned();
+        let (rest, is_unc) = if let Some(r) = raw.strip_prefix(r"\\?\UNC\") {
+            (r, true)
+        } else if let Some(r) = raw.strip_prefix(r"\\?\") {
+            (r, false)
+        } else if raw.starts_with("\\\\") {
+            (&raw[2..], true)
+        } else {
+            (raw.as_str(), false)
+        };
+
+        let slash_normalized = rest.replace('\\', "/");
+        let collapsed = collapse_duplicate_slashes(&slash_normalized);
+        let without_trailing = strip_trailing_slash(&collapsed);
+        let with_prefix = if is_unc {
+            format!("//{}", without_trailing)
+        } else {
+            without_trailing.to_string()
+        };
+
+        with_prefix.to_lowercase()
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let collapsed = collapse_duplicate_slashes(&lossy);
+        strip_trailing_slash(&collapsed).to_lowercase()
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        let collapsed = collapse_duplicate_slashes(&lossy);
+        strip_trailing_slash(&collapsed).to_string()
+    }
+}
+
 fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<PathBuf>) {
+    let mut seen = std::collections::HashSet::new();
     let files = paths
         .into_iter()
         .filter_map(|path| {
+            let key = path_identity_key(&path);
+            if !seen.insert(key.clone()) {
+                return None;
+            }
             let _ = app.fs_scope().allow_file(&path);
-            Some(PendingOpenFile {
-                path: path.to_string_lossy().into_owned(),
-            })
+            Some((
+                PendingOpenFile {
+                    path: path.to_string_lossy().into_owned(),
+                },
+                key,
+            ))
         })
         .collect::<Vec<_>>();
 
@@ -87,7 +173,14 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
     }
 
     if let Ok(mut pending) = app.state::<PendingOpen>().0.lock() {
-        pending.extend(files);
+        for (file, file_key) in files {
+            if pending
+                .iter()
+                .all(|p| path_identity_key(Path::new(&p.path)) != file_key)
+            {
+                pending.push(file);
+            }
+        }
     }
 
     let _ = app.emit("open-associated-files", ());
@@ -160,4 +253,127 @@ pub fn run() {
             }
             _ => {}
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use super::path_identity_key;
+
+    #[test]
+    fn windows_normalizes_slashes_before_case_folding() {
+        // These assertions target Windows behaviour, but constructing the same
+        // paths here is harmless on other platforms.
+        #[cfg(target_os = "windows")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new(r"C:\foo\bar.txt")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"C:/foo\\bar.txt")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(path_identity_key(Path::new(r"C:\foo\\bar\")), "c:/foo/bar");
+            assert_eq!(
+                path_identity_key(Path::new(r"C:/foo//bar.txt")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\server\share\file.fig")),
+                "//server/share/file.fig"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\server\share\dir\\")),
+                "//server/share/dir"
+            );
+        }
+    }
+
+    #[test]
+    fn windows_strips_verbatim_prefix_before_normalizing() {
+        // These assertions target Windows behaviour, but constructing the same
+        // paths here is harmless on other platforms.
+        #[cfg(target_os = "windows")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\C:\foo\bar.txt")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\C:\foo\bar.txt\\")),
+                "c:/foo/bar.txt"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\UNC\server\share\file.fig")),
+                "//server/share/file.fig"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\UNC\server\share\file.fig\\")),
+                "//server/share/file.fig"
+            );
+            assert_eq!(
+                path_identity_key(Path::new(r"\\?\UNC\Server\Share\dir")),
+                "//server/share/dir"
+            );
+        }
+    }
+
+    #[test]
+    fn case_folding_respects_platform_case_sensitivity() {
+        #[cfg(target_os = "macos")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey/File.txt")),
+                "/users/joey/file.txt"
+            );
+        }
+        #[cfg(target_os = "linux")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey/File.txt")),
+                "/Users/Joey/File.txt"
+            );
+        }
+    }
+
+    #[test]
+    fn collapses_slashes_and_strips_trailing_slash_respecting_case_sensitivity() {
+        #[cfg(target_os = "macos")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey//File.txt/")),
+                "/users/joey/file.txt"
+            );
+        }
+        #[cfg(target_os = "linux")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/Joey//File.txt/")),
+                "/Users/Joey/File.txt"
+            );
+        }
+    }
+
+    #[test]
+    fn posix_preserves_backslash_as_legal_filename_character() {
+        // Backslash is a legal filename character on POSIX filesystems and must
+        // not be treated as a path separator. Case folding is still applied on
+        // macOS, which is case-insensitive by default.
+        #[cfg(target_os = "macos")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/joeyc/my\\file.fig")),
+                "/users/joeyc/my\\file.fig"
+            );
+        }
+        #[cfg(target_os = "linux")]
+        {
+            assert_eq!(
+                path_identity_key(Path::new("/Users/joeyc/my\\file.fig")),
+                "/Users/joeyc/my\\file.fig"
+            );
+        }
+    }
 }

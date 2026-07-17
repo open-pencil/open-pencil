@@ -70,12 +70,24 @@ export function createDocumentIOActions(
     getDocumentFilePath: sourceState.getFilePath,
     setDocumentSource: sourceActions.setDocumentSource,
     setPlannedFilePath: sourceActions.setPlannedFilePath,
+    updateSourceIdentity: sourceActions.updateSourceIdentity,
+    clearSourceIdentity: sourceActions.clearSourceIdentity,
     startWatchingCurrentFile: sourceActions.startWatchingCurrentFile,
     disposeDocumentIO: sourceActions.disposeDocumentIO,
     openFigFile,
     openDOMFile,
     importDOMText,
     saveFigFile: sourceActions.saveFigFile,
-    saveFigFileAs: sourceActions.saveFigFileAs
+    saveFigFileAs: sourceActions.saveFigFileAs,
+
+    // Identity getters for cross-platform file-open deduplication.
+    getSourceHandle: sourceState.getSourceHandle,
+    getSourcePath: sourceState.getSourcePath,
+    getSourceFileName: sourceState.getSourceFileName,
+
+    // Also expose save/watch accessors so the identity layer can reuse the
+    // canonical .fig handle/path when it is the active writable source.
+    getFileHandle: sourceState.getFileHandle,
+    getFilePath: sourceState.getFilePath
   }
 }

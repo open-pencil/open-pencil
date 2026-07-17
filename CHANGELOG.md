@@ -55,6 +55,9 @@
 - Improve Figma group, boolean, instance, rotated vector, complex text fill, layout grid, page guide, pattern/noise, and other imported visual details.
 - Fix file-backed CLI commands under Node by avoiding Bun-only filesystem APIs.
 - Improve overlap analysis accuracy for rotated stroked nodes, nested clipping, empty limits, and trimmed filter values.
+- Deduplicate file opens across all platforms (Tauri desktop, browser File System Access API, drag-and-drop) by normalizing file paths into a canonical identity key and switching to an existing tab when one is already open, rather than creating a duplicate.
+- Fix `yieldToUI` leaving a dangling queued `requestAnimationFrame` callback when the `setTimeout` fallback resolved first, and fix a dangling `setTimeout` fallback when `requestAnimationFrame` is a synchronous no-op.
+- Fix leaking `vi.mock` calls in tab/file IO tests that replaced `computeAllLayouts` with a no-op and broke unrelated layout/text tests in the same `bun test` process.
 
 ## 0.13.2 — 2026-05-30
 

@@ -17,7 +17,11 @@ import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
 import { clearEditedSourceMetadata } from './source-metadata'
-import { TEXT_PICTURE_KEYS } from './text-picture'
+import {
+  GLYPH_AFFECTING_KEYS,
+  invalidateTextPictureIfNeeded,
+  TEXT_PICTURE_KEYS
+} from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -300,6 +304,7 @@ export class SceneGraph {
   }
 
   static TEXT_PICTURE_KEYS: ReadonlySet<string> = TEXT_PICTURE_KEYS
+  static GLYPH_AFFECTING_KEYS: ReadonlySet<string> = GLYPH_AFFECTING_KEYS
 
   static LAYOUT_AFFECTING_KEYS: ReadonlySet<string> = new Set([
     'x',
@@ -391,11 +396,7 @@ export class SceneGraph {
         set.add(id)
       }
     }
-    if (node.type === 'TEXT') {
-      const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
-      if (node.textPicture && textChanged) node.textPicture = null
-      if (node.figmaDerivedTextGlyphs && textChanged) node.figmaDerivedTextGlyphs = null
-    }
+    if (node.type === 'TEXT') invalidateTextPictureIfNeeded(node, changes)
     const entries = Object.entries(changes) as Array<[string, unknown]>
     changes = Object.fromEntries(
       entries.filter(([, value]) => value !== undefined)
