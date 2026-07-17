@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import { AppearanceControlsRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
+import { useBlendModeOptions } from '@/components/properties/blend-mode/use'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
@@ -17,25 +16,7 @@ import type { BlendMode } from '@open-pencil/scene-graph'
 const { panels } = useI18n()
 type BlendModeSelectValue = BlendMode | 'MIXED'
 
-const baseBlendModeOptions = computed<Array<{ value: BlendModeSelectValue; label: string }>>(() => [
-  { value: 'PASS_THROUGH', label: panels.value.blendModePassThrough },
-  { value: 'NORMAL', label: panels.value.blendModeNormal },
-  { value: 'DARKEN', label: panels.value.blendModeDarken },
-  { value: 'MULTIPLY', label: panels.value.blendModeMultiply },
-  { value: 'COLOR_BURN', label: panels.value.blendModeColorBurn },
-  { value: 'LIGHTEN', label: panels.value.blendModeLighten },
-  { value: 'SCREEN', label: panels.value.blendModeScreen },
-  { value: 'COLOR_DODGE', label: panels.value.blendModeColorDodge },
-  { value: 'OVERLAY', label: panels.value.blendModeOverlay },
-  { value: 'SOFT_LIGHT', label: panels.value.blendModeSoftLight },
-  { value: 'HARD_LIGHT', label: panels.value.blendModeHardLight },
-  { value: 'DIFFERENCE', label: panels.value.blendModeDifference },
-  { value: 'EXCLUSION', label: panels.value.blendModeExclusion },
-  { value: 'HUE', label: panels.value.blendModeHue },
-  { value: 'SATURATION', label: panels.value.blendModeSaturation },
-  { value: 'COLOR', label: panels.value.blendModeColor },
-  { value: 'LUMINOSITY', label: panels.value.blendModeLuminosity }
-])
+const baseBlendModeOptions = useBlendModeOptions(true)
 
 function blendModeOptions(value: BlendMode | typeof MIXED) {
   return value === MIXED
