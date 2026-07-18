@@ -54,7 +54,7 @@ useEventListener(
   document,
   'wheel',
   (e: WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) e.preventDefault()
+    if (e.ctrlKey || e.metaKey || e.shiftKey) e.preventDefault()
   },
   { passive: false }
 )

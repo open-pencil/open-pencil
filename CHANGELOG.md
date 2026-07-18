@@ -4,6 +4,7 @@
 
 ### Changed
 
+- Add Figma-style horizontal pan with Shift + scroll on the canvas.
 - Move complete `.fig` archive parsing, bidirectional SceneGraph/NodeChange conversion, and component/instance interpretation into `@open-pencil/fig`, keeping runtime font access and format-neutral IO orchestration in core and Kiwi schema/container mechanics in `@open-pencil/kiwi`.
 - Remove internal cross-package forwarding modules; import `@open-pencil/fig`, `@open-pencil/pen`, and `@open-pencil/scene-graph` from their owning public exports.
 - Track normalized source edits in SceneGraph while preserving original `.fig` provenance and filtering stale raw fields through Fig-owned metadata policy.
