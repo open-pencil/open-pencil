@@ -25,7 +25,8 @@ test('font settings popover exposes web font access without desktop-only cache a
   await expect(
     typography.getByRole('img', { name: /Missing font: Missing Test Sans/ })
   ).toBeVisible()
-  const fontSettings = page.getByTestId('font-settings-trigger')
+  const fontSettings = page.getByRole('button', { name: 'Font settings' })
+  await expect(fontSettings).toHaveAttribute('data-test-id', 'font-settings-trigger')
   await fontSettings.hover()
   await expect(page.locator('[role=tooltip]').filter({ hasText: 'Font settings' })).toBeVisible()
   await fontSettings.click()
@@ -47,4 +48,8 @@ test('font settings popover exposes web font access without desktop-only cache a
   await expect(page.getByTestId('font-settings-refresh-cache')).toHaveCount(0)
   await expect(page.getByTestId('font-settings-clear-cache')).toHaveCount(0)
   await expect(page.getByText('Download CJK and Arabic fallbacks')).toHaveCount(0)
+
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('font-settings-panel')).toBeHidden()
+  await expect(typography).toBeVisible()
 })

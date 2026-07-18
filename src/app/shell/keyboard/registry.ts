@@ -50,12 +50,23 @@ function opacityBindings(): ShortcutDefinition[] {
   }))
 }
 
+const EDITOR_SHORTCUT_OVERLAY_SELECTOR =
+  '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
+
+function originatedInOverlay(event: KeyboardEvent) {
+  return event
+    .composedPath()
+    .some((target) => target instanceof Element && target.matches(EDITOR_SHORTCUT_OVERLAY_SELECTOR))
+}
+
+function hasOpenDismissableLayer() {
+  return document.querySelector('[data-dismissable-layer]') !== null
+}
+
 function shouldIgnoreShortcut(event: KeyboardEvent, options: KeyboardShortcutOptions) {
   return (
-    (event.target instanceof Element &&
-      event.target.closest(
-        '[data-picker-content], [role="dialog"], [role="listbox"], [role="menu"]'
-      ) !== null) ||
+    hasOpenDismissableLayer() ||
+    originatedInOverlay(event) ||
     isEditing(event) ||
     options.inputFocused.value ||
     !!options.store.state.editingTextId ||
@@ -177,7 +188,8 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
           handler(event)
         }
       ])
-    )
+    ),
+    { capture: true }
   )
 
   onScopeDispose(unsubscribe)

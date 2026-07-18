@@ -87,84 +87,88 @@ function updateSolidColor(
 
       <div v-for="(fill, index) in items" :key="`${index}:${fill.visible ? 'visible' : 'hidden'}`">
         <PropertyItemRow
+          class="items-start"
           prop-key="fills"
           :index="index"
           :visibility-label="panels.toggleVisibility"
           :remove-label="panels.removeFill"
         >
-          <BindableValueRoot
-            v-slot="binding"
-            :provider="colorProvider"
-            :targets="paintBindingTargets(selectedNodeIds, 'fills', index)"
-            :value="fill.color"
-            batch-label="Change fill color"
-          >
-            <PaintField
-              :opacity="fill.opacity"
-              :opacity-label="panels.opacity"
-              @update:opacity="actions.patch(index, { opacity: $event })"
+          <div class="flex min-w-0 flex-1 flex-col gap-panel">
+            <BindableValueRoot
+              v-slot="binding"
+              :provider="colorProvider"
+              :targets="paintBindingTargets(selectedNodeIds, 'fills', index)"
+              :value="fill.color"
+              batch-label="Change fill color"
             >
-              <template #preview>
-                <FillPicker
-                  :fill="displayFill(fill, binding.resolvedValue)"
-                  :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
-                  @update="
-                    updatePickerFill(binding.actions, flush, $event, (next) =>
-                      actions.update(index, next)
-                    )
-                  "
-                  @open-change="!$event && commitPaintMutation(binding.actions)"
-                  @cancel="cancelPaintMutation(binding.actions)"
-                />
-              </template>
+              <PaintField
+                class="w-full flex-none"
+                :opacity="fill.opacity"
+                :opacity-label="panels.opacity"
+                @update:opacity="actions.patch(index, { opacity: $event })"
+              >
+                <template #preview>
+                  <FillPicker
+                    :fill="displayFill(fill, binding.resolvedValue)"
+                    :okhcl="createFillOkhclAdapter(okhcl, activeNode, index)"
+                    @update="
+                      updatePickerFill(binding.actions, flush, $event, (next) =>
+                        actions.update(index, next)
+                      )
+                    "
+                    @open-change="!$event && commitPaintMutation(binding.actions)"
+                    @cancel="cancelPaintMutation(binding.actions)"
+                  />
+                </template>
 
-              <template #value>
-                <PaintValue
-                  v-if="fill.type === 'SOLID'"
-                  :color="fill.color"
-                  :resolved-color="binding.resolvedValue"
-                  :variable-name="binding.variable?.name"
-                  :label="panels.fill"
-                  @update="
-                    updateSolidColor(binding.actions, flush, fill, $event, (next) =>
-                      actions.update(index, next)
-                    )
-                  "
-                />
-                <span v-else class="min-w-0 flex-1 truncate font-mono text-xs text-surface">
-                  {{ fillLabel(fill) }}
-                </span>
-              </template>
+                <template #value>
+                  <PaintValue
+                    v-if="fill.type === 'SOLID'"
+                    :color="fill.color"
+                    :resolved-color="binding.resolvedValue"
+                    :variable-name="binding.variable?.name"
+                    :label="panels.fill"
+                    @update="
+                      updateSolidColor(binding.actions, flush, fill, $event, (next) =>
+                        actions.update(index, next)
+                      )
+                    "
+                  />
+                  <span v-else class="min-w-0 flex-1 truncate font-mono text-xs text-surface">
+                    {{ fillLabel(fill) }}
+                  </span>
+                </template>
 
-              <template v-if="fill.type === 'SOLID'" #binding>
-                <VariableBindingPicker
-                  :trigger-label="panels.applyVariable"
-                  :search-placeholder="dialogs.search"
-                  :empty-label="panels.noVariablesFound"
-                  :detach-label="panels.detachVariable"
-                  :create-label="
-                    panels.createColorVariable({ value: `#${colorToHexRaw(fill.color)}` })
-                  "
-                  :create-name-placeholder="panels.variableName"
-                  :create-submit-label="panels.create"
-                />
-              </template>
-            </PaintField>
-          </BindableValueRoot>
+                <template v-if="fill.type === 'SOLID'" #binding>
+                  <VariableBindingPicker
+                    :trigger-label="panels.applyVariable"
+                    :search-placeholder="dialogs.search"
+                    :empty-label="panels.noVariablesFound"
+                    :detach-label="panels.detachVariable"
+                    :create-label="
+                      panels.createColorVariable({ value: `#${colorToHexRaw(fill.color)}` })
+                    "
+                    :create-name-placeholder="panels.variableName"
+                    :create-submit-label="panels.create"
+                  />
+                </template>
+              </PaintField>
+            </BindableValueRoot>
+            <PanelFieldGroup :label="panels.blendMode">
+              <AppSelect
+                :model-value="fill.blendMode ?? 'NORMAL'"
+                :options="blendModeOptions"
+                :label="panels.blendMode"
+                data-property="fill-blend-mode"
+                @update:model-value="
+                  commitDiscretePropertyListChange(flush, () =>
+                    actions.patch(index, { blendMode: $event as Fill['blendMode'] })
+                  )
+                "
+              />
+            </PanelFieldGroup>
+          </div>
         </PropertyItemRow>
-        <PanelFieldGroup :label="panels.blendMode" class="ml-[26px] mt-1.5">
-          <AppSelect
-            :model-value="fill.blendMode ?? 'NORMAL'"
-            :options="blendModeOptions"
-            :label="panels.blendMode"
-            data-property="fill-blend-mode"
-            @update:model-value="
-              commitDiscretePropertyListChange(flush, () =>
-                actions.patch(index, { blendMode: $event as Fill['blendMode'] })
-              )
-            "
-          />
-        </PanelFieldGroup>
       </div>
     </PanelSection>
   </PropertyListRoot>
