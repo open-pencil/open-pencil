@@ -23,7 +23,7 @@ const ctx = useLayerTree()
 
 const isSelected = computed(() => ctx.selectedIds.value.has(node.id))
 const isDragging = computed(() => ctx.draggingId.value === node.id)
-const padLeft = computed(() => `${8 + (level - 1) * ctx.indentPerLevel}px`)
+const padLeft = computed(() => `${(level - 1) * ctx.indentPerLevel}px`)
 
 const rowEl = ref<HTMLElement | null>(null)
 
@@ -67,7 +67,7 @@ defineExpose({ rowEl })
 </script>
 
 <template>
-  <div :ref="onRef" :data-node-id="node.id">
+  <div :ref="onRef" :data-node-id="node.id" class="w-full">
     <slot
       :node="node"
       :level="level"

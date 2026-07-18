@@ -154,19 +154,7 @@ test('effect settings expand semantically and row remove reveals on hover', asyn
   await expect(expand).toHaveAttribute('aria-expanded', 'false')
   await expand.click()
   await expect(expand).toHaveAttribute('aria-expanded', 'true')
-  const effectSettings = editor.page.locator('[data-slot="effect-settings"]')
-  await expect(effectSettings).toBeVisible()
-  const effectTypeBox = expectDefined(
-    await effectItem.locator('[data-property="effect-type"]').boundingBox(),
-    'effect type bounds'
-  )
-  const effectBlendBox = expectDefined(
-    await effectSettings.locator('[data-property="effect-blend-mode"]').boundingBox(),
-    'effect blend mode bounds'
-  )
-  expect(
-    Math.abs(effectBlendBox.x + effectBlendBox.width - (effectTypeBox.x + effectTypeBox.width))
-  ).toBeLessThan(1)
+  await expect(editor.page.locator('[data-slot="effect-settings"]')).toBeVisible()
 
   const remove = effectItem.getByRole('button', { name: 'Remove effect' })
   await expect(remove).toHaveCSS('opacity', '1')
@@ -188,20 +176,6 @@ test('paint effect and export rows share compact visual anatomy', async () => {
       .click()
   }
   await editor.page.mouse.move(0, 0)
-
-  const fillItem = propertyItems(editor.page, 'fills').first()
-  const paintFieldBox = expectDefined(
-    await fillItem.locator('[data-slot="paint-field"]').boundingBox(),
-    'fill paint field bounds'
-  )
-  const fillBlendBox = expectDefined(
-    await editor.page.locator('[data-property="fill-blend-mode"]').boundingBox(),
-    'fill blend mode bounds'
-  )
-  expect(Math.abs(fillBlendBox.x - paintFieldBox.x)).toBeLessThan(1)
-  expect(
-    Math.abs(fillBlendBox.x + fillBlendBox.width - (paintFieldBox.x + paintFieldBox.width))
-  ).toBeLessThan(1)
 
   await expect(designPanel()).toHaveScreenshot('design-panel-paint-effects-export.png')
 

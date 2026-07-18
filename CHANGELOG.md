@@ -49,7 +49,7 @@
 
 ### Fixes
 
-- Align Fill and Effects sub-controls to their shared property-row content rails, and improve font-settings accessibility without clearing selection when dismissing overlays.
+- Align Fill and Effects sub-controls to their shared property-row content rails, make Layer rows fill the panel with cleaner root indentation, left-align icon menu labels, and improve font-settings accessibility without clearing selection when dismissing overlays.
 - Restore the Variables dialog empty state, full-width table layout, unclipped type menu, and expected Escape handling in dialogs and popup menus.
 - Pin the patched `websocket-driver` release used through Trystero/Firebase collaboration to resolve a critical protocol-length advisory.
 - Preserve unrelated Figma prototype, library, export, and raw metadata when editing modeled `.fig` fields, while still overriding stale field-specific payloads.

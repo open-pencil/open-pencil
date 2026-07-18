@@ -45,7 +45,7 @@ import type { VariableType } from '@open-pencil/scene-graph'
 
 const open = defineModel<boolean>('open', { default: false })
 const cls = useDialogUI({ content: 'flex h-[75vh] w-[800px] max-w-[90vw] flex-col' })
-const menuCls = useMenuUI({ content: 'w-40' })
+const menuCls = useMenuUI({ content: 'w-40', item: 'justify-start gap-2' })
 const addVariableMenuCls = useMenuUI({ content: 'w-48' })
 const variableTable = tv(variableTableTheme)
 const tableStyles = variableTable()
