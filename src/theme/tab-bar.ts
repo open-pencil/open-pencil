@@ -3,7 +3,7 @@ const tabBarTheme = {
     root: 'scrollbar-none flex h-9 shrink-0 items-end overflow-x-auto border-b border-border bg-canvas',
     list: 'flex h-full items-end',
     trigger:
-      'group/tab flex h-full max-w-48 min-w-0 cursor-pointer items-center gap-1.5 border-r border-border px-3 text-xs transition-colors outline-none select-none focus-visible:ring-1 focus-visible:ring-accent',
+      'group/tab flex h-full max-w-48 min-w-0 cursor-pointer items-center gap-1.5 border-r border-border px-3 text-[11px] transition-colors outline-none select-none focus-visible:ring-1 focus-visible:ring-accent',
     icon: 'size-3 shrink-0 opacity-50',
     label: 'min-w-0 flex-1 truncate',
     close:
