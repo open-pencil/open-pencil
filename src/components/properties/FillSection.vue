@@ -93,7 +93,7 @@ function updateSolidColor(
           :visibility-label="panels.toggleVisibility"
           :remove-label="panels.removeFill"
         >
-          <div class="flex min-w-0 flex-1 flex-col gap-panel">
+          <div class="flex min-w-0 flex-1 flex-col gap-1.5">
             <BindableValueRoot
               v-slot="binding"
               :provider="colorProvider"

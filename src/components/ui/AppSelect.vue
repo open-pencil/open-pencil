@@ -7,6 +7,8 @@ import {
   SelectItemText,
   SelectPortal,
   SelectRoot,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
   SelectTrigger,
   SelectValue,
   SelectViewport
@@ -46,6 +48,9 @@ const styles = tv(theme)()
         :side-offset="2"
         :class="styles.content({ class: ui?.content })"
       >
+        <SelectScrollUpButton class="flex items-center justify-center py-0.5 text-muted">
+          <icon-lucide-chevron-up class="size-3.5" />
+        </SelectScrollUpButton>
         <SelectViewport :class="styles.viewport({ class: ui?.viewport })">
           <SelectItem
             v-for="opt in options"
@@ -59,6 +64,9 @@ const styles = tv(theme)()
             <SelectItemText>{{ opt.label }}</SelectItemText>
           </SelectItem>
         </SelectViewport>
+        <SelectScrollDownButton class="flex items-center justify-center py-0.5 text-muted">
+          <icon-lucide-chevron-down class="size-3.5" />
+        </SelectScrollDownButton>
       </SelectContent>
     </SelectPortal>
   </SelectRoot>

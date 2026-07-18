@@ -40,6 +40,7 @@ const visibilityStyles = computed(() => layerTree({ actionActive: !node.visible 
       <button
         type="button"
         data-slot="action"
+        :aria-label="node.locked ? t.unlock : t.lock"
         :class="styles.action({ class: ui?.action })"
         @pointerdown.stop
         @click.stop="emit('toggleLock')"
@@ -60,6 +61,7 @@ const visibilityStyles = computed(() => layerTree({ actionActive: !node.visible 
       <button
         type="button"
         data-slot="action"
+        :aria-label="node.visible ? t.hide : t.show"
         :class="styles.action({ class: ui?.action })"
         @pointerdown.stop
         @click.stop="emit('toggleVisibility')"

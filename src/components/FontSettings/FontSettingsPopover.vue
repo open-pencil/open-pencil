@@ -16,7 +16,7 @@ const cls = usePopoverUI({ content: 'isolate z-[51] w-80 p-3' })
 const trigger = useButtonUI({
   tone: 'ghost',
   size: 'iconSm',
-  ui: { base: 'shrink-0 border border-border bg-input' }
+  ui: { base: 'shrink-0' }
 })
 const secondaryButton = useButtonUI({
   tone: 'ghost',

@@ -46,7 +46,7 @@ const { panels } = useI18n()
   >
     <PanelHeader>
       <template #icon>
-        <icon-lucide-layers-3 class="size-panel-icon" aria-hidden="true" />
+        <icon-lucide-layers-3 class="size-3.5" aria-hidden="true" />
       </template>
       <span role="heading" aria-level="2">
         {{ panels.layersCount({ count: String(multiCount) }) }}
@@ -75,7 +75,7 @@ const { panels } = useI18n()
       <template #icon>
         <Tip :label="node.type">
           <span role="img" :aria-label="node.type" class="contents">
-            <component :is="selectedIcon" class="size-panel-icon" />
+            <component :is="selectedIcon" class="size-3.5" />
           </span>
         </Tip>
       </template>

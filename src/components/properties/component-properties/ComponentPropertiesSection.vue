@@ -41,7 +41,7 @@ const sectionLabel = computed(() =>
 
 <template>
   <PanelSection v-if="active" :label="sectionLabel" :ui="componentSectionUI">
-    <div class="flex flex-col gap-panel">
+    <div class="flex flex-col gap-1.5">
       <PanelFieldGroup v-for="control in controls" :key="control.id" :label="control.name">
         <ComponentPropertyTextField
           v-if="control.type === 'TEXT'"

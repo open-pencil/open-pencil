@@ -266,7 +266,7 @@ function onToggleSides(activeNode: SceneNode | null) {
         </template>
       </div>
 
-      <PanelGrid v-if="advancedActive" columns="three" class="mt-panel">
+      <PanelGrid v-if="advancedActive" columns="three" class="mt-1.5">
         <PanelFieldGroup :label="panels.strokeCap">
           <SegmentedControl
             :model-value="cap === MIXED ? 'MIXED' : cap"

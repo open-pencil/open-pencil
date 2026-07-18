@@ -32,7 +32,7 @@ test('appearance fields share control height and show variable actions', async (
     section.getByRole('spinbutton', { name: 'Corner smoothing' })
   ]
   for (const control of controls) {
-    await expect(control).toHaveCSS('height', '26px')
+    await expect(control).toHaveCSS('height', '24px')
   }
 
   const applyVariable = section.getByRole('button', { name: 'Apply variable' }).first()
@@ -58,7 +58,7 @@ test('appearance fields share control height and show variable actions', async (
 
   const fillItem = propertyItems(editor.page, 'fills').first()
   const paintField = fillItem.locator('[data-slot="paint-field"]')
-  await expect(paintField).toHaveCSS('height', '26px')
+  await expect(paintField).toHaveCSS('height', '24px')
   const colorBox = expectDefined(
     await fillItem.getByRole('textbox', { name: 'Fill' }).boundingBox(),
     'fill color bounds'

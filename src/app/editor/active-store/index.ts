@@ -6,6 +6,10 @@ export type { EditorStore }
 
 const storeRef = shallowRef<EditorStore>()
 
+export function useActiveEditorStoreRef() {
+  return storeRef
+}
+
 export function setActiveEditorStore(store: EditorStore) {
   storeRef.value = store
   triggerRef(storeRef)

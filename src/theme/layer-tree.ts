@@ -1,7 +1,7 @@
 const layerTreeTheme = {
   slots: {
     viewport: 'scrollbar-thin h-full overflow-y-auto px-1',
-    row: 'group/row relative flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent py-1 pr-1 text-left text-xs text-surface hover:bg-hover',
+    row: 'group/row relative flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent py-1.5 pr-1 text-left text-[11px] text-surface hover:bg-hover',
     disclosure:
       'flex w-4 shrink-0 cursor-pointer items-center justify-center text-muted transition-transform hover:text-surface',
     disclosurePlaceholder: 'w-4 shrink-0',
@@ -15,7 +15,7 @@ const layerTreeTheme = {
     renameRow: 'flex w-full items-center gap-1 py-1',
     renameIcon: 'size-3 shrink-0 opacity-70',
     renameInput:
-      'min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-xs text-surface outline-none'
+      'min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-[11px] text-surface outline-none'
   },
   variants: {
     selected: {

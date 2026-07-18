@@ -30,7 +30,7 @@ function handleAlign(
     v-slot="{ active, isMulti, xValue, yValue, wValue, hValue, rotationValue, actions }"
   >
     <PanelSection v-if="active" :label="panels.position">
-      <div role="toolbar" :aria-label="panels.position" class="mb-panel flex justify-between">
+      <div role="toolbar" :aria-label="panels.position" class="mb-1.5 flex justify-between">
         <div class="flex gap-0.5">
           <IconButton
             :label="panels.alignLeft"
@@ -102,7 +102,7 @@ function handleAlign(
         </Tip>
       </PanelGrid>
 
-      <PanelGrid v-if="isMulti" columns="two" class="mt-panel">
+      <PanelGrid v-if="isMulti" columns="two" class="mt-1.5">
         <Tip :label="panels.width">
           <NumberField
             icon="W"
@@ -127,7 +127,7 @@ function handleAlign(
         </Tip>
       </PanelGrid>
 
-      <div class="mt-panel grid grid-cols-[minmax(0,1fr)_repeat(3,var(--spacing-control))] gap-0.5">
+      <div class="mt-1.5 grid grid-cols-[minmax(0,1fr)_repeat(3,24px)] gap-0.5">
         <Tip :label="panels.rotation">
           <NumberField
             suffix="°"

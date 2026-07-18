@@ -54,7 +54,7 @@ defineSlots<{
             :prop-key="propKey"
             :index="index"
             :aria-label="visibilityLabel"
-            class="flex size-control shrink-0 cursor-pointer items-center justify-center rounded-panel border-none bg-transparent p-0 text-muted hover:bg-hover hover:text-surface"
+            class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:bg-hover hover:text-surface"
             @toggle="emit('toggleVisibility', $event)"
           >
             <icon-lucide-eye v-if="!item.hidden" class="size-3.5" />
@@ -68,7 +68,7 @@ defineSlots<{
             :aria-label="removeLabel"
             :class="[
               removeClass,
-              'flex size-control shrink-0 cursor-pointer items-center justify-center rounded-panel border-none bg-transparent p-0 text-muted hover:bg-hover hover:text-surface'
+              'flex size-6 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:bg-hover hover:text-surface'
             ]"
             @remove="emit('remove', $event)"
           >

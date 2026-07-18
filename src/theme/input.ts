@@ -4,13 +4,12 @@ export default {
   base: 'w-full tabular-nums',
   variants: {
     tone: {
-      default:
-        'rounded border border-border bg-input text-surface outline-none focus:border-accent',
+      default: panelFieldBase,
       panel: panelFieldBase
     },
     size: {
-      sm: 'px-2 py-1 text-[11px]',
-      md: 'px-2 py-1 text-xs'
+      sm: 'px-2 text-[11px]',
+      md: 'px-2 text-[11px]'
     },
     state: panelFieldState
   },

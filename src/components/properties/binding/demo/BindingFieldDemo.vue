@@ -113,12 +113,12 @@ const mixedTargets: BindingTarget[] = [
 
 <template>
   <div class="w-[320px] overflow-hidden rounded-lg border border-border bg-panel shadow-xl">
-    <header class="border-b border-border px-panel-x py-panel-y">
+    <header class="border-b border-border px-3 py-2">
       <p class="text-xs font-semibold">Binding field states</p>
       <p class="mt-1 text-[11px] text-muted">Pill at rest, resolved value while editing</p>
     </header>
 
-    <div class="grid grid-cols-2 gap-panel p-panel-x">
+    <div class="grid grid-cols-2 gap-1.5 px-3">
       <label class="space-y-1">
         <span class="text-[11px] text-muted">Unbound</span>
         <BindingFieldDemoItem

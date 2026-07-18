@@ -58,7 +58,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
     <PanelSection v-if="ctx.node.value" :label="panels.typography">
       <SharedStyleField kind="text" :label="panels.textStyle" />
 
-      <div class="mb-panel flex min-w-0 items-center gap-panel">
+      <div class="mb-1.5 flex min-w-0 items-center gap-1.5">
         <FontPicker
           class="min-w-0 flex-1"
           :model-value="ctx.node.value.fontFamily"
@@ -88,7 +88,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </Tip>
       </div>
 
-      <PanelGrid columns="two" class="mb-panel">
+      <PanelGrid columns="two" class="mb-1.5">
         <PanelFieldGroup :label="panels.fontWeight">
           <AppSelect
             :label="panels.fontWeight"
@@ -111,7 +111,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelFieldGroup>
       </PanelGrid>
 
-      <PanelGrid columns="two" class="mb-panel">
+      <PanelGrid columns="two" class="mb-1.5">
         <PanelFieldGroup :label="panels.lineHeight">
           <VariableNumberField
             :model-value="
@@ -146,7 +146,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelFieldGroup>
       </PanelGrid>
 
-      <PanelFieldGroup :label="panels.direction" class="mb-panel">
+      <PanelFieldGroup :label="panels.direction" class="mb-1.5">
         <AppSelect
           :label="panels.direction"
           :model-value="ctx.node.value.textDirection"
@@ -159,7 +159,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         />
       </PanelFieldGroup>
 
-      <PanelFieldGroup :label="panels.textAlignment" class="mb-panel">
+      <PanelFieldGroup :label="panels.textAlignment" class="mb-1.5">
         <SegmentedControl
           :model-value="ctx.node.value.textAlignHorizontal"
           :options="alignmentOptions"
@@ -175,7 +175,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </SegmentedControl>
       </PanelFieldGroup>
 
-      <PanelFieldGroup :label="panels.verticalTextAlignment" class="mb-panel">
+      <PanelFieldGroup :label="panels.verticalTextAlignment" class="mb-1.5">
         <SegmentedControl
           :model-value="ctx.node.value.textAlignVertical"
           :options="verticalAlignmentOptions"
@@ -196,7 +196,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </SegmentedControl>
       </PanelFieldGroup>
 
-      <PanelGrid columns="two" class="mb-panel">
+      <PanelGrid columns="two" class="mb-1.5">
         <PanelFieldGroup :label="panels.textCase">
           <AppSelect
             :label="panels.textCase"
@@ -220,7 +220,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
       <PanelFieldGroup
         v-if="ctx.node.value.textTruncation === 'ENDING'"
         :label="panels.maxLines"
-        class="mb-panel"
+        class="mb-1.5"
       >
         <NumberField
           :model-value="ctx.node.value.maxLines ?? 1"
@@ -235,12 +235,12 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         />
       </PanelFieldGroup>
 
-      <PanelFieldGroup :label="panels.openTypeFeatures" class="mb-panel">
+      <PanelFieldGroup :label="panels.openTypeFeatures" class="mb-1.5">
         <div class="grid gap-1.5">
           <label
             v-for="feature in commonFeatures"
             :key="feature.tag"
-            class="flex items-center justify-between gap-panel text-[11px] text-muted"
+            class="flex items-center justify-between gap-1.5 text-[11px] text-muted"
           >
             <span>{{ feature.label }}</span>
             <AppSwitch
@@ -253,8 +253,8 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </div>
       </PanelFieldGroup>
 
-      <PanelFieldGroup :label="panels.textFormatting" :ui="{ container: 'flex-row gap-panel' }">
-        <div class="flex items-center gap-panel" role="toolbar" :aria-label="panels.textFormatting">
+      <PanelFieldGroup :label="panels.textFormatting" :ui="{ container: 'flex-row gap-1.5' }">
+        <div class="flex items-center gap-1.5" role="toolbar" :aria-label="panels.textFormatting">
           <IconButton
             :label="`${menu.bold} (${appMenuShortcutLabel('text.bold')})`"
             size="md"

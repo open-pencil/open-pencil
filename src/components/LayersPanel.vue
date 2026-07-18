@@ -74,7 +74,7 @@ const panelTabsUI = { root: 'w-full' }
       <SplitterPanel :default-size="70" :min-size="20" class="flex flex-col overflow-hidden">
         <header
           data-test-id="layers-header"
-          class="shrink-0 px-3 py-2 text-[11px] tracking-wider text-muted uppercase"
+          class="shrink-0 px-3 py-2 text-[11px] font-semibold text-surface"
         >
           {{ panels.layers }}
         </header>

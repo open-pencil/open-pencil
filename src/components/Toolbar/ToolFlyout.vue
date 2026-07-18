@@ -78,6 +78,7 @@ function flyoutItemClass(subActive: boolean) {
       <ToolButton
         :data-test-id="toolbarToolTestId(activeKeyForTool(), mobile)"
         :icon="toolIcons[activeKeyForTool()]"
+        :label="toolLabels[activeKeyForTool()]"
         :active="triggerActive"
         :mobile="mobile"
         :ui="ui"
@@ -91,6 +92,7 @@ function flyoutItemClass(subActive: boolean) {
           v-test-id="toolbarFlyoutTestId(tool.key, mobile)"
           :data-active="triggerActive || undefined"
           :data-mobile="mobile || undefined"
+          :aria-label="`${toolLabels[tool.key]} options`"
           :class="styles.flyoutTrigger({ class: ui?.flyoutTrigger })"
         >
           <IconChevronDown :class="styles.flyoutTriggerIcon({ class: ui?.flyoutTriggerIcon })" />

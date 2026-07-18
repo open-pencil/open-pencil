@@ -87,16 +87,16 @@ export const StateMatrix: Story = {
       <TooltipProvider>
         <div class="w-[320px] overflow-hidden rounded-lg border border-border bg-panel shadow-xl">
           <PanelHeader>
-            <template #icon><SquareIcon class="size-panel-icon" /></template>
+            <template #icon><SquareIcon class="size-3.5" /></template>
             <span role="heading" aria-level="2">Rectangle</span>
             <template #actions>
-              <IconButton label="Selection actions"><MoreIcon class="size-panel-icon" /></IconButton>
+              <IconButton label="Selection actions"><MoreIcon class="size-3.5" /></IconButton>
             </template>
           </PanelHeader>
 
           <PanelSection label="Layout">
             <template #actions>
-              <IconButton label="Reset layout"><RotateIcon class="size-panel-icon" /></IconButton>
+              <IconButton label="Reset layout"><RotateIcon class="size-3.5" /></IconButton>
             </template>
             <PanelGrid columns="two-rail">
               <PanelFieldGroup label="Width">
@@ -106,7 +106,7 @@ export const StateMatrix: Story = {
                 <AppInput v-model="height" tone="panel" data-story-control data-state="focus" aria-label="Height" />
               </PanelFieldGroup>
               <PanelRail>
-                <IconButton label="Constrain proportions" size="md"><LinkIcon class="size-panel-icon" /></IconButton>
+                <IconButton label="Constrain proportions" size="md"><LinkIcon class="size-3.5" /></IconButton>
               </PanelRail>
             </PanelGrid>
           </PanelSection>
@@ -120,13 +120,13 @@ export const StateMatrix: Story = {
                 <AppInput v-model="mixed" tone="panel" state="mixed" readonly data-story-control aria-label="Mixed opacity" />
               </PanelFieldGroup>
               <PanelRail>
-                <IconButton label="Toggle visibility"><EyeIcon class="size-panel-icon" /></IconButton>
+                <IconButton label="Toggle visibility"><EyeIcon class="size-3.5" /></IconButton>
               </PanelRail>
             </PanelGrid>
           </PanelSection>
 
           <PanelSection label="States">
-            <div class="grid grid-cols-2 gap-panel">
+            <div class="grid grid-cols-2 gap-1.5">
               <PanelFieldGroup label="Bound">
                 <AppInput v-model="bound" tone="panel" state="bound" readonly data-story-control aria-label="Bound value" />
               </PanelFieldGroup>

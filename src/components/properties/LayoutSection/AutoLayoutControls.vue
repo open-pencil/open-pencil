@@ -18,7 +18,7 @@ const layoutModes = computed<Array<{ mode: LayoutMode; label: string }>>(() => [
 </script>
 
 <template>
-  <div class="flex items-center gap-panel">
+  <div class="flex items-center gap-1.5">
     <IconButton
       v-if="ctx.node.layoutMode === 'NONE'"
       :label="panels.addAutoLayout"

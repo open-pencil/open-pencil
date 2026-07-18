@@ -68,7 +68,7 @@ function effectPreview(effect: Effect): Fill {
           @remove="effectsCtx.adjustExpandedAfterRemove(index)"
         >
           <div class="flex min-w-0 flex-1 flex-col">
-            <div class="flex min-w-0 items-center gap-panel">
+            <div class="flex min-w-0 items-center gap-1.5">
               <Tip
                 :label="
                   effectsCtx.expandedIndex.value === index
@@ -111,7 +111,7 @@ function effectPreview(effect: Effect): Fill {
 
             <div
               v-if="effectsCtx.expandedIndex.value === index"
-              class="flex flex-col gap-panel py-panel"
+              class="flex flex-col gap-1.5 py-1.5"
               data-slot="effect-settings"
             >
               <PanelFieldGroup :label="panels.blendMode">

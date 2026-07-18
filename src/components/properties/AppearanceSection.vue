@@ -55,7 +55,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
         </IconButton>
       </template>
 
-      <PanelGrid columns="two">
+      <PanelGrid columns="appearance">
         <PanelFieldGroup :label="panels.blendMode">
           <AppSelect
             :model-value="blendModeValue === MIXED ? 'MIXED' : blendModeValue"
@@ -106,7 +106,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
       <PanelGrid
         v-if="hasCornerRadius && !showIndependentCorners"
         columns="fill-rail"
-        class="mt-panel"
+        class="mt-1.5"
       >
         <PanelFieldGroup :label="panels.radius">
           <VariableNumberField
@@ -152,7 +152,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
       <PanelGrid
         v-else-if="hasCornerRadius && !isMulti && node"
         columns="two-rail"
-        class="mt-panel"
+        class="mt-1.5"
         data-corner-grid
       >
         <VariableNumberField
@@ -204,7 +204,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
         <PanelRail />
       </PanelGrid>
 
-      <PanelGrid v-if="hasCornerRadius" columns="fill" class="mt-panel">
+      <PanelGrid v-if="hasCornerRadius" columns="fill" class="mt-1.5">
         <PanelFieldGroup :label="panels.cornerSmoothing">
           <NumberField
             suffix="%"

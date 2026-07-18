@@ -2,7 +2,7 @@ import { tv } from 'tailwind-variants'
 
 export const popover = tv({
   slots: {
-    content: 'z-[100] rounded-lg border border-border bg-panel shadow-xl',
+    content: 'z-[100] rounded-xl bg-panel shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
     header: '',
     body: '',
     footer: ''
