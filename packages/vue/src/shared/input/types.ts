@@ -11,6 +11,8 @@ export interface DragDraw {
   startX: number
   startY: number
   nodeId: string
+  parentOffsetX: number
+  parentOffsetY: number
 }
 
 export interface DragMove {

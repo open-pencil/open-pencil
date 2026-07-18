@@ -38,6 +38,7 @@ export function useCanvasInput(
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null,
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null,
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
+  hitTestFrameTitles: (cx: number, cy: number) => SceneNode | null,
   onCursorMove?: (cx: number, cy: number) => void
 ) {
   const drag = ref<DragState | null>(null)
@@ -58,7 +59,8 @@ export function useCanvasInput(
     editor,
     hitTestSectionTitle,
     hitTestComponentLabel,
-    hitTestFrameTitle
+    hitTestFrameTitle,
+    hitTestFrameTitles
   )
 
   function setDrag(d: DragState) {
@@ -147,16 +149,19 @@ export function useCanvasInput(
     const node = editor.graph.getNode(nodeId)
     if (!node) return
     frameTitleRename.value = { nodeId, name: node.name }
+    editor.state.editingFrameTitleId = nodeId
   }
 
   function commitFrameTitleRename(value: string) {
     const edit = frameTitleRename.value
     if (edit) editor.renameNode(edit.nodeId, value)
     frameTitleRename.value = null
+    editor.state.editingFrameTitleId = null
   }
 
   function cancelFrameTitleRename() {
     frameTitleRename.value = null
+    editor.state.editingFrameTitleId = null
   }
 
   function onDblClick(e: MouseEvent) {

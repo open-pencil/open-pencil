@@ -15,7 +15,7 @@ import {
   SECTION_TITLE_PADDING_X
 } from '#core/constants'
 
-import type { CachedComponent, CachedSection, LabelCache } from './cache'
+import type { CachedComponent, CachedFrame, CachedSection, LabelCache } from './cache'
 
 function measureGlyphWidth(font: Font, text: string): number {
   const glyphIds = font.getGlyphIDs(text)
@@ -263,4 +263,37 @@ export function hitTestFrameTitle(
   const labelY = -LABEL_OFFSET_Y / zoom - labelH
 
   return hitInRect(hit.x, hit.y, 0, labelY, labelW, labelH) ? node : null
+}
+
+function hitCachedFrameTitle(
+  child: SceneNode,
+  item: CachedFrame,
+  context: LabelHitContext
+): SceneNode | null {
+  const { canvasX, canvasY, zoom, font } = context
+  const labelW = measureGlyphWidth(font, child.name) / zoom
+  const labelH = LABEL_FONT_SIZE / zoom
+  const hit = rotatePoint(canvasX - item.absX, canvasY - item.absY, child.rotation)
+  const labelY = -LABEL_OFFSET_Y / zoom - labelH
+  return hitInRect(hit.x, hit.y, 0, labelY, labelW, labelH) ? child : null
+}
+
+export function hitTestFrameTitles(
+  graph: SceneGraph,
+  canvasX: number,
+  canvasY: number,
+  zoom: number,
+  font: Font | null,
+  labelCache?: LabelCache
+): SceneNode | null {
+  if (!font) return null
+  if (labelCache) {
+    return hitCachedLabelWithContext(
+      graph,
+      labelCache.getAllFrames(),
+      labelHitContext(canvasX, canvasY, zoom, font),
+      hitCachedFrameTitle
+    )
+  }
+  return null
 }

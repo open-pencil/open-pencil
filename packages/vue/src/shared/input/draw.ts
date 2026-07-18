@@ -22,10 +22,32 @@ export function startShapeDraw(
   const nodeType = TOOL_TO_NODE[editor.state.activeTool]
   if (!nodeType) return
 
+  const container = editor.graph.hitTestFrame(cx, cy, new Set(), editor.state.currentPageId)
+  let parentId: string | undefined
+  let parentOffsetX = 0
+  let parentOffsetY = 0
+  let shapeX = cx
+  let shapeY = cy
+  if (container && container.type === 'FRAME') {
+    const abs = editor.graph.getAbsolutePosition(container.id)
+    parentId = container.id
+    parentOffsetX = abs.x
+    parentOffsetY = abs.y
+    shapeX = cx - abs.x
+    shapeY = cy - abs.y
+  }
+
   editor.undo.beginBatch('Create shape')
-  const nodeId = editor.createShape(nodeType, cx, cy, 0, 0)
+  const nodeId = editor.createShape(nodeType, shapeX, shapeY, 0, 0, parentId)
   editor.select([nodeId])
-  setDrag({ type: 'draw', startX: cx, startY: cy, nodeId })
+  setDrag({
+    type: 'draw',
+    startX: cx,
+    startY: cy,
+    nodeId,
+    parentOffsetX,
+    parentOffsetY
+  })
 }
 
 export function handleDrawMove(
@@ -45,8 +67,8 @@ export function handleDrawMove(
   }
 
   editor.updateNode(d.nodeId, {
-    x: w < 0 ? d.startX + w : d.startX,
-    y: h < 0 ? d.startY + h : d.startY,
+    x: (w < 0 ? d.startX + w : d.startX) - d.parentOffsetX,
+    y: (h < 0 ? d.startY + h : d.startY) - d.parentOffsetY,
     width: Math.abs(w),
     height: Math.abs(h)
   })

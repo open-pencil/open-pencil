@@ -69,6 +69,7 @@ function drawSingleFrameTitle(
   const parentNode = node.parentId ? graph.getNode(node.parentId) : null
   const isTopLevel = !parentNode || parentNode.type === 'CANVAS' || parentNode.type === 'SECTION'
   if (node.type !== 'FRAME' || !isTopLevel) return
+  if (overlays.editingFrameTitleId === node.id) return
 
   const overlayRotation = getOverlayRotation(node, overlays) // degrees
 

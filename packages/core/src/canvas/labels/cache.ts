@@ -14,6 +14,12 @@ export interface CachedComponent {
   parentType: string
 }
 
+export interface CachedFrame {
+  nodeId: string
+  absX: number
+  absY: number
+}
+
 interface Viewport {
   x: number
   y: number
@@ -23,6 +29,7 @@ interface Viewport {
 
 const LABEL_TYPES = new Set(['COMPONENT', 'COMPONENT_SET'])
 const COMPONENT_LABEL_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
+const FRAME_TITLE_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
 
 function isInViewport(absX: number, absY: number, w: number, h: number, vp: Viewport): boolean {
   return absX + w >= vp.x && absY + h >= vp.y && absX <= vp.x + vp.w && absY <= vp.y + vp.h
@@ -50,6 +57,7 @@ function collectVisibleLabels<
 export class LabelCache {
   private sections: CachedSection[] = []
   private components: CachedComponent[] = []
+  private frames: CachedFrame[] = []
   private cachedSceneVersion = -1
   private cachedPositionPreviewVersion = -1
   private cachedPageId: string | null = null
@@ -79,6 +87,7 @@ export class LabelCache {
     this.cachedPageId = null
     this.sections = []
     this.components = []
+    this.frames = []
   }
 
   getSections(
@@ -99,6 +108,17 @@ export class LabelCache {
     }))
   }
 
+  getFrames(
+    graph: SceneGraph,
+    viewport: Viewport
+  ): Array<{ node: SceneNode; absX: number; absY: number }> {
+    return collectVisibleLabels(graph, viewport, this.frames, () => ({}))
+  }
+
+  getAllFrames(): readonly CachedFrame[] {
+    return this.frames
+  }
+
   getAllSections(): readonly CachedSection[] {
     return this.sections
   }
@@ -110,6 +130,7 @@ export class LabelCache {
   private rebuild(graph: SceneGraph, pageId: string | null): void {
     this.sections = []
     this.components = []
+    this.frames = []
 
     const pageNode = graph.getNode(pageId ?? graph.rootId)
     if (!pageNode) return
@@ -137,6 +158,9 @@ export class LabelCache {
       if (child.type === 'SECTION') {
         this.sections.push({ nodeId: childId, absX: ax, absY: ay, nested: insideSection })
         this.walkChildren(graph, childId, ax, ay, true)
+      } else if (child.type === 'FRAME' && FRAME_TITLE_PARENT_TYPES.has(parentType)) {
+        this.frames.push({ nodeId: childId, absX: ax, absY: ay })
+        this.walkChildren(graph, childId, ax, ay, insideSection)
       } else if (LABEL_TYPES.has(child.type)) {
         if (COMPONENT_LABEL_PARENT_TYPES.has(parentType)) {
           this.components.push({ nodeId: childId, absX: ax, absY: ay, parentType })

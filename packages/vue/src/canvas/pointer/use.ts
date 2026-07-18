@@ -17,7 +17,8 @@ export function createCanvasPointer(
   editor: Editor,
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null,
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null,
-  hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
+  hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
+  hitTestFrameTitles: (cx: number, cy: number) => SceneNode | null
 ) {
   const canvasToLocal = (cx: number, cy: number, scopeId: string) =>
     canvasToLocalPoint(cx, cy, scopeId, editor)
@@ -32,7 +33,8 @@ export function createCanvasPointer(
     hitTestSectionTitle,
     hitTestComponentLabel,
     hitTestFrameTitle,
-    hitTestFrameBorder: (cx: number, cy: number) => hitTestFrameBorder(cx, cy, editor)
+    hitTestFrameBorder: (cx: number, cy: number) => hitTestFrameBorder(cx, cy, editor),
+    hitTestFrameTitles
   }
 
   return {

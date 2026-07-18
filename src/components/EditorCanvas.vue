@@ -46,7 +46,7 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   onReady: fadeOutGlobalLoader
 })
-const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
+const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestFrameTitles } = useCanvas(
   canvasRef,
   store,
   {
@@ -68,6 +68,7 @@ const {
   hitTestSectionTitle,
   hitTestComponentLabel,
   hitTestFrameTitle,
+  hitTestFrameTitles,
   updateCursor
 )
 
@@ -119,11 +120,26 @@ function onRenameKeydown(e: KeyboardEvent) {
 }
 
 const renameInputRef = ref<HTMLInputElement | null>(null)
+const renameMirrorRef = ref<HTMLSpanElement | null>(null)
+const renameValue = ref('')
+
+const renameMaxWidth = computed(() => {
+  const edit = frameTitleRename.value
+  if (!edit) return 120
+  const node = store.graph.getNode(edit.nodeId)
+  if (!node) return 120
+  return Math.max(40, node.width * store.state.zoom)
+})
+
+function onRenameInput(e: Event) {
+  renameValue.value = (e.target as HTMLInputElement).value
+}
 
 watch(
   () => frameTitleRename.value,
   (edit) => {
     if (edit) {
+      renameValue.value = edit.name
       requestAnimationFrame(() => {
         const input = renameInputRef.value
         if (input) {
@@ -224,18 +240,26 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
               align="start"
               :side-offset="4"
               :collision-padding="8"
-              class="z-50 w-28 rounded-md bg-panel p-0.5 shadow-lg"
+              class="z-50 inline-block rounded-md bg-panel p-0.5 shadow-lg"
               data-test-id="frame-title-rename"
+              :style="{ maxWidth: `${renameMaxWidth + 12}px` }"
               @open-auto-focus.prevent
             >
-              <input
-                ref="renameInputRef"
-                :value="frameTitleRename.name"
-                data-test-id="frame-title-rename-input"
-                class="w-full rounded-sm border border-transparent bg-panel-field px-1.5 py-0.5 text-xs text-surface outline-none focus:border-panel-focus"
-                @blur="commitFrameTitleRename(($event.target as HTMLInputElement).value)"
-                @keydown="onRenameKeydown"
-              />
+              <div class="relative inline-flex" :style="{ maxWidth: `${renameMaxWidth}px` }">
+                <span
+                  ref="renameMirrorRef"
+                  class="invisible whitespace-pre rounded-sm px-1.5 py-0.5 text-xs"
+                  aria-hidden="true"
+                >{{ renameValue || ' ' }}&nbsp;</span>
+                <input
+                  ref="renameInputRef"
+                  v-model="renameValue"
+                  data-test-id="frame-title-rename-input"
+                  class="absolute inset-0 w-full rounded-sm border border-transparent bg-panel-field px-1.5 py-0.5 text-xs text-surface outline-none focus:border-panel-focus"
+                  @blur="commitFrameTitleRename(renameValue)"
+                  @keydown="onRenameKeydown"
+                />
+              </div>
             </PopoverContent>
           </PopoverPortal>
         </PopoverRoot>

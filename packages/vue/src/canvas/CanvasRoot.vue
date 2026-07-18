@@ -11,7 +11,7 @@ const editor = useEditor()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const ready = ref(false)
 
-const { renderNow, hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
+const { renderNow, hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestFrameTitles } = useCanvas(
   canvasRef,
   editor,
   {
@@ -29,7 +29,8 @@ provideCanvas({
   renderNow,
   hitTestSectionTitle,
   hitTestComponentLabel,
-  hitTestFrameTitle
+  hitTestFrameTitle,
+  hitTestFrameTitles
 })
 </script>
 

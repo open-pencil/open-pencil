@@ -57,6 +57,7 @@ export function renderFromEditorState(
       hoveredNodeId: state.hoveredNodeId,
       enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
+      editingFrameTitleId: state.editingFrameTitleId,
       textEditor: textEditor as RenderOverlays['textEditor'],
       marquee: state.marquee,
       snapGuides: state.snapGuides,
@@ -216,6 +217,9 @@ export function render(
     p.beginPhase('render:componentLabels')
     r.drawComponentLabels(canvas, graph)
     p.endPhase('render:componentLabels')
+    p.beginPhase('render:frameTitles')
+    r.drawFrameTitles(canvas, graph, selectedIds, overlays.hoveredNodeId ?? null, overlays.editingFrameTitleId ?? null)
+    p.endPhase('render:frameTitles')
     canvas.restore()
 
     canvas.save()
