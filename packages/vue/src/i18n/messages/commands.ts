@@ -33,6 +33,7 @@ export const commandMessageDefaults = {
   flipHorizontal: 'Flip horizontal',
   flipVertical: 'Flip vertical',
   moveToPage: 'Move to page',
+  setOpacity: 'Set opacity',
   zoomTo100: 'Zoom to 100%',
   zoomToFit: 'Zoom to fit',
   zoomToSelection: 'Zoom to selection'

@@ -15,6 +15,7 @@
   "bringToFront": "Traer al frente",
   "sendToBack": "Enviar al fondo",
   "moveToPage": "Mover a página",
+  "setOpacity": "Establecer opacidad",
   "zoomTo100": "Zoom 100 %",
   "zoomToFit": "Ajustar a pantalla",
   "zoomToSelection": "Zoom a selección",

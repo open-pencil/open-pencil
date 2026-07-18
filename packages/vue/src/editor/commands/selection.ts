@@ -29,7 +29,8 @@ export function createSelectionCommands({
   capabilities,
   messages: t,
   otherPages,
-  moveSelectionToPage
+  moveSelectionToPage,
+  getOpacityTarget
 }: EditorCommandMapOptions): Record<SelectionCommandId, EditorCommand> {
   return {
     'selection.selectAll': {
@@ -260,6 +261,17 @@ export function createSelectionCommands({
       enabled: capabilities.canMoveToPage,
       run: () => {
         moveSelectionToPage(otherPages.value[0].id)
+      }
+    },
+    'selection.setOpacity': {
+      id: 'selection.setOpacity',
+      get label() {
+        return t.value.setOpacity
+      },
+      enabled: capabilities.canSetOpacity,
+      run: () => {
+        const target = getOpacityTarget()
+        editor.setOpacity(target.value, target.coalesceKey)
       }
     }
   }

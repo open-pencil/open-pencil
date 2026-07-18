@@ -48,6 +48,15 @@ function getZoom() {
   })
 }
 
+function getSelectedOpacity() {
+  return editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const id = [...store.state.selectedIds][0]
+    return id ? store.graph.getNode(id)?.opacity : undefined
+  })
+}
+
 test.describe('tool switching', () => {
   test('V → SELECT', async () => {
     await editor.page.keyboard.press('v')
@@ -219,6 +228,56 @@ test.describe('duplicate', () => {
 
     const children = await getPageChildren()
     expect(children).toHaveLength(2)
+  })
+})
+
+test.describe('opacity shortcuts', () => {
+  test.beforeEach(async () => {
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
+  })
+
+  test('combines digits and undoes them as one interaction', async () => {
+    await editor.page.keyboard.press('2')
+    await editor.page.keyboard.press('8')
+    expect(await getSelectedOpacity()).toBe(0.28)
+
+    await editor.page.keyboard.press('Meta+z')
+    expect(await getSelectedOpacity()).toBe(1)
+
+    await editor.page.keyboard.press('Meta+Shift+z')
+    expect(await getSelectedOpacity()).toBe(0.28)
+  })
+
+  test('maps 0 to 100% and 00 to 0%', async () => {
+    await editor.page.keyboard.press('5')
+    expect(await getSelectedOpacity()).toBe(0.5)
+
+    await editor.canvas.clearCanvas()
+    await editor.canvas.drawRect(100, 100, 60, 60)
+    await editor.page.keyboard.press('0')
+    expect(await getSelectedOpacity()).toBe(1)
+    await editor.page.keyboard.press('0')
+    expect(await getSelectedOpacity()).toBe(0)
+  })
+
+  test('does not consume shifted digits or NumLock-off navigation keys', async () => {
+    await editor.page.keyboard.press('5')
+    await editor.page.keyboard.press('Shift+1')
+    expect(await getSelectedOpacity()).toBe(0.5)
+
+    const prevented = await editor.page.evaluate(() => {
+      const event = new KeyboardEvent('keydown', {
+        key: 'End',
+        code: 'Numpad1',
+        bubbles: true,
+        cancelable: true
+      })
+      window.dispatchEvent(event)
+      return event.defaultPrevented
+    })
+    expect(prevented).toBe(false)
+    expect(await getSelectedOpacity()).toBe(0.5)
   })
 })
 

@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
 
+import { opacityFromBuffer } from '@open-pencil/core/editor'
 import type { useEditorCommands, useViewportKind } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -9,13 +10,15 @@ type KeyboardActionsOptions = {
   activeTab: Ref<'design' | 'code' | 'ai'>
   isMobile: ReturnType<typeof useViewportKind>['isMobile']
   runCommand: ReturnType<typeof useEditorCommands>['runCommand']
+  setOpacityTarget: ReturnType<typeof useEditorCommands>['setOpacityTarget']
 }
 
 export function createKeyboardActions({
   store,
   activeTab,
   isMobile,
-  runCommand
+  runCommand,
+  setOpacityTarget
 }: KeyboardActionsOptions) {
   function hasNodeEditSelection() {
     return (
@@ -98,6 +101,34 @@ export function createKeyboardActions({
     if (store.state.selectedIds.size > 0) void store.exportSelection(1, 'png')
   }
 
+  let opacityBuffer = ''
+  let opacitySelectionKey = ''
+  let opacityCoalesceKey = ''
+  let opacityResetTimer: ReturnType<typeof setTimeout> | undefined
+
+  function resetOpacityBuffer() {
+    opacityBuffer = ''
+    opacitySelectionKey = ''
+    opacityCoalesceKey = ''
+    clearTimeout(opacityResetTimer)
+  }
+
+  function opacityDigit(digit: string) {
+    if (store.state.selectedIds.size === 0) return
+    const selectionKey = [...store.state.selectedIds].sort().join('\0')
+    if (selectionKey !== opacitySelectionKey) resetOpacityBuffer()
+    if (!opacityBuffer) {
+      opacitySelectionKey = selectionKey
+      opacityCoalesceKey = crypto.randomUUID()
+    }
+    opacityBuffer += digit
+    if (opacityBuffer.length > 3) opacityBuffer = opacityBuffer.slice(-3)
+    setOpacityTarget(opacityFromBuffer(opacityBuffer), opacityCoalesceKey)
+    runCommand('selection.setOpacity')
+    clearTimeout(opacityResetTimer)
+    opacityResetTimer = setTimeout(resetOpacityBuffer, 800)
+  }
+
   return {
     smartDelete,
     confirmOrEnterText,
@@ -105,6 +136,7 @@ export function createKeyboardActions({
     toggleAutoLayout,
     toggleUI,
     toggleAI,
-    exportSelectionPng
+    exportSelectionPng,
+    opacityDigit
   }
 }

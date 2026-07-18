@@ -17,11 +17,17 @@ export function useKeyboard() {
   const { activeTab } = useAIChat()
   const store = useEditorStore()
   const { isMobile } = useViewportKind()
-  const { runCommand } = useEditorCommands()
+  const { runCommand, setOpacityTarget } = useEditorCommands()
   const activeElement = useActiveElement()
   const inputFocused = computed(() => isInputElement(activeElement.value))
 
-  const actions = createKeyboardActions({ store, activeTab, isMobile, runCommand })
+  const actions = createKeyboardActions({
+    store,
+    activeTab,
+    isMobile,
+    runCommand,
+    setOpacityTarget
+  })
 
   bindEditorClipboard(store)
   bindNudgeKeys(store)

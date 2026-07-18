@@ -41,19 +41,26 @@ export function useEditorCommands() {
     editor.moveToPage(pageId)
   }
 
+  let opacityTarget: { value: number; coalesceKey?: string } = { value: 1 }
+  function setOpacityTarget(value: number, coalesceKey?: string) {
+    opacityTarget = coalesceKey ? { value, coalesceKey } : { value }
+  }
+
   const commands = createEditorCommandMap({
     editor,
     selection,
     capabilities,
     messages: t,
     otherPages,
-    moveSelectionToPage
+    moveSelectionToPage,
+    getOpacityTarget: () => opacityTarget
   })
 
   return {
     commands,
     otherPages,
     moveSelectionToPage,
+    setOpacityTarget,
     ...createEditorCommandActions(commands)
   }
 }

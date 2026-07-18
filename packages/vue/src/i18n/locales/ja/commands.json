@@ -15,6 +15,7 @@
   "bringToFront": "最前面へ移動",
   "sendToBack": "最背面へ移動",
   "moveToPage": "ページへ移動",
+  "setOpacity": "不透明度を設定",
   "zoomTo100": "100%にズーム",
   "zoomToFit": "画面に合わせる",
   "zoomToSelection": "選択範囲にズーム",

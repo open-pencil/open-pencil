@@ -12,6 +12,7 @@ export type KeyboardShortcutActions = {
   toggleUI: () => void
   toggleAI: () => void
   exportSelectionPng: () => void
+  opacityDigit: (digit: string) => void
 }
 
 export type KeyboardShortcutOptions = {

@@ -2,6 +2,7 @@ export interface UndoEntry {
   label: string
   forward: () => void
   inverse: () => void
+  coalesceKey?: string
 }
 
 export interface UndoManagerOptions {
@@ -11,6 +12,7 @@ export interface UndoManagerOptions {
 interface UndoBatch {
   label: string
   entries: UndoEntry[]
+  coalesceKey?: string
 }
 
 const DEFAULT_HISTORY_LIMIT = 200
@@ -63,8 +65,8 @@ export class UndoManager {
     return entry.label
   }
 
-  beginBatch(label: string): void {
-    this.batches.push({ label, entries: [] })
+  beginBatch(label: string, coalesceKey?: string): void {
+    this.batches.push({ label, entries: [], coalesceKey })
   }
 
   commitBatch(): void {
@@ -77,8 +79,8 @@ export class UndoManager {
     else this.pushUndoEntry(entry)
   }
 
-  runBatch<T>(label: string, fn: () => T): T {
-    this.beginBatch(label)
+  runBatch<T>(label: string, fn: () => T, coalesceKey?: string): T {
+    this.beginBatch(label, coalesceKey)
     try {
       const result = fn()
       this.commitBatch()
@@ -129,12 +131,21 @@ export class UndoManager {
     return {
       label: batch.label,
       forward: () => batch.entries.forEach((entry) => entry.forward()),
-      inverse: () => batch.entries.toReversed().forEach((entry) => entry.inverse())
+      inverse: () => batch.entries.toReversed().forEach((entry) => entry.inverse()),
+      coalesceKey: batch.coalesceKey
     }
   }
 
   private pushUndoEntry(entry: UndoEntry): void {
-    this.undoStack.push(entry)
+    const previous = this.undoStack.at(-1)
+    if (entry.coalesceKey && previous?.coalesceKey === entry.coalesceKey) {
+      this.undoStack[this.undoStack.length - 1] = {
+        ...entry,
+        inverse: previous.inverse
+      }
+    } else {
+      this.undoStack.push(entry)
+    }
     this.redoStack = []
     this.trimUndoStack()
   }
