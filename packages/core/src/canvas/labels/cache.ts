@@ -61,30 +61,35 @@ export class LabelCache {
   private cachedSceneVersion = -1
   private cachedPositionPreviewVersion = -1
   private cachedPageId: string | null = null
+  private cachedEnteredContainerId: string | null | undefined = undefined
 
   update(
     graph: SceneGraph,
     pageId: string | null,
     sceneVersion: number,
-    positionPreviewVersion = graph.positionPreviewVersion
+    positionPreviewVersion = graph.positionPreviewVersion,
+    enteredContainerId?: string | null
   ): void {
     if (
       sceneVersion === this.cachedSceneVersion &&
       positionPreviewVersion === this.cachedPositionPreviewVersion &&
-      pageId === this.cachedPageId
+      pageId === this.cachedPageId &&
+      enteredContainerId === this.cachedEnteredContainerId
     ) {
       return
     }
-    this.rebuild(graph, pageId)
+    this.rebuild(graph, pageId, enteredContainerId)
     this.cachedSceneVersion = sceneVersion
     this.cachedPositionPreviewVersion = positionPreviewVersion
     this.cachedPageId = pageId
+    this.cachedEnteredContainerId = enteredContainerId
   }
 
   invalidate(): void {
     this.cachedSceneVersion = -1
     this.cachedPositionPreviewVersion = -1
     this.cachedPageId = null
+    this.cachedEnteredContainerId = undefined
     this.sections = []
     this.components = []
     this.frames = []
@@ -127,15 +132,23 @@ export class LabelCache {
     return this.components
   }
 
-  private rebuild(graph: SceneGraph, pageId: string | null): void {
+  private rebuild(graph: SceneGraph, pageId: string | null, enteredContainerId?: string | null): void {
     this.sections = []
     this.components = []
     this.frames = []
 
     const pageNode = graph.getNode(pageId ?? graph.rootId)
-    if (!pageNode) return
+    if (pageNode) {
+      this.walkChildren(graph, pageNode.id, 0, 0, false)
+    }
 
-    this.walkChildren(graph, pageNode.id, 0, 0, false)
+    if (enteredContainerId) {
+      const container = graph.getNode(enteredContainerId)
+      if (container) {
+        const abs = graph.getAbsolutePosition(enteredContainerId)
+        this.walkChildren(graph, enteredContainerId, abs.x, abs.y, false, true)
+      }
+    }
   }
 
   private walkChildren(
@@ -143,7 +156,8 @@ export class LabelCache {
     parentId: string,
     ox: number,
     oy: number,
-    insideSection: boolean
+    insideSection: boolean,
+    collectNestedFrames = false
   ): void {
     const parent = graph.getNode(parentId)
     if (!parent) return
@@ -158,9 +172,9 @@ export class LabelCache {
       if (child.type === 'SECTION') {
         this.sections.push({ nodeId: childId, absX: ax, absY: ay, nested: insideSection })
         this.walkChildren(graph, childId, ax, ay, true)
-      } else if (child.type === 'FRAME' && FRAME_TITLE_PARENT_TYPES.has(parentType)) {
+      } else if (child.type === 'FRAME' && (FRAME_TITLE_PARENT_TYPES.has(parentType) || collectNestedFrames)) {
         this.frames.push({ nodeId: childId, absX: ax, absY: ay })
-        this.walkChildren(graph, childId, ax, ay, insideSection)
+        this.walkChildren(graph, childId, ax, ay, insideSection, false)
       } else if (LABEL_TYPES.has(child.type)) {
         if (COMPONENT_LABEL_PARENT_TYPES.has(parentType)) {
           this.components.push({ nodeId: childId, absX: ax, absY: ay, parentType })

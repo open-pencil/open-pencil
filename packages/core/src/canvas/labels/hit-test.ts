@@ -252,10 +252,6 @@ export function hitTestFrameTitle(
   const node = graph.getNode(id)
   if (node?.type !== 'FRAME') return null
 
-  const parent = node.parentId ? graph.getNode(node.parentId) : null
-  const isTopLevel = !parent || parent.type === 'CANVAS' || parent.type === 'SECTION'
-  if (!isTopLevel) return null
-
   const abs = graph.getAbsolutePosition(id)
   const labelW = measureGlyphWidth(font, node.name) / zoom
   const labelH = LABEL_FONT_SIZE / zoom

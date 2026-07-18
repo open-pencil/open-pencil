@@ -210,7 +210,7 @@ export function render(
   if (layer !== 'scene') {
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
-    r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
+    r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion, overlays.enteredContainerId)
     p.beginPhase('render:sectionTitles')
     r.drawSectionTitles(canvas, graph)
     p.endPhase('render:sectionTitles')

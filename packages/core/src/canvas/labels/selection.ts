@@ -66,9 +66,7 @@ function drawSingleFrameTitle(
   overlays: RenderOverlays,
   labelFont: NonNullable<SkiaRenderer['labelFont']>
 ): void {
-  const parentNode = node.parentId ? graph.getNode(node.parentId) : null
-  const isTopLevel = !parentNode || parentNode.type === 'CANVAS' || parentNode.type === 'SECTION'
-  if (node.type !== 'FRAME' || !isTopLevel) return
+  if (node.type !== 'FRAME') return
   if (overlays.editingFrameTitleId === node.id) return
 
   const overlayRotation = getOverlayRotation(node, overlays) // degrees
