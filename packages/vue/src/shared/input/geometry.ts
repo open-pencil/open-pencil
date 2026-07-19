@@ -74,7 +74,8 @@ export function hitTestFrameBorder(cx: number, cy: number, editor: Editor): Scen
   const scopeId = editor.state.enteredContainerId ?? editor.state.currentPageId
   const scope = editor.graph.getNode(scopeId)
   if (!scope) return null
-  for (const childId of scope.childIds) {
+  for (let i = scope.childIds.length - 1; i >= 0; i--) {
+    const childId = scope.childIds[i]
     const child = editor.graph.getNode(childId)
     if (!child?.visible || child.type !== 'FRAME') continue
     const abs = editor.graph.getAbsolutePosition(childId)

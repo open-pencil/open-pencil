@@ -63,7 +63,7 @@ export function createShapeActions(ctx: EditorContext) {
     const node = ctx.graph.createNode(type, pid, overrides)
     ctx.runLayoutForNode(pid)
     const id = node.id
-    const snapshot = { ...node }
+    const snapshot = structuredClone(node)
     ctx.undo.push({
       label: `Create ${type.toLowerCase()}`,
       forward: () => {

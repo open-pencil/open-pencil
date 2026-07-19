@@ -46,7 +46,7 @@ export interface EditorState {
   } | null
   hoveredNodeId: string | null
   editingTextId: string | null
-  editingFrameTitleId?: string | null
+  editingFrameTitleId: string | null
   penState: {
     vertices: VectorVertex[]
     segments: VectorSegment[]

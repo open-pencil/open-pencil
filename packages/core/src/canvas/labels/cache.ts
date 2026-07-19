@@ -143,15 +143,7 @@ export class LabelCache {
 
     const pageNode = graph.getNode(pageId ?? graph.rootId)
     if (pageNode) {
-      this.walkChildren(graph, pageNode.id, 0, 0, false)
-    }
-
-    if (enteredContainerId) {
-      const container = graph.getNode(enteredContainerId)
-      if (container) {
-        const abs = graph.getAbsolutePosition(enteredContainerId)
-        this.walkChildren(graph, enteredContainerId, abs.x, abs.y, false, true)
-      }
+      this.walkChildren(graph, pageNode.id, 0, 0, false, false, enteredContainerId)
     }
   }
 
@@ -161,11 +153,13 @@ export class LabelCache {
     ox: number,
     oy: number,
     insideSection: boolean,
-    collectNestedFrames = false
+    collectNestedFrames = false,
+    enteredContainerId?: string | null
   ): void {
     const parent = graph.getNode(parentId)
     if (!parent) return
     const parentType = parent.type
+    const shouldCollectNested = collectNestedFrames || parentId === enteredContainerId
 
     for (const childId of parent.childIds) {
       const child = graph.getNode(childId)
@@ -175,22 +169,22 @@ export class LabelCache {
 
       if (child.type === 'SECTION') {
         this.sections.push({ nodeId: childId, absX: ax, absY: ay, nested: insideSection })
-        this.walkChildren(graph, childId, ax, ay, true)
+        this.walkChildren(graph, childId, ax, ay, true, false, enteredContainerId)
       } else if (
         child.type === 'FRAME' &&
-        (FRAME_TITLE_PARENT_TYPES.has(parentType) || collectNestedFrames)
+        (FRAME_TITLE_PARENT_TYPES.has(parentType) || shouldCollectNested)
       ) {
         this.frames.push({ nodeId: childId, absX: ax, absY: ay })
-        this.walkChildren(graph, childId, ax, ay, insideSection, false)
+        this.walkChildren(graph, childId, ax, ay, insideSection, false, enteredContainerId)
       } else if (LABEL_TYPES.has(child.type)) {
         if (COMPONENT_LABEL_PARENT_TYPES.has(parentType)) {
           this.components.push({ nodeId: childId, absX: ax, absY: ay, parentType })
         }
         if (child.childIds.length > 0) {
-          this.walkChildren(graph, childId, ax, ay, insideSection)
+          this.walkChildren(graph, childId, ax, ay, insideSection, false, enteredContainerId)
         }
       } else if (child.childIds.length > 0) {
-        this.walkChildren(graph, childId, ax, ay, insideSection)
+        this.walkChildren(graph, childId, ax, ay, insideSection, false, enteredContainerId)
       }
     }
   }
