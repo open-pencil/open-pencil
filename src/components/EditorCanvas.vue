@@ -247,6 +247,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
                 <input
                   ref="renameInputRef"
                   v-model="renameValue"
+                  aria-label="Rename frame"
                   data-test-id="frame-title-rename-input"
                   class="absolute inset-0 w-full rounded-sm border border-transparent bg-panel-field px-1.5 py-0.5 text-xs text-surface outline-none focus:border-panel-focus"
                   @blur="commitFrameTitleRename(renameValue)"
