@@ -1,5 +1,9 @@
 import { DEFAULT_TEXT_HEIGHT, DEFAULT_TEXT_WIDTH } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
+import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
+import type { Mat3 } from '@open-pencil/scene-graph'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+import Matrix from '@open-pencil/scene-graph/matrix'
 
 import { TOOL_TO_NODE } from '#vue/shared/input/types'
 import type { DragDraw, DragState } from '#vue/shared/input/types'
@@ -13,6 +17,16 @@ export function startTextTool(cx: number, cy: number, editor: Editor) {
   editor.requestRender()
 }
 
+function worldToParentLocal(
+  parentInverseMatrix: Mat3 | null,
+  worldX: number,
+  worldY: number
+): Vector {
+  if (!parentInverseMatrix) return { x: worldX, y: worldY }
+  const [x, y] = Matrix.mapPoints(parentInverseMatrix, [worldX, worldY])
+  return { x, y }
+}
+
 export function startShapeDraw(
   cx: number,
   cy: number,
@@ -24,17 +38,15 @@ export function startShapeDraw(
 
   const container = editor.graph.hitTestFrame(cx, cy, new Set(), editor.state.currentPageId)
   let parentId: string | undefined
-  let parentOffsetX = 0
-  let parentOffsetY = 0
+  let parentInverseMatrix: Mat3 | null = null
   let shapeX = cx
   let shapeY = cy
   if (container?.type === 'FRAME') {
-    const abs = editor.graph.getAbsolutePosition(container.id)
     parentId = container.id
-    parentOffsetX = abs.x
-    parentOffsetY = abs.y
-    shapeX = cx - abs.x
-    shapeY = cy - abs.y
+    parentInverseMatrix = Matrix.invert(getWorldMatrix(container, editor.graph))
+    const local = worldToParentLocal(parentInverseMatrix, cx, cy)
+    shapeX = local.x
+    shapeY = local.y
   }
 
   editor.undo.beginBatch('Create shape')
@@ -45,8 +57,7 @@ export function startShapeDraw(
     startX: cx,
     startY: cy,
     nodeId,
-    parentOffsetX,
-    parentOffsetY
+    parentInverseMatrix
   })
 }
 
@@ -57,8 +68,11 @@ export function handleDrawMove(
   shiftKey: boolean,
   editor: Editor
 ) {
-  let w = cx - d.startX
-  let h = cy - d.startY
+  const start = worldToParentLocal(d.parentInverseMatrix, d.startX, d.startY)
+  const cur = worldToParentLocal(d.parentInverseMatrix, cx, cy)
+
+  let w = cur.x - start.x
+  let h = cur.y - start.y
 
   if (shiftKey) {
     const size = Math.max(Math.abs(w), Math.abs(h))
@@ -67,8 +81,8 @@ export function handleDrawMove(
   }
 
   editor.updateNode(d.nodeId, {
-    x: (w < 0 ? d.startX + w : d.startX) - d.parentOffsetX,
-    y: (h < 0 ? d.startY + h : d.startY) - d.parentOffsetY,
+    x: w < 0 ? start.x + w : start.x,
+    y: h < 0 ? start.y + h : start.y,
     width: Math.abs(w),
     height: Math.abs(h)
   })
@@ -82,7 +96,8 @@ export function handleDrawUp(d: DragDraw, editor: Editor) {
   if (node?.type === 'SECTION') {
     editor.adoptNodesIntoSection(node.id)
   }
-  editor.commitResize(d.nodeId, { x: d.startX, y: d.startY, width: 0, height: 0 })
+  const start = worldToParentLocal(d.parentInverseMatrix, d.startX, d.startY)
+  editor.commitResize(d.nodeId, { x: start.x, y: start.y, width: 0, height: 0 })
   editor.undo.commitBatch()
   editor.setTool('SELECT')
 }
