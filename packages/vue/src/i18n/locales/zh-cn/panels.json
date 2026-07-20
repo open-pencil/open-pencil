@@ -32,7 +32,7 @@
   "truncationDisabled": "禁用",
   "truncationEnding": "末尾省略号",
   "maxLines": "最大行数",
-  "openTypeFeatures": "OpenType 功能",
+  "openTypeFeatures": "字体功能",
   "standardLigatures": "标准连字",
   "contextualAlternates": "上下文替代字形",
   "kerning": "字距调整",

@@ -40,7 +40,7 @@ function setMode(value: TextResizeMode) {
 </script>
 
 <template>
-  <PanelFieldGroup :label="panels.resizing">
+  <PanelFieldGroup :label="panels.resizing" class="mb-3">
     <SegmentedControl
       :model-value="mode"
       :options="options"

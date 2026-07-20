@@ -8,13 +8,17 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 import { TOOL_TO_NODE } from '#vue/shared/input/types'
 import type { DragDraw, DragState } from '#vue/shared/input/types'
 
-export function startTextTool(cx: number, cy: number, editor: Editor) {
-  const nodeId = editor.createShape('TEXT', cx, cy, DEFAULT_TEXT_WIDTH, DEFAULT_TEXT_HEIGHT)
+export function startTextDraw(
+  cx: number,
+  cy: number,
+  editor: Editor,
+  setDrag: (d: DragState) => void
+) {
+  editor.undo.beginBatch('Create text')
+  const nodeId = editor.createShape('TEXT', cx, cy, 0, 0)
   editor.graph.updateNode(nodeId, { text: '' })
   editor.select([nodeId])
-  editor.startTextEditing(nodeId)
-  editor.setTool('SELECT')
-  editor.requestRender()
+  setDrag({ type: 'draw', startX: cx, startY: cy, nodeId })
 }
 
 function worldToParentLocal(
@@ -90,7 +94,14 @@ export function handleDrawMove(
 
 export function handleDrawUp(d: DragDraw, editor: Editor) {
   const node = editor.graph.getNode(d.nodeId)
-  if (node && node.width < 2 && node.height < 2) {
+  if (node?.type === 'TEXT') {
+    const isPointText = node.width < 2 && node.height < 2
+    editor.updateNode(d.nodeId, {
+      width: isPointText ? DEFAULT_TEXT_WIDTH : node.width,
+      height: isPointText ? DEFAULT_TEXT_HEIGHT : node.height,
+      textAutoResize: isPointText ? 'WIDTH_AND_HEIGHT' : 'NONE'
+    })
+  } else if (node && node.width < 2 && node.height < 2) {
     editor.updateNode(d.nodeId, { width: 100, height: 100 })
   }
   if (node?.type === 'SECTION') {
@@ -100,4 +111,5 @@ export function handleDrawUp(d: DragDraw, editor: Editor) {
   editor.commitResize(d.nodeId, { x: start.x, y: start.y, width: 0, height: 0 })
   editor.undo.commitBatch()
   editor.setTool('SELECT')
+  if (node?.type === 'TEXT') editor.startTextEditing(node.id)
 }

@@ -88,7 +88,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </Tip>
       </div>
 
-      <PanelGrid columns="two" class="mb-1.5">
+      <PanelGrid columns="two" class="mb-3">
         <PanelFieldGroup :label="panels.fontWeight">
           <AppSelect
             :label="panels.fontWeight"
@@ -111,7 +111,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelFieldGroup>
       </PanelGrid>
 
-      <PanelGrid columns="two" class="mb-1.5">
+      <PanelGrid columns="two" class="mb-3">
         <PanelFieldGroup :label="panels.lineHeight">
           <VariableNumberField
             :model-value="
@@ -146,7 +146,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelFieldGroup>
       </PanelGrid>
 
-      <PanelFieldGroup :label="panels.direction" class="mb-1.5">
+      <PanelFieldGroup :label="panels.direction" class="mb-3">
         <AppSelect
           :label="panels.direction"
           :model-value="ctx.node.value.textDirection"
@@ -159,7 +159,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         />
       </PanelFieldGroup>
 
-      <PanelFieldGroup :label="panels.textAlignment" class="mb-1.5">
+      <PanelFieldGroup :label="panels.textAlignment" class="mb-3">
         <SegmentedControl
           :model-value="ctx.node.value.textAlignHorizontal"
           :options="alignmentOptions"
@@ -175,7 +175,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </SegmentedControl>
       </PanelFieldGroup>
 
-      <PanelFieldGroup :label="panels.verticalTextAlignment" class="mb-1.5">
+      <PanelFieldGroup :label="panels.verticalTextAlignment" class="mb-3">
         <SegmentedControl
           :model-value="ctx.node.value.textAlignVertical"
           :options="verticalAlignmentOptions"
@@ -196,65 +196,12 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </SegmentedControl>
       </PanelFieldGroup>
 
-      <PanelGrid columns="two" class="mb-1.5">
-        <PanelFieldGroup :label="panels.textCase">
-          <AppSelect
-            :label="panels.textCase"
-            :model-value="ctx.node.value.textCase"
-            :options="textCaseOptions"
-            @update:model-value="
-              ctx.actions.setTextCase($event as 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE')
-            "
-          />
-        </PanelFieldGroup>
-        <PanelFieldGroup :label="panels.truncation">
-          <AppSelect
-            :label="panels.truncation"
-            :model-value="ctx.node.value.textTruncation"
-            :options="truncationOptions"
-            @update:model-value="ctx.actions.setTruncation($event as 'DISABLED' | 'ENDING')"
-          />
-        </PanelFieldGroup>
-      </PanelGrid>
-
-      <PanelFieldGroup
-        v-if="ctx.node.value.textTruncation === 'ENDING'"
-        :label="panels.maxLines"
-        class="mb-1.5"
-      >
-        <NumberField
-          :model-value="ctx.node.value.maxLines ?? 1"
-          :aria-label="panels.maxLines"
-          :min="1"
-          :step="1"
-          data-property="max-lines"
-          @update:model-value="ctx.actions.updateProp('maxLines', Math.max(1, Math.round($event)))"
-          @commit="
-            (value: number, previous: number) => ctx.actions.commitProp('maxLines', value, previous)
-          "
-        />
-      </PanelFieldGroup>
-
-      <PanelFieldGroup :label="panels.openTypeFeatures" class="mb-1.5">
-        <div class="grid gap-1.5">
-          <label
-            v-for="feature in commonFeatures"
-            :key="feature.tag"
-            class="flex items-center justify-between gap-1.5 text-[11px] text-muted"
-          >
-            <span>{{ feature.label }}</span>
-            <AppSwitch
-              :model-value="featureEnabled(ctx.node.value.fontFeatures, feature.tag)"
-              :label="feature.label"
-              :data-property="`font-feature-${feature.tag.toLowerCase()}`"
-              @update:model-value="ctx.actions.setFontFeature(feature.tag, $event)"
-            />
-          </label>
-        </div>
-      </PanelFieldGroup>
-
-      <PanelFieldGroup :label="panels.textFormatting" :ui="{ container: 'flex-row gap-1.5' }">
-        <div class="flex items-center gap-1.5" role="toolbar" :aria-label="panels.textFormatting">
+      <PanelFieldGroup :label="panels.textFormatting" class="mb-3" :ui="{ container: 'flex-row gap-1.5' }">
+        <div
+          class="inline-flex items-center gap-0.5 rounded bg-panel-field p-0.5 hover:bg-panel-field-hover"
+          role="toolbar"
+          :aria-label="panels.textFormatting"
+        >
           <IconButton
             :label="`${menu.bold} (${appMenuShortcutLabel('text.bold')})`"
             size="md"
@@ -287,6 +234,67 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
           >
             <icon-lucide-strikethrough class="size-3.5" />
           </IconButton>
+        </div>
+      </PanelFieldGroup>
+
+      <PanelGrid columns="two" class="mb-3">
+        <PanelFieldGroup :label="panels.textCase">
+          <AppSelect
+            :label="panels.textCase"
+            :model-value="ctx.node.value.textCase"
+            :options="textCaseOptions"
+            @update:model-value="
+              ctx.actions.setTextCase($event as 'ORIGINAL' | 'UPPER' | 'LOWER' | 'TITLE')
+            "
+          />
+        </PanelFieldGroup>
+        <PanelFieldGroup :label="panels.truncation">
+          <AppSelect
+            :label="panels.truncation"
+            :model-value="ctx.node.value.textTruncation"
+            :options="truncationOptions"
+            @update:model-value="ctx.actions.setTruncation($event as 'DISABLED' | 'ENDING')"
+          />
+        </PanelFieldGroup>
+      </PanelGrid>
+
+      <PanelFieldGroup
+        v-if="ctx.node.value.textTruncation === 'ENDING'"
+        :label="panels.maxLines"
+        class="mb-3"
+      >
+        <NumberField
+          :model-value="ctx.node.value.maxLines ?? 1"
+          :aria-label="panels.maxLines"
+          :min="1"
+          :step="1"
+          data-property="max-lines"
+          @update:model-value="ctx.actions.updateProp('maxLines', Math.max(1, Math.round($event)))"
+          @commit="
+            (value: number, previous: number) => ctx.actions.commitProp('maxLines', value, previous)
+          "
+        />
+      </PanelFieldGroup>
+
+      <PanelFieldGroup
+        :label="panels.openTypeFeatures"
+        class="mb-3"
+        :ui="{ label: 'font-semibold text-surface' }"
+      >
+        <div class="grid gap-2.5">
+          <label
+            v-for="feature in commonFeatures"
+            :key="feature.tag"
+            class="flex items-center justify-between gap-1.5 text-[11px] text-muted/70"
+          >
+            <span>{{ feature.label }}</span>
+            <AppSwitch
+              :model-value="featureEnabled(ctx.node.value.fontFeatures, feature.tag)"
+              :label="feature.label"
+              :data-property="`font-feature-${feature.tag.toLowerCase()}`"
+              @update:model-value="ctx.actions.setFontFeature(feature.tag, $event)"
+            />
+          </label>
         </div>
       </PanelFieldGroup>
     </PanelSection>

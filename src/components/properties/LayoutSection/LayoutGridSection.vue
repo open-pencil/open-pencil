@@ -86,7 +86,9 @@ function isGrid(grid: LayoutGrid): boolean {
           :model-value="gridPattern(grid)"
           :options="patternOptions"
           :label="panels.layoutGrids"
-          @change="patch(index, { pattern: $event as LayoutGrid['pattern'] }, 'Change grid pattern')"
+          @change="
+            patch(index, { pattern: $event as LayoutGrid['pattern'] }, 'Change grid pattern')
+          "
         >
           <template #option="{ option }">
             <Tip :label="option.label" class="flex items-center justify-center">

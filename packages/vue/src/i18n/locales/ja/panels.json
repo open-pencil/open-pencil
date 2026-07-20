@@ -43,7 +43,7 @@
   "truncationDisabled": "無効",
   "truncationEnding": "末尾を省略",
   "maxLines": "最大行数",
-  "openTypeFeatures": "OpenType 機能",
+  "openTypeFeatures": "フォント機能",
   "standardLigatures": "標準合字",
   "contextualAlternates": "文脈依存字形",
   "kerning": "カーニング",

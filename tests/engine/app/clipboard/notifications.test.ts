@@ -1,7 +1,11 @@
-import { afterEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import { notifyClipboardImageResolution } from '@/app/editor/clipboard/notifications'
 import { toast } from '@/app/shell/ui'
+
+beforeEach(() => {
+  toast.toasts.value = []
+})
 
 afterEach(() => {
   toast.toasts.value = []

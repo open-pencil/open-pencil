@@ -60,7 +60,8 @@ export function getSelectedNode(page: Page) {
       fontSize: n.fontSize,
       fontFamily: n.fontFamily,
       fontWeight: n.fontWeight,
-      italic: n.italic
+      italic: n.italic,
+      textAutoResize: n.textAutoResize
     }
   })
 }

@@ -64,7 +64,7 @@ export const panelMessageDefaults = {
   truncationDisabled: 'Disabled',
   truncationEnding: 'Ending ellipsis',
   maxLines: 'Maximum lines',
-  openTypeFeatures: 'OpenType features',
+  openTypeFeatures: 'Font features',
   standardLigatures: 'Standard ligatures',
   contextualAlternates: 'Contextual alternates',
   kerning: 'Kerning',

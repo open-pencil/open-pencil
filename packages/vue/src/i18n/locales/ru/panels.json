@@ -32,7 +32,7 @@
   "truncationDisabled": "Отключена",
   "truncationEnding": "Многоточие в конце",
   "maxLines": "Максимум строк",
-  "openTypeFeatures": "Функции OpenType",
+  "openTypeFeatures": "Свойства шрифта",
   "standardLigatures": "Стандартные лигатуры",
   "contextualAlternates": "Контекстные варианты",
   "kerning": "Кернинг",

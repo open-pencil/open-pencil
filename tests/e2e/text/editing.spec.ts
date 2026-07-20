@@ -39,9 +39,10 @@ test('clicking with text tool creates a text node', async () => {
   expect(textNode).toBeTruthy()
 })
 
-test('text node is selected after creation', async () => {
+test('point text is selected and auto-sizes after creation', async () => {
   const node = await getSelectedNode(editor.page)
   expect(node?.type).toBe('TEXT')
+  expect(node?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
 })
 
 test('typography section appears for text node', async () => {
@@ -61,6 +62,26 @@ test('text node has default font properties', async () => {
   const node = await getSelectedNode(editor.page)
   expect(node?.fontSize).toBeGreaterThan(0)
   expect(node?.fontFamily).toBeTruthy()
+})
+
+test('dragging with the text tool creates a fixed-width text box', async () => {
+  await editor.page.keyboard.press('Escape')
+  await editor.page.keyboard.press('t')
+  await editor.canvas.drag(300, 120, 520, 240)
+  await editor.canvas.waitForRender()
+
+  const node = expectDefined(await getSelectedNode(editor.page), 'selected text box')
+  expect(node.type).toBe('TEXT')
+  expect(node.width).toBeCloseTo(220)
+  expect(node.height).toBeCloseTo(120)
+  expect(node.textAutoResize).toBe('NONE')
+
+  const editingTextId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.state.editingTextId
+  })
+  expect(editingTextId).toBe(node.id)
 })
 
 test('creating text via store works', async () => {
