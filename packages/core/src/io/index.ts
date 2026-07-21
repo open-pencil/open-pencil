@@ -24,6 +24,12 @@ export {
   type ExportFormat
 } from './formats/raster'
 export { renderNodesToSVG, geometryBlobToSVGPath, vectorNetworkToSVGPaths } from './formats/svg'
+export {
+  renderNodesToPPTX,
+  type PPTXExportOptions,
+  type PPTXExportStats,
+  type PPTXRasterize
+} from './formats/pptx'
 export type {
   IOFormatRole,
   IOFormatCategory,

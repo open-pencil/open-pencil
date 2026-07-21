@@ -181,6 +181,7 @@
     "nanoevents": "^9.1.0",
     "ofetch": "^1.5.1",
     "opentype.js": "^2.0.0",
+    "pptxgenjs": "^4.0.1",
     "sucrase": "^3.35.1",
     "svg2pdf.js": "^2.7.0",
     "svgpath": "^2.6.0",
