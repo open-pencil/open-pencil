@@ -18,14 +18,26 @@ function isMacOs() {
   return typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
 }
 
-function normalizeWheelDelta(e: WheelEvent): { dx: number; dy: number } {
+export type WheelPanInput = {
+  deltaX: number
+  deltaY: number
+  deltaMode: number
+  shiftKey: boolean
+  ctrlKey: boolean
+  metaKey: boolean
+}
+
+export function computeWheelPanDelta(e: WheelPanInput): { dx: number; dy: number } {
   let { deltaX, deltaY } = e
-  if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+  if (e.deltaMode === 1) {
     deltaX *= 40
     deltaY *= 40
-  } else if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+  } else if (e.deltaMode === 2) {
     deltaX *= 800
     deltaY *= 800
+  }
+  if (e.shiftKey) {
+    return { dx: deltaX + deltaY, dy: 0 }
   }
   return { dx: deltaX, dy: deltaY }
 }
@@ -74,8 +86,6 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
   function onWheel(e: WheelEvent) {
     const canvas = canvasRef.value
     if (!canvas) return
-    const { dx, dy } = normalizeWheelDelta(e)
-
     if (e.ctrlKey || e.metaKey) {
       const rect = canvas.getBoundingClientRect()
       wheelAccum.zoomCenterX = e.clientX - rect.left
@@ -83,6 +93,7 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
       wheelAccum.zoomScale *= 2 ** wheelZoomDelta(e)
       wheelAccum.hasZoom = true
     } else {
+      const { dx, dy } = computeWheelPanDelta(e)
       wheelAccum.deltaX -= dx
       wheelAccum.deltaY -= dy
     }

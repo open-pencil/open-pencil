@@ -4,6 +4,48 @@
 
 ### Added
 
+- Add Figma-style horizontal pan with Shift + scroll on the canvas.
+- Move complete `.fig` archive parsing, bidirectional SceneGraph/NodeChange conversion, and component/instance interpretation into `@open-pencil/fig`, keeping runtime font access and format-neutral IO orchestration in core and Kiwi schema/container mechanics in `@open-pencil/kiwi`.
+- Remove internal cross-package forwarding modules; import `@open-pencil/fig`, `@open-pencil/pen`, and `@open-pencil/scene-graph` from their owning public exports.
+- Track normalized source edits in SceneGraph while preserving original `.fig` provenance and filtering stale raw fields through Fig-owned metadata policy.
+- Eliminate quadratic component-property scans and redundant instance propagation during large `.fig` round trips, reducing the Material 3 fixture regression from minutes to seconds.
+- Reject corrupted fig-Kiwi data chunks instead of silently treating failed compressed payloads as raw bytes.
+- Add Figma-style page management in the Pages panel, including rename/delete actions and drag-and-drop page reordering.
+- Add DOM/CSS import and authoring support so HTML, CSS, Tailwind, and JSX can be converted into editable OpenPencil documents from the app, CLI, and SDK.
+- Add Tailwind class serialization for DOM/CSS HTML export in the SDK and CLI.
+- Add standalone browser-openable HTML export with compiled CSS and optional external image/font assets.
+- Add richer Design JSX authoring for components, variables, structured fills, gradients, shadows, and blur effects.
+- Add overlap analysis for finding layout collisions and overflowing children from the CLI, AI tools, and MCP.
+- Add saved per-node export settings for repeat exports.
+- Add Design panel controls for layer blend modes and alpha, vector, and luminance masks.
+- Refine Design panel foundations with 26px controls, consistently aligned action rails, shared Tailwind themes, and Storybook component states.
+- Fix variable binding action visibility, picker anchoring, hover treatment, and Design panel number-field sizing, including embedded paint rows.
+- Scale the Layers panel to 5,000-node documents with virtualized rows, indexed updates, scroll-to-selection, range selection, and focus-aware themed states.
+- Add Figma-style horizontal and vertical constraint controls with pin interactions, mixed-selection editing, undo, and responsive frame resizing.
+- Add mixed-selection stroke cap, join, and miter-limit controls with CanvasKit rendering and `.fig` roundtrip support.
+- Add a mixed-selection corner-smoothing percentage control with live preview, per-node undo restoration, and `.fig` roundtrip coverage.
+- Model imported fill, stroke, text, effect, and grid styles with reusable SDK/app selectors, automatic detach-on-edit, undo, and `.fig` definition roundtrips.
+- Add variant, text, boolean, and nested instance-swap component property controls with mixed-selection undo and typed `.fig` metadata roundtrips.
+- Add fill and effect blend-mode controls with shared-style detachment and mixed-selection undo.
+- Add text case, justification, vertical alignment, truncation/max-lines, and common OpenType controls with CanvasKit rendering and undo.
+- Standardize Pages, Layers/Assets navigation, and document tab states across light and dark themes.
+- Standardize Vue SDK and app override type names on the `UI` acronym, including `FontPickerUI`.
+- Add a headless Vue SDK NumberField with pointer scrubbing, keyboard stepping, safe arithmetic expressions, and mixed/bound states; remove the superseded ScrubInput API.
+- Add provider-driven BindableValue primitives for variable and token binding, including detach-on-edit, read-only, edit-variable, mixed-value, and undo-batched interactions.
+- Add headless PropertySection, SegmentedControl, and typed PropertyList anatomy, with controlled list events and an undo-aware OpenPencil adapter.
+- Refine variable-bound number fields with a quiet identity pill, one picker affordance, an accessible variable combobox, and non-destructive focus behavior.
+- Redesign Position and Appearance controls with aligned panel grids, SDK-owned independent-corner state, and compact type-icon selection headers.
+- Rebuild Layout size fields with shared variable binding, inline sizing modes, semantic field anatomy, and one-step Hug/Fill-to-Fixed editing.
+- Replace the fragmented Vue SDK color-picker model helpers with `useColorModel()`, providing precise Reka bridges, extensible formats, and shared RGB, HSL, HSB, and OkHCL channel behavior.
+- Add accessible color-channel sliders, binding-aware fill primitives, and keyboard-operable gradient stops while separating fill state from popover composition.
+- Rebuild Fill, Stroke, Effects, and Export controls with shared compact item rows, semantic actions, binding-aware paint fields, and reversible color-picker edits.
+- Finish the Design panel migration with compact labeled Typography, Variant, Mask, and Page controls plus semantic empty-section states.
+- Remove the deprecated `FillPickerRoot`, `useFillPicker()`, and `PanelRow` compatibility APIs after migrating consumers to the canonical fill and panel primitives.
+- Upgrade Vue SDK documentation with shared Tailwind demos, source-generated component API tables, and type-aware Twoslash examples in VitePress.
+- Add desktop image drag-and-drop into the Tauri app window.
+- Add open-document discovery for live CLI and MCP automation so agents can target the intended document and page.
+- Publish lower-level SceneGraph, Pen, Kiwi, Fig, and DOM/CSS functionality through clearer package boundaries for SDK and automation consumers.
+- Upgrade `opentype.js` to v2 and add BCP-47 text-language hints for language-correct CJK shaping and fallback order.
 - Import HTML, CSS, Tailwind, and JSX as editable documents from the app, CLI, and SDK, and export standalone browser-ready HTML with compiled CSS and optional external assets.
 - Author richer Design JSX with components, instances, variables, gradients, structured fills, shadows, and blur effects.
 - Manage pages with rename, delete, and drag-to-reorder actions in the Pages panel.
