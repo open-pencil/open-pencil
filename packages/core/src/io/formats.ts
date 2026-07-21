@@ -3,6 +3,7 @@ import { parsePenFile } from '@open-pencil/pen'
 import { sceneNodeToJSX, selectionToJSX } from '#core/design-jsx'
 
 import { exportFigFile, parseFigFile } from './formats/fig'
+import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
 import { renderNodesToSVG } from './formats/svg'
 import { extractExportGraph, findPageId } from './subgraph'
@@ -286,6 +287,41 @@ export const pdfFormat: IOFormatAdapter = {
   }
 }
 
+export const pptxFormat: IOFormatAdapter = {
+  id: 'pptx',
+  label: 'PowerPoint',
+  role: 'derived-export',
+  category: 'print',
+  extensions: ['pptx'],
+  mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
+  support: {
+    exportDocument: true,
+    exportPage: true,
+    exportSelection: true,
+    exportNode: true
+  },
+  exportOptions: {
+    scale: false,
+    quality: false
+  },
+  async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const { renderNodesToPPTX } = await import('./formats/pptx')
+    const data = await renderNodesToPPTX(request.graph, target.pageId, target.nodeIds, {
+      ...options,
+      context: options?.context ?? context
+    })
+    if (!data) throw new Error('Nothing to export')
+    return {
+      format: 'pptx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      extension: 'pptx',
+      data
+    }
+  }
+}
+
 export const jsxFormat: IOFormatAdapter = {
   id: 'jsx',
   label: 'JSX',
@@ -329,5 +365,6 @@ export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
   webpFormat,
   svgFormat,
   pdfFormat,
+  pptxFormat,
   jsxFormat
 ]
