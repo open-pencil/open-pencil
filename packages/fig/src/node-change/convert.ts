@@ -423,14 +423,25 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
   }
 }
 
+function consumesVariableField(nc: NodeChange, field: string): boolean {
+  return nc.variableConsumptionMap?.entries?.some((entry) => entry.variableField === field) ?? false
+}
+
 function convertLayoutPadding(
   nc: NodeChange
 ): Pick<SceneNode, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> {
+  const basePadding = nc.stackPadding ?? 0
+  const verticalPadding = nc.stackVerticalPadding ?? basePadding
+  const horizontalPadding = nc.stackHorizontalPadding ?? basePadding
   return {
-    paddingTop: nc.stackVerticalPadding ?? nc.stackPadding ?? 0,
-    paddingBottom: nc.stackPaddingBottom ?? nc.stackVerticalPadding ?? nc.stackPadding ?? 0,
-    paddingLeft: nc.stackHorizontalPadding ?? nc.stackPadding ?? 0,
-    paddingRight: nc.stackPaddingRight ?? nc.stackHorizontalPadding ?? nc.stackPadding ?? 0
+    paddingTop: verticalPadding,
+    paddingBottom:
+      nc.stackPaddingBottom ??
+      (consumesVariableField(nc, 'STACK_PADDING_TOP') ? basePadding : verticalPadding),
+    paddingLeft: horizontalPadding,
+    paddingRight:
+      nc.stackPaddingRight ??
+      (consumesVariableField(nc, 'STACK_PADDING_LEFT') ? basePadding : horizontalPadding)
   }
 }
 
