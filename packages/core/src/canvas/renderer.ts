@@ -261,6 +261,13 @@ export class SkiaRenderer {
   declare drawRulers: (canvas: Canvas, graph: SceneGraph, selectedIds: Set<string>) => void
   declare drawSectionTitles: (canvas: Canvas, graph: SceneGraph) => void
   declare drawComponentLabels: (canvas: Canvas, graph: SceneGraph) => void
+  declare drawFrameTitles: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>,
+    hoveredNodeId: string | null,
+    editingFrameTitleId: string | null
+  ) => void
   declare renderNode: (
     canvas: Canvas,
     graph: SceneGraph,
@@ -530,6 +537,17 @@ export class SkiaRenderer {
       this.zoom,
       selectedIds,
       this.labelFont
+    )
+  }
+
+  hitTestFrameTitles(graph: SceneGraph, canvasX: number, canvasY: number): SceneNode | null {
+    return LabelHitTest.hitTestFrameTitles(
+      graph,
+      canvasX,
+      canvasY,
+      this.zoom,
+      this.labelFont,
+      this.labelCache
     )
   }
 

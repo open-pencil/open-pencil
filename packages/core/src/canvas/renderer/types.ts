@@ -15,6 +15,7 @@ export interface RenderOverlays {
   hoveredNodeId?: string | null
   enteredContainerId?: string | null
   editingTextId?: string | null
+  editingFrameTitleId?: string | null
   textEditor?: TextEditor | null
   marquee?: Rect | null
   snapGuides?: SnapGuide[]

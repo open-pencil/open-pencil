@@ -9,6 +9,7 @@ export interface CanvasContext {
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
+  hitTestFrameTitles: (cx: number, cy: number) => SceneNode | null
 }
 
 export const CANVAS_KEY: InjectionKey<CanvasContext> = Symbol('canvas')

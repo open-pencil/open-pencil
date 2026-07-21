@@ -11,7 +11,8 @@ import {
   COMPONENT_LABEL_FONT_SIZE,
   COMPONENT_LABEL_GAP,
   COMPONENT_LABEL_ICON_SIZE,
-  COMPONENT_LABEL_ICON_GAP
+  COMPONENT_LABEL_ICON_GAP,
+  LABEL_OFFSET_Y
 } from '#core/constants'
 
 import { ellipsizeLabelText } from './text'
@@ -98,6 +99,52 @@ function drawSectionTitle(
   r.auxFill.setColor(lum > 0.5 ? r.ck.BLACK : r.ck.WHITE)
   const textY = localPillY + pillH * 0.7
   canvas.drawText(displayText, localPillX + SECTION_TITLE_PADDING_X, textY, r.auxFill, font)
+  canvas.restore()
+}
+
+export function drawFrameTitles(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  selectedIds: Set<string>,
+  hoveredNodeId: string | null,
+  editingFrameTitleId: string | null
+): void {
+  if (!r.labelFont) return
+
+  const frames = r.labelCache.getFrames(graph, r.worldViewport)
+  if (frames.length === 0) return
+
+  const font = r.labelFont
+
+  for (const { node, absX, absY } of frames) {
+    if (selectedIds.has(node.id)) continue
+    if (editingFrameTitleId === node.id) continue
+    drawFrameTitle(r, canvas, font, node, absX, absY, hoveredNodeId === node.id)
+  }
+}
+
+function drawFrameTitle(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  font: Font,
+  node: SceneNode,
+  absX: number,
+  absY: number,
+  hovered: boolean
+): void {
+  const screenX = absX * r.zoom + r.panX
+  const screenY = absY * r.zoom + r.panY
+
+  const displayText = ellipsizeLabelText(font, node.name, node.width * r.zoom)
+  if (!displayText) return
+
+  r.auxFill.setColor(hovered ? r.selColor() : r.selColor(0.5))
+
+  canvas.save()
+  canvas.translate(screenX, screenY)
+  if (node.rotation !== 0) canvas.rotate(node.rotation, 0, 0)
+  canvas.drawText(displayText, 0, -LABEL_OFFSET_Y, r.auxFill, font)
   canvas.restore()
 }
 

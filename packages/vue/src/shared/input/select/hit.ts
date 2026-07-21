@@ -10,13 +10,16 @@ export function resolveHit(
   fns: HitTestFns
 ): SceneNode | null {
   const titleHit =
-    fns.hitTestFrameTitle(cx, cy) ??
+    fns.hitTestFrameTitles(cx, cy) ??
     fns.hitTestSectionTitle(cx, cy) ??
     fns.hitTestComponentLabel(cx, cy)
   if (titleHit) return titleHit
 
   const hit = fns.hitTestInScope(cx, cy, false)
   if (hit) return hit
+
+  const borderHit = fns.hitTestFrameBorder(cx, cy)
+  if (borderHit) return borderHit
 
   const scopeId = editor.state.enteredContainerId
   if (!scopeId) return null

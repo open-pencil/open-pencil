@@ -145,6 +145,16 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Labels.drawComponentLabels(this, canvas, graph)
   },
 
+  drawFrameTitles(
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>,
+    hoveredNodeId: string | null,
+    editingFrameTitleId: string | null
+  ): void {
+    Labels.drawFrameTitles(this, canvas, graph, selectedIds, hoveredNodeId, editingFrameTitleId)
+  },
+
   renderNode(
     canvas: Canvas,
     graph: SceneGraph,

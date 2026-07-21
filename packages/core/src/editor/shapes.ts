@@ -61,20 +61,24 @@ export function createShapeActions(ctx: EditorContext) {
       overrides.starInnerRadius = 0.38
     }
     const node = ctx.graph.createNode(type, pid, overrides)
+    ctx.runLayoutForNode(pid)
     const id = node.id
-    const snapshot = { ...node }
+    const snapshot = structuredClone(node)
     ctx.undo.push({
       label: `Create ${type.toLowerCase()}`,
       forward: () => {
         ctx.graph.createNode(snapshot.type, pid, snapshot)
+        ctx.runLayoutForNode(pid)
       },
       inverse: () => {
         ctx.graph.deleteNode(id)
+        ctx.runLayoutForNode(pid)
         const next = new Set(ctx.state.selectedIds)
         next.delete(id)
         ctx.setSelectedIds(next)
       }
     })
+    ctx.requestRender()
     return id
   }
 

@@ -14,6 +14,12 @@ export interface CachedComponent {
   parentType: string
 }
 
+export interface CachedFrame {
+  nodeId: string
+  absX: number
+  absY: number
+}
+
 interface Viewport {
   x: number
   y: number
@@ -23,6 +29,7 @@ interface Viewport {
 
 const LABEL_TYPES = new Set(['COMPONENT', 'COMPONENT_SET'])
 const COMPONENT_LABEL_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
+const FRAME_TITLE_PARENT_TYPES = new Set(['CANVAS', 'SECTION'])
 
 function isInViewport(absX: number, absY: number, w: number, h: number, vp: Viewport): boolean {
   return absX + w >= vp.x && absY + h >= vp.y && absX <= vp.x + vp.w && absY <= vp.y + vp.h
@@ -50,35 +57,42 @@ function collectVisibleLabels<
 export class LabelCache {
   private sections: CachedSection[] = []
   private components: CachedComponent[] = []
+  private frames: CachedFrame[] = []
   private cachedSceneVersion = -1
   private cachedPositionPreviewVersion = -1
   private cachedPageId: string | null = null
+  private cachedEnteredContainerId: string | null | undefined = undefined
 
   update(
     graph: SceneGraph,
     pageId: string | null,
     sceneVersion: number,
-    positionPreviewVersion = graph.positionPreviewVersion
+    positionPreviewVersion = graph.positionPreviewVersion,
+    enteredContainerId?: string | null
   ): void {
     if (
       sceneVersion === this.cachedSceneVersion &&
       positionPreviewVersion === this.cachedPositionPreviewVersion &&
-      pageId === this.cachedPageId
+      pageId === this.cachedPageId &&
+      enteredContainerId === this.cachedEnteredContainerId
     ) {
       return
     }
-    this.rebuild(graph, pageId)
+    this.rebuild(graph, pageId, enteredContainerId)
     this.cachedSceneVersion = sceneVersion
     this.cachedPositionPreviewVersion = positionPreviewVersion
     this.cachedPageId = pageId
+    this.cachedEnteredContainerId = enteredContainerId
   }
 
   invalidate(): void {
     this.cachedSceneVersion = -1
     this.cachedPositionPreviewVersion = -1
     this.cachedPageId = null
+    this.cachedEnteredContainerId = undefined
     this.sections = []
     this.components = []
+    this.frames = []
   }
 
   getSections(
@@ -99,6 +113,17 @@ export class LabelCache {
     }))
   }
 
+  getFrames(
+    graph: SceneGraph,
+    viewport: Viewport
+  ): Array<{ node: SceneNode; absX: number; absY: number }> {
+    return collectVisibleLabels(graph, viewport, this.frames, () => ({}))
+  }
+
+  getAllFrames(): readonly CachedFrame[] {
+    return this.frames
+  }
+
   getAllSections(): readonly CachedSection[] {
     return this.sections
   }
@@ -107,14 +132,19 @@ export class LabelCache {
     return this.components
   }
 
-  private rebuild(graph: SceneGraph, pageId: string | null): void {
+  private rebuild(
+    graph: SceneGraph,
+    pageId: string | null,
+    enteredContainerId?: string | null
+  ): void {
     this.sections = []
     this.components = []
+    this.frames = []
 
     const pageNode = graph.getNode(pageId ?? graph.rootId)
-    if (!pageNode) return
-
-    this.walkChildren(graph, pageNode.id, 0, 0, false)
+    if (pageNode) {
+      this.walkChildren(graph, pageNode.id, 0, 0, false, false, enteredContainerId)
+    }
   }
 
   private walkChildren(
@@ -122,11 +152,14 @@ export class LabelCache {
     parentId: string,
     ox: number,
     oy: number,
-    insideSection: boolean
+    insideSection: boolean,
+    collectNestedFrames = false,
+    enteredContainerId?: string | null
   ): void {
     const parent = graph.getNode(parentId)
     if (!parent) return
     const parentType = parent.type
+    const shouldCollectNested = collectNestedFrames || parentId === enteredContainerId
 
     for (const childId of parent.childIds) {
       const child = graph.getNode(childId)
@@ -136,16 +169,46 @@ export class LabelCache {
 
       if (child.type === 'SECTION') {
         this.sections.push({ nodeId: childId, absX: ax, absY: ay, nested: insideSection })
-        this.walkChildren(graph, childId, ax, ay, true)
+        this.walkChildren(graph, childId, ax, ay, true, shouldCollectNested, enteredContainerId)
+      } else if (
+        child.type === 'FRAME' &&
+        (FRAME_TITLE_PARENT_TYPES.has(parentType) || shouldCollectNested)
+      ) {
+        this.frames.push({ nodeId: childId, absX: ax, absY: ay })
+        this.walkChildren(
+          graph,
+          childId,
+          ax,
+          ay,
+          insideSection,
+          shouldCollectNested,
+          enteredContainerId
+        )
       } else if (LABEL_TYPES.has(child.type)) {
         if (COMPONENT_LABEL_PARENT_TYPES.has(parentType)) {
           this.components.push({ nodeId: childId, absX: ax, absY: ay, parentType })
         }
         if (child.childIds.length > 0) {
-          this.walkChildren(graph, childId, ax, ay, insideSection)
+          this.walkChildren(
+            graph,
+            childId,
+            ax,
+            ay,
+            insideSection,
+            shouldCollectNested,
+            enteredContainerId
+          )
         }
       } else if (child.childIds.length > 0) {
-        this.walkChildren(graph, childId, ax, ay, insideSection)
+        this.walkChildren(
+          graph,
+          childId,
+          ax,
+          ay,
+          insideSection,
+          shouldCollectNested,
+          enteredContainerId
+        )
       }
     }
   }

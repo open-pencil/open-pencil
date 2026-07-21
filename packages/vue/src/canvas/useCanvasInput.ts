@@ -38,6 +38,7 @@ export function useCanvasInput(
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null,
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null,
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
+  hitTestFrameTitles: (cx: number, cy: number) => SceneNode | null,
   onCursorMove?: (cx: number, cy: number) => void
 ) {
   const drag = ref<DragState | null>(null)
@@ -48,6 +49,7 @@ export function useCanvasInput(
     value: number
     previous: number
   } | null>(null)
+  const frameTitleRename = ref<{ nodeId: string; name: string } | null>(null)
   const selectedIdsBeforeClickSequence = ref<ReadonlySet<string>>(new Set())
   const spaceHeld = useSpaceHeld()
   const { recordClick, getClickCount } = createClickCounter()
@@ -57,7 +59,8 @@ export function useCanvasInput(
     editor,
     hitTestSectionTitle,
     hitTestComponentLabel,
-    hitTestFrameTitle
+    hitTestFrameTitle,
+    hitTestFrameTitles
   )
 
   function setDrag(d: DragState) {
@@ -142,8 +145,33 @@ export function useCanvasInput(
     autoLayoutPaddingEdit.value = null
   }
 
+  function startFrameTitleRename(nodeId: string) {
+    const node = editor.graph.getNode(nodeId)
+    if (!node) return
+    frameTitleRename.value = { nodeId, name: node.name }
+    editor.state.editingFrameTitleId = nodeId
+  }
+
+  function commitFrameTitleRename(value: string) {
+    const edit = frameTitleRename.value
+    if (edit) editor.renameNode(edit.nodeId, value)
+    frameTitleRename.value = null
+    editor.state.editingFrameTitleId = null
+  }
+
+  function cancelFrameTitleRename() {
+    frameTitleRename.value = null
+    editor.state.editingFrameTitleId = null
+  }
+
   function onDblClick(e: MouseEvent) {
     if (startAutoLayoutPaddingEdit(e)) return
+    const { cx, cy } = getCoords(e)
+    const titleHit = hitTestFrameTitles(cx, cy)
+    if (titleHit) {
+      startFrameTitleRename(titleHit.id)
+      return
+    }
     onTextDblClick(e)
   }
 
@@ -302,6 +330,9 @@ export function useCanvasInput(
     autoLayoutPaddingEdit,
     updateAutoLayoutPaddingEdit,
     commitAutoLayoutPaddingEdit,
-    cancelAutoLayoutPaddingEdit
+    cancelAutoLayoutPaddingEdit,
+    frameTitleRename,
+    commitFrameTitleRename,
+    cancelFrameTitleRename
   }
 }

@@ -35,5 +35,9 @@ export function createCanvasHitTests(editor: Editor, getRenderer: () => SkiaRend
     )
   }
 
-  return { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle }
+  function hitTestFrameTitles(canvasX: number, canvasY: number) {
+    return getRenderer()?.hitTestFrameTitles(editor.graph, canvasX, canvasY) ?? null
+  }
+
+  return { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestFrameTitles }
 }

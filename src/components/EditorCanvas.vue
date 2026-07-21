@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
@@ -46,25 +46,26 @@ useCanvas(sceneCanvasRef, store, {
   showRulers: false,
   onReady: fadeOutGlobalLoader
 })
-const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
-  canvasRef,
-  store,
-  {
+const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle, hitTestFrameTitles } =
+  useCanvas(canvasRef, store, {
     layer: 'overlays'
-  }
-)
+  })
 const {
   cursorOverride,
   autoLayoutPaddingEdit,
   updateAutoLayoutPaddingEdit,
   commitAutoLayoutPaddingEdit,
-  cancelAutoLayoutPaddingEdit
+  cancelAutoLayoutPaddingEdit,
+  frameTitleRename,
+  commitFrameTitleRename,
+  cancelFrameTitleRename
 } = useCanvasInput(
   canvasRef,
   store,
   hitTestSectionTitle,
   hitTestComponentLabel,
   hitTestFrameTitle,
+  hitTestFrameTitles,
   updateCursor
 )
 
@@ -96,6 +97,61 @@ const paddingEditorIcon = computed(() => {
   const edit = autoLayoutPaddingEdit.value
   return edit ? paddingSideIcons[edit.side] : IconLucidePanelTop
 })
+
+const renameAnchor = computed(() => {
+  const edit = frameTitleRename.value
+  if (!edit) return null
+  const abs = store.graph.getAbsolutePosition(edit.nodeId)
+  return abs ? { x: abs.x, y: abs.y } : null
+})
+const renameReference = useCanvasVirtualReference(canvasRef, store, renameAnchor)
+
+function onRenameKeydown(e: KeyboardEvent) {
+  if (e.code === 'Enter') {
+    e.preventDefault()
+    ;(e.target as HTMLInputElement).blur()
+  } else if (e.code === 'Escape') {
+    e.preventDefault()
+    cancelFrameTitleRename()
+  }
+}
+
+const renameInputRef = ref<HTMLInputElement | null>(null)
+const renameValue = ref('')
+
+const renameMaxWidth = computed(() => {
+  const edit = frameTitleRename.value
+  if (!edit) return 120
+  const node = store.graph.getNode(edit.nodeId)
+  if (!node) return 120
+  return Math.max(40, node.width * store.state.zoom)
+})
+
+watch(
+  () => frameTitleRename.value,
+  (edit) => {
+    if (edit) {
+      renameValue.value = edit.name
+      requestAnimationFrame(() => {
+        const input = renameInputRef.value
+        if (input) {
+          input.focus()
+          input.select()
+        }
+      })
+    }
+  }
+)
+
+watch(
+  () => store.state.selectedIds,
+  (selectedIds) => {
+    const edit = frameTitleRename.value
+    if (edit && !selectedIds.has(edit.nodeId)) {
+      cancelFrameTitleRename()
+    }
+  }
+)
 
 const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.value))
 </script>
@@ -164,6 +220,40 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
                   <component :is="paddingEditorIcon" class="size-3.5" />
                 </template>
               </NumberField>
+            </PopoverContent>
+          </PopoverPortal>
+        </PopoverRoot>
+        <PopoverRoot :open="!!frameTitleRename">
+          <PopoverPortal>
+            <PopoverContent
+              v-if="frameTitleRename && renameReference"
+              :reference="renameReference"
+              side="top"
+              align="start"
+              :side-offset="4"
+              :collision-padding="8"
+              class="z-50 inline-block rounded-md bg-panel p-0.5 shadow-lg"
+              data-test-id="frame-title-rename"
+              :style="{ maxWidth: `${renameMaxWidth + 12}px` }"
+              @keydown.escape.prevent="cancelFrameTitleRename"
+              @open-auto-focus.prevent
+            >
+              <div class="relative inline-flex" :style="{ maxWidth: `${renameMaxWidth}px` }">
+                <span
+                  class="invisible whitespace-pre rounded-sm px-1.5 py-0.5 text-xs"
+                  aria-hidden="true"
+                  >{{ renameValue || ' ' }}&nbsp;</span
+                >
+                <input
+                  ref="renameInputRef"
+                  v-model="renameValue"
+                  aria-label="Rename frame"
+                  data-test-id="frame-title-rename-input"
+                  class="absolute inset-0 w-full rounded-sm border border-transparent bg-panel-field px-1.5 py-0.5 text-xs text-surface outline-none focus:border-panel-focus"
+                  @blur="commitFrameTitleRename(renameValue)"
+                  @keydown="onRenameKeydown"
+                />
+              </div>
             </PopoverContent>
           </PopoverPortal>
         </PopoverRoot>

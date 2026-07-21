@@ -90,6 +90,31 @@ test.describe('Zoom and pan', () => {
     helper.assertNoErrors()
   })
 
+  test('shift + vertical wheel pans horizontally', async () => {
+    const before = await helper.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return { panX: store.state.panX, panY: store.state.panY }
+    })
+
+    const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
+    await helper.page.mouse.move(box.x + 400, box.y + 300)
+    await helper.page.keyboard.down('Shift')
+    await helper.page.mouse.wheel(0, 100)
+    await helper.page.keyboard.up('Shift')
+    await helper.waitForRender()
+    await helper.page.waitForTimeout(50)
+
+    const after = await helper.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return { panX: store.state.panX, panY: store.state.panY }
+    })
+
+    expect(Math.abs(after.panX - before.panX)).toBeGreaterThan(Math.abs(after.panY - before.panY))
+    helper.assertNoErrors()
+  })
+
   test('rapid wheel events are coalesced without errors', async () => {
     const box = expectDefined(await helper.canvas.boundingBox(), 'canvas bounds')
     await helper.page.mouse.move(box.x + 400, box.y + 300)

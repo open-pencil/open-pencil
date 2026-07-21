@@ -15,6 +15,8 @@ export interface HitTestFns {
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null
+  hitTestFrameBorder: (cx: number, cy: number) => SceneNode | null
+  hitTestFrameTitles: (cx: number, cy: number) => SceneNode | null
 }
 
 export function handleSelectDown(

@@ -1,8 +1,13 @@
 import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/scene-graph/coordinate'
+import {
+  getAbsoluteRotation,
+  getWorldHandles,
+  getWorldMatrix
+} from '@open-pencil/scene-graph/coordinate'
 import { degToRad } from '@open-pencil/scene-graph/geometry'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import resizeCursorSvg from '#vue/shared/assets/resize-cursor.svg?raw'
@@ -65,6 +70,35 @@ export function hitTestInEditorScope(
   return deep
     ? editor.graph.hitTestDeep(cx, cy, editor.state.currentPageId)
     : editor.graph.hitTest(cx, cy, editor.state.currentPageId)
+}
+
+const FRAME_BORDER_HIT_THRESHOLD_PX = 6
+
+export function hitTestFrameBorder(cx: number, cy: number, editor: Editor): SceneNode | null {
+  const threshold = FRAME_BORDER_HIT_THRESHOLD_PX / editor.state.zoom
+  const scopeId = editor.state.enteredContainerId ?? editor.state.currentPageId
+  const scope = editor.graph.getNode(scopeId)
+  if (!scope) return null
+  for (let i = scope.childIds.length - 1; i >= 0; i--) {
+    const childId = scope.childIds[i]
+    const child = editor.graph.getNode(childId)
+    if (!child?.visible || child.type !== 'FRAME') continue
+    const inverse = Matrix.invert(getWorldMatrix(child, editor.graph))
+    if (!inverse) continue
+    const [localX, localY] = Matrix.mapPoints(inverse, [cx, cy])
+    const insideOuter =
+      localX >= -threshold &&
+      localX <= child.width + threshold &&
+      localY >= -threshold &&
+      localY <= child.height + threshold
+    const insideInner =
+      localX >= threshold &&
+      localX <= child.width - threshold &&
+      localY >= threshold &&
+      localY <= child.height - threshold
+    if (insideOuter && !insideInner) return child
+  }
+  return null
 }
 
 export function isInsideEditorContainerBounds(

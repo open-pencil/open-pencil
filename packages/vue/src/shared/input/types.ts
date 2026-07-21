@@ -1,5 +1,5 @@
 import type { Tool } from '@open-pencil/core/editor'
-import type { NodeType, VectorNetwork } from '@open-pencil/scene-graph'
+import type { Mat3, NodeType, VectorNetwork } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 export type HandlePosition = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
@@ -11,6 +11,7 @@ export interface DragDraw {
   startX: number
   startY: number
   nodeId: string
+  parentInverseMatrix: Mat3 | null
 }
 
 export interface DragMove {
