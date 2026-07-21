@@ -1,36 +1,20 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createStandaloneShapes } from '@/app/demo/sections/standalone'
+import { createDemoShapes } from '@/app/demo/document'
 import { createEditorStore } from '@/app/editor/session'
 
 describe('demo document', () => {
-  test('showcases imported OpenType and text decoration features', () => {
+  test('builds the component library and analytics showcase', () => {
     const store = createEditorStore()
 
-    createStandaloneShapes(store)
+    createDemoShapes(store)
 
     const nodes = [...store.graph.getAllNodes()]
-    const ligatures = nodes.find((node) => node.name === 'Ligatures')
-    const rawTags = nodes.find((node) => node.name === 'Raw')
-    const wavy = nodes.find((node) => node.name === 'Wavy')
-    const dotted = nodes.find((node) => node.name === 'Dotted')
-
-    expect(ligatures?.fontFeatures).toEqual([{ tag: 'LIGA', enabled: false }])
-    expect(rawTags?.fontFeatures).toEqual([
-      { tag: 'DLIG', enabled: true },
-      { tag: 'KERN', enabled: false }
-    ])
-    expect(wavy).toMatchObject({
-      textDecoration: 'UNDERLINE',
-      textDecorationStyle: 'WAVY',
-      textDecorationThickness: 1.6
-    })
-    expect(wavy?.textDecorationFills[0]?.type).toBe('SOLID')
-    expect(dotted).toMatchObject({
-      textDecoration: 'UNDERLINE',
-      textDecorationStyle: 'DOTTED',
-      textDecorationThickness: 2
-    })
-    expect(dotted?.textDecorationFills[0]?.type).toBe('SOLID')
+    expect(nodes.some((node) => node.name === 'Component Library')).toBe(true)
+    expect(nodes.some((node) => node.name === 'App — Analytics')).toBe(true)
+    expect(nodes.some((node) => node.name === 'Chart')).toBe(true)
+    expect(nodes.filter((node) => node.type === 'COMPONENT').length).toBeGreaterThanOrEqual(6)
+    expect(nodes.filter((node) => node.type === 'INSTANCE').length).toBeGreaterThan(6)
+    expect(store.graph.variables.size).toBeGreaterThan(0)
   })
 })

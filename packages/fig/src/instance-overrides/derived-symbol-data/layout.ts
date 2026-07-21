@@ -32,15 +32,14 @@ function resolveSizeOnlyPosition(
   )
     return null
   const source = ctx.graph.getNode(node.componentId)
-  if (!source) return null
-  const sourceParent = source.parentId ? ctx.graph.getNode(source.parentId) : null
-  if (!sourceParent) return { x: source.x, y: source.y }
-  const withinParent =
+  const targetParent = ctx.graph.getNode(node.parentId)
+  if (!source || !targetParent) return null
+  const fitsTargetParent =
     source.x >= 0 &&
     source.y >= 0 &&
-    source.x + source.width <= sourceParent.width + 0.01 &&
-    source.y + source.height <= sourceParent.height + 0.01
-  return withinParent ? { x: source.x, y: source.y } : { x: 0, y: 0 }
+    source.x + source.width <= targetParent.width + 0.01 &&
+    source.y + source.height <= targetParent.height + 0.01
+  return fitsTargetParent ? { x: source.x, y: source.y } : null
 }
 
 function buildDsdTextUpdates(
@@ -66,7 +65,7 @@ function buildDsdTextUpdates(
 
 export function buildDsdLayoutUpdates(
   ctx: OverrideContext,
-  visibleSiblingCount: Map<string, number>,
+  _visibleSiblingCount: Map<string, number>,
   d: DerivedSymbolOverride,
   target: SceneNode
 ): { updates: Partial<SceneNode>; hasSize: boolean } {
@@ -85,7 +84,7 @@ export function buildDsdLayoutUpdates(
     figmaDerivedLayout.x = d.transform.m02
     figmaDerivedLayout.y = d.transform.m12
   } else if (d.size) {
-    const position = resolveSizeOnlyPosition(ctx, visibleSiblingCount, target)
+    const position = resolveSizeOnlyPosition(ctx, _visibleSiblingCount, target)
     if (position) {
       updates.x = position.x
       updates.y = position.y

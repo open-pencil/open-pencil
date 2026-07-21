@@ -75,6 +75,7 @@ export interface InstanceNodeChange {
   guid?: GUID
   parentIndex?: { guid?: GUID }
   transform?: Matrix
+  size?: Vector
   overrideKey?: GUID
   symbolData?: SymbolData
   componentPropRefs?: ComponentPropRef[]

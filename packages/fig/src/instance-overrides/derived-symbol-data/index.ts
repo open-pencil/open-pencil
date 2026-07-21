@@ -17,6 +17,12 @@ function applyDsdOverride(
 
   const targetId = resolveOverrideTarget(ctx, nodeId, guids)
   if (!targetId) return
+  if (targetId === nodeId) {
+    // The instance NodeChange already carries its authoritative root bounds.
+    // Keep descendant propagation from replacing them with component bounds.
+    sizeSet.add(nodeId)
+    return
+  }
 
   const target = ctx.graph.getNode(targetId)
   if (!target) return
@@ -35,7 +41,6 @@ function resolveDsdUpdates(ctx: OverrideContext): { modified: Set<string>; sizeS
   const modified = new Set<string>()
   const sizeSet = new Set<string>()
   const visibleSiblingCount = new Map<string, number>()
-
   for (const [ncId, nc] of ctx.changeMap) {
     if (nc.type !== 'INSTANCE') continue
     const derived = nc.derivedSymbolData

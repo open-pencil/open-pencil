@@ -30,7 +30,17 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
 
     const figmaId = ctx.nodeIdToGuid.get(node.id)
     const strokeScale = figmaId ? ctx.changeMap.get(figmaId)?.strokeWeight : undefined
-    scaleChildren(graph, node, comp, sx, sy, scaled, basis !== comp, strokeScale)
+    scaleChildren(
+      graph,
+      node,
+      comp,
+      sx,
+      sy,
+      scaled,
+      ctx.geometryOverrideNodes,
+      basis !== comp,
+      strokeScale
+    )
   }
 
   if (scaled.size > 0) propagateScaling(ctx, scaled)
@@ -109,6 +119,25 @@ function scaledStrokes(
   }))
 }
 
+function scaledGeometryUpdates(
+  source: SceneNode,
+  shapeScaleX: number,
+  shapeScaleY: number,
+  hasDerivedGeometry: boolean
+): Partial<SceneNode> {
+  const updates: Partial<SceneNode> = {}
+  if (!hasDerivedGeometry && source.fillGeometry.length > 0) {
+    updates.fillGeometry = scaleGeometryBlobs(source.fillGeometry, shapeScaleX, shapeScaleY)
+  }
+  if (!hasDerivedGeometry && source.strokeGeometry.length > 0) {
+    updates.strokeGeometry = scaleGeometryBlobs(source.strokeGeometry, shapeScaleX, shapeScaleY)
+  }
+  if (source.vectorNetwork) {
+    updates.vectorNetwork = scaleVectorNetwork(source.vectorNetwork, shapeScaleX, shapeScaleY)
+  }
+  return updates
+}
+
 function scaleChildren(
   graph: SceneGraph,
   instance: SceneNode,
@@ -116,6 +145,7 @@ function scaleChildren(
   sx: number,
   sy: number,
   scaled: Set<string>,
+  geometryOverrideNodes: Set<string>,
   useCurrentChildAsSource = false,
   strokeScale?: number
 ): void {
@@ -141,15 +171,10 @@ function scaleChildren(
     }
     const shapeScaleX = hScale ? sx : 1
     const shapeScaleY = vScale ? sy : 1
-    if (source.fillGeometry.length > 0) {
-      updates.fillGeometry = scaleGeometryBlobs(source.fillGeometry, shapeScaleX, shapeScaleY)
-    }
-    if (source.strokeGeometry.length > 0) {
-      updates.strokeGeometry = scaleGeometryBlobs(source.strokeGeometry, shapeScaleX, shapeScaleY)
-    }
-    if (source.vectorNetwork) {
-      updates.vectorNetwork = scaleVectorNetwork(source.vectorNetwork, shapeScaleX, shapeScaleY)
-    }
+    Object.assign(
+      updates,
+      scaledGeometryUpdates(source, shapeScaleX, shapeScaleY, geometryOverrideNodes.has(child.id))
+    )
     updates.strokes = scaledStrokes(source, child, shapeScaleX, shapeScaleY, strokeScale)
     graph.updateNode(child.id, updates)
     scaled.add(child.id)
@@ -162,6 +187,7 @@ function scaleChildren(
         hScale ? sx : 1,
         vScale ? sy : 1,
         scaled,
+        geometryOverrideNodes,
         useCurrentChildAsSource,
         strokeScale
       )

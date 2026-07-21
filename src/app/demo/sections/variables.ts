@@ -33,40 +33,40 @@ export function createDemoVariables(store: EditorStore) {
     {
       id: 'var-gray-50',
       name: 'Gray/50',
-      light: DEMO_COLORS.gray50,
+      light: DEMO_COLORS.bg,
       dark: { r: 0.1, g: 0.1, b: 0.11, a: 1 }
     },
     {
       id: 'var-gray-100',
       name: 'Gray/100',
-      light: DEMO_COLORS.gray100,
+      light: DEMO_COLORS.surfaceSunken,
       dark: { r: 0.14, g: 0.14, b: 0.16, a: 1 }
     },
     {
       id: 'var-gray-200',
       name: 'Gray/200',
-      light: DEMO_COLORS.gray200,
+      light: DEMO_COLORS.border,
       dark: { r: 0.22, g: 0.22, b: 0.24, a: 1 }
     },
     {
       id: 'var-gray-500',
       name: 'Gray/500',
-      light: DEMO_COLORS.gray500,
+      light: DEMO_COLORS.textSecondary,
       dark: { r: 0.65, g: 0.65, b: 0.68, a: 1 }
     },
     {
       id: 'var-blue',
       name: 'Blue',
-      light: DEMO_COLORS.blue,
+      light: DEMO_COLORS.accent,
       dark: { r: 0.33, g: 0.61, b: 1, a: 1 }
     },
     {
       id: 'var-green',
       name: 'Green',
-      light: DEMO_COLORS.green,
+      light: DEMO_COLORS.success,
       dark: { r: 0.23, g: 0.87, b: 0.52, a: 1 }
     },
-    { id: 'var-red', name: 'Red', light: DEMO_COLORS.red, dark: { r: 1, g: 0.32, b: 0.32, a: 1 } }
+    { id: 'var-red', name: 'Red', light: DEMO_COLORS.danger, dark: { r: 1, g: 0.32, b: 0.32, a: 1 } }
   ]
 
   for (const c of primitiveColors) {

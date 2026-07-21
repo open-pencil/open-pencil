@@ -1,253 +1,191 @@
-import { DEMO_COLORS, gradient, solid, thinStroke } from '@/app/demo/colors'
+import { DEMO_COLORS, solid } from '@/app/demo/colors'
 import { makeComponent } from '@/app/demo/helpers'
 import type { EditorStore } from '@/app/editor/session'
 
+/**
+ * A small but real component library: Button (primary/secondary), Badge,
+ * Avatar, Nav item, and Toggle — all as actual COMPONENTs. The app screen is
+ * then assembled from INSTANCEs so the demo exercises the component → instance
+ * → override workflow.
+ */
 export function createComponentsSection(store: EditorStore) {
   const { graph } = store
 
-  const compSectionId = store.createShape('SECTION', 60, 60, 920, 540)
-  graph.updateNode(compSectionId, { name: 'Components' })
-
-  const btnId = store.createShape('FRAME', 32, 76, 120, 40, compSectionId)
-  graph.updateNode(btnId, {
-    name: 'Button/Primary',
-    fills: [],
-    strokes: [],
-    clipsContent: false
+  const sectionId = store.createShape('SECTION', 60, 60, 660, 300)
+  graph.updateNode(sectionId, {
+    name: 'Component Library',
+    fills: [solid(DEMO_COLORS.surface)]
   })
-  const btnSurfaceId = store.createShape('FRAME', 0, 0, 120, 40, btnId)
-  graph.updateNode(btnSurfaceId, {
-    name: 'Surface',
+
+  const title = store.createShape('TEXT', 24, 20, 300, 20, sectionId)
+  graph.updateNode(title, {
+    name: 'Title',
+    text: 'Components — the app below is built from these',
+    fontSize: 12,
+    fontWeight: 600,
+    fills: [solid(DEMO_COLORS.textTertiary)],
+    textAutoResize: 'WIDTH_AND_HEIGHT'
+  })
+
+  function caption(text: string, x: number, y: number) {
+    const c = store.createShape('TEXT', x, y, 140, 14, sectionId)
+    graph.updateNode(c, {
+      name: 'Caption',
+      text,
+      fontSize: 10,
+      fontWeight: 500,
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      fills: [solid(DEMO_COLORS.textTertiary)]
+    })
+  }
+
+  caption('Button / Primary', 24, 52)
+  caption('Button / Secondary', 156, 52)
+  caption('Badge', 296, 52)
+  caption('Avatar', 388, 52)
+  caption('Nav item', 24, 148)
+  caption('Toggle', 196, 148)
+
+  // ── Button / Primary ──────────────────────────────────────────────
+  const btnPrimary = store.createShape('FRAME', 24, 72, 116, 36, sectionId)
+  graph.updateNode(btnPrimary, {
+    name: 'Button / Primary',
     cornerRadius: 8,
-    fills: [solid(DEMO_COLORS.blue)],
+    fills: [solid(DEMO_COLORS.accent)],
     layoutMode: 'HORIZONTAL',
     primaryAxisSizing: 'HUG',
     counterAxisSizing: 'HUG',
     primaryAxisAlign: 'CENTER',
     counterAxisAlign: 'CENTER',
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 20,
-    paddingRight: 20
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 16,
+    paddingRight: 16
   })
-  const btnTextId = store.createShape('TEXT', 0, 0, 80, 20, btnSurfaceId)
-  graph.updateNode(btnTextId, {
+  const btnPrimaryLabel = store.createShape('TEXT', 0, 0, 84, 20, btnPrimary)
+  graph.updateNode(btnPrimaryLabel, {
     name: 'Label',
-    text: 'Get Started',
-    fontSize: 14,
+    text: 'Get started',
+    fontSize: 13,
     fontWeight: 600,
     textAutoResize: 'WIDTH_AND_HEIGHT',
     fills: [solid(DEMO_COLORS.white)]
   })
-  const btnCompId = makeComponent(store, [btnId])
+  const btnPrimaryComp = makeComponent(store, [btnPrimary])
 
-  const btn2Id = store.createShape('FRAME', 216, 76, 100, 40, compSectionId)
-  graph.updateNode(btn2Id, {
-    name: 'Button/Secondary',
-    fills: [],
-    strokes: [],
-    clipsContent: false
-  })
-  const btn2SurfaceId = store.createShape('FRAME', 0, 0, 100, 40, btn2Id)
-  graph.updateNode(btn2SurfaceId, {
-    name: 'Surface',
+  // ── Button / Secondary ────────────────────────────────────────────
+  const btnSecondary = store.createShape('FRAME', 156, 72, 104, 36, sectionId)
+  graph.updateNode(btnSecondary, {
+    name: 'Button / Secondary',
     cornerRadius: 8,
-    fills: [solid(DEMO_COLORS.white)],
-    strokes: thinStroke(DEMO_COLORS.gray200),
+    fills: [solid(DEMO_COLORS.surfaceSunken)],
     layoutMode: 'HORIZONTAL',
     primaryAxisSizing: 'HUG',
     counterAxisSizing: 'HUG',
     primaryAxisAlign: 'CENTER',
     counterAxisAlign: 'CENTER',
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 20,
-    paddingRight: 20
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingLeft: 16,
+    paddingRight: 16
   })
-  const btn2TextId = store.createShape('TEXT', 0, 0, 60, 20, btn2SurfaceId)
-  graph.updateNode(btn2TextId, {
+  const btnSecondaryLabel = store.createShape('TEXT', 0, 0, 72, 20, btnSecondary)
+  graph.updateNode(btnSecondaryLabel, {
     name: 'Label',
     text: 'Cancel',
-    fontSize: 14,
-    fontWeight: 500,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.black)]
-  })
-  const btn2CompId = makeComponent(store, [btn2Id])
-
-  store.select([btnCompId, btn2CompId])
-  store.createComponentSetFromComponents()
-  const buttonSetId = [...store.state.selectedIds][0]
-  graph.updateNode(buttonSetId, { x: 32, y: 44, width: 400, height: 136, fills: [] })
-  graph.updateNode(btnCompId, { x: 40, y: 64 })
-  graph.updateNode(btn2CompId, { x: 224, y: 64 })
-
-  const chipId = store.createShape('FRAME', 500, 72, 80, 28, compSectionId)
-  graph.updateNode(chipId, {
-    name: 'Tag',
-    cornerRadius: 14,
-    fills: [solid({ r: 0.93, g: 0.94, b: 1, a: 1 })],
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'HUG',
-    counterAxisSizing: 'HUG',
-    primaryAxisAlign: 'CENTER',
-    counterAxisAlign: 'CENTER',
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingLeft: 12,
-    paddingRight: 12
-  })
-  const chipTextId = store.createShape('TEXT', 0, 0, 56, 16, chipId)
-  graph.updateNode(chipTextId, {
-    name: 'Label',
-    text: 'Design',
-    fontSize: 12,
-    fontWeight: 500,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.indigo)]
-  })
-  makeComponent(store, [chipId])
-
-  const avatarId = store.createShape('ELLIPSE', 640, 68, 40, 40, compSectionId)
-  graph.updateNode(avatarId, {
-    name: 'Avatar',
-    fills: [
-      gradient([
-        { color: DEMO_COLORS.purple, position: 0 },
-        { color: DEMO_COLORS.blue, position: 1 }
-      ])
-    ]
-  })
-  const avatarCompId = makeComponent(store, [avatarId])
-  graph.updateNode(avatarCompId, { name: 'Avatar' })
-
-  const cardId = store.createShape('FRAME', 32, 216, 280, 160, compSectionId)
-  graph.updateNode(cardId, {
-    name: 'Card',
-    cornerRadius: 12,
-    fills: [solid(DEMO_COLORS.white)],
-    strokes: thinStroke(DEMO_COLORS.gray200),
-    layoutMode: 'VERTICAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    itemSpacing: 8,
-    paddingTop: 20,
-    paddingBottom: 20,
-    paddingLeft: 20,
-    paddingRight: 20
-  })
-  const cardTitleId = store.createShape('TEXT', 0, 0, 240, 22, cardId)
-  graph.updateNode(cardTitleId, {
-    name: 'Title',
-    text: 'Analytics Overview',
-    fontSize: 16,
-    fontWeight: 600,
-    textAutoResize: 'HEIGHT',
-    layoutAlignSelf: 'STRETCH',
-    fills: [solid(DEMO_COLORS.black)]
-  })
-  const cardDescId = store.createShape('TEXT', 0, 0, 240, 36, cardId)
-  graph.updateNode(cardDescId, {
-    name: 'Description',
-    text: 'Track your key metrics and performance indicators in real time.',
     fontSize: 13,
-    fontWeight: 400,
-    textAutoResize: 'HEIGHT',
-    layoutAlignSelf: 'STRETCH',
-    fills: [solid(DEMO_COLORS.gray500)]
+    fontWeight: 600,
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    fills: [solid(DEMO_COLORS.textPrimary)]
   })
-  const cardBarBg = store.createShape('RECTANGLE', 0, 0, 240, 8, cardId)
-  graph.updateNode(cardBarBg, {
-    name: 'Progress BG',
-    cornerRadius: 4,
-    fills: [solid(DEMO_COLORS.gray100)]
-  })
-  const cardBar = store.createShape('RECTANGLE', 0, 0, 168, 8, cardId)
-  graph.updateNode(cardBar, {
-    name: 'Progress',
-    cornerRadius: 4,
-    fills: [
-      gradient([
-        { color: DEMO_COLORS.blue, position: 0 },
-        { color: DEMO_COLORS.teal, position: 1 }
-      ])
-    ]
-  })
-  makeComponent(store, [cardId])
+  const btnSecondaryComp = makeComponent(store, [btnSecondary])
 
-  const inputId = store.createShape('FRAME', 344, 216, 240, 40, compSectionId)
-  graph.updateNode(inputId, {
-    name: 'Input',
-    cornerRadius: 8,
-    fills: [solid(DEMO_COLORS.white)],
-    strokes: thinStroke(DEMO_COLORS.gray200),
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'HUG',
-    primaryAxisAlign: 'MIN',
-    counterAxisAlign: 'CENTER',
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 12,
-    paddingRight: 12
-  })
-  const inputPlaceholder = store.createShape('TEXT', 0, 0, 200, 18, inputId)
-  graph.updateNode(inputPlaceholder, {
-    name: 'Placeholder',
-    text: 'Search...',
-    fontSize: 14,
-    fontWeight: 400,
-    textAutoResize: 'HEIGHT',
-    layoutAlignSelf: 'STRETCH',
-    fills: [solid(DEMO_COLORS.gray500)]
-  })
-  makeComponent(store, [inputId])
-
-  const badgeId = store.createShape('FRAME', 344, 284, 48, 24, compSectionId)
-  graph.updateNode(badgeId, {
-    name: 'Badge',
+  // ── Badge / Success ───────────────────────────────────────────────
+  const badge = store.createShape('FRAME', 296, 72, 72, 24, sectionId)
+  graph.updateNode(badge, {
+    name: 'Badge / Success',
     cornerRadius: 12,
-    fills: [solid({ r: 0.93, g: 1, b: 0.95, a: 1 })],
+    fills: [solid(DEMO_COLORS.successSoft)],
     layoutMode: 'HORIZONTAL',
     primaryAxisSizing: 'HUG',
     counterAxisSizing: 'HUG',
     primaryAxisAlign: 'CENTER',
     counterAxisAlign: 'CENTER',
-    itemSpacing: 4,
-    paddingTop: 4,
-    paddingBottom: 4,
+    paddingTop: 2,
+    paddingBottom: 2,
     paddingLeft: 8,
     paddingRight: 8
   })
-  const badgeDot = store.createShape('ELLIPSE', 0, 0, 6, 6, badgeId)
-  graph.updateNode(badgeDot, {
-    name: 'Dot',
-    fills: [solid(DEMO_COLORS.green)]
-  })
-  const badgeText = store.createShape('TEXT', 0, 0, 28, 14, badgeId)
-  graph.updateNode(badgeText, {
+  const badgeLabel = store.createShape('TEXT', 0, 0, 56, 16, badge)
+  graph.updateNode(badgeLabel, {
     name: 'Label',
-    text: 'Live',
+    text: '+14%',
     fontSize: 11,
     fontWeight: 600,
     textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.green)]
+    fills: [solid(DEMO_COLORS.success)]
   })
-  const badgeCompId = makeComponent(store, [badgeId])
+  const badgeComp = makeComponent(store, [badge])
 
-  const swatches = [
-    { name: 'Blue', color: DEMO_COLORS.blue, x: 32 },
-    { name: 'Indigo', color: DEMO_COLORS.indigo, x: 88 },
-    { name: 'Purple', color: DEMO_COLORS.purple, x: 144 },
-    { name: 'Green', color: DEMO_COLORS.green, x: 200 },
-    { name: 'Teal', color: DEMO_COLORS.teal, x: 256 },
-    { name: 'Orange', color: DEMO_COLORS.orange, x: 312 },
-    { name: 'Red', color: DEMO_COLORS.red, x: 368 }
-  ]
-  for (const swatch of swatches) {
-    const id = store.createShape('ELLIPSE', swatch.x, 460, 44, 44, compSectionId)
-    graph.updateNode(id, { name: swatch.name, fills: [solid(swatch.color)] })
+  // ── Avatar ────────────────────────────────────────────────────────
+  const avatar = store.createShape('ELLIPSE', 388, 72, 32, 32, sectionId)
+  graph.updateNode(avatar, {
+    name: 'Avatar',
+    fills: [solid(DEMO_COLORS.accentSoft)]
+  })
+  const avatarComp = makeComponent(store, [avatar])
+
+  // ── Nav item ──────────────────────────────────────────────────────
+  const navItem = store.createShape('FRAME', 24, 168, 148, 32, sectionId)
+  graph.updateNode(navItem, {
+    name: 'Nav Item',
+    cornerRadius: 6,
+    fills: [solid(DEMO_COLORS.surfaceSunken)],
+    layoutMode: 'HORIZONTAL',
+    primaryAxisSizing: 'FIXED',
+    counterAxisSizing: 'FIXED',
+    counterAxisAlign: 'CENTER',
+    itemSpacing: 10,
+    paddingLeft: 10,
+    paddingRight: 10
+  })
+  const navDot = store.createShape('ELLIPSE', 0, 0, 14, 14, navItem)
+  graph.updateNode(navDot, {
+    name: 'Icon',
+    fills: [solid(DEMO_COLORS.accent)]
+  })
+  const navLabel = store.createShape('TEXT', 0, 0, 80, 16, navItem)
+  graph.updateNode(navLabel, {
+    name: 'Label',
+    text: 'Overview',
+    fontSize: 13,
+    fontWeight: 500,
+    textAutoResize: 'WIDTH_AND_HEIGHT',
+    fills: [solid(DEMO_COLORS.textPrimary)]
+  })
+  const navItemComp = makeComponent(store, [navItem])
+
+  // ── Toggle ────────────────────────────────────────────────────────
+  const toggle = store.createShape('FRAME', 196, 172, 36, 20, sectionId)
+  graph.updateNode(toggle, {
+    name: 'Toggle',
+    cornerRadius: 10,
+    fills: [solid(DEMO_COLORS.accent)]
+  })
+  const toggleKnob = store.createShape('ELLIPSE', 18, 2, 16, 16, toggle)
+  graph.updateNode(toggleKnob, {
+    name: 'Knob',
+    fills: [solid(DEMO_COLORS.white)]
+  })
+  const toggleComp = makeComponent(store, [toggle])
+
+  return {
+    sectionId,
+    btnPrimaryComp,
+    btnSecondaryComp,
+    badgeComp,
+    avatarComp,
+    navItemComp,
+    toggleComp
   }
-
-  return { btnCompId, badgeCompId }
 }

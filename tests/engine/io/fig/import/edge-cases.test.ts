@@ -445,12 +445,14 @@ describe('edge cases', () => {
         type: 'INSTANCE',
         name: 'Search',
         phase: 'CREATED',
+        size: { x: 50, y: 60 },
         symbolData: {
           symbolID: { sessionID: 1, localID: 1 },
           symbolOverrides: [
             {
               guidPath: { guids: [{ sessionID: 90, localID: 1 }] },
-              overriddenSymbolID: { sessionID: 1, localID: 3 }
+              overriddenSymbolID: { sessionID: 1, localID: 3 },
+              size: { x: 200, y: 200 }
             }
           ]
         }
@@ -461,6 +463,8 @@ describe('edge cases', () => {
       .getChildren(graph.getPages()[0].id)
       .find((node) => node.type === 'INSTANCE')
     expect(instance?.name).toBe('Avatar')
+    expect(instance?.width).toBe(50)
+    expect(instance?.height).toBe(60)
   })
 
   test('DSD propagates through intermediate clones that are also DSD-targeted', async () => {
