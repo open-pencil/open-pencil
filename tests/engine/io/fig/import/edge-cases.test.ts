@@ -228,7 +228,9 @@ describe('edge cases', () => {
         type: 'SYMBOL',
         name: 'IconB',
         phase: 'CREATED',
-        size: { x: 24, y: 24 },
+        size: { x: 40, y: 40 },
+        cornerRadius: 12,
+        frameMaskDisabled: false,
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       {
@@ -383,6 +385,10 @@ describe('edge cases', () => {
     const iconClone = graph.getChildren(buttonChildren[1].id)[0]
     expect(iconClone).toBeDefined()
     expect(iconClone.name).toBe('icon')
+    expect(iconClone.width).toBe(24)
+    expect(iconClone.height).toBe(24)
+    expect(iconClone.cornerRadius).toBe(12)
+    expect(iconClone.clipsContent).toBe(true)
 
     // Icon should have IconB's children, not IconA's child. The later text
     // override must resolve through the same path prefix after the swap.
