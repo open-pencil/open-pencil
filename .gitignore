@@ -75,5 +75,8 @@ components.d.ts
 # Agent scratch space (reviews, plans, test artifacts)
 scratch/
 
+# Agent local config and scratch space
+.claude/
+
 # OpenCode
 .opencode/

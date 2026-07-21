@@ -1,0 +1,8 @@
+{
+  "name": "@open-pencil/attribution-policy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests"
+  }
+}

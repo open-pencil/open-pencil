@@ -104,6 +104,8 @@ Use Conventional Commits for regular development commits: `feat`, `fix`, `refact
 - Preserve product/domain casing in subjects and bodies: `DOM/CSS`, `CSS`, `HTML`, `JSX`, `Tailwind`, `Kiwi`, `.fig`, `MCP`, `CLI`, `AI`, `ACP`, `i18n`. Do not flatten acronyms to lowercase prose such as `dom css documents`.
 - Prefer scopes that match the project structure: `app`, `tauri`, `core`, `cli`, `dom-css`, `mcp`, `vue`, `docs`, or focused domains like `editor`, `scene-graph`, `canvas`, `tools`, `kiwi`, `io`, `text`, `vector`, `color`, `acp`, `ai`, `collab`, `automation`, `i18n`
 - Use the narrowest honest scope, or omit it if the change spans multiple unrelated areas
+- Do not add coding-harness attribution, vendor branding, or product-placement text to commits, PR bodies, comments, or generated files; this includes `Co-authored-by: Claude`, `Made with Cursor`, `Generated with Claude Code`, and similar trailers from any AI coding tool
+- If AI-generated code is substantial and the context is useful for review, mention only the model identifier, for example `Model: claude-sonnet-4.5`; do not credit or advertise the coding harness/agent
 
 Example:
 
