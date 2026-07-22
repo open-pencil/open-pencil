@@ -1,4 +1,4 @@
-import { resolveGeometryPaths } from '@open-pencil/fig/node-change'
+import { alignGeometryWindingRules, resolveGeometryPaths } from '@open-pencil/fig/node-change'
 import type { GeometryPath, SceneNode } from '@open-pencil/scene-graph'
 
 import type { DerivedSymbolOverride } from '../types'
@@ -35,7 +35,7 @@ export function resolveDsdGeometry(
   const fg = resolveGeometryPaths(d.fillGeometry, blobs)
   const sg = resolveGeometryPaths(d.strokeGeometry, blobs)
 
-  if (fg.length > 0) result.fillGeometry = fg
+  if (fg.length > 0) result.fillGeometry = alignGeometryWindingRules(fg, target.vectorNetwork)
   else if (d.size && target.fillGeometry.length > 0 && target.width > 0 && target.height > 0) {
     result.fillGeometry = scaleGeometryBlobs(
       target.fillGeometry,

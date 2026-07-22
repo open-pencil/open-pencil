@@ -23,7 +23,11 @@ import {
 } from './plugin-data'
 import { importStyleRuns } from './style-runs'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
-import { resolveGeometryPaths, resolveVectorNetwork } from './vector-geometry'
+import {
+  alignGeometryWindingRules,
+  resolveGeometryPaths,
+  resolveVectorNetwork
+} from './vector-geometry'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { importStyleRuns } from './style-runs'
@@ -557,9 +561,13 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const vectorNetwork = resolveVectorNetwork(nc, blobs)
   const strokeCap = getVectorStrokeCap(nc, vectorNetwork)
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
+  const fillGeometry = alignGeometryWindingRules(
+    resolveGeometryPaths(nc.fillGeometry, blobs),
+    vectorNetwork
+  )
   return {
     vectorNetwork,
-    fillGeometry: resolveGeometryPaths(nc.fillGeometry, blobs),
+    fillGeometry,
     strokeGeometry: resolveGeometryPaths(nc.strokeGeometry, blobs),
     arcData: mapArcData(nc.arcData as Partial<ArcData> | undefined),
     strokeCap,
