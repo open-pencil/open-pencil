@@ -23,6 +23,7 @@ import type {
 const {
   tools,
   activeTool,
+  flyoutSelections,
   toolIcons,
   toolLabels,
   toolShortcuts,
@@ -36,6 +37,7 @@ const {
 } = defineProps<{
   tools: EditorToolDef[]
   activeTool: Tool
+  flyoutSelections: ReadonlyMap<Tool, Tool>
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
@@ -65,7 +67,7 @@ const slideVariants = {
 }
 
 function activeKeyForTool(tool: EditorToolDef) {
-  return tool.flyout?.includes(activeTool) ? activeTool : tool.key
+  return flyoutSelections.get(tool.key) ?? tool.key
 }
 
 function navigationClass(disabled: boolean) {
@@ -118,6 +120,7 @@ function navigationClass(disabled: boolean) {
               mobile
               :tool="tool"
               :active-tool="activeTool"
+              :selected-tool="activeKeyForTool(tool)"
               :tool-icons="toolIcons"
               :tool-labels="toolLabels"
               :tool-shortcuts="toolShortcuts"

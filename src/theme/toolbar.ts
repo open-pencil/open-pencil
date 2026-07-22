@@ -5,10 +5,11 @@ const toolbarTheme = {
     icon: 'size-4',
     flyoutGroup: 'flex items-center',
     flyoutTrigger:
-      'flex h-8 w-3 cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none focus-visible:ring-1 focus-visible:ring-accent',
+      'flex h-8 w-3 cursor-pointer items-center justify-center border-none bg-transparent text-muted transition-colors outline-none data-[state=open]:bg-hover data-[state=open]:text-surface focus-visible:ring-1 focus-visible:ring-accent',
     flyoutTriggerIcon: 'size-2.5',
     flyoutContent: '',
     flyoutItem: '',
+    flyoutItemIndicator: 'flex size-3.5 shrink-0 items-center justify-center',
     flyoutItemIcon: 'size-3.5',
     flyoutItemLabel: 'flex-1',
     navigationAction:
@@ -21,30 +22,23 @@ const toolbarTheme = {
   variants: {
     active: {
       true: {
-        button: 'bg-accent text-white',
-        flyoutTrigger: 'bg-accent text-white'
+        button: 'bg-accent text-white'
       },
       false: {}
     },
     mobile: {
       true: {
         button: 'rounded-[6px] select-none',
-        flyoutTrigger: 'rounded-[6px] select-none'
+        flyoutTrigger: 'rounded-[6px] select-none active:bg-hover active:text-surface'
       },
       false: {
         button: 'rounded-lg',
-        flyoutTrigger: 'rounded-lg'
+        flyoutTrigger: 'rounded-lg hover:bg-hover hover:text-surface'
       }
     },
     disabled: {
       true: {
         navigationAction: 'pointer-events-none'
-      },
-      false: {}
-    },
-    subActive: {
-      true: {
-        flyoutItem: 'bg-accent text-white'
       },
       false: {}
     }
@@ -54,24 +48,21 @@ const toolbarTheme = {
       active: false,
       mobile: true,
       class: {
-        button: 'active:bg-hover',
-        flyoutTrigger: 'active:bg-hover'
+        button: 'active:bg-hover'
       }
     },
     {
       active: false,
       mobile: false,
       class: {
-        button: 'hover:bg-hover hover:text-surface',
-        flyoutTrigger: 'hover:bg-hover hover:text-surface'
+        button: 'hover:bg-hover hover:text-surface'
       }
     }
   ],
   defaultVariants: {
     active: false,
     mobile: false,
-    disabled: false,
-    subActive: false
+    disabled: false
   }
 }
 

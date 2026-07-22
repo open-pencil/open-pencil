@@ -48,8 +48,9 @@ export function createGridChildNode(child: SceneNode): YogaNode {
     }
     const hasLayout = child.layoutMode !== 'NONE'
     const explicitStretch = child.layoutGrow > 0 || child.layoutAlignSelf === 'STRETCH'
+    const inheritsContainerStretch = hasLayout && child.layoutAlignSelf === 'AUTO'
 
-    if (explicitStretch || hasLayout) {
+    if (explicitStretch || inheritsContainerStretch) {
       yogaChild.setWidthStretch()
     } else {
       yogaChild.setWidth(child.width)

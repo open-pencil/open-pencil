@@ -8,14 +8,16 @@ import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
 import type { ToolbarUI, ToolIconMap, ToolLabels } from '@/components/Toolbar/types'
 
-const { tools, activeTool, toolIcons, toolLabels, toolShortcuts, ui } = defineProps<{
-  tools: EditorToolDef[]
-  activeTool: Tool
-  toolIcons: ToolIconMap
-  toolLabels: ToolLabels
-  toolShortcuts: Record<Tool, string>
-  ui?: ToolbarUI
-}>()
+const { tools, activeTool, flyoutSelections, toolIcons, toolLabels, toolShortcuts, ui } =
+  defineProps<{
+    tools: EditorToolDef[]
+    activeTool: Tool
+    flyoutSelections: ReadonlyMap<Tool, Tool>
+    toolIcons: ToolIconMap
+    toolLabels: ToolLabels
+    toolShortcuts: Record<Tool, string>
+    ui?: ToolbarUI
+  }>()
 
 const emit = defineEmits<{
   setTool: [tool: Tool]
@@ -26,7 +28,7 @@ function isActive(tool: EditorToolDef) {
 }
 
 function activeKeyForTool(tool: EditorToolDef) {
-  return tool.flyout?.includes(activeTool) ? activeTool : tool.key
+  return flyoutSelections.get(tool.key) ?? tool.key
 }
 </script>
 
@@ -44,6 +46,7 @@ function activeKeyForTool(tool: EditorToolDef) {
           <ToolFlyout
             :tool="tool"
             :active-tool="activeTool"
+            :selected-tool="activeKeyForTool(tool)"
             :tool-icons="toolIcons"
             :tool-labels="toolLabels"
             :tool-shortcuts="toolShortcuts"
