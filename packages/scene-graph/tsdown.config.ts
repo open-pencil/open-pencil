@@ -22,6 +22,7 @@ export default defineConfig({
     coordinate: './src/coordinate.ts',
     matrix: './src/matrix.ts',
     geometry: './src/geometry.ts',
+    resize: './src/resize.ts',
     'parse-path': './src/parse-path.ts'
   },
   platform: 'neutral',

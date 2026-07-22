@@ -6,6 +6,7 @@ export interface ToolbarContext {
   editor: Editor
   tools: EditorToolDef[]
   activeTool: ComputedRef<Tool>
+  flyoutSelections: ReadonlyMap<Tool, Tool>
   expandedFlyout: Ref<Tool | null>
   setTool: (tool: Tool) => void
   toggleFlyout: (tool: Tool) => void
