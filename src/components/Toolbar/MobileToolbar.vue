@@ -9,7 +9,7 @@ import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
 import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
 import toolbarTheme from '@/theme/toolbar'
-import { toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
+import { getToolbarToolSelection, toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
@@ -66,10 +66,6 @@ const slideVariants = {
   exit: (dir: unknown) => ({ opacity: 0, x: (dir as number) * -20 })
 }
 
-function activeKeyForTool(tool: EditorToolDef) {
-  return flyoutSelections.get(tool.key) ?? tool.key
-}
-
 function navigationClass(disabled: boolean) {
   return toolbar({ disabled }).navigationAction({ class: ui?.navigationAction })
 }
@@ -120,7 +116,7 @@ function navigationClass(disabled: boolean) {
               mobile
               :tool="tool"
               :active-tool="activeTool"
-              :selected-tool="activeKeyForTool(tool)"
+              :selected-tool="getToolbarToolSelection(tool, activeTool, flyoutSelections)"
               :tool-icons="toolIcons"
               :tool-labels="toolLabels"
               :tool-shortcuts="toolShortcuts"
@@ -133,7 +129,10 @@ function navigationClass(disabled: boolean) {
                 mobile
                 :data-test-id="toolbarToolTestId(tool.key, true)"
                 :icon="toolIcons[tool.key]"
-                :active="active || activeKeyForTool(tool) === activeTool"
+                :active="
+                  active ||
+                  getToolbarToolSelection(tool, activeTool, flyoutSelections) === activeTool
+                "
                 :ui="ui"
                 @click="actions.select"
               />
