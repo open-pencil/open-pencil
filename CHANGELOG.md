@@ -15,6 +15,7 @@
 - Target a specific open document and page from live CLI and MCP automation, including sessions with multiple documents.
 - Test OpenAI-compatible provider connections from AI settings with clearer setup errors.
 - Build custom property panels with new Vue SDK number fields, bindable values, property sections, segmented controls, property lists, color models, fill controls, and gradient primitives.
+- Create centered frames from current Figma-style device and asset presets, or resize selected frames from the Design panel while preserving their names.
 
 ### Changed
 

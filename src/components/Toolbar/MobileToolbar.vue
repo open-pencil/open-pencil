@@ -9,7 +9,7 @@ import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
 import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
 import toolbarTheme from '@/theme/toolbar'
-import { toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
+import { getToolbarToolSelection, toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
@@ -23,6 +23,7 @@ import type {
 const {
   tools,
   activeTool,
+  flyoutSelections,
   toolIcons,
   toolLabels,
   toolShortcuts,
@@ -36,6 +37,7 @@ const {
 } = defineProps<{
   tools: EditorToolDef[]
   activeTool: Tool
+  flyoutSelections: ReadonlyMap<Tool, Tool>
   toolIcons: ToolIconMap
   toolLabels: ToolLabels
   toolShortcuts: Record<Tool, string>
@@ -62,10 +64,6 @@ const slideVariants = {
   initial: (dir: unknown) => ({ opacity: 0, x: (dir as number) * 20 }),
   animate: { opacity: 1, x: 0 },
   exit: (dir: unknown) => ({ opacity: 0, x: (dir as number) * -20 })
-}
-
-function activeKeyForTool(tool: EditorToolDef) {
-  return tool.flyout?.includes(activeTool) ? activeTool : tool.key
 }
 
 function navigationClass(disabled: boolean) {
@@ -118,6 +116,7 @@ function navigationClass(disabled: boolean) {
               mobile
               :tool="tool"
               :active-tool="activeTool"
+              :selected-tool="getToolbarToolSelection(tool, activeTool, flyoutSelections)"
               :tool-icons="toolIcons"
               :tool-labels="toolLabels"
               :tool-shortcuts="toolShortcuts"
@@ -130,7 +129,10 @@ function navigationClass(disabled: boolean) {
                 mobile
                 :data-test-id="toolbarToolTestId(tool.key, true)"
                 :icon="toolIcons[tool.key]"
-                :active="active || activeKeyForTool(tool) === activeTool"
+                :active="
+                  active ||
+                  getToolbarToolSelection(tool, activeTool, flyoutSelections) === activeTool
+                "
                 :ui="ui"
                 @click="actions.select"
               />

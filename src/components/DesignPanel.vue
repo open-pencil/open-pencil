@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
+import { useEditorStore } from '@/app/editor/active-store'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -22,8 +23,12 @@ import StrokeSection from './properties/StrokeSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
+import FramePresetsSection from './properties/frame-presets/FramePresetsSection.vue'
+import FramePresetSelect from './properties/frame-presets/FramePresetSelect.vue'
 
 const variablesOpen = ref(false)
+const store = useEditorStore()
+const activeTool = computed(() => store.state.activeTool)
 const { selectedNode: node, selectedCount: multiCount } = useSelectionState()
 const showBooleanOperations = computed(() => multiCount.value >= 2)
 const { getCommand } = useEditorCommands()
@@ -38,9 +43,17 @@ const { panels } = useI18n()
 </script>
 
 <template>
+  <!-- Frame tool presets replace selection properties, matching Figma. -->
+  <div
+    v-if="activeTool === 'FRAME'"
+    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
+  >
+    <FramePresetsSection />
+  </div>
+
   <!-- Multi-select summary -->
   <div
-    v-if="multiCount > 1"
+    v-else-if="multiCount > 1"
     data-test-id="design-panel-multi"
     class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >
@@ -107,6 +120,8 @@ const { panels } = useI18n()
     </div>
 
     <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
+
+    <FramePresetSelect v-if="node.type === 'FRAME'" />
 
     <PositionSection />
     <ConstraintsSection />
