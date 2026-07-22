@@ -18,6 +18,7 @@ import { menu } from '@/components/ui/menu'
 import toolbarTheme from '@/theme/toolbar'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import {
+  isToolbarToolActive,
   toolbarFlyoutItemTestId,
   toolbarFlyoutTestId,
   toolbarToolTestId,
@@ -49,7 +50,7 @@ const {
 }>()
 
 const toolbar = tv(toolbarTheme)
-const triggerActive = computed(() => isActiveTool())
+const triggerActive = computed(() => isToolbarToolActive(tool, activeTool))
 const styles = computed(() => toolbar({ active: triggerActive.value, mobile }))
 
 const emit = defineEmits<{
@@ -59,10 +60,6 @@ const emit = defineEmits<{
 defineSlots<{
   default(props: { label: string }): unknown
 }>()
-
-function isActiveTool() {
-  return tool.key === activeTool || (tool.flyout?.includes(activeTool) ?? false)
-}
 
 function flyoutItemClass() {
   return menu({ justify: 'start' }).item({

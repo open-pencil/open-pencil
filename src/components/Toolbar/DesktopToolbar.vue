@@ -2,7 +2,12 @@
 import Tip from '@/components/ui/Tip.vue'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
-import { toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
+import {
+  getToolbarToolSelection,
+  isToolbarToolActive,
+  toolbarToolTestId,
+  ToolbarItem
+} from '@open-pencil/vue'
 
 import type { Tool } from '@open-pencil/vue'
 import type { EditorToolDef } from '@open-pencil/core/editor'
@@ -22,14 +27,6 @@ const { tools, activeTool, flyoutSelections, toolIcons, toolLabels, toolShortcut
 const emit = defineEmits<{
   setTool: [tool: Tool]
 }>()
-
-function isActive(tool: EditorToolDef) {
-  return tool.key === activeTool || (tool.flyout?.includes(activeTool) ?? false)
-}
-
-function activeKeyForTool(tool: EditorToolDef) {
-  return flyoutSelections.get(tool.key) ?? tool.key
-}
 </script>
 
 <template>
@@ -41,12 +38,12 @@ function activeKeyForTool(tool: EditorToolDef) {
       <template v-for="tool in tools" :key="tool.key">
         <Tip
           v-if="tool.flyout && tool.flyout.length > 1"
-          :label="`${toolLabels[activeKeyForTool(tool)]} (${tool.shortcut})`"
+          :label="`${toolLabels[getToolbarToolSelection(tool, activeTool, flyoutSelections)]} (${tool.shortcut})`"
         >
           <ToolFlyout
             :tool="tool"
             :active-tool="activeTool"
-            :selected-tool="activeKeyForTool(tool)"
+            :selected-tool="getToolbarToolSelection(tool, activeTool, flyoutSelections)"
             :tool-icons="toolIcons"
             :tool-labels="toolLabels"
             :tool-shortcuts="toolShortcuts"
@@ -61,7 +58,7 @@ function activeKeyForTool(tool: EditorToolDef) {
               :data-test-id="toolbarToolTestId(tool.key)"
               :icon="toolIcons[tool.key]"
               :label="toolLabels[tool.key]"
-              :active="active || isActive(tool)"
+              :active="active || isToolbarToolActive(tool, activeTool)"
               :ui="ui"
               @click="actions.select"
             />

@@ -7,7 +7,7 @@ const editor = useEditorSetup()
 test('creates and resizes a frame with presets', async () => {
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
-    if (!store) return
+    if (!store) throw new Error('openPencil store not available')
     const id = store.createShape('RECTANGLE', 100, 100, 80, 80)
     store.select([id])
   })
