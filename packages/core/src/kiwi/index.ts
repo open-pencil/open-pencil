@@ -1,6 +1,7 @@
 export { prefetchFigmaSchema } from '#core/clipboard'
 export { readFigFile, parseFigFile } from './fig/file'
 export { importNodeChanges } from './fig/import'
+export { populateAllLazyFigImportRoots, populateLazyFigImportRoots } from './fig/lazy-import'
 export { deduplicateNodeChangePluginData } from '@open-pencil/kiwi/fig/parse'
 export {
   initCodec,

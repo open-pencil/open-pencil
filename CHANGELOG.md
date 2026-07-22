@@ -32,6 +32,7 @@
 - Improve `.fig` import and rendering fidelity for groups, booleans, instances, rotated vectors, complex text fills, auto-sized text, layout grids, page guides, patterns, noise effects, masks, and canvas backgrounds.
 - Preserve pages, components, prototype and library metadata, export settings, unsupported effects, and other unrelated Figma data when editing and resaving `.fig` files.
 - Prevent duplicate generated IDs from corrupting `.fig` round trips.
+- Populate lazy `.fig` pages for file-mode CLI inspection and preserve the whole document when exporting FIG unless a page is explicitly requested.
 - Match Figma auto-layout reflow after deleting children, hiding optional instance slots, or syncing component changes.
 - Make group and boolean-operation children scale with their parent during resize.
 - Restore desktop copy, cut, and paste when browser clipboard events are unavailable.

@@ -7,7 +7,7 @@ import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
 import { requireFile } from '#cli/app-client'
 import { ok, printError } from '#cli/format'
-import { loadDocument } from '#cli/headless'
+import { loadDocument, populateWholeDocument } from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -51,6 +51,7 @@ export default defineCommand({
 
     const file = requireFile(args.file)
     const graph = await loadDocument(file)
+    populateWholeDocument(graph)
     const result = await io.writeDocument(format, graph)
     const output = args.output ? resolve(args.output) : defaultOutput(file, format)
     await writeFile(output, result.data as Uint8Array)
