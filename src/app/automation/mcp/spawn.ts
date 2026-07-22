@@ -4,6 +4,7 @@ import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
+import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
 interface AutomationHealth {
@@ -92,20 +93,13 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   runtimeAutomationAuthToken = authToken
 
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const isWindows = navigator.platform.includes('Win')
-  const command = isWindows
-    ? Command.create('cmd', ['/c', 'openpencil-mcp-http'], {
-        env: {
-          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
-        }
-      })
-    : Command.create('openpencil-mcp-http', [], {
-        env: {
-          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
-        }
-      })
+  const resolved = resolvePlatformCommand('openpencil-mcp-http')
+  const command = Command.create(resolved.command, resolved.args, {
+    env: {
+      OPENPENCIL_MCP_AUTH_TOKEN: authToken,
+      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin
+    }
+  })
 
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     console.error('[MCP]', decodeTauriStderr(raw))
