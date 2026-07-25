@@ -104,14 +104,15 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
   async function renderExportImage(
     nodeIds: string[],
     scale: number,
-    format: RasterExportFormat
+    format: RasterExportFormat,
+    pageId = state.currentPageId
   ): Promise<Uint8Array | null> {
     const renderer = editor.renderer
     if (!renderer) return null
     const ids =
       nodeIds.length > 0 ? nodeIds : editor.graph.getChildren(state.currentPageId).map((n) => n.id)
     if (ids.length === 0) return null
-    return renderNodesToImage(renderer.ck, renderer, editor.graph, state.currentPageId, ids, {
+    return renderNodesToImage(renderer.ck, renderer, editor.graph, pageId, ids, {
       scale,
       format
     })

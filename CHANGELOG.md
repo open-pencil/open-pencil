@@ -8,6 +8,7 @@
 
 ### Added
 
+- Figma-style Assets panel browsing with component thumbnails, grid/list views, page grouping, context actions, and drag-to-canvas insertion.
 - Import HTML, CSS, Tailwind, and JSX as editable documents from the app, CLI, and SDK, and export standalone browser-ready HTML with compiled CSS and optional external assets.
 - Author richer Design JSX with components, instances, variables, gradients, structured fills, shadows, and blur effects.
 - Manage pages with rename, delete, and drag-to-reorder actions in the Pages panel.

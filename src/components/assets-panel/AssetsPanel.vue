@@ -2,6 +2,11 @@
 import { useObjectUrl } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 import {
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuPortal,
+  ContextMenuRoot,
+  ContextMenuTrigger,
   DialogClose,
   DialogContent,
   DialogOverlay,
@@ -16,10 +21,15 @@ import { useI18n } from '@open-pencil/vue'
 import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openExternalLink } from '@/app/shell/ui'
+import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { useDialogUI } from '@/components/ui/dialog'
+import { useMenuUI } from '@/components/ui/menu'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import Tip from '@/components/ui/Tip.vue'
+
+type AssetView = 'grid' | 'list'
 
 type LocalAsset = {
   id: string
@@ -32,11 +42,20 @@ type LocalAsset = {
   sourceLibraryKey: string | null
   description: string
   docsUrl: string | null
+  pageId: string
+  pageName: string
+}
+
+type AssetGroup = {
+  pageId: string
+  pageName: string
+  assets: LocalAsset[]
 }
 
 const editor = useEditorStore()
 const { panels, commands } = useI18n()
 const query = ref('')
+const assetView = ref<AssetView>('grid')
 const detailsOpen = ref(false)
 const selectedAssetId = ref<string | null>(null)
 const previewBlob = shallowRef<Blob | null>(null)
@@ -46,6 +65,12 @@ let previewRequestId = 0
 const insertButton = useButtonUI({ tone: 'ghost', size: 'iconSm' })
 const primaryButton = useButtonUI({ tone: 'accent', size: 'md' })
 const dialog = useDialogUI({ content: 'flex w-[720px] max-w-[92vw] flex-col overflow-hidden' })
+const contextMenu = useMenuUI({ content: 'min-w-44' })
+const viewOptions = computed(() => [
+  { value: 'grid', label: panels.value.gridView },
+  { value: 'list', label: panels.value.listView }
+])
+const viewUI = { root: 'w-16', item: 'px-1' }
 
 function componentSetVariantInfo(componentSetId: string) {
   return [...editor.collectVariantOptions(componentSetId)].map(([name, values]) => ({
@@ -58,6 +83,18 @@ const graphNodes = computed(() => ({
   sceneVersion: editor.state.sceneVersion,
   nodes: [...editor.graph.nodes.values()]
 }))
+
+const pageByNodeId = computed(() => {
+  const pages = new Map<string, { id: string; name: string }>()
+  for (const node of graphNodes.value.nodes) {
+    let current: SceneNode | undefined = node
+    while (current && current.type !== 'CANVAS') {
+      current = current.parentId ? editor.graph.getNode(current.parentId) : undefined
+    }
+    if (current) pages.set(node.id, { id: current.id, name: current.name })
+  }
+  return pages
+})
 
 const assets = computed<LocalAsset[]>(() => {
   return graphNodes.value.nodes
@@ -73,6 +110,7 @@ const assets = computed<LocalAsset[]>(() => {
       const conflicts =
         node.type === 'COMPONENT_SET' ? editor.getComponentSetVariantConflicts(node.id) : []
       const variants = node.type === 'COMPONENT_SET' ? componentSetVariantInfo(node.id) : []
+      const page = pageByNodeId.value.get(node.id)
       return {
         id: node.id,
         name: node.name,
@@ -83,7 +121,9 @@ const assets = computed<LocalAsset[]>(() => {
         hasConflicts: conflicts.length > 0,
         sourceLibraryKey: node.sourceLibraryKey,
         description: node.symbolDescription,
-        docsUrl: node.symbolLinks[0]?.uri ?? null
+        docsUrl: node.symbolLinks[0]?.uri ?? null,
+        pageId: page?.id ?? editor.state.currentPageId,
+        pageName: page?.name ?? panels.value.page
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -93,6 +133,20 @@ const filteredAssets = computed(() => {
   const normalized = query.value.trim().toLowerCase()
   if (!normalized) return assets.value
   return assets.value.filter((asset) => asset.name.toLowerCase().includes(normalized))
+})
+
+const assetGroups = computed<AssetGroup[]>(() => {
+  const groups = new Map<string, AssetGroup>()
+  for (const asset of filteredAssets.value) {
+    const group = groups.get(asset.pageId) ?? {
+      pageId: asset.pageId,
+      pageName: asset.pageName,
+      assets: []
+    }
+    group.assets.push(asset)
+    groups.set(asset.pageId, group)
+  }
+  return [...groups.values()].sort((a, b) => a.pageName.localeCompare(b.pageName))
 })
 
 const selectedAsset = computed(
@@ -122,7 +176,7 @@ async function updatePreview() {
   try {
     const maxSize = Math.max(node.width, node.height, 1)
     const scale = Math.min(176 / maxSize, 2)
-    const data = await editor.renderExportImage([nodeId], scale, 'PNG')
+    const data = await editor.renderExportImage([nodeId], scale, 'PNG', selectedAsset.value?.pageId)
     if (requestId !== previewRequestId) return
     previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
   } finally {
@@ -162,6 +216,28 @@ function insertAsset(asset: LocalAsset) {
   editor.requestRender()
 }
 
+function onDragStart(event: DragEvent, asset: LocalAsset) {
+  if (!event.dataTransfer || !asset.componentId) return
+  event.dataTransfer.setData('application/x-openpencil-component', asset.componentId)
+  event.dataTransfer.effectAllowed = 'copy'
+}
+
+function focusAsset(asset: LocalAsset) {
+  void editor.focusComponent(asset.id)
+}
+
+function onAssetKeydown(event: KeyboardEvent, asset: LocalAsset) {
+  if ((event.metaKey || event.ctrlKey) && event.code === 'Enter') {
+    event.preventDefault()
+    openDetails(asset)
+    return
+  }
+  if (event.code === 'Enter' || event.code === 'Space') {
+    event.preventDefault()
+    insertAsset(asset)
+  }
+}
+
 function insertSelectedAsset() {
   if (!selectedAsset.value) return
   insertAsset(selectedAsset.value)
@@ -174,91 +250,146 @@ function insertSelectedAsset() {
     <header class="shrink-0 px-3 py-2 text-[11px] font-semibold text-surface">
       {{ panels.assets }}
     </header>
-    <div class="shrink-0 px-2 pb-2">
+    <div class="flex shrink-0 items-center gap-2 px-2 pb-2">
       <AppInput
         v-model="query"
         type="search"
         data-test-id="assets-search"
         size="sm"
+        class="min-w-0 flex-1"
         :placeholder="panels.searchLocalComponents"
       />
+      <SegmentedControl
+        v-model="assetView"
+        data-test-id="assets-view-toggle"
+        :options="viewOptions"
+        :label="panels.assetView"
+        :ui="viewUI"
+      >
+        <template #option="{ option }">
+          <icon-lucide-layout-grid v-if="option.value === 'grid'" class="size-3" />
+          <icon-lucide-list v-else class="size-3" />
+        </template>
+      </SegmentedControl>
     </div>
 
-    <div class="scrollbar-thin flex-1 overflow-y-auto px-1 pb-2">
-      <button
-        v-for="asset in filteredAssets"
-        :key="asset.id"
-        data-test-id="asset-item"
-        :data-asset-id="asset.id"
-        class="group/asset flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-surface hover:bg-hover"
-        @click="openDetails(asset)"
-        @dblclick="insertAsset(asset)"
-      >
-        <component
-          :is="nodeIcon(asset.node)"
-          class="size-3.5 shrink-0 text-component"
-          aria-hidden="true"
-        />
-        <span class="min-w-0 flex-1">
-          <span class="flex min-w-0 items-center gap-1.5">
-            <span data-test-id="asset-name" class="truncate">{{ asset.name }}</span>
-            <span
-              v-if="asset.sourceLibraryKey"
-              data-test-id="asset-library-badge"
-              class="shrink-0 rounded bg-component/15 px-1 py-px text-[9px] font-medium text-component uppercase"
-            >
-              {{ panels.assetLibraryBadge }}
-            </span>
-          </span>
-          <span
-            v-if="asset.variants.length > 0"
-            data-test-id="asset-variant-summary"
-            class="mt-0.5 block truncate text-[10px] text-muted"
-          >
-            {{
-              panels.assetVariantSummary({
-                count: asset.variantCount,
-                names: asset.variants.map((variant) => variant.name).join(', ')
-              })
-            }}
-          </span>
-          <span
-            v-if="asset.description"
-            data-test-id="asset-description"
-            class="mt-0.5 block truncate text-[10px] text-muted"
-          >
-            {{ asset.description }}
-          </span>
-          <span
-            v-if="asset.hasConflicts"
-            data-test-id="asset-variant-conflict"
-            class="mt-0.5 block truncate text-[10px] text-[var(--color-warning-text)]"
-          >
-            {{ panels.duplicateVariantValues }}
-          </span>
-        </span>
-        <Tip v-if="asset.docsUrl" :label="panels.openDocumentation">
-          <span
-            :class="insertButton.base"
-            data-test-id="asset-docs"
-            @pointerdown.stop
-            @dblclick.stop
-            @click.stop="asset.docsUrl ? openExternalLink(asset.docsUrl) : undefined"
-          >
-            <icon-lucide-book-open class="size-3" />
-          </span>
-        </Tip>
-        <Tip :label="commands.createInstance">
-          <span
-            :class="insertButton.base"
-            data-test-id="asset-insert"
-            @pointerdown.stop
-            @click.stop="insertAsset(asset)"
-          >
-            <icon-lucide-plus class="size-3" />
-          </span>
-        </Tip>
-      </button>
+    <div class="scrollbar-thin flex-1 overflow-y-auto px-2 pb-2">
+      <section v-for="group in assetGroups" :key="group.pageId" class="mb-3">
+        <h2 class="mb-1 px-1 text-[10px] font-medium tracking-wide text-muted uppercase">
+          {{ group.pageName }}
+        </h2>
+        <div :class="assetView === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-0.5'">
+          <ContextMenuRoot v-for="asset in group.assets" :key="asset.id">
+            <ContextMenuTrigger as-child>
+              <button
+                data-test-id="asset-item"
+                :data-asset-id="asset.id"
+                :draggable="!!asset.componentId"
+                :class="[
+                  'group/asset rounded text-left text-xs text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-accent',
+                  assetView === 'grid'
+                    ? 'flex min-w-0 flex-col items-center gap-1 p-1.5'
+                    : 'flex w-full items-center gap-2 px-1.5 py-1'
+                ]"
+                @click="openDetails(asset)"
+                @keydown="onAssetKeydown($event, asset)"
+                @dragstart="onDragStart($event, asset)"
+              >
+                <AssetThumbnail
+                  v-if="asset.componentId"
+                  :node-id="asset.componentId"
+                  :alt="`${asset.name} preview`"
+                  :size="assetView === 'grid' ? 96 : 40"
+                />
+                <component
+                  :is="nodeIcon(asset.node)"
+                  v-else
+                  class="size-4 shrink-0 text-component"
+                  aria-hidden="true"
+                />
+                <span :class="assetView === 'grid' ? 'w-full min-w-0' : 'min-w-0 flex-1'">
+                  <span class="flex min-w-0 items-center gap-1">
+                    <span data-test-id="asset-name" class="truncate">{{ asset.name }}</span>
+                    <span
+                      v-if="asset.sourceLibraryKey"
+                      data-test-id="asset-library-badge"
+                      class="shrink-0 rounded bg-component/15 px-1 py-px text-[9px] font-medium text-component uppercase"
+                    >
+                      {{ panels.assetLibraryBadge }}
+                    </span>
+                  </span>
+                  <span
+                    v-if="assetView === 'list' && asset.variants.length > 0"
+                    data-test-id="asset-variant-summary"
+                    class="mt-0.5 block truncate text-[10px] text-muted"
+                  >
+                    {{
+                      panels.assetVariantSummary({
+                        count: asset.variantCount,
+                        names: asset.variants.map((variant) => variant.name).join(', ')
+                      })
+                    }}
+                  </span>
+                  <span
+                    v-if="assetView === 'list' && asset.description"
+                    data-test-id="asset-description"
+                    class="mt-0.5 block truncate text-[10px] text-muted"
+                  >
+                    {{ asset.description }}
+                  </span>
+                  <span
+                    v-if="assetView === 'list' && asset.hasConflicts"
+                    data-test-id="asset-variant-conflict"
+                    class="mt-0.5 block truncate text-[10px] text-[var(--color-warning-text)]"
+                  >
+                    {{ panels.duplicateVariantValues }}
+                  </span>
+                </span>
+                <div v-if="assetView === 'list'" class="flex shrink-0 items-center">
+                  <Tip v-if="asset.docsUrl" :label="panels.openDocumentation">
+                    <span
+                      :class="insertButton.base"
+                      data-test-id="asset-docs"
+                      @pointerdown.stop
+                      @click.stop="asset.docsUrl ? openExternalLink(asset.docsUrl) : undefined"
+                    >
+                      <icon-lucide-book-open class="size-3" />
+                    </span>
+                  </Tip>
+                  <Tip :label="commands.createInstance">
+                    <span
+                      :class="insertButton.base"
+                      data-test-id="asset-insert"
+                      @pointerdown.stop
+                      @click.stop="insertAsset(asset)"
+                    >
+                      <icon-lucide-plus class="size-3" />
+                    </span>
+                  </Tip>
+                </div>
+              </button>
+            </ContextMenuTrigger>
+            <ContextMenuPortal>
+              <ContextMenuContent :class="contextMenu.content">
+                <ContextMenuItem
+                  data-test-id="asset-context-go-to-main"
+                  :class="contextMenu.item"
+                  @select="focusAsset(asset)"
+                >
+                  {{ panels.goToMainComponent }}
+                </ContextMenuItem>
+                <ContextMenuItem
+                  data-test-id="asset-context-view-details"
+                  :class="contextMenu.item"
+                  @select="openDetails(asset)"
+                >
+                  {{ panels.viewDetails }}
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenuPortal>
+          </ContextMenuRoot>
+        </div>
+      </section>
 
       <div
         v-if="filteredAssets.length === 0"
