@@ -186,7 +186,7 @@ describe('frame presets', () => {
     })
   })
 
-  test('repositions constrained descendants after an in-flow child grows', () => {
+  test('recomputes nested constraints across resize, undo, and redo', () => {
     const editor = createEditor()
     const id = editor.graph.createNode('FRAME', editor.state.currentPageId, {
       width: 100,
@@ -198,26 +198,41 @@ describe('frame presets', () => {
     const childId = editor.graph.createNode('FRAME', id, {
       width: 100,
       height: 100,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED',
       layoutGrow: 1
     }).id
-    const nestedId = editor.graph.createNode('RECTANGLE', childId, {
+    const nestedFrameId = editor.graph.createNode('FRAME', childId, {
+      width: 100,
+      height: 100,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED',
+      layoutGrow: 1
+    }).id
+    const constrainedId = editor.graph.createNode('RECTANGLE', nestedFrameId, {
       x: 80,
       y: 0,
       width: 10,
       height: 10,
+      layoutPositioning: 'ABSOLUTE',
       horizontalConstraint: 'MAX'
     }).id
 
     editor.resizeFrameToPreset(id, { name: 'Wide', width: 200, height: 100 })
     expect(getNodeOrThrow(editor.graph, childId).width).toBe(200)
-    expect(getNodeOrThrow(editor.graph, nestedId).x).toBe(180)
+    expect(getNodeOrThrow(editor.graph, nestedFrameId).width).toBe(200)
+    expect(getNodeOrThrow(editor.graph, constrainedId).x).toBe(180)
 
     editor.undo.undo()
     expect(getNodeOrThrow(editor.graph, childId).width).toBe(100)
-    expect(getNodeOrThrow(editor.graph, nestedId).x).toBe(80)
+    expect(getNodeOrThrow(editor.graph, nestedFrameId).width).toBe(100)
+    expect(getNodeOrThrow(editor.graph, constrainedId).x).toBe(80)
 
     editor.undo.redo()
     expect(getNodeOrThrow(editor.graph, childId).width).toBe(200)
-    expect(getNodeOrThrow(editor.graph, nestedId).x).toBe(180)
+    expect(getNodeOrThrow(editor.graph, nestedFrameId).width).toBe(200)
+    expect(getNodeOrThrow(editor.graph, constrainedId).x).toBe(180)
   })
 })

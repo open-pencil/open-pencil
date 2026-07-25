@@ -96,12 +96,12 @@ export function createFramePresetActions(ctx: EditorContext, createShape: Create
     ctx.runLayoutForNode(id)
   }
 
-  function applyInitialResize(
+  function applyLayoutAwareResize(
     id: string,
     previous: FrameResizePatch,
     next: FrameResizePatch,
     originals: ReadonlyMap<string, ResizeSnapshot>
-  ): Map<string, Partial<SceneNode>> {
+  ) {
     ctx.graph.updateNode(id, next)
     const provisional = computeConstrainedResizeChanges(ctx.graph, id, previous, next, originals)
     for (const [childId, changes] of provisional) ctx.graph.updateNode(childId, changes)
@@ -109,7 +109,6 @@ export function createFramePresetActions(ctx: EditorContext, createShape: Create
 
     const final = computeConstrainedResizeChanges(ctx.graph, id, previous, next, originals)
     applyResize(id, next, final)
-    return final
   }
 
   function resizeFrameToPreset(id: string, preset: FramePresetDimensions) {
@@ -137,11 +136,12 @@ export function createFramePresetActions(ctx: EditorContext, createShape: Create
     }
 
     const originalDescendants = collectResizeDescendants(ctx.graph, id) ?? new Map()
-    const nextDescendants = applyInitialResize(id, previous, next, originalDescendants)
+    applyLayoutAwareResize(id, previous, next, originalDescendants)
+    const resizedDescendants = collectResizeDescendants(ctx.graph, id) ?? new Map()
     ctx.undo.push({
       label: 'Resize frame to preset',
-      forward: () => applyResize(id, next, nextDescendants),
-      inverse: () => applyResize(id, previous, originalDescendants)
+      forward: () => applyLayoutAwareResize(id, previous, next, originalDescendants),
+      inverse: () => applyLayoutAwareResize(id, next, previous, resizedDescendants)
     })
     ctx.requestRender()
   }
