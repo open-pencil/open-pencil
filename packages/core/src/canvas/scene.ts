@@ -636,7 +636,9 @@ function drawOutlinedText(
 function drawGradientText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
   if (!r.fontsLoaded || !r.fontProvider) return false
 
-  const paragraph = r.buildParagraph(node, r.ck.Color4f(0, 0, 0, 1))
+  const paragraph = r.buildParagraph(node, r.ck.Color4f(0, 0, 0, 1), {
+    halfLeading: true
+  })
   try {
     const paragraphY = textVerticalOffset(node, paragraph.getHeight())
     r.effectLayerPaint.setImageFilter(null)
@@ -693,7 +695,9 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
   if (shouldRenderTextAsOutline(fill)) {
     let paragraphY = 0
     if (node.textAlignVertical !== 'TOP') {
-      const paragraph = r.buildParagraph(node, r.ck.Color4f(0, 0, 0, 1))
+      const paragraph = r.buildParagraph(node, r.ck.Color4f(0, 0, 0, 1), {
+        halfLeading: true
+      })
       paragraphY = textVerticalOffset(node, paragraph.getHeight())
       paragraph.delete()
     }
@@ -707,7 +711,9 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     return
   }
   if (r.fontsLoaded && r.fontProvider) {
-    const paragraph = r.buildParagraph(node, r.fillPaint.getColor())
+    const paragraph = r.buildParagraph(node, r.fillPaint.getColor(), {
+      halfLeading: true
+    })
     const paragraphY = textVerticalOffset(node, paragraph.getHeight())
     canvas.drawParagraph(paragraph, 0, paragraphY)
     paragraph.delete()

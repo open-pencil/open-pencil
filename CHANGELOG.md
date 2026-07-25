@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
+
 ### Added
 
 - Import HTML, CSS, Tailwind, and JSX as editable documents from the app, CLI, and SDK, and export standalone browser-ready HTML with compiled CSS and optional external assets.
