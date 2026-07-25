@@ -12,6 +12,8 @@ const { nodeId, alt, size } = defineProps<{
   size: 40 | 96
 }>()
 
+const THUMBNAIL_RENDER_SCALE = 2
+
 const editor = useEditorStore()
 const thumbnail = useTemplateRef<HTMLElement>('thumbnail')
 const isVisible = useElementVisibility(thumbnail)
@@ -36,7 +38,7 @@ async function updatePreview() {
   }
 
   const maxDimension = Math.max(node.width, node.height, 1)
-  const scale = Math.min(size / maxDimension, 2)
+  const scale = (size * THUMBNAIL_RENDER_SCALE) / maxDimension
   const data = await editor.renderExportImage([nodeId], scale, 'PNG', pageIdForNode(node))
   if (currentRequest !== requestId) return
   previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
