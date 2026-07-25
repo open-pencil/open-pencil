@@ -22,12 +22,14 @@ import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openExternalLink } from '@/app/shell/ui'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
+import { findAssetPage } from '@/components/assets-panel/page'
 import AppInput from '@/components/ui/AppInput.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { useDialogUI } from '@/components/ui/dialog'
 import { useMenuUI } from '@/components/ui/menu'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import Tip from '@/components/ui/Tip.vue'
+import { ASSET_GRID_THUMBNAIL_SIZE, ASSET_LIST_THUMBNAIL_SIZE } from '@/constants'
 
 type AssetView = 'grid' | 'list'
 
@@ -84,21 +86,23 @@ const graphNodes = computed(() => ({
   nodes: [...editor.graph.nodes.values()]
 }))
 
+const assetNodes = computed(() =>
+  graphNodes.value.nodes.filter(
+    (node) => node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'
+  )
+)
+
 const pageByNodeId = computed(() => {
   const pages = new Map<string, { id: string; name: string }>()
-  for (const node of graphNodes.value.nodes) {
-    let current: SceneNode | undefined = node
-    while (current && current.type !== 'CANVAS') {
-      current = current.parentId ? editor.graph.getNode(current.parentId) : undefined
-    }
-    if (current) pages.set(node.id, { id: current.id, name: current.name })
+  for (const node of assetNodes.value) {
+    const page = findAssetPage(node, editor.graph)
+    if (page) pages.set(node.id, { id: page.id, name: page.name })
   }
   return pages
 })
 
 const assets = computed<LocalAsset[]>(() => {
-  return graphNodes.value.nodes
-    .filter((node) => node.type === 'COMPONENT' || node.type === 'COMPONENT_SET')
+  return assetNodes.value
     .filter((node) => {
       if (node.type === 'COMPONENT_SET') return true
       const parent = node.parentId ? editor.graph.getNode(node.parentId) : null
@@ -179,6 +183,8 @@ async function updatePreview() {
     const data = await editor.renderExportImage([nodeId], scale, 'PNG', selectedAsset.value?.pageId)
     if (requestId !== previewRequestId) return
     previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
+  } catch {
+    if (requestId === previewRequestId) clearPreview()
   } finally {
     if (requestId === previewRequestId) previewLoading.value = false
   }
@@ -278,7 +284,9 @@ function insertSelectedAsset() {
         <div :class="assetView === 'grid' ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-0.5'">
           <ContextMenuRoot v-for="asset in group.assets" :key="asset.id">
             <ContextMenuTrigger as-child>
-              <button
+              <div
+                role="button"
+                tabindex="0"
                 data-test-id="asset-item"
                 :data-asset-id="asset.id"
                 :draggable="!!asset.componentId"
@@ -296,7 +304,9 @@ function insertSelectedAsset() {
                   v-if="asset.componentId"
                   :node-id="asset.componentId"
                   :alt="`${asset.name} preview`"
-                  :size="assetView === 'grid' ? 96 : 40"
+                  :size="
+                    assetView === 'grid' ? ASSET_GRID_THUMBNAIL_SIZE : ASSET_LIST_THUMBNAIL_SIZE
+                  "
                 />
                 <component
                   :is="nodeIcon(asset.node)"
@@ -344,27 +354,29 @@ function insertSelectedAsset() {
                 </span>
                 <div v-if="assetView === 'list'" class="flex shrink-0 items-center">
                   <Tip v-if="asset.docsUrl" :label="panels.openDocumentation">
-                    <span
+                    <button
+                      type="button"
                       :class="insertButton.base"
                       data-test-id="asset-docs"
                       @pointerdown.stop
                       @click.stop="asset.docsUrl ? openExternalLink(asset.docsUrl) : undefined"
                     >
                       <icon-lucide-book-open class="size-3" />
-                    </span>
+                    </button>
                   </Tip>
                   <Tip :label="commands.createInstance">
-                    <span
+                    <button
+                      type="button"
                       :class="insertButton.base"
                       data-test-id="asset-insert"
                       @pointerdown.stop
                       @click.stop="insertAsset(asset)"
                     >
                       <icon-lucide-plus class="size-3" />
-                    </span>
+                    </button>
                   </Tip>
                 </div>
-              </button>
+              </div>
             </ContextMenuTrigger>
             <ContextMenuPortal>
               <ContextMenuContent :class="contextMenu.content">

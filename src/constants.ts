@@ -95,6 +95,10 @@ export {
   ZOOM_SCALE_MAX
 } from '@open-pencil/core/constants'
 
+export const ASSET_GRID_THUMBNAIL_SIZE = 96
+export const ASSET_LIST_THUMBNAIL_SIZE = 40
+export const ASSET_THUMBNAIL_RENDER_SCALE = 2
+
 export const HANDLE_SIZE = 6
 
 export const HALF_FRAC = 3 / 7
