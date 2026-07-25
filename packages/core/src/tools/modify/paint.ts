@@ -4,6 +4,16 @@ import { parseColor } from '#core/color'
 import { BLACK } from '#core/constants'
 import { defineTool } from '#core/tools/schema'
 
+function canUseImageFill(type: string): boolean {
+  return (
+    type === 'RECTANGLE' ||
+    type === 'ELLIPSE' ||
+    type === 'FRAME' ||
+    type === 'COMPONENT' ||
+    type === 'INSTANCE'
+  )
+}
+
 export const setFill = defineTool({
   name: 'set_fill',
   mutates: true,
@@ -112,6 +122,9 @@ export const setImageFill = defineTool({
   execute: (figma, { id, image_data, scale_mode }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
+    if (!canUseImageFill(node.type)) {
+      return { error: `Node "${id}" is ${node.type}; use a shape for image fills` }
+    }
     const bytes = Uint8Array.fromBase64(image_data)
     const image = figma.createImage(bytes)
     const mode = (scale_mode ?? 'FILL') as 'FILL' | 'FIT' | 'CROP' | 'TILE'
