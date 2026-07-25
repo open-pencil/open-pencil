@@ -235,4 +235,69 @@ describe('frame presets', () => {
     expect(getNodeOrThrow(editor.graph, nestedFrameId).width).toBe(200)
     expect(getNodeOrThrow(editor.graph, constrainedId).x).toBe(180)
   })
+
+  test('restores exact constrained geometry after lossy resize rounding', () => {
+    const editor = createEditor()
+    const id = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      width: 100,
+      height: 100
+    }).id
+    const childId = editor.graph.createNode('RECTANGLE', id, {
+      x: 10,
+      y: 0,
+      width: 10,
+      height: 10,
+      horizontalConstraint: 'CENTER'
+    }).id
+
+    editor.resizeFrameToPreset(id, { name: 'iPhone 16', width: 393, height: 852 })
+    expect(getNodeOrThrow(editor.graph, childId).x).toBe(157)
+
+    editor.undo.undo()
+    expect(getNodeOrThrow(editor.graph, childId).x).toBe(10)
+
+    editor.undo.redo()
+    expect(getNodeOrThrow(editor.graph, childId).x).toBe(157)
+  })
+
+  test('uses post-layout geometry for constraints nested in a HUG frame', () => {
+    const editor = createEditor()
+    const id = editor.graph.createNode('FRAME', editor.state.currentPageId, {
+      width: 100,
+      height: 100
+    }).id
+    const hugId = editor.graph.createNode('FRAME', id, {
+      width: 50,
+      height: 50,
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'FIXED',
+      horizontalConstraint: 'STRETCH'
+    }).id
+    editor.graph.createNode('RECTANGLE', hugId, {
+      width: 50,
+      height: 10
+    })
+    const constrainedId = editor.graph.createNode('RECTANGLE', hugId, {
+      x: 40,
+      y: 0,
+      width: 10,
+      height: 10,
+      layoutPositioning: 'ABSOLUTE',
+      horizontalConstraint: 'MAX'
+    }).id
+    computeLayout(editor.graph, hugId)
+
+    editor.resizeFrameToPreset(id, { name: 'Wide', width: 200, height: 100 })
+    expect(getNodeOrThrow(editor.graph, hugId).width).toBe(50)
+    expect(getNodeOrThrow(editor.graph, constrainedId).x).toBe(40)
+
+    editor.undo.undo()
+    expect(getNodeOrThrow(editor.graph, hugId).width).toBe(50)
+    expect(getNodeOrThrow(editor.graph, constrainedId).x).toBe(40)
+
+    editor.undo.redo()
+    expect(getNodeOrThrow(editor.graph, hugId).width).toBe(50)
+    expect(getNodeOrThrow(editor.graph, constrainedId).x).toBe(40)
+  })
 })

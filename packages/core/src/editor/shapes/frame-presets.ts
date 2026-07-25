@@ -141,7 +141,11 @@ export function createFramePresetActions(ctx: EditorContext, createShape: Create
     ctx.undo.push({
       label: 'Resize frame to preset',
       forward: () => applyLayoutAwareResize(id, previous, next, originalDescendants),
-      inverse: () => applyLayoutAwareResize(id, next, previous, resizedDescendants)
+      inverse: () => {
+        applyLayoutAwareResize(id, next, previous, resizedDescendants)
+        // Constraint math rounds and clamps, so only the captured snapshot can restore exactly.
+        applyResize(id, previous, originalDescendants)
+      }
     })
     ctx.requestRender()
   }

@@ -174,7 +174,8 @@ export function computeConstrainedResizeChanges(
       )
       if (vectorNetwork) childChanges.vectorNetwork = vectorNetwork
       changes.set(childId, childChanges)
-      compute(childId, original, rect)
+      // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.
+      compute(childId, original, child.layoutMode === 'NONE' ? rect : child)
     }
   }
 
