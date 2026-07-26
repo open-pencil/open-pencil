@@ -44,6 +44,7 @@
 - Match Figma auto-layout reflow after deleting children, hiding optional instance slots, or syncing component changes.
 - Make group and boolean-operation children scale with their parent during resize.
 - Restore desktop copy, cut, and paste when browser clipboard events are unavailable.
+- Start globally installed ACP agents correctly on Windows instead of reporting them as unavailable (#361).
 - Keep duplicated layers independent instead of sharing mutable fills, strokes, bindings, overrides, or vector data, and remove stale bindings when paints are deleted.
 - Preserve Hangul IME composition while editing text.
 - Share public app links from the desktop collaboration panel and send the current document to newly joined collaborators.

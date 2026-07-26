@@ -5,6 +5,7 @@ import { randomHex } from '@open-pencil/core/random'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
+import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
 interface AutomationHealth {
@@ -240,32 +241,22 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
   // Cache only after MCP startup is confirmed healthy.
 
   const { Command } = await import('@tauri-apps/plugin-shell')
-  const isWindows = navigator.platform.includes('Win')
   // Set OPENPENCIL_MCP_ROOT to the user's home directory so file-scoped
   // tools (open_file, save_file, export_*) operate on paths inside ~,
   // which is naturally writable and matches user expectations for "my files."
   // The app bundle directory (Tauri executableDir) is read-only and would
   // cause EACCES errors on every file write.
   const mcpRoot = await resolveTauriHomeDir()
-  const command = isWindows
-    ? Command.create('cmd', ['/c', 'openpencil-mcp-http'], {
-        env: {
-          PORT: String(AUTOMATION_HTTP_PORT),
-          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
-          OPENPENCIL_MCP_TCP: '1',
-          OPENPENCIL_MCP_ROOT: mcpRoot
-        }
-      })
-    : Command.create('openpencil-mcp-http', [], {
-        env: {
-          PORT: String(AUTOMATION_HTTP_PORT),
-          OPENPENCIL_MCP_AUTH_TOKEN: authToken,
-          OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
-          OPENPENCIL_MCP_TCP: '1',
-          OPENPENCIL_MCP_ROOT: mcpRoot
-        }
-      })
+  const resolved = resolvePlatformCommand('openpencil-mcp-http')
+  const command = Command.create(resolved.command, resolved.args, {
+    env: {
+      PORT: String(AUTOMATION_HTTP_PORT),
+      OPENPENCIL_MCP_AUTH_TOKEN: authToken,
+      OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
+      OPENPENCIL_MCP_TCP: '1',
+      OPENPENCIL_MCP_ROOT: mcpRoot
+    }
+  })
 
   command.stderr.on('data', (raw: Uint8Array | number[] | string) => {
     console.error('[MCP]', decodeTauriStderr(raw))

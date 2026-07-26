@@ -52,6 +52,19 @@ describe('Tauri MCP spawning', () => {
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
       if (cmd === 'plugin:shell|spawn') {
+        expect(args).toMatchObject({
+          program: 'openpencil-mcp-http',
+          args: [],
+          options: {
+            env: {
+              PORT: '7600',
+              OPENPENCIL_MCP_AUTH_TOKEN: expect.any(String),
+              OPENPENCIL_MCP_CORS_ORIGIN: 'tauri://localhost',
+              OPENPENCIL_MCP_TCP: '1',
+              OPENPENCIL_MCP_ROOT: '/mock/home'
+            }
+          }
+        })
         onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent.onmessage
         return 77
       }
