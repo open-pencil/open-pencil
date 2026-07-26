@@ -23,7 +23,10 @@ export async function spawnAcpProcess({
 }: AcpProcessOptions) {
   const { Command } = await import('@tauri-apps/plugin-shell')
   const resolved = resolvePlatformCommand(commandName, args)
-  const command = Command.create(resolved.command, resolved.args, { encoding: 'raw' })
+  const command = Command.create(resolved.command, resolved.args, {
+    encoding: 'raw',
+    env: {}
+  })
 
   const stdoutChunks: Uint8Array[] = []
   let stdoutResolver: ((chunk: Uint8Array | null) => void) | null = null

@@ -2,22 +2,57 @@
 
 ## Unreleased
 
+### Fixed
+
+- Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
+
+### Added
+
+- Import HTML, CSS, Tailwind, and JSX as editable documents from the app, CLI, and SDK, and export standalone browser-ready HTML with compiled CSS and optional external assets.
+- Author richer Design JSX with components, instances, variables, gradients, structured fills, shadows, and blur effects.
+- Manage pages with rename, delete, and drag-to-reorder actions in the Pages panel.
+- Inspect and edit constraints, stroke caps and joins, corner smoothing, shared styles, component properties, blend modes, masks, advanced typography, and per-node export settings from the Design panel.
+- Find overlapping layers and overflowing children from the CLI, AI tools, and MCP.
+- Use Figma-style number-key opacity shortcuts: `1`–`9` set 10%–90%, `0` sets 100%, and two-digit sequences set exact values.
+- Drag image files directly into the desktop app and paste Figma layers with their remote image fills.
+- Drag with the Text tool to create a fixed-size text box, or click to create auto-width text.
+- Target a specific open document and page from live CLI and MCP automation, including sessions with multiple documents.
+- Test OpenAI-compatible provider connections from AI settings with clearer setup errors.
+- Build custom property panels with new Vue SDK number fields, bindable values, property sections, segmented controls, property lists, color models, fill controls, and gradient primitives.
+- Connect local MCP clients through automatically discovered private Unix sockets on macOS and Linux, with localhost TCP fallback. (#338)
+- Create centered frames from current Figma-style device and asset presets, or resize selected frames from the Design panel while preserving their names.
+
 ### Changed
 
-- Add JSX authoring support for components, component sets, and instances.
-- Add type-validated `bindVariable`/`unbindVariable` with event emission and indexed binding format (`fills/N/color` instead of `fills[N]`).
-- Add `unbind_variable` MCP tool for removing variable bindings.
+- Redesign the editor chrome and Design panel with denser aligned controls, clearer selection and section states, improved menus and overlays, consistent light/dark theming, and better keyboard and screen-reader behavior.
+- Scale the Layers panel to documents with thousands of nodes through virtualized rows, faster incremental updates, stable expansion, range selection, and scroll-to-selection.
+- Resolve fonts before text appears, with language-aware CJK and Arabic fallback, character-specific remote subsets, and more reliable rendering as fonts load.
+- Open and save large `.fig` documents substantially faster while preserving original metadata and user edits; corrupted compressed data now reports an error instead of being opened as valid content.
+- Publish SceneGraph, Pen, Kiwi, Fig, DOM/CSS, and Vue functionality through clearer package APIs, with expanded SDK documentation and examples.
 
-### Fixes
+### Fixed
 
-- Fix clone operations (duplicate, instance creation, clipboard copy) sharing mutable references with the original — editing fills, strokes, variable bindings, overrides, or vector networks on one no longer corrupts the other.
-- Fix instance overrides shallow-copied on clone — override values containing objects are now deep-copied.
-- Fix stale variable bindings not cleaned up when fills/strokes arrays shrink — any indexed sub-path is now handled, not just `/color`.
-- Fix tooltips around inspector dropdowns/popovers without breaking floating menu anchoring.
-- Harden MCP calls with bounded page-tree responses, oversized-result errors, JSON HTTP responses, and stale WebSocket cleanup.
-- Improve Figma boolean imports by preserving XOR operations as editable exclude nodes and falling back to imported fill geometry when boolean path reconstruction cannot produce a path.
-- Preserve rotated Figma transform origins for imported vector nodes.
-- Render complex text fills through vector glyph outlines so imported Figma text can use the normal fill pipeline for gradients, images, patterns, and other non-solid paints.
+- Keep MCP file access inside its configured root even when paths contain symlinks, and harden local authentication token checks. (#338)
+- Keep desktop text visible across the scene and overlay canvases, refresh it after local fonts load, and preserve rendering when a requested italic face is unavailable (#395).
+- Honor node-scoped variable modes in `.fig` files so light and dark component examples keep their intended colors.
+- Preserve nested instance text, visibility, paint, geometry, and clipping across repeated children and component swaps in `.fig` files.
+- Improve `.fig` import and rendering fidelity for groups, booleans, instances, rotated vectors, complex text fills, auto-sized text, layout grids, page guides, patterns, noise effects, masks, and canvas backgrounds.
+- Preserve pages, components, prototype and library metadata, export settings, unsupported effects, and other unrelated Figma data when editing and resaving `.fig` files.
+- Prevent duplicate generated IDs from corrupting `.fig` round trips.
+- Populate lazy `.fig` pages for file-mode CLI inspection, preserve the whole document when exporting FIG unless a page is explicitly requested, and expose vector paths and variable modes to Plugin API scripts.
+- Match Figma auto-layout reflow after deleting children, hiding optional instance slots, or syncing component changes.
+- Make group and boolean-operation children scale with their parent during resize.
+- Restore desktop copy, cut, and paste when browser clipboard events are unavailable.
+- Start globally installed ACP agents correctly on Windows instead of reporting them as unavailable (#361).
+- Keep duplicated layers independent instead of sharing mutable fills, strokes, bindings, overrides, or vector data, and remove stale bindings when paints are deleted.
+- Preserve Hangul IME composition while editing text.
+- Share public app links from the desktop collaboration panel and send the current document to newly joined collaborators.
+- Resolve published package types correctly for TypeScript consumers and keep file-backed CLI commands working under Node.
+- Reuse the existing tab when reopening a file through its desktop path or browser file handle, avoiding duplicate watchers and conflicting saves (#297).
+
+### Security
+
+- Update the collaboration WebSocket dependency to address a protocol-length advisory.
 
 ## 0.13.2 — 2026-05-30
 
