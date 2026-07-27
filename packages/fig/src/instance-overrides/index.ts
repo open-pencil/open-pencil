@@ -85,14 +85,10 @@ function buildKiwiGeometryNodes(
   return result
 }
 
-function propagateResolvedFills(
-  graph: SceneGraph,
-  protectedNodes: Set<string>,
-  activeNodeIds?: Set<string>
-): void {
+function propagateResolvedFills(graph: SceneGraph, protectedNodes: Set<string>): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
-    for (const node of overrideCandidates(graph, activeNodeIds)) {
+    for (const node of graph.getAllNodes()) {
       if (!node.componentId) continue
       const source = graph.getNode(node.componentId)
       if (!source || isEqual(source.fills, node.fills)) continue
@@ -104,13 +100,10 @@ function propagateResolvedFills(
   }
 }
 
-function propagateResolvedChildPlacementClones(
-  graph: SceneGraph,
-  activeNodeIds?: Set<string>
-): void {
+function propagateResolvedChildPlacementClones(graph: SceneGraph): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
-    for (const node of overrideCandidates(graph, activeNodeIds)) {
+    for (const node of graph.getAllNodes()) {
       if (node.type !== 'INSTANCE' || !node.componentId) continue
       const source = graph.getNode(node.componentId)
       if (!source || source.childIds.length !== node.childIds.length) continue
@@ -325,15 +318,11 @@ export function populateAndApplyOverrides(
         ctx.protectedFields
       )
     }
-    propagateResolvedChildPlacementClones(graph, ctx.activeNodeIds)
+    propagateResolvedChildPlacementClones(graph)
   }
 
   applyDerivedSymbolData(ctx)
-  propagateResolvedFills(
-    graph,
-    new Set([...ctx.kiwiPropertyNodes, ...overriddenNodes]),
-    ctx.activeNodeIds
-  )
+  propagateResolvedFills(graph, new Set([...ctx.kiwiPropertyNodes, ...overriddenNodes]))
   propagateResolvedTextClones(graph, ctx.activeNodeIds)
   applyConstraintScaling(ctx)
   applyComponentProperties(ctx)

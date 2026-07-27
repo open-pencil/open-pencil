@@ -27,7 +27,7 @@ describe('@open-pencil/fig instance interpretation', () => {
     expect(graph.getNode(populated?.childIds[0] ?? '')?.text).toBe('Label')
   })
 
-  test('limits lazy population work to active roots', () => {
+  test('limits lazy population to required global propagation scans', () => {
     const graph = new SceneGraph()
     const activePage = graph.getPages()[0]
     const unrelatedPage = graph.addPage('Unrelated')
@@ -55,7 +55,7 @@ describe('@open-pencil/fig instance interpretation', () => {
     populateAndApplyOverrides(graph, new Map(), new Map(), [], [activePage.id])
 
     expect(graph.getNode(instance.id)?.childIds).toHaveLength(1)
-    expect(globalScans).toBe(0)
+    expect(globalScans).toBe(2)
   })
 
   test('resolves text clone chains to their source values', () => {
