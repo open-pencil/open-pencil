@@ -16,7 +16,7 @@ export function recloneChildren(
 ): void {
   const srcChild = graph.getNode(srcChildId)
   if (!srcChild) return
-  const effectiveCloneSources = cloneSources ?? buildClonesMap(graph)
+  const effectiveCloneSources = cloneSources ?? buildClonesMap(graph, activeNodeIds)
 
   const previousSources = snapshotChildSources(graph, tgtNode.id)
   for (const childId of Array.from(tgtNode.childIds)) graph.deleteNode(childId)
@@ -49,7 +49,7 @@ export function syncChildrenDeep(
   const src = graph.getNode(sourceId)
   const tgt = graph.getNode(targetId)
   if (!src || !tgt) return
-  const effectiveCloneSources = cloneSources ?? buildClonesMap(graph)
+  const effectiveCloneSources = cloneSources ?? buildClonesMap(graph, activeNodeIds)
   const len = Math.min(src.childIds.length, tgt.childIds.length)
   for (let i = 0; i < len; i++) {
     if (skip?.has(tgt.childIds[i])) continue

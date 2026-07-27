@@ -55,9 +55,11 @@ const { draggingId, instruction, instructionTargetId, setupItem } = useLayerDrag
 )
 
 let rebuildPending = false
+let rebuildToken = 0
 
 function rebuildTree() {
   rebuildPending = false
+  rebuildToken++
   const model = buildLayerTreeModel(editor.graph, editor.state.currentPageId)
   items.value = model.items
   nodesById = model.byId
@@ -68,7 +70,11 @@ function rebuildTree() {
 function scheduleTreeRebuild() {
   if (rebuildPending) return
   rebuildPending = true
-  queueMicrotask(rebuildTree)
+  const token = ++rebuildToken
+  queueMicrotask(() => {
+    if (!rebuildPending || token !== rebuildToken) return
+    rebuildTree()
+  })
 }
 
 rebuildTree()
