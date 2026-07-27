@@ -3,6 +3,7 @@ import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { buildClonesMap } from './sync'
 import type { OverrideContext } from './types'
+import { overrideCandidates } from './utils'
 
 /**
  * Apply SCALE constraint resizing to children of instances whose size
@@ -13,8 +14,7 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
   const { graph } = ctx
   const scaled = new Set<string>()
 
-  for (const node of graph.getAllNodes()) {
-    if (ctx.activeNodeIds && !ctx.activeNodeIds.has(node.id)) continue
+  for (const node of overrideCandidates(graph, ctx.activeNodeIds)) {
     if (node.type !== 'INSTANCE' || !node.componentId) continue
     const comp = graph.getNode(node.componentId)
     if (!comp || comp.width <= 0 || comp.height <= 0) continue
@@ -197,8 +197,7 @@ function scaleChildren(
 
 function normalizeOutOfBoundsSingleChildren(ctx: OverrideContext): void {
   const { graph } = ctx
-  for (const parent of graph.getAllNodes()) {
-    if (ctx.activeNodeIds && !ctx.activeNodeIds.has(parent.id)) continue
+  for (const parent of overrideCandidates(graph, ctx.activeNodeIds)) {
     if (parent.childIds.length !== 1) continue
     const child = graph.getNode(parent.childIds[0])
     if (!child?.visible || !child.componentId) continue

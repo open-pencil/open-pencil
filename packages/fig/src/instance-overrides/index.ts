@@ -35,6 +35,7 @@ import { applySymbolOverrides } from './symbol/overrides'
 import { propagateNodePropsTransitively, propagateOverridesTransitively } from './sync'
 import { indexCloneNodes } from './sync/sources'
 import type { InstanceNodeChange, OverrideContext, ComponentPropValue } from './types'
+import { overrideCandidates } from './utils'
 
 /**
  * Identify nodes whose kiwi NC has explicit property values that DIFFER
@@ -91,8 +92,7 @@ function propagateResolvedFills(
 ): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
-    for (const node of graph.getAllNodes()) {
-      if (activeNodeIds && !activeNodeIds.has(node.id)) continue
+    for (const node of overrideCandidates(graph, activeNodeIds)) {
       if (!node.componentId) continue
       const source = graph.getNode(node.componentId)
       if (!source || isEqual(source.fills, node.fills)) continue
@@ -104,10 +104,13 @@ function propagateResolvedFills(
   }
 }
 
-function propagateResolvedChildPlacementClones(graph: SceneGraph): void {
+function propagateResolvedChildPlacementClones(
+  graph: SceneGraph,
+  activeNodeIds?: Set<string>
+): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
-    for (const node of graph.getAllNodes()) {
+    for (const node of overrideCandidates(graph, activeNodeIds)) {
       if (node.type !== 'INSTANCE' || !node.componentId) continue
       const source = graph.getNode(node.componentId)
       if (!source || source.childIds.length !== node.childIds.length) continue
@@ -144,7 +147,7 @@ function sameDerivedGlyphSource(
   return hasSameCopySource(source, target)
 }
 
-function propagateResolvedTextClones(graph: SceneGraph): void {
+function propagateResolvedTextClones(graph: SceneGraph, activeNodeIds?: Set<string>): void {
   const ordered: SceneNode[] = []
   const visited = new Set<string>()
   const visiting = new Set<string>()
@@ -157,7 +160,7 @@ function propagateResolvedTextClones(graph: SceneGraph): void {
     visited.add(node.id)
     if (node.type === 'TEXT' && node.componentId) ordered.push(node)
   }
-  for (const nodeId of graph.nodes.keys()) {
+  for (const nodeId of activeNodeIds ?? graph.nodes.keys()) {
     const node = graph.getNode(nodeId)
     if (node?.type === 'TEXT' && node.componentId) visit(node)
   }
@@ -322,7 +325,7 @@ export function populateAndApplyOverrides(
         ctx.protectedFields
       )
     }
-    propagateResolvedChildPlacementClones(graph)
+    propagateResolvedChildPlacementClones(graph, ctx.activeNodeIds)
   }
 
   applyDerivedSymbolData(ctx)
@@ -331,7 +334,7 @@ export function populateAndApplyOverrides(
     new Set([...ctx.kiwiPropertyNodes, ...overriddenNodes]),
     ctx.activeNodeIds
   )
-  propagateResolvedTextClones(graph)
+  propagateResolvedTextClones(graph, ctx.activeNodeIds)
   applyConstraintScaling(ctx)
   applyComponentProperties(ctx)
 

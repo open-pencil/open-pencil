@@ -9,6 +9,7 @@ import {
   snapshotChildSources
 } from './sync/sources'
 import type { InstanceNodeChange, OverrideContext } from './types'
+import { overrideCandidates } from './utils'
 
 const MAX_CHAIN_DEPTH = 20
 const siblingIndexCache = new WeakMap<OverrideContext, Map<string, number | null>>()
@@ -41,7 +42,7 @@ export function preComputeRoots(ctx: OverrideContext): void {
     return nodeId
   }
 
-  for (const node of ctx.graph.getAllNodes()) {
+  for (const node of overrideCandidates(ctx.graph, ctx.activeNodeIds)) {
     if (!node.componentId) continue
     resolve(node.id)
     const clones = ctx.preComputedClones.get(node.componentId)
@@ -484,7 +485,13 @@ export function repopulateInstance(ctx: OverrideContext, nodeId: string, compId:
     indexCloneSubtree(ctx.graph, nodeId, ctx.preComputedClones)
     applyStrokeDescendants(ctx, nodeId, previousStrokes)
   }
-  remapRepopulatedChildSources(ctx.graph, nodeId, previousSources, ctx.preComputedClones)
+  remapRepopulatedChildSources(
+    ctx.graph,
+    nodeId,
+    previousSources,
+    ctx.preComputedClones,
+    ctx.activeNodeIds
+  )
   ctx.swappedInstances.add(nodeId)
   ctx.componentIdRoot.clear()
   candidateCache.delete(ctx)

@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Reduce large `.fig` page-switch work to the active page and coalesce Layers tree rebuilds. (#420)
 - Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
 
 ### Added

@@ -27,6 +27,37 @@ describe('@open-pencil/fig instance interpretation', () => {
     expect(graph.getNode(populated?.childIds[0] ?? '')?.text).toBe('Label')
   })
 
+  test('limits lazy population work to active roots', () => {
+    const graph = new SceneGraph()
+    const activePage = graph.getPages()[0]
+    const unrelatedPage = graph.addPage('Unrelated')
+    const component = graph.createNode('COMPONENT', unrelatedPage.id, {
+      width: 100,
+      height: 40
+    })
+    graph.createNode('TEXT', component.id, { text: 'Label' })
+    const instance = graph.createNode('INSTANCE', activePage.id, {
+      width: 100,
+      height: 40,
+      componentId: component.id
+    })
+    for (let index = 0; index < 5_000; index++) {
+      graph.createNode('RECTANGLE', unrelatedPage.id)
+    }
+
+    let globalScans = 0
+    const getAllNodes = graph.getAllNodes.bind(graph)
+    graph.getAllNodes = () => {
+      globalScans++
+      return getAllNodes()
+    }
+
+    populateAndApplyOverrides(graph, new Map(), new Map(), [], [activePage.id])
+
+    expect(graph.getNode(instance.id)?.childIds).toHaveLength(1)
+    expect(globalScans).toBe(0)
+  })
+
   test('resolves text clone chains to their source values', () => {
     const graph = new SceneGraph()
     const pageId = graph.getPages()[0].id
