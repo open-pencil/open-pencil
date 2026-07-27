@@ -287,6 +287,19 @@ export const pdfFormat: IOFormatAdapter = {
   }
 }
 
+/**
+ * Every top-level frame becomes a slide, so a PPTX document export spans all
+ * pages — the shared resolver only reaches the first one.
+ */
+function resolvePPTXExportNodes(
+  request: ExportRequest
+): { pageId: string; nodeIds: string[] } | null {
+  if (request.target.scope !== 'document') return resolveExportNodes(request)
+  const pages = request.graph.getPages()
+  if (!pages.length) return null
+  return { pageId: pages[0].id, nodeIds: pages.flatMap((page) => page.childIds) }
+}
+
 export const pptxFormat: IOFormatAdapter = {
   id: 'pptx',
   label: 'PowerPoint',
@@ -305,7 +318,7 @@ export const pptxFormat: IOFormatAdapter = {
     quality: false
   },
   async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
-    const target = resolveExportNodes(request)
+    const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
     const { renderNodesToPPTX } = await import('./formats/pptx')
     const data = await renderNodesToPPTX(request.graph, target.pageId, target.nodeIds, {

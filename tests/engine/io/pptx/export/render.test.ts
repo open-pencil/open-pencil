@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { unzipSync } from 'fflate'
 
 import { SceneGraph, renderNodesToPPTX, type PPTXExportStats } from '@open-pencil/core'
+import { BUILTIN_IO_FORMATS } from '@open-pencil/core/io'
 
 // 1x1 transparent PNG — stub rasterizer output so unit tests avoid CanvasKit.
 const TINY_PNG = Uint8Array.from(
@@ -15,9 +16,15 @@ const TINY_PNG = Uint8Array.from(
 const stubRasterize = () => Promise.resolve(TINY_PNG)
 
 function makeGraph() {
-  const graph = new SceneGraph()
-  graph.createNode('CANVAS', graph.rootId, { name: 'Page 1' })
-  return graph
+  return new SceneGraph()
+}
+
+function solidFill(r: number, g: number, b: number, a = 1) {
+  return { type: 'SOLID' as const, color: { r, g, b, a }, opacity: 1, visible: true }
+}
+
+function solidStroke(r: number, g: number, b: number, a = 1, weight = 2) {
+  return { color: { r, g, b, a }, weight, opacity: 1, visible: true, align: 'CENTER' as const }
 }
 
 function pageId(graph: SceneGraph) {
@@ -41,6 +48,38 @@ function slideXml(files: Record<string, Uint8Array>, index: number): string {
   const entry = files[`ppt/slides/slide${index}.xml`]
   expect(entry).toBeDefined()
   return new TextDecoder().decode(entry)
+}
+
+const EMU_PER_INCH = 914400
+const SLIDE_WIDTH_IN = 13.333
+/** Slide frames in these tests are 1280px wide, so px → in uses that scale. */
+function inches(px: number): number {
+  return px / (1280 / SLIDE_WIDTH_IN)
+}
+
+interface Placement {
+  /** degrees, clockwise */
+  rot: number
+  centerX: number
+  centerY: number
+  width: number
+  height: number
+}
+
+/** Element placements (inches) read back from the slide XML. */
+function placements(xml: string): Placement[] {
+  const pattern =
+    /<a:xfrm(?: rot="(-?\d+)")?><a:off x="(-?\d+)" y="(-?\d+)"\/><a:ext cx="(-?\d+)" cy="(-?\d+)"\/><\/a:xfrm>/g
+  return [...xml.matchAll(pattern)].map((match) => {
+    const [x, y, width, height] = match.slice(2).map((v) => Number(v) / EMU_PER_INCH)
+    return {
+      rot: Number(match[1] ?? 0) / 60000,
+      centerX: x + width / 2,
+      centerY: y + height / 2,
+      width,
+      height
+    }
+  })
 }
 
 describe('renderNodesToPPTX()', () => {
@@ -199,6 +238,216 @@ describe('renderNodesToPPTX()', () => {
     expect(reported.fallbackReasons['vector graphics']).toBe(1)
   })
 
+  test('a child of a rotated frame keeps the inherited rotation and stays centered', async () => {
+    const graph = makeGraph()
+    const frame = makeSlideFrame(graph, 'Slide')
+    const rotated = graph.createNode('FRAME', frame.id, {
+      name: 'Rotated',
+      x: 400,
+      y: 200,
+      width: 200,
+      height: 100,
+      rotation: 90,
+      fills: []
+    })
+    graph.createNode('RECTANGLE', rotated.id, {
+      width: 200,
+      height: 100,
+      fills: [solidFill(0, 0, 1)]
+    })
+
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: stubRasterize
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    const [rect, ...rest] = placements(slideXml(unzipPptx(data), 1))
+    expect(rest).toHaveLength(0)
+    // Rotation comes from the parent frame, and the rect is centered on it —
+    // the unrotated box origin, not the rotated corner at (550, 150).
+    expect(rect.rot).toBeCloseTo(90, 3)
+    expect(rect.centerX).toBeCloseTo(inches(500), 3)
+    expect(rect.centerY).toBeCloseTo(inches(250), 3)
+    expect(rect.width).toBeCloseTo(inches(200), 3)
+    expect(rect.height).toBeCloseTo(inches(100), 3)
+  })
+
+  test('a clipped frame with an overflowing child rasterizes as one image', async () => {
+    const graph = makeGraph()
+    const frame = makeSlideFrame(graph, 'Slide')
+    const clipped = graph.createNode('FRAME', frame.id, {
+      name: 'Clipped',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 200,
+      clipsContent: true,
+      fills: [solidFill(0, 0, 1)]
+    })
+    graph.createNode('RECTANGLE', clipped.id, {
+      x: 150,
+      y: 20,
+      width: 200,
+      height: 100,
+      fills: [solidFill(1, 0, 0)]
+    })
+
+    let stats: PPTXExportStats | null = null
+    const rasterCalls: string[][] = []
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: (ids) => {
+        rasterCalls.push(ids)
+        return Promise.resolve(TINY_PNG)
+      },
+      onStats: (s) => {
+        stats = s
+      }
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    // The frame rasterized once, so the cropped part of the child cannot leak
+    // back in as a separate native shape.
+    expect(rasterCalls).toEqual([[clipped.id]])
+    expect(slideXml(unzipPptx(data), 1)).not.toContain('FF0000')
+    expect(stats).not.toBeNull()
+    if (!stats) return
+    const reported: PPTXExportStats = stats
+    expect(reported.fallbackReasons['clipped content']).toBe(1)
+  })
+
+  test('a clipped frame whose children fit stays native', async () => {
+    const graph = makeGraph()
+    const frame = makeSlideFrame(graph, 'Slide')
+    const clipped = graph.createNode('FRAME', frame.id, {
+      name: 'Clipped',
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 200,
+      clipsContent: true,
+      fills: [solidFill(0, 0, 1)]
+    })
+    graph.createNode('RECTANGLE', clipped.id, {
+      x: 20,
+      y: 20,
+      width: 100,
+      height: 100,
+      fills: [solidFill(1, 0, 0)]
+    })
+
+    let stats: PPTXExportStats | null = null
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: stubRasterize,
+      onStats: (s) => {
+        stats = s
+      }
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    const xml = slideXml(unzipPptx(data), 1)
+    expect(xml).toContain('FF0000')
+    expect(stats).not.toBeNull()
+    if (!stats) return
+    const reported: PPTXExportStats = stats
+    expect(reported.fallback).toBe(0)
+  })
+
+  test('line transparency includes the stroke paint alpha', async () => {
+    const graph = makeGraph()
+    const frame = makeSlideFrame(graph, 'Slide')
+    graph.createNode('LINE', frame.id, {
+      x: 40,
+      y: 40,
+      width: 200,
+      height: 2,
+      strokes: [solidStroke(1, 0, 0, 0.5)]
+    })
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: stubRasterize
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    const xml = slideXml(unzipPptx(data), 1)
+    expect(xml).toContain('FF0000')
+    // 50% alpha survives instead of rendering fully opaque.
+    expect(xml).toContain('<a:alpha val="50000"/>')
+  })
+
+  test('a stroked slide frame becomes a native shape, not an image', async () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      width: 1280,
+      height: 720,
+      fills: [solidFill(1, 1, 1)],
+      strokes: [solidStroke(0, 0, 0, 1, 4)]
+    })
+
+    let stats: PPTXExportStats | null = null
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: stubRasterize,
+      onStats: (s) => {
+        stats = s
+      }
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    const files = unzipPptx(data)
+    // A slide-sized shape carries the border instead of a flattened image.
+    const [border, ...rest] = placements(slideXml(files, 1))
+    expect(rest).toHaveLength(0)
+    expect(border.width).toBeCloseTo(SLIDE_WIDTH_IN, 2)
+    expect(
+      Object.keys(files).filter((f) => f.startsWith('ppt/media/') && !f.endsWith('/'))
+    ).toHaveLength(0)
+    expect(stats).not.toBeNull()
+    if (!stats) return
+    const reported: PPTXExportStats = stats
+    expect(reported.fallback).toBe(0)
+  })
+
+  test('a non-solid slide background rasterizes without its children', async () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      width: 1280,
+      height: 720,
+      fills: [
+        {
+          type: 'GRADIENT_LINEAR',
+          color: { r: 0, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true,
+          gradientStops: [
+            { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+            { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } }
+          ]
+        }
+      ]
+    })
+    graph.createNode('TEXT', frame.id, {
+      text: 'On the gradient',
+      x: 100,
+      y: 100,
+      width: 400,
+      height: 60,
+      fontSize: 32,
+      fills: [solidFill(1, 1, 1)]
+    })
+
+    const calls: { ids: string[]; paintOnly?: boolean }[] = []
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: (ids, _scale, options) => {
+        calls.push({ ids, paintOnly: options?.paintOnly })
+        return Promise.resolve(TINY_PNG)
+      }
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    // Baking the children into the background image would draw them twice —
+    // once flattened, once as the native text added right after.
+    expect(calls).toEqual([{ ids: [frame.id], paintOnly: true }])
+    expect(slideXml(unzipPptx(data), 1)).toContain('On the gradient')
+  })
+
   test('solid frame background maps to slide background color', async () => {
     const graph = makeGraph()
     const frame = graph.createNode('FRAME', pageId(graph), {
@@ -213,5 +462,44 @@ describe('renderNodesToPPTX()', () => {
     if (!data) return
     const xml = slideXml(unzipPptx(data), 1)
     expect(xml.toUpperCase()).toContain('336699')
+  })
+
+  test('a translucent frame background keeps its alpha', async () => {
+    const graph = makeGraph()
+    const frame = graph.createNode('FRAME', pageId(graph), {
+      width: 1280,
+      height: 720,
+      fills: [solidFill(0.2, 0.4, 0.6, 0.5)]
+    })
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: stubRasterize
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    const xml = slideXml(unzipPptx(data), 1)
+    expect(xml).toContain('<a:alpha val="50000"/>')
+  })
+
+  test('document export covers frames on every page', async () => {
+    const graph = makeGraph()
+    makeSlideFrame(graph, 'Page 1 slide')
+    const second = graph.addPage('Page 2')
+    graph.createNode('FRAME', second.id, {
+      name: 'Page 2 slide',
+      width: 1280,
+      height: 720,
+      fills: [solidFill(1, 1, 1)]
+    })
+
+    const pptx = BUILTIN_IO_FORMATS.find((format) => format.id === 'pptx')
+    expect(pptx).toBeDefined()
+    if (!pptx) return
+    const result = await pptx.exportContent(
+      { graph, target: { scope: 'document' } },
+      { rasterize: stubRasterize }
+    )
+    const files = unzipPptx(result.data as Uint8Array)
+    expect(files['ppt/slides/slide1.xml']).toBeDefined()
+    expect(files['ppt/slides/slide2.xml']).toBeDefined()
   })
 })

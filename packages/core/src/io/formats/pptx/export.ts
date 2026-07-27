@@ -1,11 +1,27 @@
 import type PptxGenJS from 'pptxgenjs'
 import type { CanvasKit } from 'canvaskit-wasm'
 
-import type { Color, Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { Fill, Mat3, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { TransformMatrix, getWorldMatrix } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas'
-import { colorToHex } from '#core/color'
 import { extractExportGraph } from '#core/io/subgraph'
+
+import {
+  applyTextCase,
+  clampRot,
+  effectiveRadius,
+  firstVisibleFill,
+  firstVisibleStroke,
+  getSolidOffsetShadow,
+  hex,
+  isRounded,
+  mapHAlign,
+  mapShadow,
+  mapVAlign,
+  round2,
+  transparency
+} from './style'
 
 /**
  * Scene graph → editable PPTX hybrid conversion.
@@ -22,6 +38,8 @@ import { extractExportGraph } from '#core/io/subgraph'
 
 const MIN_SIZE_IN = 0.01
 const BASE_SLIDE_WIDTH_IN = 13.333
+/** Sub-pixel slack when testing whether a clipped container actually crops. */
+const CLIP_EPSILON_PX = 0.5
 const SIMPLE_BLENDS = new Set<SceneNode['blendMode']>(['NORMAL', 'PASS_THROUGH'])
 /** Node types that map to native PPT shapes. Others recurse or fall back to PNG. */
 const SHAPE_TYPES = new Set<SceneNode['type']>([
@@ -41,8 +59,17 @@ export interface PPTXExportStats {
   fallbackReasons: Record<string, number>
 }
 
+export interface PPTXRasterizeOptions {
+  /** Render only the nodes' own paint, dropping their children. */
+  paintOnly?: boolean
+}
+
 /** Renders the given nodes to a PNG byte array (used for fallback images). */
-export type PPTXRasterize = (nodeIds: string[], scale: number) => Promise<Uint8Array | null>
+export type PPTXRasterize = (
+  nodeIds: string[],
+  scale: number,
+  options?: PPTXRasterizeOptions
+) => Promise<Uint8Array | null>
 
 export interface PPTXExportOptions {
   /** Raster scale for fallback images. Defaults to 2. */
@@ -65,10 +92,20 @@ interface ExportCtx {
   rasterize: PPTXRasterize
   /** frame px → slide inch conversion factor */
   pxPerInch: number
-  frameX: number
-  frameY: number
+  /** world → slide-frame local space, so a rotated slide frame stays upright */
+  toSlideSpace: Mat3
   fallbackScale: number
   stats: PPTXExportStats
+}
+
+/** Placement of a node on the slide, in inches, plus its transform. */
+interface SlideBox {
+  x: number
+  y: number
+  w: number
+  h: number
+  rotate: number
+  flipH: boolean
 }
 
 export async function renderNodesToPPTX(
@@ -100,34 +137,23 @@ export async function renderNodesToPPTX(
 
   for (const root of roots) {
     const slide = pptx.addSlide()
-    const abs = graph.getAbsolutePosition(root.id)
     const ctx: ExportCtx = {
       slide,
       graph,
       rasterize,
       pxPerInch,
-      frameX: abs.x,
-      frameY: abs.y,
+      toSlideSpace: TransformMatrix.invert(getWorldMatrix(root, graph)) ?? TransformMatrix.identity(),
       fallbackScale: options.fallbackScale ?? 2,
       stats
     }
 
     if (root.type !== 'FRAME') {
       // Non-frame root: export as a single image on its own slide.
-      ctx.frameX = abs.x
-      ctx.frameY = abs.y
       await addFallbackImage(ctx, root, root.opacity, `root node type ${root.type}`)
       continue
     }
 
-    // Frame background: solid color maps to the slide background; anything
-    // else renders the frame itself as a fallback image underneath.
-    const bg = firstVisibleFill(root)
-    if (bg?.type === 'SOLID') {
-      slide.background = { color: hex(bg.color) }
-    } else if (bg) {
-      await addFallbackImage(ctx, root, 1, 'non-solid frame background')
-    }
+    await addSlideFramePaint(ctx, root)
 
     for (const childId of root.childIds) {
       const child = graph.getNode(childId)
@@ -150,9 +176,18 @@ function makeIsolatedRasterize(
   graph: SceneGraph,
   context?: PPTXExportOptions['context']
 ): PPTXRasterize {
-  return async (nodeIds: string[], scale: number) => {
+  return async (nodeIds: string[], scale: number, options?: PPTXRasterizeOptions) => {
     const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
     if (!extracted.pageId || extracted.nodeIds.length === 0) return null
+
+    if (options?.paintOnly) {
+      // The extracted graph is a copy, so detaching the children only affects
+      // this render — the renderer walks the tree through childIds.
+      for (const nodeId of extracted.nodeIds) {
+        const node = extracted.graph.getNode(nodeId)
+        if (node) node.childIds = []
+      }
+    }
 
     const targets = new Set(extracted.nodeIds)
     for (const nodeId of extracted.nodeIds) {
@@ -220,12 +255,59 @@ async function walkNode(ctx: ExportCtx, node: SceneNode, inheritedOpacity: numbe
   }
 }
 
+/**
+ * Paints the slide frame itself. A plain solid fill becomes the slide
+ * background; a stroke, corner radius or translucency still maps to a native
+ * shape covering the slide. Only paint PPTX cannot express at all is
+ * rasterized, and then *without* the frame's children — they are converted
+ * natively right after, and baking them into the image too would draw every
+ * element twice.
+ */
+async function addSlideFramePaint(ctx: ExportCtx, root: SceneNode): Promise<void> {
+  const reason = rootRasterReason(root)
+  if (reason) {
+    await addFallbackImage(ctx, root, root.opacity, reason, { paintOnly: true })
+    return
+  }
+
+  const bg = firstVisibleFill(root)
+  const plainBackground =
+    !root.strokes.some((s) => s.visible) &&
+    !root.effects.some((e) => e.visible && e.type === 'INNER_SHADOW') &&
+    effectiveRadius(root) === 0
+  if (bg?.type === 'SOLID' && plainBackground) {
+    ctx.slide.background = {
+      color: hex(bg.color),
+      transparency: transparency(root.opacity * bg.opacity * bg.color.a)
+    }
+    return
+  }
+  addEditableShape(ctx, root, root.opacity)
+}
+
+/** Why a slide frame's own paint has to be rasterized. Null means it maps natively. */
+function rootRasterReason(root: SceneNode): string | null {
+  if (!SIMPLE_BLENDS.has(root.blendMode)) return 'blend mode'
+  // A drop shadow on the slide frame paints outside the slide, where nothing is
+  // visible — rasterizing the whole slide for it would only cost editability.
+  if (root.effects.some((e) => e.visible && e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW'))
+    return 'blur effect'
+  const fills = root.fills.filter((f) => f.visible)
+  if (fills.length > 1) return 'multiple fills'
+  if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid frame background'
+  return null
+}
+
 /** Why a node cannot be converted natively. Null means native conversion is possible. */
 function getFallbackReason(graph: SceneGraph, node: SceneNode): string | null {
   if (!SIMPLE_BLENDS.has(node.blendMode)) return 'blend mode'
   if (node.effects.some((e) => e.visible && e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW'))
     return 'blur effect'
   if (node.childIds.some((id) => graph.getNode(id)?.isMask)) return 'contains mask'
+  // PPTX has no container clipping — a clipped frame and its children arrive as
+  // sibling elements, so whatever the frame crops would reappear. Rasterizing
+  // the subtree keeps the crop.
+  if (clipsOverflowingContent(graph, node)) return 'clipped content'
   // Icon-style containers (every visible child is a vector path) rasterize as
   // ONE image — per-path fallbacks would stack overlapping PNGs and lose the
   // composed artwork.
@@ -256,6 +338,40 @@ function isImageLeaf(node: SceneNode): boolean {
   return node.childIds.length === 0 && node.fills.some((f) => f.visible && f.type === 'IMAGE')
 }
 
+/** True when `node` clips and some descendant actually reaches past its bounds. */
+function clipsOverflowingContent(graph: SceneGraph, node: SceneNode): boolean {
+  if (!node.clipsContent || !CONTAINER_TYPES.has(node.type)) return false
+  const toNodeSpace = TransformMatrix.invert(getWorldMatrix(node, graph))
+  if (!toNodeSpace) return false
+
+  const pending = [...node.childIds]
+  while (pending.length > 0) {
+    const childId = pending.pop()
+    const child = childId ? graph.getNode(childId) : undefined
+    if (!child?.visible) continue
+    const local = TransformMatrix.multiply(toNodeSpace, getWorldMatrix(child, graph))
+    const corners = TransformMatrix.mapPoints(local, [
+      0,
+      0,
+      child.width,
+      0,
+      child.width,
+      child.height,
+      0,
+      child.height
+    ])
+    for (let i = 0; i < corners.length; i += 2) {
+      const outsideX =
+        corners[i] < -CLIP_EPSILON_PX || corners[i] > node.width + CLIP_EPSILON_PX
+      const outsideY =
+        corners[i + 1] < -CLIP_EPSILON_PX || corners[i + 1] > node.height + CLIP_EPSILON_PX
+      if (outsideX || outsideY) return true
+    }
+    pending.push(...child.childIds)
+  }
+  return false
+}
+
 function isVectorOnlyContainer(graph: SceneGraph, node: SceneNode): boolean {
   if (!CONTAINER_TYPES.has(node.type)) return false
   const children = node.childIds
@@ -279,7 +395,8 @@ function addEditableShape(ctx: ExportCtx, node: SceneNode, opacity: number): voi
     y: box.y,
     w: box.w,
     h: box.h,
-    rotate: clampRot(node.rotation),
+    rotate: box.rotate,
+    flipH: box.flipH,
     shadow: solidShadow ? undefined : mapShadow(node, opacity),
     fill:
       fill?.type === 'SOLID'
@@ -306,7 +423,7 @@ function addEditableShape(ctx: ExportCtx, node: SceneNode, opacity: number): voi
       line: {
         color: hex(paint.color),
         width: Math.max(pt(ctx, stroke?.weight ?? node.height), 0.25),
-        transparency: transparency(opacity)
+        transparency: transparency(opacity * paint.opacity * paint.color.a)
       }
     })
   } else if (node.type === 'ELLIPSE') {
@@ -334,9 +451,10 @@ function addEditableText(ctx: ExportCtx, node: SceneNode, opacity: number): void
   ctx.slide.addText(runs, {
     x: box.x,
     y: box.y,
-    w: Math.max(box.w, MIN_SIZE_IN),
-    h: Math.max(box.h, MIN_SIZE_IN),
-    rotate: clampRot(node.rotation),
+    w: box.w,
+    h: box.h,
+    rotate: box.rotate,
+    flipH: box.flipH,
     align: mapHAlign(node.textAlignHorizontal),
     valign: mapVAlign(node.textAlignVertical),
     margin: 0,
@@ -400,9 +518,10 @@ async function addFallbackImage(
   ctx: ExportCtx,
   node: SceneNode,
   opacity: number,
-  reason: string | null
+  reason: string | null,
+  options?: PPTXRasterizeOptions
 ): Promise<void> {
-  const data = await ctx.rasterize([node.id], ctx.fallbackScale)
+  const data = await ctx.rasterize([node.id], ctx.fallbackScale, options)
   if (!data) {
     ctx.stats.skipped += 1
     return
@@ -412,9 +531,10 @@ async function addFallbackImage(
     data: `data:image/png;base64,${bytesToBase64(data)}`,
     x: box.x,
     y: box.y,
-    w: Math.max(box.w, MIN_SIZE_IN),
-    h: Math.max(box.h, MIN_SIZE_IN),
-    rotate: clampRot(node.rotation),
+    w: box.w,
+    h: box.h,
+    rotate: box.rotate,
+    flipH: box.flipH,
     transparency: transparency(opacity)
   })
   if (reason) {
@@ -440,36 +560,31 @@ function charSpacingPt(ctx: ExportCtx, px: number): number | undefined {
   return round2(pt(ctx, px))
 }
 
-function nodeBox(ctx: ExportCtx, node: SceneNode): { x: number; y: number; w: number; h: number } {
-  const abs = ctx.graph.getAbsolutePosition(node.id)
+/**
+ * PowerPoint places an element by the top-left of its *unrotated* box and then
+ * rotates it around its own center, so both the center and the rotation are read
+ * off the node's transform relative to the slide frame. Deriving them from
+ * `getAbsolutePosition()` plus `node.rotation` instead would misplace rotated
+ * nodes (that position is the rotated corner) and drop rotation inherited from
+ * ancestors.
+ */
+function nodeBox(ctx: ExportCtx, node: SceneNode): SlideBox {
+  const local = TransformMatrix.multiply(ctx.toSlideSpace, getWorldMatrix(node, ctx.graph))
+  const [centerX, centerY] = TransformMatrix.mapPoints(local, [node.width / 2, node.height / 2])
+  // A mirrored basis (negative determinant) is a flip, which PPTX expresses
+  // separately from rotation — folding it into the angle would spin the shape.
+  const mirrored = local[0] * local[4] - local[1] * local[3] < 0
+  const radians = mirrored ? Math.atan2(-local[3], local[4]) : Math.atan2(local[3], local[0])
+  const w = Math.max(inch(ctx, node.width), MIN_SIZE_IN)
+  const h = Math.max(inch(ctx, node.height), MIN_SIZE_IN)
   return {
-    x: inch(ctx, abs.x - ctx.frameX),
-    y: inch(ctx, abs.y - ctx.frameY),
-    w: Math.max(inch(ctx, node.width), MIN_SIZE_IN),
-    h: Math.max(inch(ctx, node.height), MIN_SIZE_IN)
+    x: inch(ctx, centerX) - w / 2,
+    y: inch(ctx, centerY) - h / 2,
+    w,
+    h,
+    rotate: clampRot(round2((radians * 180) / Math.PI)),
+    flipH: mirrored
   }
-}
-
-function firstVisibleFill(node: SceneNode): Fill | null {
-  return node.fills.find((f) => f.visible) ?? null
-}
-
-function firstVisibleStroke(node: SceneNode): Stroke | null {
-  return node.strokes.find((s) => s.visible) ?? null
-}
-
-function isRounded(node: SceneNode): boolean {
-  return effectiveRadius(node) > 0
-}
-
-function effectiveRadius(node: SceneNode): number {
-  if (node.independentCorners) {
-    return (
-      (node.topLeftRadius + node.topRightRadius + node.bottomRightRadius + node.bottomLeftRadius) /
-      4
-    )
-  }
-  return node.cornerRadius
 }
 
 /**
@@ -480,7 +595,7 @@ function effectiveRadius(node: SceneNode): number {
 function addSolidShadowShape(
   ctx: ExportCtx,
   node: SceneNode,
-  box: { x: number; y: number; w: number; h: number },
+  box: SlideBox,
   opacity: number,
   shadow: NonNullable<ReturnType<typeof getSolidOffsetShadow>>
 ): void {
@@ -493,7 +608,8 @@ function addSolidShadowShape(
     y: box.y + inch(ctx, shadow.offset.y - sp),
     w: box.w + inch(ctx, sp * 2),
     h: box.h + inch(ctx, sp * 2),
-    rotate: clampRot(node.rotation),
+    rotate: box.rotate,
+    flipH: box.flipH,
     fill: {
       color: hex(shadow.color),
       transparency: transparency(opacity * shadow.color.a)
@@ -503,71 +619,6 @@ function addSolidShadowShape(
       ? { rectRadius: Math.min(inch(ctx, effectiveRadius(node)), Math.min(box.w, box.h) / 2) }
       : {})
   })
-}
-
-/** DROP_SHADOW without blur (design-system solid offset shadow) — drawn as a separate shape. */
-function getSolidOffsetShadow(node: SceneNode) {
-  const e = node.effects.find((fx) => fx.visible && fx.type === 'DROP_SHADOW')
-  if (!e) return null
-  if (e.radius > 1) return null
-  if (Math.abs(e.offset.x) < 0.5 && Math.abs(e.offset.y) < 0.5 && e.spread <= 0) return null
-  return e
-}
-
-function mapShadow(node: SceneNode, opacity: number): PptxGenJS.ShadowProps | undefined {
-  const e = node.effects.find(
-    (fx) => fx.visible && (fx.type === 'DROP_SHADOW' || fx.type === 'INNER_SHADOW')
-  )
-  if (!e) return undefined
-  const angleRaw = (Math.atan2(e.offset.y, e.offset.x) * 180) / Math.PI
-  return {
-    type: e.type === 'INNER_SHADOW' ? 'inner' : 'outer',
-    color: hex(e.color),
-    opacity: clamp01(e.color.a * opacity),
-    blur: Math.min(Math.max(e.radius, 0), 100),
-    offset: Math.min(Math.hypot(e.offset.x, e.offset.y), 200),
-    angle: angleRaw < 0 ? angleRaw + 360 : angleRaw
-  }
-}
-
-function mapHAlign(a: SceneNode['textAlignHorizontal']): 'left' | 'center' | 'right' | 'justify' {
-  if (a === 'CENTER') return 'center'
-  if (a === 'RIGHT') return 'right'
-  if (a === 'JUSTIFIED') return 'justify'
-  return 'left'
-}
-
-function mapVAlign(a: SceneNode['textAlignVertical']): 'top' | 'middle' | 'bottom' {
-  if (a === 'CENTER') return 'middle'
-  if (a === 'BOTTOM') return 'bottom'
-  return 'top'
-}
-
-function applyTextCase(text: string, textCase: SceneNode['textCase']): string {
-  if (textCase === 'UPPER') return text.toUpperCase()
-  if (textCase === 'LOWER') return text.toLowerCase()
-  if (textCase === 'TITLE') return text.replace(/\b\w/g, (c) => c.toUpperCase())
-  return text
-}
-
-function hex(color: Color): string {
-  return colorToHex(color).replace('#', '').slice(0, 6)
-}
-
-function transparency(alpha: number): number {
-  return Math.min(Math.max(Math.round((1 - clamp01(alpha)) * 100), 0), 100)
-}
-
-function clamp01(v: number): number {
-  return Math.min(Math.max(v, 0), 1)
-}
-
-function clampRot(deg: number): number {
-  return Math.min(Math.max(deg, -360), 360)
-}
-
-function round2(v: number): number {
-  return Math.round(v * 100) / 100
 }
 
 function bytesToBase64(bytes: Uint8Array): string {
