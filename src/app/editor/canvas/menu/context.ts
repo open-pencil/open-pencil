@@ -6,6 +6,7 @@ import type { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import {
   CANVAS_COPY_AS_ACTIONS,
   CANVAS_COPY_AS_GROUP_TEST_ID,
+  CANVAS_VECTORIZE_TEST_ID,
   type CanvasContextActionId
 } from '@/app/editor/canvas/menu/registry'
 
@@ -21,6 +22,7 @@ type CanvasCopyLabels = {
   copyAsJSX: string
   copyNodeId: string
   copyXPath: string
+  convertToVector: string
 }
 
 function withoutStaticSelectionCommands(entries: readonly MenuEntry[]): MenuEntry[] {
@@ -90,6 +92,16 @@ export function useCanvasContextMenu(
   return computed<MenuEntry[]>(() => {
     const entries = withoutStaticSelectionCommands(baseEntries.value)
     if (!hasSelection.value) return entries
+    if (actions.canVectorizeImage()) {
+      entries.push(
+        { separator: true },
+        {
+          label: labels.value.convertToVector,
+          testId: CANVAS_VECTORIZE_TEST_ID,
+          action: runAsync(actions.vectorizeImage)
+        }
+      )
+    }
     return [...entries, { separator: true }, copyPasteAsEntry(editor, actions, labels.value)]
   })
 }

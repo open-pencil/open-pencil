@@ -88,7 +88,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </Tip>
       </div>
 
-      <PanelGrid columns="two" class="mb-3">
+      <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.fontWeight">
           <AppSelect
             :label="panels.fontWeight"
@@ -111,7 +111,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelFieldGroup>
       </PanelGrid>
 
-      <PanelGrid columns="two" class="mb-3">
+      <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.lineHeight">
           <VariableNumberField
             :model-value="
@@ -196,7 +196,11 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </SegmentedControl>
       </PanelFieldGroup>
 
-      <PanelFieldGroup :label="panels.textFormatting" class="mb-3" :ui="{ container: 'flex-row gap-1.5' }">
+      <PanelFieldGroup
+        :label="panels.textFormatting"
+        class="mb-3"
+        :ui="{ container: 'flex-row gap-1.5' }"
+      >
         <div
           class="inline-flex items-center gap-0.5 rounded bg-panel-field p-0.5 hover:bg-panel-field-hover"
           role="toolbar"
@@ -237,7 +241,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </div>
       </PanelFieldGroup>
 
-      <PanelGrid columns="two" class="mb-3">
+      <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.textCase">
           <AppSelect
             :label="panels.textCase"

@@ -64,7 +64,7 @@ describe('lazy .fig page population', () => {
     const { graph, page1Instance, page2Instance } = createLazyGraph()
 
     expect(populateAllLazyFigImportRoots(graph)).toBe(true)
-    expect(graph.getChildren(page1Instance.id)).toHaveLength(0)
+    expect(graph.getChildren(page1Instance.id)).toHaveLength(1)
     expect(graph.getChildren(page2Instance.id)).toHaveLength(1)
     expect(populateAllLazyFigImportRoots(graph)).toBe(false)
   })

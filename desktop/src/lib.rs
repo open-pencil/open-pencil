@@ -1,3 +1,4 @@
+mod credentials;
 mod fig_container;
 mod fonts;
 mod http;
@@ -6,6 +7,10 @@ mod menu_events;
 #[cfg(target_os = "macos")]
 mod window;
 
+use credentials::{
+    credential_read, credential_remove, credential_status, credential_store_availability,
+    credential_write,
+};
 use fig_container::build_fig_file;
 use fonts::{list_system_fonts, load_system_font};
 use http::proxy_http_request;
@@ -118,6 +123,11 @@ pub fn run() {
         .manage(PendingOpen(Mutex::new(Vec::new())))
         .invoke_handler(tauri::generate_handler![
             build_fig_file,
+            credential_read,
+            credential_remove,
+            credential_status,
+            credential_store_availability,
+            credential_write,
             list_system_fonts,
             load_system_font,
             proxy_http_request,

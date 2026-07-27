@@ -1,3 +1,5 @@
+export * from './vectorize'
+
 export {
   breakAtVertex,
   computeAccurateBounds,

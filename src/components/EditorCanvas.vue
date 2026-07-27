@@ -25,7 +25,6 @@ import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
-import { fadeOutGlobalLoader } from '@/app/editor/canvas/loader-overlay'
 import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
 import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
@@ -43,8 +42,7 @@ const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
-  showRulers: false,
-  onReady: fadeOutGlobalLoader
+  showRulers: false
 })
 const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
   canvasRef,

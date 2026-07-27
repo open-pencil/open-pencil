@@ -3,11 +3,11 @@ import { TooltipProvider } from 'reka-ui'
 import { computed, ref } from 'vue'
 
 import ProviderModelSelect from '@/components/chat/ProviderModelSelect.vue'
-import ProviderSettings from '@/components/chat/ProviderSettings/ProviderSettings.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { useAIChat } from '@/app/ai/chat/use'
+import { openSettingsDialog } from '@/app/settings/dialog'
 import { useI18n } from '@open-pencil/vue'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
@@ -92,7 +92,17 @@ function handleSubmit(e: Event) {
         </ProviderModelSelect>
 
         <div class="ml-auto">
-          <ProviderSettings />
+          <Tip :label="dialogs.providerSettings">
+            <button
+              type="button"
+              data-test-id="provider-settings-trigger"
+              :aria-label="dialogs.providerSettings"
+              class="rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
+              @click="openSettingsDialog('ai')"
+            >
+              <icon-lucide-settings class="size-3" />
+            </button>
+          </Tip>
         </div>
       </div>
 

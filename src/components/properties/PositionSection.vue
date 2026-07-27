@@ -79,7 +79,7 @@ function handleAlign(
         </div>
       </div>
 
-      <PanelGrid columns="two">
+      <PanelGrid :columns="2">
         <Tip :label="panels.xAxis">
           <NumberField
             icon="X"
@@ -102,7 +102,7 @@ function handleAlign(
         </Tip>
       </PanelGrid>
 
-      <PanelGrid v-if="isMulti" columns="two" class="mt-1.5">
+      <PanelGrid v-if="isMulti" :columns="2" class="mt-1.5">
         <Tip :label="panels.width">
           <NumberField
             icon="W"
@@ -127,7 +127,7 @@ function handleAlign(
         </Tip>
       </PanelGrid>
 
-      <div class="mt-1.5 grid grid-cols-[minmax(0,1fr)_repeat(3,24px)] gap-0.5">
+      <PanelGrid :columns="2" class="mt-1.5">
         <Tip :label="panels.rotation">
           <NumberField
             suffix="°"
@@ -144,16 +144,18 @@ function handleAlign(
             </template>
           </NumberField>
         </Tip>
-        <IconButton :label="panels.flipHorizontal" size="md" @click="actions.flip('horizontal')">
-          <icon-lucide-flip-horizontal-2 class="size-3.5" />
-        </IconButton>
-        <IconButton :label="panels.flipVertical" size="md" @click="actions.flip('vertical')">
-          <icon-lucide-flip-vertical-2 class="size-3.5" />
-        </IconButton>
-        <IconButton :label="panels.rotate90" size="md" @click="actions.rotate(90)">
-          <icon-lucide-rotate-cw-square class="size-3.5" />
-        </IconButton>
-      </div>
+        <div class="flex h-6 items-center justify-end gap-0.5">
+          <IconButton :label="panels.flipHorizontal" size="md" @click="actions.flip('horizontal')">
+            <icon-lucide-flip-horizontal-2 class="size-3.5" />
+          </IconButton>
+          <IconButton :label="panels.flipVertical" size="md" @click="actions.flip('vertical')">
+            <icon-lucide-flip-vertical-2 class="size-3.5" />
+          </IconButton>
+          <IconButton :label="panels.rotate90" size="md" @click="actions.rotate(90)">
+            <icon-lucide-rotate-cw-square class="size-3.5" />
+          </IconButton>
+        </div>
+      </PanelGrid>
     </PanelSection>
   </PositionControlsRoot>
 </template>

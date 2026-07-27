@@ -10,6 +10,8 @@ import { parseColor } from '#core/color'
 import type { RenderOptions } from '#core/design-jsx/types'
 import { fetchIcons } from '#core/icons'
 import { createIconFromPaths } from '#core/icons/render'
+import { extractPaths, scalePathInfos } from '#core/icons/svg'
+import type { IconData } from '#core/icons/types'
 import { computeAllLayouts } from '#core/layout'
 import { randomHex } from '#core/random'
 
@@ -190,6 +192,33 @@ function applyBindings(graph: SceneGraph, nodeId: string, bindings: Record<strin
   }
 }
 
+function applyIconSize(
+  props: Record<string, unknown>,
+  overrides: Partial<SceneNode>,
+  parentLayout: SceneNode['layoutMode'],
+  size: number
+): void {
+  const { w, h } = applySizeOverrides(props, overrides, parentLayout)
+  if (typeof w !== 'number') overrides.width = size
+  if (typeof h !== 'number') overrides.height = size
+}
+
+function finishIconRender(
+  graph: SceneGraph,
+  icon: IconData,
+  props: Record<string, unknown>,
+  size: number,
+  color: Color,
+  parentId: string
+): SceneNode {
+  const parent = graph.getNode(parentId)
+  const parentLayout = parent?.layoutMode ?? 'NONE'
+  const overrides: Partial<SceneNode> = {}
+  if (props.label) overrides.name = props.label as string
+  applyIconSize(props, overrides, parentLayout, size)
+  return createIconFromPaths(graph, icon, icon.name, size, color, parentId, overrides)
+}
+
 async function renderIconNode(
   graph: SceneGraph,
   tree: TreeNode,
@@ -208,16 +237,76 @@ async function renderIconNode(
   if (!icon || icon.paths.length === 0) {
     throw new Error(`Icon "${iconName}" not found`)
   }
+  return finishIconRender(graph, icon, props, size, parsedColor, parentId)
+}
 
-  const parent = graph.getNode(parentId)
-  const parentLayout = parent?.layoutMode ?? 'NONE'
-  const overrides: Partial<SceneNode> = {}
-  if (props.label) overrides.name = props.label as string
-  const { w, h } = applySizeOverrides(props, overrides, parentLayout)
-  if (typeof w !== 'number') overrides.width = size
-  if (typeof h !== 'number') overrides.height = size
+/**
+ * Render an inline <svg> element into vector nodes. Reuses the same SVG-path
+ * pipeline as iconify icons: the body may be passed as string children or a
+ * `body`/`children` string prop, and is parsed with extractPaths + parseSVGPath.
+ */
+async function renderSvgNode(
+  graph: SceneGraph,
+  tree: TreeNode,
+  parentId: string
+): Promise<SceneNode> {
+  const props = tree.props
+  const explicitW = typeof props.w === 'number' ? props.w : 0
+  const explicitH = typeof props.h === 'number' ? props.h : 0
+  const size = explicitW > 0 || explicitH > 0 ? Math.max(explicitW, explicitH) : ((props.size as number | undefined) ?? 24)
+  const colorHex = (props.color as string | undefined) ?? '#000000'
+  const parsedColor = parseColor(colorHex)
 
-  return createIconFromPaths(graph, icon, iconName, size, parsedColor, parentId, overrides)
+  const body =
+    (typeof props.body === 'string' && props.body) ||
+    tree.children.filter((c): c is string => typeof c === 'string').join('')
+
+  // Children may arrive as parsed <path>/<circle>/etc. elements (mini-react
+  // lowercases tags) rather than raw markup. Rebuild path info from either
+  // source: raw SVG markup, or element children carrying a `d` attribute.
+  let pathInfos = body.trim() ? extractPaths(body) : []
+  if (pathInfos.length === 0) {
+    pathInfos = tree.children
+      .filter(isTreeNode)
+      .map((child) => {
+        const d = (child.props.d ?? child.props.body) as string | undefined
+        if (!d) return null
+        return {
+          d,
+          fill: (child.props.fill as string | undefined) ?? 'currentColor',
+          stroke: (child.props.stroke as string | undefined) ?? null,
+          strokeWidth: Number(child.props['stroke-width'] ?? child.props.strokeWidth ?? 1),
+          strokeCap: (child.props['stroke-linecap'] as string | undefined) ?? 'butt',
+          strokeJoin: (child.props['stroke-linejoin'] as string | undefined) ?? 'miter',
+          fillRule: (child.props['fill-rule'] as string | undefined) === 'evenodd' ? 'EVENODD' as const : 'NONZERO' as const
+        }
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null)
+  }
+  if (pathInfos.length === 0) {
+    throw new Error('<svg> requires SVG markup as children, a body prop, or <path d="..."> children')
+  }
+
+  const vb = parseViewBox(props.viewBox as string | undefined)
+  const scaleX = vb.w > 0 ? size / vb.w : 1
+  const scaleY = vb.h > 0 ? size / vb.h : 1
+
+  const icon: IconData = {
+    prefix: 'svg',
+    name: (props.name as string | undefined) ?? 'custom',
+    width: size,
+    height: size,
+    paths: scalePathInfos(pathInfos, scaleX, scaleY)
+  }
+  return finishIconRender(graph, icon, props, size, parsedColor, parentId)
+}
+
+function parseViewBox(viewBox: string | undefined): { w: number; h: number } {
+  if (!viewBox) return { w: 0, h: 0 }
+  const parts = viewBox.trim().split(/[\s,]+/).map(Number)
+  const w = parts[2] ?? 0
+  const h = parts[3] ?? 0
+  return { w, h }
 }
 
 function parseVariantValues(name: string): Record<string, string> {
@@ -343,11 +432,54 @@ async function renderInstanceNode(
   const instance =
     graph.createInstance(component.id, parentId, overrides) ?? graph.createNode('FRAME', parentId)
   applyBindings(graph, instance.id, bindings)
+  applyInstanceOverrides(graph, instance, tree.props.overrides)
   return instance
+}
+
+/**
+ * Apply child overrides to a freshly created instance. Keys are
+ * `childName:prop` (e.g. 'label:text', 'icon:fills'); the child is resolved by
+ * name among the instance's descendants, and the value is applied to both the
+ * child node and the instance's overrides record so component sync keeps it.
+ */
+function applyInstanceOverrides(
+  graph: SceneGraph,
+  instance: SceneNode,
+  overridesProp: unknown
+): void {
+  if (!overridesProp || typeof overridesProp !== 'object') return
+  if (Array.isArray(overridesProp)) return
+  const entries = Object.entries(overridesProp)
+  if (entries.length === 0) return
+
+  const descendants: SceneNode[] = []
+  const walk = (id: string) => {
+    const node = graph.getNode(id)
+    if (!node) return
+    descendants.push(node)
+    for (const cid of node.childIds) walk(cid)
+  }
+  walk(instance.id)
+
+  const overrides: Record<string, unknown> = { ...instance.overrides }
+  for (const [key, value] of entries) {
+    const sep = key.indexOf(':')
+    if (sep === -1) continue
+    const childName = key.slice(0, sep)
+    const prop = key.slice(sep + 1)
+    const child = descendants.find((n) => n.name === childName)
+    if (!child || !(prop in child)) continue
+    graph.updateNode(child.id, { [prop]: value } as Partial<SceneNode>)
+    overrides[`${child.id}:${prop}`] = value
+  }
+  if (Object.keys(overrides).length > 0) {
+    graph.updateNode(instance.id, { overrides })
+  }
 }
 
 async function renderNode(graph: SceneGraph, tree: TreeNode, parentId: string): Promise<SceneNode> {
   if (tree.type === 'icon') return renderIconNode(graph, tree, parentId)
+  if (tree.type === 'svg') return renderSvgNode(graph, tree, parentId)
   if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
 
   const nodeType = TYPE_MAP[tree.type]

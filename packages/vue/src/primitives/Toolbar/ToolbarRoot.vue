@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { EDITOR_TOOLS } from '@open-pencil/core/editor'
 
 import { useEditor } from '#vue/editor/context'
@@ -14,6 +14,19 @@ const { tools = EDITOR_TOOLS } = defineProps<{
 const editor = useEditor()
 const activeTool = computed(() => editor.state.activeTool)
 const expandedFlyout = ref<Tool | null>(null)
+const flyoutSelections = reactive(new Map<Tool, Tool>())
+
+watch(
+  activeTool,
+  (currentTool) => {
+    for (const tool of tools) {
+      if (tool.flyout?.includes(currentTool)) {
+        flyoutSelections.set(tool.key, currentTool)
+      }
+    }
+  },
+  { immediate: true }
+)
 
 function setTool(tool: Tool) {
   editor.setTool(tool)
@@ -38,6 +51,7 @@ provideToolbar({
   editor,
   tools,
   activeTool,
+  flyoutSelections,
   expandedFlyout,
   setTool,
   toggleFlyout,
@@ -49,6 +63,7 @@ provideToolbar({
   <slot
     :tools="tools"
     :active-tool="activeTool"
+    :flyout-selections="flyoutSelections"
     :expanded-flyout="expandedFlyout"
     :actions="actions"
   />

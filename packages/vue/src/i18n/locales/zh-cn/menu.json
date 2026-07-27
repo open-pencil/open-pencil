@@ -43,6 +43,7 @@
   "copyAsJSX": "复制为 JSX",
   "copyNodeId": "复制节点 ID",
   "copyXPath": "复制 XPath",
+  "convertToVector": "转换为矢量",
   "checkUpdates": "检查更新…",
   "booleanOperations": "布尔运算",
   "strikethrough": "删除线",

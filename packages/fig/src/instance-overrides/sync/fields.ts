@@ -1,3 +1,5 @@
+import { omit } from 'es-toolkit/object'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   copyEffects,
@@ -94,10 +96,27 @@ function assignCopiedUpdate(
   }
 }
 
+function syncPaintBindings(
+  key: 'fills' | 'strokes',
+  source: SceneNode,
+  target: SceneNode,
+  updates: Partial<SceneNode>
+): void {
+  const prefix = `${key}/`
+  const currentBindings = updates.boundVariables ?? target.boundVariables
+  const paintFields = Object.keys(currentBindings).filter((field) => field.startsWith(prefix))
+  const bindings: Record<string, string> = omit(currentBindings, paintFields)
+  for (const [field, variableId] of Object.entries(source.boundVariables)) {
+    if (field.startsWith(prefix)) bindings[field] = variableId
+  }
+  updates.boundVariables = bindings
+}
+
 function copiedSync(key: CopiedSyncKey, field: ProtectedField): SyncFn {
   return (source, target, updates, protections) => {
     if (!hasSameCopySource(source[key], target[key]) && canSync(protections, target.id, field)) {
       assignCopiedUpdate(key, source, updates)
+      if (key === 'fills' || key === 'strokes') syncPaintBindings(key, source, target, updates)
     }
   }
 }

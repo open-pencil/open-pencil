@@ -7,6 +7,7 @@ import { useTooltipUI } from '@/components/ui/tooltip'
 const TOOLTIP_OPEN_DELAY_MS = 400
 const TOOLTIP_SIDE_OFFSET = 4
 const TOOLTIP_VIEWPORT_PADDING = 8
+const TOOLTIP_CLAIM_EVENT = 'open-pencil:tooltip-claim'
 
 type TooltipSide = 'top' | 'bottom' | 'left' | 'right'
 
@@ -93,6 +94,11 @@ function refreshPosition() {
 
 function show() {
   if (!canOpen.value) return
+  document.dispatchEvent(
+    new CustomEvent(TOOLTIP_CLAIM_EVENT, {
+      detail: triggerRef.value
+    })
+  )
   stopOpenTimer()
   startOpenTimer()
 }
@@ -102,12 +108,21 @@ function hide() {
   open.value = false
 }
 
+function isNestedTooltipEvent(event: PointerEvent | FocusEvent) {
+  const target = event.target
+  return target instanceof Element && target.closest('[data-tooltip-trigger]') !== triggerRef.value
+}
+
 function containsRelatedTarget(event: PointerEvent | FocusEvent) {
   const relatedTarget = event.relatedTarget
   return relatedTarget instanceof Node && triggerRef.value?.contains(relatedTarget)
 }
 
 function onPointerOver(event: PointerEvent) {
+  if (isNestedTooltipEvent(event)) {
+    hide()
+    return
+  }
   if (containsRelatedTarget(event)) return
   show()
 }
@@ -118,6 +133,10 @@ function onPointerOut(event: PointerEvent) {
 }
 
 function onFocusIn(event: FocusEvent) {
+  if (isNestedTooltipEvent(event)) {
+    hide()
+    return
+  }
   if (containsRelatedTarget(event)) return
   show()
 }
@@ -131,10 +150,16 @@ function onPointerDown() {
   hide()
 }
 
+function onTooltipClaim(event: Event) {
+  if (!(event instanceof CustomEvent) || event.detail === triggerRef.value) return
+  hide()
+}
+
 useEventListener(window, 'resize', refreshPosition)
 useEventListener(window, 'scroll', refreshPosition, { capture: true, passive: true })
 useEventListener(document, 'pointerdown', hide, { capture: true })
 useEventListener(document, 'click', hide, { capture: true })
+useEventListener(document, TOOLTIP_CLAIM_EVENT, onTooltipClaim)
 
 watch(canOpen, (value) => {
   if (!value) hide()
@@ -144,6 +169,7 @@ watch(canOpen, (value) => {
 <template>
   <span
     ref="triggerRef"
+    data-tooltip-trigger
     class="contents"
     @focusin="onFocusIn"
     @focusout="onFocusOut"

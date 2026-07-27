@@ -154,7 +154,7 @@ function onToggleSides(activeNode: SceneNode | null) {
                   <button
                     type="button"
                     :aria-label="panels.stroke"
-                    class="size-5 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+                    class="size-4 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
                   >
                     <FillSwatch
                       :fill="strokePreview(stroke, binding.resolvedValue ?? stroke.color)"
@@ -266,7 +266,7 @@ function onToggleSides(activeNode: SceneNode | null) {
         </template>
       </div>
 
-      <PanelGrid v-if="advancedActive" columns="three" class="mt-1.5">
+      <PanelGrid v-if="advancedActive" :columns="3" class="mt-1.5">
         <PanelFieldGroup :label="panels.strokeCap">
           <SegmentedControl
             :model-value="cap === MIXED ? 'MIXED' : cap"

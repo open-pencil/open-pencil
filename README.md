@@ -25,6 +25,7 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 - **Fully programmable** — headless CLI, XPath queries, Figma Plugin API via `eval`, MCP server for AI agents, and desktop agent integrations for Claude Code, Codex, and Gemini CLI
 - **Lint, convert, and extract tokens** — inspect documents, lint naming/layout/accessibility, convert between supported formats, analyze colors/typography/spacing/clusters, and extract design tokens
 - **Components and variants** — create reusable components, group variants into component sets, insert local assets as instances, and switch variants from the inspector
+- **Image vectorization** — convert image layers into editable vector layers with Recraft or fal.ai
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
 - **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
@@ -206,8 +207,10 @@ For other MCP clients:
 **HTTP** (scripts, CI):
 
 ```sh
-openpencil-mcp-http   # http://localhost:3100/mcp
+openpencil-mcp-http   # Unix socket on macOS/Linux + http://127.0.0.1:7600/mcp
 ```
+
+Local clients discover the private Unix socket automatically and fall back to localhost TCP. Set `PORT=0` to disable TCP on macOS/Linux.
 
 **File access:** Set `OPENPENCIL_MCP_ROOT` to scope file operations (`open_file`, `new_document`, export `path` param) to a directory. Defaults to the current working directory.
 

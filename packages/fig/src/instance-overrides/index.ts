@@ -66,7 +66,9 @@ function buildKiwiPropertyNodes(
       (nc.cornerRadius !== undefined || nc.rectangleCornerRadiiIndependent !== undefined) &&
       node.cornerRadius !== comp.cornerRadius
     const hasDiffVisible = nc.visible === false && comp.visible
-    if (hasDiffRadius || hasDiffVisible) result.add(nodeId)
+    const hasDiffFills = nc.fillPaints !== undefined && !isEqual(node.fills, comp.fills)
+    const hasDiffStrokes = nc.strokePaints !== undefined && !isEqual(node.strokes, comp.strokes)
+    if (hasDiffRadius || hasDiffVisible || hasDiffFills || hasDiffStrokes) result.add(nodeId)
   }
   return result
 }

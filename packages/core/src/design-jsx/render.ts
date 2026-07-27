@@ -162,6 +162,7 @@ export function buildComponent(jsxString: string): React.ComponentType {
     const Group = 'group', Section = 'section', View = 'frame', Rect = 'rectangle'
     const Component = 'component', ComponentSet = 'component-set', Instance = 'instance'
     const Icon = 'icon'
+    const svg = 'svg'
     const dropShadow = __helpers.dropShadow
     const innerShadow = __helpers.innerShadow
     const layerBlur = __helpers.layerBlur

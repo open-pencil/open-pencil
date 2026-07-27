@@ -9,6 +9,7 @@ import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
 import Tip from '@/components/ui/Tip.vue'
 
@@ -201,13 +202,15 @@ function copyReference() {
       </div>
     </div>
 
-    <div
+    <AppPlaceholder
       v-if="!jsxCode"
       data-test-id="code-panel-empty"
-      class="flex flex-1 items-center justify-center px-4 text-center"
+      :label="dialogs.selectLayerForJSX"
     >
-      <span class="text-xs text-muted">{{ dialogs.selectLayerForJSX }}</span>
-    </div>
+      <template #icon>
+        <icon-lucide-code-2 class="size-5" />
+      </template>
+    </AppPlaceholder>
 
     <ScrollAreaRoot v-else data-test-id="code-panel" class="min-h-0 flex-1">
       <ScrollAreaViewport class="code-highlight size-full">

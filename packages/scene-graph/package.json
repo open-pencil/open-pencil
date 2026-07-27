@@ -124,6 +124,12 @@
       "import": "./dist/geometry.js",
       "default": "./dist/geometry.js"
     },
+    "./resize": {
+      "types": "./dist/resize.d.ts",
+      "bun": "./src/resize.ts",
+      "import": "./dist/resize.js",
+      "default": "./dist/resize.js"
+    },
     "./parse-path": {
       "types": "./dist/parse-path.d.ts",
       "bun": "./src/parse-path.ts",

@@ -6,6 +6,7 @@ import { nodeToXPath } from '@open-pencil/core/xpath'
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
+import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize'
 import { toast } from '@/app/shell/ui'
 import { writeTauriClipboardText } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
@@ -75,6 +76,14 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     clipboardWrite,
     copyNodeId,
     copyXPath,
-    copyAsPNG
+    copyAsPNG,
+    canVectorizeImage: () => {
+      void selectedIds.value
+      return canVectorizeImageNode(store)
+    },
+    vectorizeImage: async () => {
+      const nodeId = ids()[0]
+      if (nodeId) await vectorizeImageNode(store, nodeId)
+    }
   }
 }

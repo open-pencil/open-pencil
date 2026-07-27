@@ -228,7 +228,9 @@ describe('edge cases', () => {
         type: 'SYMBOL',
         name: 'IconB',
         phase: 'CREATED',
-        size: { x: 24, y: 24 },
+        size: { x: 40, y: 40 },
+        cornerRadius: 12,
+        frameMaskDisabled: false,
         transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
       } as NodeChange,
       {
@@ -343,6 +345,23 @@ describe('edge cases', () => {
               guidPath: {
                 guids: [
                   { sessionID: 90, localID: 61 },
+                  { sessionID: 90, localID: 31 }
+                ]
+              },
+              fillPaints: [
+                {
+                  type: 'SOLID',
+                  color: { r: 1, g: 1, b: 1, a: 1 },
+                  colorVar: {
+                    value: { alias: { guid: { sessionID: 2, localID: 5 } } }
+                  }
+                }
+              ]
+            },
+            {
+              guidPath: {
+                guids: [
+                  { sessionID: 90, localID: 61 },
                   { sessionID: 1, localID: 33 }
                 ]
               },
@@ -383,12 +402,19 @@ describe('edge cases', () => {
     const iconClone = graph.getChildren(buttonChildren[1].id)[0]
     expect(iconClone).toBeDefined()
     expect(iconClone.name).toBe('icon')
+    expect(iconClone.width).toBe(24)
+    expect(iconClone.height).toBe(24)
+    expect(iconClone.cornerRadius).toBe(12)
+    expect(iconClone.clipsContent).toBe(true)
 
     // Icon should have IconB's children, not IconA's child. The later text
     // override must resolve through the same path prefix after the swap.
     const iconChildren = graph.getChildren(iconClone.id)
     expect(iconChildren).toHaveLength(3)
     expect(iconChildren.map((c) => c.name).sort()).toEqual(['Icon label', 'PathB1', 'PathB2'])
+    expect(iconChildren.find((child) => child.name === 'PathB1')?.boundVariables).toMatchObject({
+      'fills/0/color': '2:5'
+    })
     expect(iconChildren.find((child) => child.name === 'Icon label')?.text).toBe(
       'Changed after swap'
     )

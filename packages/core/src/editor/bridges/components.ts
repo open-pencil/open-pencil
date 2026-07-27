@@ -27,6 +27,8 @@ export function createComponentBridge(
       ),
     createInstanceFromComponent: components.createInstanceFromComponent,
     detachInstance: () => components.detachInstance(selection.getSelectedNode()),
+    focusComponent: (componentId: string) =>
+      components.focusComponent(componentId, pages.switchPage),
     goToMainComponent: () =>
       components.goToMainComponent(selection.getSelectedNode(), pages.switchPage),
     getComponentSetPropertyDefs: components.getComponentSetPropertyDefs,

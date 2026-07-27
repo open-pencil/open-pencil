@@ -305,6 +305,17 @@ function normalizeStackCounterAlign(value: string | undefined): string | undefin
   return value === 'SPACE_EVENLY' ? 'SPACE_BETWEEN' : value
 }
 
+function preserveTrailingPadding(
+  explicitValue: number | undefined,
+  leadingValue: number | undefined,
+  baseValue: number | undefined,
+  normalizedValue: number
+): number | undefined {
+  if (explicitValue !== undefined) return explicitValue
+  const inheritedValue = leadingValue ?? baseValue ?? normalizedValue
+  return normalizedValue !== inheritedValue ? normalizedValue : undefined
+}
+
 function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
   if (!node.source.id) upsertPluginData(node, LAYOUT_DIRECTION_PLUGIN_KEY, node.layoutDirection)
   const figLayout = node.source.fig.layout
@@ -312,8 +323,18 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
     nc.stackMode = normalizeStackMode(figLayout.stackMode)
     nc.stackSpacing = figLayout.stackSpacing
     nc.stackPadding = figLayout.stackPadding
-    nc.stackPaddingRight = figLayout.stackPaddingRight
-    nc.stackPaddingBottom = figLayout.stackPaddingBottom
+    nc.stackPaddingRight = preserveTrailingPadding(
+      figLayout.stackPaddingRight,
+      figLayout.stackHorizontalPadding,
+      figLayout.stackPadding,
+      node.paddingRight
+    )
+    nc.stackPaddingBottom = preserveTrailingPadding(
+      figLayout.stackPaddingBottom,
+      figLayout.stackVerticalPadding,
+      figLayout.stackPadding,
+      node.paddingBottom
+    )
     nc.stackCounterAlign = normalizeStackCounterAlign(figLayout.stackCounterAlign)
     nc.stackJustify = normalizeStackJustify(figLayout.stackJustify)
     nc.stackCounterAlignItems = normalizeStackCounterAlign(figLayout.stackCounterAlignItems)

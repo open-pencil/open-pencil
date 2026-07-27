@@ -83,6 +83,7 @@ export interface InstanceNodeChange {
   componentPropDefs?: ComponentPropDef[]
   styleType?: string
   fillPaints?: NodeChange['fillPaints']
+  strokePaints?: NodeChange['strokePaints']
   fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeWeight?: number

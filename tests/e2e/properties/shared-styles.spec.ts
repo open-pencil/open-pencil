@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { propertySection } from '#tests/helpers/properties'
+import { propertyItems, propertySection } from '#tests/helpers/properties'
 
 let page: Page
 let canvas: CanvasHelper
@@ -114,7 +114,7 @@ test('applies fill, stroke, effect, and grid styles from local definitions', asy
   await chooseStyle('Fill', 'Fill style', 'Brand/Primary')
   await chooseStyle('Stroke', 'Stroke style', 'Brand/Primary')
   await chooseStyle('Effects', 'Effect style', 'Effects/Card')
-  await chooseStyle('Layout', 'Grid style', 'Grid/12 columns')
+  await chooseStyle('Layout guide', 'Grid style', 'Grid/12 columns')
 
   expect(await targetStyles()).toMatchObject({
     fillStyleId: '1:100',
@@ -128,6 +128,7 @@ test('applies fill, stroke, effect, and grid styles from local definitions', asy
 })
 
 test('manual paint edits detach the style and undo restores the reference', async () => {
+  await propertyItems(page, 'fills').first().hover()
   await propertySection(page, 'Fill').getByRole('button', { name: 'Remove fill' }).click()
   await canvas.waitForRender()
   expect((await targetStyles())?.fillStyleId).toBeNull()

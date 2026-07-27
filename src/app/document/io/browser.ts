@@ -1,5 +1,11 @@
 import type { ViewportSize } from '@/app/document/io/types'
 
+export function resolveBrowserFileURL(path: string): URL {
+  const url = new URL(path, window.location.href)
+  url.hash = ''
+  return url
+}
+
 export function yieldToUI(): Promise<void> {
   return new Promise((resolve) => {
     requestAnimationFrame(() => resolve())

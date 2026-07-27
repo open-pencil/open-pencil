@@ -112,6 +112,7 @@ test('assets panel groups component sets and inserts the default variant', async
   await canvas.waitForRender()
 
   await page.getByTestId('left-panel-assets-tab').click()
+  await page.getByRole('button', { name: 'List view' }).click()
 
   const assetsPanel = page.getByTestId('assets-panel')
   const assetItems = page.getByTestId('asset-item')
@@ -188,6 +189,70 @@ test('assets panel groups component sets and inserts the default variant', async
   canvas.assertNoErrors()
 })
 
+test('assets panel supports Figma-style views, component actions, and canvas drag', async ({
+  page
+}) => {
+  const canvas = new CanvasHelper(page)
+  await page.goto('/?test')
+  await canvas.waitForInit()
+
+  const setup = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.panX = 0
+    store.state.panY = 0
+    store.state.zoom = 1
+    const currentPage = store.graph.getNode(store.state.currentPageId)
+    if (!currentPage) throw new Error('Current page not found')
+    const secondPage = store.graph.addPage('Components')
+    const component = store.graph.createNode('COMPONENT', secondPage.id, {
+      name: 'Toolbar button',
+      x: 100,
+      y: 120,
+      width: 96,
+      height: 40
+    })
+    store.requestRender()
+    return { currentPageId: currentPage.id, secondPageId: secondPage.id, componentId: component.id }
+  })
+  await canvas.waitForRender()
+
+  await page.getByTestId('left-panel-assets-tab').click()
+  const asset = page.locator(`[data-asset-id="${setup.componentId}"]`)
+  await expect(page.getByRole('heading', { name: 'Components' })).toBeVisible()
+  await expect(asset.locator('[data-slot="asset-thumbnail"]')).toHaveClass(/size-24/)
+
+  await page.getByRole('button', { name: 'List view' }).click()
+  await expect(asset.locator('[data-slot="asset-thumbnail"]')).toHaveClass(/size-10/)
+
+  await asset.click({ button: 'right' })
+  await page.getByTestId('asset-context-go-to-main').click()
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        return {
+          pageId: store.state.currentPageId,
+          selectedId: [...store.state.selectedIds][0]
+        }
+      })
+    )
+    .toEqual({ pageId: setup.secondPageId, selectedId: setup.componentId })
+
+  await page.getByTestId('left-panel-assets-tab').click()
+  const canvasBox = expectDefined(await canvas.canvas.boundingBox(), 'canvas bounds')
+  await page
+    .locator(`[data-asset-id="${setup.componentId}"]`)
+    .dragTo(canvas.canvas, { targetPosition: { x: canvasBox.width / 2, y: canvasBox.height / 2 } })
+  await canvas.waitForRender()
+
+  const inserted = await selectedNodeSnapshot(page)
+  expect(inserted?.type).toBe('INSTANCE')
+  expect(inserted?.componentId).toBe(setup.componentId)
+  canvas.assertNoErrors()
+})
+
 test('assets insertion accounts for entered container coordinates', async ({ page }) => {
   const canvas = new CanvasHelper(page)
   await page.goto('/?test')
@@ -222,6 +287,7 @@ test('assets insertion accounts for entered container coordinates', async ({ pag
   await canvas.waitForRender()
 
   await page.getByTestId('left-panel-assets-tab').click()
+  await page.getByRole('button', { name: 'List view' }).click()
   await page.locator(`[data-asset-id="${setup.componentId}"]`).getByTestId('asset-insert').click()
   await canvas.waitForRender()
 
@@ -256,6 +322,7 @@ test('demo exposes component set assets', async ({ page }) => {
   await canvas.waitForInit()
 
   await page.getByTestId('left-panel-assets-tab').click()
+  await page.getByRole('button', { name: 'List view' }).click()
   const assetsPanel = page.getByTestId('assets-panel')
 
   await expect(assetsPanel).toContainText('Button')

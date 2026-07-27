@@ -1,9 +1,9 @@
 export default {
   slots: {
-    root: 'group flex min-h-6 items-center gap-1.5 py-0.5',
-    content: 'flex min-w-0 flex-1 items-center gap-1.5',
+    root: 'group grid min-h-6 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-1.5 gap-y-1.5 py-0.5',
+    content: 'flex min-w-0 items-center gap-1.5',
     rail: 'flex shrink-0 items-center gap-0.5',
-    remove:
-      'transition-opacity [@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100'
+    details: 'col-span-2 min-w-0',
+    remove: ''
   }
 } as const

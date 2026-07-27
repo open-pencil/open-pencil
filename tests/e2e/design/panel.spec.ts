@@ -89,9 +89,19 @@ test('fill section appears with default fill', async () => {
   await expect(fillItems.first()).toBeVisible()
 })
 
-test('fill item shows color swatch', async () => {
+test('fill item shows color swatch and full hex value', async () => {
   const swatch = fillSection().getByTestId('fill-picker-swatch').first()
   await expect(swatch).toBeVisible()
+
+  const fillItem = propertyItems(editor.page, 'fills').first()
+  await expect(fillItem.getByRole('button', { name: 'Remove fill' })).toBeVisible()
+  const hex = fillItem.locator('[data-property="color-hex"]')
+  const metrics = await hex.evaluate((element) => ({
+    fits: element.scrollWidth <= element.clientWidth,
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth
+  }))
+  expect(metrics.fits, JSON.stringify(metrics)).toBe(true)
 })
 
 test('clicking color area changes fill color', async () => {
@@ -129,6 +139,9 @@ test('adding a stroke creates stroke section item', async () => {
 
   const strokeItems = propertyItems(editor.page, 'strokes')
   await expect(strokeItems.first()).toBeVisible()
+  await expect(strokeItems.first().getByRole('button', { name: 'Remove stroke' })).toBeVisible()
+  const hex = strokeItems.first().locator('[data-property="color-hex"]')
+  expect(await hex.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
 
   const id = await getSelectedId()
   const node = await getNode(expectDefined(id, 'selected id'))
@@ -148,7 +161,7 @@ test('adding an effect creates effect item', async () => {
   expect(expectDefined(node, 'node node').effects.length).toBe(1)
 })
 
-test('effect settings expand semantically and row remove reveals on hover', async () => {
+test('effect settings expand semantically and row remove stays visible', async () => {
   const effectItem = propertyItems(editor.page, 'effects').first()
   const expand = effectItem.locator('[data-property="effect-expand"]')
   await expect(expand).toHaveAttribute('aria-expanded', 'false')
@@ -160,8 +173,6 @@ test('effect settings expand semantically and row remove reveals on hover', asyn
   await expect(remove).toHaveCSS('opacity', '1')
   await editor.page.getByRole('tab', { name: 'Design' }).focus()
   await editor.page.mouse.move(0, 0)
-  await expect(remove).toHaveCSS('opacity', '0')
-  await effectItem.hover()
   await expect(remove).toHaveCSS('opacity', '1')
 })
 

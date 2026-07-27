@@ -35,6 +35,7 @@ test('text case vertical alignment and ending truncation', async () => {
         height: 106,
         text: item.label,
         fontSize: 20,
+        lineHeight: 36,
         textCase: item.textCase,
         textAlignVertical: item.vertical
       })

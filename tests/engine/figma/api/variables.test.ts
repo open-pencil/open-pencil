@@ -70,6 +70,31 @@ describe('variables', () => {
     expect(cols[0].name).toBe('Colors')
   })
 
+  test('exposes explicit and inherited variable modes on nodes', () => {
+    const api = createAPI()
+    api.graph.addCollection({
+      id: 'col1',
+      name: 'Theme',
+      modes: [
+        { modeId: 'light', name: 'Light' },
+        { modeId: 'dark', name: 'Dark' }
+      ],
+      defaultModeId: 'light',
+      variableIds: []
+    })
+    api.graph.setActiveMode('col1', 'dark')
+
+    const parent = api.createFrame()
+    const child = api.createRectangle()
+    parent.appendChild(child)
+    api.graph.updateNode(parent.id, { variableModes: { col1: 'light' } })
+
+    expect(parent.explicitVariableModes).toEqual({ col1: 'light' })
+    expect(child.explicitVariableModes).toEqual({})
+    expect(child.resolvedVariableModes).toEqual({ col1: 'light' })
+    expect(Object.isFrozen(child.resolvedVariableModes)).toBe(true)
+  })
+
   test('getVariableCollectionById', () => {
     const api = createAPI()
     api.graph.addCollection({

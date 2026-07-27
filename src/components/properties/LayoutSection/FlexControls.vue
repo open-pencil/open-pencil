@@ -52,7 +52,7 @@ function alignmentCellClass(primary: LayoutAlign, counter: string) {
 
 <template>
   <div class="mt-2">
-    <label class="mb-1 block text-[11px] text-muted">{{ panels.flow }}</label>
+    <label class="mb-1 block text-[11px] text-muted">{{ panels.direction }}</label>
     <AppSelect
       :model-value="ctx.layoutDirection"
       :options="[

@@ -10,7 +10,8 @@ import {
   mapArcData,
   importStyleRuns,
   convertStrokes,
-  convertEffects
+  convertEffects,
+  extractBoundVariables
 } from '@open-pencil/fig/node-change'
 import type { NodeChange, Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
 import type { SceneNode, ArcData, TextAutoResize } from '@open-pencil/scene-graph'
@@ -31,6 +32,10 @@ function applyOverridePaints(ov: Record<string, unknown>, updates: Partial<Scene
       ov.strokeWeight as number | undefined,
       ov.strokeAlign as string | undefined
     )
+  if (ov.fillPaints != null || ov.strokePaints != null) {
+    const bindings = extractBoundVariables(ov as NodeChange)
+    if (Object.keys(bindings).length > 0) updates.boundVariables = bindings
+  }
   if (ov.effects != null) updates.effects = convertEffects(ov.effects as KiwiEffect[])
   if (ov.visible != null) updates.visible = ov.visible as boolean
   if (ov.opacity != null) updates.opacity = ov.opacity as number

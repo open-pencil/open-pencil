@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n, useLayoutControlsContext, useSceneComputed } from '@open-pencil/vue'
+import { useEditor, useI18n, useSceneComputed } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import IconButton from '@/components/ui/IconButton.vue'
@@ -10,13 +10,14 @@ import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
 
 import type { LayoutGrid } from '@open-pencil/scene-graph'
 
-const ctx = useLayoutControlsContext()
+const editor = useEditor()
 const { panels } = useI18n()
 
-const selectedNode = useSceneComputed(() => ctx.editor.getSelectedNode() ?? null)
+const selectedNode = useSceneComputed(() => editor.getSelectedNode() ?? null)
 const grids = computed<LayoutGrid[]>(() => selectedNode.value?.layoutGrids ?? [])
 
 const patternOptions = computed(() => [
@@ -41,21 +42,21 @@ function defaultGrid(): LayoutGrid {
 function commit(next: LayoutGrid[], label: string) {
   const node = selectedNode.value
   if (!node) return
-  ctx.editor.updateNodeWithUndo(node.id, { layoutGrids: next }, label)
+  editor.updateNodeWithUndo(node.id, { layoutGrids: next }, label)
 }
 
 function add() {
-  commit([...grids.value, defaultGrid()], 'Add layout grid')
+  commit([...grids.value, defaultGrid()], 'Add layout guide')
 }
 
 function remove(index: number) {
   commit(
     grids.value.filter((_, i) => i !== index),
-    'Remove layout grid'
+    'Remove layout guide'
   )
 }
 
-function patch(index: number, changes: Partial<LayoutGrid>, label = 'Edit layout grid') {
+function patch(index: number, changes: Partial<LayoutGrid>, label = 'Edit layout guide') {
   commit(
     grids.value.map((grid, i) => (i === index ? { ...grid, ...changes } : grid)),
     label
@@ -74,6 +75,7 @@ function isGrid(grid: LayoutGrid): boolean {
 
 <template>
   <PanelSection :label="panels.layoutGrids" :empty="grids.length === 0">
+    <SharedStyleField kind="grid" :label="panels.gridStyle" />
     <template #actions>
       <IconButton :label="panels.addLayoutGrid" @click="add">
         <icon-lucide-plus class="size-3.5" />
@@ -98,7 +100,7 @@ function isGrid(grid: LayoutGrid): boolean {
             </Tip>
           </template>
         </SegmentedControl>
-        <PanelGrid columns="two">
+        <PanelGrid :columns="2">
           <PanelFieldGroup :label="panels.gridCount">
             <NumberField
               :model-value="grid.count ?? grid.numSections ?? 1"
@@ -136,7 +138,7 @@ function isGrid(grid: LayoutGrid): boolean {
         <IconButton
           :label="panels.toggleVisibility"
           :active="grid.visible === false"
-          @click="patch(index, { visible: grid.visible === false }, 'Toggle layout grid')"
+          @click="patch(index, { visible: grid.visible === false }, 'Toggle layout guide')"
         >
           <icon-lucide-eye-off v-if="grid.visible === false" class="size-3.5" />
           <icon-lucide-eye v-else class="size-3.5" />
