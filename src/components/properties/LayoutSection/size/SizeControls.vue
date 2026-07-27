@@ -48,12 +48,12 @@ const visibleSizeLimits = computed(() =>
 </script>
 
 <template>
-  <PanelGrid columns="two">
+  <PanelGrid :columns="2">
     <SizeAxisField axis="width" icon="W" :label="panels.width" />
     <SizeAxisField axis="height" icon="H" :label="panels.height" />
   </PanelGrid>
 
-  <PanelGrid v-if="visibleSizeLimits.length" columns="two" class="mt-1.5">
+  <PanelGrid v-if="visibleSizeLimits.length" :columns="2" class="mt-1.5">
     <SizeLimitField v-for="item in visibleSizeLimits" :key="item.prop" :item="item" />
   </PanelGrid>
 </template>

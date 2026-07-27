@@ -7,7 +7,7 @@ description: Connect Claude Code, Cursor, Windsurf, and other MCP clients to Ope
 
 OpenPencil includes an MCP (Model Context Protocol) server that lets AI coding tools — Claude Code, Cursor, Windsurf, etc. — read and modify designs through the running app.
 
-Two transports: **stdio** for MCP clients, **HTTP** for browser extensions and scripts.
+Two transports: **stdio** for MCP clients, and **Streamable HTTP** for browser extensions and scripts. On macOS and Linux, local clients prefer a private Unix domain socket; Windows and unavailable sockets fall back to localhost TCP.
 
 ## Install
 
@@ -17,7 +17,7 @@ npm install -g @open-pencil/mcp
 
 ## Stdio (Claude Code, Cursor, etc.)
 
-The stdio server connects to the running OpenPencil app via WebSocket (port 7601). Make sure the desktop app is open with a document loaded.
+The stdio server discovers the running OpenPencil app automatically. It prefers the app's Unix domain socket on macOS and Linux and falls back to localhost TCP when needed. Make sure the desktop app is open with a document loaded.
 
 ### Claude Code
 
@@ -101,18 +101,22 @@ openpencil-mcp-http
 
 Or from source: `bun packages/mcp/src/index.ts` / `npx tsx packages/mcp/src/index.ts`
 
-Security defaults (HTTP transport):
+Security defaults:
 
-- Binds to `127.0.0.1` by default (`HOST` to override)
-- `eval` tool is disabled
-- File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to current working directory)
-- CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow one origin
-- Optional auth token: `OPENPENCIL_MCP_AUTH_TOKEN` (client sends `Authorization: Bearer <token>` or `x-mcp-token`)
+- Unix socket and discovery files are created with owner-only permissions on macOS and Linux.
+- TCP binds to `127.0.0.1` and uses port 7600 by default.
+- Authentication is enabled by default with a generated token stored in the private discovery file.
+- `eval` is disabled.
+- File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to the current working directory) and reject symlink escapes.
+- CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow one origin.
 
-Server starts on port 7600 (override with `PORT` env var). Endpoints:
+Set `PORT=0` to disable TCP on macOS and Linux. Windows requires TCP. Set `OPENPENCIL_MCP_SOCKET` to override the Unix socket path, or `OPENPENCIL_MCP_DISCOVERY_PATH` to override the discovery file location. To provide a stable token, set `OPENPENCIL_MCP_AUTH_TOKEN`; an explicitly empty value disables authentication and should only be used with a trusted local socket.
 
-- `GET /health` — server status
-- `POST /mcp` — MCP Streamable HTTP (SSE). Sessions via `mcp-session-id` header.
+Endpoints are available over both active transports:
+
+- `GET /health` — server and app connection status; never returns the auth token.
+- `POST /rpc` — authenticated live-app automation.
+- `POST /mcp` — MCP Streamable HTTP. Sessions use the `mcp-session-id` header.
 
 ## Workflow
 

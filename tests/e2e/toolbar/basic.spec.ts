@@ -10,7 +10,16 @@ const editor = useEditorSetup()
 
 test('shapes flyout opens', async () => {
   await editor.page.getByTestId(toolbarFlyoutTestId('RECTANGLE')).click()
-  await expect(editor.page.getByTestId(toolbarFlyoutItemTestId('POLYGON'))).toBeVisible()
+  const rectangleItem = editor.page.getByTestId(toolbarFlyoutItemTestId('RECTANGLE'))
+  const polygonItem = editor.page.getByTestId(toolbarFlyoutItemTestId('POLYGON'))
+
+  await expect(polygonItem).toBeVisible()
+  await expect(rectangleItem).toHaveAttribute('data-active', 'true')
+  await expect(rectangleItem).toHaveAttribute('role', 'menuitemradio')
+  await expect(rectangleItem).toHaveAttribute('aria-checked', 'true')
+  await expect(rectangleItem.locator('[data-slot="flyout-item-indicator"] svg')).toHaveCount(1)
+  await expect(polygonItem).not.toHaveAttribute('data-active', 'true')
+  await expect(polygonItem).toHaveAttribute('aria-checked', 'false')
   editor.canvas.assertNoErrors()
 })
 
@@ -36,6 +45,29 @@ test('Star tool creates STAR node', async () => {
 
   const children = await getPageChildren(editor.page)
   expect(children.some((n) => n.type === 'STAR')).toBe(true)
+  editor.canvas.assertNoErrors()
+})
+
+test('shape flyout remembers its selection independently of the active tool', async () => {
+  await editor.canvas.pressKey('f')
+  await expect(editor.page.getByTestId(toolbarToolTestId('STAR'))).not.toHaveAttribute(
+    'data-active',
+    'true'
+  )
+
+  await editor.page.getByTestId(toolbarFlyoutTestId('RECTANGLE')).click()
+  const starItem = editor.page.getByTestId(toolbarFlyoutItemTestId('STAR'))
+  const rectangleItem = editor.page.getByTestId(toolbarFlyoutItemTestId('RECTANGLE'))
+
+  await expect(starItem).toHaveAttribute('data-active', 'true')
+  await expect(starItem).toHaveAttribute('aria-checked', 'true')
+  await expect(starItem.locator('[data-slot="flyout-item-indicator"] svg')).toHaveCount(1)
+  await expect(rectangleItem).not.toHaveAttribute('data-active', 'true')
+  await expect(rectangleItem).toHaveAttribute('aria-checked', 'false')
+
+  await rectangleItem.hover()
+  await expect(rectangleItem).toHaveAttribute('data-highlighted', '')
+  await expect(starItem).toHaveAttribute('data-active', 'true')
   editor.canvas.assertNoErrors()
 })
 
@@ -98,8 +130,28 @@ test('Pen close path creates VECTOR with closed region', async () => {
 })
 
 test('Frame flyout shows Frame and Section items', async () => {
-  await editor.page.getByTestId(toolbarFlyoutTestId('FRAME')).click()
-  await expect(editor.page.getByTestId(toolbarFlyoutItemTestId('FRAME'))).toBeVisible()
-  await expect(editor.page.getByTestId(toolbarFlyoutItemTestId('SECTION'))).toBeVisible()
+  await editor.canvas.pressKey('f')
+  const frameButton = editor.page.getByTestId(toolbarToolTestId('FRAME'))
+  const frameOptions = editor.page.getByTestId(toolbarFlyoutTestId('FRAME'))
+
+  await expect(frameButton).toHaveAttribute('data-active', 'true')
+  await expect(frameOptions).not.toHaveAttribute('data-active', 'true')
+  await expect(frameOptions).toHaveAttribute('data-state', 'closed')
+
+  await frameOptions.click()
+  await expect(frameOptions).toHaveAttribute('data-state', 'open')
+  await expect(frameOptions).not.toHaveAttribute('data-active', 'true')
+  const frameItem = editor.page.getByTestId(toolbarFlyoutItemTestId('FRAME'))
+  await expect(frameItem).toBeVisible()
+  await expect(frameItem).toHaveAttribute('data-active', 'true')
+  await expect(frameItem.locator('[data-slot="flyout-item-indicator"] svg')).toHaveCount(1)
+  const sectionItem = editor.page.getByTestId(toolbarFlyoutItemTestId('SECTION'))
+  await expect(sectionItem).toBeVisible()
+  await expect(sectionItem).not.toHaveAttribute('data-active', 'true')
+  await expect(sectionItem.locator('[data-slot="flyout-item-indicator"] svg')).toHaveCount(0)
+
+  await sectionItem.hover()
+  await expect(sectionItem).toHaveAttribute('data-highlighted', '')
+  await expect(frameItem).toHaveAttribute('data-active', 'true')
   editor.canvas.assertNoErrors()
 })

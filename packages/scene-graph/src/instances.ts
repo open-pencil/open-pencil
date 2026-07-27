@@ -176,6 +176,12 @@ function syncChildren(
   })
 }
 
+export function copyInstanceComponentProps(component: SceneNode): Partial<SceneNode> {
+  const props: Partial<SceneNode> = {}
+  for (const key of INSTANCE_SYNC_PROPS) copyProp(props, component, key)
+  return props
+}
+
 export function createInstance(
   graph: SceneGraph,
   componentId: string,
@@ -185,9 +191,10 @@ export function createInstance(
   const component = graph.nodes.get(componentId)
   if (component?.type !== 'COMPONENT') return null
 
-  const props: Partial<SceneNode> = { name: component.name, componentId }
-  for (const key of INSTANCE_SYNC_PROPS) {
-    copyProp(props, component, key)
+  const props: Partial<SceneNode> = {
+    ...copyInstanceComponentProps(component),
+    name: component.name,
+    componentId
   }
 
   const instance = graph.createNode('INSTANCE', parentId, { ...props, ...overrides })

@@ -45,7 +45,7 @@ function update(value: string) {
 </script>
 
 <template>
-  <PanelGrid v-if="visible" columns="fill" class="mb-1.5">
+  <PanelGrid v-if="visible" class="mb-1.5">
     <PanelFieldGroup :label="label">
       <AppSelect
         :model-value="styleId === MIXED ? 'MIXED' : (styleId ?? 'NONE')"

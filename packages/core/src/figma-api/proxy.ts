@@ -19,6 +19,8 @@ import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
 
 import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
+import { installVariableModeNodeProxyAccessors } from './accessors/variables'
+import { installVectorNodeProxyAccessors, type FigmaVectorPath } from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import type { FigmaFontName } from './fonts'
 import * as PluginData from './plugin-data'
@@ -103,6 +105,9 @@ export class FigmaNodeProxy {
   declare maxWidth: number | null
   declare minHeight: number | null
   declare maxHeight: number | null
+  declare readonly vectorPaths: readonly FigmaVectorPath[]
+  declare readonly explicitVariableModes: Readonly<Record<string, string>>
+  declare readonly resolvedVariableModes: Readonly<Record<string, string>>
 
   constructor(id: string, graph: SceneGraph, api: NodeProxyHost) {
     this[INTERNAL_ID] = id
@@ -546,8 +551,12 @@ installVisualNodeProxyAccessors(
   MIXED
 )
 
-installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, {
+const proxyInternals = {
   id: INTERNAL_ID,
   graph: INTERNAL_GRAPH,
   api: INTERNAL_API
-})
+}
+
+installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
+installVariableModeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
+installVectorNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)

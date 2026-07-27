@@ -5,8 +5,10 @@ import { tv } from 'tailwind-variants'
 import theme from '@/theme/input'
 
 interface AppInputProps {
+  id?: string
   type?: 'text' | 'password' | 'number' | 'search'
   placeholder?: string
+  ariaLabel?: string
   readonly?: boolean
   disabled?: boolean
   autofocus?: boolean
@@ -19,8 +21,10 @@ interface AppInputProps {
 }
 
 const {
+  id,
   type = 'text',
   placeholder,
+  ariaLabel,
   readonly,
   disabled,
   autofocus,
@@ -44,9 +48,11 @@ const emit = defineEmits<{
 
 <template>
   <input
+    :id="id"
     v-model="modelValue"
     :type="type"
     :placeholder="placeholder"
+    :aria-label="ariaLabel"
     :readonly="readonly"
     :disabled="disabled"
     :autofocus="autofocus"

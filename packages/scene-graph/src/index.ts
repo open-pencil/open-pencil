@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- SceneGraph exposes a stable facade over domain modules */
 export * from './images'
 export * from './copy'
+export { copyInstanceComponentProps } from './instances'
 export * from './snap'
 export * from './export-scale'
 export * from './coordinate'

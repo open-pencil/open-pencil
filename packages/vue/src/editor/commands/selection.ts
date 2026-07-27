@@ -122,7 +122,7 @@ export function createSelectionCommands({
         return t.value.goToMainComponent
       },
       enabled: capabilities.canGoToMainComponent,
-      run: () => editor.goToMainComponent()
+      run: () => void editor.goToMainComponent()
     },
     'selection.wrapInAutoLayout': {
       id: 'selection.wrapInAutoLayout',

@@ -32,6 +32,7 @@ const emit = defineEmits<{
 defineSlots<{
   default(props: PropertyListItemSlotProps<K>): VNode[]
   rail?(props: PropertyListItemSlotProps<K>): VNode[]
+  details?(props: PropertyListItemSlotProps<K>): VNode[]
 }>()
 </script>
 
@@ -47,6 +48,9 @@ defineSlots<{
   >
     <PanelItemRow>
       <slot v-bind="item" />
+      <template v-if="$slots.details" #details>
+        <slot name="details" v-bind="item" />
+      </template>
       <template #rail="{ removeClass }">
         <slot name="rail" v-bind="item" />
         <Tip v-if="showVisibility" :label="visibilityLabel">

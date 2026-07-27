@@ -1,6 +1,6 @@
 import { guidToString } from '@open-pencil/fig/node-change'
 import type { GUID } from '@open-pencil/kiwi/fig/codec'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyInstanceComponentProps, type SceneNode } from '@open-pencil/scene-graph'
 import { copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import {
@@ -448,6 +448,18 @@ function componentInstanceName(ctx: OverrideContext, component: SceneNode | unde
   return parent?.type === 'COMPONENT_SET' ? parent.name : component.name
 }
 
+function swappedRootProps(node: SceneNode, component: SceneNode): Partial<SceneNode> {
+  const props = copyInstanceComponentProps(component)
+  props.width = node.width
+  props.height = node.height
+  props.boundVariables = { ...props.boundVariables }
+  for (const field of ['width', 'height'] as const) {
+    const binding = node.boundVariables[field]
+    if (binding) props.boundVariables[field] = binding
+  }
+  return props
+}
+
 export function repopulateInstance(ctx: OverrideContext, nodeId: string, compId: string): void {
   const node = ctx.graph.getNode(nodeId)
   if (node?.type !== 'INSTANCE') return
@@ -458,7 +470,9 @@ export function repopulateInstance(ctx: OverrideContext, nodeId: string, compId:
   const rootComp = rootCompId ? ctx.graph.getNode(rootCompId) : undefined
   for (const childId of Array.from(node.childIds)) ctx.graph.deleteNode(childId)
   const comp = ctx.graph.getNode(compId)
-  const updates: Partial<SceneNode> = { componentId: compId }
+  const updates: Partial<SceneNode> = comp
+    ? { ...swappedRootProps(node, comp), componentId: compId }
+    : { componentId: compId }
   const previousName = componentInstanceName(ctx, rootComp)
   const nextName = componentInstanceName(ctx, comp)
   if (nextName && previousName && (node.name === previousName || node.name === rootComp?.name)) {

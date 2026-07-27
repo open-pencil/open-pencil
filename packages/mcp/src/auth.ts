@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from 'node:crypto'
+
 export function bearerToken(header: string | undefined | null): string | null {
   return header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : null
 }
@@ -10,5 +12,10 @@ export function mcpRequestToken(
 }
 
 export function isAuthorized(provided: string | null, expected: string | null): boolean {
-  return expected === null || provided === expected
+  if (expected === null) return true
+  if (provided === null) return false
+
+  const providedDigest = createHash('sha256').update(provided, 'utf8').digest()
+  const expectedDigest = createHash('sha256').update(expected, 'utf8').digest()
+  return timingSafeEqual(providedDigest, expectedDigest)
 }

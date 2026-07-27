@@ -4,7 +4,9 @@ export default defineConfig({
   entry: {
     index: './src/index.ts',
     server: './src/server.ts',
-    stdio: './src/stdio.ts'
+    stdio: './src/stdio.ts',
+    transport: './src/transport/paths.ts',
+    discovery: './src/transport/discovery.ts'
   },
   platform: 'node',
   format: ['esm'],

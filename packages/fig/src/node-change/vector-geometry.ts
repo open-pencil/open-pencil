@@ -4,6 +4,27 @@ import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { decodeVectorNetworkBlob } from './vector-network'
 
+export function alignGeometryWindingRules(
+  geometry: GeometryPath[],
+  vectorNetwork: VectorNetwork | null
+): GeometryPath[] {
+  const regions = vectorNetwork?.regions ?? []
+  if (geometry.length === regions.length) {
+    return geometry.map((path, index) => ({
+      ...path,
+      windingRule: regions[index].windingRule
+    }))
+  }
+  if (
+    geometry.length === 1 &&
+    regions.length > 0 &&
+    regions.every((region) => region.windingRule === regions[0].windingRule)
+  ) {
+    return [{ ...geometry[0], windingRule: regions[0].windingRule }]
+  }
+  return geometry
+}
+
 export function resolveVectorNetwork(nc: NodeChange, blobs: Uint8Array[]): VectorNetwork | null {
   const vectorData = nc.vectorData as
     | {

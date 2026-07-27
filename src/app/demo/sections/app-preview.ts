@@ -1,314 +1,191 @@
-import type { Color } from '@open-pencil/scene-graph'
-
 import { DEMO_COLORS, gradient, solid, thinStroke } from '@/app/demo/colors'
 import type { EditorStore } from '@/app/editor/session'
 
-interface DemoComponents {
-  btnPrimaryComp: string
-  btnSecondaryComp: string
-  badgeComp: string
-  avatarComp: string
-  navItemComp: string
-  toggleComp: string
-}
-
-type StatTone = 'success' | 'accent' | 'danger'
-
-const STAT_TONE_COLORS: Record<StatTone, { foreground: Color; background: Color }> = {
-  success: { foreground: DEMO_COLORS.success, background: DEMO_COLORS.successSoft },
-  accent: { foreground: DEMO_COLORS.accent, background: DEMO_COLORS.accentSoft },
-  danger: { foreground: DEMO_COLORS.danger, background: DEMO_COLORS.dangerSoft }
-}
-
-/**
- * One cohesive product screen assembled from INSTANCEs of the component
- * library, laid out with real auto-layout, and themed via bound variables.
- * Resizing the root frame demonstrates live reflow; toggling a variable
- * re-themes the whole screen.
- */
-export function createAppPreviewSection(store: EditorStore, comps: DemoComponents) {
+export function createAppPreviewSection(
+  store: EditorStore,
+  btnCompId: string,
+  badgeCompId: string
+) {
   const { graph } = store
 
-  const sectionId = store.createShape('SECTION', 760, 60, 720, 760)
-  graph.updateNode(sectionId, {
-    name: 'App — Analytics',
-    fills: [solid(DEMO_COLORS.bg)]
+  const appSectionId = store.createShape('SECTION', 1040, 60, 560, 540)
+  graph.updateNode(appSectionId, { name: 'App Preview' })
+
+  const frameId = store.createShape('FRAME', 20, 48, 520, 460, appSectionId)
+  graph.updateNode(frameId, {
+    name: 'Dashboard',
+    fills: [solid(DEMO_COLORS.gray50)],
+    strokes: thinStroke(DEMO_COLORS.gray200),
+    clipsContent: true
   })
 
-  // ── Sidebar ───────────────────────────────────────────────────────
-  const sidebar = store.createShape('FRAME', 24, 24, 180, 712, sectionId)
-  graph.updateNode(sidebar, {
+  const sidebarId = store.createShape('RECTANGLE', 0, 0, 56, 460, frameId)
+  graph.updateNode(sidebarId, {
     name: 'Sidebar',
-    cornerRadius: 16,
-    fills: [solid(DEMO_COLORS.surface)],
-    strokes: thinStroke(DEMO_COLORS.border),
-    layoutMode: 'VERTICAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    itemSpacing: 4,
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingLeft: 12,
-    paddingRight: 12
+    fills: [solid(DEMO_COLORS.white)],
+    strokes: thinStroke(DEMO_COLORS.gray200)
   })
 
-  const logo = store.createShape('FRAME', 0, 0, 156, 32, sidebar)
-  graph.updateNode(logo, {
-    name: 'Logo',
-    fills: [],
-    layoutMode: 'HORIZONTAL',
-    counterAxisAlign: 'CENTER',
-    itemSpacing: 8,
-    paddingLeft: 8
-  })
-  const logoMark = store.createShape('ELLIPSE', 0, 0, 18, 18, logo)
-  graph.updateNode(logoMark, { name: 'Mark', fills: [solid(DEMO_COLORS.accent)] })
-  const logoText = store.createShape('TEXT', 0, 0, 90, 18, logo)
-  graph.updateNode(logoText, {
-    name: 'Wordmark',
-    text: 'Pulse',
-    fontSize: 15,
-    fontWeight: 700,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.textPrimary)]
-  })
+  for (let i = 0; i < 5; i++) {
+    const dotId = store.createShape('ELLIPSE', 18, 20 + i * 40, 20, 20, frameId)
+    graph.updateNode(dotId, {
+      name: `Nav ${i + 1}`,
+      fills: [solid(i === 0 ? DEMO_COLORS.blue : DEMO_COLORS.gray200)]
+    })
+  }
 
-  const navLabels = ['Overview', 'Analytics', 'Customers', 'Reports', 'Settings']
-  navLabels.forEach((label, i) => {
-    const inst = graph.createInstance(comps.navItemComp, sidebar)
-    if (inst) {
-      graph.updateNode(inst.id, { name: `Nav / ${label}` })
-      const labelChild = inst.childIds
-        .map((cid) => graph.getNode(cid))
-        .find((n) => n?.type === 'TEXT')
-      if (labelChild) {
-        // Set the text and record an override so component sync doesn't revert it.
-        graph.updateNode(labelChild.id, { text: label })
-        graph.updateNode(inst.id, {
-          overrides: { ...inst.overrides, [`${labelChild.id}:text`]: label }
-        })
-      }
-      if (i === 0) {
-        const dotChild = inst.childIds
-          .map((cid) => graph.getNode(cid))
-          .find((n) => n?.type === 'ELLIPSE')
-        if (dotChild) graph.updateNode(dotChild.id, { fills: [solid(DEMO_COLORS.accent)] })
-      }
-    }
-  })
-
-  // ── Main content (auto-layout column) ─────────────────────────────
-  const main = store.createShape('FRAME', 224, 24, 472, 712, sectionId)
-  graph.updateNode(main, {
-    name: 'Content',
-    fills: [],
-    layoutMode: 'VERTICAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    itemSpacing: 16
-  })
-
-  // Header
-  const header = store.createShape('FRAME', 0, 0, 472, 40, main)
-  graph.updateNode(header, {
+  const headerId = store.createShape('FRAME', 56, 0, 464, 52, frameId)
+  graph.updateNode(headerId, {
     name: 'Header',
-    fills: [],
+    fills: [solid(DEMO_COLORS.white)],
+    strokes: thinStroke(DEMO_COLORS.gray200),
     layoutMode: 'HORIZONTAL',
     primaryAxisSizing: 'FIXED',
     counterAxisSizing: 'FIXED',
+    counterAxisAlign: 'CENTER',
     primaryAxisAlign: 'SPACE_BETWEEN',
-    counterAxisAlign: 'CENTER'
+    paddingLeft: 20,
+    paddingRight: 20,
+    itemSpacing: 8
   })
-  const headerTitleWrap = store.createShape('FRAME', 0, 0, 200, 40, header)
-  graph.updateNode(headerTitleWrap, {
-    name: 'Title',
-    fills: [],
-    layoutMode: 'VERTICAL',
-    itemSpacing: 2
-  })
-  const headerTitle = store.createShape('TEXT', 0, 0, 140, 22, headerTitleWrap)
+  const headerTitle = store.createShape('TEXT', 0, 0, 120, 20, headerId)
   graph.updateNode(headerTitle, {
-    name: 'Heading',
-    text: 'Analytics overview',
-    fontSize: 18,
-    fontWeight: 700,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.textPrimary)]
+    name: 'Page Title',
+    text: 'Dashboard',
+    fontSize: 16,
+    fontWeight: 600,
+    textAutoResize: 'WIDTH_AND_HEIGHT' as const,
+    fills: [solid(DEMO_COLORS.black)]
   })
-  const headerSub = store.createShape('TEXT', 0, 0, 200, 16, headerTitleWrap)
-  graph.updateNode(headerSub, {
-    name: 'Subheading',
-    text: 'Last 30 days',
-    fontSize: 12,
-    fontWeight: 400,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.textSecondary)]
-  })
-  graph.createInstance(comps.avatarComp, header)
-  graph.createInstance(comps.btnPrimaryComp, header)
 
-  // Stat row (auto-layout, fills width)
-  const statRow = store.createShape('FRAME', 0, 0, 472, 96, main)
-  graph.updateNode(statRow, {
-    name: 'Stat Row',
-    fills: [],
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    itemSpacing: 12
-  })
+  const badgeInstance = graph.createInstance(badgeCompId, headerId)
+  if (badgeInstance) graph.updateNode(badgeInstance.id, { x: 264, y: 15 })
+  const buttonInstance = graph.createInstance(btnCompId, headerId)
+  if (buttonInstance) graph.updateNode(buttonInstance.id, { x: 324, y: 6 })
 
   const stats = [
-    { title: 'Revenue', value: '$12,480', trend: '+14%', tone: 'success' as const },
-    { title: 'Active users', value: '3,842', trend: '+8%', tone: 'accent' as const },
-    { title: 'Churn', value: '1.9%', trend: '-3%', tone: 'danger' as const }
+    { title: 'Revenue', value: '$12,480', badge: '+14%', color: DEMO_COLORS.green },
+    { title: 'Users', value: '3,842', badge: '+8%', color: DEMO_COLORS.blue },
+    { title: 'Orders', value: '1,249', badge: '-3%', color: DEMO_COLORS.red }
   ]
 
-  const statBadges: StatBadge[] = []
-  stats.forEach((s) => {
-    const card = store.createShape('FRAME', 0, 0, 148, 96, statRow)
-    graph.updateNode(card, {
-      name: `Stat / ${s.title}`,
-      cornerRadius: 12,
-      fills: [solid(DEMO_COLORS.surface)],
-      strokes: thinStroke(DEMO_COLORS.border),
+  for (let i = 0; i < stats.length; i++) {
+    const s = stats[i]
+    const cx = 76 + i * 152
+    const cId = store.createShape('FRAME', cx, 72, 140, 88, frameId)
+    graph.updateNode(cId, {
+      name: s.title,
+      cornerRadius: 10,
+      fills: [solid(DEMO_COLORS.white)],
+      strokes: thinStroke(DEMO_COLORS.gray200),
       layoutMode: 'VERTICAL',
       primaryAxisSizing: 'FIXED',
-      counterAxisSizing: 'FILL',
-      itemSpacing: 6,
+      counterAxisSizing: 'FIXED',
+      itemSpacing: 4,
       paddingTop: 14,
       paddingBottom: 14,
       paddingLeft: 16,
       paddingRight: 16
     })
-    const label = store.createShape('TEXT', 0, 0, 100, 14, card)
-    graph.updateNode(label, {
+    const labelId = store.createShape('TEXT', 0, 0, 108, 14, cId)
+    graph.updateNode(labelId, {
       name: 'Label',
       text: s.title,
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: 500,
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
-      fills: [solid(DEMO_COLORS.textSecondary)]
+      fills: [solid(DEMO_COLORS.gray500)]
     })
-    const value = store.createShape('TEXT', 0, 0, 100, 26, card)
-    graph.updateNode(value, {
+    const valId = store.createShape('TEXT', 0, 0, 108, 24, cId)
+    graph.updateNode(valId, {
       name: 'Value',
       text: s.value,
       fontSize: 22,
       fontWeight: 700,
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
-      fills: [solid(DEMO_COLORS.textPrimary)]
+      fills: [solid(DEMO_COLORS.black)]
     })
-    const badge = graph.createInstance(comps.badgeComp, card)
-    if (badge) {
-      const tone = STAT_TONE_COLORS[s.tone]
-      const bLabel = badge.childIds.map((cid) => graph.getNode(cid)).find((n) => n?.type === 'TEXT')
-      if (bLabel) {
-        const overrides: Record<string, unknown> = { ...badge.overrides }
-        graph.updateNode(bLabel.id, { text: s.trend, fills: [solid(tone.foreground)] })
-        overrides[`${bLabel.id}:text`] = s.trend
-        overrides[`${bLabel.id}:fills`] = [solid(tone.foreground)]
-        graph.updateNode(badge.id, { fills: [solid(tone.background)], overrides })
-        statBadges.push({ id: badge.id, labelId: bLabel.id, tone: s.tone })
-      }
-    }
-  })
+    const bId = store.createShape('TEXT', 0, 0, 108, 14, cId)
+    graph.updateNode(bId, {
+      name: 'Badge',
+      text: s.badge,
+      fontSize: 11,
+      fontWeight: 600,
+      textAutoResize: 'HEIGHT',
+      layoutAlignSelf: 'STRETCH',
+      fills: [solid(s.color)]
+    })
+  }
 
-  // Chart card
-  const chart = store.createShape('FRAME', 0, 0, 472, 260, main)
-  graph.updateNode(chart, {
+  const chartBg = store.createShape('FRAME', 76, 180, 424, 200, frameId)
+  graph.updateNode(chartBg, {
     name: 'Chart',
-    cornerRadius: 12,
-    fills: [solid(DEMO_COLORS.surface)],
-    strokes: thinStroke(DEMO_COLORS.border),
-    layoutMode: 'VERTICAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingLeft: 16,
-    paddingRight: 16,
-    itemSpacing: 12
+    cornerRadius: 10,
+    fills: [solid(DEMO_COLORS.white)],
+    strokes: thinStroke(DEMO_COLORS.gray200)
   })
-  const chartHeader = store.createShape('FRAME', 0, 0, 440, 20, chart)
-  graph.updateNode(chartHeader, {
-    name: 'Chart Header',
-    fills: [],
-    layoutMode: 'HORIZONTAL',
-    primaryAxisAlign: 'SPACE_BETWEEN',
-    counterAxisAlign: 'CENTER'
-  })
-  const chartTitle = store.createShape('TEXT', 0, 0, 140, 18, chartHeader)
+  const chartTitle = store.createShape('TEXT', 16, 16, 120, 18, chartBg)
   graph.updateNode(chartTitle, {
-    name: 'Title',
+    name: 'Chart Title',
     text: 'Revenue over time',
     fontSize: 13,
     fontWeight: 600,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.textPrimary)]
+    fills: [solid(DEMO_COLORS.black)]
   })
-  graph.createInstance(comps.toggleComp, chartHeader)
 
-  const bars = store.createShape('FRAME', 0, 0, 440, 190, chart)
-  graph.updateNode(bars, {
-    name: 'Bars',
-    fills: [],
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    primaryAxisAlign: 'SPACE_BETWEEN',
-    counterAxisAlign: 'MAX',
-    paddingTop: 8
-  })
-  const barHeights = [70, 105, 88, 128, 96, 148, 112, 84, 132, 158, 120, 92]
-  barHeights.forEach((h, i) => {
-    const bar = store.createShape('RECTANGLE', 0, 0, 22, h, bars)
-    graph.updateNode(bar, {
+  const barHeights = [60, 90, 72, 110, 95, 130, 100, 80, 120, 140, 115, 88]
+  const barW = 24
+  const barGap = 10
+  const barStartX = 16
+  const barBaseY = 180
+
+  for (let i = 0; i < barHeights.length; i++) {
+    const h = barHeights[i]
+    const bx = barStartX + i * (barW + barGap)
+    const by = barBaseY - h
+    const barId = store.createShape('RECTANGLE', bx, by, barW, h, chartBg)
+    graph.updateNode(barId, {
       name: `Bar ${i + 1}`,
-      cornerRadius: 5,
+      cornerRadius: 4,
       fills: [
         gradient([
-          { color: DEMO_COLORS.accent, position: 0 },
-          { color: { r: 0.55, g: 0.5, b: 0.98, a: 1 }, position: 1 }
+          { color: DEMO_COLORS.blue, position: 0 },
+          { color: DEMO_COLORS.indigo, position: 1 }
         ])
       ]
     })
-  })
+  }
 
-  // Feature callout
-  const callout = store.createShape('FRAME', 0, 0, 472, 64, main)
-  graph.updateNode(callout, {
-    name: 'Callout',
-    cornerRadius: 12,
-    fills: [solid(DEMO_COLORS.accentSoft)],
+  const tableId = store.createShape('FRAME', 76, 400, 424, 40, frameId)
+  graph.updateNode(tableId, {
+    name: 'Table Header',
+    fills: [solid(DEMO_COLORS.white)],
+    strokes: thinStroke(DEMO_COLORS.gray200),
     layoutMode: 'HORIZONTAL',
     primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
+    counterAxisSizing: 'HUG',
+    primaryAxisAlign: 'SPACE_BETWEEN',
     counterAxisAlign: 'CENTER',
-    itemSpacing: 12,
+    paddingTop: 10,
+    paddingBottom: 10,
     paddingLeft: 16,
-    paddingRight: 16
+    paddingRight: 16,
+    itemSpacing: 16
   })
-  const calloutDot = store.createShape('ELLIPSE', 0, 0, 24, 24, callout)
-  graph.updateNode(calloutDot, { name: 'Icon', fills: [solid(DEMO_COLORS.accent)] })
-  const calloutText = store.createShape('TEXT', 0, 0, 340, 32, callout)
-  graph.updateNode(calloutText, {
-    name: 'Text',
-    text: 'This screen is built from components, auto-layout, and variables. Edit a variable to re-theme it.',
-    fontSize: 12,
-    fontWeight: 500,
-    textAutoResize: 'HEIGHT',
-    layoutAlignSelf: 'STRETCH',
-    fills: [solid(DEMO_COLORS.accentText)]
-  })
+  const cols = ['Name', 'Status', 'Amount', 'Date']
+  for (const col of cols) {
+    const colId = store.createShape('TEXT', 0, 0, 80, 16, tableId)
+    graph.updateNode(colId, {
+      name: col,
+      text: col,
+      fontSize: 12,
+      fontWeight: 600,
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      fills: [solid(DEMO_COLORS.gray500)]
+    })
+  }
 
-  return { sectionId, sidebar, main, headerTitle, chartTitle, statBadges }
-}
-
-interface StatBadge {
-  id: string
-  labelId: string
-  tone: StatTone
+  return { sidebarId, headerId, frameId, headerTitle, chartTitle }
 }

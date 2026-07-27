@@ -43,6 +43,7 @@
   "copyAsJSX": "Копировать как JSX",
   "copyNodeId": "Копировать ID узла",
   "copyXPath": "Копировать XPath",
+  "convertToVector": "Преобразовать в вектор",
   "checkUpdates": "Проверить обновления…",
   "booleanOperations": "Логические операции",
   "strikethrough": "Зачёркивание",

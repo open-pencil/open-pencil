@@ -10,6 +10,7 @@ import { activeTab } from '@/app/tabs'
 import AcpPermissionDialog from '@/components/chat/AcpPermissionDialog.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
+import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import { useAIChat } from '@/app/ai/chat/use'
@@ -132,15 +133,16 @@ function handleClearChat() {
     <template v-else>
       <ScrollAreaRoot class="min-h-0 flex-1">
         <ScrollAreaViewport class="h-full px-3 py-3 [&>div]:h-full">
-          <!-- Empty state -->
-          <div
+          <AppPlaceholder
             v-if="messages.length === 0"
             data-test-id="chat-empty-state"
-            class="flex h-full flex-col items-center justify-center gap-3 text-muted"
+            :label="dialogs.describeCreateOrChange"
+            :ui="{ root: 'h-full' }"
           >
-            <icon-lucide-message-circle class="size-8 opacity-50" />
-            <p class="text-center text-xs">{{ dialogs.describeCreateOrChange }}</p>
-          </div>
+            <template #icon>
+              <icon-lucide-message-circle class="size-5" />
+            </template>
+          </AppPlaceholder>
 
           <!-- Messages -->
           <div v-else data-test-id="chat-messages" class="flex flex-col gap-3">

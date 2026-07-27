@@ -3,6 +3,7 @@ import {
   responseWithTarget,
   type AutomationTarget
 } from '@/app/automation/bridge/target'
+import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import { openFileFromPath } from '@/app/shell/menu/use'
 import { createTab, getActiveStore, openFileInNewTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
@@ -52,11 +53,12 @@ export async function handleOpenFile(_target: AutomationTarget, args: unknown): 
   if (isTauri()) {
     await openFileFromPath(path)
   } else {
-    const response = await fetch(path)
+    const resourceURL = resolveBrowserFileURL(path)
+    const response = await fetch(resourceURL)
     if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`)
-    const name = path.split(/[\\/]/).pop() ?? 'file.fig'
+    const name = resourceURL.pathname.split('/').pop() ?? 'file.fig'
     const file = new File([await response.blob()], name)
-    await openFileInNewTab(file, undefined, path)
+    await openFileInNewTab(file, undefined, resourceURL.href)
   }
   const target = resolveAutomationTarget(getActiveStore(), undefined)
   return responseWithTarget({ ok: true, result: { opened: true } }, target)

@@ -40,6 +40,7 @@ import type {
 } from './types'
 import { createUndoActions } from './undo'
 import { createVariableActions } from './variables'
+import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
 
 export { createDefaultEditorState } from './state'
@@ -165,6 +166,7 @@ export function createEditor(options?: EditorOptions) {
   const text = createTextActions(ctx)
   const nodes = createNodeActions(ctx)
   const variables = createVariableActions(ctx)
+  const vectorize = createVectorizeActions(ctx)
   const alignment = createAlignmentActions(ctx)
   const clipboardBridge = createClipboardBridge(clipboard, selection)
   const componentBridge = createComponentBridge(components, selection, structure, pages)
@@ -250,6 +252,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Alignment (align, flip, rotate)
     ...alignment,
+
+    // Bitmap-to-vector replacement
+    ...vectorize,
 
     // Variables
     ...variables,

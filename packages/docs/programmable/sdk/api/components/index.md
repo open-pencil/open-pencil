@@ -23,6 +23,7 @@ description: Component reference for headless Vue primitives in @open-pencil/vue
 
 <SdkCardGroup>
   <SdkCard title="PropertySection" to="/programmable/sdk/api/components/property-section" description="Collapsible property-section anatomy and empty states." />
+  <SdkCard title="PropertyGrid" to="/programmable/sdk/api/components/property-grid" description="Responsive field-grid and action-rail anatomy." />
   <SdkCard title="SegmentedControl" to="/programmable/sdk/api/components/segmented-control" description="Accessible selection and action-only segment groups." />
   <SdkCard title="PropertyListRoot" to="/programmable/sdk/api/components/property-list-root" description="Headless property list primitive." />
   <SdkCard title="PropertyListItem" to="/programmable/sdk/api/components/property-list-item" description="Single fills, strokes, or effects row primitive." />

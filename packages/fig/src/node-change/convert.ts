@@ -23,7 +23,11 @@ import {
 } from './plugin-data'
 import { importStyleRuns } from './style-runs'
 import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './text-values'
-import { resolveGeometryPaths, resolveVectorNetwork } from './vector-geometry'
+import {
+  alignGeometryWindingRules,
+  resolveGeometryPaths,
+  resolveVectorNetwork
+} from './vector-geometry'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { importStyleRuns } from './style-runs'
@@ -423,14 +427,25 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
   }
 }
 
+function consumesVariableField(nc: NodeChange, field: string): boolean {
+  return nc.variableConsumptionMap?.entries?.some((entry) => entry.variableField === field) ?? false
+}
+
 function convertLayoutPadding(
   nc: NodeChange
 ): Pick<SceneNode, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> {
+  const basePadding = nc.stackPadding ?? 0
+  const verticalPadding = nc.stackVerticalPadding ?? basePadding
+  const horizontalPadding = nc.stackHorizontalPadding ?? basePadding
   return {
-    paddingTop: nc.stackVerticalPadding ?? nc.stackPadding ?? 0,
-    paddingBottom: nc.stackPaddingBottom ?? nc.stackVerticalPadding ?? nc.stackPadding ?? 0,
-    paddingLeft: nc.stackHorizontalPadding ?? nc.stackPadding ?? 0,
-    paddingRight: nc.stackPaddingRight ?? nc.stackHorizontalPadding ?? nc.stackPadding ?? 0
+    paddingTop: verticalPadding,
+    paddingBottom:
+      nc.stackPaddingBottom ??
+      (consumesVariableField(nc, 'STACK_PADDING_TOP') ? basePadding : verticalPadding),
+    paddingLeft: horizontalPadding,
+    paddingRight:
+      nc.stackPaddingRight ??
+      (consumesVariableField(nc, 'STACK_PADDING_LEFT') ? basePadding : horizontalPadding)
   }
 }
 
@@ -546,9 +561,13 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const vectorNetwork = resolveVectorNetwork(nc, blobs)
   const strokeCap = getVectorStrokeCap(nc, vectorNetwork)
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
+  const fillGeometry = alignGeometryWindingRules(
+    resolveGeometryPaths(nc.fillGeometry, blobs),
+    vectorNetwork
+  )
   return {
     vectorNetwork,
-    fillGeometry: resolveGeometryPaths(nc.fillGeometry, blobs),
+    fillGeometry,
     strokeGeometry: resolveGeometryPaths(nc.strokeGeometry, blobs),
     arcData: mapArcData(nc.arcData as Partial<ArcData> | undefined),
     strokeCap,

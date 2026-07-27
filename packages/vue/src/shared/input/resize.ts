@@ -1,12 +1,14 @@
 export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
 import type { Editor } from '@open-pencil/core/editor'
-import { computeLayout } from '@open-pencil/core/layout'
+import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import {
+  computeConstrainedResizeChanges,
+  scaleVectorNetworkForResize
+} from '@open-pencil/scene-graph/resize'
 
-import { constrainedChildRect, scaledChildRect } from '#vue/shared/input/resize/constraints'
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
-import { scaleVectorNetworkForResize } from '#vue/shared/input/resize/vector'
 import type { DragResize } from '#vue/shared/input/types'
 
 function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean) {
@@ -32,46 +34,17 @@ function applyConstrainedChildren(
   editor: Editor
 ) {
   if (!d.origChildren || d.origRect.width <= 0 || d.origRect.height <= 0) return
-
-  const apply = (
-    parentId: string,
-    parentBefore: Pick<SceneNode, 'width' | 'height'>,
-    parentAfter: Pick<SceneNode, 'width' | 'height'>
-  ) => {
-    const parent = editor.graph.getNode(parentId)
-    if (!parent) return
-    const scalesChildren = parent.type === 'GROUP' || parent.type === 'BOOLEAN_OPERATION'
-    for (const childId of parent.childIds) {
-      const original = d.origChildren?.get(childId)
-      const child = editor.graph.getNode(childId)
-      if (!original || !child) continue
-      const rect = scalesChildren
-        ? scaledChildRect(original, parentBefore, parentAfter)
-        : constrainedChildRect(
-            original,
-            parentBefore,
-            parentAfter,
-            child.horizontalConstraint,
-            child.verticalConstraint
-          )
-      const childChanges: Partial<SceneNode> = { ...rect }
-      if (original.vectorNetwork) {
-        const scaled = scaleVectorNetworkForResize(
-          original.vectorNetwork,
-          original.width,
-          original.height,
-          rect.width,
-          rect.height
-        )
-        if (scaled) childChanges.vectorNetwork = scaled
-      }
-      editor.graph.updateNodePreview(childId, childChanges)
-      editor.renderer?.invalidateVectorPath(childId)
-      apply(childId, original, rect)
-    }
+  const changes = computeConstrainedResizeChanges(
+    editor.graph,
+    d.nodeId,
+    d.origRect,
+    newRect,
+    d.origChildren
+  )
+  for (const [childId, childChanges] of changes) {
+    editor.graph.updateNodePreview(childId, childChanges)
+    editor.renderer?.invalidateVectorPath(childId)
   }
-
-  apply(d.nodeId, d.origRect, newRect)
 }
 
 export function applyResize(
@@ -84,11 +57,9 @@ export function applyResize(
   const { changes, newRect } = resizeChanges(d, cx, cy, constrain)
   editor.graph.updateNodePreview(d.nodeId, changes)
   applyConstrainedChildren(d, newRect, editor)
-
-  const node = editor.graph.getNode(d.nodeId)
-  if (node?.layoutMode !== 'NONE') {
-    editor.graph.runPreviewUpdates(() => computeLayout(editor.graph, d.nodeId))
-  }
+  editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
+  applyConstrainedChildren(d, newRect, editor)
+  editor.graph.runPreviewUpdates(() => computeAllLayouts(editor.graph, d.nodeId))
   editor.requestRepaint()
 }
 
