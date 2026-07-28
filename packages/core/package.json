@@ -126,6 +126,7 @@
       "default": "./dist/clipboard.js"
     },
     "./bytes": {
+      "bun": "./src/bytes/index.ts",
       "types": "./dist/bytes/index.d.ts",
       "import": "./dist/bytes/index.js",
       "default": "./dist/bytes/index.js"
