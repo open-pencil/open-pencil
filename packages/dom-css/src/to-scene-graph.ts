@@ -1,3 +1,4 @@
+import { decodeBase64 } from '@open-pencil/core/bytes'
 import {
   SceneGraph,
   type Fill,
@@ -239,8 +240,7 @@ function bytesFromDataURL(value: string | undefined): Uint8Array | null {
   const metadata = value.slice(0, commaIndex)
   const body = value.slice(commaIndex + 1)
   if (!metadata.endsWith(';base64')) return null
-  const binary = globalThis.atob(body)
-  return Uint8Array.from(binary, (char) => char.charCodeAt(0))
+  return decodeBase64(body)
 }
 
 function applyImageFill(

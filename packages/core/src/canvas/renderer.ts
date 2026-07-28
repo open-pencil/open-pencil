@@ -2,6 +2,7 @@ import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-gra
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
+import { decodeBase64 } from '#core/bytes'
 import type { ResolvedRenderColor } from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
@@ -683,10 +684,7 @@ export class SkiaRenderer {
       if (!dataUrl.startsWith(`data:${mime}`)) return null
       const base64 = dataUrl.split(',')[1]
       if (!base64) return null
-      const binary = atob(base64)
-      const bytes = new Uint8Array(binary.length)
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
-      return bytes
+      return decodeBase64(base64)
     } catch (err) {
       console.warn('Raster encode fallback failed:', err)
       return null

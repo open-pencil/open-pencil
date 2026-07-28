@@ -1,5 +1,6 @@
 import type { Matrix } from '@open-pencil/scene-graph/primitives'
 
+import { decodeBase64 } from '#core/bytes'
 import { parseColor } from '#core/color'
 import { BLACK } from '#core/constants'
 import { defineTool } from '#core/tools/schema'
@@ -112,7 +113,7 @@ export const setImageFill = defineTool({
   execute: (figma, { id, image_data, scale_mode }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
-    const bytes = Uint8Array.fromBase64(image_data)
+    const bytes = decodeBase64(image_data)
     const image = figma.createImage(bytes)
     const mode = (scale_mode ?? 'FILL') as 'FILL' | 'FIT' | 'CROP' | 'TILE'
     node.fills = [

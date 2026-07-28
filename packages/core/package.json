@@ -125,6 +125,11 @@
       "import": "./dist/clipboard.js",
       "default": "./dist/clipboard.js"
     },
+    "./bytes": {
+      "types": "./dist/bytes/index.d.ts",
+      "import": "./dist/bytes/index.js",
+      "default": "./dist/bytes/index.js"
+    },
     "./constants": {
       "types": "./dist/constants.d.ts",
       "import": "./dist/constants.js",
@@ -178,6 +183,7 @@
     "fflate": "^0.8.2",
     "fontoxpath": "^3.34.0",
     "fzstd": "^0.1.1",
+    "js-base64": "^3.9.2",
     "jspdf": "^4.2.1",
     "nanoevents": "^9.1.0",
     "ofetch": "^1.5.1",

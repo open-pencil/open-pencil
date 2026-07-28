@@ -3,6 +3,8 @@ import { deflateSync, inflateSync } from 'fflate'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { JsonObject } from '@open-pencil/scene-graph/primitives'
 
+import { decodeBase64, encodeBase64 } from '#core/bytes'
+
 // --- Internal copy/paste (OpenPencil ↔ OpenPencil) ---
 
 export interface OpenPencilClipboardData {
@@ -15,7 +17,7 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
   if (!match) return null
 
   try {
-    const raw = Uint8Array.fromBase64(match[1])
+    const raw = decodeBase64(match[1])
     let bytes: Uint8Array
     try {
       bytes = inflateSync(raw)
@@ -29,7 +31,7 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
       if (decoded.images && typeof decoded.images === 'object') {
         for (const [hash, b64] of Object.entries(decoded.images)) {
           if (typeof b64 === 'string') {
-            images.set(hash, Uint8Array.fromBase64(b64))
+            images.set(hash, decodeBase64(b64))
           }
         }
       }
@@ -44,7 +46,7 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
 function restoreTextPictures(nodes: JsonObject[]): void {
   for (const node of nodes) {
     if (typeof node.textPicture === 'string') {
-      node.textPicture = Uint8Array.fromBase64(node.textPicture)
+      node.textPicture = decodeBase64(node.textPicture)
     }
     if (Array.isArray(node.children)) {
       restoreTextPictures(node.children)
@@ -78,7 +80,7 @@ export function buildOpenPencilClipboardHTML(
   const images: Record<string, string> = {}
   for (const hash of hashes) {
     const bytes = graph.images.get(hash)
-    if (bytes) images[hash] = bytes.toBase64()
+    if (bytes) images[hash] = encodeBase64(bytes)
   }
   const data = {
     format: 'openpencil/v1',
@@ -86,7 +88,7 @@ export function buildOpenPencilClipboardHTML(
     images
   }
   const compressed = deflateSync(new TextEncoder().encode(JSON.stringify(data)))
-  return `<!--(openpencil)${compressed.toBase64()}(/openpencil)-->`
+  return `<!--(openpencil)${encodeBase64(compressed)}(/openpencil)-->`
 }
 
 function collectNodeTree(
@@ -100,7 +102,7 @@ function collectNodeTree(
 
     if (node.type === 'TEXT' && node.text && textPictureBuilder) {
       const pic = node.textPicture ?? textPictureBuilder(node)
-      if (pic) serialized.textPicture = pic.toBase64()
+      if (pic) serialized.textPicture = encodeBase64(pic)
     } else {
       delete serialized.textPicture
     }

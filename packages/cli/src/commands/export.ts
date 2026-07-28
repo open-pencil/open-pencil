@@ -3,6 +3,7 @@ import { basename, dirname, extname, join, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
+import { decodeBase64 } from '@open-pencil/core/bytes'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import type { RasterExportFormat } from '@open-pencil/core/io'
 import {
@@ -77,7 +78,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
       printError('Nothing to export.')
       process.exit(1)
     }
-    const data = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0))
+    const data = decodeBase64(result.base64)
     await writeAndLog(resolve(args.output ?? 'export.pdf'), data)
     return
   }
@@ -93,7 +94,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
     scale: Number(args.scale),
     format: format.toLowerCase()
   })
-  const data = Uint8Array.from(atob(result.base64), (c) => c.charCodeAt(0))
+  const data = decodeBase64(result.base64)
   const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
   await writeAndLog(resolve(args.output ?? `export.${ext}`), data)
 }
