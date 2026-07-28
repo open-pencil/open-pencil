@@ -160,7 +160,7 @@ function prepareGraphForExport(
   format: string,
   args: ExportArgs
 ): boolean {
-  const wholeDocument = format === 'FIG' && !args.page && !args.node
+  const wholeDocument = (format === 'FIG' || format === 'PPTX') && !args.page && !args.node
   if (wholeDocument || args.node) populateWholeDocument(graph)
   else populateDocumentPage(graph, pageId)
   return wholeDocument
@@ -175,7 +175,10 @@ async function executeFileExport(
     | undefined,
   wholeDocument: boolean
 ) {
-  if (wholeDocument) return io.writeDocument(formatId, graph, options)
+  if (wholeDocument) {
+    if (formatId === 'fig') return io.writeDocument(formatId, graph, options)
+    return io.exportContent(formatId, { graph, target: { scope: 'document' } }, options)
+  }
   return io.exportContent(formatId, { graph, target }, options)
 }
 

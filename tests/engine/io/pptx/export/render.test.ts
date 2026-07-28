@@ -210,6 +210,77 @@ describe('renderNodesToPPTX()', () => {
     expect(rect.height).toBeCloseTo(inches(100), 3)
   })
 
+  test('a root frame with overflowing clipped content rasterizes as one image', async () => {
+    const graph = makeGraph()
+    const frame = makeSlideFrame(graph, 'Clipped slide')
+    frame.clipsContent = true
+    graph.createNode('RECTANGLE', frame.id, {
+      x: 1200,
+      y: 40,
+      width: 200,
+      height: 100,
+      fills: [solidFill(1, 0, 0)]
+    })
+
+    let stats: PPTXExportStats | null = null
+    const rasterCalls: string[][] = []
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: (ids) => {
+        rasterCalls.push(ids)
+        return Promise.resolve(TINY_PNG)
+      },
+      onStats: (value) => {
+        stats = value
+      }
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    expect(rasterCalls).toEqual([[frame.id]])
+    expect(slideXml(unzipPptx(data), 1)).not.toContain('FF0000')
+    expect(stats).not.toBeNull()
+    if (!stats) return
+    const reported: PPTXExportStats = stats
+    expect(reported.fallbackReasons['clipped content']).toBe(1)
+  })
+
+  test('a root frame containing a mask rasterizes as one image', async () => {
+    const graph = makeGraph()
+    const frame = makeSlideFrame(graph, 'Masked slide')
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 200,
+      height: 200,
+      isMask: true,
+      fills: [solidFill(0, 0, 0)]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      x: 100,
+      y: 100,
+      width: 300,
+      height: 300,
+      fills: [solidFill(1, 0, 0)]
+    })
+
+    let stats: PPTXExportStats | null = null
+    const rasterCalls: string[][] = []
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: (ids) => {
+        rasterCalls.push(ids)
+        return Promise.resolve(TINY_PNG)
+      },
+      onStats: (value) => {
+        stats = value
+      }
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    expect(rasterCalls).toEqual([[frame.id]])
+    expect(slideXml(unzipPptx(data), 1)).not.toContain('FF0000')
+    expect(stats).not.toBeNull()
+    if (!stats) return
+    const reported: PPTXExportStats = stats
+    expect(reported.fallbackReasons['contains mask']).toBe(1)
+  })
+
   test('a clipped frame with an overflowing child rasterizes as one image', async () => {
     const graph = makeGraph()
     const frame = makeSlideFrame(graph, 'Slide')

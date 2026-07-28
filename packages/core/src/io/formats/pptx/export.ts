@@ -3,6 +3,8 @@ import type PptxGenJS from 'pptxgenjs'
 import type { Fill, Mat3, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TransformMatrix, getWorldMatrix } from '@open-pencil/scene-graph'
 
+import { encodeBase64 } from '#core/bytes'
+
 import {
   hasUnsupportedTransform,
   inch,
@@ -133,6 +135,12 @@ export async function renderNodesToPPTX(
       continue
     }
 
+    const contentFallbackReason = rootContentFallbackReason(ctx, root)
+    if (contentFallbackReason) {
+      await addFallbackImage(ctx, root, root.opacity, contentFallbackReason)
+      continue
+    }
+
     await addSlideFramePaint(ctx, root)
 
     for (const childId of root.childIds) {
@@ -212,6 +220,13 @@ async function addSlideFramePaint(ctx: ExportCtx, root: SceneNode): Promise<void
     return
   }
   addEditableShape(ctx, root, root.opacity)
+}
+
+/** Why a slide frame's content must be rasterized as one composited image. */
+function rootContentFallbackReason(ctx: ExportCtx, root: SceneNode): string | null {
+  if (root.childIds.some((id) => ctx.graph.getNode(id)?.isMask)) return 'contains mask'
+  if (clipsOverflowingContent(ctx.graph, root)) return 'clipped content'
+  return null
 }
 
 /** Why a slide frame's own paint has to be rasterized. Null means it maps natively. */
@@ -492,7 +507,7 @@ async function addFallbackImage(
   }
   const box = nodeBox(ctx, node)
   ctx.slide.addImage({
-    data: `data:image/png;base64,${bytesToBase64(data)}`,
+    data: `data:image/png;base64,${encodeBase64(data)}`,
     x: box.x,
     y: box.y,
     w: box.w,
@@ -556,13 +571,4 @@ function addSolidShadowShape(
         }
       : {})
   })
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = ''
-  const chunk = 0x8000
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
-  }
-  return btoa(binary)
 }
