@@ -4,6 +4,9 @@ export function uint8ArrayToBase64(bytes: Uint8Array): string {
   if (typeof Buffer !== 'undefined') {
     return Buffer.from(bytes).toString('base64')
   }
+  if (typeof btoa !== 'function') {
+    throw new TypeError('Base64 encoding is unavailable in this environment')
+  }
 
   let binary = ''
   for (let index = 0; index < bytes.length; index += BASE64_CHUNK_SIZE) {
