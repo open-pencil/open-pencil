@@ -40,6 +40,10 @@ const MODEL_PROVIDER_ADAPTERS = {
       return createDeepSeek({ apiKey: config.apiKey, fetch: runtime.fetch })(config.modelID)
     }
   },
+  atlascloud: createOpenAICompatibleAdapter({
+    baseURL: 'https://api.atlascloud.ai/v1',
+    mode: 'chat'
+  }),
   zai: createAnthropicCompatibleAdapter({ baseURL: 'https://api.z.ai/api/anthropic' }),
   minimax: createOpenAICompatibleAdapter({ baseURL: 'https://api.minimax.io/v1', mode: 'chat' }),
   'openai-compatible': createOpenAICompatibleAdapter({

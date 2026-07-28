@@ -12,6 +12,7 @@ export function resolveLanguageModelID(
 ): string {
   if (
     config.providerID === 'openrouter' ||
+    config.providerID === 'atlascloud' ||
     config.providerID === 'openai-compatible' ||
     config.providerID === 'anthropic-compatible'
   ) {

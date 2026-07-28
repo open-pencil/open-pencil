@@ -178,6 +178,7 @@ export type AIProviderID =
   | 'openai'
   | 'google'
   | 'deepseek'
+  | 'atlascloud'
   | 'openai-compatible'
   | 'zai'
   | 'minimax'
@@ -270,6 +271,21 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     models: [
       { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', tag: 'Fast' },
       { id: 'deepseek-v4-pro', name: 'DeepSeek V4 Pro', tag: 'Reasoning' }
+    ]
+  },
+  {
+    id: 'atlascloud',
+    name: 'Atlas Cloud',
+    keyPlaceholder: 'API key',
+    keyURL: 'https://www.atlascloud.ai/console/api-keys',
+    defaultModel: 'deepseek-ai/deepseek-v4-pro',
+    supportsCustomModel: true,
+    models: [
+      {
+        id: 'deepseek-ai/deepseek-v4-pro',
+        name: 'DeepSeek V4 Pro',
+        tag: 'Reasoning'
+      }
     ]
   },
   {
