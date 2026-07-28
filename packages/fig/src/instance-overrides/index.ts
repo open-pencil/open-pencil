@@ -85,10 +85,35 @@ function buildKiwiGeometryNodes(
   return result
 }
 
-function propagateResolvedFills(graph: SceneGraph, protectedNodes: Set<string>): void {
+function componentLinkedNodes(graph: SceneGraph): SceneNode[] {
+  const nodes: SceneNode[] = []
+  for (const node of graph.getAllNodes()) if (node.componentId) nodes.push(node)
+  return nodes
+}
+
+function instancePlacementPairs(
+  graph: SceneGraph
+): Array<{ sourceChildId: string; childId: string }> {
+  const pairs: Array<{ sourceChildId: string; childId: string }> = []
+  for (const node of graph.getAllNodes()) {
+    if (node.type !== 'INSTANCE' || !node.componentId) continue
+    const source = graph.getNode(node.componentId)
+    if (!source || source.childIds.length !== node.childIds.length) continue
+    for (let index = 0; index < node.childIds.length; index++) {
+      pairs.push({ sourceChildId: source.childIds[index], childId: node.childIds[index] })
+    }
+  }
+  return pairs
+}
+
+function propagateResolvedFills(
+  graph: SceneGraph,
+  protectedNodes: Set<string>,
+  candidates = componentLinkedNodes(graph)
+): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
-    for (const node of graph.getAllNodes()) {
+    for (const node of candidates) {
       if (!node.componentId) continue
       const source = graph.getNode(node.componentId)
       if (!source || isEqual(source.fills, node.fills)) continue
@@ -100,32 +125,30 @@ function propagateResolvedFills(graph: SceneGraph, protectedNodes: Set<string>):
   }
 }
 
-function propagateResolvedChildPlacementClones(graph: SceneGraph): void {
+function propagateResolvedChildPlacementClones(
+  graph: SceneGraph,
+  pairs = instancePlacementPairs(graph)
+): void {
   for (let pass = 0; pass < 10; pass++) {
     let changed = false
-    for (const node of graph.getAllNodes()) {
-      if (node.type !== 'INSTANCE' || !node.componentId) continue
-      const source = graph.getNode(node.componentId)
-      if (!source || source.childIds.length !== node.childIds.length) continue
-      for (let i = 0; i < node.childIds.length; i++) {
-        const sourceChild = graph.getNode(source.childIds[i])
-        const child = graph.getNode(node.childIds[i])
-        if (!sourceChild || !child) continue
-        if (
-          sourceChild.overrideKey &&
-          child.overrideKey &&
-          sourceChild.overrideKey !== child.overrideKey
-        ) {
-          continue
-        }
-        const updates: Partial<SceneNode> = {}
-        if (!sourceChild.visible && child.visible) updates.visible = false
-        if (sourceChild.x !== child.x) updates.x = sourceChild.x
-        if (sourceChild.y !== child.y) updates.y = sourceChild.y
-        if (Object.keys(updates).length === 0) continue
-        graph.updateNode(child.id, updates)
-        changed = true
+    for (const pair of pairs) {
+      const sourceChild = graph.getNode(pair.sourceChildId)
+      const child = graph.getNode(pair.childId)
+      if (!sourceChild || !child) continue
+      if (
+        sourceChild.overrideKey &&
+        child.overrideKey &&
+        sourceChild.overrideKey !== child.overrideKey
+      ) {
+        continue
       }
+      const updates: Partial<SceneNode> = {}
+      if (!sourceChild.visible && child.visible) updates.visible = false
+      if (sourceChild.x !== child.x) updates.x = sourceChild.x
+      if (sourceChild.y !== child.y) updates.y = sourceChild.y
+      if (Object.keys(updates).length === 0) continue
+      graph.updateNode(child.id, updates)
+      changed = true
     }
     if (!changed) return
   }
