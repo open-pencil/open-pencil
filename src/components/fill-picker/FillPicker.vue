@@ -52,7 +52,7 @@ function cancelFromEscape(event: KeyboardEvent) {
           type="button"
           :aria-label="panels.fill"
           data-test-id="fill-picker-swatch"
-          class="size-5 shrink-0 cursor-pointer rounded border-0 bg-transparent p-0"
+          class="size-4 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
         >
           <FillSwatch :fill="fill" class="size-full" v-slot="swatch">
             <span

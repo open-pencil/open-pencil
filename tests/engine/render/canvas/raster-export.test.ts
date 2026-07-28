@@ -33,6 +33,78 @@ beforeAll(async () => {
 })
 
 describe('raster export', () => {
+  test('selection export excludes ancestor backgrounds', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const section = graph.createNode('SECTION', page.id, {
+      x: 20,
+      y: 30,
+      width: 100,
+      height: 100,
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 0.4, g: 0.4, b: 0.4, a: 1 },
+          opacity: 1,
+          visible: true
+        }
+      ]
+    })
+    const component = graph.createNode('COMPONENT', section.id, {
+      x: 10,
+      y: 10,
+      width: 10,
+      height: 10,
+      fills: []
+    })
+    graph.createNode('RECTANGLE', component.id, {
+      x: 3,
+      y: 3,
+      width: 4,
+      height: 4,
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0, b: 0, a: 1 },
+          opacity: 1,
+          visible: true
+        }
+      ]
+    })
+
+    const surface = expectDefined(ck.MakeSurface(1, 1), 'surface')
+    const renderer = new SkiaRenderer(ck, surface)
+
+    try {
+      const png = expectDefined(
+        renderNodesToImage(ck, renderer, graph, page.id, [component.id], {
+          scale: 1,
+          format: 'PNG'
+        }),
+        'png'
+      )
+      const image = expectDefined(ck.MakeImageFromEncoded(png), 'image')
+      const pixels = expectDefined(
+        image.readPixels(0, 0, {
+          alphaType: ck.AlphaType.Unpremul,
+          colorType: ck.ColorType.RGBA_8888,
+          colorSpace: ck.ColorSpace.SRGB,
+          width: image.width(),
+          height: image.height()
+        }),
+        'pixels'
+      )
+
+      expect(pixels[3]).toBe(0)
+      const centerAlpha = pixels[(5 * image.width() + 5) * 4 + 3]
+      expect(centerAlpha).toBeGreaterThan(0)
+
+      image.delete()
+    } finally {
+      surface.delete()
+    }
+  })
+
   test('keeps one-pixel transparent fringes when trimming exports', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

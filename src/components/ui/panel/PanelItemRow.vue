@@ -15,6 +15,7 @@ export interface PanelItemRowProps {
 export interface PanelItemRowSlots {
   default(): VNode[]
   rail?(props: { removeClass: string }): VNode[]
+  details?(): VNode[]
 }
 </script>
 
@@ -36,6 +37,9 @@ const styles = computed(() => tv(itemRowTheme)())
     </div>
     <div v-if="$slots.rail" :class="styles.rail({ class: ui?.rail })" data-slot="rail">
       <slot name="rail" :remove-class="styles.remove({ class: ui?.remove })" />
+    </div>
+    <div v-if="$slots.details" :class="styles.details({ class: ui?.details })" data-slot="details">
+      <slot name="details" />
     </div>
   </div>
 </template>

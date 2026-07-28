@@ -40,7 +40,7 @@ const { dialogs } = useI18n()
 const { isMobile } = useViewportKind()
 
 if (createdInitialTab && route.meta.demo && !('test' in params)) {
-  createDemoShapes(firstTab.store)
+  void createDemoShapes(firstTab.store)
 }
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })

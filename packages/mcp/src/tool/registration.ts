@@ -8,9 +8,8 @@ import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RpcJsonObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
-
-import { resolveSafePath, writeToolOutput } from './output'
-import { paramToZod } from './schema'
+import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
+import { paramToZod } from '#mcp/tool/schema'
 
 export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
 
@@ -130,7 +129,11 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         : 'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
       inputSchema: resolvedRoot
         ? z.object({
-            path: z.string().describe('Optional absolute path for the .fig file').optional(),
+            path: z
+              .string()
+              .min(1)
+              .describe('Path for the .fig file, absolute or relative to the MCP root')
+              .optional(),
             ...automationTargetSchema
           })
         : z.object({ ...automationTargetSchema })
@@ -138,14 +141,19 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     async (args: { path?: string; document_id?: string; page_id?: string }) => {
       try {
         const safePath =
-          args.path && resolvedRoot ? resolveSafePath(args.path, resolvedRoot) : undefined
+          args.path !== undefined && resolvedRoot
+            ? await resolveSafePath(args.path, resolvedRoot)
+            : undefined
         const { target } = splitAutomationTarget(args)
-        const result = await sendRpc({ command: 'save_file', args: { ...target, path: safePath } })
+        const result = await sendRpc({
+          command: 'save_file',
+          args: { ...target, path: safePath?.realPath }
+        })
         const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
         return ok({
           saved: true,
-          ...(safePath ? { path: safePath } : {}),
+          ...(safePath ? { path: safePath.resolved } : {}),
           ...(res.target ? { target: res.target } : {})
         })
       } catch (e) {
@@ -160,15 +168,21 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       {
         description: `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`,
         inputSchema: z.object({
-          path: z.string().describe('Absolute path to the design file'),
+          path: z
+            .string()
+            .min(1)
+            .describe('Path to the design file, absolute or relative to the MCP root'),
           ...automationTargetSchema
         })
       },
       async (args: { path: string; document_id?: string; page_id?: string }) => {
         try {
-          const safe = resolveSafePath(args.path, resolvedRoot)
+          const safe = await resolveSafePath(args.path, resolvedRoot)
           const { target } = splitAutomationTarget(args)
-          const result = await sendRpc({ command: 'open_file', args: { ...target, path: safe } })
+          const result = await sendRpc({
+            command: 'open_file',
+            args: { ...target, path: safe.realPath }
+          })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
           return ok({ opened: true, ...(res.target ? { target: res.target } : {}) })
@@ -183,17 +197,22 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       {
         description: `Create a new empty document. Optionally set a save path inside ${resolvedRoot}.`,
         inputSchema: z.object({
-          path: z.string().describe('Optional absolute path for the new file').optional(),
+          path: z
+            .string()
+            .min(1)
+            .describe('Path for the new file, absolute or relative to the MCP root')
+            .optional(),
           ...automationTargetSchema
         })
       },
       async (args: { path?: string; document_id?: string; page_id?: string }) => {
         try {
-          const safePath = args.path ? resolveSafePath(args.path, resolvedRoot) : undefined
+          const safePath =
+            args.path !== undefined ? await resolveSafePath(args.path, resolvedRoot) : undefined
           const { target } = splitAutomationTarget(args)
           const result = await sendRpc({
             command: 'new_document',
-            args: { ...target, path: safePath }
+            args: { ...target, path: safePath?.realPath }
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))

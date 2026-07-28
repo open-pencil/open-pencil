@@ -29,7 +29,7 @@
         --loader-fg: 32, 33, 36;
       }
       body { margin: 0; background: var(--loader-bg); }
-      #loader {
+      #boot-splash {
         position: fixed;
         inset: 0;
         display: flex;
@@ -38,11 +38,9 @@
         z-index: 9999;
         color: rgb(var(--loader-fg));
         background: var(--loader-bg);
-        transition: opacity 0.3s;
       }
-      #loader.fade-out { opacity: 0; pointer-events: none; }
-      #loader svg { width: 32px; height: 32px; opacity: 0.45; }
-      #loader .bar {
+      #boot-splash svg { width: 32px; height: 32px; opacity: 0.45; }
+      #boot-splash .bar {
         position: absolute;
         bottom: 50%;
         left: 50%;
@@ -53,7 +51,7 @@
         border-radius: 1px;
         overflow: hidden;
       }
-      #loader .bar::after {
+      #boot-splash .bar::after {
         content: '';
         display: block;
         height: 100%;
@@ -70,13 +68,14 @@
   </head>
 
   <body>
-    <div id="loader">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m15.232 5.232 3.536 3.536m-2.036-5.036a2.5 2.5 0 0 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732Z"/>
-      </svg>
-      <div class="bar"></div>
+    <div id="app">
+      <div id="boot-splash">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m15.232 5.232 3.536 3.536m-2.036-5.036a2.5 2.5 0 0 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732Z"/>
+        </svg>
+        <div class="bar"></div>
+      </div>
     </div>
-    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

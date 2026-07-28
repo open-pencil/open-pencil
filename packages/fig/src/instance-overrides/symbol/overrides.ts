@@ -7,6 +7,20 @@ function isActiveInstance(ctx: OverrideContext, nodeId: string | undefined): nod
   return nodeId !== undefined && (!ctx.activeNodeIds || ctx.activeNodeIds.has(nodeId))
 }
 
+function preserveInstanceRootBounds(
+  hasRootSize: boolean,
+  instanceId: string,
+  targetId: string,
+  patch: ReturnType<typeof patchFromSymbolOverride>
+): void {
+  if (!hasRootSize || targetId !== instanceId || !patch?.props) return
+  // Root bounds belong to the instance NodeChange. Figma may repeat the
+  // source component size in a root symbol override, but that must not resize
+  // the placed instance.
+  delete patch.props.width
+  delete patch.props.height
+}
+
 /**
  * Apply symbolOverrides from kiwi data.
  *
@@ -37,6 +51,7 @@ export function applySymbolOverrides(ctx: OverrideContext, propertiesOnly = fals
 
       const patch = patchFromSymbolOverride(ctx, targetId, ov)
       if (!patch) continue
+      preserveInstanceRootBounds(nc.size !== undefined, nodeId, targetId, patch)
       if (propertiesOnly) patch.swapComponentId = undefined
       if (!patch.swapComponentId && !patch.props) continue
       overriddenNodes.add(targetId)

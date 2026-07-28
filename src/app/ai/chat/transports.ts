@@ -1,13 +1,14 @@
 import { Chat } from '@ai-sdk/vue'
 import { DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
-import type { ChatTransport, UIMessage } from 'ai'
+import type { ChatTransport, LanguageModel, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
-import { createLanguageModel, resolveLanguageModelID } from '@/app/ai/chat/model'
+import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
+import { createAIModelRuntime } from '@/app/ai/models'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/app/ai/tools'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
 
@@ -17,23 +18,15 @@ type ChatSessionOptions = {
   isConfigured: ComputedRef<boolean>
   isACPProvider: ComputedRef<boolean>
   providerID: Ref<AIProviderID>
-  apiKey: Ref<string>
-  modelID: Ref<string>
-  customModelID: Ref<string>
-  customBaseURL: Ref<string>
-  customAPIType: Ref<'completions' | 'responses'>
-  maxOutputTokens: Ref<number>
+  credentialsReady: Promise<void>
   getActiveEditorStore: () => EditorStore
 }
 
 type ToolLoopTransportOptions = {
   store: EditorStore
   providerID: AIProviderID
-  apiKey: string
-  modelID: string
-  customModelID: string
-  customBaseURL: string
-  customAPIType: 'completions' | 'responses'
+  model: LanguageModel
+  effectiveModelID: string
   maxOutputTokens: number
 }
 
@@ -62,28 +55,17 @@ export async function createACPTransport(providerID: AIProviderID) {
 export function createToolLoopTransport({
   store,
   providerID,
-  apiKey,
-  modelID,
-  customModelID,
-  customBaseURL,
-  customAPIType,
+  model,
+  effectiveModelID,
   maxOutputTokens
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store)
-  const effectiveModelID = resolveLanguageModelID({ providerID, modelID, customModelID })
   const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
     ? ANTHROPIC_CACHE_CONTROL
     : undefined
 
   const agent = new ToolLoopAgent({
-    model: createLanguageModel({
-      providerID,
-      apiKey,
-      modelID,
-      customModelID,
-      customBaseURL,
-      customAPIType
-    }),
+    model,
     instructions: SYSTEM_PROMPT,
     tools,
     stopWhen: stepCountIs(MAX_AGENT_STEPS),
@@ -118,12 +100,7 @@ export function createChatSessionManager({
   isConfigured,
   isACPProvider,
   providerID,
-  apiKey,
-  modelID,
-  customModelID,
-  customBaseURL,
-  customAPIType,
-  maxOutputTokens,
+  credentialsReady,
   getActiveEditorStore
 }: ChatSessionOptions) {
   let transportDirty = false
@@ -146,25 +123,31 @@ export function createChatSessionManager({
     return transport as ChatTransport<UIMessage>
   }
 
-  function createTransport(store: EditorStore) {
+  async function createTransport(store: EditorStore) {
     if (overrideTransport) return overrideTransport()
 
     void acpTransportInstance?.destroy()
     acpTransportInstance = null
 
+    const runtime = await createAIModelRuntime('design')
+    if (runtime?.kind !== 'direct') {
+      throw new Error('The Design model is not configured for direct API access')
+    }
     return createToolLoopTransport({
       store,
-      providerID: providerID.value,
-      apiKey: apiKey.value,
-      modelID: modelID.value,
-      customModelID: customModelID.value,
-      customBaseURL: customBaseURL.value,
-      customAPIType: customAPIType.value,
-      maxOutputTokens: maxOutputTokens.value
+      providerID: runtime.role.connection.providerID,
+      model: runtime.model,
+      effectiveModelID: resolveLanguageModelID({
+        providerID: runtime.role.connection.providerID,
+        modelID: runtime.role.profile.modelID,
+        customModelID: runtime.role.profile.customModelID
+      }),
+      maxOutputTokens: runtime.role.profile.maxOutputTokens
     })
   }
 
   async function ensureChat(): Promise<Chat<UIMessage> | null> {
+    await credentialsReady
     if (!isConfigured.value) return null
 
     const store = getActiveEditorStore()
@@ -176,7 +159,7 @@ export function createChatSessionManager({
       const messages = currentChatMessages.get(store)
       const transport: ChatTransport<UIMessage> = isACPProvider.value
         ? await createActiveACPTransport()
-        : createTransport(store)
+        : await createTransport(store)
       chat = new Chat<UIMessage>({ transport, messages })
       currentChatStore = store
       transportDirty = false

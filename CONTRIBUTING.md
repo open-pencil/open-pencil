@@ -35,6 +35,7 @@ Pull requests must be reviewable without guessing the author's intent.
 - Explain what changed and why it changed.
 - Include a concrete list or paragraph of meaningful changes.
 - Document validation, such as `bun run check`, targeted tests, docs-only review, or an explicit reason validation was not run.
+- Complete the AI assistance section. If an LLM materially helped create or modify the PR, list the model names you know. Write `None` otherwise. This is review context, not authorship attribution; prompts and transcripts are not required.
 - Keep the body primarily in English. Code identifiers, file paths, logs, error messages, and short quoted examples may use their original language.
 
 ### Reviewability

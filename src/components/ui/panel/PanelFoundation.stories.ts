@@ -16,7 +16,6 @@ import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import PanelFieldGroup from './PanelFieldGroup.vue'
 import PanelGrid from './PanelGrid.vue'
 import PanelHeader from './PanelHeader.vue'
-import PanelRail from './PanelRail.vue'
 import PanelSection from './PanelSection.vue'
 
 const meta = {
@@ -47,7 +46,6 @@ export const StateMatrix: Story = {
       PanelFieldGroup,
       PanelGrid,
       PanelHeader,
-      PanelRail,
       PanelSection,
       RotateIcon,
       SegmentedControl,
@@ -98,30 +96,30 @@ export const StateMatrix: Story = {
             <template #actions>
               <IconButton label="Reset layout"><RotateIcon class="size-3.5" /></IconButton>
             </template>
-            <PanelGrid columns="two-rail">
+            <PanelGrid :columns="2">
               <PanelFieldGroup label="Width">
                 <AppInput v-model="width" tone="panel" data-story-control data-state="idle" aria-label="Width" />
               </PanelFieldGroup>
               <PanelFieldGroup label="Height">
                 <AppInput v-model="height" tone="panel" data-story-control data-state="focus" aria-label="Height" />
               </PanelFieldGroup>
-              <PanelRail>
+              <template #actions>
                 <IconButton label="Constrain proportions" size="md"><LinkIcon class="size-3.5" /></IconButton>
-              </PanelRail>
+              </template>
             </PanelGrid>
           </PanelSection>
 
           <PanelSection label="Appearance">
-            <PanelGrid columns="two-rail">
+            <PanelGrid :columns="2">
               <PanelFieldGroup label="Blend mode">
                 <AppSelect v-model="blendMode" :options="blendModes" data-story-control aria-label="Blend mode" />
               </PanelFieldGroup>
               <PanelFieldGroup label="Opacity">
                 <AppInput v-model="mixed" tone="panel" state="mixed" readonly data-story-control aria-label="Mixed opacity" />
               </PanelFieldGroup>
-              <PanelRail>
+              <template #actions>
                 <IconButton label="Toggle visibility"><EyeIcon class="size-3.5" /></IconButton>
-              </PanelRail>
+              </template>
             </PanelGrid>
           </PanelSection>
 

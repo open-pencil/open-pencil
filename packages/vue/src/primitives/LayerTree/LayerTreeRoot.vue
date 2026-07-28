@@ -8,7 +8,6 @@ import { useEditor } from '#vue/editor/context'
 import { provideLayerTree } from '#vue/primitives/LayerTree/context'
 import {
   buildLayerTreeModel,
-  indexLayerNodes,
   layerSelectionForTarget,
   patchLayerNode,
   visibleLayerRows
@@ -55,12 +54,27 @@ const { draggingId, instruction, instructionTargetId, setupItem } = useLayerDrag
   expandNode
 )
 
+let rebuildPending = false
+let rebuildToken = 0
+
 function rebuildTree() {
+  rebuildPending = false
+  rebuildToken++
   const model = buildLayerTreeModel(editor.graph, editor.state.currentPageId)
   items.value = model.items
-  nodesById = indexLayerNodes(items.value)
+  nodesById = model.byId
   expanded.value = expanded.value.filter((id) => nodesById.has(id))
   treeVersion.value++
+}
+
+function scheduleTreeRebuild() {
+  if (rebuildPending) return
+  rebuildPending = true
+  const token = ++rebuildToken
+  queueMicrotask(() => {
+    if (!rebuildPending || token !== rebuildToken) return
+    rebuildTree()
+  })
 }
 
 rebuildTree()
@@ -127,10 +141,10 @@ function onSelectionChanged(ids: string[]) {
 const unsubscribe = [
   editor.onEditorEvent('graph:replaced', rebuildTree),
   editor.onEditorEvent('page:changed', rebuildTree),
-  editor.onEditorEvent('node:created', rebuildTree),
-  editor.onEditorEvent('node:deleted', rebuildTree),
-  editor.onEditorEvent('node:reparented', rebuildTree),
-  editor.onEditorEvent('node:reordered', rebuildTree),
+  editor.onEditorEvent('node:created', scheduleTreeRebuild),
+  editor.onEditorEvent('node:deleted', scheduleTreeRebuild),
+  editor.onEditorEvent('node:reparented', scheduleTreeRebuild),
+  editor.onEditorEvent('node:reordered', scheduleTreeRebuild),
   editor.onEditorEvent('node:updated', patchTreeNode),
   editor.onEditorEvent('selection:changed', onSelectionChanged)
 ]

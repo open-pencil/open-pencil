@@ -10,6 +10,12 @@ Before opening a PR, read `CONTRIBUTING.md` and `AGENTS.md`. PRs should explain 
 
 - Add a concise summary here.
 
+### AI assistance
+
+<!-- If an LLM materially helped create or modify this PR, list the model names. Otherwise write “None”. No prompts or transcripts are required. -->
+
+Models: None
+
 ### Validation
 
 - [ ] `bun run check`

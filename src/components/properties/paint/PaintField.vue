@@ -56,7 +56,9 @@ const styles = computed(() => tv(paintFieldTheme)())
       :max="100"
       :ui="{
         root: 'h-full rounded-none border-0 bg-transparent shadow-none',
-        leading: 'hidden'
+        leading: 'hidden',
+        field: 'pl-1.5',
+        display: 'pl-1.5'
       }"
       data-property="opacity"
       @update:model-value="emit('update:opacity', Math.max(0, Math.min(1, $event / 100)))"

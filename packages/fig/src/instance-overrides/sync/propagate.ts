@@ -141,9 +141,18 @@ export function propagateOverridesTransitively(
           graph.populateInstanceChildren(node.id, sourceId, 'fig-import')
           indexCloneSubtree(graph, node.id, clonesOf)
         }
-        remapRepopulatedChildSources(graph, node.id, previousSources, clonesOf)
+        remapRepopulatedChildSources(graph, node.id, previousSources, clonesOf, activeNodeIds)
       } else if (source.childIds.length > 0 && node.childIds.length > 0) {
-        syncChildrenDeep(graph, sourceId, node.id, swappedInstances, skip, protections, clonesOf)
+        syncChildrenDeep(
+          graph,
+          sourceId,
+          node.id,
+          swappedInstances,
+          skip,
+          protections,
+          clonesOf,
+          activeNodeIds
+        )
       }
       syncQueue.push(cloneId)
     }

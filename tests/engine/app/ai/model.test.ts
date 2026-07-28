@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
+import { AI_PROVIDERS } from '@open-pencil/core/constants'
+
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { normalizeOpenRouterModel } from '@/app/ai/chat/provider-models'
+import { modelProviderAdapter } from '@/app/ai/providers/registry'
 
 describe('resolveLanguageModelID', () => {
   test('uses the selected OpenRouter model when no custom model is configured', () => {
@@ -22,6 +25,17 @@ describe('resolveLanguageModelID', () => {
         customModelID: '  meta-llama/llama-3.3-70b-instruct  '
       })
     ).toBe('meta-llama/llama-3.3-70b-instruct')
+  })
+})
+
+describe('model provider registry', () => {
+  test('registers every direct provider without handling ACP agents as models', () => {
+    for (const provider of AI_PROVIDERS) {
+      expect(modelProviderAdapter(provider.id).create).toBeFunction()
+    }
+    expect(() => modelProviderAdapter('acp:claude-code')).toThrow(
+      'ACP providers do not use direct API models'
+    )
   })
 })
 

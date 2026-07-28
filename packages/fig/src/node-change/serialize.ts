@@ -305,18 +305,61 @@ function normalizeStackCounterAlign(value: string | undefined): string | undefin
   return value === 'SPACE_EVENLY' ? 'SPACE_BETWEEN' : value
 }
 
-function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
+function normalizeStackCounterAlignItems(value: string | undefined): string | undefined {
+  const normalized = normalizeStackCounterAlign(value)
+  // Figma models cross-axis stretch on each child, not on counterAxisAlignItems.
+  return normalized === 'STRETCH' ? 'MIN' : normalized
+}
+
+function serializeInheritedCounterAxisStretch(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  graph: SceneGraph
+): void {
+  if (!node.parentId || node.layoutAlignSelf !== 'AUTO' || node.layoutPositioning === 'ABSOLUTE')
+    return
+  const parent = graph.getNode(node.parentId)
+  if (
+    parent?.counterAxisAlign === 'STRETCH' &&
+    (parent.layoutMode === 'HORIZONTAL' || parent.layoutMode === 'VERTICAL')
+  ) {
+    nc.stackChildAlignSelf = 'STRETCH'
+  }
+}
+
+function preserveTrailingPadding(
+  explicitValue: number | undefined,
+  leadingValue: number | undefined,
+  baseValue: number | undefined,
+  normalizedValue: number
+): number | undefined {
+  if (explicitValue !== undefined) return explicitValue
+  const inheritedValue = leadingValue ?? baseValue ?? normalizedValue
+  return normalizedValue !== inheritedValue ? normalizedValue : undefined
+}
+
+function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneGraph): void {
   if (!node.source.id) upsertPluginData(node, LAYOUT_DIRECTION_PLUGIN_KEY, node.layoutDirection)
   const figLayout = node.source.fig.layout
   if (figLayout) {
     nc.stackMode = normalizeStackMode(figLayout.stackMode)
     nc.stackSpacing = figLayout.stackSpacing
     nc.stackPadding = figLayout.stackPadding
-    nc.stackPaddingRight = figLayout.stackPaddingRight
-    nc.stackPaddingBottom = figLayout.stackPaddingBottom
+    nc.stackPaddingRight = preserveTrailingPadding(
+      figLayout.stackPaddingRight,
+      figLayout.stackHorizontalPadding,
+      figLayout.stackPadding,
+      node.paddingRight
+    )
+    nc.stackPaddingBottom = preserveTrailingPadding(
+      figLayout.stackPaddingBottom,
+      figLayout.stackVerticalPadding,
+      figLayout.stackPadding,
+      node.paddingBottom
+    )
     nc.stackCounterAlign = normalizeStackCounterAlign(figLayout.stackCounterAlign)
     nc.stackJustify = normalizeStackJustify(figLayout.stackJustify)
-    nc.stackCounterAlignItems = normalizeStackCounterAlign(figLayout.stackCounterAlignItems)
+    nc.stackCounterAlignItems = normalizeStackCounterAlignItems(figLayout.stackCounterAlignItems)
     nc.stackPrimaryAlignItems = normalizeStackJustify(figLayout.stackPrimaryAlignItems)
     // For imported nodes, figLayout captures the original kiwi NC values.
     // Preserve omitted sizing fields instead of materializing schema defaults.
@@ -333,6 +376,7 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
     nc.stackCounterSpacing = figLayout.stackCounterSpacing
     nc.bordersTakeSpace = figLayout.bordersTakeSpace
     if (figLayout.stackReverseZIndex) nc.stackReverseZIndex = true
+    serializeInheritedCounterAxisStretch(node, nc, graph)
     return
   }
   if (node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
@@ -345,7 +389,7 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
     nc.stackPrimarySizing = node.primaryAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
     nc.stackCounterSizing = node.counterAxisSizing === 'HUG' ? 'RESIZE_TO_FIT' : 'FIXED'
     nc.stackPrimaryAlignItems = normalizeStackJustify(node.primaryAxisAlign)
-    nc.stackCounterAlignItems = normalizeStackCounterAlign(node.counterAxisAlign)
+    nc.stackCounterAlignItems = normalizeStackCounterAlignItems(node.counterAxisAlign)
     if (node.layoutWrap === 'WRAP') nc.stackWrap = 'WRAP'
     if (node.counterAxisSpacing > 0) nc.stackCounterSpacing = node.counterAxisSpacing
     nc.bordersTakeSpace = node.strokesIncludedInLayout
@@ -355,6 +399,8 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange): void {
   if (node.layoutGrow > 0) nc.stackChildPrimaryGrow = node.layoutGrow
   if (node.layoutAlignSelf !== 'AUTO') {
     nc.stackChildAlignSelf = node.layoutAlignSelf
+  } else {
+    serializeInheritedCounterAxisStretch(node, nc, graph)
   }
 }
 
@@ -498,7 +544,7 @@ export function sceneNodeToKiwi(
     serializeCornerRadii,
     serializeTextProps: (textNode, nc, textGraph, digests, textBlobs, glyphs) =>
       serializeTextProps(textNode, nc, textGraph, digests, textBlobs, glyphs, runtime),
-    serializeLayoutProps,
+    serializeLayoutProps: (layoutNode, nc) => serializeLayoutProps(layoutNode, nc, graph),
     serializeGeometry,
     serializeVariableBindings,
     sceneNodeToKiwi: sceneNodeToKiwiWithContext

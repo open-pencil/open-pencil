@@ -11,6 +11,7 @@ import {
 } from 'reka-ui'
 
 import AppBadge from '@/components/ui/AppBadge.vue'
+import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import { useInputUI } from '@/components/ui/input'
 import { useSelectUI } from '@/components/ui/select'
 
@@ -23,6 +24,7 @@ export type AppComboboxOption = {
 interface AppComboboxInputProps {
   options: AppComboboxOption[]
   placeholder?: string
+  emptyLabel?: string
   ui?: {
     input?: string
     content?: string
@@ -34,7 +36,7 @@ interface AppComboboxInputProps {
 
 defineOptions({ inheritAttrs: false })
 
-const { options, placeholder, ui } = defineProps<AppComboboxInputProps>()
+const { options, placeholder, emptyLabel = 'No results', ui } = defineProps<AppComboboxInputProps>()
 
 const modelValue = defineModel<string>({ required: true })
 const open = ref(false)
@@ -45,7 +47,6 @@ const select = useSelectUI({
 })
 const inputClass = computed(() => useInputUI({ size: 'sm', ui: { base: ui?.input } }).base)
 const viewportClass = ui?.viewport ?? 'max-h-56 overflow-y-auto p-0.5'
-const emptyClass = ui?.empty ?? 'px-2 py-2 text-[11px] text-muted'
 
 const filteredOptions = computed(() => {
   const query = modelValue.value.trim().toLowerCase()
@@ -107,7 +108,13 @@ function updateValue(value: AcceptableValue) {
             </div>
             <AppBadge v-if="option.meta">{{ option.meta }}</AppBadge>
           </ComboboxItem>
-          <div v-if="filteredOptions.length === 0" :class="emptyClass">No matching models</div>
+          <AppPlaceholder
+            v-if="filteredOptions.length === 0"
+            :label="emptyLabel"
+            :fill="false"
+            size="compact"
+            :ui="{ root: ui?.empty }"
+          />
         </ComboboxViewport>
       </ComboboxContent>
     </ComboboxPortal>

@@ -1,35 +1,11 @@
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { parseColor } from '#core/color'
 import { createPathStroke } from '#core/icons/path-style'
 import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'
+import { parseSVGSize } from '#core/io/formats/svg/metadata'
 import { defineTool } from '#core/tools/schema'
-
-function parseSvgViewBox(svg: string): Rect | null {
-  const match = svg.match(/viewBox="([^"]+)"/)
-  if (!match) return null
-  const [x, y, w, h] = match[1].split(/[\s,]+/).map(Number)
-  if ([x, y, w, h].some((n) => !Number.isFinite(n))) return null
-  return { x, y, width: w, height: h }
-}
-
-function parseSvgDimension(svg: string, attr: string): number | null {
-  const match = svg.match(new RegExp(`\\b${attr}="([^"]+)"`))
-  if (!match) return null
-  const n = Number.parseFloat(match[1])
-  return Number.isFinite(n) && n > 0 ? n : null
-}
-
-function parseSvgSize(svg: string): { width: number; height: number } {
-  const viewBox = parseSvgViewBox(svg)
-  const w = parseSvgDimension(svg, 'width')
-  const h = parseSvgDimension(svg, 'height')
-  if (w && h) return { width: w, height: h }
-  if (viewBox) return { width: viewBox.width, height: viewBox.height }
-  return { width: 24, height: 24 }
-}
 
 function createVectorFromPath(
   figma: Parameters<Parameters<typeof defineTool>[0]['execute']>[0],
@@ -102,7 +78,7 @@ export const importSvg = defineTool({
     const paths = extractPaths(svg)
     if (paths.length === 0) return { error: 'No supported SVG elements found in the markup' }
 
-    const { width, height } = parseSvgSize(svg)
+    const { width, height } = parseSVGSize(svg)
     const defaultColor = args.color ?? '#000000'
     const parentId = args.parent_id ?? figma.currentPage.id
 

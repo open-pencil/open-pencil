@@ -1,5 +1,5 @@
-import { browser, localeFrom } from '@nanostores/i18n'
-import { atom } from 'nanostores'
+import { localeFrom } from '@nanostores/i18n'
+import { atom, onStart } from 'nanostores'
 
 export const AVAILABLE_LOCALES = ['en', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'ru', 'zh-CN'] as const
 export type Locale = (typeof AVAILABLE_LOCALES)[number]
@@ -43,7 +43,29 @@ const LOCALE_STORAGE_KEY = 'open-pencil-locale'
 
 export const localeSetting = atom<Locale | undefined>(undefined)
 
-export const locale = localeFrom(localeSetting, browser({ available: AVAILABLE_LOCALES }))
+export function resolveBrowserLocale(languages: readonly string[]): Locale {
+  const localesByCode = new Map(AVAILABLE_LOCALES.map((code) => [code.toLowerCase(), code]))
+  for (const language of languages) {
+    const normalized = language.toLowerCase()
+    const exact = localesByCode.get(normalized)
+    if (exact) return exact
+
+    const base = normalized.split('-')[0]
+    const baseLocale = localesByCode.get(base)
+    if (baseLocale) return baseLocale
+  }
+  return 'en'
+}
+
+const browserLocale = atom<Locale>('en')
+onStart(browserLocale, () => {
+  if (typeof navigator === 'undefined') return
+  const browserLanguages = Array.isArray(navigator.languages) ? navigator.languages : []
+  const languages = browserLanguages.length > 0 ? browserLanguages : [navigator.language || 'en']
+  browserLocale.set(resolveBrowserLocale(languages))
+})
+
+export const locale = localeFrom(localeSetting, browserLocale)
 
 function getLocalStorage(): Storage | null {
   if (typeof localStorage === 'undefined') return null

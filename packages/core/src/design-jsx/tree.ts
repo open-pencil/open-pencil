@@ -135,6 +135,7 @@ export type StyleProps = {
   cornerSmoothing?: number
   opacity?: number
   blendMode?: string
+  mask?: boolean | 'alpha' | 'luminance' | 'vector'
   rotate?: number
   rotation?: number
   overflow?: 'hidden' | 'visible'

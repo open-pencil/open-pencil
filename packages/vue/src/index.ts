@@ -54,7 +54,11 @@ export type {
   UseFlatReorderDragOptions
 } from '#vue/shared/drag/useFlatReorderDrag'
 export { useInlineRename } from '#vue/editor/inline-rename/use'
-export { useToolbarState } from '#vue/primitives/Toolbar/useToolbarState'
+export {
+  getToolbarToolSelection,
+  isToolbarToolActive,
+  useToolbarState
+} from '#vue/primitives/Toolbar/useToolbarState'
 export { useNodeFontStatus } from '#vue/shared/font-status/use'
 export { usePropScrub } from '#vue/controls/prop-scrub/use'
 export { toolCursor } from '#vue/editor/tool-cursor'
@@ -242,6 +246,14 @@ export type {
   PropertyListRootSlotProps,
   PropertyListRootSlots
 } from '#vue/primitives/PropertyList'
+export { PropertyGridRoot } from '#vue/primitives/PropertyGrid'
+export type {
+  PropertyGridColumns,
+  PropertyGridDistribution,
+  PropertyGridRootProps,
+  PropertyGridRootSlots
+} from '#vue/primitives/PropertyGrid'
+
 export {
   PropertySectionRoot,
   PropertySectionHeader,

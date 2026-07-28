@@ -35,7 +35,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Shape tools (Rectangle, Ellipse, Line, Polygon, Star) | ✅ | All basic shape types; polygon side count and star inner radius configurable |
-| Frames | ✅ | Clip content, independent coordinate system |
+| Frames | ✅ | Clip content, independent coordinate system, and Figma-style creation and resize presets |
 | Groups | ✅ | <kbd>⌘</kbd><kbd>G</kbd> to group, <kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd> to ungroup |
 | Sections | ✅ | Title pills, auto-adopt overlapping nodes, luminance-adaptive text |
 | Arc tool (arcs, semi-circles, rings) | ✅ | arcData with start/end angle and inner radius |

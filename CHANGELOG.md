@@ -2,9 +2,17 @@
 
 ## Unreleased
 
+### Fixed
+
+- Match regional browser languages to supported locales without selecting a secondary language. (#417)
+- Save auto-layout frames that stretch their children to `.fig` without failing. (#427)
+- Reduce large `.fig` page-switch work to the active page and coalesce Layers tree rebuilds. (#420)
+- Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
+
 ### Added
 
 - Export selections, pages and documents as editable PowerPoint (`.pptx`) files from the File menu, CLI and SDK: text, rectangles, ellipses and lines stay native editable elements, while gradients, masks, blends, vectors and icons fall back to embedded images.
+- Figma-style Assets panel browsing with component thumbnails, grid/list views, page grouping, context actions, and drag-to-canvas insertion.
 - Import HTML, CSS, Tailwind, and JSX as editable documents from the app, CLI, and SDK, and export standalone browser-ready HTML with compiled CSS and optional external assets.
 - Author richer Design JSX with components, instances, variables, gradients, structured fills, shadows, and blur effects.
 - Manage pages with rename, delete, and drag-to-reorder actions in the Pages panel.
@@ -15,11 +23,19 @@
 - Drag with the Text tool to create a fixed-size text box, or click to create auto-width text.
 - Target a specific open document and page from live CLI and MCP automation, including sessions with multiple documents.
 - Test OpenAI-compatible provider connections from AI settings with clearer setup errors.
-- Build custom property panels with new Vue SDK number fields, bindable values, property sections, segmented controls, property lists, color models, fill controls, and gradient primitives.
+- Manage AI, agent, and media credentials from unified Settings, using the system credential store on desktop and encrypted browser storage by default with a session-only option.
+- Assign separate Design, Review, Fast, and Vision models, providers, endpoints, and credentials from AI settings.
+- Connect an S3-compatible storage workspace with local-first saves, background synchronization, and centrally managed credentials.
+- Convert image layers into editable vector layers with Recraft or fal.ai from the canvas context menu. (#322)
+- Build custom property panels with new Vue SDK number fields, bindable values, property sections, responsive property grids, segmented controls, property lists, color models, fill controls, and gradient primitives.
+- Connect local MCP clients through automatically discovered private Unix sockets on macOS and Linux, with localhost TCP fallback. (#338)
+- Create centered frames from current Figma-style device and asset presets, or resize selected frames from the Design panel while preserving their names.
 
 ### Changed
 
+- Choose Freeform, vertical, horizontal, or grid flow directly from the contextual Layout section, with sizing grouped alongside it and current Layout guide terminology.
 - Redesign the editor chrome and Design panel with denser aligned controls, clearer selection and section states, improved menus and overlays, consistent light/dark theming, and better keyboard and screen-reader behavior.
+- Center full-area empty and setup states consistently across panels, dialogs, and workspaces.
 - Scale the Layers panel to documents with thousands of nodes through virtualized rows, faster incremental updates, stable expansion, range selection, and scroll-to-selection.
 - Resolve fonts before text appears, with language-aware CJK and Arabic fallback, character-specific remote subsets, and more reliable rendering as fonts load.
 - Open and save large `.fig` documents substantially faster while preserving original metadata and user edits; corrupted compressed data now reports an error instead of being opened as valid content.
@@ -27,19 +43,24 @@
 
 ### Fixed
 
+- Keep MCP file access inside its configured root even when paths contain symlinks, and harden local authentication token checks. (#338)
 - Keep desktop text visible across the scene and overlay canvases, refresh it after local fonts load, and preserve rendering when a requested italic face is unavailable (#395).
 - Honor node-scoped variable modes in `.fig` files so light and dark component examples keep their intended colors.
-- Preserve nested instance text, visibility, and paint overrides across repeated children and component swaps in `.fig` files.
+- Preserve nested instance text, visibility, paint, geometry, and clipping across repeated children and component swaps in `.fig` files.
 - Improve `.fig` import and rendering fidelity for groups, booleans, instances, rotated vectors, complex text fills, auto-sized text, layout grids, page guides, patterns, noise effects, masks, and canvas backgrounds.
 - Preserve pages, components, prototype and library metadata, export settings, unsupported effects, and other unrelated Figma data when editing and resaving `.fig` files.
 - Prevent duplicate generated IDs from corrupting `.fig` round trips.
+- Populate lazy `.fig` pages for file-mode CLI inspection, preserve the whole document when exporting FIG unless a page is explicitly requested, and expose vector paths and variable modes to Plugin API scripts.
 - Match Figma auto-layout reflow after deleting children, hiding optional instance slots, or syncing component changes.
 - Make group and boolean-operation children scale with their parent during resize.
 - Restore desktop copy, cut, and paste when browser clipboard events are unavailable.
+- Show only the most specific tooltip when property controls contain nested actions.
+- Start globally installed ACP agents correctly on Windows instead of reporting them as unavailable (#361).
 - Keep duplicated layers independent instead of sharing mutable fills, strokes, bindings, overrides, or vector data, and remove stale bindings when paints are deleted.
 - Preserve Hangul IME composition while editing text.
 - Share public app links from the desktop collaboration panel and send the current document to newly joined collaborators.
 - Resolve published package types correctly for TypeScript consumers and keep file-backed CLI commands working under Node.
+- Reuse the existing tab when reopening a file through its desktop path or browser file handle, avoiding duplicate watchers and conflicting saves (#297).
 
 ### Security
 

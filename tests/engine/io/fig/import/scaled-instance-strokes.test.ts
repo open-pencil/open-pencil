@@ -5,6 +5,15 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { canvas, doc, node } from './legacy/helpers'
 
+function pointGeometry(x: number, y: number): Uint8Array {
+  const bytes = new Uint8Array(9)
+  bytes[0] = 1
+  const view = new DataView(bytes.buffer)
+  view.setFloat32(1, x, true)
+  view.setFloat32(5, y, true)
+  return bytes
+}
+
 describe('fig import scaled instance strokes', () => {
   test('preserves vector stroke weight while scaling icon geometry', () => {
     const componentGuid = { sessionID: 1, localID: 10 }
@@ -54,6 +63,57 @@ describe('fig import scaled instance strokes', () => {
 
     expect(vector?.strokes[0]?.weight).toBe(2)
     expect(vector?.strokes[0]?.color).toEqual({ r: 0.2, g: 0.25, b: 0.33, a: 1 })
+  })
+
+  test('does not scale explicit derived vector geometry twice', () => {
+    const componentGuid = { sessionID: 1, localID: 21 }
+    const vectorGuid = { sessionID: 1, localID: 22 }
+    const graph = importNodeChanges(
+      [
+        doc(),
+        canvas(),
+        node('SYMBOL', 21, 1, {
+          guid: componentGuid,
+          size: { x: 24, y: 24 }
+        } as Partial<NodeChange>),
+        node('VECTOR', 22, 1, {
+          guid: vectorGuid,
+          parentIndex: { guid: componentGuid, position: '!' },
+          size: { x: 12, y: 12 },
+          horizontalConstraint: 'SCALE',
+          verticalConstraint: 'SCALE',
+          fillGeometry: [{ commandsBlob: 0, windingRule: 'NONZERO' }]
+        } as Partial<NodeChange>),
+        node('INSTANCE', 23, 1, {
+          size: { x: 16, y: 16 },
+          symbolData: { symbolID: componentGuid },
+          derivedSymbolData: [
+            {
+              guidPath: { guids: [vectorGuid] },
+              size: { x: 8, y: 8 },
+              fillGeometry: [{ commandsBlob: 1, windingRule: 'NONZERO' }]
+            }
+          ]
+        } as Partial<NodeChange>)
+      ],
+      [pointGeometry(12, 12), pointGeometry(6, 6)],
+      undefined,
+      { populate: 'all' }
+    )
+
+    const instance = Array.from(graph.getAllNodes()).find(
+      (sceneNode) => sceneNode.name === 'INSTANCE_23'
+    )
+    const vector = instance?.childIds.map((id) => graph.getNode(id)).find(Boolean)
+    const geometry = vector?.fillGeometry[0]?.commandsBlob
+    expect(geometry).toBeDefined()
+    const view = new DataView(
+      geometry?.buffer ?? new ArrayBuffer(0),
+      geometry?.byteOffset ?? 0,
+      geometry?.byteLength ?? 0
+    )
+    expect(view.getFloat32(1, true)).toBe(6)
+    expect(view.getFloat32(5, true)).toBe(6)
   })
 
   test('applies explicit instance stroke scale to scaled vectors', () => {

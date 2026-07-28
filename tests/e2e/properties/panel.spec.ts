@@ -68,6 +68,32 @@ test('appearance fields share control height and show variable actions', async (
   expect(opacityBox.width).toBeGreaterThanOrEqual(40)
 })
 
+test('property fields show only the most specific tooltip', async () => {
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
+
+  const widthField = propertyField(editor.page, 'width')
+  const variableTrigger = widthField.getByRole('button', { name: 'Apply variable' })
+  const tooltips = editor.page.getByRole('tooltip')
+
+  await widthField.hover({ position: { x: 40, y: 12 } })
+  await expect(tooltips).toHaveText('Width')
+  await expect(tooltips).toHaveCount(1)
+
+  await variableTrigger.hover()
+  await expect(tooltips).toHaveText('Apply variable')
+  await expect(tooltips).toHaveCount(1)
+
+  await editor.page.mouse.move(500, 400)
+  await variableTrigger.focus()
+  await expect(tooltips).toHaveText('Apply variable')
+  await expect(tooltips).toHaveCount(1)
+
+  await propertyField(editor.page, 'height').hover({ position: { x: 40, y: 12 } })
+  await expect(tooltips).toHaveText('Height')
+  await expect(tooltips).toHaveCount(1)
+})
+
 test('NumberField drag changes X position', async () => {
   await editor.canvas.clearCanvas()
   await editor.canvas.drawRect(100, 100, 80, 80)

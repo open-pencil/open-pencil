@@ -35,6 +35,23 @@ describe('fig import derived symbol data', () => {
     expect(clone.figmaDerivedLayout).toEqual(source.figmaDerivedLayout)
   })
 
+  test('keeps the existing position when derived data only changes size', () => {
+    const graph = new SceneGraph()
+    const component = graph.createNode('COMPONENT', pageId(graph), { x: 100, y: 100 })
+    const target = graph.createNode('INSTANCE', pageId(graph), {
+      x: 8,
+      y: 8,
+      componentId: component.id
+    })
+    const ctx = { graph, blobs: [] } as OverrideContext
+
+    const { updates } = buildDsdLayoutUpdates(ctx, new Map(), { size: { x: 184, y: 36 } }, target)
+
+    expect(updates).toMatchObject({ width: 184, height: 36 })
+    expect(updates.x).toBeUndefined()
+    expect(updates.y).toBeUndefined()
+  })
+
   test('routes derived text glyphs through layout patch updates', () => {
     const graph = new SceneGraph()
     const target = graph.createNode('TEXT', pageId(graph), { text: 'Menu Item' })

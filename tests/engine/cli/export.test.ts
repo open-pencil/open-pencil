@@ -31,10 +31,69 @@ async function createFigFixture() {
   rect.paddingBottom = 16
   rect.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 } }]
 
+  const secondPage = graph.addPage('Second Page')
+  createRect(graph, secondPage.id, {
+    name: 'Second Card',
+    x: 0,
+    y: 0,
+    width: 120,
+    height: 60
+  })
+
   const result = await io.writeDocument('fig', graph)
   await Bun.write(figPath, result.data as Uint8Array)
   return { dir, figPath }
 }
+
+test('FIG export preserves the whole document by default', async () => {
+  const { dir, figPath } = await createFigFixture()
+  const output = join(dir, 'whole.fig')
+
+  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    'export',
+    figPath,
+    '--format',
+    'fig',
+    '--output',
+    output
+  ])
+
+  expect(stderr).toBe('')
+  expect(exitCode).toBe(0)
+  expect(stdout).toContain('Target: whole document')
+
+  const { graph } = await io.readDocument({
+    name: output,
+    data: new Uint8Array(await Bun.file(output).arrayBuffer())
+  })
+  expect(graph.getPages()).toHaveLength(3)
+  expect(graph.getPages().map((page) => page.name)).toContain('Second Page')
+})
+
+test('FIG export requires an explicit page for a partial archive', async () => {
+  const { dir, figPath } = await createFigFixture()
+  const output = join(dir, 'page.fig')
+
+  const { stderr, exitCode } = await runOpenPencilCLI([
+    'export',
+    figPath,
+    '--format',
+    'fig',
+    '--page',
+    'Second Page',
+    '--output',
+    output
+  ])
+
+  expect(stderr).toBe('')
+  expect(exitCode).toBe(0)
+
+  const { graph } = await io.readDocument({
+    name: output,
+    data: new Uint8Array(await Bun.file(output).arrayBuffer())
+  })
+  expect(graph.getPages().map((page) => page.name)).toEqual(['Second Page'])
+})
 
 test('export CLI writes HTML with inline styles by default', async () => {
   const { dir, figPath } = await createFigFixture()

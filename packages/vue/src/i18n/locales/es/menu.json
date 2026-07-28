@@ -42,6 +42,7 @@
   "copyAsJSX": "Copiar como JSX",
   "copyNodeId": "Copiar ID del nodo",
   "copyXPath": "Copiar XPath",
+  "convertToVector": "Convertir a vector",
   "checkUpdates": "Buscar actualizaciones…",
   "booleanOperations": "Operaciones booleanas",
   "closeTab": "Cerrar pestaña",

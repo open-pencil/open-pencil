@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+
 import {
   applyStyleRefsToFields,
   buildStyleOverrideTable,
@@ -8,9 +10,13 @@ import {
   convertFontFeatures,
   convertLetterSpacing,
   convertLineHeight,
+  convertStrokes,
   decodeVectorNetworkBlob,
+  encodePathCommandsBlob,
   encodeVectorNetworkBlob,
-  mapTextDecoration
+  mapTextDecoration,
+  nodeChangeToProps,
+  setVariableColorResolver
 } from '../src/node-change'
 
 describe('@open-pencil/fig NodeChange policy', () => {
@@ -43,6 +49,76 @@ describe('@open-pencil/fig NodeChange policy', () => {
       radius: 0,
       visible: true
     })
+  })
+
+  test('keeps resolved variable alpha in paint opacity', () => {
+    setVariableColorResolver(() => ({ r: 1, g: 0, b: 0, a: 0.4 }))
+    try {
+      const paint = {
+        type: 'SOLID',
+        color: { r: 0, g: 0, b: 0, a: 1 },
+        colorVar: { value: { alias: { guid: { sessionID: 1, localID: 2 } } } }
+      }
+      expect(convertFills([paint])[0]).toMatchObject({
+        color: { r: 1, g: 0, b: 0, a: 1 },
+        opacity: 0.4
+      })
+      expect(convertStrokes([paint])[0]).toMatchObject({
+        color: { r: 1, g: 0, b: 0, a: 1 },
+        opacity: 0.4
+      })
+    } finally {
+      setVariableColorResolver(null)
+    }
+  })
+
+  test('uses vector-region winding rules for rendered geometry', () => {
+    const network = {
+      vertices: [
+        { x: 0, y: 0, handleMirroring: 'NONE' as const },
+        { x: 10, y: 0, handleMirroring: 'NONE' as const },
+        { x: 0, y: 10, handleMirroring: 'NONE' as const }
+      ],
+      segments: [
+        {
+          start: 0,
+          end: 1,
+          tangentStart: { x: 0, y: 0 },
+          tangentEnd: { x: 0, y: 0 }
+        },
+        {
+          start: 1,
+          end: 2,
+          tangentStart: { x: 0, y: 0 },
+          tangentEnd: { x: 0, y: 0 }
+        },
+        {
+          start: 2,
+          end: 0,
+          tangentStart: { x: 0, y: 0 },
+          tangentEnd: { x: 0, y: 0 }
+        }
+      ],
+      regions: [{ windingRule: 'EVENODD' as const, loops: [[0, 1, 2]] }]
+    }
+    const props = nodeChangeToProps(
+      {
+        type: 'VECTOR',
+        fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: 0 }],
+        vectorData: { vectorNetworkBlob: 1 }
+      } as NodeChange,
+      [
+        encodePathCommandsBlob([
+          { type: 'M', x: 0, y: 0 },
+          { type: 'L', x: 10, y: 0 },
+          { type: 'L', x: 0, y: 10 },
+          { type: 'Z' }
+        ]),
+        encodeVectorNetworkBlob(network)
+      ]
+    )
+
+    expect(props.fillGeometry[0]?.windingRule).toBe('EVENODD')
   })
 
   test('round-trips vector network blobs with handle mirroring', () => {

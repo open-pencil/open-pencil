@@ -8,6 +8,7 @@ import {
   SECTION_DEFAULT_STROKE
 } from '#core/constants'
 
+import { createFramePresetActions } from './shapes/frame-presets'
 import { createPenActions } from './shapes/pen'
 import { adoptNodesIntoSection as adoptNodesIntoSectionImpl } from './shapes/section-adopt'
 import type { EditorContext } from './types'
@@ -38,7 +39,8 @@ export function createShapeActions(ctx: EditorContext) {
     y: number,
     w: number,
     h: number,
-    parentId?: string
+    parentId?: string,
+    name?: string
   ): string {
     const fill = DEFAULT_FILLS[type] ?? DEFAULT_FILLS.RECTANGLE
     const pid = parentId ?? ctx.state.currentPageId
@@ -47,7 +49,8 @@ export function createShapeActions(ctx: EditorContext) {
       y,
       width: w,
       height: h,
-      fills: [{ ...fill }]
+      fills: [{ ...fill }],
+      ...(name ? { name } : {})
     }
     if (type === 'SECTION') {
       overrides.strokes = [{ ...SECTION_DEFAULT_STROKE }]
@@ -79,6 +82,7 @@ export function createShapeActions(ctx: EditorContext) {
   }
 
   const penActions = createPenActions(ctx, createShape)
+  const framePresetActions = createFramePresetActions(ctx, createShape)
 
   function setTool(tool: typeof ctx.state.activeTool) {
     ctx.setActiveTool(tool)
@@ -87,6 +91,7 @@ export function createShapeActions(ctx: EditorContext) {
   return {
     createShape,
     ...penActions,
+    ...framePresetActions,
     adoptNodesIntoSection: (sectionId: string) => adoptNodesIntoSectionImpl(ctx, sectionId),
     setTool
   }

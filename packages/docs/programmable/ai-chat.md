@@ -11,8 +11,10 @@ Press <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) to open the AI
 
 1. Open the AI chat panel (<kbd>⌘</kbd><kbd>J</kbd>)
 2. Click the settings icon
-3. Choose a provider and enter your API key
-4. Select a model
+3. Add a model and configure its provider, model ID, credentials, and capabilities
+4. Save the model and assign it to **Design agent**
+
+You can configure multiple reusable models and separately assign models for design work, reviews, fast tasks, and image input. Models using the same provider connection reuse its stored credential.
 
 ### Supported Providers
 

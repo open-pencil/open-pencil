@@ -2,7 +2,7 @@ import { executeRpcCommand } from '@open-pencil/core/rpc'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetRpcArgs, type AppTargetCliArgs } from '#cli/app-target'
-import { loadDocument } from '#cli/headless'
+import { loadDocument, prepareDocumentForRpc } from '#cli/headless'
 
 type RpcArgs = { [key: string]: unknown }
 
@@ -23,5 +23,6 @@ export async function loadRpcData<Result>(
     })
   }
   const graph = await loadDocument(requireFile(file))
+  prepareDocumentForRpc(graph, command, args)
   return executeRpcCommand(graph, command, args) as Result
 }

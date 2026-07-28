@@ -75,6 +75,7 @@ export interface InstanceNodeChange {
   guid?: GUID
   parentIndex?: { guid?: GUID }
   transform?: Matrix
+  size?: Vector
   overrideKey?: GUID
   symbolData?: SymbolData
   componentPropRefs?: ComponentPropRef[]
@@ -82,6 +83,7 @@ export interface InstanceNodeChange {
   componentPropDefs?: ComponentPropDef[]
   styleType?: string
   fillPaints?: NodeChange['fillPaints']
+  strokePaints?: NodeChange['strokePaints']
   fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
   strokeWeight?: number

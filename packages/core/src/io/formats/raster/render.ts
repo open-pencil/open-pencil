@@ -223,6 +223,27 @@ function renderToSurface(
   }
 }
 
+function prepareSelectionRenderGraph(
+  source: SceneGraph,
+  renderGraph: SceneGraph,
+  pageId: string,
+  nodeIds: string[]
+): void {
+  const page = renderGraph.getNode(pageId)
+  if (!page) return
+
+  page.childIds = nodeIds.filter((nodeId) => renderGraph.getNode(nodeId) !== undefined)
+  for (const nodeId of page.childIds) {
+    const node = renderGraph.getNode(nodeId)
+    if (!node) continue
+    const position = source.getAbsolutePosition(nodeId)
+    node.parentId = pageId
+    node.x = position.x
+    node.y = position.y
+  }
+  renderGraph.clearAbsPosCache()
+}
+
 export function renderNodesToImage(
   ck: CanvasKit,
   renderer: SkiaRenderer,
@@ -253,6 +274,9 @@ export function renderNodesToImage(
     ? graph
     : extracted.graph
   const renderPageId = renderGraph === graph ? pageId : extracted.pageId
+  if (renderGraph !== graph) {
+    prepareSelectionRenderGraph(graph, renderGraph, renderPageId, nodeIds)
+  }
 
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
   return renderToSurface(

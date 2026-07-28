@@ -42,6 +42,7 @@
   "copyAsJSX": "JSXとしてコピー",
   "copyNodeId": "ノードIDをコピー",
   "copyXPath": "XPathをコピー",
+  "convertToVector": "ベクターに変換",
   "checkUpdates": "アップデートを確認…",
   "booleanOperations": "パスの型抜き (ブーリアン演算)",
   "closeTab": "タブを閉じる",

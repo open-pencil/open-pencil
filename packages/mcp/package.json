@@ -21,6 +21,18 @@
       "types": "./dist/stdio.d.mts",
       "import": "./dist/stdio.mjs",
       "default": "./dist/stdio.mjs"
+    },
+    "./transport": {
+      "types": "./dist/transport.d.mts",
+      "bun": "./src/transport/paths.ts",
+      "import": "./dist/transport.mjs",
+      "default": "./dist/transport.mjs"
+    },
+    "./discovery": {
+      "types": "./dist/discovery.d.mts",
+      "bun": "./src/transport/discovery.ts",
+      "import": "./dist/discovery.mjs",
+      "default": "./dist/discovery.mjs"
     }
   },
   "bin": {

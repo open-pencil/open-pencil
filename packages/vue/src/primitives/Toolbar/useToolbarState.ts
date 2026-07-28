@@ -4,6 +4,19 @@ import type { Tool, EditorToolDef } from '@open-pencil/core/editor'
 
 const CATEGORY_COUNT = 3
 
+export function isToolbarToolActive(tool: EditorToolDef, activeTool: Tool): boolean {
+  return tool.key === activeTool || (tool.flyout?.includes(activeTool) ?? false)
+}
+
+export function getToolbarToolSelection(
+  tool: EditorToolDef,
+  activeTool: Tool,
+  flyoutSelections?: ReadonlyMap<Tool, Tool>
+): Tool {
+  if (tool.flyout?.includes(activeTool)) return activeTool
+  return flyoutSelections?.get(tool.key) ?? tool.key
+}
+
 /**
  * Returns responsive toolbar UI state for mobile category paging.
  *
@@ -16,16 +29,6 @@ export function useToolbarState() {
 
   const hasPrev = computed(() => mobileCategory.value > 0)
   const hasNext = computed(() => mobileCategory.value < CATEGORY_COUNT - 1)
-
-  function isActive(tool: EditorToolDef, activeTool: Tool): boolean {
-    if (tool.key === activeTool) return true
-    return tool.flyout?.includes(activeTool) ?? false
-  }
-
-  function activeKeyForTool(tool: EditorToolDef, activeTool: Tool): Tool {
-    if (tool.flyout?.includes(activeTool)) return activeTool
-    return tool.key
-  }
 
   function goPrev() {
     if (!hasPrev.value) return
@@ -44,8 +47,8 @@ export function useToolbarState() {
     slideDirection,
     hasPrev,
     hasNext,
-    isActive,
-    activeKeyForTool,
+    isActive: isToolbarToolActive,
+    activeKeyForTool: getToolbarToolSelection,
     goPrev,
     goNext
   }

@@ -38,6 +38,9 @@ export function applyOverridePatch(ctx: OverrideContext, patch: OverridePatch): 
     const target = ctx.graph.getNode(patch.targetId)
     if (target) {
       const props = patch.props
+      if (props.boundVariables) {
+        props.boundVariables = { ...target.boundVariables, ...props.boundVariables }
+      }
       preserveStrokeShapeProps(target, props)
       ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(patch.targetId, props))
       protectPatchProps(ctx.protectedFields, patch.targetId, props)

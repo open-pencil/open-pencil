@@ -47,11 +47,21 @@ function resolveColorVar(paint: Paint): Color | undefined {
   return variableColorResolver(alias) ?? undefined
 }
 
+function resolvedPaintColor(paint: Paint): { color: Color; opacity: number } {
+  const resolved = resolveColorVar(paint)
+  if (!resolved) return { color: convertColor(paint.color), opacity: paint.opacity ?? 1 }
+  return {
+    color: { ...resolved, a: paint.color?.a ?? 1 },
+    opacity: paint.opacity ?? resolved.a
+  }
+}
+
 function convertBaseFill(p: Paint): Fill {
+  const { color, opacity } = resolvedPaintColor(p)
   return {
     type: p.type as FillType,
-    color: convertColor(resolveColorVar(p) ?? p.color),
-    opacity: p.opacity ?? 1,
+    color,
+    opacity,
     visible: p.visible ?? true,
     blendMode: (p.blendMode ?? 'NORMAL') as BlendMode
   }
@@ -119,16 +129,19 @@ export function convertStrokes(
   if (align === 'INSIDE') strokeAlign = 'INSIDE'
   else if (align === 'OUTSIDE') strokeAlign = 'OUTSIDE'
 
-  return paints.map((p) => ({
-    color: convertColor(resolveColorVar(p) ?? p.color),
-    weight: weight ?? 1,
-    opacity: p.opacity ?? 1,
-    visible: p.visible ?? true,
-    align: strokeAlign,
-    cap: cap ?? 'NONE',
-    join: join ?? 'MITER',
-    dashPattern: dashPattern ?? []
-  }))
+  return paints.map((p) => {
+    const { color, opacity } = resolvedPaintColor(p)
+    return {
+      color,
+      weight: weight ?? 1,
+      opacity,
+      visible: p.visible ?? true,
+      align: strokeAlign,
+      cap: cap ?? 'NONE',
+      join: join ?? 'MITER',
+      dashPattern: dashPattern ?? []
+    }
+  })
 }
 
 export function convertEffects(effects?: KiwiEffect[]): Effect[] {
