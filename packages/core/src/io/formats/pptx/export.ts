@@ -224,7 +224,14 @@ async function addSlideFramePaint(ctx: ExportCtx, root: SceneNode): Promise<void
 
 /** Why a slide frame's content must be rasterized as one composited image. */
 function rootContentFallbackReason(ctx: ExportCtx, root: SceneNode): string | null {
-  if (root.childIds.some((id) => ctx.graph.getNode(id)?.isMask)) return 'contains mask'
+  if (
+    root.childIds.some((id) => {
+      const child = ctx.graph.getNode(id)
+      return child?.visible === true && child.isMask
+    })
+  ) {
+    return 'contains mask'
+  }
   if (clipsOverflowingContent(ctx.graph, root)) return 'clipped content'
   return null
 }

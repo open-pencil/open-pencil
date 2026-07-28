@@ -281,6 +281,37 @@ describe('renderNodesToPPTX()', () => {
     expect(reported.fallbackReasons['contains mask']).toBe(1)
   })
 
+  test('an invisible mask does not flatten an otherwise editable root frame', async () => {
+    const graph = makeGraph()
+    const frame = makeSlideFrame(graph, 'Slide with hidden mask')
+    graph.createNode('RECTANGLE', frame.id, {
+      width: 200,
+      height: 200,
+      isMask: true,
+      visible: false,
+      fills: [solidFill(0, 0, 0)]
+    })
+    graph.createNode('RECTANGLE', frame.id, {
+      x: 100,
+      y: 100,
+      width: 300,
+      height: 300,
+      fills: [solidFill(1, 0, 0)]
+    })
+
+    const rasterCalls: string[][] = []
+    const data = await renderNodesToPPTX(graph, pageId(graph), [frame.id], {
+      rasterize: (ids) => {
+        rasterCalls.push(ids)
+        return Promise.resolve(TINY_PNG)
+      }
+    })
+    expect(data).not.toBeNull()
+    if (!data) return
+    expect(rasterCalls).toEqual([])
+    expect(slideXml(unzipPptx(data), 1)).toContain('FF0000')
+  })
+
   test('a clipped frame with an overflowing child rasterizes as one image', async () => {
     const graph = makeGraph()
     const frame = makeSlideFrame(graph, 'Slide')
