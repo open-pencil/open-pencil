@@ -1,6 +1,7 @@
-export {
-  renderNodesToPPTX,
-  type PPTXExportOptions,
-  type PPTXExportStats,
-  type PPTXRasterize
-} from './export'
+export { renderNodesToPPTX } from './export'
+export type {
+  PPTXExportOptions,
+  PPTXExportStats,
+  PPTXRasterize,
+  PPTXRasterizeOptions
+} from './types'

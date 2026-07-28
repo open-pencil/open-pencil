@@ -1,19 +1,25 @@
 import type PptxGenJS from 'pptxgenjs'
-import type { CanvasKit } from 'canvaskit-wasm'
 
 import type { Fill, Mat3, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TransformMatrix, getWorldMatrix } from '@open-pencil/scene-graph'
 
-import type { SkiaRenderer } from '#core/canvas'
-import { extractExportGraph } from '#core/io/subgraph'
-
+import {
+  hasUnsupportedTransform,
+  inch,
+  nodeBox,
+  nodeScale,
+  pt,
+  transformNodeVector,
+  type SlideBox
+} from './geometry'
+import { makeIsolatedRasterize } from './rasterize'
 import {
   applyTextCase,
-  clampRot,
   effectiveRadius,
   firstVisibleFill,
   firstVisibleStroke,
   getSolidOffsetShadow,
+  hasAsymmetricCorners,
   hex,
   isRounded,
   mapHAlign,
@@ -22,6 +28,12 @@ import {
   round2,
   transparency
 } from './style'
+import type {
+  PPTXExportOptions,
+  PPTXExportStats,
+  PPTXRasterize,
+  PPTXRasterizeOptions
+} from './types'
 
 /**
  * Scene graph → editable PPTX hybrid conversion.
@@ -36,7 +48,6 @@ import {
  * exported as a single image on their own slide.
  */
 
-const MIN_SIZE_IN = 0.01
 const BASE_SLIDE_WIDTH_IN = 13.333
 /** Sub-pixel slack when testing whether a clipped container actually crops. */
 const CLIP_EPSILON_PX = 0.5
@@ -51,41 +62,6 @@ const SHAPE_TYPES = new Set<SceneNode['type']>([
 ])
 const CONTAINER_TYPES = new Set<SceneNode['type']>(['FRAME', 'GROUP', 'SECTION'])
 
-export interface PPTXExportStats {
-  editable: number
-  fallback: number
-  skipped: number
-  /** Fallback reason → count, for fidelity measurement. */
-  fallbackReasons: Record<string, number>
-}
-
-export interface PPTXRasterizeOptions {
-  /** Render only the nodes' own paint, dropping their children. */
-  paintOnly?: boolean
-}
-
-/** Renders the given nodes to a PNG byte array (used for fallback images). */
-export type PPTXRasterize = (
-  nodeIds: string[],
-  scale: number,
-  options?: PPTXRasterizeOptions
-) => Promise<Uint8Array | null>
-
-export interface PPTXExportOptions {
-  /** Raster scale for fallback images. Defaults to 2. */
-  fallbackScale?: number
-  /**
-   * Custom rasterizer for fallback images. Defaults to an isolated render of
-   * the node subtree (ancestor backgrounds cleared) through the raster
-   * pipeline — headless, or renderer-bound when `context` provides one.
-   */
-  rasterize?: PPTXRasterize
-  /** Live renderer to reuse for fallback rasterization (browser contexts). */
-  context?: { canvasKit?: CanvasKit; renderer?: SkiaRenderer }
-  /** Receives conversion statistics after the export completes. */
-  onStats?: (stats: PPTXExportStats) => void
-}
-
 interface ExportCtx {
   slide: PptxGenJS.Slide
   graph: SceneGraph
@@ -94,18 +70,11 @@ interface ExportCtx {
   pxPerInch: number
   /** world → slide-frame local space, so a rotated slide frame stays upright */
   toSlideSpace: Mat3
+  offsetX: number
+  offsetY: number
+  contentFillsSlide: boolean
   fallbackScale: number
   stats: PPTXExportStats
-}
-
-/** Placement of a node on the slide, in inches, plus its transform. */
-interface SlideBox {
-  x: number
-  y: number
-  w: number
-  h: number
-  rotate: number
-  flipH: boolean
 }
 
 export async function renderNodesToPPTX(
@@ -122,27 +91,38 @@ export async function renderNodesToPPTX(
   const { default: PptxGen } = await import('pptxgenjs')
 
   const first = roots[0]
-  const slideW = first.width >= first.height ? BASE_SLIDE_WIDTH_IN : 7.5
-  const slideH = slideW * (first.height / first.width)
-  const pxPerInch = first.width / slideW
+  const firstWidth = Math.max(first.width, 1)
+  const firstHeight = Math.max(first.height, 1)
+  const slideW = firstWidth >= firstHeight ? BASE_SLIDE_WIDTH_IN : 7.5
+  const slideH = slideW * (firstHeight / firstWidth)
 
   const pptx = new PptxGen()
   pptx.defineLayout({ name: 'SCENE', width: slideW, height: slideH })
   pptx.layout = 'SCENE'
 
-  const rasterize =
-    options.rasterize ?? makeIsolatedRasterize(graph, options.context)
+  const rasterize = options.rasterize ?? makeIsolatedRasterize(graph, options.context)
 
   const stats: PPTXExportStats = { editable: 0, fallback: 0, skipped: 0, fallbackReasons: {} }
 
   for (const root of roots) {
+    const rootWidth = Math.max(root.width, 1)
+    const rootHeight = Math.max(root.height, 1)
+    const inchesPerPixel = Math.min(slideW / rootWidth, slideH / rootHeight)
+    const contentWidth = rootWidth * inchesPerPixel
+    const contentHeight = rootHeight * inchesPerPixel
+    const offsetX = (slideW - contentWidth) / 2
+    const offsetY = (slideH - contentHeight) / 2
     const slide = pptx.addSlide()
     const ctx: ExportCtx = {
       slide,
       graph,
       rasterize,
-      pxPerInch,
-      toSlideSpace: TransformMatrix.invert(getWorldMatrix(root, graph)) ?? TransformMatrix.identity(),
+      pxPerInch: 1 / inchesPerPixel,
+      toSlideSpace:
+        TransformMatrix.invert(getWorldMatrix(root, graph)) ?? TransformMatrix.identity(),
+      offsetX,
+      offsetY,
+      contentFillsSlide: Math.abs(offsetX) < 1e-6 && Math.abs(offsetY) < 1e-6,
       fallbackScale: options.fallbackScale ?? 2,
       stats
     }
@@ -166,58 +146,6 @@ export async function renderNodesToPPTX(
   return new Uint8Array(raw)
 }
 
-/**
- * Renders a node subtree in isolation: the selection extraction keeps the full
- * ancestor chain (so clipping still applies), but ancestor paints are cleared —
- * otherwise every fallback image would carry an opaque copy of the slide
- * background behind it.
- */
-function makeIsolatedRasterize(
-  graph: SceneGraph,
-  context?: PPTXExportOptions['context']
-): PPTXRasterize {
-  return async (nodeIds: string[], scale: number, options?: PPTXRasterizeOptions) => {
-    const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
-    if (!extracted.pageId || extracted.nodeIds.length === 0) return null
-
-    if (options?.paintOnly) {
-      // The extracted graph is a copy, so detaching the children only affects
-      // this render — the renderer walks the tree through childIds.
-      for (const nodeId of extracted.nodeIds) {
-        const node = extracted.graph.getNode(nodeId)
-        if (node) node.childIds = []
-      }
-    }
-
-    const targets = new Set(extracted.nodeIds)
-    for (const nodeId of extracted.nodeIds) {
-      let cursor = extracted.graph.getNode(nodeId)?.parentId ?? null
-      while (cursor) {
-        const ancestor = extracted.graph.getNode(cursor)
-        if (!ancestor || targets.has(ancestor.id)) break
-        ancestor.fills = []
-        ancestor.strokes = []
-        ancestor.effects = []
-        cursor = ancestor.parentId
-      }
-    }
-
-    const raster = await import('#core/io/formats/raster')
-    const ck = context?.canvasKit
-    const renderer = context?.renderer
-    if (ck && renderer) {
-      return raster.renderNodesToImage(ck, renderer, extracted.graph, extracted.pageId, extracted.nodeIds, {
-        scale,
-        format: 'PNG'
-      })
-    }
-    return raster.headlessRenderNodes(extracted.graph, extracted.pageId, extracted.nodeIds, {
-      scale,
-      format: 'PNG'
-    })
-  }
-}
-
 // ── Tree traversal ────────────────────────────────────────
 
 async function walkNode(ctx: ExportCtx, node: SceneNode, inheritedOpacity: number): Promise<void> {
@@ -227,7 +155,7 @@ async function walkNode(ctx: ExportCtx, node: SceneNode, inheritedOpacity: numbe
   }
   const opacity = inheritedOpacity * node.opacity
 
-  const fallbackReason = getFallbackReason(ctx.graph, node)
+  const fallbackReason = getFallbackReason(ctx, node)
   if (fallbackReason) {
     await addFallbackImage(ctx, node, opacity, fallbackReason)
     return
@@ -272,6 +200,7 @@ async function addSlideFramePaint(ctx: ExportCtx, root: SceneNode): Promise<void
 
   const bg = firstVisibleFill(root)
   const plainBackground =
+    ctx.contentFillsSlide &&
     !root.strokes.some((s) => s.visible) &&
     !root.effects.some((e) => e.visible && e.type === 'INNER_SHADOW') &&
     effectiveRadius(root) === 0
@@ -292,46 +221,78 @@ function rootRasterReason(root: SceneNode): string | null {
   // visible — rasterizing the whole slide for it would only cost editability.
   if (root.effects.some((e) => e.visible && e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW'))
     return 'blur effect'
+  const shadowReason = getShadowFallbackReason(root)
+  if (shadowReason) return shadowReason
+  if (hasAsymmetricCorners(root)) return 'asymmetric corners'
+  if (root.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
   const fills = root.fills.filter((f) => f.visible)
   if (fills.length > 1) return 'multiple fills'
   if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid frame background'
   return null
 }
 
+function getShadowFallbackReason(node: SceneNode): string | null {
+  const shadows = node.effects.filter(
+    (effect) => effect.visible && (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW')
+  )
+  if (shadows.length > 1) return 'multiple shadows'
+  if (shadows.length === 0) return null
+  const shadow = shadows[0]
+  if (shadow.spread !== 0 && getSolidOffsetShadow(node) !== shadow) return 'shadow spread'
+  return null
+}
+
 /** Why a node cannot be converted natively. Null means native conversion is possible. */
-function getFallbackReason(graph: SceneGraph, node: SceneNode): string | null {
+function getFallbackReason(ctx: ExportCtx, node: SceneNode): string | null {
+  const commonReason = getCommonFallbackReason(ctx, node)
+  if (commonReason) return commonReason
+  if (node.type === 'TEXT') return getTextFallbackReason(node)
+  if (SHAPE_TYPES.has(node.type) || CONTAINER_TYPES.has(node.type)) {
+    return getShapeFallbackReason(node)
+  }
+  return `node type ${node.type}`
+}
+
+function getCommonFallbackReason(ctx: ExportCtx, node: SceneNode): string | null {
+  const { graph } = ctx
+  if (hasUnsupportedTransform(ctx, node)) return 'unsupported transform'
   if (!SIMPLE_BLENDS.has(node.blendMode)) return 'blend mode'
   if (node.effects.some((e) => e.visible && e.type !== 'DROP_SHADOW' && e.type !== 'INNER_SHADOW'))
     return 'blur effect'
+  const shadowReason = getShadowFallbackReason(node)
+  if (shadowReason) return shadowReason
+  if (hasAsymmetricCorners(node)) return 'asymmetric corners'
+  if (node.strokes.filter((stroke) => stroke.visible).length > 1) return 'multiple strokes'
   if (node.childIds.some((id) => graph.getNode(id)?.isMask)) return 'contains mask'
-  // PPTX has no container clipping — a clipped frame and its children arrive as
-  // sibling elements, so whatever the frame crops would reappear. Rasterizing
-  // the subtree keeps the crop.
   if (clipsOverflowingContent(graph, node)) return 'clipped content'
-  // Icon-style containers (every visible child is a vector path) rasterize as
-  // ONE image — per-path fallbacks would stack overlapping PNGs and lose the
-  // composed artwork.
   if (isVectorOnlyContainer(graph, node)) return 'vector graphics'
+  return null
+}
 
-  if (node.type === 'TEXT') {
-    // Only gradient fills force a fallback — partial styles map to native runs.
-    const fill = firstVisibleFill(node)
-    if (fill && fill.type !== 'SOLID') return 'non-solid text fill'
-    return null
+function getTextFallbackReason(node: SceneNode): string | null {
+  const fills = node.fills.filter((fill) => fill.visible)
+  if (fills.length > 1) return 'multiple text fills'
+  if (fills[0] && fills[0].type !== 'SOLID') return 'non-solid text fill'
+  if (node.strokes.some((stroke) => stroke.visible)) return 'text stroke'
+  for (const run of node.styleRuns) {
+    const runFills = run.style.fills?.filter((fill) => fill.visible) ?? []
+    if (runFills.length > 1 || runFills.some((fill) => fill.type !== 'SOLID')) {
+      return 'unsupported text run fill'
+    }
   }
+  return null
+}
 
-  if (SHAPE_TYPES.has(node.type) || CONTAINER_TYPES.has(node.type)) {
-    const visibleFills = node.fills.filter((f) => f.visible)
-    if (visibleFills.some((f) => f.type.startsWith('GRADIENT'))) return 'gradient fill'
-    if (visibleFills.length > 1) return 'multiple fills'
-    // Image-fill leaves become native pictures at the call site; containers
-    // with an image background fall back so children stay aligned.
-    if (visibleFills.some((f) => f.type === 'IMAGE') && node.childIds.length > 0)
-      return 'image background container'
-    return null
+function getShapeFallbackReason(node: SceneNode): string | null {
+  const visibleFills = node.fills.filter((fill) => fill.visible)
+  if (visibleFills.some((fill) => fill.type.startsWith('GRADIENT'))) return 'gradient fill'
+  if (visibleFills.length > 1) return 'multiple fills'
+  // Image-fill leaves become native pictures at the call site; containers
+  // with an image background fall back so children stay aligned.
+  if (visibleFills.some((fill) => fill.type === 'IMAGE') && node.childIds.length > 0) {
+    return 'image background container'
   }
-
-  return `node type ${node.type}`
+  return null
 }
 
 function isImageLeaf(node: SceneNode): boolean {
@@ -361,8 +322,7 @@ function clipsOverflowingContent(graph: SceneGraph, node: SceneNode): boolean {
       child.height
     ])
     for (let i = 0; i < corners.length; i += 2) {
-      const outsideX =
-        corners[i] < -CLIP_EPSILON_PX || corners[i] > node.width + CLIP_EPSILON_PX
+      const outsideX = corners[i] < -CLIP_EPSILON_PX || corners[i] > node.width + CLIP_EPSILON_PX
       const outsideY =
         corners[i + 1] < -CLIP_EPSILON_PX || corners[i + 1] > node.height + CLIP_EPSILON_PX
       if (outsideX || outsideY) return true
@@ -429,9 +389,13 @@ function addEditableShape(ctx: ExportCtx, node: SceneNode, opacity: number): voi
   } else if (node.type === 'ELLIPSE') {
     ctx.slide.addShape('ellipse', common)
   } else if (isRounded(node)) {
+    const scale = nodeScale(ctx, node)
     ctx.slide.addShape('roundRect', {
       ...common,
-      rectRadius: Math.min(inch(ctx, effectiveRadius(node)), Math.min(box.w, box.h) / 2)
+      rectRadius: Math.min(
+        inch(ctx, effectiveRadius(node) * Math.min(scale.x, scale.y)),
+        Math.min(box.w, box.h) / 2
+      )
     })
   } else {
     ctx.slide.addShape('rect', common)
@@ -545,46 +509,10 @@ async function addFallbackImage(
 
 // ── Unit and style mapping (exact formulas, no hand tuning) ──
 
-function inch(ctx: ExportCtx, px: number): number {
-  return px / ctx.pxPerInch
-}
-
-/** px → pt. 1in = 96px (scene units) = 72pt. */
-function pt(ctx: ExportCtx, px: number): number {
-  return (px * 72) / ctx.pxPerInch
-}
-
 /** letterSpacing px → PPT charSpacing (pt). Zero is omitted (default). */
 function charSpacingPt(ctx: ExportCtx, px: number): number | undefined {
   if (!px) return undefined
   return round2(pt(ctx, px))
-}
-
-/**
- * PowerPoint places an element by the top-left of its *unrotated* box and then
- * rotates it around its own center, so both the center and the rotation are read
- * off the node's transform relative to the slide frame. Deriving them from
- * `getAbsolutePosition()` plus `node.rotation` instead would misplace rotated
- * nodes (that position is the rotated corner) and drop rotation inherited from
- * ancestors.
- */
-function nodeBox(ctx: ExportCtx, node: SceneNode): SlideBox {
-  const local = TransformMatrix.multiply(ctx.toSlideSpace, getWorldMatrix(node, ctx.graph))
-  const [centerX, centerY] = TransformMatrix.mapPoints(local, [node.width / 2, node.height / 2])
-  // A mirrored basis (negative determinant) is a flip, which PPTX expresses
-  // separately from rotation — folding it into the angle would spin the shape.
-  const mirrored = local[0] * local[4] - local[1] * local[3] < 0
-  const radians = mirrored ? Math.atan2(-local[3], local[4]) : Math.atan2(local[3], local[0])
-  const w = Math.max(inch(ctx, node.width), MIN_SIZE_IN)
-  const h = Math.max(inch(ctx, node.height), MIN_SIZE_IN)
-  return {
-    x: inch(ctx, centerX) - w / 2,
-    y: inch(ctx, centerY) - h / 2,
-    w,
-    h,
-    rotate: clampRot(round2((radians * 180) / Math.PI)),
-    flipH: mirrored
-  }
 }
 
 /**
@@ -600,14 +528,18 @@ function addSolidShadowShape(
   shadow: NonNullable<ReturnType<typeof getSolidOffsetShadow>>
 ): void {
   const sp = shadow.spread
+  const offset = transformNodeVector(ctx, node, shadow.offset)
+  const scale = nodeScale(ctx, node)
+  const spreadX = inch(ctx, sp * scale.x)
+  const spreadY = inch(ctx, sp * scale.y)
   let shapeType: 'roundRect' | 'ellipse' | 'rect' = 'rect'
   if (isRounded(node)) shapeType = 'roundRect'
   else if (node.type === 'ELLIPSE') shapeType = 'ellipse'
   ctx.slide.addShape(shapeType, {
-    x: box.x + inch(ctx, shadow.offset.x - sp),
-    y: box.y + inch(ctx, shadow.offset.y - sp),
-    w: box.w + inch(ctx, sp * 2),
-    h: box.h + inch(ctx, sp * 2),
+    x: box.x + offset.x - spreadX,
+    y: box.y + offset.y - spreadY,
+    w: box.w + spreadX * 2,
+    h: box.h + spreadY * 2,
     rotate: box.rotate,
     flipH: box.flipH,
     fill: {
@@ -616,7 +548,12 @@ function addSolidShadowShape(
     },
     line: { color: 'FFFFFF', transparency: 100, width: 0 },
     ...(shapeType === 'roundRect'
-      ? { rectRadius: Math.min(inch(ctx, effectiveRadius(node)), Math.min(box.w, box.h) / 2) }
+      ? {
+          rectRadius: Math.min(
+            inch(ctx, effectiveRadius(node) * Math.min(scale.x, scale.y)),
+            Math.min(box.w, box.h) / 2
+          )
+        }
       : {})
   })
 }

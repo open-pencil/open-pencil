@@ -18,14 +18,19 @@ export function isRounded(node: SceneNode): boolean {
   return effectiveRadius(node) > 0
 }
 
+export function hasAsymmetricCorners(node: SceneNode): boolean {
+  if (!node.independentCorners) return false
+  const radii = [
+    node.topLeftRadius,
+    node.topRightRadius,
+    node.bottomRightRadius,
+    node.bottomLeftRadius
+  ]
+  return radii.some((radius) => Math.abs(radius - radii[0]) > 1e-6)
+}
+
 export function effectiveRadius(node: SceneNode): number {
-  if (node.independentCorners) {
-    return (
-      (node.topLeftRadius + node.topRightRadius + node.bottomRightRadius + node.bottomLeftRadius) /
-      4
-    )
-  }
-  return node.cornerRadius
+  return node.independentCorners ? node.topLeftRadius : node.cornerRadius
 }
 
 /** DROP_SHADOW without blur (design-system solid offset shadow) — drawn as a separate shape. */
