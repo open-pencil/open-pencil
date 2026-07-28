@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Export SVGs with large embedded image fills without overflowing the JavaScript call stack.
 - Save auto-layout frames that stretch their children to `.fig` without failing. (#427)
 - Reduce large `.fig` page-switch work to the active page and coalesce Layers tree rebuilds. (#420)
 - Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.

@@ -1,19 +1,6 @@
+import { uint8ArrayToBase64 } from '#core/io/base64'
 import type { RasterExportFormat } from '#core/io/formats/raster'
 import { defineTool } from '#core/tools/schema'
-
-const CHUNK_SIZE = 0x8000
-
-function uint8ArrayToBase64(bytes: Uint8Array): string {
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(bytes).toString('base64')
-  }
-  let binary = ''
-  for (let index = 0; index < bytes.length; index += CHUNK_SIZE) {
-    const chunk = bytes.subarray(index, index + CHUNK_SIZE)
-    binary += String.fromCharCode(...chunk)
-  }
-  return btoa(binary)
-}
 
 export const exportSvg = defineTool({
   name: 'export_svg',
