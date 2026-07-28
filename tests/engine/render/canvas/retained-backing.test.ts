@@ -1,13 +1,13 @@
 import { expect, mock, test } from 'bun:test'
 
-import type { Canvas, Image as CKImage, Surface } from 'canvaskit-wasm'
+import type { Canvas, Image as CKImage, ImageInfo, Surface } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderSceneBacking } from '#core/canvas/renderer/retained-backing'
 
-function createRenderer(surfaceFactory: () => Surface | null) {
+function createRenderer(surfaceFactory: (info: ImageInfo) => Surface | null) {
   const renderer: Partial<SkiaRenderer> = {
     ck: {
       AlphaType: { Premul: 'Premul' },
@@ -33,6 +33,7 @@ function createRenderer(surfaceFactory: () => Surface | null) {
     panY: 0,
     zoom: 1,
     dpr: 1,
+    maxTextureSize: 16384,
     viewportWidth: 100,
     viewportHeight: 100,
     pageColor: { r: 1, g: 1, b: 1 },
@@ -147,6 +148,62 @@ test('retained scene backing allows same-zoom previews while panning', () => {
 
   expect(renderSceneBacking(r, canvas, graph, 1)).toBe(true)
   expect(canvas.drawImageRectOptions).toHaveBeenCalled()
+})
+
+test('retained scene backing keeps the offscreen surface within the GPU texture limit', () => {
+  // Regression: a wide viewport on a HiDPI display asked for a backing texture
+  // larger than MAX_TEXTURE_SIZE, so the allocation failed and the canvas went
+  // blank. Reproduces the reported case: 2998x1490 CSS px at dpr 2, where the
+  // unclamped 3x margin would request ceil(2998*3)*2 = 17988 px of width.
+  const requested: Array<{ width: number; height: number }> = []
+  const r = createRenderer((info) => {
+    requested.push({ width: info.width, height: info.height })
+    return null
+  })
+  r.dpr = 2
+  r.maxTextureSize = 16384
+  r.viewportWidth = 2998
+  r.viewportHeight = 1490
+
+  renderSceneBacking(r, createCanvas(), createGraph(), 1)
+
+  expect(requested).not.toHaveLength(0)
+  for (const size of requested) {
+    expect(size.width).toBeLessThanOrEqual(r.maxTextureSize)
+    expect(size.height).toBeLessThanOrEqual(r.maxTextureSize)
+  }
+})
+
+test('retained scene backing does not shrink the margin when it already fits', () => {
+  const requested: Array<{ width: number; height: number }> = []
+  const r = createRenderer((info) => {
+    requested.push({ width: info.width, height: info.height })
+    return null
+  })
+  r.dpr = 2
+  r.maxTextureSize = 16384
+  r.viewportWidth = 1919
+  r.viewportHeight = 1490
+
+  renderSceneBacking(r, createCanvas(), createGraph(), 1)
+
+  // 1919 * 3 * 2 = 11514, comfortably inside the limit, so the full
+  // SCENE_BACKING_SCALE margin must be preserved.
+  expect(requested[0]).toEqual({ width: 11514, height: 8940 })
+})
+
+test('retained scene backing survives CanvasKit throwing instead of returning null', () => {
+  // CanvasKit raises "Cannot set properties of null" rather than returning null
+  // when it cannot allocate; the null-guard alone did not stop that from
+  // escaping as an uncaught TypeError.
+  const r = createRenderer(() => {
+    throw new TypeError("Cannot set properties of null (setting 'be')")
+  })
+  const canvas = createCanvas()
+
+  expect(() => renderSceneBacking(r, canvas, createGraph(), 1)).not.toThrow()
+  expect(r.sceneBacking).toBeNull()
+  expect(canvas.drawImageRectOptions).not.toHaveBeenCalled()
 })
 
 test('retained scene backing invalidates stale position-preview metadata', () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -59,6 +59,15 @@ useEventListener(
   { passive: false }
 )
 
+// The canvas is mounted once and teleported into the slot exposed by the
+// active layout, so switching layouts never destroys the WebGL surface.
+const desktopCanvasSlot = ref<HTMLElement | null>(null)
+const fallbackCanvasSlot = ref<HTMLElement | null>(null)
+const showDesktopChrome = computed(() => !isMobile.value && showChrome && store.state.showUI)
+const canvasSlot = computed(() =>
+  showDesktopChrome.value ? desktopCanvasSlot.value : fallbackCanvasSlot.value
+)
+
 const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
 const fileAssociationCleanup = ref<(() => void) | null>(null)
@@ -116,9 +125,16 @@ onUnmounted(() => {
     <SafariBanner />
     <TabBar />
 
-    <!-- Desktop layout -->
+    <!--
+      The canvas host is intentionally rendered exactly once, outside of any
+      v-if branch. Toggling `showUI` (or crossing the mobile breakpoint) only
+      swaps the surrounding chrome — it must never unmount `EditorCanvas`,
+      because a remount destroys the WebGL surface and the Skia renderer and
+      leaves the freshly mounted <canvas> at its 300x150 default until the
+      async CanvasKit re-init completes.
+    -->
     <SplitterGroup
-      v-if="!isMobile && showChrome && store.state.showUI"
+      v-show="showDesktopChrome"
       :key="activeTab?.id"
       direction="horizontal"
       class="flex-1 overflow-hidden"
@@ -140,10 +156,7 @@ onUnmounted(() => {
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
       <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
-        <div class="relative flex min-w-0 flex-1">
-          <EditorCanvas />
-          <Toolbar />
-        </div>
+        <div ref="desktopCanvasSlot" class="relative flex min-w-0 flex-1" />
       </SplitterPanel>
       <SplitterResizeHandle class="group relative z-10 -mx-1 w-2 cursor-col-resize">
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
@@ -164,58 +177,41 @@ onUnmounted(() => {
       </SplitterPanel>
     </SplitterGroup>
 
-    <!-- Mobile layout -->
-    <div
-      v-else-if="isMobile && showChrome && store.state.showUI"
-      :key="'mobile-' + activeTab?.id"
-      class="flex flex-1 overflow-hidden"
-    >
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
-        <MobileHud />
-        <Toolbar />
-      </div>
-      <MobileDrawer />
+    <!-- Mobile / collapsed / bare layouts all reuse the same canvas host -->
+    <div v-show="!showDesktopChrome" class="flex flex-1 overflow-hidden">
+      <div ref="fallbackCanvasSlot" class="relative flex min-w-0 flex-1" />
+      <MobileDrawer v-if="isMobile && showChrome && store.state.showUI" />
     </div>
 
-    <!-- Collapsed UI (showUI=false) -->
-    <div
-      v-else-if="showChrome"
-      :key="'collapsed-' + activeTab?.id"
-      class="flex flex-1 overflow-hidden"
-    >
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
-        <div
-          v-if="!isMobile"
-          class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
+    <!--
+      The single canvas instance. It is teleported into whichever slot the
+      active layout exposes; Teleport moves the existing DOM node instead of
+      recreating it, so the WebGL context survives every layout change.
+    -->
+    <Teleport v-if="canvasSlot" :to="canvasSlot">
+      <EditorCanvas />
+      <MobileHud v-if="isMobile && showChrome && store.state.showUI" />
+      <Toolbar v-if="showChrome && store.state.showUI" />
+      <div
+        v-if="showChrome && !store.state.showUI && !isMobile"
+        class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
+      >
+        <img src="/favicon-32.png" class="size-4" alt="OpenPencil" />
+        <span data-test-id="editor-document-name" class="text-xs text-surface">{{
+          store.state.documentName
+        }}</span>
+        <Tip
+          :label="dialogs.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })"
         >
-          <img src="/favicon-32.png" class="size-4" alt="OpenPencil" />
-          <span data-test-id="editor-document-name" class="text-xs text-surface">{{
-            store.state.documentName
-          }}</span>
-          <Tip
-            :label="
-              dialogs.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })
-            "
+          <button
+            data-test-id="editor-show-ui"
+            class="ml-1 flex size-6 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
+            @click="store.state.showUI = true"
           >
-            <button
-              data-test-id="editor-show-ui"
-              class="ml-1 flex size-6 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
-              @click="store.state.showUI = true"
-            >
-              <icon-lucide-sidebar class="size-3.5" />
-            </button>
-          </Tip>
-        </div>
+            <icon-lucide-sidebar class="size-3.5" />
+          </button>
+        </Tip>
       </div>
-    </div>
-
-    <!-- Bare canvas (no chrome, e.g. ?no-chrome) -->
-    <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
-      </div>
-    </div>
+    </Teleport>
   </div>
 </template>

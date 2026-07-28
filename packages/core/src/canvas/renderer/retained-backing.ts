@@ -153,11 +153,24 @@ function drawSceneBacking(
   return true
 }
 
+function maxSceneBackingPixels(r: SkiaRenderer): number {
+  return Math.max(1, r.maxTextureSize)
+}
+
 function sceneBackingGeometry(r: SkiaRenderer) {
+  // The backing texture is SCENE_BACKING_SCALE times the viewport in each axis,
+  // then multiplied again by dpr in createSceneBackingSurface. On a wide
+  // viewport with a HiDPI display that product overshoots the GPU's maximum
+  // texture dimension (commonly 16384), which makes the allocation fail. Cap
+  // the margin so the final pixel size always stays inside the limit — a
+  // smaller backing only costs extra re-records while panning.
+  const maxBackingPx = maxSceneBackingPixels(r)
+  const maxWidth = Math.max(1, Math.floor(maxBackingPx / r.dpr))
+  const maxHeight = Math.max(1, Math.floor(maxBackingPx / r.dpr))
   const marginX = r.viewportWidth * ((SCENE_BACKING_SCALE - 1) / 2)
   const marginY = r.viewportHeight * ((SCENE_BACKING_SCALE - 1) / 2)
-  const width = Math.max(1, Math.ceil(r.viewportWidth + marginX * 2))
-  const height = Math.max(1, Math.ceil(r.viewportHeight + marginY * 2))
+  const width = clamp(Math.ceil(r.viewportWidth + marginX * 2), 1, maxWidth)
+  const height = clamp(Math.ceil(r.viewportHeight + marginY * 2), 1, maxHeight)
   const backingPanX = r.panX + marginX
   const backingPanY = r.panY + marginY
   return {
@@ -175,13 +188,21 @@ function sceneBackingGeometry(r: SkiaRenderer) {
 }
 
 function createSceneBackingSurface(r: SkiaRenderer, width: number, height: number): Surface | null {
-  return r.surface.makeSurface({
-    width: Math.ceil(width * r.dpr),
-    height: Math.ceil(height * r.dpr),
-    colorType: r.ck.ColorType.RGBA_8888,
-    alphaType: r.ck.AlphaType.Premul,
-    colorSpace: r.ck.ColorSpace.SRGB
-  })
+  try {
+    // CanvasKit throws (rather than returning null) when the backing store
+    // cannot be allocated, so the null-check at the call sites is not enough
+    // on its own. Falling back to null just skips the retained backing for
+    // this frame; the scene still renders directly to the on-screen surface.
+    return r.surface.makeSurface({
+      width: Math.ceil(width * r.dpr),
+      height: Math.ceil(height * r.dpr),
+      colorType: r.ck.ColorType.RGBA_8888,
+      alphaType: r.ck.AlphaType.Premul,
+      colorSpace: r.ck.ColorSpace.SRGB
+    })
+  } catch {
+    return null
+  }
 }
 
 function ensureSubtreePictureCacheScope(

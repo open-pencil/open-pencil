@@ -62,6 +62,19 @@ export interface PendingFontNode {
 
 import type { RenderOverlays, RulerTheme } from './renderer/types'
 
+/** Conservative floor mandated by the WebGL2 spec when the real limit is unknown. */
+const DEFAULT_MAX_TEXTURE_SIZE = 2048
+
+function readMaxTextureSize(gl: WebGL2RenderingContext | null): number {
+  if (!gl) return DEFAULT_MAX_TEXTURE_SIZE
+  try {
+    const size: unknown = gl.getParameter(gl.MAX_TEXTURE_SIZE)
+    return typeof size === 'number' && size > 0 ? size : DEFAULT_MAX_TEXTURE_SIZE
+  } catch {
+    return DEFAULT_MAX_TEXTURE_SIZE
+  }
+}
+
 export class SkiaRenderer {
   ck: CanvasKit
   surface: Surface
@@ -173,6 +186,8 @@ export class SkiaRenderer {
   panY = 0
   zoom = 1
   dpr = 1
+  /** GPU limit for a single texture dimension, in device pixels. */
+  maxTextureSize = DEFAULT_MAX_TEXTURE_SIZE
   viewportWidth = 0
   viewportHeight = 0
   showRulers = true
@@ -412,6 +427,7 @@ export class SkiaRenderer {
   constructor(ck: CanvasKit, surface: Surface, gl?: WebGL2RenderingContext | null) {
     this.ck = ck
     this.surface = surface
+    this.maxTextureSize = readMaxTextureSize(gl ?? null)
     this.profiler = new RenderProfiler(ck, gl ?? null)
     initializeRendererPaints(this)
   }
