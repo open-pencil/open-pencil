@@ -2,6 +2,12 @@ import { IS_BROWSER, IS_TAURI } from '@open-pencil/core/constants'
 
 import ACP_DESIGN_CONTEXT from '@/app/ai/acp/design-context.md'
 
+/** Slide filmstrip thumbnail width clamp (CSS px) — Figma-like min/max. */
+export const SLIDE_THUMB_MIN_WIDTH = 168
+export const SLIDE_THUMB_MAX_WIDTH = 288
+/** Space reserved for the slide index column beside the thumb. */
+export const SLIDE_THUMB_INDEX_GUTTER = 20
+
 export {
   IS_BROWSER,
   IS_TAURI,
@@ -9,6 +15,7 @@ export {
   COMPONENT_COLOR,
   SNAP_COLOR,
   CANVAS_BG_COLOR,
+  DECK_CANVAS_BG_COLOR,
   SNAP_THRESHOLD,
   RULER_SIZE,
   RULER_BG_COLOR,

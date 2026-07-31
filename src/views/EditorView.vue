@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -7,7 +7,12 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
 import { useKeyboard } from '@/app/shell/keyboard/use'
-import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
+import {
+  loadEditorLayout,
+  loadSlidesLayout,
+  saveEditorLayout,
+  saveSlidesLayout
+} from '@/app/shell/layout-storage'
 import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
@@ -63,7 +68,26 @@ useEventListener(
 const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
 const fileAssociationCleanup = ref<(() => void) | null>(null)
-const initialEditorLayout = loadEditorLayout()
+
+const isSlidesView = computed(() => store.state.viewMode === 'slides')
+/** Design vs slides layouts are stored separately; slides defaults right panel to min (10). */
+const panelLayout = computed(() => (isSlidesView.value ? loadSlidesLayout() : loadEditorLayout()))
+const splitterKey = computed(() => `${activeTab.value?.id ?? 'tab'}-${store.state.viewMode}`)
+
+function onSplitterLayout(layout: number[]) {
+  if (isSlidesView.value) saveSlidesLayout(layout)
+  else saveEditorLayout(layout)
+}
+
+// Remounting the splitter for slides (narrow right panel) changes canvas size — re-fit the slide
+watch(
+  () => store.state.viewMode,
+  async (mode) => {
+    if (mode !== 'slides') return
+    await nextTick()
+    await store.fitCurrentPageToViewport()
+  }
+)
 
 type PendingOpenFile = {
   path: string
@@ -121,14 +145,14 @@ onUnmounted(() => {
     <!-- Desktop layout -->
     <SplitterGroup
       v-if="!isMobile && showChrome && store.state.showUI"
-      :key="activeTab?.id"
+      :key="splitterKey"
       direction="horizontal"
       class="flex-1 overflow-hidden"
-      @layout="saveEditorLayout"
+      @layout="onSplitterLayout"
     >
       <SplitterPanel
         id="layers"
-        :default-size="initialEditorLayout[0]"
+        :default-size="panelLayout[0]"
         :min-size="10"
         :max-size="30"
         class="flex"
@@ -141,7 +165,7 @@ onUnmounted(() => {
       >
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
-      <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
+      <SplitterPanel id="canvas" :default-size="panelLayout[1]" :min-size="30" class="flex">
         <div class="relative flex min-w-0 flex-1">
           <EditorCanvas />
           <Toolbar />
@@ -152,7 +176,7 @@ onUnmounted(() => {
       </SplitterResizeHandle>
       <SplitterPanel
         id="properties"
-        :default-size="initialEditorLayout[2]"
+        :default-size="panelLayout[2]"
         :min-size="10"
         :max-size="30"
         class="flex flex-col"

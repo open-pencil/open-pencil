@@ -141,6 +141,11 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: appMenuTinykeysShortcut('selection.rename') ?? '$mod+KeyR',
       run: ({ store }) => requestRenameSelection(store)
     },
+    {
+      id: 'new-deck',
+      keys: appMenuTinykeysShortcut('new-deck') ?? '$mod+Shift+KeyN',
+      run: ({ createDeckTab }) => createDeckTab()
+    },
     ...commandShortcuts(
       'edit.undo',
       'view.zoom100',

@@ -1,5 +1,6 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { DECK_CANVAS_BG_COLOR } from '#core/constants'
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import { computeAllLayouts } from '#core/layout'
 import { fontManager } from '#core/text/fonts'
@@ -95,8 +96,18 @@ export function createPageActions(ctx: EditorContext) {
   }
 
   function setPageColor(color: Color) {
+    // Deck / slides documents use a fixed zoomed-out backdrop; ignore user edits.
+    if (pageViewportStore.isDeckBackdropLocked()) {
+      ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
+      ctx.requestRender()
+      return
+    }
     ctx.state.pageColor = color
     ctx.requestRender()
+  }
+
+  function setDeckBackdropLocked(locked: boolean) {
+    pageViewportStore.setDeckBackdropLocked(locked)
   }
 
   return {
@@ -106,6 +117,7 @@ export function createPageActions(ctx: EditorContext) {
     movePage,
     renamePage,
     setPageColor,
+    setDeckBackdropLocked,
     clearPageViewports: pageViewportStore.clearPageViewports
   }
 }

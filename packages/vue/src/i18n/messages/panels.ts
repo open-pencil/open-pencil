@@ -7,6 +7,8 @@ export const panelMessageDefaults = {
   nodeCopyString: ' copy',
   layers: 'Layers',
   pages: 'Pages',
+  slides: 'Slides',
+  newSlide: 'New slide',
   design: 'Design',
   code: 'Code',
   ai: 'AI',

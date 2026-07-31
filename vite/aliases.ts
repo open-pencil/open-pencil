@@ -37,6 +37,8 @@ export function createOpenPencilAliases(rootDir: string) {
     { find: '@open-pencil/kiwi', replacement: resolve(rootDir, 'packages/kiwi/src') },
     { find: /^@open-pencil\/fig$/, replacement: resolve(rootDir, 'packages/fig/src/index.ts') },
     { find: '@open-pencil/fig', replacement: resolve(rootDir, 'packages/fig/src') },
+    { find: /^@open-pencil\/deck$/, replacement: resolve(rootDir, 'packages/deck/src/index.ts') },
+    { find: '@open-pencil/deck', replacement: resolve(rootDir, 'packages/deck/src') },
     {
       find: /^@open-pencil\/mcp\/discovery$/,
       replacement: resolve(rootDir, 'packages/mcp/src/transport/discovery.ts')

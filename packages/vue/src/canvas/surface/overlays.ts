@@ -8,14 +8,25 @@ export type RulerVisibilityOptions = {
   showRulers?: boolean
 }
 
-export function createRulerVisibility(options?: RulerVisibilityOptions) {
+type RulerEditorState = {
+  showRulers?: boolean
+  /** App-extended: slides / deck mode has no canvas rulers */
+  viewMode?: 'design' | 'slides'
+}
+
+export function createRulerVisibility(options?: RulerVisibilityOptions, editor?: Editor) {
   const params = IS_BROWSER ? new URLSearchParams(window.location.search) : new URLSearchParams()
   const noRulersParam = params.has('no-rulers')
   const { isMobile } = useViewportKind()
 
   return function shouldShowRulers() {
     if (options?.showRulers === false) return false
-    return !noRulersParam && !isMobile.value
+    if (noRulersParam || isMobile.value) return false
+    const state = editor?.state as RulerEditorState | undefined
+    // Deck / slides: Figma Slides–style canvas has no rulers
+    if (state?.viewMode === 'slides') return false
+    if (state?.showRulers === false) return false
+    return true
   }
 }
 

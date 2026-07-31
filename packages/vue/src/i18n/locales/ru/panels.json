@@ -1,6 +1,7 @@
 {
   "layers": "Слои",
   "pages": "Страницы",
+  "slides": "Слайды",
   "design": "Дизайн",
   "code": "Код",
   "ai": "AI",
@@ -263,5 +264,6 @@
   "blendModeHue": "Тон",
   "blendModeSaturation": "Насыщенность",
   "blendModeColor": "Цвет",
-  "blendModeLuminosity": "Яркость"
+  "blendModeLuminosity": "Яркость",
+  "newSlide": "Новый слайд"
 }

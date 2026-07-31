@@ -30,6 +30,17 @@
 - Configure separate Design, Review, Fast, and Vision models, providers, endpoints, and credentials from AI settings.
 - Manage AI, agent, media, and storage credentials from unified Settings, using the system credential store on desktop and encrypted browser storage by default, with a session-only browser option.
 - Connect an S3-compatible storage workspace with local-first saves and background synchronization.
+- Figma Slides (`.deck`) support — open, edit, and save decks as a first-class document format
+  - New `@open-pencil/deck` package: archive parse/write, slide↔page restructure
+  - Each active slide becomes an editor page; left-rail filmstrip with lazy thumbnails
+  - File pickers, Tauri OS association, CLI/IO registry via `deckFormat`
+  - Fixed zoomed-out canvas backdrop (`#1c1c1c`) for decks — not user-editable
+  - **New Deck** (⌘⇧N): empty light slide (1920×1080 white card + starter title) on dark chrome
+  - Slides filmstrip **New slide** / **+** to append blank 1920×1080 white slides
+  - Opening a `.deck` and switching slides always fits the full 1920×1080 artboard in the viewport
+  - Slides mode defaults the right properties panel to minimum width
+  - Slides / deck mode hides canvas rulers (horizontal and vertical)
+  - Slide artboards render with Figma-like rounded corners (40px)
 - Add Japanese localization and improve menu translations across the existing supported languages. (#367)
 - Author richer Design JSX with components, instances, variables, gradients, structured fills, shadows, blur effects, masks, and inline SVG vectors.
 - Build custom property panels with new Vue SDK number fields, bindable values, property sections, responsive grids, segmented controls, property lists, color models, fill controls, and gradient primitives.

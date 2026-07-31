@@ -8,7 +8,8 @@ export const menuMessageDefaults = {
   arrange: 'Arrange',
   text: 'Text',
 
-  new: 'New',
+  new: 'New Design',
+  newDeck: 'New Deck',
   open: 'Open…',
   openStorageWorkspace: 'Open storage workspace…',
   save: 'Save',

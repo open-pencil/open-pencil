@@ -49,6 +49,14 @@
         "role": "Editor",
         "mimeType": "application/x-figma",
         "rank": "Alternate"
+      },
+      {
+        "ext": ["deck"],
+        "name": "Figma Slides File",
+        "description": "Figma Slides presentation",
+        "role": "Editor",
+        "mimeType": "application/x-figma-slides",
+        "rank": "Alternate"
       }
     ],
     "macOS": {

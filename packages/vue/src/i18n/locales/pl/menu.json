@@ -5,7 +5,7 @@
   "object": "Obiekt",
   "arrange": "Rozmieszczenie",
   "text": "Tekst",
-  "new": "Nowy",
+  "new": "Nowy projekt",
   "open": "Otwórz…",
   "openStorageWorkspace": "Otwórz obszar przechowywania…",
   "save": "Zapisz",
@@ -56,6 +56,7 @@
   "arrangeAlignMiddle": "Wyśrodkuj w pionie",
   "arrangeAlignBottom": "Wyrównaj do dołu",
   "multiplayerCursors": "Kursory wielu użytkowników",
+  "newDeck": "Nowa prezentacja",
   "renameSelection": "Zmień nazwę zaznaczenia…",
   "rulers": "Linijki",
   "settings": "Ustawienia…"

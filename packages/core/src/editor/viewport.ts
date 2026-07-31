@@ -1,6 +1,11 @@
 import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
-import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
+import {
+  RULER_SIZE,
+  ZOOM_DIVISOR,
+  ZOOM_SCALE_MAX,
+  ZOOM_SCALE_MIN
+} from '#core/constants'
 
 import type { EditorContext } from './types'
 
@@ -54,13 +59,25 @@ export function createViewportActions(ctx: EditorContext) {
     const padding = 80
     const w = maxX - minX + padding * 2
     const h = maxY - minY + padding * 2
+    if (w <= 0 || h <= 0) return
 
-    const { width: viewW, height: viewH } = ctx.getViewportSize()
+    const { width: fullW, height: fullH } = ctx.getViewportSize()
+    if (fullW <= 0 || fullH <= 0) return
+
+    // Rulers occupy the top/left strip — omit in slides mode (no rulers on deck canvas).
+    const appState = ctx.state as { showRulers?: boolean; viewMode?: string }
+    const rulersVisible =
+      appState.showRulers !== false && appState.viewMode !== 'slides'
+    const ruler = rulersVisible ? RULER_SIZE : 0
+    const viewW = Math.max(1, fullW - ruler)
+    const viewH = Math.max(1, fullH - ruler)
+
     const zoom = Math.min(viewW / w, viewH / h, 1)
 
     ctx.state.zoom = zoom
-    ctx.state.panX = (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
-    ctx.state.panY = (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
+    // Offset pan by ruler so content is centered in the usable region (not under rulers)
+    ctx.state.panX = ruler + (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
+    ctx.state.panY = ruler + (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -69,7 +86,13 @@ export function createViewportActions(ctx: EditorContext) {
     const nodes = ctx.graph.getChildren(ctx.state.currentPageId)
     if (nodes.length === 0) return
 
-    const b = computeBounds(nodes)
+    // Prefer top-level FRAME artboards (deck slides) so we fit the full 1920×1080
+    // card, not only tight content bounds inside it.
+    const artboards = nodes.filter(
+      (node) => node.type === 'FRAME' && node.width > 0 && node.height > 0
+    )
+    const targets = artboards.length > 0 ? artboards : nodes
+    const b = computeBounds(targets)
     zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height)
   }
 

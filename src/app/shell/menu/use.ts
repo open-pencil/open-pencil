@@ -12,7 +12,7 @@ import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
 import { createSelectionMenuActions } from '@/app/shell/menu/selection-actions'
 import { useAppTheme } from '@/app/shell/theme'
 import { checkForAppUpdate } from '@/app/shell/updater'
-import { createTab, closeTab, activeTab } from '@/app/tabs'
+import { createTab, createDeckTab, closeTab, activeTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 function commandMenuIds(entries: readonly AppMenuEntry[]): EditorCommandId[] {
@@ -40,6 +40,7 @@ export function useMenu() {
 
   const actions: Partial<Record<string, () => void>> = {
     new: () => createTab(),
+    'new-deck': () => void createDeckTab(),
     open: () => void openFileDialog(),
     'open-storage-workspace': () => {
       void import('@/router').then(({ default: router }) => openStorageWorkspace(router))

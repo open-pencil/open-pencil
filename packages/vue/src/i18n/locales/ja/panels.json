@@ -3,6 +3,7 @@
   "nodeCopyString": " コピー",
   "layers": "レイヤー",
   "pages": "ページ",
+  "slides": "スライド",
   "design": "デザイン",
   "code": "コード",
   "ai": "AI",
@@ -263,5 +264,6 @@
   "blendModeHue": "色相",
   "blendModeSaturation": "彩度",
   "blendModeColor": "カラー",
-  "blendModeLuminosity": "輝度"
+  "blendModeLuminosity": "輝度",
+  "newSlide": "新しいスライド"
 }

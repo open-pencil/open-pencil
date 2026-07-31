@@ -16,6 +16,7 @@
         "@chenglou/pretext": "^0.0.7",
         "@open-pencil/cli": "workspace:*",
         "@open-pencil/core": "workspace:*",
+        "@open-pencil/deck": "workspace:*",
         "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "@open-pencil/kiwi": "workspace:*",
@@ -140,6 +141,7 @@
       "dependencies": {
         "@chenglou/pretext": "^0.0.7",
         "@iconify/utils": "^3.1.0",
+        "@open-pencil/deck": "workspace:*",
         "@open-pencil/fig": "workspace:*",
         "@open-pencil/kiwi": "workspace:*",
         "@open-pencil/pen": "workspace:*",
@@ -174,6 +176,24 @@
         "@types/diff": "^8.0.0",
         "@types/opentype.js": "^1.3.9",
         "typescript": "~5.8.3",
+      },
+    },
+    "packages/deck": {
+      "name": "@open-pencil/deck",
+      "version": "0.13.2",
+      "dependencies": {
+        "fflate": "^0.8.2",
+      },
+      "devDependencies": {
+        "@open-pencil/kiwi": "workspace:*",
+        "@open-pencil/scene-graph": "workspace:*",
+        "@types/bun": "^1.3.14",
+        "tsdown": "^0.22.3",
+        "typescript": "~5.8.3",
+      },
+      "peerDependencies": {
+        "@open-pencil/kiwi": "workspace:*",
+        "@open-pencil/scene-graph": "workspace:*",
       },
     },
     "packages/docs": {
@@ -856,6 +876,8 @@
     "@open-pencil/cli": ["@open-pencil/cli@workspace:packages/cli"],
 
     "@open-pencil/core": ["@open-pencil/core@workspace:packages/core"],
+
+    "@open-pencil/deck": ["@open-pencil/deck@workspace:packages/deck"],
 
     "@open-pencil/docs": ["@open-pencil/docs@workspace:packages/docs"],
 
@@ -3304,6 +3326,8 @@
     "@multiformats/dns/@libp2p/interface": ["@libp2p/interface@3.1.0", "", { "dependencies": { "@multiformats/dns": "^1.0.6", "@multiformats/multiaddr": "^13.0.1", "main-event": "^1.0.1", "multiformats": "^13.4.0", "progress-events": "^1.0.1", "uint8arraylist": "^2.4.8" } }, "sha512-RE7/XyvC47fQBe1cHxhMvepYKa5bFCUyFrrpj8PuM0E7JtzxU7F+Du5j4VXbg2yLDcToe0+j8mB7jvwE2AThYw=="],
 
     "@open-pencil/core/fflate": ["fflate@0.8.3", "", {}, "sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA=="],
+
+    "@open-pencil/deck/fflate": ["fflate@0.8.3", "", {}, "sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA=="],
 
     "@open-pencil/docs/@tailwindcss/vite": ["@tailwindcss/vite@4.3.2", "", { "dependencies": { "@tailwindcss/node": "4.3.2", "@tailwindcss/oxide": "4.3.2", "tailwindcss": "4.3.2" }, "peerDependencies": { "vite": "^5.2.0 || ^6 || ^7 || ^8" } }, "sha512-eHpMeX4JXfVNJDEcsouTeCBubJBTcTLigeaw/NTUW6PB5ATKKXdyonnXgTBX2VuRbjz1hjfz6C5XAhr52ImQXA=="],
 

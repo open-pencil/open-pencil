@@ -1,11 +1,13 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { exportDeckFile } from '@open-pencil/core/io/formats/deck'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import {
   documentNameFromFigPath,
   downloadNameFromPath,
-  figDownloadName
+  figDownloadName,
+  isNativeDocumentFormat
 } from '@/app/document/io/names'
 import { createSaveActions } from '@/app/document/io/save'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
@@ -46,13 +48,23 @@ export function createDocumentSourceActions({
   setLastWriteTime,
   getRenderer
 }: DocumentSourceOptions) {
-  function buildFigFile() {
-    return exportFigFile(editor.graph, undefined, getRenderer() ?? undefined, state.currentPageId)
+  function currentSourceFormat(): string {
+    const name = getDownloadName()
+    if (/\.deck$/i.test(name)) return 'deck'
+    return 'fig'
+  }
+
+  function buildNativeFile() {
+    const renderer = getRenderer() ?? undefined
+    if (currentSourceFormat() === 'deck') {
+      return exportDeckFile(editor.graph, undefined, renderer, state.currentPageId)
+    }
+    return exportFigFile(editor.graph, undefined, renderer, state.currentPageId)
   }
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
-    buildFigFile,
+    buildFigFile: buildNativeFile,
     getFilePath,
     setFilePath,
     getFileHandle,
@@ -74,7 +86,7 @@ export function createDocumentSourceActions({
     getSavedVersion,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
     saveCurrentDocument: async () => {
-      await writeFile(await buildFigFile())
+      await writeFile(await buildNativeFile())
     }
   })
 
@@ -86,13 +98,13 @@ export function createDocumentSourceActions({
   ) {
     stopWatchingFile()
     setStorageBinding(null)
-    const isFig = sourceFormat === 'fig'
-    setFileHandle(isFig ? (handle ?? null) : null)
-    setFilePath(isFig ? (path ?? null) : null)
+    const isNative = isNativeDocumentFormat(sourceFormat)
+    setFileHandle(isNative ? (handle ?? null) : null)
+    setFilePath(isNative ? (path ?? null) : null)
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSourceIdentity({ handle: handle ?? null, path: path ?? null })
     setSavedVersion(state.sceneVersion)
-    if (isFig && (handle || path)) {
+    if (isNative && (handle || path)) {
       void startWatchingFile()
     }
   }

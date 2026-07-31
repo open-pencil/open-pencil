@@ -27,7 +27,7 @@ export function useCanvas(
   let ck: CanvasKit | null = null
   const lifecycle: { destroyed: boolean } = { destroyed: false }
   const isDestroyed = () => lifecycle.destroyed
-  const shouldShowRulers = createRulerVisibility(options)
+  const shouldShowRulers = createRulerVisibility(options, editor)
 
   const surface = createCanvasSurfaceManager({
     editor,

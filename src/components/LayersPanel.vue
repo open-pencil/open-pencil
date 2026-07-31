@@ -4,14 +4,18 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { useEditorStore } from '@/app/editor/active-store'
 import AppMenu from '@/components/Shell/AppMenu.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import SlidesFilmstrip from '@/components/slides/SlidesFilmstrip.vue'
 import AssetsPanel from './assets-panel/AssetsPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
 
+const editor = useEditorStore()
 const { menu, panels } = useI18n()
 const activePanel = ref<'file' | 'assets'>('file')
+const isSlidesView = computed(() => editor.state.viewMode === 'slides')
 const panelModel = computed({
   get: () => activePanel.value,
   set: (value: string) => {
@@ -52,6 +56,7 @@ const panelTabsUI = { root: 'w-full' }
       </SegmentedControl>
     </div>
     <AssetsPanel v-if="activePanel === 'assets'" />
+    <SlidesFilmstrip v-else-if="isSlidesView" />
     <SplitterGroup
       v-else
       direction="vertical"

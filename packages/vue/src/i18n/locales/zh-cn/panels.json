@@ -1,6 +1,7 @@
 {
   "layers": "图层",
   "pages": "页面",
+  "slides": "幻灯片",
   "design": "设计",
   "code": "代码",
   "ai": "AI",
@@ -263,5 +264,6 @@
   "blendModeHue": "色相",
   "blendModeSaturation": "饱和度",
   "blendModeColor": "颜色",
-  "blendModeLuminosity": "明度"
+  "blendModeLuminosity": "明度",
+  "newSlide": "新建幻灯片"
 }

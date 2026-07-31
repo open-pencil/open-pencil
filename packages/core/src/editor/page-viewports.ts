@@ -1,6 +1,6 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { CANVAS_BG_COLOR } from '#core/constants'
+import { CANVAS_BG_COLOR, DECK_CANVAS_BG_COLOR } from '#core/constants'
 
 import type { EditorContext } from './types'
 
@@ -13,8 +13,25 @@ interface PageViewport {
 
 export function createPageViewportStore(ctx: EditorContext) {
   const pageViewports = new Map<string, PageViewport>()
+  /** When true, canvas backdrop is forced to DECK_CANVAS_BG_COLOR and is not user-editable. */
+  let deckBackdropLocked = false
+
+  function setDeckBackdropLocked(locked: boolean) {
+    deckBackdropLocked = locked
+    if (locked) {
+      ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
+      ctx.requestRender()
+    }
+  }
+
+  function isDeckBackdropLocked() {
+    return deckBackdropLocked
+  }
 
   function saveCurrentPageViewport() {
+    // Decks re-fit on every slide switch — no need to persist per-slide zoom
+    if (deckBackdropLocked) return
+
     pageViewports.set(ctx.state.currentPageId, {
       panX: ctx.state.panX,
       panY: ctx.state.panY,
@@ -24,6 +41,15 @@ export function createPageViewportStore(ctx: EditorContext) {
   }
 
   function restorePageViewport(pageId: string) {
+    if (deckBackdropLocked) {
+      // Fixed chrome; zoom is re-applied by fitCurrentPageToViewport after switch
+      ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
+      ctx.state.panX = 0
+      ctx.state.panY = 0
+      ctx.state.zoom = 1
+      return
+    }
+
     const viewport = pageViewports.get(pageId)
     if (viewport) {
       ctx.state.panX = viewport.panX
@@ -47,5 +73,12 @@ export function createPageViewportStore(ctx: EditorContext) {
     pageViewports.clear()
   }
 
-  return { saveCurrentPageViewport, restorePageViewport, deletePageViewport, clearPageViewports }
+  return {
+    saveCurrentPageViewport,
+    restorePageViewport,
+    deletePageViewport,
+    clearPageViewports,
+    setDeckBackdropLocked,
+    isDeckBackdropLocked
+  }
 }

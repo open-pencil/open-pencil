@@ -1,6 +1,7 @@
 {
   "layers": "Warstwy",
   "pages": "Strony",
+  "slides": "Slajdy",
   "design": "Design",
   "code": "Kod",
   "ai": "AI",
@@ -263,5 +264,6 @@
   "blendModeHue": "Barwa",
   "blendModeSaturation": "Nasycenie",
   "blendModeColor": "Kolor",
-  "blendModeLuminosity": "Jasność"
+  "blendModeLuminosity": "Jasność",
+  "newSlide": "Nowy slajd"
 }

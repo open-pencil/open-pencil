@@ -2,6 +2,7 @@ import { parsePenFile } from '@open-pencil/pen'
 
 import { sceneNodeToJSX, selectionToJSX } from '#core/design-jsx'
 
+import { exportDeckFile, parseDeckFile } from './formats/deck'
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
@@ -218,6 +219,65 @@ export const penFormat: IOFormatAdapter = {
   }
 }
 
+export const deckFormat: IOFormatAdapter = {
+  id: 'deck',
+  label: 'Figma Slides',
+  role: 'native-document',
+  category: 'document',
+  extensions: ['deck'],
+  mimeTypes: ['application/octet-stream'],
+  support: {
+    readDocument: true,
+    writeDocument: true,
+    exportDocument: true,
+    exportPage: true,
+    exportSelection: true,
+    exportNode: true
+  },
+  exportOptions: {
+    scale: false,
+    quality: false
+  },
+  matchesFile(fileName) {
+    return lowerExt(fileName) === 'deck'
+  },
+  async readDocument(input) {
+    const graph = await parseDeckFile(input.data, { populate: 'first-page' })
+    return { graph, sourceFormat: 'deck' }
+  },
+  async writeDocument(graph, options?: FigWriteOptions, context?: IOContext) {
+    const data = await exportDeckFile(
+      graph,
+      context?.canvasKit,
+      context?.renderer,
+      options?.thumbnailPageId,
+      options?.renderThumbnail ?? false
+    )
+    return {
+      format: 'deck',
+      mimeType: 'application/octet-stream',
+      extension: 'deck',
+      data
+    }
+  },
+  async exportContent(request, options?: FigWriteOptions, context?: IOContext) {
+    const extracted = extractExportGraph(request.graph, request.target)
+    const data = await exportDeckFile(
+      extracted.graph,
+      context?.canvasKit,
+      context?.renderer,
+      options?.thumbnailPageId ?? extracted.pageId ?? undefined,
+      options?.renderThumbnail ?? false
+    )
+    return {
+      format: 'deck',
+      mimeType: 'application/octet-stream',
+      extension: 'deck',
+      data
+    }
+  }
+}
+
 export const pngFormat = rasterFormat('PNG')
 export const jpgFormat = rasterFormat('JPG')
 export const webpFormat = rasterFormat('WEBP')
@@ -373,6 +433,7 @@ export const jsxFormat: IOFormatAdapter = {
 export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
   figFormat,
   penFormat,
+  deckFormat,
   pngFormat,
   jpgFormat,
   webpFormat,

@@ -3,6 +3,7 @@ import { shallowRef, computed, triggerRef } from 'vue'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { createEmptyDeckGraph } from '@open-pencil/deck'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
@@ -74,6 +75,31 @@ export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   const tab: Tab = { id: generateTabId(), store: s }
   tabsRef.value = [...tabsRef.value, tab]
   activateTab(tab)
+  return tab
+}
+
+/**
+ * New Figma Slides document: dark chrome, one white 1920×1080 slide, starter title.
+ * Save path defaults to `.deck`.
+ */
+export async function createDeckTab(): Promise<Tab> {
+  const graph = createEmptyDeckGraph()
+  const pageId = graph.getPages()[0]?.id
+  if (pageId) computeAllLayouts(graph, pageId)
+
+  const tab = createTab(undefined, graph)
+  const { store } = tab
+  store.state.documentName = 'Untitled'
+  store.state.viewMode = 'slides'
+  store.setDeckBackdropLocked(true)
+  store.setDocumentSource('Untitled.deck', 'deck')
+  store.clearSelection()
+  store.undo.clear()
+
+  const currentPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  await store.switchPage(currentPageId)
+  store.setDeckBackdropLocked(true)
+  await store.fitCurrentPageToViewport()
   return tab
 }
 
@@ -251,9 +277,18 @@ export async function openFileInNewTab(
     store.replaceGraph(imported)
     store.undo.clear()
     store.setDocumentSource(file.name, sourceFormat, handle, path)
+    const isDeck = sourceFormat === 'deck'
+    store.state.viewMode = isDeck ? 'slides' : 'design'
+    // Fixed zoomed-out slides backdrop (#1c1c1c) — not user-editable
+    store.setDeckBackdropLocked(isDeck)
     store.clearSelection()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
+    if (isDeck) {
+      // Ensure lock wins over default page-viewport restore on first page
+      store.setDeckBackdropLocked(true)
+    }
+    // Fit whole slide (1920×1080 artboard) once canvas size is known
     await store.fitCurrentPageToViewport()
     completion.resolve(undefined)
   } catch (error) {
@@ -274,6 +309,7 @@ export function useTabsStore() {
     tabs: allTabs,
     activeTabId,
     createTab,
+    createDeckTab,
     switchTab,
     closeTab,
     getActiveTabId,

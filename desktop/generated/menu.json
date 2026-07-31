@@ -4,8 +4,13 @@
     "items": [
       {
         "id": "new",
-        "label": "New",
+        "label": "New Design",
         "accelerator": "CmdOrCtrl+N"
+      },
+      {
+        "id": "new-deck",
+        "label": "New Deck",
+        "accelerator": "CmdOrCtrl+Shift+N"
       },
       {
         "id": "open",

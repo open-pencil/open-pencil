@@ -31,7 +31,8 @@ export const APP_MENU_SCHEMA = [
   {
     label: 'File',
     items: [
-      { id: 'new', label: 'New', shortcut: 'MOD+N' },
+      { id: 'new', label: 'New Design', shortcut: 'MOD+N' },
+      { id: 'new-deck', label: 'New Deck', shortcut: 'MOD+SHIFT+N' },
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
       { id: 'open-storage-workspace', label: 'Open Storage Workspace…' },
       { type: 'separator' },
