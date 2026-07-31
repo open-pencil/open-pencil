@@ -94,3 +94,64 @@ describe('render', () => {
     expect(result.textAlignHorizontal).toBe('CENTER')
   })
 })
+
+describe('create_vector', () => {
+  const STAR_D = 'M50 0 L61 35 L98 35 L68 57 L79 91 L50 70 L21 91 L32 57 L2 35 L39 35 Z'
+
+  test('accepts an SVG path string', () => {
+    const { figma, graph } = setupToolTest()
+    const tool = getTool('create_vector')
+    const result = tool.execute(figma, {
+      x: 10,
+      y: 20,
+      name: 'Star',
+      path: STAR_D
+    }) as ToolResult
+
+    const node = expectDefined(
+      graph.getNode(expectDefined(result.id, 'created node id')),
+      'created node'
+    )
+    // The whole point: an LLM-authored `d` string has to yield real geometry,
+    // not a zero-path node that silently renders nothing.
+    const network = expectDefined(node.vectorNetwork, 'vector network')
+    expect(network.vertices.length).toBeGreaterThan(0)
+    expect(network.regions.length).toBeGreaterThan(0)
+  })
+
+  test('still accepts VectorNetwork JSON', () => {
+    const { figma, graph } = setupToolTest()
+    const tool = getTool('create_vector')
+    const result = tool.execute(figma, {
+      x: 0,
+      y: 0,
+      path: JSON.stringify({
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 }
+        ],
+        segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+        regions: []
+      })
+    }) as ToolResult
+
+    const node = expectDefined(
+      graph.getNode(expectDefined(result.id, 'created node id')),
+      'created node'
+    )
+    expect(expectDefined(node.vectorNetwork, 'vector network').vertices.length).toBe(2)
+  })
+
+  test('rejects bad path data without leaving an orphaned node behind', () => {
+    const { figma, graph } = setupToolTest()
+    const tool = getTool('create_vector')
+    const before = [...graph.getAllNodes()].length
+
+    const result = tool.execute(figma, { x: 0, y: 0, name: 'Ghost', path: 'not a path' })
+
+    expect(expectDefined(result, 'result').error).toBeDefined()
+    // Regression: the node used to be created and named before the path was
+    // parsed, so every rejected attempt left an invisible paths:0 node.
+    expect([...graph.getAllNodes()].length).toBe(before)
+  })
+})
