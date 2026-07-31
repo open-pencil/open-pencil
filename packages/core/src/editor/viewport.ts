@@ -5,7 +5,45 @@ import { RULER_SIZE, ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/
 import { documentKindRules } from './document-kind'
 import type { EditorContext } from './types'
 
+function clamp(value: number, min: number, max: number): number {
+  // A degenerate range means the artboard is smaller than the viewport on this axis.
+  return min > max ? value : Math.min(max, Math.max(min, value))
+}
+
 export function createViewportActions(ctx: EditorContext) {
+  /**
+   * Keep the camera on the artboard for kinds that own one.
+   *
+   * While the slide fits it is centred, so panning cannot nudge it off centre. Once zoomed
+   * in past the fit, the camera is bounded by the slide's edges instead of drifting into
+   * empty space beside it.
+   */
+  function clampViewportToArtboard() {
+    if (!documentKindRules(ctx.state.documentKind).lockViewportToArtboard) return
+    const artboard = ctx.graph
+      .getChildren(ctx.state.currentPageId)
+      .find((node) => node.type === 'FRAME' && node.width > 0 && node.height > 0)
+    if (!artboard) return
+
+    const { width: viewW, height: viewH } = ctx.getViewportSize()
+    if (viewW <= 0 || viewH <= 0) return
+
+    const zoom = ctx.state.zoom
+    const left = artboard.x * zoom
+    const top = artboard.y * zoom
+    const width = artboard.width * zoom
+    const height = artboard.height * zoom
+
+    ctx.state.panX =
+      width <= viewW
+        ? (viewW - width) / 2 - left
+        : clamp(ctx.state.panX, viewW - (left + width), -left)
+    ctx.state.panY =
+      height <= viewH
+        ? (viewH - height) / 2 - top
+        : clamp(ctx.state.panY, viewH - (top + height), -top)
+  }
+
   function currentViewport() {
     return { panX: ctx.state.panX, panY: ctx.state.panY, zoom: ctx.state.zoom }
   }
@@ -30,6 +68,7 @@ export function createViewportActions(ctx: EditorContext) {
     ctx.state.panX = centerX - (centerX - ctx.state.panX) * (newZoom / ctx.state.zoom)
     ctx.state.panY = centerY - (centerY - ctx.state.panY) * (newZoom / ctx.state.zoom)
     ctx.state.zoom = newZoom
+    clampViewportToArtboard()
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -46,6 +85,7 @@ export function createViewportActions(ctx: EditorContext) {
     const previous = currentViewport()
     ctx.state.panX += dx
     ctx.state.panY += dy
+    clampViewportToArtboard()
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -101,6 +141,7 @@ export function createViewportActions(ctx: EditorContext) {
     ctx.state.zoom = Math.max(0.02, Math.min(256, level))
     ctx.state.panX = viewW / 2 - centerX
     ctx.state.panY = viewH / 2 - centerY
+    clampViewportToArtboard()
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }

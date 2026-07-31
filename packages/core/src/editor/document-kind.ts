@@ -24,6 +24,21 @@ export interface DocumentKindRules {
   saveFormat: 'fig' | 'deck'
   /** Page background is user-editable from the design panel. */
   pageBackgroundEditable: boolean
+  /**
+   * Top-level artboards can be selected and edited as objects.
+   *
+   * False for decks: a slide is fixed presentation chrome that holds the content, not a
+   * shape the user owns — clicks pass through it to whatever is on the slide.
+   */
+  artboardSelectable: boolean
+  /**
+   * The camera is tied to the artboard.
+   *
+   * A deck shows one fixed slide with nothing around it, so there is nowhere to pan to:
+   * while the slide fits it stays centred, and once zoomed in past the fit the camera
+   * stops at the slide's edges rather than sliding it off screen.
+   */
+  lockViewportToArtboard: boolean
 }
 
 const RULES: Record<DocumentKind, DocumentKindRules> = {
@@ -34,7 +49,9 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     persistPageViewports: true,
     leftRail: 'layers',
     saveFormat: 'fig',
-    pageBackgroundEditable: true
+    pageBackgroundEditable: true,
+    artboardSelectable: true,
+    lockViewportToArtboard: false
   },
   deck: {
     // Figma Slides-style canvas: fixed backdrop, always-fit slide, filmstrip navigator.
@@ -44,7 +61,9 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     persistPageViewports: false,
     leftRail: 'filmstrip',
     saveFormat: 'deck',
-    pageBackgroundEditable: false
+    pageBackgroundEditable: false,
+    artboardSelectable: false,
+    lockViewportToArtboard: true
   }
 }
 

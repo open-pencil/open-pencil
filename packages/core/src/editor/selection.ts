@@ -1,3 +1,4 @@
+import { documentKindRules } from './document-kind'
 import { createSelectionContainerActions } from './selection/container'
 import { createSelectionHitTestActions } from './selection/hit-test'
 import { createSelectionOverlayActions } from './selection/overlays'
@@ -24,7 +25,15 @@ export function createSelectionActions(ctx: EditorContext) {
 
   function selectAll() {
     const children = ctx.graph.getChildren(ctx.state.currentPageId)
-    ctx.setSelectedIds(new Set(children.map((n) => n.id)))
+    if (documentKindRules(ctx.state.documentKind).artboardSelectable) {
+      ctx.setSelectedIds(new Set(children.map((n) => n.id)))
+      return
+    }
+    // A deck slide cannot be selected, so "everything" means everything on the slide.
+    const ids = children.flatMap((node) =>
+      node.type === 'FRAME' ? ctx.graph.getChildren(node.id).map((child) => child.id) : [node.id]
+    )
+    ctx.setSelectedIds(new Set(ids))
   }
 
   function selectInverse() {
