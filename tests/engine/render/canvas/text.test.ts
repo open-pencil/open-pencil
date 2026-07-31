@@ -7,6 +7,7 @@ import {
   SkiaRenderer as SkiaRendererClass
 } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { initCanvasKit } from '#cli/headless'
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -95,6 +96,7 @@ function textNode(overrides: Partial<SceneNode> = {}): SceneNode {
     textDecoration: 'NONE',
     textDirection: 'AUTO',
     styleRuns: [],
+    source: createDefaultSourceMetadata(),
     ...overrides
   } as SceneNode
 }

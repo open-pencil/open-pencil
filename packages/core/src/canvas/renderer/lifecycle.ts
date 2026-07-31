@@ -10,12 +10,7 @@ function clearRetainedSceneState(r: SkiaRenderer): void {
   r.sceneBackingBuild = null
 }
 
-export function destroyRenderer(r: SkiaRenderer): void {
-  if (r.destroyed) return
-  r.destroyed = true
-
-  for (const img of r.imageCache.values()) img.delete()
-  r.imageCache.clear()
+function disposePathCaches(r: SkiaRenderer): void {
   for (const cache of [
     r.vectorPathCache,
     r.vectorStrokePathCache,
@@ -28,6 +23,18 @@ export function destroyRenderer(r: SkiaRenderer): void {
     }
     cache.clear()
   }
+  // glyphSilhouetteCache maps to a single Path per entry (not an array).
+  for (const p of r.glyphSilhouetteCache.values()) p.delete()
+  r.glyphSilhouetteCache.clear()
+}
+
+export function destroyRenderer(r: SkiaRenderer): void {
+  if (r.destroyed) return
+  r.destroyed = true
+
+  for (const img of r.imageCache.values()) img.delete()
+  r.imageCache.clear()
+  disposePathCaches(r)
   r.fillPaint.delete()
   r.strokePaint.delete()
   r.selectionPaint.delete()

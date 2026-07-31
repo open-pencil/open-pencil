@@ -30,6 +30,14 @@ export interface FigmaSourcePayload {
   derivedSymbolData: unknown[]
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
+  /**
+   * Figma Kiwi type when the engine type is a stand-in (TEXT_PATH → TEXT).
+   * Export re-emits this while path-text fidelity remains; cleared when the
+   * user edits text content (glyphs invalidated). Not an OpenPencil plugin key
+   * — Figma would ignore that for native node type. Widen this union if another
+   * Figma type ever needs a stand-in.
+   */
+  kiwiNodeType: 'TEXT_PATH' | null
 }
 
 export interface SourceMetadata {
@@ -303,11 +311,25 @@ export interface PluginRelaunchDataEntry {
   isDeleted: boolean
 }
 
+/**
+ * One Figma-baked glyph outline for display (path text / missing-font fidelity).
+ * commandsBlob is in font units; paint multiplies by fontSize (and scaleX/Y).
+ */
 export interface FigmaDerivedTextGlyph {
   commandsBlob: Uint8Array
   x: number
   y: number
   fontSize: number
+  /** Figma Glyph.rotation — radians, not degrees. Zero for axis-aligned text. */
+  rotation?: number
+  /**
+   * Accumulated non-uniform resize scale (default 1). Paint order is
+   * translate → scale(scaleX,Y) → rotate → scale(fontSize,-fontSize) so
+   * anisotropic stretch matches scaleGeometryPaths(strokeGeometry).
+   * Do not fold this into fontSize or rotated letters desync from outlines.
+   */
+  scaleX?: number
+  scaleY?: number
 }
 
 export interface SymbolLink {
@@ -514,6 +536,13 @@ export interface SceneNode {
 
   textPicture: Uint8Array | null
   figmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
+  /**
+   * Node-local rect that an imported TEXT_PATH layout path (rawNodeFields
+   * vectorData, in normalizedSize space) maps onto. Set at import (accounts
+   * for the expandPathTextLayoutBox shift), scaled on resize so text can be
+   * re-laid out along the scaled path. Null for non-path text.
+   */
+  textPathBox: Rect | null
 }
 
 export type ComponentPropertyType = 'VARIANT' | 'TEXT' | 'BOOLEAN' | 'INSTANCE_SWAP'

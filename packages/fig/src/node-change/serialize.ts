@@ -1,7 +1,7 @@
 import { normalizeFontFamily, weightToStyle } from '@open-pencil/scene-graph'
 
 import { effectiveFigmaRawNodeFields } from '../source-metadata'
-import { fractionalPosition, mapToFigmaType } from './basics'
+import { computeExportTransform, fractionalPosition, mapToFigmaType } from './basics'
 import { bytesToHex } from './bytes'
 import { VARIABLE_BINDING_FIELDS } from './convert'
 import { buildDerivedTextData as buildSharedDerivedTextData } from './derived-text-data'
@@ -9,7 +9,7 @@ import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export-
 import { applyFontFeaturesToKiwi } from './font/features'
 import { weightToFigmaStyle } from './font/style'
 import { fillToKiwiPaint, safeColor } from './paint'
-import { encodePathCommandsBlob } from './path-commands'
+import { bakeGlyphScale, encodePathCommandsBlob } from './path-commands'
 import {
   BOUND_VARIABLES_PLUGIN_KEY,
   LAYOUT_DIRECTION_PLUGIN_KEY,
@@ -31,7 +31,7 @@ export {
 import type { NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { GUID, JsonObject, Matrix } from '@open-pencil/scene-graph/primitives'
+import type { GUID, JsonObject } from '@open-pencil/scene-graph/primitives'
 
 import {
   buildAssetRefToVarGuidMap,
@@ -100,7 +100,16 @@ function buildDerivedTextData(
   const glyphs =
     derivedGlyphs.length > 0
       ? derivedGlyphs.map((glyph, index) => ({
-          commandsBlob: appendGlyphBlob(blobs, glyphBlobMap, glyph.commandsBlob),
+          commandsBlob: appendGlyphBlob(
+            blobs,
+            glyphBlobMap,
+            bakeGlyphScale(
+              glyph.commandsBlob,
+              glyph.scaleX ?? 1,
+              glyph.scaleY ?? 1,
+              glyph.rotation ?? 0
+            )
+          ),
           position: { x: glyph.x, y: glyph.y },
           fontSize: glyph.fontSize,
           firstCharacter: index,
@@ -108,7 +117,8 @@ function buildDerivedTextData(
             index + 1 < derivedGlyphs.length
               ? Math.max(derivedGlyphs[index + 1].x - glyph.x, 0)
               : glyphAdvance,
-          rotation: 0
+          // Preserve path-text radians; hardcoding 0 used to flatten circular text on re-export.
+          rotation: glyph.rotation ?? 0
         }))
       : (
           runtime.getGlyphOutlineMetrics(
@@ -451,37 +461,6 @@ function serializeVariableBindings(
     upsertPluginData(node, BOUND_VARIABLES_PLUGIN_KEY, JSON.stringify(roundtripBindings))
   }
   if (entries.length > 0) nc.variableConsumptionMap = { entries }
-}
-
-function computeExportTransform(node: SceneNode): Matrix {
-  const sx = node.flipX ? -1 : 1
-  const cos = Math.cos((node.rotation * Math.PI) / 180)
-  const sin = Math.sin((node.rotation * Math.PI) / 180)
-
-  const m00 = cos * sx
-  const m01 = -sin
-  const m10 = sin * sx
-  const m11 = cos
-  const corners = [
-    { x: 0, y: 0 },
-    { x: node.width, y: 0 },
-    { x: 0, y: node.height },
-    { x: node.width, y: node.height }
-  ].map((point) => ({
-    x: m00 * point.x + m01 * point.y,
-    y: m10 * point.x + m11 * point.y
-  }))
-  const offsetX = Math.min(...corners.map((point) => point.x))
-  const offsetY = Math.min(...corners.map((point) => point.y))
-
-  return {
-    m00,
-    m01,
-    m02: node.x - offsetX,
-    m10,
-    m11,
-    m12: node.y - offsetY
-  }
 }
 
 export function sceneNodeToKiwi(
