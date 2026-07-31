@@ -5,7 +5,8 @@ import type {
   Fill,
   Stroke,
   Effect,
-  LayoutMode
+  LayoutMode,
+  VectorNetwork
 } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
@@ -105,7 +106,8 @@ export class FigmaNodeProxy {
   declare maxWidth: number | null
   declare minHeight: number | null
   declare maxHeight: number | null
-  declare readonly vectorPaths: readonly FigmaVectorPath[]
+  declare vectorPaths: readonly FigmaVectorPath[]
+  declare vectorNetwork: VectorNetwork | null
   declare readonly explicitVariableModes: Readonly<Record<string, string>>
   declare readonly resolvedVariableModes: Readonly<Record<string, string>>
 
