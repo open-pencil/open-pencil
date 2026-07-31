@@ -1,5 +1,6 @@
 import { shallowRef, computed, triggerRef } from 'vue'
 
+import { documentKindForSourceFormat } from '@open-pencil/core/editor'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
@@ -90,15 +91,13 @@ export async function createDeckTab(): Promise<Tab> {
   const tab = createTab(undefined, graph)
   const { store } = tab
   store.state.documentName = 'Untitled'
-  store.state.viewMode = 'slides'
-  store.setDeckBackdropLocked(true)
+  store.setDocumentKind('deck')
   store.setDocumentSource('Untitled.deck', 'deck')
   store.clearSelection()
   store.undo.clear()
 
   const currentPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
   await store.switchPage(currentPageId)
-  store.setDeckBackdropLocked(true)
   await store.fitCurrentPageToViewport()
   return tab
 }
@@ -277,17 +276,10 @@ export async function openFileInNewTab(
     store.replaceGraph(imported)
     store.undo.clear()
     store.setDocumentSource(file.name, sourceFormat, handle, path)
-    const isDeck = sourceFormat === 'deck'
-    store.state.viewMode = isDeck ? 'slides' : 'design'
-    // Fixed zoomed-out slides backdrop (#1c1c1c) — not user-editable
-    store.setDeckBackdropLocked(isDeck)
+    store.setDocumentKind(documentKindForSourceFormat(sourceFormat))
     store.clearSelection()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
-    if (isDeck) {
-      // Ensure lock wins over default page-viewport restore on first page
-      store.setDeckBackdropLocked(true)
-    }
     // Fit whole slide (1920×1080 artboard) once canvas size is known
     await store.fitCurrentPageToViewport()
     completion.resolve(undefined)

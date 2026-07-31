@@ -1,13 +1,20 @@
+import { documentKindForFileName, documentKindRules } from '@open-pencil/core/editor'
+
 export type NativeSaveFormat = 'fig' | 'deck'
 
+/**
+ * Fallback for entry points that only have a file name. The document kind on the store is
+ * the real source of truth — prefer passing that in.
+ */
 function saveFormatFromName(name?: string | null): NativeSaveFormat {
-  return name && /\.deck$/i.test(name) ? 'deck' : 'fig'
+  return documentKindRules(documentKindForFileName(name ?? '')).saveFormat
 }
 
 export async function chooseTauriFigSavePath(suggestedName?: string | null) {
   const { save } = await import('@tauri-apps/plugin-dialog')
   const format = saveFormatFromName(suggestedName)
-  const defaultPath = suggestedName?.trim() || (format === 'deck' ? 'Untitled.deck' : 'Untitled.fig')
+  const defaultPath =
+    suggestedName?.trim() || (format === 'deck' ? 'Untitled.deck' : 'Untitled.fig')
   return save({
     defaultPath,
     filters:

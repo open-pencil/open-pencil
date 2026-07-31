@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
+import { documentKindRules } from '@open-pencil/core/editor'
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -46,7 +47,9 @@ const supportsLayoutGuides = computed(() => {
 })
 const { panels } = useI18n()
 /** Deck slides use a fixed canvas backdrop — hide page background editor. */
-const showPageBackground = computed(() => store.state.viewMode !== 'slides')
+const showPageBackground = computed(
+  () => documentKindRules(store.state.documentKind).pageBackgroundEditable
+)
 </script>
 
 <template>

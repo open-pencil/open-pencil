@@ -10,7 +10,6 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     showRemoteCursors: true,
     activeRibbonTab: 'panels',
     panelMode: 'design',
-    viewMode: 'design',
     actionToast: null,
     mobileDrawerSnap: 'closed',
     clipboardHtml: '',
@@ -30,8 +29,6 @@ export type AppEditorState = EditorState & {
   showRemoteCursors: boolean
   activeRibbonTab: 'panels' | 'code' | 'ai'
   panelMode: 'layers' | 'design'
-  /** Left-rail layout: design = pages+layers; slides = filmstrip for .deck */
-  viewMode: 'design' | 'slides'
   actionToast: string | null
   mobileDrawerSnap: 'closed' | 'half' | 'full'
   clipboardHtml: string

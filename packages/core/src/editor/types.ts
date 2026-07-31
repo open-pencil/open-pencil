@@ -15,6 +15,8 @@ import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { RenderOverlays } from '#core/canvas/renderer/types'
 import type { TextEditor } from '#core/text/editor'
 
+import type { DocumentKind } from './document-kind'
+
 export type Tool =
   | 'SELECT'
   | 'FRAME'
@@ -30,6 +32,8 @@ export type Tool =
 
 export interface EditorState {
   activeTool: Tool
+  /** Which document kind is open; drives format-specific editor behaviour. */
+  documentKind: DocumentKind
   currentPageId: string
   selectedIds: Set<string>
   marquee: Rect | null

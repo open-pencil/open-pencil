@@ -25,4 +25,13 @@ export interface UseCanvasOptions {
    * Called once the rendering surface is ready.
    */
   onReady?: () => void
+  /**
+   * Called after the canvas host changed size and the editor viewport was updated,
+   * before the frame is repainted.
+   *
+   * Use it for policy that depends on the viewport size — re-fitting content, for
+   * example. Runs on the surface's own resize pass, so it is already coalesced to one
+   * call per frame and ordered after the new size reaches the editor.
+   */
+  onResize?: () => void
 }

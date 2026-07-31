@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-import { useEventListener, useUrlSearchParams } from '@vueuse/core'
+import { useDebounceFn, useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
+import { documentKindRules } from '@open-pencil/core/editor'
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import {
@@ -69,21 +70,27 @@ const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 
-const isSlidesView = computed(() => store.state.viewMode === 'slides')
+const isSlidesView = computed(
+  () => documentKindRules(store.state.documentKind).leftRail === 'filmstrip'
+)
 /** Design vs slides layouts are stored separately; slides defaults right panel to min (10). */
 const panelLayout = computed(() => (isSlidesView.value ? loadSlidesLayout() : loadEditorLayout()))
-const splitterKey = computed(() => `${activeTab.value?.id ?? 'tab'}-${store.state.viewMode}`)
+const splitterKey = computed(() => `${activeTab.value?.id ?? 'tab'}-${store.state.documentKind}`)
 
-function onSplitterLayout(layout: number[]) {
+/**
+ * Splitter drags emit continuously; localStorage writes are synchronous, so persisting on
+ * every emission stutters the drag. Only the resting position needs to survive a reload.
+ */
+const onSplitterLayout = useDebounceFn((layout: number[]) => {
   if (isSlidesView.value) saveSlidesLayout(layout)
   else saveEditorLayout(layout)
-}
+}, 200)
 
-// Remounting the splitter for slides (narrow right panel) changes canvas size — re-fit the slide
+// Remounting the splitter for decks (narrow right panel) changes canvas size — re-fit
 watch(
-  () => store.state.viewMode,
-  async (mode) => {
-    if (mode !== 'slides') return
+  () => store.state.documentKind,
+  async (kind) => {
+    if (!documentKindRules(kind).autoFitOnResize) return
     await nextTick()
     await store.fitCurrentPageToViewport()
   }

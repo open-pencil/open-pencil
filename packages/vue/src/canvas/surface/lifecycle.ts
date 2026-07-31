@@ -107,7 +107,13 @@ export function createCanvasSurfaceManager({
       return
     }
 
-    sizeCanvas(canvas, editor)
+    // A resize notification does not always mean new pixels — the observer also fires on
+    // layout churn that leaves the backing store identical. Rebuilding the GPU surface and
+    // repainting for those is pure waste.
+    if (!sizeCanvas(canvas, editor)) return
+
+    // Editor now holds the new viewport size — safe for size-dependent policy (re-fit).
+    options?.onResize?.()
 
     const result = makeGLSurface(ck, canvas, editor, options, state.glContext)
     state.glContext = result.glContext

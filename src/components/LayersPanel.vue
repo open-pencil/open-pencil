@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
+import { documentKindRules } from '@open-pencil/core/editor'
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -15,7 +16,9 @@ import PagesPanel from './PagesPanel.vue'
 const editor = useEditorStore()
 const { menu, panels } = useI18n()
 const activePanel = ref<'file' | 'assets'>('file')
-const isSlidesView = computed(() => editor.state.viewMode === 'slides')
+const isSlidesView = computed(
+  () => documentKindRules(editor.state.documentKind).leftRail === 'filmstrip'
+)
 const panelModel = computed({
   get: () => activePanel.value,
   set: (value: string) => {

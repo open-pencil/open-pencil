@@ -1,12 +1,8 @@
 import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
-import {
-  RULER_SIZE,
-  ZOOM_DIVISOR,
-  ZOOM_SCALE_MAX,
-  ZOOM_SCALE_MIN
-} from '#core/constants'
+import { RULER_SIZE, ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 
+import { documentKindRules } from './document-kind'
 import type { EditorContext } from './types'
 
 export function createViewportActions(ctx: EditorContext) {
@@ -64,10 +60,10 @@ export function createViewportActions(ctx: EditorContext) {
     const { width: fullW, height: fullH } = ctx.getViewportSize()
     if (fullW <= 0 || fullH <= 0) return
 
-    // Rulers occupy the top/left strip — omit in slides mode (no rulers on deck canvas).
-    const appState = ctx.state as { showRulers?: boolean; viewMode?: string }
+    // Rulers occupy the top/left strip — decks have none, and the user can hide them.
+    const appState = ctx.state as { showRulers?: boolean }
     const rulersVisible =
-      appState.showRulers !== false && appState.viewMode !== 'slides'
+      documentKindRules(ctx.state.documentKind).rulers && appState.showRulers !== false
     const ruler = rulersVisible ? RULER_SIZE : 0
     const viewW = Math.max(1, fullW - ruler)
     const viewH = Math.max(1, fullH - ruler)

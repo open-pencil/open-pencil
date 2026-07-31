@@ -7,6 +7,7 @@ import { fontManager } from '#core/text/fonts'
 import { collectGraphFontRequirements } from '#core/text/requirements'
 import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 
+import type { DocumentKind } from './document-kind'
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
 
@@ -97,7 +98,7 @@ export function createPageActions(ctx: EditorContext) {
 
   function setPageColor(color: Color) {
     // Deck / slides documents use a fixed zoomed-out backdrop; ignore user edits.
-    if (pageViewportStore.isDeckBackdropLocked()) {
+    if (pageViewportStore.isBackdropLocked()) {
       ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
       ctx.requestRender()
       return
@@ -106,8 +107,13 @@ export function createPageActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
-  function setDeckBackdropLocked(locked: boolean) {
-    pageViewportStore.setDeckBackdropLocked(locked)
+  /**
+   * Switch the document kind. Single entry point for "this is a deck" / "this is a design
+   * file" — everything format-specific derives from it, so nothing else needs setting.
+   */
+  function setDocumentKind(kind: DocumentKind) {
+    ctx.state.documentKind = kind
+    pageViewportStore.applyBackdrop()
   }
 
   return {
@@ -117,7 +123,7 @@ export function createPageActions(ctx: EditorContext) {
     movePage,
     renamePage,
     setPageColor,
-    setDeckBackdropLocked,
+    setDocumentKind,
     clearPageViewports: pageViewportStore.clearPageViewports
   }
 }

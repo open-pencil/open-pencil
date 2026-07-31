@@ -1,6 +1,6 @@
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
 import { IS_BROWSER } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
+import { documentKindRules, type Editor } from '@open-pencil/core/editor'
 
 import { useViewportKind } from '#vue/editor/viewport-kind/use'
 
@@ -9,9 +9,8 @@ export type RulerVisibilityOptions = {
 }
 
 type RulerEditorState = {
+  /** App-extended: the user's own rulers toggle. */
   showRulers?: boolean
-  /** App-extended: slides / deck mode has no canvas rulers */
-  viewMode?: 'design' | 'slides'
 }
 
 export function createRulerVisibility(options?: RulerVisibilityOptions, editor?: Editor) {
@@ -22,9 +21,9 @@ export function createRulerVisibility(options?: RulerVisibilityOptions, editor?:
   return function shouldShowRulers() {
     if (options?.showRulers === false) return false
     if (noRulersParam || isMobile.value) return false
+    // Decks have no canvas rulers, whatever the user's toggle says.
+    if (editor && !documentKindRules(editor.state.documentKind).rulers) return false
     const state = editor?.state as RulerEditorState | undefined
-    // Deck / slides: Figma Slides–style canvas has no rulers
-    if (state?.viewMode === 'slides') return false
     if (state?.showRulers === false) return false
     return true
   }

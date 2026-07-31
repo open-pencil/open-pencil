@@ -2,6 +2,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { CANVAS_BG_COLOR, DECK_CANVAS_BG_COLOR } from '#core/constants'
 
+import { documentKindRules } from './document-kind'
 import type { EditorContext } from './types'
 
 interface PageViewport {
@@ -13,24 +14,26 @@ interface PageViewport {
 
 export function createPageViewportStore(ctx: EditorContext) {
   const pageViewports = new Map<string, PageViewport>()
-  /** When true, canvas backdrop is forced to DECK_CANVAS_BG_COLOR and is not user-editable. */
-  let deckBackdropLocked = false
 
-  function setDeckBackdropLocked(locked: boolean) {
-    deckBackdropLocked = locked
-    if (locked) {
-      ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
-      ctx.requestRender()
-    }
+  function rules() {
+    return documentKindRules(ctx.state.documentKind)
   }
 
-  function isDeckBackdropLocked() {
-    return deckBackdropLocked
+  /** Backdrop is fixed by the format (decks) and not user-editable. */
+  function isBackdropLocked() {
+    return rules().lockedBackdrop
+  }
+
+  /** Re-apply format-owned chrome after the document kind changes. */
+  function applyBackdrop() {
+    if (!isBackdropLocked()) return
+    ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
+    ctx.requestRender()
   }
 
   function saveCurrentPageViewport() {
     // Decks re-fit on every slide switch — no need to persist per-slide zoom
-    if (deckBackdropLocked) return
+    if (!rules().persistPageViewports) return
 
     pageViewports.set(ctx.state.currentPageId, {
       panX: ctx.state.panX,
@@ -41,7 +44,7 @@ export function createPageViewportStore(ctx: EditorContext) {
   }
 
   function restorePageViewport(pageId: string) {
-    if (deckBackdropLocked) {
+    if (isBackdropLocked()) {
       // Fixed chrome; zoom is re-applied by fitCurrentPageToViewport after switch
       ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
       ctx.state.panX = 0
@@ -78,7 +81,7 @@ export function createPageViewportStore(ctx: EditorContext) {
     restorePageViewport,
     deletePageViewport,
     clearPageViewports,
-    setDeckBackdropLocked,
-    isDeckBackdropLocked
+    applyBackdrop,
+    isBackdropLocked
   }
 }

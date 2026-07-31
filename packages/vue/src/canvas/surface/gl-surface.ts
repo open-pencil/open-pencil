@@ -8,13 +8,27 @@ type GLContext = ReturnType<CanvasKit['MakeGrContext']>
 
 export type CanvasGLContext = GLContext
 
-export function sizeCanvas(canvas: HTMLCanvasElement, editor: Editor) {
+/**
+ * Match the backing store to the canvas host and publish the new size to the editor.
+ *
+ * Returns whether the backing store actually changed — assigning `width`/`height`
+ * reallocates and clears it even when the value is identical, and every such change
+ * forces a new GPU surface downstream, so callers skip that work when nothing moved.
+ */
+export function sizeCanvas(canvas: HTMLCanvasElement, editor: Editor): boolean {
   const dpr = window.devicePixelRatio || 1
-  canvas.width = canvas.clientWidth * dpr
-  canvas.height = canvas.clientHeight * dpr
+  // Truncated, matching the integer coercion an assignment would apply anyway.
+  const width = Math.trunc(canvas.clientWidth * dpr)
+  const height = Math.trunc(canvas.clientHeight * dpr)
+  const changed = canvas.width !== width || canvas.height !== height
+  if (changed) {
+    canvas.width = width
+    canvas.height = height
+  }
   if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
     editor.setViewportSize(canvas.clientWidth, canvas.clientHeight)
   }
+  return changed
 }
 
 export function makeGLSurface(

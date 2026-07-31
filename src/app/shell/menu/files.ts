@@ -37,9 +37,7 @@ export async function readTauriDesignFile(path: string): Promise<File> {
 export async function chooseTauriOpenPath(): Promise<string | null> {
   const { open } = await import('@tauri-apps/plugin-dialog')
   const path = await open({
-    filters: [
-      { name: 'Design file', extensions: ['fig', 'pen', 'deck', 'html', 'htm', 'xhtml'] }
-    ],
+    filters: [{ name: 'Design file', extensions: ['fig', 'pen', 'deck', 'html', 'htm', 'xhtml'] }],
     multiple: false
   })
   return typeof path === 'string' ? path : null

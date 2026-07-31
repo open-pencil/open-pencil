@@ -4,6 +4,7 @@ import type { EditorState } from '#core/editor/types'
 export function createDefaultEditorState(pageId: string): EditorState {
   return {
     activeTool: 'SELECT',
+    documentKind: 'design',
     currentPageId: pageId,
     selectedIds: new Set<string>(),
     marquee: null,

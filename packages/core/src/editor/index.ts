@@ -1,4 +1,10 @@
 export { createDefaultEditorState, createEditor } from './create'
+export {
+  documentKindForFileName,
+  documentKindForSourceFormat,
+  documentKindRules
+} from './document-kind'
+export type { DocumentKind, DocumentKindRules } from './document-kind'
 export type { Editor } from './create'
 export { createTextActions } from './text'
 export { opacityFromBuffer } from './nodes'

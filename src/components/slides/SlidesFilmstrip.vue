@@ -9,11 +9,7 @@ import { useI18n, usePageList } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import Tip from '@/components/ui/Tip.vue'
 import SlideThumbnail from '@/components/slides/SlideThumbnail.vue'
-import {
-  SLIDE_THUMB_INDEX_GUTTER,
-  SLIDE_THUMB_MAX_WIDTH,
-  SLIDE_THUMB_MIN_WIDTH
-} from '@/constants'
+import { SLIDE_THUMB_INDEX_GUTTER, SLIDE_THUMB_MAX_WIDTH, SLIDE_THUMB_MIN_WIDTH } from '@/constants'
 import slidesRailTheme from '@/theme/slides-rail'
 
 const editor = useEditorStore()
@@ -60,9 +56,7 @@ async function onSelect(pageId: string) {
 
 async function onNewSlide() {
   const pageId = addEmptySlide(editor.graph)
-  editor.setDeckBackdropLocked(true)
   await editor.switchPage(pageId)
-  editor.setDeckBackdropLocked(true)
   await editor.fitCurrentPageToViewport()
   editor.requestRender()
 }
@@ -74,12 +68,7 @@ async function onNewSlide() {
       <span :class="base.title()">{{ panels.slides }}</span>
     </header>
     <div :class="base.toolbar()">
-      <button
-        type="button"
-        data-test-id="slides-new"
-        :class="base.newSlide()"
-        @click="onNewSlide"
-      >
+      <button type="button" data-test-id="slides-new" :class="base.newSlide()" @click="onNewSlide">
         {{ panels.newSlide }}
       </button>
       <Tip :label="panels.newSlide">
@@ -114,11 +103,7 @@ async function onNewSlide() {
           <div :class="base.thumbShell()" :style="thumbShellStyle">
             <div :class="base.activeChrome()" :data-active="cell.active ? 'true' : 'false'">
               <div :class="base.thumb()" :data-active="cell.active ? 'true' : undefined">
-                <SlideThumbnail
-                  :page-id="cell.id"
-                  :alt="cell.name"
-                  :width="thumbWidth"
-                />
+                <SlideThumbnail :page-id="cell.id" :alt="cell.name" :width="thumbWidth" />
               </div>
             </div>
           </div>

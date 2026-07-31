@@ -1,4 +1,4 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { documentKindRules, type Editor, type EditorState } from '@open-pencil/core/editor'
 import { exportDeckFile } from '@open-pencil/core/io/formats/deck'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 
@@ -49,9 +49,7 @@ export function createDocumentSourceActions({
   getRenderer
 }: DocumentSourceOptions) {
   function currentSourceFormat(): string {
-    const name = getDownloadName()
-    if (/\.deck$/i.test(name)) return 'deck'
-    return 'fig'
+    return documentKindRules(state.documentKind).saveFormat
   }
 
   function buildNativeFile() {

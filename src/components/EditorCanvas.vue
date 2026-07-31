@@ -4,6 +4,7 @@ import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
 } from '@open-pencil/core/constants'
+import { documentKindRules } from '@open-pencil/core/editor'
 import {
   ContextMenuPortal,
   ContextMenuRoot,
@@ -40,6 +41,15 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
+/**
+ * Side panels and window resizes shrink the canvas host. Decks are always fit, so re-fit
+ * the artboard rather than leave it clipped under a widened panel; design files keep
+ * whatever camera the user set.
+ */
+function refitOnResize() {
+  if (documentKindRules(store.state.documentKind).autoFitOnResize) store.zoomToFit()
+}
+
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
   showRulers: false
@@ -48,7 +58,10 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCan
   canvasRef,
   store,
   {
-    layer: 'overlays'
+    layer: 'overlays',
+    // Only the overlay canvas drives the re-fit; both canvases share a host size, and
+    // subscribing on each would run the policy twice per resize.
+    onResize: refitOnResize
   }
 )
 const {
