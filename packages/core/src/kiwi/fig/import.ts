@@ -297,7 +297,6 @@ function importPages(
   parentMap: Map<string, string>,
   childrenMap: Map<string, string[]>,
   created: Set<string>,
-  canvasIdToPageId: Map<string, string>,
   createSceneNode: (ncId: string, graphParentId: string) => void
 ): void {
   let docId: string | null = null
@@ -318,7 +317,6 @@ function importPages(
         const page = graph.addPage(canvasNc.name ?? 'Page')
         page.source.id = canvasId
         applyImportedCanvasMetadata(page, canvasNc)
-        canvasIdToPageId.set(canvasId, page.id)
         if (canvasNc.internalOnly) page.internalOnly = true
         created.add(canvasId)
         for (const childId of childrenMap.get(canvasId) ?? []) {
@@ -443,7 +441,6 @@ export function importNodeChanges(
   const assetRefs = buildAssetRefMap(changeMap)
   setVariableColorResolver(buildVariableColorResolver(changeMap, assetRefs))
 
-  const canvasIdToPageId = new Map<string, string>()
   const created = new Set<string>()
   const guidToNodeId = new Map<string, string>()
   const getChildren = (ncId: string): string[] => childrenMap.get(ncId) ?? []
@@ -462,8 +459,11 @@ export function importNodeChanges(
       props.textAutoResize = 'WIDTH_AND_HEIGHT'
     }
 
-    const parentId = canvasIdToPageId.get(graphParentId) ?? graphParentId
-    const node = graph.createNode(nodeType, parentId, props)
+    // `graphParentId` is always a SceneGraph node id (every caller passes
+    // `page.id` / `node.id`). SceneGraph mints ids as `0:${n}` — the same
+    // textual space as fig GUIDs — so translating it through a GUID-keyed map
+    // can only ever be a no-op or a false hit that reparents onto a stranger.
+    const node = graph.createNode(nodeType, graphParentId, props)
     guidToNodeId.set(ncId, node.id)
 
     for (const childId of getChildren(ncId)) {
@@ -471,7 +471,7 @@ export function importNodeChanges(
     }
   }
 
-  importPages(graph, changeMap, parentMap, childrenMap, created, canvasIdToPageId, createSceneNode)
+  importPages(graph, changeMap, parentMap, childrenMap, created, createSceneNode)
 
   importCollections(changeMap, graph)
   importVariableEntries(changeMap, parentMap, graph, assetRefs)
