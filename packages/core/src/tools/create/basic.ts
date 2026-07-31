@@ -5,7 +5,7 @@ export const createShape = defineTool({
   name: 'create_shape',
   mutates: true,
   description:
-    'Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, SECTION for page sections.',
+    'Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, SECTION for page sections, LINE for rules and dividers, STAR for star bursts and badges, POLYGON for triangles and regular n-gons. For shapes outside this set, use create_vector with an SVG path.',
   params: {
     type: {
       type: 'string',
