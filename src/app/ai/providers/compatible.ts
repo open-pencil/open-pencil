@@ -1,7 +1,13 @@
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 
+import { IS_TAURI } from '@open-pencil/core/constants'
+
 import type { ModelConfig, ModelProviderAdapter } from '@/app/ai/providers/types'
+
+// Anthropic omits CORS headers unless the caller opts in, so browser requests fail with an
+// opaque "failed to fetch". The desktop build goes through tauriFetch and is not subject to CORS.
+const BROWSER_ACCESS_HEADERS = { 'anthropic-dangerous-direct-browser-access': 'true' }
 
 export type CompatibleEndpoint = string | ((config: ModelConfig) => string)
 
@@ -48,7 +54,8 @@ export function createAnthropicCompatibleAdapter(
       const provider = createAnthropic({
         apiKey: config.apiKey,
         baseURL: resolveEndpoint(options.baseURL, config),
-        fetch: runtime.fetch
+        fetch: runtime.fetch,
+        headers: IS_TAURI ? undefined : BROWSER_ACCESS_HEADERS
       })
       return provider(config.customModelID.trim() || config.modelID)
     }

@@ -4,7 +4,9 @@ import { AI_PROVIDERS } from '@open-pencil/core/constants'
 
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { normalizeOpenRouterModel } from '@/app/ai/chat/provider-models'
+import { createAnthropicCompatibleAdapter } from '@/app/ai/providers/compatible'
 import { modelProviderAdapter } from '@/app/ai/providers/registry'
+import type { ModelConfig } from '@/app/ai/providers/types'
 
 describe('resolveLanguageModelID', () => {
   test('uses the selected OpenRouter model when no custom model is configured', () => {
@@ -35,6 +37,41 @@ describe('model provider registry', () => {
     }
     expect(() => modelProviderAdapter('acp:claude-code')).toThrow(
       'ACP providers do not use direct API models'
+    )
+  })
+})
+
+describe('anthropic compatible adapter', () => {
+  const config: ModelConfig = {
+    providerID: 'anthropic',
+    apiKey: 'test-key',
+    modelID: 'claude-sonnet-4.6',
+    customModelID: '',
+    customBaseURL: '',
+    customAPIType: 'completions'
+  }
+
+  async function capturedHeaders(): Promise<Record<string, string>> {
+    let captured: Record<string, string> = {}
+    const fetchSpy: typeof fetch = async (_input, init) => {
+      captured = Object.fromEntries(new Headers(init?.headers).entries())
+      throw new Error('stop')
+    }
+
+    const model = createAnthropicCompatibleAdapter().create(config, { fetch: fetchSpy })
+    await model
+      .doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
+      .catch(() => undefined)
+
+    return captured
+  }
+
+  test('opts into direct browser access so Anthropic returns CORS headers', async () => {
+    // Anthropic omits Access-Control-Allow-Origin unless this header is sent, which makes the
+    // web build fail with an opaque network error. See #436.
+    expect(await capturedHeaders()).toHaveProperty(
+      'anthropic-dangerous-direct-browser-access',
+      'true'
     )
   })
 })
