@@ -10,6 +10,7 @@
 - Edit vectors in opened documents at the correct position, with live fills and undo/redo. (#390)
 - Reduce large `.fig` page-switch work to the active page, reuse fixed-point propagation indexes, and coalesce Layers tree rebuilds. (#420)
 - Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
+- Import multi-color SVG artwork as a single vector with per-region fills rather than one node per path, matching how Figma represents the same illustration — double-click editing now shows the whole illustration's anchors in one session. Stroked and open paths still import as their own nodes. (#394)
 
 ### Added
 

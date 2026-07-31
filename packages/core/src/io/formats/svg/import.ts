@@ -47,14 +47,20 @@ export function createSVGNodesFromImport(
   })
 
   try {
-    createVectorFrameChildren(graph, frame.id, data, {
-      x: frame.x,
-      y: frame.y,
-      width: frame.width,
-      height: frame.height,
-      offsetX: 0,
-      offsetY: 0
-    })
+    createVectorFrameChildren(
+      graph,
+      frame.id,
+      data,
+      {
+        x: frame.x,
+        y: frame.y,
+        width: frame.width,
+        height: frame.height,
+        offsetX: 0,
+        offsetY: 0
+      },
+      { flattenFills: true, name: frame.name }
+    )
     if (graph.getChildren(frame.id).length > 0) return frame
     graph.deleteNode(frame.id)
     return null

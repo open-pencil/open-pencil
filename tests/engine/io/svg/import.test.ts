@@ -44,9 +44,42 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
+    // Closed fill-only paths merge into one multi-color vector (the
+    // representation Figma uses for the same artwork): rect + circle become a
+    // single node with a fill per region. The open line has no region, so it
+    // stays its own node rather than disappearing into the merged network.
     const children = graph.getChildren(result.id)
-    expect(children.length).toBe(3)
-    expect(children.every((c) => c.type === 'VECTOR')).toBe(true)
+    expect(children.length).toBe(2)
+    const flattened = expectDefined(
+      children.find((c) => c.fillGeometry.length > 1),
+      'flattened multi-color vector'
+    )
+    expect(flattened.type).toBe('VECTOR')
+    expect(flattened.fillGeometry.length).toBe(2)
+  })
+
+  test('flattens multi-color fills into one vector with per-region fills', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg viewBox="0 0 100 100">
+        <rect x="0" y="0" width="40" height="40" fill="#ff5000"/>
+        <rect x="50" y="0" width="40" height="40" fill="#0050ff"/>
+        <rect x="0" y="50" width="40" height="40" fill="#00a050"/>
+      </svg>`
+    })) as { id: string }
+
+    const children = graph.getChildren(result.id)
+    expect(children.length).toBe(1)
+    const vector = children[0]
+    expect(vector.type).toBe('VECTOR')
+
+    // One merged network, one fillGeometry entry per source rect, each keeping
+    // its own colour — editing the node shows all three rects' anchors at once.
+    expect(expectDefined(vector.vectorNetwork, 'merged network').regions.length).toBe(3)
+    expect(vector.fillGeometry.length).toBe(3)
+    const reds = vector.fillGeometry.map((path) => path.fills?.[0]?.color.r)
+    expect(reds).toEqual([expect.closeTo(1, 2), expect.closeTo(0, 2), expect.closeTo(0, 2)])
+    // Blobs are rebuilt from the merged network, not left as placeholders.
+    expect(vector.fillGeometry.every((path) => path.commandsBlob.length > 0)).toBe(true)
   })
 
   test('respects viewBox dimensions', async () => {
@@ -145,6 +178,8 @@ describe('import_svg', () => {
       </svg>`
     })) as { id: string }
 
+    // Only the polygon is a closed fill region; the polyline is an open chain,
+    // so there is nothing to merge it with and both stay separate.
     const children = graph.getChildren(result.id)
     expect(children.length).toBe(2)
   })
