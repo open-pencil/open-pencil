@@ -62,7 +62,10 @@ describe('Tauri document IO helpers', () => {
       expect(args).toEqual({
         options: {
           defaultPath: 'Untitled.fig',
-          filters: [{ name: 'Figma file', extensions: ['fig'] }]
+          filters: [
+            { name: 'Figma Design', extensions: ['fig'] },
+            { name: 'Figma Slides', extensions: ['deck'] }
+          ]
         }
       })
       return '/tmp/Untitled.fig'

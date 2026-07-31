@@ -24,7 +24,8 @@ function setupGlobals() {
     removeEventListener: vi.fn()
   } as Window & typeof globalThis
   globalThis.document = {
-    fonts: { add: vi.fn(), ready: Promise.resolve() }
+    fonts: { add: vi.fn(), ready: Promise.resolve() },
+    querySelector: () => null
   } as Document
   globalThis.requestAnimationFrame = window.requestAnimationFrame
   globalThis.cancelAnimationFrame = window.cancelAnimationFrame
