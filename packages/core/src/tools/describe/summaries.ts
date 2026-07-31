@@ -16,6 +16,18 @@ function findSolidFillIndex(node: SceneNode): number {
   return node.fills.findIndex((candidate) => candidate.type === 'SOLID' && candidate.visible)
 }
 
+/**
+ * On an outline drawing the stroke is the whole visual. Summarising it as a
+ * bare "bordered" — or omitting it, as the container summary did — left agents
+ * unable to tell a correct stroked path from an empty node.
+ */
+function strokeSummary(node: SceneNode): string | null {
+  const stroke = node.strokes[0]
+  if (!stroke?.visible) return null
+  const weight = Math.round(stroke.weight * 100) / 100
+  return `${colorToHex(stroke.color)} ${weight}px stroke`
+}
+
 export function describeVisual(node: SceneNode, graph?: SceneGraph): string {
   const parts: string[] = []
   const fillIndex = findSolidFillIndex(node)
@@ -23,7 +35,8 @@ export function describeVisual(node: SceneNode, graph?: SceneGraph): string {
     const fill = node.fills[fillIndex]
     parts.push(`${colorToHex(fill.color)}${boundFillSuffix(node, fillIndex, graph)} fill`)
   }
-  if (node.strokes.length > 0 && node.strokes[0]?.visible) parts.push('bordered')
+  const stroke = strokeSummary(node)
+  if (stroke) parts.push(stroke)
   if (node.cornerRadius > 0) parts.push('rounded')
   if (node.clipsContent) parts.push('clipped')
   for (const effect of node.effects) {
@@ -83,6 +96,8 @@ export function summarizeContainer(node: SceneNode, graph?: SceneGraph): string 
     const fill = node.fills[fillIndex]
     parts.push(`${colorToHex(fill.color)}${boundFillSuffix(node, fillIndex, graph)}`)
   }
+  const stroke = strokeSummary(node)
+  if (stroke) parts.push(stroke)
   if (node.cornerRadius > 0) parts.push('rounded')
   const layout = describeLayout(node)
   if (layout) parts.push(layout)
