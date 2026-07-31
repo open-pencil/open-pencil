@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import {
+  aiModelSettings,
   createAIModelRuntime,
   createModelProfileDraft,
   modelSettingsSnapshot,
@@ -97,6 +98,36 @@ describe('AI model profiles and role assignments', () => {
 
     setModelRoleAssignment('vision', null)
     expect(resolveAIModelRole('vision')).toBeNull()
+  })
+
+  test('switches the design agent between saved profiles', () => {
+    // Backs the chat model switcher: it lists tools-capable profiles and reassigns the design role.
+    const switchable = aiModelSettings.value.models.filter((profile) =>
+      profile.capabilities.includes('tools')
+    )
+    expect(switchable.map((profile) => profile.id)).toEqual(['model-design', 'model-fast'])
+
+    setModelRoleAssignment('design', 'model-fast')
+    expect(resolveAIModelRole('design')?.profile.id).toBe('model-fast')
+    expect(resolveAIModelRole('design')?.connection.id).toBe('connection-google')
+
+    setModelRoleAssignment('design', 'model-design')
+    expect(resolveAIModelRole('design')?.profile.id).toBe('model-design')
+  })
+
+  test('refuses to assign a profile that cannot use tools as the design agent', () => {
+    aiModelSettings.value.models.push({
+      id: 'model-textonly',
+      name: 'Text only',
+      connectionId: 'connection-google',
+      modelID: 'text-only',
+      customModelID: '',
+      maxOutputTokens: 4096,
+      capabilities: []
+    })
+
+    setModelRoleAssignment('design', 'model-textonly')
+    expect(resolveAIModelRole('design')?.profile.id).toBe('model-design')
   })
 
   test('reuses matching provider connections when adding models', () => {

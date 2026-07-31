@@ -2,11 +2,13 @@
 import { TooltipProvider } from 'reka-ui'
 import { computed, ref } from 'vue'
 
+import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
 import ProviderModelSelect from '@/components/chat/ProviderModelSelect.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { useAIChat } from '@/app/ai/chat/use'
+import { aiModelSettings, designModelProfile } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { useI18n } from '@open-pencil/vue'
 
@@ -58,6 +60,15 @@ const selectedModelName = computed(() => {
   return providerDef.value.models.find((m) => m.id === modelID.value)?.name ?? modelID.value
 })
 
+// Switching between saved profiles only makes sense once more than one can drive the design agent.
+const switchableProfiles = computed(() =>
+  aiModelSettings.value.models.filter((profile) => profile.capabilities.includes('tools'))
+)
+const canSwitchProfile = computed(() => switchableProfiles.value.length > 1)
+const selectedProfileName = computed(
+  () => designModelProfile.value?.name ?? selectedModelName.value
+)
+
 function handleSubmit(e: Event) {
   e.preventDefault()
   const text = input.value.trim()
@@ -78,6 +89,9 @@ function handleSubmit(e: Event) {
             {{ acpAgentName }}
           </div>
         </template>
+        <ChatProfileSelect v-else-if="canSwitchProfile">
+          <template #value>{{ selectedProfileName }}</template>
+        </ChatProfileSelect>
         <template v-else-if="isCustomProvider || usesCustomModel">
           <div
             class="flex items-center gap-1 px-1.5 py-0.5 text-[10px] text-muted"
