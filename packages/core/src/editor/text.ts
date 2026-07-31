@@ -1,3 +1,8 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
+import { weightToStyle } from '#core/text/fonts'
+import { hasGlyphOutlines } from '#core/text/opentype'
+
 import {
   createTextEditSession,
   resizeTextNodeForEdit,
@@ -7,6 +12,20 @@ import {
 } from './text/session'
 import type { EditorContext } from './types'
 
+/**
+ * Path text is edited by re-flowing glyph OUTLINES along its path. When the font
+ * is unavailable we can't produce new glyphs, so editing would corrupt the baked
+ * lettering — treat it as a baked graphic and refuse to enter edit mode. Non-path
+ * text still edits (system-font fallback); path text with the font available
+ * edits fully (add/remove characters reflow). "Available" is deliberately broad:
+ * today that means loaded locally, but a future remote provider (e.g. Google
+ * Fonts) would extend hasGlyphOutlines without changing this gate.
+ */
+function isPathTextEditable(node: SceneNode): boolean {
+  if (!node.textPathBox) return true
+  return hasGlyphOutlines(node.fontFamily, weightToStyle(node.fontWeight, node.italic))
+}
+
 export function createTextActions(ctx: EditorContext) {
   let activeSession: TextEditSession | null = null
 
@@ -15,6 +34,8 @@ export function createTextActions(ctx: EditorContext) {
     if (ctx.state.editingTextId) commitTextEdit()
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
+    // Font-gated: unavailable-font path text stays a non-editable baked graphic.
+    if (!isPathTextEditable(node)) return
     activeSession = createTextEditSession(node)
     ctx.state.editingTextId = nodeId
     if (te) {

@@ -53,7 +53,10 @@ describe('fig-import: text properties', () => {
         commandsBlob: glyphBlob,
         x: 2,
         y: 8,
-        fontSize: 14
+        fontSize: 14,
+        // Path text needs per-glyph rotation preserved through import (#396);
+        // plain text imports it as 0 rather than dropping the field.
+        rotation: 0
       }
     ])
 

@@ -10,6 +10,12 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./raw": {
+      "types": "./dist/raw.d.ts",
+      "bun": "./src/raw.ts",
+      "import": "./dist/raw.js",
+      "default": "./dist/raw.js"
+    },
     "./copy": {
       "types": "./dist/copy.d.ts",
       "bun": "./src/copy.ts",

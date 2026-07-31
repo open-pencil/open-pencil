@@ -108,7 +108,7 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
     expect(src).not.toContain("'FOREGROUND_BLUR' ? 'LAYER_BLUR'")
   })
 
-  test('C01-06: renderShapeUncached order = behind effects → fills → strokes → front effects (scene.ts:430-466)', () => {
+  test('C01-06: renderShapeUncached order = behind effects → fills → strokes → front effects', () => {
     const src = readSource(scenePath)
     const renderShapeUncachedMatch = src.match(
       /export function renderShapeUncached[\s\S]*?(?=\nexport function|\n$)/
@@ -119,7 +119,9 @@ describe('Doc 01 — The Current Engine: Static Code Claims', () => {
     // Find indices of key calls
     const behindIdx = body.indexOf("'behind'")
     const fillIdx = body.indexOf('drawNodeFill')
-    const strokeIdx = body.indexOf('drawNodeStroke')
+    // Strokes paint through paintNodeStrokes, which path text calls earlier
+    // (stroke-first); the default order is asserted from its second call site.
+    const strokeIdx = body.lastIndexOf('paintNodeStrokes')
     const frontIdx = body.indexOf("'front'")
 
     expect(behindIdx).toBeGreaterThan(-1)

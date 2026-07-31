@@ -1,3 +1,4 @@
+import { transformGeometryBlob } from '@open-pencil/scene-graph/copy'
 export interface OutlineCommand {
   type: string
   x?: number
@@ -75,4 +76,27 @@ export function encodePathCommandsBlob(commands: OutlineCommand[], scale = 1): U
   }
 
   return new Uint8Array(bytes)
+}
+
+/**
+ * Bake accumulated resize scale into a glyph blob (font units). The Kiwi
+ * Glyph schema has no scaleX/scaleY, so exporting them any other way loses
+ * the scale on reload — positions and strokeGeometry persist scaled while
+ * glyph shapes revert, garbling path text (DomeSticker save/reopen bug).
+ * Paint order is T·S·R(-theta)·F (see drawFigmaDerivedText); rewriting points as
+ * p' = F^-1·R(theta)·S·R(-theta)·F·p lets the same world transform hold without S.
+ */
+export function bakeGlyphScale(
+  blob: Uint8Array,
+  scaleX: number,
+  scaleY: number,
+  rotation: number
+): Uint8Array {
+  if (scaleX === 1 && scaleY === 1) return blob
+  const cos = Math.cos(rotation)
+  const sin = Math.sin(rotation)
+  const m00 = scaleX * cos * cos + scaleY * sin * sin
+  const m01 = (scaleY - scaleX) * sin * cos
+  const m11 = scaleX * sin * sin + scaleY * cos * cos
+  return transformGeometryBlob(blob, m00, m01, m01, m11)
 }
