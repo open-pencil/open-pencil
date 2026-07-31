@@ -26,7 +26,8 @@ import { convertLetterSpacing, convertLineHeight, mapTextDecoration } from './te
 import {
   alignGeometryWindingRules,
   resolveGeometryPaths,
-  resolveVectorNetwork
+  resolveVectorNetwork,
+  resolveVectorStyleOverrideFills
 } from './vector-geometry'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
@@ -562,7 +563,7 @@ function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const strokeCap = getVectorStrokeCap(nc, vectorNetwork)
   const strokeJoin = getVectorStrokeJoin(nc, vectorNetwork)
   const fillGeometry = alignGeometryWindingRules(
-    resolveGeometryPaths(nc.fillGeometry, blobs),
+    resolveGeometryPaths(nc.fillGeometry, blobs, resolveVectorStyleOverrideFills(nc)),
     vectorNetwork
   )
   return {

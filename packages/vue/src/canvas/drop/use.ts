@@ -5,7 +5,13 @@ import type { Editor } from '@open-pencil/core/editor'
 
 import { findMoveDropTarget } from '#vue/shared/input/drop-target'
 
-const ACCEPTED_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif'])
+const RASTER_IMAGE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/avif'
+])
 const COMPONENT_MIME = 'application/x-openpencil-component'
 
 function hasComponentData(e: DragEvent): boolean {
@@ -38,14 +44,14 @@ export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: 
   const isDraggingOver = ref(false)
 
   useEventListener(canvasRef, 'dragover', (e: DragEvent) => {
-    if (!hasComponentData(e) && !hasImageFiles(e)) return
+    if (!hasComponentData(e) && !hasFileData(e)) return
     e.preventDefault()
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
     isDraggingOver.value = true
   })
 
   useEventListener(canvasRef, 'dragenter', (e: DragEvent) => {
-    if (!hasComponentData(e) && !hasImageFiles(e)) return
+    if (!hasComponentData(e) && !hasFileData(e)) return
     e.preventDefault()
     isDraggingOver.value = true
   })
@@ -71,31 +77,32 @@ export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: 
       return
     }
 
-    const files = filterImageFiles(e.dataTransfer?.files ?? null)
+    const files = filterCanvasFiles(e.dataTransfer?.files ?? null)
     if (!files.length) return
-    void editor.placeImageFiles(files, point.x, point.y)
+    void editor.placeFiles(files, point.x, point.y).catch((error: unknown) => {
+      console.error('Failed to place dropped files', error)
+    })
   })
 
   return { isDraggingOver }
 }
 
-function hasImageFiles(e: DragEvent): boolean {
-  if (!e.dataTransfer?.types.includes('Files')) return false
-  for (const item of e.dataTransfer.items) {
-    if (item.kind === 'file' && ACCEPTED_TYPES.has(item.type)) return true
-  }
-  return false
+function hasFileData(e: DragEvent): boolean {
+  return e.dataTransfer?.types.includes('Files') ?? false
 }
 
-function filterImageFiles(files: FileList | null): File[] {
+function isSVGFile(file: File): boolean {
+  return (
+    file.type === 'image/svg+xml' || (file.type === '' && file.name.toLowerCase().endsWith('.svg'))
+  )
+}
+
+export function filterCanvasFiles(files: ArrayLike<File> | Iterable<File> | null): File[] {
   if (!files) return []
-  const result: File[] = []
-  for (const file of files) {
-    if (ACCEPTED_TYPES.has(file.type)) result.push(file)
-  }
-  return result
+  return Array.from(files).filter((file) => RASTER_IMAGE_TYPES.has(file.type) || isSVGFile(file))
 }
 
 export function extractImageFilesFromClipboard(e: ClipboardEvent): File[] {
-  return filterImageFiles(e.clipboardData?.files ?? null)
+  const files = e.clipboardData?.files
+  return files ? Array.from(files).filter((file) => RASTER_IMAGE_TYPES.has(file.type)) : []
 }

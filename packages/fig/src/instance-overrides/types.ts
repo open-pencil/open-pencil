@@ -58,8 +58,9 @@ export interface DerivedSymbolOverride {
   letterSpacing?: NodeChange['letterSpacing']
   strokeWeight?: number
   derivedTextData?: NodeChange['derivedTextData']
-  fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
-  strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
+  vectorData?: NodeChange['vectorData']
+  fillGeometry?: NodeChange['fillGeometry']
+  strokeGeometry?: NodeChange['strokeGeometry']
 }
 
 export interface ComponentPropDef {
@@ -84,8 +85,8 @@ export interface InstanceNodeChange {
   styleType?: string
   fillPaints?: NodeChange['fillPaints']
   strokePaints?: NodeChange['strokePaints']
-  fillGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
-  strokeGeometry?: Array<{ windingRule?: string; commandsBlob?: number }>
+  fillGeometry?: NodeChange['fillGeometry']
+  strokeGeometry?: NodeChange['strokeGeometry']
   strokeWeight?: number
   derivedSymbolData?: DerivedSymbolOverride[]
   key?: string

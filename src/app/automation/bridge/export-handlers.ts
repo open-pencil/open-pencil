@@ -1,3 +1,4 @@
+import { encodeBase64 } from '@open-pencil/core/bytes'
 import { selectionToJSX, sceneNodeToJSX, type RasterExportFormat } from '@open-pencil/core/io'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
@@ -13,9 +14,7 @@ export async function handleExport(target: AutomationTarget, args: unknown): Pro
     (exportArgs?.format ?? 'PNG') as RasterExportFormat
   )
   if (!data) throw new Error('Export failed')
-  let binary = ''
-  for (const byte of data) binary += String.fromCharCode(byte)
-  const base64 = btoa(binary)
+  const base64 = encodeBase64(data)
   return {
     ok: true,
     result: { base64, mimeType: `image/${(exportArgs?.format ?? 'png').toLowerCase()}` }

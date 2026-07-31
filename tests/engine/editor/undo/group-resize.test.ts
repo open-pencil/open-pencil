@@ -101,7 +101,9 @@ describe('resize undo', () => {
             y: 0,
             width: 10,
             height: 10,
-            vectorNetwork: originalVectorNetwork
+            vectorNetwork: originalVectorNetwork,
+            fillGeometry: [],
+            strokeGeometry: []
           }
         ]
       ])

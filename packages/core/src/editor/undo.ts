@@ -1,6 +1,7 @@
 import { pick } from 'es-toolkit/object'
 
 import { cloneVectorNetwork, type SceneNode } from '@open-pencil/scene-graph'
+import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
@@ -14,8 +15,12 @@ import {
 import { textAutoResizeChanges } from './text/auto-resize'
 import type { EditorContext } from './types'
 
-type ResizeSnapshot = Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'vectorNetwork'>
-type ResizeOriginal = Rect & { vectorNetwork?: SceneNode['vectorNetwork'] }
+type ResizeSnapshot = Pick<
+  SceneNode,
+  'x' | 'y' | 'width' | 'height' | 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'
+>
+type ResizeOriginal = Rect &
+  Partial<Pick<SceneNode, 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'>>
 
 function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
   return {
@@ -23,7 +28,9 @@ function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
     y: node.y,
     width: node.width,
     height: node.height,
-    vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null
+    vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
+    fillGeometry: copyGeometryPaths(node.fillGeometry),
+    strokeGeometry: copyGeometryPaths(node.strokeGeometry)
   }
 }
 
@@ -94,10 +101,11 @@ export function createUndoActions(ctx: EditorContext) {
   function commitResize(nodeId: string, original: ResizeOriginal) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
-    const final: ResizeOriginal =
-      'vectorNetwork' in original
-        ? createResizeSnapshot(node)
-        : { x: node.x, y: node.y, width: node.width, height: node.height }
+    const includesGeometry =
+      'vectorNetwork' in original || 'fillGeometry' in original || 'strokeGeometry' in original
+    const final: ResizeOriginal = includesGeometry
+      ? createResizeSnapshot(node)
+      : { x: node.x, y: node.y, width: node.width, height: node.height }
     ctx.undo.push({
       label: 'Resize',
       forward: () => {

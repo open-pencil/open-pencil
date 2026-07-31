@@ -12,6 +12,7 @@ import type { NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { decodeBase64, decodeBase64Text, encodeBase64, encodeBase64Text } from './bytes'
 import { shapeTextForClipboard } from './canvas/text/clipboard'
 import {
   sceneNodeToKiwi,
@@ -44,8 +45,8 @@ export async function parseFigmaClipboard(
   const bufMatch = html.match(/\(figma\)(.*?)\(\/figma\)/s)
   if (!metaMatch || !bufMatch) return null
 
-  const meta: FigmaClipboardMeta = JSON.parse(atob(metaMatch[1]))
-  const binary = Uint8Array.fromBase64(bufMatch[1])
+  const meta: FigmaClipboardMeta = JSON.parse(decodeBase64Text(metaMatch[1]))
+  const binary = decodeBase64(bufMatch[1])
 
   try {
     const chunks = parseFigKiwiChunks(binary)
@@ -369,14 +370,14 @@ export async function buildFigmaClipboardHTML(
 
   const dataRaw = compiled.encodeMessage(msg)
   const figKiwiBinary = buildFigKiwi(schemaDeflated, dataRaw)
-  const bufferB64 = figKiwiBinary.toBase64()
+  const bufferB64 = encodeBase64(figKiwiBinary)
 
   const meta: FigmaClipboardMeta = {
     fileKey: 'openpencil',
     pasteID: msg.pasteID as number,
     dataType: 'scene'
   }
-  const metaB64 = btoa(JSON.stringify(meta))
+  const metaB64 = encodeBase64Text(JSON.stringify(meta))
 
   return (
     `<meta charset='utf-8'>` +

@@ -4,6 +4,11 @@
 
 ### Fixed
 
+- Match regional browser languages to supported locales without selecting a secondary language. (#417)
+- Save auto-layout frames that stretch their children to `.fig` without failing. (#427)
+- Preserve multiple colors in imported vector artwork such as multi-color logos. (#386)
+- Edit vectors in opened documents at the correct position, with live fills and undo/redo. (#390)
+- Reduce large `.fig` page-switch work to the active page, reuse fixed-point propagation indexes, and coalesce Layers tree rebuilds. (#420)
 - Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
 
 ### Added
@@ -50,6 +55,7 @@
 - Add open-document discovery for live CLI and MCP automation so agents can target the intended document and page.
 - Publish lower-level SceneGraph, Pen, Kiwi, Fig, and DOM/CSS functionality through clearer package boundaries for SDK and automation consumers.
 - Upgrade `opentype.js` to v2 and add BCP-47 text-language hints for language-correct CJK shaping and fallback order.
+- Export selections, pages and documents as editable PowerPoint (`.pptx`) files from the File menu, CLI and SDK: text, rectangles, ellipses and lines stay native editable elements, while gradients, masks, blends, vectors and icons fall back to embedded images.
 - Figma-style Assets panel browsing with component thumbnails, grid/list views, page grouping, context actions, and drag-to-canvas insertion.
 - Import HTML, CSS, Tailwind, and JSX as editable documents from the app, CLI, and SDK, and export standalone browser-ready HTML with compiled CSS and optional external assets.
 - Author richer Design JSX with components, instances, variables, gradients, structured fills, shadows, and blur effects.
@@ -58,6 +64,7 @@
 - Find overlapping layers and overflowing children from the CLI, AI tools, and MCP.
 - Use Figma-style number-key opacity shortcuts: `1`–`9` set 10%–90%, `0` sets 100%, and two-digit sequences set exact values.
 - Drag image files directly into the desktop app and paste Figma layers with their remote image fills.
+- Drop SVG files onto the canvas to import them as editable vector layers alongside raster images. (#392)
 - Drag with the Text tool to create a fixed-size text box, or click to create auto-width text.
 - Target a specific open document and page from live CLI and MCP automation, including sessions with multiple documents.
 - Test OpenAI-compatible provider connections from AI settings with clearer setup errors.

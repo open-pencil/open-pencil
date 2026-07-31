@@ -9,13 +9,13 @@
  * normalize into each node's bounding box (objectBoundingBox) space, matching the
  * gradientTransform convention used by the SVG exporter (see io/formats/svg/defs).
  */
-import svgpath from 'svgpath'
-
 import type { Fill, GradientStop } from '@open-pencil/scene-graph'
-import type { Color, Matrix, Rect, Size, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Color, Matrix, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseColor } from '#core/color'
 import { parseSVGDocument } from '#core/io/formats/svg/document'
+
+import { mapSVGPointToViewport, type SVGViewportMapping } from './transform'
 
 interface RawStop {
   offset: number
@@ -119,33 +119,6 @@ function gradientIdFromFill(fill: string | null): string | null {
   return id && !id.includes(' ') ? id : null
 }
 
-/**
- * Map a userSpaceOnUse point through the same element-transform + viewBox→bounds
- * pipeline applied to the path data, yielding bounds-pixel-space coordinates.
- */
-function mapUserPoint(
-  x: number,
-  y: number,
-  elementTransform: string | null,
-  gradientTransform: string | null,
-  space: Rect,
-  bounds: Size
-): Vector {
-  const sx = bounds.width / space.width
-  const sy = bounds.height / space.height
-  let sp = svgpath(`M${x} ${y}`)
-  if (gradientTransform) sp = sp.transform(gradientTransform)
-  if (elementTransform) sp = sp.transform(elementTransform)
-  sp = sp.translate(-space.x, -space.y).scale(sx, sy)
-  const points: Vector[] = []
-  sp.abs().iterate((segment) => {
-    if (points.length === 0 && segment[0] === 'M') {
-      points.push({ x: segment[1], y: segment[2] })
-    }
-  })
-  return points[0] ?? { x, y }
-}
-
 function gradientStops(stops: RawStop[]): GradientStop[] {
   return stops.map((s) => ({ color: s.color, position: s.offset }))
 }
@@ -159,8 +132,7 @@ export function resolveGradientFill(
   fillRef: string | null,
   gradients: Map<string, ParsedGradient>,
   elementTransform: string | null,
-  space: Rect,
-  bounds: Size,
+  viewport: SVGViewportMapping,
   nodeBounds: Rect
 ): Fill | null {
   const id = gradientIdFromFill(fillRef)
@@ -173,7 +145,7 @@ export function resolveGradientFill(
     const mapped =
       grad.units === 'objectBoundingBox'
         ? { x: nodeBounds.x + px * nodeBounds.width, y: nodeBounds.y + py * nodeBounds.height }
-        : mapUserPoint(px, py, elementTransform, grad.transform, space, bounds)
+        : mapSVGPointToViewport(px, py, elementTransform, grad.transform, viewport)
     return {
       x: (mapped.x - nodeBounds.x) / nodeBounds.width,
       y: (mapped.y - nodeBounds.y) / nodeBounds.height

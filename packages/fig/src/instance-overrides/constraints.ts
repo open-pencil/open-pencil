@@ -1,8 +1,9 @@
-import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import { copyGeometryPaths, scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { buildClonesMap } from './sync'
 import type { OverrideContext } from './types'
+import { overrideCandidates } from './utils'
 
 /**
  * Apply SCALE constraint resizing to children of instances whose size
@@ -13,8 +14,7 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
   const { graph } = ctx
   const scaled = new Set<string>()
 
-  for (const node of graph.getAllNodes()) {
-    if (ctx.activeNodeIds && !ctx.activeNodeIds.has(node.id)) continue
+  for (const node of overrideCandidates(graph, ctx.activeNodeIds)) {
     if (node.type !== 'INSTANCE' || !node.componentId) continue
     const comp = graph.getNode(node.componentId)
     if (!comp || comp.width <= 0 || comp.height <= 0) continue
@@ -65,27 +65,6 @@ function resolveScaleBasis(
   return null
 }
 
-function scaleGeometryBlobs(geom: GeometryPath[], sx: number, sy: number): GeometryPath[] {
-  if (sx === 1 && sy === 1) return copyGeometryPaths(geom)
-  return geom.map((g) => {
-    const scaled = g.commandsBlob.slice()
-    const dv = new DataView(scaled.buffer, scaled.byteOffset, scaled.byteLength)
-    let offset = 0
-    while (offset < scaled.length) {
-      const command = scaled[offset++]
-      let coords = 0
-      if (command === 1 || command === 2) coords = 1
-      else if (command === 4) coords = 3
-      for (let i = 0; i < coords; i++) {
-        dv.setFloat32(offset, dv.getFloat32(offset, true) * sx, true)
-        dv.setFloat32(offset + 4, dv.getFloat32(offset + 4, true) * sy, true)
-        offset += 8
-      }
-    }
-    return { windingRule: g.windingRule, commandsBlob: scaled }
-  })
-}
-
 function scaleVectorNetwork(
   network: VectorNetwork | null,
   sx: number,
@@ -127,10 +106,10 @@ function scaledGeometryUpdates(
 ): Partial<SceneNode> {
   const updates: Partial<SceneNode> = {}
   if (!hasDerivedGeometry && source.fillGeometry.length > 0) {
-    updates.fillGeometry = scaleGeometryBlobs(source.fillGeometry, shapeScaleX, shapeScaleY)
+    updates.fillGeometry = scaleGeometryPaths(source.fillGeometry, shapeScaleX, shapeScaleY)
   }
   if (!hasDerivedGeometry && source.strokeGeometry.length > 0) {
-    updates.strokeGeometry = scaleGeometryBlobs(source.strokeGeometry, shapeScaleX, shapeScaleY)
+    updates.strokeGeometry = scaleGeometryPaths(source.strokeGeometry, shapeScaleX, shapeScaleY)
   }
   if (source.vectorNetwork) {
     updates.vectorNetwork = scaleVectorNetwork(source.vectorNetwork, shapeScaleX, shapeScaleY)
@@ -197,8 +176,7 @@ function scaleChildren(
 
 function normalizeOutOfBoundsSingleChildren(ctx: OverrideContext): void {
   const { graph } = ctx
-  for (const parent of graph.getAllNodes()) {
-    if (ctx.activeNodeIds && !ctx.activeNodeIds.has(parent.id)) continue
+  for (const parent of overrideCandidates(graph, ctx.activeNodeIds)) {
     if (parent.childIds.length !== 1) continue
     const child = graph.getNode(parent.childIds[0])
     if (!child?.visible || !child.componentId) continue

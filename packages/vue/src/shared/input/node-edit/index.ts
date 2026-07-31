@@ -21,6 +21,7 @@ type NodeEditEditor = Partial<{
   nodeEditRemoveVertex: (vertexIndex: number) => void
   penResumeFromEndpoint: (nodeId: string, endpointVertexIndex: number) => void
   nodeEditAddVertex: (cx: number, cy: number) => void
+  nodeEditPushHistory: () => void
   nodeEditSetHandle: (
     segmentIndex: number,
     tangentField: 'tangentStart' | 'tangentEnd',
@@ -56,6 +57,7 @@ export function handleNodeEditDown(
       es.selectedVertexIndices = new Set()
       es.selectedHandles = new Set([key])
     }
+    nodeEditEditor.nodeEditPushHistory?.()
     setDrag({
       type: 'edit-handle',
       segmentIndex: handleHit.segmentIndex,
@@ -79,6 +81,7 @@ export function handleNodeEditDown(
 
     if (e.metaKey || e.ctrlKey) {
       nodeEditEditor.nodeEditSelectVertex?.(vi, false)
+      nodeEditEditor.nodeEditPushHistory?.()
       setDrag({
         type: 'bend-handle',
         vertexIndex: vi,
@@ -104,6 +107,7 @@ export function handleNodeEditDown(
       origPositions.set(vi, { x: es.vertices[vi].x, y: es.vertices[vi].y })
     }
 
+    nodeEditEditor.nodeEditPushHistory?.()
     setDrag({
       type: 'edit-node',
       startX: cx,

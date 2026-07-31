@@ -1,6 +1,7 @@
 import { CSSFontFaceRule } from '@acemir/cssom'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
+import { decodeBase64 } from '@open-pencil/core/bytes'
 import { normalizeFontFamily } from '@open-pencil/core/text'
 import {
   exportWebFontFaceAssets,
@@ -256,10 +257,6 @@ function dataImageParts(value: string): { mime: string; base64: string } | undef
   }
 }
 
-function bytesFromBase64(value: string): Uint8Array {
-  return Uint8Array.from(atob(value), (char) => char.charCodeAt(0))
-}
-
 function extensionForMime(mime: string): string {
   if (mime === 'image/jpeg') return 'jpg'
   if (mime === 'image/webp') return 'webp'
@@ -287,7 +284,7 @@ function extractImageAssets(
     }
     const path = `${assetBasePath}/images/image-${sources.size + 1}.${extensionForMime(parts.mime)}`
     sources.set(src.value, path)
-    files.push({ path, content: bytesFromBase64(parts.base64) })
+    files.push({ path, content: decodeBase64(parts.base64) })
     src.value = path
   })
   return { html: serialize(fragment), files }

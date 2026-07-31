@@ -1,5 +1,5 @@
 import type { Paint, Effect as KiwiEffect } from '@open-pencil/kiwi/fig/codec'
-import { guidToString } from '@open-pencil/kiwi/fig/guid'
+import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type {
   Fill,
   FillType,
@@ -13,6 +13,44 @@ import type {
 } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
 import type { Color, Matrix } from '@open-pencil/scene-graph/primitives'
+
+import { hexToBytes } from './bytes'
+
+export function safeColor(color: Color | Omit<Color, 'a'>): Color {
+  return { r: color.r, g: color.g, b: color.b, a: 'a' in color ? color.a : 1 }
+}
+
+export function fillToKiwiPaint(fill: Fill): Paint {
+  const paint: Paint = {
+    type: fill.type,
+    color: safeColor(fill.color),
+    opacity: fill.opacity,
+    visible: fill.visible,
+    blendMode: fill.blendMode ?? 'NORMAL'
+  }
+  if (fill.gradientStops) {
+    paint.stops = fill.gradientStops.map((stop) => ({
+      color: safeColor(stop.color),
+      position: stop.position
+    }))
+  }
+  if (fill.gradientTransform) paint.transform = fill.gradientTransform
+  if (fill.imageHash) paint.image = { hash: hexToBytes(fill.imageHash) }
+  if (fill.imageScaleMode) paint.imageScaleMode = fill.imageScaleMode
+  if (fill.imageTransform) paint.transform = fill.imageTransform
+  if (fill.sourceNodeId) paint.sourceNodeId = stringToGuid(fill.sourceNodeId)
+  if (fill.scale) paint.scale = fill.scale
+  if (fill.spacing) paint.spacing = fill.spacing
+  if (fill.patternSpacing) paint.patternSpacing = fill.patternSpacing
+  if (fill.patternTileType) paint.patternTileType = fill.patternTileType
+  if (fill.verticalAlignment) paint.verticalAlignment = fill.verticalAlignment
+  if (fill.horizontalAlignment) paint.horizontalAlignment = fill.horizontalAlignment
+  if (fill.noiseType) paint.noiseType = fill.noiseType
+  if (fill.density !== undefined) paint.density = fill.density
+  if (fill.noiseSize) paint.noiseSize = fill.noiseSize
+  if (fill.customEffectId) paint.customEffectId = { guid: stringToGuid(fill.customEffectId) }
+  return paint
+}
 
 function convertColor(color?: Partial<Color>): Color {
   if (!color) return { ...BLACK }

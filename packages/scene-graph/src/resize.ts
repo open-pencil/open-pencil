@@ -1,8 +1,12 @@
+import { copyGeometryPaths, scaleGeometryPaths } from './copy'
 import type { Rect } from './primitives'
 import type { ConstraintType, SceneNode, VectorNetwork } from './types'
 import { cloneVectorNetwork } from './vector-network'
 
-export type ResizeSnapshot = Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'vectorNetwork'>
+export type ResizeSnapshot = Pick<
+  SceneNode,
+  'x' | 'y' | 'width' | 'height' | 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'
+>
 
 interface ResizeGraph {
   getNode(id: string): SceneNode | undefined
@@ -119,7 +123,9 @@ export function collectResizeDescendants(
         y: child.y,
         width: child.width,
         height: child.height,
-        vectorNetwork: child.vectorNetwork ? cloneVectorNetwork(child.vectorNetwork) : null
+        vectorNetwork: child.vectorNetwork ? cloneVectorNetwork(child.vectorNetwork) : null,
+        fillGeometry: copyGeometryPaths(child.fillGeometry),
+        strokeGeometry: copyGeometryPaths(child.strokeGeometry)
       })
       collect(childId)
     }
@@ -173,6 +179,22 @@ export function computeConstrainedResizeChanges(
         rect.height
       )
       if (vectorNetwork) childChanges.vectorNetwork = vectorNetwork
+      if (original.width > 0 && original.height > 0) {
+        const scaleX = rect.width / original.width
+        const scaleY = rect.height / original.height
+        if (scaleX !== 1 || scaleY !== 1) {
+          if (original.fillGeometry.length > 0) {
+            childChanges.fillGeometry = scaleGeometryPaths(original.fillGeometry, scaleX, scaleY)
+          }
+          if (original.strokeGeometry.length > 0) {
+            childChanges.strokeGeometry = scaleGeometryPaths(
+              original.strokeGeometry,
+              scaleX,
+              scaleY
+            )
+          }
+        }
+      }
       changes.set(childId, childChanges)
       // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.
       compute(childId, original, child.layoutMode === 'NONE' ? rect : child)

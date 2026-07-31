@@ -148,4 +148,59 @@ describe('import_svg', () => {
     const children = graph.getChildren(result.id)
     expect(children.length).toBe(2)
   })
+
+  test('applies nested transforms through the XML tree', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg viewBox="0 0 100 100"><g transform="translate(40 30)"><rect width="10" height="20"/></g></svg>`
+    })) as { id: string }
+
+    const path = getNodeOrThrow(graph, graph.getChildren(result.id)[0].id)
+    expect(path.x).toBeCloseTo(40)
+    expect(path.y).toBeCloseTo(30)
+    expect(path.width).toBeCloseTo(10)
+    expect(path.height).toBeCloseTo(20)
+  })
+
+  test('honors preserveAspectRatio when mapping the viewBox', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg width="200" height="200" viewBox="0 0 100 50"><rect width="100" height="50"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.x).toBeCloseTo(0)
+    expect(path.y).toBeCloseTo(50)
+    expect(path.width).toBeCloseTo(200)
+    expect(path.height).toBeCloseTo(100)
+  })
+
+  test('supports preserveAspectRatio none', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg width="200" height="200" viewBox="0 0 100 50" preserveAspectRatio="none"><rect width="100" height="50"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.x).toBeCloseTo(0)
+    expect(path.y).toBeCloseTo(0)
+    expect(path.width).toBeCloseTo(200)
+    expect(path.height).toBeCloseTo(200)
+  })
+
+  test('resolves internal use references and inline presentation styles', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg viewBox="0 0 100 100"><defs><path id="tile" d="M0 0H10V10H0Z"/></defs><use href="#tile" x="20" y="30" style="fill: #0000ff"/></svg>`
+    })) as { id: string }
+
+    const path = graph.getChildren(result.id)[0]
+    expect(path.x).toBeCloseTo(20)
+    expect(path.y).toBeCloseTo(30)
+    expect(path.fills[0].color.b).toBeCloseTo(1)
+  })
+
+  test('imports gradient fills through the shared SVG pipeline', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg viewBox="0 0 10 10"><defs><linearGradient id="g"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><rect width="10" height="10" fill="url(#g)"/></svg>`
+    })) as { id: string }
+
+    expect(graph.getChildren(result.id)[0].fills[0].type).toBe('GRADIENT_LINEAR')
+  })
 })

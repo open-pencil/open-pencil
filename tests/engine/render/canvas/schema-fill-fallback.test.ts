@@ -27,9 +27,12 @@ function createRenderer() {
   return {
     fillPaint: {
       setShader: mock(() => undefined),
-      setColor: mock(() => undefined)
+      setColor: mock(() => undefined),
+      setAlphaf: mock(() => undefined),
+      setBlendMode: mock(() => undefined)
     },
     ck: {
+      BlendMode: { SrcOver: 'source-over' },
       Color4f: mock((r, g, b, a) => ['color', r, g, b, a]),
       FilterMode: { Linear: 'linear' },
       LTRBRect: mock((left, top, right, bottom) => [left, top, right, bottom]),

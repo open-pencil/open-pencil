@@ -1,3 +1,4 @@
+import { encodeBase64 } from '@open-pencil/core/bytes'
 import { colorToCSS } from '@open-pencil/core/color'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
@@ -209,12 +210,6 @@ function styleFromTextNode(node: SceneNode): DesignStyleDeclaration {
   return style
 }
 
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = ''
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return globalThis.btoa(binary)
-}
-
 function imageSourceURL(node: SceneNode): string | undefined {
   return node.pluginData.find(
     (entry) => entry.pluginId === DOM_CSS_PLUGIN_ID && entry.key === IMAGE_SOURCE_URL_KEY
@@ -235,7 +230,7 @@ function attrsForNode(
   if (fill?.type !== 'IMAGE' || !fill.imageHash) return attrs
   const bytes = graph.images.get(fill.imageHash)
   if (!bytes) return attrs
-  return { ...attrs, src: `data:image/png;base64,${bytesToBase64(bytes)}` }
+  return { ...attrs, src: `data:image/png;base64,${encodeBase64(bytes)}` }
 }
 
 function tagNameForNode(node: SceneNode): string {

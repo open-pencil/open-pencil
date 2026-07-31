@@ -1,5 +1,6 @@
 import type { Editor } from '@open-pencil/core/editor'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
+import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 import { collectResizeDescendants } from '@open-pencil/scene-graph/resize'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
@@ -19,6 +20,8 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
         origRect: { x: node.x, y: node.y, width: node.width, height: node.height },
         nodeId: id,
         origVectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
+        origFillGeometry: copyGeometryPaths(node.fillGeometry),
+        origStrokeGeometry: copyGeometryPaths(node.strokeGeometry),
         origChildren: collectResizeDescendants(editor.graph, id)
       }
     }

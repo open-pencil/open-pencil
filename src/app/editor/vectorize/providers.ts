@@ -1,3 +1,4 @@
+import { encodeBase64 } from '@open-pencil/core/bytes'
 import { IS_TAURI } from '@open-pencil/core/constants'
 
 import { tauriFetch } from '@/app/tauri/http'
@@ -15,7 +16,6 @@ const NATIVE_TIMEOUT_GRACE_MS = 1000
 const MAX_SVG_BYTES = 20 * 1024 * 1024
 const MAX_API_RESPONSE_BYTES = 1024 * 1024
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
-const BASE64_CHUNK_SIZE = 32_768
 
 const RECRAFT_DEFINITION = {
   id: 'recraft',
@@ -59,14 +59,6 @@ async function vectorizeFetch(
   } finally {
     clearTimeout(timeout)
   }
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  let binary = ''
-  for (let offset = 0; offset < bytes.length; offset += BASE64_CHUNK_SIZE) {
-    binary += String.fromCharCode(...bytes.subarray(offset, offset + BASE64_CHUNK_SIZE))
-  }
-  return btoa(binary)
 }
 
 type VectorizeResponseRecord = {
@@ -240,7 +232,7 @@ const fal: VectorizeProvider = {
         Authorization: `Key ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ image_url: `data:image/png;base64,${bytesToBase64(pngBytes)}` }),
+      body: JSON.stringify({ image_url: `data:image/png;base64,${encodeBase64(pngBytes)}` }),
       credentials: 'omit',
       redirect: 'error'
     })

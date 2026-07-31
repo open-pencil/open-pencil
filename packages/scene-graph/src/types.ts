@@ -73,6 +73,8 @@ export interface VectorNetwork {
 export interface GeometryPath {
   windingRule: WindingRule
   commandsBlob: Uint8Array
+  /** Resolved paints for geometry using a format-specific style override. */
+  fills?: Fill[]
 }
 
 export type NodeType =

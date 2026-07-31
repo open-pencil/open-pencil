@@ -1,9 +1,15 @@
-import type { Path } from 'canvaskit-wasm'
-
 import type { VectorSegment, VectorVertex } from '@open-pencil/scene-graph'
 
+/** Anything path commands can be emitted into: a canvaskit Path or a blob encoder. */
+export interface PathSink {
+  moveTo(x: number, y: number): unknown
+  lineTo(x: number, y: number): unknown
+  cubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): unknown
+  close(): unknown
+}
+
 export function addSegmentDirected(
-  path: Path,
+  path: PathSink,
   seg: VectorSegment,
   vertices: VectorVertex[],
   forward: boolean
@@ -32,8 +38,45 @@ export function findChainStart(chain: number[], segments: VectorSegment[]): numb
   return first.start
 }
 
+export function addLoopToPath(
+  path: PathSink,
+  loop: number[],
+  segments: VectorSegment[],
+  vertices: VectorVertex[]
+): void {
+  if (loop.length === 0) return
+
+  const firstSeg = segments[loop[0]]
+
+  // Determine the starting vertex — if the loop has multiple segments,
+  // the first segment's direction is determined by which vertex connects
+  // to the second segment.
+  let current: number
+  if (loop.length === 1) {
+    current = firstSeg.start
+  } else {
+    const secondSeg = segments[loop[1]]
+    if (firstSeg.end === secondSeg.start || firstSeg.end === secondSeg.end) {
+      current = firstSeg.start
+    } else {
+      current = firstSeg.end
+    }
+  }
+
+  path.moveTo(vertices[current].x, vertices[current].y)
+
+  for (const segIdx of loop) {
+    const seg = segments[segIdx]
+    const forward = seg.start === current
+    addSegmentDirected(path, seg, vertices, forward)
+    current = forward ? seg.end : seg.start
+  }
+
+  path.close()
+}
+
 export function addOpenSegmentsToPath(
-  path: Path,
+  path: PathSink,
   segments: VectorSegment[],
   vertices: VectorVertex[]
 ): void {

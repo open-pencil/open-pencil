@@ -108,8 +108,41 @@ export function copyStyleRuns(runs: StyleRun[]): StyleRun[] {
 export function copyGeometryPaths(paths: GeometryPath[]): GeometryPath[] {
   return paths.map((p) => ({
     windingRule: p.windingRule,
-    commandsBlob: p.commandsBlob.slice()
+    commandsBlob: p.commandsBlob.slice(),
+    fills: p.fills ? copyFills(p.fills) : undefined
   }))
+}
+
+/** Scale geometry path coordinates while preserving independent path fills. */
+export function scaleGeometryPaths(paths: GeometryPath[], scaleX: number, scaleY: number) {
+  const copies = copyGeometryPaths(paths)
+  if (scaleX === 1 && scaleY === 1) return copies
+
+  for (const path of copies) {
+    const view = new DataView(
+      path.commandsBlob.buffer,
+      path.commandsBlob.byteOffset,
+      path.commandsBlob.byteLength
+    )
+    let offset = 0
+    while (offset < path.commandsBlob.length) {
+      const command = path.commandsBlob[offset]
+      offset += 1
+      if (command === 0) continue
+
+      let coordinateCount = 0
+      if (command === 1 || command === 2) coordinateCount = 1
+      else if (command === 3) coordinateCount = 2
+      else if (command === 4) coordinateCount = 3
+      if (coordinateCount === 0 || offset + coordinateCount * 8 > path.commandsBlob.length) break
+      for (let index = 0; index < coordinateCount; index++) {
+        view.setFloat32(offset, view.getFloat32(offset, true) * scaleX, true)
+        view.setFloat32(offset + 4, view.getFloat32(offset + 4, true) * scaleY, true)
+        offset += 8
+      }
+    }
+  }
+  return copies
 }
 
 // --- Internal helpers ---

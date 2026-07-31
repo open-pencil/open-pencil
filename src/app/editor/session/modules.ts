@@ -2,7 +2,6 @@ import { computed } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import type { IORegistry } from '@open-pencil/core/io'
-import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { createDocumentExportActions } from '@/app/document/export'
 import { createDocumentIOActions } from '@/app/document/io'
@@ -51,14 +50,13 @@ export function createEditorComputedRefs(editor: Editor, state: AppEditorState) 
 
 export function createEditorStoreModules(
   editor: Editor,
-  graph: SceneGraph,
   state: AppEditorState,
   io: IORegistry,
   viewportSize: ViewportSize
 ) {
   const flash = createFlashActions(editor, state)
-  const pen = createPenActions(editor, graph, state)
-  const vectorEdit = createVectorEditActions(editor, graph, state)
+  const pen = createPenActions(editor, state)
+  const vectorEdit = createVectorEditActions(editor, state)
   const documentIO = createDocumentIOActions(editor, state, viewportSize)
   const documentExport = createDocumentExportActions(editor, state, io, documentIO.downloadBlob)
   const mobileClipboard = createMobileClipboardActions(editor, state)

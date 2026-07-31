@@ -8,11 +8,11 @@ import {
 } from '#core/clipboard'
 import { computeAllLayouts } from '#core/layout'
 
+import { createClipboardAssetActions } from './clipboard/assets'
 import { createClipboardCopyActions } from './clipboard/copy'
 import { createClipboardExportActions } from './clipboard/export'
 import { createClipboardFontActions } from './clipboard/fonts'
 import { deleteIds, recreateSnapshots, restoreDeletedEntries } from './clipboard/history'
-import { createClipboardImageActions } from './clipboard/images'
 import { replaceTargetsWithCreated, selectedReplacementTargets } from './clipboard/paste-replace'
 import { resolvePasteTarget } from './clipboard/paste-target'
 import { createClipboardPlacementActions } from './clipboard/placement'
@@ -66,11 +66,11 @@ export function createClipboardActions(ctx: EditorContext) {
     }
   }
 
-  function pushPasteUndo(created: string[], prevSelection: Set<string>) {
+  function pushCreatedNodesUndo(created: string[], prevSelection: Set<string>, label = 'Paste') {
     const allNodes = collectSubtrees(ctx.graph, created)
     const pageId = ctx.state.currentPageId
     ctx.undo.push({
-      label: 'Paste',
+      label,
       forward: () => {
         recreateSnapshots(ctx, allNodes, pageId)
         computeAllLayouts(ctx.graph, pageId)
@@ -115,7 +115,7 @@ export function createClipboardActions(ctx: EditorContext) {
         placementActions.centerNodesAt(created, cx, cy)
         computeAllLayouts(ctx.graph, ctx.state.currentPageId)
         ctx.setSelectedIds(new Set(created))
-        pushPasteUndo(created, prevSelection)
+        pushCreatedNodesUndo(created, prevSelection)
       }
 
       await Promise.all([
@@ -168,7 +168,7 @@ export function createClipboardActions(ctx: EditorContext) {
     computeAllLayouts(ctx.graph, ctx.state.currentPageId)
     ctx.setSelectedIds(new Set(created))
 
-    pushPasteUndo(created, prevSelection)
+    pushCreatedNodesUndo(created, prevSelection)
     return created
   }
 
@@ -261,7 +261,7 @@ export function createClipboardActions(ctx: EditorContext) {
   const copyActions = createClipboardCopyActions(ctx)
   const exportActions = createClipboardExportActions(ctx)
   const fontActions = createClipboardFontActions(ctx)
-  const imageActions = createClipboardImageActions(ctx)
+  const assetActions = createClipboardAssetActions(ctx, pushCreatedNodesUndo)
   const placementActions = createClipboardPlacementActions(ctx)
 
   return {
@@ -273,7 +273,7 @@ export function createClipboardActions(ctx: EditorContext) {
     pasteFromHTML,
     warnMissingImages,
     deleteSelected,
-    ...imageActions,
+    ...assetActions,
     ...exportActions
   }
 }

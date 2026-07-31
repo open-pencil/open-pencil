@@ -1,61 +1,11 @@
-import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
-
-import { parseColor } from '#core/color'
-import { createPathStroke } from '#core/icons/path-style'
-import { extractPaths } from '#core/icons/svg'
-import type { IconPathInfo } from '#core/icons/types'
-import { parseSVGSize } from '#core/io/formats/svg/metadata'
+import { createSVGNodes } from '#core/io/formats/svg'
 import { defineTool } from '#core/tools/schema'
-
-function createVectorFromPath(
-  figma: Parameters<Parameters<typeof defineTool>[0]['execute']>[0],
-  path: IconPathInfo,
-  width: number,
-  height: number,
-  parentId: string,
-  defaultColor: string
-) {
-  const vectorNetwork = parseSVGPath(path.d, path.fillRule)
-  const vector = figma.graph.createNode('VECTOR', parentId, {
-    name: 'path',
-    width,
-    height,
-    vectorNetwork
-  })
-  vector.x = 0
-  vector.y = 0
-
-  if (path.fill && path.fill !== 'none') {
-    const fillColor =
-      path.fill === 'currentColor' ? parseColor(defaultColor) : parseColor(path.fill)
-    figma.graph.updateNode(vector.id, {
-      fills: [{ type: 'SOLID', color: fillColor, opacity: 1, visible: true }]
-    })
-  } else if (path.fill === null && !path.stroke) {
-    const fillColor = parseColor(defaultColor)
-    figma.graph.updateNode(vector.id, {
-      fills: [{ type: 'SOLID', color: fillColor, opacity: 1, visible: true }]
-    })
-  } else {
-    figma.graph.updateNode(vector.id, { fills: [] })
-  }
-
-  if (path.stroke && path.stroke !== 'none') {
-    const strokeColor =
-      path.stroke === 'currentColor' ? parseColor(defaultColor) : parseColor(path.stroke)
-    figma.graph.updateNode(vector.id, {
-      strokes: [createPathStroke(strokeColor, path.strokeWidth, path.strokeCap, path.strokeJoin)]
-    })
-  }
-
-  return vector
-}
 
 export const importSvg = defineTool({
   name: 'import_svg',
   mutates: true,
   description:
-    'Import raw SVG markup onto the canvas. Parses <path>, <circle>, <ellipse>, <rect>, <line>, <polygon>, <polyline> elements and creates vector nodes. Supports fill, stroke, stroke-width, viewBox sizing.',
+    'Import raw SVG markup onto the canvas as editable vector nodes. Supports common SVG shapes, inherited presentation attributes, transforms, gradients, and internal <use> references.',
   params: {
     svg: {
       type: 'string',
@@ -72,30 +22,15 @@ export const importSvg = defineTool({
     y: { type: 'number', description: 'Y position' }
   },
   execute: async (figma, args) => {
-    const svg = args.svg
-    if (!svg || typeof svg !== 'string') return { error: 'svg parameter is required' }
+    if (!args.svg || typeof args.svg !== 'string') return { error: 'svg parameter is required' }
 
-    const paths = extractPaths(svg)
-    if (paths.length === 0) return { error: 'No supported SVG elements found in the markup' }
-
-    const { width, height } = parseSVGSize(svg)
-    const defaultColor = args.color ?? '#000000'
-    const parentId = args.parent_id ?? figma.currentPage.id
-
-    const frame = figma.graph.createNode('FRAME', parentId, {
-      name: args.name ?? 'SVG',
-      width,
-      height,
-      fills: []
+    const frame = createSVGNodes(figma.graph, args.parent_id ?? figma.currentPage.id, args.svg, {
+      name: args.name,
+      defaultColor: args.color,
+      x: args.x,
+      y: args.y
     })
-
-    if (args.x !== undefined) frame.x = args.x
-    if (args.y !== undefined) frame.y = args.y
-
-    for (const path of paths) {
-      createVectorFromPath(figma, path, width, height, frame.id, defaultColor)
-    }
-
+    if (!frame) return { error: 'No supported SVG elements found in the markup' }
     return { id: frame.id, name: frame.name, type: frame.type }
   }
 })

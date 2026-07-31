@@ -1,3 +1,4 @@
+import type { Paint } from '@open-pencil/kiwi/fig/codec'
 import type {
   HandleMirroring,
   VectorNetwork,
@@ -10,6 +11,7 @@ import type {
 export interface StyleOverride {
   styleID: number
   handleMirroring?: string
+  fillPaints?: Paint[]
 }
 
 export function decodeVectorNetworkBlob(

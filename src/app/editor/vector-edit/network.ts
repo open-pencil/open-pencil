@@ -2,6 +2,7 @@ import type { Editor } from '@open-pencil/core/editor'
 import { nearestPointOnNetwork, removeVertex, splitSegmentAt } from '@open-pencil/core/vector'
 import type { VectorNetwork } from '@open-pencil/scene-graph'
 
+import { pushNodeEditHistory } from './history'
 import type { NodeEditState, VectorEditState } from './types'
 
 export function setNodeEditNetwork(es: NodeEditState, network: VectorNetwork) {
@@ -43,6 +44,7 @@ export function createVectorEditNetworkActions(
     const es = getNodeEditState()
     if (!es || a === b) return
     if (a < 0 || b < 0 || a >= es.vertices.length || b >= es.vertices.length) return
+    pushNodeEditHistory(es)
 
     const removeIndex = a
     const keepIndex = b
@@ -74,6 +76,7 @@ export function createVectorEditNetworkActions(
     const live = getLiveNetwork(es)
     const nearest = nearestPointOnNetwork(cx, cy, live, nodeEditHitThreshold / state.zoom)
     if (!nearest) return
+    pushNodeEditHistory(es)
     const split = splitSegmentAt(live, nearest.segmentIndex, nearest.t)
     setNodeEditNetwork(es, split.network)
     es.selectedVertexIndices = new Set([split.newVertexIndex])
@@ -87,6 +90,7 @@ export function createVectorEditNetworkActions(
     const live = getLiveNetwork(es)
     const next = removeVertex(live, vertexIndex)
     if (!next) return
+    pushNodeEditHistory(es)
     setNodeEditNetwork(es, next)
     es.selectedVertexIndices = new Set()
     es.selectedHandles = new Set()

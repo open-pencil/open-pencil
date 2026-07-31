@@ -5,8 +5,6 @@
  * reflect the input pixel size. Scale path data from the SVG coordinate space
  * (viewBox, else width/height) into the target node bounds before parsing.
  */
-import svgpath from 'svgpath'
-
 import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
@@ -20,14 +18,11 @@ import { parseSVGSize, parseSVGViewBox } from '#core/io/formats/svg/metadata'
 import { computeAccurateBounds } from '#core/vector/curve-math'
 
 import { parseSVGGradients, resolveGradientFill } from './gradients'
-import { applySVGTransformToPath } from './transform'
-
-/** Map path data from SVG user space (viewBox) into target pixel bounds. */
-function mapPathDataToBounds(d: string, space: Rect, target: Size): string {
-  const sx = target.width / space.width
-  const sy = target.height / space.height
-  return svgpath(d).translate(-space.x, -space.y).scale(sx, sy).toString()
-}
+import {
+  applySVGTransformToPath,
+  mapSVGPathToViewport,
+  resolveSVGViewportMapping
+} from './transform'
 
 function parseSVGCoordinateSpace(svg: string): Rect {
   const viewBox = parseSVGViewBox(svg)
@@ -75,7 +70,7 @@ export interface SVGVectorizeResult {
 export function svgToVectorPaths(
   svgText: string,
   bounds: Size,
-  options?: { defaultColor?: string }
+  options?: { defaultColor?: string; preserveAspectRatio?: boolean }
 ): SVGVectorizeResult | null {
   const paths = extractPaths(svgText)
   if (paths.length === 0) return null
@@ -85,16 +80,20 @@ export function svgToVectorPaths(
 
   const defaultColor = options?.defaultColor ?? '#000000'
   const gradients = parseSVGGradients(svgText)
-  // Path coordinates are scaled from SVG space into the target bounds; scale stroke
-  // width by the same (uniform) factor so thickness matches the transformed geometry.
-  const strokeScale = Math.min(bounds.width / space.width, bounds.height / space.height)
+  const viewport = resolveSVGViewportMapping(
+    svgText,
+    space,
+    bounds,
+    options?.preserveAspectRatio ?? false
+  )
+  const strokeScale = Math.min(viewport.scaleX, viewport.scaleY)
 
   const vectorized: VectorizedPath[] = []
   for (const path of paths) {
     const fillRule: WindingRule = path.fillRule
     const transform = path.transform ?? null
     const pathData = applySVGTransformToPath(path.d, transform)
-    const scaledD = mapPathDataToBounds(pathData, space, bounds)
+    const scaledD = mapSVGPathToViewport(pathData, viewport)
     const network = parseSVGPath(scaledD, fillRule)
     const gradientFill =
       gradients.size > 0
@@ -102,8 +101,7 @@ export function svgToVectorPaths(
             path.fill,
             gradients,
             transform,
-            space,
-            bounds,
+            viewport,
             computeAccurateBounds(network)
           )
         : null

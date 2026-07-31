@@ -2,7 +2,9 @@ export { constrainToAspectRatio } from '#vue/shared/input/resize/rect'
 export { tryStartResize } from '#vue/shared/input/resize/start'
 import type { Editor } from '@open-pencil/core/editor'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyGeometryPaths, scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 import {
   computeConstrainedResizeChanges,
   scaleVectorNetworkForResize
@@ -25,6 +27,18 @@ function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean
     newRect.height
   )
   if (resizedVectorNetwork) changes.vectorNetwork = resizedVectorNetwork
+  if (origRect.width > 0 && origRect.height > 0) {
+    const scaleX = newRect.width / origRect.width
+    const scaleY = newRect.height / origRect.height
+    if (scaleX !== 1 || scaleY !== 1) {
+      if (d.origFillGeometry.length > 0) {
+        changes.fillGeometry = scaleGeometryPaths(d.origFillGeometry, scaleX, scaleY)
+      }
+      if (d.origStrokeGeometry.length > 0) {
+        changes.strokeGeometry = scaleGeometryPaths(d.origStrokeGeometry, scaleX, scaleY)
+      }
+    }
+  }
   return { changes, newRect }
 }
 
@@ -72,7 +86,9 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
     width: node.width,
     height: node.height
   }
-  if (node.vectorNetwork) finalChanges.vectorNetwork = node.vectorNetwork
+  if (node.vectorNetwork) finalChanges.vectorNetwork = cloneVectorNetwork(node.vectorNetwork)
+  finalChanges.fillGeometry = copyGeometryPaths(node.fillGeometry)
+  finalChanges.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
 
   if (d.origChildren) {
     const finalChildren = new Map<string, Partial<SceneNode>>()
@@ -85,7 +101,9 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
         width: child.width,
         height: child.height
       }
-      if (child.vectorNetwork) final.vectorNetwork = child.vectorNetwork
+      if (child.vectorNetwork) final.vectorNetwork = cloneVectorNetwork(child.vectorNetwork)
+      final.fillGeometry = copyGeometryPaths(child.fillGeometry)
+      final.strokeGeometry = copyGeometryPaths(child.strokeGeometry)
       finalChildren.set(childId, final)
     }
     editor.graph.updateNodePreview(d.nodeId, d.origRect)
@@ -103,7 +121,9 @@ export function commitResizePreview(d: DragResize, editor: Editor) {
     editor.updateNode(d.nodeId, finalChanges)
     editor.commitResize(d.nodeId, {
       ...d.origRect,
-      ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {})
+      vectorNetwork: d.origVectorNetwork,
+      fillGeometry: d.origFillGeometry,
+      strokeGeometry: d.origStrokeGeometry
     })
   }
 }

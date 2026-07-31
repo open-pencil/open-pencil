@@ -68,8 +68,8 @@ function normalizeVectorToNodeBounds(network: VectorNetwork): {
   network: VectorNetwork
   bounds: Rect
 } | null {
+  if (network.vertices.length === 0) return null
   const bounds = computeAccurateBounds(network)
-  if (bounds.width <= 0 || bounds.height <= 0) return null
 
   return {
     bounds,

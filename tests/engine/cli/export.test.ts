@@ -3,6 +3,8 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { unzipSync } from 'fflate'
+
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 
 import { runOpenPencilCLI } from '#tests/helpers/cli'
@@ -16,7 +18,12 @@ async function createFigFixture() {
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-export-cli-'))
   const figPath = join(dir, 'card.fig')
   const graph = makeSceneGraph('Export Page')
-  const rect = createRect(graph, firstPageId(graph), {
+  const firstFrame = graph.createNode('FRAME', firstPageId(graph), {
+    name: 'First slide',
+    width: 1280,
+    height: 720
+  })
+  const rect = createRect(graph, firstFrame.id, {
     name: 'Export Card',
     x: 0,
     y: 0,
@@ -32,7 +39,12 @@ async function createFigFixture() {
   rect.fills = [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 } }]
 
   const secondPage = graph.addPage('Second Page')
-  createRect(graph, secondPage.id, {
+  const secondFrame = graph.createNode('FRAME', secondPage.id, {
+    name: 'Second slide',
+    width: 1280,
+    height: 720
+  })
+  createRect(graph, secondFrame.id, {
     name: 'Second Card',
     x: 0,
     y: 0,
@@ -68,6 +80,29 @@ test('FIG export preserves the whole document by default', async () => {
   })
   expect(graph.getPages()).toHaveLength(3)
   expect(graph.getPages().map((page) => page.name)).toContain('Second Page')
+})
+
+test('PPTX export includes slides from every page by default', async () => {
+  const { dir, figPath } = await createFigFixture()
+  const output = join(dir, 'whole.pptx')
+
+  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+    'export',
+    figPath,
+    '--format',
+    'pptx',
+    '--output',
+    output
+  ])
+
+  expect(stderr).toBe('')
+  expect(exitCode).toBe(0)
+  expect(stdout).toContain('Target: whole document')
+
+  const files = unzipSync(new Uint8Array(await Bun.file(output).arrayBuffer()))
+  expect(files['ppt/slides/slide1.xml']).toBeDefined()
+  expect(files['ppt/slides/slide2.xml']).toBeDefined()
+  expect(files['ppt/slides/slide3.xml']).toBeUndefined()
 })
 
 test('FIG export requires an explicit page for a partial archive', async () => {

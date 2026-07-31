@@ -1,5 +1,6 @@
 import type { Tool } from '@open-pencil/core/editor'
 import type { Mat3, NodeType, VectorNetwork } from '@open-pencil/scene-graph'
+import type { GeometryPath, NodeType, VectorNetwork } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -47,6 +48,8 @@ export interface DragResize {
   origRect: Rect
   nodeId: string
   origVectorNetwork: VectorNetwork | null
+  origFillGeometry: GeometryPath[]
+  origStrokeGeometry: GeometryPath[]
   origChildren: Map<string, ResizeSnapshot> | null
 }
 

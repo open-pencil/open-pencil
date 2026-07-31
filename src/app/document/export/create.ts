@@ -105,7 +105,7 @@ export function createDocumentExportActions(
 
   async function exportSelection(
     scale: number,
-    formatId: 'png' | 'jpg' | 'webp' | 'svg' | 'pdf' | 'fig'
+    formatId: 'png' | 'jpg' | 'webp' | 'svg' | 'pdf' | 'pptx' | 'fig'
   ) {
     await exportTarget(getSelectionExportTarget(), formatId, { scale })
   }

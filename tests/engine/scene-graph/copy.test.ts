@@ -89,13 +89,19 @@ describe('copy helpers — mutation isolation', () => {
     expect(original.style.fontWeight).toBe(700)
   })
 
-  test('copyGeometryPaths: Uint8Array is independent', () => {
+  test('copyGeometryPaths: blobs and path fills are independent', () => {
     const original: GeometryPath[] = [
-      { windingRule: 'NONZERO', commandsBlob: new Uint8Array([1, 2, 3]) }
+      {
+        windingRule: 'NONZERO',
+        commandsBlob: new Uint8Array([1, 2, 3]),
+        fills: [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
+      }
     ]
     const copy = copyGeometryPaths(original)
     copy[0].commandsBlob[0] = 99
+    if (copy[0].fills?.[0]) copy[0].fills[0].color.r = 0
     expect(original[0].commandsBlob[0]).toBe(1)
+    expect(original[0].fills?.[0]?.color.r).toBe(1)
   })
 
   test('copyFills: array independence', () => {
