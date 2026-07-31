@@ -140,7 +140,23 @@ function unsupportedPropWarnings(tree: TreeNode): string[] {
   return warnings
 }
 
+/** Props <svg> itself understands beyond the shared set. */
+const SVG_ROOT_PROPS = new Set(['viewBox', 'size', 'body', 'color'])
+
 function collectUnsupportedPropWarnings(tree: TreeNode, warnings: string[]): void {
+  // Everything inside <svg> is SVG markup parsed by the SVG renderer, not
+  // design-JSX props. Validating it against the design prop list reported
+  // `d`, `stroke-width` and `viewBox` as ignored while they were being used —
+  // agents believed the tool and threw away correct output.
+  if (tree.type === 'svg') {
+    for (const key of Object.keys(tree.props)) {
+      if (!SUPPORTED_PROPS.has(key) && !SVG_ROOT_PROPS.has(key)) {
+        warnings.push(`Unsupported prop "${key}" on <svg> is ignored.`)
+      }
+    }
+    return
+  }
+
   for (const key of Object.keys(tree.props)) {
     if (!SUPPORTED_PROPS.has(key)) {
       warnings.push(`Unsupported prop "${key}" on <${tree.type}> is ignored.`)

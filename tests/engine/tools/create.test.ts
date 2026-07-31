@@ -77,6 +77,18 @@ describe('render', () => {
     expect(result.warnings).toEqual(['Unsupported prop "mt" on <frame> is ignored.'])
   })
 
+  test('does not warn about SVG attributes inside <svg>', async () => {
+    const { figma } = setupToolTest()
+    const result = (await getTool('render').execute(figma, {
+      jsx: '<svg name="Boat" viewBox="0 0 640 700" size={600}><path d="M380 40 L380 560" stroke="#021A3B" stroke-width="6" fill="none" /></svg>'
+    })) as ToolResult
+
+    // `d`, `viewBox` and `stroke-width` are all consumed by the SVG renderer,
+    // but were checked against the design-prop list and reported as ignored.
+    // Agents believed the warning and deleted correct output.
+    expect(result.warnings).toBeUndefined()
+  })
+
   test('get_node exposes text style fields', async () => {
     const { figma } = setupToolTest()
     const render = getTool('render')
