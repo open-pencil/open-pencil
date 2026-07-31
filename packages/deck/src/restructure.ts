@@ -9,7 +9,7 @@ const DEFAULT_SLIDE_SIZE: Vector = { x: 1920, y: 1080 }
  * Figma Slides presentation artboard rounding. Source SLIDE nodes often have no
  * cornerRadius; the rounded white card is applied when baking to a FRAME.
  */
-const SLIDE_CORNER_RADIUS = 40
+const SLIDE_CORNER_RADIUS = 15
 
 function buildChildrenMap(nodes: NodeChange[]): Map<string, NodeChange[]> {
   const map = new Map<string, NodeChange[]>()
@@ -89,8 +89,7 @@ function fractionalPosition(index: number): string {
 
 function findDocument(nodeChanges: NodeChange[]): NodeChange {
   const document =
-    nodeChanges.find((n) => n.type === 'DOCUMENT') ??
-    nodeChanges.find((n) => nodeKey(n) === '0:0')
+    nodeChanges.find((n) => n.type === 'DOCUMENT') ?? nodeChanges.find((n) => nodeKey(n) === '0:0')
   if (!document?.guid) {
     throw new Error('Deck restructure failed: missing DOCUMENT node')
   }
@@ -150,9 +149,7 @@ export function restructureDeckNodeChanges(nodeChanges: NodeChange[]): NodeChang
 
   const document = findDocument(nodeChanges)
   const docGuid = document.guid as GUID
-  const slideKeys = new Set(
-    slides.map((s) => nodeKey(s)).filter((k): k is string => k !== null)
-  )
+  const slideKeys = new Set(slides.map((s) => nodeKey(s)).filter((k): k is string => k !== null))
 
   let localId = nextLocalId(nodeChanges)
   const alloc = (): GUID => ({ sessionID: 0, localID: localId++ })

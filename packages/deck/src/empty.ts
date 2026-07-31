@@ -8,7 +8,7 @@ export const EMPTY_SLIDE_HEIGHT = 1080
  * Figma Slides artboard corner radius (presentation chrome).
  * Real .deck SLIDE nodes often omit cornerRadius; the rounded card is a slides UI trait.
  */
-export const EMPTY_SLIDE_CORNER_RADIUS = 40
+export const EMPTY_SLIDE_CORNER_RADIUS = 15
 
 const WHITE: Color = { r: 1, g: 1, b: 1, a: 1 }
 const SUBTITLE_GRAY: Color = { r: 0.25, g: 0.25, b: 0.25, a: 1 }

@@ -1,17 +1,7 @@
-export {
-  parseDeckBuffer,
-  type DeckParseResult
-} from './parse'
-export {
-  restructureDeckNodeChanges,
-  collectActiveSlides
-} from './restructure'
+export { parseDeckBuffer, type DeckParseResult } from './parse'
+export { restructureDeckNodeChanges, collectActiveSlides } from './restructure'
 export { structurePagesToDeck } from './structure'
-export {
-  writeDeckArchive,
-  defaultDeckMetaJson,
-  type WriteDeckArchiveInput
-} from './archive'
+export { writeDeckArchive, defaultDeckMetaJson, type WriteDeckArchiveInput } from './archive'
 export {
   normalizeDeckCanvasPrelude,
   setCanvasPrelude,

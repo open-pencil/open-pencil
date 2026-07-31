@@ -1,7 +1,7 @@
 import { unzipSync } from 'fflate'
 
-import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
 
 import { normalizeDeckCanvasPrelude, readCanvasPrelude } from './prelude'
 import { restructureDeckNodeChanges } from './restructure'

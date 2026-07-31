@@ -170,7 +170,7 @@ export function useCanvasSurfaceLifecycle({
     onReady
   })
 
-  const { cancelResize } = useCanvasResizeObserver({
+  useCanvasResizeObserver({
     canvasRef,
     getCanvasKitValue,
     resizeCanvas: surface.resizeCanvas
@@ -178,7 +178,6 @@ export function useCanvasSurfaceLifecycle({
 
   onScopeDispose(() => {
     lifecycle.destroyed = true
-    cancelResize()
     surface.destroy()
   })
 }

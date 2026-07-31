@@ -28,6 +28,7 @@ import { destroyRenderer } from './renderer/lifecycle'
 import { installRendererDomainMethods } from './renderer/methods'
 import { initializeRendererPaints } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
+import { beginSceneBackingPreview } from './renderer/retained-backing'
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 export type { RenderOverlays, RulerTheme } from './renderer/types'
@@ -448,10 +449,21 @@ export class SkiaRenderer {
     return RendererFonts.prepareForExport(this, graph, pageId, nodeIds)
   }
 
+  /**
+   * Swap in a new onscreen surface after the canvas changed size.
+   *
+   * Only an in-flight backing build owns GPU memory derived from the outgoing surface. The
+   * recorded picture is device-independent, and the backing image was snapshotted from an
+   * offscreen surface and lives on the GL context — which is reused across the swap, not
+   * recreated. Discarding those as well made every resize frame re-record the entire scene,
+   * the dominant cost of dragging a panel over a photo-heavy deck.
+   */
   replaceSurface(surface: Surface): void {
     this.surface.delete()
     this.surface = surface
-    this.invalidateScenePicture()
+    this.sceneBackingBuild?.surface.delete()
+    this.sceneBackingBuild = null
+    beginSceneBackingPreview(this)
   }
 
   invalidateScenePicture(): void {

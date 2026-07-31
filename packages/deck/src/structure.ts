@@ -16,8 +16,7 @@ function makeGuid(sessionID: number, localID: number): GUID {
 
 function findDocument(nodeChanges: NodeChange[]): NodeChange {
   const document =
-    nodeChanges.find((n) => n.type === 'DOCUMENT') ??
-    nodeChanges.find((n) => nodeKey(n) === '0:0')
+    nodeChanges.find((n) => n.type === 'DOCUMENT') ?? nodeChanges.find((n) => nodeKey(n) === '0:0')
   if (!document?.guid) {
     throw new Error('Deck structure failed: missing DOCUMENT node')
   }
@@ -42,10 +41,7 @@ function pageArtboard(nodeChanges: NodeChange[], page: NodeChange): NodeChange |
   if (!pageKey) return undefined
   const frames = nodeChanges
     .filter(
-      (n) =>
-        n.type === 'FRAME' &&
-        n.phase !== 'REMOVED' &&
-        guidKey(n.parentIndex?.guid) === pageKey
+      (n) => n.type === 'FRAME' && n.phase !== 'REMOVED' && guidKey(n.parentIndex?.guid) === pageKey
     )
     .sort((a, b) => comparePosition(a.parentIndex?.position, b.parentIndex?.position))
   return frames[0]
@@ -130,9 +126,7 @@ export function structurePagesToDeck(nodeChanges: NodeChange[]): NodeChange[] {
     throw new Error('Deck structure failed: no user pages to convert into slides')
   }
 
-  const pageKeys = new Set(
-    pages.map((p) => nodeKey(p)).filter((k): k is string => k !== null)
-  )
+  const pageKeys = new Set(pages.map((p) => nodeKey(p)).filter((k): k is string => k !== null))
 
   let localId = nextLocalId(nodeChanges)
   const alloc = (): GUID => makeGuid(0, localId++)

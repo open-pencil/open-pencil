@@ -13,7 +13,9 @@ export function normalizeDeckCanvasPrelude(canvasData: Uint8Array): Uint8Array {
     out.set(new TextEncoder().encode(FIG_KIWI_PRELUDE), 0)
     return out
   }
-  throw new Error(`Invalid deck canvas prelude: expected fig-deck or fig-kiwi, got ${JSON.stringify(header)}`)
+  throw new Error(
+    `Invalid deck canvas prelude: expected fig-deck or fig-kiwi, got ${JSON.stringify(header)}`
+  )
 }
 
 /** Set the 8-byte container prelude (e.g. to `fig-deck` before writing). */
