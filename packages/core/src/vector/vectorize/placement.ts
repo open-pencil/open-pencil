@@ -1,9 +1,18 @@
-import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
+import type { GeometryPath, SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { computeAccurateBounds } from '#core/vector/curve-math'
+import { regenerateFillGeometry } from '#core/vector/fill-geometry'
+import { mergeVectorNetworks } from '#core/vector/merge'
 
-import type { SVGVectorizeResult } from './svg/to-vectors'
+import type { SVGVectorizeResult, VectorizedPath } from './svg/to-vectors'
+
+export interface CreateVectorFrameChildrenOptions {
+  /** Merge fill-only paths into a single multi-color vector (SVG import). */
+  flattenFills?: boolean
+  /** Name for the flattened vector. */
+  name?: string
+}
 
 export interface VectorFramePlacement {
   x: number
@@ -85,13 +94,80 @@ function normalizeVectorToNodeBounds(network: VectorNetwork): {
   }
 }
 
+/**
+ * Fill-only paths become ONE multi-color vector: a single merged network whose
+ * regions carry per-path fills. That is the representation Figma uses for the
+ * same artwork (per-path fills through fillGeometry, #388), so double-click
+ * editing shows the whole illustration's anchors in one session and per-path
+ * colors round-trip. Stroked paths can't participate — the flattened model has
+ * no per-path strokes — so they stay separate sibling nodes.
+ */
+function createFlattenedVectorChild(
+  graph: SceneGraph,
+  frameId: string,
+  paths: VectorizedPath[],
+  placement: VectorFramePlacement,
+  name: string
+): SceneNode | null {
+  const networks = paths.map((path) =>
+    offsetVectorNetwork(path.vectorNetwork, placement.offsetX, placement.offsetY)
+  )
+  const normalized = normalizeVectorToNodeBounds(mergeVectorNetworks(networks))
+  if (!normalized) return null
+
+  // One fillGeometry entry per region, carrying its source path's fill; the
+  // command blobs are rebuilt from the merged network by regenerateFillGeometry.
+  const placeholders: GeometryPath[] = []
+  networks.forEach((network, index) => {
+    for (const region of network.regions) {
+      placeholders.push({
+        windingRule: region.windingRule,
+        commandsBlob: new Uint8Array(0),
+        ...(paths[index].fills.length > 0 ? { fills: paths[index].fills } : {})
+      })
+    }
+  })
+
+  return graph.createNode('VECTOR', frameId, {
+    name,
+    x: normalized.bounds.x,
+    y: normalized.bounds.y,
+    width: normalized.bounds.width,
+    height: normalized.bounds.height,
+    vectorNetwork: normalized.network,
+    fillGeometry: regenerateFillGeometry(normalized.network, placeholders),
+    fills: paths.find((path) => path.fills.length > 0)?.fills ?? []
+  })
+}
+
 export function createVectorFrameChildren(
   graph: SceneGraph,
   frameId: string,
   vectorized: SVGVectorizeResult,
-  placement: VectorFramePlacement
+  placement: VectorFramePlacement,
+  options: CreateVectorFrameChildrenOptions = {}
 ): void {
-  for (const [index, path] of vectorized.paths.entries()) {
+  // Bitmap vectorization keeps one node per traced path; only SVG import opts
+  // into the flattened multi-color representation.
+  // Requires a closed region: an open chain contributes no fillGeometry entry,
+  // so merging it in would leave its geometry in the network but unpainted.
+  const flattenable = options.flattenFills
+    ? vectorized.paths.filter(
+        (path) =>
+          path.strokes.length === 0 &&
+          path.fills.length > 0 &&
+          path.vectorNetwork.regions.length > 0
+      )
+    : []
+  const flatten = flattenable.length > 1
+  if (flatten) {
+    createFlattenedVectorChild(graph, frameId, flattenable, placement, options.name ?? 'Vector')
+  }
+  const remaining = flatten
+    ? vectorized.paths.filter((path) => !flattenable.includes(path))
+    : vectorized.paths
+
+  for (const [index, path] of remaining.entries()) {
     const inFrame = offsetVectorNetwork(path.vectorNetwork, placement.offsetX, placement.offsetY)
     const normalized = normalizeVectorToNodeBounds(inFrame)
     if (!normalized) continue
