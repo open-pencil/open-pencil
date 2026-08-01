@@ -151,7 +151,8 @@ export function useCanvasSurfaceLifecycle({
   setCanvasKit,
   getCanvasKitValue,
   lifecycle,
-  onReady
+  onReady,
+  resizeMode
 }: {
   canvasRef: Ref<HTMLCanvasElement | null>
   surface: ReturnType<typeof createCanvasSurfaceManager>
@@ -159,6 +160,7 @@ export function useCanvasSurfaceLifecycle({
   getCanvasKitValue: () => CanvasKit | null
   lifecycle: { destroyed: boolean }
   onReady?: () => void
+  resizeMode?: 'live' | 'settle'
 }) {
   useCanvasKitLoader({
     canvasRef,
@@ -173,7 +175,8 @@ export function useCanvasSurfaceLifecycle({
   useCanvasResizeObserver({
     canvasRef,
     getCanvasKitValue,
-    resizeCanvas: surface.resizeCanvas
+    resizeCanvas: surface.resizeCanvas,
+    mode: resizeMode
   })
 
   onScopeDispose(() => {

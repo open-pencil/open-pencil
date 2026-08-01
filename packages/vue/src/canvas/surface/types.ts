@@ -22,6 +22,14 @@ export interface UseCanvasOptions {
    */
   preserveDrawingBuffer?: boolean
   /**
+   * How eagerly this layer follows the canvas host as it resizes.
+   *
+   * 'live' rebuilds once per frame. 'settle' waits for resizing to stop, trading a briefly
+   * stale layer for not allocating a GPU surface every frame — worth it for a layer that
+   * draws chrome rather than document pixels.
+   */
+  resizeMode?: 'live' | 'settle'
+  /**
    * Called once the rendering surface is ready.
    */
   onReady?: () => void

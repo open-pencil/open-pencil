@@ -2,18 +2,33 @@ import { useResizeObserver } from '@vueuse/core'
 import type { CanvasKit } from 'canvaskit-wasm'
 import { onScopeDispose, type Ref } from 'vue'
 
+/** How eagerly a layer follows the canvas host as it changes size. */
+export type CanvasResizeMode = 'live' | 'settle'
+
+/** Long enough to outlast a drag's frame-to-frame jitter, short enough to feel immediate. */
+const SETTLE_MS = 120
+
 type ResizeObserverOptions = {
   canvasRef: Ref<HTMLCanvasElement | null>
   getCanvasKitValue: () => CanvasKit | null
   resizeCanvas: (canvas: HTMLCanvasElement) => void
+  mode?: CanvasResizeMode
 }
 
 export function useCanvasResizeObserver({
   canvasRef,
   getCanvasKitValue,
-  resizeCanvas
+  resizeCanvas,
+  mode = 'live'
 }: ResizeObserverOptions) {
   let pending = 0
+  let settleTimer: ReturnType<typeof setTimeout> | null = null
+
+  function applyResize() {
+    const canvas = canvasRef.value
+    if (!canvas || !getCanvasKitValue()) return
+    resizeCanvas(canvas)
+  }
 
   /**
    * Coalesce to one resize per animation frame.
@@ -29,14 +44,26 @@ export function useCanvasResizeObserver({
    * simply notifies again. Nothing is dropped.
    */
   useResizeObserver(canvasRef, () => {
+    // 'settle' layers rebuild once the size stops changing rather than every frame. Each
+    // rebuild allocates a GPU surface and repaints, and paying that per layer per frame is
+    // the bulk of a drag's cost — a layer drawing only chrome does not need to keep pace.
+    if (mode === 'settle') {
+      if (settleTimer) clearTimeout(settleTimer)
+      settleTimer = setTimeout(() => {
+        settleTimer = null
+        applyResize()
+      }, SETTLE_MS)
+      return
+    }
     if (pending) return
     pending = requestAnimationFrame(() => {
       pending = 0
-      const canvas = canvasRef.value
-      if (!canvas || !getCanvasKitValue()) return
-      resizeCanvas(canvas)
+      applyResize()
     })
   })
 
-  onScopeDispose(() => cancelAnimationFrame(pending))
+  onScopeDispose(() => {
+    cancelAnimationFrame(pending)
+    if (settleTimer) clearTimeout(settleTimer)
+  })
 }

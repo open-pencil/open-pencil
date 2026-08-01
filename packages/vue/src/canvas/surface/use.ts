@@ -46,7 +46,8 @@ export function useCanvas(
     setCanvasKit: (value) => {
       ck = value
     },
-    onReady: options?.onReady
+    onReady: options?.onReady,
+    resizeMode: options?.resizeMode
   })
 
   const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = createCanvasHitTests(

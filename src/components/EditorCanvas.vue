@@ -52,16 +52,20 @@ function refitOnResize() {
 
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
-  showRulers: false
+  showRulers: false,
+  // The scene layer follows the host live and drives the re-fit: it holds the document
+  // pixels, so it is the one that must track the panel edge.
+  onResize: refitOnResize
 })
 const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
   canvasRef,
   store,
   {
     layer: 'overlays',
-    // Only the overlay canvas drives the re-fit; both canvases share a host size, and
-    // subscribing on each would run the policy twice per resize.
-    onResize: refitOnResize
+    // Selection handles and guides, not document pixels. Rebuilding its GPU surface every
+    // frame doubled the cost of a panel drag for chrome nobody is looking at mid-drag, so
+    // it catches up once the resize settles.
+    resizeMode: 'settle'
   }
 )
 const {
