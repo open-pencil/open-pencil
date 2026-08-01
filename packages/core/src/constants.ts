@@ -174,6 +174,7 @@ export const ACP_AGENTS: ACPAgentDef[] = [
 
 export type AIProviderID =
   | 'openrouter'
+  | 'orcarouter'
   | 'anthropic'
   | 'openai'
   | 'google'
@@ -224,6 +225,26 @@ export const AI_PROVIDERS: AIProviderDef[] = [
       { id: 'qwen/qwen3.5-flash-02-23', name: 'Qwen 3.5 Flash', tag: 'Cheap' },
       { id: 'qwen/qwen3-coder:free', name: 'Qwen3 Coder', tag: 'Free' },
       { id: 'openai/gpt-oss-120b:free', name: 'GPT-OSS 120B', tag: 'Free' }
+    ]
+  },
+  {
+    id: 'orcarouter',
+    name: 'OrcaRouter',
+    keyPlaceholder: 'sk-orca-…',
+    keyURL: 'https://www.orcarouter.ai/console',
+    defaultModel: 'anthropic/claude-sonnet-4.6',
+    supportsCustomModel: true,
+    models: [
+      { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', tag: 'Best for design' },
+      { id: 'anthropic/claude-opus-4.8', name: 'Claude Opus 4.8', tag: 'Smartest' },
+      { id: 'openai/gpt-5.5', name: 'GPT-5.5' },
+      { id: 'google/gemini-3.5-flash', name: 'Gemini 3.5 Flash', tag: 'Fast' },
+      { id: 'kimi/kimi-k2.5', name: 'Kimi K2.5', tag: 'Vision + code' },
+      { id: 'z-ai/glm-5.2', name: 'GLM-5.2' },
+      { id: 'qwen/qwen3.7-max', name: 'Qwen 3.7 Max' },
+      { id: 'deepseek/deepseek-v4-pro', name: 'DeepSeek V4 Pro', tag: 'Cheap' },
+      { id: 'minimax/minimax-m3', name: 'MiniMax M3', tag: 'Cheap' },
+      { id: 'orcarouter/auto', name: 'Auto', tag: 'Picks a model per request' }
     ]
   },
   {
