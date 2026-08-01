@@ -28,6 +28,49 @@ export function renderSceneToCanvas(
 
 export type RenderLayer = 'full' | 'scene' | 'overlays'
 
+/** Build overlay props; strip selection/hover/collab chrome while presenting. */
+function overlaysFromEditorState(state: EditorState, textEditor: unknown): RenderOverlays {
+  if (state.presenting) {
+    return {
+      hoveredNodeId: null,
+      enteredContainerId: null,
+      editingTextId: null,
+      textEditor: null,
+      marquee: null,
+      snapGuides: [],
+      rotationPreview: null,
+      dropTargetId: null,
+      layoutInsertIndicator: null,
+      penState: null,
+      nodeEditState: null,
+      remoteCursors: [],
+      autoLayoutHover: null
+    }
+  }
+
+  return {
+    hoveredNodeId: state.hoveredNodeId,
+    enteredContainerId: state.enteredContainerId,
+    editingTextId: state.editingTextId,
+    textEditor: textEditor as RenderOverlays['textEditor'],
+    marquee: state.marquee,
+    snapGuides: state.snapGuides,
+    rotationPreview: state.rotationPreview,
+    dropTargetId: state.dropTargetId,
+    layoutInsertIndicator: state.layoutInsertIndicator,
+    penState: state.penState
+      ? ({
+          ...state.penState,
+          cursorX: state.penCursorX ?? undefined,
+          cursorY: state.penCursorY ?? undefined
+        } as RenderOverlays['penState'])
+      : null,
+    nodeEditState: state.nodeEditState ?? null,
+    remoteCursors: state.remoteCursors,
+    autoLayoutHover: state.autoLayoutHover
+  }
+}
+
 export function renderFromEditorState(
   r: SkiaRenderer,
   state: EditorState,
@@ -52,28 +95,8 @@ export function renderFromEditorState(
   render(
     r,
     graph,
-    state.selectedIds,
-    {
-      hoveredNodeId: state.hoveredNodeId,
-      enteredContainerId: state.enteredContainerId,
-      editingTextId: state.editingTextId,
-      textEditor: textEditor as RenderOverlays['textEditor'],
-      marquee: state.marquee,
-      snapGuides: state.snapGuides,
-      rotationPreview: state.rotationPreview,
-      dropTargetId: state.dropTargetId,
-      layoutInsertIndicator: state.layoutInsertIndicator,
-      penState: state.penState
-        ? ({
-            ...state.penState,
-            cursorX: state.penCursorX ?? undefined,
-            cursorY: state.penCursorY ?? undefined
-          } as RenderOverlays['penState'])
-        : null,
-      nodeEditState: state.nodeEditState ?? null,
-      remoteCursors: state.remoteCursors,
-      autoLayoutHover: state.autoLayoutHover
-    },
+    state.presenting ? new Set<string>() : state.selectedIds,
+    overlaysFromEditorState(state, textEditor),
     state.sceneVersion,
     layer
   )

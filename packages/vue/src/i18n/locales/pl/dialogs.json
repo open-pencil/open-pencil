@@ -201,5 +201,9 @@
   "you": "Ty",
   "youSuffix": "ty",
   "followingPeerStop": "Obserwujesz {name} (kliknij, aby zatrzymać)",
-  "clickToFollowPeer": "Kliknij, aby obserwować {name}"
+  "clickToFollowPeer": "Kliknij, aby obserwować {name}",
+  "exitPresentation": "Zakończ prezentację",
+  "previousSlide": "Poprzedni slajd",
+  "nextSlide": "Następny slajd",
+  "slidePosition": "{current} / {total}"
 }

@@ -201,5 +201,9 @@
   "you": "你",
   "youSuffix": "你",
   "followingPeerStop": "正在跟随 {name}（点击停止）",
-  "clickToFollowPeer": "点击跟随 {name}"
+  "clickToFollowPeer": "点击跟随 {name}",
+  "exitPresentation": "退出演示",
+  "previousSlide": "上一张幻灯片",
+  "nextSlide": "下一张幻灯片",
+  "slidePosition": "{current} / {total}"
 }

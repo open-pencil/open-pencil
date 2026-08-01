@@ -14,6 +14,7 @@ import { useDebounceFn, useElementSize, useEventListener, useUrlSearchParams } f
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
 import { documentKindRules } from '@open-pencil/core/editor'
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
@@ -42,17 +43,20 @@ import {
   LEFT_PANEL_MIN_WIDTH
 } from '@/constants'
 
+import { usePresentationSession } from '@/app/editor/presentation'
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
+import PresentationOverlay from '@/components/presentation/PresentationOverlay.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
+import presentationTheme from '@/theme/presentation'
 
 const route = useRoute()
 const params = useUrlSearchParams('history')
@@ -88,9 +92,13 @@ useSessionPersistence()
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()
 useMenu()
+usePresentationSession()
 
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
+
+const isPresenting = computed(() => store.state.presenting)
+const presentationStyles = tv(presentationTheme)()
 
 // A divider drag continues even if the pointer leaves the handle, so the release is
 // watched on the window rather than on the handle itself.
@@ -289,10 +297,26 @@ onUnmounted(() => {
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
       <SplitterPanel id="canvas" :default-size="canvasDefaultSize" :min-size="30" class="flex">
-        <div class="relative flex min-w-0 flex-1">
-          <EditorCanvas />
-          <Toolbar />
-        </div>
+        <!--
+          Teleport relocates the canvas host without remounting EditorCanvas, so the
+          two CanvasKit/WebGL surfaces survive enter/exit. Do not key this wrapper and
+          do not add a fifth EditorView branch for presentation.
+        -->
+        <Teleport to="body" :disabled="!isPresenting">
+          <div
+            data-test-id="presentation-stage"
+            :data-presenting="isPresenting ? 'true' : undefined"
+            :class="isPresenting ? presentationStyles.stage() : 'relative flex min-w-0 flex-1'"
+          >
+            <div :class="isPresenting ? presentationStyles.canvasHost() : 'contents'">
+              <div class="relative flex min-h-0 min-w-0 flex-1">
+                <EditorCanvas />
+                <Toolbar v-if="!isPresenting" />
+              </div>
+            </div>
+            <PresentationOverlay v-if="isPresenting" />
+          </div>
+        </Teleport>
       </SplitterPanel>
       <SplitterResizeHandle
         class="group relative z-10 -mx-1 w-2 cursor-col-resize"
@@ -308,7 +332,7 @@ onUnmounted(() => {
         class="flex flex-col"
       >
         <div
-          class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
+          class="relative z-20 flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
         >
           <CollabPanel />
         </div>

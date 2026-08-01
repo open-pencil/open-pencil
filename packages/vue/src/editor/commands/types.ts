@@ -39,6 +39,7 @@ export type EditorCommandId =
   | 'view.zoom100'
   | 'view.zoomFit'
   | 'view.zoomSelection'
+  | 'view.present'
 
 export interface EditorCommand {
   id: EditorCommandId

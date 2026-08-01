@@ -13,6 +13,11 @@ export type KeyboardShortcutActions = {
   toggleAI: () => void
   exportSelectionPng: () => void
   opacityDigit: (digit: string) => void
+  presentNext: () => void
+  presentPrevious: () => void
+  presentFirst: () => void
+  presentLast: () => void
+  exitPresentation: () => void
 }
 
 export type KeyboardShortcutOptions = {

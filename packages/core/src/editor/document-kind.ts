@@ -47,6 +47,12 @@ export interface DocumentKindRules {
    * canvas and keeps the wide range.
    */
   zoomRange: { min: number; max: number }
+  /**
+   * Whether this document kind can enter presentation mode.
+   *
+   * Decks have an ordered slide list to advance through; design documents do not.
+   */
+  presentable: boolean
 }
 
 const RULES: Record<DocumentKind, DocumentKindRules> = {
@@ -60,7 +66,8 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     pageBackgroundEditable: true,
     artboardSelectable: true,
     lockViewportToArtboard: false,
-    zoomRange: { min: 0.02, max: 256 }
+    zoomRange: { min: 0.02, max: 256 },
+    presentable: false
   },
   deck: {
     // Figma Slides-style canvas: fixed backdrop, always-fit slide, filmstrip navigator.
@@ -73,7 +80,8 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     pageBackgroundEditable: false,
     artboardSelectable: false,
     lockViewportToArtboard: true,
-    zoomRange: { min: 0.5, max: 16 }
+    zoomRange: { min: 0.5, max: 16 },
+    presentable: true
   }
 }
 

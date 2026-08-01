@@ -4,6 +4,13 @@ import { opacityFromBuffer } from '@open-pencil/core/editor'
 import type { useEditorCommands, useViewportKind } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import {
+  exitPresentation,
+  presentFirst,
+  presentLast,
+  presentNext,
+  presentPrevious
+} from '@/app/editor/presentation'
 
 type KeyboardActionsOptions = {
   store: EditorStore
@@ -57,6 +64,10 @@ export function createKeyboardActions({
   }
 
   function escapeOrDeselect() {
+    if (store.state.presenting) {
+      exitPresentation(store)
+      return
+    }
     if (store.state.nodeEditState) {
       store.exitNodeEditMode(true)
       return
@@ -137,6 +148,11 @@ export function createKeyboardActions({
     toggleUI,
     toggleAI,
     exportSelectionPng,
-    opacityDigit
+    opacityDigit,
+    presentNext: () => void presentNext(store),
+    presentPrevious: () => void presentPrevious(store),
+    presentFirst: () => void presentFirst(store),
+    presentLast: () => void presentLast(store),
+    exitPresentation: () => exitPresentation(store)
   }
 }

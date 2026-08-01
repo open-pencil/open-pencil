@@ -22,6 +22,8 @@ type ShortcutDefinition = {
   keys: string | string[]
   run: ShortcutAction
   shouldPreventDefault?: (event: KeyboardEvent) => boolean
+  /** When true, only fires while presenting and bypasses the edit-shortcut ignore guard. */
+  presentation?: boolean
 }
 
 function commandShortcut(
@@ -66,6 +68,8 @@ function hasOpenDismissableLayer() {
 
 function shouldIgnoreShortcut(event: KeyboardEvent, options: KeyboardShortcutOptions) {
   return (
+    // Presentation owns the keyboard; editing shortcuts stand down entirely.
+    options.store.state.presenting ||
     hasOpenDismissableLayer() ||
     originatedInOverlay(event) ||
     isEditing(event) ||
@@ -177,35 +181,89 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       'selection.sendBackward',
       'selection.sendToBack'
     ),
-    { id: 'delete-backspace', keys: 'Backspace', run: ({ actions }) => actions.smartDelete(false) },
+    {
+      id: 'delete-backspace',
+      keys: 'Backspace',
+      // Backspace is shared: previous-slide while presenting, delete otherwise.
+      run: ({ actions, store }) => {
+        if (store.state.presenting) actions.presentPrevious()
+        else actions.smartDelete(false)
+      }
+    },
     { id: 'delete', keys: 'Delete', run: ({ actions }) => actions.smartDelete(false) },
     { id: 'delete-alt', keys: 'Alt+Delete', run: ({ actions }) => actions.smartDelete(true) },
     { id: 'enter', keys: 'Enter', run: ({ actions }) => actions.confirmOrEnterText() },
+    // Escape exits presentation first (see escapeOrDeselect); keep a single binding so
+    // capture-phase registration order stays deterministic with no second listener.
     { id: 'escape', keys: 'Escape', run: ({ actions }) => actions.escapeOrDeselect() },
-    ...opacityBindings()
+    ...opacityBindings(),
+    // Presentation-only navigation — same tinykeys registry (capture:true) so they are
+    // not beaten by earlier Escape/arrow listeners.
+    {
+      id: 'present-next',
+      keys: ['ArrowRight', 'ArrowDown', 'Space', 'PageDown'],
+      run: ({ actions }) => actions.presentNext(),
+      presentation: true
+    },
+    {
+      id: 'present-previous',
+      keys: ['ArrowLeft', 'ArrowUp', 'PageUp'],
+      run: ({ actions }) => actions.presentPrevious(),
+      presentation: true
+    },
+    {
+      id: 'present-first',
+      keys: 'Home',
+      run: ({ actions }) => actions.presentFirst(),
+      presentation: true
+    },
+    {
+      id: 'present-last',
+      keys: 'End',
+      run: ({ actions }) => actions.presentLast(),
+      presentation: true
+    },
+    ...commandShortcuts('view.present')
   ]
 
   const bindings: KeyBindingMap = {}
+  const presentationBindings: KeyBindingMap = {}
   bindToolShortcuts(bindings, runOptions(new KeyboardEvent('keydown')))
 
   for (const shortcut of shortcuts) {
-    bindShortcut(bindings, shortcut.keys, (event) => {
+    const target = shortcut.presentation ? presentationBindings : bindings
+    bindShortcut(target, shortcut.keys, (event) => {
       shortcut.run(runOptions(event))
       if (shortcut.shouldPreventDefault?.(event) ?? true) event.preventDefault()
     })
   }
 
+  // Escape / Backspace must still fire while presenting: shouldIgnoreShortcut includes
+  // `presenting`, so those shared keys get an explicit bypass when the store is presenting.
+  const PRESENTATION_SHARED_KEYS = new Set(['Escape', 'Backspace'])
+
   const unsubscribe = tinykeys(
     window,
-    Object.fromEntries(
-      Object.entries(bindings).map(([keys, handler]) => [
+    Object.fromEntries([
+      ...Object.entries(bindings).map(([keys, handler]) => [
         keys,
         (event: KeyboardEvent) => {
+          if (options.store.state.presenting && PRESENTATION_SHARED_KEYS.has(keys)) {
+            handler(event)
+            return
+          }
           if (shouldIgnoreShortcut(event, options)) return
           handler(event)
         }
+      ]),
+      ...Object.entries(presentationBindings).map(([keys, handler]) => [
+        keys,
+        (event: KeyboardEvent) => {
+          if (!options.store.state.presenting) return
+          handler(event)
+        }
       ])
-    ),
+    ]),
     { capture: true }
   )
 

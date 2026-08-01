@@ -201,5 +201,9 @@
   "you": "Вы",
   "youSuffix": "вы",
   "followingPeerStop": "Следите за {name} (нажмите, чтобы остановить)",
-  "clickToFollowPeer": "Нажмите, чтобы следить за {name}"
+  "clickToFollowPeer": "Нажмите, чтобы следить за {name}",
+  "exitPresentation": "Выйти из презентации",
+  "previousSlide": "Предыдущий слайд",
+  "nextSlide": "Следующий слайд",
+  "slidePosition": "{current} / {total}"
 }

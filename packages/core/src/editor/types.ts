@@ -82,6 +82,11 @@ export interface EditorState {
   rulerTheme?: RulerTheme
   panY: number
   zoom: number
+  /**
+   * Audience presentation mode for decks. While true, the camera uses an
+   * edge-to-edge fit (no editing padding / 100% cap) and chrome is suppressed.
+   */
+  presenting: boolean
   renderVersion: number
   sceneVersion: number
   loading: boolean

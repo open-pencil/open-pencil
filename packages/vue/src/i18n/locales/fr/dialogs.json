@@ -201,5 +201,9 @@
   "you": "Vous",
   "youSuffix": "vous",
   "followingPeerStop": "Suit {name} (cliquer pour arrêter)",
-  "clickToFollowPeer": "Cliquer pour suivre {name}"
+  "clickToFollowPeer": "Cliquer pour suivre {name}",
+  "exitPresentation": "Quitter la présentation",
+  "previousSlide": "Diapositive précédente",
+  "nextSlide": "Diapositive suivante",
+  "slidePosition": "{current} / {total}"
 }

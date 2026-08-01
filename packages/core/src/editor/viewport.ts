@@ -7,6 +7,21 @@ import type { EditorContext } from './types'
 
 /** World-space breathing room zoomToBounds leaves around fitted content. */
 const VIEWPORT_FIT_PADDING = 80
+/** Default maximum scale for editing fit — content never scales above native size. */
+const VIEWPORT_FIT_MAX_SCALE = 1
+
+export interface ZoomToBoundsOptions {
+  /**
+   * World-space padding around the fitted bounds. Defaults to the editing margin
+   * ({@link VIEWPORT_FIT_PADDING}); presentation uses `0` for edge-to-edge fit.
+   */
+  padding?: number
+  /**
+   * Upper bound on the fitted scale. Defaults to `1` (editing); presentation passes
+   * `Infinity` so a slide can grow above 100% on a larger display.
+   */
+  maxScale?: number
+}
 
 function clamp(value: number, min: number, max: number): number {
   // A degenerate range means the artboard is smaller than the viewport on this axis.
@@ -99,9 +114,16 @@ export function createViewportActions(ctx: EditorContext) {
     emitViewportChanged(previous)
   }
 
-  function zoomToBounds(minX: number, minY: number, maxX: number, maxY: number) {
+  function zoomToBounds(
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+    options?: ZoomToBoundsOptions
+  ) {
     const previous = currentViewport()
-    const padding = VIEWPORT_FIT_PADDING
+    const padding = options?.padding ?? VIEWPORT_FIT_PADDING
+    const maxScale = options?.maxScale ?? VIEWPORT_FIT_MAX_SCALE
     const w = maxX - minX + padding * 2
     const h = maxY - minY + padding * 2
     if (w <= 0 || h <= 0) return
@@ -117,7 +139,7 @@ export function createViewportActions(ctx: EditorContext) {
     const viewW = Math.max(1, fullW - ruler)
     const viewH = Math.max(1, fullH - ruler)
 
-    const zoom = Math.min(viewW / w, viewH / h, 1)
+    const zoom = Math.min(viewW / w, viewH / h, maxScale)
 
     ctx.state.zoom = zoom
     // Offset pan by ruler so content is centered in the usable region (not under rulers)
@@ -138,7 +160,11 @@ export function createViewportActions(ctx: EditorContext) {
     )
     const targets = artboards.length > 0 ? artboards : nodes
     const b = computeBounds(targets)
-    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height)
+    // Presentation fills the stage edge to edge and may scale past 100%.
+    const fitOptions = ctx.state.presenting
+      ? { padding: 0, maxScale: Number.POSITIVE_INFINITY }
+      : undefined
+    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height, fitOptions)
   }
 
   function zoomToLevel(level: number) {

@@ -201,5 +201,9 @@
   "you": "あなた",
   "youSuffix": "あなた",
   "followingPeerStop": "{name} をフォロー中 (クリックして停止)",
-  "clickToFollowPeer": "クリックして {name} をフォロー"
+  "clickToFollowPeer": "クリックして {name} をフォロー",
+  "exitPresentation": "プレゼンテーションを終了",
+  "previousSlide": "前のスライド",
+  "nextSlide": "次のスライド",
+  "slidePosition": "{current} / {total}"
 }

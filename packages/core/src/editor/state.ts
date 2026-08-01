@@ -24,6 +24,7 @@ export function createDefaultEditorState(pageId: string): EditorState {
     pageColor: { ...CANVAS_BG_COLOR },
     panY: 0,
     zoom: 1,
+    presenting: false,
     renderVersion: 0,
     sceneVersion: 0,
     loading: false,

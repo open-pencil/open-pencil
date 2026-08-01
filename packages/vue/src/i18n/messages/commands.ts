@@ -41,7 +41,8 @@ export const commandMessageDefaults = {
   setOpacity: 'Set opacity',
   zoomTo100: 'Zoom to 100%',
   zoomToFit: 'Zoom to fit',
-  zoomToSelection: 'Zoom to selection'
+  zoomToSelection: 'Zoom to selection',
+  present: 'Present'
 } as const
 
 export const commandMessages = i18n('commands', commandMessageDefaults)

@@ -183,6 +183,14 @@
         "type": "separator"
       },
       {
+        "id": "view.present",
+        "label": "Present",
+        "accelerator": "Alt+CmdOrCtrl+Enter"
+      },
+      {
+        "type": "separator"
+      },
+      {
         "id": "theme",
         "label": "Theme",
         "sub": [

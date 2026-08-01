@@ -122,6 +122,12 @@ export const APP_MENU_SCHEMA = [
       { id: 'view-multiplayer-cursors', label: 'Multiplayer Cursors', checkbox: true },
       { type: 'separator' },
       {
+        id: 'view.present',
+        label: 'Present',
+        command: 'view.present'
+      },
+      { type: 'separator' },
+      {
         id: 'theme',
         label: 'Theme',
         sub: [
