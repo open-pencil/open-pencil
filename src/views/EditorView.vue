@@ -7,7 +7,8 @@ import {
   provide,
   ref,
   useTemplateRef,
-  watch
+  watch,
+  watchEffect
 } from 'vue'
 import { useDebounceFn, useElementSize, useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
@@ -170,6 +171,25 @@ const propertiesDefaultSize = computed(() => panelLayout.value[2] ?? 0)
 const canvasDefaultSize = computed(() =>
   Math.max(0, 100 - layersDefaultSize.value - propertiesDefaultSize.value)
 )
+
+if (import.meta.env.DEV) {
+  /**
+   * Panel defaults must total 100 or the splitter discards the layout and renormalises it,
+   * reporting only "Invalid layout total size" with no indication of which group or which
+   * numbers. Assert on our own values so a drift names itself.
+   */
+  watchEffect(() => {
+    const sizes = {
+      layers: layersDefaultSize.value,
+      canvas: canvasDefaultSize.value,
+      properties: propertiesDefaultSize.value
+    }
+    const total = sizes.layers + sizes.canvas + sizes.properties
+    if (Math.abs(total - 100) > 0.01) {
+      console.warn('[layout] panel defaults do not total 100', { ...sizes, total })
+    }
+  })
+}
 
 /**
  * Splitter drags emit continuously; localStorage writes are synchronous, so persisting on
