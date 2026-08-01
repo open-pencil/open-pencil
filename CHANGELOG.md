@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Stop warning AI agents that supported inline SVG attributes were ignored. (#445)
 - Help AI agents discover every shape supported by `create_shape`. (#448)
 - Keep `fill="none"` and `stroke="none"` SVG paths transparent when rendering inline artwork. (#446)
 - Match regional browser languages to supported locales without selecting a secondary language. (#417)

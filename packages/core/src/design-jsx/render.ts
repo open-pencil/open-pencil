@@ -140,12 +140,19 @@ function unsupportedPropWarnings(tree: TreeNode): string[] {
   return warnings
 }
 
+const SVG_ROOT_PROPS = new Set([...SUPPORTED_PROPS, 'viewBox', 'body'])
+
 function collectUnsupportedPropWarnings(tree: TreeNode, warnings: string[]): void {
+  const supportedProps = tree.type === 'svg' ? SVG_ROOT_PROPS : SUPPORTED_PROPS
   for (const key of Object.keys(tree.props)) {
-    if (!SUPPORTED_PROPS.has(key)) {
+    if (!supportedProps.has(key)) {
       warnings.push(`Unsupported prop "${key}" on <${tree.type}> is ignored.`)
     }
   }
+
+  // SVG descendants are parsed as markup by renderSvgNode, not as Design JSX nodes.
+  if (tree.type === 'svg') return
+
   for (const child of tree.children) {
     if (isTreeNode(child)) collectUnsupportedPropWarnings(child, warnings)
   }
