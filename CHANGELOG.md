@@ -10,6 +10,7 @@
 - Edit vectors in opened documents at the correct position, with live fills and undo/redo. (#390)
 - Reduce large `.fig` page-switch work to the active page, reuse fixed-point propagation indexes, and coalesce Layers tree rebuilds. (#420)
 - Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
+- Import Figma text-on-path (`TEXT_PATH`) as text with rotated derived glyphs and freeform stroke geometry, instead of a solid black rectangle covering the artwork underneath. Resizing reflows the lettering along its path, editing is enabled when the font's outlines are available, and both save and `.fig` export round-trip the result. (#396)
 
 ### Added
 

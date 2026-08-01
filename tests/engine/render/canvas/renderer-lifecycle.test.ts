@@ -18,6 +18,7 @@ function createRenderer() {
     vectorStrokeOutlineCache: new Map(),
     fillGeometryCache: new Map(),
     strokeGeometryCache: new Map(),
+    glyphSilhouetteCache: new Map(),
     fillPaint: deletable<Paint>(),
     strokePaint: deletable<Paint>(),
     selectionPaint: deletable<Paint>(),

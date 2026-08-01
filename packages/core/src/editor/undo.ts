@@ -1,8 +1,8 @@
 import { pick } from 'es-toolkit/object'
 
-import { cloneVectorNetwork, type SceneNode } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { createResizeSnapshot, type ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
@@ -15,24 +15,18 @@ import {
 import { textAutoResizeChanges } from './text/auto-resize'
 import type { EditorContext } from './types'
 
-type ResizeSnapshot = Pick<
-  SceneNode,
-  'x' | 'y' | 'width' | 'height' | 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'
->
 type ResizeOriginal = Rect &
-  Partial<Pick<SceneNode, 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'>>
-
-function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
-  return {
-    x: node.x,
-    y: node.y,
-    width: node.width,
-    height: node.height,
-    vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
-    fillGeometry: copyGeometryPaths(node.fillGeometry),
-    strokeGeometry: copyGeometryPaths(node.strokeGeometry)
-  }
-}
+  Partial<
+    Pick<
+      SceneNode,
+      | 'vectorNetwork'
+      | 'fillGeometry'
+      | 'strokeGeometry'
+      | 'figmaDerivedTextGlyphs'
+      | 'strokes'
+      | 'textPathBox'
+    >
+  >
 
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
@@ -101,19 +95,27 @@ export function createUndoActions(ctx: EditorContext) {
   function commitResize(nodeId: string, original: ResizeOriginal) {
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
-    const includesGeometry =
-      'vectorNetwork' in original || 'fillGeometry' in original || 'strokeGeometry' in original
-    const final: ResizeOriginal = includesGeometry
+    // Snapshot full geometry when the inverse payload carries any of it
+    // (vector/path-text resize); plain rect-only resize stays lightweight.
+    const hasGeometry =
+      'vectorNetwork' in original ||
+      'fillGeometry' in original ||
+      'strokeGeometry' in original ||
+      'figmaDerivedTextGlyphs' in original ||
+      'strokes' in original ||
+      'textPathBox' in original
+    const final: ResizeOriginal = hasGeometry
       ? createResizeSnapshot(node)
       : { x: node.x, y: node.y, width: node.width, height: node.height }
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
-        ctx.graph.updateNode(nodeId, final)
+        // Geometric replay — keep the raw Figma payload (see commitResizePreview).
+        ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, final))
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, original)
+        ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, original))
         ctx.runLayoutForNode(nodeId)
       }
     })
@@ -135,13 +137,18 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
-        ctx.graph.updateNode(nodeId, finalRect)
-        for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
+        // Geometric replay — keep the raw Figma payload (see commitResizePreview).
+        ctx.graph.preserveSourceMetadataDuring(() => {
+          ctx.graph.updateNode(nodeId, finalRect)
+          for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
+        })
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, origRect)
-        for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
+        ctx.graph.preserveSourceMetadataDuring(() => {
+          ctx.graph.updateNode(nodeId, origRect)
+          for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
+        })
         ctx.runLayoutForNode(nodeId)
       }
     })

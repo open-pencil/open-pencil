@@ -1,5 +1,11 @@
 import type { Tool } from '@open-pencil/core/editor'
-import type { GeometryPath, NodeType, VectorNetwork } from '@open-pencil/scene-graph'
+import type {
+  FigmaDerivedTextGlyph,
+  GeometryPath,
+  NodeType,
+  Stroke,
+  VectorNetwork
+} from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
@@ -47,7 +53,11 @@ export interface DragResize {
   nodeId: string
   origVectorNetwork: VectorNetwork | null
   origFillGeometry: GeometryPath[]
+  /** Path-text OUTSIDE outlines / vector stroke blobs — must scale with the node. */
   origStrokeGeometry: GeometryPath[]
+  origFigmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
+  origStrokes: Stroke[]
+  origTextPathBox: Rect | null
   origChildren: Map<string, ResizeSnapshot> | null
 }
 
