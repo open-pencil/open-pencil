@@ -4,6 +4,9 @@ import { comparePosition, guidKey, nextLocalId, nodeKey } from './guid'
 
 const DEFAULT_SLIDE_SIZE: Vector = { x: 1920, y: 1080 }
 const SLIDE_PADDING = 240
+/** Content insets Figma writes on a slide. */
+const SLIDE_STACK_PADDING_X = 168
+const SLIDE_STACK_PADDING_Y = 128
 
 function fractionalPosition(index: number): string {
   if (index < 90) return String.fromCharCode(0x21 + index)
@@ -75,6 +78,12 @@ function buildScaffold(
       phase: 'CREATED',
       parentIndex: { guid: docGuid, position: '!' },
       visible: true,
+      opacity: 1,
+      backgroundEnabled: true,
+      backgroundOpacity: 1,
+      strokeWeight: 0,
+      strokeAlign: 'CENTER',
+      strokeJoin: 'BEVEL',
       transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
     },
     {
@@ -201,7 +210,19 @@ export function structurePagesToDeck(
           visible: true
         }
       ],
-      visible: true
+      visible: true,
+      // Kiwi has no notion of "absent means default": an omitted optional field is simply
+      // unset, and a reader that defaults opacity to 0 renders every child of the slide
+      // invisible. Figma writes these on every slide, so we do too.
+      opacity: 1,
+      strokeWeight: 1,
+      strokeAlign: 'INSIDE',
+      strokeJoin: 'MITER',
+      frameMaskDisabled: false,
+      stackHorizontalPadding: SLIDE_STACK_PADDING_X,
+      stackVerticalPadding: SLIDE_STACK_PADDING_Y,
+      stackPaddingRight: SLIDE_STACK_PADDING_X,
+      stackPaddingBottom: SLIDE_STACK_PADDING_Y
     })
   })
 

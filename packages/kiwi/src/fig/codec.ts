@@ -301,6 +301,9 @@ export interface NodeChange {
   backgroundPaints?: Paint[]
   strokeWeight?: number
   strokeAlign?: string
+  /** CANVAS background, which Figma writes explicitly rather than relying on a default. */
+  backgroundEnabled?: boolean
+  backgroundOpacity?: number
   strokeCap?: string
   strokeJoin?: string
   dashPattern?: number[]
