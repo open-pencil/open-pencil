@@ -27,17 +27,21 @@ useResizeObserver(listEl, (entries) => {
   listWidth.value = entry.contentRect.width
 })
 
-/** Thumb width tracks the left panel, clamped to Figma-like min/max. */
+/**
+ * Thumb width tracks the left panel, preferring the Figma-like range but never exceeding
+ * the space available: a thumbnail wider than the rail is simply clipped, which looks
+ * broken. Fitting the width wins over honouring the minimum.
+ */
 const thumbWidth = computed(() => {
   const available = Math.max(0, listWidth.value - SLIDE_THUMB_INDEX_GUTTER)
   if (available <= 0) return SLIDE_THUMB_MIN_WIDTH
-  return Math.min(SLIDE_THUMB_MAX_WIDTH, Math.max(SLIDE_THUMB_MIN_WIDTH, available))
+  return Math.min(SLIDE_THUMB_MAX_WIDTH, available)
 })
 
 const thumbShellStyle = computed(() => ({
   width: `${thumbWidth.value}px`,
-  minWidth: `${SLIDE_THUMB_MIN_WIDTH}px`,
-  maxWidth: `${SLIDE_THUMB_MAX_WIDTH}px`
+  // No floor here: a min wider than the rail is exactly what caused the clipping.
+  maxWidth: '100%'
 }))
 
 const cells = computed(() =>
