@@ -96,36 +96,116 @@ export function cloneVectorNetwork(vn: VectorNetwork): VectorNetwork {
  * Validate a VectorNetwork structure, returning an array of error messages.
  * Empty array means the network is valid.
  */
-export function validateVectorNetwork(vn: VectorNetwork): string[] {
+export function validateVectorNetwork(value: unknown): string[] {
+  if (!isRecord(value)) return ['network must be an object']
+  if (!Array.isArray(value.vertices)) return ['vertices must be an array']
+  if (!Array.isArray(value.segments)) return ['segments must be an array']
+
   const errors: string[] = []
-  if (!Array.isArray(vn.vertices)) {
-    errors.push('vertices must be an array')
-    return errors
-  }
-  if (!Array.isArray(vn.segments)) {
-    errors.push('segments must be an array')
-    return errors
-  }
-  if (!Array.isArray(vn.regions)) errors.push('regions must be an array')
-  const vertexCount = vn.vertices.length
-  for (let i = 0; i < vn.vertices.length; i++) {
-    const v = vn.vertices[i]
-    if (typeof v.x !== 'number' || typeof v.y !== 'number') {
-      errors.push(`vertex[${i}]: x and y must be numbers`)
-    }
-  }
-  for (let i = 0; i < vn.segments.length; i++) {
-    const s = vn.segments[i]
-    if (typeof s.start !== 'number' || typeof s.end !== 'number') {
-      errors.push(`segment[${i}]: start and end must be numbers`)
-    } else {
-      if (s.start < 0 || s.start >= vertexCount)
-        errors.push(`segment[${i}]: start index ${s.start} out of range`)
-      if (s.end < 0 || s.end >= vertexCount)
-        errors.push(`segment[${i}]: end index ${s.end} out of range`)
-    }
+  validateVertices(value.vertices, errors)
+  validateSegments(value.segments, value.vertices.length, errors)
+  if (Array.isArray(value.regions)) {
+    validateRegions(value.regions, value.segments.length, errors)
+  } else {
+    errors.push('regions must be an array')
   }
   return errors
+}
+
+function validateVertices(vertices: unknown[], errors: string[]): void {
+  for (let index = 0; index < vertices.length; index++) {
+    if (!isFiniteVector(vertices[index])) {
+      errors.push(`vertex[${index}]: x and y must be finite numbers`)
+    }
+  }
+}
+
+function validateSegments(segments: unknown[], vertexCount: number, errors: string[]): void {
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index]
+    if (!isRecord(segment)) {
+      errors.push(`segment[${index}] must be an object`)
+      continue
+    }
+    if (!isInteger(segment.start) || !isInteger(segment.end)) {
+      errors.push(`segment[${index}]: start and end must be integers`)
+      continue
+    }
+    if (segment.start < 0 || segment.start >= vertexCount) {
+      errors.push(`segment[${index}]: start index ${segment.start} out of range`)
+    }
+    if (segment.end < 0 || segment.end >= vertexCount) {
+      errors.push(`segment[${index}]: end index ${segment.end} out of range`)
+    }
+    validateSegmentTangents(segment, index, errors)
+  }
+}
+
+function validateSegmentTangents(
+  segment: Record<string, unknown>,
+  index: number,
+  errors: string[]
+): void {
+  for (const tangentKey of ['tangentStart', 'tangentEnd'] as const) {
+    const tangent = segment[tangentKey]
+    if (tangent !== undefined && !isFiniteVector(tangent)) {
+      errors.push(`segment[${index}]: ${tangentKey} must contain finite x and y numbers`)
+    }
+  }
+}
+
+function validateRegions(regions: unknown[], segmentCount: number, errors: string[]): void {
+  for (let regionIndex = 0; regionIndex < regions.length; regionIndex++) {
+    const region = regions[regionIndex]
+    if (!isRecord(region) || !Array.isArray(region.loops)) {
+      errors.push(`region[${regionIndex}]: loops must be an array`)
+      continue
+    }
+    if (region.windingRule !== 'NONZERO' && region.windingRule !== 'EVENODD') {
+      errors.push(`region[${regionIndex}]: windingRule must be NONZERO or EVENODD`)
+    }
+    validateRegionLoops(region.loops, regionIndex, segmentCount, errors)
+  }
+}
+
+function validateRegionLoops(
+  loops: unknown[],
+  regionIndex: number,
+  segmentCount: number,
+  errors: string[]
+): void {
+  for (let loopIndex = 0; loopIndex < loops.length; loopIndex++) {
+    const loop = loops[loopIndex]
+    if (!Array.isArray(loop)) {
+      errors.push(`region[${regionIndex}].loop[${loopIndex}] must be an array`)
+      continue
+    }
+    for (const segmentIndex of loop) {
+      if (!isInteger(segmentIndex) || segmentIndex < 0 || segmentIndex >= segmentCount) {
+        errors.push(
+          `region[${regionIndex}].loop[${loopIndex}]: segment index ${String(segmentIndex)} out of range`
+        )
+      }
+    }
+  }
+}
+
+function isFiniteVector(value: unknown): value is Vector {
+  return (
+    isRecord(value) &&
+    typeof value.x === 'number' &&
+    Number.isFinite(value.x) &&
+    typeof value.y === 'number' &&
+    Number.isFinite(value.y)
+  )
+}
+
+function isInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }
 
 /**

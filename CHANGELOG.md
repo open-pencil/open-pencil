@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Let AI and MCP tools create arbitrary vectors from SVG path data without leaving blank layers after invalid input. (#440)
 - Show stroke colors and weights in AI visual descriptions. (#447)
 - Stop warning AI agents that supported inline SVG attributes were ignored. (#445)
 - Help AI agents discover every shape supported by `create_shape`. (#448)

@@ -76,7 +76,9 @@ export function parseSVGPath(d: string, windingRule: WindingRule = 'NONZERO'): V
     addSegment(x1, y1, x2, y2, cp1x, cp1y, cp2x, cp2y)
   }
 
-  const normalized = svgpath(d).abs().unshort().unarc()
+  const parsed = svgpath(d)
+  if ('err' in parsed && parsed.err) return { vertices, segments, regions: [] }
+  const normalized = parsed.abs().unshort().unarc()
 
   normalized.iterate((seg) => {
     const cmd = seg[0]

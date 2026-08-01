@@ -98,6 +98,10 @@ describe('parseSVGPath', () => {
     expect(vn.segments.length).toBeGreaterThan(5)
   })
 
+  test('malformed input does not preserve partial geometry', () => {
+    expect(parseSVGPath('M0 0 L')).toEqual({ vertices: [], segments: [], regions: [] })
+  })
+
   test('round-trip: parse → export produces valid SVG paths', () => {
     const d = 'M0 0 L100 0 L100 100 L0 100 Z'
     const vn = parseSVGPath(d)

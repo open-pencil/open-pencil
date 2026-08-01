@@ -51,6 +51,25 @@ describe('validateVectorNetwork', () => {
       regions: []
     } as VectorNetwork
     const errors = validateVectorNetwork(network)
-    expect(errors[0]).toContain('x and y must be numbers')
+    expect(errors[0]).toContain('x and y must be finite numbers')
+  })
+
+  test('rejects non-object input without throwing', () => {
+    expect(validateVectorNetwork(null)).toEqual(['network must be an object'])
+    expect(validateVectorNetwork('not a network')).toEqual(['network must be an object'])
+  })
+
+  test('rejects invalid region topology', () => {
+    const errors = validateVectorNetwork({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 }
+      ],
+      segments: [{ start: 0, end: 1 }],
+      regions: [{ windingRule: 'INVALID', loops: [[1]] }]
+    })
+
+    expect(errors).toContain('region[0]: windingRule must be NONZERO or EVENODD')
+    expect(errors).toContain('region[0].loop[0]: segment index 1 out of range')
   })
 })
