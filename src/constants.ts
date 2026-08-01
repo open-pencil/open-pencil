@@ -5,9 +5,10 @@ import ACP_DESIGN_CONTEXT from '@/app/ai/acp/design-context.md'
 /** Slide filmstrip thumbnail width clamp (CSS px) — Figma-like min/max. */
 /** The slides rail holds fixed-width thumbnails, so it is capped in pixels. */
 export const LEFT_PANEL_MAX_WIDTH = 310
-/** Fallback share of the window, used until the splitter has been measured. */
+/** Narrowest useful rail: a minimum thumbnail plus its index gutter. */
+export const LEFT_PANEL_MIN_WIDTH = 200
+/** Shares of the window used only until the splitter has been measured. */
 export const LEFT_PANEL_MAX_PERCENT = 30
-/** Floor for the rail, and the floor the pixel cap can never drop below. */
 export const LEFT_PANEL_MIN_PERCENT = 10
 
 export const SLIDE_THUMB_MIN_WIDTH = 168

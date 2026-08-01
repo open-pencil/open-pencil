@@ -34,7 +34,12 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { createTab, activeTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
 import { takeRestorableDocument, useSessionPersistence } from '@/app/document/session/use'
 import { beginPanelResize, endPanelResize } from '@/app/shell/panel-resize'
-import { LEFT_PANEL_MAX_PERCENT, LEFT_PANEL_MAX_WIDTH, LEFT_PANEL_MIN_PERCENT } from '@/constants'
+import {
+  LEFT_PANEL_MAX_PERCENT,
+  LEFT_PANEL_MAX_WIDTH,
+  LEFT_PANEL_MIN_PERCENT,
+  LEFT_PANEL_MIN_WIDTH
+} from '@/constants'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -123,13 +128,48 @@ const splitterEl = computed<HTMLElement | null>(() => {
   return value instanceof HTMLElement ? value : (value.$el ?? null)
 })
 const { width: splitterWidth } = useElementSize(splitterEl)
-const layersMaxSize = computed(() => {
-  if (splitterWidth.value <= 0) return LEFT_PANEL_MAX_PERCENT
-  const asPercent = (LEFT_PANEL_MAX_WIDTH / splitterWidth.value) * 100
-  // On a very wide display 310px is under the panel's own minimum; a max below the min is
-  // an invalid constraint and the splitter rejects the whole layout.
-  return Math.max(LEFT_PANEL_MIN_PERCENT, Math.min(LEFT_PANEL_MAX_PERCENT, asPercent))
-})
+/**
+ * Both bounds are pixel-based, converted against the splitter's live width.
+ *
+ * Leaving the minimum as a share of the window meant that beyond about 3100px it overtook
+ * the 310px cap and won, so the rail grew to 344px and then 512px — the very thing the cap
+ * exists to prevent. Scaling both keeps them ordered at any width.
+ */
+const asPercentOfSplitter = (px: number, fallback: number) =>
+  splitterWidth.value > 0 ? (px / splitterWidth.value) * 100 : fallback
+
+const layersMinSize = computed(() =>
+  Math.min(
+    asPercentOfSplitter(LEFT_PANEL_MIN_WIDTH, LEFT_PANEL_MIN_PERCENT),
+    LEFT_PANEL_MIN_PERCENT
+  )
+)
+const layersMaxSize = computed(() =>
+  Math.min(
+    asPercentOfSplitter(LEFT_PANEL_MAX_WIDTH, LEFT_PANEL_MAX_PERCENT),
+    LEFT_PANEL_MAX_PERCENT
+  )
+)
+
+/**
+ * The remembered width has to obey the same bounds as the panel.
+ *
+ * A stored 22% is wider than a 310px cap on any window past about 1410px, and a default
+ * outside its own min/max is an invalid constraint: the splitter rejects the layout and
+ * renormalises it, which is what "Invalid layout total size" was reporting.
+ */
+const layersDefaultSize = computed(() =>
+  Math.min(Math.max(panelLayout.value[0] ?? 0, layersMinSize.value), layersMaxSize.value)
+)
+const propertiesDefaultSize = computed(() => panelLayout.value[2] ?? 0)
+/**
+ * The three defaults must total 100, so the canvas absorbs whatever clamping the rail
+ * needed. Leaving the stored values untouched made them sum to 99.5 once the rail was
+ * capped, and the splitter discards a layout that does not add up.
+ */
+const canvasDefaultSize = computed(() =>
+  Math.max(0, 100 - layersDefaultSize.value - propertiesDefaultSize.value)
+)
 
 /**
  * Splitter drags emit continuously; localStorage writes are synchronous, so persisting on
@@ -214,8 +254,8 @@ onUnmounted(() => {
     >
       <SplitterPanel
         id="layers"
-        :default-size="panelLayout[0]"
-        :min-size="LEFT_PANEL_MIN_PERCENT"
+        :default-size="layersDefaultSize"
+        :min-size="layersMinSize"
         :max-size="layersMaxSize"
         class="flex"
       >
@@ -228,7 +268,7 @@ onUnmounted(() => {
       >
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
-      <SplitterPanel id="canvas" :default-size="panelLayout[1]" :min-size="30" class="flex">
+      <SplitterPanel id="canvas" :default-size="canvasDefaultSize" :min-size="30" class="flex">
         <div class="relative flex min-w-0 flex-1">
           <EditorCanvas />
           <Toolbar />
@@ -242,7 +282,7 @@ onUnmounted(() => {
       </SplitterResizeHandle>
       <SplitterPanel
         id="properties"
-        :default-size="panelLayout[2]"
+        :default-size="propertiesDefaultSize"
         :min-size="10"
         :max-size="30"
         class="flex flex-col"
