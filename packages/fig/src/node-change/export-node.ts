@@ -11,7 +11,7 @@ import type { Color, GUID, Matrix, Vector } from '@open-pencil/scene-graph/primi
 
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../source-metadata'
 /* eslint-disable max-lines */
-import { bytesToHex } from './bytes'
+import { appendBlob, type BlobIndex } from './blob-table'
 import {
   applyExportSettingsPluginData,
   mergePluginData,
@@ -46,13 +46,13 @@ export function buildAssetRefToVarGuidMap(
 interface SceneNodeToKiwiContext {
   graph: SceneGraph
   blobs: Uint8Array[]
-  blobIndexByHex?: Map<string, number>
+  /** Shared dedupe table for every blob written during this export. */
+  blobIndex?: BlobIndex
   nodeIdToGuid?: Map<string, GUID>
   /** Reverse index of assigned GUID values ("sessionID:localID") for O(1)
    *  collision detection. Populated alongside every nodeIdToGuid.set() call. */
   assignedGuidValues?: Set<string>
   fontDigestMap?: Map<string, Uint8Array>
-  glyphBlobMap?: Map<string, number>
   varIdToGuid?: Map<string, GUID>
   modeIdToGuid?: Map<string, GUID>
   /** Variable GUIDs used only where raw effect aliases cannot retain asset refs. */
@@ -70,10 +70,15 @@ interface SceneNodeToKiwiContext {
     graph: SceneGraph,
     fontDigestMap: Map<string, Uint8Array> | undefined,
     blobs: Uint8Array[],
-    glyphBlobMap: Map<string, number> | undefined
+    blobIndex: BlobIndex | undefined
   ) => void
   serializeLayoutProps: (node: SceneNode, nc: KiwiNodeChange) => void
-  serializeGeometry: (node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]) => void
+  serializeGeometry: (
+    node: SceneNode,
+    nc: KiwiNodeChange,
+    blobs: Uint8Array[],
+    blobIndex: BlobIndex | undefined
+  ) => void
   serializeVariableBindings: (
     node: SceneNode,
     nc: KiwiNodeChange,
@@ -228,7 +233,7 @@ function materializeSafeVariableMap(
 }
 
 interface MaterializeFigmaPayloadOptions {
-  blobIndexByHex?: Map<string, number>
+  blobIndex?: BlobIndex
   includePaintVariables?: boolean
   includeVariableMaps?: boolean
 }
@@ -240,13 +245,7 @@ function materializeFigmaBlob(
 ): number {
   const blob = value.__openPencilFigmaBlob
   const bytes = blob instanceof Uint8Array ? blob : new Uint8Array(Object.values(blob ?? {}))
-  const key = bytesToHex(bytes)
-  const existing = options.blobIndexByHex?.get(key)
-  if (existing !== undefined) return existing
-  const index = blobs.length
-  blobs.push(bytes)
-  options.blobIndexByHex?.set(key, index)
-  return index
+  return appendBlob(blobs, options.blobIndex, bytes)
 }
 
 function normalizeFigmaPayloadValue(key: string, value: unknown): unknown {
@@ -378,7 +377,7 @@ function applyRawFigmaNodeFields(
   nc: KiwiNodeChange
 ): void {
   const materialized = materializeFigmaPayload(effectiveFigmaRawNodeFields(node), context.blobs, {
-    blobIndexByHex: context.blobIndexByHex,
+    blobIndex: context.blobIndex,
     includePaintVariables: true,
     includeVariableMaps: true
   }) as Partial<KiwiNodeChange>
@@ -456,7 +455,7 @@ function applyInstancePayload(
         node.source.fig.symbolOverrides,
         context.blobs,
         {
-          blobIndexByHex: context.blobIndexByHex,
+          blobIndex: context.blobIndex,
           includePaintVariables: true,
           includeVariableMaps: true
         }
@@ -472,7 +471,7 @@ function applyInstancePayload(
       node.source.fig.componentPropAssignments,
       context.blobs,
       {
-        blobIndexByHex: context.blobIndexByHex,
+        blobIndex: context.blobIndex,
         includePaintVariables: true,
         includeVariableMaps: true
       }
@@ -483,7 +482,7 @@ function applyInstancePayload(
       node.source.fig.derivedSymbolData,
       context.blobs,
       {
-        blobIndexByHex: context.blobIndexByHex,
+        blobIndex: context.blobIndex,
         includePaintVariables: true,
         includeVariableMaps: true
       }
@@ -721,7 +720,7 @@ function applyNodeVisualProps(
       context.graph,
       context.fontDigestMap,
       context.blobs,
-      context.glyphBlobMap
+      context.blobIndex
     )
   }
 
@@ -800,7 +799,7 @@ export function sceneNodeToKiwiWithContext(
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
-  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs)
+  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs, context.blobIndex)
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   applyRawFigmaNodeFields(context, node, nc)
   const variableModeBySetMap = serializeVariableModes(

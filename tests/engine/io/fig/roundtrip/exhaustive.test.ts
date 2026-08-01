@@ -67,8 +67,10 @@ const SPECS: FixtureSpec[] = [
     // Grown twice against the original 596973. First +17 bytes: each text line now carries
     // its full record rather than lineType alone, which Figma needs to lay text out. Then
     // +23: a page's editInfo now survives the round-trip instead of being dropped.
-    g1ExportSize: 597013,
-    g2ExportSize: 597013
+    // Then shrunk by 2635: glyph outlines and raw Figma payloads used to keep separate
+    // dedupe maps, so every blob was written twice. All push sites now share one table.
+    g1ExportSize: 594378,
+    g2ExportSize: 594378
   }
 ]
 

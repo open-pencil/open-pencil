@@ -345,8 +345,7 @@ interface InternalResourceContext {
   fontDigestMap: Map<string, Uint8Array>
   varIdToGuid: Map<string, GUID>
   modeIdToGuid: Map<string, GUID>
-  glyphBlobMap: Map<string, number>
-  blobIndexByHex: Map<string, number>
+  blobIndex: Map<string, number>
   assignedGuidValues: Set<string>
   componentPropertyDefinitionsById: ReturnType<typeof buildComponentPropIndex>
 }
@@ -367,8 +366,7 @@ function appendInternalResources(context: InternalResourceContext): void {
         context.nodeIdToGuid,
         context.fontDigestMap,
         context.varIdToGuid,
-        context.glyphBlobMap,
-        context.blobIndexByHex,
+        context.blobIndex,
         context.assignedGuidValues,
         context.componentPropertyDefinitionsById,
         context.modeIdToGuid
@@ -432,8 +430,10 @@ export async function exportFigFile(
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
   const fontDigestMap = await buildFontDigestMap(graph)
-  const glyphBlobMap = new Map<string, number>()
-  const blobIndexByHex = new Map<string, number>()
+  // One dedupe table for every blob push site: glyph outlines, vector
+  // networks, fill/stroke geometry and raw Figma payloads all share it, so
+  // byte-identical blobs are written exactly once.
+  const blobIndex = new Map<string, number>()
   const componentPropertyDefinitionsById = buildComponentPropIndex(graph)
 
   // Scan ALL imported source.ids BEFORE any new GUID assignment to find
@@ -497,8 +497,7 @@ export async function exportFigFile(
           nodeIdToGuid,
           fontDigestMap,
           varIdToGuid,
-          glyphBlobMap,
-          blobIndexByHex,
+          blobIndex,
           assignedGuidValues,
           componentPropertyDefinitionsById,
           modeIdToGuid
@@ -517,8 +516,7 @@ export async function exportFigFile(
     fontDigestMap,
     varIdToGuid,
     modeIdToGuid,
-    glyphBlobMap,
-    blobIndexByHex,
+    blobIndex,
     assignedGuidValues,
     componentPropertyDefinitionsById
   })
