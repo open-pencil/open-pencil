@@ -253,7 +253,10 @@ async function renderSvgNode(
   const props = tree.props
   const explicitW = typeof props.w === 'number' ? props.w : 0
   const explicitH = typeof props.h === 'number' ? props.h : 0
-  const size = explicitW > 0 || explicitH > 0 ? Math.max(explicitW, explicitH) : ((props.size as number | undefined) ?? 24)
+  const size =
+    explicitW > 0 || explicitH > 0
+      ? Math.max(explicitW, explicitH)
+      : ((props.size as number | undefined) ?? 24)
   const colorHex = (props.color as string | undefined) ?? '#000000'
   const parsedColor = parseColor(colorHex)
 
@@ -278,13 +281,18 @@ async function renderSvgNode(
           strokeWidth: Number(child.props['stroke-width'] ?? child.props.strokeWidth ?? 1),
           strokeCap: (child.props['stroke-linecap'] as string | undefined) ?? 'butt',
           strokeJoin: (child.props['stroke-linejoin'] as string | undefined) ?? 'miter',
-          fillRule: (child.props['fill-rule'] as string | undefined) === 'evenodd' ? 'EVENODD' as const : 'NONZERO' as const
+          fillRule:
+            (child.props['fill-rule'] as string | undefined) === 'evenodd'
+              ? ('EVENODD' as const)
+              : ('NONZERO' as const)
         }
       })
       .filter((p): p is NonNullable<typeof p> => p !== null)
   }
   if (pathInfos.length === 0) {
-    throw new Error('<svg> requires SVG markup as children, a body prop, or <path d="..."> children')
+    throw new Error(
+      '<svg> requires SVG markup as children, a body prop, or <path d="..."> children'
+    )
   }
 
   const vb = parseViewBox(props.viewBox as string | undefined)
@@ -303,7 +311,10 @@ async function renderSvgNode(
 
 function parseViewBox(viewBox: string | undefined): { w: number; h: number } {
   if (!viewBox) return { w: 0, h: 0 }
-  const parts = viewBox.trim().split(/[\s,]+/).map(Number)
+  const parts = viewBox
+    .trim()
+    .split(/[\s,]+/)
+    .map(Number)
   const w = parts[2] ?? 0
   const h = parts[3] ?? 0
   return { w, h }
