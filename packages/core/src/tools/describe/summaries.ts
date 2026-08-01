@@ -16,6 +16,13 @@ function findSolidFillIndex(node: SceneNode): number {
   return node.fills.findIndex((candidate) => candidate.type === 'SOLID' && candidate.visible)
 }
 
+function strokeSummary(node: SceneNode): string | null {
+  const stroke = node.strokes.find((candidate) => candidate.visible)
+  if (!stroke) return null
+  const weight = Math.round(stroke.weight * 100) / 100
+  return `${colorToHex(stroke.color)} ${weight}px stroke`
+}
+
 export function describeVisual(node: SceneNode, graph?: SceneGraph): string {
   const parts: string[] = []
   const fillIndex = findSolidFillIndex(node)
@@ -23,7 +30,8 @@ export function describeVisual(node: SceneNode, graph?: SceneGraph): string {
     const fill = node.fills[fillIndex]
     parts.push(`${colorToHex(fill.color)}${boundFillSuffix(node, fillIndex, graph)} fill`)
   }
-  if (node.strokes.length > 0 && node.strokes[0]?.visible) parts.push('bordered')
+  const stroke = strokeSummary(node)
+  if (stroke) parts.push(stroke)
   if (node.cornerRadius > 0) parts.push('rounded')
   if (node.clipsContent) parts.push('clipped')
   for (const effect of node.effects) {
@@ -83,6 +91,8 @@ export function summarizeContainer(node: SceneNode, graph?: SceneGraph): string 
     const fill = node.fills[fillIndex]
     parts.push(`${colorToHex(fill.color)}${boundFillSuffix(node, fillIndex, graph)}`)
   }
+  const stroke = strokeSummary(node)
+  if (stroke) parts.push(stroke)
   if (node.cornerRadius > 0) parts.push('rounded')
   const layout = describeLayout(node)
   if (layout) parts.push(layout)

@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- Show stroke colors and weights in AI visual descriptions. (#447)
 - Stop warning AI agents that supported inline SVG attributes were ignored. (#445)
 - Help AI agents discover every shape supported by `create_shape`. (#448)
 - Keep `fill="none"` and `stroke="none"` SVG paths transparent when rendering inline artwork. (#446)
