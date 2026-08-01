@@ -5,6 +5,29 @@ import { transformTextCase } from '#core/text/case'
 import { cjkFallbackScriptForLanguage, type FontFallbackScript } from '#core/text/fallbacks'
 import { weightToStyle } from '#core/text/font-style'
 
+export type TextNodeFontSource = Pick<
+  SceneNode,
+  'fontFamily' | 'fontWeight' | 'italic' | 'styleRuns'
+>
+
+/** Distinct family|style pairs used by one TEXT node (base + style runs). */
+export function collectNodeFontKeys(node: TextNodeFontSource): Array<[string, string]> {
+  const fontKeys = new Set<string>()
+  addNodeFontKeys(fontKeys, node)
+  return Array.from(fontKeys, (key) => key.split('\0') as [string, string])
+}
+
+function addNodeFontKeys(fontKeys: Set<string>, node: TextNodeFontSource): void {
+  const family = node.fontFamily || DEFAULT_FONT_FAMILY
+  fontKeys.add(`${family}\0${weightToStyle(node.fontWeight || 400, node.italic)}`)
+  for (const run of node.styleRuns) {
+    const runFamily = run.style.fontFamily ?? family
+    const weight = run.style.fontWeight ?? node.fontWeight
+    const italic = run.style.italic ?? node.italic
+    fontKeys.add(`${runFamily}\0${weightToStyle(weight, italic)}`)
+  }
+}
+
 export function collectGraphFontKeys(
   graph: SceneGraph,
   nodeIds: readonly string[]
@@ -13,16 +36,7 @@ export function collectGraphFontKeys(
   const collect = (nodeId: string) => {
     const node = graph.getNode(nodeId)
     if (!node) return
-    if (node.type === 'TEXT') {
-      const family = node.fontFamily || DEFAULT_FONT_FAMILY
-      fontKeys.add(`${family}\0${weightToStyle(node.fontWeight || 400, node.italic)}`)
-      for (const run of node.styleRuns) {
-        const runFamily = run.style.fontFamily ?? family
-        const weight = run.style.fontWeight ?? node.fontWeight
-        const italic = run.style.italic ?? node.italic
-        fontKeys.add(`${runFamily}\0${weightToStyle(weight, italic)}`)
-      }
-    }
+    if (node.type === 'TEXT') addNodeFontKeys(fontKeys, node)
     for (const childId of node.childIds) collect(childId)
   }
   for (const nodeId of nodeIds) collect(nodeId)

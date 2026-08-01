@@ -2,7 +2,11 @@ import { useIntervalFn } from '@vueuse/core'
 import type { ShallowRef } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import { adjustRunsForDelete, adjustRunsForInsert } from '@open-pencil/core/text'
+import {
+  adjustRunsForDelete,
+  adjustRunsForInsert,
+  ensureTextNodeFonts
+} from '@open-pencil/core/text'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 const CARET_BLINK_MS = 530
@@ -140,12 +144,26 @@ export function createTextEditActions(store: Editor) {
     return store.graph.getNode(id) ?? null
   }
 
+  /** Rebuild the paragraph again once newly required faces reach the active provider. */
+  async function rebuildAfterFontsResolve(node: SceneNode, nodeId: string): Promise<void> {
+    // Public Editor exposes `renderer` (getter); getRenderer is internal EditorContext only.
+    await ensureTextNodeFonts(node, store.renderer)
+    if (store.state.editingTextId !== nodeId) return
+    const latest = store.graph.getNode(nodeId)
+    if (latest) store.textEditor?.rebuildParagraph(latest)
+    store.requestRender()
+  }
+
   function syncText(nodeId: string, text: string, runs?: SceneNode['styleRuns']) {
     const changes: Partial<SceneNode> = { text }
     if (runs !== undefined) changes.styleRuns = runs
     store.graph.updateNode(nodeId, changes)
     const updated = store.graph.getNode(nodeId)
-    if (updated) store.textEditor?.rebuildParagraph(updated)
+    if (updated) {
+      // Text change clears figmaDerivedTextGlyphs — paragraph paint needs registered faces.
+      void rebuildAfterFontsResolve(updated, nodeId)
+      store.textEditor?.rebuildParagraph(updated)
+    }
     store.requestRender()
   }
 

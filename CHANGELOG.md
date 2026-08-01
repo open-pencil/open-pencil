@@ -10,6 +10,8 @@
 - Edit vectors in opened documents at the correct position, with live fills and undo/redo. (#390)
 - Reduce large `.fig` page-switch work to the active page, reuse fixed-point propagation indexes, and coalesce Layers tree rebuilds. (#420)
 - Center text glyphs within explicit line-height leading in CanvasKit paragraph rendering.
+- Download document fonts on demand in the web app (Fontsource-first) instead of reporting that online font providers require the desktop app. Browsing a provider's full catalog still needs the desktop proxy. (#398)
+- Keep downloaded faces registered against the renderer's live font provider so text edit no longer falls back to Inter once Figma's derived glyphs are cleared. (#398)
 
 ### Added
 

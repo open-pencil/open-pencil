@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
+
 import { fontManager, type FontFallbackScript } from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -37,6 +39,48 @@ describe('app font loading', () => {
       expect(expectDefined(graph.getNode(text.id), 'text node').textPicture).toBeNull()
     } finally {
       fontManager.ensureFallbackPack = originalEnsureFallbackPack
+    }
+  })
+
+  test('ensureGraphFonts invalidates text pictures when a missing face loads', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const text = graph.createNode('TEXT', page.id, {
+      text: 'Hello',
+      fontFamily: 'EnsureLoadFace',
+      fontSize: 24,
+      textPicture: new Uint8Array([9, 9, 9])
+    })
+
+    // Registration generation only advances when a face lands on a live provider,
+    // so the invalidation path needs one attached.
+    const registrations: string[] = []
+    const provider = {
+      registerFont(_data: ArrayBuffer, family: string) {
+        registrations.push(family)
+      }
+    } as TypefaceFontProvider
+    fontManager.attachProvider({} as CanvasKit, provider)
+
+    const originalLoadFont = fontManager.loadFont.bind(fontManager)
+    fontManager.loadFont = async (family, style) => {
+      if (family === 'EnsureLoadFace') {
+        const data = new ArrayBuffer(8)
+        fontManager.markLoaded(family, style ?? 'Regular', data)
+        return data
+      }
+      return originalLoadFont(family, style ?? 'Regular')
+    }
+
+    try {
+      const changed = await ensureGraphFonts(graph, [page.id])
+      expect(changed).toBe(true)
+      expect(registrations).toContain('EnsureLoadFace')
+      expect(fontManager.isStyleLoaded('EnsureLoadFace', 'Regular')).toBe(true)
+      expect(expectDefined(graph.getNode(text.id), 'text node').textPicture).toBeNull()
+    } finally {
+      fontManager.loadFont = originalLoadFont
+      fontManager.detachProvider(provider)
     }
   })
 })
