@@ -18,19 +18,34 @@ const previewBlob = shallowRef<Blob | null>(null)
 const previewUrl = useObjectUrl(previewBlob)
 let requestId = 0
 
+/** Page ids repeat across documents, so the cache key needs the document too. */
+function documentId(): string {
+  return editor.getDocumentFilePath?.() || editor.state.documentName || 'untitled'
+}
+
 async function updatePreview() {
   const currentRequest = ++requestId
   const sceneVersion = editor.state.sceneVersion
   try {
-    const blob = await getSlideThumbnail(pageId, sceneVersion, async () => {
-      // Rendered at the widest the rail can go and scaled down by CSS, so the render does
-      // not depend on the displayed size.
-      const scale = (SLIDE_THUMB_MAX_WIDTH * 2) / 1920
-      const data = await editor.renderExportImage([], Math.max(scale, 0.05), 'PNG', pageId)
-      return data ? new Blob([data], { type: 'image/png' }) : null
-    })
+    const { blob, refresh } = await getSlideThumbnail(
+      documentId(),
+      pageId,
+      sceneVersion,
+      async () => {
+        // Rendered at the widest the rail can go and scaled down by CSS, so the render does
+        // not depend on the displayed size.
+        const scale = (SLIDE_THUMB_MAX_WIDTH * 2) / 1920
+        const data = await editor.renderExportImage([], Math.max(scale, 0.05), 'PNG', pageId)
+        return data ? new Blob([data], { type: 'image/png' }) : null
+      }
+    )
     if (currentRequest !== requestId) return
     previewBlob.value = blob
+    if (refresh) {
+      // The shown thumbnail came from a previous session; swap in the fresh render.
+      const fresh = await refresh
+      if (currentRequest === requestId && fresh) previewBlob.value = fresh
+    }
   } catch {
     if (currentRequest === requestId) previewBlob.value = null
   }
