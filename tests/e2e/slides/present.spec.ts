@@ -229,9 +229,7 @@ test('canvas still renders after exiting presentation', async () => {
   // is relocated back into the splitter asynchronously (Vue patch + layout settle), so a
   // single rAF can beat it back into place — poll instead of reading once.
   await expect.poll(() => canvas.boundingBox().then((box) => box?.width ?? 0)).toBeGreaterThan(100)
-  await expect
-    .poll(() => canvas.boundingBox().then((box) => box?.height ?? 0))
-    .toBeGreaterThan(100)
+  await expect.poll(() => canvas.boundingBox().then((box) => box?.height ?? 0)).toBeGreaterThan(100)
 
   const state = await getPresentationState()
   expect(state.presenting).toBe(false)

@@ -205,5 +205,8 @@
   "exitPresentation": "Quitter la présentation",
   "previousSlide": "Diapositive précédente",
   "nextSlide": "Diapositive suivante",
-  "slidePosition": "{current} / {total}"
+  "slidePosition": "{current} / {total}",
+  "presenterNotes": "Notes du présentateur",
+  "addPresenterNotes": "Ajouter des notes du présentateur…",
+  "showPresenterNotes": "Afficher les notes du présentateur"
 }

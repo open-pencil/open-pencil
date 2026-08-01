@@ -1,10 +1,4 @@
-import type {
-  Effect,
-  Fill,
-  GridTrack,
-  LayoutMode,
-  SceneNode
-} from '@open-pencil/scene-graph'
+import type { Effect, Fill, GridTrack, LayoutMode, SceneNode } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { colorToFill, parseColor } from '#core/color'

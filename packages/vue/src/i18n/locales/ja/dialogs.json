@@ -205,5 +205,8 @@
   "exitPresentation": "プレゼンテーションを終了",
   "previousSlide": "前のスライド",
   "nextSlide": "次のスライド",
-  "slidePosition": "{current} / {total}"
+  "slidePosition": "{current} / {total}",
+  "presenterNotes": "発表者メモ",
+  "addPresenterNotes": "発表者メモを追加…",
+  "showPresenterNotes": "発表者メモを表示"
 }

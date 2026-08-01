@@ -14,7 +14,6 @@ import { useDebounceFn, useElementSize, useEventListener, useUrlSearchParams } f
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
-import { tv } from 'tailwind-variants'
 
 import { documentKindRules } from '@open-pencil/core/editor'
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
@@ -22,8 +21,10 @@ import { useKeyboard } from '@/app/shell/keyboard/use'
 import {
   loadEditorLayout,
   loadSlidesLayout,
+  loadSlidesNotesLayout,
   saveEditorLayout,
-  saveSlidesLayout
+  saveSlidesLayout,
+  saveSlidesNotesLayout
 } from '@/app/shell/layout-storage'
 import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
@@ -45,18 +46,18 @@ import {
 
 import { usePresentationSession } from '@/app/editor/presentation'
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
+import CanvasStage from '@/components/canvas/CanvasStage.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
-import PresentationOverlay from '@/components/presentation/PresentationOverlay.vue'
+import NotesPane from '@/components/slides/NotesPane.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
-import presentationTheme from '@/theme/presentation'
 
 const route = useRoute()
 const params = useUrlSearchParams('history')
@@ -98,7 +99,6 @@ const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
 
 const isPresenting = computed(() => store.state.presenting)
-const presentationStyles = tv(presentationTheme)()
 
 // A divider drag continues even if the pointer leaves the handle, so the release is
 // watched on the window rather than on the handle itself.
@@ -121,6 +121,8 @@ const fileAssociationCleanup = ref<(() => void) | null>(null)
 const isSlidesView = computed(
   () => documentKindRules(store.state.documentKind).leftRail === 'filmstrip'
 )
+/** Presenter notes only exist for slides documents; design canvases stay a single host. */
+const showNotesPane = isSlidesView
 /** Design vs slides layouts are stored separately; slides defaults right panel to min (10). */
 const panelLayout = computed(() => (isSlidesView.value ? loadSlidesLayout() : loadEditorLayout()))
 const splitterKey = computed(() => `${activeTab.value?.id ?? 'tab'}-${store.state.documentKind}`)
@@ -179,6 +181,30 @@ const propertiesDefaultSize = computed(() => panelLayout.value[2] ?? 0)
 const canvasDefaultSize = computed(() =>
   Math.max(0, 100 - layersDefaultSize.value - propertiesDefaultSize.value)
 )
+
+/**
+ * Presenter notes sit in a vertical splitter inside the canvas panel. The pane's height and
+ * collapsed state persist under their own key (see layout-storage) so a resize survives a
+ * reload; the outer splitter is keyed by tab + kind, so the vertical group remounts with it
+ * and `defaultSize` re-applies the remembered geometry.
+ */
+const notesPanel = useTemplateRef('notesPanel')
+const notesLayout = loadSlidesNotesLayout()
+const notesCollapsed = ref(notesLayout.collapsed)
+const notesSize = ref(notesLayout.size)
+const notesDefaultSize = computed(() => (notesCollapsed.value ? 0 : notesSize.value))
+const canvasMainDefaultSize = computed(() => 100 - notesDefaultSize.value)
+
+function onNotesSplitterLayout(layout: number[]) {
+  const notes = layout[1] ?? 0
+  if (notes > 0) notesSize.value = notes
+  saveSlidesNotesLayout({ size: notes > 0 ? notes : notesSize.value, collapsed: notes === 0 })
+}
+
+/** Restore the notes pane at its last size after it was collapsed to its handle. */
+function restoreNotesPane() {
+  notesPanel.value?.resize(notesSize.value)
+}
 
 if (import.meta.env.DEV) {
   /**
@@ -298,25 +324,62 @@ onUnmounted(() => {
       </SplitterResizeHandle>
       <SplitterPanel id="canvas" :default-size="canvasDefaultSize" :min-size="30" class="flex">
         <!--
-          Teleport relocates the canvas host without remounting EditorCanvas, so the
-          two CanvasKit/WebGL surfaces survive enter/exit. Do not key this wrapper and
-          do not add a fifth EditorView branch for presentation.
+          The presenter notes pane nests a vertical splitter inside the canvas panel. For
+          design documents the canvas panel is a plain flex host. The canvas host itself is
+          never behind a `v-if` here: only the splitter wrapper swaps, and it is keyed by
+          document kind like the outer splitter, so the CanvasKit surfaces are not remounted
+          on presentation enter/exit.
         -->
-        <Teleport to="body" :disabled="!isPresenting">
-          <div
-            data-test-id="presentation-stage"
-            :data-presenting="isPresenting ? 'true' : undefined"
-            :class="isPresenting ? presentationStyles.stage() : 'relative flex min-w-0 flex-1'"
+        <SplitterGroup
+          v-if="showNotesPane"
+          direction="vertical"
+          class="flex h-full min-h-0 min-w-0 flex-col"
+          @layout="onNotesSplitterLayout"
+        >
+          <SplitterPanel
+            id="canvas-main"
+            :default-size="canvasMainDefaultSize"
+            :min-size="40"
+            class="flex"
           >
-            <div :class="isPresenting ? presentationStyles.canvasHost() : 'contents'">
-              <div class="relative flex min-h-0 min-w-0 flex-1">
-                <EditorCanvas />
-                <Toolbar v-if="!isPresenting" />
-              </div>
-            </div>
-            <PresentationOverlay v-if="isPresenting" />
-          </div>
-        </Teleport>
+            <CanvasStage :presenting="isPresenting" />
+          </SplitterPanel>
+          <SplitterResizeHandle
+            class="group relative z-10 flex h-2 w-full shrink-0 cursor-row-resize items-center justify-center"
+            @pointerdown="beginPanelResize"
+          >
+            <div
+              class="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border"
+            />
+            <button
+              v-if="notesCollapsed"
+              type="button"
+              data-test-id="notes-show"
+              class="relative z-10 flex h-5 cursor-pointer items-center gap-1 rounded-md border border-border bg-panel px-2 text-[11px] font-medium text-surface shadow-sm hover:bg-hover"
+              @click.stop="restoreNotesPane"
+            >
+              <icon-lucide-notebook-pen class="size-3.5" />
+              {{ dialogs.showPresenterNotes }}
+            </button>
+          </SplitterResizeHandle>
+          <SplitterPanel
+            id="notes"
+            ref="notesPanel"
+            :default-size="notesDefaultSize"
+            :min-size="10"
+            :max-size="50"
+            :collapsible="true"
+            :collapsed-size="0"
+            class="flex"
+            @collapse="notesCollapsed = true"
+            @expand="notesCollapsed = false"
+          >
+            <NotesPane />
+          </SplitterPanel>
+        </SplitterGroup>
+        <div v-else class="relative flex min-h-0 min-w-0 flex-1">
+          <CanvasStage :presenting="isPresenting" />
+        </div>
       </SplitterPanel>
       <SplitterResizeHandle
         class="group relative z-10 -mx-1 w-2 cursor-col-resize"

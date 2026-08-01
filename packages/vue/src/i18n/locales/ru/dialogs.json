@@ -205,5 +205,8 @@
   "exitPresentation": "Выйти из презентации",
   "previousSlide": "Предыдущий слайд",
   "nextSlide": "Следующий слайд",
-  "slidePosition": "{current} / {total}"
+  "slidePosition": "{current} / {total}",
+  "presenterNotes": "Заметки докладчика",
+  "addPresenterNotes": "Добавить заметки докладчика…",
+  "showPresenterNotes": "Показать заметки докладчика"
 }

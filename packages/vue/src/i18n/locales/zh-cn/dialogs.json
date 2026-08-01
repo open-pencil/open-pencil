@@ -205,5 +205,8 @@
   "exitPresentation": "退出演示",
   "previousSlide": "上一张幻灯片",
   "nextSlide": "下一张幻灯片",
-  "slidePosition": "{current} / {total}"
+  "slidePosition": "{current} / {total}",
+  "presenterNotes": "演讲者备注",
+  "addPresenterNotes": "添加演讲者备注…",
+  "showPresenterNotes": "显示演讲者备注"
 }

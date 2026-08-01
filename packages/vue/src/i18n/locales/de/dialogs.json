@@ -205,5 +205,8 @@
   "exitPresentation": "Präsentation beenden",
   "previousSlide": "Vorherige Folie",
   "nextSlide": "Nächste Folie",
-  "slidePosition": "{current} / {total}"
+  "slidePosition": "{current} / {total}",
+  "presenterNotes": "Referentennotizen",
+  "addPresenterNotes": "Referentennotizen hinzufügen…",
+  "showPresenterNotes": "Referentennotizen anzeigen"
 }

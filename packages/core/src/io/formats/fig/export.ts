@@ -242,8 +242,21 @@ function appendVariablesForCollection(
 }
 
 function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange): void {
-  if (!page.source.id) return
+  // A deck page is a slide in disguise: hand back the fields it arrived with, so
+  // structurePagesToDeck can restore them onto the SLIDE. Plain .fig pages benefit too —
+  // they commonly carry editInfo, which used to be dropped on every round-trip.
+  //
+  // These must not depend on `source.id`: slides created in OpenPencil (New Deck / New
+  // slide) have no imported id, yet their speaker notes live in rawNodeFields and have to
+  // ride onto the exported SLIDE all the same. Only the canvas-style fields below need an
+  // imported identity to be meaningful.
   if (!('pageType' in page.source.fig.rawNodeFields)) delete canvasNc.pageType
+  for (const field of CARRIED_SLIDE_FIELDS) {
+    const value = page.source.fig.rawNodeFields[field]
+    if (value !== undefined) Object.assign(canvasNc, { [field]: structuredClone(value) })
+  }
+
+  if (!page.source.id) return
   if ('backgroundColor' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundColor = structuredClone(page.source.fig.rawNodeFields.backgroundColor)
   }
@@ -259,13 +272,6 @@ function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange
   if (typeof strokeJoin === 'string') canvasNc.strokeJoin = strokeJoin
   const strokeWeight = page.source.fig.rawNodeFields.strokeWeight
   if (typeof strokeWeight === 'number') canvasNc.strokeWeight = strokeWeight
-  // A deck page is a slide in disguise: hand back the fields it arrived with, so
-  // structurePagesToDeck can restore them onto the SLIDE. Plain .fig pages benefit too —
-  // they commonly carry editInfo, which used to be dropped on every round-trip.
-  for (const field of CARRIED_SLIDE_FIELDS) {
-    const value = page.source.fig.rawNodeFields[field]
-    if (value !== undefined) Object.assign(canvasNc, { [field]: structuredClone(value) })
-  }
 }
 
 function buildCanvasEntries(

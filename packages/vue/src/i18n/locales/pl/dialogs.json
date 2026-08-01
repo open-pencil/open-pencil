@@ -205,5 +205,8 @@
   "exitPresentation": "Zakończ prezentację",
   "previousSlide": "Poprzedni slajd",
   "nextSlide": "Następny slajd",
-  "slidePosition": "{current} / {total}"
+  "slidePosition": "{current} / {total}",
+  "presenterNotes": "Notatki prezentera",
+  "addPresenterNotes": "Dodaj notatki prezentera…",
+  "showPresenterNotes": "Pokaż notatki prezentera"
 }
