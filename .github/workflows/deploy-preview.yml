@@ -1,0 +1,73 @@
+name: Deploy preview
+
+on:
+  workflow_run:
+    workflows: [Preview]
+    types: [completed]
+
+concurrency:
+  group: deploy-preview-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.pull_requests[0].number != null
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+      pull-requests: write
+    environment:
+      name: preview
+      url: ${{ steps.deploy.outputs.deployment-url }}
+    steps:
+      - name: Download validated preview artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: preview-dist
+          path: dist
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Deploy preview
+        uses: cloudflare/wrangler-action@v4
+        id: deploy
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: npm
+          command: pages deploy dist --project-name=openpencil-app --branch=pr-${{ github.event.workflow_run.pull_requests[0].number }}
+
+      - name: Comment preview URL
+        uses: actions/github-script@v9
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.deployment-url }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        with:
+          script: |
+            const url = process.env.PREVIEW_URL;
+            const issue_number = Number(process.env.PR_NUMBER);
+            if (!url || !Number.isInteger(issue_number)) {
+              core.setFailed('Preview deployment metadata is incomplete');
+              return;
+            }
+            const marker = '<!-- preview-deploy -->';
+            const body = `${marker}\n🔗 Preview: ${url}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number
+            });
+            const existing = comments.find(comment => comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                ...context.repo, comment_id: existing.id, body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                ...context.repo, issue_number, body
+              });
+            }
