@@ -26,7 +26,7 @@ async function snapshotActiveDocument(): Promise<void> {
       name: store.state.documentName || 'Untitled',
       sourceFormat: store.state.documentKind === 'deck' ? 'deck' : 'fig',
       bytes,
-      handle: identity?.handle ?? null,
+      handle: identity.handle ?? null,
       savedAt: Date.now()
     })
   } catch (error) {
@@ -49,7 +49,7 @@ export function useSessionPersistence(): void {
     () => getActiveEditorStoreOrNull()?.state.sceneVersion,
     (version) => {
       if (version === undefined) return
-      persist()
+      void persist()
     }
   )
 
@@ -90,7 +90,7 @@ export async function takeRestorableDocument(): Promise<{
   handle: FileSystemFileHandle | null
 } | null> {
   const snapshot = await readSessionSnapshot()
-  if (!snapshot?.bytes?.byteLength) return null
+  if (!snapshot || snapshot.bytes.byteLength === 0) return null
   const extension = snapshot.sourceFormat === 'deck' ? 'deck' : 'fig'
   const name = /\.(deck|fig)$/i.test(snapshot.name)
     ? snapshot.name
@@ -100,7 +100,7 @@ export async function takeRestorableDocument(): Promise<{
     ? (snapshot.handle ?? null)
     : null
   return {
-    file: new File([bytes.buffer as ArrayBuffer], name, { type: 'application/octet-stream' }),
+    file: new File([bytes.buffer], name, { type: 'application/octet-stream' }),
     handle
   }
 }

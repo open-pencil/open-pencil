@@ -155,9 +155,10 @@ export function structurePagesToDeck(
   const rowGuid = alloc()
 
   const firstArtboard = pageArtboard(nodeChanges, pages[0])
+  const firstSize = firstArtboard?.size
   const slideSize: Vector =
-    firstArtboard?.size?.x && firstArtboard.size?.y
-      ? { x: firstArtboard.size.x, y: firstArtboard.size.y }
+    firstSize != null && firstSize.x > 0 && firstSize.y > 0
+      ? { x: firstSize.x, y: firstSize.y }
       : { ...DEFAULT_SLIDE_SIZE }
 
   /** page key → slide guid; artboard key → slide guid (for reparent). */
@@ -180,11 +181,14 @@ export function structurePagesToDeck(
       reparentToSlide.set(artboardKey, slideGuid)
     }
 
+    const artboardSize = artboard?.size
     const size =
-      artboard?.size?.x && artboard.size?.y
-        ? { x: artboard.size.x, y: artboard.size.y }
+      artboardSize != null && artboardSize.x > 0 && artboardSize.y > 0
+        ? { x: artboardSize.x, y: artboardSize.y }
         : { ...slideSize }
 
+    // Built as a plain object then asserted: Kiwi NodeChange optionals and carried
+    // slide fields do not form an exact object-literal match for the generated type.
     out.push({
       // Each slide points at the document theme, as Figma writes it.
       ...(theme?.themeID ? { themeID: theme.themeID } : {}),
@@ -226,7 +230,7 @@ export function structurePagesToDeck(
       stackVerticalPadding: SLIDE_STACK_PADDING_Y,
       stackPaddingRight: SLIDE_STACK_PADDING_X,
       stackPaddingBottom: SLIDE_STACK_PADDING_Y
-    })
+    } as NodeChange)
   })
 
   for (const nc of nodeChanges) {

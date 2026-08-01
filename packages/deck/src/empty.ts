@@ -101,8 +101,9 @@ function createSlideArtboard(
 export function createEmptyDeckGraph(options: CreateEmptyDeckOptions = {}): SceneGraph {
   const slideName = options.slideName ?? '1'
   const graph = new SceneGraph()
-  const page = graph.getPages()[0]
-  if (!page) throw new Error('SceneGraph constructor did not create a page')
+  const pages = graph.getPages()
+  if (pages.length === 0) throw new Error('SceneGraph constructor did not create a page')
+  const page = pages[0]
 
   graph.updateNode(page.id, { name: slideName })
   createSlideArtboard(graph, page.id, slideName, {

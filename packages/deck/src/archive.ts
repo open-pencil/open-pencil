@@ -16,7 +16,7 @@ export interface WriteDeckArchiveInput {
 
 /** Assemble a complete zipped `.deck` archive with `fig-deck` prelude. */
 export function writeDeckArchive(input: WriteDeckArchiveInput): Uint8Array {
-  if (!input.thumbnailPng?.byteLength) {
+  if (input.thumbnailPng.byteLength === 0) {
     throw new Error('Deck write requires thumbnail.png bytes')
   }
 

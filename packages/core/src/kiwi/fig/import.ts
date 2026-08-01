@@ -40,7 +40,7 @@ function applyImportedCanvasMetadata(
   // speaker notes and slide transitions among them. They only survive the round-trip if
   // they are kept here; this whitelist is where they were being dropped.
   for (const [field, value] of Object.entries(pickCarriedSlideFields(canvasNc))) {
-    if (value !== undefined) page.source.fig.rawNodeFields[field] = structuredClone(value)
+    page.source.fig.rawNodeFields[field] = structuredClone(value)
   }
 }
 

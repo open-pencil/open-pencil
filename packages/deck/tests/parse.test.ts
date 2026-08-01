@@ -23,9 +23,7 @@ describe('parseDeckBuffer', () => {
     expect(result.nodeChanges.some((n) => n.type === 'SLIDE_GRID')).toBe(false)
     expect(result.nodeChanges.some((n) => n.type === 'SLIDE_ROW')).toBe(false)
 
-    const pageKey = pages[0]?.guid
-      ? `${pages[0].guid.sessionID}:${pages[0].guid.localID}`
-      : null
+    const pageKey = pages[0]?.guid ? `${pages[0].guid.sessionID}:${pages[0].guid.localID}` : null
     const artboards = result.nodeChanges.filter(
       (n) =>
         n.type === 'FRAME' &&

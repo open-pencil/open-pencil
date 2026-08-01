@@ -2,11 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-import {
-  collectActiveSlides,
-  parseDeckBuffer,
-  structurePagesToDeck
-} from '../src/index'
+import { collectActiveSlides, parseDeckBuffer, structurePagesToDeck } from '../src/index'
 
 const fixturesDir = join(import.meta.dir, '../../../tests/fixtures/deck')
 

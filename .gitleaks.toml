@@ -7,6 +7,7 @@ useDefault = true
 description = "Local and generated artifacts"
 paths = [
   '''(^|/)\.env$''',
+  '''(^|/)\.env\.local$''',
   '''(^|/)\.worktrees/''',
   '''(^|/)dist/''',
   '''(^|/)node_modules/''',

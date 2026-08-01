@@ -36,7 +36,6 @@ import { applySymbolOverrides } from './symbol/overrides'
 import { propagateNodePropsTransitively, propagateOverridesTransitively } from './sync'
 import { indexCloneNodes } from './sync/sources'
 import type { InstanceNodeChange, OverrideContext, ComponentPropValue } from './types'
-import { overrideCandidates } from './utils'
 
 /**
  * Identify nodes whose kiwi NC has explicit property values that DIFFER

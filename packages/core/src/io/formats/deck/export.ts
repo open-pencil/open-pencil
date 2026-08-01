@@ -1,9 +1,9 @@
 import type { CanvasKit } from 'canvaskit-wasm'
-import { deflateSync, inflateSync } from 'fflate'
+import { inflateSync } from 'fflate'
 
 import { defaultDeckMetaJson, structurePagesToDeck, writeDeckArchive } from '@open-pencil/deck'
 import { parseFigBuffer } from '@open-pencil/fig'
-import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
+import { initCodec, type getCompiledSchema } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -38,19 +38,19 @@ export async function exportDeckFile(
   await initCodec()
   let compiled: ReturnType<typeof getCompiledSchema>
   let schemaDeflated: Uint8Array
-  if (graph.figSchemaDeflated) {
-    const schemaBytes = inflateSync(graph.figSchemaDeflated)
+  // Prefer the graph's preserved schema; otherwise the parse always carries one.
+  const schemaFromGraph = graph.figSchemaDeflated
+  if (schemaFromGraph) {
+    const schemaBytes = inflateSync(schemaFromGraph)
     const figSchema = decodeBinarySchema(new ByteBuffer(schemaBytes))
     compiled = compileSchema(figSchema) as ReturnType<typeof getCompiledSchema>
-    schemaDeflated = graph.figSchemaDeflated
-  } else if (parsed.figSchemaDeflated) {
-    const schemaBytes = inflateSync(parsed.figSchemaDeflated)
-    const figSchema = decodeBinarySchema(new ByteBuffer(schemaBytes))
-    compiled = compileSchema(figSchema) as ReturnType<typeof getCompiledSchema>
-    schemaDeflated = parsed.figSchemaDeflated
+    schemaDeflated = schemaFromGraph
   } else {
-    compiled = getCompiledSchema()
-    schemaDeflated = deflateSync(getSchemaBytes())
+    const schemaFromParsed = parsed.figSchemaDeflated
+    const schemaBytes = inflateSync(schemaFromParsed)
+    const figSchema = decodeBinarySchema(new ByteBuffer(schemaBytes))
+    compiled = compileSchema(figSchema) as ReturnType<typeof getCompiledSchema>
+    schemaDeflated = schemaFromParsed
   }
 
   const msg: Record<string, unknown> = {

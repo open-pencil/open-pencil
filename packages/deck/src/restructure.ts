@@ -115,7 +115,8 @@ function collectInternalCanvases(nodeChanges: NodeChange[], docGuid: GUID): Node
 }
 
 function slideSize(slide: NodeChange): Vector {
-  if (slide.size?.x && slide.size?.y) return { x: slide.size.x, y: slide.size.y }
+  const size = slide.size
+  if (size != null && size.x > 0 && size.y > 0) return { x: size.x, y: size.y }
   return { ...DEFAULT_SLIDE_SIZE }
 }
 
