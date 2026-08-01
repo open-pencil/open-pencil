@@ -81,11 +81,17 @@ export const APP_MENU_SCHEMA = [
         label: 'Delete',
         command: 'selection.delete'
       },
+      { id: 'selection.rename', label: 'Rename Selection…', shortcut: 'MOD+R' },
       { type: 'separator' },
       {
         id: 'selection.selectAll',
         label: 'Select All',
         command: 'selection.selectAll'
+      },
+      {
+        id: 'selection.selectInverse',
+        label: 'Select Inverse',
+        command: 'selection.selectInverse'
       }
     ]
   },

@@ -6,6 +6,7 @@ import { useEditorCommands, useI18n } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
+import { openRenameSelectionDialog } from '@/app/editor/selection/rename-dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
@@ -46,6 +47,7 @@ export function useAppMenu() {
     cut: 'cut',
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
+    'selection.rename': 'renameSelection',
     language: 'language',
     settings: 'settings',
     'view-rulers': 'rulers',
@@ -99,6 +101,7 @@ export function useAppMenu() {
       if (activeTab.value) closeTab(activeTab.value.id)
     },
     settings: openSettingsDialog,
+    'selection.rename': openRenameSelectionDialog,
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

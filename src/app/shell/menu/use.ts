@@ -6,6 +6,7 @@ import type { EditorCommandId } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
+import { openRenameSelectionDialog } from '@/app/editor/selection/rename-dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
@@ -70,6 +71,7 @@ export function useMenu() {
     'paste-to-replace': () => void pasteClipboardToReplace(store),
     'check-updates': () => void checkForAppUpdate({ messages: dialogs }),
     settings: openSettingsDialog,
+    'selection.rename': openRenameSelectionDialog,
     'selection.moveToPage.native': () => runCommand('selection.moveToPage'),
     ...createSharedEditorMenuActions(setTheme)
   }

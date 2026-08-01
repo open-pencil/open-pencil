@@ -113,12 +113,22 @@
         "accelerator": "Backspace"
       },
       {
+        "id": "selection.rename",
+        "label": "Rename Selection…",
+        "accelerator": "CmdOrCtrl+R"
+      },
+      {
         "type": "separator"
       },
       {
         "id": "selection.selectAll",
         "label": "Select All",
         "accelerator": "CmdOrCtrl+A"
+      },
+      {
+        "id": "selection.selectInverse",
+        "label": "Select Inverse",
+        "accelerator": "CmdOrCtrl+Shift+A"
       }
     ]
   },

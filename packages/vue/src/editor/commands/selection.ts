@@ -41,6 +41,14 @@ export function createSelectionCommands({
       enabled: capabilities.canSelectAll,
       run: () => editor.selectAll()
     },
+    'selection.selectInverse': {
+      id: 'selection.selectInverse',
+      get label() {
+        return t.value.selectInverse
+      },
+      enabled: capabilities.canSelectAll,
+      run: () => editor.selectInverse()
+    },
     'selection.duplicate': {
       id: 'selection.duplicate',
       get label() {

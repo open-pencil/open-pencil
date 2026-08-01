@@ -97,6 +97,26 @@ export function createStructureActions(ctx: EditorContext) {
     ctx.setSelectedIds(new Set())
   }
 
+  function renameSelected(name: string) {
+    const nodes = [...ctx.state.selectedIds]
+      .map((id) => ctx.graph.getNode(id))
+      .filter((node): node is SceneNode => node != null)
+    if (nodes.length === 0) return
+    const trimmedName = name.trim()
+    const before = new Map(nodes.map((node) => [node.id, node.name]))
+    const after = new Map(nodes.map((node) => [node.id, trimmedName || defaultNodeName(node.type)]))
+    const applyNames = (names: ReadonlyMap<string, string>) => {
+      for (const [id, nextName] of names) ctx.graph.updateNode(id, { name: nextName })
+    }
+
+    applyNames(after)
+    ctx.undo.push({
+      label: 'Rename selection',
+      forward: () => applyNames(after),
+      inverse: () => applyNames(before)
+    })
+  }
+
   function renameNode(id: string, name: string) {
     const node = ctx.graph.getNode(id)
     if (!node) return
@@ -119,6 +139,7 @@ export function createStructureActions(ctx: EditorContext) {
     outlineStrokeSelected,
     ...stateActions,
     moveToPage,
+    renameSelected,
     renameNode
   }
 }

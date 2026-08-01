@@ -4,6 +4,7 @@ export const commandMessageDefaults = {
   undo: 'Undo',
   redo: 'Redo',
   selectAll: 'Select all',
+  selectInverse: 'Select inverse',
   duplicate: 'Duplicate',
   delete: 'Delete',
   group: 'Group',

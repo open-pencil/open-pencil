@@ -4,6 +4,7 @@ export type EditorCommandId =
   | 'edit.undo'
   | 'edit.redo'
   | 'selection.selectAll'
+  | 'selection.selectInverse'
   | 'selection.duplicate'
   | 'selection.delete'
   | 'selection.group'

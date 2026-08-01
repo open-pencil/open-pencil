@@ -10,6 +10,7 @@ export const EDITOR_COMMAND_METADATA = {
   'edit.undo': { shortcut: 'MOD+Z', keybinding: '$mod+KeyZ' },
   'edit.redo': { shortcut: 'MOD+SHIFT+Z', keybinding: ['$mod+Shift+KeyZ', '$mod+KeyY'] },
   'selection.selectAll': { shortcut: 'MOD+A', keybinding: '$mod+KeyA' },
+  'selection.selectInverse': { shortcut: 'MOD+SHIFT+A', keybinding: '$mod+Shift+KeyA' },
   'selection.duplicate': {
     shortcut: 'MOD+D',
     keybinding: '$mod+KeyD',
