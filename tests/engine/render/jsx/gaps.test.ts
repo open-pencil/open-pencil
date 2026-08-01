@@ -27,6 +27,20 @@ describe('jsx gaps', () => {
     expect(vector?.vectorNetwork).toBeTruthy()
   })
 
+  it('renders open and closed SVG paths as separate stroked vectors', async () => {
+    const g = makeSceneGraph()
+    await renderJSX(
+      g,
+      `<svg viewBox="0 0 24 24" size={24}><path d="M2 2 L22 2" stroke="#000" fill="none" /><path d="M2 6 H22 V22 H2 Z" stroke="#000" fill="none" /></svg>`
+    )
+    const vectors = [...g.nodes.values()].filter((node) => node.type === 'VECTOR')
+    expect(vectors).toHaveLength(2)
+    for (const vector of vectors) {
+      expect(vector.vectorNetwork?.vertices.length).toBeGreaterThan(0)
+      expect(vector.strokes.length).toBeGreaterThan(0)
+    }
+  })
+
   it('instance overrides apply child text by name', async () => {
     const g = makeSceneGraph()
     await renderJSX(

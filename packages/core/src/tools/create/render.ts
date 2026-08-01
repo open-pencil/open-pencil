@@ -4,7 +4,7 @@ export const render = defineTool({
   name: 'render',
   mutates: true,
   description:
-    'Render JSX to design nodes. Use replace_id to swap a skeleton placeholder with real content (keeps position in parent). Example: <Frame name="Card" w={320} h="hug" flex="col" gap={16} p={24} bg="#FFF" rounded={16}><Text size={18} weight="bold">Title</Text></Frame>. For arbitrary shapes and outline drawings use <svg> with SVG path data — each <path> becomes its own vector node, and open paths stroke correctly: <svg name="Boat" viewBox="0 0 640 700" size={600}><path d="M380 40 L380 560" stroke="#021A3B" stroke-width="6" fill="none" /><path d="M100 560 C175 695 585 695 660 560 Z" stroke="#021A3B" stroke-width="6" fill="none" /></svg>',
+    'Render JSX to design nodes. Supports inline SVG paths, including open stroked paths: <svg viewBox="0 0 24 24" size={24}><path d="M2 12 L22 12" stroke="#000" fill="none" /></svg>. Use replace_id to replace a placeholder while preserving its position.',
   params: {
     replace_id: {
       type: 'string',
