@@ -34,5 +34,10 @@
   "outlineText": "テキストのアウトライン化",
   "outlineStroke": "線の境界線をプレビュー (パスのアウトライン化)",
   "useAsMask": "マスクとして使用",
-  "removeMask": "マスクを解除"
+  "removeMask": "マスクを解除",
+  "bringForward": "Bring forward",
+  "distributeHorizontal": "Distribute horizontal spacing",
+  "distributeVertical": "Distribute vertical spacing",
+  "selectInverse": "Select inverse",
+  "sendBackward": "Send backward"
 }

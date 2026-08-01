@@ -1,7 +1,6 @@
-import { ref } from 'vue'
+import type { EditorStore } from '@/app/editor/active-store'
 
-export const renameSelectionOpen = ref(false)
-
-export function openRenameSelectionDialog(): void {
-  renameSelectionOpen.value = true
+export function openRenameSelectionDialog(store: EditorStore): void {
+  if (store.state.selectedIds.size === 0) return
+  store.state.renameSelectionOpen = true
 }

@@ -139,7 +139,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     {
       id: 'rename-selection',
       keys: appMenuTinykeysShortcut('selection.rename') ?? '$mod+KeyR',
-      run: () => openRenameSelectionDialog()
+      run: ({ store }) => openRenameSelectionDialog(store)
     },
     ...commandShortcuts(
       'edit.undo',

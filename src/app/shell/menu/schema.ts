@@ -257,11 +257,6 @@ export const APP_MENU_SCHEMA = [
         target: 'browser'
       },
       {
-        id: 'selection.moveToPage.native',
-        label: 'Move to Another Page',
-        target: 'native'
-      },
-      {
         id: 'selection.bringForward',
         label: 'Bring Forward',
         command: 'selection.bringForward'

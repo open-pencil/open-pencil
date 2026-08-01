@@ -53,5 +53,9 @@
   "arrangeAlignRight": "右揃え",
   "arrangeAlignTop": "上揃え",
   "arrangeAlignMiddle": "上下中央揃え",
-  "arrangeAlignBottom": "下揃え"
+  "arrangeAlignBottom": "下揃え",
+  "multiplayerCursors": "Multiplayer cursors",
+  "renameSelection": "Rename selection…",
+  "rulers": "Rulers",
+  "settings": "Settings…"
 }

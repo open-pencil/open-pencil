@@ -101,7 +101,7 @@ export function useAppMenu() {
       if (activeTab.value) closeTab(activeTab.value.id)
     },
     settings: openSettingsDialog,
-    'selection.rename': openRenameSelectionDialog,
+    'selection.rename': () => openRenameSelectionDialog(store),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

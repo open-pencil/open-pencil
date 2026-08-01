@@ -71,8 +71,7 @@ export function useMenu() {
     'paste-to-replace': () => void pasteClipboardToReplace(store),
     'check-updates': () => void checkForAppUpdate({ messages: dialogs }),
     settings: openSettingsDialog,
-    'selection.rename': openRenameSelectionDialog,
-    'selection.moveToPage.native': () => runCommand('selection.moveToPage'),
+    'selection.rename': () => openRenameSelectionDialog(store),
     ...createSharedEditorMenuActions(setTheme)
   }
 

@@ -77,7 +77,9 @@ export function createStructureReorderActions(ctx: EditorContext) {
   }
 
   function applyChildOrder(parentId: string, childIds: readonly string[]) {
+    const current = ctx.graph.getNode(parentId)?.childIds ?? []
     for (const [index, childId] of childIds.entries()) {
+      if (current[index] === childId) continue
       ctx.graph.insertChildAt(childId, parentId, index)
     }
     ctx.runLayoutForNode(parentId)
@@ -119,34 +121,37 @@ export function createStructureReorderActions(ctx: EditorContext) {
     })
   }
 
-  function bringForward() {
-    moveSelectionInZOrder('Bring forward', (childIds, selectedIds) => {
-      const result = [...childIds]
-      for (let index = result.length - 2; index >= 0; index--) {
-        const current = result[index]
-        const next = result[index + 1]
-        if (current && next && selectedIds.has(current) && !selectedIds.has(next)) {
-          result[index] = next
-          result[index + 1] = current
-        }
+  function moveAdjacent(
+    childIds: readonly string[],
+    selectedIds: ReadonlySet<string>,
+    direction: 'forward' | 'backward'
+  ) {
+    const result = [...childIds]
+    const start = direction === 'forward' ? result.length - 2 : 1
+    const end = direction === 'forward' ? -1 : result.length
+    const step = direction === 'forward' ? -1 : 1
+    for (let index = start; index !== end; index += step) {
+      const neighborIndex = index - step
+      const current = result[index]
+      const neighbor = result[neighborIndex]
+      if (current && neighbor && selectedIds.has(current) && !selectedIds.has(neighbor)) {
+        result[index] = neighbor
+        result[neighborIndex] = current
       }
-      return result
-    })
+    }
+    return result
+  }
+
+  function bringForward() {
+    moveSelectionInZOrder('Bring forward', (childIds, selectedIds) =>
+      moveAdjacent(childIds, selectedIds, 'forward')
+    )
   }
 
   function sendBackward() {
-    moveSelectionInZOrder('Send backward', (childIds, selectedIds) => {
-      const result = [...childIds]
-      for (let index = 1; index < result.length; index++) {
-        const current = result[index]
-        const previous = result[index - 1]
-        if (current && previous && selectedIds.has(current) && !selectedIds.has(previous)) {
-          result[index] = previous
-          result[index - 1] = current
-        }
-      }
-      return result
-    })
+    moveSelectionInZOrder('Send backward', (childIds, selectedIds) =>
+      moveAdjacent(childIds, selectedIds, 'backward')
+    )
   }
 
   function bringToFront() {

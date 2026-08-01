@@ -331,10 +331,6 @@
         "type": "separator"
       },
       {
-        "id": "selection.moveToPage.native",
-        "label": "Move to Another Page"
-      },
-      {
         "id": "selection.bringForward",
         "label": "Bring Forward",
         "accelerator": "CmdOrCtrl+]"

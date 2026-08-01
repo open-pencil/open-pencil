@@ -34,5 +34,10 @@
   "outlineText": "Kontur tekstu",
   "outlineStroke": "Kontur obrysu",
   "useAsMask": "Użyj jako maski",
-  "removeMask": "Usuń maskę"
+  "removeMask": "Usuń maskę",
+  "bringForward": "Bring forward",
+  "distributeHorizontal": "Distribute horizontal spacing",
+  "distributeVertical": "Distribute vertical spacing",
+  "selectInverse": "Select inverse",
+  "sendBackward": "Send backward"
 }

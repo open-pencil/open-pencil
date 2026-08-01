@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch, useTemplateRef } from 'vue'
 
-import { renameSelectionOpen } from '@/app/editor/selection/rename-dialog'
 import { useEditorStore } from '@/app/editor/active-store'
 import {
   AppDialogBody,
@@ -15,21 +14,24 @@ const name = computed(() => store.selectedNodes.value[0]?.name ?? '')
 const draft = ref('')
 const input = useTemplateRef<HTMLInputElement>('input')
 
-watch(renameSelectionOpen, (open) => {
-  if (!open) return
-  draft.value = name.value
-  void nextTick(() => input.value?.select())
-})
+watch(
+  () => store.state.renameSelectionOpen,
+  (open) => {
+    if (!open) return
+    draft.value = name.value
+    void nextTick(() => input.value?.select())
+  }
+)
 
 function submit() {
   if (store.state.selectedIds.size === 0) return
   store.renameSelected(draft.value)
-  renameSelectionOpen.value = false
+  store.state.renameSelectionOpen = false
 }
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="renameSelectionOpen" size="sm">
+  <AppDialogRoot v-model:open="store.state.renameSelectionOpen" size="sm">
     <AppDialogHeader heading="Rename selection" close-label="Close" />
     <AppDialogBody>
       <label class="flex flex-col gap-1.5 text-xs text-muted">

@@ -53,5 +53,9 @@
   "arrangeAlignRight": "Выровнять по правому краю",
   "arrangeAlignTop": "Выровнять по верхнему краю",
   "arrangeAlignMiddle": "Выровнять по центру по вертикали",
-  "arrangeAlignBottom": "Выровнять по нижнему краю"
+  "arrangeAlignBottom": "Выровнять по нижнему краю",
+  "multiplayerCursors": "Multiplayer cursors",
+  "renameSelection": "Rename selection…",
+  "rulers": "Rulers",
+  "settings": "Settings…"
 }

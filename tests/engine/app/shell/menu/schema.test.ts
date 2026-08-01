@@ -43,7 +43,7 @@ describe('APP_MENU_SCHEMA', () => {
     expect(commandIds).toContain('selection.moveToPage')
   })
 
-  test('provides platform-specific move-to-page entries', () => {
+  test('keeps move-to-page destination selection in the browser menu', () => {
     const objectMenu = APP_MENU_SCHEMA.find((group) => group.label === 'Object')
     const entries = objectMenu ? actionItems(objectMenu.items) : []
     const moveEntries = entries.filter(
@@ -51,8 +51,7 @@ describe('APP_MENU_SCHEMA', () => {
     )
 
     expect(moveEntries).toEqual([
-      expect.objectContaining({ id: 'selection.moveToPage', target: 'browser' }),
-      expect.objectContaining({ id: 'selection.moveToPage.native', target: 'native' })
+      expect.objectContaining({ id: 'selection.moveToPage', target: 'browser' })
     ])
   })
 })
