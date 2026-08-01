@@ -349,7 +349,14 @@ export interface NodeChange {
   textAutoResize?: string
   textData?: {
     characters: string
-    lines?: Array<{ lineType?: string; styleId?: number; indentationLevel?: number }>
+    lines?: Array<{
+      lineType?: string
+      styleId?: number
+      indentationLevel?: number
+      sourceDirectionality?: string
+      listStartOffset?: number
+      isFirstLineOfList?: boolean
+    }>
     characterStyleIDs?: number[]
     styleOverrideTable?: NodeChange[]
   }

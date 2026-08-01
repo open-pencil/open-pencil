@@ -37,14 +37,37 @@ export function writeDeckArchive(input: WriteDeckArchiveInput): Uint8Array {
   return zipSync(entries)
 }
 
-export function defaultDeckMetaJson(fileName = 'Untitled.deck'): string {
+/** Gap Figma leaves around the slide row; mirrors SLIDE_PADDING in structure.ts. */
+const DECK_SLIDE_PADDING = 240
+/** Zoomed-out slides backdrop Figma paints behind the grid. */
+const DECK_BACKDROP = { r: 0.1176, g: 0.1176, b: 0.1176, a: 1 }
+
+export type DeckMetaInput = {
+  /** How many slides the presentation holds — the row is this many slides wide. */
+  slideCount?: number
+  slideWidth?: number
+  slideHeight?: number
+}
+
+/**
+ * Figma reads `render_coordinates` as the extent of the whole presentation, not of one
+ * slide: a 33-slide deck spans 33 x (slide width + padding). Declaring a single slide made
+ * the file open with nothing rendered.
+ */
+export function defaultDeckMetaJson(fileName = 'Untitled.deck', input: DeckMetaInput = {}): string {
+  const slideCount = Math.max(1, input.slideCount ?? 1)
+  const slideWidth = input.slideWidth ?? 1920
+  const slideHeight = input.slideHeight ?? 1080
+  const width = slideCount * (slideWidth + DECK_SLIDE_PADDING)
+  const height = slideHeight + DECK_SLIDE_PADDING * 2
   return JSON.stringify({
     client_meta: {
-      background_color: { r: 0.96, g: 0.96, b: 0.96, a: 1 },
-      thumbnail_size: { width: 400, height: 260 },
-      render_coordinates: { x: 0, y: 0, width: 1920, height: 1080 }
+      background_color: { ...DECK_BACKDROP },
+      thumbnail_size: { width: 400, height: Math.max(1, Math.round((400 * height) / width)) },
+      render_coordinates: { x: 0, y: 0, width, height }
     },
     file_name: fileName.replace(/\.deck$/i, ''),
-    developer_related_links: []
+    developer_related_links: [],
+    exported_at: new Date().toISOString()
   })
 }

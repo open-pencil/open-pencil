@@ -118,7 +118,17 @@ function buildScaffold(
  * Expects open layout: CANVAS page → one white FRAME artboard (slide) → content.
  * Unwraps the artboard so SLIDE holds the content directly.
  */
-export function structurePagesToDeck(nodeChanges: NodeChange[]): NodeChange[] {
+/**
+ * Figma Slides theme bindings carried over from the source deck. They reference the
+ * variable set and text styles on the internal-only canvas; without them Figma shows no
+ * template style and renders the slides unthemed.
+ */
+export type DeckThemeBindings = Record<string, unknown>
+
+export function structurePagesToDeck(
+  nodeChanges: NodeChange[],
+  theme?: DeckThemeBindings | null
+): NodeChange[] {
   const document = findDocument(nodeChanges)
   const docGuid = document.guid as GUID
   const pages = userPages(nodeChanges)
@@ -144,7 +154,8 @@ export function structurePagesToDeck(nodeChanges: NodeChange[]): NodeChange[] {
   const reparentToSlide = new Map<string, GUID>()
   const artboardKeys = new Set<string>()
 
-  const out: NodeChange[] = [structuredClone(document)]
+  // The scene graph does not model theme bindings, so restore them onto the DOCUMENT.
+  const out: NodeChange[] = [{ ...structuredClone(document), ...theme }]
   out.push(...collectInternalCanvases(nodeChanges, pageKeys))
   out.push(...buildScaffold(docGuid, userCanvasGuid, gridGuid, rowGuid, slideSize))
 
@@ -165,6 +176,9 @@ export function structurePagesToDeck(nodeChanges: NodeChange[]): NodeChange[] {
         : { ...slideSize }
 
     out.push({
+      // Each slide points at the document theme, as Figma writes it.
+      ...(theme?.themeID ? { themeID: theme.themeID } : {}),
+      ...(theme?.sourceLibraryKey ? { sourceLibraryKey: theme.sourceLibraryKey } : {}),
       guid: slideGuid,
       type: 'SLIDE',
       name: page.name ?? artboard?.name ?? String(index + 1),

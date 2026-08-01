@@ -70,6 +70,13 @@ export class SceneGraph {
   variableCollections = new Map<string, VariableCollection>()
   activeMode = new Map<string, string>()
   rootId: string
+  /**
+   * Figma Slides theme bindings from the source deck: the DOCUMENT's themeID,
+   * sourceLibraryKey and slideThemeMap. They point at the variable set and text styles on
+   * the internal-only canvas. Dropping them leaves Figma with no template style, which
+   * renders every slide unthemed, so they ride along verbatim for the round-trip.
+   */
+  deckTheme: Record<string, unknown> | null = null
   figKiwiVersion: number | null = null
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null

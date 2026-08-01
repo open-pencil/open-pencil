@@ -55,7 +55,14 @@ export function createDocumentSourceActions({
   function buildNativeFile() {
     const renderer = getRenderer() ?? undefined
     if (currentSourceFormat() === 'deck') {
-      return exportDeckFile(editor.graph, undefined, renderer, state.currentPageId)
+      return exportDeckFile(
+        editor.graph,
+        undefined,
+        renderer,
+        state.currentPageId,
+        false,
+        getDownloadName() || state.documentName
+      )
     }
     return exportFigFile(editor.graph, undefined, renderer, state.currentPageId)
   }

@@ -1,11 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 
-import {
-  defaultDeckMetaJson,
-  structurePagesToDeck,
-  writeDeckArchive
-} from '@open-pencil/deck'
+import { defaultDeckMetaJson, structurePagesToDeck, writeDeckArchive } from '@open-pencil/deck'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
@@ -29,14 +25,15 @@ export async function exportDeckFile(
   ck?: CanvasKit,
   renderer?: SkiaRenderer,
   pageId?: string,
-  renderHeadlessThumbnail = false
+  renderHeadlessThumbnail = false,
+  fileName?: string
 ): Promise<Uint8Array> {
   const figBytes = await exportFigFile(graph, ck, renderer, pageId, renderHeadlessThumbnail)
   const parsed = parseFigBuffer(
     figBytes.buffer.slice(figBytes.byteOffset, figBytes.byteOffset + figBytes.byteLength)
   )
 
-  const deckNodeChanges = structurePagesToDeck(parsed.nodeChanges)
+  const deckNodeChanges = structurePagesToDeck(parsed.nodeChanges, graph.deckTheme)
 
   await initCodec()
   let compiled: ReturnType<typeof getCompiledSchema>
@@ -87,7 +84,10 @@ export async function exportDeckFile(
     schemaDeflated,
     kiwiData,
     thumbnailPng,
-    metaJson: defaultDeckMetaJson('Untitled.deck'),
+    // Figma sizes the presentation from this, so it must describe every slide, not one.
+    metaJson: defaultDeckMetaJson(fileName ?? 'Untitled.deck', {
+      slideCount: graph.getPages().filter((page) => !page.internalOnly).length
+    }),
     images,
     figKiwiVersion: graph.figKiwiVersion ?? parsed.figKiwiVersion
   })

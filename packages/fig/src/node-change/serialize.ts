@@ -41,9 +41,23 @@ import {
 } from './export-node'
 import { exportTextData, fontVariationToKiwi } from './text-data-export'
 
+/**
+ * One record per line of the paragraph.
+ *
+ * Figma lays text out from these, so a line needs more than its type: emitting only
+ * `lineType` produced files whose frames rendered but whose text never appeared. The shape
+ * mirrors what Figma itself writes for plain text.
+ */
 function textLines(text: string): NonNullable<NodeChange['textData']>['lines'] {
   const lineCount = Math.max(1, text.split('\n').length)
-  return Array.from({ length: lineCount }, () => ({ lineType: 'PLAIN' }))
+  return Array.from({ length: lineCount }, () => ({
+    lineType: 'PLAIN',
+    styleId: 0,
+    indentationLevel: 0,
+    sourceDirectionality: 'AUTO',
+    listStartOffset: 0,
+    isFirstLineOfList: false
+  }))
 }
 
 function appendGlyphBlob(
