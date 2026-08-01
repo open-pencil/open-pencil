@@ -45,11 +45,11 @@ export function createPageViewportStore(ctx: EditorContext) {
 
   function restorePageViewport(pageId: string) {
     if (isBackdropLocked()) {
-      // Fixed chrome; zoom is re-applied by fitCurrentPageToViewport after switch
+      // Deck slides share one size, so the camera that fitted the previous slide already
+      // fits this one. Keeping it means the new slide is painted at the right size
+      // immediately; resetting to zoom 1 first showed a full-size slide for a frame
+      // before the re-fit landed. The re-fit that follows only refines it.
       ctx.state.pageColor = { ...DECK_CANVAS_BG_COLOR }
-      ctx.state.panX = 0
-      ctx.state.panY = 0
-      ctx.state.zoom = 1
       return
     }
 

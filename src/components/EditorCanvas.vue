@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, ref, type Component } from 'vue'
+import { computed, ref, type Component } from 'vue'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
@@ -26,6 +26,7 @@ import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
+import { usePanelResizing } from '@/app/shell/panel-resize'
 import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
 import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
@@ -42,19 +43,15 @@ const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 /**
- * Selection chrome is hidden while the canvas host is changing size.
+ * Selection chrome is hidden while a panel divider is being dragged.
  *
- * The overlay layer rebuilds only once the resize settles, so during a drag its handles
- * describe a canvas that no longer exists — boxes and size badges sitting away from the
- * thing they belong to. Hiding them is both more honest and cheaper than painting them
- * wrong; they return once the overlay has caught up.
- *
- * Slightly longer than the overlay's own settle window so they reappear against a
- * correctly sized layer rather than a stale one.
+ * The overlay layer rebuilds only once the drag ends, so mid-drag its boxes, handles and
+ * size badges describe a canvas that no longer exists. Hiding them is more honest than
+ * painting them wrong, and cheaper. Tied to the drag itself rather than to a timer after
+ * the last resize, so it is the release that brings them back, not a guess at when the
+ * pointer stopped.
  */
-const OVERLAY_RESTORE_MS = 180
-const isResizing = ref(false)
-let settleTimer: ReturnType<typeof setTimeout> | null = null
+const isResizing = usePanelResizing()
 
 /**
  * Side panels and window resizes shrink the canvas host. Decks are always fit, so re-fit
@@ -63,17 +60,7 @@ let settleTimer: ReturnType<typeof setTimeout> | null = null
  */
 function refitOnResize() {
   if (documentKindRules(store.state.documentKind).autoFitOnResize) store.zoomToFit()
-  isResizing.value = true
-  if (settleTimer) clearTimeout(settleTimer)
-  settleTimer = setTimeout(() => {
-    settleTimer = null
-    isResizing.value = false
-  }, OVERLAY_RESTORE_MS)
 }
-
-onScopeDispose(() => {
-  if (settleTimer) clearTimeout(settleTimer)
-})
 
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',

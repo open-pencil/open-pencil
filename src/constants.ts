@@ -3,6 +3,11 @@ import { IS_BROWSER, IS_TAURI } from '@open-pencil/core/constants'
 import ACP_DESIGN_CONTEXT from '@/app/ai/acp/design-context.md'
 
 /** Slide filmstrip thumbnail width clamp (CSS px) — Figma-like min/max. */
+/** The slides rail holds fixed-width thumbnails, so it is capped in pixels. */
+export const LEFT_PANEL_MAX_WIDTH = 310
+/** Fallback share of the window, used until the splitter has been measured. */
+export const LEFT_PANEL_MAX_PERCENT = 30
+
 export const SLIDE_THUMB_MIN_WIDTH = 168
 export const SLIDE_THUMB_MAX_WIDTH = 288
 /** Space reserved for the slide index column beside the thumb. */

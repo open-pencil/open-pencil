@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-import { useDebounceFn, useEventListener, useUrlSearchParams } from '@vueuse/core'
+import {
+  computed,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  provide,
+  ref,
+  useTemplateRef,
+  watch
+} from 'vue'
+import { useDebounceFn, useElementSize, useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
@@ -24,6 +33,8 @@ import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createTab, activeTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
 import { takeRestorableDocument, useSessionPersistence } from '@/app/document/session/use'
+import { beginPanelResize, endPanelResize } from '@/app/shell/panel-resize'
+import { LEFT_PANEL_MAX_PERCENT, LEFT_PANEL_MAX_WIDTH } from '@/constants'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -75,6 +86,11 @@ useMenu()
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
 
+// A divider drag continues even if the pointer leaves the handle, so the release is
+// watched on the window rather than on the handle itself.
+useEventListener(window, 'pointerup', endPanelResize)
+useEventListener(window, 'pointercancel', endPanelResize)
+
 useEventListener(
   document,
   'wheel',
@@ -94,6 +110,23 @@ const isSlidesView = computed(
 /** Design vs slides layouts are stored separately; slides defaults right panel to min (10). */
 const panelLayout = computed(() => (isSlidesView.value ? loadSlidesLayout() : loadEditorLayout()))
 const splitterKey = computed(() => `${activeTab.value?.id ?? 'tab'}-${store.state.documentKind}`)
+
+/**
+ * The slides rail is capped in pixels, not as a share of the window: it holds fixed-width
+ * thumbnails, so on a wide display a percentage cap just leaves it fat and empty. The
+ * splitter takes percentages, so convert against its live width.
+ */
+const splitterGroup = useTemplateRef<{ $el?: HTMLElement } | HTMLElement>('splitterGroup')
+const splitterEl = computed<HTMLElement | null>(() => {
+  const value = splitterGroup.value
+  if (!value) return null
+  return value instanceof HTMLElement ? value : (value.$el ?? null)
+})
+const { width: splitterWidth } = useElementSize(splitterEl)
+const layersMaxSize = computed(() => {
+  if (splitterWidth.value <= 0) return LEFT_PANEL_MAX_PERCENT
+  return Math.min(LEFT_PANEL_MAX_PERCENT, (LEFT_PANEL_MAX_WIDTH / splitterWidth.value) * 100)
+})
 
 /**
  * Splitter drags emit continuously; localStorage writes are synchronous, so persisting on
@@ -170,6 +203,7 @@ onUnmounted(() => {
     <!-- Desktop layout -->
     <SplitterGroup
       v-if="!isMobile && showChrome && store.state.showUI"
+      ref="splitterGroup"
       :key="splitterKey"
       direction="horizontal"
       class="flex-1 overflow-hidden"
@@ -179,7 +213,7 @@ onUnmounted(() => {
         id="layers"
         :default-size="panelLayout[0]"
         :min-size="10"
-        :max-size="30"
+        :max-size="layersMaxSize"
         class="flex"
       >
         <LayersPanel />
@@ -187,6 +221,7 @@ onUnmounted(() => {
       <SplitterResizeHandle
         data-test-id="left-splitter-handle"
         class="group relative z-10 -mx-1 w-2 cursor-col-resize"
+        @pointerdown="beginPanelResize"
       >
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
@@ -196,7 +231,10 @@ onUnmounted(() => {
           <Toolbar />
         </div>
       </SplitterPanel>
-      <SplitterResizeHandle class="group relative z-10 -mx-1 w-2 cursor-col-resize">
+      <SplitterResizeHandle
+        class="group relative z-10 -mx-1 w-2 cursor-col-resize"
+        @pointerdown="beginPanelResize"
+      >
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
       <SplitterPanel
