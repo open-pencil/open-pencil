@@ -104,10 +104,18 @@ export function validateVectorNetwork(value: unknown): string[] {
   const errors: string[] = []
   validateVertices(value.vertices, errors)
   validateSegments(value.segments, value.vertices.length, errors)
-  if (Array.isArray(value.regions)) {
-    validateRegions(value.regions, value.segments.length, errors)
-  } else {
-    errors.push('regions must be an array')
+  const typedSegments = value.segments.filter(isSegmentRecord)
+  if (value.regions !== undefined) {
+    if (Array.isArray(value.regions)) {
+      validateRegions(
+        value.regions,
+        value.segments.length,
+        typedSegments.length === value.segments.length ? typedSegments : null,
+        errors
+      )
+    } else {
+      errors.push('regions must be an array when provided')
+    }
   }
   return errors
 }
@@ -154,7 +162,12 @@ function validateSegmentTangents(
   }
 }
 
-function validateRegions(regions: unknown[], segmentCount: number, errors: string[]): void {
+function validateRegions(
+  regions: unknown[],
+  segmentCount: number,
+  segments: Array<Record<'start' | 'end', number>> | null,
+  errors: string[]
+): void {
   for (let regionIndex = 0; regionIndex < regions.length; regionIndex++) {
     const region = regions[regionIndex]
     if (!isRecord(region) || !Array.isArray(region.loops)) {
@@ -164,7 +177,10 @@ function validateRegions(regions: unknown[], segmentCount: number, errors: strin
     if (region.windingRule !== 'NONZERO' && region.windingRule !== 'EVENODD') {
       errors.push(`region[${regionIndex}]: windingRule must be NONZERO or EVENODD`)
     }
-    validateRegionLoops(region.loops, regionIndex, segmentCount, errors)
+    if (region.loops.length === 0) {
+      errors.push(`region[${regionIndex}]: loops must contain at least one loop`)
+    }
+    validateRegionLoops(region.loops, regionIndex, segmentCount, segments, errors)
   }
 }
 
@@ -172,6 +188,7 @@ function validateRegionLoops(
   loops: unknown[],
   regionIndex: number,
   segmentCount: number,
+  segments: Array<Record<'start' | 'end', number>> | null,
   errors: string[]
 ): void {
   for (let loopIndex = 0; loopIndex < loops.length; loopIndex++) {
@@ -180,14 +197,58 @@ function validateRegionLoops(
       errors.push(`region[${regionIndex}].loop[${loopIndex}] must be an array`)
       continue
     }
+    if (loop.length === 0) {
+      errors.push(`region[${regionIndex}].loop[${loopIndex}] must contain at least one segment`)
+      continue
+    }
+
+    const segmentIndices: number[] = []
     for (const segmentIndex of loop) {
       if (!isInteger(segmentIndex) || segmentIndex < 0 || segmentIndex >= segmentCount) {
         errors.push(
           `region[${regionIndex}].loop[${loopIndex}]: segment index ${String(segmentIndex)} out of range`
         )
+      } else {
+        segmentIndices.push(segmentIndex)
       }
     }
+    if (segmentIndices.length !== loop.length) continue
+    if (new Set(segmentIndices).size !== segmentIndices.length) {
+      errors.push(`region[${regionIndex}].loop[${loopIndex}] must not repeat segments`)
+      continue
+    }
+    if (segments && !formsContinuousChain(segmentIndices, segments)) {
+      errors.push(`region[${regionIndex}].loop[${loopIndex}] segments must form a continuous chain`)
+    }
   }
+}
+
+function formsContinuousChain(
+  indices: number[],
+  segments: Array<Record<'start' | 'end', number>>
+): boolean {
+  if (indices.length <= 1) return true
+  const first = segments[indices[0]]
+  return followsChain(indices, segments, first.end) || followsChain(indices, segments, first.start)
+}
+
+function followsChain(
+  indices: number[],
+  segments: Array<Record<'start' | 'end', number>>,
+  initialEnd: number
+): boolean {
+  let current = initialEnd
+  for (let index = 1; index < indices.length; index++) {
+    const segment = segments[indices[index]]
+    if (segment.start === current) current = segment.end
+    else if (segment.end === current) current = segment.start
+    else return false
+  }
+  return true
+}
+
+function isSegmentRecord(value: unknown): value is Record<'start' | 'end', number> {
+  return isRecord(value) && isInteger(value.start) && isInteger(value.end)
 }
 
 function isFiniteVector(value: unknown): value is Vector {
@@ -208,12 +269,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
+export type NormalizableVectorNetwork = Omit<VectorNetwork, 'regions'> & {
+  regions?: VectorNetwork['regions']
+}
+
 /**
- * Ensure every segment has tangentStart/tangentEnd.
+ * Ensure every segment has tangentStart/tangentEnd and a regions array.
  * Missing tangents default to {x:0, y:0} (straight line segments).
  * Use at system boundaries where input may come from JSON/MCP.
  */
-export function normalizeVectorNetwork(vn: VectorNetwork): VectorNetwork {
+export function normalizeVectorNetwork(vn: NormalizableVectorNetwork): VectorNetwork {
   const ZERO: Vector = { x: 0, y: 0 }
   return {
     vertices: vn.vertices,
@@ -223,6 +288,6 @@ export function normalizeVectorNetwork(vn: VectorNetwork): VectorNetwork {
       tangentStart: (s as Partial<VectorSegment>).tangentStart ?? { ...ZERO },
       tangentEnd: (s as Partial<VectorSegment>).tangentEnd ?? { ...ZERO }
     })),
-    regions: vn.regions
+    regions: vn.regions ?? []
   }
 }

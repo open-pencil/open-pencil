@@ -75,6 +75,8 @@ export interface GeometryPath {
   commandsBlob: Uint8Array
   /** Resolved paints for geometry using a format-specific style override. */
   fills?: Fill[]
+  /** Shared fill style attached to this geometry region, when available. */
+  fillStyleId?: string
 }
 
 export type NodeType =
@@ -438,6 +440,7 @@ export interface SceneNode {
   layoutAlignSelf: LayoutAlignSelf
 
   vectorNetwork: VectorNetwork | null
+  handleMirroring: HandleMirroring
   booleanOperation?: 'UNION' | 'SUBTRACT' | 'INTERSECT' | 'EXCLUDE'
   fillGeometry: GeometryPath[]
   strokeGeometry: GeometryPath[]

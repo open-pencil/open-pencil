@@ -20,7 +20,11 @@ import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
 import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
 import { installVariableModeNodeProxyAccessors } from './accessors/variables'
-import { installVectorNodeProxyAccessors, type FigmaVectorPath } from './accessors/vector'
+import {
+  installVectorNodeProxyAccessors,
+  type FigmaVectorNetwork,
+  type FigmaVectorPath
+} from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import type { FigmaFontName } from './fonts'
 import * as PluginData from './plugin-data'
@@ -105,7 +109,10 @@ export class FigmaNodeProxy {
   declare maxWidth: number | null
   declare minHeight: number | null
   declare maxHeight: number | null
-  declare readonly vectorPaths: readonly FigmaVectorPath[]
+  declare vectorPaths: readonly FigmaVectorPath[]
+  declare vectorNetwork: FigmaVectorNetwork
+  declare setVectorNetworkAsync: (vectorNetwork: FigmaVectorNetwork) => Promise<void>
+  declare handleMirroring: SceneNode['handleMirroring'] | typeof MIXED
   declare readonly explicitVariableModes: Readonly<Record<string, string>>
   declare readonly resolvedVariableModes: Readonly<Record<string, string>>
 
@@ -113,6 +120,13 @@ export class FigmaNodeProxy {
     this[INTERNAL_ID] = id
     this[INTERNAL_GRAPH] = graph
     this[INTERNAL_API] = api
+    if (graph.getNode(id)?.type === 'VECTOR') {
+      installVectorNodeProxyAccessors(
+        this,
+        { id: INTERNAL_ID, graph: INTERNAL_GRAPH, api: INTERNAL_API },
+        MIXED
+      )
+    }
   }
 
   private _raw(): SceneNode {
@@ -559,4 +573,3 @@ const proxyInternals = {
 
 installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installVariableModeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
-installVectorNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)

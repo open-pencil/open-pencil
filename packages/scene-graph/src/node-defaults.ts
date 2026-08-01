@@ -90,6 +90,7 @@ export function createDefaultNode(
     layoutGrow: 0,
     layoutAlignSelf: 'AUTO',
     vectorNetwork: null,
+    handleMirroring: 'NONE',
     fillGeometry: [],
     strokeGeometry: [],
     arcData: null,
