@@ -39,18 +39,38 @@ import type { SVGNode } from './node'
 function vectorShapeElements(
   node: SceneNode,
   common: Record<string, string | number | undefined>,
-  strokeAttrs: Record<string, string | number | undefined>
+  strokeAttrs: Record<string, string | number | undefined>,
+  ctx: SVGExportContext,
+  fallbackFills?: Fill[]
 ): SVGNode[] {
   const elements: SVGNode[] = []
   if (node.fillGeometry.length > 0) {
     for (const geo of node.fillGeometry) {
       const d = geometryBlobToSVGPath(geo.commandsBlob)
-      if (d) {
+      if (!d) continue
+      const attrs = {
+        d,
+        'fill-rule': geo.windingRule === 'EVENODD' ? 'evenodd' : undefined,
+        ...common
+      }
+      const pathFills = geo.fills?.length ? geo.fills : fallbackFills
+      if (!pathFills) {
+        elements.push(svg('path', attrs))
+        continue
+      }
+      const visibleFills = pathFills.filter((fill) => fill.visible)
+      if (visibleFills.length === 0) {
+        elements.push(svg('path', { ...attrs, fill: 'none' }))
+        continue
+      }
+      for (const [index, fill] of visibleFills.entries()) {
+        const fillAttr = resolveFill(fill, node, ctx)
+        if (!fillAttr) continue
         elements.push(
           svg('path', {
-            d,
-            'fill-rule': geo.windingRule === 'EVENODD' ? 'evenodd' : undefined,
-            ...common
+            ...attrs,
+            fill: fillAttr,
+            stroke: index === visibleFills.length - 1 ? common.stroke : 'none'
           })
         )
       }
@@ -84,7 +104,8 @@ function vectorShapeElements(
 function nodeShapeElements(
   node: SceneNode,
   fillAttr: string | null,
-  strokeAttrs: Record<string, string | number | undefined>
+  strokeAttrs: Record<string, string | number | undefined>,
+  ctx: SVGExportContext
 ): SVGNode[] {
   const common: Record<string, string | number | undefined> = {
     fill: fillAttr ?? 'none',
@@ -124,7 +145,7 @@ function nodeShapeElements(
       return [svg('polygon', { points: makePolygonPoints(node), ...common })]
 
     case 'VECTOR':
-      return vectorShapeElements(node, common, strokeAttrs)
+      return vectorShapeElements(node, common, strokeAttrs, ctx)
 
     default: {
       if (hasRadius(node)) {
@@ -311,6 +332,10 @@ function buildSVGStrokeAttrs(
   return attrs
 }
 
+function hasPathLevelFills(node: SceneNode): boolean {
+  return node.type === 'VECTOR' && node.fillGeometry.some((geometry) => geometry.fills?.length)
+}
+
 function buildShapeChildren(
   node: SceneNode,
   visibleFills: Fill[],
@@ -319,6 +344,16 @@ function buildShapeChildren(
   visibleStrokeCount: number,
   ctx: SVGExportContext
 ): SVGNode[] {
+  if (hasPathLevelFills(node)) {
+    return vectorShapeElements(
+      node,
+      { fill: fillAttr ?? 'none', ...strokeAttrs },
+      strokeAttrs,
+      ctx,
+      visibleFills
+    )
+  }
+
   if (visibleFills.length > 1) {
     const elements: SVGNode[] = []
     for (const fill of visibleFills) {
@@ -328,7 +363,8 @@ function buildShapeChildren(
           ...nodeShapeElements(
             node,
             ref,
-            fill === visibleFills[visibleFills.length - 1] ? strokeAttrs : {}
+            fill === visibleFills[visibleFills.length - 1] ? strokeAttrs : {},
+            ctx
           )
         )
       }
@@ -338,7 +374,7 @@ function buildShapeChildren(
 
   const hasFillOrStroke = fillAttr || visibleStrokeCount > 0
   if (hasFillOrStroke && !isGroupLike(node)) {
-    return nodeShapeElements(node, fillAttr, strokeAttrs)
+    return nodeShapeElements(node, fillAttr, strokeAttrs, ctx)
   }
 
   return []
@@ -358,7 +394,10 @@ function renderNode(node: SceneNode, ctx: SVGExportContext): SVGNode | null {
 
   const visibleFills = node.fills.filter((f) => f.visible)
   const visibleStrokes = node.strokes.filter((s) => s.visible)
-  const fillAttr = visibleFills.length > 0 ? resolveFill(visibleFills[0], node, ctx) : null
+  const fillAttr =
+    visibleFills.length > 0 && !hasPathLevelFills(node)
+      ? resolveFill(visibleFills[0], node, ctx)
+      : null
   const strokeAttrs = buildSVGStrokeAttrs(visibleStrokes, ctx.colorSpace)
 
   const children: (SVGNode | null)[] = buildShapeChildren(

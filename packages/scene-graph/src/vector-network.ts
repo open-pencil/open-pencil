@@ -4,6 +4,41 @@ import type { Mat3 } from './matrix'
 import type { Vector } from './primitives'
 import type { VectorNetwork, VectorSegment } from './types'
 
+/** Concatenate vector networks while preserving independent geometry. */
+export function mergeVectorNetworks(networks: readonly VectorNetwork[]): VectorNetwork {
+  const vertices: VectorNetwork['vertices'] = []
+  const segments: VectorNetwork['segments'] = []
+  const regions: VectorNetwork['regions'] = []
+  let vertexOffset = 0
+  let segmentOffset = 0
+
+  for (const network of networks) {
+    for (const vertex of network.vertices) vertices.push({ ...vertex })
+    for (const segment of network.segments) {
+      segments.push({
+        ...segment,
+        start: segment.start + vertexOffset,
+        end: segment.end + vertexOffset,
+        tangentStart: { ...segment.tangentStart },
+        tangentEnd: { ...segment.tangentEnd }
+      })
+    }
+    for (const region of network.regions) {
+      const loops: number[][] = []
+      for (const loop of region.loops) {
+        const shifted: number[] = []
+        for (const segmentIndex of loop) shifted.push(segmentIndex + segmentOffset)
+        loops.push(shifted)
+      }
+      regions.push({ windingRule: region.windingRule, loops })
+    }
+    vertexOffset += network.vertices.length
+    segmentOffset += network.segments.length
+  }
+
+  return { vertices, segments, regions }
+}
+
 /**
  * Map a VectorNetwork through an affine matrix: vertices as points,
  * tangents as direction vectors (linear part only, no translation).

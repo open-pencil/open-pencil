@@ -1,6 +1,8 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
-import { FigmaAPI, SceneGraph } from '@open-pencil/core'
+import { FigmaAPI, renderNodesToSVG, SceneGraph } from '@open-pencil/core'
 import { importSvg } from '@open-pencil/core/tools'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
@@ -35,18 +37,82 @@ describe('import_svg', () => {
     ).toBeGreaterThan(0)
   })
 
-  test('imports multiple shapes', async () => {
+  test('flattens compatible filled shapes into one vector', async () => {
     const result = (await importSvg.execute(figma, {
       svg: `<svg viewBox="0 0 100 100">
-        <rect x="10" y="10" width="30" height="30"/>
-        <circle cx="70" cy="30" r="20"/>
-        <path d="M10 70 L90 70"/>
+        <rect x="0" y="0" width="50" height="50" fill="#ff0000"/>
+        <rect x="50" y="0" width="50" height="50" fill="#00ff00"/>
+        <rect x="0" y="50" width="100" height="50" fill="#0000ff"/>
       </svg>`
     })) as { id: string }
 
     const children = graph.getChildren(result.id)
-    expect(children.length).toBe(3)
-    expect(children.every((c) => c.type === 'VECTOR')).toBe(true)
+    expect(children).toHaveLength(1)
+    const vector = expectDefined(children[0])
+    expect(vector.type).toBe('VECTOR')
+    expect(expectDefined(vector.vectorNetwork).regions).toHaveLength(3)
+    expect(vector.fillGeometry).toHaveLength(3)
+    expect(expectDefined(vector.fillGeometry[0]?.fills?.[0]).color.r).toBeCloseTo(1)
+    expect(expectDefined(vector.fillGeometry[1]?.fills?.[0]).color.g).toBeCloseTo(1)
+    expect(expectDefined(vector.fillGeometry[2]?.fills?.[0]).color.b).toBeCloseTo(1)
+    expect(vector.fillGeometry.every(({ commandsBlob }) => commandsBlob.length > 0)).toBe(true)
+
+    const page = expectDefined(graph.getPages()[0])
+    const exported = expectDefined(renderNodesToSVG(graph, page.id, [result.id]))
+    expect(exported.match(/fill="#FF0000"/g)).toHaveLength(1)
+    expect(exported.match(/fill="#00FF00"/g)).toHaveLength(1)
+    expect(exported.match(/fill="#0000FF"/g)).toHaveLength(1)
+  })
+
+  test('flattens a real multi-path provider SVG', async () => {
+    const svg = readFileSync(
+      join(process.cwd(), 'tests/fixtures/vectorize/euro_shield.recraft.svg'),
+      'utf8'
+    )
+    const result = (await importSvg.execute(figma, { svg })) as { id: string }
+
+    const vector = expectDefined(graph.getChildren(result.id)[0])
+    const network = expectDefined(vector.vectorNetwork)
+    expect(graph.getChildren(result.id)).toHaveLength(1)
+    expect(network.regions.length).toBeGreaterThan(10)
+    expect(vector.fillGeometry).toHaveLength(network.regions.length)
+  })
+
+  test('preserves paint order around stroked paths', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg viewBox="0 0 100 100">
+        <rect x="0" y="0" width="20" height="20" fill="#ff0000"/>
+        <rect x="20" y="0" width="20" height="20" fill="#ff8800"/>
+        <path d="M0 30H100" fill="none" stroke="#000000"/>
+        <rect x="0" y="40" width="20" height="20" fill="#0000ff"/>
+        <rect x="20" y="40" width="20" height="20" fill="#00ff00"/>
+      </svg>`
+    })) as { id: string }
+
+    const children = graph.getChildren(result.id)
+    expect(children).toHaveLength(3)
+    expect(expectDefined(children[0]).fillGeometry).toHaveLength(2)
+    expect(expectDefined(children[1]).strokes).toHaveLength(1)
+    expect(expectDefined(children[2]).fillGeometry).toHaveLength(2)
+  })
+
+  test('remaps path gradients into flattened vector bounds', async () => {
+    const result = (await importSvg.execute(figma, {
+      svg: `<svg viewBox="0 0 100 50"><defs><linearGradient id="g"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#fff"/></linearGradient></defs><rect width="50" height="50" fill="url(#g)"/><rect x="50" width="50" height="50" fill="url(#g)"/></svg>`
+    })) as { id: string }
+
+    const vector = expectDefined(graph.getChildren(result.id)[0])
+    const left = expectDefined(vector.fillGeometry[0]?.fills?.[0]?.gradientTransform)
+    const right = expectDefined(vector.fillGeometry[1]?.fills?.[0]?.gradientTransform)
+    expect(left.m00).toBeCloseTo(0.5)
+    expect(left.m02).toBeCloseTo(0)
+    expect(right.m00).toBeCloseTo(0.5)
+    expect(right.m02).toBeCloseTo(0.5)
+
+    const page = expectDefined(graph.getPages()[0])
+    const exported = expectDefined(renderNodesToSVG(graph, page.id, [result.id]))
+    expect(exported.match(/<linearGradient/g)).toHaveLength(2)
+    expect(exported.match(/fill="url\(#/g)).toHaveLength(2)
   })
 
   test('respects viewBox dimensions', async () => {
@@ -146,7 +212,8 @@ describe('import_svg', () => {
     })) as { id: string }
 
     const children = graph.getChildren(result.id)
-    expect(children.length).toBe(2)
+    expect(children).toHaveLength(2)
+    expect(children.every(({ vectorNetwork }) => vectorNetwork !== null)).toBe(true)
   })
 
   test('applies nested transforms through the XML tree', async () => {

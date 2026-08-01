@@ -7,7 +7,7 @@ async function dispatchMixedFileDrop() {
     const bounds = canvas.getBoundingClientRect()
     const svg = new File(
       [
-        '<svg width="40" height="20" viewBox="0 0 40 20"><rect width="40" height="20" fill="#f00"/></svg>'
+        '<svg width="40" height="20" viewBox="0 0 40 20"><rect width="20" height="20" fill="#f00"/><rect x="20" width="20" height="20" fill="#0c8"/></svg>'
       ],
       'mark.svg'
     )
@@ -72,6 +72,8 @@ test('mixed SVG and raster drops share placement, selection, and undo', async ()
     selected: 2,
     undoLabel: 'Place files'
   })
+  await editor.canvas.waitForRender()
+  expect(await editor.canvas.canvas.screenshot()).toMatchSnapshot('dropped-svg-multicolor.png')
 
   await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
   await expect

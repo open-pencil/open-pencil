@@ -299,9 +299,10 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'MiniMax',
     keyPlaceholder: 'API key',
     keyURL: 'https://platform.minimax.io/user-center/basic-information/interface-key',
-    defaultModel: 'MiniMax-M2.7',
+    defaultModel: 'MiniMax-M3',
     models: [
-      { id: 'MiniMax-M2.7', name: 'MiniMax-M2.7', tag: 'Best' },
+      { id: 'MiniMax-M3', name: 'MiniMax-M3', tag: 'Best' },
+      { id: 'MiniMax-M2.7', name: 'MiniMax-M2.7' },
       { id: 'MiniMax-M2.7-highspeed', name: 'MiniMax-M2.7-highspeed', tag: 'Fast' },
       { id: 'MiniMax-M2.5', name: 'MiniMax-M2.5' },
       { id: 'MiniMax-M2.5-highspeed', name: 'MiniMax-M2.5 Highspeed', tag: 'Fast' },

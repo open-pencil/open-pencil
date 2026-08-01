@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { Size } from '@open-pencil/scene-graph/primitives'
 
-import { createVectorFrameChildren } from '#core/vector/vectorize/placement'
+import { createFlattenedVectorFrameChildren } from '#core/vector/vectorize/placement'
 import { svgToVectorPaths, type SVGVectorizeResult } from '#core/vector/vectorize/svg/to-vectors'
 
 import { parseSVGSize } from './metadata'
@@ -47,7 +47,7 @@ export function createSVGNodesFromImport(
   })
 
   try {
-    createVectorFrameChildren(graph, frame.id, data, {
+    createFlattenedVectorFrameChildren(graph, frame.id, data, {
       x: frame.x,
       y: frame.y,
       width: frame.width,
