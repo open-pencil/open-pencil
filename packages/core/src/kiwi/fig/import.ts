@@ -1,5 +1,6 @@
 import { isNotNil } from 'es-toolkit/predicate'
 
+import { pickCarriedSlideFields } from '@open-pencil/deck'
 import { populateAndApplyOverrides } from '@open-pencil/fig/instance-overrides'
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import {
@@ -35,6 +36,12 @@ function applyImportedCanvasMetadata(
   page.source.fig.rawNodeFields.strokeJoin = canvasNc.strokeJoin
   page.source.fig.rawNodeFields.strokeWeight = canvasNc.strokeWeight
   if (canvasNc.pageType) page.source.fig.rawNodeFields.pageType = canvasNc.pageType
+  // A deck slide arrives as a page, carrying fields the scene graph does not model —
+  // speaker notes and slide transitions among them. They only survive the round-trip if
+  // they are kept here; this whitelist is where they were being dropped.
+  for (const [field, value] of Object.entries(pickCarriedSlideFields(canvasNc))) {
+    if (value !== undefined) page.source.fig.rawNodeFields[field] = structuredClone(value)
+  }
 }
 
 function applyImportedDocumentMetadata(graph: SceneGraph, docNc: NodeChange | undefined) {

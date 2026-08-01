@@ -1,7 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
-import { restructureDeckNodeChanges, structurePagesToDeck } from '@open-pencil/deck'
+import { unzipSync } from 'fflate'
+
+import { exportDeckFile } from '@open-pencil/core/io/formats/deck'
+import { importNodeChanges } from '@open-pencil/core/kiwi/fig/import'
+import {
+  normalizeDeckCanvasPrelude,
+  restructureDeckNodeChanges,
+  structurePagesToDeck
+} from '@open-pencil/deck'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
 
 const NOTE = 'Remember to mention the exposure curve here.'
 
@@ -72,6 +81,22 @@ describe('carried slide fields', () => {
     for (const canvas of exported.filter((nc) => nc.type === 'CANVAS')) {
       expect(canvas.slideSpeakerNotes).toBeUndefined()
     }
+  })
+
+  test('notes survive the whole pipeline, not just the transforms', async () => {
+    // Both transforms passed on their own while notes were still lost end to end: the
+    // graph boundary keeps only a whitelist of raw canvas fields, on import and on export.
+    const restructured = restructureDeckNodeChanges(deckWithOneSlide({ slideSpeakerNotes: NOTE }))
+    const graph = importNodeChanges(restructured, [], new Map())
+
+    const page = graph.getPages()[0]
+    expect(page?.source.fig.rawNodeFields.slideSpeakerNotes).toBe(NOTE)
+
+    const bytes = await exportDeckFile(graph, undefined, undefined, page?.id, false, 'notes.deck')
+    const decoded = decodeFigKiwiCanvas(normalizeDeckCanvasPrelude(unzipSync(bytes)['canvas.fig']))
+    const slide = decoded.nodeChanges.find((nc) => nc.type === 'SLIDE')
+
+    expect(slide?.slideSpeakerNotes).toBe(NOTE)
   })
 
   test('a slide without notes stays without them', () => {

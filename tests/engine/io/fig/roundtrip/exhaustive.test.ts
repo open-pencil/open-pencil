@@ -64,11 +64,11 @@ const SPECS: FixtureSpec[] = [
     thumbnailHeight: 239,
     imageCount: 3,
     figKiwiVersion: 101,
-    // +17 bytes vs. the previous golden value: each text line now carries its full record
-    // (styleId, indentationLevel, sourceDirectionality, listStartOffset, isFirstLineOfList)
-    // rather than lineType alone, which Figma needs in order to lay the text out.
-    g1ExportSize: 596990,
-    g2ExportSize: 596990
+    // Grown twice against the original 596973. First +17 bytes: each text line now carries
+    // its full record rather than lineType alone, which Figma needs to lay text out. Then
+    // +23: a page's editInfo now survives the round-trip instead of being dropped.
+    g1ExportSize: 597013,
+    g2ExportSize: 597013
   }
 ]
 

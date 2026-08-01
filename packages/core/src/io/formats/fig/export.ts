@@ -2,6 +2,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 
+import { CARRIED_SLIDE_FIELDS } from '@open-pencil/deck'
 import { compressFigDataSync } from '@open-pencil/fig'
 import { buildComponentPropIndex, stringToGuid } from '@open-pencil/fig/node-change'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
@@ -258,6 +259,13 @@ function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange
   if (typeof strokeJoin === 'string') canvasNc.strokeJoin = strokeJoin
   const strokeWeight = page.source.fig.rawNodeFields.strokeWeight
   if (typeof strokeWeight === 'number') canvasNc.strokeWeight = strokeWeight
+  // A deck page is a slide in disguise: hand back the fields it arrived with, so
+  // structurePagesToDeck can restore them onto the SLIDE. Plain .fig pages benefit too —
+  // they commonly carry editInfo, which used to be dropped on every round-trip.
+  for (const field of CARRIED_SLIDE_FIELDS) {
+    const value = page.source.fig.rawNodeFields[field]
+    if (value !== undefined) Object.assign(canvasNc, { [field]: structuredClone(value) })
+  }
 }
 
 function buildCanvasEntries(
