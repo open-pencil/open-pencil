@@ -22,7 +22,8 @@ import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
+import { createTab, activeTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
+import { takeRestorableDocument, useSessionPersistence } from '@/app/document/session/use'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -46,9 +47,26 @@ const store = useEditorStore()
 const { dialogs } = useI18n()
 const { isMobile } = useViewportKind()
 
+const isBlankStart = createdInitialTab && !route.meta.demo && !('test' in params)
+
 if (createdInitialTab && route.meta.demo && !('test' in params)) {
   void createDemoShapes(firstTab.store)
 }
+
+// Bring back whatever was open when the tab last closed, so a reload does not silently
+// discard it. Restores through the normal open path, so the document kind, fit and file
+// watching all behave as if it had just been opened by hand.
+if (isBlankStart) {
+  void takeRestorableDocument()
+    .then(async (restorable) => {
+      if (!restorable) return undefined
+      await openFileInNewTab(restorable.file, restorable.handle ?? undefined)
+      return undefined
+    })
+    .catch((error: unknown) => console.warn('[session] could not restore the last document', error))
+}
+
+useSessionPersistence()
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()

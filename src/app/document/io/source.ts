@@ -146,6 +146,8 @@ export function createDocumentSourceActions({
   }
 
   return {
+    /** Serialise the open document in its own native format (.fig or .deck). */
+    exportNativeDocument: buildNativeFile,
     setDocumentSource,
     setStorageDocumentSource,
     setPlannedFilePath,

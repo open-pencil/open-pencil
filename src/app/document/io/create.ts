@@ -78,6 +78,7 @@ export function createDocumentIOActions(
     openFigFile,
     openDOMFile,
     importDOMText,
+    exportNativeDocument: sourceActions.exportNativeDocument,
     saveFigFile: sourceActions.saveFigFile,
     saveFigFileAs: sourceActions.saveFigFileAs
   }
