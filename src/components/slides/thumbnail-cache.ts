@@ -7,13 +7,13 @@ import { readStoredThumbnail, writeStoredThumbnail } from '@/components/slides/t
  * them lazily as they scroll into view — so without a cache, every scroll back over a slide
  * pays for it again.
  *
- * Two layers, keyed differently on purpose:
+ * Both layers are keyed by document and page. The scene version deliberately plays no part
+ * in the key: it is document-global, so putting it there meant one edit invalidated every
+ * slide's thumbnail and the whole filmstrip re-rendered. It is also a runtime counter that
+ * resets when a document is reopened, so it could never match across sessions anyway.
  *
- * - In memory, by document, page and scene version. Within a session the scene version is
- *   a meaningful counter, so an edit supersedes the entry with no explicit invalidation.
- * - On disk, by document and page only. The scene version is a runtime counter that resets
- *   when a document is reopened, so including it would guarantee a miss on every load, and
- *   comparing it across sessions cannot tell whether the content actually changed.
+ * Freshness is the caller's decision instead: it knows which page was edited and asks for
+ * that one to be re-rendered.
  *
  * A stored thumbnail is therefore shown immediately but treated as possibly stale: the
  * caller gets it at once and a fresh render follows in the background. That is what makes a
@@ -25,11 +25,7 @@ const inFlight = new Map<string, Promise<Blob | null>>()
 /** Enough for a long deck's worth of slides without holding every version ever rendered. */
 const MAX_ENTRIES = 120
 
-function memoryKey(documentId: string, pageId: string, sceneVersion: number): string {
-  return `${documentId}:${pageId}:${sceneVersion}`
-}
-
-function storageKey(documentId: string, pageId: string): string {
+function keyFor(documentId: string, pageId: string): string {
   return `${documentId}:${pageId}`
 }
 
@@ -77,23 +73,29 @@ function renderAndStore(
 export async function getSlideThumbnail(
   documentId: string,
   pageId: string,
-  sceneVersion: number,
-  render: () => Promise<Blob | null>
+  render: () => Promise<Blob | null>,
+  { stale = false }: { stale?: boolean } = {}
 ): Promise<SlideThumbnailResult> {
-  const key = memoryKey(documentId, pageId, sceneVersion)
+  const key = keyFor(documentId, pageId)
+
+  if (stale) {
+    // This slide was just edited: the cached image is known to be out of date.
+    cache.delete(key)
+    return { blob: await renderAndStore(key, key, render), refresh: null }
+  }
+
   const cached = cache.get(key)
   if (cached) return { blob: cached, refresh: null }
 
   const pending = inFlight.get(key)
   if (pending) return { blob: await pending, refresh: null }
 
-  const stored = storageKey(documentId, pageId)
-  const persisted = await readStoredThumbnail(stored)
+  const persisted = await readStoredThumbnail(key)
   if (persisted) {
-    // Show it now, and correct it if the slide has changed since it was stored.
+    // Show it now, and correct it in the background in case it predates an edit.
     remember(key, persisted)
-    return { blob: persisted, refresh: renderAndStore(key, stored, render) }
+    return { blob: persisted, refresh: renderAndStore(key, key, render) }
   }
 
-  return { blob: await renderAndStore(key, stored, render), refresh: null }
+  return { blob: await renderAndStore(key, key, render), refresh: null }
 }
