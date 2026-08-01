@@ -5,6 +5,9 @@ import { RULER_SIZE, ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/
 import { documentKindRules } from './document-kind'
 import type { EditorContext } from './types'
 
+/** World-space breathing room zoomToBounds leaves around fitted content. */
+const VIEWPORT_FIT_PADDING = 80
+
 function clamp(value: number, min: number, max: number): number {
   // A degenerate range means the artboard is smaller than the viewport on this axis.
   return min > max ? value : Math.min(max, Math.max(min, value))
@@ -62,9 +65,15 @@ export function createViewportActions(ctx: EditorContext) {
     }
   }
 
+  /** The zoom bounds for the open document kind. */
+  function zoomBounds() {
+    return documentKindRules(ctx.state.documentKind).zoomRange
+  }
+
   function setZoomAroundPoint(level: number, centerX: number, centerY: number) {
     const previous = currentViewport()
-    const newZoom = Math.max(0.02, Math.min(256, level))
+    const { min, max } = zoomBounds()
+    const newZoom = Math.max(min, Math.min(max, level))
     ctx.state.panX = centerX - (centerX - ctx.state.panX) * (newZoom / ctx.state.zoom)
     ctx.state.panY = centerY - (centerY - ctx.state.panY) * (newZoom / ctx.state.zoom)
     ctx.state.zoom = newZoom
@@ -92,7 +101,7 @@ export function createViewportActions(ctx: EditorContext) {
 
   function zoomToBounds(minX: number, minY: number, maxX: number, maxY: number) {
     const previous = currentViewport()
-    const padding = 80
+    const padding = VIEWPORT_FIT_PADDING
     const w = maxX - minX + padding * 2
     const h = maxY - minY + padding * 2
     if (w <= 0 || h <= 0) return
@@ -138,7 +147,8 @@ export function createViewportActions(ctx: EditorContext) {
     const centerY = (-ctx.state.panY + viewH / 2) / ctx.state.zoom
 
     const previous = currentViewport()
-    ctx.state.zoom = Math.max(0.02, Math.min(256, level))
+    const { min, max } = zoomBounds()
+    ctx.state.zoom = Math.max(min, Math.min(max, level))
     ctx.state.panX = viewW / 2 - centerX
     ctx.state.panY = viewH / 2 - centerY
     clampViewportToArtboard()

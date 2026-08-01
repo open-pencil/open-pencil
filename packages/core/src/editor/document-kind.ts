@@ -39,6 +39,14 @@ export interface DocumentKindRules {
    * stops at the slide's edges rather than sliding it off screen.
    */
   lockViewportToArtboard: boolean
+  /**
+   * How far the camera may zoom, as a scale factor.
+   *
+   * A deck is a fixed-size stage: below half size the slide is just a stamp adrift in
+   * backdrop, and past 16x there is nothing left to inspect. A design file is an infinite
+   * canvas and keeps the wide range.
+   */
+  zoomRange: { min: number; max: number }
 }
 
 const RULES: Record<DocumentKind, DocumentKindRules> = {
@@ -51,7 +59,8 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     saveFormat: 'fig',
     pageBackgroundEditable: true,
     artboardSelectable: true,
-    lockViewportToArtboard: false
+    lockViewportToArtboard: false,
+    zoomRange: { min: 0.02, max: 256 }
   },
   deck: {
     // Figma Slides-style canvas: fixed backdrop, always-fit slide, filmstrip navigator.
@@ -63,7 +72,8 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     saveFormat: 'deck',
     pageBackgroundEditable: false,
     artboardSelectable: false,
-    lockViewportToArtboard: true
+    lockViewportToArtboard: true,
+    zoomRange: { min: 0.5, max: 16 }
   }
 }
 
@@ -80,4 +90,20 @@ export function documentKindForSourceFormat(sourceFormat: string): DocumentKind 
 /** The kind implied by a file name, for entry points that only have a name to go on. */
 export function documentKindForFileName(fileName: string): DocumentKind {
   return /\.deck$/i.test(fileName) ? 'deck' : 'design'
+}
+
+/**
+ * Whether a node is presentation chrome the user cannot select.
+ *
+ * A deck's slide is the frame its content sits on, not a shape anyone owns. Selection
+ * reaches the canvas by several routes — a click, the frame's title label, select-all, a
+ * marquee — so the rule lives here rather than being restated at each one.
+ */
+export function isFixedArtboard(
+  kind: DocumentKind,
+  node: { type: string; parentId?: string | null } | null | undefined,
+  currentPageId: string
+): boolean {
+  if (!node || documentKindRules(kind).artboardSelectable) return false
+  return node.type === 'FRAME' && node.parentId === currentPageId
 }

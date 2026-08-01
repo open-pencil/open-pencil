@@ -1,5 +1,5 @@
 import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core/constants'
-import type { Editor } from '@open-pencil/core/editor'
+import { isFixedArtboard, type Editor } from '@open-pencil/core/editor'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/scene-graph/coordinate'
 import { degToRad } from '@open-pencil/scene-graph/geometry'
@@ -62,9 +62,17 @@ export function hitTestInEditorScope(
         : editor.graph.hitTest(cx, cy, scopeId)
     }
   }
-  return deep
+  const hit = deep
     ? editor.graph.hitTestDeep(cx, cy, editor.state.currentPageId)
     : editor.graph.hitTest(cx, cy, editor.state.currentPageId)
+
+  // A deck slide is fixed chrome, so a click resolves through it to whatever sits on it.
+  // The same rule lives in the editor's own hit test; this is the path real pointer input
+  // takes, and it bypassed it entirely.
+  if (!hit || !isFixedArtboard(editor.state.documentKind, hit, editor.state.currentPageId)) {
+    return hit
+  }
+  return deep ? editor.graph.hitTestDeep(cx, cy, hit.id) : editor.graph.hitTest(cx, cy, hit.id)
 }
 
 export function isInsideEditorContainerBounds(

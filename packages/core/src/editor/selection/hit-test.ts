@@ -1,6 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
-import { documentKindRules } from '#core/editor/document-kind'
+import { isFixedArtboard } from '#core/editor/document-kind'
 import type { EditorContext } from '#core/editor/types'
 
 export function createSelectionHitTestActions(
@@ -19,9 +19,7 @@ export function createSelectionHitTestActions(
     cy: number,
     deep: boolean
   ): SceneNode | null {
-    if (!hit || documentKindRules(ctx.state.documentKind).artboardSelectable) return hit
-    const isTopLevelArtboard = hit.type === 'FRAME' && hit.parentId === ctx.state.currentPageId
-    if (!isTopLevelArtboard) return hit
+    if (!hit || !isFixedArtboard(ctx.state.documentKind, hit, ctx.state.currentPageId)) return hit
     return deep ? ctx.graph.hitTestDeep(cx, cy, hit.id) : ctx.graph.hitTest(cx, cy, hit.id)
   }
 

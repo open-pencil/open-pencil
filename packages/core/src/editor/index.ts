@@ -2,7 +2,8 @@ export { createDefaultEditorState, createEditor } from './create'
 export {
   documentKindForFileName,
   documentKindForSourceFormat,
-  documentKindRules
+  documentKindRules,
+  isFixedArtboard
 } from './document-kind'
 export type { DocumentKind, DocumentKindRules } from './document-kind'
 export type { Editor } from './create'
