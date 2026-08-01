@@ -23,7 +23,7 @@ jobs:
       name: preview
       url: ${{ steps.deploy.outputs.deployment-url }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -34,7 +34,7 @@ jobs:
 
       - run: bun run build
 
-      - uses: cloudflare/wrangler-action@v3
+      - uses: cloudflare/wrangler-action@v4
         id: deploy
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -42,7 +42,7 @@ jobs:
           command: pages deploy dist --project-name=openpencil-app --branch=${{ github.event.pull_request.head.ref }}
 
       - name: Comment preview URL
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const url = '${{ steps.deploy.outputs.deployment-url }}';
