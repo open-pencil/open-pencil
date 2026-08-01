@@ -4,13 +4,11 @@ import type { MenuEntry } from '@open-pencil/vue'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
-import { executeClipboardCommand } from '@/app/editor/clipboard/system'
-import { openRenameSelectionDialog } from '@/app/editor/selection/rename-dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
+import { createSelectionMenuActions } from '@/app/shell/menu/selection-actions'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
@@ -93,15 +91,11 @@ export function useAppMenu() {
     save: () => void store.saveFigFile(),
     'save-as': () => void store.saveFigFileAs(),
     'export-selection': () => exportSelection('png'),
-    copy: () => void executeClipboardCommand(store, 'copy'),
-    cut: () => void executeClipboardCommand(store, 'cut'),
-    paste: () => void executeClipboardCommand(store, 'paste'),
-    'paste-to-replace': () => void pasteClipboardToReplace(store),
+    ...createSelectionMenuActions(store),
     close: () => {
       if (activeTab.value) closeTab(activeTab.value.id)
     },
     settings: openSettingsDialog,
-    'selection.rename': () => openRenameSelectionDialog(store),
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),

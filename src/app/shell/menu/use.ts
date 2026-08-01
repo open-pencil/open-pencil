@@ -4,13 +4,11 @@ import { useEditorCommands, useI18n } from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
-import { executeClipboardCommand } from '@/app/editor/clipboard/system'
-import { openRenameSelectionDialog } from '@/app/editor/selection/rename-dialog'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { importFileDialog, openFileDialog } from '@/app/shell/menu/files'
 import { APP_MENU_SCHEMA, type AppMenuEntry } from '@/app/shell/menu/schema'
+import { createSelectionMenuActions } from '@/app/shell/menu/selection-actions'
 import { useAppTheme } from '@/app/shell/theme'
 import { checkForAppUpdate } from '@/app/shell/updater'
 import { createTab, closeTab, activeTab } from '@/app/tabs'
@@ -65,13 +63,9 @@ export function useMenu() {
     autosave: () => {
       store.state.autosaveEnabled = !store.state.autosaveEnabled
     },
-    copy: () => void executeClipboardCommand(store, 'copy'),
-    cut: () => void executeClipboardCommand(store, 'cut'),
-    paste: () => void executeClipboardCommand(store, 'paste'),
-    'paste-to-replace': () => void pasteClipboardToReplace(store),
+    ...createSelectionMenuActions(store),
     'check-updates': () => void checkForAppUpdate({ messages: dialogs }),
     settings: openSettingsDialog,
-    'selection.rename': () => openRenameSelectionDialog(store),
     ...createSharedEditorMenuActions(setTheme)
   }
 
