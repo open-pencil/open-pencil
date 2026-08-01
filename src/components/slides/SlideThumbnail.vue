@@ -3,6 +3,7 @@ import { useElementVisibility, useObjectUrl } from '@vueuse/core'
 import { shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { getSlideThumbnail } from '@/components/slides/thumbnail-cache'
 import { SLIDE_THUMB_MAX_WIDTH } from '@/constants'
 
 const { pageId, alt } = defineProps<{
@@ -19,14 +20,17 @@ let requestId = 0
 
 async function updatePreview() {
   const currentRequest = ++requestId
+  const sceneVersion = editor.state.sceneVersion
   try {
-    // Rendered once at the widest the rail can go, then scaled down by CSS. Rendering to
-    // the current rail width instead re-rasterised every slide on every frame of a panel
-    // drag, which is as slow as it sounds.
-    const scale = (SLIDE_THUMB_MAX_WIDTH * 2) / 1920
-    const data = await editor.renderExportImage([], Math.max(scale, 0.05), 'PNG', pageId)
+    const blob = await getSlideThumbnail(pageId, sceneVersion, async () => {
+      // Rendered at the widest the rail can go and scaled down by CSS, so the render does
+      // not depend on the displayed size.
+      const scale = (SLIDE_THUMB_MAX_WIDTH * 2) / 1920
+      const data = await editor.renderExportImage([], Math.max(scale, 0.05), 'PNG', pageId)
+      return data ? new Blob([data], { type: 'image/png' }) : null
+    })
     if (currentRequest !== requestId) return
-    previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
+    previewBlob.value = blob
   } catch {
     if (currentRequest === requestId) previewBlob.value = null
   }
