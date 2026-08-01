@@ -225,11 +225,13 @@ test('canvas still renders after exiting presentation', async () => {
   await expect(canvas).toBeVisible()
   await expect(canvas).toHaveAttribute('data-ready', '1')
 
-  // A live surface still reports non-zero size after the teleport round-trip.
-  const box = await canvas.boundingBox()
-  expect(box).toBeTruthy()
-  expect(box?.width ?? 0).toBeGreaterThan(100)
-  expect(box?.height ?? 0).toBeGreaterThan(100)
+  // A live surface still reports non-zero size after the teleport round-trip. The host
+  // is relocated back into the splitter asynchronously (Vue patch + layout settle), so a
+  // single rAF can beat it back into place — poll instead of reading once.
+  await expect.poll(() => canvas.boundingBox().then((box) => box?.width ?? 0)).toBeGreaterThan(100)
+  await expect
+    .poll(() => canvas.boundingBox().then((box) => box?.height ?? 0))
+    .toBeGreaterThan(100)
 
   const state = await getPresentationState()
   expect(state.presenting).toBe(false)
