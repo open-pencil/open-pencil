@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue'
+import { computed, onScopeDispose, ref, type Component } from 'vue'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
@@ -42,13 +42,38 @@ const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 /**
+ * Selection chrome is hidden while the canvas host is changing size.
+ *
+ * The overlay layer rebuilds only once the resize settles, so during a drag its handles
+ * describe a canvas that no longer exists — boxes and size badges sitting away from the
+ * thing they belong to. Hiding them is both more honest and cheaper than painting them
+ * wrong; they return once the overlay has caught up.
+ *
+ * Slightly longer than the overlay's own settle window so they reappear against a
+ * correctly sized layer rather than a stale one.
+ */
+const OVERLAY_RESTORE_MS = 180
+const isResizing = ref(false)
+let settleTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
  * Side panels and window resizes shrink the canvas host. Decks are always fit, so re-fit
  * the artboard rather than leave it clipped under a widened panel; design files keep
  * whatever camera the user set.
  */
 function refitOnResize() {
   if (documentKindRules(store.state.documentKind).autoFitOnResize) store.zoomToFit()
+  isResizing.value = true
+  if (settleTimer) clearTimeout(settleTimer)
+  settleTimer = setTimeout(() => {
+    settleTimer = null
+    isResizing.value = false
+  }, OVERLAY_RESTORE_MS)
 }
+
+onScopeDispose(() => {
+  if (settleTimer) clearTimeout(settleTimer)
+})
 
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
@@ -133,7 +158,10 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
           data-test-id="canvas-element"
           tabindex="-1"
           :style="{ cursor }"
-          class="absolute inset-0 block size-full touch-none outline-none"
+          :class="[
+            'absolute inset-0 block size-full touch-none outline-none',
+            isResizing ? 'opacity-0' : 'opacity-100'
+          ]"
         />
         <Transition
           enter-active-class="transition-opacity duration-150"
