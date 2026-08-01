@@ -107,7 +107,7 @@ async function onNewSlide() {
           <div :class="base.thumbShell()" :style="thumbShellStyle">
             <div :class="base.activeChrome()" :data-active="cell.active ? 'true' : 'false'">
               <div :class="base.thumb()" :data-active="cell.active ? 'true' : undefined">
-                <SlideThumbnail :page-id="cell.id" :alt="cell.name" :width="thumbWidth" />
+                <SlideThumbnail :page-id="cell.id" :alt="cell.name" />
               </div>
             </div>
           </div>

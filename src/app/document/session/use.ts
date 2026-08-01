@@ -61,6 +61,30 @@ export function useSessionPersistence(): void {
  * The document from the previous session, as a File ready for the normal open path, so a
  * restore behaves exactly like opening the file by hand.
  */
+/**
+ * Whether the stored handle can still be used without prompting.
+ *
+ * A handle survives a reload, but the permission behind it does not: reading one without a
+ * fresh user gesture throws "The request is not allowed by the user agent". Restoring the
+ * bytes is what matters, so an unusable handle is simply dropped and the document reopens
+ * detached — Save As relinks it.
+ */
+type PermissionQueryable = {
+  queryPermission?: (options: { mode: 'read' | 'readwrite' }) => Promise<PermissionState>
+}
+
+async function handleStillReadable(handle: FileSystemFileHandle | null): Promise<boolean> {
+  if (!handle) return false
+  const query = (handle as FileSystemFileHandle & PermissionQueryable).queryPermission
+  if (typeof query !== 'function') return false
+  try {
+    return (await query.call(handle, { mode: 'readwrite' })) === 'granted'
+  } catch (error) {
+    console.warn('[session] could not check file permission', error)
+    return false
+  }
+}
+
 export async function takeRestorableDocument(): Promise<{
   file: File
   handle: FileSystemFileHandle | null
@@ -72,8 +96,11 @@ export async function takeRestorableDocument(): Promise<{
     ? snapshot.name
     : `${snapshot.name}.${extension}`
   const bytes = new Uint8Array(snapshot.bytes)
+  const handle = (await handleStillReadable(snapshot.handle ?? null))
+    ? (snapshot.handle ?? null)
+    : null
   return {
     file: new File([bytes.buffer as ArrayBuffer], name, { type: 'application/octet-stream' }),
-    handle: snapshot.handle ?? null
+    handle
   }
 }

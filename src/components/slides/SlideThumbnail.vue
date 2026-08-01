@@ -3,11 +3,11 @@ import { useElementVisibility, useObjectUrl } from '@vueuse/core'
 import { shallowRef, useTemplateRef, watch } from 'vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { SLIDE_THUMB_MAX_WIDTH } from '@/constants'
 
-const { pageId, alt, width } = defineProps<{
+const { pageId, alt } = defineProps<{
   pageId: string
   alt: string
-  width: number
 }>()
 
 const editor = useEditorStore()
@@ -20,8 +20,10 @@ let requestId = 0
 async function updatePreview() {
   const currentRequest = ++requestId
   try {
-    // Whole page → PNG at filmstrip width (×2 for density)
-    const scale = (width * 2) / 1920
+    // Rendered once at the widest the rail can go, then scaled down by CSS. Rendering to
+    // the current rail width instead re-rasterised every slide on every frame of a panel
+    // drag, which is as slow as it sounds.
+    const scale = (SLIDE_THUMB_MAX_WIDTH * 2) / 1920
     const data = await editor.renderExportImage([], Math.max(scale, 0.05), 'PNG', pageId)
     if (currentRequest !== requestId) return
     previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
@@ -31,8 +33,8 @@ async function updatePreview() {
 }
 
 watch(
-  () => [pageId, width, editor.state.sceneVersion, isVisible.value] as const,
-  ([, , , visible]) => {
+  () => [pageId, editor.state.sceneVersion, isVisible.value] as const,
+  ([, , visible]) => {
     if (visible) void updatePreview()
   },
   { immediate: true, flush: 'post' }
