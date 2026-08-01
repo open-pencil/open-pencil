@@ -1,6 +1,7 @@
 import type { GUID, NodeChange, Vector } from '@open-pencil/kiwi/fig/codec'
 
 import { comparePosition, guidKey, nextLocalId, nodeKey } from './guid'
+import { pickCarriedSlideFields } from './slide-fields'
 
 const SCAFFOLDING_TYPES = new Set(['SLIDE_GRID', 'SLIDE_ROW', 'MODULE'])
 const INTERNAL_CANVAS_NAME = /internal\s*only/i
@@ -173,8 +174,10 @@ export function restructureDeckNodeChanges(nodeChanges: NodeChange[]): NodeChang
 
     const size = slideSize(slide)
 
-    // Page = navigable container only (not a second visible canvas artboard)
+    // Page = navigable container only (not a second visible canvas artboard). Slide-only
+    // fields ride on it so they survive as raw fig fields and can be restored on export.
     out.push({
+      ...pickCarriedSlideFields(slide),
       guid: pageGuid,
       type: 'CANVAS',
       name: slide.name ?? String(index + 1),

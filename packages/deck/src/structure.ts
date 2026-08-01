@@ -1,6 +1,7 @@
 import type { GUID, NodeChange, Vector } from '@open-pencil/kiwi/fig/codec'
 
 import { comparePosition, guidKey, nextLocalId, nodeKey } from './guid'
+import { pickCarriedSlideFields, withoutCarriedSlideFields } from './slide-fields'
 
 const DEFAULT_SLIDE_SIZE: Vector = { x: 1920, y: 1080 }
 const SLIDE_PADDING = 240
@@ -165,7 +166,7 @@ export function structurePagesToDeck(
 
   // The scene graph does not model theme bindings, so restore them onto the DOCUMENT.
   const out: NodeChange[] = [{ ...structuredClone(document), ...theme }]
-  out.push(...collectInternalCanvases(nodeChanges, pageKeys))
+  out.push(...collectInternalCanvases(nodeChanges, pageKeys).map(withoutCarriedSlideFields))
   out.push(...buildScaffold(docGuid, userCanvasGuid, gridGuid, rowGuid, slideSize))
 
   pages.forEach((page, index) => {
@@ -188,6 +189,8 @@ export function structurePagesToDeck(
       // Each slide points at the document theme, as Figma writes it.
       ...(theme?.themeID ? { themeID: theme.themeID } : {}),
       ...(theme?.sourceLibraryKey ? { sourceLibraryKey: theme.sourceLibraryKey } : {}),
+      // Speaker notes and transitions the page carried over from the source deck.
+      ...pickCarriedSlideFields(page),
       guid: slideGuid,
       type: 'SLIDE',
       name: page.name ?? artboard?.name ?? String(index + 1),

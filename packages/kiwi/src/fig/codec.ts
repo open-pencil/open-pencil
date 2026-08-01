@@ -304,6 +304,11 @@ export interface NodeChange {
   /** CANVAS background, which Figma writes explicitly rather than relying on a default. */
   backgroundEnabled?: boolean
   backgroundOpacity?: number
+  /** Slide-only fields; see CARRIED_SLIDE_FIELDS in @open-pencil/deck. */
+  slideSpeakerNotes?: string
+  overrideKey?: GUID
+  editInfo?: { userId?: string; lastEditedAt?: number; createdAt?: number }
+  sourceLibraryKey?: string
   strokeCap?: string
   strokeJoin?: string
   dashPattern?: number[]
