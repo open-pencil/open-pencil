@@ -34,7 +34,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { createTab, activeTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
 import { takeRestorableDocument, useSessionPersistence } from '@/app/document/session/use'
 import { beginPanelResize, endPanelResize } from '@/app/shell/panel-resize'
-import { LEFT_PANEL_MAX_PERCENT, LEFT_PANEL_MAX_WIDTH } from '@/constants'
+import { LEFT_PANEL_MAX_PERCENT, LEFT_PANEL_MAX_WIDTH, LEFT_PANEL_MIN_PERCENT } from '@/constants'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -125,7 +125,10 @@ const splitterEl = computed<HTMLElement | null>(() => {
 const { width: splitterWidth } = useElementSize(splitterEl)
 const layersMaxSize = computed(() => {
   if (splitterWidth.value <= 0) return LEFT_PANEL_MAX_PERCENT
-  return Math.min(LEFT_PANEL_MAX_PERCENT, (LEFT_PANEL_MAX_WIDTH / splitterWidth.value) * 100)
+  const asPercent = (LEFT_PANEL_MAX_WIDTH / splitterWidth.value) * 100
+  // On a very wide display 310px is under the panel's own minimum; a max below the min is
+  // an invalid constraint and the splitter rejects the whole layout.
+  return Math.max(LEFT_PANEL_MIN_PERCENT, Math.min(LEFT_PANEL_MAX_PERCENT, asPercent))
 })
 
 /**
@@ -212,7 +215,7 @@ onUnmounted(() => {
       <SplitterPanel
         id="layers"
         :default-size="panelLayout[0]"
-        :min-size="10"
+        :min-size="LEFT_PANEL_MIN_PERCENT"
         :max-size="layersMaxSize"
         class="flex"
       >

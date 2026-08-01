@@ -7,6 +7,8 @@ import ACP_DESIGN_CONTEXT from '@/app/ai/acp/design-context.md'
 export const LEFT_PANEL_MAX_WIDTH = 310
 /** Fallback share of the window, used until the splitter has been measured. */
 export const LEFT_PANEL_MAX_PERCENT = 30
+/** Floor for the rail, and the floor the pixel cap can never drop below. */
+export const LEFT_PANEL_MIN_PERCENT = 10
 
 export const SLIDE_THUMB_MIN_WIDTH = 168
 export const SLIDE_THUMB_MAX_WIDTH = 288

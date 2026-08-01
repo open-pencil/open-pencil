@@ -39,14 +39,17 @@ async function updatePreview(stale = false) {
       { stale }
     )
     if (currentRequest !== requestId) return
-    previewBlob.value = blob
+    // Keep whatever is on screen if a render came back empty: a slightly stale thumbnail
+    // is always better than a blank one, and a failed refresh should not destroy a good
+    // image that is already showing.
+    if (blob) previewBlob.value = blob
     if (refresh) {
       // The shown thumbnail came from a previous session; swap in the fresh render.
       const fresh = await refresh
       if (currentRequest === requestId && fresh) previewBlob.value = fresh
     }
-  } catch {
-    if (currentRequest === requestId) previewBlob.value = null
+  } catch (error) {
+    console.warn('[thumbnails] could not render a slide preview', error)
   }
 }
 
