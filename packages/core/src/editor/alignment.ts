@@ -66,6 +66,38 @@ function alignMultipleNodes(
   }
 }
 
+function distributeMultipleNodes(
+  ctx: EditorContext,
+  nodes: SceneNode[],
+  axis: 'horizontal' | 'vertical'
+) {
+  const positions = new Map(nodes.map((node) => [node.id, ctx.graph.getAbsolutePosition(node.id)]))
+  const coordinate = axis === 'horizontal' ? 'x' : 'y'
+  const size = axis === 'horizontal' ? 'width' : 'height'
+  const sorted = [...nodes].sort((a, b) => {
+    const delta =
+      (positions.get(a.id)?.[coordinate] ?? 0) - (positions.get(b.id)?.[coordinate] ?? 0)
+    return delta || a.id.localeCompare(b.id)
+  })
+  const first = sorted[0]
+  const last = sorted.at(-1)
+  if (!last) return
+
+  const start = positions.get(first.id)?.[coordinate] ?? 0
+  const end = (positions.get(last.id)?.[coordinate] ?? 0) + last[size]
+  const totalSize = sorted.reduce((sum, node) => sum + node[size], 0)
+  const gap = (end - start - totalSize) / (sorted.length - 1)
+  let cursor = start
+
+  for (const node of sorted) {
+    const parentPosition = node.parentId
+      ? ctx.graph.getAbsolutePosition(node.parentId)
+      : { x: 0, y: 0 }
+    ctx.graph.updateNode(node.id, { [coordinate]: cursor - parentPosition[coordinate] })
+    cursor += node[size] + gap
+  }
+}
+
 export function createAlignmentActions(ctx: EditorContext) {
   function alignNodes(
     nodeIds: string[],
@@ -97,7 +129,25 @@ export function createAlignmentActions(ctx: EditorContext) {
     ctx.requestRender()
   }
 
+  function distributeNodes(nodeIds: string[], axis: 'horizontal' | 'vertical') {
+    const nodes = nodeIds
+      .map((id) => ctx.graph.getNode(id))
+      .filter((node): node is SceneNode => node != null)
+    if (nodes.length < 3) return
+
+    const originals = collectNodePositions(
+      ctx,
+      nodes.map((node) => node.id)
+    )
+    distributeMultipleNodes(ctx, nodes, axis)
+    const finals = collectNodePositions(ctx, originals.keys())
+    pushPositionUndo(ctx, 'Distribute', originals, finals)
+
+    for (const id of nodeIds) ctx.runLayoutForNode(id)
+    ctx.requestRender()
+  }
+
   const { flipNodes, rotateNodes } = createFlipRotateActions(ctx)
 
-  return { alignNodes, flipNodes, rotateNodes }
+  return { alignNodes, distributeNodes, flipNodes, rotateNodes }
 }

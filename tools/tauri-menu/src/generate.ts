@@ -1,6 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 
+import { editorCommandMetadata } from '@open-pencil/vue'
+
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import type { AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
 import { shortcutTokenToAccelerator } from '@/app/shell/menu/shortcut'
@@ -12,10 +14,12 @@ function isNativeVisible(entry: { target?: string }): boolean {
 function cleanEntry(entry: AppMenuEntry): unknown | null {
   if (!isNativeVisible(entry)) return null
   if (entry.type === 'separator') return { type: 'separator' }
+  const shortcut =
+    entry.shortcut ?? (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
   return {
     id: entry.id,
     label: entry.label,
-    accelerator: entry.accelerator ?? shortcutTokenToAccelerator(entry.shortcut),
+    accelerator: entry.accelerator ?? shortcutTokenToAccelerator(shortcut),
     checkbox: entry.checkbox,
     sub: entry.sub?.map(cleanEntry).filter(Boolean)
   }

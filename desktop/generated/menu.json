@@ -42,6 +42,10 @@
             "label": "SVG"
           },
           {
+            "id": "export-pptx",
+            "label": "PPTX"
+          },
+          {
             "id": "export-fig",
             "label": ".fig"
           }
@@ -67,11 +71,13 @@
     "items": [
       {
         "id": "edit.undo",
-        "label": "Undo"
+        "label": "Undo",
+        "accelerator": "CmdOrCtrl+Z"
       },
       {
         "id": "edit.redo",
-        "label": "Redo"
+        "label": "Redo",
+        "accelerator": "CmdOrCtrl+Shift+Z"
       },
       {
         "type": "separator"
@@ -93,22 +99,26 @@
       },
       {
         "id": "paste-to-replace",
-        "label": "Paste to replace"
+        "label": "Paste to replace",
+        "accelerator": "CmdOrCtrl+Shift+R"
       },
       {
         "id": "selection.duplicate",
-        "label": "Duplicate"
+        "label": "Duplicate",
+        "accelerator": "CmdOrCtrl+D"
       },
       {
         "id": "selection.delete",
-        "label": "Delete"
+        "label": "Delete",
+        "accelerator": "Backspace"
       },
       {
         "type": "separator"
       },
       {
         "id": "selection.selectAll",
-        "label": "Select All"
+        "label": "Select All",
+        "accelerator": "CmdOrCtrl+A"
       }
     ]
   },
@@ -136,6 +146,19 @@
         "id": "zoom-out",
         "label": "Zoom Out",
         "accelerator": "CmdOrCtrl+-"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "view-rulers",
+        "label": "Rulers",
+        "checkbox": true
+      },
+      {
+        "id": "view-multiplayer-cursors",
+        "label": "Multiplayer Cursors",
+        "checkbox": true
       },
       {
         "type": "separator"
@@ -170,6 +193,13 @@
         "accelerator": "CmdOrCtrl+\\"
       },
       {
+        "id": "settings",
+        "label": "Settings…"
+      },
+      {
+        "type": "separator"
+      },
+      {
         "id": "dev-tools",
         "label": "Developer Tools",
         "accelerator": "CmdOrCtrl+Alt+I"
@@ -181,38 +211,77 @@
     "items": [
       {
         "id": "selection.group",
-        "label": "Group Selection"
+        "label": "Group Selection",
+        "accelerator": "CmdOrCtrl+G"
       },
       {
         "id": "selection.frameSelection",
-        "label": "Frame Selection"
+        "label": "Frame Selection",
+        "accelerator": "CmdOrCtrl+Alt+G"
       },
       {
         "id": "selection.ungroup",
-        "label": "Ungroup Selection"
+        "label": "Ungroup Selection",
+        "accelerator": "CmdOrCtrl+Shift+G"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.toggleMask",
+        "label": "Use as Mask",
+        "accelerator": "CmdOrCtrl+Alt+M"
+      },
+      {
+        "id": "selection.toggleVisibility",
+        "label": "Show/Hide",
+        "accelerator": "CmdOrCtrl+Shift+H"
+      },
+      {
+        "id": "selection.toggleLock",
+        "label": "Lock/Unlock",
+        "accelerator": "CmdOrCtrl+Shift+L"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.flipHorizontal",
+        "label": "Flip Horizontal",
+        "accelerator": "Shift+H"
+      },
+      {
+        "id": "selection.flipVertical",
+        "label": "Flip Vertical",
+        "accelerator": "Shift+V"
       },
       {
         "type": "separator"
       },
       {
         "id": "selection.booleanUnion",
-        "label": "Union selection"
+        "label": "Union selection",
+        "accelerator": "Alt+Shift+U"
       },
       {
         "id": "selection.booleanSubtract",
-        "label": "Subtract selection"
+        "label": "Subtract selection",
+        "accelerator": "Alt+Shift+S"
       },
       {
         "id": "selection.booleanIntersect",
-        "label": "Intersect selection"
+        "label": "Intersect selection",
+        "accelerator": "Alt+Shift+I"
       },
       {
         "id": "selection.booleanExclude",
-        "label": "Exclude selection"
+        "label": "Exclude selection",
+        "accelerator": "Alt+Shift+E"
       },
       {
         "id": "selection.flatten",
-        "label": "Flatten"
+        "label": "Flatten",
+        "accelerator": "Alt+Shift+F"
       },
       {
         "id": "selection.outlineText",
@@ -227,26 +296,53 @@
       },
       {
         "id": "selection.createComponent",
-        "label": "Create Component"
+        "label": "Create Component",
+        "accelerator": "CmdOrCtrl+Alt+K"
       },
       {
         "id": "selection.createComponentSet",
-        "label": "Create Component Set"
+        "label": "Create Component Set",
+        "accelerator": "CmdOrCtrl+Shift+K"
+      },
+      {
+        "id": "selection.createInstance",
+        "label": "Create Instance"
+      },
+      {
+        "id": "selection.goToMainComponent",
+        "label": "Go to Main Component"
       },
       {
         "id": "selection.detachInstance",
-        "label": "Detach Instance"
+        "label": "Detach Instance",
+        "accelerator": "CmdOrCtrl+Alt+B"
       },
       {
         "type": "separator"
       },
       {
+        "id": "selection.moveToPage.native",
+        "label": "Move to Another Page"
+      },
+      {
+        "id": "selection.bringForward",
+        "label": "Bring Forward",
+        "accelerator": "CmdOrCtrl+]"
+      },
+      {
         "id": "selection.bringToFront",
-        "label": "Bring to Front"
+        "label": "Bring to Front",
+        "accelerator": "]"
+      },
+      {
+        "id": "selection.sendBackward",
+        "label": "Send Backward",
+        "accelerator": "CmdOrCtrl+["
       },
       {
         "id": "selection.sendToBack",
-        "label": "Send to Back"
+        "label": "Send to Back",
+        "accelerator": "["
       }
     ]
   },
@@ -275,7 +371,8 @@
     "items": [
       {
         "id": "selection.wrapInAutoLayout",
-        "label": "Wrap in Auto Layout"
+        "label": "Wrap in Auto Layout",
+        "accelerator": "Shift+A"
       },
       {
         "type": "separator"
@@ -312,6 +409,17 @@
         "id": "arrange.align-bottom",
         "label": "Align Bottom",
         "accelerator": "Alt+S"
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "selection.distributeHorizontal",
+        "label": "Distribute Horizontal Spacing"
+      },
+      {
+        "id": "selection.distributeVertical",
+        "label": "Distribute Vertical Spacing"
       }
     ]
   }

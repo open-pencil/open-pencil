@@ -76,34 +76,99 @@ export function createStructureReorderActions(ctx: EditorContext) {
     })
   }
 
-  function moveSelectionInZOrder(
-    isAlreadyPlaced: (currentIndex: number, childCount: number) => boolean,
-    insertIndex: (childCount: number) => number
-  ) {
-    for (const id of ctx.state.selectedIds) {
-      const node = ctx.graph.getNode(id)
-      if (!node?.parentId) continue
-      const parent = ctx.graph.getNode(node.parentId)
-      if (!parent) continue
-      if (isAlreadyPlaced(parent.childIds.indexOf(id), parent.childIds.length)) continue
-      ctx.graph.insertChildAt(id, node.parentId, insertIndex(parent.childIds.length))
+  function applyChildOrder(parentId: string, childIds: readonly string[]) {
+    for (const [index, childId] of childIds.entries()) {
+      ctx.graph.insertChildAt(childId, parentId, index)
     }
+    ctx.runLayoutForNode(parentId)
     ctx.requestRender()
   }
 
+  function moveSelectionInZOrder(
+    label: string,
+    reorder: (childIds: readonly string[], selectedIds: ReadonlySet<string>) => string[]
+  ) {
+    const selectedIds = ctx.state.selectedIds
+    const parentIds = new Set<string>()
+    for (const id of selectedIds) {
+      const parentId = ctx.graph.getNode(id)?.parentId
+      if (parentId) parentIds.add(parentId)
+    }
+
+    const before = new Map<string, string[]>()
+    const after = new Map<string, string[]>()
+    for (const parentId of parentIds) {
+      const childIds = ctx.graph.getNode(parentId)?.childIds
+      if (!childIds) continue
+      const next = reorder(childIds, selectedIds)
+      if (next.every((id, index) => id === childIds[index])) continue
+      before.set(parentId, [...childIds])
+      after.set(parentId, next)
+      applyChildOrder(parentId, next)
+    }
+    if (after.size === 0) return
+
+    ctx.undo.push({
+      label,
+      forward: () => {
+        for (const [parentId, childIds] of after) applyChildOrder(parentId, childIds)
+      },
+      inverse: () => {
+        for (const [parentId, childIds] of before) applyChildOrder(parentId, childIds)
+      }
+    })
+  }
+
+  function bringForward() {
+    moveSelectionInZOrder('Bring forward', (childIds, selectedIds) => {
+      const result = [...childIds]
+      for (let index = result.length - 2; index >= 0; index--) {
+        const current = result[index]
+        const next = result[index + 1]
+        if (current && next && selectedIds.has(current) && !selectedIds.has(next)) {
+          result[index] = next
+          result[index + 1] = current
+        }
+      }
+      return result
+    })
+  }
+
+  function sendBackward() {
+    moveSelectionInZOrder('Send backward', (childIds, selectedIds) => {
+      const result = [...childIds]
+      for (let index = 1; index < result.length; index++) {
+        const current = result[index]
+        const previous = result[index - 1]
+        if (current && previous && selectedIds.has(current) && !selectedIds.has(previous)) {
+          result[index] = previous
+          result[index - 1] = current
+        }
+      }
+      return result
+    })
+  }
+
   function bringToFront() {
-    moveSelectionInZOrder(
-      (currentIndex, childCount) => currentIndex === childCount - 1,
-      (childCount) => childCount
-    )
+    moveSelectionInZOrder('Bring to front', (childIds, selectedIds) => [
+      ...childIds.filter((id) => !selectedIds.has(id)),
+      ...childIds.filter((id) => selectedIds.has(id))
+    ])
   }
 
   function sendToBack() {
-    moveSelectionInZOrder(
-      (currentIndex) => currentIndex === 0,
-      () => 0
-    )
+    moveSelectionInZOrder('Send to back', (childIds, selectedIds) => [
+      ...childIds.filter((id) => selectedIds.has(id)),
+      ...childIds.filter((id) => !selectedIds.has(id))
+    ])
   }
 
-  return { reorderInAutoLayout, reorderChildWithUndo, bringToFront, sendToBack }
+  return {
+    reorderInAutoLayout,
+    reorderChildWithUndo,
+    bringForward,
+    sendBackward,
+    bringToFront,
+    sendToBack
+  }
 }

@@ -52,6 +52,14 @@ export function createSharedEditorMenuActions(
   return {
     'zoom-in': () => store.applyZoom(-100, window.innerWidth / 2, window.innerHeight / 2),
     'zoom-out': () => store.applyZoom(100, window.innerWidth / 2, window.innerHeight / 2),
+    'view-rulers': () => {
+      store.state.showRulers = !store.state.showRulers
+      store.requestRepaint()
+    },
+    'view-multiplayer-cursors': () => {
+      store.state.showRemoteCursors = !store.state.showRemoteCursors
+      store.requestRepaint()
+    },
     'toggle-ui': () => {
       store.state.showUI = !store.state.showUI
     },

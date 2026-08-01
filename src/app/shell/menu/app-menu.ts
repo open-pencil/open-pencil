@@ -4,13 +4,16 @@ import type { MenuEntry } from '@open-pencil/vue'
 import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
+import { openSettingsDialog } from '@/app/settings/dialog'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { openFileDialog } from '@/app/shell/menu/use'
 import { useAppTheme } from '@/app/shell/theme'
+import { closeTab, activeTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
@@ -27,7 +30,7 @@ function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type
 
 export function useAppMenu() {
   const store = useEditorStore()
-  const { menuItem: commandMenuItem } = useEditorCommands()
+  const { menuItem: commandMenuItem, otherPages, moveSelectionToPage } = useEditorCommands()
   const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
 
@@ -44,6 +47,9 @@ export function useAppMenu() {
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     language: 'language',
+    settings: 'settings',
+    'view-rulers': 'rulers',
+    'view-multiplayer-cursors': 'multiplayerCursors',
     profiler: 'profiler',
     'toggle-ui': 'toggleUI',
     theme: 'theme',
@@ -88,6 +94,11 @@ export function useAppMenu() {
     copy: () => void executeClipboardCommand(store, 'copy'),
     cut: () => void executeClipboardCommand(store, 'cut'),
     paste: () => void executeClipboardCommand(store, 'paste'),
+    'paste-to-replace': () => void pasteClipboardToReplace(store),
+    close: () => {
+      if (activeTab.value) closeTab(activeTab.value.id)
+    },
+    settings: openSettingsDialog,
     'export-png': () => exportSelection('png'),
     'export-svg': () => exportSelection('svg'),
     'export-pptx': () => exportSelection('pptx'),
@@ -105,6 +116,10 @@ export function useAppMenu() {
         return store.state.autosaveEnabled
       case 'profiler':
         return store.renderer?.profiler.hudVisible ?? false
+      case 'view-rulers':
+        return store.state.showRulers
+      case 'view-multiplayer-cursors':
+        return store.state.showRemoteCursors
       case 'theme-light':
         return theme.value === 'light'
       case 'theme-dark':
@@ -124,6 +139,14 @@ export function useAppMenu() {
         }
       case 'profiler':
         return () => store.toggleProfiler()
+      case 'view-rulers':
+        return (value: boolean) => {
+          if (store.state.showRulers !== value) itemAction(item)?.()
+        }
+      case 'view-multiplayer-cursors':
+        return (value: boolean) => {
+          if (store.state.showRemoteCursors !== value) itemAction(item)?.()
+        }
       case 'theme-light':
       case 'theme-dark':
       case 'theme-auto':
@@ -146,6 +169,17 @@ export function useAppMenu() {
 
     if (entry.id === 'language') {
       return { label: menuLabel(entry), sub: languageMenu.value }
+    }
+
+    if (entry.id === 'selection.moveToPage') {
+      if (otherPages.value.length === 0) return null
+      return {
+        label: menuLabel(entry),
+        sub: otherPages.value.map((page) => ({
+          label: page.name,
+          action: () => moveSelectionToPage(page.id)
+        }))
+      }
     }
 
     if (entry.command) {

@@ -159,7 +159,12 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: 'Shift+KeyA',
       run: ({ actions }) => actions.toggleAutoLayout()
     },
-    ...commandShortcuts('selection.bringToFront', 'selection.sendToBack'),
+    ...commandShortcuts(
+      'selection.bringForward',
+      'selection.bringToFront',
+      'selection.sendBackward',
+      'selection.sendToBack'
+    ),
     { id: 'delete-backspace', keys: 'Backspace', run: ({ actions }) => actions.smartDelete(false) },
     { id: 'delete', keys: 'Delete', run: ({ actions }) => actions.smartDelete(false) },
     { id: 'delete-alt', keys: 'Alt+Delete', run: ({ actions }) => actions.smartDelete(true) },

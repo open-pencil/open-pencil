@@ -149,6 +149,14 @@ export function createSelectionCommands({
         )
       }
     },
+    'selection.bringForward': {
+      id: 'selection.bringForward',
+      get label() {
+        return t.value.bringForward
+      },
+      enabled: capabilities.canBringToFront,
+      run: () => editor.bringForward()
+    },
     'selection.bringToFront': {
       id: 'selection.bringToFront',
       get label() {
@@ -156,6 +164,14 @@ export function createSelectionCommands({
       },
       enabled: capabilities.canBringToFront,
       run: () => editor.bringToFront()
+    },
+    'selection.sendBackward': {
+      id: 'selection.sendBackward',
+      get label() {
+        return t.value.sendBackward
+      },
+      enabled: capabilities.canSendToBack,
+      run: () => editor.sendBackward()
     },
     'selection.sendToBack': {
       id: 'selection.sendToBack',
@@ -196,6 +212,22 @@ export function createSelectionCommands({
       },
       enabled: capabilities.canFlip,
       run: () => editor.flipNodes([...selection.selectedIds.value], 'vertical')
+    },
+    'selection.distributeHorizontal': {
+      id: 'selection.distributeHorizontal',
+      get label() {
+        return t.value.distributeHorizontal
+      },
+      enabled: capabilities.canDistribute,
+      run: () => editor.distributeNodes([...selection.selectedIds.value], 'horizontal')
+    },
+    'selection.distributeVertical': {
+      id: 'selection.distributeVertical',
+      get label() {
+        return t.value.distributeVertical
+      },
+      enabled: capabilities.canDistribute,
+      run: () => editor.distributeNodes([...selection.selectedIds.value], 'vertical')
     },
     'selection.booleanUnion': {
       id: 'selection.booleanUnion',

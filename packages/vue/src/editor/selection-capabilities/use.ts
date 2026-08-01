@@ -43,6 +43,7 @@ export function useSelectionCapabilities() {
     canToggleVisibility: computed(() => hasSelection.value),
     canToggleLock: computed(() => hasSelection.value),
     canFlip: computed(() => hasSelection.value),
+    canDistribute: computed(() => selectedCount.value >= 3),
     canBooleanOperation: computed(() => selectedCount.value >= 2 && selectedNodesCanFlatten.value),
     canFlatten: computed(() => selectedNodesCanFlatten.value),
     canOutlineText: useSceneComputed(() => {

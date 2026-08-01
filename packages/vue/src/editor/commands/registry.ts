@@ -38,10 +38,20 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: ['Control+Meta+KeyM', '$mod+Alt+KeyM'],
     contextTestId: 'context-toggle-mask'
   },
+  'selection.bringForward': {
+    shortcut: 'MOD+]',
+    keybinding: '$mod+BracketRight',
+    contextTestId: 'context-bring-forward'
+  },
   'selection.bringToFront': {
     shortcut: ']',
     keybinding: 'BracketRight',
     contextTestId: 'context-bring-to-front'
+  },
+  'selection.sendBackward': {
+    shortcut: 'MOD+[',
+    keybinding: '$mod+BracketLeft',
+    contextTestId: 'context-send-backward'
   },
   'selection.sendToBack': {
     shortcut: '[',
@@ -68,6 +78,8 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: 'Shift+KeyV',
     contextTestId: 'context-flip-vertical'
   },
+  'selection.distributeHorizontal': {},
+  'selection.distributeVertical': {},
   'selection.booleanUnion': {
     shortcut: 'ALT+SHIFT+U',
     keybinding: 'Alt+Shift+KeyU',

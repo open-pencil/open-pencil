@@ -25,6 +25,9 @@ export const menuMessageDefaults = {
   themeAuto: 'Auto',
   profiler: 'Performance profiler',
   language: 'Language',
+  settings: 'Settings…',
+  rulers: 'Rulers',
+  multiplayerCursors: 'Multiplayer cursors',
   checkUpdates: 'Check for updates…',
 
   moveToPage: 'Move to page',

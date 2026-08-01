@@ -19,6 +19,7 @@
 
 ### Added
 
+- Expose Figma-style mask, visibility, lock, flip, component, z-order, distribution, move-to-page, ruler, multiplayer cursor, and Settings actions from the shared browser and desktop menus.
 - Use MiniMax M3 as the default MiniMax model for AI design workflows. (#431)
 - Export selections, pages and documents as editable PowerPoint (`.pptx`) files from the File menu, CLI and SDK: text, rectangles, ellipses and lines stay native editable elements, while gradients, masks, blends, vectors and icons fall back to embedded images.
 - Figma-style Assets panel browsing with component thumbnails, grid/list views, page grouping, context actions, and drag-to-canvas insertion.

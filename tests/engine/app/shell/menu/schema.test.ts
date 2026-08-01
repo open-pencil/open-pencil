@@ -23,4 +23,36 @@ describe('APP_MENU_SCHEMA', () => {
 
     expect(duplicated).toEqual([])
   })
+
+  test('exposes every menu-backed editor command to shared dispatch', () => {
+    const commandIds = actionItems(APP_MENU_SCHEMA.flatMap((group) => group.items)).flatMap(
+      (entry) => {
+        if ('type' in entry || !entry.command) return []
+        return [entry.command]
+      }
+    )
+
+    expect(commandIds).toContain('selection.frameSelection')
+    expect(commandIds).toContain('selection.toggleMask')
+    expect(commandIds).toContain('selection.toggleVisibility')
+    expect(commandIds).toContain('selection.toggleLock')
+    expect(commandIds).toContain('selection.flipHorizontal')
+    expect(commandIds).toContain('selection.flipVertical')
+    expect(commandIds).toContain('selection.createInstance')
+    expect(commandIds).toContain('selection.goToMainComponent')
+    expect(commandIds).toContain('selection.moveToPage')
+  })
+
+  test('provides platform-specific move-to-page entries', () => {
+    const objectMenu = APP_MENU_SCHEMA.find((group) => group.label === 'Object')
+    const entries = objectMenu ? actionItems(objectMenu.items) : []
+    const moveEntries = entries.filter(
+      (entry) => !('type' in entry) && entry.id.startsWith('selection.moveToPage')
+    )
+
+    expect(moveEntries).toEqual([
+      expect.objectContaining({ id: 'selection.moveToPage', target: 'browser' }),
+      expect.objectContaining({ id: 'selection.moveToPage.native', target: 'native' })
+    ])
+  })
 })
