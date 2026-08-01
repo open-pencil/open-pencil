@@ -28,6 +28,14 @@ describe('create_shape', () => {
     expect(node.height).toBe(400)
   })
 
+  test('names every supported node type in the tool description', () => {
+    const tool = getTool('create_shape')
+    const supportedTypes = tool.params.type.enum ?? []
+
+    expect(supportedTypes.length).toBeGreaterThan(0)
+    expect(supportedTypes.filter((type) => !tool.description.includes(type))).toEqual([])
+  })
+
   test('creates nested inside parent', () => {
     const { figma } = setupToolTest()
     const tool = getTool('create_shape')
