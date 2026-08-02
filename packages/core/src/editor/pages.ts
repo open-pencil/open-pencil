@@ -34,6 +34,10 @@ export function createPageActions(ctx: EditorContext) {
     const toLoad = fontManager.collectFontKeys(ctx.graph, childIds)
     const requirements = collectGraphFontRequirements(ctx.graph, childIds)
     fontManager.blockNodesUntilFontsResolve(childIds)
+    // Only a font actually resolving invalidates cached pictures. Switching page does not
+    // change the scene, and wiping every tier on each advance forced a full re-record —
+    // re-shaping every text node — even when returning to a slide shown seconds ago.
+    let fontsChangedText = false
     try {
       const results = await Promise.all(
         toLoad.map(([family, style]) => ctx.loadFont(family, style, requirements.characters))
@@ -48,16 +52,24 @@ export function createPageActions(ctx: EditorContext) {
         (script) => (fallbacks[script]?.length ?? 0) > 0
       )
       if (facesReady && fallbacksReady) {
-        for (const node of requirements.nodes) if (node.type === 'TEXT') node.textPicture = null
+        for (const node of requirements.nodes) {
+          if (node.type !== 'TEXT') continue
+          if (node.textPicture !== null) fontsChangedText = true
+          node.textPicture = null
+        }
       }
     } finally {
       fontManager.unblockNodes(childIds)
-      ctx.getRenderer()?.invalidateAllPictures()
+      if (fontsChangedText || populated) ctx.getRenderer()?.invalidateAllPictures()
     }
     if (ctx.getRenderer() || populated) {
       computeAllLayouts(ctx.graph, pageId)
     }
-    ctx.requestRender()
+    // `requestRender` bumps sceneVersion, which every picture cache is keyed on. Reserve it
+    // for the case where this switch genuinely changed the scene; otherwise a repaint is
+    // all a page change needs, and the caches survive.
+    if (fontsChangedText || populated) ctx.requestRender()
+    else ctx.requestRepaint()
   }
 
   function addPage(name?: string) {

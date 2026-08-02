@@ -33,7 +33,10 @@ async function updatePreview(stale = false) {
         // Rendered at the widest the rail can go and scaled down by CSS, so the render does
         // not depend on the displayed size.
         const scale = (SLIDE_THUMB_MAX_WIDTH * 2) / 1920
-        const data = await editor.renderExportImage([], Math.max(scale, 0.05), 'PNG', pageId)
+        // No supersampling: the scale above already doubles for retina, so leaving it on
+        // rendered four times the pixels a ~310px thumbnail can show. Measured at ~390ms
+        // per thumbnail, on the same main thread the presented slide needs.
+        const data = await editor.renderExportImage([], Math.max(scale, 0.05), 'PNG', pageId, false)
         return data ? new Blob([data], { type: 'image/png' }) : null
       },
       { stale }

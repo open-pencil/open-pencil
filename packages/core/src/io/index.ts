@@ -18,6 +18,7 @@ export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './formats/jsx'
 export {
   computeContentBounds,
   renderNodesToImage,
+  renderNodesToPixels,
   renderThumbnail,
   initCanvasKit,
   headlessRenderNodes,

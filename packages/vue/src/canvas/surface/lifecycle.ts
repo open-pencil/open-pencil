@@ -14,6 +14,27 @@ import type { UseCanvasOptions } from '#vue/canvas/surface/types'
 type SurfaceManagerState = {
   renderer: SkiaRenderer | null
   glContext: CanvasGLContext | null
+  /** The element the GL context is bound to, so it can be released on teardown. */
+  canvas: HTMLCanvasElement | null
+}
+
+/**
+ * Give the browser back the canvas element's WebGL context.
+ *
+ * Deleting Skia's GrContext frees Skia's own objects but leaves the underlying WebGL
+ * context attached to the element, alive until it happens to be collected. Chrome caps
+ * how many may exist at once and drops the oldest when the cap is reached — which, once
+ * enough canvases have been mounted and discarded, is a context still in use. That shows
+ * up as `Too many active WebGL contexts` followed by rendering dying somewhere unrelated.
+ *
+ * Only safe when the element itself is being discarded: a surface rebuilt on the same
+ * canvas must keep its context.
+ */
+function releaseCanvasContext(canvas: HTMLCanvasElement | null) {
+  if (!canvas) return
+  const gl = canvas.getContext('webgl2') ?? canvas.getContext('webgl')
+  if (!(gl instanceof WebGLRenderingContext) && !(gl instanceof WebGL2RenderingContext)) return
+  gl.getExtension('WEBGL_lose_context')?.loseContext()
 }
 
 export function createCanvasSurfaceManager({
@@ -31,7 +52,7 @@ export function createCanvasSurfaceManager({
   isDestroyed: () => boolean
   shouldShowRulers: () => boolean
 }) {
-  const state: SurfaceManagerState = { renderer: null, glContext: null }
+  const state: SurfaceManagerState = { renderer: null, glContext: null, canvas: null }
   let sceneBackingRenderTimer: ReturnType<typeof setTimeout> | null = null
 
   function clearSceneBackingRenderTimer() {
@@ -64,6 +85,7 @@ export function createCanvasSurfaceManager({
     }
 
     const glCtx = canvas.getContext('webgl2') ?? null
+    state.canvas = canvas
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
     editor.setCanvasKit(ck, state.renderer)
     canvas.dataset.ready = '1'
@@ -133,6 +155,11 @@ export function createCanvasSurfaceManager({
     if (state.renderer) editor.removeCanvasRenderer(state.renderer)
     state.renderer?.destroy()
     state.glContext?.delete()
+    state.glContext = null
+    // The component is going away with its canvas, so the context goes too.
+    releaseCanvasContext(state.canvas)
+    state.canvas = null
+    state.renderer = null
   }
 
   return {

@@ -5,6 +5,7 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { RenderColorSpace } from '#core/color/management'
+import { startRasterProfile } from '#core/io/formats/raster/profile'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'
@@ -16,6 +17,14 @@ interface RenderOptions {
   quality?: number
   colorSpace?: RenderColorSpace
   trimTransparent?: boolean
+  /**
+   * Draw at twice the requested size and downsample, for smoother edges.
+   *
+   * On by default because exports are looked at closely. It costs four times the pixels,
+   * a second full-size buffer and an extra image copy, so callers rendering for immediate
+   * display — where the raster is already at device resolution — should turn it off.
+   */
+  supersample?: boolean
 }
 
 function ensureSinglePageSelection(graph: SceneGraph, pageId: string, nodeIds: string[]): boolean {
@@ -107,10 +116,11 @@ function renderToSurface(
   height: number,
   format: ExportFormat,
   quality: number,
+  supersample: boolean,
   setup: (canvas: Canvas) => void,
   trimTransparent = false
 ): Uint8Array | null {
-  const renderScale = 2
+  const renderScale = supersample ? 2 : 1
   const renderWidth = width * renderScale
   const renderHeight = height * renderScale
   const pixels = ck.Malloc(Uint8Array, renderWidth * renderHeight * 4)
@@ -130,43 +140,51 @@ function renderToSurface(
     return null
   }
 
+  const inner = startRasterProfile('renderToSurface')
   try {
+    inner.phase('draw')
     const canvas = surface.getCanvas()
     canvas.scale(renderScale, renderScale)
     setup(canvas)
     renderer.renderSceneToCanvas(canvas, renderGraph, pageId)
     surface.flush()
 
-    const highResImage = surface.makeImageSnapshot()
-    const downsamplePixels = ck.Malloc(Uint8Array, width * height * 4)
-    const downsampleSurface = ck.MakeRasterDirectSurface(
-      {
-        alphaType: ck.AlphaType.Premul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB,
-        width,
-        height
-      },
-      downsamplePixels,
-      width * 4
-    )
+    // Without supersampling the surface is already the requested size, so the snapshot,
+    // the second buffer and the copy between them are all pure cost and are skipped.
+    inner.phase('downsample')
+    const downsamplePixels = renderScale === 1 ? null : ck.Malloc(Uint8Array, width * height * 4)
+    const downsampleSurface = downsamplePixels
+      ? ck.MakeRasterDirectSurface(
+          {
+            alphaType: ck.AlphaType.Premul,
+            colorType: ck.ColorType.RGBA_8888,
+            colorSpace: ck.ColorSpace.SRGB,
+            width,
+            height
+          },
+          downsamplePixels,
+          width * 4
+        )
+      : surface
     if (!downsampleSurface) {
-      ck.Free(downsamplePixels)
-      highResImage.delete()
+      if (downsamplePixels) ck.Free(downsamplePixels)
       return null
     }
     const downsampleCanvas = downsampleSurface.getCanvas()
-    downsampleCanvas.clear(ck.TRANSPARENT)
-    downsampleCanvas.drawImageRectOptions(
-      highResImage,
-      ck.LTRBRect(0, 0, renderWidth, renderHeight),
-      ck.LTRBRect(0, 0, width, height),
-      ck.FilterMode.Linear,
-      ck.MipmapMode.None,
-      null
-    )
-    downsampleSurface.flush()
-    highResImage.delete()
+    if (downsamplePixels) {
+      const highResImage = surface.makeImageSnapshot()
+      downsampleCanvas.clear(ck.TRANSPARENT)
+      downsampleCanvas.drawImageRectOptions(
+        highResImage,
+        ck.LTRBRect(0, 0, renderWidth, renderHeight),
+        ck.LTRBRect(0, 0, width, height),
+        ck.FilterMode.Linear,
+        ck.MipmapMode.None,
+        null
+      )
+      downsampleSurface.flush()
+      highResImage.delete()
+    }
 
     const foundAlphaBounds = trimTransparent
       ? findAlphaBounds(ck, downsampleCanvas, width, height)
@@ -183,6 +201,7 @@ function renderToSurface(
           alphaBounds.maxY
         ])
       : downsampleSurface.makeImageSnapshot()
+    inner.phase('encode')
     const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
     let resultBytes: Uint8Array | null = encoded ? new Uint8Array(encoded) : null
 
@@ -214,10 +233,14 @@ function renderToSurface(
     }
 
     image.delete()
-    downsampleSurface.delete()
-    ck.Free(downsamplePixels)
+    // The un-supersampled path shares the outer surface, which the `finally` block owns.
+    if (downsamplePixels) {
+      downsampleSurface.delete()
+      ck.Free(downsamplePixels)
+    }
     return resultBytes
   } finally {
+    inner.end({ width, height, renderScale })
     surface.delete()
     ck.Free(pixels)
   }
@@ -244,14 +267,31 @@ function prepareSelectionRenderGraph(
   renderGraph.clearAbsPosCache()
 }
 
-export function renderNodesToImage(
-  ck: CanvasKit,
-  renderer: SkiaRenderer,
+interface PreparedNodeRender {
+  bounds: { minX: number; minY: number; maxX: number; maxY: number }
+  pixelW: number
+  pixelH: number
+  renderGraph: SceneGraph
+  renderPageId: string
+}
+
+/**
+ * Shared prologue for rasterising a node selection: bounds, pixel size, and the graph to
+ * draw from.
+ *
+ * The subset graph is built only when it will actually be used. `extractExportGraph` walks
+ * the component-dependency closure, iterates every node in the document to pull in
+ * referenced styles, sorts by depth with an ancestor walk inside the comparator, and
+ * `structuredClone`s each node it keeps. It used to run unconditionally and then be thrown
+ * away whenever a node needed the scene backdrop — common, since any non-normal blend mode
+ * or background blur triggers it.
+ */
+function prepareNodeRender(
   graph: SceneGraph,
   pageId: string,
   nodeIds: string[],
-  options: RenderOptions
-): Uint8Array | null {
+  scale: number
+): PreparedNodeRender | null {
   if (!ensureSinglePageSelection(graph, pageId, nodeIds)) {
     throw new Error('Raster export selection must stay on a single page')
   }
@@ -263,23 +303,122 @@ export function renderNodesToImage(
   const contentH = bounds.maxY - bounds.minY
   if (contentW <= 0 || contentH <= 0) return null
 
-  const pixelW = Math.ceil(contentW * options.scale)
-  const pixelH = Math.ceil(contentH * options.scale)
+  const pixelW = Math.ceil(contentW * scale)
+  const pixelH = Math.ceil(contentH * scale)
   if (pixelW <= 0 || pixelH <= 0) return null
 
-  const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds })
-  if (!extracted.pageId) return null
+  const needsSceneBackdrop = nodeIds.some((nodeId) => nodeNeedsSceneBackdrop(graph, nodeId))
+  const extracted = needsSceneBackdrop
+    ? null
+    : extractExportGraph(graph, { scope: 'selection', nodeIds })
+  if (extracted && !extracted.pageId) return null
 
-  const renderGraph = nodeIds.some((nodeId) => nodeNeedsSceneBackdrop(graph, nodeId))
-    ? graph
-    : extracted.graph
-  const renderPageId = renderGraph === graph ? pageId : extracted.pageId
+  const renderGraph = extracted?.graph ?? graph
+  const renderPageId = extracted?.pageId ?? pageId
   if (renderGraph !== graph) {
     prepareSelectionRenderGraph(graph, renderGraph, renderPageId, nodeIds)
   }
 
+  return { bounds, pixelW, pixelH, renderGraph, renderPageId }
+}
+
+export interface RenderedPixels {
+  /** Unpremultiplied RGBA, ready for `ImageData`. */
+  pixels: Uint8Array
+  width: number
+  height: number
+}
+
+/**
+ * Draw nodes and hand back raw pixels, skipping the encoder entirely.
+ *
+ * For a raster that is displayed immediately rather than written to a file, PNG is pure
+ * overhead: encoding measured 476-1258ms for a full-screen slide, and whatever receives it
+ * then has to decode it again. Callers that can take pixels — a canvas blit — should.
+ */
+export function renderNodesToPixels(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  scale: number
+): RenderedPixels | null {
+  const prepared = prepareNodeRender(graph, pageId, nodeIds, scale)
+  if (!prepared) return null
+  const { bounds, pixelW, pixelH, renderGraph, renderPageId } = prepared
+
+  const profile = startRasterProfile('renderNodesToPixels')
+  profile.phase('surface')
+  const buffer = ck.Malloc(Uint8Array, pixelW * pixelH * 4)
+  const surface = ck.MakeRasterDirectSurface(
+    {
+      alphaType: ck.AlphaType.Premul,
+      colorType: ck.ColorType.RGBA_8888,
+      colorSpace: ck.ColorSpace.SRGB,
+      width: pixelW,
+      height: pixelH
+    },
+    buffer,
+    pixelW * 4
+  )
+  if (!surface) {
+    ck.Free(buffer)
+    profile.end()
+    return null
+  }
+
+  try {
+    profile.phase('draw')
+    const canvas = surface.getCanvas()
+    canvas.clear(ck.TRANSPARENT)
+    canvas.scale(scale, scale)
+    canvas.translate(-bounds.minX, -bounds.minY)
+    renderer.renderSceneToCanvas(canvas, renderGraph, renderPageId)
+    surface.flush()
+
+    profile.phase('readPixels')
+    // Unpremultiplied because that is what `ImageData` expects; premultiplied bytes would
+    // darken anything partially transparent.
+    const read = canvas.readPixels(0, 0, {
+      alphaType: ck.AlphaType.Unpremul,
+      colorType: ck.ColorType.RGBA_8888,
+      colorSpace: ck.ColorSpace.SRGB,
+      width: pixelW,
+      height: pixelH
+    })
+    if (!(read instanceof Uint8Array)) return null
+    // Copy before the `finally` frees the surface: `readPixels` can hand back a view onto
+    // the WASM heap, and returning that leaves the caller holding freed memory — which
+    // paints as garbage or black once the allocator reuses it.
+    return { pixels: new Uint8Array(read), width: pixelW, height: pixelH }
+  } finally {
+    profile.end({ width: pixelW, height: pixelH })
+    surface.delete()
+    ck.Free(buffer)
+  }
+}
+
+export function renderNodesToImage(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  graph: SceneGraph,
+  pageId: string,
+  nodeIds: string[],
+  options: RenderOptions
+): Uint8Array | null {
+  const profile = startRasterProfile('renderNodesToImage')
+  profile.phase('prepare')
+  const prepared = prepareNodeRender(graph, pageId, nodeIds, options.scale)
+  if (!prepared) {
+    profile.end()
+    return null
+  }
+  const { bounds, pixelW, pixelH, renderGraph, renderPageId } = prepared
+
   const quality = options.quality ?? (options.format === 'PNG' ? 100 : 90)
-  return renderToSurface(
+  profile.phase('renderToSurface')
+  const bytes = renderToSurface(
     ck,
     renderer,
     renderGraph,
@@ -288,6 +427,7 @@ export function renderNodesToImage(
     pixelH,
     options.format,
     quality,
+    options.supersample ?? true,
     (canvas) => {
       canvas.clear(ck.TRANSPARENT)
       canvas.scale(options.scale, options.scale)
@@ -295,6 +435,8 @@ export function renderNodesToImage(
     },
     options.trimTransparent
   )
+  profile.end({ pixels: pixelW * pixelH, nodes: nodeIds.length })
+  return bytes
 }
 
 export function renderThumbnail(
@@ -317,7 +459,7 @@ export function renderThumbnail(
 
   const scale = Math.min(width / contentW, height / contentH, 2)
 
-  return renderToSurface(ck, renderer, graph, pageId, width, height, 'PNG', 100, (canvas) => {
+  return renderToSurface(ck, renderer, graph, pageId, width, height, 'PNG', 100, true, (canvas) => {
     canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
     const offsetX = (width - contentW * scale) / 2 - bounds.minX * scale
     const offsetY = (height - contentH * scale) / 2 - bounds.minY * scale
