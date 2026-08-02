@@ -68,7 +68,7 @@ export type SeedStorageCanvasOptions = {
 export async function seedStorageCanvasFromRemote(
   options: SeedStorageCanvasOptions
 ): Promise<void> {
-  await getLocalCanvasStore().writeCanvas({
+  const metadata = await getLocalCanvasStore().writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
     name: options.name,
@@ -83,6 +83,9 @@ export async function seedStorageCanvasFromRemote(
   await getLocalCanvasStore().updateMeta(options.canvasId, {
     lastSyncedAt: options.updatedAt || new Date().toISOString(),
     syncStatus: 'synced',
+    // These bytes were just downloaded FROM the remote, so the remote provably
+    // has them — without this the row would never become evictable.
+    bodySyncedRevision: metadata.revision,
     lastSyncError: null
   })
   await evictLocalFigCache(new Set([options.canvasId]))

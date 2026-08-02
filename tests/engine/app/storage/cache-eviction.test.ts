@@ -10,6 +10,12 @@ import type { LocalSyncStatus } from '@/app/storage/local-store'
 
 const MB = 1024 * 1024
 
+/**
+ * Seed a row whose bytes are genuinely on the remote: `syncStatus: 'synced'`
+ * AND a confirmed body upload at the current revision. Both are required for
+ * eviction — `syncStatus` alone can be set by a metadata-only put, which would
+ * make eviction destroy the only copy.
+ */
 async function seed(
   id: string,
   sizeMb: number,
@@ -17,14 +23,17 @@ async function seed(
   syncStatus: LocalSyncStatus = 'synced'
 ) {
   const local = getLocalCanvasStore()
-  await local.writeCanvas({
+  const meta = await local.writeCanvas({
     id,
     providerId: 's3-compatible',
     name: id,
     figBytes: new Uint8Array(sizeMb * MB),
     syncStatus
   })
-  await local.updateMeta(id, { lastOpenedAt })
+  await local.updateMeta(id, {
+    lastOpenedAt,
+    ...(syncStatus === 'synced' ? { bodySyncedRevision: meta.revision } : {})
+  })
 }
 
 describe('evictLocalFigCache', () => {
@@ -72,5 +81,35 @@ describe('evictLocalFigCache', () => {
     await local.updateMeta('legacy', { figSize: undefined })
     const evicted = await evictLocalFigCache(new Set(), 1 * MB)
     expect(evicted).toBe(1)
+  })
+
+  test('keeps bytes when synced but no body upload was ever confirmed', async () => {
+    // A metadata-only put (rename/trash) can mark a row 'synced' without any
+    // body reaching the remote. Evicting here destroys the only copy.
+    await seed('sidecar-only', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    await local.updateMeta('sidecar-only', { bodySyncedRevision: undefined })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
+    expect(evicted).toBe(0)
+    expect((await local.getMeta('sidecar-only'))?.hasFig).toBe(true)
+    expect(await local.readFig('sidecar-only')).not.toBeNull()
+  })
+
+  test('keeps bytes when the body upload is behind the current revision', async () => {
+    // Body synced at r1, then the user edited again — r2 exists only locally.
+    await seed('stale-body', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    const before = await local.getMeta('stale-body')
+    await local.updateMeta('stale-body', {
+      revision: (before?.revision ?? 1) + 1,
+      syncStatus: 'synced'
+    })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
+    expect(evicted).toBe(0)
+    expect(await local.readFig('stale-body')).not.toBeNull()
   })
 })

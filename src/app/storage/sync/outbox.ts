@@ -90,7 +90,15 @@ export function createMemoryOutbox(): Outbox {
 export function createIdbOutbox(): Outbox {
   let dbPromise: Promise<IDBDatabase> | null = null
   function db() {
-    if (!dbPromise) dbPromise = openDb()
+    // Never memoize a rejection: one transient open failure (quota, private
+    // mode, a blocked upgrade from another tab) used to brick the outbox for
+    // the tab's whole lifetime, so every later save failed to queue.
+    if (!dbPromise) {
+      dbPromise = openDb().catch((error: unknown) => {
+        dbPromise = null
+        throw error
+      })
+    }
     return dbPromise
   }
 
@@ -123,7 +131,13 @@ export function createIdbOutbox(): Outbox {
     async update(job) {
       const database = await db()
       const tx = database.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).put(job)
+      const store = tx.objectStore(STORE)
+      // `put` is an upsert, so a retry/backoff write for a job that was already
+      // completed or superseded used to RESURRECT it. The zombie then re-ran,
+      // failed on missing local bytes, and demoted a healthy document to
+      // `error`. Only update a row that still exists.
+      const existing = (await reqToPromise(store.get(job.id))) as OutboxJob | undefined
+      if (existing) store.put(job)
       await txDone(tx)
     },
 

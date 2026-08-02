@@ -50,16 +50,68 @@ export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number |
   return nextAt === Number.MAX_SAFE_INTEGER ? null : Math.max(250, nextAt - now)
 }
 
+/** HTTP status carried by adapter errors (S3HttpError, AppwriteHttpError, …). */
+function httpStatusOf(error: unknown): number | null {
+  if (!error || typeof error !== 'object' || !('status' in error)) return null
+  const status = (error as { status: unknown }).status
+  return typeof status === 'number' ? status : null
+}
+
 function isPermanentError(error: unknown): boolean {
+  // Prefer the real status. The previous substring match on '403'/'401' fired on
+  // any message that happened to contain those digits — a byte count, a port, a
+  // request id — and permanently parked the document mutation behind it.
+  const status = httpStatusOf(error)
+  if (status != null) return status === 401 || status === 403 || status === 404
   if (!(error instanceof Error)) return false
   const msg = error.message.toLowerCase()
   return (
-    msg.includes('403') ||
-    msg.includes('401') ||
     msg.includes('access denied') ||
     msg.includes('invalid access key') ||
     msg.includes('not configured')
   )
+}
+
+/**
+ * Record a sync failure against the document, guarded by revision.
+ *
+ * Unguarded writes let a stale or zombie job demote a document that is healthy
+ * at a newer revision to `error`, leaving a permanent false failure badge.
+ * `putThumb` never touches `syncStatus` — a stale remote thumbnail must not
+ * report the document itself as broken.
+ */
+async function updateSyncFailureMeta(job: OutboxJob, message: string): Promise<void> {
+  const store = getLocalCanvasStore()
+  const latest = await store.getMeta(job.canvasId)
+  if (!latest) return
+  if (job.type === 'putThumb') {
+    await store.updateMeta(job.canvasId, { lastSyncError: message })
+    return
+  }
+  await store.updateMeta(
+    job.canvasId,
+    { syncStatus: 'error', lastSyncError: message },
+    { expectedRevision: latest.revision }
+  )
+}
+
+/**
+ * Reason text for a fully parked queue, recovered from the per-document errors
+ * the engine already records. Without this the user is told "sync paused" with
+ * no indication of which document failed or why.
+ */
+async function describeBlockedQueue(jobs: OutboxJob[]): Promise<string> {
+  const store = getLocalCanvasStore()
+  const canvasIds = [...new Set(jobs.map((job) => job.canvasId))]
+  const metas = await Promise.all(canvasIds.map((id) => store.getMeta(id)))
+  const failures = metas.filter((meta) => meta?.lastSyncError)
+  const reason = failures[0]?.lastSyncError ?? 'Storage is unavailable'
+  const others = failures.length - 1
+  const scope =
+    failures.length > 1
+      ? `${failures[0]?.name ?? 'A document'} and ${others} other ${others === 1 ? 'document' : 'documents'}`
+      : (failures[0]?.name ?? `${jobs.length} pending change${jobs.length === 1 ? '' : 's'}`)
+  return `${scope}: ${reason}`
 }
 
 function documentMetadata(meta: LocalCanvasMeta): StorageDocumentMetadata {
@@ -71,19 +123,35 @@ function documentMetadata(meta: LocalCanvasMeta): StorageDocumentMetadata {
   }
 }
 
-async function markRevisionSynced(store: LocalCanvasStore, job: OutboxJob): Promise<boolean> {
-  const latest = await store.getMeta(job.canvasId)
-  if (!latest || latest.revision !== job.revision || latest.tombstoned) return false
+/**
+ * Record a successful remote write.
+ *
+ * A document only counts as `synced` when its BYTES are on the remote at the
+ * current revision. Metadata-only puts must not claim it: renaming a document
+ * with a pending body upload used to mark the row synced, which both hid the
+ * missing upload and made the local blob evictable — destroying the only copy.
+ */
+export async function markRevisionSynced(
+  store: LocalCanvasStore,
+  canvasId: string,
+  revision: number,
+  options: { bodyUploaded?: boolean } = {}
+): Promise<boolean> {
+  const latest = await store.getMeta(canvasId)
+  if (!latest || latest.revision !== revision || latest.tombstoned) return false
+  const bodySyncedRevision = options.bodyUploaded ? revision : latest.bodySyncedRevision
+  const bodyIsCurrent = bodySyncedRevision === revision
   await store.updateMeta(
-    job.canvasId,
+    canvasId,
     {
-      syncStatus: 'synced',
+      syncStatus: bodyIsCurrent ? 'synced' : 'pending',
+      bodySyncedRevision,
       lastSyncedAt: new Date().toISOString(),
       lastSyncError: null
     },
-    { expectedRevision: job.revision }
+    { expectedRevision: revision }
   )
-  return true
+  return bodyIsCurrent
 }
 
 async function putMetadata(
@@ -92,16 +160,38 @@ async function putMetadata(
   meta: LocalCanvasMeta,
   job: OutboxJob
 ): Promise<void> {
-  if (meta.revision > job.revision) return
+  // Write whatever the row currently says rather than bailing when the revision
+  // advanced past the job — the job is "sync this canvas", not "sync revision N".
+  const revision = meta.revision
   const metadata = documentMetadata(meta)
   if (adapter.putDocumentMetadata) {
     await adapter.putDocumentMetadata(job.canvasId, metadata)
   } else {
     const bytes = meta.hasFig ? await store.readFig(job.canvasId) : null
     if (!bytes) throw new Error('Storage provider cannot update document metadata separately')
+    // This path uploads the body alongside the metadata.
     await adapter.putDocument(job.canvasId, bytes, metadata)
+    await markRevisionSynced(store, job.canvasId, revision, { bodyUploaded: true })
+    return
   }
-  await markRevisionSynced(store, job)
+  await markRevisionSynced(store, job.canvasId, revision)
+
+  // A sidecar write proves nothing about the body. If this revision's bytes are
+  // still missing remotely, queue the upload instead of leaving a row that looks
+  // synced but has no remote object behind it.
+  const latest = await store.getMeta(job.canvasId)
+  if (
+    latest &&
+    !latest.tombstoned &&
+    latest.hasFig &&
+    latest.bodySyncedRevision !== latest.revision
+  ) {
+    await getOutbox().enqueue({
+      canvasId: job.canvasId,
+      type: 'putCanvas',
+      revision: latest.revision
+    })
+  }
 }
 
 async function putCanvas(
@@ -110,7 +200,11 @@ async function putCanvas(
   meta: LocalCanvasMeta,
   job: OutboxJob
 ): Promise<void> {
-  if (meta.revision > job.revision || !meta.hasFig) return
+  if (!meta.hasFig) return
+  // Upload the CURRENT revision, not the one the job was created for. A rename
+  // between enqueue and drain bumps the revision, and the old code treated the
+  // now-stale job as success and deleted it — losing the body upload entirely.
+  const revision = meta.revision
   const bytes = await store.readFig(job.canvasId)
   if (!bytes || bytes.byteLength === 0) throw new Error('Local document missing for sync')
   setUploadProgress(job.canvasId, 0)
@@ -123,7 +217,7 @@ async function putCanvas(
   } finally {
     setUploadProgress(job.canvasId, null)
   }
-  if (await markRevisionSynced(store, job)) {
+  if (await markRevisionSynced(store, job.canvasId, revision, { bodyUploaded: true })) {
     await evictLocalFigCache(new Set([job.canvasId]))
   }
 }
@@ -192,15 +286,27 @@ async function pumpOnce(): Promise<void> {
     return
   }
 
-  setSyncUi('syncing')
   const now = Date.now()
-  // Single-flight globally for simplicity (large figs)
+  // Single-flight within this tab (large figs)
   const job = jobs.find((j) => j.nextAttemptAt <= now)
   if (!job) {
     const delay = nextSyncWakeDelay(jobs, now)
-    if (delay != null) scheduleWake(delay)
+    if (delay != null) {
+      // Waiting on a backoff — still making progress.
+      setSyncUi('syncing')
+      scheduleWake(delay)
+      return
+    }
+    // Every job is parked at MAX_SAFE_INTEGER. Nothing will move without user
+    // action, so report it as terminal instead of falling through to "Syncing…"
+    // forever, which is what this path used to do.
+    setSyncUi('blocked', await describeBlockedQueue(jobs))
     return
   }
+
+  // Only claim "syncing" once we actually have a job to run, so a kick from an
+  // autosave or an `online` event cannot overwrite a sticky failure state.
+  setSyncUi('syncing')
 
   try {
     await runJob(job)
@@ -216,7 +322,10 @@ async function pumpOnce(): Promise<void> {
         ...job,
         nextAttemptAt: Number.MAX_SAFE_INTEGER
       })
-      setSyncUi('error', message)
+      // Record it on the document too — this branch used to leave no per-document
+      // trace at all, so nothing could explain the pause afterwards.
+      await updateSyncFailureMeta(job, message)
+      setSyncUi('blocked', message)
       return
     }
 
@@ -225,18 +334,10 @@ async function pumpOnce(): Promise<void> {
     console.warn('[Storage sync] job failed:', job.type, job.canvasId, message)
 
     if (permanent) {
-      // A failed thumbnail upload must not poison the document's sync status —
-      // only canvas/delete jobs reflect into the meta row.
+      await updateSyncFailureMeta(job, message)
       if (job.type !== 'putThumb') {
-        await getLocalCanvasStore().updateMeta(job.canvasId, {
-          syncStatus: 'error',
-          lastSyncError: message
-        })
-        setSyncUi('error', message.slice(0, 120))
-      } else {
-        // Keep a record without touching syncStatus so the stale remote
-        // thumbnail is at least diagnosable.
-        await getLocalCanvasStore().updateMeta(job.canvasId, { lastSyncError: message })
+        // Terminal for this job: it parks below and only resumeStorageSync revives it.
+        setSyncUi('blocked', message)
       }
       if (job.type === 'putThumb') {
         await outbox.remove(job.id)
@@ -262,6 +363,8 @@ async function pumpOnce(): Promise<void> {
       nextAttemptAt: Date.now() + backoffMs(attempts)
     }
     await outbox.update(updated)
+    // Transient: still retrying, so surface it as `error` rather than `blocked`.
+    setSyncUi('error', message)
     if (job.type !== 'putThumb') {
       await getLocalCanvasStore().updateMeta(job.canvasId, {
         syncStatus: 'pending',
@@ -296,6 +399,26 @@ function ensureOnlineListeners() {
   })
 }
 
+const SYNC_LOCK = 'openpencil-storage-sync'
+
+/**
+ * Hold a cross-tab exclusive lock for the duration of a drain.
+ *
+ * The outbox is shared IndexedDB but the in-tab `pumping` flag is per-realm, so
+ * two open tabs would both select the same job and upload the same bytes. The
+ * loser then found the blob evicted by the winner, failed, and demoted a healthy
+ * document to `error`. `ifAvailable` means a tab that loses the lock simply
+ * skips this drain rather than queueing another full pass behind it.
+ */
+async function withSyncLock(run: () => Promise<void>): Promise<void> {
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+  if (!locks) return run()
+  await locks.request(SYNC_LOCK, { ifAvailable: true }, async (lock) => {
+    if (!lock) return
+    await run()
+  })
+}
+
 /** Start or continue draining the outbox. Safe to call often. */
 export async function kickSyncEngine(): Promise<void> {
   ensureOnlineListeners()
@@ -303,13 +426,15 @@ export async function kickSyncEngine(): Promise<void> {
   pumping = true
   let pumpFailed = false
   try {
-    // Drain a few jobs per kick to avoid long tight loops blocking the tab.
-    for (let i = 0; i < 3; i++) {
-      const before = (await getOutbox().list()).length
-      await pumpOnce()
-      const after = (await getOutbox().list()).length
-      if (after === 0 || after >= before) break
-    }
+    await withSyncLock(async () => {
+      // Drain a few jobs per kick to avoid long tight loops blocking the tab.
+      for (let i = 0; i < 3; i++) {
+        const before = (await getOutbox().list()).length
+        await pumpOnce()
+        const after = (await getOutbox().list()).length
+        if (after === 0 || after >= before) break
+      }
+    })
   } catch (error) {
     // Never let an escaped rejection strand the queue — retry shortly.
     pumpFailed = true
@@ -352,7 +477,10 @@ export async function resumeStorageSync(): Promise<void> {
   const outbox = getOutbox()
   const jobs = await outbox.list()
   const now = Date.now()
-  await Promise.all(jobs.map((job) => outbox.update({ ...job, nextAttemptAt: now })))
+  // Reset attempts too: the user repairing credentials is exactly the signal
+  // that the old attempt count is stale. Without this a parked job got a single
+  // retry and re-parked on the first transient blip.
+  await Promise.all(jobs.map((job) => outbox.update({ ...job, attempts: 0, nextAttemptAt: now })))
   if (jobs.length > 0) setSyncUi('syncing')
   void kickSyncEngine()
 }

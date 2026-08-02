@@ -52,7 +52,15 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
   let dbPromise: Promise<IDBDatabase> | null = null
 
   function db() {
-    if (!dbPromise) dbPromise = openDb()
+    // A memoized rejection would permanently brick the local mirror for this
+    // tab — every subsequent save rejects — and the memory fallback in
+    // `store.ts` cannot catch it because the open is lazy and async.
+    if (!dbPromise) {
+      dbPromise = openDb().catch((error: unknown) => {
+        dbPromise = null
+        throw error
+      })
+    }
     return dbPromise
   }
 

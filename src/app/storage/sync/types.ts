@@ -11,7 +11,13 @@ export type OutboxJob = {
   nextAttemptAt: number
 }
 
-export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error'
+/**
+ * `error` is a transient failure still being retried. `blocked` is terminal:
+ * every queued job is parked and nothing will move until the user repairs
+ * configuration. They are distinct because a blocked queue used to fall through
+ * and render as "Syncing…" indefinitely.
+ */
+export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error' | 'blocked'
 
 /** Pure helper: drop older putCanvas jobs for same canvas when a newer revision is enqueued. */
 export function supersedePutCanvasJobs(

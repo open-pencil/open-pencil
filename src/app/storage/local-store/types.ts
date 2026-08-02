@@ -12,6 +12,14 @@ export type LocalCanvasMeta = {
   updatedAt: string
   /** Monotonic local revision; increments on each local write. */
   revision: number
+  /**
+   * Revision whose fig BYTES are confirmed on the remote. Metadata-only puts
+   * (rename/trash/restore) bump `revision` without uploading a body, so this is
+   * the only field that proves a durable remote copy exists. `syncStatus` does
+   * not: it used to be set by a sidecar write alone, which made eviction drop
+   * the last copy of a document the remote had never seen.
+   */
+  bodySyncedRevision?: number
   syncStatus: LocalSyncStatus
   lastSyncedAt: string | null
   lastSyncError: string | null
@@ -49,4 +57,6 @@ export type LocalCanvasWriteInput = {
   /** If set, keep this revision; otherwise increment from existing. */
   revision?: number
   syncStatus?: LocalSyncStatus
+  /** Set when the bytes being written are known to already exist remotely. */
+  bodySyncedRevision?: number
 }

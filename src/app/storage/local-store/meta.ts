@@ -37,6 +37,9 @@ export function buildWriteMeta(
     trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),
     updatedAt: input.updatedAt ?? new Date().toISOString(),
     revision: input.revision ?? (existing ? existing.revision + 1 : 1),
+    // New bytes are not on the remote yet, so this deliberately stays at the
+    // older revision until putCanvas confirms an upload.
+    bodySyncedRevision: input.bodySyncedRevision ?? existing?.bodySyncedRevision,
     syncStatus: input.syncStatus ?? 'pending',
     lastSyncedAt: existing?.lastSyncedAt ?? null,
     lastSyncError: input.syncStatus === 'synced' ? null : (existing?.lastSyncError ?? null),
@@ -62,6 +65,7 @@ export function buildIndexMeta(
     trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),
     updatedAt: input.updatedAt,
     revision: input.revision ?? existing?.revision ?? 1,
+    bodySyncedRevision: existing?.bodySyncedRevision,
     syncStatus: input.syncStatus,
     lastSyncedAt: input.lastSyncedAt,
     lastSyncError: input.lastSyncError,

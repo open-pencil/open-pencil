@@ -5,8 +5,14 @@ export const FIG_CACHE_BUDGET_BYTES = 500 * 1024 * 1024
 
 /**
  * Evict least-recently-opened fig blobs until the cache fits the budget.
- * Only fully synced, non-tombstoned, not-currently-open canvases qualify —
- * evicting never loses data, it just forces a re-download on next open.
+ *
+ * The safety rule is: **only evict a blob the remote provably has.** That means
+ * `bodySyncedRevision === revision` — a confirmed upload of the current bytes —
+ * not merely `syncStatus === 'synced'`, which a metadata-only put can set
+ * without any body ever reaching the remote. Getting this wrong deletes the
+ * user's only copy, so the check is deliberately conservative: a row whose body
+ * revision is unknown or stale is kept, at worst wasting cache space.
+ *
  * Returns the number of evicted figs.
  */
 export async function evictLocalFigCache(
@@ -29,6 +35,8 @@ export async function evictLocalFigCache(
     }
     totalBytes += size
     if (m.tombstoned || m.syncStatus !== 'synced' || excludeIds.has(m.id)) continue
+    // Never drop bytes the remote has not confirmed at this exact revision.
+    if (m.bodySyncedRevision !== m.revision) continue
     candidates.push({
       id: m.id,
       size,
