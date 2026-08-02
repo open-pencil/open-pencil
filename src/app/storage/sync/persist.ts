@@ -15,6 +15,8 @@ export type PersistStorageCanvasOptions = {
   canvasId: string
   name: string
   sourceFormat?: StorageDocumentFormat
+  updatedAt?: string
+  trashedAt?: string | null
   figBytes: Uint8Array
   thumbnailBytes?: Uint8Array | null
 }
@@ -34,6 +36,8 @@ export async function persistStorageCanvasLocally(
     providerId: options.providerId,
     name: options.name,
     sourceFormat: options.sourceFormat,
+    updatedAt: options.updatedAt,
+    trashedAt: options.trashedAt,
     figBytes: options.figBytes,
     thumbBytes: options.thumbnailBytes,
     syncStatus: 'pending'
@@ -54,6 +58,7 @@ export type SeedStorageCanvasOptions = {
   canvasId: string
   name: string
   sourceFormat?: StorageDocumentFormat
+  trashedAt?: string | null
   updatedAt: string
   figBytes: Uint8Array
   thumbnailBytes?: Uint8Array | null
@@ -68,6 +73,7 @@ export async function seedStorageCanvasFromRemote(
     providerId: options.providerId,
     name: options.name,
     sourceFormat: options.sourceFormat,
+    trashedAt: options.trashedAt,
     updatedAt: options.updatedAt,
     figBytes: options.figBytes,
     thumbBytes: options.thumbnailBytes,

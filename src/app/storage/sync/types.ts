@@ -1,10 +1,10 @@
-export type OutboxJobType = 'putCanvas' | 'putThumb' | 'deleteCanvas'
+export type OutboxJobType = 'putCanvas' | 'putMetadata' | 'putThumb' | 'deleteCanvas'
 
 export type OutboxJob = {
   id: string
   canvasId: string
   type: OutboxJobType
-  /** Local revision for putCanvas; used to supersede older puts. */
+  /** Local revision for document/metadata puts; used to supersede older puts. */
   revision: number
   createdAt: number
   attempts: number

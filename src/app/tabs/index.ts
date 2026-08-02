@@ -169,7 +169,11 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     return
   }
 
-  const store = reusableTabStore()
+  // Workspace documents append to the editor tab list and stay focused. Reusing an
+  // untouched tab could replace a tab in the middle of the strip, which made cloud opens
+  // appear to land in an arbitrary position.
+  const tab = createTab()
+  const { store } = tab
   store.state.documentName = document.name
   store.state.loading = true
   try {
@@ -189,6 +193,7 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
         canvasId: document.id,
         name: document.name,
         sourceFormat: document.sourceFormat,
+        trashedAt: document.trashedAt,
         updatedAt: document.updatedAt,
         figBytes: bytes
       })
@@ -224,6 +229,7 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
     await store.fitCurrentPageToViewport()
+    switchTab(tab.id)
   } finally {
     store.state.loading = false
   }

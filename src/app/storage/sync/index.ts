@@ -2,6 +2,7 @@ export {
   clearStorageLocalMirror,
   enqueueDeleteCanvas,
   enqueuePutCanvas,
+  enqueuePutMetadata,
   enqueuePutThumb,
   kickSyncEngine,
   resumeStorageSync

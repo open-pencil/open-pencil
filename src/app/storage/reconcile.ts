@@ -31,6 +31,7 @@ export function reconcileStorageDocuments(
       name: metadata.name,
       updatedAt: metadata.updatedAt,
       sourceFormat: metadata.sourceFormat,
+      trashedAt: metadata.trashedAt,
       metadataAuthoritative: true
     })
   }

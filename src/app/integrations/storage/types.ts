@@ -19,6 +19,8 @@ export type StorageDocumentMetadata = {
   updatedAt: string
   /** Native bytes stored for this document. Missing legacy metadata defaults to `.fig`. */
   sourceFormat: StorageDocumentFormat
+  /** Soft-delete marker. The document bytes remain available until permanent deletion. */
+  trashedAt: string | null
 }
 
 export type StorageDocument = StorageDocumentMetadata & {
@@ -51,6 +53,7 @@ export interface StorageAdapter {
     metadata: StorageDocumentMetadata,
     onProgress?: (progress: StorageTransferProgress) => void
   ): Promise<void>
+  putDocumentMetadata?(id: string, metadata: StorageDocumentMetadata): Promise<void>
   deleteDocument(id: string): Promise<void>
   getDocumentMetadata?(id: string): Promise<StorageDocumentMetadata | null>
   getUsage(): Promise<StorageUsage>

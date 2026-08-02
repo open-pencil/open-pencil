@@ -18,7 +18,8 @@ export function sortAndFilterMetas(
 export function normalizeLocalCanvasMeta(meta: LocalCanvasMeta): LocalCanvasMeta {
   return {
     ...meta,
-    sourceFormat: meta.sourceFormat === 'deck' ? 'deck' : 'fig'
+    sourceFormat: meta.sourceFormat === 'deck' ? 'deck' : 'fig',
+    trashedAt: typeof meta.trashedAt === 'string' ? meta.trashedAt : null
   }
 }
 
@@ -33,6 +34,7 @@ export function buildWriteMeta(
     providerId: input.providerId,
     name: input.name,
     sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
+    trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),
     updatedAt: input.updatedAt ?? new Date().toISOString(),
     revision: input.revision ?? (existing ? existing.revision + 1 : 1),
     syncStatus: input.syncStatus ?? 'pending',
@@ -57,6 +59,7 @@ export function buildIndexMeta(
     providerId: input.providerId,
     name: input.name,
     sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
+    trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),
     updatedAt: input.updatedAt,
     revision: input.revision ?? existing?.revision ?? 1,
     syncStatus: input.syncStatus,

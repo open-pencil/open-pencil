@@ -61,11 +61,13 @@ function parseMetadata(
     const updatedAt =
       typeof parsed.updatedAt === 'string' && parsed.updatedAt ? parsed.updatedAt : null
     const sourceFormat = parsed.sourceFormat === 'deck' ? 'deck' : 'fig'
+    const trashedAt = typeof parsed.trashedAt === 'string' ? parsed.trashedAt : null
     return {
       metadata: {
         name: name ?? fallback.name,
         updatedAt: updatedAt ?? fallback.updatedAt,
-        sourceFormat
+        sourceFormat,
+        trashedAt
       },
       authoritative: name !== null && updatedAt !== null
     }
@@ -89,6 +91,24 @@ async function ensureNamespace(config: S3CompatibleConfig): Promise<void> {
     }
     throw error
   }
+}
+
+async function writeDocumentMetadata(
+  config: S3CompatibleConfig,
+  id: string,
+  metadata: StorageDocumentMetadata
+): Promise<void> {
+  await putObject(
+    config,
+    documentMetaKey(id),
+    JSON.stringify({
+      name: metadata.name,
+      updatedAt: metadata.updatedAt || new Date().toISOString(),
+      sourceFormat: metadata.sourceFormat,
+      trashedAt: metadata.trashedAt
+    }),
+    'application/json'
+  )
 }
 
 export interface S3StorageAdapter extends StorageAdapter {
@@ -143,7 +163,8 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
               const fallback = {
                 name: id,
                 updatedAt: lastModified ?? new Date(0).toISOString(),
-                sourceFormat: 'fig' as const
+                sourceFormat: 'fig' as const,
+                trashedAt: null
               }
               const metadataBytes = await getObject(config, documentMetaKey(id)).catch(
                 (error: unknown) => {
@@ -196,16 +217,11 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
               })
           : undefined
       )
-      await putObject(
-        config,
-        documentMetaKey(id),
-        JSON.stringify({
-          name: metadata.name,
-          updatedAt: metadata.updatedAt || new Date().toISOString(),
-          sourceFormat: metadata.sourceFormat
-        }),
-        'application/json'
-      )
+      await writeDocumentMetadata(config, id, metadata)
+    },
+
+    async putDocumentMetadata(id, metadata) {
+      await writeDocumentMetadata(await resolveConfig(runtime), id, metadata)
     },
 
     async getDocumentMetadata(id) {
@@ -215,7 +231,8 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       const parsed = parseMetadata(bytes, {
         name: id,
         updatedAt: new Date(0).toISOString(),
-        sourceFormat: 'fig'
+        sourceFormat: 'fig',
+        trashedAt: null
       })
       return parsed.authoritative ? parsed.metadata : null
     },

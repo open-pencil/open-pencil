@@ -44,12 +44,18 @@ function buildJob(partial: OutboxEnqueueInput): OutboxJob {
 
 /**
  * Queue with the new job applied: putCanvas supersedes older revisions,
- * and only one putThumb/delete per canvas survives (latest wins).
+ * and only one metadata/thumbnail/delete job per canvas survives (latest wins).
  */
 function withJobQueued(queue: OutboxJob[], job: OutboxJob): OutboxJob[] {
   let next = queue
   if (job.type === 'putCanvas') {
     next = supersedePutCanvasJobs(next, job.canvasId, job.revision)
+    next = next.filter(
+      (queued) =>
+        queued.canvasId !== job.canvasId ||
+        queued.type !== 'putMetadata' ||
+        queued.revision > job.revision
+    )
   }
   next = next.filter(
     (j) => !(j.canvasId === job.canvasId && j.type === job.type && j.type !== 'putCanvas')

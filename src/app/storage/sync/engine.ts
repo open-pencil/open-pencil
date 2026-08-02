@@ -5,10 +5,14 @@ import {
   createActiveStorageAdapter,
   storageCredentialStatuses,
   storagePreferencesComplete,
-  storageProviderRegistry
+  storageProviderRegistry,
+  type StorageAdapter,
+  type StorageDocumentMetadata
 } from '@/app/integrations/storage'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
+import type { LocalCanvasStore } from '@/app/storage/local-store/store'
+import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
 import { getOutbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/storage/sync/status'
@@ -58,6 +62,72 @@ function isPermanentError(error: unknown): boolean {
   )
 }
 
+function documentMetadata(meta: LocalCanvasMeta): StorageDocumentMetadata {
+  return {
+    name: meta.name,
+    updatedAt: meta.updatedAt,
+    sourceFormat: meta.sourceFormat,
+    trashedAt: meta.trashedAt
+  }
+}
+
+async function markRevisionSynced(store: LocalCanvasStore, job: OutboxJob): Promise<boolean> {
+  const latest = await store.getMeta(job.canvasId)
+  if (!latest || latest.revision !== job.revision || latest.tombstoned) return false
+  await store.updateMeta(
+    job.canvasId,
+    {
+      syncStatus: 'synced',
+      lastSyncedAt: new Date().toISOString(),
+      lastSyncError: null
+    },
+    { expectedRevision: job.revision }
+  )
+  return true
+}
+
+async function putMetadata(
+  adapter: StorageAdapter,
+  store: LocalCanvasStore,
+  meta: LocalCanvasMeta,
+  job: OutboxJob
+): Promise<void> {
+  if (meta.revision > job.revision) return
+  const metadata = documentMetadata(meta)
+  if (adapter.putDocumentMetadata) {
+    await adapter.putDocumentMetadata(job.canvasId, metadata)
+  } else {
+    const bytes = meta.hasFig ? await store.readFig(job.canvasId) : null
+    if (!bytes) throw new Error('Storage provider cannot update document metadata separately')
+    await adapter.putDocument(job.canvasId, bytes, metadata)
+  }
+  await markRevisionSynced(store, job)
+}
+
+async function putCanvas(
+  adapter: StorageAdapter,
+  store: LocalCanvasStore,
+  meta: LocalCanvasMeta,
+  job: OutboxJob
+): Promise<void> {
+  if (meta.revision > job.revision || !meta.hasFig) return
+  const bytes = await store.readFig(job.canvasId)
+  if (!bytes || bytes.byteLength === 0) throw new Error('Local document missing for sync')
+  setUploadProgress(job.canvasId, 0)
+  try {
+    await adapter.putDocument(job.canvasId, bytes, documentMetadata(meta), (progress) => {
+      if (progress.totalBytes) {
+        setUploadProgress(job.canvasId, progress.transferredBytes / progress.totalBytes)
+      }
+    })
+  } finally {
+    setUploadProgress(job.canvasId, null)
+  }
+  if (await markRevisionSynced(store, job)) {
+    await evictLocalFigCache(new Set([job.canvasId]))
+  }
+}
+
 async function runJob(job: OutboxJob): Promise<void> {
   const store = getLocalCanvasStore()
   const meta = await store.getMeta(job.canvasId)
@@ -89,43 +159,13 @@ async function runJob(job: OutboxJob): Promise<void> {
     return
   }
 
+  if (job.type === 'putMetadata') {
+    await putMetadata(adapter, store, meta, job)
+    return
+  }
+
   if (job.type === 'putCanvas') {
-    // Superseded by a newer local revision already on disk
-    if (meta.revision > job.revision) return
-    if (!meta.hasFig) return
-    const fig = await store.readFig(job.canvasId)
-    if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
-    setUploadProgress(job.canvasId, 0)
-    try {
-      await adapter.putDocument(
-        job.canvasId,
-        fig,
-        {
-          name: meta.name,
-          updatedAt: meta.updatedAt,
-          sourceFormat: meta.sourceFormat
-        },
-        ({ transferredBytes, totalBytes }) => {
-          if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
-        }
-      )
-    } finally {
-      setUploadProgress(job.canvasId, null)
-    }
-    // Only mark synced if still on this revision and no other pending work for newer rev
-    const latest = await store.getMeta(job.canvasId)
-    if (latest && latest.revision === job.revision && !latest.tombstoned) {
-      await store.updateMeta(
-        job.canvasId,
-        {
-          syncStatus: 'synced',
-          lastSyncedAt: new Date().toISOString(),
-          lastSyncError: null
-        },
-        { expectedRevision: job.revision }
-      )
-      await evictLocalFigCache(new Set([job.canvasId]))
-    }
+    await putCanvas(adapter, store, meta, job)
     return
   }
 
@@ -289,6 +329,11 @@ export async function kickSyncEngine(): Promise<void> {
 
 export async function enqueuePutCanvas(canvasId: string, revision: number): Promise<void> {
   await getOutbox().enqueue({ canvasId, type: 'putCanvas', revision })
+  void kickSyncEngine()
+}
+
+export async function enqueuePutMetadata(canvasId: string, revision: number): Promise<void> {
+  await getOutbox().enqueue({ canvasId, type: 'putMetadata', revision })
   void kickSyncEngine()
 }
 

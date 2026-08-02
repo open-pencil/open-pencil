@@ -2,6 +2,13 @@
 import { useEventListener } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogTitle,
+  DialogClose
+} from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
 
 import {
@@ -15,15 +22,35 @@ import {
 } from '@/app/integrations/storage'
 import { openSettingsDialog, settingsDialogOpen } from '@/app/settings/dialog'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
+import {
+  duplicateStorageDocument,
+  moveStorageDocumentToTrash,
+  permanentlyDeleteStorageDocument,
+  renameStorageDocument,
+  restoreStorageDocument
+} from '@/app/storage/documents'
+import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import { createCanvasId } from '@/app/storage/id'
 import { isDeckStorageFile, prepareDeckStorageImport } from '@/app/storage/import'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
-import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
+import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
 import { enqueuePutThumb, persistStorageCanvasLocally } from '@/app/storage/sync'
 import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
-import { activeTab, createTab, openStorageDocumentInNewTab } from '@/app/tabs'
+import { activeTab, createDeckTab, createTab, openStorageDocumentInNewTab } from '@/app/tabs'
+import StorageDocumentCard from '@/components/storage/StorageDocumentCard.vue'
+import RefreshIcon from '@/components/storage/RefreshIcon.vue'
+import TrashIcon from '@/components/storage/TrashIcon.vue'
+import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import {
+  AppAlertDialogRoot,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot
+} from '@/components/ui/dialog'
 
 const { dialogs } = useI18n()
 const router = useRouter()
@@ -42,10 +69,49 @@ const error = ref<string | null>(null)
 const workspace = ref<HTMLElement | null>(null)
 const dropActive = ref(false)
 const importing = ref(false)
+const folder = ref<'documents' | 'trash'>('documents')
+const sortMode = ref<StorageSortMode>('date-desc')
+const busyDocumentIds = ref<Set<string>>(new Set())
+const renameOpen = ref(false)
+const renameTarget = ref<StorageDocument | null>(null)
+const renameValue = ref('')
+const deleteOpen = ref(false)
+const deleteTarget = ref<StorageDocument | null>(null)
+const deletePermanently = ref(false)
 const thumbnailUrls = ref<Record<string, string>>({})
 const ownedThumbnailUrls = new Map<string, string>()
+const queuedThumbnailIds = new Set<string>()
+const activeThumbnailIds = new Set<string>()
+const thumbnailQueue: StorageDocument[] = []
+const maxConcurrentThumbnailLoads = 3
 let dragDepth = 0
 let thumbnailLoadGeneration = 0
+
+const visibleDocuments = computed(() =>
+  sortStorageDocuments(
+    documents.value.filter((document) =>
+      folder.value === 'trash' ? document.trashedAt !== null : document.trashedAt === null
+    ),
+    sortMode.value
+  )
+)
+const trashedDocumentCount = computed(
+  () => documents.value.filter((document) => document.trashedAt !== null).length
+)
+const sortOptions = computed(() => [
+  { value: 'name-asc' as const, label: dialogs.value.storageSortNameAsc },
+  { value: 'name-desc' as const, label: dialogs.value.storageSortNameDesc },
+  { value: 'date-desc' as const, label: dialogs.value.storageSortNewest },
+  { value: 'date-asc' as const, label: dialogs.value.storageSortOldest }
+])
+const deleteDialogDescription = computed(() => {
+  const target = deleteTarget.value
+  if (!target) return ''
+  const params = { name: target.name }
+  return deletePermanently.value
+    ? dialogs.value.storageDeletePermanentlyDescription(params)
+    : dialogs.value.storageMoveToTrashDescription(params)
+})
 
 function setThumbnailUrl(documentId: string, bytes: Uint8Array): void {
   const previous = ownedThumbnailUrls.get(documentId)
@@ -57,58 +123,72 @@ function setThumbnailUrl(documentId: string, bytes: Uint8Array): void {
 
 function clearThumbnailUrls(): void {
   thumbnailLoadGeneration++
+  thumbnailQueue.length = 0
+  queuedThumbnailIds.clear()
   for (const url of ownedThumbnailUrls.values()) URL.revokeObjectURL(url)
   ownedThumbnailUrls.clear()
   thumbnailUrls.value = {}
 }
 
-async function loadDocumentThumbnails(items: StorageDocument[]): Promise<void> {
-  if (!configured.value || items.length === 0) return
-  const generation = ++thumbnailLoadGeneration
-  const providerId = activeStorageProviderID.value
-  const adapter = createActiveStorageAdapter(providerId)
+async function loadDocumentThumbnail(document: StorageDocument, generation: number): Promise<void> {
   const localStore = getLocalCanvasStore()
-  const missing: StorageDocument[] = []
+  const local = await localStore.readThumb(document.id)
+  if (generation !== thumbnailLoadGeneration) return
+  if (isUsableStorageThumbnail(local)) {
+    setThumbnailUrl(document.id, local)
+    return
+  }
 
-  // Prefer tiny cached/remote thumbnails before considering full document downloads.
-  for (let offset = 0; offset < items.length; offset += 6) {
-    const batch = items.slice(offset, offset + 6)
-    const loaded = await Promise.all(
-      batch.map(async (document) => {
-        const local = await localStore.readThumb(document.id)
-        if (isUsableStorageThumbnail(local)) return { document, bytes: local }
-        const remote = adapter.getThumbnail
-          ? await adapter.getThumbnail(document.id).catch(() => null)
-          : null
-        return { document, bytes: remote }
+  const adapter = createActiveStorageAdapter(activeStorageProviderID.value)
+  const remote = adapter.getThumbnail
+    ? await adapter.getThumbnail(document.id).catch(() => null)
+    : null
+  if (generation !== thumbnailLoadGeneration) return
+  if (isUsableStorageThumbnail(remote)) {
+    await localStore.writeThumb(document.id, remote)
+    if (generation === thumbnailLoadGeneration) setThumbnailUrl(document.id, remote)
+    return
+  }
+
+  // Legacy documents may only contain an archive thumbnail. Backfill it once, cache it
+  // locally, and upload the small object so later devices do not need the full document.
+  const bytes = await adapter.getDocument(document.id)
+  const thumbnail = await createStorageThumbnail(bytes, document.sourceFormat)
+  if (!isUsableStorageThumbnail(thumbnail) || generation !== thumbnailLoadGeneration) return
+  const metadata = await localStore.writeThumb(document.id, thumbnail)
+  if (metadata) await enqueuePutThumb(document.id, metadata.revision)
+  if (generation === thumbnailLoadGeneration) setThumbnailUrl(document.id, thumbnail)
+}
+
+function pumpThumbnailQueue(): void {
+  while (activeThumbnailIds.size < maxConcurrentThumbnailLoads && thumbnailQueue.length > 0) {
+    const document = thumbnailQueue.shift()
+    if (!document) return
+    queuedThumbnailIds.delete(document.id)
+    activeThumbnailIds.add(document.id)
+    const generation = thumbnailLoadGeneration
+    void loadDocumentThumbnail(document, generation)
+      .catch((reason) => {
+        console.warn('[Storage] Thumbnail load failed:', document.id, reason)
       })
-    )
-    if (generation !== thumbnailLoadGeneration) return
-    for (const result of loaded) {
-      if (isUsableStorageThumbnail(result.bytes)) {
-        await localStore.writeThumb(result.document.id, result.bytes)
-        setThumbnailUrl(result.document.id, result.bytes)
-      } else {
-        missing.push(result.document)
-      }
-    }
+      .finally(() => {
+        activeThumbnailIds.delete(document.id)
+        pumpThumbnailQueue()
+      })
   }
+}
 
-  // Legacy cloud documents have no separate thumbnail object. Backfill them one at a time
-  // from the thumbnail embedded in their native archive (or raster the first page).
-  for (const document of missing) {
-    if (generation !== thumbnailLoadGeneration) return
-    try {
-      const bytes = await adapter.getDocument(document.id)
-      const thumbnail = await createStorageThumbnail(bytes, document.sourceFormat)
-      if (!isUsableStorageThumbnail(thumbnail)) continue
-      const metadata = await localStore.writeThumb(document.id, thumbnail)
-      if (metadata) await enqueuePutThumb(document.id, metadata.revision)
-      if (generation === thumbnailLoadGeneration) setThumbnailUrl(document.id, thumbnail)
-    } catch (reason) {
-      console.warn('[Storage] Thumbnail backfill failed:', document.id, reason)
-    }
+function requestDocumentThumbnail(document: StorageDocument): void {
+  if (
+    thumbnailUrls.value[document.id] ||
+    queuedThumbnailIds.has(document.id) ||
+    activeThumbnailIds.has(document.id)
+  ) {
+    return
   }
+  queuedThumbnailIds.add(document.id)
+  thumbnailQueue.push(document)
+  pumpThumbnailQueue()
 }
 
 async function paintLocalDocuments(): Promise<void> {
@@ -120,6 +200,7 @@ async function paintLocalDocuments(): Promise<void> {
     name: metadata.name,
     updatedAt: metadata.updatedAt,
     sourceFormat: metadata.sourceFormat,
+    trashedAt: metadata.trashedAt,
     metadataAuthoritative: true
   }))
 }
@@ -149,13 +230,13 @@ async function refresh(): Promise<void> {
         providerId: activeStorageProviderID.value,
         name: document.name,
         sourceFormat: document.sourceFormat,
+        trashedAt: document.trashedAt,
         updatedAt: document.updatedAt,
         syncStatus: 'synced',
         lastSyncedAt: document.updatedAt,
         lastSyncError: null
       })
     }
-    void loadDocumentThumbnails(documents.value)
   } catch (reason) {
     error.value = reason instanceof Error ? reason.message : String(reason)
   } finally {
@@ -169,19 +250,134 @@ async function openDocument(document: StorageDocument): Promise<void> {
   await openStorageDocumentInNewTab(document)
 }
 
-async function createDocument(): Promise<void> {
+function setDocumentBusy(documentId: string, busy: boolean): void {
+  const next = new Set(busyDocumentIds.value)
+  if (busy) next.add(documentId)
+  else next.delete(documentId)
+  busyDocumentIds.value = next
+}
+
+function replaceDocument(next: StorageDocument): void {
+  documents.value = documents.value.map((document) => (document.id === next.id ? next : document))
+}
+
+function removeThumbnailUrl(documentId: string): void {
+  const owned = ownedThumbnailUrls.get(documentId)
+  if (owned) URL.revokeObjectURL(owned)
+  ownedThumbnailUrls.delete(documentId)
+  thumbnailUrls.value = Object.fromEntries(
+    Object.entries(thumbnailUrls.value).filter(([id]) => id !== documentId)
+  )
+}
+
+function startRename(document: StorageDocument): void {
+  renameTarget.value = document
+  renameValue.value = document.name
+  renameOpen.value = true
+}
+
+async function commitRename(): Promise<void> {
+  const target = renameTarget.value
+  if (!target) return
+  const name = nextUniqueStorageName(
+    renameValue.value,
+    documents.value.filter((document) => document.id !== target.id).map((document) => document.name)
+  )
+  if (name === target.name) {
+    renameOpen.value = false
+    return
+  }
+  setDocumentBusy(target.id, true)
+  error.value = null
+  try {
+    replaceDocument(await renameStorageDocument(activeStorageProviderID.value, target, name))
+    renameOpen.value = false
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : String(reason)
+  } finally {
+    setDocumentBusy(target.id, false)
+  }
+}
+
+async function duplicateDocument(document: StorageDocument): Promise<void> {
+  setDocumentBusy(document.id, true)
+  error.value = null
+  try {
+    const name = nextUniqueStorageName(
+      `${document.name} copy`,
+      documents.value.map((item) => item.name)
+    )
+    const duplicated = await duplicateStorageDocument(activeStorageProviderID.value, document, name)
+    documents.value = [duplicated.document, ...documents.value]
+    if (isUsableStorageThumbnail(duplicated.thumbnailBytes)) {
+      setThumbnailUrl(duplicated.document.id, duplicated.thumbnailBytes)
+    }
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : String(reason)
+  } finally {
+    setDocumentBusy(document.id, false)
+  }
+}
+
+function requestDelete(document: StorageDocument, permanent: boolean): void {
+  deleteTarget.value = document
+  deletePermanently.value = permanent
+  deleteOpen.value = true
+}
+
+async function confirmDelete(): Promise<void> {
+  const target = deleteTarget.value
+  if (!target) return
+  setDocumentBusy(target.id, true)
+  error.value = null
+  try {
+    if (deletePermanently.value) {
+      await permanentlyDeleteStorageDocument(activeStorageProviderID.value, target)
+      documents.value = documents.value.filter((document) => document.id !== target.id)
+      removeThumbnailUrl(target.id)
+    } else {
+      replaceDocument(await moveStorageDocumentToTrash(activeStorageProviderID.value, target))
+    }
+    deleteOpen.value = false
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : String(reason)
+  } finally {
+    setDocumentBusy(target.id, false)
+  }
+}
+
+async function restoreDocument(document: StorageDocument): Promise<void> {
+  setDocumentBusy(document.id, true)
+  error.value = null
+  try {
+    replaceDocument(await restoreStorageDocument(activeStorageProviderID.value, document))
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : String(reason)
+  } finally {
+    setDocumentBusy(document.id, false)
+  }
+}
+
+async function createDocument(sourceFormat: 'fig' | 'deck'): Promise<void> {
   if (!configured.value) return
   await router.push('/')
   await nextTick()
-  const current = activeTab.value
   const store =
-    current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-      ? current.store
-      : createTab().store
+    sourceFormat === 'deck'
+      ? (await createDeckTab()).store
+      : (() => {
+          const current = activeTab.value
+          const reusable =
+            current?.store.state.documentKind === 'design' &&
+            current.store.state.documentName === 'Untitled' &&
+            !current.store.undo.canUndo
+          return reusable ? current.store : createTab().store
+        })()
   const documentId = createCanvasId()
   store.setStorageDocumentSource(
     { providerId: activeStorageProviderID.value, documentId },
-    'Untitled'
+    'Untitled',
+    sourceFormat
   )
   await store.saveFigFile()
 }
@@ -235,6 +431,8 @@ async function importDroppedDecks(files: File[]): Promise<void> {
           canvasId: id,
           name,
           sourceFormat: prepared.sourceFormat,
+          updatedAt,
+          trashedAt: null,
           figBytes: prepared.bytes,
           thumbnailBytes: prepared.thumbnailBytes
         })
@@ -242,6 +440,7 @@ async function importDroppedDecks(files: File[]): Promise<void> {
           id,
           name,
           sourceFormat: prepared.sourceFormat,
+          trashedAt: null,
           updatedAt,
           metadataAuthoritative: true
         }
@@ -291,7 +490,7 @@ onBeforeUnmount(clearThumbnailUrls)
 <template>
   <main
     ref="workspace"
-    class="relative flex min-h-screen flex-col bg-app text-surface"
+    class="relative flex h-screen min-h-0 flex-col overflow-hidden bg-app text-surface"
     data-test-id="storage-workspace"
     :aria-busy="importing"
   >
@@ -310,18 +509,76 @@ onBeforeUnmount(clearThumbnailUrls)
         </button>
         <button
           type="button"
-          class="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+          class="flex items-center gap-1.5 rounded border border-border bg-panel px-2.5 py-1.5 text-xs font-medium text-surface hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="!configured"
-          data-test-id="storage-new-document"
-          @click="createDocument"
+          data-test-id="storage-new-design"
+          @click="createDocument('fig')"
         >
-          {{ dialogs.newStoredDocument }}
+          <img :src="storageDocumentIconUrls.fig" alt="" class="size-4 rounded-[3px]" />
+          {{ dialogs.newStoredDesign }}
+        </button>
+        <button
+          type="button"
+          class="flex items-center gap-1.5 rounded border border-border bg-panel px-2.5 py-1.5 text-xs font-medium text-surface hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="!configured"
+          data-test-id="storage-new-slides"
+          @click="createDocument('deck')"
+        >
+          <img :src="storageDocumentIconUrls.deck" alt="" class="size-4 rounded-[3px]" />
+          {{ dialogs.newStoredSlides }}
         </button>
       </div>
     </header>
 
-    <section class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col p-6">
-      <div class="mb-4 flex shrink-0 items-center justify-between">
+    <section class="flex min-h-0 w-full flex-1 flex-col overflow-y-auto p-6">
+      <div class="mb-4 flex shrink-0 items-center gap-2">
+        <div class="flex rounded-md border border-border bg-panel p-0.5">
+          <button
+            type="button"
+            class="rounded px-2.5 py-1 text-xs"
+            :class="
+              folder === 'documents' ? 'bg-hover text-surface' : 'text-muted hover:text-surface'
+            "
+            data-test-id="storage-folder-documents"
+            @click="folder = 'documents'"
+          >
+            {{ dialogs.storageDocuments }}
+          </button>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 rounded px-2.5 py-1 text-xs"
+            :class="folder === 'trash' ? 'bg-hover text-surface' : 'text-muted hover:text-surface'"
+            data-test-id="storage-folder-trash"
+            @click="folder = 'trash'"
+          >
+            <TrashIcon class="size-3" />
+            {{ dialogs.storageTrash }}
+            <span v-if="trashedDocumentCount" class="text-[10px] text-muted">
+              {{ trashedDocumentCount }}
+            </span>
+          </button>
+        </div>
+        <div class="ml-auto flex items-center gap-1.5">
+          <AppSelect
+            v-model="sortMode"
+            :options="sortOptions"
+            :label="dialogs.storageSort"
+            class="min-w-40"
+          />
+          <button
+            v-if="configured"
+            type="button"
+            class="flex size-7 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
+            :aria-label="dialogs.refresh"
+            :title="dialogs.refresh"
+            @click="refresh"
+          >
+            <RefreshIcon class="size-3.5" :class="loading && 'animate-spin'" />
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-4 flex min-h-5 shrink-0 items-center">
         <p v-if="error && configured" class="whitespace-pre-line text-xs text-danger" role="alert">
           {{ error }}
         </p>
@@ -329,47 +586,27 @@ onBeforeUnmount(clearThumbnailUrls)
           {{ dialogs.importingDeckFiles }}
         </p>
         <span v-else />
-        <button
-          v-if="configured"
-          type="button"
-          class="rounded px-2 py-1 text-xs text-muted hover:bg-hover hover:text-surface"
-          @click="refresh"
-        >
-          {{ dialogs.refresh }}
-        </button>
       </div>
 
       <div
-        v-if="documents.length"
+        v-if="visibleDocuments.length"
         class="grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-4"
       >
-        <button
-          v-for="document in documents"
+        <StorageDocumentCard
+          v-for="document in visibleDocuments"
           :key="document.id"
-          type="button"
-          class="group overflow-hidden rounded-lg border border-border bg-panel text-left hover:border-panel-focus hover:bg-hover"
-          :data-document-id="document.id"
-          @click="openDocument(document)"
-        >
-          <div
-            class="flex aspect-[4/3] items-center justify-center overflow-hidden bg-panel-field"
-            data-slot="storage-thumbnail"
-          >
-            <img
-              v-if="thumbnailUrls[document.id]"
-              :src="thumbnailUrls[document.id]"
-              alt=""
-              class="size-full object-cover"
-            />
-            <icon-lucide-presentation v-else class="size-5 text-muted/50" />
-          </div>
-          <div class="border-t border-border p-3">
-            <p class="truncate text-xs font-medium">{{ document.name }}</p>
-            <p class="mt-1 text-[10px] text-muted">
-              {{ new Date(document.updatedAt).toLocaleString() }}
-            </p>
-          </div>
-        </button>
+          :document="document"
+          :thumbnail-url="thumbnailUrls[document.id]"
+          :trash-view="folder === 'trash'"
+          :busy="busyDocumentIds.has(document.id)"
+          @open="openDocument"
+          @rename="startRename"
+          @duplicate="duplicateDocument"
+          @trash="requestDelete($event, false)"
+          @restore="restoreDocument"
+          @delete-permanently="requestDelete($event, true)"
+          @thumbnail-needed="requestDocumentThumbnail"
+        />
       </div>
 
       <AppPlaceholder v-else-if="loading" :label="dialogs.loadingDocuments" size="page">
@@ -378,9 +615,14 @@ onBeforeUnmount(clearThumbnailUrls)
         </template>
       </AppPlaceholder>
 
-      <AppPlaceholder v-else-if="configured" :label="dialogs.emptyStorageWorkspace" size="page">
+      <AppPlaceholder
+        v-else-if="configured"
+        :label="folder === 'trash' ? dialogs.emptyStorageTrash : dialogs.emptyStorageWorkspace"
+        size="page"
+      >
         <template #icon>
-          <icon-lucide-files class="size-5" />
+          <TrashIcon v-if="folder === 'trash'" class="size-5" />
+          <icon-lucide-files v-else class="size-5" />
         </template>
       </AppPlaceholder>
 
@@ -410,5 +652,68 @@ onBeforeUnmount(clearThumbnailUrls)
         <p class="text-sm font-medium">{{ dialogs.dropDeckFiles }}</p>
       </div>
     </div>
+
+    <AppDialogRoot v-model:open="renameOpen" size="sm" data-test-id="storage-rename-dialog">
+      <AppDialogHeader
+        :heading="dialogs.storageRename"
+        :description="dialogs.storageRenameDescription"
+        :close-label="dialogs.cancel"
+      />
+      <AppDialogBody>
+        <input
+          v-model="renameValue"
+          class="w-full rounded border border-border bg-panel-field px-2.5 py-2 text-xs text-surface outline-none focus:border-panel-focus"
+          :aria-label="dialogs.storageRename"
+          @keydown.enter="commitRename"
+        />
+      </AppDialogBody>
+      <AppDialogFooter>
+        <DialogClose as-child>
+          <button type="button" class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover">
+            {{ dialogs.cancel }}
+          </button>
+        </DialogClose>
+        <button
+          type="button"
+          class="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
+          @click="commitRename"
+        >
+          {{ dialogs.storageRename }}
+        </button>
+      </AppDialogFooter>
+    </AppDialogRoot>
+
+    <AppAlertDialogRoot v-model:open="deleteOpen" data-test-id="storage-delete-dialog">
+      <div class="border-b border-border px-4 py-3">
+        <AlertDialogTitle class="text-sm font-semibold text-surface">
+          {{
+            deletePermanently
+              ? dialogs.storageDeletePermanentlyTitle
+              : dialogs.storageMoveToTrashTitle
+          }}
+        </AlertDialogTitle>
+      </div>
+      <AppDialogBody>
+        <AlertDialogDescription class="text-xs text-muted">
+          {{ deleteDialogDescription }}
+        </AlertDialogDescription>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <AlertDialogCancel as-child>
+          <button type="button" class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover">
+            {{ dialogs.cancel }}
+          </button>
+        </AlertDialogCancel>
+        <AlertDialogAction as-child>
+          <button
+            type="button"
+            class="rounded bg-danger px-3 py-1.5 text-xs font-medium text-white hover:bg-danger/90"
+            @click="confirmDelete"
+          >
+            {{ deletePermanently ? dialogs.storageDeletePermanently : dialogs.storageMoveToTrash }}
+          </button>
+        </AlertDialogAction>
+      </AppDialogFooter>
+    </AppAlertDialogRoot>
   </main>
 </template>

@@ -8,6 +8,7 @@ export type LocalCanvasMeta = {
   providerId: StorageProviderID
   name: string
   sourceFormat: StorageDocumentFormat
+  trashedAt: string | null
   updatedAt: string
   /** Monotonic local revision; increments on each local write. */
   revision: number
@@ -27,12 +28,13 @@ export type LocalCanvasMeta = {
 /** Index-only row for remote canvases not yet downloaded (no fig body). */
 export type LocalCanvasIndexInput = Omit<
   LocalCanvasMeta,
-  'hasFig' | 'hasThumb' | 'tombstoned' | 'revision' | 'sourceFormat'
+  'hasFig' | 'hasThumb' | 'tombstoned' | 'revision' | 'sourceFormat' | 'trashedAt'
 > & {
   revision?: number
   hasFig?: boolean
   hasThumb?: boolean
   sourceFormat?: StorageDocumentFormat
+  trashedAt?: string | null
 }
 
 export type LocalCanvasWriteInput = {
@@ -41,6 +43,7 @@ export type LocalCanvasWriteInput = {
   name: string
   sourceFormat?: StorageDocumentFormat
   updatedAt?: string
+  trashedAt?: string | null
   figBytes: Uint8Array
   thumbBytes?: Uint8Array | null
   /** If set, keep this revision; otherwise increment from existing. */

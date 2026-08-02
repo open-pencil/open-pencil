@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 
 import { expect, test, type Page } from '@playwright/test'
+import { unzipSync, zipSync } from 'fflate'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
@@ -63,7 +64,14 @@ test('configured storage lists and opens a remote document', async ({ page }) =>
   await configureStorage(page)
   const canvas = new CanvasHelper(page)
   await expect(page.getByText('Remote design')).toBeVisible()
-  await expect(page.locator('[data-document-id="remote-1"] img')).toBeVisible()
+  await expect(
+    page.locator('[data-document-id="remote-1"] [data-slot="storage-thumbnail"] > img').first()
+  ).toBeVisible()
+  await expect(
+    page.locator(
+      '[data-document-id="remote-1"] [data-slot="storage-format-badge"][data-format="fig"]'
+    )
+  ).toBeVisible()
 
   await page.locator('[data-document-id="remote-1"]').click()
   await expect(page).toHaveURL(/\/$/)
@@ -72,7 +80,14 @@ test('configured storage lists and opens a remote document', async ({ page }) =>
 })
 
 test('dropping a deck stores its format and generated thumbnail', async ({ page }) => {
-  const fixture = readFileSync('tests/fixtures/deck/css-filter-roundtrip.deck')
+  const fixtureArchive = unzipSync(readFileSync('tests/fixtures/deck/css-filter-roundtrip.deck'))
+  fixtureArchive['thumbnail.png'] = Uint8Array.from(
+    Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+Xv1ZAAAAAElFTkSuQmCC',
+      'base64'
+    )
+  )
+  const fixture = zipSync(fixtureArchive)
   const puts: Array<{ url: string; body: Buffer | null }> = []
 
   await page.route('https://s3.example.com/**', async (route) => {
@@ -117,7 +132,8 @@ test('dropping a deck stores its format and generated thumbnail', async ({ page 
 
   const card = page.getByRole('button', { name: /Dropped presentation/ })
   await expect(card).toBeVisible()
-  await expect(card.locator('img')).toBeVisible()
+  await expect(card.locator('[data-slot="storage-thumbnail"] > img').first()).toBeVisible()
+  await expect(card.locator('[data-slot="storage-format-badge"][data-format="deck"]')).toBeVisible()
   await expect
     .poll(() => puts.find((put) => put.url.endsWith('.meta.json'))?.body?.toString() ?? '')
     .toContain('"sourceFormat":"deck"')
@@ -134,7 +150,8 @@ test('storage workspace directs unconfigured users to Settings', async ({ page }
 
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
   await expect(page.getByText('Configure storage before using this workspace.')).toBeVisible()
-  await expect(page.getByTestId('storage-new-document')).toBeDisabled()
+  await expect(page.getByTestId('storage-new-design')).toBeDisabled()
+  await expect(page.getByTestId('storage-new-slides')).toBeDisabled()
 
   await page.getByRole('button', { name: 'Settings' }).last().click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
