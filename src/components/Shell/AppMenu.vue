@@ -115,7 +115,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
               <template v-for="(item, i) in menu.items" :key="i">
                 <MenubarSeparator v-if="isMenuSeparator(item)" :class="menuCls.separator" />
                 <MenubarSub v-else-if="hasMenuSubItems(item)">
-                  <MenubarSubTrigger :class="menuCls.item">
+                  <MenubarSubTrigger :class="menuCls.item" :disabled="menuDisabled(item)">
                     <span class="flex-1">{{ menuLabel(item) }}</span>
                     <IconChevronRight class="size-3 text-muted" />
                   </MenubarSubTrigger>

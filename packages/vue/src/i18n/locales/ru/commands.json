@@ -35,9 +35,9 @@
   "outlineStroke": "Преобразовать обводку в контур",
   "useAsMask": "Использовать как маску",
   "removeMask": "Убрать маску",
-  "bringForward": "Bring forward",
-  "distributeHorizontal": "Distribute horizontal spacing",
-  "distributeVertical": "Distribute vertical spacing",
-  "selectInverse": "Select inverse",
-  "sendBackward": "Send backward"
+  "bringForward": "Переместить вперёд",
+  "distributeHorizontal": "Распределить интервалы по горизонтали",
+  "distributeVertical": "Распределить интервалы по вертикали",
+  "selectInverse": "Инвертировать выделение",
+  "sendBackward": "Переместить назад"
 }

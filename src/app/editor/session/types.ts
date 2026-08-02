@@ -18,6 +18,7 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     cursorCanvasY: null,
     nodeEditState: null,
     renameSelectionOpen: false,
+    renameNodeId: null,
     numberFieldFocused: false
   }
 }
@@ -36,5 +37,6 @@ export type AppEditorState = EditorState & {
   cursorCanvasY: number | null
   nodeEditState: NodeEditState | null
   renameSelectionOpen: boolean
+  renameNodeId: string | null
   numberFieldFocused: boolean
 }

@@ -114,6 +114,45 @@ test.describe('selection shortcuts', () => {
     expect(await getSelectedCount()).toBe(2)
   })
 
+  test('⌘R starts inline rename for one layer', async () => {
+    const id = await editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const node = store.graph.createNode('RECTANGLE', store.state.currentPageId)
+      store.select([node.id])
+      return node.id
+    })
+
+    await editor.page.keyboard.press('Meta+r')
+
+    const input = editor.page.getByTestId('layers-item-input')
+    await expect(input).toBeFocused()
+    await input.fill('Renamed rectangle')
+    await input.press('Enter')
+    const child = (await getPageChildren()).find((node) => node.id === id)
+    expect(child?.name).toBe('Renamed rectangle')
+  })
+
+  test('⌘R opens bulk rename for multiple layers', async () => {
+    const ids = await editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const first = store.graph.createNode('RECTANGLE', store.state.currentPageId)
+      const second = store.graph.createNode('RECTANGLE', store.state.currentPageId)
+      store.select([first.id, second.id])
+      return [first.id, second.id]
+    })
+
+    await editor.page.keyboard.press('Meta+r')
+
+    const dialog = editor.page.getByRole('dialog', { name: 'Rename 2 layers' })
+    await expect(dialog).toBeVisible()
+    await dialog.getByLabel('Rename to').fill('Layer $n')
+    await dialog.getByRole('button', { name: 'Rename', exact: true }).click()
+    const renamed = (await getPageChildren()).filter((node) => ids.includes(node.id))
+    expect(renamed.map((node) => node.name)).toEqual(['Layer 1', 'Layer 2'])
+  })
+
   test('Escape clears selection and resets to SELECT tool', async () => {
     await editor.page.keyboard.press('Escape')
     expect(await getSelectedCount()).toBe(0)

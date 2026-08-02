@@ -35,9 +35,9 @@
   "outlineStroke": "Vectoriser le contour",
   "useAsMask": "Utiliser comme masque",
   "removeMask": "Retirer le masque",
-  "bringForward": "Bring forward",
-  "distributeHorizontal": "Distribute horizontal spacing",
-  "distributeVertical": "Distribute vertical spacing",
-  "selectInverse": "Select inverse",
-  "sendBackward": "Send backward"
+  "bringForward": "Avancer",
+  "distributeHorizontal": "Répartir l’espacement horizontal",
+  "distributeVertical": "Répartir l’espacement vertical",
+  "selectInverse": "Inverser la sélection",
+  "sendBackward": "Reculer"
 }

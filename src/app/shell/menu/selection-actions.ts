@@ -1,7 +1,7 @@
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
-import { openRenameSelectionDialog } from '@/app/editor/selection/rename-dialog'
+import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 
 export function createSelectionMenuActions(store: EditorStore) {
   return {
@@ -9,6 +9,6 @@ export function createSelectionMenuActions(store: EditorStore) {
     cut: () => void executeClipboardCommand(store, 'cut'),
     paste: () => void executeClipboardCommand(store, 'paste'),
     'paste-to-replace': () => void pasteClipboardToReplace(store),
-    'selection.rename': () => openRenameSelectionDialog(store)
+    'selection.rename': () => requestRenameSelection(store)
   }
 }

@@ -2,6 +2,10 @@ import { describe, expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
 
+function renameOptions(replacement: string, match = '', startNumber = 1) {
+  return { match, replacement, startNumber }
+}
+
 describe('selection semantics', () => {
   test('selectInverse selects unselected top-level layers', () => {
     const editor = createEditor()
@@ -23,7 +27,7 @@ describe('selection semantics', () => {
     const second = editor.graph.createNode('ELLIPSE', pageId, { name: 'Second' })
     editor.select([first.id, second.id])
 
-    editor.renameSelected('Shared name')
+    editor.renameSelected(renameOptions('Shared name'))
     expect(editor.graph.getNode(first.id)?.name).toBe('Shared name')
     expect(editor.graph.getNode(second.id)?.name).toBe('Shared name')
 
@@ -32,16 +36,49 @@ describe('selection semantics', () => {
     expect(editor.graph.getNode(second.id)?.name).toBe('Second')
   })
 
-  test('renameSelected restores default names for blank input', () => {
+  test('renameSelected supports matching, current names, and numbered sequences', () => {
     const editor = createEditor()
     const pageId = editor.state.currentPageId
-    const rectangle = editor.graph.createNode('RECTANGLE', pageId, { name: 'Custom' })
-    const text = editor.graph.createNode('TEXT', pageId, { name: 'Copy' })
-    editor.select([rectangle.id, text.id])
+    const first = editor.graph.createNode('RECTANGLE', pageId, { name: 'Icon/Home' })
+    const second = editor.graph.createNode('RECTANGLE', pageId, { name: 'Icon/Search' })
+    editor.select([first.id, second.id])
 
-    editor.renameSelected('  ')
+    editor.renameSelected(renameOptions('Image/', '^Icon/'))
+    expect(editor.graph.getNode(first.id)?.name).toBe('Image/Home')
+    expect(editor.graph.getNode(second.id)?.name).toBe('Image/Search')
 
-    expect(editor.graph.getNode(rectangle.id)?.name).toBe('Rectangle')
-    expect(editor.graph.getNode(text.id)?.name).toBe('Text')
+    editor.renameSelected(renameOptions('$nn $&', '', 7))
+    expect(editor.graph.getNode(first.id)?.name).toBe('07 Image/Home')
+    expect(editor.graph.getNode(second.id)?.name).toBe('08 Image/Search')
+
+    editor.undoAction()
+    editor.renameSelected(renameOptions('$NN $&', '', 7))
+    expect(editor.graph.getNode(first.id)?.name).toBe('08 Image/Home')
+    expect(editor.graph.getNode(second.id)?.name).toBe('07 Image/Search')
+  })
+
+  test('renameSelected rejects invalid regular expressions', () => {
+    const editor = createEditor()
+    const node = editor.graph.createNode('RECTANGLE', editor.state.currentPageId, { name: 'Home' })
+    editor.select([node.id])
+
+    const preview = editor.previewRenameSelected(renameOptions('Icon', '['))
+    editor.renameSelected(renameOptions('Icon', '['))
+
+    expect(preview.error).toBe('invalid-pattern')
+    expect(editor.graph.getNode(node.id)?.name).toBe('Home')
+    expect(editor.undo.canUndo).toBe(false)
+  })
+
+  test('blank results restore readable default names', () => {
+    const editor = createEditor()
+    const componentSet = editor.graph.createNode('COMPONENT_SET', editor.state.currentPageId, {
+      name: 'Custom'
+    })
+    editor.select([componentSet.id])
+
+    editor.renameSelected(renameOptions(''))
+
+    expect(editor.graph.getNode(componentSet.id)?.name).toBe('Component set')
   })
 })

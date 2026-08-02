@@ -54,8 +54,8 @@
   "arrangeAlignTop": "上揃え",
   "arrangeAlignMiddle": "上下中央揃え",
   "arrangeAlignBottom": "下揃え",
-  "multiplayerCursors": "Multiplayer cursors",
-  "renameSelection": "Rename selection…",
-  "rulers": "Rulers",
-  "settings": "Settings…"
+  "multiplayerCursors": "マルチプレイヤーカーソル",
+  "renameSelection": "選択範囲の名前を変更…",
+  "rulers": "ルーラー",
+  "settings": "設定…"
 }

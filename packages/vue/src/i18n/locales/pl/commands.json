@@ -35,9 +35,9 @@
   "outlineStroke": "Kontur obrysu",
   "useAsMask": "Użyj jako maski",
   "removeMask": "Usuń maskę",
-  "bringForward": "Bring forward",
-  "distributeHorizontal": "Distribute horizontal spacing",
-  "distributeVertical": "Distribute vertical spacing",
-  "selectInverse": "Select inverse",
-  "sendBackward": "Send backward"
+  "bringForward": "Przesuń do przodu",
+  "distributeHorizontal": "Rozłóż odstępy w poziomie",
+  "distributeVertical": "Rozłóż odstępy w pionie",
+  "selectInverse": "Odwróć zaznaczenie",
+  "sendBackward": "Przesuń do tyłu"
 }

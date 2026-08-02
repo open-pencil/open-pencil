@@ -54,8 +54,8 @@
   "arrangeAlignTop": "顶部对齐",
   "arrangeAlignMiddle": "垂直居中",
   "arrangeAlignBottom": "底部对齐",
-  "multiplayerCursors": "Multiplayer cursors",
-  "renameSelection": "Rename selection…",
-  "rulers": "Rulers",
-  "settings": "Settings…"
+  "multiplayerCursors": "多人光标",
+  "renameSelection": "重命名所选内容…",
+  "rulers": "标尺",
+  "settings": "设置…"
 }

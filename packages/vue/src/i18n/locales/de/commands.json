@@ -35,9 +35,9 @@
   "outlineStroke": "Kontur in Pfad umwandeln",
   "useAsMask": "Als Maske verwenden",
   "removeMask": "Maske entfernen",
-  "bringForward": "Bring forward",
-  "distributeHorizontal": "Distribute horizontal spacing",
-  "distributeVertical": "Distribute vertical spacing",
-  "selectInverse": "Select inverse",
-  "sendBackward": "Send backward"
+  "bringForward": "Nach vorne",
+  "distributeHorizontal": "Horizontalen Abstand verteilen",
+  "distributeVertical": "Vertikalen Abstand verteilen",
+  "selectInverse": "Auswahl umkehren",
+  "sendBackward": "Nach hinten"
 }

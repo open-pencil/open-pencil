@@ -29,7 +29,12 @@ function isSeparator(entry: AppMenuEntry): entry is Extract<AppMenuEntry, { type
 
 export function useAppMenu() {
   const store = useEditorStore()
-  const { menuItem: commandMenuItem, otherPages, moveSelectionToPage } = useEditorCommands()
+  const {
+    commands,
+    menuItem: commandMenuItem,
+    otherPages,
+    moveSelectionToPage
+  } = useEditorCommands()
   const { menu, locale, availableLocales, localeLabels, setLocale } = useI18n()
   const { theme, setTheme } = useAppTheme()
 
@@ -46,6 +51,7 @@ export function useAppMenu() {
     paste: 'paste',
     'paste-to-replace': 'pasteToReplace',
     'selection.rename': 'renameSelection',
+    'selection.moveToPage': 'moveToPage',
     language: 'language',
     settings: 'settings',
     'view-rulers': 'rulers',
@@ -170,10 +176,13 @@ export function useAppMenu() {
 
     if (entry.id === 'selection.moveToPage') {
       if (otherPages.value.length === 0) return null
+      const disabled = !commands['selection.moveToPage'].enabled.value
       return {
         label: menuLabel(entry),
+        disabled,
         sub: otherPages.value.map((page) => ({
           label: page.name,
+          disabled,
           action: () => moveSelectionToPage(page.id)
         }))
       }

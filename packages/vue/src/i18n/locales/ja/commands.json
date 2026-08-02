@@ -35,9 +35,9 @@
   "outlineStroke": "線の境界線をプレビュー (パスのアウトライン化)",
   "useAsMask": "マスクとして使用",
   "removeMask": "マスクを解除",
-  "bringForward": "Bring forward",
-  "distributeHorizontal": "Distribute horizontal spacing",
-  "distributeVertical": "Distribute vertical spacing",
-  "selectInverse": "Select inverse",
-  "sendBackward": "Send backward"
+  "bringForward": "前面へ移動",
+  "distributeHorizontal": "水平方向の間隔を均等に配置",
+  "distributeVertical": "垂直方向の間隔を均等に配置",
+  "selectInverse": "選択範囲を反転",
+  "sendBackward": "背面へ移動"
 }
