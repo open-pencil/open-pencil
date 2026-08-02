@@ -70,6 +70,7 @@ export function createPageActions(ctx: EditorContext) {
     // all a page change needs, and the caches survive.
     if (fontsChangedText || populated) ctx.requestRender()
     else ctx.requestRepaint()
+    ctx.emitEditorEvent('page:ready', pageId)
   }
 
   function addPage(name?: string) {

@@ -17,6 +17,9 @@ import type { TextEditor } from '#core/text/editor'
 
 import type { DocumentKind } from './document-kind'
 
+/** How a canvas renderer participates in editor-wide renderer-backed operations. */
+export type CanvasRendererRole = 'primary' | 'auxiliary'
+
 export type Tool =
   | 'SELECT'
   | 'FRAME'
@@ -116,6 +119,8 @@ export interface EditorEvents extends SceneGraphEvents {
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
   'page:changed': (pageId: string, previousPageId: string) => void
+  /** Fires after a page switch has finished loading fonts and recomputing layout. */
+  'page:ready': (pageId: string) => void
   'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
   'viewport:changed': (
     viewport: { panX: number; panY: number; zoom: number },

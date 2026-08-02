@@ -32,6 +32,7 @@ import { createDefaultEditorState } from './state'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import type {
+  CanvasRendererRole,
   EditorContext,
   EditorEventName,
   EditorEvents,
@@ -173,22 +174,33 @@ export function createEditor(options?: EditorOptions) {
   const structureBridge = createStructureBridge(structure, selection)
   const undoBridge = createUndoBridge(undoActions, selection)
 
-  function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
-    _ck = ck
+  function selectRenderer(renderer: SkiaRenderer | null) {
     _renderer = renderer
-    _renderers.add(renderer)
-    _textEditor ??= new TextEditor(ck)
     setTextMeasurer(
-      typeof renderer.measureTextNode === 'function'
+      renderer && typeof renderer.measureTextNode === 'function'
         ? (node, maxWidth) => renderer.measureTextNode(node, maxWidth)
         : null
     )
   }
 
+  function setCanvasKit(
+    ck: CanvasKit,
+    renderer: SkiaRenderer,
+    role: CanvasRendererRole = 'primary'
+  ) {
+    _ck = ck
+    _renderers.add(renderer)
+    _textEditor ??= new TextEditor(ck)
+    // Renderer-backed exports and editor helpers must use the canvas that owns document
+    // pixels. Auxiliary canvases (selection chrome, guides, cursors) still register so
+    // graph mutations invalidate their caches, but they must not replace that authority.
+    if (role === 'primary' || !_renderer) selectRenderer(renderer)
+  }
+
   function removeCanvasRenderer(renderer: SkiaRenderer) {
     _renderers.delete(renderer)
     if (_renderer === renderer) {
-      _renderer = _renderers.values().next().value ?? null
+      selectRenderer(_renderers.values().next().value ?? null)
     }
   }
 

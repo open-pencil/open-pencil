@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useResizeObserver } from '@vueuse/core'
+import { refAutoReset, useEventListener, useResizeObserver } from '@vueuse/core'
 import { computed, ref, useTemplateRef } from 'vue'
 import { tv } from 'tailwind-variants'
 
@@ -21,7 +21,33 @@ const presenterMode = computed(() => editor.state.presenterMode)
 const base = styles()
 
 const listEl = useTemplateRef<HTMLElement>('list')
+const viewportEl = useTemplateRef<HTMLElement>('viewport')
 const listWidth = ref(0)
+const elasticOffset = refAutoReset(0, 90)
+
+const elasticListStyle = computed(() => ({
+  transform: `translateY(${elasticOffset.value}px)`
+}))
+
+/** Give wheel/trackpad input a small physical stop at either end of the filmstrip. */
+useEventListener(
+  viewportEl,
+  'wheel',
+  (event) => {
+    const viewport = viewportEl.value
+    if (!viewport || event.deltaY === 0 || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return
+
+    const nextScrollTop = viewport.scrollTop + event.deltaY
+    const reachesTop = event.deltaY < 0 && nextScrollTop <= 0
+    const reachesBottom =
+      event.deltaY > 0 && nextScrollTop + viewport.clientHeight >= viewport.scrollHeight
+    if (!reachesTop && !reachesBottom) return
+
+    const strength = Math.min(10, 4 + Math.abs(event.deltaY) * 0.04)
+    elasticOffset.value = reachesTop ? strength : -strength
+  },
+  { passive: true }
+)
 
 useResizeObserver(listEl, (entries) => {
   const entry = entries[0]
@@ -92,8 +118,8 @@ async function onNewSlide() {
         </button>
       </Tip>
     </div>
-    <div :class="base.viewport()">
-      <div ref="list" :class="base.list()" role="list">
+    <div ref="viewport" :class="base.viewport()">
+      <div ref="list" :class="base.list()" :style="elasticListStyle" role="list">
         <button
           v-for="cell in cells"
           :key="cell.id"
@@ -112,7 +138,7 @@ async function onNewSlide() {
           <div :class="base.thumbShell()" :style="thumbShellStyle">
             <div :class="base.activeChrome()" :data-active="cell.active ? 'true' : 'false'">
               <div :class="base.thumb()" :data-active="cell.active ? 'true' : undefined">
-                <SlideThumbnail :page-id="cell.id" :alt="cell.name" />
+                <SlideThumbnail :page-id="cell.id" :alt="cell.name" :scroll-target="viewportEl" />
               </div>
             </div>
           </div>

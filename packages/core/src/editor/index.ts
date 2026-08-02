@@ -13,6 +13,7 @@ export { EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
 export type { RenameSelectionOptions, RenameSelectionPreview } from './structure/rename'
 export type { EditorToolDef } from './tool-registry'
 export type {
+  CanvasRendererRole,
   ClipboardImageResolution,
   EditorContext,
   EditorEventName,

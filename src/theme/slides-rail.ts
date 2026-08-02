@@ -7,8 +7,9 @@ const slidesRailTheme = {
     newSlide:
       'flex h-7 min-w-0 flex-1 cursor-pointer items-center justify-center rounded-md border border-border bg-panel px-2 text-[11px] font-medium text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-panel-focus',
     add: 'flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-panel text-base leading-none text-muted outline-none hover:bg-hover hover:text-surface focus-visible:ring-1 focus-visible:ring-panel-focus',
-    viewport: 'scrollbar-thin min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-2 pb-2',
-    list: 'flex flex-col items-stretch gap-2',
+    viewport:
+      'scrollbar-thin min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-2 pb-2',
+    list: 'flex flex-col items-stretch gap-2 will-change-transform transition-transform duration-200 ease-[cubic-bezier(0.22,1.35,0.36,1)] motion-reduce:!transform-none motion-reduce:transition-none',
     // Padding is unconditional so selecting a slide tints the row rather than moving it.
     cell: 'flex w-full cursor-pointer items-start gap-1.5 rounded-lg border-0 bg-transparent p-1 text-left outline-none focus-visible:ring-1 focus-visible:ring-panel-focus data-[active=true]:bg-accent',
     index:

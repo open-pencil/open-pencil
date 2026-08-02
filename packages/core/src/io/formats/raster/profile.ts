@@ -31,7 +31,7 @@ export interface RasterProfile {
   end: (detail?: Record<string, number | string>) => void
 }
 
-const noop: RasterProfile = { phase: () => {}, end: () => {} }
+const noop: RasterProfile = { phase: () => undefined, end: () => undefined }
 
 export function startRasterProfile(label: string): RasterProfile {
   if (!rasterProfilingEnabled() || typeof performance === 'undefined') return noop
@@ -50,8 +50,9 @@ export function startRasterProfile(label: string): RasterProfile {
         start: currentStart,
         duration: ms
       })
-    } catch {
+    } catch (error) {
       // Measures are a convenience for profiling; never let one break a render.
+      console.debug('[raster] could not record performance measure', error)
     }
     currentName = null
   }
@@ -66,7 +67,10 @@ export function startRasterProfile(label: string): RasterProfile {
       close()
       const total = performance.now() - started
       const breakdown = phases.map(({ name, ms }) => `${name} ${ms.toFixed(1)}ms`).join('  ·  ')
-      console.info(`[raster] ${label} — total ${total.toFixed(1)}ms  ·  ${breakdown}`, detail ?? '')
+      console.debug(
+        `[raster] ${label} — total ${total.toFixed(1)}ms  ·  ${breakdown}`,
+        detail ?? ''
+      )
     }
   }
 }

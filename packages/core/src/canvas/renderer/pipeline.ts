@@ -17,14 +17,20 @@ export function renderSceneToCanvas(
   pageId: string
 ): void {
   const prevViewport = r.worldViewport
+  const prevPageId = r.pageId
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
-  const pageNode = graph.getNode(pageId)
-  if (pageNode) {
-    for (const childId of pageNode.childIds) {
-      r.renderNode(canvas, graph, childId, {})
+  r.pageId = pageId
+  try {
+    const pageNode = graph.getNode(pageId)
+    if (pageNode) {
+      for (const childId of pageNode.childIds) {
+        r.renderNode(canvas, graph, childId, {})
+      }
     }
+  } finally {
+    r.pageId = prevPageId
+    r.worldViewport = prevViewport
   }
-  r.worldViewport = prevViewport
 }
 
 export type RenderLayer = 'full' | 'scene' | 'overlays'

@@ -9,6 +9,7 @@ import {
   requestPresentationFullscreen
 } from '@/app/editor/presentation/fullscreen'
 import { exitPresentation } from '@/app/editor/presentation/session'
+import { setSlideThumbnailRenderingPaused } from '@/app/editor/thumbnails/cache'
 
 /**
  * Keeps presentation and fullscreen in agreement for the active editor.
@@ -53,6 +54,7 @@ export function usePresentationSession() {
   const audience = ref<AudienceSession | null>(null)
 
   function endPresenterMode() {
+    setSlideThumbnailRenderingPaused(false)
     audience.value?.close()
     audience.value = null
     if (store.state.presenterMode) store.state.presenterMode = false
@@ -62,6 +64,9 @@ export function usePresentationSession() {
     () => store.state.presenterMode,
     (active, wasActive) => {
       if (active && !wasActive) {
+        // The scene renderer is shared. Filmstrip work is low priority and must not block
+        // the first audience frame or a slide advance.
+        setSlideThumbnailRenderingPaused(true)
         const session = openAudienceWindow(store, () => {
           // Audience window closed by the user — end the mode rather than keep driving
           // a window that is no longer there.
@@ -69,6 +74,7 @@ export function usePresentationSession() {
           store.state.presenterMode = false
         })
         if (!session) {
+          setSlideThumbnailRenderingPaused(false)
           store.state.presenterMode = false
           console.warn('[presentation] could not open the audience window')
           return
@@ -81,13 +87,12 @@ export function usePresentationSession() {
     }
   )
 
-  // The audience follows the presented slide.
-  watch(
-    () => store.state.currentPageId,
-    () => {
-      void audience.value?.render()
-    }
-  )
+  // `currentPageId` changes before `switchPage()` has finished loading fonts. Rastering on
+  // that early edge can see every root node blocked, cache a transparent slide and never
+  // recover. Follow the settled page event instead, after fonts and layout are ready.
+  store.onEditorEvent('page:ready', () => {
+    void audience.value?.render()
+  })
 
   /**
    * A real edit drops that slide's cached raster and redraws it.

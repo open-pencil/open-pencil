@@ -24,7 +24,8 @@ export {
   headlessRenderNodes,
   headlessRenderThumbnail,
   type RasterExportFormat,
-  type ExportFormat
+  type ExportFormat,
+  type RenderedPixels
 } from './formats/raster'
 export {
   createSVGNodes,

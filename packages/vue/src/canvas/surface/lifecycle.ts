@@ -87,7 +87,7 @@ export function createCanvasSurfaceManager({
     const glCtx = canvas.getContext('webgl2') ?? null
     state.canvas = canvas
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
-    editor.setCanvasKit(ck, state.renderer)
+    editor.setCanvasKit(ck, state.renderer, options?.layer === 'overlays' ? 'auxiliary' : 'primary')
     canvas.dataset.ready = '1'
 
     // When the surface is recreated after a resize fallback, destroyRenderer

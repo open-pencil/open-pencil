@@ -1,3 +1,7 @@
+import { useDebounceFn, useEventListener, useIntervalFn } from '@vueuse/core'
+
+import type { RenderedPixels } from '@open-pencil/core/io'
+
 import type { EditorStore } from '@/app/editor/active-store'
 
 /**
@@ -14,14 +18,10 @@ import type { EditorStore } from '@/app/editor/active-store'
  */
 
 /**
- * Upper bound on the raster, as a multiple of the slide's own size.
- *
- * The scale is chosen from the audience window's width rather than fixed: rendering a
- * 1920-wide slide at 2x is an 8-megapixel PNG encoded on the main thread, which stalls both
- * windows for seconds on every advance. A 1x raster on a 1080p projector is already
- * pixel-for-pixel.
+ * Audience output is presentation output, not a UI thumbnail: it follows the target
+ * display's physical pixel width so Retina/projector output stays sharp. Responsiveness
+ * comes from avoiding speculative renders, not reducing the requested slide quality.
  */
-const AUDIENCE_MAX_SCALE = 2
 const SLIDE_REFERENCE_WIDTH = 1920
 /** Served from `public/`, so the window loads a real page rather than one written into it. */
 const AUDIENCE_URL = '/presentation.html'
@@ -32,10 +32,9 @@ const CLOSE_POLL_MS = 500
 /**
  * How many slide rasters to keep.
  *
- * Enough to cover the prerender window either side of the current slide, and no more: a
- * full-size PNG per slide adds up fast, and eviction driven only by the idle callback
- * never ran when the presenter clicked quickly, because each advance cancelled the
- * previous callback before it fired.
+ * Recently shown slides only. Speculative neighbours are deliberately excluded: CanvasKit
+ * rastering is synchronous on the presenter's main thread, so three "idle" neighbours at
+ * ~900ms each froze both navigation and filmstrip scrolling.
  */
 const MAX_CACHED_SLIDES = 6
 
@@ -53,16 +52,25 @@ export interface AudienceSession {
   close: () => void
 }
 
+type CachedAudienceRaster = {
+  raster: RenderedPixels
+  scale: number
+}
+
 /**
- * Scale needed for this window, capped.
+ * Scale needed for this window at its native device-pixel resolution.
  *
- * Uses the audience display's own pixel ratio, so a Retina projector still gets a sharp
- * slide while a 1080p one is not asked to decode four times the pixels it can show.
+ * Deliberately uncapped: a high-density or wide audience display should receive enough
+ * source pixels for the resolution it can actually show.
  */
 function rasterScaleFor(win: Window): number {
   const cssWidth = win.innerWidth || SLIDE_REFERENCE_WIDTH
   const pixelWidth = cssWidth * (win.devicePixelRatio || 1)
-  return Math.min(AUDIENCE_MAX_SCALE, Math.max(1, pixelWidth / SLIDE_REFERENCE_WIDTH))
+  return pixelWidth / SLIDE_REFERENCE_WIDTH
+}
+
+function isCanvasElement(element: HTMLElement | null): element is HTMLCanvasElement {
+  return element?.tagName === 'CANVAS'
 }
 
 /**
@@ -97,80 +105,71 @@ export function openAudienceWindow(
       settle()
       return
     }
-    const poll = window.setInterval(() => {
+    const { pause } = useIntervalFn(() => {
       if (win.closed) {
-        window.clearInterval(poll)
+        pause()
         resolve()
         return
       }
       if (!win.document.getElementById(SLIDE_ELEMENT_ID)) return
-      window.clearInterval(poll)
+      pause()
       settle()
     }, 30)
   })
 
   let closed = false
+  let stopResizeListener: (() => void) | null = null
 
-  const poll = window.setInterval(() => {
+  const { pause: stopClosePoll } = useIntervalFn(() => {
     if (win.closed) teardown()
   }, CLOSE_POLL_MS)
 
   function teardown() {
     if (closed) return
     closed = true
-    window.clearInterval(poll)
-    if (idleHandle !== null) window.cancelIdleCallback?.(idleHandle)
+    stopClosePoll()
+    stopResizeListener?.()
+    stopResizeListener = null
     cache.clear()
     shownPageId = null
+    shownScale = null
     onAudienceClosed()
   }
 
   /**
    * Rasters already made, keyed by slide.
    *
-   * A slide costs real time to raster — the export path supersamples internally, so a
-   * 1920-wide slide is drawn at 3840 and downsampled before it is even encoded. Paying
-   * that while the presenter waits is what made advancing feel frozen, so slides are
-   * rendered ahead of being asked for and kept.
+   * A slide costs real time to raster, so only slides actually requested are retained.
+   * Pre-rendering neighbours on the same main thread made rapid jumps progressively slower.
    */
-  const cache = new Map<string, ImageData>()
+  const cache = new Map<string, CachedAudienceRaster>()
   let shownPageId: string | null = null
+  let shownScale: number | null = null
   let inFlight: Promise<void> | null = null
-  let idleHandle: number | null = null
 
-  function slideIds(): string[] {
-    return store.graph.getPages().map((page) => page.id)
-  }
-
-  /**
-   * Drop rasters outside the window, never the one on screen.
-   *
-   * Revoking the URL the audience `<img>` is currently pointing at blanks that window to
-   * black with no way back — so the displayed raster is retained regardless of where the
-   * window has moved to.
-   */
-  function evictBeyond(keep: Set<string>) {
-    for (const pageId of cache.keys()) {
-      if (keep.has(pageId) || pageId === shownPageId) continue
-      cache.delete(pageId)
-    }
+  function unavailable(): boolean {
+    return closed || win.closed
   }
 
   /**
    * Drop a slide's raster because its content actually changed.
    *
-   * Deliberately not keyed on `sceneVersion`: `switchPage` calls `requestRender`, which
-   * bumps that counter, so every prerendered slide was being thrown away at the moment it
-   * was navigated to — the cache never hit. Graph mutation events are the real signal.
+   * Deliberately not keyed on the document-wide `sceneVersion`: page initialization and
+   * unrelated graph work can bump it without changing this slide. Graph mutation events
+   * are the real invalidation signal.
    */
   function invalidate(pageId: string | null) {
     if (!pageId) {
       cache.clear()
       shownPageId = null
+      shownScale = null
       return
     }
     cache.delete(pageId)
-    if (pageId === shownPageId) shownPageId = null
+    if (pageId === shownPageId) {
+      shownPageId = null
+      shownScale = null
+    }
   }
 
   /** Trim to the newest entries, never dropping the slide currently on screen. */
@@ -183,29 +182,27 @@ export function openAudienceWindow(
     }
   }
 
-  async function rasterFor(pageId: string): Promise<ImageData | null> {
+  async function rasterFor(pageId: string, scale: number): Promise<RenderedPixels | null> {
+    if (unavailable()) return null
     const cached = cache.get(pageId)
-    if (cached) {
-      if (profilingRaster()) console.info('[raster] audience slide served from cache')
-      return cached
+    if (cached?.scale === scale) {
+      cache.delete(pageId)
+      cache.set(pageId, cached)
+      if (profilingRaster()) console.debug('[raster] audience slide served from cache')
+      return cached.raster
     }
     const startedAt = performance.now()
-    const rendered = await store.renderExportPixels(rasterScaleFor(win), pageId)
-    if (!rendered || closed || win.closed) return null
-    const image = new ImageData(
-      new Uint8ClampedArray(rendered.pixels),
-      rendered.width,
-      rendered.height
-    )
-    cache.set(pageId, image)
+    const rendered = await store.renderExportPixels(scale, pageId)
+    if (!rendered || unavailable()) return null
+    cache.set(pageId, { raster: rendered, scale })
     pruneCache()
     if (profilingRaster()) {
-      console.info(
+      console.debug(
         `[raster] audience slide ready — ${(performance.now() - startedAt).toFixed(1)}ms, ` +
           `${rendered.width}x${rendered.height}`
       )
     }
-    return image
+    return rendered
   }
 
   /**
@@ -215,86 +212,77 @@ export function openAudienceWindow(
    * surface into the other window's canvas. Cross-realm `putImageData` is fine: both
    * windows are same-origin and share a process.
    */
-  function show(pageId: string, image: ImageData) {
+  function show(pageId: string, scale: number, raster: RenderedPixels) {
     const shownAt = performance.now()
     const slide = win.document.getElementById(SLIDE_ELEMENT_ID)
     const placeholder = win.document.getElementById(PLACEHOLDER_ELEMENT_ID)
-    if (!slide) return
-    const canvas = slide as unknown as HTMLCanvasElement
-    if (canvas.width !== image.width || canvas.height !== image.height) {
-      canvas.width = image.width
-      canvas.height = image.height
+    if (!isCanvasElement(slide)) return
+    const canvas = slide
+    if (canvas.width !== raster.width || canvas.height !== raster.height) {
+      canvas.width = raster.width
+      canvas.height = raster.height
     }
     const context = canvas.getContext('2d')
     if (!context) return
-    context.putImageData(image, 0, 0)
-    slide.removeAttribute('hidden')
+    // Construct the ImageData through the audience canvas so both the object and its pixel
+    // storage belong to that window's realm. Passing an ImageData created by the presenter
+    // across windows intermittently produced a successful no-op, leaving a transparent
+    // canvas while `shownPageId` incorrectly recorded the slide as displayed.
+    const audienceImage = context.createImageData(raster.width, raster.height)
+    audienceImage.data.set(raster.pixels)
+    context.putImageData(audienceImage, 0, 0)
+    canvas.removeAttribute('hidden')
     placeholder?.setAttribute('hidden', '')
     shownPageId = pageId
+    shownScale = scale
     if (profilingRaster()) {
-      console.info(`[raster] audience blit — ${(performance.now() - shownAt).toFixed(1)}ms`)
+      console.debug(`[raster] audience blit — ${(performance.now() - shownAt).toFixed(1)}ms`)
     }
-  }
-
-  /** Render the slides either side of the current one while nothing else is happening. */
-  function scheduleNeighbours() {
-    if (idleHandle !== null) window.cancelIdleCallback?.(idleHandle)
-    const run = async () => {
-      idleHandle = null
-      if (closed || win.closed) return
-      const ids = slideIds()
-      // Re-read the slide now rather than using the one this was scheduled for: clicking
-      // through quickly leaves that stale, and warming — or worse, evicting — around a
-      // slide the presenter has already left is how the shown raster got discarded.
-      const pageId = store.state.currentPageId
-      const index = ids.indexOf(pageId)
-      if (index < 0) return
-      // Two ahead, one back: presenting runs forwards, and a quick double-tap should not
-      // out-run the cache.
-      const neighbours = [ids[index + 1], ids[index - 1], ids[index + 2]].filter(
-        (id): id is string => !!id
-      )
-      for (const id of neighbours) {
-        if (closed || win.closed) return
-        await rasterFor(id)
-      }
-      evictBeyond(new Set([pageId, ...neighbours]))
-    }
-    idleHandle =
-      window.requestIdleCallback?.(() => void run(), { timeout: 400 }) ??
-      window.setTimeout(() => void run(), 100)
   }
 
   /**
-   * Show the current slide, then get the next one ready.
+   * Show the current slide.
    *
    * Requests that arrive mid-render are dropped rather than queued: each is expensive and
    * only the newest slide is wanted, so the chain re-reads `currentPageId` when it settles.
    */
   async function render(): Promise<void> {
-    if (closed || win.closed) return
+    if (unavailable()) return
     if (inFlight) return inFlight
     const run = async () => {
       await ready
       let pageId = store.state.currentPageId
+      let scale = rasterScaleFor(win)
       for (;;) {
-        const image = await rasterFor(pageId)
-        if (closed || win.closed) return
+        const raster = await rasterFor(pageId, scale)
+        if (unavailable()) return
         const latest = store.state.currentPageId
-        if (latest !== pageId) {
+        const latestScale = rasterScaleFor(win)
+        if (latest !== pageId || latestScale !== scale) {
           pageId = latest
+          scale = latestScale
           continue
         }
-        if (image && pageId !== shownPageId) show(pageId, image)
+        if (raster && (pageId !== shownPageId || scale !== shownScale)) {
+          show(pageId, scale, raster)
+        }
         break
       }
-      scheduleNeighbours()
     }
     inFlight = run().finally(() => {
       inFlight = null
     })
     return inFlight
   }
+
+  // A popup may be resized, made fullscreen or moved to a display with a different DPR.
+  // Keep the existing pixels visible during that transition, then make one fresh native-
+  // resolution raster after the resize burst settles.
+  stopResizeListener = useEventListener(
+    win,
+    'resize',
+    useDebounceFn(() => void render(), 150)
+  )
 
   function close() {
     if (!win.closed) win.close()

@@ -4,6 +4,7 @@ export {
   renderNodesToPixels,
   renderThumbnail,
   type RasterExportFormat,
-  type ExportFormat
+  type ExportFormat,
+  type RenderedPixels
 } from './render'
 export { initCanvasKit, headlessRenderNodes, headlessRenderThumbnail } from './headless'

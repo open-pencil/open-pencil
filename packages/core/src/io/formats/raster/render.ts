@@ -1,4 +1,4 @@
-import type { CanvasKit, Canvas } from 'canvaskit-wasm'
+import type { CanvasKit, Canvas, MallocObj, Surface } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
@@ -92,11 +92,9 @@ function findAlphaBounds(ck: CanvasKit, canvas: Canvas, width: number, height: n
 
 const MIN_TRANSPARENT_TRIM_INSET = 2
 
-function shouldTrimAlphaBounds(
-  alphaBounds: NonNullable<ReturnType<typeof findAlphaBounds>>,
-  width: number,
-  height: number
-): boolean {
+type AlphaBounds = NonNullable<ReturnType<typeof findAlphaBounds>>
+
+function shouldTrimAlphaBounds(alphaBounds: AlphaBounds, width: number, height: number): boolean {
   return (
     Math.max(
       alphaBounds.minX,
@@ -105,6 +103,63 @@ function shouldTrimAlphaBounds(
       height - alphaBounds.maxY
     ) >= MIN_TRANSPARENT_TRIM_INSET
   )
+}
+
+function trimmedAlphaBounds(
+  ck: CanvasKit,
+  canvas: Canvas,
+  width: number,
+  height: number,
+  trimTransparent: boolean
+): AlphaBounds | null {
+  if (!trimTransparent) return null
+  const found = findAlphaBounds(ck, canvas, width, height)
+  return found && shouldTrimAlphaBounds(found, width, height) ? found : null
+}
+
+function encodeSurfaceImage(
+  ck: CanvasKit,
+  renderer: SkiaRenderer,
+  surface: Surface,
+  canvas: Canvas,
+  width: number,
+  height: number,
+  format: ExportFormat,
+  quality: number,
+  alphaBounds: AlphaBounds | null
+): Uint8Array | null {
+  const image = alphaBounds
+    ? surface.makeImageSnapshot([
+        alphaBounds.minX,
+        alphaBounds.minY,
+        alphaBounds.maxX,
+        alphaBounds.maxY
+      ])
+    : surface.makeImageSnapshot()
+
+  try {
+    const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
+    if (encoded) return new Uint8Array(encoded)
+
+    // CanvasKit's `encodeToBytes` returns null for JPEG/WEBP in this build, so
+    // fall back to encoding the raw pixels through the browser canvas.
+    if (format !== 'JPG' && format !== 'WEBP') return null
+    const exportWidth = alphaBounds ? alphaBounds.maxX - alphaBounds.minX : width
+    const exportHeight = alphaBounds ? alphaBounds.maxY - alphaBounds.minY : height
+    const exportMinX = alphaBounds?.minX ?? 0
+    const exportMinY = alphaBounds?.minY ?? 0
+    const rawPixels = canvas.readPixels(exportMinX, exportMinY, {
+      alphaType: ck.AlphaType.Unpremul,
+      colorType: ck.ColorType.RGBA_8888,
+      colorSpace: ck.ColorSpace.SRGB,
+      width: exportWidth,
+      height: exportHeight
+    })
+    if (!(rawPixels instanceof Uint8Array)) return null
+    return renderer.encodeRasterFallback(rawPixels, exportWidth, exportHeight, format, quality)
+  } finally {
+    image.delete()
+  }
 }
 
 function renderToSurface(
@@ -170,75 +225,46 @@ function renderToSurface(
       if (downsamplePixels) ck.Free(downsamplePixels)
       return null
     }
-    const downsampleCanvas = downsampleSurface.getCanvas()
-    if (downsamplePixels) {
-      const highResImage = surface.makeImageSnapshot()
-      downsampleCanvas.clear(ck.TRANSPARENT)
-      downsampleCanvas.drawImageRectOptions(
-        highResImage,
-        ck.LTRBRect(0, 0, renderWidth, renderHeight),
-        ck.LTRBRect(0, 0, width, height),
-        ck.FilterMode.Linear,
-        ck.MipmapMode.None,
-        null
+    try {
+      const downsampleCanvas = downsampleSurface.getCanvas()
+      if (downsamplePixels) {
+        const highResImage = surface.makeImageSnapshot()
+        try {
+          downsampleCanvas.clear(ck.TRANSPARENT)
+          downsampleCanvas.drawImageRectOptions(
+            highResImage,
+            ck.LTRBRect(0, 0, renderWidth, renderHeight),
+            ck.LTRBRect(0, 0, width, height),
+            ck.FilterMode.Linear,
+            ck.MipmapMode.None,
+            null
+          )
+          downsampleSurface.flush()
+        } finally {
+          highResImage.delete()
+        }
+      }
+
+      const alphaBounds = trimmedAlphaBounds(ck, downsampleCanvas, width, height, trimTransparent)
+      inner.phase('encode')
+      return encodeSurfaceImage(
+        ck,
+        renderer,
+        downsampleSurface,
+        downsampleCanvas,
+        width,
+        height,
+        format,
+        quality,
+        alphaBounds
       )
-      downsampleSurface.flush()
-      highResImage.delete()
-    }
-
-    const foundAlphaBounds = trimTransparent
-      ? findAlphaBounds(ck, downsampleCanvas, width, height)
-      : null
-    const alphaBounds =
-      foundAlphaBounds && shouldTrimAlphaBounds(foundAlphaBounds, width, height)
-        ? foundAlphaBounds
-        : null
-    const image = alphaBounds
-      ? downsampleSurface.makeImageSnapshot([
-          alphaBounds.minX,
-          alphaBounds.minY,
-          alphaBounds.maxX,
-          alphaBounds.maxY
-        ])
-      : downsampleSurface.makeImageSnapshot()
-    inner.phase('encode')
-    const encoded = image.encodeToBytes(ckImageFormat(ck, format), quality)
-    let resultBytes: Uint8Array | null = encoded ? new Uint8Array(encoded) : null
-
-    // CanvasKit's `encodeToBytes` returns null for JPEG/WEBP in this build, so
-    // fall back to encoding the raw pixels through the browser canvas.
-    if (!resultBytes && (format === 'JPG' || format === 'WEBP')) {
-      const exportWidth = alphaBounds ? alphaBounds.maxX - alphaBounds.minX : width
-      const exportHeight = alphaBounds ? alphaBounds.maxY - alphaBounds.minY : height
-      const exportMinX = alphaBounds ? alphaBounds.minX : 0
-      const exportMinY = alphaBounds ? alphaBounds.minY : 0
-
-      const rawPixels = downsampleCanvas.readPixels(exportMinX, exportMinY, {
-        alphaType: ck.AlphaType.Unpremul,
-        colorType: ck.ColorType.RGBA_8888,
-        colorSpace: ck.ColorSpace.SRGB,
-        width: exportWidth,
-        height: exportHeight
-      })
-
-      if (rawPixels instanceof Uint8Array) {
-        resultBytes = renderer.encodeRasterFallback(
-          rawPixels,
-          exportWidth,
-          exportHeight,
-          format,
-          quality
-        )
+    } finally {
+      // The un-supersampled path shares the outer surface, which the outer `finally` owns.
+      if (downsamplePixels) {
+        downsampleSurface.delete()
+        ck.Free(downsamplePixels)
       }
     }
-
-    image.delete()
-    // The un-supersampled path shares the outer surface, which the `finally` block owns.
-    if (downsamplePixels) {
-      downsampleSurface.delete()
-      ck.Free(downsamplePixels)
-    }
-    return resultBytes
   } finally {
     inner.end({ width, height, renderScale })
     surface.delete()
@@ -329,6 +355,25 @@ export interface RenderedPixels {
   height: number
 }
 
+/** Copy CanvasKit's direct premultiplied buffer into `ImageData`-ready RGBA bytes. */
+export function copyAndUnpremultiplyPixels(pixels: Uint8Array): Uint8Array {
+  const copied = new Uint8Array(pixels)
+  for (let index = 3; index < pixels.length; index += 4) {
+    const alpha = pixels[index]
+    if (alpha === 255) continue
+    if (alpha === 0) {
+      copied[index - 3] = 0
+      copied[index - 2] = 0
+      copied[index - 1] = 0
+      continue
+    }
+    copied[index - 3] = Math.min(255, Math.round((pixels[index - 3] * 255) / alpha))
+    copied[index - 2] = Math.min(255, Math.round((pixels[index - 2] * 255) / alpha))
+    copied[index - 1] = Math.min(255, Math.round((pixels[index - 1] * 255) / alpha))
+  }
+  return copied
+}
+
 /**
  * Draw nodes and hand back raw pixels, skipping the encoder entirely.
  *
@@ -350,20 +395,26 @@ export function renderNodesToPixels(
 
   const profile = startRasterProfile('renderNodesToPixels')
   profile.phase('surface')
-  const buffer = ck.Malloc(Uint8Array, pixelW * pixelH * 4)
-  const surface = ck.MakeRasterDirectSurface(
-    {
-      alphaType: ck.AlphaType.Premul,
-      colorType: ck.ColorType.RGBA_8888,
-      colorSpace: ck.ColorSpace.SRGB,
-      width: pixelW,
-      height: pixelH
-    },
-    buffer,
-    pixelW * 4
-  )
+  const imageInfo = {
+    alphaType: ck.AlphaType.Premul,
+    colorType: ck.ColorType.RGBA_8888,
+    colorSpace: ck.ColorSpace.SRGB,
+    width: pixelW,
+    height: pixelH
+  }
+  let buffer: MallocObj | null = null
+  // A compatible surface shares the primary renderer's WebGL context, so its cached Skia
+  // images remain valid and the slide is drawn by the GPU. Software/headless renderers keep
+  // the direct raster path below.
+  let surface: Surface | null = renderer.surface.reportBackendTypeIsGPU()
+    ? renderer.surface.makeSurface(imageInfo)
+    : null
   if (!surface) {
-    ck.Free(buffer)
+    buffer = ck.Malloc(Uint8Array, pixelW * pixelH * 4)
+    surface = ck.MakeRasterDirectSurface(imageInfo, buffer, pixelW * 4)
+  }
+  if (!surface) {
+    if (buffer) ck.Free(buffer)
     profile.end()
     return null
   }
@@ -376,6 +427,18 @@ export function renderNodesToPixels(
     canvas.translate(-bounds.minX, -bounds.minY)
     renderer.renderSceneToCanvas(canvas, renderGraph, renderPageId)
     surface.flush()
+
+    if (buffer) {
+      profile.phase('unpremultiplyPixels')
+      const directPixels = buffer.toTypedArray()
+      if (directPixels instanceof Uint8Array) {
+        return {
+          pixels: copyAndUnpremultiplyPixels(directPixels),
+          width: pixelW,
+          height: pixelH
+        }
+      }
+    }
 
     profile.phase('readPixels')
     // Unpremultiplied because that is what `ImageData` expects; premultiplied bytes would
@@ -395,7 +458,7 @@ export function renderNodesToPixels(
   } finally {
     profile.end({ width: pixelW, height: pixelH })
     surface.delete()
-    ck.Free(buffer)
+    if (buffer) ck.Free(buffer)
   }
 }
 
