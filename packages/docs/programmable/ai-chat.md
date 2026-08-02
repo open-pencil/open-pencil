@@ -21,6 +21,7 @@ You can configure multiple reusable models and separately assign models for desi
 | Provider                 | Models                                          | Setup                                                                                                       |
 | ------------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | **OpenRouter**           | Claude, GPT, Gemini, DeepSeek, Qwen, and others | API key from [openrouter.ai](https://openrouter.ai)                                                         |
+| **OrcaRouter**           | Claude, GPT, Gemini, Kimi, GLM, and others      | API key from [orcarouter.ai](https://www.orcarouter.ai)                                                     |
 | **Anthropic**            | Claude Sonnet 4.6, Claude Opus 4.6              | API key from [console.anthropic.com](https://console.anthropic.com)                                         |
 | **OpenAI**               | GPT-5.3 Codex, GPT-4.1, o3, o4-mini             | API key from [platform.openai.com](https://platform.openai.com)                                             |
 | **Google AI**            | Gemini 3.1 Pro, Gemini 3 Flash                  | API key from [aistudio.google.dev](https://aistudio.google.dev)                                             |

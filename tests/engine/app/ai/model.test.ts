@@ -28,6 +28,16 @@ describe('resolveLanguageModelID', () => {
       })
     ).toBe('meta-llama/llama-3.3-70b-instruct')
   })
+
+  test('uses a custom OrcaRouter model ID when provided', () => {
+    expect(
+      resolveLanguageModelID({
+        providerID: 'orcarouter',
+        modelID: 'anthropic/claude-sonnet-4.6',
+        customModelID: '  openai/gpt-5.6-sol  '
+      })
+    ).toBe('openai/gpt-5.6-sol')
+  })
 })
 
 describe('model provider registry', () => {
@@ -61,6 +71,48 @@ describe('model provider registry', () => {
 
     expect(requestURL).toBe('https://api.minimax.io/v1/chat/completions')
     expect(requestBody).toContain('"model":"MiniMax-M3"')
+  })
+
+  test('routes OrcaRouter through its gateway with client attribution headers', async () => {
+    let requestURL = ''
+    let requestBody = ''
+    let requestHeaders: Record<string, string> = {}
+    const fetchSpy: typeof fetch = async (input, init) => {
+      requestURL = String(input)
+      requestBody = String(init?.body)
+      requestHeaders = Object.fromEntries(new Headers(init?.headers).entries())
+      throw new Error('stop')
+    }
+    const config: ModelConfig = {
+      providerID: 'orcarouter',
+      apiKey: 'sk-orca-test-key',
+      modelID: 'anthropic/claude-sonnet-4.6',
+      customModelID: '',
+      customBaseURL: '',
+      customAPIType: 'completions'
+    }
+
+    const model = modelProviderAdapter('orcarouter').create(config, { fetch: fetchSpy })
+    await model
+      .doGenerate({ prompt: [{ role: 'user', content: [{ type: 'text', text: 'hi' }] }] })
+      .catch(() => undefined)
+
+    expect(requestURL).toBe('https://api.orcarouter.ai/v1/chat/completions')
+    expect(requestBody).toContain('"model":"anthropic/claude-sonnet-4.6"')
+    expect(requestHeaders).toMatchObject({
+      'x-title': 'OpenPencil',
+      'http-referer': 'https://github.com/open-pencil/open-pencil'
+    })
+  })
+
+  test('offers namespaced OrcaRouter model IDs with a design default', () => {
+    const provider = AI_PROVIDERS.find(({ id }) => id === 'orcarouter')
+    expect(provider?.defaultModel).toBe('anthropic/claude-sonnet-4.6')
+    expect(provider?.supportsCustomModel).toBe(true)
+    expect(provider?.models.map(({ id }) => id)).toContain('orcarouter/auto')
+    for (const model of provider?.models ?? []) {
+      expect(model.id).toMatch(/^[\w.-]+\/[\w.-]+$/)
+    }
   })
 
   test('registers every direct provider without handling ACP agents as models', () => {

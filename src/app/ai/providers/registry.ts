@@ -26,6 +26,14 @@ const MODEL_PROVIDER_ADAPTERS = {
       return provider(config.customModelID.trim() || config.modelID)
     }
   },
+  orcarouter: createOpenAICompatibleAdapter({
+    baseURL: 'https://api.orcarouter.ai/v1',
+    mode: 'chat',
+    headers: {
+      'X-Title': 'OpenPencil',
+      'HTTP-Referer': 'https://github.com/open-pencil/open-pencil'
+    }
+  }),
   anthropic: createAnthropicCompatibleAdapter(),
   openai: createOpenAICompatibleAdapter(),
   google: {
