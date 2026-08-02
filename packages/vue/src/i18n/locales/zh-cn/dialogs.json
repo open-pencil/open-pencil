@@ -147,6 +147,7 @@
   "importingDeckFiles": "正在导入 .deck 文件…",
   "storageDeckFilesOnly": "此处只能上传 .deck 文件。",
   "copyStorageCors": "复制 CORS JSON",
+  "storageProvider": "提供商",
   "storageEndpoint": "端点",
   "storageBucket": "存储桶",
   "storageRegion": "区域",

@@ -2,20 +2,37 @@
  * Infer SigV4 signing region from a common S3-compatible endpoint host.
  * Region is not shown in the UI — most providers encode it in the URL.
  */
-export function inferS3Region(endpoint: string, fallback = 'us-east-1'): string {
-  const trimmed = endpoint.trim()
-  if (!trimmed) return fallback
+export const BUNNY_S3_REGIONS = ['de', 'ny', 'sg', 'uk', 'se', 'la', 'jh', 'syd'] as const
 
-  let host: string
+export type BunnyS3Region = (typeof BUNNY_S3_REGIONS)[number]
+
+function endpointHostname(endpoint: string): string | null {
+  const trimmed = endpoint.trim()
+  if (!trimmed) return null
+
   try {
-    const withProto =
+    const withProtocol =
       trimmed.startsWith('http://') || trimmed.startsWith('https://')
         ? trimmed
         : `https://${trimmed}`
-    host = new URL(withProto).hostname.toLowerCase()
+    return new URL(withProtocol).hostname.toLowerCase()
   } catch {
-    return fallback
+    return null
   }
+}
+
+export function inferBunnyS3Region(endpoint: string): BunnyS3Region | null {
+  const host = endpointHostname(endpoint)
+  const region = host?.match(/^([a-z]{2,3})-s3\.storage\.bunnycdn\.com$/)?.[1]
+  return BUNNY_S3_REGIONS.find((candidate) => candidate === region) ?? null
+}
+
+export function inferS3Region(endpoint: string, fallback = 'us-east-1'): string {
+  const host = endpointHostname(endpoint)
+  if (!host) return fallback
+
+  const bunny = inferBunnyS3Region(endpoint)
+  if (bunny) return bunny
 
   // Backblaze B2: s3.eu-central-003.backblazeb2.com
   const b2 = host.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/)

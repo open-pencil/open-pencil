@@ -52,6 +52,15 @@ function testProvider() {
 }
 
 describe('storage provider registry', () => {
+  test('registers Bunny Storage with its simplified connection fields', () => {
+    const provider = storageProviderRegistry.get('bunny-storage')
+
+    expect(provider.preferenceFields.map((field) => field.id)).toEqual(['storage-zone', 'endpoint'])
+    expect(provider.credentialFields.map((field) => field.id)).toEqual(['password'])
+    expect(provider.icon).toContain('logo-bunnynet-icon.svg')
+    expect(appCredentialRefs().map(credentialKey)).toContain('v1:bunny-storage:default:password')
+  })
+
   test('registers S3 preferences separately from credential fields', () => {
     const provider = storageProviderRegistry.get('s3-compatible')
 

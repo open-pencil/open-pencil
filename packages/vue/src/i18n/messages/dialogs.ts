@@ -211,6 +211,7 @@ export const dialogMessageDefaults = {
   importingDeckFiles: 'Importing .deck files…',
   storageDeckFilesOnly: 'Only .deck files can be uploaded here.',
   copyStorageCors: 'Copy CORS JSON',
+  storageProvider: 'Provider',
   storageEndpoint: 'Endpoint',
   storageBucket: 'Bucket',
   storageRegion: 'Region',

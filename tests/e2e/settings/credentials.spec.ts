@@ -2,6 +2,62 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
+test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ page }) => {
+  const requests: Array<{ method: string; authorization: string }> = []
+  await page.route('https://de-s3.storage.bunnycdn.com/**', async (route) => {
+    const request = route.request()
+    requests.push({
+      method: request.method(),
+      authorization: request.headers().authorization ?? ''
+    })
+    if (request.method() === 'HEAD') {
+      await route.fulfill({ status: 404 })
+      return
+    }
+    if (new URL(request.url()).searchParams.get('list-type') === '2') {
+      await route.fulfill({
+        contentType: 'application/xml',
+        body: '<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>'
+      })
+      return
+    }
+    await route.fulfill({ status: 200 })
+  })
+
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-storage').click()
+  await page.getByTestId('settings-storage-provider').click()
+  await page.getByRole('option', { name: 'Bunny Storage' }).click()
+
+  await expect(page.locator('[data-slot="storage-provider-icon"]')).toBeVisible()
+  await expect(page.getByText('No CORS setup is needed.')).toBeVisible()
+  await expect(page.getByLabel('Storage Zone name')).toBeVisible()
+  await expect(page.getByLabel('Endpoint')).toHaveAttribute(
+    'placeholder',
+    'https://de-s3.storage.bunnycdn.com'
+  )
+  await expect(page.getByLabel('Storage Zone password')).toBeVisible()
+  await expect(page.getByLabel('Access key ID')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Copy CORS JSON' })).toHaveCount(0)
+
+  await page.getByLabel('Storage Zone name').fill('openpencil-test2-s3')
+  await page.getByLabel('Endpoint').fill('https://de-s3.storage.bunnycdn.com')
+  const passwordField = page.locator('[data-credential="password"]')
+  await passwordField.locator('input').fill('storage-zone-password')
+  await passwordField.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('settings-storage-test').click()
+
+  await expect(page.getByRole('status')).toContainText('Connected')
+  expect(requests.map((request) => request.method)).toEqual(['HEAD', 'PUT', 'GET'])
+  expect(requests.every((request) => request.authorization.includes('/de/s3/aws4_request'))).toBe(
+    true
+  )
+})
+
 test('storage settings keep secrets behind the credential manager', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)

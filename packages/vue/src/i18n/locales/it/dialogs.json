@@ -147,6 +147,7 @@
   "importingDeckFiles": "Importazione dei file .deck…",
   "storageDeckFilesOnly": "Qui è possibile caricare solo file .deck.",
   "copyStorageCors": "Copia JSON CORS",
+  "storageProvider": "Fornitore",
   "storageEndpoint": "Endpoint",
   "storageBucket": "Bucket",
   "storageRegion": "Regione",

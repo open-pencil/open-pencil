@@ -115,10 +115,14 @@ export interface S3StorageAdapter extends StorageAdapter {
   testConnection(): Promise<S3ConnectionResult>
 }
 
-export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3StorageAdapter {
+export type S3ConfigResolver = () => Promise<S3CompatibleConfig>
+
+export function createS3StorageAdapterWithConfig(
+  resolveConfig: S3ConfigResolver
+): S3StorageAdapter {
   return {
     async testConnection() {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       try {
         await ensureNamespace(config)
         await listObjects(config, STORAGE_DOCUMENTS_PREFIX)
@@ -144,7 +148,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async listDocuments() {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       const objects = await listObjects(config, STORAGE_DOCUMENTS_PREFIX)
       const entries = objects
         .map((object) => {
@@ -186,7 +190,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async getDocument(id, onProgress) {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       const bytes = await getObject(
         config,
         documentFigKey(id),
@@ -203,7 +207,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async putDocument(id, bytes, metadata, onProgress) {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       await putObject(
         config,
         documentFigKey(id),
@@ -221,11 +225,11 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async putDocumentMetadata(id, metadata) {
-      await writeDocumentMetadata(await resolveConfig(runtime), id, metadata)
+      await writeDocumentMetadata(await resolveConfig(), id, metadata)
     },
 
     async getDocumentMetadata(id) {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       const bytes = await getObject(config, documentMetaKey(id))
       if (!bytes) return null
       const parsed = parseMetadata(bytes, {
@@ -238,7 +242,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async deleteDocument(id) {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       const results = await Promise.allSettled([
         deleteObject(config, documentFigKey(id)),
         deleteObject(config, documentMetaKey(id)),
@@ -251,7 +255,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async getUsage() {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       const objects = await listObjects(config, `${STORAGE_NAMESPACE}/`)
       return {
         bytesUsed: objects.reduce((total, object) => total + (object.size ?? 0), 0),
@@ -261,13 +265,17 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
     },
 
     async putThumbnail(id, bytes) {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       await putObject(config, documentThumbnailKey(id), bytes, storageThumbnailMimeType(bytes))
     },
 
     async getThumbnail(id) {
-      const config = await resolveConfig(runtime)
+      const config = await resolveConfig()
       return getObject(config, documentThumbnailKey(id))
     }
   }
+}
+
+export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3StorageAdapter {
+  return createS3StorageAdapterWithConfig(() => resolveConfig(runtime))
 }

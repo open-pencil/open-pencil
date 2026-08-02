@@ -147,6 +147,7 @@
   "importingDeckFiles": ".deck ファイルをインポート中…",
   "storageDeckFilesOnly": "ここには .deck ファイルのみアップロードできます。",
   "copyStorageCors": "CORS JSONをコピー",
+  "storageProvider": "プロバイダー",
   "storageEndpoint": "エンドポイント",
   "storageBucket": "バケット",
   "storageRegion": "リージョン",

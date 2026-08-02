@@ -85,6 +85,7 @@ export type StorageProviderRegistration = {
   id: StorageProviderID
   label: string
   description: string
+  icon?: string
   preferenceFields: readonly StoragePreferenceField[]
   credentialFields: readonly StorageCredentialField[]
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter
