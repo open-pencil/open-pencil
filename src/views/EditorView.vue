@@ -47,7 +47,6 @@ import {
 import { usePresentationSession } from '@/app/editor/presentation'
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import CanvasStage from '@/components/canvas/CanvasStage.vue'
-import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
@@ -512,7 +511,5 @@ onUnmounted(() => {
         <EditorCanvas />
       </div>
     </div>
-
-    <CloudWorkspaceStatus v-if="showChrome" />
   </div>
 </template>

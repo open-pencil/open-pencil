@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useOnline } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -42,6 +42,7 @@ import { activeTab, createDeckTab, createTab, openStorageDocumentInNewTab } from
 import StorageDocumentCard from '@/components/storage/StorageDocumentCard.vue'
 import RefreshIcon from '@/components/storage/RefreshIcon.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
+import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import {
@@ -65,6 +66,8 @@ const configured = computed(
     )
 )
 const loading = ref(false)
+const browserOnline = useOnline()
+const cloudReachable = ref<boolean | null>(null)
 const error = ref<string | null>(null)
 const workspace = ref<HTMLElement | null>(null)
 const dropActive = ref(false)
@@ -97,6 +100,9 @@ const visibleDocuments = computed(() =>
 )
 const trashedDocumentCount = computed(
   () => documents.value.filter((document) => document.trashedAt !== null).length
+)
+const cloudOnline = computed(
+  () => configured.value && browserOnline.value && cloudReachable.value === true
 )
 const sortOptions = computed(() => [
   { value: 'name-asc' as const, label: dialogs.value.storageSortNameAsc },
@@ -212,10 +218,12 @@ async function refresh(): Promise<void> {
   try {
     credentialStatuses.value = await storageCredentialStatuses(provider.value.id)
     if (!configured.value) {
+      cloudReachable.value = null
       error.value = dialogs.value.storageNotConfigured
       return
     }
     const remote = await createActiveStorageAdapter().listDocuments()
+    cloudReachable.value = true
     const localStore = getLocalCanvasStore()
     const local = (await localStore.listMetas(true)).filter(
       (metadata) => metadata.providerId === activeStorageProviderID.value
@@ -238,6 +246,7 @@ async function refresh(): Promise<void> {
       })
     }
   } catch (reason) {
+    cloudReachable.value = false
     error.value = reason instanceof Error ? reason.message : String(reason)
   } finally {
     loading.value = false
@@ -502,9 +511,10 @@ onBeforeUnmount(clearThumbnailUrls)
       <div class="ml-auto flex gap-2">
         <button
           type="button"
-          class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
+          class="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
           @click="openSettingsDialog('storage')"
         >
+          <icon-lucide-settings class="size-3.5" />
           {{ dialogs.settings }}
         </button>
         <button
@@ -568,12 +578,13 @@ onBeforeUnmount(clearThumbnailUrls)
           <button
             v-if="configured"
             type="button"
-            class="flex size-7 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
+            class="flex h-7 items-center justify-center gap-1.5 rounded px-2 text-xs text-muted hover:bg-hover hover:text-surface"
             :aria-label="dialogs.refresh"
             :title="dialogs.refresh"
             @click="refresh"
           >
             <RefreshIcon class="size-3.5" :class="loading && 'animate-spin'" />
+            <span>{{ dialogs.refresh }}</span>
           </button>
         </div>
       </div>
@@ -641,6 +652,8 @@ onBeforeUnmount(clearThumbnailUrls)
         </template>
       </AppPlaceholder>
     </section>
+
+    <CloudWorkspaceStatus v-if="configured && cloudReachable !== null" :online="cloudOnline" />
 
     <div
       v-if="dropActive"
