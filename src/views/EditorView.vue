@@ -52,6 +52,8 @@ import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import NotesPane from '@/components/slides/NotesPane.vue'
+import PresenterBar from '@/components/presentation/PresenterBar.vue'
+import PresenterNotesPanel from '@/components/presentation/PresenterNotesPanel.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
@@ -99,6 +101,8 @@ const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
 
 const isPresenting = computed(() => store.state.presenting)
+/** Driving a second window: this window swaps its editing chrome for presenter chrome. */
+const presenterMode = computed(() => store.state.presenterMode)
 
 // A divider drag continues even if the pointer leaves the handle, so the release is
 // watched on the window rather than on the handle itself.
@@ -195,6 +199,15 @@ const notesSize = ref(notesLayout.size)
 const notesDefaultSize = computed(() => (notesCollapsed.value ? 0 : notesSize.value))
 const canvasMainDefaultSize = computed(() => 100 - notesDefaultSize.value)
 
+/**
+ * With a notes pane, the toolbar gets a reserved strip along the bottom instead of floating
+ * over the canvas: the notes pane ends above it, the way Figma seats it. Design documents
+ * keep the floating toolbar over a full-height canvas.
+ */
+const canvasPanelClass = computed(() =>
+  showNotesPane.value ? 'relative flex pb-14' : 'relative flex'
+)
+
 function onNotesSplitterLayout(layout: number[]) {
   const notes = layout[1] ?? 0
   if (notes > 0) notesSize.value = notes
@@ -205,6 +218,30 @@ function onNotesSplitterLayout(layout: number[]) {
 function restoreNotesPane() {
   notesPanel.value?.resize(notesSize.value)
 }
+
+/**
+ * While driving a presentation the notes move to the right panel, beside the slide the
+ * audience is looking at, so the bottom pane folds away and comes back on exit.
+ *
+ * Collapsed rather than unmounted: the vertical splitter is where the canvas host lives,
+ * and swapping it out would rebuild the CanvasKit surfaces every time the mode changed.
+ */
+const notesCollapsedBeforePresenting = ref(false)
+watch(presenterMode, async (active, wasActive) => {
+  if (active && !wasActive) {
+    notesCollapsedBeforePresenting.value = notesCollapsed.value
+    await nextTick()
+    // `collapse()` is a no-op if the panel is already at its collapsed size, and silently
+    // does nothing if the ref has not resolved — so the resize is the one that has to land.
+    notesPanel.value?.collapse()
+    notesPanel.value?.resize(0)
+    return
+  }
+  if (!active && wasActive) {
+    await nextTick()
+    if (!notesCollapsedBeforePresenting.value) restoreNotesPane()
+  }
+})
 
 if (import.meta.env.DEV) {
   /**
@@ -322,7 +359,12 @@ onUnmounted(() => {
       >
         <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
       </SplitterResizeHandle>
-      <SplitterPanel id="canvas" :default-size="canvasDefaultSize" :min-size="30" class="flex">
+      <SplitterPanel
+        id="canvas"
+        :default-size="canvasDefaultSize"
+        :min-size="30"
+        :class="canvasPanelClass"
+      >
         <!--
           The presenter notes pane nests a vertical splitter inside the canvas panel. For
           design documents the canvas panel is a plain flex host. The canvas host itself is
@@ -351,11 +393,17 @@ onUnmounted(() => {
             <div
               class="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border"
             />
+            <!--
+              Sits on the handle, lifted clear of the toolbar below it.
+
+              The reserved toolbar strip puts the handle immediately above the toolbar, so
+              centring the pill on it left the two touching. The offset is the gap.
+            -->
             <button
-              v-if="notesCollapsed"
+              v-if="notesCollapsed && !presenterMode"
               type="button"
               data-test-id="notes-show"
-              class="relative z-10 flex h-5 cursor-pointer items-center gap-1 rounded-md border border-border bg-panel px-2 text-[11px] font-medium text-surface shadow-sm hover:bg-hover"
+              class="relative z-20 flex h-5 -translate-y-5 cursor-pointer items-center gap-1 rounded-md border border-border bg-panel px-2 text-[11px] font-medium whitespace-nowrap text-surface shadow-sm hover:bg-hover"
               @click.stop="restoreNotesPane"
             >
               <icon-lucide-notebook-pen class="size-3.5" />
@@ -374,12 +422,18 @@ onUnmounted(() => {
             @collapse="notesCollapsed = true"
             @expand="notesCollapsed = false"
           >
-            <NotesPane />
+            <NotesPane v-if="!presenterMode" />
           </SplitterPanel>
         </SplitterGroup>
         <div v-else class="relative flex min-h-0 min-w-0 flex-1">
           <CanvasStage :presenting="isPresenting" />
         </div>
+        <!--
+          Anchored to the whole canvas column rather than to the canvas above the notes
+          pane, so it stays at the very bottom of the window with the notes above it.
+        -->
+        <Toolbar v-if="!isPresenting && !presenterMode" />
+        <PresenterBar v-if="presenterMode" />
       </SplitterPanel>
       <SplitterResizeHandle
         class="group relative z-10 -mx-1 w-2 cursor-col-resize"
@@ -399,7 +453,8 @@ onUnmounted(() => {
         >
           <CollabPanel />
         </div>
-        <PropertiesPanel />
+        <PresenterNotesPanel v-if="presenterMode" />
+        <PropertiesPanel v-else />
       </SplitterPanel>
     </SplitterGroup>
 

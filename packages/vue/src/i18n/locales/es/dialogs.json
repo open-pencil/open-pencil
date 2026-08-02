@@ -208,5 +208,10 @@
   "slidePosition": "{current} / {total}",
   "presenterNotes": "Notas del presentador",
   "addPresenterNotes": "Añadir notas del presentador…",
-  "showPresenterNotes": "Mostrar notas del presentador"
+  "showPresenterNotes": "Mostrar notas del presentador",
+  "restartPresentation": "Reiniciar desde la primera diapositiva",
+  "noNotesForSlide": "No hay notas para esta diapositiva",
+  "backToEditing": "Editar",
+  "presentSoloDescription": "Una sola vista: sin notas presentadas.",
+  "presentWithNotesDescription": "Una vista para compartir y otra para tus notas."
 }

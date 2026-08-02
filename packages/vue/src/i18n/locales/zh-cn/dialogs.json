@@ -208,5 +208,10 @@
   "slidePosition": "{current} / {total}",
   "presenterNotes": "演讲者备注",
   "addPresenterNotes": "添加演讲者备注…",
-  "showPresenterNotes": "显示演讲者备注"
+  "showPresenterNotes": "显示演讲者备注",
+  "restartPresentation": "从第一张幻灯片重新开始",
+  "noNotesForSlide": "此幻灯片没有备注",
+  "backToEditing": "编辑",
+  "presentSoloDescription": "只有一个视图 — 不显示备注。",
+  "presentWithNotesDescription": "一个视图用于共享，另一个用于你的备注。"
 }

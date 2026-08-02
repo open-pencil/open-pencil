@@ -25,6 +25,7 @@ export function createDefaultEditorState(pageId: string): EditorState {
     panY: 0,
     zoom: 1,
     presenting: false,
+    presenterMode: false,
     renderVersion: 0,
     sceneVersion: 0,
     loading: false,

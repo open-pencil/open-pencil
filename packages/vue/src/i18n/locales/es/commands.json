@@ -39,6 +39,8 @@
   "distributeHorizontal": "Distribuir espacio horizontal",
   "distributeVertical": "Distribuir espacio vertical",
   "present": "Presentar",
+  "present": "Presentar",
+  "presentWithNotes": "Presentación con notas",
   "selectInverse": "Invertir selección",
   "sendBackward": "Atrasar"
 }

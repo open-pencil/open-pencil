@@ -42,7 +42,8 @@ export const commandMessageDefaults = {
   zoomTo100: 'Zoom to 100%',
   zoomToFit: 'Zoom to fit',
   zoomToSelection: 'Zoom to selection',
-  present: 'Present'
+  present: 'Present',
+  presentWithNotes: 'Presentation with notes'
 } as const
 
 export const commandMessages = i18n('commands', commandMessageDefaults)

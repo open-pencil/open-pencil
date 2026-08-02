@@ -16,6 +16,8 @@ const editor = useEditorStore()
 const { panels } = useI18n()
 const { pages, currentPageId, switchPage } = usePageList()
 const styles = tv(slidesRailTheme)
+/** Editing affordances are withheld while this window is driving a presentation. */
+const presenterMode = computed(() => editor.state.presenterMode)
 const base = styles()
 
 const listEl = useTemplateRef<HTMLElement>('list')
@@ -71,7 +73,10 @@ async function onNewSlide() {
     <header :class="base.header()">
       <span :class="base.title()">{{ panels.slides }}</span>
     </header>
-    <div :class="base.toolbar()">
+    <!--
+      Adding slides is editing, and the presenter view must not mutate the deck mid-talk.
+    -->
+    <div v-if="!presenterMode" :class="base.toolbar()">
       <button type="button" data-test-id="slides-new" :class="base.newSlide()" @click="onNewSlide">
         {{ panels.newSlide }}
       </button>

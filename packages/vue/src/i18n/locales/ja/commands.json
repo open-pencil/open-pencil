@@ -39,6 +39,8 @@
   "distributeHorizontal": "水平方向の間隔を均等に配置",
   "distributeVertical": "垂直方向の間隔を均等に配置",
   "present": "プレゼンテーション",
+  "present": "プレゼンテーション",
+  "presentWithNotes": "ノート付きプレゼンテーション",
   "selectInverse": "選択範囲を反転",
   "sendBackward": "背面へ移動"
 }

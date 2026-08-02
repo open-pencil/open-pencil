@@ -208,5 +208,10 @@
   "slidePosition": "{current} / {total}",
   "presenterNotes": "Referentennotizen",
   "addPresenterNotes": "Referentennotizen hinzufügen…",
-  "showPresenterNotes": "Referentennotizen anzeigen"
+  "showPresenterNotes": "Referentennotizen anzeigen",
+  "restartPresentation": "Von der ersten Folie neu starten",
+  "noNotesForSlide": "Keine Notizen für diese Folie",
+  "backToEditing": "Bearbeiten",
+  "presentSoloDescription": "Nur eine Ansicht – keine präsentierten Notizen.",
+  "presentWithNotesDescription": "Eine Ansicht zum Teilen, eine für deine Notizen."
 }

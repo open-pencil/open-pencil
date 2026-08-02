@@ -208,5 +208,10 @@
   "slidePosition": "{current} / {total}",
   "presenterNotes": "発表者メモ",
   "addPresenterNotes": "発表者メモを追加…",
-  "showPresenterNotes": "発表者メモを表示"
+  "showPresenterNotes": "発表者メモを表示",
+  "restartPresentation": "最初のスライドから再開",
+  "noNotesForSlide": "このスライドのノートはありません",
+  "backToEditing": "編集",
+  "presentSoloDescription": "表示は1つだけ — ノートは表示されません。",
+  "presentWithNotesDescription": "共有用の画面と、自分のノート用の画面。"
 }

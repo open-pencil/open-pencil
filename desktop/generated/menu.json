@@ -188,6 +188,10 @@
         "accelerator": "Alt+CmdOrCtrl+Enter"
       },
       {
+        "id": "view.presentWithNotes",
+        "label": "Presentation with notes"
+      },
+      {
         "type": "separator"
       },
       {

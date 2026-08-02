@@ -208,5 +208,10 @@
   "slidePosition": "{current} / {total}",
   "presenterNotes": "Notatki prezentera",
   "addPresenterNotes": "Dodaj notatki prezentera…",
-  "showPresenterNotes": "Pokaż notatki prezentera"
+  "showPresenterNotes": "Pokaż notatki prezentera",
+  "restartPresentation": "Zacznij od pierwszego slajdu",
+  "noNotesForSlide": "Brak notatek do tego slajdu",
+  "backToEditing": "Edytuj",
+  "presentSoloDescription": "Tylko jeden widok — bez prezentowanych notatek.",
+  "presentWithNotesDescription": "Jeden widok do udostępniania, drugi na twoje notatki."
 }

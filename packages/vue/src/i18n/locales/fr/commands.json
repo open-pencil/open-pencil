@@ -39,6 +39,8 @@
   "distributeHorizontal": "Répartir l’espacement horizontal",
   "distributeVertical": "Répartir l’espacement vertical",
   "present": "Présenter",
+  "present": "Présenter",
+  "presentWithNotes": "Présentation avec notes",
   "selectInverse": "Inverser la sélection",
   "sendBackward": "Reculer"
 }

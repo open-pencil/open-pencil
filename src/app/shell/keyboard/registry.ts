@@ -223,7 +223,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       run: ({ actions }) => actions.presentLast(),
       presentation: true
     },
-    ...commandShortcuts('view.present')
+    ...commandShortcuts('view.present', 'view.presentWithNotes')
   ]
 
   const bindings: KeyBindingMap = {}

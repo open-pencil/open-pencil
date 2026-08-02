@@ -208,5 +208,10 @@
   "slidePosition": "{current} / {total}",
   "presenterNotes": "Заметки докладчика",
   "addPresenterNotes": "Добавить заметки докладчика…",
-  "showPresenterNotes": "Показать заметки докладчика"
+  "showPresenterNotes": "Показать заметки докладчика",
+  "restartPresentation": "Начать с первого слайда",
+  "noNotesForSlide": "Нет заметок для этого слайда",
+  "backToEditing": "Редактировать",
+  "presentSoloDescription": "Только один вид — без показа заметок.",
+  "presentWithNotesDescription": "Один вид для показа, другой для ваших заметок."
 }

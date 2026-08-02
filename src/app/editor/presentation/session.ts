@@ -33,10 +33,21 @@ export function enterPresentation(store: EditorStore): void {
  * Fullscreen release is handled by `usePresentationSession` watching `presenting`.
  */
 export function exitPresentation(store: EditorStore): void {
-  if (!store.state.presenting) return
+  if (!presentationActive(store)) return
 
   store.state.presenting = false
   store.zoomToFit()
+}
+
+/**
+ * Slide navigation applies in either mode.
+ *
+ * `presenting` means this window shows the slideshow; `presenterMode` means it drives a
+ * second window that does. Guarding on `presenting` alone left every control in the
+ * presenter bar dead, since the presenter's own window is not the one presenting.
+ */
+function presentationActive(store: EditorStore): boolean {
+  return store.state.presenting || store.state.presenterMode
 }
 
 async function goToSlide(store: EditorStore, index: number): Promise<void> {
@@ -51,7 +62,7 @@ async function goToSlide(store: EditorStore, index: number): Promise<void> {
 
 /** Advance one slide; stays on the last slide without wrapping or exiting. */
 export async function presentNext(store: EditorStore): Promise<void> {
-  if (!store.state.presenting) return
+  if (!presentationActive(store)) return
   const index = currentSlideIndex(store)
   if (index < 0) return
   await goToSlide(store, index + 1)
@@ -59,7 +70,7 @@ export async function presentNext(store: EditorStore): Promise<void> {
 
 /** Go back one slide; stays on the first slide without wrapping. */
 export async function presentPrevious(store: EditorStore): Promise<void> {
-  if (!store.state.presenting) return
+  if (!presentationActive(store)) return
   const index = currentSlideIndex(store)
   if (index < 0) return
   await goToSlide(store, index - 1)
@@ -67,13 +78,13 @@ export async function presentPrevious(store: EditorStore): Promise<void> {
 
 /** Jump to the first slide. */
 export async function presentFirst(store: EditorStore): Promise<void> {
-  if (!store.state.presenting) return
+  if (!presentationActive(store)) return
   await goToSlide(store, 0)
 }
 
 /** Jump to the last slide. */
 export async function presentLast(store: EditorStore): Promise<void> {
-  if (!store.state.presenting) return
+  if (!presentationActive(store)) return
   const pages = slidePages(store)
   await goToSlide(store, pages.length - 1)
 }

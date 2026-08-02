@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 
 import EditorCanvas from '@/components/EditorCanvas.vue'
-import Toolbar from '@/components/Toolbar/Toolbar.vue'
 import PresentationOverlay from '@/components/presentation/PresentationOverlay.vue'
 import presentationTheme from '@/theme/presentation'
 
@@ -15,9 +14,7 @@ const dataPresenting = computed(() => (presenting ? 'true' : undefined))
 const stageClass = computed(() =>
   presenting ? presentationStyles.stage() : 'relative flex min-w-0 flex-1'
 )
-const canvasHostClass = computed(() =>
-  presenting ? presentationStyles.canvasHost() : 'contents'
-)
+const canvasHostClass = computed(() => (presenting ? presentationStyles.canvasHost() : 'contents'))
 </script>
 
 <template>
@@ -28,9 +25,13 @@ const canvasHostClass = computed(() =>
   <Teleport to="body" :disabled="!presenting">
     <div data-test-id="presentation-stage" :data-presenting="dataPresenting" :class="stageClass">
       <div :class="canvasHostClass">
+        <!--
+          The toolbar is not mounted here. It anchors to the bottom of the whole canvas
+          column in EditorView, so the presenter notes pane sits above it rather than
+          stranding it halfway up the window.
+        -->
         <div class="relative flex min-h-0 min-w-0 flex-1">
           <EditorCanvas />
-          <Toolbar v-if="!presenting" />
         </div>
       </div>
       <PresentationOverlay v-if="presenting" />

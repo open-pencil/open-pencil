@@ -126,6 +126,11 @@ export const APP_MENU_SCHEMA = [
         label: 'Present',
         command: 'view.present'
       },
+      {
+        id: 'view.presentWithNotes',
+        label: 'Presentation with notes',
+        command: 'view.presentWithNotes'
+      },
       { type: 'separator' },
       {
         id: 'theme',

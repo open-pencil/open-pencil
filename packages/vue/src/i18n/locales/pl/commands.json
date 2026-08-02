@@ -39,6 +39,8 @@
   "distributeHorizontal": "Rozłóż odstępy w poziomie",
   "distributeVertical": "Rozłóż odstępy w pionie",
   "present": "Prezentuj",
+  "present": "Prezentuj",
+  "presentWithNotes": "Prezentacja z notatkami",
   "selectInverse": "Odwróć zaznaczenie",
   "sendBackward": "Przesuń do tyłu"
 }

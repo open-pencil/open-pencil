@@ -87,6 +87,8 @@ export interface EditorState {
    * edge-to-edge fit (no editing padding / 100% cap) and chrome is suppressed.
    */
   presenting: boolean
+  /** This window is the presenter's driver view; the audience is a second window. */
+  presenterMode: boolean
   renderVersion: number
   sceneVersion: number
   loading: boolean

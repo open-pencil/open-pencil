@@ -113,7 +113,11 @@ export const EDITOR_COMMAND_METADATA = {
   'view.zoom100': { keybinding: '$mod+Digit0' },
   'view.zoomFit': { keybinding: ['$mod+Digit1', 'Shift+Digit1'] },
   'view.zoomSelection': { keybinding: ['$mod+Digit2', 'Shift+Digit2'] },
-  'view.present': { shortcut: 'ALT+MOD+Enter', keybinding: 'Alt+$mod+Enter' }
+  'view.present': { shortcut: 'ALT+MOD+Enter', keybinding: 'Alt+$mod+Enter' },
+  'view.presentWithNotes': {
+    shortcut: 'ALT+SHIFT+MOD+Enter',
+    keybinding: 'Alt+Shift+$mod+Enter'
+  }
 } satisfies Record<EditorCommandId, EditorCommandMetadata>
 
 export function editorCommandMetadata(id: EditorCommandId): EditorCommandMetadata {
