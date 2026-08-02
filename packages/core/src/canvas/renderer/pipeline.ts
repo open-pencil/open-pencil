@@ -5,6 +5,7 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 
 import { drawPageGuides } from '#core/canvas/page-guides'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { documentKindRules } from '#core/editor/document-kind'
 import type { EditorState } from '#core/editor/types'
 
 import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-backing'
@@ -66,7 +67,9 @@ function overlaysFromEditorState(state: EditorState, textEditor: unknown): Rende
         } as RenderOverlays['penState'])
       : null,
     nodeEditState: state.nodeEditState ?? null,
-    remoteCursors: state.remoteCursors,
+    // Decks draw no remote cursors: collaboration is withheld in slides mode, and a stale
+    // peer from a design tab must not paint over a slide.
+    remoteCursors: documentKindRules(state.documentKind).collaborative ? state.remoteCursors : [],
     autoLayoutHover: state.autoLayoutHover
   }
 }

@@ -53,6 +53,15 @@ export interface DocumentKindRules {
    * Decks have an ordered slide list to advance through; design documents do not.
    */
   presentable: boolean
+  /**
+   * Whether live collaboration is offered for this document kind at all.
+   *
+   * Collaboration has never been exercised against decks — not sharing, not peer
+   * awareness, not remote cursors. Rather than expose an untested path, the whole of it
+   * is withheld in slides mode: no Share, no avatars, no cursor broadcast. Design files
+   * are unaffected.
+   */
+  collaborative: boolean
 }
 
 const RULES: Record<DocumentKind, DocumentKindRules> = {
@@ -67,7 +76,8 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     artboardSelectable: true,
     lockViewportToArtboard: false,
     zoomRange: { min: 0.02, max: 256 },
-    presentable: false
+    presentable: false,
+    collaborative: true
   },
   deck: {
     // Figma Slides-style canvas: fixed backdrop, always-fit slide, filmstrip navigator.
@@ -81,7 +91,8 @@ const RULES: Record<DocumentKind, DocumentKindRules> = {
     artboardSelectable: false,
     lockViewportToArtboard: true,
     zoomRange: { min: 0.5, max: 16 },
-    presentable: true
+    presentable: true,
+    collaborative: false
   }
 }
 
