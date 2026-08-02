@@ -506,7 +506,7 @@ onBeforeUnmount(clearThumbnailUrls)
     <header class="flex h-14 items-center border-b border-border px-6">
       <div>
         <h1 class="text-sm font-semibold">{{ dialogs.storageWorkspace }}</h1>
-        <p class="text-[10px] text-muted">{{ activeStorageProviderID }}</p>
+        <p class="text-[10px] text-muted">{{ provider.label }}</p>
       </div>
       <div class="ml-auto flex gap-2">
         <button

@@ -86,6 +86,11 @@ export type StorageProviderRegistration = {
   label: string
   description: string
   icon?: string
+  /** Where to obtain credentials for this provider; rendered beside the description. */
+  helpUrl?: string
+  helpLabel?: string
+  /** Short cost summary, so the trade-off is visible before signing up. */
+  pricingNote?: string
   preferenceFields: readonly StoragePreferenceField[]
   credentialFields: readonly StorageCredentialField[]
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter

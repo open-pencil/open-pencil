@@ -32,6 +32,7 @@
 - Connect an S3-compatible storage workspace with local-first saves and background synchronization.
 - Drop `.deck` files into the cloud storage workspace; create Design or Slides documents; and sort, rename, duplicate, trash, restore, or permanently delete stored documents with cached viewport-only thumbnails.
 - Connect Bunny Storage by copying an S3-enabled Storage Zone name, endpoint, and password; browser users need no manual CORS configuration.
+- Connect Appwrite with a dedicated scoped API key; OpenPencil selects or creates the storage bucket and registers its web platform automatically.
 - Figma Slides (`.deck`) support — open, edit, and save decks as a first-class document format
   - New `@open-pencil/deck` package: archive parse/write, slide↔page restructure
   - Each active slide becomes an editor page; left-rail filmstrip with lazy thumbnails

@@ -52,6 +52,19 @@ function testProvider() {
 }
 
 describe('storage provider registry', () => {
+  test('registers Appwrite with setup fields and one dedicated credential', () => {
+    const provider = storageProviderRegistry.get('appwrite-storage')
+
+    expect(provider.preferenceFields.map((field) => field.id)).toEqual([
+      'endpoint',
+      'project-id',
+      'bucket-id'
+    ])
+    expect(provider.credentialFields.map((field) => field.id)).toEqual(['api-key'])
+    expect(provider.icon).toContain('appwrite-logo.svg')
+    expect(appCredentialRefs().map(credentialKey)).toContain('v1:appwrite-storage:default:api-key')
+  })
+
   test('registers Bunny Storage with its simplified connection fields', () => {
     const provider = storageProviderRegistry.get('bunny-storage')
 

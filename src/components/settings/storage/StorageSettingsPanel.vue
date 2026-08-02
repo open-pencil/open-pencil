@@ -160,6 +160,20 @@ onMounted(() => void refreshStatuses())
       <div>
         <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsStorage }}</h3>
         <p class="mt-0.5 text-[10px] text-muted">{{ provider.description }}</p>
+        <a
+          v-if="provider.helpUrl"
+          :href="provider.helpUrl"
+          target="_blank"
+          rel="noreferrer"
+          class="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-accent hover:underline"
+          data-test-id="settings-storage-help-link"
+        >
+          {{ provider.helpLabel ?? provider.helpUrl }}
+          <icon-lucide-external-link class="size-2.5" />
+        </a>
+        <p v-if="provider.pricingNote" class="mt-0.5 text-[10px] text-muted">
+          {{ provider.pricingNote }}
+        </p>
       </div>
     </div>
 

@@ -2,6 +2,89 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
+test('Appwrite setup uses a scoped key and configures storage automatically', async ({ page }) => {
+  const requests: Array<{ method: string; project: string; key: string }> = []
+  await page.route('https://fra.cloud.appwrite.io/v1/**', async (route) => {
+    const request = route.request()
+    requests.push({
+      method: request.method(),
+      project: request.headers()['x-appwrite-project'] ?? '',
+      key: request.headers()['x-appwrite-key'] ?? ''
+    })
+    const url = new URL(request.url())
+    if (url.pathname.endsWith('/storage/buckets')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          total: 1,
+          buckets: [{ $id: 'bucket-1', name: 'OpenPencil' }]
+        })
+      })
+      return
+    }
+    if (url.pathname.endsWith('/files') && request.method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ total: 0, files: [] })
+      })
+      return
+    }
+    if (request.method() === 'POST') {
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          $id: 'namespace-marker',
+          $updatedAt: '2026-08-02T12:00:00.000Z',
+          name: 'namespace-marker',
+          sizeOriginal: 1
+        })
+      })
+      return
+    }
+    await route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ type: 'storage_file_not_found', message: 'Not found' })
+    })
+  })
+
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-storage').click()
+  await page.getByTestId('settings-storage-provider').click()
+  await page.getByRole('option', { name: 'Appwrite' }).click()
+
+  await expect(page.locator('[data-slot="storage-provider-icon"]')).toBeVisible()
+  await expect(page.getByText(/registers its web platform automatically/)).toBeVisible()
+  await expect(page.getByLabel('Endpoint')).toHaveAttribute(
+    'placeholder',
+    'https://fra.cloud.appwrite.io/v1'
+  )
+  await expect(page.getByLabel('Project ID')).toBeVisible()
+  await expect(page.getByLabel('Bucket ID (optional)')).toBeVisible()
+  await expect(page.getByLabel('API key')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy CORS JSON' })).toHaveCount(0)
+
+  await page.getByLabel('Endpoint').fill('https://fra.cloud.appwrite.io/v1')
+  await page.getByLabel('Project ID').fill('project-1')
+  await page.getByLabel('Bucket ID (optional)').fill('bucket-1')
+  const keyField = page.locator('[data-credential="api-key"]')
+  await keyField.locator('input').fill('scoped-appwrite-key')
+  await keyField.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('settings-storage-test').click()
+
+  await expect(page.getByRole('status')).toContainText('Connected')
+  expect(requests.length).toBeGreaterThanOrEqual(4)
+  expect(requests.every((request) => request.project === 'project-1')).toBe(true)
+  expect(requests.every((request) => request.key === 'scoped-appwrite-key')).toBe(true)
+})
+
 test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ page }) => {
   const requests: Array<{ method: string; authorization: string }> = []
   await page.route('https://de-s3.storage.bunnycdn.com/**', async (route) => {

@@ -1,0 +1,378 @@
+import { IS_BROWSER } from '@/constants'
+
+import type { AppwriteConfig } from './config'
+
+const APPWRITE_CHUNK_SIZE = 5 * 1024 * 1024
+const APPWRITE_LIST_PAGE_SIZE = 100
+const APPWRITE_LIST_PAGE_LIMIT = 500
+const APPWRITE_FILE_NAME_PREFIX = 'openpencil-'
+
+export type AppwriteBucket = {
+  $id: string
+  name: string
+}
+
+export type AppwriteFile = {
+  $id: string
+  $updatedAt: string
+  name: string
+  sizeOriginal: number
+}
+
+export type AppwriteObject = {
+  key: string
+  lastModified: string
+  size: number
+}
+
+type AppwriteBucketList = {
+  buckets: AppwriteBucket[]
+}
+
+type AppwriteFileList = {
+  files: AppwriteFile[]
+}
+
+type AppwriteErrorPayload = {
+  message?: string
+  type?: string
+}
+
+export type AppwriteUploadProgress = {
+  sentBytes: number
+  totalBytes: number
+}
+
+export type AppwriteDownloadProgress = {
+  receivedBytes: number
+  totalBytes: number | null
+}
+
+export class AppwriteHttpError extends Error {
+  readonly status: number
+  readonly type: string | null
+
+  constructor(status: number, message: string, type: string | null = null) {
+    super(message)
+    this.name = 'AppwriteHttpError'
+    this.status = status
+    this.type = type
+  }
+}
+
+function query(method: string, attribute?: string, values?: readonly unknown[]): string {
+  return JSON.stringify({
+    method,
+    ...(attribute ? { attribute } : {}),
+    ...(values ? { values } : {})
+  })
+}
+
+function apiUrl(config: AppwriteConfig, path: string): string {
+  return `${config.endpoint}${path}`
+}
+
+function apiHeaders(config: AppwriteConfig, headers?: HeadersInit): Headers {
+  const result = new Headers(headers)
+  result.set('Accept', 'application/json')
+  result.set('X-Appwrite-Project', config.projectId)
+  result.set('X-Appwrite-Key', config.apiKey)
+  return result
+}
+
+async function appwriteFetch(
+  config: AppwriteConfig,
+  path: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  return fetch(apiUrl(config, path), {
+    ...init,
+    headers: apiHeaders(config, init.headers),
+    credentials: 'omit'
+  })
+}
+
+async function errorFromResponse(response: Response): Promise<AppwriteHttpError> {
+  let payload: AppwriteErrorPayload = {}
+  try {
+    payload = (await response.json()) as AppwriteErrorPayload
+  } catch (error) {
+    console.warn('[Storage] Appwrite returned an invalid error response:', error)
+  }
+  return new AppwriteHttpError(
+    response.status,
+    payload.message || `Appwrite request failed (${response.status})`,
+    payload.type ?? null
+  )
+}
+
+async function requireResponse(response: Response): Promise<Response> {
+  if (!response.ok) throw await errorFromResponse(response)
+  return response
+}
+
+async function parseJson<T>(response: Response): Promise<T> {
+  await requireResponse(response)
+  return (await response.json()) as T
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+export async function appwriteFileId(key: string): Promise<string> {
+  return (await sha256Hex(`open-pencil:${key}`)).slice(0, 36)
+}
+
+export function appwriteFileName(key: string): string {
+  return `${APPWRITE_FILE_NAME_PREFIX}${encodeURIComponent(key)}`
+}
+
+export function appwriteObjectKey(name: string): string | null {
+  if (!name.startsWith(APPWRITE_FILE_NAME_PREFIX)) return null
+  // Appwrite decodes the multipart filename before persisting it.
+  return name.slice(APPWRITE_FILE_NAME_PREFIX.length)
+}
+
+export async function listBuckets(config: AppwriteConfig): Promise<AppwriteBucket[]> {
+  const params = new URLSearchParams({ total: 'false' })
+  params.append('queries[]', query('limit', undefined, [APPWRITE_LIST_PAGE_SIZE]))
+  const response = await appwriteFetch(config, `/storage/buckets?${params.toString()}`)
+  return (await parseJson<AppwriteBucketList>(response)).buckets
+}
+
+export async function createBucket(
+  config: AppwriteConfig,
+  bucketId: string,
+  name: string
+): Promise<AppwriteBucket> {
+  const response = await appwriteFetch(config, '/storage/buckets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      bucketId,
+      name,
+      permissions: [],
+      fileSecurity: false,
+      enabled: true,
+      maximumFileSize: 5_000_000_000,
+      allowedFileExtensions: [],
+      compression: 'none',
+      encryption: false,
+      antivirus: false,
+      transformations: false
+    })
+  })
+  return parseJson<AppwriteBucket>(response)
+}
+
+function currentWebHostname(): string | null {
+  if (!IS_BROWSER) return null
+  const hostname = window.location.hostname.trim().toLowerCase()
+  if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+    return null
+  }
+  return hostname
+}
+
+async function bootstrapWebPlatform(config: AppwriteConfig, hostname: string): Promise<void> {
+  const platformId = `op-${(await sha256Hex(`platform:${hostname}`)).slice(0, 33)}`
+  try {
+    const response = await appwriteFetch(config, '/project/platforms/web', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platformId, name: 'OpenPencil', hostname })
+    })
+    if (response.ok || response.status === 409) return
+    throw await errorFromResponse(response)
+  } catch (error) {
+    // The first request from an unregistered browser origin succeeds server-side but its
+    // response has no CORS header. The browser reports that successful bootstrap as TypeError.
+    if (error instanceof TypeError) return
+    throw error
+  }
+}
+
+export async function withAppwritePlatformBootstrap<T>(
+  config: AppwriteConfig,
+  operation: () => Promise<T>
+): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    const hostname = currentWebHostname()
+    if (!(error instanceof TypeError) || !hostname) throw error
+    await bootstrapWebPlatform(config, hostname)
+    return operation()
+  }
+}
+
+export async function headObject(
+  config: AppwriteConfig,
+  bucketId: string,
+  key: string
+): Promise<boolean> {
+  const fileId = await appwriteFileId(key)
+  const response = await appwriteFetch(
+    config,
+    `/storage/buckets/${encodeURIComponent(bucketId)}/files/${fileId}`
+  )
+  if (response.status === 404) return false
+  await requireResponse(response)
+  return true
+}
+
+export async function deleteObject(
+  config: AppwriteConfig,
+  bucketId: string,
+  key: string
+): Promise<void> {
+  const fileId = await appwriteFileId(key)
+  const response = await appwriteFetch(
+    config,
+    `/storage/buckets/${encodeURIComponent(bucketId)}/files/${fileId}`,
+    { method: 'DELETE' }
+  )
+  if (response.status === 404) return
+  await requireResponse(response)
+}
+
+function exactArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer
+}
+
+async function uploadChunk(
+  config: AppwriteConfig,
+  bucketId: string,
+  fileId: string,
+  name: string,
+  bytes: Uint8Array,
+  contentType: string,
+  range: string | null,
+  uploadId: string | null
+): Promise<AppwriteFile> {
+  const form = new FormData()
+  form.set('fileId', fileId)
+  form.set('file', new File([exactArrayBuffer(bytes)], name, { type: contentType }))
+  const headers = new Headers()
+  if (range) headers.set('Content-Range', range)
+  if (uploadId) headers.set('X-Appwrite-ID', uploadId)
+  const response = await appwriteFetch(
+    config,
+    `/storage/buckets/${encodeURIComponent(bucketId)}/files`,
+    { method: 'POST', headers, body: form }
+  )
+  return parseJson<AppwriteFile>(response)
+}
+
+export async function putObject(
+  config: AppwriteConfig,
+  bucketId: string,
+  key: string,
+  bytes: Uint8Array,
+  contentType: string,
+  onProgress?: (progress: AppwriteUploadProgress) => void
+): Promise<void> {
+  await deleteObject(config, bucketId, key)
+  const fileId = await appwriteFileId(key)
+  const name = appwriteFileName(key)
+
+  if (bytes.byteLength <= APPWRITE_CHUNK_SIZE) {
+    await uploadChunk(config, bucketId, fileId, name, bytes, contentType, null, null)
+    onProgress?.({ sentBytes: bytes.byteLength, totalBytes: bytes.byteLength })
+    return
+  }
+
+  let uploadId: string | null = null
+  for (let start = 0; start < bytes.byteLength; start += APPWRITE_CHUNK_SIZE) {
+    const end = Math.min(start + APPWRITE_CHUNK_SIZE, bytes.byteLength)
+    const uploaded = await uploadChunk(
+      config,
+      bucketId,
+      fileId,
+      name,
+      bytes.subarray(start, end),
+      contentType,
+      `bytes ${start}-${end - 1}/${bytes.byteLength}`,
+      uploadId
+    )
+    uploadId = uploaded.$id
+    onProgress?.({ sentBytes: end, totalBytes: bytes.byteLength })
+  }
+}
+
+export async function getObject(
+  config: AppwriteConfig,
+  bucketId: string,
+  key: string,
+  onProgress?: (progress: AppwriteDownloadProgress) => void
+): Promise<Uint8Array | null> {
+  const fileId = await appwriteFileId(key)
+  const response = await appwriteFetch(
+    config,
+    `/storage/buckets/${encodeURIComponent(bucketId)}/files/${fileId}/download`
+  )
+  if (response.status === 404) return null
+  await requireResponse(response)
+  if (!onProgress || !response.body) return new Uint8Array(await response.arrayBuffer())
+
+  const contentLengthHeader = response.headers.get('content-length')
+  const contentLength = contentLengthHeader === null ? Number.NaN : Number(contentLengthHeader)
+  const totalBytes = Number.isFinite(contentLength) && contentLength >= 0 ? contentLength : null
+  const reader = response.body.getReader()
+  const chunks: Uint8Array[] = []
+  let receivedBytes = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+    receivedBytes += value.byteLength
+    onProgress({ receivedBytes, totalBytes })
+  }
+  const bytes = new Uint8Array(receivedBytes)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return bytes
+}
+
+export async function listObjects(
+  config: AppwriteConfig,
+  bucketId: string,
+  prefix: string
+): Promise<AppwriteObject[]> {
+  const objects: AppwriteObject[] = []
+  let cursor: string | null = null
+
+  for (let page = 0; page < APPWRITE_LIST_PAGE_LIMIT; page++) {
+    const params = new URLSearchParams({ total: 'false' })
+    // Appwrite decodes percent-encoded path separators in multipart filenames before storing
+    // the name, so the server-side query must use the decoded namespace prefix.
+    params.append(
+      'queries[]',
+      query('startsWith', 'name', [`${APPWRITE_FILE_NAME_PREFIX}${prefix}`])
+    )
+    params.append('queries[]', query('limit', undefined, [APPWRITE_LIST_PAGE_SIZE]))
+    if (cursor) params.append('queries[]', query('cursorAfter', undefined, [cursor]))
+    const response = await appwriteFetch(
+      config,
+      `/storage/buckets/${encodeURIComponent(bucketId)}/files?${params.toString()}`
+    )
+    const files = (await parseJson<AppwriteFileList>(response)).files
+    for (const file of files) {
+      const key = appwriteObjectKey(file.name)
+      if (key?.startsWith(prefix)) {
+        objects.push({ key, lastModified: file.$updatedAt, size: file.sizeOriginal })
+      }
+    }
+    if (files.length < APPWRITE_LIST_PAGE_SIZE) return objects
+    const lastFile = files.at(-1)
+    if (!lastFile) return objects
+    cursor = lastFile.$id
+  }
+
+  throw new Error('Appwrite listing exceeded the 50,000-file safety limit')
+}
