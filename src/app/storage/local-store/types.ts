@@ -1,4 +1,4 @@
-import type { StorageProviderID } from '@/app/integrations/storage/types'
+import type { StorageDocumentFormat, StorageProviderID } from '@/app/integrations/storage/types'
 
 export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
 
@@ -7,6 +7,7 @@ export type LocalCanvasMeta = {
   id: string
   providerId: StorageProviderID
   name: string
+  sourceFormat: StorageDocumentFormat
   updatedAt: string
   /** Monotonic local revision; increments on each local write. */
   revision: number
@@ -26,17 +27,19 @@ export type LocalCanvasMeta = {
 /** Index-only row for remote canvases not yet downloaded (no fig body). */
 export type LocalCanvasIndexInput = Omit<
   LocalCanvasMeta,
-  'hasFig' | 'hasThumb' | 'tombstoned' | 'revision'
+  'hasFig' | 'hasThumb' | 'tombstoned' | 'revision' | 'sourceFormat'
 > & {
   revision?: number
   hasFig?: boolean
   hasThumb?: boolean
+  sourceFormat?: StorageDocumentFormat
 }
 
 export type LocalCanvasWriteInput = {
   id: string
   providerId: StorageProviderID
   name: string
+  sourceFormat?: StorageDocumentFormat
   updatedAt?: string
   figBytes: Uint8Array
   thumbBytes?: Uint8Array | null

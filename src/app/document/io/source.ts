@@ -12,7 +12,10 @@ import {
 import { createSaveActions } from '@/app/document/io/save'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
-import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
+import type {
+  StorageDocumentBinding,
+  StorageDocumentFormat
+} from '@/app/integrations/storage/types'
 
 type DocumentSourceState = EditorState & {
   documentName: string
@@ -114,11 +117,15 @@ export function createDocumentSourceActions({
     }
   }
 
-  function setStorageDocumentSource(binding: StorageDocumentBinding, documentName: string) {
+  function setStorageDocumentSource(
+    binding: StorageDocumentBinding,
+    documentName: string,
+    sourceFormat: StorageDocumentFormat = 'fig'
+  ) {
     stopWatchingFile()
     setFileHandle(null)
     setFilePath(null)
-    setDownloadName(`${documentName}.fig`)
+    setDownloadName(`${documentName}.${sourceFormat}`)
     setSourceIdentity({ handle: null, path: null })
     setStorageBinding(binding)
     state.documentName = documentName

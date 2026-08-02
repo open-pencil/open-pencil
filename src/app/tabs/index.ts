@@ -188,22 +188,38 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
         providerId,
         canvasId: document.id,
         name: document.name,
+        sourceFormat: document.sourceFormat,
         updatedAt: document.updatedAt,
         figBytes: bytes
       })
     }
 
+    const sourceFormat = localMetadata?.sourceFormat ?? document.sourceFormat
     const fileBytes = new Uint8Array(bytes.byteLength)
     fileBytes.set(bytes)
-    const file = new File([fileBytes.buffer], `${document.name}.fig`, {
+    const file = new File([fileBytes.buffer], `${document.name}.${sourceFormat}`, {
       type: 'application/octet-stream'
     })
-    const imported = await readFigFile(file, { populate: 'first-page' })
+    const imported =
+      sourceFormat === 'fig'
+        ? await readFigFile(file, { populate: 'first-page' })
+        : (
+            await io.readDocument({
+              name: file.name,
+              mimeType: file.type,
+              data: fileBytes
+            })
+          ).graph
     const firstPageId = imported.getPages()[0]?.id
     if (firstPageId) computeAllLayouts(imported, firstPageId)
     store.replaceGraph(imported)
     store.undo.clear()
-    store.setStorageDocumentSource({ providerId, documentId: document.id }, document.name)
+    store.setDocumentKind(documentKindForSourceFormat(sourceFormat))
+    store.setStorageDocumentSource(
+      { providerId, documentId: document.id },
+      document.name,
+      sourceFormat
+    )
     store.clearSelection()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)

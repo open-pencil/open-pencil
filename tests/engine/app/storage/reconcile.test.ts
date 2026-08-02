@@ -13,6 +13,7 @@ function localMeta(
     id,
     providerId: 's3-compatible',
     name: `Local ${id}`,
+    sourceFormat: id === 'pending' ? 'deck' : 'fig',
     updatedAt: '2026-01-02T00:00:00.000Z',
     revision: 1,
     syncStatus,
@@ -29,6 +30,7 @@ function remoteDocument(id: string): StorageDocument {
   return {
     id,
     name: `Remote ${id}`,
+    sourceFormat: 'fig',
     updatedAt: '2026-01-01T00:00:00.000Z',
     metadataAuthoritative: true
   }
@@ -46,6 +48,7 @@ describe('storage workspace reconciliation', () => {
       'Remote remote'
     ])
     expect(result.remoteDocumentsToSeed.map((document) => document.id)).toEqual(['remote'])
+    expect(result.documents[0]?.sourceFormat).toBe('deck')
   })
 
   test('hides tombstones until deletion is confirmed and then purges them', () => {

@@ -23,6 +23,7 @@ describe('local canvas store (memory)', () => {
     expect(meta.revision).toBe(1)
     expect(meta.syncStatus).toBe('pending')
     expect(meta.hasFig).toBe(true)
+    expect(meta.sourceFormat).toBe('fig')
 
     const read = expectDefined(await store.readFig('c1'))
     expect([...read]).toEqual([1, 2, 3, 4, 5])
@@ -72,6 +73,7 @@ describe('local canvas store (memory)', () => {
       id: 'remote-1',
       providerId: 's3-compatible',
       name: 'From bucket',
+      sourceFormat: 'deck',
       updatedAt: '2026-01-01T00:00:00.000Z',
       syncStatus: 'synced',
       lastSyncedAt: '2026-01-01T00:00:00.000Z',
@@ -79,6 +81,7 @@ describe('local canvas store (memory)', () => {
       hasFig: false
     })
     expect(meta.hasFig).toBe(false)
+    expect(meta.sourceFormat).toBe('deck')
     expect(await store.readFig('remote-1')).toBeNull()
   })
 })

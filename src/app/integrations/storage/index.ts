@@ -8,6 +8,7 @@ export type { StoragePreferences } from './preferences'
 export { S3_STORAGE_PROVIDER, storageProviderRegistry } from './providers'
 export { defineStorageProvider, StorageProviderRegistry } from './registry'
 export { createS3StorageAdapter } from './s3/adapter'
+export { storageThumbnailMimeType } from './thumbnail'
 export type { S3StorageAdapter } from './s3/adapter'
 export type { S3CompatibleConfig, S3ConnectionResult } from './s3/types'
 export {
@@ -22,6 +23,7 @@ export type {
   StorageCredentialField,
   StorageDocument,
   StorageDocumentBinding,
+  StorageDocumentFormat,
   StorageDocumentMetadata,
   StorageFieldID,
   StoragePreferenceField,

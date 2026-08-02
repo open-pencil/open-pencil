@@ -10,6 +10,7 @@ import {
   documentMetaKey,
   documentThumbnailKey
 } from '../namespace'
+import { storageThumbnailMimeType } from '../thumbnail'
 import type {
   StorageAdapter,
   StorageDocument,
@@ -59,10 +60,12 @@ function parseMetadata(
     const name = typeof parsed.name === 'string' && parsed.name.trim() ? parsed.name : null
     const updatedAt =
       typeof parsed.updatedAt === 'string' && parsed.updatedAt ? parsed.updatedAt : null
+    const sourceFormat = parsed.sourceFormat === 'deck' ? 'deck' : 'fig'
     return {
       metadata: {
         name: name ?? fallback.name,
-        updatedAt: updatedAt ?? fallback.updatedAt
+        updatedAt: updatedAt ?? fallback.updatedAt,
+        sourceFormat
       },
       authoritative: name !== null && updatedAt !== null
     }
@@ -139,7 +142,8 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
             batch.map(async ({ id, lastModified }) => {
               const fallback = {
                 name: id,
-                updatedAt: lastModified ?? new Date(0).toISOString()
+                updatedAt: lastModified ?? new Date(0).toISOString(),
+                sourceFormat: 'fig' as const
               }
               const metadataBytes = await getObject(config, documentMetaKey(id)).catch(
                 (error: unknown) => {
@@ -197,7 +201,8 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         documentMetaKey(id),
         JSON.stringify({
           name: metadata.name,
-          updatedAt: metadata.updatedAt || new Date().toISOString()
+          updatedAt: metadata.updatedAt || new Date().toISOString(),
+          sourceFormat: metadata.sourceFormat
         }),
         'application/json'
       )
@@ -209,7 +214,8 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
       if (!bytes) return null
       const parsed = parseMetadata(bytes, {
         name: id,
-        updatedAt: new Date(0).toISOString()
+        updatedAt: new Date(0).toISOString(),
+        sourceFormat: 'fig'
       })
       return parsed.authoritative ? parsed.metadata : null
     },
@@ -239,7 +245,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
 
     async putThumbnail(id, bytes) {
       const config = await resolveConfig(runtime)
-      await putObject(config, documentThumbnailKey(id), bytes, 'image/jpeg')
+      await putObject(config, documentThumbnailKey(id), bytes, storageThumbnailMimeType(bytes))
     },
 
     async getThumbnail(id) {

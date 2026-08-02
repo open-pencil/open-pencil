@@ -2,6 +2,7 @@ import type { CredentialResolver } from '@/app/settings/credentials/types'
 
 export type StorageProviderID = string
 export type StorageFieldID = string
+export type StorageDocumentFormat = 'fig' | 'deck'
 
 export type StorageDocumentBinding = {
   providerId: StorageProviderID
@@ -16,6 +17,8 @@ export type StorageTransferProgress = {
 export type StorageDocumentMetadata = {
   name: string
   updatedAt: string
+  /** Native bytes stored for this document. Missing legacy metadata defaults to `.fig`. */
+  sourceFormat: StorageDocumentFormat
 }
 
 export type StorageDocument = StorageDocumentMetadata & {

@@ -30,6 +30,7 @@ export function reconcileStorageDocuments(
       id: metadata.id,
       name: metadata.name,
       updatedAt: metadata.updatedAt,
+      sourceFormat: metadata.sourceFormat,
       metadataAuthoritative: true
     })
   }

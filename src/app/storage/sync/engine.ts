@@ -102,7 +102,8 @@ async function runJob(job: OutboxJob): Promise<void> {
         fig,
         {
           name: meta.name,
-          updatedAt: meta.updatedAt
+          updatedAt: meta.updatedAt,
+          sourceFormat: meta.sourceFormat
         },
         ({ transferredBytes, totalBytes }) => {
           if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)

@@ -1,5 +1,10 @@
 import { openIdb, reqToPromise, txDone } from '@/app/storage/idb-util'
-import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
+import {
+  buildIndexMeta,
+  buildWriteMeta,
+  normalizeLocalCanvasMeta,
+  sortAndFilterMetas
+} from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
 
@@ -38,7 +43,8 @@ function bytesToBuffer(bytes: Uint8Array) {
 }
 
 async function readMetaRow(store: IDBObjectStore, id: string): Promise<LocalCanvasMeta | null> {
-  return ((await reqToPromise(store.get(id))) as LocalCanvasMeta | undefined) ?? null
+  const row = ((await reqToPromise(store.get(id))) as LocalCanvasMeta | undefined) ?? null
+  return row ? normalizeLocalCanvasMeta(row) : null
 }
 
 /** IndexedDB-backed local canvas store (meta + fig/thumb blobs). */
@@ -74,7 +80,7 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
         | LocalCanvasMeta
         | undefined
       await txDone(tx)
-      return row ?? null
+      return row ? normalizeLocalCanvasMeta(row) : null
     },
 
     async readFig(id: string) {

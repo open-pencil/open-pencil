@@ -9,8 +9,17 @@ export function sortAndFilterMetas(
   all: LocalCanvasMeta[],
   includeTombstones: boolean
 ): LocalCanvasMeta[] {
-  const filtered = includeTombstones ? all : all.filter((m) => !m.tombstoned)
+  const normalized = all.map(normalizeLocalCanvasMeta)
+  const filtered = includeTombstones ? normalized : normalized.filter((m) => !m.tombstoned)
   return filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+}
+
+/** Backfill format identity for IndexedDB rows written before decks were supported. */
+export function normalizeLocalCanvasMeta(meta: LocalCanvasMeta): LocalCanvasMeta {
+  return {
+    ...meta,
+    sourceFormat: meta.sourceFormat === 'deck' ? 'deck' : 'fig'
+  }
 }
 
 /** Meta row for a full canvas write (fig bytes present). */
@@ -23,6 +32,7 @@ export function buildWriteMeta(
     id: input.id,
     providerId: input.providerId,
     name: input.name,
+    sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
     updatedAt: input.updatedAt ?? new Date().toISOString(),
     revision: input.revision ?? (existing ? existing.revision + 1 : 1),
     syncStatus: input.syncStatus ?? 'pending',
@@ -46,6 +56,7 @@ export function buildIndexMeta(
     id: input.id,
     providerId: input.providerId,
     name: input.name,
+    sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
     updatedAt: input.updatedAt,
     revision: input.revision ?? existing?.revision ?? 1,
     syncStatus: input.syncStatus,
