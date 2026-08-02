@@ -76,6 +76,23 @@ App dialogs compose the Reka-backed components under `src/components/ui/dialog/`
 - `bun run tauri dev` — desktop app with hot reload
 - `bun open-pencil --help` — list CLI commands. Common commands include `info`, `tree`, `find`, `node`, `pages`, `variables`, `export`, `import`, `convert`, `lint`, `query`, `selection`, `formats`, `analyze ...`, and `eval` for Figma Plugin API scripting.
 
+## Debugging discipline
+
+- Time-box expensive interactive and browser repro loops. After two attempts or roughly two
+  minutes without materially new evidence, stop, summarize what changed, and choose a smaller
+  diagnostic instead of repeating the same sweep.
+- Repeated low-yield testing is being stuck even when commands and tools are still running.
+  Say so plainly, report the current evidence, and reassess; never deny being stuck merely
+  because work is in progress.
+- Keep the user informed during long diagnostics. State what is running, why it is needed, and
+  the bounded next checkpoint; do not leave them waiting silently while repeating tests.
+- Prefer the smallest discriminating test: instrument one boundary, reproduce one transition,
+  and inspect one result before expanding to a full deck or full quality gate.
+- Browser/HMR tests must confirm that the inspected tab is the current live window before using
+  its screenshot or logs as evidence. Close or release stale popups instead of comparing them.
+- Run targeted checks while diagnosing. Save repository-wide gates and long stress sweeps for
+  after the focused reproduction passes, unless the user explicitly asks for the full gate.
+
 ## Releases & CI
 
 ### How to release
