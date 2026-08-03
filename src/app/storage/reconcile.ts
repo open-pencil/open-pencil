@@ -5,6 +5,13 @@ export type StorageReconciliation = {
   documents: StorageDocument[]
   remoteDocumentsToSeed: StorageDocument[]
   localIdsToPurge: string[]
+  /**
+   * Rows written before body-upload tracking existed, whose presence in the
+   * remote listing proves the body is there. Backfilling `bodySyncedRevision`
+   * from this makes them evictable again — without it the cache budget is never
+   * enforced for existing installs and local storage grows without bound.
+   */
+  bodyConfirmedIds: string[]
 }
 
 /** Merge a successful remote listing with pending local work without reviving tombstones. */
@@ -43,6 +50,18 @@ export function reconcileStorageDocuments(
     remoteDocumentsToSeed: remote.filter((document) => !localById.has(document.id)),
     localIdsToPurge: local
       .filter((metadata) => metadata.tombstoned && !remoteIds.has(metadata.id))
+      .map((metadata) => metadata.id),
+    // Only legacy rows: `bodySyncedRevision` absent entirely, not merely behind.
+    // A row that is `pending` has local edits the remote has NOT seen, so its
+    // presence in the listing proves an older body exists — never the current one.
+    bodyConfirmedIds: local
+      .filter(
+        (metadata) =>
+          !metadata.tombstoned &&
+          metadata.syncStatus === 'synced' &&
+          metadata.bodySyncedRevision === undefined &&
+          remoteIds.has(metadata.id)
+      )
       .map((metadata) => metadata.id)
   }
 }

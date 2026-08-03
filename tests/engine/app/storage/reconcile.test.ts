@@ -64,3 +64,49 @@ describe('storage workspace reconciliation', () => {
     expect(confirmed.localIdsToPurge).toEqual(['deleted'])
   })
 })
+
+describe('body-upload confirmation backfill', () => {
+  test('confirms legacy synced rows that appear in the remote listing', () => {
+    // Rows written before bodySyncedRevision existed would otherwise never be
+    // evictable, so the cache budget would stop being enforced entirely.
+    const result = reconcileStorageDocuments(
+      [localMeta('legacy', 'synced')],
+      [remoteDocument('legacy')]
+    )
+
+    expect(result.bodyConfirmedIds).toEqual(['legacy'])
+  })
+
+  test('does not confirm a row missing from the remote listing', () => {
+    const result = reconcileStorageDocuments([localMeta('ghost', 'synced')], [])
+
+    expect(result.bodyConfirmedIds).toEqual([])
+  })
+
+  test('does not confirm a pending row', () => {
+    // The listing proves an OLDER body exists, never the current unsynced one.
+    const result = reconcileStorageDocuments(
+      [localMeta('dirty', 'pending')],
+      [remoteDocument('dirty')]
+    )
+
+    expect(result.bodyConfirmedIds).toEqual([])
+  })
+
+  test('does not re-confirm a row whose body revision is already tracked', () => {
+    const tracked = { ...localMeta('tracked', 'synced'), bodySyncedRevision: 1 }
+
+    const result = reconcileStorageDocuments([tracked], [remoteDocument('tracked')])
+
+    expect(result.bodyConfirmedIds).toEqual([])
+  })
+
+  test('does not confirm a tombstoned row', () => {
+    const result = reconcileStorageDocuments(
+      [localMeta('deleted', 'synced', true)],
+      [remoteDocument('deleted')]
+    )
+
+    expect(result.bodyConfirmedIds).toEqual([])
+  })
+})
