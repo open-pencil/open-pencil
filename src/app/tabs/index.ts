@@ -1,6 +1,6 @@
 import { shallowRef, computed, triggerRef } from 'vue'
 
-import { documentKindForSourceFormat } from '@open-pencil/core/editor'
+import { documentKindForSourceFormat, documentKindRules } from '@open-pencil/core/editor'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
@@ -57,6 +57,10 @@ export const allTabs = computed(() =>
   tabsRef.value.map((t) => ({
     id: t.id,
     name: t.store.state.documentName,
+    // What the tab actually holds. A generic page glyph made a deck and a
+    // design indistinguishable in the strip, which is where you look to tell
+    // them apart.
+    format: documentKindRules(t.store.state.documentKind).saveFormat,
     isActive: t.id === activeTabId.value
   }))
 )

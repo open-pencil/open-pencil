@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
+import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import Tip from '@/components/ui/Tip.vue'
 import tabBarTheme from '@/theme/tab-bar'
 import { useTabsStore, createTab } from '@/app/tabs'
@@ -49,7 +50,7 @@ function onClose(e: MouseEvent, tabId: string) {
         :data-active="tab.isActive || undefined"
         @mousedown="onMiddleClick($event, tab.id)"
       >
-        <icon-lucide-file :class="baseStyles.icon()" />
+        <img :src="storageDocumentIconUrls[tab.format]" alt="" :class="baseStyles.icon()" />
         <span :class="baseStyles.label()">{{ tab.name }}</span>
         <Tip :label="dialogs.closeTab({ name: tab.name })">
           <button
