@@ -6,11 +6,14 @@ import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
 afterEach(async () => {
   await clearTauriMocks()
+  fontManager.setWebFontFetch(null)
   vi.restoreAllMocks()
 })
 
 describe('Tauri font helpers', () => {
   test('lists system font families through mocked Tauri IPC', async () => {
+    vi.spyOn(fontManager, 'listFamilyOptions').mockResolvedValue([])
+
     await mockTauriIPC((cmd) => {
       expect(cmd).toBe('list_system_fonts')
       return [{ family: 'System UI', styles: ['Regular', 'Bold'] }]

@@ -24,11 +24,15 @@ import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
 import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
-import { TEXT_PICTURE_KEYS } from './text-picture'
+import {
+  FIGMA_DERIVED_TEXT_GLYPH_KEYS,
+  TEXT_PICTURE_KEYS,
+  clearInvalidatedTextRenderingData
+} from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
-export type { GUID, Color, Vector } from './primitives'
+export type { GUID, Color, Rect, Vector } from './primitives'
 export * from './types'
 
 import type { Emitter } from 'nanoevents'
@@ -310,6 +314,8 @@ export class SceneGraph {
 
   static TEXT_PICTURE_KEYS: ReadonlySet<string> = TEXT_PICTURE_KEYS
 
+  static FIGMA_DERIVED_TEXT_GLYPH_KEYS: ReadonlySet<string> = FIGMA_DERIVED_TEXT_GLYPH_KEYS
+
   static LAYOUT_AFFECTING_KEYS: ReadonlySet<string> = new Set([
     'x',
     'y',
@@ -402,9 +408,7 @@ export class SceneGraph {
       }
     }
     if (node.type === 'TEXT') {
-      const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
-      if (node.textPicture && textChanged) node.textPicture = null
-      if (node.figmaDerivedTextGlyphs && textChanged) node.figmaDerivedTextGlyphs = null
+      clearInvalidatedTextRenderingData(node, changes)
     }
     const entries = Object.entries(changes) as Array<[string, unknown]>
     changes = Object.fromEntries(

@@ -25,6 +25,7 @@ export {
   validateVectorNetwork,
   type SceneNode,
   type NodeType,
+  type Rect,
   type Fill,
   type FillType,
   type Stroke,

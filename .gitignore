@@ -38,6 +38,7 @@ Caddyfile.dev
 # Test and dev-server artifacts
 test-results/
 playwright-report/
+.playwright-mcp/
 blob-report/
 storybook-static/
 .vite/

@@ -61,7 +61,9 @@ pub async fn proxy_http_request(request: ProxyHttpRequest) -> Result<ProxyHttpRe
     } else {
         reqwest::redirect::Policy::none()
     };
-    let mut client_builder = reqwest::Client::builder().redirect(redirect_policy);
+    let mut client_builder = reqwest::Client::builder()
+        .redirect(redirect_policy)
+        .timeout(Duration::from_secs(30));
     if let Some(timeout_ms) = request.timeout_ms {
         client_builder = client_builder.timeout(Duration::from_millis(timeout_ms));
     }
@@ -71,6 +73,12 @@ pub async fn proxy_http_request(request: ProxyHttpRequest) -> Result<ProxyHttpRe
         .headers(request_headers(request.headers));
     if let Some(body) = request.body {
         builder = builder.body(body);
+    }
+    if let Some(timeout_ms) = request.timeout_ms {
+        if timeout_ms == 0 {
+            return Err("timeoutMs must be greater than 0".into());
+        }
+        builder = builder.timeout(Duration::from_millis(timeout_ms));
     }
 
     let mut response = builder.send().await.map_err(|e| e.to_string())?;

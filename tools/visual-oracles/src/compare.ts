@@ -23,8 +23,8 @@ import { SkiaRenderer } from '@open-pencil/core/canvas'
 import { importClipboardNodes, parseFigmaClipboard } from '@open-pencil/core/clipboard'
 import { renderNodesToImage, initCanvasKit } from '@open-pencil/core/io'
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import { SceneGraph } from '@open-pencil/core/scene-graph'
 import { fontManager } from '@open-pencil/core/text'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 const { values: opts } = parseArgs({
   options: {

@@ -62,27 +62,56 @@ function resolveComputedLayoutDirection(
   return resolveNodeLayoutDirection(node, inheritedDirection)
 }
 
-export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
+export function computeAllLayouts(
+  graph: SceneGraph,
+  scopeId?: string,
+  options: { preserveImportedInstanceLayout?: boolean } = {}
+): void {
   const visited = new Set<string>()
-  computeLayoutsBottomUp(graph, scopeId ?? graph.rootId, visited)
+  const rootId = scopeId ?? graph.rootId
+  const preserveImportedInstanceLayout = options.preserveImportedInstanceLayout ?? true
+  // Skip subtrees inside an imported .fig instance when preserving — their stored
+  // positions are the ground truth.
+  if (preserveImportedInstanceLayout && isInsideImportedFigInstance(graph, rootId)) return
+  computeLayoutsBottomUp(graph, rootId, visited, { preserveImportedInstanceLayout })
 }
 
-function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<string>): void {
+function computeLayoutsBottomUp(
+  graph: SceneGraph,
+  nodeId: string,
+  visited: Set<string>,
+  options: { preserveImportedInstanceLayout: boolean }
+): void {
   const node = graph.getNode(nodeId)
   if (!node || visited.has(nodeId)) return
   visited.add(nodeId)
 
+  // Imported .fig instances keep authoritative stored geometry; skip recomputing
+  // unless the caller opted out (e.g. the instance itself was just edited).
+  const preserveThisNode =
+    options.preserveImportedInstanceLayout && preservesImportedInstanceLayout(node)
+  if (preserveThisNode) return
+
   for (const childId of node.childIds) {
-    computeLayoutsBottomUp(graph, childId, visited)
+    computeLayoutsBottomUp(graph, childId, visited, options)
   }
 
-  if (node.layoutMode !== 'NONE' && !preservesImportedInstanceLayout(node)) {
+  if (node.layoutMode !== 'NONE') {
     computeLayout(graph, nodeId)
   }
 }
 
 function preservesImportedInstanceLayout(node: SceneNode): boolean {
   return node.type === 'INSTANCE' && node.source.format === 'fig'
+}
+
+function isInsideImportedFigInstance(graph: SceneGraph, nodeId: string): boolean {
+  let node = graph.getNode(nodeId) ?? null
+  while (node) {
+    if (preservesImportedInstanceLayout(node)) return true
+    node = node.parentId ? (graph.getNode(node.parentId) ?? null) : null
+  }
+  return false
 }
 
 function buildYogaTree(
