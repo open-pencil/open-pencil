@@ -179,6 +179,7 @@ export const dialogMessageDefaults = {
   storageWorkspace: 'Storage workspace',
   cloudWorkspaceConnected: 'Cloud connected',
   cloudWorkspaceOffline: 'Cloud offline',
+  storageSyncing: 'Syncing',
   openStorageWorkspace: 'Open workspace',
   backToStorageWorkspace: 'Back to workspace',
   newStoredDocument: 'New document',

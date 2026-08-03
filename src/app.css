@@ -158,3 +158,18 @@ input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
   display: none;
 }
+
+/*
+ * Indeterminate progress sweep, left to right. Referenced as
+ * `animate-[slide_1s_ease-in-out_infinite]` by the canvas loading bar and the
+ * storage card sync bar. The bar is 40% of its track, so it travels from fully
+ * off-left (-100% of its own width) to fully off-right (250%).
+ */
+@keyframes slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}

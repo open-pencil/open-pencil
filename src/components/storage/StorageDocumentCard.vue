@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useIntersectionObserver } from '@vueuse/core'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -14,6 +14,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import type { StorageDocument } from '@/app/integrations/storage'
 import { storageDocumentIconUrls } from '@/app/storage/document-icons'
+import { uploadProgressByCanvas } from '@/app/storage/sync'
 import { useMenuUI } from '@/components/ui/menu'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
 
@@ -60,6 +61,17 @@ useIntersectionObserver(
 function openDocument(): void {
   if (!trashView && !busy) emit('open', document)
 }
+
+/** Real byte progress (0..1) while this document's body is uploading. */
+const uploadProgress = computed(() => uploadProgressByCanvas.value.get(document.id) ?? null)
+
+/**
+ * Show a bar whenever work is in flight. Determinate for uploads, where the
+ * adapter reports transferred bytes; indeterminate for everything else
+ * (rename, duplicate, trash, metadata sync) which has no measurable size.
+ */
+const showSyncBar = computed(() => uploadProgress.value !== null || busy)
+const isDeterminate = computed(() => uploadProgress.value !== null)
 </script>
 
 <template>
@@ -71,7 +83,7 @@ function openDocument(): void {
         :tabindex="trashView || busy ? -1 : 0"
         :aria-disabled="trashView || busy"
         :aria-label="document.name"
-        class="group overflow-hidden rounded-lg border border-border bg-panel text-left hover:border-panel-focus hover:bg-hover"
+        class="group relative overflow-hidden rounded-lg border border-border bg-panel text-left hover:border-panel-focus hover:bg-hover"
         :class="busy && 'pointer-events-none opacity-60'"
         :data-document-id="document.id"
         @click="openDocument"
@@ -97,6 +109,24 @@ function openDocument(): void {
           <p class="mt-1 text-[10px] text-muted">
             {{ new Date(document.trashedAt ?? document.updatedAt).toLocaleString() }}
           </p>
+        </div>
+
+        <div
+          v-if="showSyncBar"
+          class="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-accent/15"
+          data-slot="storage-sync-progress"
+          role="progressbar"
+          :aria-valuemin="0"
+          :aria-valuemax="100"
+          :aria-valuenow="isDeterminate ? Math.round((uploadProgress ?? 0) * 100) : undefined"
+          :aria-label="dialogs.storageSyncing"
+        >
+          <div
+            v-if="isDeterminate"
+            class="h-full bg-accent transition-[width] duration-200 ease-out"
+            :style="{ width: `${(uploadProgress ?? 0) * 100}%` }"
+          />
+          <div v-else class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] bg-accent" />
         </div>
       </div>
     </ContextMenuTrigger>
