@@ -80,13 +80,20 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
       <button
         type="button"
         data-test-id="app-back-to-workspace"
-        class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 px-2 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
+        class="flex shrink-0 cursor-pointer items-center gap-1.5 px-2 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
         @click="backToWorkspace"
       >
         <IconArrowLeft class="size-3.5 shrink-0" />
-        <span class="truncate">{{ dialogs.backToStorageWorkspace }}</span>
+        <span>{{ dialogs.backToStorageWorkspace }}</span>
       </button>
-      <CloudWorkspaceStatus />
+      <!--
+        The chip absorbs the squeeze, not the destination label. "Syncing 2
+        changes…" losing its tail still reads; a navigation control reduced to
+        "B…" does not tell you where it goes.
+      -->
+      <div class="flex min-w-0 flex-1 justify-end overflow-hidden">
+        <CloudWorkspaceStatus />
+      </div>
     </div>
     <div class="flex items-center gap-2 px-2 py-1.5">
       <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />

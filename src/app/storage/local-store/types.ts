@@ -1,7 +1,15 @@
 import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
 import type { StorageTargetID } from '@/app/storage/target'
 
-export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
+/**
+ * `local` means committed here with no upload currently intended — no target
+ * configured, or backup deliberately off. It is NOT a degraded `pending`:
+ * `pending` implies a durable job exists, and a row with no destination has
+ * nothing to enqueue, so calling it pending would strand it forever.
+ *
+ * `conflict` is modelled but unimplemented; nothing produces or resolves it.
+ */
+export type LocalSyncStatus = 'local' | 'synced' | 'pending' | 'error' | 'conflict'
 
 /** Metadata for a stored canvas cached on device (document bytes stored separately). */
 export type LocalCanvasMeta = {

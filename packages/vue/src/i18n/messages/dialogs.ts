@@ -222,7 +222,7 @@ export const dialogMessageDefaults = {
   storageDocumentSyncFailed: 'Sync failed',
   storageDocumentPreviewNotSynced: 'Preview not synced',
   openStorageWorkspace: 'Open workspace',
-  backToStorageWorkspace: 'Back to workspace',
+  backToStorageWorkspace: 'Workspace',
   newStoredDocument: 'New document',
   newStoredDesign: 'New Design',
   newStoredSlides: 'New Slides',

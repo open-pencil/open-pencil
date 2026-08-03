@@ -310,7 +310,8 @@ async function refresh(): Promise<void> {
     if (!isCurrentRefresh(generation, providerId)) return
     credentialStatuses.value = statuses
     if (!configured.value) {
-      error.value = dialogs.value.storageNotConfigured
+      // Not an error: local documents are already painted and fully usable.
+      // Reporting this as a failure is what made first run look broken.
       return
     }
     const remote = await createActiveStorageAdapter(providerId).listDocuments()
@@ -655,7 +656,6 @@ onBeforeUnmount(clearThumbnailUrls)
         <button
           type="button"
           class="flex items-center gap-1.5 rounded border border-border bg-panel px-2.5 py-1.5 text-xs font-medium text-surface hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="!configured"
           data-test-id="storage-new-design"
           @click="createDocument('fig')"
         >
@@ -665,7 +665,6 @@ onBeforeUnmount(clearThumbnailUrls)
         <button
           type="button"
           class="flex items-center gap-1.5 rounded border border-border bg-panel px-2.5 py-1.5 text-xs font-medium text-surface hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
-          :disabled="!configured"
           data-test-id="storage-new-slides"
           @click="createDocument('deck')"
         >
@@ -781,8 +780,14 @@ onBeforeUnmount(clearThumbnailUrls)
         </template>
       </AppPlaceholder>
 
+      <!--
+        One empty state, configured or not. The old copy — "Configure storage
+        before using this workspace" — was accurate about the old behaviour and
+        is now simply wrong: the workspace works, it just has nothing in it yet.
+        Cloud is offered here, never demanded.
+      -->
       <AppPlaceholder
-        v-else-if="configured"
+        v-else
         :label="folder === 'trash' ? dialogs.emptyStorageTrash : dialogs.emptyStorageWorkspace"
         size="page"
       >
@@ -790,19 +795,13 @@ onBeforeUnmount(clearThumbnailUrls)
           <TrashIcon v-if="folder === 'trash'" class="size-5" />
           <icon-lucide-files v-else class="size-5" />
         </template>
-      </AppPlaceholder>
-
-      <AppPlaceholder v-else :label="dialogs.storageNotConfigured" size="page">
-        <template #icon>
-          <icon-lucide-cloud class="size-5" />
-        </template>
-        <template #action>
+        <template v-if="!configured && folder !== 'trash'" #action>
           <button
             type="button"
-            class="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
+            class="rounded border border-border bg-panel px-3 py-1.5 text-xs font-medium text-surface hover:bg-hover"
             @click="openSettingsDialog('storage')"
           >
-            {{ dialogs.settings }}
+            {{ dialogs.settingsStorage }}
           </button>
         </template>
       </AppPlaceholder>

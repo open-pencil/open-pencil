@@ -47,7 +47,10 @@ export async function persistStorageCanvasLocally(
     figBytes: options.figBytes,
     thumbBytes: options.thumbnailBytes,
     bodyId,
-    syncStatus: 'pending'
+    // No destination means no upload is intended, so the row must not claim to
+    // be waiting on one. `pending` without a job is unrecoverable: nothing
+    // clears it and eviction skips the row forever.
+    syncStatus: options.syncTargetId === null ? 'local' : 'pending'
   })
 
   // Identical content: the remote already holds these exact bytes, so there is
@@ -62,12 +65,16 @@ export async function persistStorageCanvasLocally(
     existing !== null &&
     existing.syncTargetId === options.syncTargetId &&
     existing.syncedBodyId === bodyId
-  if (confirmedAtThisTarget) {
+  if (options.syncTargetId === null) {
+    // Local-only: committed and durable, deliberately going nowhere. Enqueueing
+    // here would create a job with no destination, which parks on its first run
+    // and reports a red failure for a document that is perfectly fine.
+  } else if (confirmedAtThisTarget) {
     await runtime.store.updateMeta(options.canvasId, { syncStatus: 'synced' })
   } else {
     await runtime.enqueueCanvas(options.canvasId, metadata.revision)
   }
-  if (options.thumbnailBytes?.byteLength) {
+  if (options.syncTargetId !== null && options.thumbnailBytes?.byteLength) {
     if (dependencies?.enqueueThumbnail) {
       await dependencies.enqueueThumbnail(options.canvasId, metadata.revision)
     } else if (!dependencies) {
