@@ -27,6 +27,7 @@ import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/storage/sync/status'
 import type { OutboxJob } from '@/app/storage/sync/types'
+import { providerIdOfTarget, type StorageTargetID } from '@/app/storage/target'
 
 const MAX_ATTEMPTS = 8
 const BASE_BACKOFF_MS = 1500
@@ -61,7 +62,7 @@ export type SyncEngineDependencies = {
   getStore: () => LocalCanvasStore
   getOutbox: () => Outbox
   /** Resolves the adapter for the target a job captured, never the live selection. */
-  resolveTarget: (targetId: StorageProviderID | null) => Promise<StorageAdapter>
+  resolveTarget: (targetId: StorageTargetID | null) => Promise<StorageAdapter>
   isOnline: () => boolean
   subscribeConnectivity: (handlers: ConnectivityHandlers) => () => void
   schedule: (ms: number, run: () => void) => CancelScheduled
@@ -198,7 +199,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
   async function captureFailure(job: OutboxJob, error: unknown, attempts: number): Promise<void> {
     if (job.type === 'putThumb') return
     const meta = await deps.getStore().getMeta(job.canvasId)
-    const providerId = meta?.providerId ?? activeStorageProviderID.value
+    const providerId = providerIdOfTarget(meta?.syncTargetId ?? '') ?? activeStorageProviderID.value
     recordSyncFailure({
       operation: job.type,
       providerId,
@@ -328,7 +329,9 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
   async function runJob(job: OutboxJob): Promise<void> {
     const store = deps.getStore()
     const meta = await store.getMeta(job.canvasId)
-    const adapter = await deps.resolveTarget(meta?.providerId ?? null)
+    // The row's captured target, never the live selection. A job's bytes belong
+    // to the destination they were queued for; the user may since have switched.
+    const adapter = await deps.resolveTarget(job.targetId ?? meta?.syncTargetId ?? null)
 
     if (job.type === 'deleteCanvas') {
       await adapter.deleteDocument(job.canvasId)
@@ -532,7 +535,12 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     type: OutboxJob['type'],
     revision: number
   ): Promise<void> {
-    await deps.getOutbox().enqueue({ canvasId, type, revision })
+    // Capture the destination NOW. Resolving it at drain time is what let a
+    // provider switch mid-queue send a document's bytes to the wrong bucket.
+    const meta = await deps.getStore().getMeta(canvasId)
+    await deps
+      .getOutbox()
+      .enqueue({ canvasId, type, revision, targetId: meta?.syncTargetId ?? null })
     void kick()
   }
 

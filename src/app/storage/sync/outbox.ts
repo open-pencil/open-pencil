@@ -1,5 +1,6 @@
 import { openIdb, reqToPromise, txDone } from '@/app/storage/idb-util'
 import { makeJobId, supersedePutCanvasJobs, type OutboxJob } from '@/app/storage/sync/types'
+import type { StorageTargetID } from '@/app/storage/target'
 
 const DB_NAME = 'open-pencil-cloud-outbox'
 const DB_VERSION = 1
@@ -7,8 +8,9 @@ const STORE = 'jobs'
 
 export type OutboxEnqueueInput = Omit<
   OutboxJob,
-  'id' | 'createdAt' | 'attempts' | 'nextAttemptAt'
+  'id' | 'createdAt' | 'attempts' | 'nextAttemptAt' | 'targetId'
 > & {
+  targetId?: StorageTargetID | null
   id?: string
   attempts?: number
   nextAttemptAt?: number
@@ -36,6 +38,7 @@ function buildJob(partial: OutboxEnqueueInput): OutboxJob {
     canvasId: partial.canvasId,
     type: partial.type,
     revision: partial.revision,
+    targetId: partial.targetId ?? null,
     createdAt: Date.now(),
     attempts: partial.attempts ?? 0,
     nextAttemptAt: partial.nextAttemptAt ?? Date.now()

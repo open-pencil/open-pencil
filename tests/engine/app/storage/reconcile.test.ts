@@ -11,7 +11,7 @@ function localMeta(
 ): LocalCanvasMeta {
   return {
     id,
-    providerId: 's3-compatible',
+    syncTargetId: 's3-compatible#00000000',
     name: `Local ${id}`,
     sourceFormat: id === 'pending' ? 'deck' : 'fig',
     updatedAt: '2026-01-02T00:00:00.000Z',

@@ -11,7 +11,7 @@ async function seedDocument(id: string, bodyId = `sha256:${id}-v1`) {
   const local = getLocalCanvasStore()
   return local.writeCanvas({
     id,
-    providerId: 's3-compatible',
+    syncTargetId: 's3-compatible#00000000',
     name: id,
     figBytes: new Uint8Array([1, 2, 3, 4]),
     bodyId
@@ -81,7 +81,7 @@ describe('markRevisionSynced', () => {
     const local = getLocalCanvasStore()
     const meta = await local.upsertIndexMeta({
       id: 'remote-only',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'Remote only',
       updatedAt: new Date().toISOString(),
       syncStatus: 'synced',
@@ -101,7 +101,7 @@ describe('markRevisionSynced', () => {
     // Upload started at the first body; the user saves again before it completes.
     await local.writeCanvas({
       id: 'doc',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'doc',
       figBytes: new Uint8Array([9, 9, 9]),
       bodyId: 'sha256:doc-v2'

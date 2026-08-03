@@ -1,6 +1,17 @@
+import type { StorageTargetID } from '@/app/storage/target'
+
 export type OutboxJobType = 'putCanvas' | 'putMetadata' | 'putThumb' | 'deleteCanvas'
 
 export type OutboxJob = {
+  /**
+   * Destination captured when the job was queued.
+   *
+   * `runJob` resolves THIS, never the current selection. Without it, changing
+   * bucket or account between enqueue and drain silently redirected bytes to
+   * wherever the UI happened to point. `null` means the job predates targets
+   * and must be pinned or parked at migration, never guessed at drain time.
+   */
+  targetId: StorageTargetID | null
   id: string
   canvasId: string
   type: OutboxJobType

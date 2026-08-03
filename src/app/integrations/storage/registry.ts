@@ -28,6 +28,17 @@ export class StorageProviderRegistry {
     return registration
   }
 
+  /**
+   * Probe without throwing.
+   *
+   * Ids read back from durable storage — a migrated row, a queued job — may
+   * name a provider this build no longer ships. That is a state to report, not
+   * an exception to raise from inside a migration.
+   */
+  has(id: string): id is StorageProviderID {
+    return this.#registrations.has(id as StorageProviderID)
+  }
+
   createAdapter(id: StorageProviderID, context: StorageAdapterContext): StorageAdapter {
     const registration = this.get(id)
     const credentialFields = new Set(registration.credentialFields.map((field) => field.id))

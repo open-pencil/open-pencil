@@ -1,9 +1,10 @@
-import type { StorageDocumentFormat, StorageProviderID } from '@/app/integrations/storage/types'
+import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
 import { computeBodyIdSafe } from '@/app/storage/body-id'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import { enqueuePutCanvas, enqueuePutThumb } from '@/app/storage/sync/engine'
+import type { StorageTargetID } from '@/app/storage/target'
 
 export type StoragePersistenceDependencies = {
   store: LocalCanvasStore
@@ -12,7 +13,7 @@ export type StoragePersistenceDependencies = {
 }
 
 export type PersistStorageCanvasOptions = {
-  providerId: StorageProviderID
+  syncTargetId: StorageTargetID | null
   canvasId: string
   name: string
   sourceFormat?: StorageDocumentFormat
@@ -38,7 +39,7 @@ export async function persistStorageCanvasLocally(
 
   const metadata = await runtime.store.writeCanvas({
     id: options.canvasId,
-    providerId: options.providerId,
+    syncTargetId: options.syncTargetId,
     name: options.name,
     sourceFormat: options.sourceFormat,
     updatedAt: options.updatedAt,
@@ -68,7 +69,7 @@ export async function persistStorageCanvasLocally(
 }
 
 export type SeedStorageCanvasOptions = {
-  providerId: StorageProviderID
+  syncTargetId: StorageTargetID | null
   canvasId: string
   name: string
   sourceFormat?: StorageDocumentFormat
@@ -85,7 +86,7 @@ export async function seedStorageCanvasFromRemote(
   const bodyId = await computeBodyIdSafe(options.figBytes, options.sourceFormat ?? 'fig')
   await getLocalCanvasStore().writeCanvas({
     id: options.canvasId,
-    providerId: options.providerId,
+    syncTargetId: options.syncTargetId,
     name: options.name,
     sourceFormat: options.sourceFormat,
     trashedAt: options.trashedAt,

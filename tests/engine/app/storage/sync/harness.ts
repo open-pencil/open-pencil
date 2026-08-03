@@ -229,7 +229,7 @@ export async function seedSyncedDocument(
 ): Promise<void> {
   await store.writeCanvas({
     id,
-    providerId: 's3-compatible',
+    syncTargetId: 's3-compatible#00000000',
     name: id,
     sourceFormat: 'fig',
     figBytes: bytes

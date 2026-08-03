@@ -19,12 +19,24 @@ import {
 } from '@/app/integrations/storage'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
+import { currentTargetIdFor } from '@/app/storage/target'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 
 export interface Tab {
   id: string
   store: EditorStore
+  /**
+   * A blank tab the user has not put anything into yet, safe to recycle.
+   *
+   * Set at creation rather than inferred. The previous test was
+   * `name === 'Untitled' && !undo.canUndo`, and `!canUndo` means "not edited
+   * THIS SESSION", not "empty" — so a stored document opened and left untouched
+   * satisfied it, and New Design adopted that document's graph and saved it
+   * under a fresh id. No heuristic over document properties can be audited,
+   * and each new property silently changes what it means.
+   */
+  scratch: boolean
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -73,7 +85,9 @@ export function getTabsSnapshot(): Tab[] {
 
 export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   const s = store ?? createEditorStore(initialGraph)
-  const tab: Tab = { id: generateTabId(), store: s }
+  // Only a genuinely blank tab is scratch. One seeded with a graph already
+  // holds content, whoever produced it.
+  const tab: Tab = { id: generateTabId(), store: s, scratch: !store && !initialGraph }
   tabsRef.value = [...tabsRef.value, tab]
   activateTab(tab)
   return tab
@@ -90,6 +104,7 @@ export async function createDeckTab(): Promise<Tab> {
 
   const tab = createTab(undefined, graph)
   const { store } = tab
+  tab.scratch = false
   store.state.documentName = 'Untitled'
   store.setDocumentKind('deck')
   store.setDocumentSource('Untitled.deck', 'deck')
@@ -147,11 +162,12 @@ function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
+/** Consume the active tab only if it is still the blank one it was created as. */
 function reusableTabStore(): EditorStore {
   const current = activeTab.value
-  const isUntouched =
-    current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-  return isUntouched ? current.store : createTab().store
+  if (!current?.scratch) return createTab().store
+  current.scratch = false
+  return current.store
 }
 
 function findStorageTab(providerId: string, documentId: string): Tab | undefined {
@@ -189,7 +205,7 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     if (!bytes) {
       bytes = await createActiveStorageAdapter(providerId).getDocument(document.id)
       await seedStorageCanvasFromRemote({
-        providerId,
+        syncTargetId: currentTargetIdFor(providerId),
         canvasId: document.id,
         name: document.name,
         sourceFormat: document.sourceFormat,

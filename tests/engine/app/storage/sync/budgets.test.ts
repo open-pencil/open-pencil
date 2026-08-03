@@ -48,7 +48,7 @@ describe('sync operation budgets', () => {
     // Index-only: listed from the remote, body never downloaded (hasFig false).
     await h.store.upsertIndexMeta({
       id: 'doc-2',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'Remote only',
       updatedAt: new Date().toISOString(),
       syncStatus: 'synced',
@@ -83,7 +83,7 @@ describe('sync operation budgets', () => {
     for (const size of [1536, 2048]) {
       await h.store.writeCanvas({
         id: 'doc-3',
-        providerId: 's3-compatible',
+        syncTargetId: 's3-compatible#00000000',
         name: 'doc-3',
         sourceFormat: 'fig',
         figBytes: new Uint8Array(size).fill(9)

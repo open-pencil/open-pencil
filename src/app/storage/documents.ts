@@ -7,6 +7,7 @@ import {
   enqueuePutMetadata,
   persistStorageCanvasLocally
 } from '@/app/storage/sync'
+import { currentTargetIdFor } from '@/app/storage/target'
 import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
 
 type StorageDocumentContent = {
@@ -77,7 +78,7 @@ async function rewriteStorageDocument(
       })
     : await runtime.store.upsertIndexMeta({
         id: document.id,
-        providerId,
+        syncTargetId: currentTargetIdFor(providerId),
         name: patch.name,
         sourceFormat: document.sourceFormat,
         trashedAt: patch.trashedAt,
@@ -148,7 +149,7 @@ export async function duplicateStorageDocument(
   const id = runtime.createId()
   const updatedAt = new Date().toISOString()
   await runtime.persist({
-    providerId,
+    syncTargetId: currentTargetIdFor(providerId),
     canvasId: id,
     name,
     sourceFormat: document.sourceFormat,

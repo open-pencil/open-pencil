@@ -1,8 +1,13 @@
+import type { StorageProviderID } from '@/app/integrations/storage/types'
 import type {
   LocalCanvasIndexInput,
   LocalCanvasMeta,
   LocalCanvasWriteInput
 } from '@/app/storage/local-store/types'
+import { currentStorageTarget, type StorageTargetID } from '@/app/storage/target'
+
+const defaultTargetResolver: TargetResolver = (providerId) =>
+  currentStorageTarget(providerId)?.id ?? null
 
 /**
  * The body is on the remote only if we know the local bytes AND matched them.
@@ -19,13 +24,28 @@ export function sortAndFilterMetas(
   all: LocalCanvasMeta[],
   includeTombstones: boolean
 ): LocalCanvasMeta[] {
-  const normalized = all.map(normalizeLocalCanvasMeta)
+  const normalized = all.map((meta) => normalizeLocalCanvasMeta(meta))
   const filtered = includeTombstones ? normalized : normalized.filter((m) => !m.tombstoned)
   return filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
-/** Row shape before body identity replaced revision-based body inference. */
-type LegacyBodyRevisionMeta = LocalCanvasMeta & { bodySyncedRevision?: number }
+/** Row shape before body identity and target identity replaced their legacy fields. */
+type LegacyMeta = LocalCanvasMeta & {
+  bodySyncedRevision?: number
+  providerId?: StorageProviderID
+}
+
+/**
+ * Maps a legacy row's provider to the destination that provider names today.
+ *
+ * A legacy row records only WHICH PROVIDER it synced to, never which bucket, so
+ * this cannot recover where its bytes actually went. That is safe for a row:
+ * `syncedBodyId` stays null, so nothing treats it as durably remote and the
+ * next save re-uploads it to the current destination — which is where the user
+ * wants it. It would NOT be safe for a queued job, whose bytes were intended
+ * for a specific place; those are pinned separately and parked when ambiguous.
+ */
+export type TargetResolver = (providerId: StorageProviderID) => StorageTargetID | null
 
 /**
  * Bring an IndexedDB row up to the current shape.
@@ -40,10 +60,25 @@ type LegacyBodyRevisionMeta = LocalCanvasMeta & { bodySyncedRevision?: number }
  * be free to delete the only copy. So `syncedBodyId` stays null and the row is
  * simply non-evictable until a real transfer confirms it.
  */
-export function normalizeLocalCanvasMeta(meta: LocalCanvasMeta): LocalCanvasMeta {
-  const { bodySyncedRevision: _legacy, ...rest } = meta as LegacyBodyRevisionMeta
+export function normalizeLocalCanvasMeta(
+  meta: LocalCanvasMeta,
+  resolveTarget: TargetResolver = defaultTargetResolver
+): LocalCanvasMeta {
+  const {
+    bodySyncedRevision: _legacyBody,
+    providerId: legacyProvider,
+    ...rest
+  } = meta as LegacyMeta
   return {
     ...rest,
+    // `syncTargetId === undefined` means a pre-target row. `null` is a real,
+    // migrated value meaning local-only, so it must not be re-resolved.
+    syncTargetId:
+      meta.syncTargetId !== undefined
+        ? meta.syncTargetId
+        : legacyProvider
+          ? resolveTarget(legacyProvider)
+          : null,
     sourceFormat: meta.sourceFormat === 'deck' ? 'deck' : 'fig',
     trashedAt: typeof meta.trashedAt === 'string' ? meta.trashedAt : null,
     // `hasFig` without a `bodyId` means a legacy row: bytes are present but
@@ -65,7 +100,7 @@ export function buildWriteMeta(
 ): LocalCanvasMeta {
   return {
     id: input.id,
-    providerId: input.providerId,
+    syncTargetId: input.syncTargetId,
     name: input.name,
     sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
     trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),
@@ -97,7 +132,7 @@ export function buildIndexMeta(
 ): LocalCanvasMeta {
   return {
     id: input.id,
-    providerId: input.providerId,
+    syncTargetId: input.syncTargetId,
     name: input.name,
     sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
     trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),

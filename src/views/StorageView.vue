@@ -39,6 +39,7 @@ import { isDeckStorageFile, prepareDeckStorageImport } from '@/app/storage/impor
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
+import { currentTargetIdFor } from '@/app/storage/target'
 import {
   categorizeSyncFailure,
   clearSyncFailure,
@@ -244,7 +245,7 @@ function isCurrentRefresh(generation: number, providerId: string): boolean {
 
 async function paintLocalDocuments(generation: number, providerId: string): Promise<void> {
   const local = (await getLocalCanvasStore().listMetas()).filter(
-    (metadata) => metadata.providerId === providerId
+    (metadata) => metadata.syncTargetId === currentTargetIdFor(providerId)
   )
   if (!isCurrentRefresh(generation, providerId)) return
   documents.value = local.map((metadata) => ({
@@ -303,8 +304,9 @@ async function refresh(): Promise<void> {
     const remote = await createActiveStorageAdapter(providerId).listDocuments()
     if (!isCurrentRefresh(generation, providerId)) return
     const localStore = getLocalCanvasStore()
+    const targetId = currentTargetIdFor(providerId)
     const local = (await localStore.listMetas(true)).filter(
-      (metadata) => metadata.providerId === providerId
+      (metadata) => metadata.syncTargetId === targetId
     )
     if (!isCurrentRefresh(generation, providerId)) return
     // Listing works again. Clear only OUR failure — an outbox failure is the
@@ -332,7 +334,7 @@ async function refresh(): Promise<void> {
       await localStore.upsertIndexMeta({
         id: document.id,
         // The provider this listing actually came from — never the live ref.
-        providerId,
+        syncTargetId: currentTargetIdFor(providerId),
         name: document.name,
         sourceFormat: document.sourceFormat,
         trashedAt: document.trashedAt,
@@ -555,7 +557,7 @@ async function importDroppedDecks(files: File[]): Promise<void> {
         const id = createCanvasId()
         const updatedAt = new Date().toISOString()
         await persistStorageCanvasLocally({
-          providerId,
+          syncTargetId: currentTargetIdFor(providerId),
           canvasId: id,
           name,
           sourceFormat: prepared.sourceFormat,

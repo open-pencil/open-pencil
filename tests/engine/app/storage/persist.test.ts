@@ -19,7 +19,7 @@ describe('local-first storage persistence', () => {
 
     const result = await persistStorageCanvasLocally(
       {
-        providerId: 's3-compatible',
+        syncTargetId: 's3-compatible#00000000',
         canvasId: 'canvas-1',
         name: 'Stored design',
         sourceFormat: 'deck',
@@ -36,7 +36,7 @@ describe('local-first storage persistence', () => {
       name: 'Stored design',
       sourceFormat: 'deck',
       syncStatus: 'pending',
-      providerId: 's3-compatible'
+      syncTargetId: 's3-compatible#00000000'
     })
   })
 })
@@ -59,7 +59,7 @@ describe('unchanged-content saves', () => {
     const enqueueCanvas = vi.fn(async () => {})
     const figBytes = new Uint8Array([1, 2, 3])
     const options = {
-      providerId: 's3-compatible' as const,
+      syncTargetId: 's3-compatible#00000000',
       canvasId: 'idle',
       name: 'Idle document',
       figBytes
@@ -84,7 +84,7 @@ describe('unchanged-content saves', () => {
     const store = createMemoryLocalCanvasStore()
     const enqueueCanvas = vi.fn(async () => {})
     const base = {
-      providerId: 's3-compatible' as const,
+      syncTargetId: 's3-compatible#00000000',
       canvasId: 'edited',
       name: 'Edited document'
     }

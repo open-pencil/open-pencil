@@ -1,11 +1,21 @@
-import type { StorageDocumentFormat, StorageProviderID } from '@/app/integrations/storage/types'
+import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
+import type { StorageTargetID } from '@/app/storage/target'
 
 export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
 
 /** Metadata for a stored canvas cached on device (document bytes stored separately). */
 export type LocalCanvasMeta = {
   id: string
-  providerId: StorageProviderID
+  /**
+   * Where this document replicates to, or `null` for local-only.
+   *
+   * Replaces `providerId`, which meant "which shelf this belongs to" and made
+   * location part of identity — so a listing that resolved late could retag a
+   * row into the wrong bucket, and switching providers hid every document.
+   * A target names one immutable provider/configuration/credential tuple, so a
+   * stale read can at worst record a stale sync state, never move a document.
+   */
+  syncTargetId: StorageTargetID | null
   name: string
   sourceFormat: StorageDocumentFormat
   trashedAt: string | null
@@ -78,7 +88,7 @@ export type LocalCanvasIndexInput = Omit<
 
 export type LocalCanvasWriteInput = {
   id: string
-  providerId: StorageProviderID
+  syncTargetId: StorageTargetID | null
   name: string
   sourceFormat?: StorageDocumentFormat
   updatedAt?: string

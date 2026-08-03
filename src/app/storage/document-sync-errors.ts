@@ -42,7 +42,7 @@ export function useDocumentSyncErrors(
     const target = providerId()
     const metas = await getLocalCanvasStore().listMetas(true)
     if (target !== providerId()) return
-    setFrom(metas.filter((metadata) => metadata.providerId === target))
+    setFrom(metas.filter((metadata) => metadata.syncTargetId === target))
   }
 
   /**

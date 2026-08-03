@@ -25,7 +25,7 @@ async function seed(
   const local = getLocalCanvasStore()
   const meta = await local.writeCanvas({
     id,
-    providerId: 's3-compatible',
+    syncTargetId: 's3-compatible#00000000',
     name: id,
     figBytes: new Uint8Array(sizeMb * MB),
     bodyId: `sha256:${id}`,
@@ -138,7 +138,7 @@ describe('lastOpenedAt is written by the product', () => {
     const local = getLocalCanvasStore()
     await local.writeCanvas({
       id: 'kept',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'kept',
       figBytes: new Uint8Array([1]),
       bodyId: 'sha256:kept'
@@ -148,7 +148,7 @@ describe('lastOpenedAt is written by the product', () => {
     // A remote listing re-upserts the row; the LRU key must not be erased.
     await local.upsertIndexMeta({
       id: 'kept',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'kept',
       updatedAt: new Date().toISOString(),
       syncStatus: 'synced',
