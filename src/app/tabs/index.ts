@@ -179,7 +179,34 @@ function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
-/** Consume the active tab only if it is still the blank one it was created as. */
+/**
+ * Take the blank tab the app started with, or make a new one.
+ *
+ * Cold start creates an empty `Untitled` tab, and every route into a real
+ * document used to call `createTab()` directly — so opening one document from
+ * the workspace left two tabs, the first of them permanently empty.
+ *
+ * Only a scratch tab is consumed, which is what makes this safe: it is blank by
+ * construction, so nothing can be displaced. The earlier caution about
+ * "replacing a tab in the middle of the strip" was correct when emptiness had
+ * to be inferred from a name and an undo stack; it is decidable now.
+ */
+function takeScratchTab(): Tab {
+  const current = activeTab.value
+  const scratch = current?.scratch ? current : tabsRef.value.find((tab) => tab.scratch)
+  if (!scratch) return createTab()
+  scratch.scratch = false
+  activateTab(scratch)
+  return scratch
+}
+
+/**
+ * File opens consume only the ACTIVE tab, and never activate another.
+ *
+ * Deliberately narrower than `takeScratchTab`: two files opened concurrently
+ * must land in two tabs, and stealing a scratch tab from elsewhere in the strip
+ * — or switching to it — reorders what the user is looking at mid-open.
+ */
 function reusableTabStore(): EditorStore {
   const current = activeTab.value
   if (!current?.scratch) return createTab().store
@@ -202,10 +229,7 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     return
   }
 
-  // Workspace documents append to the editor tab list and stay focused. Reusing an
-  // untouched tab could replace a tab in the middle of the strip, which made cloud opens
-  // appear to land in an arbitrary position.
-  const tab = createTab()
+  const tab = takeScratchTab()
   const { store } = tab
   store.state.documentName = document.name
   store.state.loading = true
