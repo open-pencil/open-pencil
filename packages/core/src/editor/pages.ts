@@ -8,6 +8,7 @@ import { collectGraphFontRequirements } from '#core/text/requirements'
 import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 
 import type { DocumentKind } from './document-kind'
+import { writeStoredPageColor } from './page-color'
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
 
@@ -116,7 +117,12 @@ export function createPageActions(ctx: EditorContext) {
       ctx.requestRender()
       return
     }
+
     ctx.state.pageColor = color
+    // Persist it. Export reads `backgroundColor` off the page's imported fields
+    // and copied it through verbatim, so a stage colour the user chose was
+    // never written to the file — it lived and died in editor state.
+    writeStoredPageColor(ctx.graph, ctx.state.currentPageId, color)
     ctx.requestRender()
   }
 

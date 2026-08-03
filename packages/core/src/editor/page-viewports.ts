@@ -3,6 +3,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { CANVAS_BG_COLOR, DECK_CANVAS_BG_COLOR } from '#core/constants'
 
 import { documentKindRules } from './document-kind'
+import { readStoredPageColor } from './page-color'
 import type { EditorContext } from './types'
 
 interface PageViewport {
@@ -65,7 +66,10 @@ export function createPageViewportStore(ctx: EditorContext) {
     ctx.state.panX = 0
     ctx.state.panY = 0
     ctx.state.zoom = 1
-    ctx.state.pageColor = { ...CANVAS_BG_COLOR }
+    // First visit to this page. The document may carry its own stage colour —
+    // resetting to the default here is what made an imported red canvas open
+    // grey, and then saved that grey back over it.
+    ctx.state.pageColor = readStoredPageColor(ctx.graph, pageId) ?? { ...CANVAS_BG_COLOR }
   }
 
   function deletePageViewport(pageId: string) {
