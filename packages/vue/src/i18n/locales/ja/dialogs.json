@@ -285,5 +285,8 @@
   "syncedViaProvider": "{provider} 経由で同期済み",
   "syncFailedVia": "同期に失敗しました — {provider}",
   "workingOffline": "ローカル保存のみ",
-  "syncStatusSetUpCloud": "クラウドが未設定です — クリックしてクラウドストレージを接続"
+  "syncStatusSetUpCloud": "クラウドが未設定です — クリックしてクラウドストレージを接続",
+  "backUpToCloud": "クラウドにバックアップ",
+  "backUpToCloudOn": "作業中にドキュメントがバケットへ同期されます。",
+  "backUpToCloudOff": "一時停止中 — ドキュメントはこのデバイスに保存されます。バケット内のデータは削除されず、設定も保持されます。"
 }

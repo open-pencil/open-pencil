@@ -285,5 +285,8 @@
   "syncedViaProvider": "Zsynchronizowano przez {provider}",
   "syncFailedVia": "Synchronizacja nie powiodła się — {provider}",
   "workingOffline": "Tylko pamięć lokalna",
-  "syncStatusSetUpCloud": "Chmura nie jest skonfigurowana — kliknij, aby połączyć magazyn w chmurze"
+  "syncStatusSetUpCloud": "Chmura nie jest skonfigurowana — kliknij, aby połączyć magazyn w chmurze",
+  "backUpToCloud": "Kopia zapasowa w chmurze",
+  "backUpToCloudOn": "Dokumenty synchronizują się z Twoim bucketem podczas pracy.",
+  "backUpToCloudOff": "Wstrzymano — dokumenty pozostają na tym urządzeniu. Nic nie zostanie usunięte z bucketa, a ustawienia są zachowane."
 }

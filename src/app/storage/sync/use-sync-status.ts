@@ -3,6 +3,7 @@ import { computed, onScopeDispose, ref, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
+import { backupToCloud } from '@/app/storage/backup'
 import { lastSyncFailure } from '@/app/storage/sync/failure'
 import { pendingSyncCount, syncUiState } from '@/app/storage/sync/status'
 
@@ -30,7 +31,10 @@ export function useSyncStatus(options: {
   const { dialogs } = useI18n()
 
   const rawIndicator = computed<SyncIndicator>(() => {
-    if (!options.configured()) return 'local'
+    // Paused reads the same as unconfigured on purpose: both mean nothing is
+    // going to the cloud, and neither is a fault. Alarm colours are reserved
+    // for wanting sync and not getting it.
+    if (!options.configured() || !backupToCloud.value) return 'local'
     switch (syncUiState.value) {
       case 'syncing':
         return 'syncing'
@@ -146,7 +150,7 @@ export function useSyncStatus(options: {
    * without ever interrupting: nothing pops up, nothing blocks, and a user who
    * never wants cloud simply never clicks it.
    */
-  const canConnect = computed(() => indicator.value === 'local')
+  const canConnect = computed(() => indicator.value === 'local' && !options.configured())
 
   return {
     indicator,

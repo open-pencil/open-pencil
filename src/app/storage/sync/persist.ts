@@ -1,4 +1,5 @@
 import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
+import { backupIsActive } from '@/app/storage/backup'
 import { computeBodyIdSafe } from '@/app/storage/body-id'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
@@ -33,6 +34,10 @@ export async function persistStorageCanvasLocally(
     enqueueCanvas: enqueuePutCanvas,
     enqueueThumbnail: enqueuePutThumb
   }
+  // Pausing gates at ENQUEUE, not at the adapter. A job created and then
+  // refused would park and report a failure for a document the user chose not
+  // to upload — the same trap as a `pending` row with no job.
+  const target = backupIsActive() ? options.syncTargetId : null
   const format = options.sourceFormat ?? 'fig'
   const bodyId = await computeBodyIdSafe(options.figBytes, format)
   const existing = await runtime.store.getMeta(options.canvasId)
@@ -50,7 +55,7 @@ export async function persistStorageCanvasLocally(
     // No destination means no upload is intended, so the row must not claim to
     // be waiting on one. `pending` without a job is unrecoverable: nothing
     // clears it and eviction skips the row forever.
-    syncStatus: options.syncTargetId === null ? 'local' : 'pending'
+    syncStatus: target === null ? 'local' : 'pending'
   })
 
   // Identical content: the remote already holds these exact bytes, so there is
@@ -62,10 +67,8 @@ export async function persistStorageCanvasLocally(
   // new one and skipping the upload would mark a document synced to a bucket
   // that has never received it.
   const confirmedAtThisTarget =
-    existing !== null &&
-    existing.syncTargetId === options.syncTargetId &&
-    existing.syncedBodyId === bodyId
-  if (options.syncTargetId === null) {
+    existing !== null && existing.syncTargetId === target && existing.syncedBodyId === bodyId
+  if (target === null) {
     // Local-only: committed and durable, deliberately going nowhere. Enqueueing
     // here would create a job with no destination, which parks on its first run
     // and reports a red failure for a document that is perfectly fine.
@@ -74,7 +77,7 @@ export async function persistStorageCanvasLocally(
   } else {
     await runtime.enqueueCanvas(options.canvasId, metadata.revision)
   }
-  if (options.syncTargetId !== null && options.thumbnailBytes?.byteLength) {
+  if (target !== null && options.thumbnailBytes?.byteLength) {
     if (dependencies?.enqueueThumbnail) {
       await dependencies.enqueueThumbnail(options.canvasId, metadata.revision)
     } else if (!dependencies) {

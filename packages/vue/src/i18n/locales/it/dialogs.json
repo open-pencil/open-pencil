@@ -285,5 +285,8 @@
   "syncedViaProvider": "Sincronizzato tramite {provider}",
   "syncFailedVia": "Sincronizzazione non riuscita — {provider}",
   "workingOffline": "Solo archiviazione locale",
-  "syncStatusSetUpCloud": "Il cloud non è configurato: fai clic per collegare l'archiviazione cloud"
+  "syncStatusSetUpCloud": "Il cloud non è configurato: fai clic per collegare l'archiviazione cloud",
+  "backUpToCloud": "Backup sul cloud",
+  "backUpToCloudOn": "I documenti si sincronizzano con il tuo bucket mentre lavori.",
+  "backUpToCloudOff": "In pausa — i documenti restano su questo dispositivo. Nulla viene eliminato dal bucket e le impostazioni vengono mantenute."
 }

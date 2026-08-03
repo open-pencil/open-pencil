@@ -184,6 +184,10 @@ export const dialogMessageDefaults = {
   syncFailedVia: params('Sync failed — {provider}'),
   workingOffline: 'Local storage only',
   syncStatusSetUpCloud: 'Cloud is not set up — click to connect cloud storage',
+  backUpToCloud: 'Back up to cloud',
+  backUpToCloudOn: 'Documents sync to your bucket as you work.',
+  backUpToCloudOff:
+    'Paused — documents stay on this device. Nothing in your bucket is deleted, and your settings are kept.',
   storageSyncing: 'Syncing',
   syncStatusLocalOnly: 'Local only',
   syncStatusSynced: 'Synced',

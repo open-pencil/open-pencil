@@ -28,8 +28,11 @@ import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { resumeStorageSync } from '@/app/storage/sync'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
+import { backupToCloud } from '@/app/storage/backup'
+import AppSwitch from '@/components/ui/AppSwitch.vue'
 
 const { dialogs } = useI18n()
+const backupEnabled = backupToCloud
 const router = useRouter()
 const { copy, copied } = useClipboard()
 const { copy: copyErrorText, copied: errorCopied } = useClipboard()
@@ -332,6 +335,28 @@ onMounted(() => void refreshStatuses())
     >
       {{ copied ? dialogs.copied : dialogs.copyStorageCors }}
     </button>
+
+    <!--
+      Pause without dismantling. Clearing the API key to stop syncing means
+      re-entering it to resume, and it destroys the one setting that is
+      genuinely annoying to recreate.
+    -->
+    <div
+      v-if="configured"
+      class="flex items-start gap-2 rounded border border-border bg-panel px-3 py-2"
+    >
+      <AppSwitch
+        v-model="backupEnabled"
+        :label="dialogs.backUpToCloud"
+        data-test-id="settings-storage-backup-toggle"
+      />
+      <div class="min-w-0">
+        <p class="text-[11px] font-medium text-surface">{{ dialogs.backUpToCloud }}</p>
+        <p class="text-[10px] leading-snug text-muted">
+          {{ backupEnabled ? dialogs.backUpToCloudOn : dialogs.backUpToCloudOff }}
+        </p>
+      </div>
+    </div>
 
     <button
       type="button"

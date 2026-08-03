@@ -285,5 +285,8 @@
   "syncedViaProvider": "已通过 {provider} 同步",
   "syncFailedVia": "同步失败 — {provider}",
   "workingOffline": "仅本地存储",
-  "syncStatusSetUpCloud": "尚未设置云端 — 点击以连接云存储"
+  "syncStatusSetUpCloud": "尚未设置云端 — 点击以连接云存储",
+  "backUpToCloud": "备份到云端",
+  "backUpToCloudOn": "工作时文档会同步到你的存储桶。",
+  "backUpToCloudOff": "已暂停 — 文档保留在本机。存储桶中的内容不会被删除，设置也会保留。"
 }

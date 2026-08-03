@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'bun:test'
 
+import { backupToCloud } from '@/app/storage/backup'
 import { createMemoryLocalCanvasStore } from '@/app/storage/local-store'
 import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
@@ -178,5 +179,56 @@ describe('local-only documents', () => {
 
     expect(enqueueCanvas).toHaveBeenCalledTimes(1)
     expect((await store.getMeta('promoted'))?.syncStatus).toBe('pending')
+  })
+})
+
+describe('pausing cloud backup', () => {
+  /**
+   * Pause, not withdraw. Clearing the API key to stop syncing destroys the one
+   * setting that is genuinely annoying to recreate, and says nothing about what
+   * should happen to documents already in the bucket.
+   */
+  test('a paused save stays local and enqueues nothing', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const enqueueCanvas = vi.fn(async () => {})
+    backupToCloud.value = false
+
+    await persistStorageCanvasLocally(
+      {
+        syncTargetId: 's3-compatible#aaaaaaaa',
+        canvasId: 'paused',
+        name: 'Paused',
+        figBytes: new Uint8Array([1, 2, 3])
+      },
+      { store, enqueueCanvas }
+    )
+
+    expect(enqueueCanvas).not.toHaveBeenCalled()
+    const meta = await store.getMeta('paused')
+    expect(meta?.syncStatus).toBe('local')
+    // The document still knows where it belongs — pausing is not disconnecting.
+    expect(meta?.syncTargetId).toBe('s3-compatible#aaaaaaaa')
+    backupToCloud.value = true
+  })
+
+  test('resuming uploads the work done while paused', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const enqueueCanvas = vi.fn(async () => {})
+    const options = {
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      canvasId: 'resumed',
+      name: 'Resumed',
+      figBytes: new Uint8Array([4, 5, 6])
+    }
+
+    backupToCloud.value = false
+    await persistStorageCanvasLocally(options, { store, enqueueCanvas })
+    expect(enqueueCanvas).not.toHaveBeenCalled()
+
+    backupToCloud.value = true
+    await persistStorageCanvasLocally(options, { store, enqueueCanvas })
+
+    expect(enqueueCanvas).toHaveBeenCalledTimes(1)
+    expect((await store.getMeta('resumed'))?.syncStatus).toBe('pending')
   })
 })
