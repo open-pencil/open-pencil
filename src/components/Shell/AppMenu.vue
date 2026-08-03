@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { templateRef } from '@vueuse/core'
 
 import {
@@ -18,7 +17,6 @@ import {
   MenubarTrigger
 } from 'reka-ui'
 
-import IconArrowLeft from '~icons/lucide/arrow-left'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { vTestId, useI18n } from '@open-pencil/vue'
@@ -44,14 +42,6 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
 
 const store = useEditorStore()
-const router = useRouter()
-
-// This shared header renders for design and Slides documents on web and Tauri.
-// Use a fixed destination because browser history is absent on desktop and can
-// point somewhere other than the storage workspace on web.
-async function backToWorkspace(): Promise<void> {
-  await router.push('/')
-}
 
 const { rename, editingName, startRename, commitRename } = useDocumentNameRename(store)
 const nameInput = templateRef<HTMLInputElement>('nameInput')
@@ -75,17 +65,6 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
       renders for design AND Slides, on web AND Tauri — anywhere else and sync
       state would be invisible to half the app.
     -->
-    <div class="flex items-center gap-1 border-b border-border pr-1">
-      <button
-        type="button"
-        data-test-id="app-back-to-workspace"
-        class="flex shrink-0 cursor-pointer items-center gap-1.5 px-2 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
-        @click="backToWorkspace"
-      >
-        <IconArrowLeft class="size-3.5 shrink-0" />
-        <span>{{ dialogs.backToStorageWorkspace }}</span>
-      </button>
-    </div>
     <div class="flex items-center gap-2 px-2 py-1.5">
       <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />
       <input
