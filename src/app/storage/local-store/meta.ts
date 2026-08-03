@@ -49,7 +49,11 @@ export function normalizeLocalCanvasMeta(meta: LocalCanvasMeta): LocalCanvasMeta
     // `hasFig` without a `bodyId` means a legacy row: bytes are present but
     // unidentified. The next save or open computes the real id.
     bodyId: meta.bodyId ?? null,
-    syncedBodyId: meta.syncedBodyId ?? null
+    syncedBodyId: meta.syncedBodyId ?? null,
+    // Rows written before thumbnail failures were separated recorded them in
+    // `lastSyncError`. Nothing can tell them apart after the fact, so they stay
+    // where they are and simply age out; only new failures land here.
+    lastThumbSyncError: meta.lastThumbSyncError ?? null
   }
 }
 
@@ -74,6 +78,9 @@ export function buildWriteMeta(
     syncStatus: input.syncStatus ?? 'pending',
     lastSyncedAt: existing?.lastSyncedAt ?? null,
     lastSyncError: input.syncStatus === 'synced' ? null : (existing?.lastSyncError ?? null),
+    // Survives a body write: new bytes say nothing about whether the previous
+    // preview upload reached the remote.
+    lastThumbSyncError: existing?.lastThumbSyncError ?? null,
     // A deleted canvas stays deleted — an in-flight autosave must not resurrect it
     tombstoned: existing?.tombstoned ?? false,
     hasFig: true,
@@ -103,6 +110,7 @@ export function buildIndexMeta(
     syncStatus: input.syncStatus,
     lastSyncedAt: input.lastSyncedAt,
     lastSyncError: input.lastSyncError,
+    lastThumbSyncError: input.lastThumbSyncError ?? existing?.lastThumbSyncError ?? null,
     tombstoned: false,
     hasFig: input.hasFig ?? existing?.hasFig ?? false,
     hasThumb: input.hasThumb ?? existing?.hasThumb ?? false,

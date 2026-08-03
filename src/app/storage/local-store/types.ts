@@ -31,7 +31,18 @@ export type LocalCanvasMeta = {
   syncedBodyId: string | null
   syncStatus: LocalSyncStatus
   lastSyncedAt: string | null
+  /** Failure of the document body or its metadata. Never a thumbnail. */
   lastSyncError: string | null
+  /**
+   * Failure of the thumbnail upload alone.
+   *
+   * Kept apart from `lastSyncError` because the two mean very different things
+   * to the user: the document is safe either way, but a `putThumb` failure
+   * writing into `lastSyncError` presented a perfectly synced document as
+   * broken. A stale preview is cosmetic and gets a correspondingly quiet
+   * signal; nothing derives `syncStatus` from this field.
+   */
+  lastThumbSyncError: string | null
   /** Soft-deleted; hidden from UI until remote delete completes. */
   tombstoned: boolean
   hasFig: boolean
@@ -53,6 +64,7 @@ export type LocalCanvasIndexInput = Omit<
   | 'trashedAt'
   | 'bodyId'
   | 'syncedBodyId'
+  | 'lastThumbSyncError'
 > & {
   revision?: number
   hasFig?: boolean
@@ -61,6 +73,7 @@ export type LocalCanvasIndexInput = Omit<
   trashedAt?: string | null
   bodyId?: string | null
   syncedBodyId?: string | null
+  lastThumbSyncError?: string | null
 }
 
 export type LocalCanvasWriteInput = {

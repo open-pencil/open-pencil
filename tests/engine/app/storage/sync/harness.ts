@@ -99,6 +99,7 @@ export type FaultConfig = {
   putStatus?: number
   deleteStatus?: number
   listStatus?: number
+  thumbStatus?: number
   /** Throw a fetch-level failure — what a CORS rejection actually looks like. */
   throwOn?: AdapterOp[]
 }
@@ -129,6 +130,10 @@ export function faultyAdapter(config: FaultConfig, inner = recordingAdapter()): 
     putDocument: async (id, bytes, metadata, onProgress) => {
       fail('put', config.putStatus)
       return inner.putDocument(id, bytes, metadata, onProgress)
+    },
+    putThumbnail: async (id, bytes) => {
+      fail('putThumb', config.thumbStatus)
+      await inner.putThumbnail?.(id, bytes)
     },
     deleteDocument: async (id) => {
       // Record the attempt before failing: an Appwrite delete that returns 503

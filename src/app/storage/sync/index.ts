@@ -17,12 +17,15 @@ export {
 export {
   categorizeSyncFailure,
   clearSyncFailure,
+  formatSyncFailureReport,
   isFetchLevelFailure,
   lastSyncFailure,
   recordSyncFailure,
   type SyncFailure,
-  type SyncFailureCategory
+  type SyncFailureCategory,
+  type SyncOperation
 } from './failure'
+export { useSyncStatus, type SyncIndicator } from './use-sync-status'
 export { setUploadProgress, uploadProgressByCanvas } from './progress'
 export {
   pendingSyncCount,

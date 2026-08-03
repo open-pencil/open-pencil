@@ -1,20 +1,45 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { tv } from 'tailwind-variants'
 import { useI18n } from '@open-pencil/vue'
 
-const { online } = defineProps<{ online: boolean }>()
+import { useStorageConfigured } from '@/app/storage/configured'
+import { useSyncStatus } from '@/app/storage/sync'
+import SyncErrorDialog from '@/components/storage/SyncErrorDialog.vue'
+import syncStatusTheme from '@/theme/sync-status'
+
 const { dialogs } = useI18n()
+const configured = useStorageConfigured()
+const { indicator, label, failure, spinnerVisible, actionable } = useSyncStatus({
+  configured: () => configured.value
+})
+
+const detailOpen = ref(false)
+const cls = computed(() =>
+  tv(syncStatusTheme)({ indicator: indicator.value, actionable: actionable.value })
+)
+
+function openDetail(): void {
+  if (actionable.value) detailOpen.value = true
+}
 </script>
 
 <template>
-  <footer
-    class="flex h-5 shrink-0 items-center justify-center gap-1.5 border-t border-border bg-panel px-2 text-[10px] text-muted"
+  <button
+    type="button"
+    :class="cls.chip()"
+    :disabled="!actionable"
+    :aria-label="actionable ? dialogs.syncStatusShowDetails : undefined"
     data-test-id="cloud-workspace-status"
+    :data-indicator="indicator"
+    @click="openDetail"
   >
-    <span
-      class="size-1.5 rounded-full"
-      :class="online ? 'bg-green-500' : 'bg-amber-500'"
-      aria-hidden="true"
-    />
-    <span>{{ online ? dialogs.cloudWorkspaceConnected : dialogs.cloudWorkspaceOffline }}</span>
-  </footer>
+    <span :class="cls.indicator()" aria-hidden="true">
+      <icon-lucide-loader-circle v-if="spinnerVisible" :class="cls.spinner()" />
+      <span v-else :class="cls.dot()" />
+    </span>
+    <span :class="cls.label()">{{ label }}</span>
+  </button>
+
+  <SyncErrorDialog v-model:open="detailOpen" :failure="failure" />
 </template>

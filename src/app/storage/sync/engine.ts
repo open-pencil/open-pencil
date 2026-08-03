@@ -218,15 +218,18 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
    *
    * Unguarded writes let a stale or zombie job demote a document that is healthy
    * at a newer revision to `error`, leaving a permanent false failure badge.
-   * `putThumb` never touches `syncStatus` — a stale remote thumbnail must not
-   * report the document itself as broken.
+   *
+   * `putThumb` writes a different field entirely. It used to share
+   * `lastSyncError`, so a failed preview upload made a fully synced document
+   * report itself as broken on the card — and the real error, if there ever was
+   * one, was overwritten by the cosmetic one.
    */
   async function updateSyncFailureMeta(job: OutboxJob, message: string): Promise<void> {
     const store = deps.getStore()
     const latest = await store.getMeta(job.canvasId)
     if (!latest) return
     if (job.type === 'putThumb') {
-      await store.updateMeta(job.canvasId, { lastSyncError: message })
+      await store.updateMeta(job.canvasId, { lastThumbSyncError: message })
       return
     }
     await store.updateMeta(
@@ -361,6 +364,11 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     const thumb = await store.readThumb(job.canvasId)
     if (!thumb) return
     await adapter.putThumbnail(job.canvasId, thumb)
+    // Clear only when something is there to clear; the common case is a plain
+    // success and does not deserve an extra IndexedDB write.
+    if (meta.lastThumbSyncError !== null) {
+      await store.updateMeta(job.canvasId, { lastThumbSyncError: null })
+    }
   }
 
   async function pumpOnce(): Promise<void> {
@@ -461,9 +469,17 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
       }
       await outbox.update(updated)
       await captureFailure(job, error, attempts)
-      // Transient: still retrying, so surface it as `error` rather than `blocked`.
-      setSyncUi('error', message)
-      if (job.type !== 'putThumb') {
+      if (job.type === 'putThumb') {
+        // Quieter by construction: its own field, no `syncStatus` demotion, and
+        // no global failure state. A preview upload that is still being retried
+        // is not a reason to turn the whole workspace's chip red — especially
+        // since `captureFailure` skips putThumb, so the detail view would have
+        // had nothing to show behind it.
+        await deps.getStore().updateMeta(job.canvasId, { lastThumbSyncError: message })
+        setSyncUi('syncing')
+      } else {
+        // Transient: still retrying, so surface it as `error` rather than `blocked`.
+        setSyncUi('error', message)
         await deps.getStore().updateMeta(job.canvasId, {
           syncStatus: 'pending',
           lastSyncError: message

@@ -1,6 +1,8 @@
 import { useOnline } from '@vueuse/core'
 import { computed, onScopeDispose, ref, watch } from 'vue'
 
+import { useI18n } from '@open-pencil/vue'
+
 import { lastSyncFailure } from '@/app/storage/sync/failure'
 import { pendingSyncCount, syncUiState } from '@/app/storage/sync/status'
 
@@ -21,8 +23,9 @@ const SPINNER_MIN_VISIBLE_MS = 500
 
 export function useSyncStatus(options: { configured: () => boolean }) {
   const browserOnline = useOnline()
+  const { dialogs } = useI18n()
 
-  const indicator = computed<SyncIndicator>(() => {
+  const rawIndicator = computed<SyncIndicator>(() => {
     if (!options.configured()) return 'local'
     switch (syncUiState.value) {
       case 'syncing':
@@ -53,7 +56,7 @@ export function useSyncStatus(options: { configured: () => boolean }) {
   }
 
   watch(
-    () => indicator.value === 'syncing',
+    () => rawIndicator.value === 'syncing',
     (syncing) => {
       clearTimers()
       if (syncing) {
@@ -79,6 +82,20 @@ export function useSyncStatus(options: { configured: () => boolean }) {
 
   onScopeDispose(clearTimers)
 
+  /**
+   * What the chip actually renders.
+   *
+   * The spinner guards keep the ICON still, but a label driven by the raw state
+   * would still flash "Syncing…" for a 200 ms sync — the same strobe, moved
+   * into the text. Below the spinner threshold the chip keeps its settled
+   * presentation, which stays true: the target is reachable, and any queued
+   * work is already reported through the pending count.
+   */
+  const indicator = computed<SyncIndicator>(() => {
+    if (rawIndicator.value !== 'syncing' || spinnerVisible.value) return rawIndicator.value
+    return options.configured() ? 'synced' : 'local'
+  })
+
   const failure = computed(() => lastSyncFailure.value)
 
   /**
@@ -89,17 +106,22 @@ export function useSyncStatus(options: { configured: () => boolean }) {
   const pendingCount = computed(() => pendingSyncCount.value)
 
   const label = computed(() => {
+    const t = dialogs.value
     switch (indicator.value) {
       case 'local':
-        return 'Local only'
+        return t.syncStatusLocalOnly
       case 'syncing':
-        return pendingCount.value > 1 ? `Syncing ${pendingCount.value} changes…` : 'Syncing…'
+        return pendingCount.value > 1
+          ? t.syncStatusSyncingCount({ count: pendingCount.value })
+          : t.syncStatusSyncing
       case 'degraded':
-        return browserOnline.value ? 'Cloud unreachable — retrying' : 'Offline — will sync'
+        return browserOnline.value ? t.syncStatusUnreachable : t.syncStatusOffline
       case 'failing':
-        return 'Sync failed'
+        return t.syncStatusFailed
       default:
-        return pendingCount.value > 0 ? `${pendingCount.value} waiting to sync` : 'Synced'
+        return pendingCount.value > 0
+          ? t.syncStatusWaiting({ count: pendingCount.value })
+          : t.syncStatusSynced
     }
   })
 

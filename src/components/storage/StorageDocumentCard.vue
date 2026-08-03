@@ -16,16 +16,23 @@ import type { StorageDocument } from '@/app/integrations/storage'
 import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import { uploadProgressByCanvas } from '@/app/storage/sync'
 import { useMenuUI } from '@/components/ui/menu'
+import Tip from '@/components/ui/Tip.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
 
 const {
   document,
   thumbnailUrl,
+  syncError = null,
+  thumbnailError = null,
   trashView = false,
   busy = false
 } = defineProps<{
   document: StorageDocument
   thumbnailUrl?: string
+  /** Verbatim provider text for a failed body/metadata sync. */
+  syncError?: string | null
+  /** Verbatim provider text for a failed preview upload. Cosmetic only. */
+  thumbnailError?: string | null
   trashView?: boolean
   busy?: boolean
 }>()
@@ -109,6 +116,32 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
           <p class="mt-1 text-[10px] text-muted">
             {{ new Date(document.trashedAt ?? document.updatedAt).toLocaleString() }}
           </p>
+          <!--
+            The provider's own words are the tooltip, not a paraphrase: the
+            label says which layer failed, the message says what to fix.
+          -->
+          <Tip v-if="syncError" :label="syncError">
+            <p
+              class="mt-1 flex items-center gap-1 text-[10px] text-danger"
+              data-slot="storage-sync-error"
+            >
+              <icon-lucide-circle-alert class="size-3 shrink-0" />
+              <span class="truncate">{{ dialogs.storageDocumentSyncFailed }}</span>
+            </p>
+          </Tip>
+          <!--
+            Deliberately quieter than the body error and never mutually
+            exclusive with it: a stale preview says nothing about the document.
+          -->
+          <Tip v-if="thumbnailError" :label="thumbnailError">
+            <p
+              class="mt-1 flex items-center gap-1 text-[10px] text-muted"
+              data-slot="storage-thumbnail-error"
+            >
+              <icon-lucide-image-off class="size-3 shrink-0" />
+              <span class="truncate">{{ dialogs.storageDocumentPreviewNotSynced }}</span>
+            </p>
+          </Tip>
         </div>
 
         <div

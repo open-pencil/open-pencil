@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   categorizeSyncFailure,
   clearSyncFailure,
+  formatSyncFailureReport,
   isFetchLevelFailure,
   lastSyncFailure,
   recordSyncFailure,
@@ -94,5 +95,31 @@ describe('failure snapshots', () => {
     clearSyncFailure()
 
     expect(lastSyncFailure.value).toBeNull()
+  })
+})
+
+describe('formatSyncFailureReport', () => {
+  test('carries the snapshot a bug report needs, verbatim error last', () => {
+    const report = formatSyncFailureReport(
+      failure({
+        category: 'permission',
+        status: 403,
+        rawError: 'User (role: guests) missing scopes (["buckets.read"])'
+      })
+    )
+
+    expect(report).toContain('Operation: putCanvas')
+    expect(report).toContain('Endpoint: https://example.test')
+    expect(report).toContain('Bucket: designs')
+    expect(report).toContain('Quarterly deck')
+    expect(report).toContain('doc-1')
+    expect(report).toContain('Attempts: 2')
+    expect(report).toContain('Time: 2026-08-03T12:00:00.000Z')
+    // The provider's own words are the payload, not a paraphrase of them.
+    expect(report.endsWith('User (role: guests) missing scopes (["buckets.read"])')).toBe(true)
+  })
+
+  test('reports a missing HTTP status rather than dropping the line', () => {
+    expect(formatSyncFailureReport(failure({ status: null }))).toContain('HTTP status: n/a')
   })
 })

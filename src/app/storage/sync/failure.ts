@@ -31,8 +31,16 @@ export type SyncFailureCategory =
  * endpoint — and the chip's 120-character label was the only thing retained,
  * which discarded exactly the part a bug report needs.
  */
+/**
+ * Listing is not an outbox job, but it fails the same way and for the same
+ * reasons — and a workspace that cannot list is not synced, whatever the queue
+ * says. Without it here, an unreachable bucket with an empty outbox showed a
+ * green chip beside a red error banner.
+ */
+export type SyncOperation = OutboxJobType | 'listDocuments'
+
 export type SyncFailure = {
-  operation: OutboxJobType
+  operation: SyncOperation
   /** Provider the job was addressed to, captured at enqueue. */
   providerId: StorageProviderID
   /** Non-secret display context, e.g. endpoint and bucket. Never credentials. */
@@ -88,4 +96,28 @@ export function categorizeSyncFailure(error: unknown, browserOnline = true): Syn
 
 export function syncFailureErrorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+/**
+ * Plain-text failure report for the clipboard.
+ *
+ * Everything here comes from the snapshot, so a bug report describes the
+ * failure as it happened rather than as the app looks now. `providerContext`
+ * is already classified non-secret at capture time (`nonSecretProviderContext`),
+ * so nothing here can carry a credential.
+ */
+export function formatSyncFailureReport(failure: SyncFailure): string {
+  return [
+    'OpenPencil sync failure',
+    `Operation: ${failure.operation}`,
+    `Provider: ${failure.providerId}`,
+    ...Object.entries(failure.providerContext).map(([field, value]) => `${field}: ${value}`),
+    `Documents: ${failure.documentName ?? '(unnamed)'} [${failure.documentIds.join(', ')}]`,
+    `Category: ${failure.category}`,
+    `HTTP status: ${failure.status ?? 'n/a'}`,
+    `Attempts: ${failure.attempts}`,
+    `Time: ${failure.occurredAt}`,
+    '',
+    failure.rawError
+  ].join('\n')
 }

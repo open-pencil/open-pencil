@@ -23,6 +23,7 @@ import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { vTestId, useI18n } from '@open-pencil/vue'
 import AppShortcutText from '@/components/ui/AppShortcutText.vue'
+import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
 import { useMenuUI } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
@@ -70,15 +71,23 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 
 <template>
   <div class="shrink-0 border-b border-border">
-    <button
-      type="button"
-      data-test-id="app-back-to-workspace"
-      class="flex w-full cursor-pointer items-center gap-1.5 border-b border-border px-2 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
-      @click="backToWorkspace"
-    >
-      <IconArrowLeft class="size-3.5 shrink-0" />
-      <span class="truncate">{{ dialogs.backToStorageWorkspace }}</span>
-    </button>
+    <!--
+      The sync chip rides this row because this header is the one surface that
+      renders for design AND Slides, on web AND Tauri — anywhere else and sync
+      state would be invisible to half the app.
+    -->
+    <div class="flex items-center gap-1 border-b border-border pr-1">
+      <button
+        type="button"
+        data-test-id="app-back-to-workspace"
+        class="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 px-2 py-1.5 text-xs text-muted transition-colors hover:bg-hover hover:text-surface"
+        @click="backToWorkspace"
+      >
+        <IconArrowLeft class="size-3.5 shrink-0" />
+        <span class="truncate">{{ dialogs.backToStorageWorkspace }}</span>
+      </button>
+      <CloudWorkspaceStatus />
+    </div>
     <div class="flex items-center gap-2 px-2 py-1.5">
       <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />
       <input

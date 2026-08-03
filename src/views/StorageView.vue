@@ -17,6 +17,7 @@ import {
   readStoragePreferences,
   storageThumbnailMimeType,
   storageCredentialStatuses,
+  nonSecretProviderContext,
   storagePreferencesComplete,
   storageProviderRegistry,
   type StorageDocument
@@ -30,13 +31,25 @@ import {
   renameStorageDocument,
   restoreStorageDocument
 } from '@/app/storage/documents'
+import { storageCredentialsSatisfied } from '@/app/storage/configured'
 import { storageDocumentIconUrls } from '@/app/storage/document-icons'
+import { useDocumentSyncErrors } from '@/app/storage/document-sync-errors'
 import { createCanvasId } from '@/app/storage/id'
 import { isDeckStorageFile, prepareDeckStorageImport } from '@/app/storage/import'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
-import { enqueuePutCanvas, enqueuePutThumb, persistStorageCanvasLocally } from '@/app/storage/sync'
+import {
+  categorizeSyncFailure,
+  clearSyncFailure,
+  enqueuePutCanvas,
+  enqueuePutThumb,
+  lastSyncFailure,
+  persistStorageCanvasLocally,
+  recordSyncFailure,
+  setSyncUi,
+  syncUiState
+} from '@/app/storage/sync'
 import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
 import { activeTab, createDeckTab, createTab, openStorageDocumentInNewTab } from '@/app/tabs'
@@ -62,13 +75,10 @@ const credentialStatuses = ref<Record<string, CredentialStatus>>({})
 const configured = computed(
   () =>
     storagePreferencesComplete(provider.value.id) &&
-    provider.value.credentialFields.every(
-      (field) => !field.required || credentialStatuses.value[field.id] === 'configured'
-    )
+    storageCredentialsSatisfied(provider.value.id, credentialStatuses.value)
 )
 const loading = ref(false)
 const browserOnline = useOnline()
-const cloudReachable = ref<boolean | null>(null)
 const error = ref<string | null>(null)
 const workspace = ref<HTMLElement | null>(null)
 const dropActive = ref(false)
@@ -83,6 +93,9 @@ const deleteOpen = ref(false)
 const deleteTarget = ref<StorageDocument | null>(null)
 const deletePermanently = ref(false)
 const thumbnailUrls = ref<Record<string, string>>({})
+const { errors: documentSyncErrors, setFrom: setDocumentSyncErrors } = useDocumentSyncErrors(
+  () => activeStorageProviderID.value
+)
 const ownedThumbnailUrls = new Map<string, string>()
 const queuedThumbnailIds = new Set<string>()
 const activeThumbnailIds = new Set<string>()
@@ -109,9 +122,6 @@ const visibleDocuments = computed(() =>
 )
 const trashedDocumentCount = computed(
   () => documents.value.filter((document) => document.trashedAt !== null).length
-)
-const cloudOnline = computed(
-  () => configured.value && browserOnline.value && cloudReachable.value === true
 )
 const sortOptions = computed(() => [
   { value: 'name-asc' as const, label: dialogs.value.storageSortNameAsc },
@@ -245,6 +255,7 @@ async function paintLocalDocuments(generation: number, providerId: string): Prom
     trashedAt: metadata.trashedAt,
     metadataAuthoritative: true
   }))
+  setDocumentSyncErrors(local)
 }
 
 const { copy, copied: errorCopied } = useClipboard()
@@ -286,20 +297,25 @@ async function refresh(): Promise<void> {
     if (!isCurrentRefresh(generation, providerId)) return
     credentialStatuses.value = statuses
     if (!configured.value) {
-      cloudReachable.value = null
       error.value = dialogs.value.storageNotConfigured
       return
     }
     const remote = await createActiveStorageAdapter(providerId).listDocuments()
     if (!isCurrentRefresh(generation, providerId)) return
-    cloudReachable.value = true
     const localStore = getLocalCanvasStore()
     const local = (await localStore.listMetas(true)).filter(
       (metadata) => metadata.providerId === providerId
     )
     if (!isCurrentRefresh(generation, providerId)) return
+    // Listing works again. Clear only OUR failure — an outbox failure is the
+    // engine's to own and clearing it here would hide real unsent work.
+    if (lastSyncFailure.value?.operation === 'listDocuments') {
+      clearSyncFailure()
+      if (syncUiState.value === 'error') setSyncUi('idle')
+    }
     const reconciliation = reconcileStorageDocuments(local, remote)
     documents.value = reconciliation.documents
+    setDocumentSyncErrors(local)
 
     for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
     // Self-healing migration for rows written before body-upload tracking: the
@@ -328,8 +344,23 @@ async function refresh(): Promise<void> {
     }
   } catch (reason) {
     if (!isCurrentRefresh(generation, providerId)) return
-    cloudReachable.value = false
     error.value = reason instanceof Error ? reason.message : String(reason)
+    // A listing failure is a sync failure. Reporting it only in the banner left
+    // the chip showing a calm "Synced" beside it whenever the outbox happened
+    // to be empty — the queue was drained, but the bucket was unreachable.
+    recordSyncFailure({
+      operation: 'listDocuments',
+      providerId,
+      providerContext: nonSecretProviderContext(providerId),
+      documentIds: [],
+      documentName: null,
+      occurredAt: new Date().toISOString(),
+      attempts: 1,
+      category: categorizeSyncFailure(reason, browserOnline.value),
+      rawError: error.value,
+      status: null
+    })
+    setSyncUi('error', error.value)
   } finally {
     if (generation === refreshGeneration) loading.value = false
   }
@@ -714,6 +745,8 @@ onBeforeUnmount(clearThumbnailUrls)
           :key="document.id"
           :document="document"
           :thumbnail-url="thumbnailUrls[document.id]"
+          :sync-error="documentSyncErrors[document.id]?.body"
+          :thumbnail-error="documentSyncErrors[document.id]?.thumbnail"
           :trash-view="folder === 'trash'"
           :busy="busyDocumentIds.has(document.id)"
           @open="openDocument"
@@ -759,7 +792,16 @@ onBeforeUnmount(clearThumbnailUrls)
       </AppPlaceholder>
     </section>
 
-    <CloudWorkspaceStatus v-if="configured && cloudReachable !== null" :online="cloudOnline" />
+    <!--
+      Always mounted. Grey "Local only" for an unconfigured workspace is a
+      calm, accurate statement; hiding the chip until a listing had succeeded
+      meant the one moment the user most needed sync state showed nothing.
+    -->
+    <footer
+      class="flex h-5 shrink-0 items-center justify-center border-t border-border bg-panel px-2"
+    >
+      <CloudWorkspaceStatus />
+    </footer>
 
     <div
       v-if="dropActive"
