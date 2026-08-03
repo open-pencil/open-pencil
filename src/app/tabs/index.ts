@@ -147,17 +147,37 @@ export function switchTab(tabId: string) {
   activateTab(tab)
 }
 
+/**
+ * Close a tab, landing any edit still inside the autosave debounce.
+ *
+ * `store.dispose()` runs `disposeAutosave`, which is the debounce's `stop` — it
+ * CANCELS a pending save rather than flushing it. So closing within the ~3s
+ * window silently discarded the last edit, with nothing anywhere recording that
+ * it had happened.
+ *
+ * The flush is fire-and-forget on purpose: it writes locally first and only
+ * then enqueues the upload, so the bytes are durable before this returns, and
+ * making every caller await a close would push async through the keyboard
+ * handler, the menu and the tab strip for no user-visible gain.
+ */
 export function closeTab(tabId: string) {
   const idx = tabsRef.value.findIndex((t) => t.id === tabId)
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
+  const settled = closingTab.store
+    .flushPendingSave()
+    .catch((error: unknown) => console.warn('[Tabs] Flush on close failed:', error))
   const wasActive = activeTabId.value === tabId
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
+  // Dispose only once the flush has settled — disposing first would cancel the
+  // very write we just asked for.
+  const disposeWhenSettled = () => void settled.then(() => closingTab.store.dispose())
+
   if (tabsRef.value.length === 0) {
     createTab()
-    closingTab.store.dispose()
+    disposeWhenSettled()
     return
   }
 
@@ -166,7 +186,7 @@ export function closeTab(tabId: string) {
     activateTab(tabsRef.value[newIdx])
   }
 
-  closingTab.store.dispose()
+  disposeWhenSettled()
 }
 
 function yieldToUI(): Promise<void> {
