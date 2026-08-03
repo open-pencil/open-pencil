@@ -284,5 +284,6 @@
   "cloudUnreachableVia": "Облако недоступно — {provider}",
   "syncedViaProvider": "Синхронизировано через {provider}",
   "syncFailedVia": "Ошибка синхронизации — {provider}",
-  "workingOffline": "Офлайн"
+  "workingOffline": "Только локальное хранилище",
+  "syncStatusSetUpCloud": "Облако не настроено — нажмите, чтобы подключить облачное хранилище"
 }

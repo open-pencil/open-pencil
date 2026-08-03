@@ -134,8 +134,28 @@ export function useSyncStatus(options: {
     }
   })
 
-  /** Only states the user can act on open the detail view. */
+  /** States with a failure worth reading. */
   const actionable = computed(() => indicator.value === 'failing' || indicator.value === 'degraded')
 
-  return { indicator, label, pendingCount, failure, spinnerVisible, actionable, browserOnline }
+  /**
+   * No cloud yet — the strip becomes the way to set one up.
+   *
+   * A first run has nothing to report and nothing to fix, so the chip would
+   * otherwise be inert exactly when a new user most needs a next step. Making
+   * it a door rather than a label keeps the invitation available permanently
+   * without ever interrupting: nothing pops up, nothing blocks, and a user who
+   * never wants cloud simply never clicks it.
+   */
+  const canConnect = computed(() => indicator.value === 'local')
+
+  return {
+    indicator,
+    label,
+    pendingCount,
+    failure,
+    spinnerVisible,
+    actionable,
+    canConnect,
+    browserOnline
+  }
 }

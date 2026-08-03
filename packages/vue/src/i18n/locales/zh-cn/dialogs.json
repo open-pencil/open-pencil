@@ -284,5 +284,6 @@
   "cloudUnreachableVia": "无法连接云端 — {provider}",
   "syncedViaProvider": "已通过 {provider} 同步",
   "syncFailedVia": "同步失败 — {provider}",
-  "workingOffline": "离线"
+  "workingOffline": "仅本地存储",
+  "syncStatusSetUpCloud": "尚未设置云端 — 点击以连接云存储"
 }

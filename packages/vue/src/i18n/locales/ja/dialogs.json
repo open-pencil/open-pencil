@@ -284,5 +284,6 @@
   "cloudUnreachableVia": "クラウドに接続できません — {provider}",
   "syncedViaProvider": "{provider} 経由で同期済み",
   "syncFailedVia": "同期に失敗しました — {provider}",
-  "workingOffline": "オフライン"
+  "workingOffline": "ローカル保存のみ",
+  "syncStatusSetUpCloud": "クラウドが未設定です — クリックしてクラウドストレージを接続"
 }

@@ -284,5 +284,6 @@
   "cloudUnreachableVia": "Cloud nicht erreichbar – {provider}",
   "syncedViaProvider": "Synchronisiert über {provider}",
   "syncFailedVia": "Synchronisierung fehlgeschlagen – {provider}",
-  "workingOffline": "Offline"
+  "workingOffline": "Nur lokaler Speicher",
+  "syncStatusSetUpCloud": "Cloud ist nicht eingerichtet – klicken, um Cloud-Speicher zu verbinden"
 }

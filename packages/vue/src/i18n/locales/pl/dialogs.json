@@ -284,5 +284,6 @@
   "cloudUnreachableVia": "Chmura nieosiągalna — {provider}",
   "syncedViaProvider": "Zsynchronizowano przez {provider}",
   "syncFailedVia": "Synchronizacja nie powiodła się — {provider}",
-  "workingOffline": "Tryb offline"
+  "workingOffline": "Tylko pamięć lokalna",
+  "syncStatusSetUpCloud": "Chmura nie jest skonfigurowana — kliknij, aby połączyć magazyn w chmurze"
 }

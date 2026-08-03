@@ -284,5 +284,6 @@
   "cloudUnreachableVia": "Cloud injoignable — {provider}",
   "syncedViaProvider": "Synchronisé via {provider}",
   "syncFailedVia": "Échec de la synchronisation — {provider}",
-  "workingOffline": "Hors ligne"
+  "workingOffline": "Stockage local uniquement",
+  "syncStatusSetUpCloud": "Le cloud n'est pas configuré — cliquez pour connecter un stockage cloud"
 }

@@ -284,5 +284,6 @@
   "cloudUnreachableVia": "Nube no accesible — {provider}",
   "syncedViaProvider": "Sincronizado mediante {provider}",
   "syncFailedVia": "Error de sincronización — {provider}",
-  "workingOffline": "Sin conexión"
+  "workingOffline": "Solo almacenamiento local",
+  "syncStatusSetUpCloud": "La nube no está configurada: haz clic para conectar el almacenamiento en la nube"
 }
