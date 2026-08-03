@@ -19,7 +19,15 @@ export type OutboxJob = {
  */
 export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error' | 'blocked'
 
-/** Pure helper: drop older putCanvas jobs for same canvas when a newer revision is enqueued. */
+/**
+ * Pure helper: drop superseded putCanvas jobs for the same canvas.
+ *
+ * `>=` rather than `>` would keep a job at the SAME revision, so two enqueues
+ * at one revision both survived and uploaded identical bytes twice. The engine
+ * always uploads the row's current body regardless of which job triggered it,
+ * so any queued putCanvas for a canvas is fully redundant with a newer one —
+ * an equal revision included.
+ */
 export function supersedePutCanvasJobs(
   jobs: OutboxJob[],
   canvasId: string,
@@ -27,7 +35,7 @@ export function supersedePutCanvasJobs(
 ): OutboxJob[] {
   return jobs.filter((job) => {
     if (job.canvasId !== canvasId || job.type !== 'putCanvas') return true
-    return job.revision >= revision
+    return job.revision > revision
   })
 }
 

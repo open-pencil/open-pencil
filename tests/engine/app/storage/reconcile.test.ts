@@ -22,7 +22,9 @@ function localMeta(
     tombstoned,
     hasFig: true,
     hasThumb: false,
-    figSize: 1
+    figSize: 1,
+    bodyId: `sha256:${id}`,
+    syncedBodyId: null
   }
 }
 
@@ -65,48 +67,48 @@ describe('storage workspace reconciliation', () => {
   })
 })
 
-describe('body-upload confirmation backfill', () => {
-  test('confirms legacy synced rows that appear in the remote listing', () => {
-    // Rows written before bodySyncedRevision existed would otherwise never be
-    // evictable, so the cache budget would stop being enforced entirely.
+describe('unconfirmed legacy bodies', () => {
+  test('reports a legacy row holding bytes nothing has identified', () => {
+    // Rows written before body identity existed would otherwise never become
+    // evictable, so the cache budget would stop being enforced entirely. They
+    // are reported for RE-UPLOAD, not confirmed: listing membership proves a
+    // body exists remotely, never that it matches the bytes on this device.
     const result = reconcileStorageDocuments(
       [localMeta('legacy', 'synced')],
       [remoteDocument('legacy')]
     )
 
-    expect(result.bodyConfirmedIds).toEqual(['legacy'])
+    expect(result.bodyUnconfirmedIds).toEqual(['legacy'])
   })
 
-  test('does not confirm a row missing from the remote listing', () => {
+  test('ignores a row missing from the remote listing', () => {
     const result = reconcileStorageDocuments([localMeta('ghost', 'synced')], [])
 
-    expect(result.bodyConfirmedIds).toEqual([])
+    expect(result.bodyUnconfirmedIds).toEqual([])
   })
 
-  test('does not confirm a pending row', () => {
-    // The listing proves an OLDER body exists, never the current unsynced one.
-    const result = reconcileStorageDocuments(
-      [localMeta('dirty', 'pending')],
-      [remoteDocument('dirty')]
-    )
+  test('ignores a row whose body is already confirmed', () => {
+    const confirmed = { ...localMeta('tracked', 'synced'), syncedBodyId: 'sha256:tracked' }
 
-    expect(result.bodyConfirmedIds).toEqual([])
+    const result = reconcileStorageDocuments([confirmed], [remoteDocument('tracked')])
+
+    expect(result.bodyUnconfirmedIds).toEqual([])
   })
 
-  test('does not re-confirm a row whose body revision is already tracked', () => {
-    const tracked = { ...localMeta('tracked', 'synced'), bodySyncedRevision: 1 }
+  test('ignores an index-only row, which has no local bytes to re-upload', () => {
+    const indexOnly = { ...localMeta('remote', 'synced'), hasFig: false, bodyId: null }
 
-    const result = reconcileStorageDocuments([tracked], [remoteDocument('tracked')])
+    const result = reconcileStorageDocuments([indexOnly], [remoteDocument('remote')])
 
-    expect(result.bodyConfirmedIds).toEqual([])
+    expect(result.bodyUnconfirmedIds).toEqual([])
   })
 
-  test('does not confirm a tombstoned row', () => {
+  test('ignores a tombstoned row', () => {
     const result = reconcileStorageDocuments(
       [localMeta('deleted', 'synced', true)],
       [remoteDocument('deleted')]
     )
 
-    expect(result.bodyConfirmedIds).toEqual([])
+    expect(result.bodyUnconfirmedIds).toEqual([])
   })
 })

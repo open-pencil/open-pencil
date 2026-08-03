@@ -43,7 +43,7 @@ describe('sync operation budgets', () => {
   //
   // Marked `failing` so the suite stays green while the defect is on record.
   // It will fail loudly the moment 1.3 lands, which is the signal to unmark it.
-  test.failing('renaming a document with no local body never parks it pending', async () => {
+  test('renaming a document with no local body never parks it pending', async () => {
     const h = createHarness()
     // Index-only: listed from the remote, body never downloaded (hasFig false).
     await h.store.upsertIndexMeta({
@@ -111,7 +111,7 @@ describe('sync operation budgets', () => {
   // may already have queued. Recorded here rather than fixed: the supersede rule
   // belongs with the body-identity work, where `bodyId` makes "same bytes"
   // decidable without consulting the revision at all.
-  test.failing('two enqueues at the same revision upload the body once', async () => {
+  test('two enqueues at the same revision upload the body once', async () => {
     const h = createHarness()
     await seedSyncedDocument(h.store, 'doc-7', BODY)
     const meta = await h.store.getMeta('doc-7')

@@ -6,12 +6,18 @@ export type StorageReconciliation = {
   remoteDocumentsToSeed: StorageDocument[]
   localIdsToPurge: string[]
   /**
-   * Rows written before body-upload tracking existed, whose presence in the
-   * remote listing proves the body is there. Backfilling `bodySyncedRevision`
-   * from this makes them evictable again — without it the cache budget is never
-   * enforced for existing installs and local storage grows without bound.
+   * Rows holding local bytes whose remote copy cannot be verified — written
+   * before body identity existed, so nothing records WHICH bytes are up there.
+   *
+   * Listing membership deliberately does NOT confirm them. It proves only that
+   * *a* body exists remotely, and marking these rows confirmed would let
+   * eviction delete a local copy the remote may never have received. The caller
+   * re-uploads them instead: one conservative round trip buys a real
+   * confirmation, after which the row is genuinely evictable. Without this the
+   * cache budget is never enforced for existing installs and local storage grows
+   * without bound.
    */
-  bodyConfirmedIds: string[]
+  bodyUnconfirmedIds: string[]
 }
 
 /** Merge a successful remote listing with pending local work without reviving tombstones. */
@@ -51,15 +57,12 @@ export function reconcileStorageDocuments(
     localIdsToPurge: local
       .filter((metadata) => metadata.tombstoned && !remoteIds.has(metadata.id))
       .map((metadata) => metadata.id),
-    // Only legacy rows: `bodySyncedRevision` absent entirely, not merely behind.
-    // A row that is `pending` has local edits the remote has NOT seen, so its
-    // presence in the listing proves an older body exists — never the current one.
-    bodyConfirmedIds: local
+    bodyUnconfirmedIds: local
       .filter(
         (metadata) =>
           !metadata.tombstoned &&
-          metadata.syncStatus === 'synced' &&
-          metadata.bodySyncedRevision === undefined &&
+          metadata.hasFig &&
+          metadata.syncedBodyId === null &&
           remoteIds.has(metadata.id)
       )
       .map((metadata) => metadata.id)

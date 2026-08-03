@@ -13,13 +13,22 @@ export type LocalCanvasMeta = {
   /** Monotonic local revision; increments on each local write. */
   revision: number
   /**
-   * Revision whose fig BYTES are confirmed on the remote. Metadata-only puts
-   * (rename/trash/restore) bump `revision` without uploading a body, so this is
-   * the only field that proves a durable remote copy exists. `syncStatus` does
-   * not: it used to be set by a sidecar write alone, which made eviction drop
-   * the last copy of a document the remote had never seen.
+   * Identity of the current local body, or `null` for an index-only row whose
+   * bytes were never downloaded. Derived from content, not from `revision`:
+   * a rename bumps the revision without changing a single byte of the body.
    */
-  bodySyncedRevision?: number
+  bodyId: string | null
+  /**
+   * Body identity last CONFIRMED on the remote. `null` means unknown or never
+   * confirmed — never "the current bytes are up there".
+   *
+   * The body is current remotely only when `bodyId !== null && bodyId ===
+   * syncedBodyId`. This is the only field that proves a durable remote copy
+   * exists; `syncStatus` does not, because it used to be set by a metadata
+   * sidecar write alone, which made eviction drop the last copy of a document
+   * the remote had never seen.
+   */
+  syncedBodyId: string | null
   syncStatus: LocalSyncStatus
   lastSyncedAt: string | null
   lastSyncError: string | null
@@ -36,13 +45,22 @@ export type LocalCanvasMeta = {
 /** Index-only row for remote canvases not yet downloaded (no fig body). */
 export type LocalCanvasIndexInput = Omit<
   LocalCanvasMeta,
-  'hasFig' | 'hasThumb' | 'tombstoned' | 'revision' | 'sourceFormat' | 'trashedAt'
+  | 'hasFig'
+  | 'hasThumb'
+  | 'tombstoned'
+  | 'revision'
+  | 'sourceFormat'
+  | 'trashedAt'
+  | 'bodyId'
+  | 'syncedBodyId'
 > & {
   revision?: number
   hasFig?: boolean
   hasThumb?: boolean
   sourceFormat?: StorageDocumentFormat
   trashedAt?: string | null
+  bodyId?: string | null
+  syncedBodyId?: string | null
 }
 
 export type LocalCanvasWriteInput = {
@@ -57,6 +75,8 @@ export type LocalCanvasWriteInput = {
   /** If set, keep this revision; otherwise increment from existing. */
   revision?: number
   syncStatus?: LocalSyncStatus
+  /** Identity of `figBytes`. Computed by the caller so the hash runs once. */
+  bodyId?: string | null
   /** Set when the bytes being written are known to already exist remotely. */
-  bodySyncedRevision?: number
+  syncedBodyId?: string | null
 }

@@ -28,11 +28,12 @@ async function seed(
     providerId: 's3-compatible',
     name: id,
     figBytes: new Uint8Array(sizeMb * MB),
+    bodyId: `sha256:${id}`,
     syncStatus
   })
   await local.updateMeta(id, {
     lastOpenedAt,
-    ...(syncStatus === 'synced' ? { bodySyncedRevision: meta.revision } : {})
+    ...(syncStatus === 'synced' ? { syncedBodyId: meta.bodyId } : {})
   })
 }
 
@@ -88,7 +89,7 @@ describe('evictLocalFigCache', () => {
     // body reaching the remote. Evicting here destroys the only copy.
     await seed('sidecar-only', 6, '2026-01-01')
     const local = getLocalCanvasStore()
-    await local.updateMeta('sidecar-only', { bodySyncedRevision: undefined })
+    await local.updateMeta('sidecar-only', { syncedBodyId: null })
 
     const evicted = await evictLocalFigCache(new Set(), 1 * MB)
 
@@ -97,19 +98,31 @@ describe('evictLocalFigCache', () => {
     expect(await local.readFig('sidecar-only')).not.toBeNull()
   })
 
-  test('keeps bytes when the body upload is behind the current revision', async () => {
-    // Body synced at r1, then the user edited again — r2 exists only locally.
+  test('keeps bytes when the local body has changed since the last upload', async () => {
+    // Body confirmed, then the user edited again — the new bytes exist only here.
     await seed('stale-body', 6, '2026-01-01')
     const local = getLocalCanvasStore()
-    const before = await local.getMeta('stale-body')
-    await local.updateMeta('stale-body', {
-      revision: (before?.revision ?? 1) + 1,
-      syncStatus: 'synced'
-    })
+    await local.updateMeta('stale-body', { bodyId: 'sha256:stale-body-edited' })
 
     const evicted = await evictLocalFigCache(new Set(), 1 * MB)
 
     expect(evicted).toBe(0)
     expect(await local.readFig('stale-body')).not.toBeNull()
+  })
+
+  test('still evicts after a rename, which changes no bytes', async () => {
+    // The counterpart: `revision` advancing is not evidence the body differs.
+    // Comparing revisions kept renamed documents pinned in the cache forever.
+    await seed('renamed', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    const before = await local.getMeta('renamed')
+    await local.updateMeta('renamed', {
+      name: 'Renamed',
+      revision: (before?.revision ?? 1) + 1
+    })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
+    expect(evicted).toBe(1)
   })
 })

@@ -36,7 +36,7 @@ import { isDeckStorageFile, prepareDeckStorageImport } from '@/app/storage/impor
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
-import { enqueuePutThumb, persistStorageCanvasLocally } from '@/app/storage/sync'
+import { enqueuePutCanvas, enqueuePutThumb, persistStorageCanvasLocally } from '@/app/storage/sync'
 import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
 import { activeTab, createDeckTab, createTab, openStorageDocumentInNewTab } from '@/app/tabs'
@@ -287,9 +287,12 @@ async function refresh(): Promise<void> {
     // Self-healing migration for rows written before body-upload tracking: the
     // remote listing enumerates fig keys, so appearing in it proves the body is
     // there. Restores evictability without trusting the old `synced` flag.
-    for (const id of reconciliation.bodyConfirmedIds) {
+    // Legacy rows carry bytes nothing has identified. Re-upload rather than
+    // assume: the listing proves a body exists remotely, not that it matches
+    // what is on disk here, and eviction acts on that difference.
+    for (const id of reconciliation.bodyUnconfirmedIds) {
       const metadata = local.find((row) => row.id === id)
-      if (metadata) await localStore.updateMeta(id, { bodySyncedRevision: metadata.revision })
+      if (metadata) await enqueuePutCanvas(id, metadata.revision)
     }
     for (const document of reconciliation.remoteDocumentsToSeed) {
       await localStore.upsertIndexMeta({

@@ -12,6 +12,7 @@ import {
 } from '@/app/integrations/storage'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
+import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
 import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
@@ -114,10 +115,16 @@ function documentMetadata(meta: LocalCanvasMeta): StorageDocumentMetadata {
 /**
  * Record a successful remote write.
  *
- * A document only counts as `synced` when its BYTES are on the remote at the
- * current revision. Metadata-only puts must not claim it: renaming a document
- * with a pending body upload used to mark the row synced, which both hid the
- * missing upload and made the local blob evictable — destroying the only copy.
+ * A document only counts as `synced` when its BYTES are on the remote.
+ * Metadata-only puts must not claim it: renaming a document with a pending body
+ * upload used to mark the row synced, which both hid the missing upload and made
+ * the local blob evictable — destroying the only copy.
+ *
+ * Staleness is decided on body IDENTITY, never on the revision counter. A
+ * rename bumps `revision` without touching a byte, so a revision comparison
+ * reported the body as stale and re-uploaded the whole document; on a row with
+ * no local body it demoted to `pending` with nothing to enqueue, stranding the
+ * row forever.
  */
 export async function markRevisionSynced(
   store: LocalCanvasStore,
@@ -127,13 +134,17 @@ export async function markRevisionSynced(
 ): Promise<boolean> {
   const latest = await store.getMeta(canvasId)
   if (!latest || latest.revision !== revision || latest.tombstoned) return false
-  const bodySyncedRevision = options.bodyUploaded ? revision : latest.bodySyncedRevision
-  const bodyIsCurrent = bodySyncedRevision === revision
+  const syncedBodyId = options.bodyUploaded ? latest.bodyId : latest.syncedBodyId
+  const bodyIsCurrent = bodyIsConfirmed({ bodyId: latest.bodyId, syncedBodyId })
+  // A row with no local body has nothing to upload, so it is not waiting on one.
+  // `pending` here would be unrecoverable: the repair below cannot enqueue a body
+  // job without bytes, leaving a permanent `pending` with an empty outbox.
+  const bodyPending = latest.bodyId !== null && !bodyIsCurrent
   await store.updateMeta(
     canvasId,
     {
-      syncStatus: bodyIsCurrent ? 'synced' : 'pending',
-      bodySyncedRevision,
+      syncStatus: bodyPending ? 'pending' : 'synced',
+      syncedBodyId,
       lastSyncedAt: new Date().toISOString(),
       lastSyncError: null
     },
@@ -239,16 +250,15 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     }
     await markRevisionSynced(store, job.canvasId, revision)
 
-    // A sidecar write proves nothing about the body. If this revision's bytes are
+    // A sidecar write proves nothing about the body. If the current bytes are
     // still missing remotely, queue the upload instead of leaving a row that looks
     // synced but has no remote object behind it.
+    //
+    // `hasFig` is not part of the condition: a row with bytes always has a
+    // `bodyId`, and one without has nothing to upload. Gating on `hasFig` while
+    // demoting on a revision mismatch is what stranded bodyless rows.
     const latest = await store.getMeta(job.canvasId)
-    if (
-      latest &&
-      !latest.tombstoned &&
-      latest.hasFig &&
-      latest.bodySyncedRevision !== latest.revision
-    ) {
+    if (latest && !latest.tombstoned && latest.bodyId !== null && !bodyIsConfirmed(latest)) {
       await deps.getOutbox().enqueue({
         canvasId: job.canvasId,
         type: 'putCanvas',
