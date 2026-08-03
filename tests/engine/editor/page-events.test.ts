@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
 import { createEditor } from '@open-pencil/core/editor'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('editor page events', () => {
   test('emits page ready only after the switched page finishes loading fonts', async () => {

@@ -92,10 +92,7 @@ watch(
     // one does the reverse. Neither transition is an edit. Only two real version values
     // changing while this page remains current should invalidate its cached thumbnail.
     const wasEdited =
-      previous !== undefined &&
-      previous[1] !== null &&
-      version !== null &&
-      previous[1] !== version
+      previous !== undefined && previous[1] !== null && version !== null && previous[1] !== version
     void updatePreview(wasEdited)
   },
   { immediate: true, flush: 'post' }
