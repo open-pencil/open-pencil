@@ -199,6 +199,11 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
       })
     }
 
+    // The eviction LRU key. Nothing wrote it before, so the cache evicted
+    // least-recently-WRITTEN — an untouched document that autosaved once
+    // outranked one the user opens daily.
+    await local.updateMeta(document.id, { lastOpenedAt: new Date().toISOString() })
+
     const sourceFormat = localMetadata?.sourceFormat ?? document.sourceFormat
     const fileBytes = new Uint8Array(bytes.byteLength)
     fileBytes.set(bytes)

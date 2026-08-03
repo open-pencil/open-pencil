@@ -126,3 +126,47 @@ describe('evictLocalFigCache', () => {
     expect(evicted).toBe(1)
   })
 })
+
+describe('lastOpenedAt is written by the product', () => {
+  /**
+   * The eviction tests used to set `lastOpenedAt` themselves, so six passing
+   * tests validated an ordering the product could not produce: nothing wrote
+   * the field, and `buildIndexMeta` dropped it on every reconcile. The LRU was
+   * really least-recently-WRITTEN.
+   */
+  test('survives an index-only reconcile', async () => {
+    const local = getLocalCanvasStore()
+    await local.writeCanvas({
+      id: 'kept',
+      providerId: 's3-compatible',
+      name: 'kept',
+      figBytes: new Uint8Array([1]),
+      bodyId: 'sha256:kept'
+    })
+    await local.updateMeta('kept', { lastOpenedAt: '2026-05-05T00:00:00.000Z' })
+
+    // A remote listing re-upserts the row; the LRU key must not be erased.
+    await local.upsertIndexMeta({
+      id: 'kept',
+      providerId: 's3-compatible',
+      name: 'kept',
+      updatedAt: new Date().toISOString(),
+      syncStatus: 'synced',
+      lastSyncedAt: new Date().toISOString(),
+      lastSyncError: null
+    })
+
+    expect((await local.getMeta('kept'))?.lastOpenedAt).toBe('2026-05-05T00:00:00.000Z')
+  })
+
+  test('falls back to a write timestamp when a document was never opened', async () => {
+    // Ordering must stay total: a never-opened document still needs a position.
+    await seed('never-opened', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    await local.updateMeta('never-opened', { lastOpenedAt: undefined })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
+    expect(evicted).toBe(1)
+  })
+})

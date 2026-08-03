@@ -302,9 +302,14 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
 
     if (job.type === 'deleteCanvas') {
       await adapter.deleteDocument(job.canvasId)
-      // Keep the tombstoned row: reconcile purges it once the remote listing
+      // Keep the tombstoned ROW: reconcile purges it once the remote listing
       // confirms the object is gone. Removing it here opened a race where a
       // concurrent reconcile re-seeded the canvas from a stale remote listing.
+      //
+      // The bytes are a different matter — the remote has acknowledged the
+      // delete, so nothing will ever read them again. Reclaim them now instead
+      // of holding them until a workspace refresh happens to run.
+      await store.clearFig(job.canvasId)
       await store.updateMeta(job.canvasId, { syncStatus: 'synced', lastSyncError: null })
       return
     }
