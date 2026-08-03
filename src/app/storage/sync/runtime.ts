@@ -11,6 +11,7 @@ import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { createSyncEngine, StorageSyncBlockedError } from '@/app/storage/sync/engine'
 import { migrateLegacyOutboxJobs } from '@/app/storage/sync/migrate-jobs'
 import { getOutbox } from '@/app/storage/sync/outbox'
+import { repairOrphanedPendingRows } from '@/app/storage/sync/repair'
 import { providerIdOfTarget, targetIsCurrent, type StorageTargetID } from '@/app/storage/target'
 
 /**
@@ -108,11 +109,18 @@ export const resumeStorageSync = (): Promise<void> => syncEngine.resume()
 export const clearStorageLocalMirror = (): Promise<void> => syncEngine.clearLocalMirror()
 
 /**
- * Bring the durable queue up to the current schema, then start draining it.
+ * Bring the durable queue up to the current schema, reconcile the rows against
+ * it, then start draining.
  *
  * The migration has to complete BEFORE the first pump: a legacy job carries no
  * target, and `runJob` deliberately refuses to guess one. Draining first would
  * park perfectly repairable jobs behind a blocked queue on every cold start.
+ *
+ * The repair sweep runs BETWEEN the two, and the order is load-bearing in both
+ * directions. Sweeping before the migration would judge rows whose jobs are
+ * about to be pinned — an untargeted job looks like no job at all, so the sweep
+ * would "fix" a row that was never broken. Sweeping after the pump would race
+ * the drain that is busy changing the very rows it inspects.
  */
 export async function startStorageSync(): Promise<void> {
   try {
@@ -121,6 +129,13 @@ export async function startStorageSync(): Promise<void> {
     // A migration that cannot read the queue must not also prevent the queue
     // from running — jobs already carrying a target are unaffected by it.
     console.warn('[Storage sync] legacy job migration failed:', error)
+  }
+  try {
+    await repairOrphanedPendingRows()
+  } catch (error) {
+    // Same reasoning: a sweep that cannot read local state leaves the stranded
+    // rows exactly as it found them, and healthy queued work still drains.
+    console.warn('[Storage sync] orphaned pending repair failed:', error)
   }
   await syncEngine.kick()
 }

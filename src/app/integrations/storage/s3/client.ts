@@ -149,7 +149,12 @@ export async function s3Request(
     const { CloudCorsError, isLikelyCorsOrNetworkError, formatBrowserCorsHelpMessage } =
       await import('@/app/integrations/storage/s3/cors')
     if (isLikelyCorsOrNetworkError(error)) {
-      throw new CloudCorsError(formatBrowserCorsHelpMessage())
+      // Keep the browser's own words. The guidance is rendered beside the raw
+      // error, not in place of it — "CORS issue: …" alone tells a bug report
+      // nothing about what actually failed, and `TypeError: Failed to fetch` is
+      // the string anyone searching for this will recognise.
+      const cause = error instanceof Error ? error.message : String(error)
+      throw new CloudCorsError(`${formatBrowserCorsHelpMessage()}\n\n${cause}`)
     }
     throw error
   }
@@ -190,7 +195,12 @@ export async function putObject(
     onUploadProgress
   )
   if (!res.ok) {
-    throw new S3HttpError(res.status, `Failed to upload ${key}`)
+    // The provider's own words are the actionable part. Replacing them with
+    // "Failed to upload <key>" left every distinct cause — no such bucket,
+    // access denied, clock skew, signature mismatch — reading identically, and
+    // each of those needs a completely different fix.
+    const { message, code } = await readErrorBody(res)
+    throw new S3HttpError(res.status, `Failed to upload ${key}: ${message}`, code)
   }
 }
 

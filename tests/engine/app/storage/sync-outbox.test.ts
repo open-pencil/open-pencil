@@ -66,3 +66,43 @@ describe('memory outbox', () => {
     expect(list[0]?.revision).toBe(2)
   })
 })
+
+describe('supersession is partitioned by destination', () => {
+  /**
+   * Queueing an upload for one bucket used to discard one already owed to
+   * another: the filter matched on canvas and revision alone. The bytes owed to
+   * the first destination were then never sent, and nothing recorded that they
+   * had been dropped.
+   */
+  const job = (targetId: string | null, revision: number): OutboxJob => ({
+    id: `${targetId}-${revision}`,
+    canvasId: 'doc',
+    type: 'putCanvas',
+    revision,
+    targetId,
+    createdAt: 0,
+    attempts: 0,
+    nextAttemptAt: 0
+  })
+
+  test('keeps work owed to a different target', () => {
+    const queue = [job('s3#aaaa', 1)]
+
+    const next = supersedePutCanvasJobs(queue, 'doc', 1, 's3#bbbb')
+
+    expect(next).toHaveLength(1)
+    expect(next[0]?.targetId).toBe('s3#aaaa')
+  })
+
+  test('still supersedes an older job for the same target', () => {
+    const queue = [job('s3#aaaa', 1)]
+
+    expect(supersedePutCanvasJobs(queue, 'doc', 2, 's3#aaaa')).toHaveLength(0)
+  })
+
+  test('treats local-only work as its own partition', () => {
+    const queue = [job(null, 1)]
+
+    expect(supersedePutCanvasJobs(queue, 'doc', 1, 's3#aaaa')).toHaveLength(1)
+  })
+})

@@ -25,7 +25,9 @@ const {
   syncError = null,
   thumbnailError = null,
   trashView = false,
-  busy = false
+  busy = false,
+  unavailable = false,
+  targetLabel = ''
 } = defineProps<{
   document: StorageDocument
   thumbnailUrl?: string
@@ -35,6 +37,18 @@ const {
   thumbnailError?: string | null
   trashView?: boolean
   busy?: boolean
+  /**
+   * No copy on this device and none at the target either, so there is nothing
+   * to open. Say so on the card instead of letting the click fail: the row is
+   * otherwise indistinguishable from a working document.
+   *
+   * Not a deletion, and never treated as one — the target may simply be
+   * mid-replacement. The caller recomputes this from each listing, so the card
+   * returns to normal on its own once the document is listed again.
+   */
+  unavailable?: boolean
+  /** Human name of the destination, for the unavailable explanation. */
+  targetLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -65,9 +79,15 @@ useIntersectionObserver(
   { rootMargin: '240px' }
 )
 
+const interactive = computed(() => !trashView && !busy && !unavailable)
+
 function openDocument(): void {
-  if (!trashView && !busy) emit('open', document)
+  if (interactive.value) emit('open', document)
 }
+
+const unavailableDetail = computed(() =>
+  dialogs.value.storageDocumentUnavailableDetail({ target: targetLabel })
+)
 
 /** Real byte progress (0..1) while this document's body is uploading. */
 const uploadProgress = computed(() => uploadProgressByCanvas.value.get(document.id) ?? null)
@@ -87,12 +107,13 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
       <div
         ref="card"
         role="button"
-        :tabindex="trashView || busy ? -1 : 0"
-        :aria-disabled="trashView || busy"
+        :tabindex="interactive ? 0 : -1"
+        :aria-disabled="!interactive"
         :aria-label="document.name"
         class="group relative overflow-hidden rounded-lg border border-border bg-panel text-left hover:border-panel-focus hover:bg-hover"
-        :class="busy && 'pointer-events-none opacity-60'"
+        :class="[busy && 'pointer-events-none opacity-60', unavailable && 'cursor-not-allowed']"
         :data-document-id="document.id"
+        :data-unavailable="unavailable ? '' : undefined"
         @click="openDocument"
         @keydown.enter="openDocument"
         @keydown.space.prevent="openDocument"
@@ -101,7 +122,13 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
           class="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-panel-field"
           data-slot="storage-thumbnail"
         >
-          <img v-if="thumbnailUrl" :src="thumbnailUrl" alt="" class="size-full object-cover" />
+          <img
+            v-if="thumbnailUrl"
+            :src="thumbnailUrl"
+            alt=""
+            class="size-full object-cover"
+            :class="unavailable && 'opacity-40 grayscale'"
+          />
           <icon-lucide-presentation v-else class="size-5 text-muted/50" />
           <img
             :src="storageDocumentIconUrls[document.sourceFormat]"
@@ -116,6 +143,21 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
           <p class="mt-1 text-[10px] text-muted">
             {{ new Date(document.trashedAt ?? document.updatedAt).toLocaleString() }}
           </p>
+          <!--
+            Neither an error nor a deletion: the document is simply not
+            reachable from here right now. The tooltip names the destination and
+            says so plainly, because the alarming reading — "my document is
+            gone" — is the wrong one while a replacement may be in flight.
+          -->
+          <Tip v-if="unavailable" :label="unavailableDetail">
+            <p
+              class="mt-1 flex items-center gap-1 text-[10px] text-muted"
+              data-slot="storage-document-unavailable"
+            >
+              <icon-lucide-cloud-off class="size-3 shrink-0" />
+              <span class="truncate">{{ dialogs.storageDocumentUnavailable }}</span>
+            </p>
+          </Tip>
           <!--
             The provider's own words are the tooltip, not a paraphrase: the
             label says which layer failed, the message says what to fix.
@@ -194,7 +236,14 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
             <icon-lucide-pencil :class="menuCls.icon" />
             <span>{{ dialogs.storageRename }}</span>
           </ContextMenuItem>
+          <!--
+            Duplicating reads the body, which is exactly what cannot be
+            reached — offering it would only reproduce the failed open under a
+            different name. Rename and Trash stay: both are metadata-only, and
+            Trash is the one way out of a row the user has decided is dead.
+          -->
           <ContextMenuItem
+            v-if="!unavailable"
             data-test-id="storage-context-duplicate"
             :class="menuCls.item"
             @select="emit('duplicate', document)"

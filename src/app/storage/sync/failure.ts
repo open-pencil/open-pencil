@@ -75,7 +75,14 @@ export function httpStatusOf(error: unknown): number | null {
 
 /** A fetch that never reached the server — CORS, DNS, offline, or a dead host. */
 export function isFetchLevelFailure(error: unknown): boolean {
-  return error instanceof TypeError && /fetch/i.test(error.message)
+  if (error instanceof TypeError && /fetch/i.test(error.message)) return true
+  // The adapter wraps a blocked fetch in `CloudCorsError` before it reaches
+  // here, so an `instanceof TypeError` test alone never matched the very case
+  // it was written for — a real CORS rejection was categorised `unknown`, which
+  // suppressed both the guidance and the bucket configuration to copy.
+  // Matched by name rather than by import to keep the storage layer out of a
+  // provider-specific module.
+  return error instanceof Error && error.name === 'CloudCorsError'
 }
 
 export function categorizeSyncFailure(error: unknown, browserOnline = true): SyncFailureCategory {

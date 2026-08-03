@@ -1,3 +1,4 @@
+import { backupIsActive } from '@/app/storage/backup'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
@@ -9,6 +10,8 @@ export type RetargetDependencies = {
   store: LocalCanvasStore
   outbox: Outbox
   enqueueCanvas: (canvasId: string, revision: number) => Promise<void>
+  /** Whether uploads are permitted at all; off means pause, not withdraw. */
+  backupActive: () => boolean
 }
 
 export type RetargetResult = {
@@ -23,7 +26,8 @@ function defaultDependencies(): RetargetDependencies {
   return {
     store: getLocalCanvasStore(),
     outbox: getOutbox(),
-    enqueueCanvas: enqueuePutCanvas
+    enqueueCanvas: enqueuePutCanvas,
+    backupActive: backupIsActive
   }
 }
 
@@ -46,6 +50,11 @@ function defaultDependencies(): RetargetDependencies {
  *    bucket is not a document the user asked to remove from it. Cleanup is a
  *    separate, explicit decision; doing it here would make changing a setting
  *    destroy data.
+ *
+ * Clearing the destination entirely (`null`) is the single-document form of
+ * disconnect: bytes and metadata stay, the row simply stops replicating. For the
+ * whole-workspace transition, which also has index-only rows and tombstones to
+ * decide about, see `disconnectStorageTarget`.
  *
  * The fourth property lives in `markRevisionSynced`: an upload already in
  * flight when this runs completes against the target it captured, and its
@@ -74,14 +83,18 @@ export async function retargetStorageDocument(
   )
   for (const job of cancelled) await deps.outbox.remove(job.id)
 
-  // Only a row that actually holds bytes can queue an upload. A bodyless
-  // index-only row has nothing to send, and `pending` without a durable job is
-  // the unrecoverable state phase 1 removed.
-  const canUpload = nextTargetId !== null && meta.bodyId !== null
+  // Only a row that actually holds bytes can queue an upload, and only while
+  // backup is on. A bodyless index-only row has nothing to send, and `pending`
+  // without a durable job is the unrecoverable state phase 1 removed.
+  const canUpload = nextTargetId !== null && meta.bodyId !== null && deps.backupActive()
   const updated = await deps.store.updateMeta(canvasId, {
     syncTargetId: nextTargetId,
     syncedBodyId: null,
-    syncStatus: canUpload ? 'pending' : 'synced',
+    // Not `synced`: this row's confirmation was just cleared, and claiming one
+    // for a destination that has never received the bytes — or for no
+    // destination at all — is what makes eviction delete the only copy.
+    // `local` is the honest name for "committed here, no upload intended".
+    syncStatus: canUpload ? 'pending' : 'local',
     lastSyncedAt: null,
     lastSyncError: null
   })

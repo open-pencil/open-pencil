@@ -18,9 +18,38 @@ export type StorageReconciliation = {
    * without bound.
    */
   bodyUnconfirmedIds: string[]
+  /**
+   * Rows that claim to be `synced`, are absent from this listing, and hold no
+   * local bytes. Nothing on this device can open them and nothing at the target
+   * can supply them, so they are surfaced as UNAVAILABLE instead of looking
+   * ordinary right up until the open fails.
+   *
+   * This is NOT a deletion signal and must never become one. Appwrite replaces
+   * a body by deleting it and re-uploading, because its files are immutable by
+   * id, so a document another device is mid-replacement on is genuinely missing
+   * from a listing for the length of that upload. Absence therefore has two
+   * causes — deleted elsewhere, and being rewritten elsewhere — and this
+   * function cannot tell them apart. "Cannot be opened right now" is true under
+   * both readings; "deleted" is true under only one.
+   *
+   * Derived fresh from every listing and never persisted, which is what makes
+   * recovery automatic: the first listing that includes the row again simply
+   * does not report it, and the row is ordinary once more with no user action.
+   *
+   * A row holding local bytes is never reported here however the listing looks.
+   * Local bytes are openable on their own; the remote copy is a backup of them.
+   */
+  unavailableIds: string[]
 }
 
-/** Merge a successful remote listing with pending local work without reviving tombstones. */
+/**
+ * Merge a successful remote listing with pending local work without reviving
+ * tombstones.
+ *
+ * `local` must already be narrowed to the rows belonging to the target that
+ * produced `remote`. Every absence-sensitive output here reads a missing id as
+ * "missing from ITS OWN target", which is only true under that narrowing.
+ */
 export function reconcileStorageDocuments(
   local: LocalCanvasMeta[],
   remote: StorageDocument[]
@@ -64,6 +93,15 @@ export function reconcileStorageDocuments(
           metadata.hasFig &&
           metadata.syncedBodyId === null &&
           remoteIds.has(metadata.id)
+      )
+      .map((metadata) => metadata.id),
+    unavailableIds: local
+      .filter(
+        (metadata) =>
+          !metadata.tombstoned &&
+          !metadata.hasFig &&
+          metadata.syncStatus === 'synced' &&
+          !remoteIds.has(metadata.id)
       )
       .map((metadata) => metadata.id)
   }

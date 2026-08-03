@@ -291,5 +291,7 @@
   "backUpToCloudOff": "一時停止中 — ドキュメントはこのデバイスに保存されます。バケット内のデータは削除されず、設定も保持されます。",
   "localDurabilityTitle": "このブラウザに保存されています",
   "localDurabilityBody": "ドキュメントはこの端末に保存されます。サイトデータを消去すると削除され、Safari では約7日間使用しないと削除される場合があります。永続的なコピーを保つにはクラウドストレージを接続してください。",
-  "localDurabilityDismiss": "OK"
+  "localDurabilityDismiss": "OK",
+  "storageDocumentUnavailable": "利用できません",
+  "storageDocumentUnavailableDetail": "このドキュメントはこの端末に複製がなく、{target} の一覧にもすでにありません。ここでは何も削除されていません。他の端末が現在置き換え中であれば、次の更新で自動的に戻ります。"
 }

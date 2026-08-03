@@ -42,10 +42,16 @@ export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error' | 'blocked'
 export function supersedePutCanvasJobs(
   jobs: OutboxJob[],
   canvasId: string,
-  revision: number
+  revision: number,
+  targetId: StorageTargetID | null
 ): OutboxJob[] {
   return jobs.filter((job) => {
     if (job.canvasId !== canvasId || job.type !== 'putCanvas') return true
+    // Partitioned by destination. Without this, queueing an upload for target B
+    // silently discarded one already owed to target A — the two are different
+    // work and both are owed. Cancelling A's job is retargeting's decision to
+    // make explicitly, not a side effect of saving to somewhere else.
+    if (job.targetId !== targetId) return true
     return job.revision > revision
   })
 }

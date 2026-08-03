@@ -97,6 +97,16 @@ const deleteOpen = ref(false)
 const deleteTarget = ref<StorageDocument | null>(null)
 const deletePermanently = ref(false)
 const thumbnailUrls = ref<Record<string, string>>({})
+/**
+ * Rows with no local body that the last listing did not contain.
+ *
+ * Derived from the listing and never persisted, which is the whole recovery
+ * mechanism: every refresh recomputes the set from scratch, so a document that
+ * was merely mid-replacement on another device becomes ordinary again the first
+ * time it is listed, with nothing for the user to do. Persisting this would
+ * turn a transient absence into a sticky state that needs clearing.
+ */
+const unavailableDocumentIds = ref<Set<string>>(new Set())
 const { errors: documentSyncErrors, setFrom: setDocumentSyncErrors } = useDocumentSyncErrors(
   () => activeStorageProviderID.value
 )
@@ -133,6 +143,18 @@ const sortOptions = computed(() => [
   { value: 'date-desc' as const, label: dialogs.value.storageSortNewest },
   { value: 'date-asc' as const, label: dialogs.value.storageSortOldest }
 ])
+/**
+ * The destination in the user's words. The provider label alone would not
+ * distinguish two buckets on the same provider, and "unavailable" is only
+ * actionable if it says unavailable WHERE.
+ *
+ * Non-secret preference fields only — the same allowlist the bug-report copy
+ * uses, so no credential can reach a tooltip.
+ */
+const targetLabel = computed(() => {
+  const context = Object.values(nonSecretProviderContext(provider.value.id))
+  return context.length ? `${provider.value.label} (${context.join(' · ')})` : provider.value.label
+})
 const deleteDialogDescription = computed(() => {
   const target = deleteTarget.value
   if (!target) return ''
@@ -172,6 +194,12 @@ async function loadDocumentThumbnail(document: StorageDocument, generation: numb
     setThumbnailUrl(document.id, local)
     return
   }
+
+  // A locally cached preview is still worth showing for an unavailable row —
+  // it is free and it keeps the card recognisable. What follows is not: the
+  // target does not list this document, so its preview fetch 404s and the
+  // backfill below would download a whole document that is not there.
+  if (unavailableDocumentIds.value.has(document.id)) return
 
   const adapter = createActiveStorageAdapter(providerId)
   const remote = adapter.getThumbnail
@@ -259,6 +287,10 @@ async function paintLocalDocuments(generation: number, providerId: string): Prom
     (metadata) => metadata.syncTargetId === targetId
   )
   if (!isCurrentRefresh(generation, providerId)) return
+  // Nothing is unavailable until a listing says so. Clearing here also clears it
+  // when the listing FAILS, which is correct: an unreachable bucket is evidence
+  // about the bucket, never about one document's absence from it.
+  unavailableDocumentIds.value = new Set()
   documents.value = local.map((metadata) => ({
     id: metadata.id,
     name: metadata.name,
@@ -337,6 +369,9 @@ async function refresh(): Promise<void> {
 
     const reconciliation = reconcileStorageDocuments(local, remote)
     documents.value = reconciliation.documents
+    // Recomputed wholesale, so a row listed again this pass is simply not in the
+    // new set and needs no clearing of its own. Nothing is deleted either way.
+    unavailableDocumentIds.value = new Set(reconciliation.unavailableIds)
     setDocumentSyncErrors(local)
 
     for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
@@ -389,6 +424,9 @@ async function refresh(): Promise<void> {
 }
 
 async function openDocument(document: StorageDocument): Promise<void> {
+  // The card already refuses to emit for these; refusing here too keeps the
+  // guarantee with the state that owns it rather than with the presentation.
+  if (unavailableDocumentIds.value.has(document.id)) return
   await router.push('/editor')
   await nextTick()
   await openStorageDocumentInNewTab(document)
@@ -773,6 +811,8 @@ onBeforeUnmount(clearThumbnailUrls)
           :thumbnail-error="documentSyncErrors[document.id]?.thumbnail"
           :trash-view="folder === 'trash'"
           :busy="busyDocumentIds.has(document.id)"
+          :unavailable="unavailableDocumentIds.has(document.id)"
+          :target-label="targetLabel"
           @open="openDocument"
           @rename="startRename"
           @duplicate="duplicateDocument"

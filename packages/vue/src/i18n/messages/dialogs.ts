@@ -236,6 +236,10 @@ export const dialogMessageDefaults = {
     'The provider reported a server-side error. These usually clear on their own; retrying is safe.',
   storageDocumentSyncFailed: 'Sync failed',
   storageDocumentPreviewNotSynced: 'Preview not synced',
+  storageDocumentUnavailable: 'Unavailable',
+  storageDocumentUnavailableDetail: params(
+    'This document has no copy on this device, and {target} no longer lists it. Nothing has been deleted here. If another device is replacing it right now, it comes back by itself on the next refresh.'
+  ),
   openStorageWorkspace: 'Open workspace',
   backToStorageWorkspace: 'Workspace',
   newStoredDocument: 'New document',

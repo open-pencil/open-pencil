@@ -52,11 +52,12 @@ function buildJob(partial: OutboxEnqueueInput): OutboxJob {
 function withJobQueued(queue: OutboxJob[], job: OutboxJob): OutboxJob[] {
   let next = queue
   if (job.type === 'putCanvas') {
-    next = supersedePutCanvasJobs(next, job.canvasId, job.revision)
+    next = supersedePutCanvasJobs(next, job.canvasId, job.revision, job.targetId)
     next = next.filter(
       (queued) =>
         queued.canvasId !== job.canvasId ||
         queued.type !== 'putMetadata' ||
+        queued.targetId !== job.targetId ||
         queued.revision > job.revision
     )
   }

@@ -112,3 +112,65 @@ describe('unconfirmed legacy bodies', () => {
     expect(result.bodyUnconfirmedIds).toEqual([])
   })
 })
+
+/** A row with no bytes here and none at the target: openable from nowhere. */
+function indexOnlyMeta(id: string, syncStatus: LocalCanvasMeta['syncStatus']): LocalCanvasMeta {
+  return { ...localMeta(id, syncStatus), hasFig: false, bodyId: null, figSize: 0 }
+}
+
+describe('unreachable remote-only rows', () => {
+  test('reports a synced index-only row the listing does not contain', () => {
+    const result = reconcileStorageDocuments([indexOnlyMeta('evicted', 'synced')], [])
+
+    expect(result.unavailableIds).toEqual(['evicted'])
+  })
+
+  test('keeps the unavailable row visible and never purges it', () => {
+    // Surfacing it must not remove it: absence from a listing is not deletion,
+    // and dropping the row would destroy the only record that it ever existed.
+    const result = reconcileStorageDocuments([indexOnlyMeta('evicted', 'synced')], [])
+
+    expect(result.documents.map((document) => document.id)).toEqual(['evicted'])
+    expect(result.localIdsToPurge).toEqual([])
+  })
+
+  test('recovers on its own when a later listing contains the row again', () => {
+    // The mid-replacement case: another device deleted the body to re-upload it
+    // (Appwrite files are immutable by id), so one listing misses it and the
+    // next has it back. No user action, no stored state to clear.
+    const row = indexOnlyMeta('replacing', 'synced')
+
+    expect(reconcileStorageDocuments([row], []).unavailableIds).toEqual(['replacing'])
+    expect(reconcileStorageDocuments([row], [remoteDocument('replacing')]).unavailableIds).toEqual(
+      []
+    )
+  })
+
+  test('leaves a row holding local bytes available however the listing looks', () => {
+    // Local bytes are the point: they open without the network, so an absent
+    // remote copy is a backup problem, not an availability one.
+    const result = reconcileStorageDocuments([localMeta('cached', 'synced')], [])
+
+    expect(result.unavailableIds).toEqual([])
+  })
+
+  test('ignores a row that is not claiming to be synced', () => {
+    // `pending` and `error` rows already carry their own sync state, and a row
+    // still queued for upload is absent from the listing by design.
+    expect(
+      reconcileStorageDocuments([indexOnlyMeta('queued', 'pending')], []).unavailableIds
+    ).toEqual([])
+    expect(
+      reconcileStorageDocuments([indexOnlyMeta('failed', 'error')], []).unavailableIds
+    ).toEqual([])
+    expect(
+      reconcileStorageDocuments([indexOnlyMeta('offline', 'local')], []).unavailableIds
+    ).toEqual([])
+  })
+
+  test('ignores a tombstoned row, which is on its way out anyway', () => {
+    const tombstoned = { ...indexOnlyMeta('deleted', 'synced'), tombstoned: true }
+
+    expect(reconcileStorageDocuments([tombstoned], []).unavailableIds).toEqual([])
+  })
+})

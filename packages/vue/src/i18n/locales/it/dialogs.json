@@ -291,5 +291,7 @@
   "backUpToCloudOff": "In pausa — i documenti restano su questo dispositivo. Nulla viene eliminato dal bucket e le impostazioni vengono mantenute.",
   "localDurabilityTitle": "Salvato in questo browser",
   "localDurabilityBody": "I tuoi documenti sono salvati su questo dispositivo. Cancellare i dati del sito li eliminerà e Safari potrebbe rimuoverli dopo circa 7 giorni di inattività. Collega un archivio cloud per conservarne una copia duratura.",
-  "localDurabilityDismiss": "Ho capito"
+  "localDurabilityDismiss": "Ho capito",
+  "storageDocumentUnavailable": "Non disponibile",
+  "storageDocumentUnavailableDetail": "Di questo documento non esiste alcuna copia su questo dispositivo e {target} non lo elenca più. Qui non è stato eliminato nulla. Se un altro dispositivo lo sta sostituendo in questo momento, tornerà da solo al prossimo aggiornamento."
 }
