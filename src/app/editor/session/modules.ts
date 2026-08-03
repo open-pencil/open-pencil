@@ -74,6 +74,7 @@ export function createEditorStoreModules(
     exportNativeDocument: documentIO.exportNativeDocument,
     saveFigFile: documentIO.saveFigFile,
     saveFigFileAs: documentIO.saveFigFileAs,
+    flushPendingSave: documentIO.flushPendingSave,
     getDocumentFilePath: documentIO.getDocumentFilePath,
     getSourceIdentity: documentIO.getSourceIdentity,
     getStorageBinding: documentIO.getStorageBinding,

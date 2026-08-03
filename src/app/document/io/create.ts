@@ -80,6 +80,7 @@ export function createDocumentIOActions(
     importDOMText,
     exportNativeDocument: sourceActions.exportNativeDocument,
     saveFigFile: sourceActions.saveFigFile,
-    saveFigFileAs: sourceActions.saveFigFileAs
+    saveFigFileAs: sourceActions.saveFigFileAs,
+    flushPendingSave: sourceActions.flushPendingSave
   }
 }

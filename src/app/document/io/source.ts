@@ -94,7 +94,7 @@ export function createDocumentSourceActions({
     }
   })
 
-  const { disposeAutosave } = createAutosave({
+  const { disposeAutosave, flushAutosave } = createAutosave({
     state,
     getSavedVersion,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
@@ -167,6 +167,7 @@ export function createDocumentSourceActions({
     disposeDocumentIO,
     saveFigFile,
     saveFigFileAs,
+    flushPendingSave: flushAutosave,
     getStorageBinding
   }
 }

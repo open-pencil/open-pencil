@@ -55,7 +55,13 @@ import {
 } from '@/app/storage/sync'
 import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
-import { activeTab, createDeckTab, createTab, openStorageDocumentInNewTab } from '@/app/tabs'
+import {
+  activeTab,
+  createDeckTab,
+  createTab,
+  flushOpenTabSaves,
+  openStorageDocumentInNewTab
+} from '@/app/tabs'
 import StorageDocumentCard from '@/components/storage/StorageDocumentCard.vue'
 import RefreshIcon from '@/components/storage/RefreshIcon.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
@@ -329,14 +335,20 @@ function copyError(): void {
 }
 
 async function refresh(): Promise<void> {
-  // Pin the provider for the whole pass. Reading the live ref after an await
-  // would attribute this listing to whichever provider is active by then.
+  // Pin the provider for the whole pass, BEFORE any await. Reading the live ref
+  // afterwards would attribute this listing to whichever provider is active by
+  // then — and every await below is a window for the user to switch.
   const providerId = activeStorageProviderID.value
   // Pin the DESTINATION too, not just the provider. `isCurrentRefresh` compares
   // provider ids only, so editing the bucket mid-listing passes that guard while
   // silently retagging every row this pass seeds.
   const targetId = currentTargetIdFor(providerId)
   const generation = ++refreshGeneration
+
+  // Land pending edits from open tabs: the grid paints thumbnails from
+  // persisted bytes, so a save still sitting in the autosave debounce would
+  // show the card with the stale stage colour.
+  await flushOpenTabSaves()
   loading.value = true
   error.value = null
   await paintLocalDocuments(generation, providerId)

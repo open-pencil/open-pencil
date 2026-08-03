@@ -87,6 +87,19 @@ export function getTabsSnapshot(): Tab[] {
   return [...tabsRef.value]
 }
 
+/**
+ * Land pending edits in every open tab before another surface reads saved
+ * state. The workspace grid renders thumbnails from the last persisted bytes;
+ * without this, a colour change made seconds before navigating away still
+ * shows the old stage on the card.
+ */
+export async function flushOpenTabSaves(): Promise<void> {
+  // Optional call: a dev-server HMR can leave stores created before this
+  // action existed, and the workspace must not crash listing documents on
+  // their account.
+  await Promise.all(tabsRef.value.map((tab) => tab.store.flushPendingSave?.()))
+}
+
 export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   const s = store ?? createEditorStore(initialGraph)
   // Only a genuinely blank tab is scratch. One seeded with a graph already
