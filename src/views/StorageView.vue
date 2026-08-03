@@ -158,6 +158,10 @@ function clearThumbnailUrls(): void {
 }
 
 async function loadDocumentThumbnail(document: StorageDocument, generation: number): Promise<void> {
+  // Pin the provider before the first await. Reading it afterwards would fetch
+  // one provider's preview under another provider's credentials, and the write
+  // below would cache the result against the wrong document set.
+  const providerId = activeStorageProviderID.value
   const localStore = getLocalCanvasStore()
   const local = await localStore.readThumb(document.id)
   if (generation !== thumbnailLoadGeneration) return
@@ -166,7 +170,7 @@ async function loadDocumentThumbnail(document: StorageDocument, generation: numb
     return
   }
 
-  const adapter = createActiveStorageAdapter(activeStorageProviderID.value)
+  const adapter = createActiveStorageAdapter(providerId)
   const remote = adapter.getThumbnail
     ? await adapter.getThumbnail(document.id).catch(() => null)
     : null
@@ -244,8 +248,12 @@ function isCurrentRefresh(generation: number, providerId: string): boolean {
 }
 
 async function paintLocalDocuments(generation: number, providerId: string): Promise<void> {
+  // Resolve the destination before the listing, not inside the filter it feeds:
+  // the bucket can be edited while this is in flight, and a target resolved
+  // afterwards would silently paint a different bucket's document set.
+  const targetId = currentTargetIdFor(providerId)
   const local = (await getLocalCanvasStore().listMetas()).filter(
-    (metadata) => metadata.syncTargetId === currentTargetIdFor(providerId)
+    (metadata) => metadata.syncTargetId === targetId
   )
   if (!isCurrentRefresh(generation, providerId)) return
   documents.value = local.map((metadata) => ({
@@ -289,6 +297,10 @@ async function refresh(): Promise<void> {
   // Pin the provider for the whole pass. Reading the live ref after an await
   // would attribute this listing to whichever provider is active by then.
   const providerId = activeStorageProviderID.value
+  // Pin the DESTINATION too, not just the provider. `isCurrentRefresh` compares
+  // provider ids only, so editing the bucket mid-listing passes that guard while
+  // silently retagging every row this pass seeds.
+  const targetId = currentTargetIdFor(providerId)
   const generation = ++refreshGeneration
   loading.value = true
   error.value = null
@@ -304,7 +316,6 @@ async function refresh(): Promise<void> {
     const remote = await createActiveStorageAdapter(providerId).listDocuments()
     if (!isCurrentRefresh(generation, providerId)) return
     const localStore = getLocalCanvasStore()
-    const targetId = currentTargetIdFor(providerId)
     const local = (await localStore.listMetas(true)).filter(
       (metadata) => metadata.syncTargetId === targetId
     )
@@ -333,8 +344,8 @@ async function refresh(): Promise<void> {
     for (const document of reconciliation.remoteDocumentsToSeed) {
       await localStore.upsertIndexMeta({
         id: document.id,
-        // The provider this listing actually came from — never the live ref.
-        syncTargetId: currentTargetIdFor(providerId),
+        // The destination this listing actually came from — never the live ref.
+        syncTargetId: targetId,
         name: document.name,
         sourceFormat: document.sourceFormat,
         trashedAt: document.trashedAt,
@@ -452,15 +463,16 @@ function requestDelete(document: StorageDocument, permanent: boolean): void {
 async function confirmDelete(): Promise<void> {
   const target = deleteTarget.value
   if (!target) return
+  const providerId = activeStorageProviderID.value
   setDocumentBusy(target.id, true)
   error.value = null
   try {
     if (deletePermanently.value) {
-      await permanentlyDeleteStorageDocument(activeStorageProviderID.value, target)
+      await permanentlyDeleteStorageDocument(providerId, target)
       documents.value = documents.value.filter((document) => document.id !== target.id)
       removeThumbnailUrl(target.id)
     } else {
-      replaceDocument(await moveStorageDocumentToTrash(activeStorageProviderID.value, target))
+      replaceDocument(await moveStorageDocumentToTrash(providerId, target))
     }
     deleteOpen.value = false
   } catch (reason) {
@@ -484,6 +496,9 @@ async function restoreDocument(document: StorageDocument): Promise<void> {
 
 async function createDocument(sourceFormat: 'fig' | 'deck'): Promise<void> {
   if (!configured.value) return
+  // Bind the new document to the provider that was selected when the user asked
+  // for it, not to whatever a route change and a tick later happens to be live.
+  const providerId = activeStorageProviderID.value
   await router.push('/')
   await nextTick()
   const store =
@@ -504,11 +519,7 @@ async function createDocument(sourceFormat: 'fig' | 'deck'): Promise<void> {
           return reusable ? current.store : createTab().store
         })()
   const documentId = createCanvasId()
-  store.setStorageDocumentSource(
-    { providerId: activeStorageProviderID.value, documentId },
-    'Untitled',
-    sourceFormat
-  )
+  store.setStorageDocumentSource({ providerId, documentId }, 'Untitled', sourceFormat)
   await store.saveFigFile()
 }
 
@@ -546,6 +557,9 @@ async function importDroppedDecks(files: File[]): Promise<void> {
   importing.value = true
   error.value = null
   const providerId = activeStorageProviderID.value
+  // One destination for the whole batch. Resolving it per file would let a
+  // bucket edit mid-import scatter one drop across two buckets.
+  const targetId = currentTargetIdFor(providerId)
   const takenNames = new Set(documents.value.map((document) => document.name))
   const failures: string[] = []
   try {
@@ -557,7 +571,7 @@ async function importDroppedDecks(files: File[]): Promise<void> {
         const id = createCanvasId()
         const updatedAt = new Date().toISOString()
         await persistStorageCanvasLocally({
-          syncTargetId: currentTargetIdFor(providerId),
+          syncTargetId: targetId,
           canvasId: id,
           name,
           sourceFormat: prepared.sourceFormat,

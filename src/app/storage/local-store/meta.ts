@@ -98,6 +98,11 @@ export function buildWriteMeta(
   existing: LocalCanvasMeta | null,
   hasThumb: boolean
 ): LocalCanvasMeta {
+  // A write that names a different destination is a retarget. Confirmation
+  // belongs to the target that gave it: carried across, the new bucket inherits
+  // a claim that it holds bytes it has never seen, and eviction would then be
+  // free to delete the only copy.
+  const retargeted = existing !== null && existing.syncTargetId !== input.syncTargetId
   return {
     id: input.id,
     syncTargetId: input.syncTargetId,
@@ -109,7 +114,7 @@ export function buildWriteMeta(
     bodyId: input.bodyId ?? null,
     // New bytes are not on the remote yet, so the confirmed id deliberately
     // stays where it was until putCanvas acknowledges an upload.
-    syncedBodyId: input.syncedBodyId ?? existing?.syncedBodyId ?? null,
+    syncedBodyId: input.syncedBodyId ?? (retargeted ? null : (existing?.syncedBodyId ?? null)),
     syncStatus: input.syncStatus ?? 'pending',
     lastSyncedAt: existing?.lastSyncedAt ?? null,
     lastSyncError: input.syncStatus === 'synced' ? null : (existing?.lastSyncError ?? null),

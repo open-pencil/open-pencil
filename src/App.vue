@@ -10,7 +10,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
 import { useAppTheme } from '@/app/shell/theme'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater'
-import { kickSyncEngine } from '@/app/storage/sync'
+import { startStorageSync } from '@/app/storage/sync'
 
 useHead({ titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil') })
 
@@ -22,7 +22,7 @@ useAppTheme()
 onMounted(() => {
   toast.setupGlobalErrorHandler()
   scheduleStartupUpdateCheck(dialogs)
-  void kickSyncEngine()
+  void startStorageSync()
 })
 </script>
 

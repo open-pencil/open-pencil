@@ -1,18 +1,9 @@
-import { IS_BROWSER } from '@open-pencil/core/constants'
-
 import {
-  activeStorageProviderID,
-  createActiveStorageAdapter,
   nonSecretProviderContext,
-  storageCredentialStatuses,
-  storagePreferencesComplete,
-  storageProviderRegistry,
   type StorageAdapter,
-  type StorageDocumentMetadata,
-  type StorageProviderID
+  type StorageDocumentMetadata
 } from '@/app/integrations/storage'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
-import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
@@ -23,11 +14,14 @@ import {
   recordSyncFailure,
   syncFailureErrorText
 } from '@/app/storage/sync/failure'
-import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
+import type { Outbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/storage/sync/status'
 import type { OutboxJob } from '@/app/storage/sync/types'
 import { providerIdOfTarget, type StorageTargetID } from '@/app/storage/target'
+
+/** Provider label for a failure whose destination cannot be named at all. */
+const UNKNOWN_PROVIDER = 'unknown'
 
 const MAX_ATTEMPTS = 8
 const BASE_BACKOFF_MS = 1500
@@ -127,15 +121,23 @@ function documentMetadata(meta: LocalCanvasMeta): StorageDocumentMetadata {
  * reported the body as stale and re-uploaded the whole document; on a row with
  * no local body it demoted to `pending` with nothing to enqueue, stranding the
  * row forever.
+ *
+ * `targetId` is the destination the completing job was addressed to. Passing it
+ * makes the write conditional on the row still pointing there.
  */
 export async function markRevisionSynced(
   store: LocalCanvasStore,
   canvasId: string,
   revision: number,
-  options: { bodyUploaded?: boolean } = {}
+  options: { bodyUploaded?: boolean; targetId?: StorageTargetID | null } = {}
 ): Promise<boolean> {
   const latest = await store.getMeta(canvasId)
   if (!latest || latest.revision !== revision || latest.tombstoned) return false
+  // A completion may only confirm the destination it was addressed to. The row
+  // can be retargeted while an upload is in flight, and recording the result
+  // against the NEW target would claim a bucket holds bytes it has never seen —
+  // after which eviction is free to delete the only copy that exists.
+  if (options.targetId !== undefined && latest.syncTargetId !== options.targetId) return false
   const syncedBodyId = options.bodyUploaded ? latest.bodyId : latest.syncedBodyId
   const bodyIsCurrent = bodyIsConfirmed({ bodyId: latest.bodyId, syncedBodyId })
   // A row with no local body has nothing to upload, so it is not waiting on one.
@@ -199,11 +201,15 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
   async function captureFailure(job: OutboxJob, error: unknown, attempts: number): Promise<void> {
     if (job.type === 'putThumb') return
     const meta = await deps.getStore().getMeta(job.canvasId)
-    const providerId = providerIdOfTarget(meta?.syncTargetId ?? '') ?? activeStorageProviderID.value
+    // The job's own target first: it is what the failed call was addressed to.
+    // When neither it nor the row names a resolvable destination there is no
+    // honest provider here, and labelling the failure with whatever is selected
+    // now would read as "your current bucket rejected this".
+    const providerId = providerIdOfTarget(job.targetId ?? meta?.syncTargetId ?? '')
     recordSyncFailure({
       operation: job.type,
-      providerId,
-      providerContext: nonSecretProviderContext(providerId),
+      providerId: providerId ?? UNKNOWN_PROVIDER,
+      providerContext: providerId ? nonSecretProviderContext(providerId) : {},
       documentIds: [job.canvasId],
       documentName: meta?.name ?? null,
       occurredAt: new Date().toISOString(),
@@ -276,10 +282,13 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
       if (!bytes) throw new Error('Storage provider cannot update document metadata separately')
       // This path uploads the body alongside the metadata.
       await adapter.putDocument(job.canvasId, bytes, metadata)
-      await markRevisionSynced(store, job.canvasId, revision, { bodyUploaded: true })
+      await markRevisionSynced(store, job.canvasId, revision, {
+        bodyUploaded: true,
+        targetId: job.targetId
+      })
       return
     }
-    await markRevisionSynced(store, job.canvasId, revision)
+    await markRevisionSynced(store, job.canvasId, revision, { targetId: job.targetId })
 
     // A sidecar write proves nothing about the body. If the current bytes are
     // still missing remotely, queue the upload instead of leaving a row that looks
@@ -293,7 +302,11 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
       await deps.getOutbox().enqueue({
         canvasId: job.canvasId,
         type: 'putCanvas',
-        revision: latest.revision
+        revision: latest.revision,
+        // Address the repair at the row's CURRENT destination: this is a fresh
+        // decision about where the bytes belong, not a continuation of the job
+        // that noticed they were missing. Leaving it null made it unroutable.
+        targetId: latest.syncTargetId
       })
     }
   }
@@ -321,17 +334,22 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     } finally {
       setUploadProgress(job.canvasId, null)
     }
-    if (await markRevisionSynced(store, job.canvasId, revision, { bodyUploaded: true })) {
-      await evictLocalFigCache(new Set([job.canvasId]))
-    }
+    const confirmed = await markRevisionSynced(store, job.canvasId, revision, {
+      bodyUploaded: true,
+      targetId: job.targetId
+    })
+    if (confirmed) await evictLocalFigCache(new Set([job.canvasId]))
   }
 
   async function runJob(job: OutboxJob): Promise<void> {
     const store = deps.getStore()
     const meta = await store.getMeta(job.canvasId)
-    // The row's captured target, never the live selection. A job's bytes belong
-    // to the destination they were queued for; the user may since have switched.
-    const adapter = await deps.resolveTarget(job.targetId ?? meta?.syncTargetId ?? null)
+    // The job's captured target and nothing else — not the live selection, and
+    // not the row's CURRENT target either. A job's bytes belong to the
+    // destination they were queued for; a row retargeted since then still owes
+    // them to the old one. Legacy jobs carrying `null` are pinned or parked by
+    // `migrateLegacyOutboxJobs` at startup, so there is nothing to guess here.
+    const adapter = await deps.resolveTarget(job.targetId)
 
     if (job.type === 'deleteCanvas') {
       await adapter.deleteDocument(job.canvasId)
@@ -583,84 +601,3 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     }
   }
 }
-
-/**
- * Resolve the adapter for a captured target.
- *
- * Collapses the three module-singleton reads the engine used to perform inline
- * — `storagePreferencesComplete`, `storageCredentialStatuses` and
- * `createActiveStorageAdapter` — into the one injectable seam. `null` still
- * falls back to the active provider; jobs do not carry a target id yet.
- */
-async function resolveConfiguredTarget(
-  targetId: StorageProviderID | null
-): Promise<StorageAdapter> {
-  const providerID = targetId ?? activeStorageProviderID.value
-  if (!storagePreferencesComplete(providerID)) {
-    throw new StorageSyncBlockedError('Storage is not configured')
-  }
-  const provider = storageProviderRegistry.get(providerID)
-  const statuses = await storageCredentialStatuses(providerID)
-  const missingCredential = provider.credentialFields.some(
-    (field) => field.required && statuses[field.id] !== 'configured'
-  )
-  if (missingCredential) {
-    throw new StorageSyncBlockedError('Storage credentials are unavailable')
-  }
-  return createActiveStorageAdapter(providerID)
-}
-
-/**
- * Hold a cross-tab exclusive lock for the duration of a drain.
- *
- * The outbox is shared IndexedDB but the in-tab `pumping` flag is per-realm, so
- * two open tabs would both select the same job and upload the same bytes. The
- * loser then found the blob evicted by the winner, failed, and demoted a healthy
- * document to `error`. `ifAvailable` means a tab that loses the lock simply
- * skips this drain rather than queueing another full pass behind it.
- */
-async function runWithWebLock(key: string, run: () => Promise<void>): Promise<void> {
-  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
-  if (!locks) return run()
-  await locks.request(key, { ifAvailable: true }, async (lock) => {
-    if (!lock) return
-    await run()
-  })
-}
-
-export const syncEngine = createSyncEngine({
-  getStore: getLocalCanvasStore,
-  getOutbox,
-  resolveTarget: resolveConfiguredTarget,
-  isOnline: () => (typeof navigator === 'undefined' ? true : navigator.onLine),
-  subscribeConnectivity: (handlers) => {
-    if (!IS_BROWSER) return () => {}
-    const online = () => handlers.online()
-    const offline = () => handlers.offline()
-    window.addEventListener('online', online)
-    window.addEventListener('offline', offline)
-    return () => {
-      window.removeEventListener('online', online)
-      window.removeEventListener('offline', offline)
-    }
-  },
-  schedule: (ms, run) => {
-    const timer = setTimeout(run, ms)
-    return () => clearTimeout(timer)
-  },
-  now: () => Date.now(),
-  random: () => (crypto.getRandomValues(new Uint8Array(1))[0] ?? 0) / 256,
-  runExclusive: runWithWebLock
-})
-
-export const kickSyncEngine = (): Promise<void> => syncEngine.kick()
-export const enqueuePutCanvas = (canvasId: string, revision: number): Promise<void> =>
-  syncEngine.enqueuePutCanvas(canvasId, revision)
-export const enqueuePutMetadata = (canvasId: string, revision: number): Promise<void> =>
-  syncEngine.enqueuePutMetadata(canvasId, revision)
-export const enqueuePutThumb = (canvasId: string, revision: number): Promise<void> =>
-  syncEngine.enqueuePutThumb(canvasId, revision)
-export const enqueueDeleteCanvas = (canvasId: string): Promise<void> =>
-  syncEngine.enqueueDeleteCanvas(canvasId)
-export const resumeStorageSync = (): Promise<void> => syncEngine.resume()
-export const clearStorageLocalMirror = (): Promise<void> => syncEngine.clearLocalMirror()

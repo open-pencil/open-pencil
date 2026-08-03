@@ -5,8 +5,10 @@ export {
   enqueuePutMetadata,
   enqueuePutThumb,
   kickSyncEngine,
-  resumeStorageSync
-} from './engine'
+  resumeStorageSync,
+  startStorageSync
+} from './runtime'
+export { migrateLegacyOutboxJobs, type LegacyJobMigrationResult } from './migrate-jobs'
 export { createMemoryOutbox, getOutbox, resetOutboxForTests } from './outbox'
 export {
   persistStorageCanvasLocally,

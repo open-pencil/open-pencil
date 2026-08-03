@@ -3,7 +3,7 @@ import { computeBodyIdSafe } from '@/app/storage/body-id'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
-import { enqueuePutCanvas, enqueuePutThumb } from '@/app/storage/sync/engine'
+import { enqueuePutCanvas, enqueuePutThumb } from '@/app/storage/sync/runtime'
 import type { StorageTargetID } from '@/app/storage/target'
 
 export type StoragePersistenceDependencies = {
@@ -53,7 +53,16 @@ export async function persistStorageCanvasLocally(
   // Identical content: the remote already holds these exact bytes, so there is
   // nothing to upload. Autosave fires on activity that often changes nothing,
   // and uploading unchanged bytes is the single largest source of waste here.
-  if (existing?.syncedBodyId === bodyId) {
+  //
+  // "The remote" means the SAME remote. `syncedBodyId` is a confirmation from
+  // one destination, so after a bucket change these bytes are unknown at the
+  // new one and skipping the upload would mark a document synced to a bucket
+  // that has never received it.
+  const confirmedAtThisTarget =
+    existing !== null &&
+    existing.syncTargetId === options.syncTargetId &&
+    existing.syncedBodyId === bodyId
+  if (confirmedAtThisTarget) {
     await runtime.store.updateMeta(options.canvasId, { syncStatus: 'synced' })
   } else {
     await runtime.enqueueCanvas(options.canvasId, metadata.revision)
