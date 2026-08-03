@@ -11,6 +11,7 @@ import { toast } from '@/app/shell/ui'
 import { useAppTheme } from '@/app/shell/theme'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater'
 import { startStorageSync } from '@/app/storage/sync'
+import { useUnsyncedCloseWarning } from '@/app/storage/unsynced-warning'
 
 useHead({ titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil') })
 
@@ -18,6 +19,8 @@ const store = useEditorStore()
 const { dialogs } = useI18n()
 provideEditor(store)
 useAppTheme()
+
+useUnsyncedCloseWarning()
 
 onMounted(() => {
   toast.setupGlobalErrorHandler()
