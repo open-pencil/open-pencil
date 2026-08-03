@@ -281,5 +281,8 @@
   "copyStorageError": "バグ報告用にエラーの詳細をコピー",
   "cloudConnectedVia": "{provider} 経由でクラウドに接続済み",
   "cloudNotConnected": "オフライン — クラウド未接続",
-  "cloudUnreachableVia": "クラウドに接続できません — {provider}"
+  "cloudUnreachableVia": "クラウドに接続できません — {provider}",
+  "syncedViaProvider": "{provider} 経由で同期済み",
+  "syncFailedVia": "同期に失敗しました — {provider}",
+  "workingOffline": "オフライン"
 }

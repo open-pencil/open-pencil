@@ -21,7 +21,11 @@ const SPINNER_DELAY_MS = 400
 /** Once shown, hold it this long — a 50 ms flash reads as a glitch. */
 const SPINNER_MIN_VISIBLE_MS = 500
 
-export function useSyncStatus(options: { configured: () => boolean }) {
+export function useSyncStatus(options: {
+  configured: () => boolean
+  /** Named in the label so the strip alone answers "which cloud, and is it working". */
+  providerLabel?: () => string
+}) {
   const browserOnline = useOnline()
   const { dialogs } = useI18n()
 
@@ -107,21 +111,26 @@ export function useSyncStatus(options: { configured: () => boolean }) {
 
   const label = computed(() => {
     const t = dialogs.value
+    const provider = options.providerLabel?.()
     switch (indicator.value) {
       case 'local':
-        return t.syncStatusLocalOnly
+        // No provider to name. "Working offline" is a statement of fact about a
+        // supported configuration, not a warning about a missing one.
+        return t.workingOffline
       case 'syncing':
         return pendingCount.value > 1
           ? t.syncStatusSyncingCount({ count: pendingCount.value })
           : t.syncStatusSyncing
       case 'degraded':
-        return browserOnline.value ? t.syncStatusUnreachable : t.syncStatusOffline
+        if (!browserOnline.value) return t.syncStatusOffline
+        return provider ? t.cloudUnreachableVia({ provider }) : t.syncStatusUnreachable
       case 'failing':
-        return t.syncStatusFailed
+        return provider ? t.syncFailedVia({ provider }) : t.syncStatusFailed
       default:
-        return pendingCount.value > 0
-          ? t.syncStatusWaiting({ count: pendingCount.value })
-          : t.syncStatusSynced
+        if (pendingCount.value > 0) return t.syncStatusWaiting({ count: pendingCount.value })
+        // Naming the provider here is what lets the workspace header stop
+        // repeating the connection state above the document grid.
+        return provider ? t.syncedViaProvider({ provider }) : t.syncStatusSynced
     }
   })
 

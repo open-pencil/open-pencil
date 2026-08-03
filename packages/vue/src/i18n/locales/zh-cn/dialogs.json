@@ -281,5 +281,8 @@
   "copyStorageError": "复制错误详情以便报告问题",
   "cloudConnectedVia": "已通过 {provider} 连接云端",
   "cloudNotConnected": "离线 — 未连接云端",
-  "cloudUnreachableVia": "无法连接云端 — {provider}"
+  "cloudUnreachableVia": "无法连接云端 — {provider}",
+  "syncedViaProvider": "已通过 {provider} 同步",
+  "syncFailedVia": "同步失败 — {provider}",
+  "workingOffline": "离线"
 }

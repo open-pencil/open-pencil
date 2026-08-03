@@ -281,5 +281,8 @@
   "copyStorageError": "Skopiuj szczegóły błędu do zgłoszenia",
   "cloudConnectedVia": "Chmura połączona przez {provider}",
   "cloudNotConnected": "Tryb offline — brak połączenia z chmurą",
-  "cloudUnreachableVia": "Chmura nieosiągalna — {provider}"
+  "cloudUnreachableVia": "Chmura nieosiągalna — {provider}",
+  "syncedViaProvider": "Zsynchronizowano przez {provider}",
+  "syncFailedVia": "Synchronizacja nie powiodła się — {provider}",
+  "workingOffline": "Tryb offline"
 }

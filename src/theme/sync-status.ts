@@ -11,22 +11,25 @@ const syncStatusTheme = {
     chip: 'flex items-center gap-1.5 rounded px-1.5 py-0.5 text-[10px] leading-none text-muted',
     // Fixed 10px slot so the dot and the spinner occupy the same footprint and
     // the label does not shift when one replaces the other.
-    indicator: 'flex size-2.5 shrink-0 items-center justify-center',
-    dot: 'size-1.5 rounded-full',
+    indicator: 'flex size-3 shrink-0 items-center justify-center',
+    // A cloud glyph says WHAT the subject is; colour says how it is doing. The
+    // bare dot needed a label to mean anything, which is why the workspace
+    // header had to repeat the connection state above it.
+    icon: 'size-3',
     // Ambient, not attention-seeking: same colour as the surrounding text, and
     // slower than Tailwind's 1s default so it reads as background activity.
-    spinner: 'size-2.5 animate-spin [animation-duration:1.6s] text-muted',
+    spinner: 'size-3 animate-spin [animation-duration:1.6s] text-muted',
     label: 'truncate'
   },
   variants: {
     indicator: {
-      local: { dot: 'bg-muted/60' },
-      synced: { dot: 'bg-[var(--color-success)]' },
-      // No dot: `syncing` is only reported once the spinner is on screen, so
-      // the spinner occupies the indicator slot for the whole of this state.
-      syncing: {},
-      degraded: { dot: 'bg-[var(--color-warning-action)]' },
-      failing: { dot: 'bg-[var(--color-error)]' }
+      local: { icon: 'text-muted/70' },
+      synced: { icon: 'text-[var(--color-success)]' },
+      // `syncing` is only reported once the delay has elapsed, so the upload
+      // glyph occupies the indicator slot for the whole of this state.
+      syncing: { icon: 'text-muted' },
+      degraded: { icon: 'text-[var(--color-warning-action)]' },
+      failing: { icon: 'text-[var(--color-error)]' }
     },
     actionable: {
       true: { chip: 'cursor-pointer hover:bg-hover hover:text-surface' },

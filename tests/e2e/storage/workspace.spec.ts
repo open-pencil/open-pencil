@@ -151,7 +151,7 @@ test('an unconfigured workspace is usable, not a dead end', async ({ page }) => 
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
   // The old copy told first-time users to configure storage before doing
   // anything, which made a workspace that already worked look broken.
-  await expect(page.getByText('Working offline — no cloud connected')).toBeVisible()
+  await expect(page.getByTestId('cloud-workspace-status')).toContainText('Working offline')
   await expect(page.getByTestId('storage-new-design')).toBeEnabled()
   await expect(page.getByTestId('storage-new-slides')).toBeEnabled()
 

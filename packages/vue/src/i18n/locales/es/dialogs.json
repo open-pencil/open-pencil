@@ -281,5 +281,8 @@
   "copyStorageError": "Copiar los detalles del error para un informe de errores",
   "cloudConnectedVia": "Nube conectada mediante {provider}",
   "cloudNotConnected": "Sin conexión — nube no conectada",
-  "cloudUnreachableVia": "Nube no accesible — {provider}"
+  "cloudUnreachableVia": "Nube no accesible — {provider}",
+  "syncedViaProvider": "Sincronizado mediante {provider}",
+  "syncFailedVia": "Error de sincronización — {provider}",
+  "workingOffline": "Sin conexión"
 }

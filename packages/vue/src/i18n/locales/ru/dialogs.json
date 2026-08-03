@@ -281,5 +281,8 @@
   "copyStorageError": "Скопировать детали ошибки для отчёта",
   "cloudConnectedVia": "Облако подключено через {provider}",
   "cloudNotConnected": "Офлайн — облако не подключено",
-  "cloudUnreachableVia": "Облако недоступно — {provider}"
+  "cloudUnreachableVia": "Облако недоступно — {provider}",
+  "syncedViaProvider": "Синхронизировано через {provider}",
+  "syncFailedVia": "Ошибка синхронизации — {provider}",
+  "workingOffline": "Офлайн"
 }

@@ -281,5 +281,8 @@
   "copyStorageError": "Fehlerdetails für einen Fehlerbericht kopieren",
   "cloudConnectedVia": "Cloud verbunden über {provider}",
   "cloudNotConnected": "Offline – keine Cloud verbunden",
-  "cloudUnreachableVia": "Cloud nicht erreichbar – {provider}"
+  "cloudUnreachableVia": "Cloud nicht erreichbar – {provider}",
+  "syncedViaProvider": "Synchronisiert über {provider}",
+  "syncFailedVia": "Synchronisierung fehlgeschlagen – {provider}",
+  "workingOffline": "Offline"
 }

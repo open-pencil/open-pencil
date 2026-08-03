@@ -281,5 +281,8 @@
   "copyStorageError": "Copier les détails de l'erreur pour un rapport de bogue",
   "cloudConnectedVia": "Cloud connecté via {provider}",
   "cloudNotConnected": "Hors ligne — aucun cloud connecté",
-  "cloudUnreachableVia": "Cloud injoignable — {provider}"
+  "cloudUnreachableVia": "Cloud injoignable — {provider}",
+  "syncedViaProvider": "Synchronisé via {provider}",
+  "syncFailedVia": "Échec de la synchronisation — {provider}",
+  "workingOffline": "Hors ligne"
 }
