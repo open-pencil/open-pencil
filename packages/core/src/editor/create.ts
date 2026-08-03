@@ -46,6 +46,30 @@ import { createViewportActions } from './viewport'
 
 export { createDefaultEditorState } from './state'
 
+/**
+ * Diagnostic for the idle-upload loop.
+ *
+ * Autosave keys on `sceneVersion`, which `requestRender()` bumps from ~136 call
+ * sites — many of which are not edits (lazy page population, async font
+ * resolution, collaboration awareness). A document merely open therefore
+ * re-saves indefinitely.
+ *
+ * Body identity already stops that costing bandwidth, but the local serialize
+ * and IndexedDB write still churn. Fixing that means splitting a content
+ * version out of the render counter, and doing so safely requires knowing WHICH
+ * site fires while the document sits untouched — no call site has yet been
+ * observed doing it.
+ *
+ * Enable in a dev build with `__openPencilTraceRender = true`, leave the
+ * document alone, and read the stacks. Off by default and absent in production.
+ */
+function traceRenderRequest(): void {
+  if (!import.meta.env.DEV) return
+  const flag = (globalThis as { __openPencilTraceRender?: boolean }).__openPencilTraceRender
+  if (!flag) return
+  console.trace('[requestRender]')
+}
+
 export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
   const skipInitialGraphSetup = options?.skipInitialGraphSetup ?? false
@@ -79,6 +103,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function requestRender() {
+    traceRenderRequest()
     state.renderVersion++
     state.sceneVersion++
     emitEditorEvent('render:requested', {

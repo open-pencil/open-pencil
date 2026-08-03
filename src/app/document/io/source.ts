@@ -57,17 +57,22 @@ export function createDocumentSourceActions({
 
   function buildNativeFile() {
     const renderer = getRenderer() ?? undefined
+    // The exporter renders a thumbnail only when it has BOTH CanvasKit and a
+    // renderer. Passing undefined here is why every browser-authored document
+    // shipped a 1x1 placeholder — which then forced the workspace to download
+    // whole documents just to draw its grid.
+    const ck = renderer?.ck
     if (currentSourceFormat() === 'deck') {
       return exportDeckFile(
         editor.graph,
-        undefined,
+        ck,
         renderer,
         state.currentPageId,
         false,
         getDownloadName() || state.documentName
       )
     }
-    return exportFigFile(editor.graph, undefined, renderer, state.currentPageId)
+    return exportFigFile(editor.graph, ck, renderer, state.currentPageId)
   }
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({

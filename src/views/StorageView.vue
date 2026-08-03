@@ -87,6 +87,14 @@ const ownedThumbnailUrls = new Map<string, string>()
 const queuedThumbnailIds = new Set<string>()
 const activeThumbnailIds = new Set<string>()
 const thumbnailQueue: StorageDocument[] = []
+/**
+ * Documents whose full body was already fetched to recover a thumbnail.
+ *
+ * A legacy document that yields no usable thumbnail produced no record of the
+ * attempt, so every scroll past its card downloaded the whole document again.
+ * One attempt per document per session, whatever the outcome.
+ */
+const thumbnailBackfillAttempted = new Set<string>()
 const maxConcurrentThumbnailLoads = 3
 let dragDepth = 0
 let thumbnailLoadGeneration = 0
@@ -132,6 +140,7 @@ function clearThumbnailUrls(): void {
   thumbnailLoadGeneration++
   thumbnailQueue.length = 0
   queuedThumbnailIds.clear()
+  thumbnailBackfillAttempted.clear()
   for (const url of ownedThumbnailUrls.values()) URL.revokeObjectURL(url)
   ownedThumbnailUrls.clear()
   thumbnailUrls.value = {}
@@ -157,8 +166,17 @@ async function loadDocumentThumbnail(document: StorageDocument, generation: numb
     return
   }
 
-  // Legacy documents may only contain an archive thumbnail. Backfill it once, cache it
-  // locally, and upload the small object so later devices do not need the full document.
+  // Legacy documents may only contain an archive thumbnail. Backfill it once,
+  // cache it locally, and upload the small object so later devices do not need
+  // the full document.
+  //
+  // Documents saved by this build embed a real thumbnail at export, so this
+  // path is unreachable for them. It remains only for archives written before
+  // that fix, and is bounded to one attempt each: the download is the whole
+  // document, and repeating it per render is how a 200-document bucket cost
+  // 200 full downloads to draw a grid.
+  if (thumbnailBackfillAttempted.has(document.id)) return
+  thumbnailBackfillAttempted.add(document.id)
   const bytes = await adapter.getDocument(document.id)
   const thumbnail = await createStorageThumbnail(bytes, document.sourceFormat)
   if (!isUsableStorageThumbnail(thumbnail) || generation !== thumbnailLoadGeneration) return
