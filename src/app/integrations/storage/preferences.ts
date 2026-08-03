@@ -43,3 +43,22 @@ export function storagePreferencesComplete(providerID: StorageProviderID): boole
     (field) => !field.required || Boolean(preferences[field.id]?.trim())
   )
 }
+
+/**
+ * Provider configuration safe to put in a bug report.
+ *
+ * Allowlist by classification, not by shape: a field is included only if the
+ * provider did not mark it `secret`. Empty values are dropped — an unset
+ * endpoint is noise, and its absence is already visible in the error.
+ */
+export function nonSecretProviderContext(providerID: StorageProviderID): Record<string, string> {
+  const provider = storageProviderRegistry.get(providerID)
+  const preferences = readStoragePreferences(providerID)
+  const context: Record<string, string> = {}
+  for (const field of provider.preferenceFields) {
+    if (field.secret) continue
+    const value = preferences[field.id]
+    if (value) context[field.label] = value
+  }
+  return context
+}

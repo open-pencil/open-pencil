@@ -67,6 +67,17 @@ export type StoragePreferenceField = {
   kind: 'text' | 'url'
   required?: boolean
   placeholder?: string
+  /**
+   * Withhold this value from copied diagnostics and error detail.
+   *
+   * Credentials live in `credentialFields` and never reach a preference, so no
+   * provider declares this yet — which is precisely the risk. Diagnostics
+   * copied preference values by shape, so the first provider to put a token or
+   * a signed URL in a preference would have leaked it into a bug report with no
+   * code change anywhere. Classification is explicit so that cannot happen
+   * silently.
+   */
+  secret?: boolean
 }
 
 export type StorageCredentialField = {

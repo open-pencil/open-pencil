@@ -3,6 +3,7 @@ import { IS_BROWSER } from '@open-pencil/core/constants'
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
+  nonSecretProviderContext,
   storageCredentialStatuses,
   storagePreferencesComplete,
   storageProviderRegistry,
@@ -15,6 +16,13 @@ import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
+import {
+  categorizeSyncFailure,
+  clearSyncFailure,
+  httpStatusOf,
+  recordSyncFailure,
+  syncFailureErrorText
+} from '@/app/storage/sync/failure'
 import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/storage/sync/status'
@@ -79,13 +87,6 @@ export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number |
   if (jobs.length === 0) return null
   const nextAt = Math.min(...jobs.map((job) => job.nextAttemptAt))
   return nextAt === Number.MAX_SAFE_INTEGER ? null : Math.max(250, nextAt - now)
-}
-
-/** HTTP status carried by adapter errors (S3HttpError, AppwriteHttpError, …). */
-function httpStatusOf(error: unknown): number | null {
-  if (!error || typeof error !== 'object' || !('status' in error)) return null
-  const status = (error as { status: unknown }).status
-  return typeof status === 'number' ? status : null
 }
 
 function isPermanentError(error: unknown): boolean {
@@ -183,6 +184,32 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
       offline: () => {
         setSyncUi('offline')
       }
+    })
+  }
+
+  /**
+   * Snapshot a failure at the moment it happens.
+   *
+   * Provider context is read HERE, not when the modal opens: switching
+   * providers after a failure used to re-label it with the wrong endpoint.
+   * `putThumb` is excluded — a stale thumbnail must not present the document
+   * as broken, and it gets its own quieter per-document signal.
+   */
+  async function captureFailure(job: OutboxJob, error: unknown, attempts: number): Promise<void> {
+    if (job.type === 'putThumb') return
+    const meta = await deps.getStore().getMeta(job.canvasId)
+    const providerId = meta?.providerId ?? activeStorageProviderID.value
+    recordSyncFailure({
+      operation: job.type,
+      providerId,
+      providerContext: nonSecretProviderContext(providerId),
+      documentIds: [job.canvasId],
+      documentName: meta?.name ?? null,
+      occurredAt: new Date().toISOString(),
+      attempts,
+      category: categorizeSyncFailure(error, deps.isOnline()),
+      rawError: syncFailureErrorText(error),
+      status: httpStatusOf(error)
     })
   }
 
@@ -379,8 +406,10 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
       await outbox.remove(job.id)
       const remaining = await outbox.list()
       setPendingSyncCount(remaining.length)
-      if (remaining.length === 0) setSyncUi('idle')
-      else scheduleWake(50)
+      if (remaining.length === 0) {
+        clearSyncFailure()
+        setSyncUi('idle')
+      } else scheduleWake(50)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       if (error instanceof StorageSyncBlockedError) {
@@ -391,6 +420,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
         // Record it on the document too — this branch used to leave no per-document
         // trace at all, so nothing could explain the pause afterwards.
         await updateSyncFailureMeta(job, message)
+        await captureFailure(job, error, job.attempts)
         setSyncUi('blocked', message)
         return
       }
@@ -401,6 +431,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
 
       if (permanent) {
         await updateSyncFailureMeta(job, message)
+        await captureFailure(job, error, attempts)
         if (job.type !== 'putThumb') {
           // Terminal for this job: it parks below and only resume() revives it.
           setSyncUi('blocked', message)
@@ -429,6 +460,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
         nextAttemptAt: deps.now() + backoffMs(attempts)
       }
       await outbox.update(updated)
+      await captureFailure(job, error, attempts)
       // Transient: still retrying, so surface it as `error` rather than `blocked`.
       setSyncUi('error', message)
       if (job.type !== 'putThumb') {

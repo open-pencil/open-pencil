@@ -14,13 +14,24 @@ export {
   type PersistStorageCanvasOptions,
   type SeedStorageCanvasOptions
 } from './persist'
+export {
+  categorizeSyncFailure,
+  clearSyncFailure,
+  isFetchLevelFailure,
+  lastSyncFailure,
+  recordSyncFailure,
+  type SyncFailure,
+  type SyncFailureCategory
+} from './failure'
 export { setUploadProgress, uploadProgressByCanvas } from './progress'
 export {
   pendingSyncCount,
   setPendingSyncCount,
   setSyncUi,
+  syncHasFailure,
   syncStatusLabel,
   syncUiDetail,
+  syncUiErrorDetail,
   syncUiState
 } from './status'
 export {

@@ -1,5 +1,6 @@
 export {
   activeStorageProviderID,
+  nonSecretProviderContext,
   readStoragePreferences,
   storagePreferencesComplete,
   writeStoragePreference
