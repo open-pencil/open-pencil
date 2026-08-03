@@ -1,10 +1,11 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
+import { readStoredPageColor } from '@open-pencil/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { SkiaRenderer } from '#core/canvas'
 import { getCanvasKit } from '#core/canvaskit'
-import { IS_BROWSER } from '#core/constants'
+import { CANVAS_BG_COLOR, IS_BROWSER } from '#core/constants'
 
 import { renderNodesToImage, renderThumbnail, type ExportFormat } from './render'
 
@@ -75,5 +76,10 @@ export async function headlessRenderThumbnail(
 ): Promise<Uint8Array | null> {
   const { ck, renderer } = await getRenderer()
   renderer.invalidateAllPictures()
+  // The cached renderer never sees editor state, so hand it the document's own
+  // stage colour — without this every fallback thumbnail renders on the
+  // default grey no matter what page colour the user chose. Always assign:
+  // the renderer is reused across documents, so a colourless page must reset it.
+  renderer.pageColor = readStoredPageColor(graph, pageId) ?? { ...CANVAS_BG_COLOR }
   return renderThumbnail(ck, renderer, graph, pageId, width, height)
 }

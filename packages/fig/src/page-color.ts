@@ -12,12 +12,15 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 const FIELD = 'backgroundColor'
 
 function isColor(value: unknown): value is Color {
-  if (!value || typeof value !== 'object') return false
-  const candidate = value as Record<string, unknown>
   return (
-    typeof candidate.r === 'number' &&
-    typeof candidate.g === 'number' &&
-    typeof candidate.b === 'number'
+    value !== null &&
+    typeof value === 'object' &&
+    'r' in value &&
+    'g' in value &&
+    'b' in value &&
+    typeof value.r === 'number' &&
+    typeof value.g === 'number' &&
+    typeof value.b === 'number'
   )
 }
 

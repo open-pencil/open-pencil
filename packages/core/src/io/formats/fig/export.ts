@@ -256,10 +256,17 @@ function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange
     if (value !== undefined) Object.assign(canvasNc, { [field]: structuredClone(value) })
   }
 
-  if (!page.source.id) return
+  // The stage colour is USER data, not imported passthrough — `setPageColor`
+  // writes it here so that saving carries it. Gating it on `source.id` meant a
+  // page created in OpenPencil kept its colour for the session and lost it on
+  // save, so the document reopened grey and then wrote that grey back.
   if ('backgroundColor' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundColor = structuredClone(page.source.fig.rawNodeFields.backgroundColor)
   }
+
+  // The rest genuinely do need an imported identity: they are fields we carry
+  // back out unchanged, and there is nothing to carry for a page we authored.
+  if (!page.source.id) return
   if ('backgroundPaints' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundPaints = structuredClone(
       page.source.fig.rawNodeFields.backgroundPaints

@@ -1,3 +1,4 @@
+import { writeStoredPageColor } from '@open-pencil/fig'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { DECK_CANVAS_BG_COLOR } from '#core/constants'
@@ -8,7 +9,6 @@ import { collectGraphFontRequirements } from '#core/text/requirements'
 import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 
 import type { DocumentKind } from './document-kind'
-import { writeStoredPageColor } from './page-color'
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
 

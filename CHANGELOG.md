@@ -62,6 +62,7 @@
 - Center empty and setup states consistently across panels, dialogs, and workspaces.
 
 ### Fixed
+- Show the saved stage colour in workspace document thumbnails: headless thumbnail rendering applies the page's stored `backgroundColor` instead of the default grey, and returning to the workspace flushes pending autosaves first so a card never paints the stale raster from before a colour change.
 
 - Scale proportion-constrained `.fig` instance geometry through fixed wrapper layers so imported logos and icons retain their intended size.
 - Match Figma auto-layout spacing, padding, min/max constraints, scalar variable bindings, CanvasKit-shaped generated text, imported text bounds, and nested instance geometry more closely.

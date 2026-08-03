@@ -1,9 +1,9 @@
+import { readStoredPageColor } from '@open-pencil/fig'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { CANVAS_BG_COLOR, DECK_CANVAS_BG_COLOR } from '#core/constants'
 
 import { documentKindRules } from './document-kind'
-import { readStoredPageColor } from './page-color'
 import type { EditorContext } from './types'
 
 interface PageViewport {

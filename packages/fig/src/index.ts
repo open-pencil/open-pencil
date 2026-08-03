@@ -6,6 +6,7 @@ export {
   type FigParseResult,
   type WriteFigArchiveInput
 } from './archive'
+export { readStoredPageColor, writeStoredPageColor } from './page-color'
 export {
   effectiveFigmaRawNodeFields,
   effectiveFigmaSourcePayload,

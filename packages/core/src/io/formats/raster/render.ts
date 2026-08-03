@@ -1,5 +1,6 @@
 import type { CanvasKit, Canvas, MallocObj, Surface } from 'canvaskit-wasm'
 
+import { readStoredPageColor } from '@open-pencil/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
@@ -520,10 +521,27 @@ export function renderThumbnail(
   const contentH = bounds.maxY - bounds.minY
   if (contentW <= 0 || contentH <= 0) return null
 
-  const scale = Math.min(width / contentW, height / contentH, 2)
+  /**
+   * Breathing room around the composition.
+   *
+   * Fitting content edge-to-edge is technically correct and looks wrong: the
+   * editor shows a composition with margin around it, and a preview with none
+   * reads as a crop rather than a view of the document. It also absorbs the
+   * gap between a text node's measured box and the pixels its glyphs actually
+   * cover, which was clipping wide headlines at the frame edge.
+   */
+  const PADDING = 0.92
+  const scale = Math.min((width * PADDING) / contentW, (height * PADDING) / contentH, 2)
 
+  // Read the stage colour from the DOCUMENT, not from the renderer.
+  // `renderer.pageColor` is live editor state, synced only as a side effect of
+  // the canvas render loop, so an export can legitimately run against a
+  // renderer that never received it — and headless export has no loop at all.
+  // The stored value is the one the file will be restored with, which is
+  // exactly what a preview of that file should show.
+  const stage = readStoredPageColor(graph, pageId) ?? renderer.pageColor
   return renderToSurface(ck, renderer, graph, pageId, width, height, 'PNG', 100, true, (canvas) => {
-    canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
+    canvas.clear(ck.Color4f(stage.r, stage.g, stage.b, 1))
     const offsetX = (width - contentW * scale) / 2 - bounds.minX * scale
     const offsetY = (height - contentH * scale) / 2 - bounds.minY * scale
     canvas.translate(offsetX, offsetY)
