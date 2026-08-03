@@ -1,0 +1,71 @@
+import { getLocalCanvasStore } from '@/app/storage/local-store'
+import type { LocalCanvasStore } from '@/app/storage/local-store/store'
+import { enqueuePutCanvas, enqueuePutMetadata, enqueuePutThumb } from '@/app/storage/sync'
+import type { StorageTargetID } from '@/app/storage/target'
+
+export type PromotionResult = {
+  promoted: string[]
+  /** Rows that already belong somewhere else — never silently moved. */
+  skipped: string[]
+}
+
+export type PromotionDependencies = {
+  store: LocalCanvasStore
+  enqueueCanvas(canvasId: string, revision: number): Promise<void>
+  enqueueMetadata(canvasId: string, revision: number): Promise<void>
+  enqueueThumbnail(canvasId: string, revision: number): Promise<void>
+}
+
+/**
+ * Send documents written before a cloud existed to the cloud that now does.
+ *
+ * Without this, connecting a bucket only affects documents created afterwards:
+ * everything from the offline period stays local forever, which reads as the
+ * connection having silently failed.
+ *
+ * Uses the ordinary outbox rather than a bespoke upload path, so promoted
+ * documents take exactly the route a normal edit takes — no second
+ * implementation to keep correct, and no duplicate ids, since canvas ids are
+ * UUIDv4 and survive the transition unchanged.
+ */
+export async function promoteLocalDocuments(
+  targetId: StorageTargetID,
+  dependencies?: PromotionDependencies
+): Promise<PromotionResult> {
+  const runtime = dependencies ?? {
+    store: getLocalCanvasStore(),
+    enqueueCanvas: enqueuePutCanvas,
+    enqueueMetadata: enqueuePutMetadata,
+    enqueueThumbnail: enqueuePutThumb
+  }
+
+  const promoted: string[] = []
+  const skipped: string[] = []
+
+  for (const meta of await runtime.store.listMetas(true)) {
+    if (meta.tombstoned) continue
+    if (meta.syncTargetId === targetId) continue
+    if (meta.syncTargetId !== null) {
+      // Belongs to a different bucket. Retargeting it here would upload one
+      // user's documents into whichever destination they happened to connect
+      // next, which is not a decision this function gets to make.
+      skipped.push(meta.id)
+      continue
+    }
+
+    // Assign the target BEFORE enqueueing: the engine captures the row's target
+    // at enqueue, so the other order would queue jobs addressed to nowhere.
+    await runtime.store.updateMeta(meta.id, { syncTargetId: targetId })
+
+    if (meta.hasFig) await runtime.enqueueCanvas(meta.id, meta.revision)
+    else await runtime.enqueueMetadata(meta.id, meta.revision)
+    if (meta.hasThumb) await runtime.enqueueThumbnail(meta.id, meta.revision)
+
+    // Only now is `pending` true — it means "a durable job exists", and marking
+    // it before the enqueue would strand the row if anything above threw.
+    await runtime.store.updateMeta(meta.id, { syncStatus: 'pending' })
+    promoted.push(meta.id)
+  }
+
+  return { promoted, skipped }
+}

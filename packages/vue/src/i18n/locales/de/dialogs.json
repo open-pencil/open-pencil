@@ -288,5 +288,8 @@
   "syncStatusSetUpCloud": "Cloud ist nicht eingerichtet – klicken, um Cloud-Speicher zu verbinden",
   "backUpToCloud": "In die Cloud sichern",
   "backUpToCloudOn": "Dokumente werden beim Arbeiten in deinen Bucket synchronisiert.",
-  "backUpToCloudOff": "Pausiert – Dokumente bleiben auf diesem Gerät. Nichts in deinem Bucket wird gelöscht, deine Einstellungen bleiben erhalten."
+  "backUpToCloudOff": "Pausiert – Dokumente bleiben auf diesem Gerät. Nichts in deinem Bucket wird gelöscht, deine Einstellungen bleiben erhalten.",
+  "localDurabilityTitle": "In diesem Browser gespeichert",
+  "localDurabilityBody": "Deine Dokumente werden auf diesem Gerät gespeichert. Beim Löschen der Website-Daten gehen sie verloren, und Safari entfernt sie möglicherweise nach etwa 7 Tagen ohne Nutzung. Verbinde Cloud-Speicher für eine dauerhafte Kopie.",
+  "localDurabilityDismiss": "Verstanden"
 }

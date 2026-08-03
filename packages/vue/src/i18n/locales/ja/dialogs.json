@@ -288,5 +288,8 @@
   "syncStatusSetUpCloud": "クラウドが未設定です — クリックしてクラウドストレージを接続",
   "backUpToCloud": "クラウドにバックアップ",
   "backUpToCloudOn": "作業中にドキュメントがバケットへ同期されます。",
-  "backUpToCloudOff": "一時停止中 — ドキュメントはこのデバイスに保存されます。バケット内のデータは削除されず、設定も保持されます。"
+  "backUpToCloudOff": "一時停止中 — ドキュメントはこのデバイスに保存されます。バケット内のデータは削除されず、設定も保持されます。",
+  "localDurabilityTitle": "このブラウザに保存されています",
+  "localDurabilityBody": "ドキュメントはこの端末に保存されます。サイトデータを消去すると削除され、Safari では約7日間使用しないと削除される場合があります。永続的なコピーを保つにはクラウドストレージを接続してください。",
+  "localDurabilityDismiss": "OK"
 }

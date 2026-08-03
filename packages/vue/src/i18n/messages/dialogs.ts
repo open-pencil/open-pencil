@@ -184,6 +184,10 @@ export const dialogMessageDefaults = {
   syncFailedVia: params('Sync failed — {provider}'),
   workingOffline: 'Local storage only',
   syncStatusSetUpCloud: 'Cloud is not set up — click to connect cloud storage',
+  localDurabilityTitle: 'Stored in this browser',
+  localDurabilityBody:
+    'Your documents are saved on this device. Clearing site data will delete them, and Safari may remove them after about 7 days of inactivity. Connect cloud storage to keep a durable copy.',
+  localDurabilityDismiss: 'Got it',
   backUpToCloud: 'Back up to cloud',
   backUpToCloudOn: 'Documents sync to your bucket as you work.',
   backUpToCloudOff:

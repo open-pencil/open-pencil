@@ -288,5 +288,8 @@
   "syncStatusSetUpCloud": "Chmura nie jest skonfigurowana — kliknij, aby połączyć magazyn w chmurze",
   "backUpToCloud": "Kopia zapasowa w chmurze",
   "backUpToCloudOn": "Dokumenty synchronizują się z Twoim bucketem podczas pracy.",
-  "backUpToCloudOff": "Wstrzymano — dokumenty pozostają na tym urządzeniu. Nic nie zostanie usunięte z bucketa, a ustawienia są zachowane."
+  "backUpToCloudOff": "Wstrzymano — dokumenty pozostają na tym urządzeniu. Nic nie zostanie usunięte z bucketa, a ustawienia są zachowane.",
+  "localDurabilityTitle": "Zapisane w tej przeglądarce",
+  "localDurabilityBody": "Twoje dokumenty są zapisane na tym urządzeniu. Wyczyszczenie danych witryny je usunie, a Safari może je skasować po około 7 dniach bezczynności. Podłącz magazyn w chmurze, aby zachować trwałą kopię.",
+  "localDurabilityDismiss": "Rozumiem"
 }

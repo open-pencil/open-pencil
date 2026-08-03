@@ -151,7 +151,13 @@ test('an unconfigured workspace is usable, not a dead end', async ({ page }) => 
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
   // The old copy told first-time users to configure storage before doing
   // anything, which made a workspace that already worked look broken.
-  await expect(page.getByTestId('cloud-workspace-status')).toContainText('Working offline')
+  await expect(page.getByTestId('cloud-workspace-status')).toContainText('Local storage only')
+
+  // Honest about where the only copy lives — once, and dismissible.
+  const notice = page.getByTestId('local-durability-notice')
+  await expect(notice).toBeVisible()
+  await page.getByTestId('local-durability-dismiss').click()
+  await expect(notice).not.toBeVisible()
   await expect(page.getByTestId('storage-new-design')).toBeEnabled()
   await expect(page.getByTestId('storage-new-slides')).toBeEnabled()
 

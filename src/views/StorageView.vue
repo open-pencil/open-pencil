@@ -36,6 +36,8 @@ import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import { useDocumentSyncErrors } from '@/app/storage/document-sync-errors'
 import { createCanvasId } from '@/app/storage/id'
 import { isDeckStorageFile, prepareDeckStorageImport } from '@/app/storage/import'
+import { backupToCloud } from '@/app/storage/backup'
+import { promoteLocalDocuments } from '@/app/storage/promote'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
@@ -58,6 +60,7 @@ import StorageDocumentCard from '@/components/storage/StorageDocumentCard.vue'
 import RefreshIcon from '@/components/storage/RefreshIcon.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
 import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
+import LocalDurabilityNotice from '@/components/storage/LocalDurabilityNotice.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import {
@@ -327,6 +330,11 @@ async function refresh(): Promise<void> {
       clearSyncFailure()
       if (syncUiState.value === 'error') setSyncUi('idle')
     }
+    // Anything written before this bucket existed still has no destination.
+    // Connecting one should send it, not leave it behind — which is what makes
+    // a fresh connection look like it silently did nothing.
+    if (backupToCloud.value && targetId) await promoteLocalDocuments(targetId)
+
     const reconciliation = reconcileStorageDocuments(local, remote)
     documents.value = reconciliation.documents
     setDocumentSyncErrors(local)
@@ -672,6 +680,8 @@ onBeforeUnmount(clearThumbnailUrls)
         </button>
       </div>
     </header>
+
+    <LocalDurabilityNotice />
 
     <section class="flex min-h-0 w-full flex-1 flex-col overflow-y-auto p-6">
       <div class="mb-4 flex shrink-0 items-center gap-2">

@@ -288,5 +288,8 @@
   "syncStatusSetUpCloud": "尚未设置云端 — 点击以连接云存储",
   "backUpToCloud": "备份到云端",
   "backUpToCloudOn": "工作时文档会同步到你的存储桶。",
-  "backUpToCloudOff": "已暂停 — 文档保留在本机。存储桶中的内容不会被删除，设置也会保留。"
+  "backUpToCloudOff": "已暂停 — 文档保留在本机。存储桶中的内容不会被删除，设置也会保留。",
+  "localDurabilityTitle": "保存在此浏览器中",
+  "localDurabilityBody": "你的文档保存在本设备上。清除站点数据会将其删除，Safari 可能在约 7 天未使用后移除它们。连接云存储以保留持久副本。",
+  "localDurabilityDismiss": "知道了"
 }

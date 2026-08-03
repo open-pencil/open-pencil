@@ -288,5 +288,8 @@
   "syncStatusSetUpCloud": "Le cloud n'est pas configuré — cliquez pour connecter un stockage cloud",
   "backUpToCloud": "Sauvegarder dans le cloud",
   "backUpToCloudOn": "Les documents se synchronisent avec votre bucket pendant que vous travaillez.",
-  "backUpToCloudOff": "En pause — les documents restent sur cet appareil. Rien n’est supprimé de votre bucket et vos réglages sont conservés."
+  "backUpToCloudOff": "En pause — les documents restent sur cet appareil. Rien n’est supprimé de votre bucket et vos réglages sont conservés.",
+  "localDurabilityTitle": "Enregistré dans ce navigateur",
+  "localDurabilityBody": "Vos documents sont enregistrés sur cet appareil. Effacer les données du site les supprimera, et Safari peut les retirer après environ 7 jours d’inactivité. Connectez un stockage cloud pour conserver une copie durable.",
+  "localDurabilityDismiss": "Compris"
 }
