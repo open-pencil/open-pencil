@@ -236,3 +236,41 @@ describe('Appwrite storage configuration', () => {
     ])
   })
 })
+
+describe('bucket resolution stays on browser-usable calls', () => {
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('an explicit bucket ID never triggers an admin bucket call', async () => {
+    // listBuckets/createBucket ignore bucket permissions and require admin
+    // scope, which a browser origin never has — Appwrite resolves those to the
+    // `guests` role no matter what X-Appwrite-Key says. The discovery call used
+    // to run before the bucketId check, so even a named bucket hit it and
+    // failed with `missing scopes (["buckets.read"])`.
+    const adminCalls: string[] = []
+    const files = new Map<string, StoredFile>()
+    installStorageFetch(files)
+    const withFiles = globalThis.fetch
+    globalThis.fetch = async (input, init) => {
+      const { url, method } = requestDetails(input, init)
+      if (url.pathname.endsWith('/storage/buckets')) {
+        adminCalls.push(`${method} ${url.pathname}`)
+      }
+      return withFiles(input, init)
+    }
+
+    const adapter = createAppwriteStorageAdapterWithConfig(() =>
+      Promise.resolve({
+        endpoint: 'https://fra.cloud.appwrite.io/v1',
+        projectId: 'project-1',
+        bucketId: 'bucket-1',
+        apiKey: 'appwrite-api-key'
+      })
+    )
+
+    await adapter.listDocuments()
+
+    expect(adminCalls).toEqual([])
+  })
+})

@@ -34,25 +34,74 @@ const DEFAULT_BUCKET_NAME = 'OpenPencil'
 
 export type AppwriteConfigResolver = () => Promise<AppwriteConfig>
 
+/**
+ * Guidance followed by the provider's own words.
+ *
+ * Substituting a friendly sentence for the raw message used to destroy the only
+ * actionable part of it: `missing scopes (["buckets.read"])` names the exact
+ * scope, where the guidance can only list all of them. Keep both — the sentence
+ * says what to do, the detail says precisely what failed.
+ */
+function withProviderDetail(guidance: string, detail: string | null | undefined): string {
+  const trimmed = detail?.trim()
+  return trimmed ? `${guidance}\n\n${trimmed}` : guidance
+}
+
 function connectionErrorMessage(error: unknown): string {
   if (error instanceof AppwriteHttpError) {
-    if (error.type === 'general_unauthorized_scope') {
-      return 'The API key needs platforms, buckets, and files read/write scopes.'
+    const detail = error.type ? `${error.message} (${error.type})` : error.message
+    if (error.type === 'storage_bucket_not_found') {
+      return withProviderDetail(
+        "Bucket not found. Enter the bucket ID from the Appwrite console — that is the generated ID, not the bucket's display name.",
+        detail
+      )
     }
-    return error.message
+    if (error.type === 'general_unauthorized_scope') {
+      return withProviderDetail(
+        'The API key needs platforms, buckets, and files read/write scopes.',
+        detail
+      )
+    }
+    return detail
   }
   if (error instanceof TypeError) {
-    return 'Could not reach Appwrite. Check the endpoint and platforms.read/write scopes.'
+    return withProviderDetail(
+      'Could not reach Appwrite. Check the endpoint and platforms.read/write scopes.',
+      error.message
+    )
   }
   return error instanceof Error ? error.message : String(error)
 }
 
+/**
+ * Bucket-management calls (`listBuckets`, `createBucket`) are ADMIN operations.
+ * They ignore a bucket's own permission rows and require an API key with admin
+ * scope — which a browser origin never gets, because Appwrite resolves such
+ * requests to the `guests` role regardless of `X-Appwrite-Key`.
+ *
+ * File operations are different: they honour the bucket's Read/Write rows, so
+ * naming the bucket keeps the whole adapter on paths a browser can actually use.
+ *
+ * The discovery call used to run BEFORE the `config.bucketId` check, so even a
+ * user who supplied their bucket ID hit the admin call and failed with
+ * `missing scopes (["buckets.read"])`.
+ */
 async function selectOrCreateBucket(config: AppwriteConfig): Promise<string> {
-  const buckets = await withAppwritePlatformBootstrap(config, () => listBuckets(config))
-  if (config.bucketId) {
-    const existing = buckets.find((bucket) => bucket.$id === config.bucketId)
-    if (existing) return existing.$id
-    return (await createBucket(config, config.bucketId, DEFAULT_BUCKET_NAME)).$id
+  if (config.bucketId) return config.bucketId
+
+  let buckets: Awaited<ReturnType<typeof listBuckets>>
+  try {
+    buckets = await withAppwritePlatformBootstrap(config, () => listBuckets(config))
+  } catch (error) {
+    if (error instanceof AppwriteHttpError && error.type === 'general_unauthorized_scope') {
+      throw new Error(
+        withProviderDetail(
+          'Enter your Bucket ID. Discovering or creating a bucket needs admin access, which is not available from a browser — but OpenPencil can use a bucket you name directly.',
+          `${error.message} (${error.type})`
+        )
+      )
+    }
+    throw error
   }
 
   const named = buckets.find(

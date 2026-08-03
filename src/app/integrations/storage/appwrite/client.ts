@@ -208,6 +208,26 @@ export async function withAppwritePlatformBootstrap<T>(
   }
 }
 
+/**
+ * Appwrite answers 404 for a missing FILE and a missing BUCKET alike, and only
+ * the error `type` tells them apart. Treating both as "file absent" made a
+ * wrong bucket ID look like an empty bucket: the namespace check reported no
+ * marker, the follow-up upload 404'd too, and nothing ever said the bucket was
+ * the problem.
+ */
+async function assertBucketExists(response: Response, bucketId: string): Promise<void> {
+  const payload = await response
+    .clone()
+    .json()
+    .catch(() => ({}) as AppwriteErrorPayload)
+  if ((payload as AppwriteErrorPayload).type !== 'storage_bucket_not_found') return
+  throw new AppwriteHttpError(
+    404,
+    `Appwrite bucket "${bucketId}" was not found. Enter the bucket ID from the Appwrite console — that is the ID, not the bucket's display name.`,
+    'storage_bucket_not_found'
+  )
+}
+
 export async function headObject(
   config: AppwriteConfig,
   bucketId: string,
@@ -218,7 +238,10 @@ export async function headObject(
     config,
     `/storage/buckets/${encodeURIComponent(bucketId)}/files/${fileId}`
   )
-  if (response.status === 404) return false
+  if (response.status === 404) {
+    await assertBucketExists(response, bucketId)
+    return false
+  }
   await requireResponse(response)
   return true
 }
@@ -234,7 +257,10 @@ export async function deleteObject(
     `/storage/buckets/${encodeURIComponent(bucketId)}/files/${fileId}`,
     { method: 'DELETE' }
   )
-  if (response.status === 404) return
+  if (response.status === 404) {
+    await assertBucketExists(response, bucketId)
+    return
+  }
   await requireResponse(response)
 }
 

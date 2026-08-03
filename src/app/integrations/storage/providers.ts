@@ -22,10 +22,11 @@ export const APPWRITE_STORAGE_PROVIDER = defineStorageProvider({
   label: 'Appwrite',
   icon: appwriteLogoUrl,
   description:
-    'Use a dedicated API key with platforms, buckets, and files read/write scopes. OpenPencil selects or creates the bucket and registers its web platform automatically.',
+    'Create a bucket, give the Any role Create/Read/Update/Delete permissions on it, then enter its Bucket ID here along with an API key that has files read/write scopes.',
   helpUrl: 'https://cloud.appwrite.io/console',
   helpLabel: 'Open the Appwrite Console',
-  pricingNote: 'The free plan allows one bucket; leave Bucket ID blank to use it automatically.',
+  pricingNote:
+    'Enter the Bucket ID explicitly — browsers cannot list or create buckets, since those are admin-only operations.',
   preferenceFields: [
     {
       id: APPWRITE_ENDPOINT_FIELD,
@@ -42,9 +43,12 @@ export const APPWRITE_STORAGE_PROVIDER = defineStorageProvider({
     },
     {
       id: APPWRITE_BUCKET_ID_FIELD,
-      label: 'Bucket ID (optional)',
+      label: 'Bucket ID',
       kind: 'text',
-      placeholder: 'Leave blank to use or create OpenPencil'
+      required: true,
+      // An ID-shaped placeholder: entering the bucket's display name instead of
+      // its generated ID produces a bare 404 and is the easiest mistake to make.
+      placeholder: 'e.g. 6a1fb4370016b3e95de4 — the ID, not the bucket name'
     }
   ],
   credentialFields: [
