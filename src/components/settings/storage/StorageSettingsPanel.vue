@@ -32,6 +32,7 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 const { dialogs } = useI18n()
 const router = useRouter()
 const { copy, copied } = useClipboard()
+const { copy: copyErrorText, copied: errorCopied } = useClipboard()
 const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
 const providerOptions = computed(() =>
   storageProviderRegistry.list().map((registration) => ({
@@ -116,6 +117,29 @@ function copyCorsConfiguration(): void {
   void copy(buildCorsConfigurationJson(collectCloudCorsOrigins()))
 }
 
+/**
+ * Separate clipboard instance from the CORS button — a shared `copied` flag
+ * would flip both labels at once.
+ *
+ * Preference fields only; credentials are never read here.
+ */
+function copyResultError(): void {
+  if (!result.value || result.value.ok) return
+  const preferences = readStoragePreferences(provider.value.id)
+  void copyErrorText(
+    [
+      'OpenPencil storage connection test failed',
+      `Provider: ${provider.value.label} (${provider.value.id})`,
+      ...Object.entries(preferences)
+        .filter(([, value]) => value)
+        .map(([field, value]) => `${field}: ${value}`),
+      `Time: ${new Date().toISOString()}`,
+      '',
+      result.value.message
+    ].join('\n')
+  )
+}
+
 async function testConnection(): Promise<void> {
   busy.value = true
   result.value = null
@@ -149,6 +173,23 @@ onMounted(() => void refreshStatuses())
 
 <template>
   <section class="flex flex-col gap-3" data-test-id="settings-storage-panel">
+    <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsStorage }}</h3>
+
+    <label class="flex flex-col gap-1 text-[10px] text-muted">
+      {{ dialogs.storageProvider }}
+      <AppSelect
+        v-model="activeStorageProviderID"
+        :label="dialogs.storageProvider"
+        :options="providerOptions"
+        data-test-id="settings-storage-provider"
+      />
+    </label>
+
+    <!--
+      Provider identity and setup guidance follow the picker: they describe the
+      consequence of the selection, so showing them above it read as though the
+      branding were the panel's subject rather than the chosen provider.
+    -->
     <div class="flex items-start gap-2">
       <img
         v-if="provider.icon"
@@ -158,8 +199,7 @@ onMounted(() => void refreshStatuses())
         data-slot="storage-provider-icon"
       />
       <div>
-        <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsStorage }}</h3>
-        <p class="mt-0.5 text-[10px] text-muted">{{ provider.description }}</p>
+        <p class="text-[10px] text-muted">{{ provider.description }}</p>
         <a
           v-if="provider.helpUrl"
           :href="provider.helpUrl"
@@ -176,16 +216,6 @@ onMounted(() => void refreshStatuses())
         </p>
       </div>
     </div>
-
-    <label class="flex flex-col gap-1 text-[10px] text-muted">
-      {{ dialogs.storageProvider }}
-      <AppSelect
-        v-model="activeStorageProviderID"
-        :label="dialogs.storageProvider"
-        :options="providerOptions"
-        data-test-id="settings-storage-provider"
-      />
-    </label>
 
     <label
       v-for="field in provider.preferenceFields"
@@ -249,13 +279,50 @@ onMounted(() => void refreshStatuses())
 
     <button
       type="button"
-      class="mt-1 rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+      class="mt-1 flex items-center justify-center gap-1.5 rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
       :disabled="busy"
       data-test-id="settings-storage-test"
       @click="testConnection"
     >
+      <icon-lucide-loader-circle v-if="busy" class="size-3 animate-spin" />
       {{ dialogs.testConnection }}
     </button>
+
+    <!--
+      Directly under the button that produces it. This used to render after
+      "Open workspace" at the very bottom of the panel, so a failed test showed
+      its message below the fold and read as if nothing had happened at all.
+    -->
+    <div
+      v-if="result"
+      class="flex items-start gap-2 rounded border px-2 py-1.5"
+      :class="
+        result.ok
+          ? 'border-border bg-panel text-success'
+          : 'border-[var(--color-warning-border)] bg-[rgb(239_68_68/0.1)] text-danger'
+      "
+      :data-state="result.ok ? 'success' : 'error'"
+      data-test-id="settings-storage-result"
+      :role="result.ok ? 'status' : 'alert'"
+    >
+      <icon-lucide-circle-check v-if="result.ok" class="mt-px size-3 shrink-0" />
+      <icon-lucide-circle-alert v-else class="mt-px size-3 shrink-0" />
+      <p class="flex-1 text-[10px] leading-relaxed whitespace-pre-line select-text">
+        {{ result.message }}
+      </p>
+      <button
+        v-if="!result.ok"
+        type="button"
+        class="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium text-muted transition-colors hover:bg-hover hover:text-surface"
+        data-test-id="settings-storage-result-copy"
+        :aria-label="dialogs.copyStorageError"
+        :title="dialogs.copyStorageError"
+        @click="copyResultError"
+      >
+        <icon-lucide-check v-if="errorCopied" class="size-3" />
+        <icon-lucide-copy v-else class="size-3" />
+      </button>
+    </div>
 
     <button
       v-if="provider.id === 's3-compatible'"
@@ -275,14 +342,5 @@ onMounted(() => void refreshStatuses())
     >
       {{ dialogs.openStorageWorkspace }}
     </button>
-
-    <p
-      v-if="result"
-      class="rounded border border-border bg-panel px-2 py-1.5 text-[10px] text-muted data-[state=success]:text-success data-[state=error]:text-danger"
-      :data-state="result.ok ? 'success' : 'error'"
-      role="status"
-    >
-      {{ result.message }}
-    </p>
   </section>
 </template>

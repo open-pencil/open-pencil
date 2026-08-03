@@ -51,9 +51,24 @@ async function resolveConfig(runtime: StorageProviderRuntime): Promise<S3Compati
   }
 }
 
+/** Guidance followed by the provider's own words — never instead of them. */
+function withProviderDetail(guidance: string, detail: string | null | undefined): string {
+  const trimmed = detail?.trim()
+  return trimmed ? `${guidance}\n\n${trimmed}` : guidance
+}
+
+/** `<Code>` and status parsed from the S3 error body, discarded until now. */
+function s3ErrorDetail(error: unknown): string | null {
+  if (error instanceof S3HttpError) {
+    const code = error.code ? `${error.code}: ` : ''
+    return `${code}${error.message} (HTTP ${error.status})`
+  }
+  return error instanceof Error ? error.message : null
+}
+
 function connectionErrorMessage(error: unknown, isCors: boolean): string {
-  if (isCors) return formatBrowserCorsHelpMessage()
-  return error instanceof Error ? error.message : String(error)
+  if (isCors) return withProviderDetail(formatBrowserCorsHelpMessage(), s3ErrorDetail(error))
+  return s3ErrorDetail(error) ?? String(error)
 }
 
 async function ensureNamespace(config: S3CompatibleConfig): Promise<void> {
@@ -62,7 +77,15 @@ async function ensureNamespace(config: S3CompatibleConfig): Promise<void> {
     await putObject(config, STORAGE_NAMESPACE_MARKER, NAMESPACE_MARKER_BODY, 'application/json')
   } catch (error) {
     if (error instanceof S3HttpError && (error.status === 403 || error.status === 401)) {
-      throw new Error('Cannot write to this bucket. Check access permissions and bucket name.')
+      // Keep the parsed <Code>/<Message>: AccessDenied, SignatureDoesNotMatch,
+      // InvalidAccessKeyId and RequestTimeTooSkewed need very different fixes
+      // and all collapsed into one indistinguishable sentence.
+      throw new Error(
+        withProviderDetail(
+          'Cannot write to this bucket. Check access permissions and bucket name.',
+          s3ErrorDetail(error)
+        )
+      )
     }
     throw error
   }
