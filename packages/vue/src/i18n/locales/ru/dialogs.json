@@ -278,5 +278,8 @@
   "syncGuidanceServer": "Провайдер сообщил об ошибке на своей стороне. Обычно они проходят сами; повторять попытку безопасно.",
   "storageDocumentSyncFailed": "Сбой синхронизации",
   "storageDocumentPreviewNotSynced": "Эскиз не синхронизирован",
-  "copyStorageError": "Скопировать детали ошибки для отчёта"
+  "copyStorageError": "Скопировать детали ошибки для отчёта",
+  "cloudConnectedVia": "Облако подключено через {provider}",
+  "cloudNotConnected": "Офлайн — облако не подключено",
+  "cloudUnreachableVia": "Облако недоступно — {provider}"
 }

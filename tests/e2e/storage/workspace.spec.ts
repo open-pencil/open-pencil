@@ -74,7 +74,7 @@ test('configured storage lists and opens a remote document', async ({ page }) =>
   ).toBeVisible()
 
   await page.locator('[data-document-id="remote-1"]').click()
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/editor$/)
   await canvas.waitForInit()
   await expect(page.getByText('Remote design').first()).toBeVisible()
 })
@@ -140,19 +140,22 @@ test('dropping a deck stores its format and generated thumbnail', async ({ page 
   await expect.poll(() => puts.some((put) => put.url.endsWith('.thumb.jpg'))).toBe(true)
 
   await card.click()
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/editor$/)
   await new CanvasHelper(page).waitForInit()
   await expect(page.getByRole('button', { name: 'Present' })).toBeVisible()
 })
 
-test('storage workspace directs unconfigured users to Settings', async ({ page }) => {
-  await page.goto('/storage?test')
+test('an unconfigured workspace is usable, not a dead end', async ({ page }) => {
+  await page.goto('/?test')
 
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
-  await expect(page.getByText('Configure storage before using this workspace.')).toBeVisible()
-  await expect(page.getByTestId('storage-new-design')).toBeDisabled()
-  await expect(page.getByTestId('storage-new-slides')).toBeDisabled()
+  // The old copy told first-time users to configure storage before doing
+  // anything, which made a workspace that already worked look broken.
+  await expect(page.getByText('Working offline — no cloud connected')).toBeVisible()
+  await expect(page.getByTestId('storage-new-design')).toBeEnabled()
+  await expect(page.getByTestId('storage-new-slides')).toBeEnabled()
 
-  await page.getByRole('button', { name: 'Settings' }).last().click()
+  // Cloud is offered, never demanded.
+  await page.getByRole('button', { name: 'Cloud storage' }).last().click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })

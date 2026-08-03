@@ -66,7 +66,7 @@ async function framePaddingTop(page: Page, frameId: string) {
 }
 
 test('double-clicking an auto-layout padding handle opens a scrub editor', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -93,7 +93,7 @@ test('double-clicking an auto-layout padding handle opens a scrub editor', async
 })
 
 test('clicking the canvas closes the auto-layout padding editor', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()
@@ -112,7 +112,7 @@ test('clicking the canvas closes the auto-layout padding editor', async ({ page 
 })
 
 test('auto-layout padding editor follows canvas pan while open', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await canvas.clearCanvas()

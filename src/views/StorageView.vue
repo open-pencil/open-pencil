@@ -40,6 +40,7 @@ import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
 import { currentTargetIdFor } from '@/app/storage/target'
+import { useSyncStatus } from '@/app/storage/sync/use-sync-status'
 import {
   categorizeSyncFailure,
   clearSyncFailure,
@@ -130,6 +131,17 @@ const sortOptions = computed(() => [
   { value: 'date-desc' as const, label: dialogs.value.storageSortNewest },
   { value: 'date-asc' as const, label: dialogs.value.storageSortOldest }
 ])
+/** Configuration state, distinct from the transient sync activity in the chip. */
+const { indicator: syncIndicator } = useSyncStatus({ configured: () => configured.value })
+
+const cloudSubtitle = computed(() => {
+  if (!configured.value) return dialogs.value.cloudNotConnected
+  const named = { provider: provider.value.label }
+  return syncIndicator.value === 'degraded' || syncIndicator.value === 'failing'
+    ? dialogs.value.cloudUnreachableVia(named)
+    : dialogs.value.cloudConnectedVia(named)
+})
+
 const deleteDialogDescription = computed(() => {
   const target = deleteTarget.value
   if (!target) return ''
@@ -381,7 +393,7 @@ async function refresh(): Promise<void> {
 }
 
 async function openDocument(document: StorageDocument): Promise<void> {
-  await router.push('/')
+  await router.push('/editor')
   await nextTick()
   await openStorageDocumentInNewTab(document)
 }
@@ -500,7 +512,7 @@ async function createDocument(sourceFormat: 'fig' | 'deck'): Promise<void> {
   // Bind the new document to the provider that was selected when the user asked
   // for it, not to whatever a route change and a tick later happens to be live.
   const providerId = activeStorageProviderID.value
-  await router.push('/')
+  await router.push('/editor')
   await nextTick()
   const store =
     sourceFormat === 'deck'
@@ -642,7 +654,13 @@ onBeforeUnmount(clearThumbnailUrls)
     <header class="flex h-14 items-center border-b border-border px-6">
       <div>
         <h1 class="text-sm font-semibold">{{ dialogs.storageWorkspace }}</h1>
-        <p class="text-[10px] text-muted">{{ provider.label }}</p>
+        <!--
+          Three states, because they mean different things and want different
+          responses: no cloud at all (a valid way to work), a cloud that is
+          reachable, and a cloud that is set up but currently is not. Naming the
+          provider alone said nothing about which of those you were in.
+        -->
+        <p class="text-[10px] text-muted">{{ cloudSubtitle }}</p>
       </div>
       <div class="ml-auto flex gap-2">
         <button

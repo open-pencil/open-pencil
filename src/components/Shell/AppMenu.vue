@@ -23,7 +23,6 @@ import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { vTestId, useI18n } from '@open-pencil/vue'
 import AppShortcutText from '@/components/ui/AppShortcutText.vue'
-import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
 import { useMenuUI } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
@@ -51,7 +50,7 @@ const router = useRouter()
 // Use a fixed destination because browser history is absent on desktop and can
 // point somewhere other than the storage workspace on web.
 async function backToWorkspace(): Promise<void> {
-  await router.push('/storage')
+  await router.push('/')
 }
 
 const { rename, editingName, startRename, commitRename } = useDocumentNameRename(store)
@@ -86,14 +85,6 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
         <IconArrowLeft class="size-3.5 shrink-0" />
         <span>{{ dialogs.backToStorageWorkspace }}</span>
       </button>
-      <!--
-        The chip absorbs the squeeze, not the destination label. "Syncing 2
-        changes…" losing its tail still reads; a navigation control reduced to
-        "B…" does not tell you where it goes.
-      -->
-      <div class="flex min-w-0 flex-1 justify-end overflow-hidden">
-        <CloudWorkspaceStatus />
-      </div>
     </div>
     <div class="flex items-center gap-2 px-2 py-1.5">
       <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />

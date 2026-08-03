@@ -278,5 +278,8 @@
   "syncGuidanceServer": "El proveedor informó de un error del servidor. Suelen resolverse solos; reintentar es seguro.",
   "storageDocumentSyncFailed": "Error de sincronización",
   "storageDocumentPreviewNotSynced": "Vista previa sin sincronizar",
-  "copyStorageError": "Copiar los detalles del error para un informe de errores"
+  "copyStorageError": "Copiar los detalles del error para un informe de errores",
+  "cloudConnectedVia": "Nube conectada mediante {provider}",
+  "cloudNotConnected": "Sin conexión — nube no conectada",
+  "cloudUnreachableVia": "Nube no accesible — {provider}"
 }

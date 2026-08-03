@@ -57,6 +57,7 @@ import PresenterNotesPanel from '@/components/presentation/PresenterNotesPanel.v
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
+import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
 import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
@@ -511,5 +512,19 @@ onUnmounted(() => {
         <EditorCanvas />
       </div>
     </div>
+
+    <!--
+      Same thin strip the workspace uses. Sync state belongs at the edge of the
+      window in both places: it is ambient, and a chip in the toolbar competed
+      for width with controls that actually get clicked. Hidden with the rest of
+      the chrome, since ?no-chrome exists to produce a bare canvas.
+    -->
+    <footer
+      v-if="showChrome"
+      class="flex h-5 shrink-0 items-center justify-center border-t border-border bg-panel px-2"
+      data-test-id="editor-sync-status"
+    >
+      <CloudWorkspaceStatus />
+    </footer>
   </div>
 </template>

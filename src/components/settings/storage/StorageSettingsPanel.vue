@@ -110,7 +110,7 @@ async function clearCredential(field: string): Promise<void> {
 
 async function openWorkspace(): Promise<void> {
   settingsDialogOpen.value = false
-  await router.push('/storage')
+  await router.push('/')
 }
 
 function copyCorsConfiguration(): void {

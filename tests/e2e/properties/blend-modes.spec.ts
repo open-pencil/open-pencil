@@ -35,7 +35,7 @@ test.describe.configure({ mode: 'serial' })
 
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
-  await page.goto('/')
+  await page.goto('/editor')
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   ;[firstId, secondId] = await page.evaluate(() => {

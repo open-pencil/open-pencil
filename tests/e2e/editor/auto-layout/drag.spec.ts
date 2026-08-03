@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 test('dragging selected nested instance content reorders its auto-layout item', async ({
   page
 }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0
@@ -88,7 +88,7 @@ test('dragging selected nested instance content reorders its auto-layout item', 
 test('auto-layout drag does not show an insert indicator before order changes', async ({
   page
 }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

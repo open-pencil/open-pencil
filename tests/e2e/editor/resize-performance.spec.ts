@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test('resizing uses repaint-only previews until mouseup', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

@@ -278,5 +278,8 @@
   "syncGuidanceServer": "Le fournisseur signale une erreur côté serveur. Elle se résout généralement seule ; réessayer est sans risque.",
   "storageDocumentSyncFailed": "Échec de la synchronisation",
   "storageDocumentPreviewNotSynced": "Aperçu non synchronisé",
-  "copyStorageError": "Copier les détails de l'erreur pour un rapport de bogue"
+  "copyStorageError": "Copier les détails de l'erreur pour un rapport de bogue",
+  "cloudConnectedVia": "Cloud connecté via {provider}",
+  "cloudNotConnected": "Hors ligne — aucun cloud connecté",
+  "cloudUnreachableVia": "Cloud injoignable — {provider}"
 }

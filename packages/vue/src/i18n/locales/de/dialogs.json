@@ -278,5 +278,8 @@
   "syncGuidanceServer": "Der Anbieter meldet einen serverseitigen Fehler. Solche Fehler verschwinden meist von selbst; ein erneuter Versuch ist unbedenklich.",
   "storageDocumentSyncFailed": "Synchronisierung fehlgeschlagen",
   "storageDocumentPreviewNotSynced": "Vorschau nicht synchronisiert",
-  "copyStorageError": "Fehlerdetails für einen Fehlerbericht kopieren"
+  "copyStorageError": "Fehlerdetails für einen Fehlerbericht kopieren",
+  "cloudConnectedVia": "Cloud verbunden über {provider}",
+  "cloudNotConnected": "Offline – keine Cloud verbunden",
+  "cloudUnreachableVia": "Cloud nicht erreichbar – {provider}"
 }

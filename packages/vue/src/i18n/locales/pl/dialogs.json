@@ -278,5 +278,8 @@
   "syncGuidanceServer": "Dostawca zgłosił błąd po stronie serwera. Zwykle ustępuje samoczynnie; ponowienie jest bezpieczne.",
   "storageDocumentSyncFailed": "Synchronizacja nie powiodła się",
   "storageDocumentPreviewNotSynced": "Podgląd niezsynchronizowany",
-  "copyStorageError": "Skopiuj szczegóły błędu do zgłoszenia"
+  "copyStorageError": "Skopiuj szczegóły błędu do zgłoszenia",
+  "cloudConnectedVia": "Chmura połączona przez {provider}",
+  "cloudNotConnected": "Tryb offline — brak połączenia z chmurą",
+  "cloudUnreachableVia": "Chmura nieosiągalna — {provider}"
 }

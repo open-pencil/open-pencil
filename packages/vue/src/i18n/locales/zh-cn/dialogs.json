@@ -278,5 +278,8 @@
   "syncGuidanceServer": "服务商报告了服务端错误。这类错误通常会自行恢复，重试是安全的。",
   "storageDocumentSyncFailed": "同步失败",
   "storageDocumentPreviewNotSynced": "预览未同步",
-  "copyStorageError": "复制错误详情以便报告问题"
+  "copyStorageError": "复制错误详情以便报告问题",
+  "cloudConnectedVia": "已通过 {provider} 连接云端",
+  "cloudNotConnected": "离线 — 未连接云端",
+  "cloudUnreachableVia": "无法连接云端 — {provider}"
 }

@@ -278,5 +278,8 @@
   "syncGuidanceServer": "Il provider ha segnalato un errore lato server. Di solito si risolvono da soli; riprovare è sicuro.",
   "storageDocumentSyncFailed": "Sincronizzazione non riuscita",
   "storageDocumentPreviewNotSynced": "Anteprima non sincronizzata",
-  "copyStorageError": "Copia i dettagli dell'errore per una segnalazione"
+  "copyStorageError": "Copia i dettagli dell'errore per una segnalazione",
+  "cloudConnectedVia": "Cloud connesso tramite {provider}",
+  "cloudNotConnected": "Offline — nessun cloud connesso",
+  "cloudUnreachableVia": "Cloud non raggiungibile — {provider}"
 }

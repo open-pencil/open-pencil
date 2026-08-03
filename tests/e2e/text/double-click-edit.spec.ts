@@ -68,7 +68,7 @@ async function addFrameWithNestedText(page: Page) {
 }
 
 test('double-clicking top-level text enters text edit mode', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0
@@ -83,7 +83,7 @@ test('double-clicking top-level text enters text edit mode', async ({ page }) =>
 })
 
 test('single-clicking another text switches text edit target', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0
@@ -99,7 +99,7 @@ test('single-clicking another text switches text edit target', async ({ page }) 
 })
 
 test('double-click drill enters nested text edit mode', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

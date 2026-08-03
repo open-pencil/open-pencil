@@ -278,5 +278,8 @@
   "syncGuidanceServer": "プロバイダーがサーバー側のエラーを報告しました。通常は自然に解消します。再試行しても問題ありません。",
   "storageDocumentSyncFailed": "同期に失敗しました",
   "storageDocumentPreviewNotSynced": "プレビュー未同期",
-  "copyStorageError": "バグ報告用にエラーの詳細をコピー"
+  "copyStorageError": "バグ報告用にエラーの詳細をコピー",
+  "cloudConnectedVia": "{provider} 経由でクラウドに接続済み",
+  "cloudNotConnected": "オフライン — クラウド未接続",
+  "cloudUnreachableVia": "クラウドに接続できません — {provider}"
 }

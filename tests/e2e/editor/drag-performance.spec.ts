@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test('dragging a nested card uses repaint-only position previews', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0

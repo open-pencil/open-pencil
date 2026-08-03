@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function openTypographyForText(page: Page) {
-  await page.goto('/')
+  await page.goto('/editor')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
