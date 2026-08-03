@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useEventListener, useOnline } from '@vueuse/core'
+import { useClipboard, useEventListener, useOnline } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
@@ -14,6 +14,7 @@ import { useI18n } from '@open-pencil/vue'
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
+  readStoragePreferences,
   storageThumbnailMimeType,
   storageCredentialStatuses,
   storagePreferencesComplete,
@@ -197,10 +198,27 @@ function requestDocumentThumbnail(document: StorageDocument): void {
   pumpThumbnailQueue()
 }
 
-async function paintLocalDocuments(): Promise<void> {
+/**
+ * Refresh generation guard.
+ *
+ * `refresh()` is triggered by mount, the provider watcher, and the settings
+ * dialog closing, so several can be in flight at once. Without a guard, a slow
+ * listing from the PREVIOUS provider resolves last and wins — painting one
+ * provider's documents under another provider's name, and (far worse) seeding
+ * them into the local store tagged with whatever provider is active by the time
+ * the write runs, which corrupts the row permanently.
+ */
+let refreshGeneration = 0
+
+function isCurrentRefresh(generation: number, providerId: string): boolean {
+  return generation === refreshGeneration && providerId === activeStorageProviderID.value
+}
+
+async function paintLocalDocuments(generation: number, providerId: string): Promise<void> {
   const local = (await getLocalCanvasStore().listMetas()).filter(
-    (metadata) => metadata.providerId === activeStorageProviderID.value
+    (metadata) => metadata.providerId === providerId
   )
+  if (!isCurrentRefresh(generation, providerId)) return
   documents.value = local.map((metadata) => ({
     id: metadata.id,
     name: metadata.name,
@@ -211,31 +229,73 @@ async function paintLocalDocuments(): Promise<void> {
   }))
 }
 
+const { copy, copied: errorCopied } = useClipboard()
+
+/**
+ * Copy the failure with the context a bug report needs — a bare message like
+ * `User (role: guests) missing scopes` says nothing about which provider or
+ * endpoint produced it.
+ *
+ * Preference fields only: credentials live in the credential store and are
+ * never read here, so nothing secret can reach the clipboard.
+ */
+function copyError(): void {
+  const preferences = readStoragePreferences(provider.value.id)
+  const details = [
+    'OpenPencil storage error',
+    `Provider: ${provider.value.label} (${provider.value.id})`,
+    ...Object.entries(preferences)
+      .filter(([, value]) => value)
+      .map(([field, value]) => `${field}: ${value}`),
+    `Online: ${browserOnline.value}`,
+    `Time: ${new Date().toISOString()}`,
+    '',
+    error.value ?? ''
+  ]
+  void copy(details.join('\n'))
+}
+
 async function refresh(): Promise<void> {
+  // Pin the provider for the whole pass. Reading the live ref after an await
+  // would attribute this listing to whichever provider is active by then.
+  const providerId = activeStorageProviderID.value
+  const generation = ++refreshGeneration
   loading.value = true
   error.value = null
-  await paintLocalDocuments()
+  await paintLocalDocuments(generation, providerId)
   try {
-    credentialStatuses.value = await storageCredentialStatuses(provider.value.id)
+    const statuses = await storageCredentialStatuses(providerId)
+    if (!isCurrentRefresh(generation, providerId)) return
+    credentialStatuses.value = statuses
     if (!configured.value) {
       cloudReachable.value = null
       error.value = dialogs.value.storageNotConfigured
       return
     }
-    const remote = await createActiveStorageAdapter().listDocuments()
+    const remote = await createActiveStorageAdapter(providerId).listDocuments()
+    if (!isCurrentRefresh(generation, providerId)) return
     cloudReachable.value = true
     const localStore = getLocalCanvasStore()
     const local = (await localStore.listMetas(true)).filter(
-      (metadata) => metadata.providerId === activeStorageProviderID.value
+      (metadata) => metadata.providerId === providerId
     )
+    if (!isCurrentRefresh(generation, providerId)) return
     const reconciliation = reconcileStorageDocuments(local, remote)
     documents.value = reconciliation.documents
 
     for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
+    // Self-healing migration for rows written before body-upload tracking: the
+    // remote listing enumerates fig keys, so appearing in it proves the body is
+    // there. Restores evictability without trusting the old `synced` flag.
+    for (const id of reconciliation.bodyConfirmedIds) {
+      const metadata = local.find((row) => row.id === id)
+      if (metadata) await localStore.updateMeta(id, { bodySyncedRevision: metadata.revision })
+    }
     for (const document of reconciliation.remoteDocumentsToSeed) {
       await localStore.upsertIndexMeta({
         id: document.id,
-        providerId: activeStorageProviderID.value,
+        // The provider this listing actually came from — never the live ref.
+        providerId,
         name: document.name,
         sourceFormat: document.sourceFormat,
         trashedAt: document.trashedAt,
@@ -246,10 +306,11 @@ async function refresh(): Promise<void> {
       })
     }
   } catch (reason) {
+    if (!isCurrentRefresh(generation, providerId)) return
     cloudReachable.value = false
     error.value = reason instanceof Error ? reason.message : String(reason)
   } finally {
-    loading.value = false
+    if (generation === refreshGeneration) loading.value = false
   }
 }
 
@@ -376,10 +437,16 @@ async function createDocument(sourceFormat: 'fig' | 'deck'): Promise<void> {
       ? (await createDeckTab()).store
       : (() => {
           const current = activeTab.value
+          // Only recycle a genuinely blank scratch tab. `!canUndo` means "not
+          // edited in this session", NOT "empty": a stored document opened and
+          // left untouched also has no undo history, so a document named
+          // "Untitled" was being adopted wholesale — its contents were then
+          // saved into the new document under a fresh id.
           const reusable =
             current?.store.state.documentKind === 'design' &&
             current.store.state.documentName === 'Untitled' &&
-            !current.store.undo.canUndo
+            !current.store.undo.canUndo &&
+            current.store.getStorageBinding() === null
           return reusable ? current.store : createTab().store
         })()
   const documentId = createCanvasId()
@@ -589,10 +656,28 @@ onBeforeUnmount(clearThumbnailUrls)
         </div>
       </div>
 
-      <div class="mb-4 flex min-h-5 shrink-0 items-center">
-        <p v-if="error && configured" class="whitespace-pre-line text-xs text-danger" role="alert">
-          {{ error }}
-        </p>
+      <div class="mb-4 flex min-h-5 shrink-0 items-start gap-2">
+        <template v-if="error && configured">
+          <p
+            class="flex-1 whitespace-pre-line text-xs text-danger select-text"
+            data-test-id="storage-error"
+            role="alert"
+          >
+            {{ error }}
+          </p>
+          <button
+            type="button"
+            class="flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted transition-colors hover:bg-hover hover:text-surface"
+            data-test-id="storage-error-copy"
+            :aria-label="dialogs.copyStorageError"
+            :title="dialogs.copyStorageError"
+            @click="copyError"
+          >
+            <icon-lucide-check v-if="errorCopied" class="size-3" />
+            <icon-lucide-copy v-else class="size-3" />
+            <span>{{ errorCopied ? dialogs.copied : dialogs.copy }}</span>
+          </button>
+        </template>
         <p v-else-if="importing" class="text-xs text-muted" role="status">
           {{ dialogs.importingDeckFiles }}
         </p>
