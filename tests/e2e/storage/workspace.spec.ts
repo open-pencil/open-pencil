@@ -115,7 +115,9 @@ test('dropping a deck stores its format and generated thumbnail', async ({ page 
       return
     }
     if (url.pathname.endsWith('.fig')) {
-      await route.fulfill({ contentType: 'application/octet-stream', body: fixture })
+      // Buffer, not Uint8Array: route.fulfill rejects the latter, and the
+      // versioned layout's HEAD bodies/*.fig is the first request to hit here.
+      await route.fulfill({ contentType: 'application/octet-stream', body: Buffer.from(fixture) })
       return
     }
     await route.fulfill({ status: 404 })
@@ -143,8 +145,9 @@ test('dropping a deck stores its format and generated thumbnail', async ({ page 
   await expect(card).toBeVisible()
   await expect(card.locator('[data-slot="storage-thumbnail"] > img').first()).toBeVisible()
   await expect(card.locator('[data-slot="storage-format-badge"][data-format="deck"]')).toBeVisible()
+  // Versioned layout: the commit publishes a manifest, not a `.meta.json` sidecar.
   await expect
-    .poll(() => puts.find((put) => put.url.endsWith('.meta.json'))?.body?.toString() ?? '')
+    .poll(() => puts.find((put) => put.url.includes('/versions/'))?.body?.toString() ?? '')
     .toContain('"sourceFormat":"deck"')
   await expect.poll(() => puts.some((put) => put.url.endsWith('.thumb.jpg'))).toBe(true)
 
@@ -207,8 +210,9 @@ test('dropping a fig imports it as a design, not a deck', async ({ page }) => {
   const card = page.getByRole('button', { name: /Dropped design/ })
   await expect(card).toBeVisible()
   await expect(card.locator('[data-slot="storage-format-badge"][data-format="fig"]')).toBeVisible()
+  // Versioned layout: the commit publishes a manifest, not a `.meta.json` sidecar.
   await expect
-    .poll(() => puts.find((put) => put.url.endsWith('.meta.json'))?.body?.toString() ?? '')
+    .poll(() => puts.find((put) => put.url.includes('/versions/'))?.body?.toString() ?? '')
     .toContain('"sourceFormat":"fig"')
 
   await card.click()
