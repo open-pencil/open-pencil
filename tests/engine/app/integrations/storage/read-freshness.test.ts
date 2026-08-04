@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { listObjects, type AppwriteConfig } from '@/app/integrations/storage/appwrite/client'
-import { storageFetch } from '@/app/integrations/storage/s3/fetch'
+import { storageFetch, storageFetchTimeoutForBody } from '@/app/integrations/storage/s3/fetch'
 
 const APPWRITE: AppwriteConfig = {
   endpoint: 'https://fra.cloud.appwrite.io/v1',
@@ -42,6 +42,17 @@ describe('storage reads bypass the browser HTTP cache', () => {
 
     expect(spy.caches).toHaveLength(2)
     expect(new Set(spy.caches)).toEqual(new Set(['no-store']))
+  })
+
+  test('the fetch timeout scales with body size instead of killing large uploads', () => {
+    // Unknown or empty bodies keep the fixed hang protection.
+    expect(storageFetchTimeoutForBody(null)).toBe(20_000)
+    expect(storageFetchTimeoutForBody(0)).toBe(20_000)
+    // 8 MB at the assumed 256 KB/s floor: 32 s of transfer on top of the base.
+    expect(storageFetchTimeoutForBody(8 * 1024 * 1024)).toBe(52_000)
+    expect(storageFetchTimeoutForBody(16 * 1024 * 1024)).toBe(84_000)
+    // Capped so a stalled multi-hundred-MB upload still dies eventually.
+    expect(storageFetchTimeoutForBody(1024 * 1024 * 1024)).toBe(300_000)
   })
 
   test('the Appwrite seam passes no-store on every request', async () => {

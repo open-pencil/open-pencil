@@ -1,6 +1,6 @@
 import { AwsClient } from 'aws4fetch'
 
-import { storageFetch } from '@/app/integrations/storage/s3/fetch'
+import { storageFetch, storageFetchTimeoutForBody } from '@/app/integrations/storage/s3/fetch'
 import { inferS3Region } from '@/app/integrations/storage/s3/region'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
 import {
@@ -144,12 +144,16 @@ export async function s3Request(
         onUploadProgress
       )
     } else {
-      res = await storageFetch(signed.url, {
-        method: signed.method,
-        headers: signed.headers,
-        body: init.body ?? undefined,
-        credentials: 'omit'
-      })
+      res = await storageFetch(
+        signed.url,
+        {
+          method: signed.method,
+          headers: signed.headers,
+          body: init.body ?? undefined,
+          credentials: 'omit'
+        },
+        storageFetchTimeoutForBody(length)
+      )
     }
   } catch (error) {
     // Re-export as a typed error so UI can detect CORS/network blocks.
