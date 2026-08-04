@@ -37,7 +37,10 @@ export default defineConfig(async ({ command }) => ({
   ],
   clearScreen: false,
   build: {
-    chunkSizeWarningLimit: 2500
+    chunkSizeWarningLimit: 2500,
+    // Document-type icons must stay addressable files, never data-URI inlined.
+    assetsInlineLimit: (filePath, content) =>
+      filePath.includes('assets/icon-') ? false : content.length < 4096
   },
   server: createDevServerOptions(host)
 }))
