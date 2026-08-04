@@ -118,9 +118,9 @@ export function useSyncStatus(options: {
     const provider = options.providerLabel?.()
     switch (indicator.value) {
       case 'local':
-        // No provider to name. "Working offline" is a statement of fact about a
-        // supported configuration, not a warning about a missing one.
-        return t.workingOffline
+        // Distinguish "nothing is configured" from an intentionally paused
+        // configured target. Both are local-only, but only one needs setup.
+        return options.configured() ? t.syncStatusLocalOnly : t.workingOffline
       case 'syncing':
         return pendingCount.value > 1
           ? t.syncStatusSyncingCount({ count: pendingCount.value })

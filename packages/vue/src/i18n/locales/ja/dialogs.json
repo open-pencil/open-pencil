@@ -300,5 +300,10 @@
   "createImport": "読み込み…",
   "dropStorageFiles": "アップロードするには .fig または .deck ファイルをドロップ",
   "importingStorageFiles": "ファイルをインポートしています…",
-  "storageSupportedFilesOnly": "ここには .fig と .deck ファイルのみアップロードできます。"
+  "storageSupportedFilesOnly": "ここには .fig と .deck ファイルのみアップロードできます。",
+  "storageEmptyTrash": "ゴミ箱を空にする",
+  "storageEmptyTrashTitle": "ゴミ箱を空にしますか？",
+  "storageEmptyTrashDescription": "ゴミ箱内のすべてのドキュメントとクラウド上のデータを完全に削除します。この操作は取り消せません。",
+  "backUpToCloudUnconfigured": "クラウドバックアップはオンです。同期を開始するには、下でプロバイダーを設定してください。",
+  "localDurabilityEmptyBody": "新しいドキュメントはこの端末に保存されます。サイトデータを消去すると削除され、Safari では約7日間使用しないと削除される場合があります。永続的なコピーを保つにはクラウドストレージを接続してください。"
 }

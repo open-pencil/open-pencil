@@ -33,6 +33,8 @@
 - Drop `.deck` files into the cloud storage workspace; create Design or Slides documents; and sort, rename, duplicate, trash, restore, or permanently delete stored documents with cached viewport-only thumbnails.
 - Connect Bunny Storage by copying an S3-enabled Storage Zone name, endpoint, and password; browser users need no manual CORS configuration.
 - Connect Appwrite with a dedicated scoped API key; OpenPencil selects or creates the storage bucket and registers its web platform automatically.
+- Connect Backblaze B2 through a dedicated provider using its bucket name, S3 endpoint, application key ID, and application key.
+- Empty every document from the cloud storage Trash at once with an explicit permanent-deletion confirmation.
 - Figma Slides (`.deck`) support — open, edit, and save decks as a first-class document format
   - New `@open-pencil/deck` package: archive parse/write, slide↔page restructure
   - Each active slide becomes an editor page; left-rail filmstrip with lazy thumbnails
@@ -53,6 +55,9 @@
 ### Changed
 
 - Redesign the editor chrome and Design panel with denser, better-aligned controls, clearer selection and section states, improved menus and overlays, consistent light/dark theming, and better keyboard and screen-reader support.
+- Integrate the local browser-storage notice into the empty workspace instead of showing a separate full-width banner above it.
+- Keep the cloud-backup switch global and visible independently of the selected storage provider.
+- Center full-area empty and setup states consistently across panels, dialogs, and workspaces.
 - Choose Freeform, vertical, horizontal, or grid flow directly from the contextual Layout section, with sizing controls grouped alongside it.
 - Choose Auto width, Auto height, or Fixed size directly from the Layout section for text layers.
 - Scale the Layers panel to documents with thousands of nodes through virtualized rows, faster incremental updates, stable expansion, range selection, and scroll-to-selection.

@@ -182,14 +182,16 @@ export const dialogMessageDefaults = {
   cloudUnreachableVia: params('Cloud unreachable — {provider}'),
   syncedViaProvider: params('Synced via {provider}'),
   syncFailedVia: params('Sync failed — {provider}'),
-  workingOffline: 'Local storage only',
+  workingOffline: 'No cloud configured · Local storage only',
   syncStatusSetUpCloud: 'Cloud is not set up — click to connect cloud storage',
   localDurabilityTitle: 'Stored in this browser',
   localDurabilityBody:
     'Your documents are saved on this device. Clearing site data will delete them, and Safari may remove them after about 7 days of inactivity. Connect cloud storage to keep a durable copy.',
-  localDurabilityDismiss: 'Got it',
+  localDurabilityEmptyBody:
+    'New documents will be saved on this device. Clearing site data will delete them, and Safari may remove them after about 7 days of inactivity. Connect cloud storage to keep a durable copy.',
   backUpToCloud: 'Back up to cloud',
   backUpToCloudOn: 'Documents sync to your bucket as you work.',
+  backUpToCloudUnconfigured: 'Cloud backup is on. Configure a provider below to start syncing.',
   backUpToCloudOff:
     'Paused — documents stay on this device. Nothing in your bucket is deleted, and your settings are kept.',
   storageSyncing: 'Syncing',
@@ -261,6 +263,7 @@ export const dialogMessageDefaults = {
   storageMoveToTrash: 'Move to Trash',
   storageRestore: 'Restore',
   storageDeletePermanently: 'Delete permanently',
+  storageEmptyTrash: 'Empty Trash',
   storageRenameDescription: 'Choose a new name for this document.',
   storageMoveToTrashTitle: 'Move document to Trash?',
   storageMoveToTrashDescription: params('“{name}” will move to Trash. You can restore it later.'),
@@ -268,6 +271,9 @@ export const dialogMessageDefaults = {
   storageDeletePermanentlyDescription: params(
     '“{name}” and its cloud data will be permanently deleted. This cannot be undone.'
   ),
+  storageEmptyTrashTitle: 'Empty Trash?',
+  storageEmptyTrashDescription:
+    'All documents in Trash and their cloud data will be permanently deleted. This cannot be undone.',
   emptyStorageWorkspace: 'No stored documents yet.',
   emptyStorageTrash: 'Trash is empty.',
   loadingDocuments: 'Loading documents…',

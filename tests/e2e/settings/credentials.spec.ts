@@ -2,6 +2,28 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
+test('cloud backup remains global across storage providers', async ({ page }) => {
+  await page.goto('/?test')
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-storage').click()
+
+  const backupToggle = page.getByTestId('settings-storage-backup-toggle')
+  await expect(backupToggle).toBeVisible()
+  await expect(backupToggle).toHaveAttribute('data-state', 'checked')
+  await expect(page.getByText(/Configure a provider below to start syncing/)).toBeVisible()
+
+  await backupToggle.click()
+  await expect(backupToggle).toHaveAttribute('data-state', 'unchecked')
+
+  await page.getByTestId('settings-storage-provider').click()
+  await page.getByRole('option', { name: 'Appwrite' }).click()
+  await expect(backupToggle).toBeVisible()
+  await expect(backupToggle).toHaveAttribute('data-state', 'unchecked')
+  await expect(page.getByText(/Paused — documents stay on this device/)).toBeVisible()
+})
+
 test('Appwrite setup uses a scoped key and configures storage automatically', async ({ page }) => {
   const requests: Array<{ method: string; project: string; key: string }> = []
   await page.route('https://fra.cloud.appwrite.io/v1/**', async (route) => {
@@ -137,6 +159,63 @@ test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ p
   expect(requests.every((request) => request.authorization.includes('/de/s3/aws4_request'))).toBe(
     true
   )
+})
+
+test('Backblaze B2 setup maps application keys to its regional S3 endpoint', async ({ page }) => {
+  const requests: Array<{ method: string; authorization: string }> = []
+  await page.route('https://s3.us-west-004.backblazeb2.com/**', async (route) => {
+    const request = route.request()
+    requests.push({
+      method: request.method(),
+      authorization: request.headers().authorization ?? ''
+    })
+    if (request.method() === 'HEAD') {
+      await route.fulfill({ status: 404 })
+      return
+    }
+    if (new URL(request.url()).searchParams.get('list-type') === '2') {
+      await route.fulfill({
+        contentType: 'application/xml',
+        body: '<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>'
+      })
+      return
+    }
+    await route.fulfill({ status: 200 })
+  })
+
+  await page.goto('/?test')
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-storage').click()
+  await page.getByTestId('settings-storage-provider').click()
+  await page.getByRole('option', { name: 'Backblaze B2 (S3)', exact: true }).click()
+
+  await expect(page.getByText(/Browser use requires bucket CORS configuration/)).toBeVisible()
+  await expect(page.getByLabel('Bucket')).toHaveAttribute('placeholder', 'your-b2-bucket')
+  await expect(page.getByLabel('Endpoint')).toHaveAttribute(
+    'placeholder',
+    'https://s3.us-west-004.backblazeb2.com'
+  )
+  await expect(page.getByLabel('Application key ID', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Application key', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy CORS JSON' })).toBeVisible()
+
+  await page.getByLabel('Bucket').fill('openpencil-test')
+  await page.getByLabel('Endpoint').fill('https://s3.us-west-004.backblazeb2.com')
+  const keyIDField = page.locator('[data-credential="application-key-id"]')
+  await keyIDField.locator('input').fill('application-key-id-value')
+  await keyIDField.getByRole('button', { name: 'Save' }).click()
+  const keyField = page.locator('[data-credential="application-key"]')
+  await keyField.locator('input').fill('application-key-value')
+  await keyField.getByRole('button', { name: 'Save' }).click()
+  await page.getByTestId('settings-storage-test').click()
+
+  await expect(page.getByRole('status')).toContainText('Connected')
+  expect(requests.map((request) => request.method)).toEqual(['HEAD', 'PUT', 'GET'])
+  expect(
+    requests.every((request) => request.authorization.includes('/us-west-004/s3/aws4_request'))
+  ).toBe(true)
 })
 
 test('storage settings keep secrets behind the credential manager', async ({ page }) => {

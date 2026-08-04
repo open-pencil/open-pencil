@@ -28,6 +28,7 @@ import {
   duplicateStorageDocument,
   moveStorageDocumentToTrash,
   permanentlyDeleteStorageDocument,
+  permanentlyDeleteStorageDocuments,
   renameStorageDocument,
   restoreStorageDocument
 } from '@/app/storage/documents'
@@ -98,6 +99,7 @@ const renameValue = ref('')
 const deleteOpen = ref(false)
 const deleteTarget = ref<StorageDocument | null>(null)
 const deletePermanently = ref(false)
+const emptyTrashRequested = ref(false)
 const thumbnailUrls = ref<Record<string, string>>({})
 /**
  * Rows with no local body that the last listing did not contain.
@@ -139,6 +141,7 @@ const visibleDocuments = computed(() =>
 const trashedDocumentCount = computed(
   () => documents.value.filter((document) => document.trashedAt !== null).length
 )
+const showEmptyDurability = computed(() => folder.value === 'documents' && !configured.value)
 const sortOptions = computed(() => [
   { value: 'name-asc' as const, label: dialogs.value.storageSortNameAsc },
   { value: 'name-desc' as const, label: dialogs.value.storageSortNameDesc },
@@ -158,6 +161,7 @@ const targetLabel = computed(() => {
   return context.length ? `${provider.value.label} (${context.join(' · ')})` : provider.value.label
 })
 const deleteDialogDescription = computed(() => {
+  if (emptyTrashRequested.value) return dialogs.value.storageEmptyTrashDescription
   const target = deleteTarget.value
   if (!target) return ''
   const params = { name: target.name }
@@ -518,12 +522,51 @@ async function duplicateDocument(document: StorageDocument): Promise<void> {
 }
 
 function requestDelete(document: StorageDocument, permanent: boolean): void {
+  emptyTrashRequested.value = false
   deleteTarget.value = document
   deletePermanently.value = permanent
   deleteOpen.value = true
 }
 
+function requestEmptyTrash(): void {
+  emptyTrashRequested.value = true
+  deleteTarget.value = null
+  deletePermanently.value = true
+  deleteOpen.value = true
+}
+
+async function confirmEmptyTrash(): Promise<void> {
+  const trashed = documents.value.filter((document) => document.trashedAt !== null)
+  for (const document of trashed) setDocumentBusy(document.id, true)
+  error.value = null
+
+  try {
+    const result = await permanentlyDeleteStorageDocuments(activeStorageProviderID.value, trashed)
+    const deletedIds = new Set(result.deleted.map((document) => document.id))
+    documents.value = documents.value.filter((document) => !deletedIds.has(document.id))
+    for (const document of result.deleted) removeThumbnailUrl(document.id)
+    if (result.failed.length) {
+      error.value = result.failed
+        .map(
+          ({ document, reason }) =>
+            `${document.name}: ${reason instanceof Error ? reason.message : String(reason)}`
+        )
+        .join('\n')
+    }
+    deleteOpen.value = false
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : String(reason)
+  } finally {
+    for (const document of trashed) setDocumentBusy(document.id, false)
+    emptyTrashRequested.value = false
+  }
+}
+
 async function confirmDelete(): Promise<void> {
+  if (emptyTrashRequested.value) {
+    await confirmEmptyTrash()
+    return
+  }
   const target = deleteTarget.value
   if (!target) return
   const providerId = activeStorageProviderID.value
@@ -744,7 +787,7 @@ onBeforeUnmount(clearThumbnailUrls)
       @change="onImportPicked"
     />
 
-    <LocalDurabilityNotice />
+    <LocalDurabilityNotice v-if="documents.length > 0 && !configured" />
 
     <section class="flex min-h-0 w-full flex-1 flex-col overflow-y-auto p-6">
       <div class="mb-4 flex shrink-0 items-center gap-2">
@@ -774,6 +817,17 @@ onBeforeUnmount(clearThumbnailUrls)
             </span>
           </button>
         </div>
+        <button
+          v-if="folder === 'trash' && trashedDocumentCount"
+          type="button"
+          class="flex h-7 items-center justify-center gap-1.5 whitespace-nowrap rounded px-2 text-xs text-danger hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+          :disabled="busyDocumentIds.size > 0"
+          data-test-id="storage-empty-trash"
+          @click="requestEmptyTrash"
+        >
+          <TrashIcon class="size-3.5" />
+          <span>{{ dialogs.storageEmptyTrash }}</span>
+        </button>
         <div class="ml-auto flex items-center gap-1.5">
           <AppSelect
             v-model="sortMode"
@@ -862,11 +916,21 @@ onBeforeUnmount(clearThumbnailUrls)
       -->
       <AppPlaceholder
         v-else
-        :label="folder === 'trash' ? dialogs.emptyStorageTrash : dialogs.emptyStorageWorkspace"
+        :label="
+          folder === 'trash'
+            ? dialogs.emptyStorageTrash
+            : showEmptyDurability
+              ? dialogs.localDurabilityTitle
+              : dialogs.emptyStorageWorkspace
+        "
+        :description="showEmptyDurability ? dialogs.localDurabilityEmptyBody : undefined"
         size="page"
+        :data-test-id="showEmptyDurability ? 'local-durability-notice' : undefined"
+        :data-placement="showEmptyDurability ? 'empty' : undefined"
       >
         <template #icon>
           <TrashIcon v-if="folder === 'trash'" class="size-5" />
+          <icon-lucide-hard-drive v-else-if="showEmptyDurability" class="size-5" />
           <icon-lucide-files v-else class="size-5" />
         </template>
         <template v-if="!configured && folder !== 'trash'" #action>
@@ -937,9 +1001,11 @@ onBeforeUnmount(clearThumbnailUrls)
       <div class="border-b border-border px-4 py-3">
         <AlertDialogTitle class="text-sm font-semibold text-surface">
           {{
-            deletePermanently
-              ? dialogs.storageDeletePermanentlyTitle
-              : dialogs.storageMoveToTrashTitle
+            emptyTrashRequested
+              ? dialogs.storageEmptyTrashTitle
+              : deletePermanently
+                ? dialogs.storageDeletePermanentlyTitle
+                : dialogs.storageMoveToTrashTitle
           }}
         </AlertDialogTitle>
       </div>
@@ -960,7 +1026,13 @@ onBeforeUnmount(clearThumbnailUrls)
             class="rounded bg-danger px-3 py-1.5 text-xs font-medium text-white hover:bg-danger/90"
             @click="confirmDelete"
           >
-            {{ deletePermanently ? dialogs.storageDeletePermanently : dialogs.storageMoveToTrash }}
+            {{
+              emptyTrashRequested
+                ? dialogs.storageEmptyTrash
+                : deletePermanently
+                  ? dialogs.storageDeletePermanently
+                  : dialogs.storageMoveToTrash
+            }}
           </button>
         </AlertDialogAction>
       </AppDialogFooter>

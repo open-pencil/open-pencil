@@ -222,13 +222,16 @@ test('an unconfigured workspace is usable, not a dead end', async ({ page }) => 
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
   // The old copy told first-time users to configure storage before doing
   // anything, which made a workspace that already worked look broken.
-  await expect(page.getByTestId('cloud-workspace-status')).toContainText('Local storage only')
+  await expect(page.getByTestId('cloud-workspace-status')).toContainText(
+    'No cloud configured · Local storage only'
+  )
 
-  // Honest about where the only copy lives — once, and dismissible.
+  // Honest about where the only copy lives, integrated into the empty state.
   const notice = page.getByTestId('local-durability-notice')
   await expect(notice).toBeVisible()
-  await page.getByTestId('local-durability-dismiss').click()
-  await expect(notice).not.toBeVisible()
+  await expect(notice).toHaveAttribute('data-placement', 'empty')
+  await expect(notice).toContainText('New documents will be saved on this device.')
+  await expect(page.getByRole('button', { name: 'Got it' })).toHaveCount(0)
   await expect(page.getByTestId('storage-new-design')).toBeEnabled()
   await expect(page.getByTestId('storage-new-slides')).toBeEnabled()
 
@@ -237,9 +240,44 @@ test('an unconfigured workspace is usable, not a dead end', async ({ page }) => 
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })
 
+test('emptying Trash requires confirmation and removes every trashed document', async ({
+  page
+}) => {
+  await page.goto('/?test')
+  await page.getByTestId('storage-new-design').click()
+
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  await canvas.drawRect(120, 120, 260, 240)
+  await page.getByTestId('app-back-to-workspace').click()
+
+  const card = page.locator('[data-document-id]').first()
+  await expect(card).toBeVisible()
+  await card.click({ button: 'right' })
+  await page.getByTestId('storage-context-trash').click()
+  await page
+    .getByTestId('storage-delete-dialog')
+    .getByRole('button', { name: 'Move to Trash' })
+    .click()
+
+  await page.getByTestId('storage-folder-trash').click()
+  const emptyTrash = page.getByTestId('storage-empty-trash')
+  await expect(emptyTrash).toBeVisible()
+
+  await emptyTrash.click()
+  const dialog = page.getByTestId('storage-delete-dialog')
+  await expect(dialog.getByText('Empty Trash?')).toBeVisible()
+  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(card).toBeVisible()
+
+  await emptyTrash.click()
+  await dialog.getByRole('button', { name: 'Empty Trash' }).click()
+  await expect(page.locator('[data-document-id]')).toHaveCount(0)
+  await expect(page.getByText('Trash is empty.')).toBeVisible()
+})
+
 test('a blank Untitled leaves nothing behind, an edited one does', async ({ page }) => {
   await page.goto('/?test')
-  await page.getByTestId('local-durability-dismiss').click()
 
   // Create one, touch nothing, close it.
   await page.getByTestId('storage-new-design').click()
@@ -268,7 +306,6 @@ test('a blank Untitled leaves nothing behind, an edited one does', async ({ page
 
 test('a document is renamed in its tab, and the new name sticks', async ({ page }) => {
   await page.goto('/?test')
-  await page.getByTestId('local-durability-dismiss').click()
   await page.getByTestId('storage-new-design').click()
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
@@ -298,7 +335,6 @@ test('a document is renamed in its tab, and the new name sticks', async ({ page 
 
 test('escape abandons a tab rename', async ({ page }) => {
   await page.goto('/?test')
-  await page.getByTestId('local-durability-dismiss').click()
   await page.getByTestId('storage-new-design').click()
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()

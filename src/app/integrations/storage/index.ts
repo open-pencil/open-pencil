@@ -6,9 +6,11 @@ export {
   writeStoragePreference
 } from './preferences'
 export { createAppwriteStorageAdapter } from './appwrite/adapter'
+export { createBackblazeStorageAdapter } from './backblaze/adapter'
 export type { StoragePreferences } from './preferences'
 export {
   APPWRITE_STORAGE_PROVIDER,
+  BACKBLAZE_STORAGE_PROVIDER,
   BUNNY_STORAGE_PROVIDER,
   S3_STORAGE_PROVIDER,
   storageProviderRegistry

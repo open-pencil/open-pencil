@@ -102,6 +102,8 @@ export type StorageProviderRegistration = {
   helpLabel?: string
   /** Short cost summary, so the trade-off is visible before signing up. */
   pricingNote?: string
+  /** Offer the shared S3 CORS configuration helper for browser access. */
+  corsConfiguration?: 's3'
   preferenceFields: readonly StoragePreferenceField[]
   credentialFields: readonly StorageCredentialField[]
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter

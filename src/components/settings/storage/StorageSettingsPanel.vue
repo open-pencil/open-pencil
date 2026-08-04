@@ -25,10 +25,10 @@ import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { credentialRef } from '@/app/settings/credentials/reference'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
+import { backupToCloud, setBackupToCloud } from '@/app/storage/backup'
 import { resumeStorageSync } from '@/app/storage/sync'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import { backupToCloud } from '@/app/storage/backup'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 
 const { dialogs } = useI18n()
@@ -71,6 +71,10 @@ const configured = computed(
       (field) => !field.required || credentialStatuses.value[field.id] === 'configured'
     )
 )
+const backupDescription = computed(() => {
+  if (!backupEnabled.value) return dialogs.value.backUpToCloudOff
+  return configured.value ? dialogs.value.backUpToCloudOn : dialogs.value.backUpToCloudUnconfigured
+})
 
 function preferenceLabel(field: StoragePreferenceField): string {
   if (field.id === 'endpoint') return dialogs.value.storageEndpoint
@@ -176,7 +180,31 @@ onMounted(() => void refreshStatuses())
 
 <template>
   <section class="flex flex-col gap-3" data-test-id="settings-storage-panel">
-    <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsStorage }}</h3>
+    <div class="flex flex-wrap items-start gap-3">
+      <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsStorage }}</h3>
+
+      <!--
+        Pause without dismantling. Clearing the API key to stop syncing means
+        re-entering it to resume, and it destroys the one setting that is
+        genuinely annoying to recreate.
+      -->
+      <div
+        class="ml-auto flex min-w-0 max-w-md flex-1 items-start gap-2 rounded border border-border bg-panel px-3 py-2"
+      >
+        <AppSwitch
+          :model-value="backupEnabled"
+          :label="dialogs.backUpToCloud"
+          data-test-id="settings-storage-backup-toggle"
+          @update:model-value="setBackupToCloud"
+        />
+        <div class="min-w-0">
+          <p class="text-[11px] font-medium text-surface">{{ dialogs.backUpToCloud }}</p>
+          <p class="text-[10px] leading-snug text-muted">
+            {{ backupDescription }}
+          </p>
+        </div>
+      </div>
+    </div>
 
     <label class="flex flex-col gap-1 text-[10px] text-muted">
       {{ dialogs.storageProvider }}
@@ -328,35 +356,13 @@ onMounted(() => void refreshStatuses())
     </div>
 
     <button
-      v-if="provider.id === 's3-compatible'"
+      v-if="provider.corsConfiguration === 's3'"
       type="button"
       class="rounded px-3 py-1.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
       @click="copyCorsConfiguration"
     >
       {{ copied ? dialogs.copied : dialogs.copyStorageCors }}
     </button>
-
-    <!--
-      Pause without dismantling. Clearing the API key to stop syncing means
-      re-entering it to resume, and it destroys the one setting that is
-      genuinely annoying to recreate.
-    -->
-    <div
-      v-if="configured"
-      class="flex items-start gap-2 rounded border border-border bg-panel px-3 py-2"
-    >
-      <AppSwitch
-        v-model="backupEnabled"
-        :label="dialogs.backUpToCloud"
-        data-test-id="settings-storage-backup-toggle"
-      />
-      <div class="min-w-0">
-        <p class="text-[11px] font-medium text-surface">{{ dialogs.backUpToCloud }}</p>
-        <p class="text-[10px] leading-snug text-muted">
-          {{ backupEnabled ? dialogs.backUpToCloudOn : dialogs.backUpToCloudOff }}
-        </p>
-      </div>
-    </div>
 
     <button
       type="button"

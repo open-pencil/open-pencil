@@ -25,6 +25,16 @@ export type StorageDocumentMutationDependencies = {
   createId: typeof createCanvasId
 }
 
+export type StorageDocumentDeletionFailure = {
+  document: StorageDocument
+  reason: unknown
+}
+
+export type StorageDocumentDeletionResult = {
+  deleted: StorageDocument[]
+  failed: StorageDocumentDeletionFailure[]
+}
+
 function dependenciesFor(
   providerId: StorageProviderID,
   dependencies?: StorageDocumentMutationDependencies
@@ -258,4 +268,25 @@ export async function permanentlyDeleteStorageDocument(
     await runtime.store.updateMeta(document.id, { syncStatus: 'local' })
     throw error
   }
+}
+
+/** Delete a batch without letting one failed row strand everything after it. */
+export async function permanentlyDeleteStorageDocuments(
+  providerId: StorageProviderID,
+  documents: StorageDocument[],
+  dependencies?: StorageDocumentMutationDependencies
+): Promise<StorageDocumentDeletionResult> {
+  const runtime = dependenciesFor(providerId, dependencies)
+  const result: StorageDocumentDeletionResult = { deleted: [], failed: [] }
+
+  for (const document of documents) {
+    try {
+      await permanentlyDeleteStorageDocument(providerId, document, runtime)
+      result.deleted.push(document)
+    } catch (reason) {
+      result.failed.push({ document, reason })
+    }
+  }
+
+  return result
 }

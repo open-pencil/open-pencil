@@ -1,4 +1,5 @@
 import appwriteLogoUrl from '@/assets/appwrite-logo.svg'
+import backblazeLogoUrl from '@/assets/backblaze-logo.svg'
 import bunnyLogoUrl from '@/assets/logo-bunnynet-icon.svg'
 
 import { createAppwriteStorageAdapter } from './appwrite/adapter'
@@ -8,6 +9,13 @@ import {
   APPWRITE_ENDPOINT_FIELD,
   APPWRITE_PROJECT_ID_FIELD
 } from './appwrite/config'
+import { createBackblazeStorageAdapter } from './backblaze/adapter'
+import {
+  BACKBLAZE_APPLICATION_KEY_FIELD,
+  BACKBLAZE_APPLICATION_KEY_ID_FIELD,
+  BACKBLAZE_BUCKET_FIELD,
+  BACKBLAZE_ENDPOINT_FIELD
+} from './backblaze/config'
 import { createBunnyStorageAdapter } from './bunny/adapter'
 import {
   BUNNY_ENDPOINT_FIELD,
@@ -96,11 +104,52 @@ export const BUNNY_STORAGE_PROVIDER = defineStorageProvider({
   createAdapter: createBunnyStorageAdapter
 })
 
+export const BACKBLAZE_STORAGE_PROVIDER = defineStorageProvider({
+  id: 'backblaze-b2',
+  label: 'Backblaze B2 (S3)',
+  icon: backblazeLogoUrl,
+  description:
+    'Create a B2 bucket and a bucket-scoped application key with list, read, write, and delete access, then copy the bucket name and S3 endpoint shown by Backblaze. Browser use requires bucket CORS configuration.',
+  helpUrl: 'https://secure.backblaze.com/b2_buckets.htm',
+  helpLabel: 'Open Backblaze B2',
+  corsConfiguration: 's3',
+  preferenceFields: [
+    {
+      id: BACKBLAZE_BUCKET_FIELD,
+      label: 'Bucket',
+      kind: 'text',
+      required: true,
+      placeholder: 'your-b2-bucket'
+    },
+    {
+      id: BACKBLAZE_ENDPOINT_FIELD,
+      label: 'S3 endpoint',
+      kind: 'url',
+      required: true,
+      placeholder: 'https://s3.us-west-004.backblazeb2.com'
+    }
+  ],
+  credentialFields: [
+    {
+      id: BACKBLAZE_APPLICATION_KEY_ID_FIELD,
+      label: 'Application key ID',
+      required: true
+    },
+    {
+      id: BACKBLAZE_APPLICATION_KEY_FIELD,
+      label: 'Application key',
+      required: true
+    }
+  ],
+  createAdapter: createBackblazeStorageAdapter
+})
+
 export const S3_STORAGE_PROVIDER = defineStorageProvider({
   id: 's3-compatible',
   label: 'Generic S3',
   description:
-    'AWS S3, Backblaze B2, Cloudflare R2, MinIO, and compatible storage. Requires adding a CORS configuration to your bucket.',
+    'AWS S3, Cloudflare R2, MinIO, and other compatible storage. Requires adding a CORS configuration to your bucket.',
+  corsConfiguration: 's3',
   preferenceFields: [
     { id: 'endpoint', label: 'Endpoint', kind: 'url', required: true },
     { id: 'bucket', label: 'Bucket', kind: 'text', required: true },
@@ -116,5 +165,6 @@ export const S3_STORAGE_PROVIDER = defineStorageProvider({
 export const storageProviderRegistry = new StorageProviderRegistry([
   APPWRITE_STORAGE_PROVIDER,
   BUNNY_STORAGE_PROVIDER,
+  BACKBLAZE_STORAGE_PROVIDER,
   S3_STORAGE_PROVIDER
 ])

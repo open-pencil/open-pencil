@@ -300,5 +300,10 @@
   "createImport": "Importuj…",
   "dropStorageFiles": "Upuść pliki .fig lub .deck, aby je przesłać",
   "importingStorageFiles": "Importowanie plików…",
-  "storageSupportedFilesOnly": "Tutaj można przesyłać tylko pliki .fig i .deck."
+  "storageSupportedFilesOnly": "Tutaj można przesyłać tylko pliki .fig i .deck.",
+  "storageEmptyTrash": "Opróżnij kosz",
+  "storageEmptyTrashTitle": "Opróżnić kosz?",
+  "storageEmptyTrashDescription": "Wszystkie dokumenty w koszu i ich dane w chmurze zostaną trwale usunięte. Tej operacji nie można cofnąć.",
+  "backUpToCloudUnconfigured": "Kopia zapasowa w chmurze jest włączona. Skonfiguruj dostawcę poniżej, aby rozpocząć synchronizację.",
+  "localDurabilityEmptyBody": "Nowe dokumenty będą zapisywane na tym urządzeniu. Wyczyszczenie danych witryny je usunie, a Safari może je skasować po około 7 dniach bezczynności. Podłącz magazyn w chmurze, aby zachować trwałą kopię."
 }

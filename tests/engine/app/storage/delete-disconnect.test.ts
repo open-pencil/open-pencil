@@ -5,6 +5,7 @@ import { setBackupToCloud } from '@/app/storage/backup'
 import { disconnectStorageTarget } from '@/app/storage/disconnect'
 import {
   permanentlyDeleteStorageDocument,
+  permanentlyDeleteStorageDocuments,
   type StorageDocumentMutationDependencies
 } from '@/app/storage/documents'
 import {
@@ -166,6 +167,32 @@ afterEach(() => {
 })
 
 describe('permanent delete', () => {
+  test('bulk deletion continues after a failed row and reports the remainder', async () => {
+    const world = createWorld()
+    const first = await seedDocument(world, 'first', null)
+    const last = await seedDocument(world, 'last', null)
+    const missing: StorageDocument = {
+      id: 'missing',
+      name: 'missing',
+      sourceFormat: 'fig',
+      updatedAt: new Date().toISOString(),
+      trashedAt: new Date().toISOString(),
+      metadataAuthoritative: true
+    }
+
+    const result = await permanentlyDeleteStorageDocuments(
+      PROVIDER,
+      [first, missing, last],
+      documentDeps(world)
+    )
+
+    expect(result.deleted.map((document) => document.id)).toEqual(['first', 'last'])
+    expect(result.failed.map(({ document }) => document.id)).toEqual(['missing'])
+    expect(result.failed[0]?.reason).toBeInstanceOf(Error)
+    expect(await world.store.getMeta('first')).toBeNull()
+    expect(await world.store.getMeta('last')).toBeNull()
+  })
+
   test('a local-only document is removed outright, bytes and all', async () => {
     const world = createWorld()
     const document = await seedDocument(world, 'doc', null)

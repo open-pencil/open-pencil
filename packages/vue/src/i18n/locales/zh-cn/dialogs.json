@@ -300,5 +300,10 @@
   "createImport": "导入…",
   "dropStorageFiles": "拖放 .fig 或 .deck 文件以上传",
   "importingStorageFiles": "正在导入文件…",
-  "storageSupportedFilesOnly": "此处只能上传 .fig 和 .deck 文件。"
+  "storageSupportedFilesOnly": "此处只能上传 .fig 和 .deck 文件。",
+  "storageEmptyTrash": "清空回收站",
+  "storageEmptyTrashTitle": "清空回收站？",
+  "storageEmptyTrashDescription": "回收站中的所有文档及其云端数据都将被永久删除。此操作无法撤销。",
+  "backUpToCloudUnconfigured": "云备份已开启。请在下方配置服务提供商以开始同步。",
+  "localDurabilityEmptyBody": "新文档将保存在本设备上。清除站点数据会将其删除，Safari 可能在约 7 天未使用后移除它们。连接云存储以保留持久副本。"
 }

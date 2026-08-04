@@ -300,5 +300,10 @@
   "createImport": "Importieren…",
   "dropStorageFiles": "Ziehen Sie .fig- oder .deck-Dateien hierher",
   "importingStorageFiles": "Dateien werden importiert…",
-  "storageSupportedFilesOnly": "Hier können nur .fig- und .deck-Dateien hochgeladen werden."
+  "storageSupportedFilesOnly": "Hier können nur .fig- und .deck-Dateien hochgeladen werden.",
+  "storageEmptyTrash": "Papierkorb leeren",
+  "storageEmptyTrashTitle": "Papierkorb leeren?",
+  "storageEmptyTrashDescription": "Alle Dokumente im Papierkorb und ihre Cloud-Daten werden endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
+  "backUpToCloudUnconfigured": "Cloud-Sicherung ist aktiviert. Konfiguriere unten einen Anbieter, um die Synchronisierung zu starten.",
+  "localDurabilityEmptyBody": "Neue Dokumente werden auf diesem Gerät gespeichert. Beim Löschen der Website-Daten gehen sie verloren, und Safari entfernt sie möglicherweise nach etwa 7 Tagen ohne Nutzung. Verbinde Cloud-Speicher für eine dauerhafte Kopie."
 }

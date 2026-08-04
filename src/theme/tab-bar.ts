@@ -31,7 +31,7 @@ const tabBarTheme = {
   variants: {
     active: {
       true: {
-        trigger: 'bg-panel text-surface',
+        trigger: 'bg-panel-field text-surface',
         close: 'opacity-100',
         home: 'bg-panel text-surface'
       },

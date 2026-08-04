@@ -29,7 +29,7 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
 - **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
-- **Local-first cloud workspace** — connect Appwrite, an S3-compatible bucket, or an S3-enabled Bunny Storage Zone, with automatic background synchronization and no manual CORS setup for Appwrite or Bunny
+- **Local-first cloud workspace** — connect Appwrite, Backblaze B2, a generic S3-compatible bucket, or an S3-enabled Bunny Storage Zone, with automatic background synchronization and no manual CORS setup for Appwrite or Bunny
 - **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
 - **~7 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 

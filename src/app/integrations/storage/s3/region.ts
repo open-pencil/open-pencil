@@ -27,6 +27,11 @@ export function inferBunnyS3Region(endpoint: string): BunnyS3Region | null {
   return BUNNY_S3_REGIONS.find((candidate) => candidate === region) ?? null
 }
 
+export function inferBackblazeS3Region(endpoint: string): string | null {
+  const host = endpointHostname(endpoint)
+  return host?.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/)?.[1] ?? null
+}
+
 export function inferS3Region(endpoint: string, fallback = 'us-east-1'): string {
   const host = endpointHostname(endpoint)
   if (!host) return fallback
@@ -35,8 +40,8 @@ export function inferS3Region(endpoint: string, fallback = 'us-east-1'): string 
   if (bunny) return bunny
 
   // Backblaze B2: s3.eu-central-003.backblazeb2.com
-  const b2 = host.match(/^s3\.([a-z0-9-]+)\.backblazeb2\.com$/)
-  if (b2?.[1]) return b2[1]
+  const b2 = inferBackblazeS3Region(endpoint)
+  if (b2) return b2
 
   // AWS path-style: s3.eu-west-1.amazonaws.com / s3-eu-west-1.amazonaws.com
   const awsPath = host.match(/^s3[.-]([a-z0-9-]+)\.amazonaws\.com$/)
