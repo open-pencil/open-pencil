@@ -44,6 +44,32 @@ const fileOpenCoordinator = createFileOpenCoordinator()
 
 let nextTabId = 1
 
+/**
+ * A document open the user asked for, which has not landed yet.
+ *
+ * The workspace opens by routing to the editor FIRST and loading straight
+ * after, so the editor mounts with no tabs and cannot tell an explicit open
+ * from a cold start — and restores the previous session on top of it. Checking
+ * for the binding afterwards does not help: the restore reads IndexedDB and
+ * wins the race against a document fetch. The intent has to be recorded before
+ * the navigation that hides it.
+ */
+let explicitOpens = 0
+
+export function isExplicitOpenPending(): boolean {
+  return explicitOpens > 0
+}
+
+export function beginExplicitOpen(): () => void {
+  explicitOpens++
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    explicitOpens--
+  }
+}
+
 function generateTabId(): string {
   return `tab-${nextTabId++}`
 }

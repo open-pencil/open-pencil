@@ -57,6 +57,7 @@ import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
 import {
   activeTab,
+  beginExplicitOpen,
   createDeckTab,
   createTab,
   flushOpenTabSaves,
@@ -439,9 +440,17 @@ async function openDocument(document: StorageDocument): Promise<void> {
   // The card already refuses to emit for these; refusing here too keeps the
   // guarantee with the state that owns it rather than with the presentation.
   if (unavailableDocumentIds.value.has(document.id)) return
-  await router.push('/editor')
-  await nextTick()
-  await openStorageDocumentInNewTab(document)
+  // Declare the intent BEFORE routing: the editor mounts during the push and
+  // would otherwise read an empty tab list as a cold start and restore the
+  // previous session on top of the document being opened.
+  const openDone = beginExplicitOpen()
+  try {
+    await router.push('/editor')
+    await nextTick()
+    await openStorageDocumentInNewTab(document)
+  } finally {
+    openDone()
+  }
 }
 
 function setDocumentBusy(documentId: string, busy: boolean): void {

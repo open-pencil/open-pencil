@@ -25,7 +25,8 @@ const tabBarTheme = {
     active: {
       true: {
         trigger: 'bg-panel text-surface',
-        close: 'opacity-100'
+        close: 'opacity-100',
+        home: 'bg-panel text-surface'
       },
       false: {
         trigger: 'text-muted hover:text-surface',

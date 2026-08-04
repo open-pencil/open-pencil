@@ -5,6 +5,7 @@ import { TooltipProvider } from 'reka-ui'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
 import AppToast from '@/components/Shell/AppToast.vue'
+import TabBar from '@/components/TabBar.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toast } from '@/app/shell/ui'
@@ -31,7 +32,18 @@ onMounted(() => {
 
 <template>
   <TooltipProvider :delay-duration="400">
-    <RouterView />
+    <!--
+      The strip is app chrome, not editor chrome. Home loads the workspace into
+      the view BELOW it rather than leaving the editor, so open documents stay
+      open and one click away — the same reason Figma keeps its strip visible on
+      the files screen.
+    -->
+    <div class="flex h-screen w-screen flex-col">
+      <TabBar />
+      <div class="min-h-0 flex-1">
+        <RouterView />
+      </div>
+    </div>
     <SettingsDialog />
     <AppToast />
   </TooltipProvider>

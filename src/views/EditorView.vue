@@ -34,7 +34,14 @@ import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { createTab, activeTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
+import {
+  createTab,
+  activeTab,
+  getActiveStore,
+  isExplicitOpenPending,
+  openFileInNewTab,
+  tabCount
+} from '@/app/tabs'
 import { takeRestorableDocument, useSessionPersistence } from '@/app/document/session/use'
 import { beginPanelResize, endPanelResize } from '@/app/shell/panel-resize'
 import {
@@ -58,7 +65,6 @@ import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
-import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
 
@@ -85,6 +91,11 @@ if (isBlankStart) {
   void takeRestorableDocument()
     .then(async (restorable) => {
       if (!restorable) return undefined
+      // The workspace opens a document by routing here FIRST and loading it
+      // straight after, so this view mounts with no tabs and looks like a cold
+      // start. Restoring then raced that open and both landed — which is how
+      // one click produced two identical tabs. An explicit open always wins.
+      if (isExplicitOpenPending() || activeTab.value?.store.getStorageBinding()) return undefined
       await openFileInNewTab(restorable.file, restorable.handle ?? undefined)
       return undefined
     })
@@ -330,10 +341,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
+  <div data-test-id="editor-root" class="flex h-full w-full flex-col">
     <SafariBanner />
     <RenameSelectionDialog />
-    <TabBar />
 
     <!-- Desktop layout -->
     <SplitterGroup

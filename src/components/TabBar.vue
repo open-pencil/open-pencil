@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
@@ -13,19 +13,27 @@ import { useI18n } from '@open-pencil/vue'
 const { dialogs } = useI18n()
 
 const router = useRouter()
+const route = useRoute()
 const { tabs, activeTabId, switchTab, closeTab } = useTabsStore()
 
-// Fixed destination rather than history: desktop has no browser history, and on
-// web the previous entry is often another document, not the workspace.
-async function backToWorkspace(): Promise<void> {
+/** Home is a view, not an exit: documents stay open while the workspace shows. */
+const showingHome = computed(() => route.path === '/')
+
+async function goHome(): Promise<void> {
   await router.push('/')
+}
+
+/** Returning to a document from the workspace needs the route as well as the tab. */
+async function activate(tabId: string): Promise<void> {
+  switchTab(tabId)
+  if (showingHome.value) await router.push('/editor')
 }
 const tabBarStyles = tv(tabBarTheme)
 const baseStyles = tabBarStyles()
 
 const modelValue = computed({
-  get: () => activeTabId.value,
-  set: (id: string) => switchTab(id)
+  get: () => (showingHome.value ? '' : activeTabId.value),
+  set: (id: string) => void activate(id)
 })
 
 function onMiddleClick(e: MouseEvent, tabId: string) {
@@ -51,9 +59,10 @@ function onClose(e: MouseEvent, tabId: string) {
       <button
         type="button"
         data-test-id="app-back-to-workspace"
-        :class="baseStyles.home()"
+        :class="tabBarStyles({ active: showingHome }).home()"
         :aria-label="dialogs.backToStorageWorkspace"
-        @click="backToWorkspace"
+        :data-active="showingHome || undefined"
+        @click="goHome"
       >
         <icon-lucide-house :class="baseStyles.homeIcon()" />
       </button>
@@ -64,9 +73,10 @@ function onClose(e: MouseEvent, tabId: string) {
         :key="tab.id"
         :value="tab.id"
         data-test-id="tabbar-tab"
-        :class="tabBarStyles({ active: tab.isActive }).trigger()"
-        :data-active="tab.isActive || undefined"
+        :class="tabBarStyles({ active: tab.isActive && !showingHome }).trigger()"
+        :data-active="(tab.isActive && !showingHome) || undefined"
         @mousedown="onMiddleClick($event, tab.id)"
+        @click="void activate(tab.id)"
       >
         <img :src="storageDocumentIconUrls[tab.format]" alt="" :class="baseStyles.icon()" />
         <span :class="baseStyles.label()">{{ tab.name }}</span>
