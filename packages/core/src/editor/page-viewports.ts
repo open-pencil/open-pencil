@@ -1,16 +1,24 @@
 import { readStoredPageColor } from '@open-pencil/fig'
-import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { CANVAS_BG_COLOR, DECK_CANVAS_BG_COLOR } from '#core/constants'
 
 import { documentKindRules } from './document-kind'
 import type { EditorContext } from './types'
 
+/**
+ * Camera only. The stage colour is NOT cached here.
+ *
+ * It used to be, and that shadowed the document: `replaceGraph` sets
+ * `currentPageId` before `switchPage` runs, so the save-then-restore inside
+ * `switchPage` wrote the *previous* document's colour into the cache under the
+ * *new* page's id and immediately restored it — and the stored value was never
+ * read. `setPageColor` writes through to the document, so the document is the
+ * only source of truth and this cache has nothing to add.
+ */
 interface PageViewport {
   panX: number
   panY: number
   zoom: number
-  pageColor: Color
 }
 
 export function createPageViewportStore(ctx: EditorContext) {
@@ -39,8 +47,7 @@ export function createPageViewportStore(ctx: EditorContext) {
     pageViewports.set(ctx.state.currentPageId, {
       panX: ctx.state.panX,
       panY: ctx.state.panY,
-      zoom: ctx.state.zoom,
-      pageColor: { ...ctx.state.pageColor }
+      zoom: ctx.state.zoom
     })
   }
 
@@ -54,22 +61,22 @@ export function createPageViewportStore(ctx: EditorContext) {
       return
     }
 
+    // Always from the document, never from the camera cache — a page carries
+    // its stage colour, and re-entering it must not resurrect whatever colour
+    // happened to be in editor state when the page was last left.
+    ctx.state.pageColor = readStoredPageColor(ctx.graph, pageId) ?? { ...CANVAS_BG_COLOR }
+
     const viewport = pageViewports.get(pageId)
     if (viewport) {
       ctx.state.panX = viewport.panX
       ctx.state.panY = viewport.panY
       ctx.state.zoom = viewport.zoom
-      ctx.state.pageColor = { ...viewport.pageColor }
       return
     }
 
     ctx.state.panX = 0
     ctx.state.panY = 0
     ctx.state.zoom = 1
-    // First visit to this page. The document may carry its own stage colour —
-    // resetting to the default here is what made an imported red canvas open
-    // grey, and then saved that grey back over it.
-    ctx.state.pageColor = readStoredPageColor(ctx.graph, pageId) ?? { ...CANVAS_BG_COLOR }
   }
 
   function deletePageViewport(pageId: string) {
