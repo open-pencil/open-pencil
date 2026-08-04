@@ -38,7 +38,7 @@ The workspace and editor show a small status chip:
 
 ## Conflicts between devices
 
-Writes are last-write-wins on every currently supported provider: none of them offers the conditional writes needed to *prevent* two devices from overwriting each other. Editing the same document on two devices at once can overwrite the older change. Conflict detection (notice an overwrite and offer recovery) is on the roadmap — see `development/roadmap.md`.
+No supported provider offers the conditional writes needed to *prevent* two devices from overwriting each other, so the destination always ends up with the latest acknowledged write. What OpenPencil does is *detect*: before a change uploads, sync compares the destination's document state with the state the edit was based on, and if another device got there first the document is flagged **Changed on another device** instead of silently overwriting — keep your version as a separate copy, load the remote one, or decide later. Recovering older versions that were already overwritten is not possible yet; retained versions are on the roadmap — see `development/roadmap.md`.
 
 ## Provider capability matrix
 
@@ -56,5 +56,6 @@ What each provider offers the sync layer. Response-side behavior matters as much
 
 Notes:
 
-- **Backblaze B2 same-second writes.** B2 documents that multiple writes to one key within the same second may be processed out of order. OpenPencil's sync engine never issues two different payloads to one key in quick succession — body uploads write metadata read at completion — so this does not affect normal use.
+- **Backblaze B2 same-second writes.** B2 documents that multiple writes to one key within the same second may be processed out of order. OpenPencil's sync engine never issues two different payloads to one key in quick succession — body uploads write metadata read at completion — so this does not affect normal use. A live probe (10 rounds of back-to-back same-key writes, 2026-08-04) observed no reordering.
+- **Backblaze B2 multipart, verified live.** A 17 MB document uploaded through the multipart API (3 parts) round-tripped byte-identical; `UploadPart` returns ETags, and completion plus a subsequent single-PUT overwrite behave as expected (2026-08-04).
 - **Bunny maturity.** Bunny's S3 compatibility is described as public preview on one vendor page and beta on another; treat it as preview software.
