@@ -51,7 +51,7 @@ test('Appwrite setup uses a scoped key and configures storage automatically', as
     })
   })
 
-  await page.goto('/editor?test')
+  await page.goto('/editor?new=design&test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
@@ -107,7 +107,7 @@ test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ p
     await route.fulfill({ status: 200 })
   })
 
-  await page.goto('/editor?test')
+  await page.goto('/editor?new=design&test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
@@ -142,7 +142,7 @@ test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ p
 })
 
 test('storage settings keep secrets behind the credential manager', async ({ page }) => {
-  await page.goto('/editor?test')
+  await page.goto('/editor?new=design&test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
@@ -173,7 +173,7 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
 })
 
 test('model library keeps reusable profiles and role assignments', async ({ page }) => {
-  await page.goto('/editor?test')
+  await page.goto('/editor?new=design&test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
@@ -211,7 +211,7 @@ test('model library keeps reusable profiles and role assignments', async ({ page
 })
 
 test('remembered browser credentials survive reload and clear centrally', async ({ page }) => {
-  await page.goto('/editor?test')
+  await page.goto('/editor?new=design&test')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 

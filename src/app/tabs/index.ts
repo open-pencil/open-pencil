@@ -202,7 +202,10 @@ export function closeTab(tabId: string) {
   const disposeWhenSettled = () => void settled.then(() => closingTab.store.dispose())
 
   if (tabsRef.value.length === 0) {
-    createTab()
+    // No replacement document. Closing the last one returns you to the
+    // workspace — the view that owns choosing what to work on.
+    activeTabId.value = ''
+    triggerRef(tabsRef)
     disposeWhenSettled()
     return
   }

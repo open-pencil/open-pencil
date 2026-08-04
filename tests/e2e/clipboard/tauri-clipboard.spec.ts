@@ -78,7 +78,7 @@ async function installTauriClipboardMock(page: Page) {
 
 async function createTauriEditorPage(page: Page) {
   await installTauriClipboardMock(page)
-  await page.goto('/editor')
+  await page.goto('/editor?new=design')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   return canvas

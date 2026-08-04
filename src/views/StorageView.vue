@@ -56,7 +56,6 @@ import {
 import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
 import {
-  activeTab,
   beginExplicitOpen,
   createDeckTab,
   createTab,
@@ -563,31 +562,19 @@ async function restoreDocument(document: StorageDocument): Promise<void> {
 }
 
 async function createDocument(sourceFormat: 'fig' | 'deck'): Promise<void> {
-  if (!configured.value) return
-  // Bind the new document to the provider that was selected when the user asked
-  // for it, not to whatever a route change and a tick later happens to be live.
+  // Capture the provider the user was looking at, not whatever a route change
+  // and a tick later happens to be live. No cloud configured is fine — the
+  // document is local-only, which is a supported way to work, not a refusal.
   const providerId = activeStorageProviderID.value
-  await router.push('/editor')
-  await nextTick()
-  const store =
-    sourceFormat === 'deck'
-      ? (await createDeckTab()).store
-      : (() => {
-          const current = activeTab.value
-          // Only recycle a genuinely blank scratch tab. `!canUndo` means "not
-          // edited in this session", NOT "empty": a stored document opened and
-          // left untouched also has no undo history, so a document named
-          // "Untitled" was being adopted wholesale — its contents were then
-          // saved into the new document under a fresh id.
-          const reusable =
-            current?.store.state.documentKind === 'design' &&
-            current.store.state.documentName === 'Untitled' &&
-            !current.store.undo.canUndo &&
-            current.store.getStorageBinding() === null
-          return reusable ? current.store : createTab().store
-        })()
+
+  // Create BEFORE routing. The editor no longer manufactures a blank document
+  // when it mounts with nothing open — it sends you back here — so arriving
+  // with no tab would bounce straight off the view we are trying to reach.
+  const store = sourceFormat === 'deck' ? (await createDeckTab()).store : createTab(undefined).store
   const documentId = createCanvasId()
   store.setStorageDocumentSource({ providerId, documentId }, 'Untitled', sourceFormat)
+
+  await router.push('/editor')
   await store.saveFigFile()
 }
 

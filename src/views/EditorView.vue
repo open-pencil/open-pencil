@@ -11,7 +11,7 @@ import {
   watchEffect
 } from 'vue'
 import { useDebounceFn, useElementSize, useEventListener, useUrlSearchParams } from '@vueuse/core'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
@@ -69,10 +69,21 @@ import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
 
 const route = useRoute()
+const router = useRouter()
 const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
 
-const createdInitialTab = tabCount() === 0
+/**
+ * A blank document is created only when someone asks for one.
+ *
+ * The editor used to manufacture an Untitled document whenever it mounted with
+ * nothing open, so arriving here at all produced a document the user never
+ * asked for. Now the workspace is the entry point, that is just litter — New
+ * Design and New Deck are the only things that should conjure a blank canvas.
+ */
+const requestedKind = params.new
+const wantsBlank = requestedKind === 'design' || requestedKind === 'deck' || !!route.meta.demo
+const createdInitialTab = tabCount() === 0 && wantsBlank
 const firstTab = createdInitialTab ? createTab() : (activeTab.value ?? createTab())
 const store = useEditorStore()
 const { dialogs } = useI18n()
@@ -80,7 +91,16 @@ const { isMobile } = useViewportKind()
 
 const isBlankStart = createdInitialTab && !route.meta.demo && !('test' in params)
 
-if (createdInitialTab && route.meta.demo && !('test' in params)) {
+// Closing the last document returns to the workspace. Entry is handled by the
+// route guard; this covers leaving the last tab while already in the editor.
+watch(
+  () => tabCount(),
+  (count) => {
+    if (count === 0) void router.replace('/')
+  }
+)
+
+if (createdInitialTab && firstTab && route.meta.demo && !('test' in params)) {
   void createDemoShapes(firstTab.store)
 }
 

@@ -5,7 +5,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 test('font settings popover exposes web font access without desktop-only cache actions', async ({
   page
 }) => {
-  await page.goto('/editor')
+  await page.goto('/editor?new=design')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 

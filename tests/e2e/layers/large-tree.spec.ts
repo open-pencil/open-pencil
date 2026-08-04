@@ -6,7 +6,7 @@ const NODE_COUNT = 5000
 
 test('large layer trees stay virtualized and scrollable', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/editor?test&no-rulers')
+  await page.goto('/editor?new=design&test&no-rulers')
   await canvas.waitForInit()
 
   const replaceStartedAt = await page.evaluate((count: number) => {
@@ -111,7 +111,7 @@ test('large layer trees stay virtualized and scrollable', async ({ page }) => {
 
 test('layer tree supports range and additive selection', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('/editor?test&no-rulers')
+  await page.goto('/editor?new=design&test&no-rulers')
   await canvas.waitForInit()
 
   await page.evaluate(() => {

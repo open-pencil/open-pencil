@@ -8,7 +8,7 @@ import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 async function openEditor(page: Page): Promise<CanvasHelper> {
-  await page.goto('/editor?test&no-chrome&no-rulers')
+  await page.goto('/editor?new=design&test&no-chrome&no-rulers')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   await page.evaluate(() => {

@@ -9,7 +9,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
  * calling `useEditorSetup()` with no argument navigated to the workspace and
  * then waited out its timeout on a canvas that was never going to appear.
  */
-export function useEditorSetup(url = '/editor') {
+export function useEditorSetup(url = '/editor?new=design') {
   let page: Page
   let canvas: CanvasHelper
 

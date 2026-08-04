@@ -5,6 +5,12 @@ import { unzipSync, zipSync } from 'fflate'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
+// These configure storage, list a bucket, download a fig and initialise
+// CanvasKit before asserting anything. Measured at 20-22s, so the 15s default
+// makes them flaky by duration rather than by behaviour — the same reason
+// traffic-budgets.spec.ts raises its own.
+test.setTimeout(60_000)
+
 async function configureStorage(page: Page): Promise<void> {
   await page.goto('/storage?test')
   await page.getByRole('button', { name: 'Settings' }).last().click()
