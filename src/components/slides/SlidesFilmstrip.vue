@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { refAutoReset, useEventListener, useResizeObserver } from '@vueuse/core'
-import { computed, ref, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, type ComponentPublicInstance } from 'vue'
 import { tv } from 'tailwind-variants'
 
 import { addEmptySlide } from '@open-pencil/deck'
-import { useI18n, usePageList } from '@open-pencil/vue'
+import { useFlatReorderDrag, useI18n, usePageList } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import Tip from '@/components/ui/Tip.vue'
@@ -14,7 +14,7 @@ import slidesRailTheme from '@/theme/slides-rail'
 
 const editor = useEditorStore()
 const { panels } = useI18n()
-const { pages, currentPageId, switchPage } = usePageList()
+const { pages, currentPageId, switchPage, movePage } = usePageList()
 const styles = tv(slidesRailTheme)
 /** Editing affordances are withheld while this window is driving a presentation. */
 const presenterMode = computed(() => editor.state.presenterMode)
@@ -72,7 +72,14 @@ const thumbShellStyle = computed(() => ({
   maxWidth: '100%'
 }))
 
-const cells = computed(() =>
+type SlideCell = {
+  id: string
+  name: string
+  indexLabel: string
+  active: boolean
+}
+
+const cells = computed<SlideCell[]>(() =>
   pages.value.map((page, index) => ({
     id: page.id,
     name: page.name || String(index + 1),
@@ -80,6 +87,39 @@ const cells = computed(() =>
     active: page.id === currentPageId.value
   }))
 )
+
+/**
+ * Slide order is page order, so reordering is `movePage` — the same operation the
+ * pages panel performs, through the same shared drag composable.
+ */
+const reorder = useFlatReorderDrag<SlideCell>({
+  items: () => cells.value,
+  onMove: (pageId, index) => movePage(pageId, index)
+})
+
+function dropPosition(cell: SlideCell): 'before' | 'after' | undefined {
+  if (reorder.instructionTargetId.value !== cell.id) return undefined
+  if (reorder.instruction.value?.operation === 'reorder-before') return 'before'
+  if (reorder.instruction.value?.operation === 'reorder-after') return 'after'
+  return undefined
+}
+
+function cellStyles(cell: SlideCell) {
+  return styles({
+    active: cell.active,
+    dragging: reorder.draggingId.value === cell.id,
+    dropPosition: dropPosition(cell)
+  })
+}
+
+/**
+ * Reordering is editing, so the presenter view registers no drag sources at all
+ * rather than dropping the move at the end — same reason the toolbar is hidden.
+ */
+function setupCellRef(value: Element | ComponentPublicInstance | null, cell: SlideCell) {
+  const element = !presenterMode.value && value instanceof HTMLElement ? value : null
+  reorder.setupItem(element, () => ({ id: cell.id }))
+}
 
 async function onSelect(pageId: string) {
   await switchPage(pageId)
@@ -123,15 +163,24 @@ async function onNewSlide() {
         <button
           v-for="cell in cells"
           :key="cell.id"
+          :ref="(value) => setupCellRef(value, cell)"
           type="button"
           role="listitem"
+          data-test-id="slides-cell"
           :data-page-id="cell.id"
           :data-active="cell.active ? 'true' : undefined"
-          :class="styles({ active: cell.active }).cell()"
+          :data-dragging="reorder.draggingId.value === cell.id || undefined"
+          :data-drop-position="dropPosition(cell)"
+          :class="cellStyles(cell).cell()"
           :aria-current="cell.active ? 'true' : undefined"
           :aria-label="cell.name"
           @click="onSelect(cell.id)"
         >
+          <div
+            v-if="dropPosition(cell) === 'before'"
+            data-test-id="slides-drop-indicator"
+            :class="cellStyles(cell).dropIndicator()"
+          />
           <span :class="base.index()" :data-active="cell.active ? 'true' : undefined">
             {{ cell.indexLabel }}
           </span>
@@ -142,6 +191,11 @@ async function onNewSlide() {
               </div>
             </div>
           </div>
+          <div
+            v-if="dropPosition(cell) === 'after'"
+            data-test-id="slides-drop-indicator"
+            :class="cellStyles(cell).dropIndicator()"
+          />
         </button>
       </div>
     </div>

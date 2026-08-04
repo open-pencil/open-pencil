@@ -11,7 +11,10 @@ const slidesRailTheme = {
       'scrollbar-thin min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-2 pb-2',
     list: 'flex flex-col items-stretch gap-2 will-change-transform transition-transform duration-200 ease-[cubic-bezier(0.22,1.35,0.36,1)] motion-reduce:!transform-none motion-reduce:transition-none',
     // Padding is unconditional so selecting a slide tints the row rather than moving it.
-    cell: 'flex w-full cursor-pointer items-start gap-1.5 rounded-lg border-0 bg-transparent p-1 text-left outline-none focus-visible:ring-1 focus-visible:ring-panel-focus data-[active=true]:bg-accent',
+    // `relative` anchors the reorder drop indicator to the cell.
+    cell: 'relative flex w-full cursor-pointer items-start gap-1.5 rounded-lg border-0 bg-transparent p-1 text-left outline-none focus-visible:ring-1 focus-visible:ring-panel-focus data-[active=true]:bg-accent',
+    // Inset to the thumb gutter so the line reads as "between these two slides".
+    dropIndicator: 'pointer-events-none absolute inset-x-1 z-10 h-0.5 rounded-full bg-accent',
     index:
       'mt-1 w-4 shrink-0 text-right text-[11px] font-medium tabular-nums text-muted data-[active=true]:text-white',
     // Width clamped via inline style (min/max) so thumbs scale with the left panel
@@ -29,10 +32,21 @@ const slidesRailTheme = {
       false: {
         cell: 'hover:opacity-90'
       }
+    },
+    dragging: {
+      true: { cell: 'opacity-60' },
+      false: {}
+    },
+    dropPosition: {
+      // The gap between cells is 8px, so pull the line half a gap clear of the
+      // cell padding to sit centred in the gap rather than against a thumb.
+      before: { dropIndicator: '-top-1' },
+      after: { dropIndicator: '-bottom-1' }
     }
   },
   defaultVariants: {
-    active: false
+    active: false,
+    dragging: false
   }
 }
 

@@ -42,6 +42,8 @@
   - Fixed zoomed-out canvas backdrop (`#1c1c1c`) for decks — not user-editable
   - **New Deck** (⌘⇧N): empty light slide (1920×1080 white card + starter title) on dark chrome
   - Slides filmstrip **New slide** / **+** to append blank 1920×1080 white slides
+  - Drag a filmstrip thumbnail to reorder slides, with a drop indicator between cells;
+    disabled while presenting
   - Opening a `.deck` and switching slides always fits the full 1920×1080 artboard in the viewport
   - Slides mode defaults the right properties panel to minimum width
   - Slides / deck mode hides canvas rulers (horizontal and vertical)
