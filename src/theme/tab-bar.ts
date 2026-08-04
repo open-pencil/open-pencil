@@ -2,13 +2,20 @@ const tabBarTheme = {
   slots: {
     root: 'scrollbar-none flex h-9 shrink-0 items-end overflow-x-auto border-b border-border bg-canvas',
     list: 'flex h-full items-end',
+    // Bounded at BOTH ends. Without a minimum a document called "a" collapses to
+    // a stub you cannot aim at; without a maximum one long name pushes every
+    // other tab off the strip.
     trigger:
-      'group/tab flex h-full max-w-48 min-w-0 cursor-pointer items-center gap-1.5 border-r border-border px-3 text-[11px] transition-colors outline-none select-none focus-visible:ring-1 focus-visible:ring-accent',
+      'group/tab flex h-full max-w-48 min-w-32 cursor-pointer items-center gap-1.5 border-r border-border px-3 text-[11px] transition-colors outline-none select-none focus-visible:ring-1 focus-visible:ring-accent',
     // Full opacity and slightly larger than the old stroke glyph: this is
     // coloured artwork, and dimming it to 50% made the two formats read as the
     // same washed-out shape — the exact thing the icon is here to distinguish.
     icon: 'size-3.5 shrink-0 rounded-[2px]',
     label: 'min-w-0 flex-1 truncate',
+    // Same box as the label it replaces, so a name too long for the tab scrolls
+    // within it rather than stretching the strip.
+    labelInput:
+      'min-w-0 flex-1 rounded-[2px] border border-accent bg-input px-1 text-[11px] text-surface outline-none',
     close:
       'flex size-4 shrink-0 cursor-pointer items-center justify-center rounded transition-opacity group-hover/tab:opacity-100 hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-panel-focus',
     closeIcon: 'size-3',

@@ -146,6 +146,15 @@ export function createDocumentSourceActions({
     }
   }
 
+  /**
+   * Whether this document has yet to earn a row. Callers that write metadata
+   * (a rename, say) must not create one for a blank document — that would put
+   * back the card the provisional rule exists to avoid.
+   */
+  function isProvisionalDocument(): boolean {
+    return provisional
+  }
+
   function setStorageDocumentSource(
     binding: StorageDocumentBinding,
     documentName: string,
@@ -190,6 +199,7 @@ export function createDocumentSourceActions({
     exportNativeDocument: buildNativeFile,
     setDocumentSource,
     setStorageDocumentSource,
+    isProvisionalDocument,
     setPlannedFilePath,
     startWatchingCurrentFile,
     disposeDocumentIO,

@@ -706,8 +706,9 @@ onBeforeUnmount(clearThumbnailUrls)
       <div class="ml-auto flex gap-2">
         <button
           type="button"
+          data-test-id="app-settings-trigger"
           class="flex items-center gap-1.5 rounded px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
-          @click="openSettingsDialog('storage')"
+          @click="openSettingsDialog()"
         >
           <icon-lucide-settings class="size-3.5" />
           {{ dialogs.settings }}

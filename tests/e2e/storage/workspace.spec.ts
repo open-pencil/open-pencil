@@ -14,6 +14,9 @@ test.setTimeout(60_000)
 async function configureStorage(page: Page): Promise<void> {
   await page.goto('/storage?test')
   await page.getByRole('button', { name: 'Settings' }).last().click()
+  // Settings open on their first section now that this button is the app's only
+  // way in — it used to jump straight to storage.
+  await page.getByTestId('settings-section-storage').click()
   await page.getByLabel('Endpoint').fill('https://s3.example.com')
   await page.getByLabel('Bucket').fill('designs')
 
@@ -261,4 +264,48 @@ test('a blank Untitled leaves nothing behind, an edited one does', async ({ page
 
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
   await expect(page.locator('[data-document-id]')).toHaveCount(1)
+})
+
+test('a document is renamed in its tab, and the new name sticks', async ({ page }) => {
+  await page.goto('/?test')
+  await page.getByTestId('local-durability-dismiss').click()
+  await page.getByTestId('storage-new-design').click()
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  // A blank document has no row to rename. Give it one edit so it earns one.
+  await canvas.drawRect(120, 120, 260, 240)
+  await page.waitForTimeout(4_000)
+
+  const tab = page.getByTestId('tabbar-tab')
+  await expect(tab).toContainText('Untitled')
+  await tab.getByText('Untitled').dblclick()
+
+  const input = page.getByTestId('tabbar-name-input')
+  await expect(input).toBeFocused()
+  // Opening selects the whole name, so typing replaces rather than appends.
+  await page.keyboard.type('Quarterly Review 2026')
+  await expect(input).toHaveValue('Quarterly Review 2026')
+  await page.keyboard.press('Enter')
+  await expect(tab).toContainText('Quarterly Review 2026')
+
+  // The name has to reach storage: setting it in memory is not saving it, and
+  // autosave keys on `sceneVersion`, which a rename never bumps.
+  await page.getByTestId('app-back-to-workspace').click()
+  await expect(page.getByRole('button', { name: /Quarterly Review 2026/ })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button', { name: /Quarterly Review 2026/ })).toBeVisible()
+})
+
+test('escape abandons a tab rename', async ({ page }) => {
+  await page.goto('/?test')
+  await page.getByTestId('local-durability-dismiss').click()
+  await page.getByTestId('storage-new-design').click()
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  const tab = page.getByTestId('tabbar-tab')
+  await tab.getByText('Untitled').dblclick()
+  await page.keyboard.type('Discarded')
+  await page.keyboard.press('Escape')
+  await expect(tab).toContainText('Untitled')
 })

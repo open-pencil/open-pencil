@@ -51,9 +51,8 @@ test('Appwrite setup uses a scoped key and configures storage automatically', as
     })
   })
 
-  await page.goto('/editor?new=design&test')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
+  await page.goto('/?test')
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-storage').click()
@@ -107,9 +106,8 @@ test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ p
     await route.fulfill({ status: 200 })
   })
 
-  await page.goto('/editor?new=design&test')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
+  await page.goto('/?test')
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-storage').click()
@@ -142,9 +140,8 @@ test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ p
 })
 
 test('storage settings keep secrets behind the credential manager', async ({ page }) => {
-  await page.goto('/editor?new=design&test')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
+  await page.goto('/?test')
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-storage').click()
@@ -165,7 +162,7 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
   await page.getByTestId('app-settings-done').click()
 
   await page.reload()
-  await canvas.waitForInit()
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-storage').click()
   await expect(page.getByLabel('Endpoint')).toHaveValue('https://s3.example.com')
@@ -173,9 +170,8 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
 })
 
 test('model library keeps reusable profiles and role assignments', async ({ page }) => {
-  await page.goto('/editor?new=design&test')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
+  await page.goto('/?test')
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-add-model').click()
@@ -202,7 +198,7 @@ test('model library keeps reusable profiles and role assignments', async ({ page
   await page.getByTestId('app-settings-done').click()
 
   await page.reload()
-  await canvas.waitForInit()
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
   await page.getByTestId('app-settings-trigger').click()
   await expect(page.getByTestId('settings-model-list')).toContainText('Fast model')
   await expect(page.getByTestId('settings-model-list')).toContainText('Vision model')
@@ -238,6 +234,9 @@ test('remembered browser credentials survive reload and clear centrally', async 
   await page.getByRole('tab', { name: 'AI' }).click()
   await expect(page.getByTestId('chat-input')).toBeVisible()
 
+  // Settings are reached from the workspace now, not from a gear in the editor.
+  // The document stays open behind it, so the tab is the way back.
+  await page.getByTestId('app-back-to-workspace').click()
   await page.getByTestId('app-settings-trigger').click()
   await page.locator('[data-model-id]').first().click()
   await page.getByTestId('provider-settings-clear-key').click()
@@ -245,7 +244,9 @@ test('remembered browser credentials survive reload and clear centrally', async 
   await page.getByTestId('settings-remember-credentials').click()
   await page.getByTestId('app-settings-done').click()
 
-  await page.reload()
+  // A fresh load rather than a reload: we are on the workspace now, and the
+  // point of the step is that the cleared key does not survive a page load.
+  await page.goto('/editor?new=design&test')
   await canvas.waitForInit()
   await page.getByRole('tab', { name: 'AI' }).click()
   await expect(page.getByTestId('provider-setup-open-settings')).toBeVisible()

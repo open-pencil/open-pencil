@@ -80,6 +80,7 @@ export function createEditorStoreModules(
     getStorageBinding: documentIO.getStorageBinding,
     setDocumentSource: documentIO.setDocumentSource,
     setStorageDocumentSource: documentIO.setStorageDocumentSource,
+    isProvisionalDocument: documentIO.isProvisionalDocument,
     setPlannedFilePath: documentIO.setPlannedFilePath,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
     dispose: documentIO.disposeDocumentIO,

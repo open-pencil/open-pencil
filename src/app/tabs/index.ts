@@ -17,6 +17,7 @@ import {
   createActiveStorageAdapter,
   type StorageDocument
 } from '@/app/integrations/storage'
+import { renameStorageDocument } from '@/app/storage/documents'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
 import { currentTargetIdFor } from '@/app/storage/target'
@@ -449,6 +450,51 @@ export function tabCount(): number {
   return tabsRef.value.length
 }
 
+/**
+ * Rename the document a tab holds.
+ *
+ * The tab strip is where the name is READ, so it is where renaming belongs; the
+ * editor header showed the same name a second time and only one of them could
+ * be the place you go to change it.
+ */
+export async function renameTab(tabId: string, name: string): Promise<void> {
+  const tab = tabsRef.value.find((t) => t.id === tabId)
+  if (!tab) return
+  const trimmed = name.trim()
+  // An empty name is a mis-click, not a request for an unnamed document.
+  if (!trimmed || trimmed === tab.store.state.documentName) return
+  const previous = tab.store.state.documentName
+  tab.store.state.documentName = trimmed
+
+  // Setting the name is not saving it. Autosave keys on `sceneVersion`, which a
+  // rename never bumps, so the new name lived in memory only and a reload
+  // brought the old one back. Go through the workspace's own rename: it writes
+  // the row and queues a metadata-only upload rather than re-sending the body.
+  const binding = tab.store.getStorageBinding()
+  // A document that has never been written has no row to rename, and creating
+  // one here would put back the card a blank Untitled is meant not to leave.
+  // The name is not lost: the first real save writes whatever it says by then.
+  if (!binding || tab.store.isProvisionalDocument()) return
+  try {
+    await renameStorageDocument(
+      binding.providerId,
+      {
+        id: binding.documentId,
+        name: previous,
+        sourceFormat: documentKindRules(tab.store.state.documentKind).saveFormat,
+        trashedAt: null,
+        updatedAt: new Date().toISOString(),
+        metadataAuthoritative: true
+      },
+      trimmed
+    )
+  } catch (error) {
+    // Keep the name the user typed on screen: the document is still open and
+    // still theirs to save. Reverting under them would look like a rejection.
+    console.warn('[Tabs] Persisting the new name failed:', error)
+  }
+}
+
 export function useTabsStore() {
   return {
     tabs: allTabs,
@@ -463,6 +509,7 @@ export function useTabsStore() {
     getTabsSnapshot,
     openFileInNewTab,
     openStorageDocumentInNewTab,
+    renameTab,
     getActiveStore,
     tabCount
   }
