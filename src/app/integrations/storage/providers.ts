@@ -1,5 +1,6 @@
 import appwriteLogoUrl from '@/assets/appwrite-logo.svg'
 import backblazeLogoUrl from '@/assets/backblaze-logo.svg'
+import bucketIconUrl from '@/assets/bucket.svg'
 import bunnyLogoUrl from '@/assets/logo-bunnynet-icon.svg'
 
 import { createAppwriteStorageAdapter } from './appwrite/adapter'
@@ -66,15 +67,17 @@ export const APPWRITE_STORAGE_PROVIDER = defineStorageProvider({
       required: true
     }
   ],
+  conflictProtection: 'detect',
   createAdapter: createAppwriteStorageAdapter
 })
 
 export const BUNNY_STORAGE_PROVIDER = defineStorageProvider({
   id: 'bunny-storage',
-  label: 'Bunny Storage (S3)',
+  // Vendor pages disagree on maturity ("public preview" vs "beta") — stay conservative.
+  label: 'Bunny Storage (S3 beta)',
   icon: bunnyLogoUrl,
   description:
-    'Create a Bunny Storage Zone with S3 Compatibility enabled, then copy its zone name, S3 endpoint, and password. No CORS setup is needed.',
+    'Create a Bunny Storage Zone with S3 Compatibility enabled (a Bunny preview feature), then copy its zone name, S3 endpoint, and password. No CORS setup is needed.',
   helpUrl: 'https://bunny.net/',
   helpLabel: 'Get your Storage Zone credentials',
   pricingNote: '14-day free trial, then $1/month for 100 GB. No API fees, free egress.',
@@ -101,6 +104,7 @@ export const BUNNY_STORAGE_PROVIDER = defineStorageProvider({
       required: true
     }
   ],
+  conflictProtection: 'detect',
   createAdapter: createBunnyStorageAdapter
 })
 
@@ -141,12 +145,16 @@ export const BACKBLAZE_STORAGE_PROVIDER = defineStorageProvider({
       required: true
     }
   ],
+  conflictProtection: 'detect',
   createAdapter: createBackblazeStorageAdapter
 })
 
 export const S3_STORAGE_PROVIDER = defineStorageProvider({
   id: 's3-compatible',
   label: 'Generic S3',
+  // A bucket rather than a brand: this entry is every S3-compatible service at
+  // once, so no vendor mark would be honest. Sat iconless next to three logos.
+  icon: bucketIconUrl,
   description:
     'AWS S3, Cloudflare R2, MinIO, and other compatible storage. Requires adding a CORS configuration to your bucket.',
   corsConfiguration: 's3',
@@ -159,6 +167,7 @@ export const S3_STORAGE_PROVIDER = defineStorageProvider({
     { id: 'access-key-id', label: 'Access key ID', required: true },
     { id: 'secret-access-key', label: 'Secret access key', required: true }
   ],
+  conflictProtection: 'detect',
   createAdapter: createS3StorageAdapter
 })
 

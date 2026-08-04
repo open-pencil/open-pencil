@@ -1,7 +1,7 @@
 import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
 import { backupIsActive } from '@/app/storage/backup'
-import { computeBodyIdSafe } from '@/app/storage/body-id'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
+import { computeBodyIdSafe } from '@/app/storage/identity/body'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import { enqueuePutCanvas, enqueuePutThumb } from '@/app/storage/sync/runtime'
@@ -97,6 +97,12 @@ export type SeedStorageCanvasOptions = {
   figBytes: Uint8Array
   thumbnailBytes?: Uint8Array | null
   markSynced?: boolean
+  /**
+   * The remote's published `stateId` at download time. Opening a remote
+   * document adopts that state as the conflict base — the device has no edits
+   * of its own yet, so there is nothing to lose.
+   */
+  baseStateId?: string | null
 }
 
 export async function seedStorageCanvasFromRemote(
@@ -116,6 +122,7 @@ export async function seedStorageCanvasFromRemote(
     // These bytes were just downloaded FROM the remote, so the remote provably
     // has them — without this the row would never become evictable.
     syncedBodyId: options.markSynced === false ? undefined : bodyId,
+    baseStateId: options.baseStateId ?? null,
     syncStatus: options.markSynced === false ? 'pending' : 'synced'
   })
   if (options.markSynced === false) return

@@ -24,6 +24,7 @@ const {
   thumbnailUrl,
   syncError = null,
   thumbnailError = null,
+  conflicted = false,
   trashView = false,
   busy = false,
   unavailable = false,
@@ -35,6 +36,8 @@ const {
   syncError?: string | null
   /** Verbatim provider text for a failed preview upload. Cosmetic only. */
   thumbnailError?: string | null
+  /** The remote moved underneath a pending local edit — resolution is a click away. */
+  conflicted?: boolean
   trashView?: boolean
   busy?: boolean
   /**
@@ -58,6 +61,7 @@ const emit = defineEmits<{
   trash: [document: StorageDocument]
   restore: [document: StorageDocument]
   deletePermanently: [document: StorageDocument]
+  resolveConflict: [document: StorageDocument]
   thumbnailNeeded: [document: StorageDocument]
 }>()
 
@@ -158,6 +162,21 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
               <span class="truncate">{{ dialogs.storageDocumentUnavailable }}</span>
             </p>
           </Tip>
+          <!--
+            Not a failure: the destination is fine, the remote just moved.
+            Clicking opens the resolution dialog — the one state on a card
+            with its own action.
+          -->
+          <button
+            v-if="conflicted"
+            type="button"
+            class="mt-1 flex items-center gap-1 text-[10px] text-[var(--color-warning-text)] hover:underline"
+            data-slot="storage-document-conflict"
+            @click.stop="emit('resolveConflict', document)"
+          >
+            <icon-lucide-git-pull-request-arrow class="size-3 shrink-0" />
+            <span class="truncate">{{ dialogs.storageDocumentConflict }}</span>
+          </button>
           <!--
             The provider's own words are the tooltip, not a paraphrase: the
             label says which layer failed, the message says what to fix.

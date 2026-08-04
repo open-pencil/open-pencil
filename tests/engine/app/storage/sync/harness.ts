@@ -16,18 +16,29 @@ import {
 import { createMemoryOutbox } from '@/app/storage/sync/outbox'
 import type { Outbox } from '@/app/storage/sync/outbox'
 
-export type AdapterOp = 'put' | 'putMetadata' | 'putThumb' | 'delete' | 'get' | 'list'
+export type AdapterOp =
+  | 'put'
+  | 'putMetadata'
+  | 'getMetadata'
+  | 'putThumb'
+  | 'delete'
+  | 'get'
+  | 'list'
 
 export type RecordedCall = {
   op: AdapterOp
   id: string
   byteLength: number
+  /** Sidecar payload for `putMetadata` calls — proves WHICH metadata reached the remote. */
+  metadata?: StorageDocumentMetadata
 }
 
 export type RecordingAdapter = StorageAdapter & {
   readonly calls: RecordedCall[]
   /** Bytes last written per document — proves WHICH body reached the remote. */
   readonly bodies: Map<string, Uint8Array>
+  /** Sidecar last written per document — proves WHICH metadata reached the remote. */
+  readonly metas: Map<string, StorageDocumentMetadata>
   count(op: AdapterOp): number
 }
 
@@ -42,20 +53,36 @@ const NO_USAGE: StorageUsage = { usedBytes: 0, documentCount: 0 }
  * and counts nothing, which is why a rename that re-uploaded a whole body read
  * as a pass.
  */
-export function recordingAdapter(
-  options: { supportsMetadataPut?: boolean } = {}
-): RecordingAdapter {
+export function recordingAdapter(): RecordingAdapter {
   const calls: RecordedCall[] = []
   const bodies = new Map<string, Uint8Array>()
+  const metas = new Map<string, StorageDocumentMetadata>()
 
-  const adapter: RecordingAdapter = {
+  return {
     calls,
     bodies,
+    metas,
     count: (op) => calls.filter((call) => call.op === op).length,
     testConnection: async () => OK,
     listDocuments: async () => {
       calls.push({ op: 'list', id: '', byteLength: 0 })
-      return [] as StorageDocument[]
+      // Listings derive ids from body keys, exactly like the real adapters'
+      // `documentIdFromFigKey`: a sidecar without a body is INVISIBLE, and a
+      // body without a sidecar lists with non-authoritative metadata. Tear
+      // tests assert on this shape, so the fake must reproduce it.
+      return [...bodies.keys()].map((id) => {
+        const meta = metas.get(id)
+        return meta
+          ? { id, ...meta, metadataAuthoritative: true }
+          : {
+              id,
+              name: id,
+              updatedAt: new Date(0).toISOString(),
+              sourceFormat: 'fig' as const,
+              trashedAt: null,
+              metadataAuthoritative: false
+            }
+      }) as StorageDocument[]
     },
     getDocument: async (id) => {
       calls.push({ op: 'get', id, byteLength: 0 })
@@ -65,25 +92,26 @@ export function recordingAdapter(
       calls.push({ op: 'put', id, byteLength: bytes.byteLength })
       bodies.set(id, bytes)
     },
+    putDocumentMetadata: async (id, metadata) => {
+      calls.push({ op: 'putMetadata', id, byteLength: 0, metadata })
+      metas.set(id, metadata)
+    },
+    // The preflight read — counted because it is the per-write cost of
+    // conflict detection.
+    getDocumentMetadata: async (id) => {
+      calls.push({ op: 'getMetadata', id, byteLength: 0 })
+      return metas.get(id) ?? null
+    },
     deleteDocument: async (id) => {
       calls.push({ op: 'delete', id, byteLength: 0 })
       bodies.delete(id)
+      metas.delete(id)
     },
     getUsage: async () => NO_USAGE,
     putThumbnail: async (id, bytes) => {
       calls.push({ op: 'putThumb', id, byteLength: bytes.byteLength })
     }
   }
-
-  // Optional on the interface. When absent the engine must fall back to a full
-  // putDocument, so the budget tests need to control which shape they exercise.
-  if (options.supportsMetadataPut !== false) {
-    adapter.putDocumentMetadata = async (id: string, _metadata: StorageDocumentMetadata) => {
-      calls.push({ op: 'putMetadata', id, byteLength: 0 })
-    }
-  }
-
-  return adapter
 }
 
 export class FakeHttpError extends Error {
@@ -97,6 +125,7 @@ export class FakeHttpError extends Error {
 
 export type FaultConfig = {
   putStatus?: number
+  metadataStatus?: number
   deleteStatus?: number
   listStatus?: number
   thumbStatus?: number
@@ -122,14 +151,19 @@ export function faultyAdapter(config: FaultConfig, inner = recordingAdapter()): 
     ...inner,
     calls: inner.calls,
     bodies: inner.bodies,
+    metas: inner.metas,
     count: inner.count,
     listDocuments: async () => {
       fail('list', config.listStatus)
       return inner.listDocuments()
     },
-    putDocument: async (id, bytes, metadata, onProgress) => {
+    putDocument: async (id, bytes, onProgress) => {
       fail('put', config.putStatus)
-      return inner.putDocument(id, bytes, metadata, onProgress)
+      return inner.putDocument(id, bytes, onProgress)
+    },
+    putDocumentMetadata: async (id, metadata) => {
+      fail('putMetadata', config.metadataStatus)
+      return inner.putDocumentMetadata(id, metadata)
     },
     putThumbnail: async (id, bytes) => {
       fail('putThumb', config.thumbStatus)

@@ -322,7 +322,8 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
         sourceFormat: document.sourceFormat,
         trashedAt: document.trashedAt,
         updatedAt: document.updatedAt,
-        figBytes: bytes
+        figBytes: bytes,
+        baseStateId: document.stateId ?? null
       })
     }
 

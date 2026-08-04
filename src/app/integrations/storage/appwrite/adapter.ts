@@ -227,7 +227,7 @@ export function createAppwriteStorageAdapterWithConfig(
       return bytes
     },
 
-    async putDocument(id, bytes, metadata, onProgress) {
+    async putDocument(id, bytes, onProgress) {
       const { config, bucketId } = await resolveStorage()
       await putObject(
         config,
@@ -243,7 +243,6 @@ export function createAppwriteStorageAdapterWithConfig(
               })
           : undefined
       )
-      await writeDocumentMetadata(config, bucketId, id, metadata)
     },
 
     async putDocumentMetadata(id, metadata) {

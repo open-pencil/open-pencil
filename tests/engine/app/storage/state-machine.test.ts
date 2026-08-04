@@ -514,10 +514,10 @@ function gatedAdapter(): { adapter: RecordingAdapter; started: Promise<void>; re
     calls: inner.calls,
     bodies: inner.bodies,
     count: inner.count,
-    putDocument: async (id, bytes, metadata, onProgress) => {
+    putDocument: async (id, bytes, onProgress) => {
       start.open()
       await gate.reached
-      return inner.putDocument(id, bytes, metadata, onProgress)
+      return inner.putDocument(id, bytes, onProgress)
     }
   }
   return { adapter, started: start.reached, release: gate.open }

@@ -47,6 +47,16 @@ export type LocalCanvasMeta = {
    * the remote had never seen.
    */
   syncedBodyId: string | null
+  /**
+   * Whole-document state (`stateId`) the current local edits are BASED on —
+   * the remote state this device last acknowledged. Conflict detection
+   * compares the remote's current `stateId` against this base: a difference
+   * means someone else wrote. `null` means unknown base (legacy row, fresh
+   * retarget) and never produces a conflict on its own. Advanced on every
+   * acknowledged write; `syncedBodyId` alone cannot play this role because it
+   * says nothing about the metadata base of a rename.
+   */
+  baseStateId: string | null
   syncStatus: LocalSyncStatus
   lastSyncedAt: string | null
   /** Failure of the document body or its metadata. Never a thumbnail. */
@@ -82,6 +92,7 @@ export type LocalCanvasIndexInput = Omit<
   | 'trashedAt'
   | 'bodyId'
   | 'syncedBodyId'
+  | 'baseStateId'
   | 'lastThumbSyncError'
 > & {
   revision?: number
@@ -91,6 +102,7 @@ export type LocalCanvasIndexInput = Omit<
   trashedAt?: string | null
   bodyId?: string | null
   syncedBodyId?: string | null
+  baseStateId?: string | null
   lastThumbSyncError?: string | null
 }
 
@@ -110,4 +122,6 @@ export type LocalCanvasWriteInput = {
   bodyId?: string | null
   /** Set when the bytes being written are known to already exist remotely. */
   syncedBodyId?: string | null
+  /** Conflict base the write builds on; preserved across writes, cleared on retarget. */
+  baseStateId?: string | null
 }

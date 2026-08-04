@@ -245,6 +245,18 @@ onMounted(() => void refreshStatuses())
         <p v-if="provider.pricingNote" class="mt-0.5 text-[10px] text-muted">
           {{ provider.pricingNote }}
         </p>
+        <!--
+          Honesty about what a destination cannot do: only called out when the
+          answer is "nothing" — a provider that detects conflicts needs no
+          warning, and 'prevent' does not exist on this matrix yet.
+        -->
+        <p
+          v-if="provider.conflictProtection === 'none'"
+          class="mt-0.5 text-[10px] text-[var(--color-warning-text)]"
+          data-test-id="settings-storage-no-conflict-detection"
+        >
+          {{ dialogs.storageNoConflictDetection }}
+        </p>
       </div>
     </div>
 

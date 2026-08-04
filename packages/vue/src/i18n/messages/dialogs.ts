@@ -216,6 +216,17 @@ export const dialogMessageDefaults = {
   syncErrorLikelyCause: 'Likely cause',
   syncErrorCorsConfiguration: 'Bucket CORS configuration',
   syncRetryNow: 'Retry now',
+  syncConflictTitle: 'Sync conflict',
+  syncConflictDescription: params('{name} was changed on another device since this one synced it.'),
+  syncConflictBody:
+    'Your changes on this device have not been uploaded. Choose how to continue — the version from the other device is never overwritten. Recovering older overwritten versions is not available yet.',
+  syncConflictKeepCopy: 'Keep my changes as a copy',
+  syncConflictLoadRemote: 'Use the other version',
+  syncConflictLater: 'Decide later',
+  storageDocumentConflict: 'Changed on another device',
+  syncConflictResolve: 'Resolve the conflict',
+  storageNoConflictDetection:
+    'This destination cannot detect conflicts: two devices editing one document silently overwrite each other.',
   syncOpenStorageSettings: 'Open storage settings',
   syncCopyDetails: 'Copy details',
   syncOperationPutCanvas: 'Uploading document contents',

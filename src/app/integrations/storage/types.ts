@@ -21,6 +21,14 @@ export type StorageDocumentMetadata = {
   sourceFormat: StorageDocumentFormat
   /** Soft-delete marker. The document bytes remain available until permanent deletion. */
   trashedAt: string | null
+  /**
+   * Content identity of the body this metadata describes. Optional: sidecars
+   * written before identity existed lack it, and absence means "unknown",
+   * never "different". See `sync-conflict-detection`.
+   */
+  bodyId?: string
+  /** Whole-document state identity (body + semantic metadata), for conflict detection. */
+  stateId?: string
 }
 
 export type StorageDocument = StorageDocumentMetadata & {
@@ -47,13 +55,18 @@ export interface StorageAdapter {
     id: string,
     onProgress?: (progress: StorageTransferProgress) => void
   ): Promise<Uint8Array>
+  /**
+   * Upload the document body only. Metadata is NOT accepted here: a dispatch-time
+   * snapshot written after a multi-second upload can overwrite a rename that
+   * landed while the bytes were on the wire. The caller writes metadata after
+   * completion through `putDocumentMetadata`, read from the row at that moment.
+   */
   putDocument(
     id: string,
     bytes: Uint8Array,
-    metadata: StorageDocumentMetadata,
     onProgress?: (progress: StorageTransferProgress) => void
   ): Promise<void>
-  putDocumentMetadata?(id: string, metadata: StorageDocumentMetadata): Promise<void>
+  putDocumentMetadata(id: string, metadata: StorageDocumentMetadata): Promise<void>
   deleteDocument(id: string): Promise<void>
   getDocumentMetadata?(id: string): Promise<StorageDocumentMetadata | null>
   getUsage(): Promise<StorageUsage>
@@ -102,6 +115,15 @@ export type StorageProviderRegistration = {
   helpLabel?: string
   /** Short cost summary, so the trade-off is visible before signing up. */
   pricingNote?: string
+  /**
+   * What this destination can do about two devices editing one document,
+   * named by the decision the UI makes with it: `'none'` means overwrites are
+   * silent and the workspace must say so; `'detect'` means a moved remote is
+   * caught before a write and the conflict UX applies; `'prevent'` (reserved
+   * for providers with probe-verified conditional writes) means a clobbering
+   * write is refused outright.
+   */
+  conflictProtection: 'none' | 'detect' | 'prevent'
   /** Offer the shared S3 CORS configuration helper for browser access. */
   corsConfiguration?: 's3'
   preferenceFields: readonly StoragePreferenceField[]

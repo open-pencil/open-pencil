@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { zipSync } from 'fflate'
 
-import { computeBodyId, computeBodyIdSafe } from '@/app/storage/body-id'
+import { computeBodyId, computeBodyIdSafe } from '@/app/storage/identity/body'
 
 type Entries = Record<string, Uint8Array>
 

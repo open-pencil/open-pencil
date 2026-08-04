@@ -17,12 +17,17 @@ export function parseStorageDocumentMetadata(
       typeof parsed.updatedAt === 'string' && parsed.updatedAt ? parsed.updatedAt : null
     const sourceFormat = parsed.sourceFormat === 'deck' ? 'deck' : 'fig'
     const trashedAt = typeof parsed.trashedAt === 'string' ? parsed.trashedAt : null
+    const bodyId = typeof parsed.bodyId === 'string' && parsed.bodyId ? parsed.bodyId : undefined
+    const stateId =
+      typeof parsed.stateId === 'string' && parsed.stateId ? parsed.stateId : undefined
     return {
       metadata: {
         name: name ?? fallback.name,
         updatedAt: updatedAt ?? fallback.updatedAt,
         sourceFormat,
-        trashedAt
+        trashedAt,
+        bodyId,
+        stateId
       },
       authoritative: name !== null && updatedAt !== null
     }
@@ -36,6 +41,10 @@ export function serializeStorageDocumentMetadata(metadata: StorageDocumentMetada
     name: metadata.name,
     updatedAt: metadata.updatedAt || new Date().toISOString(),
     sourceFormat: metadata.sourceFormat,
-    trashedAt: metadata.trashedAt
+    trashedAt: metadata.trashedAt,
+    // Optional identity fields: omitted entirely when unknown, so pre-identity
+    // readers see exactly the old shape.
+    ...(metadata.bodyId ? { bodyId: metadata.bodyId } : {}),
+    ...(metadata.stateId ? { stateId: metadata.stateId } : {})
   })
 }

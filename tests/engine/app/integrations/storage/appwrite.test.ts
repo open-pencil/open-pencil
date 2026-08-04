@@ -169,7 +169,8 @@ describe('Appwrite storage configuration', () => {
       ok: true,
       message: 'Connected. Appwrite storage is ready.'
     })
-    await adapter.putDocument('canvas-1', new Uint8Array([1, 2, 3]), {
+    await adapter.putDocument('canvas-1', new Uint8Array([1, 2, 3]))
+    await adapter.putDocumentMetadata('canvas-1', {
       name: 'Appwrite canvas',
       updatedAt: '2026-08-02T12:30:00.000Z',
       sourceFormat: 'fig',

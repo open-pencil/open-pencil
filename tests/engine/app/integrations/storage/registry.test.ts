@@ -31,6 +31,10 @@ class TestStorageAdapter implements StorageAdapter {
     return Promise.resolve()
   }
 
+  putDocumentMetadata() {
+    return Promise.resolve()
+  }
+
   deleteDocument() {
     return Promise.resolve()
   }
@@ -47,6 +51,7 @@ function testProvider() {
     description: 'Storage used by registry tests',
     preferenceFields: [{ id: 'endpoint', label: 'Endpoint', kind: 'url', required: true }],
     credentialFields: [{ id: 'secret', label: 'Secret', required: true }],
+    conflictProtection: 'detect',
     createAdapter: (runtime) => new TestStorageAdapter(runtime)
   })
 }

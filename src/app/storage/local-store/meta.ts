@@ -85,6 +85,9 @@ export function normalizeLocalCanvasMeta(
     // unidentified. The next save or open computes the real id.
     bodyId: meta.bodyId ?? null,
     syncedBodyId: meta.syncedBodyId ?? null,
+    // Pre-identity rows have no recorded base: `null` = unknown, which never
+    // conflicts on its own — the first acknowledged write establishes it.
+    baseStateId: meta.baseStateId ?? null,
     // Rows written before thumbnail failures were separated recorded them in
     // `lastSyncError`. Nothing can tell them apart after the fact, so they stay
     // where they are and simply age out; only new failures land here.
@@ -115,6 +118,10 @@ export function buildWriteMeta(
     // New bytes are not on the remote yet, so the confirmed id deliberately
     // stays where it was until putCanvas acknowledges an upload.
     syncedBodyId: input.syncedBodyId ?? (retargeted ? null : (existing?.syncedBodyId ?? null)),
+    // The conflict base describes a state AT A DESTINATION: a retarget moves
+    // the document to a bucket whose state we have not acknowledged, so the
+    // base clears alongside the body confirmation.
+    baseStateId: input.baseStateId ?? (retargeted ? null : (existing?.baseStateId ?? null)),
     syncStatus: input.syncStatus ?? 'pending',
     lastSyncedAt: existing?.lastSyncedAt ?? null,
     lastSyncError: input.syncStatus === 'synced' ? null : (existing?.lastSyncError ?? null),
@@ -147,6 +154,7 @@ export function buildIndexMeta(
     // its own — keep whatever a previous local write established.
     bodyId: input.bodyId ?? existing?.bodyId ?? null,
     syncedBodyId: input.syncedBodyId ?? existing?.syncedBodyId ?? null,
+    baseStateId: input.baseStateId ?? existing?.baseStateId ?? null,
     syncStatus: input.syncStatus,
     lastSyncedAt: input.lastSyncedAt,
     lastSyncError: input.lastSyncError,

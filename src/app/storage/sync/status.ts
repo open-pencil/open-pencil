@@ -14,6 +14,18 @@ export const syncUiDetail = ref<string | null>(null)
 export const syncUiErrorDetail = ref<string | null>(null)
 export const pendingSyncCount = ref(0)
 
+/**
+ * True when `navigator.locks` is unavailable and cross-tab drain exclusivity
+ * is silently off. The drain still works; what is gone is the guarantee that
+ * two tabs cannot select the same job. Recorded once, never cleared — the
+ * environment does not change mid-session.
+ */
+export const syncCrossTabLockUnavailable = ref(false)
+
+export function markCrossTabLockUnavailable(): void {
+  syncCrossTabLockUnavailable.value = true
+}
+
 const CHIP_DETAIL_MAX = 120
 
 export const syncStatusLabel = computed(() => {

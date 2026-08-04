@@ -194,9 +194,9 @@ describe('an in-flight completion may only confirm the target it captured', () =
     const inner = recordingAdapter()
     const adapter: StorageAdapter & { calls: typeof inner.calls } = {
       ...inner,
-      putDocument: async (id, bytes, metadata, onProgress) => {
+      putDocument: async (id, bytes, onProgress) => {
         await inFlight
-        await inner.putDocument(id, bytes, metadata, onProgress)
+        await inner.putDocument(id, bytes, onProgress)
       }
     }
     const h = createHarness({ resolveTarget: async () => adapter })

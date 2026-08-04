@@ -12,6 +12,7 @@ import { createSyncEngine, StorageSyncBlockedError } from '@/app/storage/sync/en
 import { migrateLegacyOutboxJobs } from '@/app/storage/sync/migrate-jobs'
 import { getOutbox } from '@/app/storage/sync/outbox'
 import { repairOrphanedPendingRows } from '@/app/storage/sync/repair'
+import { markCrossTabLockUnavailable } from '@/app/storage/sync/status'
 import { providerIdOfTarget, targetIsCurrent, type StorageTargetID } from '@/app/storage/target'
 
 /**
@@ -61,10 +62,25 @@ async function resolveConfiguredTarget(targetId: StorageTargetID | null): Promis
  * loser then found the blob evicted by the winner, failed, and demoted a healthy
  * document to `error`. `ifAvailable` means a tab that loses the lock simply
  * skips this drain rather than queueing another full pass behind it.
+ *
+ * Environments without `navigator.locks` run unlocked — that re-exposes the
+ * two-tab race, so it must not be silent: warn once and mark the sync status
+ * state, where the status surface and tests can see the degraded guarantee.
  */
-async function runWithWebLock(key: string, run: () => Promise<void>): Promise<void> {
+let warnedUnlockedDrain = false
+
+export async function runWithWebLock(key: string, run: () => Promise<void>): Promise<void> {
   const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
-  if (!locks) return run()
+  if (!locks) {
+    if (!warnedUnlockedDrain) {
+      warnedUnlockedDrain = true
+      console.warn(
+        '[Storage sync] navigator.locks is unavailable: cross-tab drain exclusivity is off, so two open tabs can upload the same document concurrently.'
+      )
+    }
+    markCrossTabLockUnavailable()
+    return run()
+  }
   await locks.request(key, { ifAvailable: true }, async (lock) => {
     if (!lock) return
     await run()

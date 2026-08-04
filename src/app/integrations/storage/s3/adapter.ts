@@ -202,7 +202,7 @@ export function createS3StorageAdapterWithConfig(
       return bytes
     },
 
-    async putDocument(id, bytes, metadata, onProgress) {
+    async putDocument(id, bytes, onProgress) {
       const config = await resolveConfig()
       await putObject(
         config,
@@ -217,7 +217,6 @@ export function createS3StorageAdapterWithConfig(
               })
           : undefined
       )
-      await writeDocumentMetadata(config, id, metadata)
     },
 
     async putDocumentMetadata(id, metadata) {

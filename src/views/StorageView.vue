@@ -39,6 +39,11 @@ import { createCanvasId } from '@/app/storage/id'
 import { isSupportedStorageFile, prepareStorageImport } from '@/app/storage/import'
 import { backupToCloud } from '@/app/storage/backup'
 import { promoteLocalDocuments } from '@/app/storage/promote'
+import {
+  markListingConflicts,
+  resolveStorageConflict,
+  type ConflictResolution
+} from '@/app/storage/conflict'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
@@ -49,6 +54,7 @@ import {
   clearSyncFailure,
   enqueuePutCanvas,
   enqueuePutThumb,
+  getOutbox,
   lastSyncFailure,
   persistStorageCanvasLocally,
   recordSyncFailure,
@@ -59,6 +65,7 @@ import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
 import { beginExplicitOpen, flushOpenTabSaves, openStorageDocumentInNewTab } from '@/app/tabs'
 import StorageDocumentCard from '@/components/storage/StorageDocumentCard.vue'
+import StorageConflictDialog from '@/components/storage/StorageConflictDialog.vue'
 import RefreshIcon from '@/components/storage/RefreshIcon.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
 import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
@@ -100,6 +107,9 @@ const deleteOpen = ref(false)
 const deleteTarget = ref<StorageDocument | null>(null)
 const deletePermanently = ref(false)
 const emptyTrashRequested = ref(false)
+const conflictedDocumentIds = ref<Set<string>>(new Set())
+const conflictOpen = ref(false)
+const conflictTarget = ref<StorageDocument | null>(null)
 const thumbnailUrls = ref<Record<string, string>>({})
 /**
  * Rows with no local body that the last listing did not contain.
@@ -381,6 +391,15 @@ async function refresh(): Promise<void> {
 
     const reconciliation = reconcileStorageDocuments(local, remote)
     documents.value = reconciliation.documents
+    // Listing-time conflict detection: remote movement underneath a pending
+    // local edit marks the row before the next drain would overwrite it.
+    const newConflicts = await markListingConflicts(localStore, local, remote)
+    conflictedDocumentIds.value = new Set([
+      ...local
+        .filter((metadata) => metadata.syncStatus === 'conflict')
+        .map((metadata) => metadata.id),
+      ...newConflicts
+    ])
     // Recomputed wholesale, so a row listed again this pass is simply not in the
     // new set and needs no clearing of its own. Nothing is deleted either way.
     unavailableDocumentIds.value = new Set(reconciliation.unavailableIds)
@@ -408,7 +427,10 @@ async function refresh(): Promise<void> {
         updatedAt: document.updatedAt,
         syncStatus: 'synced',
         lastSyncedAt: document.updatedAt,
-        lastSyncError: null
+        lastSyncError: null,
+        // A fresh device adopts the remote's published state as its conflict
+        // base: it has no edits of its own yet, so there is nothing to lose.
+        baseStateId: document.stateId ?? null
       })
     }
   } catch (reason) {
@@ -562,14 +584,47 @@ async function confirmEmptyTrash(): Promise<void> {
   }
 }
 
+function requestResolveConflict(document: StorageDocument): void {
+  conflictTarget.value = document
+  conflictOpen.value = true
+}
+
+async function handleConflictResolve(resolution: ConflictResolution): Promise<void> {
+  const target = conflictTarget.value
+  if (!target) return
+  // Pin the provider across the awaits — the user can switch mid-resolution.
+  const providerId = activeStorageProviderID.value
+  setDocumentBusy(target.id, true)
+  error.value = null
+  try {
+    await resolveStorageConflict(target.id, resolution, {
+      store: getLocalCanvasStore(),
+      outbox: getOutbox(),
+      adapter: createActiveStorageAdapter(providerId),
+      enqueueCanvas: enqueuePutCanvas,
+      createId: createCanvasId
+    })
+    conflictedDocumentIds.value = new Set(
+      [...conflictedDocumentIds.value].filter((id) => id !== target.id)
+    )
+    await refresh()
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : String(reason)
+  } finally {
+    setDocumentBusy(target.id, false)
+  }
+}
+
 async function confirmDelete(): Promise<void> {
+  // Pin the destination before any await: reading the live provider after a
+  // suspension asks a question whose answer may have moved.
+  const providerId = activeStorageProviderID.value
   if (emptyTrashRequested.value) {
     await confirmEmptyTrash()
     return
   }
   const target = deleteTarget.value
   if (!target) return
-  const providerId = activeStorageProviderID.value
   setDocumentBusy(target.id, true)
   error.value = null
   try {
@@ -888,6 +943,7 @@ onBeforeUnmount(clearThumbnailUrls)
           :thumbnail-url="thumbnailUrls[document.id]"
           :sync-error="documentSyncErrors[document.id]?.body"
           :thumbnail-error="documentSyncErrors[document.id]?.thumbnail"
+          :conflicted="conflictedDocumentIds.has(document.id)"
           :trash-view="folder === 'trash'"
           :busy="busyDocumentIds.has(document.id)"
           :unavailable="unavailableDocumentIds.has(document.id)"
@@ -898,6 +954,7 @@ onBeforeUnmount(clearThumbnailUrls)
           @trash="requestDelete($event, false)"
           @restore="restoreDocument"
           @delete-permanently="requestDelete($event, true)"
+          @resolve-conflict="requestResolveConflict"
           @thumbnail-needed="requestDocumentThumbnail"
         />
       </div>
@@ -996,6 +1053,12 @@ onBeforeUnmount(clearThumbnailUrls)
         </button>
       </AppDialogFooter>
     </AppDialogRoot>
+
+    <StorageConflictDialog
+      v-model:open="conflictOpen"
+      :document="conflictTarget"
+      @resolve="handleConflictResolve"
+    />
 
     <AppAlertDialogRoot v-model:open="deleteOpen" data-test-id="storage-delete-dialog">
       <div class="border-b border-border px-4 py-3">

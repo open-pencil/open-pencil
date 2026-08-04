@@ -4,6 +4,7 @@ import {
   type StorageDocumentMetadata
 } from '@/app/integrations/storage'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
+import { computeStateIdentity } from '@/app/storage/identity/state'
 import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
@@ -33,6 +34,46 @@ export class StorageSyncBlockedError extends Error {
     super(message)
     this.name = 'StorageSyncBlockedError'
   }
+}
+
+/**
+ * The remote moved since the local edits' base — another device wrote, and
+ * writing now would silently overwrite that work. Detection needs no provider
+ * capability: compare the remote's published `stateId` against the row's
+ * `baseStateId`, and let identical concurrent edits converge (remote already
+ * holds exactly what we were about to publish).
+ */
+export class StorageConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'StorageConflictError'
+  }
+}
+
+/**
+ * Preflight conflict check, run before any remote write. Returns without
+ * throwing whenever detection cannot say anything honest: the adapter cannot
+ * read metadata, the row has no recorded base (legacy/fresh target), or the
+ * remote predates identity fields.
+ *
+ * This is a time-of-check/time-of-use guard, not prevention: two writers can
+ * both pass against the same base and the second PUT still lands. That race
+ * is detected at the next read (drain preflight or listing), and recovery of
+ * the overwritten version requires retained versions — deferred to
+ * `sync-versioned-remote-layout`.
+ */
+async function assertNoRemoteConflict(
+  adapter: StorageAdapter,
+  meta: LocalCanvasMeta,
+  intendedStateId: string
+): Promise<void> {
+  if (!adapter.getDocumentMetadata || !meta.baseStateId) return
+  const remote = await adapter.getDocumentMetadata(meta.id)
+  if (!remote?.stateId) return
+  if (remote.stateId === meta.baseStateId || remote.stateId === intendedStateId) return
+  throw new StorageConflictError(
+    `"${meta.name}" was changed on another device since this one synced it. Resolve the conflict before uploading.`
+  )
 }
 
 /** Cancels a scheduled wake. Calling it after the wake fired is a no-op. */
@@ -99,12 +140,32 @@ function isPermanentError(error: unknown): boolean {
   )
 }
 
-function documentMetadata(meta: LocalCanvasMeta): StorageDocumentMetadata {
+/**
+ * Sidecar payload for a row, carrying content identity.
+ *
+ * `remoteBodyId` is the body the REMOTE will actually hold once this write
+ * lands — the uploaded bytes for a body put, the last confirmed body for a
+ * metadata-only put. It is not necessarily the row's current `bodyId`: a body
+ * edit landing mid-upload makes the remote state old-body-plus-new-metadata,
+ * and the identity must describe exactly that mixed state or conflict
+ * detection compares against a body the bucket has never seen.
+ */
+async function documentMetadata(
+  meta: LocalCanvasMeta,
+  remoteBodyId: string | null
+): Promise<StorageDocumentMetadata & { stateId: string }> {
+  const { stateId } = await computeStateIdentity(remoteBodyId ?? '', {
+    name: meta.name,
+    sourceFormat: meta.sourceFormat,
+    isTrashed: meta.trashedAt !== null
+  })
   return {
     name: meta.name,
     updatedAt: meta.updatedAt,
     sourceFormat: meta.sourceFormat,
-    trashedAt: meta.trashedAt
+    trashedAt: meta.trashedAt,
+    ...(remoteBodyId ? { bodyId: remoteBodyId } : {}),
+    stateId
   }
 }
 
@@ -124,12 +185,15 @@ function documentMetadata(meta: LocalCanvasMeta): StorageDocumentMetadata {
  *
  * `targetId` is the destination the completing job was addressed to. Passing it
  * makes the write conditional on the row still pointing there.
+ *
+ * `stateId` is the whole-document state the acknowledged write published; it
+ * becomes the row's conflict base — the remote state future edits build on.
  */
 export async function markRevisionSynced(
   store: LocalCanvasStore,
   canvasId: string,
   revision: number,
-  options: { bodyUploaded?: boolean; targetId?: StorageTargetID | null } = {}
+  options: { bodyUploaded?: boolean; targetId?: StorageTargetID | null; stateId?: string } = {}
 ): Promise<boolean> {
   const latest = await store.getMeta(canvasId)
   if (!latest || latest.revision !== revision || latest.tombstoned) return false
@@ -149,6 +213,7 @@ export async function markRevisionSynced(
     {
       syncStatus: bodyPending ? 'pending' : 'synced',
       syncedBodyId,
+      baseStateId: options.stateId ?? latest.baseStateId,
       lastSyncedAt: new Date().toISOString(),
       lastSyncError: null
     },
@@ -274,21 +339,18 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     // Write whatever the row currently says rather than bailing when the revision
     // advanced past the job — the job is "sync this canvas", not "sync revision N".
     const revision = meta.revision
-    const metadata = documentMetadata(meta)
-    if (adapter.putDocumentMetadata) {
-      await adapter.putDocumentMetadata(job.canvasId, metadata)
-    } else {
-      const bytes = meta.hasFig ? await store.readFig(job.canvasId) : null
-      if (!bytes) throw new Error('Storage provider cannot update document metadata separately')
-      // This path uploads the body alongside the metadata.
-      await adapter.putDocument(job.canvasId, bytes, metadata)
-      await markRevisionSynced(store, job.canvasId, revision, {
-        bodyUploaded: true,
-        targetId: job.targetId
-      })
-      return
-    }
-    await markRevisionSynced(store, job.canvasId, revision, { targetId: job.targetId })
+    // The remote body after a metadata-only write is whatever was last confirmed
+    // there — a pending body upload has not landed, so the identity must not
+    // claim it.
+    const written = await documentMetadata(meta, meta.syncedBodyId)
+    // Preflight BEFORE writing: a remote that moved from our base stops the
+    // write here, while local bytes still exist and nothing is overwritten.
+    await assertNoRemoteConflict(adapter, meta, written.stateId)
+    await adapter.putDocumentMetadata(job.canvasId, written)
+    await markRevisionSynced(store, job.canvasId, revision, {
+      targetId: job.targetId,
+      stateId: written.stateId
+    })
 
     // A sidecar write proves nothing about the body. If the current bytes are
     // still missing remotely, queue the upload instead of leaving a row that looks
@@ -324,9 +386,13 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     const revision = meta.revision
     const bytes = await store.readFig(job.canvasId)
     if (!bytes || bytes.byteLength === 0) throw new Error('Local document missing for sync')
+    // Preflight BEFORE the expensive upload: the remote body after this write
+    // is the body we are about to send, so the intended identity uses it.
+    const intended = await documentMetadata(meta, meta.bodyId)
+    await assertNoRemoteConflict(adapter, meta, intended.stateId)
     setUploadProgress(job.canvasId, 0)
     try {
-      await adapter.putDocument(job.canvasId, bytes, documentMetadata(meta), (progress) => {
+      await adapter.putDocument(job.canvasId, bytes, (progress) => {
         if (progress.totalBytes) {
           setUploadProgress(job.canvasId, progress.transferredBytes / progress.totalBytes)
         }
@@ -334,9 +400,28 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     } finally {
       setUploadProgress(job.canvasId, null)
     }
+    // Write the sidecar with metadata read AT COMPLETION, never the dispatch
+    // snapshot: a rename landing during a multi-second upload is already in
+    // this re-read, so this write and the rename's trailing putMetadata carry
+    // the SAME payload — identical writes, benign even where a provider (B2)
+    // may process same-second same-key writes out of order. Writing the
+    // dispatch snapshot produced two DIFFERENT payloads a sub-second apart.
+    // A mutation between this re-read and the PUT converges on the next job;
+    // reconcile bounds it — the older payload carries the older `updatedAt`.
+    const latest = await store.getMeta(job.canvasId)
+    let writtenStateId: string | undefined
+    if (latest && !latest.tombstoned) {
+      // The remote body is the bytes just uploaded (the dispatch snapshot's
+      // body), even when the re-read row has moved on — the identity describes
+      // old-body-plus-new-metadata truthfully in that case.
+      const written = await documentMetadata(latest, meta.bodyId)
+      writtenStateId = written.stateId
+      await adapter.putDocumentMetadata(job.canvasId, written)
+    }
     const confirmed = await markRevisionSynced(store, job.canvasId, revision, {
       bodyUploaded: true,
-      targetId: job.targetId
+      targetId: job.targetId,
+      stateId: writtenStateId
     })
     if (confirmed) await evictLocalFigCache(new Set([job.canvasId]))
   }
@@ -441,6 +526,29 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
       } else scheduleWake(50)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
+      if (error instanceof StorageConflictError) {
+        // A conflict is not a failure: nothing about the destination is wrong,
+        // and retrying would not help — the remote moved and only the user can
+        // pick a winner. Park the job (resume() revives it after resolution),
+        // mark the row, and say whose work is at stake. No failure snapshot:
+        // that channel describes provider faults, and this is neither.
+        await outbox.update({
+          ...job,
+          nextAttemptAt: Number.MAX_SAFE_INTEGER
+        })
+        const latest = await deps.getStore().getMeta(job.canvasId)
+        if (latest) {
+          await deps
+            .getStore()
+            .updateMeta(
+              job.canvasId,
+              { syncStatus: 'conflict', lastSyncError: null },
+              { expectedRevision: latest.revision }
+            )
+        }
+        setSyncUi('blocked', message)
+        return
+      }
       if (error instanceof StorageSyncBlockedError) {
         await outbox.update({
           ...job,

@@ -129,6 +129,8 @@ export function readFixture(path: string): Uint8Array {
 export async function configureStorage(page: Page): Promise<void> {
   await page.goto('/storage?test')
   await page.getByRole('button', { name: 'Settings' }).last().click()
+  // Settings open on their first section — storage is no longer the default.
+  await page.getByTestId('settings-section-storage').click()
   await page.getByLabel('Endpoint').fill(STORAGE_ORIGIN)
   await page.getByLabel('Bucket').fill('designs')
 
