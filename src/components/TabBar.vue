@@ -123,7 +123,12 @@ function onClose(e: MouseEvent, tabId: string) {
         </Tip>
       </TabsTrigger>
     </TabsList>
-    <DropdownMenuRoot>
+    <!--
+      Not on home: the workspace already offers New Design, New Slides and
+      Import as its own buttons, so the strip would only be a second door to
+      the same three things.
+    -->
+    <DropdownMenuRoot v-if="!showingHome">
       <DropdownMenuTrigger as-child>
         <button
           data-test-id="tabbar-new"

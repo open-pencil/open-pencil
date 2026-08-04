@@ -35,7 +35,7 @@ import { storageCredentialsSatisfied } from '@/app/storage/configured'
 import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import { useDocumentSyncErrors } from '@/app/storage/document-sync-errors'
 import { createCanvasId } from '@/app/storage/id'
-import { isDeckStorageFile, prepareDeckStorageImport } from '@/app/storage/import'
+import { isSupportedStorageFile, prepareStorageImport } from '@/app/storage/import'
 import { backupToCloud } from '@/app/storage/backup'
 import { promoteLocalDocuments } from '@/app/storage/promote'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
@@ -584,13 +584,13 @@ function onDragLeave(event: DragEvent): void {
   if (dragDepth === 0) dropActive.value = false
 }
 
-async function importDroppedDecks(files: File[]): Promise<void> {
+async function importDroppedFiles(files: File[]): Promise<void> {
   // No cloud is not a reason to refuse an import — the document lands locally
   // and uploads later if a destination is ever configured.
   if (importing.value) return
-  const deckFiles = files.filter((file) => isDeckStorageFile(file.name))
-  if (deckFiles.length === 0) {
-    error.value = dialogs.value.storageDeckFilesOnly
+  const supported = files.filter((file) => isSupportedStorageFile(file.name))
+  if (supported.length === 0) {
+    error.value = dialogs.value.storageSupportedFilesOnly
     return
   }
 
@@ -603,9 +603,9 @@ async function importDroppedDecks(files: File[]): Promise<void> {
   const takenNames = new Set(documents.value.map((document) => document.name))
   const failures: string[] = []
   try {
-    for (const file of deckFiles) {
+    for (const file of supported) {
       try {
-        const prepared = await prepareDeckStorageImport(file)
+        const prepared = await prepareStorageImport(file)
         const name = nextUniqueStorageName(prepared.name, takenNames)
         takenNames.add(name)
         const id = createCanvasId()
@@ -647,7 +647,7 @@ function onDrop(event: DragEvent): void {
   event.preventDefault()
   dragDepth = 0
   dropActive.value = false
-  void importDroppedDecks(Array.from(event.dataTransfer?.files ?? []))
+  void importDroppedFiles(Array.from(event.dataTransfer?.files ?? []))
 }
 
 useEventListener(workspace, 'dragenter', onDragEnter)
@@ -672,7 +672,7 @@ function pickFilesToImport(): void {
 
 function onImportPicked(event: Event): void {
   const input = event.target as HTMLInputElement
-  void importDroppedDecks(Array.from(input.files ?? []))
+  void importDroppedFiles(Array.from(input.files ?? []))
   // Clear it so choosing the same file twice in a row still fires a change.
   input.value = ''
 }
@@ -734,7 +734,7 @@ onBeforeUnmount(clearThumbnailUrls)
     <input
       ref="importInput"
       type="file"
-      accept=".deck"
+      accept=".fig,.deck"
       multiple
       class="hidden"
       data-test-id="storage-import-input"
@@ -815,7 +815,7 @@ onBeforeUnmount(clearThumbnailUrls)
           </button>
         </template>
         <p v-else-if="importing" class="text-xs text-muted" role="status">
-          {{ dialogs.importingDeckFiles }}
+          {{ dialogs.importingStorageFiles }}
         </p>
         <span v-else />
       </div>
@@ -896,7 +896,7 @@ onBeforeUnmount(clearThumbnailUrls)
     >
       <div class="flex flex-col items-center gap-2 text-accent">
         <icon-lucide-cloud-upload class="size-8" />
-        <p class="text-sm font-medium">{{ dialogs.dropDeckFiles }}</p>
+        <p class="text-sm font-medium">{{ dialogs.dropStorageFiles }}</p>
       </div>
     </div>
 

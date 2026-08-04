@@ -297,5 +297,8 @@
   "createDocument": "Создать",
   "createDesign": "Дизайн",
   "createSlides": "Слайды",
-  "createImport": "Импорт…"
+  "createImport": "Импорт…",
+  "dropStorageFiles": "Перетащите файлы .fig или .deck для загрузки",
+  "importingStorageFiles": "Импорт файлов…",
+  "storageSupportedFilesOnly": "Сюда можно загружать только файлы .fig и .deck."
 }

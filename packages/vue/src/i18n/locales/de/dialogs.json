@@ -297,5 +297,8 @@
   "createDocument": "Erstellen",
   "createDesign": "Design",
   "createSlides": "Folien",
-  "createImport": "Importieren…"
+  "createImport": "Importieren…",
+  "dropStorageFiles": "Ziehen Sie .fig- oder .deck-Dateien hierher",
+  "importingStorageFiles": "Dateien werden importiert…",
+  "storageSupportedFilesOnly": "Hier können nur .fig- und .deck-Dateien hochgeladen werden."
 }

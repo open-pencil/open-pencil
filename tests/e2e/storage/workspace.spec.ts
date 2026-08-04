@@ -148,7 +148,69 @@ test('dropping a deck stores its format and generated thumbnail', async ({ page 
   await card.click()
   await expect(page).toHaveURL(/\/editor$/)
   await new CanvasHelper(page).waitForInit()
-  await expect(page.getByRole('button', { name: 'Present' })).toBeVisible()
+  // By test id, not by name: role-name matching is substring, so 'Present'
+  // also matched the tab's "Close Dropped presentation" button.
+  await expect(page.getByTestId('present-button')).toBeVisible()
+})
+
+test('dropping a fig imports it as a design, not a deck', async ({ page }) => {
+  // `.fig` was refused by the drop handler for no reason other than the filter:
+  // the thumbnailer and the open path have always handled both formats.
+  const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  const puts: Array<{ url: string; body: Buffer | null }> = []
+
+  await page.route('https://s3.example.com/**', async (route) => {
+    const request = route.request()
+    const url = new URL(request.url())
+    if (request.method() === 'PUT') {
+      puts.push({ url: request.url(), body: request.postDataBuffer() })
+      await route.fulfill({ status: 200 })
+      return
+    }
+    if (url.searchParams.get('list-type') === '2') {
+      await route.fulfill({
+        contentType: 'application/xml',
+        body: '<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>'
+      })
+      return
+    }
+    if (url.pathname.endsWith('.fig')) {
+      await route.fulfill({ contentType: 'application/octet-stream', body: fixture })
+      return
+    }
+    await route.fulfill({ status: 404 })
+  })
+
+  await configureStorage(page)
+  const workspace = page.getByTestId('storage-workspace')
+  await workspace.evaluate(
+    (element, fileBytes) => {
+      const transfer = new DataTransfer()
+      transfer.items.add(
+        new File([new Uint8Array(fileBytes)], 'Dropped design.fig', {
+          type: 'application/octet-stream'
+        })
+      )
+      const options = { bubbles: true, cancelable: true, dataTransfer: transfer }
+      element.dispatchEvent(new DragEvent('dragenter', options))
+      element.dispatchEvent(new DragEvent('dragover', options))
+      element.dispatchEvent(new DragEvent('drop', options))
+    },
+    [...fixture]
+  )
+
+  // The name keeps its extension off and the badge must say design, or the
+  // document would open through the deck reader and fail.
+  const card = page.getByRole('button', { name: /Dropped design/ })
+  await expect(card).toBeVisible()
+  await expect(card.locator('[data-slot="storage-format-badge"][data-format="fig"]')).toBeVisible()
+  await expect
+    .poll(() => puts.find((put) => put.url.endsWith('.meta.json'))?.body?.toString() ?? '')
+    .toContain('"sourceFormat":"fig"')
+
+  await card.click()
+  await expect(page).toHaveURL(/\/editor$/)
+  await new CanvasHelper(page).waitForInit()
 })
 
 test('an unconfigured workspace is usable, not a dead end', async ({ page }) => {

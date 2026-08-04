@@ -297,5 +297,8 @@
   "createDocument": "新建",
   "createDesign": "设计",
   "createSlides": "幻灯片",
-  "createImport": "导入…"
+  "createImport": "导入…",
+  "dropStorageFiles": "拖放 .fig 或 .deck 文件以上传",
+  "importingStorageFiles": "正在导入文件…",
+  "storageSupportedFilesOnly": "此处只能上传 .fig 和 .deck 文件。"
 }

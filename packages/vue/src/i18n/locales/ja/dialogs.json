@@ -297,5 +297,8 @@
   "createDocument": "作成",
   "createDesign": "デザイン",
   "createSlides": "スライド",
-  "createImport": "読み込み…"
+  "createImport": "読み込み…",
+  "dropStorageFiles": "アップロードするには .fig または .deck ファイルをドロップ",
+  "importingStorageFiles": "ファイルをインポートしています…",
+  "storageSupportedFilesOnly": "ここには .fig と .deck ファイルのみアップロードできます。"
 }

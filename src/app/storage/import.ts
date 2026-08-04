@@ -13,23 +13,34 @@ export type PreparedStorageImport = {
   thumbnailBytes: Uint8Array | null
 }
 
-export function isDeckStorageFile(fileName: string): boolean {
-  return /\.deck$/i.test(fileName)
+/**
+ * The extension decides the format, because both are ZIP archives and sniffing
+ * the container tells us nothing about which schema is inside.
+ */
+export function storageFormatForFile(fileName: string): StorageDocumentFormat | null {
+  if (/\.deck$/i.test(fileName)) return 'deck'
+  if (/\.fig$/i.test(fileName)) return 'fig'
+  return null
 }
 
-export function storageNameFromDeckFile(fileName: string): string {
-  return fileName.replace(/\.deck$/i, '').trim() || 'Untitled'
+export function isSupportedStorageFile(fileName: string): boolean {
+  return storageFormatForFile(fileName) !== null
 }
 
-export async function prepareDeckStorageImport(
+export function storageNameFromFile(fileName: string): string {
+  return fileName.replace(/\.(deck|fig)$/i, '').trim() || 'Untitled'
+}
+
+export async function prepareStorageImport(
   file: DroppedStorageFile
 ): Promise<PreparedStorageImport> {
-  if (!isDeckStorageFile(file.name)) throw new Error('Only .deck files can be uploaded here.')
+  const sourceFormat = storageFormatForFile(file.name)
+  if (!sourceFormat) throw new Error('Only .fig and .deck files can be uploaded here.')
   const bytes = new Uint8Array(await file.arrayBuffer())
-  const thumbnailBytes = await createStorageThumbnail(bytes, 'deck')
+  const thumbnailBytes = await createStorageThumbnail(bytes, sourceFormat)
   return {
-    name: storageNameFromDeckFile(file.name),
-    sourceFormat: 'deck',
+    name: storageNameFromFile(file.name),
+    sourceFormat,
     bytes,
     thumbnailBytes
   }
