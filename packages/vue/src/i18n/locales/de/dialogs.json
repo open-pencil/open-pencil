@@ -293,5 +293,9 @@
   "localDurabilityBody": "Deine Dokumente werden auf diesem Gerät gespeichert. Beim Löschen der Website-Daten gehen sie verloren, und Safari entfernt sie möglicherweise nach etwa 7 Tagen ohne Nutzung. Verbinde Cloud-Speicher für eine dauerhafte Kopie.",
   "localDurabilityDismiss": "Verstanden",
   "storageDocumentUnavailable": "Nicht verfügbar",
-  "storageDocumentUnavailableDetail": "Von diesem Dokument gibt es auf diesem Gerät keine Kopie, und {target} führt es nicht mehr auf. Hier wurde nichts gelöscht. Wenn ein anderes Gerät es gerade ersetzt, erscheint es beim nächsten Aktualisieren von selbst wieder."
+  "storageDocumentUnavailableDetail": "Von diesem Dokument gibt es auf diesem Gerät keine Kopie, und {target} führt es nicht mehr auf. Hier wurde nichts gelöscht. Wenn ein anderes Gerät es gerade ersetzt, erscheint es beim nächsten Aktualisieren von selbst wieder.",
+  "createDocument": "Erstellen",
+  "createDesign": "Design",
+  "createSlides": "Folien",
+  "createImport": "Importieren…"
 }

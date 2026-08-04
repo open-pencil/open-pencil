@@ -293,5 +293,9 @@
   "localDurabilityBody": "Twoje dokumenty są zapisane na tym urządzeniu. Wyczyszczenie danych witryny je usunie, a Safari może je skasować po około 7 dniach bezczynności. Podłącz magazyn w chmurze, aby zachować trwałą kopię.",
   "localDurabilityDismiss": "Rozumiem",
   "storageDocumentUnavailable": "Niedostępny",
-  "storageDocumentUnavailableDetail": "Ten dokument nie ma kopii na tym urządzeniu, a {target} już go nie wyświetla. Nic tutaj nie zostało usunięte. Jeśli inne urządzenie właśnie go zastępuje, wróci samoczynnie przy następnym odświeżeniu."
+  "storageDocumentUnavailableDetail": "Ten dokument nie ma kopii na tym urządzeniu, a {target} już go nie wyświetla. Nic tutaj nie zostało usunięte. Jeśli inne urządzenie właśnie go zastępuje, wróci samoczynnie przy następnym odświeżeniu.",
+  "createDocument": "Utwórz",
+  "createDesign": "Projekt",
+  "createSlides": "Slajdy",
+  "createImport": "Importuj…"
 }

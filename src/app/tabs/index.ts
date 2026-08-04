@@ -56,6 +56,20 @@ let nextTabId = 1
  */
 let explicitOpens = 0
 
+/**
+ * Where to go when the last document closes.
+ *
+ * Injected rather than imported: pulling in the router singleton here drags
+ * `createWebHistory()` into every unit test, and those run without a DOM. It is
+ * also the wrong direction — navigation is the shell's concern, not the tab
+ * store's.
+ */
+let leaveEditor: (() => Promise<void>) | null = null
+
+export function setEditorExit(handler: () => Promise<void>): void {
+  leaveEditor = handler
+}
+
 export function isExplicitOpenPending(): boolean {
   return explicitOpens > 0
 }
@@ -194,21 +208,27 @@ export function closeTab(tabId: string) {
   const settled = closingTab.store
     .flushPendingSave()
     .catch((error: unknown) => console.warn('[Tabs] Flush on close failed:', error))
-  const wasActive = activeTabId.value === tabId
-  tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
-
   // Dispose only once the flush has settled — disposing first would cancel the
   // very write we just asked for.
   const disposeWhenSettled = () => void settled.then(() => closingTab.store.dispose())
 
-  if (tabsRef.value.length === 0) {
-    // No replacement document. Closing the last one returns you to the
-    // workspace — the view that owns choosing what to work on.
-    activeTabId.value = ''
-    triggerRef(tabsRef)
-    disposeWhenSettled()
+  if (tabsRef.value.length === 1) {
+    // The last document. Leave the editor FIRST, then empty the list: removing
+    // it here would re-render the editor with nothing to show and every reader
+    // of `getActiveStore()` would throw before any redirect could run.
+    const clear = () => {
+      tabsRef.value = []
+      activeTabId.value = ''
+      triggerRef(tabsRef)
+      disposeWhenSettled()
+    }
+    if (leaveEditor) void leaveEditor().then(clear)
+    else clear()
     return
   }
+
+  const wasActive = activeTabId.value === tabId
+  tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
   if (wasActive) {
     const newIdx = Math.min(idx, tabsRef.value.length - 1)

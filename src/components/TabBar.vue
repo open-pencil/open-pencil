@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuRoot,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  TabsList,
+  TabsRoot,
+  TabsTrigger
+} from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
 import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import Tip from '@/components/ui/Tip.vue'
+import { menuItem, useMenuUI } from '@/components/ui/menu'
 import tabBarTheme from '@/theme/tab-bar'
-import { useTabsStore, createTab } from '@/app/tabs'
+import { setEditorExit, useTabsStore } from '@/app/tabs'
+import { createStorageDocument } from '@/app/storage/create-document'
 import { useI18n } from '@open-pencil/vue'
 
 const { dialogs } = useI18n()
@@ -23,6 +35,21 @@ async function goHome(): Promise<void> {
   await router.push('/')
 }
 
+// Closing the last document lands here too.
+setEditorExit(goHome)
+
+async function create(sourceFormat: 'fig' | 'deck'): Promise<void> {
+  await createStorageDocument(sourceFormat, router)
+}
+
+/**
+ * Import lives in the workspace, which owns the file picker, the naming and the
+ * error surface. Sending the user there beats a second copy of all three.
+ */
+async function goImport(): Promise<void> {
+  await router.push({ path: '/', query: { import: '1' } })
+}
+
 /** Returning to a document from the workspace needs the route as well as the tab. */
 async function activate(tabId: string): Promise<void> {
   switchTab(tabId)
@@ -30,6 +57,8 @@ async function activate(tabId: string): Promise<void> {
 }
 const tabBarStyles = tv(tabBarTheme)
 const baseStyles = tabBarStyles()
+const menuCls = useMenuUI({ content: 'min-w-40' })
+const itemCls = menuItem({ justify: 'start', class: 'gap-2' })
 
 const modelValue = computed({
   get: () => (showingHome.value ? '' : activeTabId.value),
@@ -94,15 +123,42 @@ function onClose(e: MouseEvent, tabId: string) {
         </Tip>
       </TabsTrigger>
     </TabsList>
-    <Tip :label="dialogs.newTab">
-      <button
-        data-test-id="tabbar-new"
-        :class="baseStyles.newAction()"
-        :aria-label="dialogs.newTab"
-        @click="createTab()"
-      >
-        <icon-lucide-plus :class="baseStyles.newIcon()" />
-      </button>
-    </Tip>
+    <DropdownMenuRoot>
+      <DropdownMenuTrigger as-child>
+        <button
+          data-test-id="tabbar-new"
+          :class="baseStyles.newAction()"
+          :aria-label="dialogs.createDocument"
+          :title="dialogs.createDocument"
+        >
+          <icon-lucide-plus :class="baseStyles.newIcon()" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuContent :class="menuCls.content" align="start" :side-offset="4">
+          <DropdownMenuItem
+            :class="itemCls"
+            data-test-id="tabbar-create-design"
+            @select="void create('fig')"
+          >
+            <img :src="storageDocumentIconUrls.fig" alt="" class="size-4 rounded-[2px]" />
+            {{ dialogs.createDesign }}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            :class="itemCls"
+            data-test-id="tabbar-create-slides"
+            @select="void create('deck')"
+          >
+            <img :src="storageDocumentIconUrls.deck" alt="" class="size-4 rounded-[2px]" />
+            {{ dialogs.createSlides }}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator :class="menuCls.separator" />
+          <DropdownMenuItem :class="itemCls" data-test-id="tabbar-import" @select="void goImport()">
+            <icon-lucide-import class="size-4" />
+            {{ dialogs.createImport }}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenuPortal>
+    </DropdownMenuRoot>
   </TabsRoot>
 </template>

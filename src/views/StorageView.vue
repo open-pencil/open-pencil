@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useClipboard, useEventListener, useOnline } from '@vueuse/core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   AlertDialogAction,
   AlertDialogCancel,
@@ -41,6 +41,7 @@ import { promoteLocalDocuments } from '@/app/storage/promote'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
+import { createStorageDocument } from '@/app/storage/create-document'
 import { currentTargetIdFor } from '@/app/storage/target'
 import {
   categorizeSyncFailure,
@@ -55,13 +56,7 @@ import {
 } from '@/app/storage/sync'
 import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
 import { nextUniqueStorageName } from '@/app/storage/unique-name'
-import {
-  beginExplicitOpen,
-  createDeckTab,
-  createTab,
-  flushOpenTabSaves,
-  openStorageDocumentInNewTab
-} from '@/app/tabs'
+import { beginExplicitOpen, flushOpenTabSaves, openStorageDocumentInNewTab } from '@/app/tabs'
 import StorageDocumentCard from '@/components/storage/StorageDocumentCard.vue'
 import RefreshIcon from '@/components/storage/RefreshIcon.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
@@ -79,6 +74,7 @@ import {
 
 const { dialogs } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
 const documents = ref<StorageDocument[]>([])
 const credentialStatuses = ref<Record<string, CredentialStatus>>({})
@@ -562,20 +558,7 @@ async function restoreDocument(document: StorageDocument): Promise<void> {
 }
 
 async function createDocument(sourceFormat: 'fig' | 'deck'): Promise<void> {
-  // Capture the provider the user was looking at, not whatever a route change
-  // and a tick later happens to be live. No cloud configured is fine — the
-  // document is local-only, which is a supported way to work, not a refusal.
-  const providerId = activeStorageProviderID.value
-
-  // Create BEFORE routing. The editor no longer manufactures a blank document
-  // when it mounts with nothing open — it sends you back here — so arriving
-  // with no tab would bounce straight off the view we are trying to reach.
-  const store = sourceFormat === 'deck' ? (await createDeckTab()).store : createTab(undefined).store
-  const documentId = createCanvasId()
-  store.setStorageDocumentSource({ providerId, documentId }, 'Untitled', sourceFormat)
-
-  await router.push('/editor')
-  await store.saveFigFile()
+  await createStorageDocument(sourceFormat, router)
 }
 
 function eventHasFiles(event: DragEvent): boolean {
@@ -602,7 +585,9 @@ function onDragLeave(event: DragEvent): void {
 }
 
 async function importDroppedDecks(files: File[]): Promise<void> {
-  if (!configured.value || importing.value) return
+  // No cloud is not a reason to refuse an import — the document lands locally
+  // and uploads later if a destination is ever configured.
+  if (importing.value) return
   const deckFiles = files.filter((file) => isDeckStorageFile(file.name))
   if (deckFiles.length === 0) {
     error.value = dialogs.value.storageDeckFilesOnly
@@ -679,7 +664,26 @@ watch(settingsDialogOpen, (open, wasOpen) => {
   if (wasOpen && !open) void refresh()
 })
 
+const importInput = ref<HTMLInputElement | null>(null)
+
+function pickFilesToImport(): void {
+  importInput.value?.click()
+}
+
+function onImportPicked(event: Event): void {
+  const input = event.target as HTMLInputElement
+  void importDroppedDecks(Array.from(input.files ?? []))
+  // Clear it so choosing the same file twice in a row still fires a change.
+  input.value = ''
+}
+
 onMounted(() => {
+  // The Create menu in the tab strip sends the user here to import, because
+  // this view owns the picker, the naming and the error surface.
+  if (route.query.import) {
+    void router.replace({ path: '/', query: {} })
+    void nextTick(pickFilesToImport)
+  }
   void refresh()
 })
 
@@ -726,6 +730,16 @@ onBeforeUnmount(clearThumbnailUrls)
         </button>
       </div>
     </header>
+
+    <input
+      ref="importInput"
+      type="file"
+      accept=".deck"
+      multiple
+      class="hidden"
+      data-test-id="storage-import-input"
+      @change="onImportPicked"
+    />
 
     <LocalDurabilityNotice />
 
