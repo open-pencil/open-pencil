@@ -28,8 +28,13 @@ export async function createStorageDocument(
   // arriving first would bounce straight off the view we are heading for.
   const store = sourceFormat === 'deck' ? (await createDeckTab()).store : createTab(undefined).store
   const documentId = createCanvasId()
-  store.setStorageDocumentSource({ providerId, documentId }, 'Untitled', sourceFormat)
+  // Provisional, and deliberately not saved here. A blank Untitled that is
+  // opened and closed again should leave nothing behind — no local row, no
+  // upload, no card in the workspace to tidy up. Autosave writes it the moment
+  // it holds actual work.
+  store.setStorageDocumentSource({ providerId, documentId }, 'Untitled', sourceFormat, {
+    provisional: true
+  })
 
   await router.push('/editor')
-  await store.saveFigFile()
 }

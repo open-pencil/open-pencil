@@ -233,3 +233,32 @@ test('an unconfigured workspace is usable, not a dead end', async ({ page }) => 
   await page.getByRole('button', { name: 'Cloud storage' }).last().click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })
+
+test('a blank Untitled leaves nothing behind, an edited one does', async ({ page }) => {
+  await page.goto('/?test')
+  await page.getByTestId('local-durability-dismiss').click()
+
+  // Create one, touch nothing, close it.
+  await page.getByTestId('storage-new-design').click()
+  await expect(page).toHaveURL(/\/editor$/)
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  // Longer than the 3s autosave debounce: the point is that waiting does not
+  // help it, not that we outran it.
+  await page.waitForTimeout(4_000)
+  await page.getByTestId('tabbar-close').click()
+
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
+  await expect(page.locator('[data-document-id]')).toHaveCount(0)
+
+  // Same again, but draw something first.
+  await page.getByTestId('storage-new-design').click()
+  await canvas.waitForInit()
+  await canvas.drawRect(120, 120, 260, 240)
+  await page.waitForTimeout(4_000)
+  await page.getByTestId('tabbar-close').click()
+
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
+  await expect(page.locator('[data-document-id]')).toHaveCount(1)
+})

@@ -75,6 +75,23 @@ export function createDocumentSourceActions({
     return exportFigFile(editor.graph, ck, renderer, state.currentPageId)
   }
 
+  // A document created blank has nothing worth keeping until it holds
+  // something. Cleared on the first real write, after which it is an ordinary
+  // document and saves like one — including when emptied again.
+  let provisional = false
+
+  /**
+   * Both halves matter. `canUndo` alone would let a stage-colour change on an
+   * empty canvas mint a document, and an empty canvas is not work. Objects
+   * alone would let `requestRender()` — which bumps `sceneVersion` from over a
+   * hundred call sites — save a document nobody touched.
+   */
+  function worthKeeping(): boolean {
+    if (!provisional) return true
+    if (!editor.undo.canUndo) return false
+    return editor.graph.getPages().some((page) => editor.graph.getChildren(page.id).length > 0)
+  }
+
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
     buildFigFile: buildNativeFile,
@@ -87,7 +104,13 @@ export function createDocumentSourceActions({
     getStorageBinding,
     setStorageBinding,
     setSourceIdentity,
-    setSavedVersion,
+    // Every successful write funnels through here, whichever destination it
+    // took, so this is the one place that can retire the provisional flag —
+    // an explicit Save of a blank document is intent, and must stick.
+    setSavedVersion: (version: number) => {
+      provisional = false
+      setSavedVersion(version)
+    },
     setLastWriteTime,
     startWatchingFile: () => {
       void startWatchingFile()
@@ -99,6 +122,7 @@ export function createDocumentSourceActions({
     getSavedVersion,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
     saveCurrentDocument: async () => {
+      if (!worthKeeping()) return
       await writeFile(await buildNativeFile())
     }
   })
@@ -125,7 +149,8 @@ export function createDocumentSourceActions({
   function setStorageDocumentSource(
     binding: StorageDocumentBinding,
     documentName: string,
-    sourceFormat: StorageDocumentFormat = 'fig'
+    sourceFormat: StorageDocumentFormat = 'fig',
+    options: { provisional?: boolean } = {}
   ) {
     stopWatchingFile()
     setFileHandle(null)
@@ -136,6 +161,9 @@ export function createDocumentSourceActions({
     state.documentName = documentName
     state.autosaveEnabled = true
     setSavedVersion(state.sceneVersion)
+    // Opening an existing document is never provisional: it earned its row
+    // already, and emptying it must still be saved.
+    provisional = options.provisional ?? false
   }
 
   function setPlannedFilePath(path: string) {
