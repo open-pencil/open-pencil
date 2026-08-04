@@ -11,11 +11,14 @@ import {
 } from '../namespace'
 import { storageThumbnailMimeType } from '../thumbnail'
 import type {
+  CommittedVersion,
   StorageAdapter,
   StorageDocument,
   StorageDocumentMetadata,
-  StorageProviderRuntime
+  StorageProviderRuntime,
+  StorageTransferProgress
 } from '../types'
+import { MissingVersionIdentityError } from '../versioned/s3'
 import {
   AppwriteHttpError,
   createBucket,
@@ -248,6 +251,46 @@ export function createAppwriteStorageAdapterWithConfig(
     async putDocumentMetadata(id, metadata) {
       const { config, bucketId } = await resolveStorage()
       await writeDocumentMetadata(config, bucketId, id, metadata)
+    },
+
+    /**
+     * Degraded versioned commit (versioned-layout design decision 7): Appwrite
+     * has no content-addressed keys and no head object — the metadata write is
+     * the commit point, and an interrupted commit can orphan the body file.
+     * That is the same orphan shape as the fixed-key layout, documented as
+     * this adapter's degradation. `hasRemoteBody` is deliberately absent: the
+     * row's fixed-key confirmation stays valid here because the layout never
+     * changes, so the migration sweep has nothing to re-prove.
+     */
+    async putDocumentVersion(
+      id: string,
+      bytes: Uint8Array,
+      readWritten: () => Promise<StorageDocumentMetadata>,
+      onProgress?: (progress: StorageTransferProgress) => void
+    ): Promise<CommittedVersion> {
+      const { config, bucketId } = await resolveStorage()
+      await putObject(
+        config,
+        bucketId,
+        documentFigKey(id),
+        bytes,
+        'application/octet-stream',
+        onProgress
+          ? (progress) =>
+              onProgress({ transferredBytes: progress.sentBytes, totalBytes: progress.totalBytes })
+          : undefined
+      )
+      const written = await readWritten()
+      if (!written.stateId || !written.bodyId) throw new MissingVersionIdentityError(id)
+      await writeDocumentMetadata(config, bucketId, id, written)
+      return { stateId: written.stateId, bodyId: written.bodyId }
+    },
+
+    async putMetadataVersion(id, written): Promise<CommittedVersion> {
+      if (!written.stateId || !written.bodyId) throw new MissingVersionIdentityError(id)
+      const { config, bucketId } = await resolveStorage()
+      await writeDocumentMetadata(config, bucketId, id, written)
+      return { stateId: written.stateId, bodyId: written.bodyId }
     },
 
     async getDocumentMetadata(id) {

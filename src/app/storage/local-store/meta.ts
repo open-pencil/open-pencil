@@ -88,6 +88,11 @@ export function normalizeLocalCanvasMeta(
     // Pre-identity rows have no recorded base: `null` = unknown, which never
     // conflicts on its own — the first acknowledged write establishes it.
     baseStateId: meta.baseStateId ?? null,
+    // Pre-versioned rows confirmed bodies against the fixed-key layout; that
+    // proof is stale by the versioned layout's lights until the sweep or a
+    // versioned commit re-establishes it.
+    versionedConfirmed: meta.versionedConfirmed ?? false,
+    lastKnownTargetId: meta.lastKnownTargetId ?? null,
     // Rows written before thumbnail failures were separated recorded them in
     // `lastSyncError`. Nothing can tell them apart after the fact, so they stay
     // where they are and simply age out; only new failures land here.
@@ -122,6 +127,13 @@ export function buildWriteMeta(
     // the document to a bucket whose state we have not acknowledged, so the
     // base clears alongside the body confirmation.
     baseStateId: input.baseStateId ?? (retargeted ? null : (existing?.baseStateId ?? null)),
+    // Same rule as the body confirmation: a layout proof belongs to the
+    // destination that gave it. New bytes stay unconfirmed in the versioned
+    // layout until the versioned commit acknowledges them.
+    versionedConfirmed: retargeted ? false : (existing?.versionedConfirmed ?? false),
+    // Last known destination is deliberately sticky: retargeting and
+    // disconnect must not forget where a replica may exist.
+    lastKnownTargetId: input.syncTargetId ?? existing?.lastKnownTargetId ?? null,
     syncStatus: input.syncStatus ?? 'pending',
     lastSyncedAt: existing?.lastSyncedAt ?? null,
     lastSyncError: input.syncStatus === 'synced' ? null : (existing?.lastSyncError ?? null),
@@ -155,6 +167,8 @@ export function buildIndexMeta(
     bodyId: input.bodyId ?? existing?.bodyId ?? null,
     syncedBodyId: input.syncedBodyId ?? existing?.syncedBodyId ?? null,
     baseStateId: input.baseStateId ?? existing?.baseStateId ?? null,
+    versionedConfirmed: input.versionedConfirmed ?? existing?.versionedConfirmed ?? false,
+    lastKnownTargetId: input.syncTargetId ?? existing?.lastKnownTargetId ?? null,
     syncStatus: input.syncStatus,
     lastSyncedAt: input.lastSyncedAt,
     lastSyncError: input.lastSyncError,

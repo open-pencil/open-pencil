@@ -37,6 +37,9 @@ export type StorageDocument = StorageDocumentMetadata & {
   metadataAuthoritative?: boolean
 }
 
+/** What a versioned commit published: the state now at the head. */
+export type CommittedVersion = { stateId: string; bodyId: string }
+
 export type StorageUsage = {
   bytesUsed: number
   objectCount: number
@@ -67,6 +70,30 @@ export interface StorageAdapter {
     onProgress?: (progress: StorageTransferProgress) => void
   ): Promise<void>
   putDocumentMetadata(id: string, metadata: StorageDocumentMetadata): Promise<void>
+  /**
+   * Versioned-layout commit: ensure the body object, write the manifest, then
+   * update the head — the head is the only commit point. `readWritten` is
+   * invoked again after the body upload completes, so the committed manifest
+   * carries completion-time metadata (the rename-during-upload rule). Adapters
+   * without a versioned layout omit this and the engine uses the two-step
+   * `putDocument` + `putDocumentMetadata` path.
+   */
+  putDocumentVersion?(
+    id: string,
+    bytes: Uint8Array,
+    readWritten: () => Promise<StorageDocumentMetadata>,
+    onProgress?: (progress: StorageTransferProgress) => void
+  ): Promise<CommittedVersion>
+  /** Metadata-only version: a new manifest reusing the existing body, then head. */
+  putMetadataVersion?(id: string, written: StorageDocumentMetadata): Promise<CommittedVersion>
+  /** HEAD on the versioned body object — the migration re-confirmation sweep. */
+  hasRemoteBody?(bodyId: string): Promise<boolean>
+  /**
+   * Delete unreferenced bodies/manifests older than the retention safety
+   * window. Versioned-layout adapters only; the engine runs it best-effort
+   * when the queue idles.
+   */
+  collectGarbage?(nowMs?: number): Promise<{ deletedBodies: number; deletedManifests: number }>
   deleteDocument(id: string): Promise<void>
   getDocumentMetadata?(id: string): Promise<StorageDocumentMetadata | null>
   getUsage(): Promise<StorageUsage>

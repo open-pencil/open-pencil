@@ -35,6 +35,13 @@
 - Connect Appwrite with a dedicated scoped API key; OpenPencil selects or creates the storage bucket and registers its web platform automatically.
 - Connect Backblaze B2 through a dedicated provider using its bucket name, S3 endpoint, application key ID, and application key.
 - Empty every document from the cloud storage Trash at once with an explicit permanent-deletion confirmation.
+- Cloud storage now keeps a versioned remote layout: every upload publishes an immutable,
+  content-addressed body plus a version manifest through a per-document commit point, so a
+  reader can never see a half-written document, an interrupted upload leaves the previous
+  version untouched, and overwritten versions remain recoverable within the retention
+  window (last 10 versions per document, 24-hour safety floor). Documents already stored
+  under the old layout keep working and migrate on their next write; deleting a document
+  never removes bytes another document shares.
 - Figma Slides (`.deck`) support — open, edit, and save decks as a first-class document format
   - New `@open-pencil/deck` package: archive parse/write, slide↔page restructure
   - Each active slide becomes an editor page; left-rail filmstrip with lazy thumbnails

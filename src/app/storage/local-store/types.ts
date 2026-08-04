@@ -57,6 +57,22 @@ export type LocalCanvasMeta = {
    * says nothing about the metadata base of a rename.
    */
   baseStateId: string | null
+  /**
+   * The row's `syncedBodyId` proof was established against the VERSIONED
+   * layout (`bodies/{bodyId}` exists remotely). A confirmation earned under
+   * the legacy fixed-key layout proves bytes reached `canvases/<id>.fig` —
+   * an address the versioned layout does not serve — so it must not carry
+   * over blindly: the migration sweep re-proves it with a HEAD, and a body
+   * write only confirms through the versioned commit.
+   */
+  versionedConfirmed?: boolean
+  /**
+   * The last destination this row replicated to. Unlike `syncTargetId` it
+   * survives disconnect: a row deleted while disconnected must still name the
+   * bucket that holds its replica, so reconnecting can complete the deferred
+   * delete instead of re-seeding the document the user removed.
+   */
+  lastKnownTargetId?: StorageTargetID | null
   syncStatus: LocalSyncStatus
   lastSyncedAt: string | null
   /** Failure of the document body or its metadata. Never a thumbnail. */

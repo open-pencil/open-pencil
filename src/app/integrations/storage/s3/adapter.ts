@@ -6,8 +6,11 @@ import {
   STORAGE_DOCUMENTS_PREFIX,
   STORAGE_NAMESPACE,
   STORAGE_NAMESPACE_MARKER,
+  bodyKey,
   documentFigKey,
+  documentHeadKey,
   documentIdFromFigKey,
+  documentIdFromHeadKey,
   documentMetaKey,
   documentThumbnailKey
 } from '../namespace'
@@ -18,6 +21,8 @@ import type {
   StorageDocumentMetadata,
   StorageProviderRuntime
 } from '../types'
+import { s3CollectGarbage } from '../versioned/gc'
+import { s3CommitVersion, s3GetVersionedBody, s3ResolveVersion } from '../versioned/s3'
 import {
   S3HttpError,
   deleteObject,
@@ -118,8 +123,19 @@ export interface S3StorageAdapter extends StorageAdapter {
 
 export type S3ConfigResolver = () => Promise<S3CompatibleConfig>
 
+export type S3AdapterOptions = {
+  /**
+   * Issue conditional (If-Match) head updates, upgrading races to a typed
+   * conflict instead of a recoverable fork. Probe-gated per provider: enable
+   * only after a live probe returns 412s as documented (AWS S3 does; Bunny
+   * documents conditional headers as unsupported; B2 is undocumented).
+   */
+  conditionalHeadUpdates?: boolean
+}
+
 export function createS3StorageAdapterWithConfig(
-  resolveConfig: S3ConfigResolver
+  resolveConfig: S3ConfigResolver,
+  options: S3AdapterOptions = {}
 ): S3StorageAdapter {
   return {
     async testConnection() {
@@ -151,43 +167,70 @@ export function createS3StorageAdapterWithConfig(
     async listDocuments() {
       const config = await resolveConfig()
       const objects = await listObjects(config, STORAGE_DOCUMENTS_PREFIX)
-      const entries = objects
-        .map((object) => {
-          const id = documentIdFromFigKey(object.key)
-          return id ? { id, lastModified: object.lastModified } : null
-        })
-        .filter((entry): entry is { id: string; lastModified: string | null } => entry !== null)
+      // One listing of `canvases/` sees both layouts: heads name versioned
+      // documents, `.fig` keys name legacy ones. A head wins for its id.
+      const versionedIds = new Set<string>()
+      const legacyLastModified = new Map<string, string | null>()
+      for (const object of objects) {
+        const headId = documentIdFromHeadKey(object.key)
+        if (headId) {
+          versionedIds.add(headId)
+          continue
+        }
+        const figId = documentIdFromFigKey(object.key)
+        if (figId) legacyLastModified.set(figId, object.lastModified)
+      }
 
       const documents: StorageDocument[] = []
-      // Bound sidecar reads so large buckets do not open hundreds of requests at once.
-      for (let offset = 0; offset < entries.length; offset += 12) {
-        const batch = entries.slice(offset, offset + 12)
-        documents.push(
-          ...(await Promise.all(
-            batch.map(async ({ id, lastModified }) => {
-              const fallback = {
-                name: id,
-                updatedAt: lastModified ?? new Date(0).toISOString(),
-                sourceFormat: 'fig' as const,
-                trashedAt: null
-              }
-              const metadataBytes = await getObject(config, documentMetaKey(id)).catch(
+      const ids = [...new Set([...versionedIds, ...legacyLastModified.keys()])]
+      // Bound manifest/sidecar reads so large buckets do not open hundreds of
+      // requests at once.
+      for (let offset = 0; offset < ids.length; offset += 12) {
+        const batch = ids.slice(offset, offset + 12)
+        const batchDocuments = await Promise.all(
+          batch.map(async (id): Promise<StorageDocument | null> => {
+            const fallback = {
+              name: id,
+              updatedAt: legacyLastModified.get(id) ?? new Date(0).toISOString(),
+              sourceFormat: 'fig' as const,
+              trashedAt: null
+            }
+            if (versionedIds.has(id)) {
+              const version = await s3ResolveVersion(config, id, fallback).catch(
                 (error: unknown) => {
-                  console.warn('[Storage] Document metadata fetch failed:', id, error)
+                  console.warn('[Storage] Versioned head fetch failed:', id, error)
                   return null
                 }
               )
-              const { metadata, authoritative } = parseStorageDocumentMetadata(
-                metadataBytes,
-                fallback
-              )
-              return {
-                id,
-                ...metadata,
-                metadataAuthoritative: authoritative
-              } satisfies StorageDocument
-            })
-          ))
+              if (version) {
+                return {
+                  id,
+                  ...version.manifest.metadata,
+                  metadataAuthoritative: version.authoritative
+                } satisfies StorageDocument
+              }
+              // A torn head with no legacy body is not a readable document.
+              if (!legacyLastModified.has(id)) return null
+            }
+            const metadataBytes = await getObject(config, documentMetaKey(id)).catch(
+              (error: unknown) => {
+                console.warn('[Storage] Document metadata fetch failed:', id, error)
+                return null
+              }
+            )
+            const { metadata, authoritative } = parseStorageDocumentMetadata(
+              metadataBytes,
+              fallback
+            )
+            return {
+              id,
+              ...metadata,
+              metadataAuthoritative: authoritative
+            } satisfies StorageDocument
+          })
+        )
+        documents.push(
+          ...batchDocuments.filter((document): document is StorageDocument => document !== null)
         )
       }
       return documents.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
@@ -195,17 +238,18 @@ export function createS3StorageAdapterWithConfig(
 
     async getDocument(id, onProgress) {
       const config = await resolveConfig()
-      const bytes = await getObject(
-        config,
-        documentFigKey(id),
-        onProgress
-          ? (progress) =>
-              onProgress({
-                transferredBytes: progress.receivedBytes,
-                totalBytes: progress.totalBytes
-              })
-          : undefined
-      )
+      const mapProgress = onProgress
+        ? (progress: { receivedBytes: number; totalBytes: number | null }) =>
+            onProgress({
+              transferredBytes: progress.receivedBytes,
+              totalBytes: progress.totalBytes
+            })
+        : undefined
+      // Versioned first; a document that only ever wrote the fixed-key layout
+      // has no head and reads exactly as before.
+      const bytes =
+        (await s3GetVersionedBody(config, id, mapProgress)) ??
+        (await getObject(config, documentFigKey(id), mapProgress))
       if (!bytes) throw new Error(`Document not found: ${id}`)
       return bytes
     },
@@ -231,8 +275,46 @@ export function createS3StorageAdapterWithConfig(
       await writeDocumentMetadata(await resolveConfig(), id, metadata)
     },
 
+    async putDocumentVersion(id, bytes, readWritten, onProgress) {
+      const config = await resolveConfig()
+      return s3CommitVersion(
+        config,
+        id,
+        bytes,
+        readWritten,
+        onProgress
+          ? (progress) =>
+              onProgress({ transferredBytes: progress.sentBytes, totalBytes: progress.totalBytes })
+          : undefined,
+        { conditional: options.conditionalHeadUpdates === true }
+      )
+    },
+
+    async putMetadataVersion(id, written) {
+      return s3CommitVersion(await resolveConfig(), id, null, async () => written, undefined, {
+        conditional: options.conditionalHeadUpdates === true
+      })
+    },
+
+    async hasRemoteBody(bodyId) {
+      return headObject(await resolveConfig(), bodyKey(bodyId))
+    },
+
+    async collectGarbage(nowMs) {
+      return s3CollectGarbage(await resolveConfig(), nowMs)
+    },
+
     async getDocumentMetadata(id) {
       const config = await resolveConfig()
+      // The head's manifest is the preflight source once a document is
+      // versioned; the sidecar remains the source for legacy documents.
+      const version = await s3ResolveVersion(config, id, {
+        name: id,
+        updatedAt: new Date(0).toISOString(),
+        sourceFormat: 'fig',
+        trashedAt: null
+      })
+      if (version?.authoritative) return version.manifest.metadata
       const bytes = await getObject(config, documentMetaKey(id))
       if (!bytes) return null
       const parsed = parseStorageDocumentMetadata(bytes, {
@@ -246,10 +328,13 @@ export function createS3StorageAdapterWithConfig(
 
     async deleteDocument(id) {
       const config = await resolveConfig()
+      // The head goes with the document; manifests and bodies stay for the
+      // retention/GC sweep (phase 2), which reference-counts shared bodies.
       const results = await Promise.allSettled([
         deleteObject(config, documentFigKey(id)),
         deleteObject(config, documentMetaKey(id)),
-        deleteObject(config, documentThumbnailKey(id))
+        deleteObject(config, documentThumbnailKey(id)),
+        deleteObject(config, documentHeadKey(id))
       ])
       const failure = results.find(
         (result): result is PromiseRejectedResult => result.status === 'rejected'
@@ -260,10 +345,16 @@ export function createS3StorageAdapterWithConfig(
     async getUsage() {
       const config = await resolveConfig()
       const objects = await listObjects(config, `${STORAGE_NAMESPACE}/`)
+      // Heads and legacy bodies name the same document exactly once each.
+      const documentIds = new Set<string>()
+      for (const object of objects) {
+        const id = documentIdFromHeadKey(object.key) ?? documentIdFromFigKey(object.key)
+        if (id) documentIds.add(id)
+      }
       return {
         bytesUsed: objects.reduce((total, object) => total + (object.size ?? 0), 0),
         objectCount: objects.length,
-        documentCount: objects.filter((object) => documentIdFromFigKey(object.key)).length
+        documentCount: documentIds.size
       }
     },
 
@@ -279,6 +370,9 @@ export function createS3StorageAdapterWithConfig(
   }
 }
 
-export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3StorageAdapter {
-  return createS3StorageAdapterWithConfig(() => resolveConfig(runtime))
+export function createS3StorageAdapter(
+  runtime: StorageProviderRuntime,
+  options: S3AdapterOptions = {}
+): S3StorageAdapter {
+  return createS3StorageAdapterWithConfig(() => resolveConfig(runtime), options)
 }

@@ -220,10 +220,12 @@ export async function duplicateStorageDocument(
  *    own destination. The tombstone is what keeps the document hidden until
  *    that delete is acknowledged; nothing removes it earlier.
  *
- * Known gap: a row disconnected first (target cleared, bytes kept) and deleted
- * afterwards takes path 1, so reconnecting to the same bucket can re-seed it.
- * Closing it needs a durable "last known destination" on the row, which the
- * schema does not carry.
+ * A row disconnected first (target cleared, bytes kept) and deleted afterwards
+ * still carries `lastKnownTargetId` plus a body confirmation — evidence a
+ * replica may exist. It takes the tombstone path (scoped to the last known
+ * destination, no live enqueue), and `promoteLocalDocuments` completes the
+ * deferred delete when that destination reconnects, instead of re-seeding the
+ * document the user removed. A row with no replica evidence takes path 1.
  */
 export async function permanentlyDeleteStorageDocument(
   providerId: StorageProviderID,
@@ -234,7 +236,10 @@ export async function permanentlyDeleteStorageDocument(
   const existing = await runtime.store.getMeta(document.id)
   if (!existing) throw new Error(`Stored document not found: ${document.id}`)
 
-  if (existing.syncTargetId === null) {
+  // No current destination AND no evidence a replica ever existed: nothing
+  // remote to suppress, so the row and its bytes go now.
+  const replicaEvidence = existing.syncedBodyId !== null && existing.lastKnownTargetId != null
+  if (existing.syncTargetId === null && !replicaEvidence) {
     await runtime.store.remove(document.id)
     return
   }

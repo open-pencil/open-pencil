@@ -1,6 +1,11 @@
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
-import { enqueuePutCanvas, enqueuePutMetadata, enqueuePutThumb } from '@/app/storage/sync'
+import {
+  enqueueDeleteCanvas,
+  enqueuePutCanvas,
+  enqueuePutMetadata,
+  enqueuePutThumb
+} from '@/app/storage/sync'
 import type { StorageTargetID } from '@/app/storage/target'
 
 export type PromotionResult = {
@@ -14,6 +19,7 @@ export type PromotionDependencies = {
   enqueueCanvas(canvasId: string, revision: number): Promise<void>
   enqueueMetadata(canvasId: string, revision: number): Promise<void>
   enqueueThumbnail(canvasId: string, revision: number): Promise<void>
+  enqueueDelete(canvasId: string): Promise<void>
 }
 
 /**
@@ -36,14 +42,24 @@ export async function promoteLocalDocuments(
     store: getLocalCanvasStore(),
     enqueueCanvas: enqueuePutCanvas,
     enqueueMetadata: enqueuePutMetadata,
-    enqueueThumbnail: enqueuePutThumb
+    enqueueThumbnail: enqueuePutThumb,
+    enqueueDelete: enqueueDeleteCanvas
   }
 
   const promoted: string[] = []
   const skipped: string[] = []
 
   for (const meta of await runtime.store.listMetas(true)) {
-    if (meta.tombstoned) continue
+    if (meta.tombstoned) {
+      // A delete deferred while disconnected: the replica sits in exactly this
+      // bucket, so completing the delete is the user's original decision, not
+      // a promotion. Re-attach and let the ordinary delete job finish it.
+      if (meta.lastKnownTargetId === targetId && meta.syncedBodyId !== null) {
+        await runtime.store.updateMeta(meta.id, { syncTargetId: targetId })
+        await runtime.enqueueDelete(meta.id)
+      }
+      continue
+    }
     if (meta.syncTargetId === targetId) continue
     if (meta.syncTargetId !== null) {
       // Belongs to a different bucket. Retargeting it here would upload one

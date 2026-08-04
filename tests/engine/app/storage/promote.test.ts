@@ -12,7 +12,8 @@ function deps(store: LocalCanvasStore) {
     store,
     enqueueCanvas: vi.fn(async () => {}),
     enqueueMetadata: vi.fn(async () => {}),
-    enqueueThumbnail: vi.fn(async () => {})
+    enqueueThumbnail: vi.fn(async () => {}),
+    enqueueDelete: vi.fn(async () => undefined)
   }
 }
 
@@ -90,6 +91,29 @@ describe('promoteLocalDocuments', () => {
 
     expect(result.promoted).toEqual([])
     expect(d.enqueueCanvas).not.toHaveBeenCalled()
+  })
+
+  test('completes a delete deferred while disconnected when the replica target reconnects', async () => {
+    const store = createMemoryLocalCanvasStore()
+    await store.writeCanvas({
+      id: 'deferred',
+      syncTargetId: TARGET,
+      name: 'deferred',
+      figBytes: new Uint8Array([1]),
+      bodyId: 'sha256:deferred'
+    })
+    await store.updateMeta('deferred', { syncedBodyId: 'sha256:deferred' })
+    // Disconnect clears the live target but not the last known destination;
+    // the delete afterwards can only tombstone, not enqueue.
+    await store.updateMeta('deferred', { syncTargetId: null })
+    await store.tombstone('deferred')
+    const d = deps(store)
+
+    const result = await promoteLocalDocuments(TARGET, d)
+
+    expect(result.promoted).toEqual([])
+    expect(d.enqueueDelete).toHaveBeenCalledTimes(1)
+    expect((await store.getMeta('deferred'))?.syncTargetId).toBe(TARGET)
   })
 
   test('an index-only row queues metadata, not a body it does not have', async () => {

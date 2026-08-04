@@ -3,6 +3,7 @@ import {
   type StorageAdapter,
   type StorageDocumentMetadata
 } from '@/app/integrations/storage'
+import { StorageConflictError } from '@/app/integrations/storage/conflict'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { computeStateIdentity } from '@/app/storage/identity/state'
 import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
@@ -15,6 +16,7 @@ import {
   recordSyncFailure,
   syncFailureErrorText
 } from '@/app/storage/sync/failure'
+import { reconfirmVersionedBodies } from '@/app/storage/sync/migrate-layout'
 import type { Outbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/storage/sync/status'
@@ -43,12 +45,7 @@ export class StorageSyncBlockedError extends Error {
  * `baseStateId`, and let identical concurrent edits converge (remote already
  * holds exactly what we were about to publish).
  */
-export class StorageConflictError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'StorageConflictError'
-  }
-}
+export { StorageConflictError }
 
 /**
  * Preflight conflict check, run before any remote write. Returns without
@@ -193,7 +190,13 @@ export async function markRevisionSynced(
   store: LocalCanvasStore,
   canvasId: string,
   revision: number,
-  options: { bodyUploaded?: boolean; targetId?: StorageTargetID | null; stateId?: string } = {}
+  options: {
+    bodyUploaded?: boolean
+    targetId?: StorageTargetID | null
+    stateId?: string
+    /** The body confirmation came from a versioned-layout commit. */
+    versioned?: boolean
+  } = {}
 ): Promise<boolean> {
   const latest = await store.getMeta(canvasId)
   if (!latest || latest.revision !== revision || latest.tombstoned) return false
@@ -214,6 +217,9 @@ export async function markRevisionSynced(
       syncStatus: bodyPending ? 'pending' : 'synced',
       syncedBodyId,
       baseStateId: options.stateId ?? latest.baseStateId,
+      // A versioned commit proves the body at its `bodies/` address; legacy
+      // completions leave the flag where it was.
+      versionedConfirmed: options.versioned ? true : (latest.versionedConfirmed ?? false),
       lastSyncedAt: new Date().toISOString(),
       lastSyncError: null
     },
@@ -346,7 +352,14 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     // Preflight BEFORE writing: a remote that moved from our base stops the
     // write here, while local bytes still exist and nothing is overwritten.
     await assertNoRemoteConflict(adapter, meta, written.stateId)
-    await adapter.putDocumentMetadata(job.canvasId, written)
+    // A metadata-only version reuses the confirmed body — only sound once the
+    // confirmation is a versioned-layout proof (bodies/{id} exists). Legacy
+    // rows keep the sidecar until a body write migrates them.
+    if (adapter.putMetadataVersion && meta.versionedConfirmed) {
+      await adapter.putMetadataVersion(job.canvasId, written)
+    } else {
+      await adapter.putDocumentMetadata(job.canvasId, written)
+    }
     await markRevisionSynced(store, job.canvasId, revision, {
       targetId: job.targetId,
       stateId: written.stateId
@@ -391,37 +404,64 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     const intended = await documentMetadata(meta, meta.bodyId)
     await assertNoRemoteConflict(adapter, meta, intended.stateId)
     setUploadProgress(job.canvasId, 0)
+    let writtenStateId: string | undefined
+    let committedVersioned = false
     try {
-      await adapter.putDocument(job.canvasId, bytes, (progress) => {
-        if (progress.totalBytes) {
-          setUploadProgress(job.canvasId, progress.transferredBytes / progress.totalBytes)
+      if (adapter.putDocumentVersion) {
+        // Versioned commit: body → manifest → head, head as the only commit
+        // point. The thunk re-reads the row AT COMPLETION (after the body
+        // upload), so a rename landing mid-upload is already in the committed
+        // manifest — the same completion-time rule the sidecar writer follows.
+        // The body half stays the dispatch snapshot's: the identity describes
+        // old-body-plus-new-metadata truthfully when the row moves on mid-upload.
+        const committed = await adapter.putDocumentVersion(
+          job.canvasId,
+          bytes,
+          async () => {
+            const current = await store.getMeta(job.canvasId)
+            if (!current || current.tombstoned) throw new Error('Local document missing for sync')
+            return documentMetadata(current, meta.bodyId)
+          },
+          (progress) => {
+            if (progress.totalBytes) {
+              setUploadProgress(job.canvasId, progress.transferredBytes / progress.totalBytes)
+            }
+          }
+        )
+        writtenStateId = committed.stateId
+        committedVersioned = true
+      } else {
+        await adapter.putDocument(job.canvasId, bytes, (progress) => {
+          if (progress.totalBytes) {
+            setUploadProgress(job.canvasId, progress.transferredBytes / progress.totalBytes)
+          }
+        })
+        // Write the sidecar with metadata read AT COMPLETION, never the dispatch
+        // snapshot: a rename landing during a multi-second upload is already in
+        // this re-read, so this write and the rename's trailing putMetadata carry
+        // the SAME payload — identical writes, benign even where a provider (B2)
+        // may process same-second same-key writes out of order. Writing the
+        // dispatch snapshot produced two DIFFERENT payloads a sub-second apart.
+        // A mutation between this re-read and the PUT converges on the next job;
+        // reconcile bounds it — the older payload carries the older `updatedAt`.
+        const latest = await store.getMeta(job.canvasId)
+        if (latest && !latest.tombstoned) {
+          // The remote body is the bytes just uploaded (the dispatch snapshot's
+          // body), even when the re-read row has moved on — the identity describes
+          // old-body-plus-new-metadata truthfully in that case.
+          const written = await documentMetadata(latest, meta.bodyId)
+          writtenStateId = written.stateId
+          await adapter.putDocumentMetadata(job.canvasId, written)
         }
-      })
+      }
     } finally {
       setUploadProgress(job.canvasId, null)
-    }
-    // Write the sidecar with metadata read AT COMPLETION, never the dispatch
-    // snapshot: a rename landing during a multi-second upload is already in
-    // this re-read, so this write and the rename's trailing putMetadata carry
-    // the SAME payload — identical writes, benign even where a provider (B2)
-    // may process same-second same-key writes out of order. Writing the
-    // dispatch snapshot produced two DIFFERENT payloads a sub-second apart.
-    // A mutation between this re-read and the PUT converges on the next job;
-    // reconcile bounds it — the older payload carries the older `updatedAt`.
-    const latest = await store.getMeta(job.canvasId)
-    let writtenStateId: string | undefined
-    if (latest && !latest.tombstoned) {
-      // The remote body is the bytes just uploaded (the dispatch snapshot's
-      // body), even when the re-read row has moved on — the identity describes
-      // old-body-plus-new-metadata truthfully in that case.
-      const written = await documentMetadata(latest, meta.bodyId)
-      writtenStateId = written.stateId
-      await adapter.putDocumentMetadata(job.canvasId, written)
     }
     const confirmed = await markRevisionSynced(store, job.canvasId, revision, {
       bodyUploaded: true,
       targetId: job.targetId,
-      stateId: writtenStateId
+      stateId: writtenStateId,
+      versioned: committedVersioned
     })
     if (confirmed) await evictLocalFigCache(new Set([job.canvasId]))
   }
@@ -477,13 +517,40 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     }
   }
 
+  let layoutSweep: Promise<void> | null = null
+  let garbageCollected = false
+  function ensureLayoutSweep(): Promise<void> {
+    // Once per engine lifetime, before any drain: confirmations earned under
+    // the fixed-key layout are re-proved against `bodies/` (or cleared) before
+    // a single job runs on them. See `migrate-layout.ts`.
+    layoutSweep ??= reconfirmVersionedBodies(
+      deps.getStore(),
+      deps.getOutbox(),
+      deps.resolveTarget
+    ).catch((error: unknown) => {
+      console.warn('[Storage sync] layout re-confirmation sweep failed:', error)
+    })
+    return layoutSweep
+  }
+
   async function pumpOnce(): Promise<void> {
+    await ensureLayoutSweep()
     const outbox = deps.getOutbox()
     const jobs = await outbox.list()
     setPendingSyncCount(jobs.length)
 
     if (jobs.length === 0) {
       if (deps.isOnline()) setSyncUi('idle')
+      if (!garbageCollected) {
+        garbageCollected = true
+        // Idle queue: once per session, let a versioned adapter collect
+        // unreferenced bodies/manifests past the safety window. Best-effort —
+        // a failed sweep retries on the next session, never blocks the drain.
+        deps
+          .resolveTarget(null)
+          .then((adapter) => adapter.collectGarbage?.())
+          .catch(() => undefined)
+      }
       return
     }
 
