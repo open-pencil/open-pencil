@@ -31,11 +31,15 @@ export async function storageFetch(
       const { tauriFetch } = await import('@/app/tauri/http')
       return await tauriFetch(input, { ...init, signal })
     }
+    // Never from the HTTP cache. Every key here is mutable at a fixed URL, so a
+    // cached response is the wrong content rather than an old copy of the right
+    // content — a bucket or CDN that sends a long `max-age` would hide a
+    // document's own updates behind the version we happened to read first.
     // Request bodies are owned by the Request; re-wrap so we can attach a timeout signal.
     if (input instanceof Request) {
-      return await fetch(new Request(input, { signal }))
+      return await fetch(new Request(input, { signal, cache: 'no-store' }))
     }
-    return await fetch(input, { ...init, signal })
+    return await fetch(input, { ...init, signal, cache: 'no-store' })
   } catch (error) {
     if (signal.aborted) {
       throw new Error(

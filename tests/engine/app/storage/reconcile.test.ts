@@ -174,3 +174,52 @@ describe('unreachable remote-only rows', () => {
     expect(reconcileStorageDocuments([tombstoned], []).unavailableIds).toEqual([])
   })
 })
+
+describe('metadata authority between a local row and a listing', () => {
+  const trashed = {
+    ...localMeta('doc', 'synced'),
+    trashedAt: '2026-01-03T00:00:00.000Z',
+    updatedAt: '2026-01-03T00:00:00.000Z'
+  }
+
+  test('a stale remote copy does not revert a local edit', () => {
+    // Appwrite serves downloads with a 45-day max-age, so a listing can read the
+    // pre-trash sidecar out of the HTTP cache. `synced` means the bytes reached
+    // the target, never that this listing saw the newest metadata.
+    const { documents } = reconcileStorageDocuments(
+      [trashed],
+      [{ ...remoteDocument('doc'), updatedAt: '2026-01-01T00:00:00.000Z' }]
+    )
+    expect(documents[0]?.trashedAt).toBe('2026-01-03T00:00:00.000Z')
+    expect(documents[0]?.name).toBe('Local doc')
+  })
+
+  test('a genuinely newer remote copy still wins', () => {
+    // Another device edited it after we did. That is the case this branch exists
+    // for, and narrowing it must not turn the workspace into local-only.
+    const { documents } = reconcileStorageDocuments(
+      [trashed],
+      [{ ...remoteDocument('doc'), updatedAt: '2026-01-04T00:00:00.000Z' }]
+    )
+    expect(documents[0]?.name).toBe('Remote doc')
+    expect(documents[0]?.trashedAt).toBeUndefined()
+  })
+
+  test('a remote row carrying no metadata never wins', () => {
+    // Non-authoritative means the sidecar was missing or unreadable: the name is
+    // the document id and `trashedAt` is a default. Letting it through would
+    // rename documents as well as untrash them.
+    const { documents } = reconcileStorageDocuments(
+      [trashed],
+      [
+        {
+          ...remoteDocument('doc'),
+          updatedAt: '2026-01-09T00:00:00.000Z',
+          metadataAuthoritative: false
+        }
+      ]
+    )
+    expect(documents[0]?.name).toBe('Local doc')
+    expect(documents[0]?.trashedAt).toBe('2026-01-03T00:00:00.000Z')
+  })
+})

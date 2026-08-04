@@ -88,7 +88,18 @@ async function appwriteFetch(
   return fetch(apiUrl(config, path), {
     ...init,
     headers: apiHeaders(config, init.headers),
-    credentials: 'omit'
+    credentials: 'omit',
+    // Appwrite serves downloads with `Cache-Control: private, max-age=3888000`
+    // — forty-five days. Every object here is MUTABLE at a fixed URL: replacing
+    // a document deletes and re-uploads the same file id, so a cached response
+    // is not a stale copy of old content, it is the wrong content.
+    //
+    // This is what made trashing a document undo itself. The sidecar write
+    // reached the bucket, but the next listing read the pre-trash copy out of
+    // the HTTP cache, and a document the user deleted came back on refresh.
+    // Bodies have the same exposure: an edit made on another device would be
+    // invisible here for a month and a half.
+    cache: 'no-store'
   })
 }
 

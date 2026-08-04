@@ -67,7 +67,25 @@ export function reconcileStorageDocuments(
 
   for (const metadata of local) {
     if (metadata.tombstoned) continue
-    if (metadata.syncStatus === 'synced' && merged.has(metadata.id)) continue
+    // The remote copy wins only when it is genuinely newer. `synced` alone is
+    // not a licence to overwrite: it records that the BYTES reached the target,
+    // which says nothing about whether this listing observed the latest
+    // metadata. A stale read — an HTTP cache, a sidecar that failed to fetch and
+    // fell back — would otherwise revert the user's own edit, which is how
+    // trashing a document undid itself on the next refresh.
+    //
+    // A non-authoritative remote row never wins. It carries no metadata at all:
+    // its name is the document id and its `trashedAt` is a default, so letting
+    // it through would rename documents as well as untrash them.
+    const remoteDocument = merged.get(metadata.id)
+    if (
+      metadata.syncStatus === 'synced' &&
+      remoteDocument &&
+      remoteDocument.metadataAuthoritative &&
+      remoteDocument.updatedAt >= metadata.updatedAt
+    ) {
+      continue
+    }
     merged.set(metadata.id, {
       id: metadata.id,
       name: metadata.name,
