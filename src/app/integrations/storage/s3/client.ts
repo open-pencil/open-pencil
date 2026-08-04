@@ -97,7 +97,14 @@ function xhrSend(
     xhr.upload.onprogress = (e) => {
       onUploadProgress({ sentBytes: e.loaded, totalBytes: e.lengthComputable ? e.total : null })
     }
-    xhr.onload = () => resolve(new Response(xhr.responseText, { status: xhr.status }))
+    xhr.onload = () => {
+      // Multipart UploadPart needs the ETag response header; without exposing
+      // it here the progress-reporting path would silently lose it.
+      const headers = new Headers()
+      const etag = xhr.getResponseHeader('etag')
+      if (etag) headers.set('etag', etag)
+      resolve(new Response(xhr.responseText, { status: xhr.status, headers }))
+    }
     // Same shape the fetch path throws so CORS/network detection keeps working
     xhr.onerror = () => reject(new TypeError('Failed to fetch'))
     xhr.send(body as XMLHttpRequestBodyInit)
@@ -243,6 +250,202 @@ export async function deleteObject(config: S3CompatibleConfig, key: string): Pro
   const res = await s3Request(config, objectUrl(config, key), { method: 'DELETE' })
   if (!res.ok && res.status !== 404) {
     throw new S3HttpError(res.status, `Failed to delete ${key}`)
+  }
+}
+
+/** Below this, a single PUT is cheaper than multipart session overhead. */
+const MULTIPART_THRESHOLD_BYTES = 16 * 1024 * 1024
+/** Above S3's 5 MB minimum-part rule; 10,000 of these covers 80 GB (Bunny's cap). */
+const MULTIPART_PART_SIZE = 8 * 1024 * 1024
+const MULTIPART_PART_ATTEMPTS = 3
+/** Bunny multipart sessions expire after 10 days; a stale session restarts cleanly. */
+const MULTIPART_SESSION_RESTARTS = 2
+
+/** A multipart upload id the provider no longer knows (expired or aborted). */
+export class S3UploadSessionExpiredError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'S3UploadSessionExpiredError'
+  }
+}
+
+function parseUploadId(xml: string): string | null {
+  return /<UploadId>([^<]+)<\/UploadId>/.exec(xml)?.[1] ?? null
+}
+
+function escapeXml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function multipartUrl(
+  config: S3CompatibleConfig,
+  key: string,
+  uploadId: string,
+  partNumber?: number
+): string {
+  const params = new URLSearchParams()
+  if (partNumber !== undefined) params.set('partNumber', String(partNumber))
+  params.set('uploadId', uploadId)
+  return `${objectUrl(config, key)}?${params.toString()}`
+}
+
+async function createMultipartUpload(
+  config: S3CompatibleConfig,
+  key: string,
+  contentType: string
+): Promise<string> {
+  const res = await s3Request(config, `${objectUrl(config, key)}?uploads`, {
+    method: 'POST',
+    headers: { 'Content-Type': contentType }
+  })
+  if (!res.ok) {
+    const { message, code } = await readErrorBody(res)
+    throw new S3HttpError(res.status, message, code)
+  }
+  const uploadId = parseUploadId(await res.text())
+  if (!uploadId) {
+    throw new S3HttpError(res.status, `CreateMultipartUpload for ${key} returned no UploadId`)
+  }
+  return uploadId
+}
+
+async function readPartError(res: Response, key: string): Promise<never> {
+  const { message, code } = await readErrorBody(res)
+  if (code === 'NoSuchUpload') throw new S3UploadSessionExpiredError(message)
+  throw new S3HttpError(res.status, `Failed to upload ${key}: ${message}`, code)
+}
+
+/**
+ * One part, retried within the session. The returned ETag is OPAQUE — echoed
+ * verbatim into the completion request and never parsed (multipart ETags are
+ * not MD5s, and treating them as such breaks conditional requests later).
+ */
+async function uploadPartWithRetry(
+  config: S3CompatibleConfig,
+  key: string,
+  uploadId: string,
+  partNumber: number,
+  chunk: Uint8Array,
+  onLoaded: (loadedBytes: number) => void
+): Promise<string> {
+  const payload = chunk.buffer.slice(
+    chunk.byteOffset,
+    chunk.byteOffset + chunk.byteLength
+  ) as ArrayBuffer
+  for (let attempt = 1; attempt <= MULTIPART_PART_ATTEMPTS; attempt++) {
+    try {
+      const res = await s3Request(
+        config,
+        multipartUrl(config, key, uploadId, partNumber),
+        { method: 'PUT', body: payload },
+        (progress) => onLoaded(progress.sentBytes)
+      )
+      if (!res.ok) await readPartError(res, key)
+      const etag = res.headers.get('etag')
+      if (!etag) {
+        throw new S3HttpError(
+          res.status,
+          `UploadPart for ${key} returned no ETag — expose ETag in the bucket CORS configuration`
+        )
+      }
+      return etag
+    } catch (error) {
+      // Session expiry and credential/permission failures are not retryable here.
+      if (error instanceof S3UploadSessionExpiredError) throw error
+      if (error instanceof S3HttpError && (error.status === 401 || error.status === 403)) {
+        throw error
+      }
+      if (attempt === MULTIPART_PART_ATTEMPTS) throw error
+    }
+  }
+  throw new Error('unreachable')
+}
+
+async function completeMultipartUpload(
+  config: S3CompatibleConfig,
+  key: string,
+  uploadId: string,
+  partETags: string[]
+): Promise<void> {
+  const xml = `<CompleteMultipartUpload>${partETags
+    .map(
+      (etag, index) =>
+        `<Part><PartNumber>${index + 1}</PartNumber><ETag>${escapeXml(etag)}</ETag></Part>`
+    )
+    .join('')}</CompleteMultipartUpload>`
+  const res = await s3Request(config, multipartUrl(config, key, uploadId), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/xml' },
+    body: xml
+  })
+  if (!res.ok) await readPartError(res, key)
+}
+
+async function abortMultipartUpload(
+  config: S3CompatibleConfig,
+  key: string,
+  uploadId: string
+): Promise<void> {
+  await s3Request(config, multipartUrl(config, key, uploadId), { method: 'DELETE' })
+}
+
+/**
+ * Upload with resume semantics: a single PUT below the threshold, multipart
+ * above it. The retry unit is the PART — a failure near the end of a large
+ * document discards parts, not the whole upload, and parts the provider
+ * already acknowledged are never re-transferred, including across a session
+ * restart (Bunny sessions expire after 10 days).
+ */
+export async function putObjectResumable(
+  config: S3CompatibleConfig,
+  key: string,
+  body: Uint8Array | string,
+  contentType: string,
+  onUploadProgress?: (progress: UploadProgress) => void
+): Promise<void> {
+  const bytes = typeof body === 'string' ? new TextEncoder().encode(body) : body
+  if (bytes.byteLength < MULTIPART_THRESHOLD_BYTES) {
+    return putObject(config, key, bytes, contentType, onUploadProgress)
+  }
+
+  const partCount = Math.ceil(bytes.byteLength / MULTIPART_PART_SIZE)
+  // Acknowledged parts, by index. Survives session restarts deliberately.
+  const partETags: (string | null)[] = Array.from({ length: partCount }, () => null)
+  let acknowledgedBytes = 0
+
+  for (let restart = 0; restart <= MULTIPART_SESSION_RESTARTS; restart++) {
+    const uploadId = await createMultipartUpload(config, key, contentType)
+    try {
+      for (let part = 0; part < partCount; part++) {
+        if (partETags[part] !== null) continue
+        const start = part * MULTIPART_PART_SIZE
+        const chunk = bytes.subarray(start, Math.min(start + MULTIPART_PART_SIZE, bytes.byteLength))
+        const progressBase = acknowledgedBytes
+        partETags[part] = await uploadPartWithRetry(
+          config,
+          key,
+          uploadId,
+          part + 1,
+          chunk,
+          (loaded) =>
+            onUploadProgress?.({
+              sentBytes: progressBase + loaded,
+              totalBytes: bytes.byteLength
+            })
+        )
+        acknowledgedBytes += chunk.byteLength
+        onUploadProgress?.({ sentBytes: acknowledgedBytes, totalBytes: bytes.byteLength })
+      }
+      await completeMultipartUpload(config, key, uploadId, partETags as string[])
+      return
+    } catch (error) {
+      // A dead session is normal, not an error: abort best-effort and start a
+      // fresh one, re-sending only parts the provider never acknowledged.
+      const canRestart =
+        error instanceof S3UploadSessionExpiredError && restart < MULTIPART_SESSION_RESTARTS
+      await abortMultipartUpload(config, key, uploadId).catch(() => undefined)
+      if (!canRestart) throw error
+    }
   }
 }
 

@@ -18,7 +18,15 @@ import type {
   StorageDocumentMetadata,
   StorageProviderRuntime
 } from '../types'
-import { S3HttpError, deleteObject, getObject, headObject, listObjects, putObject } from './client'
+import {
+  S3HttpError,
+  deleteObject,
+  getObject,
+  headObject,
+  listObjects,
+  putObject,
+  putObjectResumable
+} from './client'
 import { CloudCorsError, formatBrowserCorsHelpMessage, isLikelyCorsOrNetworkError } from './cors'
 import type { S3CompatibleConfig, S3ConnectionResult } from './types'
 
@@ -204,7 +212,7 @@ export function createS3StorageAdapterWithConfig(
 
     async putDocument(id, bytes, onProgress) {
       const config = await resolveConfig()
-      await putObject(
+      await putObjectResumable(
         config,
         documentFigKey(id),
         bytes,
