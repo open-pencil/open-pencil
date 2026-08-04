@@ -691,9 +691,11 @@ onBeforeUnmount(clearThumbnailUrls)
 </script>
 
 <template>
+  <!-- h-full, not h-screen: the tab strip sits above this view now, so a full
+       viewport height here pushes the sync status bar below the fold. -->
   <main
     ref="workspace"
-    class="relative flex h-screen min-h-0 flex-col overflow-hidden bg-app text-surface"
+    class="relative flex h-full min-h-0 flex-col overflow-hidden bg-app text-surface"
     data-test-id="storage-workspace"
     :aria-busy="importing"
   >
