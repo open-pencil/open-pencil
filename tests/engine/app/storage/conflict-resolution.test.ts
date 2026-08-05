@@ -168,4 +168,37 @@ describe('conflict resolution', () => {
     expect((await store.getMeta('doc-r5'))?.syncStatus).toBe('synced')
     expect((await store.getMeta('doc-r5'))?.hasFig).toBe(true)
   })
+
+  test('the preserved copy keeps the preview of the version it preserves', async () => {
+    // Thumbnails are keyed by document id, so a copy written without one is
+    // born blank — handing the user an unrecognisable card at the moment they
+    // most need to tell two versions apart.
+    const store = createMemoryLocalCanvasStore()
+    await store.writeCanvas({
+      id: 'doc-1',
+      syncTargetId: TARGET_A,
+      name: 'My Document',
+      sourceFormat: 'fig',
+      figBytes: BODY,
+      thumbBytes: new Uint8Array([7, 7, 7, 7]),
+      bodyId: 'body-local',
+      syncedBodyId: 'body-1',
+      baseStateId: 'sha256:base'
+    })
+    await store.updateMeta('doc-1', { syncStatus: 'conflict', revision: 7 })
+    const adapter = recordingAdapter()
+    remoteSidecar(adapter, 'doc-1')
+
+    const result = await resolveStorageConflict('doc-1', 'keep-local-copy', {
+      store,
+      outbox: createMemoryOutbox(),
+      adapter,
+      enqueueCanvas: async () => {},
+      createId: () => 'copy-1'
+    })
+
+    expect(result.copyId).toBe('copy-1')
+    expect(await store.readThumb('copy-1')).toEqual(new Uint8Array([7, 7, 7, 7]))
+    expect((await store.getMeta('copy-1'))?.hasThumb).toBe(true)
+  })
 })

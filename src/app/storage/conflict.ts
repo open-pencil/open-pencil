@@ -101,12 +101,19 @@ export async function resolveStorageConflict(
     copyId = deps.createId?.() ?? createCanvasId()
     const suffix = resolution === 'keep-local-copy' ? '(my changes)' : '(local backup)'
     const bodyId = await computeBodyIdSafe(bytes, row.sourceFormat)
+    // Carry the preview across. Thumbnails are keyed by document id, so a copy
+    // written without one is born blank — and it depicts the LOCAL version,
+    // which is exactly what this copy preserves. Resolving a conflict then
+    // handed the user an unrecognisable card at the moment they most needed to
+    // tell two versions apart.
+    const thumbBytes = row.hasThumb ? await store.readThumb(canvasId) : null
     const copy = await store.writeCanvas({
       id: copyId,
       syncTargetId: row.syncTargetId,
       name: `${row.name} ${suffix}`,
       sourceFormat: row.sourceFormat,
       figBytes: bytes,
+      thumbBytes,
       bodyId
     })
     await deps.enqueueCanvas(copyId, copy.revision)
