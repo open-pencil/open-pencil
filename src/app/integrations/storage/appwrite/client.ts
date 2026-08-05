@@ -350,7 +350,10 @@ export async function getObject(
     config,
     `/storage/buckets/${encodeURIComponent(bucketId)}/files/${fileId}/download`
   )
-  if (response.status === 404) return null
+  if (response.status === 404) {
+    await assertBucketExists(response, bucketId)
+    return null
+  }
   await requireResponse(response)
   if (!onProgress || !response.body) return new Uint8Array(await response.arrayBuffer())
 

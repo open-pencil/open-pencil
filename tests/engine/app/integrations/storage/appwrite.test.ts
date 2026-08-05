@@ -4,6 +4,7 @@ import { createAppwriteStorageAdapterWithConfig } from '@/app/integrations/stora
 import {
   appwriteFileName,
   appwriteObjectKey,
+  getObject,
   putObject
 } from '@/app/integrations/storage/appwrite/client'
 import {
@@ -241,6 +242,27 @@ describe('Appwrite storage configuration', () => {
 describe('bucket resolution stays on browser-usable calls', () => {
   afterEach(() => {
     globalThis.fetch = originalFetch
+  })
+
+  test('reading from a bucket that does not exist says so, instead of "no such document"', async () => {
+    // Appwrite answers 404 for a missing FILE and a missing BUCKET alike, and
+    // only the error `type` separates them. `headObject` and `deleteObject`
+    // already ask; `getObject` did not, so a wrong bucket ID on a body or
+    // sidecar read reported the document as absent and sent the user looking
+    // for the wrong problem.
+    const config: AppwriteConfig = {
+      endpoint: 'https://fra.cloud.appwrite.io/v1',
+      projectId: 'project-1',
+      bucketId: 'wrong-bucket',
+      apiKey: 'appwrite-api-key'
+    }
+
+    globalThis.fetch = async () => jsonResponse({ type: 'storage_bucket_not_found' }, 404)
+    await expect(getObject(config, config.bucketId, 'doc.fig')).rejects.toThrow(/bucket/i)
+
+    // A file that genuinely is not there still reads as absent, not as an error.
+    globalThis.fetch = async () => jsonResponse({ type: 'storage_file_not_found' }, 404)
+    expect(await getObject(config, config.bucketId, 'doc.fig')).toBeNull()
   })
 
   test('an explicit bucket ID never triggers an admin bucket call', async () => {
