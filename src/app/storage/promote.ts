@@ -68,7 +68,12 @@ export async function promoteLocalDocuments(
       skipped.push(meta.id)
       continue
     }
-    if (meta.lastKnownTargetId !== null && meta.lastKnownTargetId !== targetId) {
+    // Nullish, not `!== null`: rows predating the target model carry neither
+    // field, and a strict null test read `undefined` as "left a destination" —
+    // skipping documents that have genuinely never had one and are exactly what
+    // promotion exists for.
+    const lastKnownTargetId = meta.lastKnownTargetId ?? null
+    if (lastKnownTargetId !== null && lastKnownTargetId !== targetId) {
       // Deliberately disconnected from somewhere else, not homeless.
       // `syncTargetId: null` means both "never had a destination" and "left the
       // one it had", and promoting on that alone swept documents the user had

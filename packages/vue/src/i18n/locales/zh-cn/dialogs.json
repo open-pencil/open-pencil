@@ -320,5 +320,15 @@
   "storageEmptyTrashTitle": "清空回收站？",
   "storageEmptyTrashDescription": "回收站中的所有文档及其云端数据都将被永久删除。此操作无法撤销。",
   "backUpToCloudUnconfigured": "云备份已开启。请在下方配置服务提供商以开始同步。",
-  "localDurabilityEmptyBody": "新文档将保存在本设备上。清除站点数据会将其删除，Safari 可能在约 7 天未使用后移除它们。连接云存储以保留持久副本。"
+  "localDurabilityEmptyBody": "新文档将保存在本设备上。清除站点数据会将其删除，Safari 可能在约 7 天未使用后移除它们。连接云存储以保留持久副本。",
+  "storageDocumentElsewhereOnly": "“{name}”在此设备上没有副本。唯一的副本位于 {provider}，连接该存储位置后即可打开。",
+  "storageLocationBackedUpTo": "已备份到 {provider}",
+  "storageLocationDetachedFrom": "已从 {provider} 分离",
+  "storageLocationDeviceOnly": "仅在此设备上",
+  "storageLocationUnknownProvider": "其他存储位置",
+  "storageScope": "显示文档范围",
+  "storageScopeAll": "全部文档",
+  "storageScopeActiveTarget": "此提供商",
+  "emptyStorageAtDestination": "此存储位置还没有文档。此设备上有 {count} 个。",
+  "storageShowAllDocuments": "显示全部文档"
 }

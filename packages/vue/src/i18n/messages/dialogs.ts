@@ -263,6 +263,13 @@ export const dialogMessageDefaults = {
   storageDocumentUnavailableDetail: params(
     'This document has no copy on this device, and {target} no longer lists it. Nothing has been deleted here. If another device is replacing it right now, it comes back by itself on the next refresh.'
   ),
+  storageDocumentElsewhereOnly: params(
+    '“{name}” has no copy on this device. Its only copy is at {provider} — connect that destination to open it.'
+  ),
+  storageLocationBackedUpTo: params('Backed up to {provider}'),
+  storageLocationDetachedFrom: params('Detached from {provider}'),
+  storageLocationDeviceOnly: 'On this device only',
+  storageLocationUnknownProvider: 'another destination',
   openStorageWorkspace: 'Open workspace',
   backToStorageWorkspace: 'Workspace',
   newStoredDocument: 'New document',
@@ -279,6 +286,9 @@ export const dialogMessageDefaults = {
   storageSortNameDesc: 'Name: Z–A',
   storageSortNewest: 'Date: Newest first',
   storageSortOldest: 'Date: Oldest first',
+  storageScope: 'Show documents',
+  storageScopeAll: 'All documents',
+  storageScopeActiveTarget: 'This provider',
   storageRename: 'Rename',
   storageDuplicate: 'Duplicate',
   storageMoveToTrash: 'Move to Trash',
@@ -295,7 +305,11 @@ export const dialogMessageDefaults = {
   storageEmptyTrashTitle: 'Empty Trash?',
   storageEmptyTrashDescription:
     'All documents in Trash and their cloud data will be permanently deleted. This cannot be undone.',
-  emptyStorageWorkspace: 'No stored documents yet.',
+  emptyStorageWorkspace: 'This device holds no documents yet.',
+  emptyStorageAtDestination: params(
+    'No documents at this destination yet. This device holds {count}.'
+  ),
+  storageShowAllDocuments: 'Show all documents',
   emptyStorageTrash: 'Trash is empty.',
   loadingDocuments: 'Loading documents…',
   storageNotConfigured: 'Configure storage before using this workspace.',

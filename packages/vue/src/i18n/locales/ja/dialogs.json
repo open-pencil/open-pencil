@@ -320,5 +320,15 @@
   "storageEmptyTrashTitle": "ゴミ箱を空にしますか？",
   "storageEmptyTrashDescription": "ゴミ箱内のすべてのドキュメントとクラウド上のデータを完全に削除します。この操作は取り消せません。",
   "backUpToCloudUnconfigured": "クラウドバックアップはオンです。同期を開始するには、下でプロバイダーを設定してください。",
-  "localDurabilityEmptyBody": "新しいドキュメントはこの端末に保存されます。サイトデータを消去すると削除され、Safari では約7日間使用しないと削除される場合があります。永続的なコピーを保つにはクラウドストレージを接続してください。"
+  "localDurabilityEmptyBody": "新しいドキュメントはこの端末に保存されます。サイトデータを消去すると削除され、Safari では約7日間使用しないと削除される場合があります。永続的なコピーを保つにはクラウドストレージを接続してください。",
+  "storageDocumentElsewhereOnly": "「{name}」はこの端末に複製がありません。唯一の複製は {provider} にあります。その保存先に接続すると開けます。",
+  "storageLocationBackedUpTo": "{provider} にバックアップ済み",
+  "storageLocationDetachedFrom": "{provider} から切り離し済み",
+  "storageLocationDeviceOnly": "この端末のみ",
+  "storageLocationUnknownProvider": "別の保存先",
+  "storageScope": "ドキュメントの表示範囲",
+  "storageScopeAll": "すべてのドキュメント",
+  "storageScopeActiveTarget": "このプロバイダー",
+  "emptyStorageAtDestination": "この保存先にはまだドキュメントがありません。この端末には {count} 件あります。",
+  "storageShowAllDocuments": "すべてのドキュメントを表示"
 }

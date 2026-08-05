@@ -48,7 +48,19 @@ import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { sortStorageDocuments, type StorageSortMode } from '@/app/storage/sort'
 import { createStorageDocument } from '@/app/storage/create-document'
-import { currentTargetIdFor } from '@/app/storage/target'
+import { currentTargetIdFor, type StorageTargetID } from '@/app/storage/target'
+import {
+  deviceStorageDocuments,
+  mergeDeviceStorageDocuments,
+  storageDocumentInScope,
+  storageDocumentLocation,
+  storageDocumentNeedsItsOwnTarget,
+  storageDocumentPlacements,
+  type StorageDocumentLocation,
+  type StorageDocumentLocationBadge,
+  type StorageDocumentPlacement,
+  type StorageDocumentScope
+} from '@/app/storage/visibility'
 import {
   categorizeSyncFailure,
   clearSyncFailure,
@@ -99,6 +111,14 @@ const dropActive = ref(false)
 const importing = ref(false)
 const folder = ref<'documents' | 'trash'>('documents')
 const sortMode = ref<StorageSortMode>('date-desc')
+/**
+ * Which destinations the user chose to look at. Defaults to all: narrowing is
+ * a view someone selects, never a rule the app imposes, and the imposed version
+ * of it is what hid every document with no destination.
+ */
+const scope = ref<StorageDocumentScope>('all')
+/** Destination of each row, by document id — for badges and the scope filter. */
+const documentPlacements = ref<Record<string, StorageDocumentPlacement>>({})
 const busyDocumentIds = ref<Set<string>>(new Set())
 const renameOpen = ref(false)
 const renameTarget = ref<StorageDocument | null>(null)
@@ -140,10 +160,30 @@ const maxConcurrentThumbnailLoads = 3
 let dragDepth = 0
 let thumbnailLoadGeneration = 0
 
+/** The destination this device currently points at, or null for none. */
+const activeTargetId = computed(() => currentTargetIdFor(activeStorageProviderID.value))
+/**
+ * Trash is already a narrowing, and there is nothing to narrow to without a
+ * destination — in both cases the selected scope would only produce an empty
+ * list with no way to read why.
+ */
+const effectiveScope = computed<StorageDocumentScope>(() =>
+  folder.value === 'trash' || activeTargetId.value === null ? 'all' : scope.value
+)
+/** Everything in this folder on this device, before the user's scope narrows it. */
+const folderDocuments = computed(() =>
+  documents.value.filter((document) =>
+    folder.value === 'trash' ? document.trashedAt !== null : document.trashedAt === null
+  )
+)
 const visibleDocuments = computed(() =>
   sortStorageDocuments(
-    documents.value.filter((document) =>
-      folder.value === 'trash' ? document.trashedAt !== null : document.trashedAt === null
+    folderDocuments.value.filter((document) =>
+      storageDocumentInScope(
+        documentPlacements.value[document.id],
+        effectiveScope.value,
+        activeTargetId.value
+      )
     ),
     sortMode.value
   )
@@ -151,13 +191,78 @@ const visibleDocuments = computed(() =>
 const trashedDocumentCount = computed(
   () => documents.value.filter((document) => document.trashedAt !== null).length
 )
+/**
+ * Location badge per card.
+ *
+ * A row the local index has not seen yet came from the active target's own
+ * listing, so that is where it lives until the seed writes it down.
+ */
+const documentLocations = computed<Record<string, StorageDocumentLocationBadge>>(() => {
+  const badges: Record<string, StorageDocumentLocationBadge> = {}
+  for (const document of documents.value) {
+    const placement = documentPlacements.value[document.id] ?? {
+      syncTargetId: activeTargetId.value,
+      lastKnownTargetId: null
+    }
+    const location = storageDocumentLocation(placement, activeTargetId.value)
+    badges[document.id] = { kind: location.kind, label: locationLabel(location) }
+  }
+  return badges
+})
 const showEmptyDurability = computed(() => folder.value === 'documents' && !configured.value)
+/**
+ * The scope is hiding documents that exist.
+ *
+ * Distinguishing this from a device that holds nothing is the whole point of
+ * the empty state: "No stored documents yet." over twenty-three documents is
+ * the message that made a full library read as lost.
+ */
+const scopeHidesDocuments = computed(
+  () => visibleDocuments.value.length === 0 && folderDocuments.value.length > 0
+)
 const sortOptions = computed(() => [
   { value: 'name-asc' as const, label: dialogs.value.storageSortNameAsc },
   { value: 'name-desc' as const, label: dialogs.value.storageSortNameDesc },
   { value: 'date-desc' as const, label: dialogs.value.storageSortNewest },
   { value: 'date-asc' as const, label: dialogs.value.storageSortOldest }
 ])
+const scopeOptions = computed(() => [
+  { value: 'all' as const, label: dialogs.value.storageScopeAll },
+  { value: 'active-target' as const, label: dialogs.value.storageScopeActiveTarget }
+])
+/**
+ * The durability notice speaks for an empty device. Documents the scope is
+ * hiding are the more urgent truth and take the empty state from it.
+ */
+const durabilityEmptyState = computed(() => showEmptyDurability.value && !scopeHidesDocuments.value)
+const emptyStateLabel = computed(() => {
+  if (folder.value === 'trash') return dialogs.value.emptyStorageTrash
+  if (scopeHidesDocuments.value) {
+    return dialogs.value.emptyStorageAtDestination({ count: folderDocuments.value.length })
+  }
+  if (durabilityEmptyState.value) return dialogs.value.localDurabilityTitle
+  return dialogs.value.emptyStorageWorkspace
+})
+
+/**
+ * A location in the user's words.
+ *
+ * A target whose provider this build no longer ships resolves to no label at
+ * all; the badge then names a neutral destination rather than an id or a
+ * thrown error.
+ */
+function locationLabel(location: StorageDocumentLocation): string {
+  const provider = location.providerLabel ?? dialogs.value.storageLocationUnknownProvider
+  // Both backed-up kinds name their destination. "Backed up here" read as "on
+  // this device" — the opposite of what it meant — and it was the only badge
+  // that withheld the one fact the badge exists to give. The `kind` still
+  // distinguishes the active destination for styling and `data-location`.
+  if (location.kind === 'backed-up-here' || location.kind === 'backed-up-elsewhere') {
+    return dialogs.value.storageLocationBackedUpTo({ provider })
+  }
+  if (location.kind === 'detached') return dialogs.value.storageLocationDetachedFrom({ provider })
+  return dialogs.value.storageLocationDeviceOnly
+}
 /**
  * The destination in the user's words. The provider label alone would not
  * distinguish two buckets on the same provider, and "unavailable" is only
@@ -297,25 +402,22 @@ function isCurrentRefresh(generation: number, providerId: string): boolean {
 async function paintLocalDocuments(generation: number, providerId: string): Promise<void> {
   // Resolve the destination before the listing, not inside the filter it feeds:
   // the bucket can be edited while this is in flight, and a target resolved
-  // afterwards would silently paint a different bucket's document set.
+  // afterwards would attribute this pass's sync errors to a different bucket.
   const targetId = currentTargetIdFor(providerId)
-  const local = (await getLocalCanvasStore().listMetas()).filter(
-    (metadata) => metadata.syncTargetId === targetId
-  )
+  // Every row on the device. The destination decides what a card SAYS, never
+  // whether it appears: narrowing here is what left rows with no destination
+  // matching no query at all, so twenty-three documents rendered nowhere.
+  const local = await getLocalCanvasStore().listMetas()
   if (!isCurrentRefresh(generation, providerId)) return
   // Nothing is unavailable until a listing says so. Clearing here also clears it
   // when the listing FAILS, which is correct: an unreachable bucket is evidence
   // about the bucket, never about one document's absence from it.
   unavailableDocumentIds.value = new Set()
-  documents.value = local.map((metadata) => ({
-    id: metadata.id,
-    name: metadata.name,
-    updatedAt: metadata.updatedAt,
-    sourceFormat: metadata.sourceFormat,
-    trashedAt: metadata.trashedAt,
-    metadataAuthoritative: true
-  }))
-  setDocumentSyncErrors(local)
+  documents.value = deviceStorageDocuments(local)
+  documentPlacements.value = storageDocumentPlacements(local)
+  // Sync errors stay attributed to the destination that produced them — a
+  // failure against this bucket says nothing about a row that syncs elsewhere.
+  setDocumentSyncErrors(local.filter((metadata) => metadata.syncTargetId === targetId))
 }
 
 const { copy, copied: errorCopied } = useClipboard()
@@ -342,6 +444,20 @@ function copyError(): void {
     error.value ?? ''
   ]
   void copy(details.join('\n'))
+}
+
+/**
+ * Send documents written before this bucket existed to the bucket that now
+ * does. Connecting a destination should sweep them up, not leave them behind —
+ * which is what makes a fresh connection look like it silently did nothing.
+ *
+ * Returns the ids it retargeted, because the caller read the index BEFORE this
+ * ran and would otherwise badge those rows against the destination they just
+ * left.
+ */
+async function promoteForBackup(targetId: StorageTargetID | null): Promise<string[]> {
+  if (!backupToCloud.value || !targetId) return []
+  return (await promoteLocalDocuments(targetId)).promoted
 }
 
 async function refresh(): Promise<void> {
@@ -374,9 +490,12 @@ async function refresh(): Promise<void> {
     const remote = await createActiveStorageAdapter(providerId).listDocuments()
     if (!isCurrentRefresh(generation, providerId)) return
     const localStore = getLocalCanvasStore()
-    const local = (await localStore.listMetas(true)).filter(
-      (metadata) => metadata.syncTargetId === targetId
-    )
+    const allLocal = await localStore.listMetas(true)
+    // Reconciliation stays narrowed to the destination that produced the
+    // listing: every absence-sensitive output it computes reads a missing id as
+    // "missing from ITS OWN target", which is only true under this narrowing.
+    // What must not stay narrowed is the list the user sees.
+    const local = allLocal.filter((metadata) => metadata.syncTargetId === targetId)
     if (!isCurrentRefresh(generation, providerId)) return
     // Listing works again. Clear only OUR failure — an outbox failure is the
     // engine's to own and clearing it here would hide real unsent work.
@@ -384,13 +503,25 @@ async function refresh(): Promise<void> {
       clearSyncFailure()
       if (syncUiState.value === 'error') setSyncUi('idle')
     }
-    // Anything written before this bucket existed still has no destination.
-    // Connecting one should send it, not leave it behind — which is what makes
-    // a fresh connection look like it silently did nothing.
-    if (backupToCloud.value && targetId) await promoteLocalDocuments(targetId)
+    const promoted = await promoteForBackup(targetId)
 
     const reconciliation = reconcileStorageDocuments(local, remote)
-    documents.value = reconciliation.documents
+    // The reconciled rows for this destination, plus every other row held on
+    // this device. Switching destination changes what the badges say, never how
+    // many documents exist.
+    documents.value = mergeDeviceStorageDocuments(reconciliation.documents, allLocal)
+    const placements = storageDocumentPlacements(allLocal)
+    // Promotion retargeted these rows after the index was read. Badging them
+    // from the snapshot would say "on this device only" about documents that
+    // are on their way to the bucket the user just connected.
+    for (const id of promoted) {
+      placements[id] = {
+        syncTargetId: targetId,
+        lastKnownTargetId: targetId,
+        hasLocalBody: placements[id]?.hasLocalBody
+      }
+    }
+    documentPlacements.value = placements
     // Listing-time conflict detection: remote movement underneath a pending
     // local edit marks the row before the next drain would overwrite it.
     const newConflicts = await markListingConflicts(localStore, local, remote)
@@ -461,6 +592,22 @@ async function openDocument(document: StorageDocument): Promise<void> {
   // The card already refuses to emit for these; refusing here too keeps the
   // guarantee with the state that owns it rather than with the presentation.
   if (unavailableDocumentIds.value.has(document.id)) return
+  // Listed, and honestly badged, but not openable from here: the bytes exist
+  // only at a destination this device is not pointed at. Opening would ask the
+  // ACTIVE bucket for an id it never held, so say where the document lives
+  // instead of surfacing that provider's 404.
+  const placement = documentPlacements.value[document.id]
+  if (storageDocumentNeedsItsOwnTarget(placement, activeTargetId.value)) {
+    const location = storageDocumentLocation(
+      placement ?? { syncTargetId: null },
+      activeTargetId.value
+    )
+    error.value = dialogs.value.storageDocumentElsewhereOnly({
+      name: document.name,
+      provider: location.providerLabel ?? dialogs.value.storageLocationUnknownProvider
+    })
+    return
+  }
   // Declare the intent BEFORE routing: the editor mounts during the push and
   // would otherwise read an empty tab list as a cold start and restore the
   // previous session on top of the document being opened.
@@ -483,6 +630,20 @@ function setDocumentBusy(documentId: string, busy: boolean): void {
 
 function replaceDocument(next: StorageDocument): void {
   documents.value = documents.value.map((document) => (document.id === next.id ? next : document))
+}
+
+/**
+ * Record where a document just written on this device belongs.
+ *
+ * Optimistic rows are painted before the next listing reads them back, and a
+ * row with no recorded placement is assumed to belong to the active target —
+ * which is wrong for a document written while no destination is configured.
+ */
+function rememberPlacement(documentId: string, targetId: StorageTargetID | null): void {
+  documentPlacements.value = {
+    ...documentPlacements.value,
+    [documentId]: { syncTargetId: targetId, lastKnownTargetId: targetId, hasLocalBody: true }
+  }
 }
 
 function removeThumbnailUrl(documentId: string): void {
@@ -524,6 +685,11 @@ async function commitRename(): Promise<void> {
 }
 
 async function duplicateDocument(document: StorageDocument): Promise<void> {
+  // Pin the destination alongside the provider, BEFORE any await. The bucket
+  // can be re-pointed while the copy is being written, and asking afterwards
+  // would badge the new row against a destination it never used.
+  const providerId = activeStorageProviderID.value
+  const targetId = currentTargetIdFor(providerId)
   setDocumentBusy(document.id, true)
   error.value = null
   try {
@@ -531,8 +697,9 @@ async function duplicateDocument(document: StorageDocument): Promise<void> {
       `${document.name} copy`,
       documents.value.map((item) => item.name)
     )
-    const duplicated = await duplicateStorageDocument(activeStorageProviderID.value, document, name)
+    const duplicated = await duplicateStorageDocument(providerId, document, name)
     documents.value = [duplicated.document, ...documents.value]
+    rememberPlacement(duplicated.document.id, targetId)
     if (isUsableStorageThumbnail(duplicated.thumbnailBytes)) {
       setThumbnailUrl(duplicated.document.id, duplicated.thumbnailBytes)
     }
@@ -727,6 +894,7 @@ async function importDroppedFiles(files: File[]): Promise<void> {
           metadataAuthoritative: true
         }
         documents.value = [document, ...documents.value]
+        rememberPlacement(id, targetId)
         if (isUsableStorageThumbnail(prepared.thumbnailBytes)) {
           setThumbnailUrl(id, prepared.thumbnailBytes)
         }
@@ -884,6 +1052,18 @@ onBeforeUnmount(clearThumbnailUrls)
           <span>{{ dialogs.storageEmptyTrash }}</span>
         </button>
         <div class="ml-auto flex items-center gap-1.5">
+          <!--
+            A view the user selects, never a rule imposed on them — and never a
+            destination change: this touches nothing outside the grid.
+          -->
+          <AppSelect
+            v-if="folder === 'documents' && activeTargetId"
+            v-model="scope"
+            :options="scopeOptions"
+            :label="dialogs.storageScope"
+            class="min-w-40"
+            data-test-id="storage-scope"
+          />
           <AppSelect
             v-model="sortMode"
             :options="sortOptions"
@@ -948,6 +1128,7 @@ onBeforeUnmount(clearThumbnailUrls)
           :busy="busyDocumentIds.has(document.id)"
           :unavailable="unavailableDocumentIds.has(document.id)"
           :target-label="targetLabel"
+          :location="documentLocations[document.id]"
           @open="openDocument"
           @rename="startRename"
           @duplicate="duplicateDocument"
@@ -970,28 +1151,43 @@ onBeforeUnmount(clearThumbnailUrls)
         before using this workspace" — was accurate about the old behaviour and
         is now simply wrong: the workspace works, it just has nothing in it yet.
         Cloud is offered here, never demanded.
+
+        An empty list can be correct, but only when it says WHICH emptiness it
+        means. A destination that holds nothing while the device holds documents
+        reports the count and offers to widen the scope.
       -->
       <AppPlaceholder
         v-else
-        :label="
-          folder === 'trash'
-            ? dialogs.emptyStorageTrash
-            : showEmptyDurability
-              ? dialogs.localDurabilityTitle
-              : dialogs.emptyStorageWorkspace
-        "
-        :description="showEmptyDurability ? dialogs.localDurabilityEmptyBody : undefined"
+        :label="emptyStateLabel"
+        :description="durabilityEmptyState ? dialogs.localDurabilityEmptyBody : undefined"
         size="page"
-        :data-test-id="showEmptyDurability ? 'local-durability-notice' : undefined"
-        :data-placement="showEmptyDurability ? 'empty' : undefined"
+        :data-test-id="
+          scopeHidesDocuments
+            ? 'storage-scope-empty'
+            : durabilityEmptyState
+              ? 'local-durability-notice'
+              : undefined
+        "
+        :data-placement="durabilityEmptyState ? 'empty' : undefined"
       >
         <template #icon>
           <TrashIcon v-if="folder === 'trash'" class="size-5" />
-          <icon-lucide-hard-drive v-else-if="showEmptyDurability" class="size-5" />
+          <icon-lucide-cloud-off v-else-if="scopeHidesDocuments" class="size-5" />
+          <icon-lucide-hard-drive v-else-if="durabilityEmptyState" class="size-5" />
           <icon-lucide-files v-else class="size-5" />
         </template>
-        <template v-if="!configured && folder !== 'trash'" #action>
+        <template v-if="scopeHidesDocuments || (!configured && folder !== 'trash')" #action>
           <button
+            v-if="scopeHidesDocuments"
+            type="button"
+            class="rounded border border-border bg-panel px-3 py-1.5 text-xs font-medium text-surface hover:bg-hover"
+            data-test-id="storage-scope-show-all"
+            @click="scope = 'all'"
+          >
+            {{ dialogs.storageShowAllDocuments }}
+          </button>
+          <button
+            v-else
             type="button"
             class="rounded border border-border bg-panel px-3 py-1.5 text-xs font-medium text-surface hover:bg-hover"
             @click="openSettingsDialog('storage')"

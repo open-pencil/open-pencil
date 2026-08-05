@@ -320,5 +320,15 @@
   "storageEmptyTrashTitle": "Svuotare il cestino?",
   "storageEmptyTrashDescription": "Tutti i documenti nel cestino e i relativi dati cloud verranno eliminati definitivamente. Questa azione non può essere annullata.",
   "backUpToCloudUnconfigured": "Il backup sul cloud è attivo. Configura un provider qui sotto per avviare la sincronizzazione.",
-  "localDurabilityEmptyBody": "I nuovi documenti verranno salvati su questo dispositivo. Cancellare i dati del sito li eliminerà e Safari potrebbe rimuoverli dopo circa 7 giorni di inattività. Collega un archivio cloud per conservarne una copia duratura."
+  "localDurabilityEmptyBody": "I nuovi documenti verranno salvati su questo dispositivo. Cancellare i dati del sito li eliminerà e Safari potrebbe rimuoverli dopo circa 7 giorni di inattività. Collega un archivio cloud per conservarne una copia duratura.",
+  "storageDocumentElsewhereOnly": "«{name}» non ha copie su questo dispositivo. L’unica copia si trova su {provider}: collega quella destinazione per aprirla.",
+  "storageLocationBackedUpTo": "Backup su {provider}",
+  "storageLocationDetachedFrom": "Scollegato da {provider}",
+  "storageLocationDeviceOnly": "Solo su questo dispositivo",
+  "storageLocationUnknownProvider": "un’altra destinazione",
+  "storageScope": "Mostra documenti",
+  "storageScopeAll": "Tutti i documenti",
+  "storageScopeActiveTarget": "Questo provider",
+  "emptyStorageAtDestination": "Nessun documento in questa destinazione. Questo dispositivo ne contiene {count}.",
+  "storageShowAllDocuments": "Mostra tutti i documenti"
 }

@@ -320,5 +320,15 @@
   "storageEmptyTrashTitle": "¿Vaciar la papelera?",
   "storageEmptyTrashDescription": "Todos los documentos de la papelera y sus datos en la nube se eliminarán permanentemente. Esta acción no se puede deshacer.",
   "backUpToCloudUnconfigured": "La copia de seguridad en la nube está activada. Configura un proveedor abajo para empezar a sincronizar.",
-  "localDurabilityEmptyBody": "Los documentos nuevos se guardarán en este dispositivo. Borrar los datos del sitio los eliminará y Safari puede quitarlos tras unos 7 días de inactividad. Conecta almacenamiento en la nube para conservar una copia duradera."
+  "localDurabilityEmptyBody": "Los documentos nuevos se guardarán en este dispositivo. Borrar los datos del sitio los eliminará y Safari puede quitarlos tras unos 7 días de inactividad. Conecta almacenamiento en la nube para conservar una copia duradera.",
+  "storageDocumentElsewhereOnly": "«{name}» no tiene ninguna copia en este dispositivo. Su única copia está en {provider}: conecta ese destino para abrirla.",
+  "storageLocationBackedUpTo": "Copia de seguridad en {provider}",
+  "storageLocationDetachedFrom": "Desconectado de {provider}",
+  "storageLocationDeviceOnly": "Solo en este dispositivo",
+  "storageLocationUnknownProvider": "otro destino",
+  "storageScope": "Mostrar documentos",
+  "storageScopeAll": "Todos los documentos",
+  "storageScopeActiveTarget": "Este proveedor",
+  "emptyStorageAtDestination": "Aún no hay documentos en este destino. Este dispositivo tiene {count}.",
+  "storageShowAllDocuments": "Mostrar todos los documentos"
 }

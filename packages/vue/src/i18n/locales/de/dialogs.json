@@ -320,5 +320,15 @@
   "storageEmptyTrashTitle": "Papierkorb leeren?",
   "storageEmptyTrashDescription": "Alle Dokumente im Papierkorb und ihre Cloud-Daten werden endgültig gelöscht. Dies kann nicht rückgängig gemacht werden.",
   "backUpToCloudUnconfigured": "Cloud-Sicherung ist aktiviert. Konfiguriere unten einen Anbieter, um die Synchronisierung zu starten.",
-  "localDurabilityEmptyBody": "Neue Dokumente werden auf diesem Gerät gespeichert. Beim Löschen der Website-Daten gehen sie verloren, und Safari entfernt sie möglicherweise nach etwa 7 Tagen ohne Nutzung. Verbinde Cloud-Speicher für eine dauerhafte Kopie."
+  "localDurabilityEmptyBody": "Neue Dokumente werden auf diesem Gerät gespeichert. Beim Löschen der Website-Daten gehen sie verloren, und Safari entfernt sie möglicherweise nach etwa 7 Tagen ohne Nutzung. Verbinde Cloud-Speicher für eine dauerhafte Kopie.",
+  "storageDocumentElsewhereOnly": "„{name}“ hat keine Kopie auf diesem Gerät. Die einzige Kopie liegt bei {provider} — verbinde dieses Ziel, um sie zu öffnen.",
+  "storageLocationBackedUpTo": "Gesichert auf {provider}",
+  "storageLocationDetachedFrom": "Von {provider} getrennt",
+  "storageLocationDeviceOnly": "Nur auf diesem Gerät",
+  "storageLocationUnknownProvider": "einem anderen Ziel",
+  "storageScope": "Dokumente anzeigen",
+  "storageScopeAll": "Alle Dokumente",
+  "storageScopeActiveTarget": "Dieser Anbieter",
+  "emptyStorageAtDestination": "An diesem Ziel sind noch keine Dokumente. Auf diesem Gerät liegen {count}.",
+  "storageShowAllDocuments": "Alle Dokumente anzeigen"
 }

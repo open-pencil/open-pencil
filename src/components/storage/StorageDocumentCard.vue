@@ -15,6 +15,7 @@ import { useI18n } from '@open-pencil/vue'
 import type { StorageDocument } from '@/app/integrations/storage'
 import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import { uploadProgressByCanvas } from '@/app/storage/sync'
+import type { StorageDocumentLocationBadge } from '@/app/storage/visibility'
 import { useMenuUI } from '@/components/ui/menu'
 import Tip from '@/components/ui/Tip.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
@@ -28,7 +29,8 @@ const {
   trashView = false,
   busy = false,
   unavailable = false,
-  targetLabel = ''
+  targetLabel = '',
+  location = null
 } = defineProps<{
   document: StorageDocument
   thumbnailUrl?: string
@@ -52,6 +54,14 @@ const {
   unavailable?: boolean
   /** Human name of the destination, for the unavailable explanation. */
   targetLabel?: string
+  /**
+   * Where this document lives, already resolved to a sentence.
+   *
+   * An attribute of the document, never a reason to hide it: the workspace
+   * lists every row on the device and the badge says which destination — if
+   * any — holds a copy.
+   */
+  location?: StorageDocumentLocationBadge | null
 }>()
 
 const emit = defineEmits<{
@@ -91,6 +101,11 @@ function openDocument(): void {
 
 const unavailableDetail = computed(() =>
   dialogs.value.storageDocumentUnavailableDetail({ target: targetLabel })
+)
+
+/** A destination holds a copy — cloud icon; otherwise the device holds it alone. */
+const locationIsReplicated = computed(
+  () => location?.kind === 'backed-up-here' || location?.kind === 'backed-up-elsewhere'
 )
 
 /** Real byte progress (0..1) while this document's body is uploading. */
@@ -146,6 +161,21 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
           <p class="truncate text-xs font-medium">{{ document.name }}</p>
           <p class="mt-1 text-[10px] text-muted">
             {{ new Date(document.trashedAt ?? document.updatedAt).toLocaleString() }}
+          </p>
+          <!--
+            Where the document lives, stated on every card. This is the answer
+            to "will my next edit reach a durable copy?" — asked and answered
+            per document, which hiding the row answers never.
+          -->
+          <p
+            v-if="location"
+            class="mt-1 flex items-center gap-1 text-[10px] text-muted"
+            data-slot="storage-document-location"
+            :data-location="location.kind"
+          >
+            <icon-lucide-cloud v-if="locationIsReplicated" class="size-3 shrink-0" />
+            <icon-lucide-hard-drive v-else class="size-3 shrink-0" />
+            <span class="truncate">{{ location.label }}</span>
           </p>
           <!--
             Neither an error nor a deletion: the document is simply not

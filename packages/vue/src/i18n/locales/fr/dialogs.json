@@ -320,5 +320,15 @@
   "storageEmptyTrashTitle": "Vider la corbeille ?",
   "storageEmptyTrashDescription": "Tous les documents de la corbeille et leurs données cloud seront définitivement supprimés. Cette action est irréversible.",
   "backUpToCloudUnconfigured": "La sauvegarde cloud est activée. Configurez un fournisseur ci-dessous pour lancer la synchronisation.",
-  "localDurabilityEmptyBody": "Les nouveaux documents seront enregistrés sur cet appareil. Effacer les données du site les supprimera, et Safari peut les retirer après environ 7 jours d’inactivité. Connectez un stockage cloud pour conserver une copie durable."
+  "localDurabilityEmptyBody": "Les nouveaux documents seront enregistrés sur cet appareil. Effacer les données du site les supprimera, et Safari peut les retirer après environ 7 jours d’inactivité. Connectez un stockage cloud pour conserver une copie durable.",
+  "storageDocumentElsewhereOnly": "« {name} » n’a aucune copie sur cet appareil. Sa seule copie se trouve sur {provider} — connectez cette destination pour l’ouvrir.",
+  "storageLocationBackedUpTo": "Sauvegardé sur {provider}",
+  "storageLocationDetachedFrom": "Détaché de {provider}",
+  "storageLocationDeviceOnly": "Sur cet appareil uniquement",
+  "storageLocationUnknownProvider": "une autre destination",
+  "storageScope": "Afficher les documents",
+  "storageScopeAll": "Tous les documents",
+  "storageScopeActiveTarget": "Ce fournisseur",
+  "emptyStorageAtDestination": "Aucun document à cette destination pour l’instant. Cet appareil en contient {count}.",
+  "storageShowAllDocuments": "Afficher tous les documents"
 }
