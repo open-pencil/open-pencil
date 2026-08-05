@@ -168,8 +168,13 @@ export function restructureDeckNodeChanges(nodeChanges: NodeChange[]): NodeChang
     const slideKey = nodeKey(slide)
     if (!slideKey || !slide.guid) return
 
+    // The artboard FRAME *is* the slide: it carries the slide's size, fills and
+    // children, so it keeps the slide's own guid. Export reads that guid back, which
+    // is what closes the round trip — minting a fresh one here renumbered every slide
+    // on every open, and the file re-uploaded on close with zero edits. It also leaves
+    // content parent references pointing at a guid that still exists.
     const pageGuid = alloc()
-    const frameGuid = alloc()
+    const frameGuid = slide.guid
     slideToPage.set(slideKey, pageGuid)
     slideToFrame.set(slideKey, frameGuid)
 

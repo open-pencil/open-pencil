@@ -22,11 +22,19 @@ export function comparePosition(a: string | undefined, b: string | undefined): n
   return left > right ? 1 : 0
 }
 
-export function nextLocalId(nodes: Iterable<NodeChange>): number {
+export function nextLocalIdFromGuids(guids: Iterable<GUID | undefined>): number {
   let max = 0
-  for (const nc of nodes) {
-    const local = nc.guid?.localID
+  for (const guid of guids) {
+    const local = guid?.localID
     if (typeof local === 'number' && local > max) max = local
   }
   return max + 1
+}
+
+export function nextLocalId(nodes: Iterable<NodeChange>): number {
+  return nextLocalIdFromGuids(
+    (function* () {
+      for (const nc of nodes) yield nc.guid
+    })()
+  )
 }

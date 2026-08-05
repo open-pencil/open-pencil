@@ -1,6 +1,6 @@
 import type { GUID, NodeChange, Vector } from '@open-pencil/kiwi/fig/codec'
 
-import { comparePosition, guidKey, nextLocalId, nodeKey } from './guid'
+import { comparePosition, guidKey, nextLocalIdFromGuids, nodeKey } from './guid'
 import { pickCarriedSlideFields, withoutCarriedSlideFields } from './slide-fields'
 
 const DEFAULT_SLIDE_SIZE: Vector = { x: 1920, y: 1080 }
@@ -135,6 +135,65 @@ function buildScaffold(
  */
 export type DeckThemeBindings = Record<string, unknown>
 
+/**
+ * How each page collapses back into a single SLIDE.
+ *
+ * A page CANVAS plus its artboard FRAME are the two halves of one slide, and the
+ * artboard is the half that kept the slide's guid on import, so it hands that identity
+ * back here. The page's own guid is minted fresh every time a deck is opened and is
+ * never written to the archive.
+ */
+interface SlideIdentities {
+  /** page key → its artboard FRAME (unwrapped: the SLIDE takes its place). */
+  artboardByPage: Map<string, NodeChange>
+  /** page key → the guid its SLIDE is written with. */
+  slideGuidByPage: Map<string, GUID>
+  artboardKeys: Set<string>
+}
+
+function resolveSlideIdentities(nodeChanges: NodeChange[], pages: NodeChange[]): SlideIdentities {
+  const artboardByPage = new Map<string, NodeChange>()
+  const slideGuidByPage = new Map<string, GUID>()
+  const artboardKeys = new Set<string>()
+
+  for (const page of pages) {
+    const key = nodeKey(page)
+    if (key === null) continue
+    const artboard = pageArtboard(nodeChanges, page)
+    if (artboard) {
+      artboardByPage.set(key, artboard)
+      const artboardKey = nodeKey(artboard)
+      if (artboardKey !== null) artboardKeys.add(artboardKey)
+    }
+    const slideGuid = artboard?.guid ?? page.guid
+    if (slideGuid) slideGuidByPage.set(key, slideGuid)
+  }
+
+  return { artboardByPage, slideGuidByPage, artboardKeys }
+}
+
+/**
+ * First free localID, counting only the guids that reach the archive.
+ *
+ * Page CANVAS guids are excluded because they are synthesized on every import and
+ * discarded on every export. Letting them push the counter is what renumbered the
+ * scaffolding — and through it every slide — each time a deck was opened and saved,
+ * so an untouched document produced different bytes and re-uploaded on close.
+ */
+function scaffoldLocalIdBase(
+  nodeChanges: NodeChange[],
+  pageKeys: Set<string>,
+  { slideGuidByPage, artboardKeys }: SlideIdentities
+): number {
+  const surviving: (GUID | undefined)[] = [...slideGuidByPage.values()]
+  for (const nc of nodeChanges) {
+    const key = nodeKey(nc)
+    if (key !== null && (pageKeys.has(key) || artboardKeys.has(key))) continue
+    surviving.push(nc.guid)
+  }
+  return nextLocalIdFromGuids(surviving)
+}
+
 export function structurePagesToDeck(
   nodeChanges: NodeChange[],
   theme?: DeckThemeBindings | null
@@ -148,13 +207,17 @@ export function structurePagesToDeck(
 
   const pageKeys = new Set(pages.map((p) => nodeKey(p)).filter((k): k is string => k !== null))
 
-  let localId = nextLocalId(nodeChanges)
+  const identities = resolveSlideIdentities(nodeChanges, pages)
+  const { artboardByPage, slideGuidByPage, artboardKeys } = identities
+
+  let localId = scaffoldLocalIdBase(nodeChanges, pageKeys, identities)
   const alloc = (): GUID => makeGuid(0, localId++)
   const userCanvasGuid = alloc()
   const gridGuid = alloc()
   const rowGuid = alloc()
 
-  const firstArtboard = pageArtboard(nodeChanges, pages[0])
+  const firstPageKey = nodeKey(pages[0])
+  const firstArtboard = firstPageKey === null ? undefined : artboardByPage.get(firstPageKey)
   const firstSize = firstArtboard?.size
   const slideSize: Vector =
     firstSize != null && firstSize.x > 0 && firstSize.y > 0
@@ -163,7 +226,6 @@ export function structurePagesToDeck(
 
   /** page key → slide guid; artboard key → slide guid (for reparent). */
   const reparentToSlide = new Map<string, GUID>()
-  const artboardKeys = new Set<string>()
 
   // The scene graph does not model theme bindings, so restore them onto the DOCUMENT.
   const out: NodeChange[] = [{ ...structuredClone(document), ...theme }]
@@ -172,14 +234,11 @@ export function structurePagesToDeck(
 
   pages.forEach((page, index) => {
     const pageKey = nodeKey(page)
-    const artboard = pageArtboard(nodeChanges, page)
+    const artboard = pageKey === null ? undefined : artboardByPage.get(pageKey)
     const artboardKey = artboard ? nodeKey(artboard) : null
-    const slideGuid = page.guid ?? alloc()
+    const slideGuid = (pageKey === null ? undefined : slideGuidByPage.get(pageKey)) ?? alloc()
     if (pageKey) reparentToSlide.set(pageKey, slideGuid)
-    if (artboardKey) {
-      artboardKeys.add(artboardKey)
-      reparentToSlide.set(artboardKey, slideGuid)
-    }
+    if (artboardKey) reparentToSlide.set(artboardKey, slideGuid)
 
     const artboardSize = artboard?.size
     const size =
