@@ -153,6 +153,13 @@ export type StorageProviderRegistration = {
   conflictProtection: 'none' | 'detect' | 'prevent'
   /** Offer the shared S3 CORS configuration helper for browser access. */
   corsConfiguration?: 's3'
+  /**
+   * The vendor-neutral entry that works with anything speaking the protocol.
+   * It leads the provider list — a named vendor at the top reads as a
+   * recommendation, and the generic option is the one that always applies.
+   * Every other provider sorts alphabetically after it.
+   */
+  catchAll?: boolean
   preferenceFields: readonly StoragePreferenceField[]
   credentialFields: readonly StorageCredentialField[]
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter

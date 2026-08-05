@@ -204,6 +204,7 @@ export const S3_STORAGE_PROVIDER = defineStorageProvider({
   description:
     'AWS S3, Cloudflare R2, MinIO, and other compatible storage. Requires adding a CORS configuration to your bucket.',
   corsConfiguration: 's3',
+  catchAll: true,
   preferenceFields: [
     { id: 'endpoint', label: 'Endpoint', kind: 'url', required: true },
     { id: 'bucket', label: 'Bucket', kind: 'text', required: true },
