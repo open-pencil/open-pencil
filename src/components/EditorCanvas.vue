@@ -24,6 +24,8 @@ import {
 } from '@open-pencil/vue'
 import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
+import iconDeckUrl from '@/assets/icon-deck.svg?url'
+import iconPencilUrl from '@/assets/icon-pencil.svg?url'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
 import { usePanelResizing } from '@/app/shell/panel-resize'
@@ -35,6 +37,11 @@ import CanvasMenu from './canvas/CanvasMenu.vue'
 import NumberField from './inputs/NumberField.vue'
 
 const store = useEditorStore()
+
+/** The document's own artwork while it loads, not a generic pencil. */
+const loadingIconUrl = computed(() =>
+  store.state.documentKind === 'deck' ? iconDeckUrl : iconPencilUrl
+)
 const collab = useCollabInjected()
 const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -203,7 +210,18 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             data-test-id="canvas-loading"
             class="absolute inset-0 z-50 flex items-center justify-center bg-canvas"
           >
-            <icon-lucide-pencil-line class="size-8 text-surface opacity-45" />
+            <!--
+              The format is known before the document parses — it is what the
+              workspace card already shows. A deck loading behind a pencil says
+              the app does not know what it is opening.
+            -->
+            <img
+              :src="loadingIconUrl"
+              alt=""
+              class="size-8 opacity-45"
+              data-slot="canvas-loading-icon"
+              :data-kind="store.state.documentKind"
+            />
             <div
               class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-surface/8"
             >

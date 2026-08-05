@@ -331,5 +331,6 @@
   "storageScopeActiveTarget": "このプロバイダー",
   "emptyStorageAtDestination": "この保存先にはまだドキュメントがありません。この端末には {count} 件あります。",
   "storageShowAllDocuments": "すべてのドキュメントを表示",
-  "storageLocationBackingUpTo": "{provider} にバックアップ中…"
+  "storageLocationBackingUpTo": "{provider} にバックアップ中…",
+  "storageDocumentEdited": "編集: {time}"
 }

@@ -331,5 +331,6 @@
   "storageScopeActiveTarget": "此提供商",
   "emptyStorageAtDestination": "此存储位置还没有文档。此设备上有 {count} 个。",
   "storageShowAllDocuments": "显示全部文档",
-  "storageLocationBackingUpTo": "正在备份到 {provider}…"
+  "storageLocationBackingUpTo": "正在备份到 {provider}…",
+  "storageDocumentEdited": "编辑于 {time}"
 }

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { useIntersectionObserver } from '@vueuse/core'
+import { useIntersectionObserver, useTimeAgo } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import {
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuLabel,
   ContextMenuPortal,
   ContextMenuRoot,
   ContextMenuSeparator,
@@ -103,6 +104,14 @@ const unavailableDetail = computed(() =>
   dialogs.value.storageDocumentUnavailableDetail({ target: targetLabel })
 )
 
+/**
+ * "Edited 3 days ago", not a wall-clock stamp.
+ *
+ * A file list is read to answer "how recent is this", and an absolute date
+ * makes the reader do the subtraction themselves.
+ */
+const editedAgo = useTimeAgo(() => new Date(document.trashedAt ?? document.updatedAt))
+
 /** A destination holds a copy — cloud icon; otherwise the device holds it alone. */
 const locationIsReplicated = computed(
   () => location?.kind === 'backed-up-here' || location?.kind === 'backed-up-elsewhere'
@@ -160,94 +169,86 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
             :class="unavailable && 'opacity-40 grayscale'"
           />
           <icon-lucide-presentation v-else class="size-5 text-muted/50" />
+        </div>
+        <div class="flex items-start gap-2 border-t border-border p-3">
+          <!--
+            Beside the name, not floating over the preview. The format is a
+            property of the document, and putting it on the artwork covered the
+            one part of the card the user is actually reading.
+          -->
           <img
             :src="storageDocumentIconUrls[document.sourceFormat]"
             alt=""
-            class="absolute top-1 left-1 size-3.5 rounded-[2px]"
+            class="mt-0.5 size-4 shrink-0 rounded-[3px]"
             data-slot="storage-format-badge"
             :data-format="document.sourceFormat"
           />
-        </div>
-        <div class="border-t border-border p-3">
-          <p class="truncate text-xs font-medium">{{ document.name }}</p>
-          <p class="mt-1 text-[10px] text-muted">
-            {{ new Date(document.trashedAt ?? document.updatedAt).toLocaleString() }}
-          </p>
-          <!--
-            Where the document lives, stated on every card. This is the answer
-            to "will my next edit reach a durable copy?" — asked and answered
-            per document, which hiding the row answers never.
-          -->
-          <p
-            v-if="location"
-            class="mt-1 flex items-center gap-1 text-[10px] text-muted"
-            data-slot="storage-document-location"
-            :data-location="location.kind"
-          >
-            <icon-lucide-cloud-upload
-              v-if="location.kind === 'backing-up'"
-              class="size-3 shrink-0"
-            />
-            <icon-lucide-cloud v-else-if="locationIsReplicated" class="size-3 shrink-0" />
-            <icon-lucide-hard-drive v-else class="size-3 shrink-0" />
-            <span class="truncate">{{ location.label }}</span>
-          </p>
-          <!--
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-xs font-medium">{{ document.name }}</p>
+            <!--
+              Relative, because "how long ago" is the question a file list
+              answers; an absolute timestamp makes the reader do the subtraction.
+            -->
+            <p class="mt-0.5 text-[10px] text-muted" data-slot="storage-document-edited">
+              {{ dialogs.storageDocumentEdited({ time: editedAgo }) }}
+            </p>
+            <!--
             Neither an error nor a deletion: the document is simply not
             reachable from here right now. The tooltip names the destination and
             says so plainly, because the alarming reading — "my document is
             gone" — is the wrong one while a replacement may be in flight.
           -->
-          <Tip v-if="unavailable" :label="unavailableDetail">
-            <p
-              class="mt-1 flex items-center gap-1 text-[10px] text-muted"
-              data-slot="storage-document-unavailable"
-            >
-              <icon-lucide-cloud-off class="size-3 shrink-0" />
-              <span class="truncate">{{ dialogs.storageDocumentUnavailable }}</span>
-            </p>
-          </Tip>
-          <!--
+            <Tip v-if="unavailable" :label="unavailableDetail">
+              <p
+                class="mt-1 flex items-center gap-1 text-[10px] text-muted"
+                data-slot="storage-document-unavailable"
+              >
+                <icon-lucide-cloud-off class="size-3 shrink-0" />
+                <span class="truncate">{{ dialogs.storageDocumentUnavailable }}</span>
+              </p>
+            </Tip>
+            <!--
             Not a failure: the destination is fine, the remote just moved.
             Clicking opens the resolution dialog — the one state on a card
             with its own action.
           -->
-          <button
-            v-if="conflicted"
-            type="button"
-            class="mt-1 flex items-center gap-1 text-[10px] text-[var(--color-warning-text)] hover:underline"
-            data-slot="storage-document-conflict"
-            @click.stop="emit('resolveConflict', document)"
-          >
-            <icon-lucide-git-pull-request-arrow class="size-3 shrink-0" />
-            <span class="truncate">{{ dialogs.storageDocumentConflict }}</span>
-          </button>
-          <!--
+            <button
+              v-if="conflicted"
+              type="button"
+              class="mt-1 flex items-center gap-1 text-[10px] text-[var(--color-warning-text)] hover:underline"
+              data-slot="storage-document-conflict"
+              @click.stop="emit('resolveConflict', document)"
+            >
+              <icon-lucide-git-pull-request-arrow class="size-3 shrink-0" />
+              <span class="truncate">{{ dialogs.storageDocumentConflict }}</span>
+            </button>
+            <!--
             The provider's own words are the tooltip, not a paraphrase: the
             label says which layer failed, the message says what to fix.
           -->
-          <Tip v-if="syncError" :label="syncError">
-            <p
-              class="mt-1 flex items-center gap-1 text-[10px] text-danger"
-              data-slot="storage-sync-error"
-            >
-              <icon-lucide-circle-alert class="size-3 shrink-0" />
-              <span class="truncate">{{ dialogs.storageDocumentSyncFailed }}</span>
-            </p>
-          </Tip>
-          <!--
+            <Tip v-if="syncError" :label="syncError">
+              <p
+                class="mt-1 flex items-center gap-1 text-[10px] text-danger"
+                data-slot="storage-sync-error"
+              >
+                <icon-lucide-circle-alert class="size-3 shrink-0" />
+                <span class="truncate">{{ dialogs.storageDocumentSyncFailed }}</span>
+              </p>
+            </Tip>
+            <!--
             Deliberately quieter than the body error and never mutually
             exclusive with it: a stale preview says nothing about the document.
           -->
-          <Tip v-if="thumbnailError" :label="thumbnailError">
-            <p
-              class="mt-1 flex items-center gap-1 text-[10px] text-muted"
-              data-slot="storage-thumbnail-error"
-            >
-              <icon-lucide-image-off class="size-3 shrink-0" />
-              <span class="truncate">{{ dialogs.storageDocumentPreviewNotSynced }}</span>
-            </p>
-          </Tip>
+            <Tip v-if="thumbnailError" :label="thumbnailError">
+              <p
+                class="mt-1 flex items-center gap-1 text-[10px] text-muted"
+                data-slot="storage-thumbnail-error"
+              >
+                <icon-lucide-image-off class="size-3 shrink-0" />
+                <span class="truncate">{{ dialogs.storageDocumentPreviewNotSynced }}</span>
+              </p>
+            </Tip>
+          </div>
         </div>
 
         <div
@@ -272,6 +273,25 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
 
     <ContextMenuPortal>
       <ContextMenuContent :class="menuCls.content" :side-offset="2" align="start">
+        <!--
+          Where the document lives, on demand rather than on the artwork. It
+          answers "will my next edit reach a durable copy?", which is worth
+          having — but it is a property to look up, not a caption every card
+          must carry.
+        -->
+        <template v-if="location">
+          <ContextMenuLabel
+            :class="[menuCls.item, 'gap-2 text-muted']"
+            data-slot="storage-document-location"
+            :data-location="location.kind"
+          >
+            <icon-lucide-cloud-upload v-if="location.kind === 'backing-up'" :class="menuCls.icon" />
+            <icon-lucide-cloud v-else-if="locationIsReplicated" :class="menuCls.icon" />
+            <icon-lucide-hard-drive v-else :class="menuCls.icon" />
+            <span class="truncate">{{ location.label }}</span>
+          </ContextMenuLabel>
+          <ContextMenuSeparator :class="menuCls.separator" />
+        </template>
         <template v-if="trashView">
           <ContextMenuItem
             data-test-id="storage-context-restore"

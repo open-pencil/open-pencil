@@ -302,6 +302,11 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
   const tab = takeScratchTab()
   const { store } = tab
   store.state.documentName = document.name
+  // Before the bytes are fetched or parsed, not after: the card that was just
+  // clicked already knows the format, and setting it only once the graph lands
+  // made every deck open behind a design-document shell — a pencil and a Pages
+  // list for a second, then a flip to slides.
+  store.setDocumentKind(documentKindForSourceFormat(document.sourceFormat))
   store.state.loading = true
   try {
     const local = getLocalCanvasStore()

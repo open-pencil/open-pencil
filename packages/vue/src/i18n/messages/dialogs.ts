@@ -269,6 +269,7 @@ export const dialogMessageDefaults = {
   storageDocumentElsewhereOnly: params(
     '“{name}” has no copy on this device. Its only copy is at {provider} — connect that destination to open it.'
   ),
+  storageDocumentEdited: params('Edited {time}'),
   storageLocationBackedUpTo: params('Backed up to {provider}'),
   storageLocationBackingUpTo: params('Backing up to {provider}…'),
   storageLocationDetachedFrom: params('Detached from {provider}'),

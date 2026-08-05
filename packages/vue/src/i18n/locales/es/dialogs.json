@@ -331,5 +331,6 @@
   "storageScopeActiveTarget": "Este proveedor",
   "emptyStorageAtDestination": "Aún no hay documentos en este destino. Este dispositivo tiene {count}.",
   "storageShowAllDocuments": "Mostrar todos los documentos",
-  "storageLocationBackingUpTo": "Copiando a {provider}…"
+  "storageLocationBackingUpTo": "Copiando a {provider}…",
+  "storageDocumentEdited": "Editado {time}"
 }
