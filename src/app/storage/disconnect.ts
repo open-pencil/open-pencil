@@ -92,6 +92,13 @@ export async function disconnectStorageTarget(
 
     await deps.store.updateMeta(meta.id, {
       syncTargetId: null,
+      // Recorded explicitly rather than left to write-time history: this is what
+      // separates "left a destination" from "never had one". Both look like
+      // `syncTargetId: null`, and `promoteLocalDocuments` used to sweep the
+      // first kind into whichever bucket was connected next — copying documents
+      // into a cloud the user never chose, moments after a dialog promised they
+      // would be kept here as local files.
+      lastKnownTargetId: targetId,
       syncedBodyId: null,
       syncStatus: 'local',
       lastSyncedAt: null,

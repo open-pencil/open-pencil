@@ -68,6 +68,18 @@ export async function promoteLocalDocuments(
       skipped.push(meta.id)
       continue
     }
+    if (meta.lastKnownTargetId !== null && meta.lastKnownTargetId !== targetId) {
+      // Deliberately disconnected from somewhere else, not homeless.
+      // `syncTargetId: null` means both "never had a destination" and "left the
+      // one it had", and promoting on that alone swept documents the user had
+      // just detached from one bucket straight into the next — the opposite of
+      // what disconnect promises, and it copies them into a second cloud the
+      // user never chose. `lastKnownTargetId` is what tells the two apart.
+      // Reconnecting to the SAME target still promotes: the check is equality,
+      // not presence.
+      skipped.push(meta.id)
+      continue
+    }
 
     // Assign the target BEFORE enqueueing: the engine captures the row's target
     // at enqueue, so the other order would queue jobs addressed to nowhere.

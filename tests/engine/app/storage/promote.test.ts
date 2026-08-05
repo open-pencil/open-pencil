@@ -134,4 +134,61 @@ describe('promoteLocalDocuments', () => {
     expect(d.enqueueCanvas).not.toHaveBeenCalled()
     expect(d.enqueueMetadata).toHaveBeenCalledTimes(1)
   })
+
+  test('a document disconnected from another bucket is not swept into this one', async () => {
+    // `syncTargetId: null` means both "never had a destination" and "left the
+    // one it had". Promoting on that alone copied documents the user had just
+    // detached from one provider straight into the next — into a second cloud
+    // they never chose, and contradicting what the disconnect dialog promises.
+    const store = createMemoryLocalCanvasStore()
+    // Seeded the way disconnect actually leaves a row: written to a target,
+    // then detached with `lastKnownTargetId` recording where it had been.
+    await store.writeCanvas({
+      id: 'was-on-other',
+      syncTargetId: OTHER,
+      name: 'was-on-other',
+      figBytes: new Uint8Array([1, 2, 3]),
+      thumbBytes: null,
+      bodyId: 'sha256:was-on-other',
+      syncStatus: 'synced'
+    })
+    await store.updateMeta('was-on-other', {
+      syncTargetId: null,
+      lastKnownTargetId: OTHER,
+      syncStatus: 'local'
+    })
+    await seedLocal(store, 'never-had-a-home')
+    const d = deps(store)
+
+    const result = await promoteLocalDocuments(TARGET, d)
+
+    expect(result.promoted).toEqual(['never-had-a-home'])
+    expect(result.skipped).toEqual(['was-on-other'])
+    expect(d.enqueueCanvas).toHaveBeenCalledTimes(1)
+  })
+
+  test('reconnecting to the same bucket promotes what was disconnected from it', async () => {
+    // The guard is equality, not presence: leaving a bucket and coming back is
+    // the one case where re-adoption is exactly what the user asked for.
+    const store = createMemoryLocalCanvasStore()
+    await store.writeCanvas({
+      id: 'came-back',
+      syncTargetId: TARGET,
+      name: 'came-back',
+      figBytes: new Uint8Array([1, 2, 3]),
+      thumbBytes: null,
+      bodyId: 'sha256:came-back',
+      syncStatus: 'synced'
+    })
+    await store.updateMeta('came-back', {
+      syncTargetId: null,
+      lastKnownTargetId: TARGET,
+      syncStatus: 'local'
+    })
+    const d = deps(store)
+
+    const result = await promoteLocalDocuments(TARGET, d)
+
+    expect(result.promoted).toEqual(['came-back'])
+  })
 })
