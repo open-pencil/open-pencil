@@ -38,12 +38,20 @@ export const syncStatusLabel = computed(() => {
       return syncUiDetail.value ?? 'Sync failed'
     case 'blocked':
       return syncUiDetail.value ?? 'Sync paused — needs attention'
+    case 'conflict':
+      return 'Sync conflict'
     default:
       return null
   }
 })
 
-/** True when the user should be able to open the error modal. */
+/**
+ * True when the user should be able to open the error modal.
+ *
+ * Deliberately excludes `conflict`: that modal reads `lastSyncFailure`, and the
+ * conflict path records none — it is not a provider fault. A conflict is
+ * resolved from the document, not from the error report.
+ */
 export const syncHasFailure = computed(
   () => syncUiState.value === 'error' || syncUiState.value === 'blocked'
 )

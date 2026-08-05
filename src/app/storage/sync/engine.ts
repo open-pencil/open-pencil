@@ -4,6 +4,11 @@ import {
   type StorageDocumentMetadata
 } from '@/app/integrations/storage'
 import { StorageConflictError } from '@/app/integrations/storage/conflict'
+// The owning module, not the barrel: importing this through
+// `@/app/integrations/storage` closes an import cycle, and the binding is still
+// in its temporal dead zone when the engine evaluates — typechecks clean, then
+// throws `activeStorageProviderID is not defined` on the first pump.
+import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { computeStateIdentity } from '@/app/storage/identity/state'
 import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
@@ -20,8 +25,8 @@ import { reconfirmVersionedBodies } from '@/app/storage/sync/migrate-layout'
 import type { Outbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/storage/sync/status'
-import type { OutboxJob } from '@/app/storage/sync/types'
-import { providerIdOfTarget, type StorageTargetID } from '@/app/storage/target'
+import type { OutboxJob, SyncUiState } from '@/app/storage/sync/types'
+import { providerIdOfTarget, targetIsCurrent, type StorageTargetID } from '@/app/storage/target'
 
 /** Provider label for a failure whose destination cannot be named at all. */
 const UNKNOWN_PROVIDER = 'unknown'
@@ -336,6 +341,34 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     return `${scope}: ${reason}`
   }
 
+  /**
+   * A job's target is dormant when the user has pointed storage somewhere else.
+   *
+   * Documents stay pinned to the destination they were queued for, which is
+   * correct — their bytes belong there. But the workspace lists only the ACTIVE
+   * target, so a fault on a dormant one raised a global red status for a
+   * document the UI refused to show and offered no way to reach. Switching
+   * provider now quiets the old destination instead of stranding the user;
+   * switching back surfaces it again, because the row keeps its own state.
+   */
+  function targetIsDormant(targetId: StorageTargetID | null): boolean {
+    if (targetId === null) return false
+    const owner = providerIdOfTarget(targetId)
+    // Compared against the SELECTED provider, not `targetIsCurrent`: that asks
+    // whether a target still matches what its own provider points at, which
+    // stays true for a bucket whose settings were never edited. A Bunny target
+    // is "current" by that test long after the user moved to R2 — the question
+    // here is whose workspace is on screen.
+    if (owner !== null && owner !== activeStorageProviderID.value) return true
+    return !targetIsCurrent(targetId)
+  }
+
+  /** Global status, raised only for the destination the user is actually using. */
+  function setSyncUiForJob(job: OutboxJob, state: SyncUiState, message?: string): void {
+    if (targetIsDormant(job.targetId)) return
+    setSyncUi(state, message ?? null)
+  }
+
   async function putMetadata(
     adapter: StorageAdapter,
     store: LocalCanvasStore,
@@ -537,7 +570,12 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     await ensureLayoutSweep()
     const outbox = deps.getOutbox()
     const jobs = await outbox.list()
-    setPendingSyncCount(jobs.length)
+    // Count only what the visible workspace could actually be waiting on. Jobs
+    // pinned to a provider the user has switched away from address documents
+    // this workspace does not list, so counting them produced "3 waiting to
+    // sync" over a grid of two — a number the user cannot reconcile, act on, or
+    // clear. They stay queued and count again when that provider is selected.
+    setPendingSyncCount(jobs.filter((job) => !targetIsDormant(job.targetId)).length)
 
     if (jobs.length === 0) {
       if (deps.isOnline()) setSyncUi('idle')
@@ -574,7 +612,20 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
       // Every job is parked at MAX_SAFE_INTEGER. Nothing will move without user
       // action, so report it as terminal instead of falling through to "Syncing…"
       // forever, which is what this path used to do.
-      setSyncUi('blocked', await describeBlockedQueue(jobs))
+      //
+      // Reported for the ACTIVE destination only. Jobs pinned to a target the
+      // user has switched away from are dormant, not parked-and-broken: the
+      // workspace does not list their documents, so a red status for them named
+      // a provider the user had left and offered nothing to act on. They stay
+      // queued and revive when that target is selected again. Scoped to the
+      // status alone — never to draining, since this reads live settings and a
+      // preferences read that has not landed yet would strand the whole queue.
+      const live = jobs.filter((candidate) => !targetIsDormant(candidate.targetId))
+      if (live.length === 0) {
+        if (deps.isOnline()) setSyncUi('idle')
+        return
+      }
+      setSyncUi('blocked', await describeBlockedQueue(live))
       return
     }
 
@@ -613,7 +664,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
               { expectedRevision: latest.revision }
             )
         }
-        setSyncUi('blocked', message)
+        setSyncUiForJob(job, 'conflict', message)
         return
       }
       if (error instanceof StorageSyncBlockedError) {
@@ -625,7 +676,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
         // trace at all, so nothing could explain the pause afterwards.
         await updateSyncFailureMeta(job, message)
         await captureFailure(job, error, job.attempts)
-        setSyncUi('blocked', message)
+        setSyncUiForJob(job, 'blocked', message)
         return
       }
 
@@ -638,7 +689,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
         await captureFailure(job, error, attempts)
         if (job.type !== 'putThumb') {
           // Terminal for this job: it parks below and only resume() revives it.
-          setSyncUi('blocked', message)
+          setSyncUiForJob(job, 'blocked', message)
         }
         if (job.type === 'putThumb') {
           await outbox.remove(job.id)
@@ -675,7 +726,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
         setSyncUi('syncing')
       } else {
         // Transient: still retrying, so surface it as `error` rather than `blocked`.
-        setSyncUi('error', message)
+        setSyncUiForJob(job, 'error', message)
         await deps.getStore().updateMeta(job.canvasId, {
           syncStatus: 'pending',
           lastSyncError: message

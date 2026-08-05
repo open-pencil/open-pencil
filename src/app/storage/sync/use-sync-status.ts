@@ -15,7 +15,7 @@ import { pendingSyncCount, syncUiState } from '@/app/storage/sync/status'
  * signals real failure. Orange and red both mean *you wanted sync and are not
  * getting it*; nothing else may use them.
  */
-export type SyncIndicator = 'local' | 'synced' | 'syncing' | 'degraded' | 'failing'
+export type SyncIndicator = 'local' | 'synced' | 'syncing' | 'degraded' | 'failing' | 'conflicted'
 
 /** Most syncs finish inside this, and should render nothing at all. */
 const SPINNER_DELAY_MS = 400
@@ -43,6 +43,8 @@ export function useSyncStatus(options: {
       case 'error':
       case 'blocked':
         return 'failing'
+      case 'conflict':
+        return 'conflicted'
       default:
         return 'synced'
     }
@@ -130,6 +132,12 @@ export function useSyncStatus(options: {
         return provider ? t.cloudUnreachableVia({ provider }) : t.syncStatusUnreachable
       case 'failing':
         return provider ? t.syncFailedVia({ provider }) : t.syncStatusFailed
+      case 'conflicted':
+        // No provider in this label on purpose. A conflict belongs to one
+        // document and its target, and the only provider name reachable here
+        // is whichever is selected in settings right now — which is how a
+        // Bunny-bound conflict came to be reported as "Sync failed — R2".
+        return t.syncConflictTitle
       default:
         if (pendingCount.value > 0) return t.syncStatusWaiting({ count: pendingCount.value })
         // Naming the provider here is what lets the workspace header stop
@@ -138,7 +146,13 @@ export function useSyncStatus(options: {
     }
   })
 
-  /** States with a failure worth reading. */
+  /**
+   * States with a failure worth reading.
+   *
+   * `conflicted` is not one: the error modal renders `lastSyncFailure`, and the
+   * conflict path records none by design, so opening it showed an empty
+   * "no failure details" dialog. Resolution lives on the document.
+   */
   const actionable = computed(() => indicator.value === 'failing' || indicator.value === 'degraded')
 
   /**

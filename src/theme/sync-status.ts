@@ -29,7 +29,10 @@ const syncStatusTheme = {
       // glyph occupies the indicator slot for the whole of this state.
       syncing: { icon: 'text-muted' },
       degraded: { icon: 'text-[var(--color-warning-action)]' },
-      failing: { icon: 'text-[var(--color-error)]' }
+      failing: { icon: 'text-[var(--color-error)]' },
+      // Warning, not error: a conflict means both versions survived and one
+      // needs choosing. Red would claim something is broken when nothing is.
+      conflicted: { icon: 'text-[var(--color-warning-action)]' }
     },
     actionable: {
       true: { chip: 'cursor-pointer hover:bg-hover hover:text-surface' },

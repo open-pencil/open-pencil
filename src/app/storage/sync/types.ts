@@ -28,7 +28,13 @@ export type OutboxJob = {
  * configuration. They are distinct because a blocked queue used to fall through
  * and render as "Syncing…" indefinitely.
  */
-export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error' | 'blocked'
+/**
+ * `conflict` is separate from `blocked` because it is not a fault: nothing is
+ * broken, two devices edited one document, and it has its own resolution flow.
+ * Folding it into `blocked` rendered it as "Sync failed" and routed the user to
+ * the provider-error modal, which by design holds no snapshot for a conflict.
+ */
+export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error' | 'blocked' | 'conflict'
 
 /**
  * Pure helper: drop superseded putCanvas jobs for the same canvas.

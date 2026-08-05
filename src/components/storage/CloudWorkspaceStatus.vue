@@ -6,16 +6,33 @@ import { useI18n } from '@open-pencil/vue'
 import { activeStorageProviderID, storageProviderRegistry } from '@/app/integrations/storage'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { useStorageConfigured } from '@/app/storage/configured'
-import { useSyncStatus } from '@/app/storage/sync'
+import { lastSyncFailure, useSyncStatus } from '@/app/storage/sync'
 import SyncErrorDialog from '@/components/storage/SyncErrorDialog.vue'
 import syncStatusTheme from '@/theme/sync-status'
 
 const { dialogs } = useI18n()
 const configured = useStorageConfigured()
 const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
+
+/**
+ * Name the provider the failure was addressed to, not the one selected now.
+ *
+ * `lastSyncFailure.providerId` is captured at the moment of failure; the active
+ * provider is a live setting. Reading the setting meant switching providers
+ * re-labelled an existing failure with the new vendor's name — a document stuck
+ * on Bunny reported itself as "Sync failed — Cloudflare R2".
+ */
+const failedProviderLabel = computed(() => {
+  const providerId = lastSyncFailure.value?.providerId
+  if (providerId && storageProviderRegistry.has(providerId)) {
+    return storageProviderRegistry.get(providerId).label
+  }
+  return provider.value.label
+})
+
 const { indicator, label, failure, spinnerVisible, actionable, canConnect } = useSyncStatus({
   configured: () => configured.value,
-  providerLabel: () => provider.value.label
+  providerLabel: () => failedProviderLabel.value
 })
 
 const detailOpen = ref(false)
