@@ -330,5 +330,6 @@
   "storageScopeAll": "Tutti i documenti",
   "storageScopeActiveTarget": "Questo provider",
   "emptyStorageAtDestination": "Nessun documento in questa destinazione. Questo dispositivo ne contiene {count}.",
-  "storageShowAllDocuments": "Mostra tutti i documenti"
+  "storageShowAllDocuments": "Mostra tutti i documenti",
+  "storageLocationBackingUpTo": "Backup su {provider} in corso…"
 }

@@ -330,5 +330,6 @@
   "storageScopeAll": "Все документы",
   "storageScopeActiveTarget": "Этот провайдер",
   "emptyStorageAtDestination": "В этом хранилище пока нет документов. На этом устройстве их {count}.",
-  "storageShowAllDocuments": "Показать все документы"
+  "storageShowAllDocuments": "Показать все документы",
+  "storageLocationBackingUpTo": "Резервное копирование в {provider}…"
 }

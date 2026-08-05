@@ -330,5 +330,6 @@
   "storageScopeAll": "Wszystkie dokumenty",
   "storageScopeActiveTarget": "Ten dostawca",
   "emptyStorageAtDestination": "W tym miejscu docelowym nie ma jeszcze dokumentów. To urządzenie zawiera {count}.",
-  "storageShowAllDocuments": "Pokaż wszystkie dokumenty"
+  "storageShowAllDocuments": "Pokaż wszystkie dokumenty",
+  "storageLocationBackingUpTo": "Tworzenie kopii w {provider}…"
 }

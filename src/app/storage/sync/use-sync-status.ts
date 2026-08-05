@@ -124,9 +124,7 @@ export function useSyncStatus(options: {
         // configured target. Both are local-only, but only one needs setup.
         return options.configured() ? t.syncStatusLocalOnly : t.workingOffline
       case 'syncing':
-        return pendingCount.value > 1
-          ? t.syncStatusSyncingCount({ count: pendingCount.value })
-          : t.syncStatusSyncing
+        return t.syncStatusSyncing
       case 'degraded':
         if (!browserOnline.value) return t.syncStatusOffline
         return provider ? t.cloudUnreachableVia({ provider }) : t.syncStatusUnreachable
@@ -139,7 +137,7 @@ export function useSyncStatus(options: {
         // Bunny-bound conflict came to be reported as "Sync failed — R2".
         return t.syncConflictTitle
       default:
-        if (pendingCount.value > 0) return t.syncStatusWaiting({ count: pendingCount.value })
+        if (pendingCount.value > 0) return t.syncStatusWaiting
         // Naming the provider here is what lets the workspace header stop
         // repeating the connection state above the document grid.
         return provider ? t.syncedViaProvider({ provider }) : t.syncStatusSynced

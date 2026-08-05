@@ -1,5 +1,6 @@
 import { storageProviderRegistry, type StorageDocument } from '@/app/integrations/storage'
 import type { LocalCanvasMeta } from '@/app/storage/local-store'
+import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 import { providerIdOfTarget, type StorageTargetID } from '@/app/storage/target'
 
 /**
@@ -19,6 +20,7 @@ import { providerIdOfTarget, type StorageTargetID } from '@/app/storage/target'
 export type StorageDocumentLocationKind =
   | 'backed-up-here'
   | 'backed-up-elsewhere'
+  | 'backing-up'
   | 'detached'
   | 'device-only'
 
@@ -44,6 +46,15 @@ export type StorageDocumentPlacement = {
   lastKnownTargetId?: StorageTargetID | null
   /** Bytes are cached here. An index-only row has metadata and nothing else. */
   hasLocalBody?: boolean
+  /**
+   * The destination has confirmed THESE bytes.
+   *
+   * Naming a destination is not the same as having reached it. Without this the
+   * card said "Backed up to X" from the moment a document was pointed at X,
+   * while its bytes were still queued — the card equivalent of a green tick
+   * over an unsent upload, and the most dangerous claim this surface can make.
+   */
+  bodyConfirmed?: boolean
 }
 
 /** Kind plus the resolved sentence, so the card renders text it is handed. */
@@ -87,6 +98,11 @@ export function storageDocumentLocation(
   // mean the same thing here, and the badge is a claim about the user's data.
   const syncTargetId = placement.syncTargetId ?? null
   if (syncTargetId !== null) {
+    // Undefined means "not recorded", which must not read as confirmed: an
+    // index-only row has no local body to have uploaded.
+    if (placement.bodyConfirmed === false) {
+      return { kind: 'backing-up', providerLabel: providerLabelOfTarget(syncTargetId) }
+    }
     return {
       kind: syncTargetId === activeTargetId ? 'backed-up-here' : 'backed-up-elsewhere',
       providerLabel: providerLabelOfTarget(syncTargetId)
@@ -165,7 +181,10 @@ export function storageDocumentPlacements(
     placements[meta.id] = {
       syncTargetId: meta.syncTargetId ?? null,
       lastKnownTargetId: meta.lastKnownTargetId ?? null,
-      hasLocalBody: meta.hasFig
+      hasLocalBody: meta.hasFig,
+      // Only a row that HAS local bytes can be waiting to upload them; an
+      // index-only row's body lives at the destination already.
+      bodyConfirmed: meta.hasFig ? bodyIsConfirmed(meta) : true
     }
   }
   return placements

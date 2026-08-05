@@ -257,6 +257,7 @@ function locationLabel(location: StorageDocumentLocation): string {
   // this device" — the opposite of what it meant — and it was the only badge
   // that withheld the one fact the badge exists to give. The `kind` still
   // distinguishes the active destination for styling and `data-location`.
+  if (location.kind === 'backing-up') return dialogs.value.storageLocationBackingUpTo({ provider })
   if (location.kind === 'backed-up-here' || location.kind === 'backed-up-elsewhere') {
     return dialogs.value.storageLocationBackedUpTo({ provider })
   }

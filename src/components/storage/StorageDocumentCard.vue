@@ -184,7 +184,11 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
             data-slot="storage-document-location"
             :data-location="location.kind"
           >
-            <icon-lucide-cloud v-if="locationIsReplicated" class="size-3 shrink-0" />
+            <icon-lucide-cloud-upload
+              v-if="location.kind === 'backing-up'"
+              class="size-3 shrink-0"
+            />
+            <icon-lucide-cloud v-else-if="locationIsReplicated" class="size-3 shrink-0" />
             <icon-lucide-hard-drive v-else class="size-3 shrink-0" />
             <span class="truncate">{{ location.label }}</span>
           </p>

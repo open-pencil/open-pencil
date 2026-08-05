@@ -197,9 +197,12 @@ export const dialogMessageDefaults = {
   storageSyncing: 'Syncing',
   syncStatusLocalOnly: 'Local only',
   syncStatusSynced: 'Synced',
-  syncStatusSyncing: 'Syncing…',
-  syncStatusSyncingCount: params('Syncing {count} changes…'),
-  syncStatusWaiting: params('{count} waiting to sync'),
+  // No count on either. The number available here is queued OUTBOX JOBS, and
+  // one save enqueues a body and a thumbnail — so "Syncing 2 changes" was shown
+  // to a user who had made one. "Changes" is the user's word for edits they
+  // made; it must not be spent on the app's own work items.
+  syncStatusSyncing: 'Backing up…',
+  syncStatusWaiting: 'Waiting to back up',
   syncStatusUnreachable: 'Cloud unreachable — retrying',
   syncStatusOffline: 'Offline — will sync',
   syncStatusFailed: 'Sync failed',
@@ -267,6 +270,7 @@ export const dialogMessageDefaults = {
     '“{name}” has no copy on this device. Its only copy is at {provider} — connect that destination to open it.'
   ),
   storageLocationBackedUpTo: params('Backed up to {provider}'),
+  storageLocationBackingUpTo: params('Backing up to {provider}…'),
   storageLocationDetachedFrom: params('Detached from {provider}'),
   storageLocationDeviceOnly: 'On this device only',
   storageLocationUnknownProvider: 'another destination',

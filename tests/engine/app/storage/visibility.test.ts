@@ -168,8 +168,9 @@ describe('workspace document list', () => {
   test('switching destination changes badges but never the row count', () => {
     // The invariant that would have caught the original defect.
     const metas = [
-      meta('here', { syncTargetId: BACKBLAZE }),
-      meta('elsewhere', { syncTargetId: BUNNY }),
+      // Confirmed bodies: this test is about destination, not upload progress.
+      meta('here', { syncTargetId: BACKBLAZE, syncedBodyId: 'sha256:here' }),
+      meta('elsewhere', { syncTargetId: BUNNY, syncedBodyId: 'sha256:elsewhere' }),
       meta('local-only')
     ]
     const placements = storageDocumentPlacements(metas)
@@ -295,5 +296,37 @@ describe('storageDocumentNeedsItsOwnTarget', () => {
 
     expect(location.kind).toBe('device-only')
     expect(location.providerLabel).toBeNull()
+  })
+
+  test('naming a destination is not the same as having reached it', () => {
+    // "Backed up to X" from the moment a document is pointed at X, while its
+    // bytes are still queued, is the card equivalent of a green tick over an
+    // unsent upload — the most dangerous claim this surface can make.
+    const location = storageDocumentLocation(
+      { syncTargetId: 's3-compatible#aaaaaaaa', bodyConfirmed: false },
+      's3-compatible#aaaaaaaa'
+    )
+
+    expect(location.kind).toBe('backing-up')
+    expect(location.providerLabel).toBe('Generic S3')
+  })
+
+  test('a confirmed body at the active destination is backed up', () => {
+    const location = storageDocumentLocation(
+      { syncTargetId: 's3-compatible#aaaaaaaa', bodyConfirmed: true },
+      's3-compatible#aaaaaaaa'
+    )
+
+    expect(location.kind).toBe('backed-up-here')
+  })
+
+  test('an index-only row is not reported as uploading', () => {
+    // It has no local body to send: its bytes already live at the destination.
+    const location = storageDocumentLocation(
+      { syncTargetId: 's3-compatible#aaaaaaaa' },
+      's3-compatible#aaaaaaaa'
+    )
+
+    expect(location.kind).toBe('backed-up-here')
   })
 })
