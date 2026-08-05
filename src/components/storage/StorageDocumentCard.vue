@@ -137,15 +137,26 @@ const isDeterminate = computed(() => uploadProgress.value !== null)
         @keydown.enter="openDocument"
         @keydown.space.prevent="openDocument"
       >
+        <!--
+          16:9 to match what the previews actually are: slides are 1920x1080 and
+          both renderers emit 400x225. A 4:3 well cropped the sides off every
+          deck, taking the title with them.
+        -->
         <div
-          class="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-panel-field"
+          class="relative flex aspect-video items-center justify-center overflow-hidden bg-panel-field"
           data-slot="storage-thumbnail"
         >
+          <!--
+            `contain`, not `cover`: a preview exists to show what the document
+            is, and cropping to fill the well is what hid the headline. A
+            document whose page is not 16:9 letterboxes against the well rather
+            than losing its edges.
+          -->
           <img
             v-if="thumbnailUrl"
             :src="thumbnailUrl"
             alt=""
-            class="size-full object-cover"
+            class="size-full object-contain"
             :class="unavailable && 'opacity-40 grayscale'"
           />
           <icon-lucide-presentation v-else class="size-5 text-muted/50" />
