@@ -135,9 +135,25 @@ export class WebFontResolver {
     return promise
   }
 
+  /**
+   * Fetch one KNOWN face. Deliberately not gated on the fetch proxy.
+   *
+   * Browsing a provider's catalogue and downloading a named font are different
+   * requests with different CORS answers, and treating them as one is why a
+   * browser could not load a font at all. `fonts.google.com/metadata/fonts`
+   * sends no `Access-Control-Allow-Origin`, so Google's catalogue genuinely
+   * needs the desktop proxy — but `fonts.gstatic.com`, `api.fontsource.org` and
+   * `cdn.jsdelivr.net` all send `*`, and Fontsource (enabled by default)
+   * resolves a family and style without a catalogue at all.
+   *
+   * Measured from the app's own origin: the italic face this blocked downloads
+   * in 25 KB and constructs into a usable `FontFace`. A provider that cannot
+   * answer in this environment fails closed on its own and the next one is
+   * tried, so the worst case here is the behaviour this guard used to force.
+   */
   async fetchFont(families: string[], style: string, characters = ''): Promise<ArrayBuffer[]> {
     const providers = this.enabledProviders()
-    if (providers.length === 0 || (IS_BROWSER && !this.remoteFetch)) return []
+    if (providers.length === 0) return []
 
     for (const family of families) {
       for (const provider of providers) {
