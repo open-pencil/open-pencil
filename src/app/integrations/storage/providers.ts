@@ -188,7 +188,7 @@ export const R2_STORAGE_PROVIDER = defineStorageProvider({
     { id: R2_SECRET_ACCESS_KEY_FIELD, label: 'Secret access key', required: true }
   ],
   // R2 is the first provider able to PREVENT a clobbering write rather than
-  // only detect one: the live probe (scratch/b2-cas-probe.sh, 2026-08-04)
+  // only detect one: the live probe (scratch/cas-probe.sh, 2026-08-04)
   // confirmed 412 PreconditionFailed on a stale If-Match and on
   // If-None-Match '*', so the conditional head update ships enabled.
   conflictProtection: 'prevent',

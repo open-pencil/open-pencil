@@ -67,6 +67,31 @@ The engine suite is sharded on purpose — do not run it raw.
 - To tell a pre-existing failure from one you introduced, re-run the single failing file across a `git stash` — never re-run the suite to diff failure lists.
 - Per-PR CI shards the same groups across parallel jobs (`ci.yml`), so targeted tests plus the static gates are enough to justify a push.
 
+## Local credentials
+
+Real keys are used locally and never committed. Concretely:
+
+- Local dev secrets live in `.env.local` (gitignored). Nothing else in the repo is a
+  legitimate home for a credential — not a test fixture, not a doc, not a commit
+  message, not a comment recording how something was verified.
+- **`VITE_`-prefixed values are embedded in the client bundle.** Anything named
+  `VITE_*` is shipped to the browser and readable by anyone loading the app. Give
+  tooling-only credentials plain names (`R2_SECRET_ACCESS_KEY`, not
+  `VITE_..._SECRET_ACCESS_KEY`) so a probe or script can read them without publishing
+  them. Reusing an app-facing `VITE_OPENPENCIL_CLOUD_S3_*` name also silently
+  repoints the running app at that provider.
+- **A gitignored directory is not a safe place for secrets.** `scratch/` is ignored,
+  yet several files in it are force-added and tracked. Ignore rules protect against
+  accident, not against `git add -f` — never rely on "it's in an ignored folder".
+- Application credentials at runtime go through the credential manager
+  (`src/app/settings/credentials/`), never through env files. Env vars are for local
+  tooling and the built-in cloud-storage dev config only. See `src/AGENTS.md`.
+- Scripts that need a provider's keys read them from the environment and are pointed
+  at a target by env vars at the call site (`scratch/cas-probe.sh` is the pattern).
+  Do not hardcode an endpoint, bucket, or key into a script.
+- If a secret does reach a tracked file, a transcript, or a shared log, rotate it —
+  removing the line is not sufficient, and rewriting history does not un-share it.
+
 ## Debugging discipline
 
 - Time-box expensive interactive and browser repro loops. After two attempts or roughly two

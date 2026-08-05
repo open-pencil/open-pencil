@@ -1372,3 +1372,50 @@ Consensus items 1–7 unchanged. Two amendments to them:
 Nothing here moves the scores. Both findings are of the class the document has been
 generating throughout: not errors in the design, but invariants that quietly stop
 holding when the thing underneath them is replaced.
+
+## [CLAUDE] Live R2 conditional-write probe — 2026-08-04
+
+The first provider to clear the bar for `conflictProtection: 'prevent'`. Phase 3 of
+this document requires a live probe before any provider claims prevention; B2 never
+returned a 412, so every provider sat at `detect`. Cloudflare R2 does.
+
+Run: `scratch/cas-probe.sh`, repointed at R2 through the environment (the script
+supports this by design), against `openpencil-r2` at
+`https://<account>.r2.cloudflarestorage.com`, region `auto`.
+
+```text
+-- If-Match with the CURRENT etag (expect success):
+OK
+-- If-Match with the STALE etag (expect 412 PreconditionFailed):
+PreconditionFailed
+-- If-None-Match '*' against an existing key (expect 412):
+PreconditionFailed
+```
+
+All three behave as required, so `R2_STORAGE_PROVIDER.conflictProtection: 'prevent'`
+is verified rather than assumed. The matrix gains its first `prevent` row: R2 enforces
+both compare-and-swap on update (`If-Match`) and create-if-absent (`If-None-Match: '*'`).
+
+Two things learned while running it, both of which would have produced a **false
+negative** for anyone repeating this:
+
+1. **Region.** The script defaulted `AWS_DEFAULT_REGION` to `eu-central-003`, a
+   Backblaze region. R2 signs as `auto` and rejects the B2 name — and the resulting
+   signature failure surfaces through the probe's own logic as "no 412", i.e. as
+   *conditional writes unsupported* rather than as a misconfiguration. Now inferred
+   from the endpoint host so a repointed run cannot silently mis-measure. This is the
+   sharp edge: the probe fails safe against false *positives* and unsafe against false
+   *negatives*.
+2. **Cleanup.** The script's teardown uses `list-object-versions`. R2 has no object
+   versioning, so under `pipefail` the script aborts before its cleanup line and leaves
+   `probe/conditional-writes` behind. Removed by hand here; the teardown needs a
+   non-versioned path before this is run routinely.
+
+**Provenance — fixed.** `providers.ts` cited `scratch/b2-cas-probe.sh` as the evidence
+for the strongest claim in the storage layer, but `scratch/` is git-ignored and the
+script was untracked: the citation pointed at nothing for every reader but its author.
+The probe is now tracked as `scratch/cas-probe.sh` (renamed — it was never B2-specific,
+and the old name is what made an R2 result look misattributed), its header records both
+providers' measured results, and `providers.ts` cites the new path. The region and
+teardown defects above are fixed in the same file, so a rerun reproduces the result
+rather than a false negative.
