@@ -9,7 +9,11 @@ import {
   persistStorageCanvasLocally
 } from '@/app/storage/sync'
 import { currentTargetIdFor, type StorageTargetID } from '@/app/storage/target'
-import { createStorageThumbnail, isUsableStorageThumbnail } from '@/app/storage/thumbnail'
+import {
+  createStorageThumbnail,
+  isBlankImage,
+  isUsableStorageThumbnail
+} from '@/app/storage/thumbnail'
 
 type StorageDocumentContent = {
   bytes: Uint8Array
@@ -63,7 +67,12 @@ async function readContent(
   if (!isUsableStorageThumbnail(thumbnailBytes) && runtime.adapter.getThumbnail) {
     thumbnailBytes = await runtime.adapter.getThumbnail(document.id).catch(() => null)
   }
-  if (requireThumbnail && !isUsableStorageThumbnail(thumbnailBytes)) {
+  // A blank preview already on disk must be replaced, not kept: it passes every
+  // structural check, so without this a document that once stored an empty
+  // thumbnail would show white for the rest of its life and re-upload it.
+  const storedIsBlank =
+    isUsableStorageThumbnail(thumbnailBytes) && (await isBlankImage(thumbnailBytes))
+  if (requireThumbnail && (storedIsBlank || !isUsableStorageThumbnail(thumbnailBytes))) {
     thumbnailBytes = await createStorageThumbnail(bytes, document.sourceFormat).catch(() => null)
   }
   return { bytes, thumbnailBytes }
