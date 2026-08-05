@@ -4,6 +4,7 @@ import type { StorageProviderID } from '@/app/integrations/storage'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
 import { syncHasFailure } from '@/app/storage/sync'
+import { currentTargetIdFor } from '@/app/storage/target'
 
 /**
  * Per-document failure text, split by layer.
@@ -39,10 +40,15 @@ export function useDocumentSyncErrors(
   async function reload(): Promise<void> {
     // Pin the provider across the await, or a slow read lands under whichever
     // provider is selected by the time it resolves.
-    const target = providerId()
+    const provider = providerId()
+    // A row stores a TARGET id — a provider plus its configuration — never a
+    // bare provider id. Comparing a row against the provider matched nothing at
+    // all, so every failure transition silently emptied the map and the errors
+    // the user needed to see disappeared as soon as they were reloaded.
+    const targetId = currentTargetIdFor(provider)
     const metas = await getLocalCanvasStore().listMetas(true)
-    if (target !== providerId()) return
-    setFrom(metas.filter((metadata) => metadata.syncTargetId === target))
+    if (provider !== providerId()) return
+    setFrom(metas.filter((metadata) => metadata.syncTargetId === targetId))
   }
 
   /**
