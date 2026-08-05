@@ -2,6 +2,12 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useClipboard } from '@vueuse/core'
 import { useRouter } from 'vue-router'
+import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogTitle
+} from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
 
 import {
@@ -26,23 +32,102 @@ import { settingsDialogOpen } from '@/app/settings/dialog'
 import { credentialRef } from '@/app/settings/credentials/reference'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { backupToCloud, setBackupToCloud } from '@/app/storage/backup'
+import { disconnectStorageTarget } from '@/app/storage/disconnect'
+import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { resumeStorageSync } from '@/app/storage/sync'
+import { currentTargetIdFor } from '@/app/storage/target'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
+import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 
 const { dialogs } = useI18n()
 const backupEnabled = backupToCloud
 const router = useRouter()
 const { copy, copied } = useClipboard()
 const { copy: copyErrorText, copied: errorCopied } = useClipboard()
-const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
+/**
+ * Which provider's FORM is on screen — not where documents go.
+ *
+ * The dropdown used to be `activeStorageProviderID` itself, so choosing an entry
+ * to read its setup instructions silently repointed sync at a provider with no
+ * credentials, and every document stopped uploading. Inspecting a provider is
+ * not a decision; only `activate()` is.
+ */
+const panelProviderID = ref<StorageProviderID>(activeStorageProviderID.value)
+const provider = computed(() => storageProviderRegistry.get(panelProviderID.value))
+const activeProvider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
+const isActiveProvider = computed(() => panelProviderID.value === activeStorageProviderID.value)
 const providerOptions = computed(() =>
   storageProviderRegistry.list().map((registration) => ({
     value: registration.id,
     label: registration.label
   }))
 )
+
+/**
+ * Switching provider unhooks this device from the old destination.
+ *
+ * Until this existed the dropdown changed a setting and nothing else: rows
+ * stayed pinned to a target the workspace no longer lists, so a fault there
+ * raised a status for documents the UI would not show and offered no way to
+ * reach. `disconnectStorageTarget` is the transition that was already written
+ * for this and never called — it keeps every document that has local bytes,
+ * drops only cards that were listed but never downloaded, and removes nothing
+ * from the bucket.
+ */
+const switchRequest = ref<{ to: StorageProviderID; from: string; pending: number } | null>(null)
+/**
+ * Open state is separate from the payload on purpose.
+ *
+ * `AlertDialogAction` dismisses the dialog as part of the same click that runs
+ * the confirm handler. With one ref for both, the close cleared the request
+ * before the handler read it, so confirming did nothing at all — silently, with
+ * no error to notice.
+ */
+const switchDialogOpen = ref(false)
+
+/**
+ * Activation is the commit point, and the only destructive one.
+ *
+ * Nothing else in this panel changes where documents go: the dropdown swaps a
+ * form, a connection test proves credentials without moving anything. Changing
+ * providers is a rare, deliberate act, so it gets a button of its own and a
+ * confirmation that names what happens to the documents already elsewhere.
+ */
+async function requestActivation(): Promise<void> {
+  const to = panelProviderID.value
+  if (to === activeStorageProviderID.value) return
+  const fromTarget = currentTargetIdFor(activeStorageProviderID.value)
+  // No configured destination to leave — activate without ceremony. There is
+  // nothing to disconnect and no documents to explain.
+  if (!fromTarget) {
+    activeStorageProviderID.value = to
+    void resumeStorageSync()
+    return
+  }
+  const metas = await getLocalCanvasStore().listMetas(true)
+  const pending = metas.filter(
+    (meta) =>
+      meta.syncTargetId === fromTarget &&
+      !meta.tombstoned &&
+      meta.bodyId !== null &&
+      meta.bodyId !== meta.syncedBodyId
+  ).length
+  switchRequest.value = { to, from: activeProvider.value.label, pending }
+  switchDialogOpen.value = true
+}
+
+async function confirmActivation(): Promise<void> {
+  const request = switchRequest.value
+  if (!request) return
+  const fromTarget = currentTargetIdFor(activeStorageProviderID.value)
+  switchDialogOpen.value = false
+  if (fromTarget) await disconnectStorageTarget(fromTarget)
+  activeStorageProviderID.value = request.to
+  switchRequest.value = null
+  void resumeStorageSync()
+}
 
 function initialPreferenceDrafts(providerID: StorageProviderID): Record<string, string> {
   const stored = readStoragePreferences(providerID)
@@ -167,12 +252,14 @@ async function testConnection(): Promise<void> {
   }
 }
 
-watch(activeStorageProviderID, (providerID) => {
+// Keyed to the FORM, not the destination: selecting a provider loads its saved
+// settings. `resumeStorageSync` is deliberately not called here — reading a
+// provider's setup is not a reason to touch the queue.
+watch(panelProviderID, (providerID) => {
   preferenceDrafts.value = initialPreferenceDrafts(providerID)
   credentialDrafts.value = emptyCredentialDrafts(providerID)
   result.value = null
   void refreshStatuses()
-  void resumeStorageSync()
 })
 
 onMounted(() => void refreshStatuses())
@@ -209,7 +296,7 @@ onMounted(() => void refreshStatuses())
     <label class="flex flex-col gap-1 text-[10px] text-muted">
       {{ dialogs.storageProvider }}
       <AppSelect
-        v-model="activeStorageProviderID"
+        v-model="panelProviderID"
         :label="dialogs.storageProvider"
         :options="providerOptions"
         data-test-id="settings-storage-provider"
@@ -332,6 +419,26 @@ onMounted(() => void refreshStatuses())
     </button>
 
     <!--
+      Only for a provider that is not the destination and could actually become
+      one. Shown disabled while incomplete rather than hidden, so the path from
+      "filling this in" to "using it" is visible before the form is valid.
+    -->
+    <div v-if="!isActiveProvider" class="flex flex-col gap-1">
+      <button
+        type="button"
+        class="flex items-center justify-center gap-1.5 rounded border border-accent px-3 py-1.5 text-[11px] font-medium text-accent hover:bg-accent/10 disabled:border-border disabled:text-muted disabled:opacity-50"
+        :disabled="!configured"
+        data-test-id="settings-storage-activate"
+        @click="requestActivation"
+      >
+        {{ dialogs.storageUseProvider({ provider: provider.label }) }}
+      </button>
+      <p class="text-[10px] text-muted">
+        {{ dialogs.storageActiveProvider({ provider: activeProvider.label }) }}
+      </p>
+    </div>
+
+    <!--
       Directly under the button that produces it. This used to render after
       "Open workspace" at the very bottom of the panel, so a failed test showed
       its message below the fold and read as if nothing had happened at all.
@@ -385,5 +492,54 @@ onMounted(() => void refreshStatuses())
     >
       {{ dialogs.openStorageWorkspace }}
     </button>
+
+    <AppAlertDialogRoot
+      v-model:open="switchDialogOpen"
+      data-test-id="settings-storage-switch-dialog"
+    >
+      <div class="border-b border-border px-4 py-3">
+        <AlertDialogTitle class="text-sm font-semibold text-surface">
+          {{ dialogs.storageSwitchTitle }}
+        </AlertDialogTitle>
+      </div>
+      <AppDialogBody>
+        <AlertDialogDescription class="text-xs text-muted">
+          {{ dialogs.storageSwitchBody({ from: switchRequest?.from ?? '' }) }}
+        </AlertDialogDescription>
+        <!--
+          Only shown when there is something to lose. A standing warning about
+          unsynced work on every switch would train people to click through it.
+        -->
+        <p
+          v-if="(switchRequest?.pending ?? 0) > 0"
+          class="mt-2 text-xs text-[var(--color-warning-action)]"
+          data-test-id="settings-storage-switch-pending"
+        >
+          {{
+            dialogs.storageSwitchPending({
+              count: switchRequest?.pending ?? 0,
+              from: switchRequest?.from ?? ''
+            })
+          }}
+        </p>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <AlertDialogCancel as-child>
+          <button type="button" class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover">
+            {{ dialogs.cancel }}
+          </button>
+        </AlertDialogCancel>
+        <AlertDialogAction as-child>
+          <button
+            type="button"
+            class="rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent/90"
+            data-test-id="settings-storage-switch-confirm"
+            @click="confirmActivation"
+          >
+            {{ dialogs.storageSwitchConfirm }}
+          </button>
+        </AlertDialogAction>
+      </AppDialogFooter>
+    </AppAlertDialogRoot>
   </section>
 </template>

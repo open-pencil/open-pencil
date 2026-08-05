@@ -216,6 +216,16 @@ export const dialogMessageDefaults = {
   syncErrorLikelyCause: 'Likely cause',
   syncErrorCorsConfiguration: 'Bucket CORS configuration',
   syncRetryNow: 'Retry now',
+  storageUseProvider: params('Use {provider} for cloud storage'),
+  storageActiveProvider: params('Currently syncing to {provider}.'),
+  storageSwitchTitle: 'Switch storage provider?',
+  storageSwitchBody: params(
+    'This device stops syncing to {from}. Documents backed up there are kept here as local files, and nothing is removed from {from}. Documents listed from the bucket but never downloaded disappear until you connect to it again.'
+  ),
+  storageSwitchPending: params(
+    '{count} document(s) have not finished uploading to {from}. Cancel, wait for syncing to finish, then switch — otherwise those changes only exist on this device.'
+  ),
+  storageSwitchConfirm: 'Switch provider',
   syncConflictTitle: 'Sync conflict',
   syncConflictDescription: params('{name} was changed on another device since this one synced it.'),
   syncConflictBody:

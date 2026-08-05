@@ -159,7 +159,7 @@ export const BACKBLAZE_STORAGE_PROVIDER = defineStorageProvider({
 
 export const R2_STORAGE_PROVIDER = defineStorageProvider({
   id: 'cloudflare-r2',
-  label: 'Cloudflare R2',
+  label: 'Cloudflare R2 (S3)',
   icon: cloudflareLogoUrl,
   description:
     'Create an R2 bucket and an R2 API token with Object Read & Write, then copy the bucket name and the S3 API endpoint from the bucket settings. Browser use requires adding a CORS policy to the bucket.',
