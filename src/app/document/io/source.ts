@@ -57,10 +57,17 @@ export function createDocumentSourceActions({
 
   function buildNativeFile() {
     const renderer = getRenderer() ?? undefined
-    // The exporter renders a thumbnail only when it has BOTH CanvasKit and a
-    // renderer. Passing undefined here is why every browser-authored document
-    // shipped a 1x1 placeholder — which then forced the workspace to download
-    // whole documents just to draw its grid.
+    // The live renderer when there is one, a headless render when there is not.
+    //
+    // A save routinely outlives the canvas that drew the document: closing a tab
+    // disposes its renderer, returning to the workspace unmounts the editor
+    // before the flush that repaints the grid, and a tab that is merely open in
+    // the background never received a renderer at all — one canvas serves
+    // whichever tab is active. Every one of those saves used to ship a 1x1
+    // placeholder, which then forced the workspace to download whole documents
+    // just to draw its grid. Asking for the headless fallback costs nothing when
+    // a renderer is present, and the exporter never lets it delay or fail the
+    // write.
     const ck = renderer?.ck
     if (currentSourceFormat() === 'deck') {
       return exportDeckFile(
@@ -68,11 +75,11 @@ export function createDocumentSourceActions({
         ck,
         renderer,
         state.currentPageId,
-        false,
+        true,
         getDownloadName() || state.documentName
       )
     }
-    return exportFigFile(editor.graph, ck, renderer, state.currentPageId)
+    return exportFigFile(editor.graph, ck, renderer, state.currentPageId, true)
   }
 
   // A document created blank has nothing worth keeping until it holds

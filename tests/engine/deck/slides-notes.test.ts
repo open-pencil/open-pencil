@@ -10,7 +10,8 @@ import {
   getSlideSpeakerNotes,
   normalizeDeckCanvasPrelude,
   restructureDeckNodeChanges,
-  setSlideSpeakerNotes
+  setSlideSpeakerNotes,
+  speakerNotesPlainText
 } from '@open-pencil/deck'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
@@ -18,9 +19,23 @@ import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
 const NOTES_ONE = 'Remember to mention the exposure curve here.'
 const NOTES_TWO = 'Pause before the pricing slide.'
 
+/**
+ * Notes as a person reads them, not as the field stores them.
+ *
+ * The field carries a serialised Lexical editor state — that is the format the
+ * exporting application defines — so asserting raw string equality would pin
+ * the serialisation rather than the behaviour under test: that each slide keeps
+ * its own note across a save.
+ */
 function slideNotesIn(bytes: Uint8Array): (string | undefined)[] {
   const decoded = decodeFigKiwiCanvas(normalizeDeckCanvasPrelude(unzipSync(bytes)['canvas.fig']))
-  return decoded.nodeChanges.filter((nc) => nc.type === 'SLIDE').map((nc) => nc.slideSpeakerNotes)
+  return decoded.nodeChanges
+    .filter((nc) => nc.type === 'SLIDE')
+    .map((nc) =>
+      typeof nc.slideSpeakerNotes === 'string'
+        ? speakerNotesPlainText(nc.slideSpeakerNotes)
+        : nc.slideSpeakerNotes
+    )
 }
 
 describe('slide speaker notes', () => {

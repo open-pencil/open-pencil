@@ -77,8 +77,10 @@
 - Center empty and setup states consistently across panels, dialogs, and workspaces.
 
 ### Fixed
+- Stop rewriting a `.deck` that nobody edited. Opening a deck minted a new identifier for every slide, and saving renumbered the slide scaffolding to match, so an untouched presentation produced different bytes on every open-and-close and re-uploaded itself to cloud storage each time. Slides now keep the identity the archive stores, and a save with no edits is byte-identical.
 - Stop hiding documents when the storage provider changes: the workspace lists every document held on this device, whatever destination it syncs to, and each card states where it lives — backed up here, backed up to another provider, detached from one, or on this device only. A scope filter narrows the list to the active destination when asked, and an empty list now says which emptiness it means instead of reporting "No stored documents yet." over a full library.
 - Show the saved stage colour in workspace document thumbnails: headless thumbnail rendering applies the page's stored `backgroundColor` instead of the default grey, and returning to the workspace flushes pending autosaves first so a card never paints the stale raster from before a colour change.
+- Embed a real preview in every saved `.fig` and `.deck` instead of a 1×1 placeholder. A save often runs after the canvas is gone — closing a tab, leaving for the workspace, or saving a background tab — so the exporter now renders the thumbnail on its own CanvasKit when no live renderer is available, without letting that render delay or fail the write.
 
 - Scale proportion-constrained `.fig` instance geometry through fixed wrapper layers so imported logos and icons retain their intended size.
 - Match Figma auto-layout spacing, padding, min/max constraints, scalar variable bindings, CanvasKit-shaped generated text, imported text bounds, and nested instance geometry more closely.
