@@ -503,6 +503,20 @@ export function renderNodesToImage(
   return bytes
 }
 
+/**
+ * The slide artboard's corner radius, or 0 when it has none.
+ *
+ * Read from the node rather than assumed: a deck imported from Figma carries
+ * whatever radius the source used, and only the default is 15.
+ */
+function slideCornerRadius(graph: SceneGraph, childIds: readonly string[]): number {
+  for (const id of childIds) {
+    const radius = graph.getNode(id)?.cornerRadius
+    if (typeof radius === 'number' && radius > 0) return radius
+  }
+  return 0
+}
+
 export function renderThumbnail(
   ck: CanvasKit,
   renderer: SkiaRenderer,
@@ -530,8 +544,30 @@ export function renderThumbnail(
    * gap between a text node's measured box and the pixels its glyphs actually
    * cover, which was clipping wide headlines at the frame edge.
    */
-  const PADDING = 0.92
-  const scale = Math.min((width * PADDING) / contentW, (height * PADDING) / contentH, 2)
+  /**
+   * Slides are full-bleed; design documents are compositions with margin.
+   *
+   * A deck page IS the artwork — 1920x1080 edge to edge — so insetting it
+   * framed every preview in the slide's own background colour, which read as a
+   * white border around the picture rather than as breathing room.
+   */
+  const isDeck = graph.deckTheme !== null
+  const PADDING = isDeck ? 1 : 0.92
+
+  /**
+   * Crop a slide's rounded corners out of its own preview.
+   *
+   * The artboard is a rounded card so it reads as a slide on the editor's dark
+   * backdrop. Filling the frame with it then exposes the stage colour in the
+   * four corners — a handful of white pixels against the artwork, which reads
+   * as a rendering fault rather than as a corner. Insetting by the radius
+   * removes the curve entirely; on a 1920-wide slide that is 15px, under 1% of
+   * the width, and nothing of the composition is lost.
+   */
+  const cornerInset = isDeck ? slideCornerRadius(graph, page.childIds) : 0
+  const fitW = Math.max(1, contentW - cornerInset * 2)
+  const fitH = Math.max(1, contentH - cornerInset * 2)
+  const scale = Math.min((width * PADDING) / fitW, (height * PADDING) / fitH, 2)
 
   // Read the stage colour from the DOCUMENT, not from the renderer.
   // `renderer.pageColor` is live editor state, synced only as a side effect of
