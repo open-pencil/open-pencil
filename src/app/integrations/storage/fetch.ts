@@ -1,7 +1,7 @@
 import { isTauri } from '@/app/tauri/env'
 
 /** Avoid hung “Test connection” when CORS/network never resolves. */
-const STORAGE_FETCH_TIMEOUT_MS = 20_000
+export const STORAGE_FETCH_TIMEOUT_MS = 20_000
 /** Sustained uplink assumed for large bodies; below it, part retry — not a timeout — is the remedy. */
 const STORAGE_FETCH_TIMEOUT_BYTES_PER_SECOND = 256 * 1024
 const STORAGE_FETCH_TIMEOUT_MAX_MS = 5 * 60_000
@@ -17,7 +17,14 @@ export function storageFetchTimeoutForBody(byteLength: number | null | undefined
   return Math.min(STORAGE_FETCH_TIMEOUT_MAX_MS, STORAGE_FETCH_TIMEOUT_MS + transferMs)
 }
 
-function withTimeoutSignal(
+/**
+ * A signal that aborts on timeout, still honouring one the caller supplied.
+ *
+ * Exported so a provider that cannot use `storageFetch` itself — Appwrite sends
+ * `FormData` and must stay on the platform `fetch` — still gets the same hang
+ * protection rather than growing its own copy of it.
+ */
+export function withTimeoutSignal(
   timeoutMs: number,
   init?: RequestInit
 ): {

@@ -244,6 +244,29 @@ describe('bucket resolution stays on browser-usable calls', () => {
     globalThis.fetch = originalFetch
   })
 
+  test('a request that never answers times out instead of hanging', async () => {
+    // A wrong endpoint or a CORS preflight that never resolves left "Test
+    // connection" spinning with nothing to cancel it.
+    const config: AppwriteConfig = {
+      endpoint: 'https://fra.cloud.appwrite.io/v1',
+      projectId: 'project-1',
+      bucketId: 'bucket-1',
+      apiKey: 'appwrite-api-key'
+    }
+
+    let signal: AbortSignal | null = null
+    globalThis.fetch = async (_input, init) => {
+      signal = init?.signal ?? null
+      return jsonResponse({ type: 'storage_file_not_found' }, 404)
+    }
+
+    await getObject(config, config.bucketId, 'doc.fig')
+
+    // The bug was that no signal reached `fetch` at all, so nothing could ever
+    // cancel the request. How long it waits is `withTimeoutSignal`'s business.
+    expect(signal).toBeInstanceOf(AbortSignal)
+  })
+
   test('reading from a bucket that does not exist says so, instead of "no such document"', async () => {
     // Appwrite answers 404 for a missing FILE and a missing BUCKET alike, and
     // only the error `type` separates them. `headObject` and `deleteObject`

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import { listObjects, type AppwriteConfig } from '@/app/integrations/storage/appwrite/client'
-import { storageFetch, storageFetchTimeoutForBody } from '@/app/integrations/storage/s3/fetch'
+import { storageFetch, storageFetchTimeoutForBody } from '@/app/integrations/storage/fetch'
 
 const APPWRITE: AppwriteConfig = {
   endpoint: 'https://fra.cloud.appwrite.io/v1',

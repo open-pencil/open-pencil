@@ -1,6 +1,6 @@
 import { AwsClient } from 'aws4fetch'
 
-import { storageFetch, storageFetchTimeoutForBody } from '@/app/integrations/storage/s3/fetch'
+import { storageFetch, storageFetchTimeoutForBody } from '@/app/integrations/storage/fetch'
 import { inferS3Region } from '@/app/integrations/storage/s3/region'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
 import {
