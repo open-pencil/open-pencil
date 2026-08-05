@@ -17,6 +17,7 @@ export { parsePenFile, readPenFile } from '@open-pencil/pen'
 export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './formats/jsx'
 export {
   computeContentBounds,
+  isUniformPixels,
   renderNodesToImage,
   renderNodesToPixels,
   renderThumbnail,

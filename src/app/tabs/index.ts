@@ -307,6 +307,11 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
   // made every deck open behind a design-document shell — a pencil and a Pages
   // list for a second, then a flip to slides.
   store.setDocumentKind(documentKindForSourceFormat(document.sourceFormat))
+  // Same reason, for the same reason it must be early: caches keyed on the document cannot
+  // name it until this is set, so a filmstrip mounting during the load looked up a key
+  // nothing was stored under and showed placeholders over thumbnails already on disk.
+  // Identity only — `setStorageDocumentSource` below still owns saveability.
+  store.setStorageDocumentIdentity({ providerId, documentId: document.id })
   store.state.loading = true
   try {
     const local = getLocalCanvasStore()

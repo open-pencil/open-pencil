@@ -4,7 +4,7 @@ export {
   renderNodesToPixels,
   renderThumbnail,
   type RasterExportFormat,
-  type ExportFormat,
-  type RenderedPixels
+  type ExportFormat
 } from './render'
+export { copyAndUnpremultiplyPixels, isUniformPixels, type RenderedPixels } from './pixels'
 export { initCanvasKit, headlessRenderNodes, headlessRenderThumbnail } from './headless'

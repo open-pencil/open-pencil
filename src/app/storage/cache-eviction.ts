@@ -1,8 +1,23 @@
+import { pruneThumbnailsForMissingDocuments } from '@/app/editor/thumbnails/store'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 
 /** Keep at most this much cached fig data on device (metas/thumbs are tiny and stay). */
 export const FIG_CACHE_BUDGET_BYTES = 500 * 1024 * 1024
+
+/**
+ * Drop cached slide thumbnails for documents this device no longer holds.
+ *
+ * Reads the list with tombstones included on purpose: a trashed document can be restored,
+ * and it should come back with its filmstrip intact. Only documents that are gone from the
+ * store entirely count as deleted.
+ */
+export async function evictThumbnailsOfDeletedDocuments(): Promise<number> {
+  const metas = await getLocalCanvasStore().listMetas(true)
+  const removed = await pruneThumbnailsForMissingDocuments(metas.map((meta) => meta.id))
+  if (removed > 0) console.warn(`[Storage] Dropped ${removed} thumbnail(s) of deleted documents`)
+  return removed
+}
 
 /**
  * Evict least-recently-opened fig blobs until the cache fits the budget.

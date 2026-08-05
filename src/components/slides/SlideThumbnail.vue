@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, shallowRef, toRef, useTemplateRef, watch } f
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { getSlideThumbnail, isRenderedThumbnail } from '@/app/editor/thumbnails/cache'
+import { thumbnailDocumentId } from '@/app/editor/thumbnails/document'
 import { SLIDE_THUMB_MAX_WIDTH } from '@/constants'
 
 const { pageId, alt, scrollTarget } = defineProps<{
@@ -30,7 +31,7 @@ let previewRequest: AbortController | null = null
 
 /** Page ids repeat across documents, so the cache key needs the document too. */
 function documentId(): string {
-  return editor.getDocumentFilePath?.() || editor.state.documentName || 'untitled'
+  return thumbnailDocumentId(editor)
 }
 
 async function updatePreview(stale = false) {
@@ -51,7 +52,7 @@ async function updatePreview(stale = false) {
         // Raw pixels skip the PNG encode/decode round trip, formerly the dominant cost.
         return editor.renderExportPixels(Math.max(scale, 0.05), pageId)
       },
-      { stale, signal: controller.signal }
+      { stale, signal: controller.signal, defer: editor.state.loading }
     )
     if (currentRequest !== requestId) return
     // Keep whatever is on screen if a render came back empty: a slightly stale thumbnail
@@ -79,8 +80,18 @@ const editedVersion = computed(() =>
   pageId === editor.state.currentPageId ? editor.state.sceneVersion : null
 )
 
+/**
+ * The graph is swapped in before a document has finished opening, so the filmstrip mounts
+ * over slides whose content is not on the canvas yet. Rastering then produces an empty
+ * frame — for the first slide, the only one visible at that moment, every time.
+ *
+ * Watching `loading` runs this again the moment the document is ready, so a slide that had
+ * nothing to show is drawn then. The request itself is still made while loading, because
+ * `defer` suppresses only the render: a thumbnail already in memory or on disk appears
+ * immediately rather than waiting out the load behind a placeholder.
+ */
 watch(
-  () => [pageId, editedVersion.value, isVisible.value] as const,
+  () => [pageId, editedVersion.value, isVisible.value, editor.state.loading] as const,
   ([, version, visible], previous) => {
     if (!visible) {
       requestId++

@@ -182,6 +182,22 @@ export function createDocumentSourceActions({
     provisional = options.provisional ?? false
   }
 
+  /**
+   * Name which workspace document this tab is, before its bytes have been parsed.
+   *
+   * Caches keyed on the document — the slide filmstrip's is one — otherwise cannot name it
+   * until the load finishes, and spend the whole load reading a key nothing was stored
+   * under, showing placeholders over thumbnails that are sitting right there.
+   *
+   * Identity ONLY, deliberately. `setStorageDocumentSource` is what makes a document
+   * saveable, and it must stay where it is: enabling autosave or pinning a saved version
+   * before `replaceGraph` has run pins the version of the document being replaced, so the
+   * load itself reads as an edit and an untouched document uploads itself on open.
+   */
+  function setStorageDocumentIdentity(binding: StorageDocumentBinding) {
+    setStorageBinding(binding)
+  }
+
   function setPlannedFilePath(path: string) {
     stopWatchingFile()
     setStorageBinding(null)
@@ -206,6 +222,7 @@ export function createDocumentSourceActions({
     exportNativeDocument: buildNativeFile,
     setDocumentSource,
     setStorageDocumentSource,
+    setStorageDocumentIdentity,
     isProvisionalDocument,
     setPlannedFilePath,
     startWatchingCurrentFile,

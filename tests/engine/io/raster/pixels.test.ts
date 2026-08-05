@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { copyAndUnpremultiplyPixels } from '#core/io/formats/raster/render'
+import { copyAndUnpremultiplyPixels } from '#core/io/formats/raster/pixels'
 
 describe('raw raster pixels', () => {
   test('copies pixels whose alpha needs no conversion', () => {

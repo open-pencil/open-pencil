@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { refAutoReset, useEventListener, useResizeObserver } from '@vueuse/core'
-import { computed, ref, useTemplateRef, type ComponentPublicInstance } from 'vue'
+import { computed, ref, useTemplateRef, watch, type ComponentPublicInstance } from 'vue'
 import { tv } from 'tailwind-variants'
 
 import { addEmptySlide } from '@open-pencil/deck'
 import { useFlatReorderDrag, useI18n, usePageList } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { thumbnailDocumentId } from '@/app/editor/thumbnails/document'
+import { pruneStoredThumbnails } from '@/app/editor/thumbnails/store'
 import Tip from '@/components/ui/Tip.vue'
 import SlideThumbnail from '@/components/slides/SlideThumbnail.vue'
 import { SLIDE_THUMB_INDEX_GUTTER, SLIDE_THUMB_MAX_WIDTH, SLIDE_THUMB_MIN_WIDTH } from '@/constants'
@@ -16,6 +18,23 @@ const editor = useEditorStore()
 const { panels } = useI18n()
 const { pages, currentPageId, switchPage, movePage } = usePageList()
 const styles = tv(slidesRailTheme)
+
+/**
+ * A loaded document is the only moment its page list is known to be complete, and so the
+ * only moment it is safe to say which stored thumbnails belong to pages that are gone.
+ */
+watch(
+  () => [editor.state.loading, pages.value.length] as const,
+  ([loading, count]) => {
+    if (loading || count === 0) return
+    void pruneStoredThumbnails(
+      thumbnailDocumentId(editor),
+      pages.value.map((page) => page.id)
+    )
+  },
+  { immediate: true }
+)
+
 /** Editing affordances are withheld while this window is driving a presentation. */
 const presenterMode = computed(() => editor.state.presenterMode)
 const base = styles()

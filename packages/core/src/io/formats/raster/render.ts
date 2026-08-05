@@ -6,6 +6,7 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 
 import type { SkiaRenderer } from '#core/canvas'
 import type { RenderColorSpace } from '#core/color/management'
+import { copyAndUnpremultiplyPixels, type RenderedPixels } from '#core/io/formats/raster/pixels'
 import { startRasterProfile } from '#core/io/formats/raster/profile'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
@@ -347,32 +348,6 @@ function prepareNodeRender(
   }
 
   return { bounds, pixelW, pixelH, renderGraph, renderPageId }
-}
-
-export interface RenderedPixels {
-  /** Unpremultiplied RGBA, ready for `ImageData`. */
-  pixels: Uint8Array
-  width: number
-  height: number
-}
-
-/** Copy CanvasKit's direct premultiplied buffer into `ImageData`-ready RGBA bytes. */
-export function copyAndUnpremultiplyPixels(pixels: Uint8Array): Uint8Array {
-  const copied = new Uint8Array(pixels)
-  for (let index = 3; index < pixels.length; index += 4) {
-    const alpha = pixels[index]
-    if (alpha === 255) continue
-    if (alpha === 0) {
-      copied[index - 3] = 0
-      copied[index - 2] = 0
-      copied[index - 1] = 0
-      continue
-    }
-    copied[index - 3] = Math.min(255, Math.round((pixels[index - 3] * 255) / alpha))
-    copied[index - 2] = Math.min(255, Math.round((pixels[index - 2] * 255) / alpha))
-    copied[index - 1] = Math.min(255, Math.round((pixels[index - 1] * 255) / alpha))
-  }
-  return copied
 }
 
 /**

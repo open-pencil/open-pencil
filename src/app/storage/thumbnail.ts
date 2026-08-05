@@ -1,6 +1,6 @@
 import { unzipSync } from 'fflate'
 
-import { parseDeckFile, parseFigFile } from '@open-pencil/core/io'
+import { isUniformPixels, parseDeckFile, parseFigFile } from '@open-pencil/core/io'
 import { headlessRenderThumbnail } from '@open-pencil/core/io/formats/raster'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 
@@ -65,22 +65,8 @@ export async function isBlankImage(bytes: Uint8Array): Promise<boolean> {
     const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d')
     if (!context) return false
     context.drawImage(bitmap, 0, 0)
-    const { data } = context.getImageData(0, 0, bitmap.width, bitmap.height)
-    if (data.length < 4) return false
-    // Sample on a stride that is coprime with the row width, so a run of
-    // identical pixels down one column cannot pass for a uniform image.
-    const stride = 4 * 97
-    for (let index = stride; index + 3 < data.length; index += stride) {
-      if (
-        data[index] !== data[0] ||
-        data[index + 1] !== data[1] ||
-        data[index + 2] !== data[2] ||
-        data[index + 3] !== data[3]
-      ) {
-        return false
-      }
-    }
-    return true
+    const { data, width } = context.getImageData(0, 0, bitmap.width, bitmap.height)
+    return isUniformPixels(new Uint8Array(data.buffer, data.byteOffset, data.byteLength), width)
   } catch {
     return false
   }

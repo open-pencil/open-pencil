@@ -32,6 +32,7 @@ import {
   renameStorageDocument,
   restoreStorageDocument
 } from '@/app/storage/documents'
+import { evictThumbnailsOfDeletedDocuments } from '@/app/storage/cache-eviction'
 import { storageCredentialsSatisfied } from '@/app/storage/configured'
 import { storageDocumentIconUrls } from '@/app/storage/document-icons'
 import { useDocumentSyncErrors } from '@/app/storage/document-sync-errors'
@@ -478,6 +479,10 @@ async function refresh(): Promise<void> {
   await flushOpenTabSaves()
   loading.value = true
   error.value = null
+  // Deleting a document leaves its cached thumbnails behind, and nothing that runs while a
+  // document is open can reach them. Fire-and-forget: this is housekeeping, and the listing
+  // must not wait on it.
+  void evictThumbnailsOfDeletedDocuments()
   await paintLocalDocuments(generation, providerId)
   try {
     const statuses = await storageCredentialStatuses(providerId)

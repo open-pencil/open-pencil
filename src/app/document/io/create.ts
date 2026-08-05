@@ -72,6 +72,7 @@ export function createDocumentIOActions(
     getStorageBinding: sourceState.getStorageBinding,
     setDocumentSource: sourceActions.setDocumentSource,
     setStorageDocumentSource: sourceActions.setStorageDocumentSource,
+    setStorageDocumentIdentity: sourceActions.setStorageDocumentIdentity,
     isProvisionalDocument: sourceActions.isProvisionalDocument,
     setPlannedFilePath: sourceActions.setPlannedFilePath,
     startWatchingCurrentFile: sourceActions.startWatchingCurrentFile,
