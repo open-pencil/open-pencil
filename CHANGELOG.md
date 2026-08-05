@@ -33,6 +33,7 @@
 - Drop `.deck` files into the cloud storage workspace; create Design or Slides documents; and sort, rename, duplicate, trash, restore, or permanently delete stored documents with cached viewport-only thumbnails.
 - Connect Bunny Storage by copying an S3-enabled Storage Zone name, endpoint, and password; browser users need no manual CORS configuration.
 - Connect Appwrite with a dedicated scoped API key; OpenPencil selects or creates the storage bucket and registers its web platform automatically.
+- Connect Cloudflare R2 as a storage destination — the first provider that can *prevent* conflicting writes: its conditional-write support is verified live, so a head update that loses a race refuses the overwrite instead of silently clobbering.
 - Connect Backblaze B2 through a dedicated provider using its bucket name, S3 endpoint, application key ID, and application key.
 - Empty every document from the cloud storage Trash at once with an explicit permanent-deletion confirmation.
 - Cloud storage now keeps a versioned remote layout: every upload publishes an immutable,

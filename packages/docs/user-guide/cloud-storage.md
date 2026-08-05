@@ -44,18 +44,19 @@ No supported provider offers the conditional writes needed to *prevent* two devi
 
 What each provider offers the sync layer. Response-side behavior matters as much as request-side: a provider that lets a browser cache a mutable object can serve the wrong content, so all storage reads bypass the browser HTTP cache.
 
-| Capability | AWS S3 (reference) | B2 (S3 API) | Bunny (S3 mode) | Appwrite |
-|---|---|---|---|---|
-| Object user metadata (`x-amz-meta-*`) | yes (2 KB) | yes — `fileInfo`, 7 KB header budget | no | no (metadata in Appwrite DB) |
-| Conditional PUT (`If-Match` / `If-None-Match`) | yes | not documented | explicitly unsupported | no |
-| Multipart / chunked upload | yes | yes | yes (≤10,000 parts; 10-day sessions) | yes (5 MB chunks) |
-| ETag on `HeadObject` | yes | yes | no | n/a |
-| Same-key writes within one second | ordered | **may be processed out of order** | ordered | n/a (immutable files) |
-| `Cache-Control` on read responses | none by default | none observed | none observed | `private, max-age=3888000` (45 days) — bypassed via `cache: 'no-store'` |
-| File versions retained | optional | yes, by default | no | n/a |
+| Capability | AWS S3 (reference) | B2 (S3 API) | Cloudflare R2 | Bunny (S3 mode) | Appwrite |
+|---|---|---|---|---|---|
+| Object user metadata (`x-amz-meta-*`) | yes (2 KB) | yes — `fileInfo`, 7 KB header budget | yes | no | no (metadata in Appwrite DB) |
+| Conditional PUT (`If-Match` / `If-None-Match`) | yes | not documented | **yes — verified live** | explicitly unsupported | no |
+| Multipart / chunked upload | yes | yes | yes | yes (≤10,000 parts; 10-day sessions) | yes (5 MB chunks) |
+| ETag on `HeadObject` | yes | yes | yes (weak for chunked uploads) | no | n/a |
+| Same-key writes within one second | ordered | **may be processed out of order** | ordered | ordered | n/a (immutable files) |
+| `Cache-Control` on read responses | none by default | none observed | none by default | none observed | `private, max-age=3888000` (45 days) — bypassed via `cache: 'no-store'` |
+| File versions retained | optional | yes, by default | yes, by default | no | n/a |
 
 Notes:
 
 - **Backblaze B2 same-second writes.** B2 documents that multiple writes to one key within the same second may be processed out of order. OpenPencil's sync engine never issues two different payloads to one key in quick succession — body uploads write metadata read at completion — so this does not affect normal use. A live probe (10 rounds of back-to-back same-key writes, 2026-08-04) observed no reordering.
 - **Backblaze B2 multipart, verified live.** A 17 MB document uploaded through the multipart API (3 parts) round-tripped byte-identical; `UploadPart` returns ETags, and completion plus a subsequent single-PUT overwrite behave as expected (2026-08-04).
+- **Cloudflare R2 prevents conflicts.** The live probe (2026-08-04) confirmed `412 PreconditionFailed` on a stale `If-Match` and on `If-None-Match: *`, so R2 is the first destination registered with conflict *prevention*: a head update that loses a race refuses the overwrite instead of silently clobbering. One R2 quirk is handled: chunked (string-body) uploads get weak `W/` ETags, which `If-Match` must not use — the commit then degrades to detection, which still covers the race.
 - **Bunny maturity.** Bunny's S3 compatibility is described as public preview on one vendor page and beta on another; treat it as preview software.

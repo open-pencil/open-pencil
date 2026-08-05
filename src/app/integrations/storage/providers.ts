@@ -1,6 +1,7 @@
 import appwriteLogoUrl from '@/assets/appwrite-logo.svg'
 import backblazeLogoUrl from '@/assets/backblaze-logo.svg'
 import bucketIconUrl from '@/assets/bucket.svg'
+import cloudflareLogoUrl from '@/assets/cloudflare-logo.svg'
 import bunnyLogoUrl from '@/assets/logo-bunnynet-icon.svg'
 
 import { createAppwriteStorageAdapter } from './appwrite/adapter'
@@ -23,6 +24,13 @@ import {
   BUNNY_PASSWORD_FIELD,
   BUNNY_STORAGE_ZONE_FIELD
 } from './bunny/config'
+import { createR2StorageAdapter } from './r2/adapter'
+import {
+  R2_ACCESS_KEY_ID_FIELD,
+  R2_BUCKET_FIELD,
+  R2_ENDPOINT_FIELD,
+  R2_SECRET_ACCESS_KEY_FIELD
+} from './r2/config'
 import { defineStorageProvider, StorageProviderRegistry } from './registry'
 import { createS3StorageAdapter } from './s3/adapter'
 
@@ -149,6 +157,44 @@ export const BACKBLAZE_STORAGE_PROVIDER = defineStorageProvider({
   createAdapter: createBackblazeStorageAdapter
 })
 
+export const R2_STORAGE_PROVIDER = defineStorageProvider({
+  id: 'cloudflare-r2',
+  label: 'Cloudflare R2',
+  icon: cloudflareLogoUrl,
+  description:
+    'Create an R2 bucket and an R2 API token with Object Read & Write, then copy the bucket name and the S3 API endpoint from the bucket settings. Browser use requires adding a CORS policy to the bucket.',
+  helpUrl: 'https://dash.cloudflare.com/?to=/:account/r2/overview',
+  helpLabel: 'Open the R2 dashboard',
+  pricingNote: '10 GB stored free per month, and no egress fees.',
+  corsConfiguration: 's3',
+  preferenceFields: [
+    {
+      id: R2_BUCKET_FIELD,
+      label: 'Bucket',
+      kind: 'text',
+      required: true,
+      placeholder: 'openpencil-r2'
+    },
+    {
+      id: R2_ENDPOINT_FIELD,
+      label: 'S3 API endpoint',
+      kind: 'url',
+      required: true,
+      placeholder: 'https://<account-id>.r2.cloudflarestorage.com'
+    }
+  ],
+  credentialFields: [
+    { id: R2_ACCESS_KEY_ID_FIELD, label: 'Access key ID', required: true },
+    { id: R2_SECRET_ACCESS_KEY_FIELD, label: 'Secret access key', required: true }
+  ],
+  // R2 is the first provider able to PREVENT a clobbering write rather than
+  // only detect one: the live probe (scratch/b2-cas-probe.sh, 2026-08-04)
+  // confirmed 412 PreconditionFailed on a stale If-Match and on
+  // If-None-Match '*', so the conditional head update ships enabled.
+  conflictProtection: 'prevent',
+  createAdapter: createR2StorageAdapter
+})
+
 export const S3_STORAGE_PROVIDER = defineStorageProvider({
   id: 's3-compatible',
   label: 'Generic S3',
@@ -175,5 +221,6 @@ export const storageProviderRegistry = new StorageProviderRegistry([
   APPWRITE_STORAGE_PROVIDER,
   BUNNY_STORAGE_PROVIDER,
   BACKBLAZE_STORAGE_PROVIDER,
+  R2_STORAGE_PROVIDER,
   S3_STORAGE_PROVIDER
 ])
