@@ -10,9 +10,9 @@ const OTHER = 's3-compatible#bbbbbbbb'
 function deps(store: LocalCanvasStore) {
   return {
     store,
-    enqueueCanvas: vi.fn(async () => {}),
-    enqueueMetadata: vi.fn(async () => {}),
-    enqueueThumbnail: vi.fn(async () => {}),
+    enqueueCanvas: vi.fn(async () => undefined),
+    enqueueMetadata: vi.fn(async () => undefined),
+    enqueueThumbnail: vi.fn(async () => undefined),
     enqueueDelete: vi.fn(async () => undefined)
   }
 }

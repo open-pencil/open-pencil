@@ -33,7 +33,7 @@ function keyOf(url: string): string {
   const { pathname } = new URL(url)
   const marker = 'open_pencil_storage/canvases/'
   const index = pathname.indexOf(marker)
-  return index >= 0 ? pathname.slice(index + marker.length) : pathname
+  return index !== -1 ? pathname.slice(index + marker.length) : pathname
 }
 
 function listBody(fixture: StorageFixture): string {

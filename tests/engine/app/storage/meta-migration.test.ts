@@ -30,7 +30,7 @@ function row(overrides: AnyStoredRow = {}): LocalCanvasMeta {
     figSize: 2048,
     lastOpenedAt: '2026-05-05T00:00:00.000Z',
     ...overrides
-  } as unknown as LocalCanvasMeta
+  } as LocalCanvasMeta
 }
 
 describe('normalizeLocalCanvasMeta', () => {

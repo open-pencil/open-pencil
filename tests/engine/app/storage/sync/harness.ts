@@ -181,7 +181,10 @@ export function faultyAdapter(config: FaultConfig, inner = recordingAdapter()): 
 
 /** Let the engine's promise chain (store reads, outbox writes, adapter) finish. */
 export async function settle(turns = 6): Promise<void> {
-  for (let i = 0; i < turns; i++) await new Promise((resolve) => setTimeout(resolve, 0))
+  for (let i = 0; i < turns; i++)
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0)
+    })
 }
 
 export type Harness = {

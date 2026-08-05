@@ -69,16 +69,14 @@ export function normalizeLocalCanvasMeta(
     providerId: legacyProvider,
     ...rest
   } = meta as LegacyMeta
+  // Evaluated lazily: a row that already carries a target must not re-resolve.
+  const legacyTarget = (): StorageTargetID | null =>
+    legacyProvider ? resolveTarget(legacyProvider) : null
   return {
     ...rest,
     // `syncTargetId === undefined` means a pre-target row. `null` is a real,
     // migrated value meaning local-only, so it must not be re-resolved.
-    syncTargetId:
-      meta.syncTargetId !== undefined
-        ? meta.syncTargetId
-        : legacyProvider
-          ? resolveTarget(legacyProvider)
-          : null,
+    syncTargetId: meta.syncTargetId !== undefined ? meta.syncTargetId : legacyTarget(),
     sourceFormat: meta.sourceFormat === 'deck' ? 'deck' : 'fig',
     trashedAt: typeof meta.trashedAt === 'string' ? meta.trashedAt : null,
     // `hasFig` without a `bodyId` means a legacy row: bytes are present but

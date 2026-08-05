@@ -54,7 +54,10 @@ function buildEnvelope(
 
   // Sorted: archive iteration order is not stable across writers, and the same
   // content in a different order is the same body.
-  const sorted = [...entries].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  const sorted = [...entries].sort(([a], [b]) => {
+    if (a < b) return -1
+    return a > b ? 1 : 0
+  })
   parts.push(encodeLength(sorted.length))
   for (const [path, bytes] of sorted) {
     push(encodeText(path))

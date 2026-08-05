@@ -193,7 +193,7 @@ describe('conflict resolution', () => {
       store,
       outbox: createMemoryOutbox(),
       adapter,
-      enqueueCanvas: async () => {},
+      enqueueCanvas: async () => undefined,
       createId: () => 'copy-1'
     })
 

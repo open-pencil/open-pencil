@@ -93,7 +93,7 @@ export const syncEngine = createSyncEngine({
   resolveTarget: resolveConfiguredTarget,
   isOnline: () => (typeof navigator === 'undefined' ? true : navigator.onLine),
   subscribeConnectivity: (handlers) => {
-    if (!IS_BROWSER) return () => {}
+    if (!IS_BROWSER) return () => undefined
     const online = () => handlers.online()
     const offline = () => handlers.offline()
     window.addEventListener('online', online)

@@ -10,7 +10,8 @@ import {
   storageDocumentInScope,
   storageDocumentLocation,
   storageDocumentNeedsItsOwnTarget,
-  storageDocumentPlacements
+  storageDocumentPlacements,
+  type StorageDocumentPlacement
 } from '@/app/storage/visibility'
 
 const BACKBLAZE: StorageTargetID = 'backblaze-b2#aaaaaaaa'
@@ -289,8 +290,10 @@ describe('storageDocumentNeedsItsOwnTarget', () => {
     // `!== null` test reads that as "has a destination" and badges documents
     // that live only on this machine as backed up to a provider they have
     // never touched — a false claim about where the user's data is.
+    // The field is absent, not null — exactly how such a row deserializes.
+    const legacyRow: Partial<StorageDocumentPlacement> = {}
     const location = storageDocumentLocation(
-      { syncTargetId: undefined as unknown as null },
+      legacyRow as StorageDocumentPlacement,
       's3-compatible#aaaaaaaa'
     )
 

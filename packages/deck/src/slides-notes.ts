@@ -50,11 +50,15 @@ export function speakerNotesPlainText(value: string): string {
   return blocks.join('\n\n')
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 function readChild(value: unknown, key: string): Record<string, unknown> | null {
-  if (typeof value !== 'object' || value === null) return null
-  const child = (value as Record<string, unknown>)[key]
-  if (typeof child !== 'object' || child === null) return null
-  return child as Record<string, unknown>
+  if (!isRecord(value)) return null
+  const child = value[key]
+  if (!isRecord(child)) return null
+  return child
 }
 
 /** Top-level children become paragraphs; everything below them is inline text. */
@@ -70,8 +74,8 @@ function collectBlocks(root: Record<string, unknown>): string[] {
 }
 
 function collectText(node: unknown): string {
-  if (typeof node !== 'object' || node === null) return ''
-  const record = node as Record<string, unknown>
+  if (!isRecord(node)) return ''
+  const record = node
   // A linebreak node carries no text and must not silently join two words.
   if (record['type'] === 'linebreak') return '\n'
   const own = typeof record['text'] === 'string' ? record['text'] : ''

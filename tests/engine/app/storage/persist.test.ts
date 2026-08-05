@@ -58,7 +58,7 @@ describe('unchanged-content saves', () => {
    */
   test('do not enqueue an upload when the remote already holds these bytes', async () => {
     const store = createMemoryLocalCanvasStore()
-    const enqueueCanvas = vi.fn(async () => {})
+    const enqueueCanvas = vi.fn(async () => undefined)
     const figBytes = new Uint8Array([1, 2, 3])
     const options = {
       syncTargetId: 's3-compatible#00000000',
@@ -84,7 +84,7 @@ describe('unchanged-content saves', () => {
 
   test('still enqueue when the content actually changed', async () => {
     const store = createMemoryLocalCanvasStore()
-    const enqueueCanvas = vi.fn(async () => {})
+    const enqueueCanvas = vi.fn(async () => undefined)
     const base = {
       syncTargetId: 's3-compatible#00000000',
       canvasId: 'edited',
@@ -116,8 +116,8 @@ describe('local-only documents', () => {
    */
   test('a save with no destination commits locally and queues nothing', async () => {
     const store = createMemoryLocalCanvasStore()
-    const enqueueCanvas = vi.fn(async () => {})
-    const enqueueThumbnail = vi.fn(async () => {})
+    const enqueueCanvas = vi.fn(async () => undefined)
+    const enqueueThumbnail = vi.fn(async () => undefined)
 
     await persistStorageCanvasLocally(
       {
@@ -153,7 +153,7 @@ describe('local-only documents', () => {
         name: 'Only copy',
         figBytes: new Uint8Array([7, 7, 7])
       },
-      { store, enqueueCanvas: vi.fn(async () => {}) }
+      { store, enqueueCanvas: vi.fn(async () => undefined) }
     )
 
     const meta = await store.getMeta('only-copy')
@@ -162,7 +162,7 @@ describe('local-only documents', () => {
 
   test('connecting a destination later does enqueue the upload', async () => {
     const store = createMemoryLocalCanvasStore()
-    const enqueueCanvas = vi.fn(async () => {})
+    const enqueueCanvas = vi.fn(async () => undefined)
     const options = {
       canvasId: 'promoted',
       name: 'Promoted',
@@ -190,7 +190,7 @@ describe('pausing cloud backup', () => {
    */
   test('a paused save stays local and enqueues nothing', async () => {
     const store = createMemoryLocalCanvasStore()
-    const enqueueCanvas = vi.fn(async () => {})
+    const enqueueCanvas = vi.fn(async () => undefined)
     backupToCloud.value = false
 
     await persistStorageCanvasLocally(
@@ -213,7 +213,7 @@ describe('pausing cloud backup', () => {
 
   test('resuming uploads the work done while paused', async () => {
     const store = createMemoryLocalCanvasStore()
-    const enqueueCanvas = vi.fn(async () => {})
+    const enqueueCanvas = vi.fn(async () => undefined)
     const options = {
       syncTargetId: 's3-compatible#aaaaaaaa',
       canvasId: 'resumed',

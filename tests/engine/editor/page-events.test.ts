@@ -12,7 +12,7 @@ describe('editor page events', () => {
       fontFamily: 'Presenter Test Font'
     })
 
-    let resolveFont: (value: ArrayBuffer | null) => void = () => {}
+    let resolveFont: (value: ArrayBuffer | null) => void = () => undefined
     const fontLoaded = new Promise<ArrayBuffer | null>((resolve) => {
       resolveFont = resolve
     })

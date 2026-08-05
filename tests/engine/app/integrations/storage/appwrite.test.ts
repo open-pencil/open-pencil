@@ -67,7 +67,7 @@ function installStorageFetch(files: Map<string, StoredFile>): void {
     }
 
     const filesIndex = path.indexOf('/files')
-    if (filesIndex < 0) return jsonResponse({ message: 'Unexpected request' }, 500)
+    if (filesIndex === -1) return jsonResponse({ message: 'Unexpected request' }, 500)
     const suffix = path.slice(filesIndex + '/files'.length)
     if (!suffix || suffix === '/') {
       if (method === 'GET') {

@@ -61,7 +61,7 @@ export async function isBlankImage(bytes: Uint8Array): Promise<boolean> {
     return false
   }
   try {
-    const bitmap = await createImageBitmap(new Blob([bytes as unknown as BlobPart]))
+    const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)]))
     const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d')
     if (!context) return false
     context.drawImage(bitmap, 0, 0)
