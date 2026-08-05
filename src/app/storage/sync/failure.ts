@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-import type { StorageProviderID } from '@/app/integrations/storage/types'
+import { asStorageProviderID, type StorageProviderID } from '@/app/integrations/storage/types'
 import type { OutboxJobType } from '@/app/storage/sync/types'
 
 /**
@@ -55,6 +55,16 @@ export type SyncFailure = {
   /** HTTP status when the provider supplied one. */
   status: number | null
 }
+
+/**
+ * Stands in when a failure cannot honestly be attributed to any provider.
+ *
+ * Not a registered id, and deliberately not one: naming the active provider
+ * instead would read as "your current bucket rejected this" about a job that
+ * never named a destination. Branded here, once, so the sentinel is the only
+ * unregistered value that can reach a `providerId` field.
+ */
+export const UNKNOWN_PROVIDER = asStorageProviderID('unknown')
 
 export const lastSyncFailure = ref<SyncFailure | null>(null)
 

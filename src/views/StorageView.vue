@@ -20,7 +20,8 @@ import {
   nonSecretProviderContext,
   storagePreferencesComplete,
   storageProviderRegistry,
-  type StorageDocument
+  type StorageDocument,
+  type StorageProviderID
 } from '@/app/integrations/storage'
 import { openSettingsDialog, settingsDialogOpen } from '@/app/settings/dialog'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
@@ -397,11 +398,14 @@ function requestDocumentThumbnail(document: StorageDocument): void {
  */
 let refreshGeneration = 0
 
-function isCurrentRefresh(generation: number, providerId: string): boolean {
+function isCurrentRefresh(generation: number, providerId: StorageProviderID): boolean {
   return generation === refreshGeneration && providerId === activeStorageProviderID.value
 }
 
-async function paintLocalDocuments(generation: number, providerId: string): Promise<void> {
+async function paintLocalDocuments(
+  generation: number,
+  providerId: StorageProviderID
+): Promise<void> {
   // Resolve the destination before the listing, not inside the filter it feeds:
   // the bucket can be edited while this is in flight, and a target resolved
   // afterwards would attribute this pass's sync errors to a different bucket.

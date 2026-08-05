@@ -19,7 +19,8 @@ import {
   clearSyncFailure,
   httpStatusOf,
   recordSyncFailure,
-  syncFailureErrorText
+  syncFailureErrorText,
+  UNKNOWN_PROVIDER
 } from '@/app/storage/sync/failure'
 import { reconfirmVersionedBodies } from '@/app/storage/sync/migrate-layout'
 import type { Outbox } from '@/app/storage/sync/outbox'
@@ -27,9 +28,6 @@ import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUi } from '@/app/storage/sync/status'
 import type { OutboxJob, SyncUiState } from '@/app/storage/sync/types'
 import { providerIdOfTarget, targetIsCurrent, type StorageTargetID } from '@/app/storage/target'
-
-/** Provider label for a failure whose destination cannot be named at all. */
-const UNKNOWN_PROVIDER = 'unknown'
 
 const MAX_ATTEMPTS = 8
 const BASE_BACKOFF_MS = 1500
@@ -281,7 +279,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     // When neither it nor the row names a resolvable destination there is no
     // honest provider here, and labelling the failure with whatever is selected
     // now would read as "your current bucket rejected this".
-    const providerId = providerIdOfTarget(job.targetId ?? meta?.syncTargetId ?? '')
+    const providerId = providerIdOfTarget(job.targetId ?? meta?.syncTargetId ?? null)
     recordSyncFailure({
       operation: job.type,
       providerId: providerId ?? UNKNOWN_PROVIDER,

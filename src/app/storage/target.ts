@@ -4,11 +4,31 @@ import {
   type StorageProviderID
 } from '@/app/integrations/storage'
 
+declare const STORAGE_TARGET_ID: unique symbol
+
 /**
  * Identifies one immutable destination: a provider, its non-secret
  * configuration, and a reference to where its credentials live.
+ *
+ * Branded, so it cannot be compared with or assigned from a bare string. A
+ * target id and a provider id are both strings and read alike, which is how
+ * `document-sync-errors` came to filter rows with `syncTargetId === providerId()`
+ * — a comparison that is false for every row, because a target id is
+ * `provider#hash`. It emptied the error map on every failure. The brand makes
+ * that a compile error rather than something a reviewer has to notice.
  */
-export type StorageTargetID = string
+export type StorageTargetID = string & { readonly [STORAGE_TARGET_ID]: true }
+
+/**
+ * Label a string that is already a target id.
+ *
+ * The single place the brand is applied, so every entry point is greppable:
+ * ids derived here, and ids read back from storage, which arrive as plain
+ * strings. Do not use it to make a provider id fit.
+ */
+export function asStorageTargetID(value: string): StorageTargetID {
+  return value as StorageTargetID
+}
 
 export type StorageTarget = {
   id: StorageTargetID
@@ -50,7 +70,7 @@ function deriveTargetId(
     // character is unchanged, and it must stay unchanged — it feeds the hash
     // every stored `syncTargetId` was derived from.
     .join('\u0000')
-  return `${providerId}#${fnv1a(canonical)}`
+  return asStorageTargetID(`${providerId}#${fnv1a(canonical)}`)
 }
 
 /**
@@ -107,7 +127,10 @@ export function currentStorageTarget(providerId: StorageProviderID): StorageTarg
 }
 
 /** Provider a target id belongs to, recovered without consulting live state. */
-export function providerIdOfTarget(targetId: StorageTargetID): StorageProviderID | null {
+export function providerIdOfTarget(targetId: StorageTargetID | null): StorageProviderID | null {
+  // Accepts the absence directly. Callers used to pass `''` to mean "no target",
+  // which only worked because an empty string happens to parse to no provider.
+  if (targetId === null) return null
   const separator = targetId.indexOf('#')
   if (separator <= 0) return null
   const providerId = targetId.slice(0, separator) as StorageProviderID

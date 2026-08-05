@@ -1,13 +1,13 @@
 import { useLocalStorage } from '@vueuse/core'
 
 import { storageProviderRegistry } from './providers'
-import type { StorageFieldID, StorageProviderID } from './types'
+import { asStorageProviderID, type StorageFieldID, type StorageProviderID } from './types'
 
 export type StoragePreferences = Record<StorageProviderID, Record<StorageFieldID, string>>
 
 export const activeStorageProviderID = useLocalStorage<StorageProviderID>(
   'open-pencil:storage:provider',
-  's3-compatible'
+  asStorageProviderID('s3-compatible')
 )
 
 const storedPreferences = useLocalStorage<StoragePreferences>('open-pencil:storage:preferences', {})

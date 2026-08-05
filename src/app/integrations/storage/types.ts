@@ -1,6 +1,26 @@
 import type { CredentialResolver } from '@/app/settings/credentials/types'
 
-export type StorageProviderID = string
+declare const STORAGE_PROVIDER_ID: unique symbol
+
+/**
+ * Which storage backend, never which destination.
+ *
+ * Branded so it cannot be compared with a `StorageTargetID`, which is also a
+ * string and reads alike. `document-sync-errors` filtered rows with
+ * `syncTargetId === providerId()` — false for every row, because a target id is
+ * `provider#hash` — and silently emptied the error map. Branding one of the two
+ * is not enough: while the other stayed a bare `string` the branded one was
+ * still assignable to it, and the comparison still compiled.
+ */
+export type StorageProviderID = string & { readonly [STORAGE_PROVIDER_ID]: true }
+
+/**
+ * Label a string that is already a provider id — a registry key, or the stored
+ * preference naming the active backend. The single place the brand is applied.
+ */
+export function asStorageProviderID(value: string): StorageProviderID {
+  return value as StorageProviderID
+}
 export type StorageFieldID = string
 export type StorageDocumentFormat = 'fig' | 'deck'
 

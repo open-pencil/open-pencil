@@ -33,9 +33,10 @@ import {
 } from './r2/config'
 import { defineStorageProvider, StorageProviderRegistry } from './registry'
 import { createS3StorageAdapter } from './s3/adapter'
+import { asStorageProviderID } from './types'
 
 export const APPWRITE_STORAGE_PROVIDER = defineStorageProvider({
-  id: 'appwrite-storage',
+  id: asStorageProviderID('appwrite-storage'),
   label: 'Appwrite',
   icon: appwriteLogoUrl,
   description:
@@ -80,7 +81,7 @@ export const APPWRITE_STORAGE_PROVIDER = defineStorageProvider({
 })
 
 export const BUNNY_STORAGE_PROVIDER = defineStorageProvider({
-  id: 'bunny-storage',
+  id: asStorageProviderID('bunny-storage'),
   // Vendor pages disagree on maturity ("public preview" vs "beta") — stay conservative.
   label: 'Bunny Storage (S3 beta)',
   icon: bunnyLogoUrl,
@@ -117,7 +118,7 @@ export const BUNNY_STORAGE_PROVIDER = defineStorageProvider({
 })
 
 export const BACKBLAZE_STORAGE_PROVIDER = defineStorageProvider({
-  id: 'backblaze-b2',
+  id: asStorageProviderID('backblaze-b2'),
   label: 'Backblaze B2 (S3)',
   icon: backblazeLogoUrl,
   description:
@@ -158,7 +159,7 @@ export const BACKBLAZE_STORAGE_PROVIDER = defineStorageProvider({
 })
 
 export const R2_STORAGE_PROVIDER = defineStorageProvider({
-  id: 'cloudflare-r2',
+  id: asStorageProviderID('cloudflare-r2'),
   label: 'Cloudflare R2 (S3)',
   icon: cloudflareLogoUrl,
   description:
@@ -196,7 +197,7 @@ export const R2_STORAGE_PROVIDER = defineStorageProvider({
 })
 
 export const S3_STORAGE_PROVIDER = defineStorageProvider({
-  id: 's3-compatible',
+  id: asStorageProviderID('s3-compatible'),
   label: 'Generic S3',
   // A bucket rather than a brand: this entry is every S3-compatible service at
   // once, so no vendor mark would be honest. Sat iconless next to three logos.

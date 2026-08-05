@@ -1,11 +1,10 @@
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
-import { recordSyncFailure, type SyncFailure } from '@/app/storage/sync/failure'
+import { recordSyncFailure, UNKNOWN_PROVIDER, type SyncFailure } from '@/app/storage/sync/failure'
 import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
 import type { OutboxJob } from '@/app/storage/sync/types'
 
 /** Provider label for a job whose destination cannot be named at all. */
-const UNKNOWN_PROVIDER = 'unknown'
 
 export type LegacyJobMigrationDependencies = {
   getStore: () => LocalCanvasStore
