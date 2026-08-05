@@ -9,7 +9,9 @@ export {
 export {
   SLIDE_SPEAKER_NOTES_FIELD,
   getSlideSpeakerNotes,
-  setSlideSpeakerNotes
+  setSlideSpeakerNotes,
+  speakerNotesLexical,
+  speakerNotesPlainText
 } from './slides-notes'
 export type { CarriedSlideField, CarriedSlideFields } from './slide-fields'
 export { writeDeckArchive, defaultDeckMetaJson, type WriteDeckArchiveInput } from './archive'
