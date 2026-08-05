@@ -70,6 +70,26 @@ describe('conditional head updates (CAS)', () => {
     expect(plainIfMatches).toEqual([null])
   })
 
+  test('weak etags degrade to the non-conditional commit instead of self-conflicting', async () => {
+    // R2 answers chunked (string-body) uploads with W/ validators, and
+    // If-Match must not match weak ones — the commit must skip CAS, not 412
+    // against its own previous write.
+    const mock = installMemoryS3(CONFIG, { weakEtags: true })
+    const conditional = createS3StorageAdapterWithConfig(async () => CONFIG, {
+      conditionalHeadUpdates: true
+    })
+    const first = await writtenFor('V1', BODY)
+    await conditional.putDocumentVersion('doc', BODY, async () => first)
+    const second = await writtenFor('V2', BODY)
+    await conditional.putMetadataVersion('doc', second)
+
+    const headIfMatches = mock.requests
+      .filter((request) => request.method === 'PUT' && request.key === documentHeadKey('doc'))
+      .map((request) => request.ifMatch)
+    expect(headIfMatches).toEqual([null, null])
+    expect((await conditional.getDocumentMetadata('doc'))?.name).toBe('V2')
+  })
+
   test('a lost CAS race surfaces as a typed conflict and leaves the head untouched', async () => {
     const mock = installMemoryS3(CONFIG)
     const conditional = createS3StorageAdapterWithConfig(async () => CONFIG, {

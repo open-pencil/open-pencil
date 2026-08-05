@@ -108,14 +108,20 @@ async function writeHead(
   head: DocumentHead,
   ifMatch: string | null
 ): Promise<void> {
+  // Bytes, not a string body: R2 answers string (chunked) uploads with weak
+  // W/ etags, and If-Match must not match weak validators (RFC 7232) — which
+  // turned our own next commit into a spurious 412. Belt-and-braces, a weak
+  // validator is never sent as If-Match either; the commit then degrades to
+  // the non-conditional path (detection still covers the race).
+  const strongMatch = ifMatch !== null && !ifMatch.startsWith('W/') ? ifMatch : null
   try {
     await s3Request(config, objectUrl(config, documentHeadKey(id)), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        ...(ifMatch !== null ? { 'If-Match': ifMatch } : {})
+        ...(strongMatch !== null ? { 'If-Match': strongMatch } : {})
       },
-      body: serializeDocumentHead(head)
+      body: new TextEncoder().encode(serializeDocumentHead(head))
     })
   } catch (error) {
     if (error instanceof S3HttpError && error.status === 412) {

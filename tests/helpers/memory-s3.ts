@@ -58,6 +58,7 @@ type PutState = {
   etags: Map<string, string>
   failOnceMarkers: { marker: string; status: number }[]
   etagCounter: number
+  weakEtags: boolean
 }
 
 function putResponse(
@@ -83,18 +84,27 @@ function putResponse(
   }
   state.objects.set(key, requestBody(init))
   state.etagCounter += 1
-  const etag = `"etag-${state.etagCounter}"`
+  const etag = `${state.weakEtags ? 'W/' : ''}"etag-${state.etagCounter}"`
   state.etags.set(key, etag)
   return new Response('', { status: 200, headers: { etag } })
 }
 
-export function installMemoryS3(config: S3CompatibleConfig): MemoryS3 {
+export function installMemoryS3(
+  config: S3CompatibleConfig,
+  options: { weakEtags?: boolean } = {}
+): MemoryS3 {
   const objects = new Map<string, Uint8Array>()
   const etags = new Map<string, string>()
   const lastModifiedOverrides = new Map<string, string>()
   const requests: { method: string; key: string; ifMatch: string | null }[] = []
   const failOnceMarkers: { marker: string; status: number }[] = []
-  const state: PutState = { objects, etags, failOnceMarkers, etagCounter: 0 }
+  const state: PutState = {
+    objects,
+    etags,
+    failOnceMarkers,
+    etagCounter: 0,
+    weakEtags: options.weakEtags === true
+  }
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = urlOf(input)
