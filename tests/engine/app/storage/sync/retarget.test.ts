@@ -8,7 +8,7 @@ import { markRevisionSynced } from '@/app/storage/sync/engine'
 import { createMemoryOutbox, type Outbox } from '@/app/storage/sync/outbox'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 
-import { createHarness, recordingAdapter, settle } from './harness'
+import { createHarness, recordingAdapter, settle } from './helpers'
 
 const BODY = new Uint8Array(384).fill(4)
 const TARGET_A = 's3-compatible#aaaaaaaa'

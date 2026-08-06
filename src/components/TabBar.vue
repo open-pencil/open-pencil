@@ -175,16 +175,17 @@ function onClose(e: MouseEvent, tabId: string) {
       the same three things.
     -->
     <DropdownMenuRoot v-if="!showingHome">
-      <DropdownMenuTrigger as-child>
-        <button
-          data-test-id="tabbar-new"
-          :class="baseStyles.newAction()"
-          :aria-label="dialogs.createDocument"
-          :title="dialogs.createDocument"
-        >
-          <icon-lucide-plus :class="baseStyles.newIcon()" />
-        </button>
-      </DropdownMenuTrigger>
+      <Tip :label="dialogs.createDocument">
+        <DropdownMenuTrigger as-child>
+          <button
+            data-test-id="tabbar-new"
+            :class="baseStyles.newAction()"
+            :aria-label="dialogs.createDocument"
+          >
+            <icon-lucide-plus :class="baseStyles.newIcon()" />
+          </button>
+        </DropdownMenuTrigger>
+      </Tip>
       <DropdownMenuPortal>
         <DropdownMenuContent :class="menuCls.content" align="start" :side-offset="4">
           <DropdownMenuItem

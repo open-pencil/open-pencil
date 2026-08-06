@@ -6,7 +6,7 @@ import type { SyncFailure } from '@/app/storage/sync/failure'
 import { migrateLegacyOutboxJobs } from '@/app/storage/sync/migrate-jobs'
 import { createMemoryOutbox, type Outbox } from '@/app/storage/sync/outbox'
 
-import { createHarness, recordingAdapter } from './harness'
+import { createHarness, recordingAdapter } from './helpers'
 
 const BODY = new Uint8Array(256).fill(5)
 const TARGET_A = 's3-compatible#aaaaaaaa'

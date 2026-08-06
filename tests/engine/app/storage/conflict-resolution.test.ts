@@ -4,7 +4,7 @@ import { resolveStorageConflict } from '@/app/storage/conflict'
 import { createMemoryLocalCanvasStore } from '@/app/storage/local-store'
 import { createMemoryOutbox } from '@/app/storage/sync/outbox'
 
-import { recordingAdapter } from './sync/harness'
+import { recordingAdapter } from './sync/helpers'
 
 const BODY = new Uint8Array(512).fill(3)
 const TARGET_A = 's3-compatible#aaaaaaaa'

@@ -6,7 +6,7 @@ import {
   recordingAdapter,
   seedSyncedDocument,
   settle
-} from './harness'
+} from './helpers'
 
 const BODY = new Uint8Array(1024).fill(7)
 

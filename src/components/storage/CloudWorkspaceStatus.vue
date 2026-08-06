@@ -8,6 +8,7 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { useStorageConfigured } from '@/app/storage/configured'
 import { lastSyncFailure, useSyncStatus } from '@/app/storage/sync'
 import SyncErrorDialog from '@/components/storage/SyncErrorDialog.vue'
+import Tip from '@/components/ui/Tip.vue'
 import syncStatusTheme from '@/theme/sync-status'
 
 const { dialogs } = useI18n()
@@ -59,27 +60,28 @@ function activate(): void {
 </script>
 
 <template>
-  <button
-    type="button"
-    :class="cls.chip()"
-    :disabled="!actionable && !canConnect"
-    :aria-label="hint"
-    :title="hint"
-    data-test-id="cloud-workspace-status"
-    :data-indicator="indicator"
-    @click="activate"
-  >
-    <span :class="cls.indicator()" aria-hidden="true">
-      <icon-lucide-cloud-upload v-if="spinnerVisible" :class="cls.icon()" />
-      <icon-lucide-cloud-off v-else-if="indicator === 'local'" :class="cls.icon()" />
-      <icon-lucide-cloud-alert
-        v-else-if="indicator === 'degraded' || indicator === 'failing'"
-        :class="cls.icon()"
-      />
-      <icon-lucide-cloud-check v-else :class="cls.icon()" />
-    </span>
-    <span :class="cls.label()">{{ label }}</span>
-  </button>
+  <Tip :label="hint">
+    <button
+      type="button"
+      :class="cls.chip()"
+      :disabled="!actionable && !canConnect"
+      :aria-label="hint"
+      data-test-id="cloud-workspace-status"
+      :data-indicator="indicator"
+      @click="activate"
+    >
+      <span :class="cls.indicator()" aria-hidden="true">
+        <icon-lucide-cloud-upload v-if="spinnerVisible" :class="cls.icon()" />
+        <icon-lucide-cloud-off v-else-if="indicator === 'local'" :class="cls.icon()" />
+        <icon-lucide-cloud-alert
+          v-else-if="indicator === 'degraded' || indicator === 'failing'"
+          :class="cls.icon()"
+        />
+        <icon-lucide-cloud-check v-else :class="cls.icon()" />
+      </span>
+      <span :class="cls.label()">{{ label }}</span>
+    </button>
+  </Tip>
 
   <SyncErrorDialog v-model:open="detailOpen" :failure="failure" />
 </template>

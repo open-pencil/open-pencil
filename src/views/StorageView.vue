@@ -1085,7 +1085,6 @@ onBeforeUnmount(clearThumbnailUrls)
             type="button"
             class="flex h-7 items-center justify-center gap-1.5 rounded px-2 text-xs text-muted hover:bg-hover hover:text-surface"
             :aria-label="dialogs.refresh"
-            :title="dialogs.refresh"
             @click="refresh"
           >
             <RefreshIcon class="size-3.5" :class="loading && 'animate-spin'" />
@@ -1108,7 +1107,6 @@ onBeforeUnmount(clearThumbnailUrls)
             class="flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-muted transition-colors hover:bg-hover hover:text-surface"
             data-test-id="storage-error-copy"
             :aria-label="dialogs.copyStorageError"
-            :title="dialogs.copyStorageError"
             @click="copyError"
           >
             <icon-lucide-check v-if="errorCopied" class="size-3" />

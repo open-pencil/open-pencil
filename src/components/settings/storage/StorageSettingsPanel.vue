@@ -39,6 +39,7 @@ import { currentTargetIdFor } from '@/app/storage/target'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
+import Tip from '@/components/ui/Tip.vue'
 import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 
 const { dialogs } = useI18n()
@@ -460,18 +461,18 @@ onMounted(() => void refreshStatuses())
       <p class="flex-1 text-[10px] leading-relaxed whitespace-pre-line select-text">
         {{ result.message }}
       </p>
-      <button
-        v-if="!result.ok"
-        type="button"
-        class="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium text-muted transition-colors hover:bg-hover hover:text-surface"
-        data-test-id="settings-storage-result-copy"
-        :aria-label="dialogs.copyStorageError"
-        :title="dialogs.copyStorageError"
-        @click="copyResultError"
-      >
-        <icon-lucide-check v-if="errorCopied" class="size-3" />
-        <icon-lucide-copy v-else class="size-3" />
-      </button>
+      <Tip v-if="!result.ok" :label="dialogs.copyStorageError">
+        <button
+          type="button"
+          class="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium text-muted transition-colors hover:bg-hover hover:text-surface"
+          data-test-id="settings-storage-result-copy"
+          :aria-label="dialogs.copyStorageError"
+          @click="copyResultError"
+        >
+          <icon-lucide-check v-if="errorCopied" class="size-3" />
+          <icon-lucide-copy v-else class="size-3" />
+        </button>
+      </Tip>
     </div>
 
     <button

@@ -8,7 +8,7 @@ import { computeStateIdentity } from '@/app/storage/identity/state'
 
 import { installMemoryS3 } from '#tests/helpers/memory-s3'
 
-import { createHarness, type RecordingAdapter } from './sync/harness'
+import { createHarness, type RecordingAdapter } from './sync/helpers'
 
 const CONFIG: S3CompatibleConfig = {
   endpoint: 'https://s3.example.test',

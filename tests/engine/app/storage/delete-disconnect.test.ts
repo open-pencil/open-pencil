@@ -18,7 +18,7 @@ import { createMemoryOutbox, resetOutboxForTests, type Outbox } from '@/app/stor
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import type { StorageTargetID } from '@/app/storage/target'
 
-import { createHarness, recordingAdapter, settle, type Harness } from './sync/harness'
+import { createHarness, recordingAdapter, settle, type Harness } from './sync/helpers'
 
 /**
  * The two transitions where a delete decision has to survive a later listing.

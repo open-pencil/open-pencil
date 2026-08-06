@@ -7,7 +7,7 @@ import {
 } from '@/app/storage/documents'
 import { createMemoryLocalCanvasStore } from '@/app/storage/local-store'
 
-import { recordingAdapter } from './sync/harness'
+import { recordingAdapter } from './sync/helpers'
 
 const PROVIDER = 's3-compatible'
 const TARGET = 's3-compatible#aaaaaaaa'

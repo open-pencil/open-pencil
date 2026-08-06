@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from 'bun:test'
 
 import { setSyncUi, syncUiState } from '@/app/storage/sync/status'
 
-import { createHarness, faultyAdapter, seedSyncedDocument } from './harness'
+import { createHarness, faultyAdapter, seedSyncedDocument } from './helpers'
 
 const BODY = new Uint8Array(512).fill(3)
 const THUMB = new Uint8Array(64).fill(9)

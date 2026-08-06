@@ -29,7 +29,7 @@ import {
   settle,
   type Harness,
   type RecordingAdapter
-} from './sync/harness'
+} from './sync/helpers'
 
 /**
  * The transition table from `offline-initial-workspace` design decision 7,

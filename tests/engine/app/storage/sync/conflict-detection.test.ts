@@ -4,7 +4,7 @@ import type { StorageDocumentMetadata } from '@/app/integrations/storage'
 import { computeStateIdentity } from '@/app/storage/identity/state'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 
-import { createHarness, recordingAdapter, settle, type RecordingAdapter } from './harness'
+import { createHarness, recordingAdapter, settle, type RecordingAdapter } from './helpers'
 
 const BODY = new Uint8Array(512).fill(3)
 const TARGET_A = 's3-compatible#aaaaaaaa'

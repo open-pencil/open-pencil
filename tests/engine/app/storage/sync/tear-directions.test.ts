@@ -9,7 +9,7 @@ import {
   recordingAdapter,
   settle,
   type RecordingAdapter
-} from './harness'
+} from './helpers'
 
 const BODY = new Uint8Array(512).fill(3)
 const TARGET_A = 's3-compatible#aaaaaaaa'

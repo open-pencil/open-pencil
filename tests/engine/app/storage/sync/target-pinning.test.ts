@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createHarness, recordingAdapter, seedSyncedDocument } from './harness'
+import { createHarness, recordingAdapter, seedSyncedDocument } from './helpers'
 
 const BODY = new Uint8Array(512).fill(3)
 
