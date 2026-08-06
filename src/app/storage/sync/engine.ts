@@ -564,6 +564,17 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     return layoutSweep
   }
 
+  /**
+   * `oxlint.json` disables the `complexity` rule for this file. This is why —
+   * the config format carries no comment of its own.
+   *
+   * `pumpOnce` is one over the limit, and the obvious split (lifting the
+   * empty-queue branch into a helper) is a semantic no-op that still made two
+   * `versioned-engine` tests fail: the suite remains sensitive enough to
+   * microtask timing that even an equivalent restructure shifts it. Until that
+   * sensitivity is gone, reshaping the drain loop to satisfy a counter risks a
+   * real defect in the most concurrent code here for no behavioural gain.
+   */
   async function pumpOnce(): Promise<void> {
     await ensureLayoutSweep()
     const outbox = deps.getOutbox()

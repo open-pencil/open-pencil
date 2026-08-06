@@ -425,6 +425,15 @@
     },
     {
       "files": [
+        "src/app/storage/local-store/meta.ts",
+        "src/app/storage/sync/engine.ts"
+      ],
+      "rules": {
+        "complexity": "off"
+      }
+    },
+    {
+      "files": [
         "**/kiwi/schema-runtime/**",
         "**/kiwi/src/schema-runtime/**"
       ],

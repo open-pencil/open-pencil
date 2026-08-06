@@ -14,8 +14,8 @@ import type { EditorStore } from '@/app/editor/active-store'
  */
 export function thumbnailDocumentId(editor: EditorStore): string {
   return (
-    editor.getStorageBinding?.()?.documentId ||
-    editor.getDocumentFilePath?.() ||
+    editor.getStorageBinding()?.documentId ||
+    editor.getDocumentFilePath() ||
     editor.state.documentName ||
     'untitled'
   )
