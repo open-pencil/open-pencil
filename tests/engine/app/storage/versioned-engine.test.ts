@@ -21,7 +21,23 @@ const TARGET = 's3-compatible#00000000'
 
 const realFetch = globalThis.fetch
 
+/**
+ * Every engine this file starts, so none outlives the test that made it.
+ *
+ * An engine holds scheduled wakes and an in-flight promise chain. Left running,
+ * its next write goes through whatever `globalThis.fetch` points at BY THEN —
+ * and `installMemoryS3` repoints that at the following test's mock. Since every
+ * test here writes the document id `doc`, a leaked engine's stray commit landed
+ * in the next test's head as an extra version: two expected, three found,
+ * intermittently, and only under the load of a full shard run.
+ *
+ * Disposed from `afterEach` rather than at the end of each test, so a test that
+ * fails still cleans up instead of poisoning the next one.
+ */
+const running: { dispose(): void }[] = []
+
 afterEach(() => {
+  for (const harness of running.splice(0)) harness.dispose()
   globalThis.fetch = realFetch
 })
 
@@ -29,6 +45,7 @@ function versionedHarness() {
   const mock = installMemoryS3(CONFIG)
   const adapter = createS3StorageAdapterWithConfig(async () => CONFIG)
   const harness = createHarness({ adapter: adapter as RecordingAdapter })
+  running.push(harness)
   return { mock, adapter, ...harness }
 }
 

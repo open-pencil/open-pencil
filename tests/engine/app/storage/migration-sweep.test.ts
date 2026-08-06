@@ -20,7 +20,17 @@ const TARGET = 's3-compatible#00000000'
 
 const realFetch = globalThis.fetch
 
+/**
+ * Every engine this file starts, so none outlives the test that made it.
+ *
+ * A live engine's next write goes through whatever `globalThis.fetch` points at
+ * by then, and `installMemoryS3` repoints that at the following test's mock —
+ * so a leaked engine commits into the next test's bucket.
+ */
+const running: { dispose(): void }[] = []
+
 afterEach(() => {
+  for (const harness of running.splice(0)) harness.dispose()
   globalThis.fetch = realFetch
 })
 
@@ -49,6 +59,7 @@ describe('layout migration sweep', () => {
     const mock = installMemoryS3(CONFIG)
     const adapter = createS3StorageAdapterWithConfig(async () => CONFIG)
     const harness = createHarness({ adapter: adapter as RecordingAdapter })
+    running.push(harness)
     const bytes = new TextEncoder().encode('legacy bytes')
     const bodyId = await seedLegacyConfirmed(harness.store, 'doc', bytes)
     mock.objects.set(bodyKey(bodyId), bytes)
@@ -65,6 +76,7 @@ describe('layout migration sweep', () => {
     const mock = installMemoryS3(CONFIG)
     const adapter = createS3StorageAdapterWithConfig(async () => CONFIG)
     const harness = createHarness({ adapter: adapter as RecordingAdapter })
+    running.push(harness)
     const bytes = new TextEncoder().encode('legacy bytes')
     const bodyId = await seedLegacyConfirmed(harness.store, 'doc', bytes)
     // No bodies/{bodyId} object: the fixed-key proof describes nothing here.
@@ -85,6 +97,7 @@ describe('layout migration sweep', () => {
     installMemoryS3(CONFIG)
     const adapter = createS3StorageAdapterWithConfig(async () => CONFIG)
     const harness = createHarness({ adapter: adapter as RecordingAdapter })
+    running.push(harness)
     const bytes = new TextEncoder().encode('fresh bytes')
     const bodyId = await computeBodyIdSafe(bytes, 'fig')
     await harness.store.writeCanvas({
@@ -105,6 +118,7 @@ describe('layout migration sweep', () => {
 
   test('adapters without a versioned layout keep their fixed-key proofs', async () => {
     const harness = createHarness() // recordingAdapter: no hasRemoteBody
+    running.push(harness)
     const bytes = new TextEncoder().encode('appwrite-shaped bytes')
     const bodyId = await seedLegacyConfirmed(harness.store, 'doc', bytes)
 

@@ -237,6 +237,53 @@ export function createHarness(
     ...overrides
   })
 
+  /**
+   * Turn until the engine stops changing anything this harness can see.
+   *
+   * `settle()` waits a FIXED number of turns, which bets on how many the
+   * engine's promise chain needs. The bet held only because leaked engines from
+   * earlier tests kept firing timers and incidentally pumped the queue for
+   * everyone else; once those were disposed the bet lost on almost every run,
+   * leaving rows still `pending` when the assertions read them.
+   *
+   * The rows belong in the snapshot, not just the queue: a job finishes, the
+   * outbox empties and the wakes stop, and only THEN does the completion write
+   * land `syncStatus`, `syncedBodyId` and `versionedConfirmed`. Watching the
+   * queue alone calls it quiet a turn or two before the assertions are true.
+   *
+   * `minTurns` exists because stillness at the start means "nothing has begun",
+   * not "everything is done". Without a floor this returned after four
+   * unchanged turns — sometimes before the engine's chain had produced its first
+   * observable change at all, which is fewer turns than the fixed wait it
+   * replaced.
+   */
+  async function settleQuiet(stableTurns = 4, minTurns = 8, limit = 500): Promise<void> {
+    let stable = 0
+    let previous = ''
+    for (let turn = 0; turn < limit; turn++) {
+      if (turn >= minTurns && stable >= stableTurns) return
+      const jobs = await outbox.list()
+      const metas = await store.listMetas(true)
+      const snapshot = [
+        scheduled.length,
+        jobs
+          .map((job) => `${job.canvasId}:${job.type}:${job.attempts}:${job.nextAttemptAt}`)
+          .join(','),
+        metas
+          .map(
+            (meta) =>
+              `${meta.id}:${meta.revision}:${meta.syncStatus}:${meta.syncedBodyId ?? ''}:${meta.versionedConfirmed ?? ''}`
+          )
+          .join(',')
+      ].join('|')
+      stable = snapshot === previous ? stable + 1 : 0
+      previous = snapshot
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0)
+      })
+    }
+  }
+
   return {
     engine,
     store,
@@ -246,13 +293,14 @@ export function createHarness(
     boundConnectivity: () => connectivityBound,
     drainWakes: async (limit = 20) => {
       // The enqueue helpers fire `void kick()`, so the first pump is already in
-      // flight and has scheduled nothing yet. Settle before looking at wakes,
-      // or every assertion races the drain it is meant to observe.
-      await settle()
+      // flight and has scheduled nothing yet. Wait for it to go quiet before
+      // looking at wakes, or every assertion races the drain it is meant to
+      // observe.
+      await settleQuiet()
       for (let i = 0; i < limit && scheduled.length > 0; i++) {
         const next = scheduled.shift()
         next?.()
-        await settle()
+        await settleQuiet()
       }
     },
     dispose: () => engine.dispose()
