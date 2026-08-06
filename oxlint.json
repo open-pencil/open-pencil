@@ -425,8 +425,7 @@
     },
     {
       "files": [
-        "src/app/storage/local-store/meta.ts",
-        "src/app/storage/sync/engine.ts"
+        "src/app/storage/local-store/meta.ts"
       ],
       "rules": {
         "complexity": "off"

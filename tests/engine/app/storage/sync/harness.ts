@@ -296,10 +296,12 @@ export function createHarness(
       // flight and has scheduled nothing yet. Wait for it to go quiet before
       // looking at wakes, or every assertion races the drain it is meant to
       // observe.
+      await engine.idle()
       await settleQuiet()
       for (let i = 0; i < limit && scheduled.length > 0; i++) {
         const next = scheduled.shift()
         next?.()
+        await engine.idle()
         await settleQuiet()
       }
     },

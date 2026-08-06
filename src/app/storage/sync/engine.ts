@@ -110,6 +110,15 @@ export type SyncEngineDependencies = {
 export type SyncEngine = {
   pumpOnce(): Promise<void>
   kick(): Promise<void>
+  /**
+   * Resolves when no pump is running.
+   *
+   * The enqueue helpers start a pump and return without it, so awaiting one of
+   * them says the job is QUEUED, never that it ran. A caller that needs the work
+   * itself — a test, above all — can await this instead of inferring completion
+   * from elapsed time.
+   */
+  idle(): Promise<void>
   resume(): Promise<void>
   clearLocalMirror(): Promise<void>
   enqueuePutCanvas(canvasId: string, revision: number): Promise<void>
@@ -233,9 +242,51 @@ export async function markRevisionSynced(
 
 export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
   let pumping = false
+  /**
+   * The pump currently running, if any.
+   *
+   * `kick()` already returns a promise covering the whole drain — every job, and
+   * the completion writes that land `syncStatus` and the body identity. Every
+   * caller threw it away, so nothing outside could tell a finished pump from one
+   * still going, and the only way to wait was to guess a number of turns.
+   * Keeping the promise turns that guess into a fact.
+   */
+  let inFlight: Promise<void> | null = null
   let cancelWake: CancelScheduled | null = null
   let unsubscribeConnectivity: (() => void) | null = null
   let disposed = false
+
+  /**
+   * Start a pump without waiting for it, but keep its promise.
+   *
+   * `kick()` sets `pumping` synchronously before its first `await`, so checking
+   * the flag here reliably separates a pump that really started from one the
+   * guard turned away — recording the latter would hand `idle()` an
+   * already-resolved promise while real work was still running.
+   */
+  function startPump(): void {
+    if (pumping) return
+    const running = kick()
+    inFlight = running
+    void running.finally(() => {
+      if (inFlight === running) inFlight = null
+    })
+  }
+
+  /**
+   * Resolves when no pump is running.
+   *
+   * Loops because finishing one pump can start another — a job enqueued
+   * mid-drain, or the re-wake at the end of `kick`. The cap only stops a
+   * pathological engine hanging a caller for ever.
+   */
+  async function idle(limit = 100): Promise<void> {
+    for (let i = 0; i < limit; i++) {
+      const running = inFlight
+      if (!running) return
+      await running.catch(() => undefined)
+    }
+  }
 
   function backoffMs(attempts: number): number {
     const exp = Math.min(MAX_BACKOFF_MS, BASE_BACKOFF_MS * 2 ** Math.max(0, attempts - 1))
@@ -247,7 +298,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     cancelWake?.()
     cancelWake = deps.schedule(ms, () => {
       cancelWake = null
-      void kick()
+      startPump()
     })
   }
 
@@ -256,7 +307,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     unsubscribeConnectivity = deps.subscribeConnectivity({
       online: () => {
         setSyncUi('syncing')
-        void kick()
+        startPump()
       },
       offline: () => {
         setSyncUi('offline')
@@ -565,16 +616,22 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
   }
 
   /**
-   * `oxlint.json` disables the `complexity` rule for this file. This is why —
-   * the config format carries no comment of its own.
+   * Nothing queued: settle the UI, and once per session let a versioned adapter
+   * collect unreferenced bodies and manifests past the safety window.
    *
-   * `pumpOnce` is one over the limit, and the obvious split (lifting the
-   * empty-queue branch into a helper) is a semantic no-op that still made two
-   * `versioned-engine` tests fail: the suite remains sensitive enough to
-   * microtask timing that even an equivalent restructure shifts it. Until that
-   * sensitivity is gone, reshaping the drain loop to satisfy a counter risks a
-   * real defect in the most concurrent code here for no behavioural gain.
+   * The sweep is best-effort — a failed one retries next session and must never
+   * block the drain.
    */
+  function onEmptyQueue(): void {
+    if (deps.isOnline()) setSyncUi('idle')
+    if (garbageCollected) return
+    garbageCollected = true
+    deps
+      .resolveTarget(null)
+      .then((adapter) => adapter.collectGarbage?.())
+      .catch(() => undefined)
+  }
+
   async function pumpOnce(): Promise<void> {
     await ensureLayoutSweep()
     const outbox = deps.getOutbox()
@@ -587,17 +644,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     setPendingSyncCount(jobs.filter((job) => !targetIsDormant(job.targetId)).length)
 
     if (jobs.length === 0) {
-      if (deps.isOnline()) setSyncUi('idle')
-      if (!garbageCollected) {
-        garbageCollected = true
-        // Idle queue: once per session, let a versioned adapter collect
-        // unreferenced bodies/manifests past the safety window. Best-effort —
-        // a failed sweep retries on the next session, never blocks the drain.
-        deps
-          .resolveTarget(null)
-          .then((adapter) => adapter.collectGarbage?.())
-          .catch(() => undefined)
-      }
+      onEmptyQueue()
       return
     }
 
@@ -794,7 +841,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     await deps
       .getOutbox()
       .enqueue({ canvasId, type, revision, targetId: meta?.syncTargetId ?? null })
-    void kick()
+    startPump()
   }
 
   /** Retry durable work immediately after storage settings or credentials change. */
@@ -807,7 +854,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
     // retry and re-parked on the first transient blip.
     await Promise.all(jobs.map((job) => outbox.update({ ...job, attempts: 0, nextAttemptAt: now })))
     if (jobs.length > 0) setSyncUi('syncing')
-    void kick()
+    startPump()
   }
 
   /** After credentials cleared — drop local mirror + outbox (optional safety). */
@@ -821,6 +868,7 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
   return {
     pumpOnce,
     kick,
+    idle,
     resume,
     clearLocalMirror,
     enqueuePutCanvas: (canvasId, revision) => enqueue(canvasId, 'putCanvas', revision),
