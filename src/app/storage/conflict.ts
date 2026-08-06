@@ -29,6 +29,11 @@ export async function markListingConflicts(
     if (meta.tombstoned || meta.syncStatus !== 'pending' || !meta.baseStateId) continue
     const remoteDocument = remoteStateById.get(meta.id)
     if (!remoteDocument?.stateId || remoteDocument.stateId === meta.baseStateId) continue
+    // A state THIS device published is not another device's write. The row may
+    // have moved past the publish mid-upload, leaving the base behind, but the
+    // remote state is still ours. Synchronous on purpose: it short-circuits the
+    // identity hash below.
+    if (remoteDocument.stateId === meta.lastPublishedStateId) continue
     // Identical concurrent edits converge: our pending state IS the state the
     // remote already holds, so there is nothing to fight over.
     const { stateId: localPublishId } = await computeStateIdentity(meta.bodyId ?? '', {

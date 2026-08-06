@@ -58,6 +58,17 @@ export type LocalCanvasMeta = {
    */
   baseStateId: string | null
   /**
+   * Whole-document state THIS device last published, or `null` if it has never
+   * published. Where `baseStateId` is the state our edits are BASED on — and is
+   * only advanced when the completing revision is still current — this records
+   * the publish itself, so it is written even when the row has moved past the
+   * completing revision mid-upload. Conflict detection uses it to tell our own
+   * recent upload apart from another device's write. Membership only, never
+   * ordered: a late completion writing an older value is harmless. Cleared on
+   * retarget, because a publish belongs to the destination that received it.
+   */
+  lastPublishedStateId: string | null
+  /**
    * The row's `syncedBodyId` proof was established against the VERSIONED
    * layout (`bodies/{bodyId}` exists remotely). A confirmation earned under
    * the legacy fixed-key layout proves bytes reached `canvases/<id>.fig` —
@@ -109,6 +120,10 @@ export type LocalCanvasIndexInput = Omit<
   | 'bodyId'
   | 'syncedBodyId'
   | 'baseStateId'
+  // `lastPublishedStateId` is deliberately omitted entirely, not made optional:
+  // it records THIS device's publishes, so a remote listing can neither set nor
+  // clear it. `buildIndexMeta` preserves it from the existing row.
+  | 'lastPublishedStateId'
   | 'lastThumbSyncError'
 > & {
   revision?: number

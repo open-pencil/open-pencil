@@ -197,6 +197,9 @@ async function documentMetadata(
  *
  * `stateId` is the whole-document state the acknowledged write published; it
  * becomes the row's conflict base — the remote state future edits build on.
+ * The publish is also recorded in `lastPublishedStateId`, even when the row has
+ * moved past the completing revision, so the conflict check can tell our own
+ * upload apart from another device's write.
  */
 export async function markRevisionSynced(
   store: LocalCanvasStore,
@@ -211,12 +214,29 @@ export async function markRevisionSynced(
   } = {}
 ): Promise<boolean> {
   const latest = await store.getMeta(canvasId)
-  if (!latest || latest.revision !== revision || latest.tombstoned) return false
+  if (!latest || latest.tombstoned) return false
   // A completion may only confirm the destination it was addressed to. The row
   // can be retargeted while an upload is in flight, and recording the result
   // against the NEW target would claim a bucket holds bytes it has never seen —
-  // after which eviction is free to delete the only copy that exists.
+  // after which eviction is free to delete the only copy that exists. Checked
+  // before the revision branch so the moved path below is target-gated too.
   if (options.targetId !== undefined && latest.syncTargetId !== options.targetId) return false
+  // The row moved past the completing job's revision. We still published
+  // `stateId` — a fact about the remote, independent of what the local row did
+  // afterwards — so record it for the conflict check. The base and the body
+  // confirmation stay put: they describe the CURRENT row, which has moved on,
+  // and advancing `syncedBodyId` here would claim the remote holds bytes it has
+  // never seen (the edit changed them).
+  if (latest.revision !== revision) {
+    if (options.stateId) {
+      await store.updateMeta(
+        canvasId,
+        { lastPublishedStateId: options.stateId },
+        { expectedRevision: latest.revision }
+      )
+    }
+    return false
+  }
   const syncedBodyId = options.bodyUploaded ? latest.bodyId : latest.syncedBodyId
   const bodyIsCurrent = bodyIsConfirmed({ bodyId: latest.bodyId, syncedBodyId })
   // A row with no local body has nothing to upload, so it is not waiting on one.
@@ -229,6 +249,9 @@ export async function markRevisionSynced(
       syncStatus: bodyPending ? 'pending' : 'synced',
       syncedBodyId,
       baseStateId: options.stateId ?? latest.baseStateId,
+      // Record the publish itself on every acknowledged write. On this (current)
+      // path it advances with the base; the moved path above records it alone.
+      lastPublishedStateId: options.stateId ?? latest.lastPublishedStateId,
       // A versioned commit proves the body at its `bodies/` address; legacy
       // completions leave the flag where it was.
       versionedConfirmed: options.versioned ? true : (latest.versionedConfirmed ?? false),

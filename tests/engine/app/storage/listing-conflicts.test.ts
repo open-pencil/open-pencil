@@ -4,6 +4,7 @@ import type { StorageDocument } from '@/app/integrations/storage'
 import { markListingConflicts } from '@/app/storage/conflict'
 import { computeStateIdentity } from '@/app/storage/identity/state'
 import { createMemoryLocalCanvasStore, type LocalCanvasMeta } from '@/app/storage/local-store'
+import { markRevisionSynced } from '@/app/storage/sync/engine'
 
 const BASE_STATE = 'sha256:base-state'
 
@@ -107,5 +108,136 @@ describe('listing-time conflict detection', () => {
 
     expect(conflicts).toEqual([])
     expect((await store.getMeta('doc-l4'))?.syncStatus).toBe('pending')
+  })
+
+  test("a pending edit does not conflict with this device's own in-flight publish", async () => {
+    const store = createMemoryLocalCanvasStore()
+    // A prior sync establishes the conflict base.
+    const first = await store.writeCanvas({
+      id: 'doc-x1',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'doc-x1',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(128).fill(1),
+      bodyId: 'body-1'
+    })
+    await markRevisionSynced(store, 'doc-x1', first.revision, {
+      bodyUploaded: true,
+      targetId: 's3-compatible#aaaaaaaa',
+      stateId: BASE_STATE
+    })
+
+    // The next revision's upload goes in flight, and the user edits AGAIN while
+    // it is — moving the row past the revision that is completing.
+    await store.writeCanvas({
+      id: 'doc-x1',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'doc-x1',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(128).fill(2),
+      bodyId: 'body-2'
+    })
+    const inFlight = await store.getMeta('doc-x1')
+    if (!inFlight) throw new Error('seed failed')
+    await store.writeCanvas({
+      id: 'doc-x1',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'doc-x1',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(128).fill(3),
+      bodyId: 'body-3'
+    })
+
+    // The in-flight upload published state(body-2). Its completion arrives
+    // addressed to the in-flight revision, but the row has moved on — refused as
+    // the base, yet it still records what this device published.
+    const published = await computeStateIdentity('body-2', {
+      name: 'doc-x1',
+      sourceFormat: 'fig',
+      isTrashed: false
+    })
+    const confirmed = await markRevisionSynced(store, 'doc-x1', inFlight.revision, {
+      bodyUploaded: true,
+      targetId: 's3-compatible#aaaaaaaa',
+      stateId: published.stateId
+    })
+    expect(confirmed).toBe(false)
+    // The base did not move, and the body confirmation did not advance to bytes
+    // the remote has never seen.
+    expect((await store.getMeta('doc-x1'))?.baseStateId).toBe(BASE_STATE)
+    expect((await store.getMeta('doc-x1'))?.syncedBodyId).toBe('body-1')
+
+    // The listing carries exactly the state we published — not another device's.
+    const remote = [await remoteDocument('doc-x1', { bodyId: 'body-2' })]
+    const meta = await store.getMeta('doc-x1')
+    if (!meta) throw new Error('seed failed')
+    const conflicts = await markListingConflicts(store, [meta], remote)
+
+    expect(conflicts).toEqual([])
+    expect((await store.getMeta('doc-x1'))?.syncStatus).toBe('pending')
+  })
+
+  // §8.3: a single field remembers only the most recent publish. Publish S1 then
+  // S2, and a listing that raced to see S1 still raises the phantom. Documented,
+  // not fixed — a small ring of recent publishes is the fast-follow.
+  test.skip('KNOWN GAP: a listing racing to the earlier of two publishes still phantoms', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const first = await store.writeCanvas({
+      id: 'doc-x2',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'doc-x2',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(128).fill(1),
+      bodyId: 'body-1'
+    })
+    // Publish S1, then S2 — both acknowledged, so lastPublishedStateId = S2.
+    await markRevisionSynced(store, 'doc-x2', first.revision, {
+      bodyUploaded: true,
+      targetId: 's3-compatible#aaaaaaaa',
+      stateId: 'sha256:S1'
+    })
+    await store.writeCanvas({
+      id: 'doc-x2',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'doc-x2',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(128).fill(2),
+      bodyId: 'body-2'
+    })
+    const second = await store.getMeta('doc-x2')
+    if (!second) throw new Error('seed failed')
+    await markRevisionSynced(store, 'doc-x2', second.revision, {
+      bodyUploaded: true,
+      targetId: 's3-compatible#aaaaaaaa',
+      stateId: 'sha256:S2'
+    })
+    expect((await store.getMeta('doc-x2'))?.lastPublishedStateId).toBe('sha256:S2')
+
+    // Edit → pending; base is S2.
+    await store.writeCanvas({
+      id: 'doc-x2',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'doc-x2',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(128).fill(3),
+      bodyId: 'body-3'
+    })
+    const meta = await store.getMeta('doc-x2')
+    if (!meta) throw new Error('seed failed')
+
+    // A listing that raced still shows the EARLIER publish S1.
+    const staleRemote: StorageDocument = {
+      id: 'doc-x2',
+      name: 'doc-x2',
+      updatedAt: new Date().toISOString(),
+      sourceFormat: 'fig',
+      trashedAt: null,
+      bodyId: 'body-1',
+      stateId: 'sha256:S1',
+      metadataAuthoritative: true
+    }
+    const conflicts = await markListingConflicts(store, [meta], [staleRemote])
+    // Single field holds only S2, so S1 !== lastPublishedStateId → this PHANTOMS.
+    expect(conflicts).toEqual([])
   })
 })

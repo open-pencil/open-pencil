@@ -96,6 +96,8 @@ export function normalizeLocalCanvasMeta(
     // Pre-identity rows have no recorded base: `null` = unknown, which never
     // conflicts on its own — the first acknowledged write establishes it.
     baseStateId: meta.baseStateId ?? null,
+    // Rows written before this field existed have no recorded publish history.
+    lastPublishedStateId: meta.lastPublishedStateId ?? null,
     // Pre-versioned rows confirmed bodies against the fixed-key layout; that
     // proof is stale by the versioned layout's lights until the sweep or a
     // versioned commit re-establishes it.
@@ -135,6 +137,11 @@ export function buildWriteMeta(
     // the document to a bucket whose state we have not acknowledged, so the
     // base clears alongside the body confirmation.
     baseStateId: input.baseStateId ?? (retargeted ? null : (existing?.baseStateId ?? null)),
+    // Same rule as the base: a publish belongs to the destination that received
+    // it. A retarget must not carry "we published S" into the new bucket, where
+    // it could suppress a genuine conflict. Not taken from `input` — only
+    // `markRevisionSynced` records a publish.
+    lastPublishedStateId: retargeted ? null : (existing?.lastPublishedStateId ?? null),
     // Same rule as the body confirmation: a layout proof belongs to the
     // destination that gave it. New bytes stay unconfirmed in the versioned
     // layout until the versioned commit acknowledges them.
@@ -175,6 +182,9 @@ export function buildIndexMeta(
     bodyId: input.bodyId ?? existing?.bodyId ?? null,
     syncedBodyId: input.syncedBodyId ?? existing?.syncedBodyId ?? null,
     baseStateId: input.baseStateId ?? existing?.baseStateId ?? null,
+    // A listing carries no authority over our own publish history — preserve it
+    // from the existing row, never from the input (it is not part of it).
+    lastPublishedStateId: existing?.lastPublishedStateId ?? null,
     versionedConfirmed: input.versionedConfirmed ?? existing?.versionedConfirmed ?? false,
     lastKnownTargetId: input.syncTargetId ?? existing?.lastKnownTargetId ?? null,
     syncStatus: input.syncStatus,

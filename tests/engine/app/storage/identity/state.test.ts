@@ -141,4 +141,63 @@ describe('conflict base on the local row', () => {
     expect(moved?.syncedBodyId).toBeNull()
     expect(moved?.baseStateId).toBeNull()
   })
+
+  test('a retarget clears lastPublishedStateId alongside the base', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const meta = await store.writeCanvas({
+      id: 'doc',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'Doc',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(64).fill(1),
+      bodyId: 'body-1'
+    })
+    await markRevisionSynced(store, 'doc', meta.revision, {
+      bodyUploaded: true,
+      targetId: 's3-compatible#aaaaaaaa',
+      stateId: 'sha256:published-at-a'
+    })
+    expect((await store.getMeta('doc'))?.lastPublishedStateId).toBe('sha256:published-at-a')
+
+    // Retarget to a different bucket: the publish belongs to the old one.
+    await store.writeCanvas({
+      id: 'doc',
+      syncTargetId: 's3-compatible#bbbbbbbb',
+      name: 'Doc',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(64).fill(1),
+      bodyId: 'body-1'
+    })
+
+    expect((await store.getMeta('doc'))?.lastPublishedStateId).toBeNull()
+  })
+
+  test('a same-target save preserves lastPublishedStateId', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const meta = await store.writeCanvas({
+      id: 'doc',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'Doc',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(64).fill(1),
+      bodyId: 'body-1'
+    })
+    await markRevisionSynced(store, 'doc', meta.revision, {
+      bodyUploaded: true,
+      targetId: 's3-compatible#aaaaaaaa',
+      stateId: 'sha256:published-at-a'
+    })
+
+    // A normal save at the SAME destination must not drop the publish history.
+    await store.writeCanvas({
+      id: 'doc',
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      name: 'Doc',
+      sourceFormat: 'fig',
+      figBytes: new Uint8Array(64).fill(2),
+      bodyId: 'body-2'
+    })
+
+    expect((await store.getMeta('doc'))?.lastPublishedStateId).toBe('sha256:published-at-a')
+  })
 })
