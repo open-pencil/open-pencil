@@ -80,8 +80,7 @@ export function reconcileStorageDocuments(
     const remoteDocument = merged.get(metadata.id)
     if (
       metadata.syncStatus === 'synced' &&
-      remoteDocument &&
-      remoteDocument.metadataAuthoritative &&
+      remoteDocument?.metadataAuthoritative &&
       remoteDocument.updatedAt >= metadata.updatedAt
     ) {
       continue

@@ -40,7 +40,7 @@ export async function markListingConflicts(
     // Re-check the row: a drain completing between the listing and this write
     // must not be stamped conflict over its own success.
     const latest = await store.getMeta(meta.id)
-    if (!latest || latest.syncStatus !== 'pending') continue
+    if (latest?.syncStatus !== 'pending') continue
     await store.updateMeta(
       meta.id,
       { syncStatus: 'conflict', lastSyncError: null },
@@ -84,7 +84,7 @@ export async function resolveStorageConflict(
 ): Promise<{ copyId: string | null }> {
   const { store, outbox, adapter } = deps
   const row = await store.getMeta(canvasId)
-  if (!row || row.syncStatus !== 'conflict') return { copyId: null }
+  if (row?.syncStatus !== 'conflict') return { copyId: null }
 
   // Fast-forwarding blind is worse than staying conflicted: if the remote
   // state cannot be read, nothing about the row changes.

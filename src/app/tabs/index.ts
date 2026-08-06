@@ -134,11 +134,24 @@ export function getTabsSnapshot(): Tab[] {
  * without this, a colour change made seconds before navigating away still
  * shows the old stage on the card.
  */
+/**
+ * A store built before the currently-loaded code.
+ *
+ * Only reachable through dev-server HMR, which can leave a tab holding a store
+ * created before `flushPendingSave` existed. `EditorStore` always declares the
+ * method, so the guard below reads as dead code against that type — the type is
+ * what is wrong, not the call. Naming the stale shape keeps the guard honest
+ * rather than deleting protection the comment says is deliberate.
+ */
+type PossiblyStaleStore = { flushPendingSave?: () => Promise<void> }
+
 export async function flushOpenTabSaves(): Promise<void> {
   // Optional call: a dev-server HMR can leave stores created before this
   // action existed, and the workspace must not crash listing documents on
   // their account.
-  await Promise.all(tabsRef.value.map((tab) => tab.store.flushPendingSave?.()))
+  await Promise.all(
+    tabsRef.value.map((tab) => (tab.store as PossiblyStaleStore).flushPendingSave?.())
+  )
 }
 
 export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {

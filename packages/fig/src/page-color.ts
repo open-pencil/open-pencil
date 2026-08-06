@@ -25,7 +25,7 @@ function isColor(value: unknown): value is Color {
 }
 
 export function readStoredPageColor(graph: SceneGraph, pageId: string): Color | null {
-  const fields = graph.getNode(pageId)?.source?.fig?.rawNodeFields
+  const fields = graph.getNode(pageId)?.source.fig.rawNodeFields
   const stored = fields?.[FIELD]
   // Alpha is not part of the stored value in every file, and a transparent
   // stage is not a state the canvas can render — treat it as fully opaque.
@@ -34,7 +34,7 @@ export function readStoredPageColor(graph: SceneGraph, pageId: string): Color | 
 
 export function writeStoredPageColor(graph: SceneGraph, pageId: string, color: Color): void {
   const page = graph.getNode(pageId)
-  const fig = page?.source?.fig
+  const fig = page?.source.fig
   if (!fig) return
   fig.rawNodeFields[FIELD] = { r: color.r, g: color.g, b: color.b, a: 1 }
 }

@@ -30,7 +30,16 @@ export function sortAndFilterMetas(
 }
 
 /** Row shape before body identity and target identity replaced their legacy fields. */
-type LegacyMeta = LocalCanvasMeta & {
+/**
+ * A row as it may actually be ON DISK, which is not the shape of a row in
+ * memory: `syncTargetId` is optional here because rows written before targets
+ * existed simply do not carry it. Typing the input as a complete
+ * `LocalCanvasMeta` claimed the field was always present, so the `undefined`
+ * check that separates a pre-target row from a migrated local-only one read as
+ * dead code to the type checker while being live at runtime.
+ */
+type LegacyMeta = Omit<LocalCanvasMeta, 'syncTargetId'> & {
+  syncTargetId?: StorageTargetID | null
   bodySyncedRevision?: number
   providerId?: StorageProviderID
 }
@@ -67,6 +76,7 @@ export function normalizeLocalCanvasMeta(
   const {
     bodySyncedRevision: _legacyBody,
     providerId: legacyProvider,
+    syncTargetId: storedTarget,
     ...rest
   } = meta as LegacyMeta
   // Evaluated lazily: a row that already carries a target must not re-resolve.
@@ -76,7 +86,7 @@ export function normalizeLocalCanvasMeta(
     ...rest,
     // `syncTargetId === undefined` means a pre-target row. `null` is a real,
     // migrated value meaning local-only, so it must not be re-resolved.
-    syncTargetId: meta.syncTargetId !== undefined ? meta.syncTargetId : legacyTarget(),
+    syncTargetId: storedTarget !== undefined ? storedTarget : legacyTarget(),
     sourceFormat: meta.sourceFormat === 'deck' ? 'deck' : 'fig',
     trashedAt: typeof meta.trashedAt === 'string' ? meta.trashedAt : null,
     // `hasFig` without a `bodyId` means a legacy row: bytes are present but

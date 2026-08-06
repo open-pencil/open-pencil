@@ -204,7 +204,7 @@ export function storageDocumentNeedsItsOwnTarget(
   placement: StorageDocumentPlacement | undefined,
   activeTargetId: StorageTargetID | null
 ): boolean {
-  if (!placement || placement.hasLocalBody !== false) return false
+  if (placement?.hasLocalBody !== false) return false
   return placement.syncTargetId !== activeTargetId
 }
 

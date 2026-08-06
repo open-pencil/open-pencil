@@ -278,11 +278,13 @@ export function openAudienceWindow(
   // A popup may be resized, made fullscreen or moved to a display with a different DPR.
   // Keep the existing pixels visible during that transition, then make one fresh native-
   // resolution raster after the resize burst settles.
-  stopResizeListener = useEventListener(
-    win,
-    'resize',
-    useDebounceFn(() => void render(), 150)
-  )
+  // `useDebounceFn` hands back a promise-returning function, so passing it
+  // straight to the listener leaves a floating promise on every resize — a
+  // rejected render would surface as an unhandled rejection with no context.
+  const renderAfterResize = useDebounceFn(() => void render(), 150)
+  stopResizeListener = useEventListener(win, 'resize', () => {
+    void renderAfterResize()
+  })
 
   function close() {
     if (!win.closed) win.close()
