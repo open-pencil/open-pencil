@@ -241,8 +241,10 @@ test('an unconfigured workspace is usable, not a dead end', async ({ page }) => 
   await expect(page.getByTestId('storage-new-design')).toBeEnabled()
   await expect(page.getByTestId('storage-new-slides')).toBeEnabled()
 
-  // Cloud is offered, never demanded.
-  await page.getByRole('button', { name: 'Cloud storage' }).last().click()
+  // Cloud is offered, never demanded. Scope the click to the placeholder: the
+  // status chip's hint contains "cloud storage" too, and an unscoped `.last()`
+  // was hitting the footer rather than the offer under test.
+  await notice.getByRole('button', { name: 'Cloud storage' }).click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })
 
@@ -259,6 +261,36 @@ test('an unconfigured workspace accepts dropped files into local storage', async
   const card = page.getByRole('button', { name: /Local design/ })
   await expect(card).toBeVisible()
   await expect(card.locator('[data-slot="storage-format-badge"][data-format="fig"]')).toBeVisible()
+})
+
+test('a populated local-only workspace explains durability from the status chip', async ({
+  page
+}) => {
+  const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  await page.goto('/?test')
+
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
+  await dropStorageFile(page, fixture, 'Local design.fig')
+  await expect(page.getByRole('button', { name: /Local design/ })).toBeVisible()
+
+  // The grid starts at the top. A banner above it said what the footer already
+  // says, and charged prime vertical space on every visit to say it.
+  await expect(page.getByTestId('local-durability-notice')).toHaveCount(0)
+
+  const status = page.getByTestId('cloud-workspace-status')
+  await expect(status).toContainText('No cloud configured · Local storage only')
+  await status.click()
+
+  // Still honest about where the only copy lives — one click away, where a full
+  // sentence fits without truncating into a 20px footer.
+  const notice = page.getByTestId('local-durability-notice')
+  await expect(notice).toBeVisible()
+  await expect(notice).toHaveAttribute('data-placement', 'status')
+  await expect(notice).toContainText('Safari may remove them after about 7 days')
+
+  // Cloud is offered, never demanded.
+  await notice.getByRole('button', { name: 'Cloud storage' }).click()
+  await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })
 
 test('emptying Trash requires confirmation and removes every trashed document', async ({

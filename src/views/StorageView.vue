@@ -83,7 +83,6 @@ import StorageConflictDialog from '@/components/storage/StorageConflictDialog.vu
 import RefreshIcon from '@/components/storage/RefreshIcon.vue'
 import TrashIcon from '@/components/storage/TrashIcon.vue'
 import CloudWorkspaceStatus from '@/components/storage/CloudWorkspaceStatus.vue'
-import LocalDurabilityNotice from '@/components/storage/LocalDurabilityNotice.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import {
@@ -1024,8 +1023,6 @@ onBeforeUnmount(clearThumbnailUrls)
       @change="onImportPicked"
     />
 
-    <LocalDurabilityNotice v-if="documents.length > 0 && !configured" />
-
     <section class="flex min-h-0 w-full flex-1 flex-col overflow-y-auto p-6">
       <div class="mb-4 flex shrink-0 items-center gap-2">
         <div class="flex rounded-md border border-border bg-panel p-0.5">
@@ -1214,6 +1211,10 @@ onBeforeUnmount(clearThumbnailUrls)
       Always mounted. Grey "Local only" for an unconfigured workspace is a
       calm, accurate statement; hiding the chip until a listing had succeeded
       meant the one moment the user most needed sync state showed nothing.
+
+      The single home for storage state. A banner above the grid used to repeat
+      this chip's answer at full width on every visit; the durability caveat it
+      carried now opens from the chip itself.
     -->
     <footer
       class="flex h-5 shrink-0 items-center justify-center border-t border-border bg-panel px-2"
