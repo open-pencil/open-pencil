@@ -33,6 +33,38 @@ async function configureStorage(page: Page): Promise<void> {
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
 }
 
+async function dropStorageFile(
+  page: Page,
+  fileBytes: Uint8Array,
+  fileName: string
+): Promise<DataTransfer['dropEffect']> {
+  return page.getByTestId('storage-workspace').evaluate(
+    (element, file) => {
+      const transfer = new DataTransfer()
+      let dropEffect: DataTransfer['dropEffect'] = 'none'
+      // Chromium resets this property for synthetic drags. Intercept its setter
+      // so the test observes what the app requested during `dragover`.
+      Object.defineProperty(transfer, 'dropEffect', {
+        get: () => dropEffect,
+        set: (value: DataTransfer['dropEffect']) => {
+          dropEffect = value
+        }
+      })
+      transfer.items.add(
+        new File([new Uint8Array(file.bytes)], file.name, {
+          type: 'application/octet-stream'
+        })
+      )
+      const options = { bubbles: true, cancelable: true, dataTransfer: transfer }
+      element.dispatchEvent(new DragEvent('dragenter', options))
+      element.dispatchEvent(new DragEvent('dragover', options))
+      element.dispatchEvent(new DragEvent('drop', options))
+      return dropEffect
+    },
+    { bytes: [...fileBytes], name: fileName }
+  )
+}
+
 test('configured storage lists and opens a remote document', async ({ page }) => {
   const fixture = readFileSync('tests/fixtures/gold-preview.fig')
   const thumbnail = readFileSync('tests/fixtures/vectorize/euro_shield.png')
@@ -124,22 +156,7 @@ test('dropping a deck stores its format and generated thumbnail', async ({ page 
   })
 
   await configureStorage(page)
-  const workspace = page.getByTestId('storage-workspace')
-  await workspace.evaluate(
-    (element, fileBytes) => {
-      const transfer = new DataTransfer()
-      transfer.items.add(
-        new File([new Uint8Array(fileBytes)], 'Dropped presentation.deck', {
-          type: 'application/octet-stream'
-        })
-      )
-      const options = { bubbles: true, cancelable: true, dataTransfer: transfer }
-      element.dispatchEvent(new DragEvent('dragenter', options))
-      element.dispatchEvent(new DragEvent('dragover', options))
-      element.dispatchEvent(new DragEvent('drop', options))
-    },
-    [...fixture]
-  )
+  await dropStorageFile(page, fixture, 'Dropped presentation.deck')
 
   const card = page.getByRole('button', { name: /Dropped presentation/ })
   await expect(card).toBeVisible()
@@ -188,22 +205,7 @@ test('dropping a fig imports it as a design, not a deck', async ({ page }) => {
   })
 
   await configureStorage(page)
-  const workspace = page.getByTestId('storage-workspace')
-  await workspace.evaluate(
-    (element, fileBytes) => {
-      const transfer = new DataTransfer()
-      transfer.items.add(
-        new File([new Uint8Array(fileBytes)], 'Dropped design.fig', {
-          type: 'application/octet-stream'
-        })
-      )
-      const options = { bubbles: true, cancelable: true, dataTransfer: transfer }
-      element.dispatchEvent(new DragEvent('dragenter', options))
-      element.dispatchEvent(new DragEvent('dragover', options))
-      element.dispatchEvent(new DragEvent('drop', options))
-    },
-    [...fixture]
-  )
+  await dropStorageFile(page, fixture, 'Dropped design.fig')
 
   // The name keeps its extension off and the badge must say design, or the
   // document would open through the deck reader and fail.
@@ -242,6 +244,21 @@ test('an unconfigured workspace is usable, not a dead end', async ({ page }) => 
   // Cloud is offered, never demanded.
   await page.getByRole('button', { name: 'Cloud storage' }).last().click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
+})
+
+test('an unconfigured workspace accepts dropped files into local storage', async ({ page }) => {
+  const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  await page.goto('/?test')
+
+  await expect(page.getByTestId('storage-workspace')).toBeVisible()
+  // `dropEffect = none` cancels a real browser drop before the drop handler can
+  // import it. A synthetic drop still dispatches, so assert the handler's
+  // requested effect as well as the resulting local document.
+  await expect(dropStorageFile(page, fixture, 'Local design.fig')).resolves.toBe('copy')
+
+  const card = page.getByRole('button', { name: /Local design/ })
+  await expect(card).toBeVisible()
+  await expect(card.locator('[data-slot="storage-format-badge"][data-format="fig"]')).toBeVisible()
 })
 
 test('emptying Trash requires confirmation and removes every trashed document', async ({

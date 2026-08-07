@@ -77,6 +77,8 @@
 - Center empty and setup states consistently across panels, dialogs, and workspaces.
 
 ### Fixed
+
+- Make cloud storage setup a single visible action: choosing an inactive provider now saves and tests its connection before activating it, instead of hiding a second required “Use provider” button below the settings fold. Unconfigured workspaces also accept dropped `.fig` and `.deck` files into local storage.
 - Stop a slide from staying blank in the filmstrip forever. Rendering a slide before its document finished loading produced an empty frame, and that frame was cached and written to disk, so the first slide of a deck — the only one on screen when the filmstrip mounts — came back blank on every later open. Empty renders are never stored, are re-rendered on the next request, and any already saved are replaced rather than shown.
 - Keep saved slide thumbnails on screen while a deck opens, instead of showing a placeholder for every slide until the load finishes.
 - Stop renaming a document from orphaning its slide thumbnails. Thumbnails are keyed on the document's identity rather than its display name, so each rename no longer left a full unreachable set behind, competing with thumbnails still in use for a fixed-size cache. Stale pages and deleted documents are now cleared as well; trashed documents keep theirs so restoring one restores its filmstrip.

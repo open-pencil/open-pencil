@@ -82,25 +82,32 @@ test('Appwrite setup uses a scoped key and configures storage automatically', as
   await page.getByRole('option', { name: 'Appwrite' }).click()
 
   await expect(page.locator('[data-slot="storage-provider-icon"]')).toBeVisible()
-  await expect(page.getByText(/registers its web platform automatically/)).toBeVisible()
+  await expect(
+    page.getByText(/give the Any role Create\/Read\/Update\/Delete permissions/)
+  ).toBeVisible()
   await expect(page.getByLabel('Endpoint')).toHaveAttribute(
     'placeholder',
     'https://fra.cloud.appwrite.io/v1'
   )
   await expect(page.getByLabel('Project ID')).toBeVisible()
-  await expect(page.getByLabel('Bucket ID (optional)')).toBeVisible()
+  await expect(page.getByLabel('Bucket ID', { exact: true })).toBeVisible()
   await expect(page.getByLabel('API key')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Copy CORS JSON' })).toHaveCount(0)
 
   await page.getByLabel('Endpoint').fill('https://fra.cloud.appwrite.io/v1')
   await page.getByLabel('Project ID').fill('project-1')
-  await page.getByLabel('Bucket ID (optional)').fill('bucket-1')
+  await page.getByLabel('Bucket ID', { exact: true }).fill('bucket-1')
   const keyField = page.locator('[data-credential="api-key"]')
   await keyField.locator('input').fill('scoped-appwrite-key')
   await keyField.getByRole('button', { name: 'Save' }).click()
-  await page.getByTestId('settings-storage-test').click()
+  const connect = page.getByTestId('settings-storage-test')
+  await expect(connect).toHaveText('Use Appwrite for cloud storage')
+  await connect.click()
 
   await expect(page.getByRole('status')).toContainText('Connected')
+  // Connecting is also the commit point. There is no second, below-the-fold
+  // "Use provider" action left for the user to discover.
+  await expect(connect).toHaveText('Test connection')
   expect(requests.length).toBeGreaterThanOrEqual(4)
   expect(requests.every((request) => request.project === 'project-1')).toBe(true)
   expect(requests.every((request) => request.key === 'scoped-appwrite-key')).toBe(true)
@@ -155,7 +162,9 @@ test('Bunny Storage setup only asks for S3-enabled zone credentials', async ({ p
   await page.getByTestId('settings-storage-test').click()
 
   await expect(page.getByRole('status')).toContainText('Connected')
-  expect(requests.map((request) => request.method)).toEqual(['HEAD', 'PUT', 'GET'])
+  // The final GET is the first workspace listing after this newly connected
+  // provider becomes the active destination.
+  expect(requests.map((request) => request.method)).toEqual(['HEAD', 'PUT', 'GET', 'GET'])
   expect(requests.every((request) => request.authorization.includes('/de/s3/aws4_request'))).toBe(
     true
   )
@@ -212,7 +221,9 @@ test('Backblaze B2 setup maps application keys to its regional S3 endpoint', asy
   await page.getByTestId('settings-storage-test').click()
 
   await expect(page.getByRole('status')).toContainText('Connected')
-  expect(requests.map((request) => request.method)).toEqual(['HEAD', 'PUT', 'GET'])
+  // The final GET is the first workspace listing after this newly connected
+  // provider becomes the active destination.
+  expect(requests.map((request) => request.method)).toEqual(['HEAD', 'PUT', 'GET', 'GET'])
   expect(
     requests.every((request) => request.authorization.includes('/us-west-004/s3/aws4_request'))
   ).toBe(true)

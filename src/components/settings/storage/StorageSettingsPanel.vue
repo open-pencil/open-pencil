@@ -91,10 +91,10 @@ const switchDialogOpen = ref(false)
 /**
  * Activation is the commit point, and the only destructive one.
  *
- * Nothing else in this panel changes where documents go: the dropdown swaps a
- * form, a connection test proves credentials without moving anything. Changing
- * providers is a rare, deliberate act, so it gets a button of its own and a
- * confirmation that names what happens to the documents already elsewhere.
+ * The provider picker only swaps the form. For an inactive provider, the primary
+ * action tests the connection and reaches this point only after the test passes.
+ * Changing providers is a rare, deliberate act, so leaving an existing target
+ * still gets a confirmation that names what happens to its documents.
  */
 async function requestActivation(): Promise<void> {
   const to = panelProviderID.value
@@ -243,6 +243,7 @@ async function testConnection(): Promise<void> {
     }
     await resumeStorageSync()
     result.value = await createActiveStorageAdapter(provider.value.id).testConnection()
+    if (result.value.ok && !isActiveProvider.value) await requestActivation()
   } catch (error) {
     result.value = {
       ok: false,
@@ -416,33 +417,29 @@ onMounted(() => void refreshStatuses())
       @click="testConnection"
     >
       <icon-lucide-loader-circle v-if="busy" class="size-3 animate-spin" />
-      {{ dialogs.testConnection }}
+      {{
+        busy
+          ? dialogs.testingConnection
+          : isActiveProvider
+            ? dialogs.testConnection
+            : dialogs.storageUseProvider({ provider: provider.label })
+      }}
     </button>
 
     <!--
-      Only for a provider that is not the destination and could actually become
-      one. Shown disabled while incomplete rather than hidden, so the path from
-      "filling this in" to "using it" is visible before the form is valid.
+      Name the current destination before the action reports its result. The
+      primary button above is the whole connect flow: it saves the form, tests
+      the connection, and only then requests the provider switch. Keeping a
+      second "Use" button here put the real commit below the fold.
     -->
-    <div v-if="!isActiveProvider" class="flex flex-col gap-1">
-      <button
-        type="button"
-        class="flex items-center justify-center gap-1.5 rounded border border-accent px-3 py-1.5 text-[11px] font-medium text-accent hover:bg-accent/10 disabled:border-border disabled:text-muted disabled:opacity-50"
-        :disabled="!configured"
-        data-test-id="settings-storage-activate"
-        @click="requestActivation"
-      >
-        {{ dialogs.storageUseProvider({ provider: provider.label }) }}
-      </button>
-      <p class="text-[10px] text-muted">
-        {{ dialogs.storageActiveProvider({ provider: activeProvider.label }) }}
-      </p>
-    </div>
+    <p v-if="!isActiveProvider" class="text-[10px] text-muted">
+      {{ dialogs.storageActiveProvider({ provider: activeProvider.label }) }}
+    </p>
 
     <!--
-      Directly under the button that produces it. This used to render after
-      "Open workspace" at the very bottom of the panel, so a failed test showed
-      its message below the fold and read as if nothing had happened at all.
+      Kept with the action that produces it. This used to render after "Open
+      workspace" at the very bottom of the panel, so a failed test showed its
+      message below the fold and read as if nothing had happened at all.
     -->
     <div
       v-if="result"

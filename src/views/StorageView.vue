@@ -850,7 +850,11 @@ function onDragEnter(event: DragEvent): void {
 function onDragOver(event: DragEvent): void {
   if (!eventHasFiles(event)) return
   event.preventDefault()
-  if (event.dataTransfer) event.dataTransfer.dropEffect = configured.value ? 'copy' : 'none'
+  // Import works without a cloud destination — the document lands locally — so
+  // the drop must stay allowed even when storage is unconfigured. `dropEffect =
+  // 'none'` cancels the drop before `onDrop` fires, which made the workspace
+  // silently ignore files for users with no cloud set up.
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
 }
 
 function onDragLeave(event: DragEvent): void {
