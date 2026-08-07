@@ -220,6 +220,8 @@ export const dialogMessageDefaults = {
   syncErrorCorsConfiguration: 'Bucket CORS configuration',
   syncRetryNow: 'Retry now',
   storageUseProvider: params('Use {provider} for cloud storage'),
+  storageUseThisProvider: 'Use this provider',
+  storageTestBeforeUse: 'Test the connection first',
   storageActiveProvider: params('Currently syncing to {provider}.'),
   storageSwitchTitle: 'Switch storage provider?',
   storageSwitchBody: params(

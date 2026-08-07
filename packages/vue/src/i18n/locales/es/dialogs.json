@@ -258,6 +258,8 @@
   "syncErrorCorsConfiguration": "Configuración CORS del bucket",
   "syncRetryNow": "Reintentar ahora",
   "storageUseProvider": "Usar {provider} para el almacenamiento en la nube",
+  "storageUseThisProvider": "Usar este proveedor",
+  "storageTestBeforeUse": "Prueba la conexión primero",
   "storageActiveProvider": "Actualmente sincronizando con {provider}.",
   "storageSwitchTitle": "¿Cambiar de proveedor de almacenamiento?",
   "storageSwitchBody": "Este dispositivo dejará de sincronizarse con {from}. Los documentos ya respaldados allí se conservan aquí como archivos locales y no se elimina nada de {from}. Los documentos listados desde el bucket pero nunca descargados desaparecerán hasta que vuelvas a conectarte.",

@@ -91,10 +91,10 @@ const switchDialogOpen = ref(false)
 /**
  * Activation is the commit point, and the only destructive one.
  *
- * The provider picker only swaps the form. For an inactive provider, the primary
- * action tests the connection and reaches this point only after the test passes.
- * Changing providers is a rare, deliberate act, so leaving an existing target
- * still gets a confirmation that names what happens to its documents.
+ * The provider picker only swaps the form. Reaching this point requires a
+ * passing test of the values currently on screen — see `canUse`. Changing
+ * providers is a rare, deliberate act, so leaving an existing target still gets
+ * a confirmation that names what happens to its documents.
  */
 async function requestActivation(): Promise<void> {
   const to = panelProviderID.value
@@ -161,6 +161,27 @@ const backupDescription = computed(() => {
   if (!backupEnabled.value) return dialogs.value.backUpToCloudOff
   return configured.value ? dialogs.value.backUpToCloudOn : dialogs.value.backUpToCloudUnconfigured
 })
+
+/**
+ * A passing test belongs to the values that produced it.
+ *
+ * Testing and committing used to be one button whose label flipped between
+ * "Test connection" and "Use <provider>", so the two were never on screen
+ * together and a successful test silently activated the provider. Splitting
+ * them means the result has to be tied to a form state, or an edit after a
+ * passing test would leave "Use" armed against values nobody has checked.
+ *
+ * Credential drafts are part of the fingerprint even though they are cleared on
+ * save: the test records the post-save state, which is exactly what stays on
+ * screen until the next keystroke.
+ */
+const formFingerprint = computed(() =>
+  JSON.stringify([provider.value.id, preferenceDrafts.value, credentialDrafts.value])
+)
+const testedFingerprint = ref<string | null>(null)
+const canUse = computed(
+  () => result.value?.ok === true && testedFingerprint.value === formFingerprint.value
+)
 
 function preferenceLabel(field: StoragePreferenceField): string {
   if (field.id === 'endpoint') return dialogs.value.storageEndpoint
@@ -233,9 +254,17 @@ function copyResultError(): void {
   )
 }
 
+/**
+ * Proves the destination. Never commits to it — that is `useProvider`.
+ *
+ * Saving the form first is not a commitment either: preferences and credentials
+ * are stored per provider, so writing them arms a test of the provider on
+ * screen without repointing sync at it.
+ */
 async function testConnection(): Promise<void> {
   busy.value = true
   result.value = null
+  testedFingerprint.value = null
   try {
     savePreferences()
     for (const field of provider.value.credentialFields) {
@@ -243,15 +272,21 @@ async function testConnection(): Promise<void> {
     }
     await resumeStorageSync()
     result.value = await createActiveStorageAdapter(provider.value.id).testConnection()
-    if (result.value.ok && !isActiveProvider.value) await requestActivation()
   } catch (error) {
     result.value = {
       ok: false,
       message: error instanceof Error ? error.message : String(error)
     }
   } finally {
+    testedFingerprint.value = formFingerprint.value
     busy.value = false
   }
+}
+
+/** The commit, reachable only from a passing test of what is on screen. */
+async function useProvider(): Promise<void> {
+  if (!canUse.value) return
+  await requestActivation()
 }
 
 // Keyed to the FORM, not the destination: selecting a provider loads its saved
@@ -261,6 +296,7 @@ watch(panelProviderID, (providerID) => {
   preferenceDrafts.value = initialPreferenceDrafts(providerID)
   credentialDrafts.value = emptyCredentialDrafts(providerID)
   result.value = null
+  testedFingerprint.value = null
   void refreshStatuses()
 })
 
@@ -410,86 +446,137 @@ onMounted(() => void refreshStatuses())
     </div>
 
     <button
-      type="button"
-      class="mt-1 flex items-center justify-center gap-1.5 rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
-      :disabled="busy"
-      data-test-id="settings-storage-test"
-      @click="testConnection"
-    >
-      <icon-lucide-loader-circle v-if="busy" class="size-3 animate-spin" />
-      {{
-        busy
-          ? dialogs.testingConnection
-          : isActiveProvider
-            ? dialogs.testConnection
-            : dialogs.storageUseProvider({ provider: provider.label })
-      }}
-    </button>
-
-    <!--
-      Name the current destination before the action reports its result. The
-      primary button above is the whole connect flow: it saves the form, tests
-      the connection, and only then requests the provider switch. Keeping a
-      second "Use" button here put the real commit below the fold.
-    -->
-    <p v-if="!isActiveProvider" class="text-[10px] text-muted">
-      {{ dialogs.storageActiveProvider({ provider: activeProvider.label }) }}
-    </p>
-
-    <!--
-      Kept with the action that produces it. This used to render after "Open
-      workspace" at the very bottom of the panel, so a failed test showed its
-      message below the fold and read as if nothing had happened at all.
-    -->
-    <div
-      v-if="result"
-      class="flex items-start gap-2 rounded border px-2 py-1.5"
-      :class="
-        result.ok
-          ? 'border-border bg-panel text-success'
-          : 'border-[var(--color-warning-border)] bg-[rgb(239_68_68/0.1)] text-danger'
-      "
-      :data-state="result.ok ? 'success' : 'error'"
-      data-test-id="settings-storage-result"
-      :role="result.ok ? 'status' : 'alert'"
-    >
-      <icon-lucide-circle-check v-if="result.ok" class="mt-px size-3 shrink-0" />
-      <icon-lucide-circle-alert v-else class="mt-px size-3 shrink-0" />
-      <p class="flex-1 text-[10px] leading-relaxed whitespace-pre-line select-text">
-        {{ result.message }}
-      </p>
-      <Tip v-if="!result.ok" :label="dialogs.copyStorageError">
-        <button
-          type="button"
-          class="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium text-muted transition-colors hover:bg-hover hover:text-surface"
-          data-test-id="settings-storage-result-copy"
-          :aria-label="dialogs.copyStorageError"
-          @click="copyResultError"
-        >
-          <icon-lucide-check v-if="errorCopied" class="size-3" />
-          <icon-lucide-copy v-else class="size-3" />
-        </button>
-      </Tip>
-    </div>
-
-    <button
       v-if="provider.corsConfiguration === 's3'"
       type="button"
-      class="rounded px-3 py-1.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
+      class="self-start rounded px-3 py-1.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
       @click="copyCorsConfiguration"
     >
       {{ copied ? dialogs.copied : dialogs.copyStorageCors }}
     </button>
 
-    <button
-      type="button"
-      class="rounded border border-border px-3 py-1.5 text-[11px] font-medium text-surface hover:bg-hover disabled:text-muted disabled:opacity-50"
-      :disabled="!configured"
-      data-test-id="settings-storage-open-workspace"
-      @click="openWorkspace"
+    <!--
+      Prove, then commit — and never one without the other in view.
+
+      A single morphing button meant the panel showed "Test connection" for the
+      active provider and "Use <provider>" for any other, so the two halves of
+      the flow could not be seen together and testing before switching was not
+      offered at all. Both live here now, pinned to the bottom of the scroll
+      area: the form above can grow to any provider's field count without
+      pushing the decision, or the result that justifies it, below the fold.
+    -->
+    <!--
+      `-bottom-4`, not `bottom-0`: the dialog body pads its scrollport by 4, and
+      pinning to the content edge left a 4-high strip underneath the bar where
+      the form scrolled past in plain sight. The offset has to cancel the same
+      padding the negative margins do.
+    -->
+    <div
+      class="sticky -bottom-4 -mx-4 -mb-4 flex flex-col gap-2 border-t border-border bg-panel px-4 py-3"
+      data-test-id="settings-storage-actions"
     >
-      {{ dialogs.openStorageWorkspace }}
-    </button>
+      <!--
+        Kept with the actions it arms. This used to render after "Open
+        workspace" at the very bottom of the panel, so a failed test showed its
+        message below the fold and read as if nothing had happened at all.
+      -->
+      <div
+        v-if="result"
+        class="flex items-start gap-2 rounded border px-2 py-1.5"
+        :class="
+          result.ok
+            ? 'border-border bg-panel text-success'
+            : 'border-[var(--color-warning-border)] bg-[rgb(239_68_68/0.1)] text-danger'
+        "
+        :data-state="result.ok ? 'success' : 'error'"
+        data-test-id="settings-storage-result"
+        :role="result.ok ? 'status' : 'alert'"
+      >
+        <icon-lucide-circle-check v-if="result.ok" class="mt-px size-3 shrink-0" />
+        <icon-lucide-circle-alert v-else class="mt-px size-3 shrink-0" />
+        <p
+          class="max-h-24 flex-1 overflow-y-auto text-[10px] leading-relaxed whitespace-pre-line select-text"
+        >
+          {{ result.message }}
+        </p>
+        <Tip v-if="!result.ok" :label="dialogs.copyStorageError">
+          <button
+            type="button"
+            class="flex shrink-0 items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium text-muted transition-colors hover:bg-hover hover:text-surface"
+            data-test-id="settings-storage-result-copy"
+            :aria-label="dialogs.copyStorageError"
+            @click="copyResultError"
+          >
+            <icon-lucide-check v-if="errorCopied" class="size-3" />
+            <icon-lucide-copy v-else class="size-3" />
+          </button>
+        </Tip>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div class="min-w-0 flex-1">
+          <!--
+            Only while a switch is on the table. On the active provider's own
+            form this would assert a destination the panel cannot vouch for —
+            an unconfigured first run has an `activeStorageProviderID` too.
+          -->
+          <p v-if="!isActiveProvider" class="text-[10px] text-muted">
+            {{ dialogs.storageActiveProvider({ provider: activeProvider.label }) }}
+          </p>
+          <!--
+            Say why the commit is locked. A disabled button swallows pointer
+            events, so a tooltip on it would never open — the reason has to be
+            standing text next to it.
+          -->
+          <p
+            v-if="!isActiveProvider && !canUse"
+            class="text-[10px] text-muted/70"
+            data-test-id="settings-storage-use-hint"
+          >
+            {{ dialogs.storageTestBeforeUse }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="flex shrink-0 items-center justify-center gap-1.5 rounded border border-border px-3 py-1.5 text-[11px] font-medium text-surface hover:bg-hover disabled:opacity-50"
+          :disabled="busy"
+          data-test-id="settings-storage-test"
+          @click="testConnection"
+        >
+          <icon-lucide-loader-circle v-if="busy" class="size-3 animate-spin" />
+          {{ busy ? dialogs.testingConnection : dialogs.testConnection }}
+        </button>
+
+        <!--
+          One primary slot, always filled by whatever "proceed" means here:
+          adopting a new destination, or opening the one already in use.
+        -->
+        <Tip
+          v-if="!isActiveProvider"
+          :label="dialogs.storageUseProvider({ provider: provider.label })"
+        >
+          <button
+            type="button"
+            class="shrink-0 rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+            :disabled="!canUse || busy"
+            data-test-id="settings-storage-use"
+            @click="useProvider"
+          >
+            {{ dialogs.storageUseThisProvider }}
+          </button>
+        </Tip>
+        <button
+          v-else
+          type="button"
+          class="shrink-0 rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+          :disabled="!configured"
+          data-test-id="settings-storage-open-workspace"
+          @click="openWorkspace"
+        >
+          {{ dialogs.openStorageWorkspace }}
+        </button>
+      </div>
+    </div>
 
     <AppAlertDialogRoot
       v-model:open="switchDialogOpen"

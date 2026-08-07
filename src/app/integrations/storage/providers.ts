@@ -1,8 +1,11 @@
 import appwriteLogoUrl from '@/assets/appwrite-logo.svg'
 import backblazeLogoUrl from '@/assets/backblaze-logo.svg'
 import bucketIconUrl from '@/assets/bucket.svg'
+// Explicitly inlined: at 6.8 KB this is the one provider mark over the build's
+// 4 KB inline threshold, so it alone shipped as a separate request while every
+// other logo became a data URI — and it alone could fail to load.
+import bunnyLogoUrl from '@/assets/bunny-logo.svg?inline'
 import cloudflareLogoUrl from '@/assets/cloudflare-logo.svg'
-import bunnyLogoUrl from '@/assets/logo-bunnynet-icon.svg'
 
 import { createAppwriteStorageAdapter } from './appwrite/adapter'
 import {

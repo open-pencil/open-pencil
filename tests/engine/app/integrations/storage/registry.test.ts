@@ -75,7 +75,7 @@ describe('storage provider registry', () => {
 
     expect(provider.preferenceFields.map((field) => field.id)).toEqual(['storage-zone', 'endpoint'])
     expect(provider.credentialFields.map((field) => field.id)).toEqual(['password'])
-    expect(provider.icon).toContain('logo-bunnynet-icon.svg')
+    expect(provider.icon).toContain('bunny-logo.svg')
     expect(appCredentialRefs().map(credentialKey)).toContain('v1:bunny-storage:default:password')
   })
 

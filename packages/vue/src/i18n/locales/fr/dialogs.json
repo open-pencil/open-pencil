@@ -258,6 +258,8 @@
   "syncErrorCorsConfiguration": "Configuration CORS du bucket",
   "syncRetryNow": "Réessayer maintenant",
   "storageUseProvider": "Utiliser {provider} pour le stockage cloud",
+  "storageUseThisProvider": "Utiliser ce fournisseur",
+  "storageTestBeforeUse": "Testez d'abord la connexion",
   "storageActiveProvider": "Synchronisation en cours avec {provider}.",
   "storageSwitchTitle": "Changer de fournisseur de stockage ?",
   "storageSwitchBody": "Cet appareil cesse de se synchroniser avec {from}. Les documents déjà sauvegardés y sont conservés ici en tant que fichiers locaux, et rien n’est supprimé de {from}. Les documents listés depuis le bucket mais jamais téléchargés disparaîtront jusqu’à ce que vous vous reconnectiez.",

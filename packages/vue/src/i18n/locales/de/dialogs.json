@@ -258,6 +258,8 @@
   "syncErrorCorsConfiguration": "CORS-Konfiguration des Buckets",
   "syncRetryNow": "Jetzt erneut versuchen",
   "storageUseProvider": "{provider} für Cloud-Speicher verwenden",
+  "storageUseThisProvider": "Diesen Anbieter verwenden",
+  "storageTestBeforeUse": "Zuerst die Verbindung testen",
   "storageActiveProvider": "Wird derzeit mit {provider} synchronisiert.",
   "storageSwitchTitle": "Speicheranbieter wechseln?",
   "storageSwitchBody": "Dieses Gerät synchronisiert nicht mehr mit {from}. Dort gesicherte Dokumente bleiben hier als lokale Dateien, und aus {from} wird nichts entfernt. Dokumente, die nur aufgelistet und nie heruntergeladen wurden, verschwinden, bis du dich wieder verbindest.",

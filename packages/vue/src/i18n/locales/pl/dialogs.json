@@ -258,6 +258,8 @@
   "syncErrorCorsConfiguration": "Konfiguracja CORS zasobnika",
   "syncRetryNow": "Ponów teraz",
   "storageUseProvider": "Użyj {provider} do magazynu w chmurze",
+  "storageUseThisProvider": "Użyj tego dostawcy",
+  "storageTestBeforeUse": "Najpierw przetestuj połączenie",
   "storageActiveProvider": "Obecnie synchronizacja z {provider}.",
   "storageSwitchTitle": "Zmienić dostawcę magazynu?",
   "storageSwitchBody": "To urządzenie przestanie synchronizować się z {from}. Dokumenty już tam zarchiwizowane pozostaną tutaj jako pliki lokalne, a z {from} nic nie zostanie usunięte. Dokumenty wypisane z kubełka, ale nigdy nie pobrane, znikną do czasu ponownego połączenia.",

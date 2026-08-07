@@ -66,6 +66,7 @@
 
 - Redesign the editor chrome and Design panel with denser, better-aligned controls, clearer selection and section states, improved menus and overlays, consistent light/dark theming, and better keyboard and screen-reader support.
 - Integrate the local browser-storage notice into the empty workspace instead of showing a separate full-width banner above it. A workspace that already holds documents now reads the same caveat from the sync status chip in the footer, which keeps the document grid at the top of the window.
+- Keep "Test connection" and the commit action side by side at the bottom of Cloud storage settings, whatever the form's length, and unlock adopting a provider only once a test of the values on screen has passed.
 - Keep the cloud-backup switch global and visible independently of the selected storage provider.
 - Center full-area empty and setup states consistently across panels, dialogs, and workspaces.
 - Choose Freeform, vertical, horizontal, or grid flow directly from the contextual Layout section, with sizing controls grouped alongside it.

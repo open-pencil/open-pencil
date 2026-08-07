@@ -258,6 +258,8 @@
   "syncErrorCorsConfiguration": "存储桶 CORS 配置",
   "syncRetryNow": "立即重试",
   "storageUseProvider": "使用 {provider} 作为云存储",
+  "storageUseThisProvider": "使用此提供商",
+  "storageTestBeforeUse": "请先测试连接",
   "storageActiveProvider": "当前正在与 {provider} 同步。",
   "storageSwitchTitle": "切换存储提供商？",
   "storageSwitchBody": "此设备将停止与 {from} 同步。已备份到那里的文档会作为本地文件保留在此设备上，{from} 中不会删除任何内容。仅在存储桶中列出但从未下载的文档将消失，直到你重新连接。",

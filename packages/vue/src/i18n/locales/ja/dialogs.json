@@ -258,6 +258,8 @@
   "syncErrorCorsConfiguration": "バケットの CORS 設定",
   "syncRetryNow": "今すぐ再試行",
   "storageUseProvider": "クラウドストレージに {provider} を使用",
+  "storageUseThisProvider": "このプロバイダーを使用",
+  "storageTestBeforeUse": "先に接続をテストしてください",
   "storageActiveProvider": "現在 {provider} と同期しています。",
   "storageSwitchTitle": "ストレージプロバイダーを切り替えますか？",
   "storageSwitchBody": "このデバイスは {from} との同期を停止します。バックアップ済みのドキュメントはローカルファイルとしてここに残り、{from} からは何も削除されません。バケットに一覧表示されただけでダウンロードされていないドキュメントは、再接続するまで表示されなくなります。",
