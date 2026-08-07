@@ -204,3 +204,17 @@ describe('create_vector', () => {
     }
   })
 })
+
+describe('create_shape discoverability', () => {
+  test('every supported node type is named in the description', () => {
+    const tool = getTool('create_shape')
+    const supported = tool.params.type.enum ?? []
+    expect(supported.length).toBeGreaterThan(0)
+
+    // The enum is invisible to a model choosing a tool; it reads the prose.
+    // STAR/POLYGON/LINE were supported but unmentioned, so agents concluded
+    // stars were impossible and hand-rasterised them instead.
+    const missing = supported.filter((type) => !tool.description.includes(type))
+    expect(missing).toEqual([])
+  })
+})
