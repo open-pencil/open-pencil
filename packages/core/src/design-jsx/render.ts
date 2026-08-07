@@ -144,6 +144,7 @@ const SVG_ROOT_PROPS = new Set([...SUPPORTED_PROPS, 'viewBox', 'body'])
 
 function collectUnsupportedPropWarnings(tree: TreeNode, warnings: string[]): void {
   const supportedProps = tree.type === 'svg' ? SVG_ROOT_PROPS : SUPPORTED_PROPS
+
   for (const key of Object.keys(tree.props)) {
     if (!supportedProps.has(key)) {
       warnings.push(`Unsupported prop "${key}" on <${tree.type}> is ignored.`)
