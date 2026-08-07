@@ -6,6 +6,7 @@ import {
   createModelProfileDraft,
   designModelProfiles,
   modelSettingsSnapshot,
+  parseAIModelSettings,
   removeModelProfile,
   replaceAIModelSettings,
   resolveAIModelRole,
@@ -62,7 +63,8 @@ function settingsFixture(): AIModelSettings {
       design: 'model-design',
       review: 'design',
       fast: 'model-fast',
-      vision: 'design'
+      vision: 'design',
+      audio: null
     }
   }
 }
@@ -177,6 +179,69 @@ describe('AI model profiles and role assignments', () => {
     expect(saveModelProfileDraft(draft).maxOutputTokens).toBe(16_384)
   })
 
+  test('treats an unspecified text input setting as enabled', () => {
+    const draft = createModelProfileDraft('model-fast')
+    expect(draft.textInput).toBeUndefined()
+
+    draft.textInput = false
+    expect(saveModelProfileDraft(draft).textInput).toBe(false)
+  })
+
+  test('persists transcription profiles without exposing them as language-model roles', () => {
+    const draft = createModelProfileDraft()
+    draft.name = 'Local Whisper'
+    draft.providerID = 'openai-compatible'
+    draft.customBaseURL = 'http://127.0.0.1:1234/v1'
+    draft.customModelID = 'whisper-large-v3'
+    draft.customAPIType = 'transcription'
+    draft.capabilities = ['audio']
+
+    const profile = saveModelProfileDraft(draft)
+    expect(
+      aiModelSettings.value.connections.find((item) => item.id === profile.connectionId)
+    ).toMatchObject({ customAPIType: 'transcription' })
+    expect(designModelProfiles()).not.toContainEqual(profile)
+
+    setModelRoleAssignment('fast', profile.id)
+    expect(resolveAIModelRole('fast')?.profile.id).toBe('model-fast')
+  })
+
+  test('persists audio assignments and clears language roles converted to transcription', () => {
+    const settings = modelSettingsSnapshot()
+    settings.models[1].capabilities.push('audio')
+    replaceAIModelSettings(settings)
+    setModelRoleAssignment('audio', 'model-fast')
+    expect(resolveAIModelRole('audio')?.profile.id).toBe('model-fast')
+
+    const draft = createModelProfileDraft('model-fast')
+    draft.providerID = 'openai-compatible'
+    draft.customBaseURL = 'http://127.0.0.1:1234/v1'
+    draft.customAPIType = 'transcription'
+    saveModelProfileDraft(draft)
+
+    const updated = modelSettingsSnapshot()
+    expect(updated.assignments.fast).toBeNull()
+    expect(updated.assignments.audio).toBe('model-fast')
+  })
+
+  test('normalizes persisted transcription assignments for language roles', () => {
+    const settings = settingsFixture()
+    settings.connections[1].customAPIType = 'transcription'
+    settings.models[1].capabilities.push('audio')
+    settings.assignments.review = 'model-fast'
+    settings.assignments.fast = 'model-fast'
+    settings.assignments.vision = 'model-fast'
+    settings.assignments.audio = 'model-fast'
+
+    expect(parseAIModelSettings(settings)?.assignments).toEqual({
+      design: 'model-design',
+      review: null,
+      fast: null,
+      vision: null,
+      audio: 'model-fast'
+    })
+  })
+
   test('repairs assignments when removing a model', () => {
     removeModelProfile('model-design')
     const settings = modelSettingsSnapshot()
@@ -226,5 +291,31 @@ describe('AI model profiles and role assignments', () => {
     } finally {
       await setModelConnectionAPIKey('connection-anthropic', '')
     }
+  })
+
+  test('creates an OpenAI-compatible runtime without an API key', async () => {
+    const settings = settingsFixture()
+    settings.connections.push({
+      id: 'connection-local',
+      providerID: 'openai-compatible',
+      customBaseURL: 'http://127.0.0.1:1234/v1',
+      customAPIType: 'completions',
+      credentialProfileId: 'local-no-key'
+    })
+    settings.models.push({
+      id: 'model-local',
+      name: 'LM Studio',
+      connectionId: 'connection-local',
+      modelID: '',
+      customModelID: 'local-model',
+      maxOutputTokens: 4096,
+      capabilities: ['tools']
+    })
+    settings.assignments.design = 'model-local'
+    replaceAIModelSettings(settings)
+
+    const runtime = await createAIModelRuntime('design')
+    expect(runtime?.kind).toBe('direct')
+    expect(runtime?.role.profile.id).toBe('model-local')
   })
 })

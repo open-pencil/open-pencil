@@ -296,9 +296,13 @@ describe('MCP tool execution', () => {
 
   test('list_pages returns all pages', () => {
     const { api } = setup()
-    const result = findTool('list_pages').execute(api, {}) as { pages: { name: string }[] }
+    const result = findTool('list_pages').execute(api, {}) as {
+      current: { id: string; name: string }
+      pages: { name: string }[]
+    }
     expect(result.pages.length).toBeGreaterThanOrEqual(1)
     expect(result.pages[0].name).toBe('Page 1')
+    expect(result.current.name).toBe('Page 1')
   })
 
   test('error on missing node', () => {
@@ -313,7 +317,9 @@ describe('MCP tool execution', () => {
     const pages = findTool('list_pages').execute(api, {}) as { pages: { name: string }[] }
     expect(pages.pages.length).toBeGreaterThanOrEqual(1)
 
-    const found = findTool('find_nodes').execute(api, { type: 'INSTANCE' }) as { count: number }
+    const found = findTool('find_nodes').execute(api, { type: 'INSTANCE', depth: 100 }) as {
+      count: number
+    }
     expect(found.count).toBeGreaterThan(0)
   })
 })

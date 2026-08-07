@@ -12,11 +12,19 @@ import {
   setTextProperties,
   updateNode
 } from './modify'
-import { findNodes, getJsx, getNode, getSelection } from './read'
+import {
+  findNodes,
+  getJsx,
+  getNode,
+  getPageTree,
+  getSelection,
+  listPages,
+  switchPage
+} from './read'
 import type { ToolDef } from './schema'
 import { stockPhoto } from './stock-photo'
 import { batchUpdate, deleteNode, nodeResize, reparentNode } from './structure'
-import { viewportZoomToFit } from './vector'
+import { exportImage, viewportZoomToFit } from './vector'
 
 /**
  * Core tools registered by default in AI chat (~30 tools, ~3K schema tokens).
@@ -28,6 +36,9 @@ export const CORE_TOOLS: ToolDef[] = [
   getNode,
   findNodes,
   getJsx,
+  listPages,
+  getPageTree,
+  switchPage,
   // Create
   render,
   // Modify
@@ -50,5 +61,6 @@ export const CORE_TOOLS: ToolDef[] = [
   describe,
   calc,
   evalCode,
+  exportImage,
   viewportZoomToFit
 ]

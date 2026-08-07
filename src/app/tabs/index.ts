@@ -19,6 +19,7 @@ import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
+import { forgetDevOpenFilePath, rememberDevOpenFilePath } from '@/app/tauri/dev-file-storage'
 
 export interface Tab {
   id: string
@@ -70,10 +71,12 @@ export function getTabsSnapshot(): Tab[] {
 }
 
 export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
+  const hadExistingTabs = tabsRef.value.length > 0
   const s = store ?? createEditorStore(initialGraph)
   const tab: Tab = { id: generateTabId(), store: s }
   tabsRef.value = [...tabsRef.value, tab]
   activateTab(tab)
+  if (hadExistingTabs) rememberActiveFile(tab)
   return tab
 }
 
@@ -84,10 +87,17 @@ function activateTab(tab: Tab) {
   setOpenPencilStore(tab.store)
 }
 
+function rememberActiveFile(tab: Tab) {
+  const path = tab.store.getSourceIdentity().path
+  if (path) rememberDevOpenFilePath(path)
+  else forgetDevOpenFilePath()
+}
+
 export function switchTab(tabId: string) {
   const tab = tabsRef.value.find((t) => t.id === tabId)
   if (!tab) return
   activateTab(tab)
+  rememberActiveFile(tab)
 }
 
 export function closeTab(tabId: string) {
@@ -99,6 +109,7 @@ export function closeTab(tabId: string) {
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
   if (tabsRef.value.length === 0) {
+    forgetDevOpenFilePath()
     createTab()
     closingTab.store.dispose()
     return
@@ -107,6 +118,7 @@ export function closeTab(tabId: string) {
   if (wasActive) {
     const newIdx = Math.min(idx, tabsRef.value.length - 1)
     activateTab(tabsRef.value[newIdx])
+    rememberActiveFile(tabsRef.value[newIdx])
   }
 
   closingTab.store.dispose()
