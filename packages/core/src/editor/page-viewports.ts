@@ -3,7 +3,7 @@ import { readStoredPageColor } from '@open-pencil/fig'
 import { CANVAS_BG_COLOR, DECK_CANVAS_BG_COLOR } from '#core/constants'
 
 import { documentKindRules } from './document-kind'
-import type { EditorContext } from './types'
+import type { EditorContext, Viewport } from './types'
 
 /**
  * Camera only. The stage colour is NOT cached here.
@@ -15,14 +15,8 @@ import type { EditorContext } from './types'
  * read. `setPageColor` writes through to the document, so the document is the
  * only source of truth and this cache has nothing to add.
  */
-interface PageViewport {
-  panX: number
-  panY: number
-  zoom: number
-}
-
 export function createPageViewportStore(ctx: EditorContext) {
-  const pageViewports = new Map<string, PageViewport>()
+  const pageViewports = new Map<string, Viewport>()
 
   function rules() {
     return documentKindRules(ctx.state.documentKind)

@@ -16,6 +16,7 @@ import {
 } from '../namespace'
 import { storageThumbnailMimeType } from '../thumbnail'
 import type {
+  DownloadProgress,
   StorageAdapter,
   StorageDocument,
   StorageDocumentMetadata,
@@ -239,7 +240,7 @@ export function createS3StorageAdapterWithConfig(
     async getDocument(id, onProgress) {
       const config = await resolveConfig()
       const mapProgress = onProgress
-        ? (progress: { receivedBytes: number; totalBytes: number | null }) =>
+        ? (progress: DownloadProgress) =>
             onProgress({
               transferredBytes: progress.receivedBytes,
               totalBytes: progress.totalBytes

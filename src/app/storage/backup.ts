@@ -1,8 +1,8 @@
 import { useLocalStorage } from '@vueuse/core'
 
+import type { StorageSyncDependencies } from '@/app/storage/dependencies'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
-import type { LocalCanvasStore } from '@/app/storage/local-store/store'
-import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
+import { getOutbox } from '@/app/storage/sync/outbox'
 
 /**
  * Whether configured cloud storage actually receives uploads.
@@ -17,11 +17,6 @@ import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
  * from where it left off.
  */
 export const backupToCloud = useLocalStorage('open-pencil:storage:backup-enabled', true)
-
-export type PauseDependencies = {
-  store: LocalCanvasStore
-  outbox: Outbox
-}
 
 /**
  * Stop pushing, immediately.
@@ -40,7 +35,7 @@ export type PauseDependencies = {
  * document stays gone locally, and the remote copy survives untouched until
  * backup resumes. Pausing must never reach the network.
  */
-export async function pauseCloudBackup(dependencies?: PauseDependencies): Promise<string[]> {
+export async function pauseCloudBackup(dependencies?: StorageSyncDependencies): Promise<string[]> {
   const outbox = dependencies?.outbox ?? getOutbox()
   const store = dependencies?.store ?? getLocalCanvasStore()
 

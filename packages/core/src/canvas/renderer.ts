@@ -15,7 +15,7 @@ import {
   COMPONENT_SET_BORDER_WIDTH,
   IS_BROWSER
 } from '#core/constants'
-import type { EditorState } from '#core/editor/types'
+import type { EditorState, Viewport } from '#core/editor/types'
 import { RenderProfiler } from '#core/profiler'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
@@ -149,7 +149,7 @@ export class SkiaRenderer {
   sceneBackingAverageRecordMs = 40
   sceneBackingAverageViewportIntervalMs = 80
   sceneBackingLastViewportEventAt = 0
-  lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
+  lastSceneViewport: Viewport | null = null
   nodePictureCache = new Map<string, SkPicture | null>()
   nodePictureCacheGenerations = new Map<string, number>()
   subtreePictureCache = new Map<string, SubtreePictureCacheEntry>()

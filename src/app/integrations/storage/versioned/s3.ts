@@ -8,11 +8,10 @@ import {
   putObject,
   putObjectResumable,
   s3Request,
-  type DownloadProgress,
   type UploadProgress
 } from '../s3/client'
 import type { S3CompatibleConfig } from '../s3/types'
-import type { CommittedVersion, StorageDocumentMetadata } from '../types'
+import type { CommittedVersion, DownloadProgress, StorageDocumentMetadata } from '../types'
 import {
   nextDocumentHead,
   parseDocumentHead,

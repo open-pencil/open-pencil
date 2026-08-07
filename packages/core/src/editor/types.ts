@@ -20,6 +20,17 @@ import type { DocumentKind } from './document-kind'
 /** How a canvas renderer participates in editor-wide renderer-backed operations. */
 export type CanvasRendererRole = 'primary' | 'auxiliary'
 
+/**
+ * Where the camera is. The same three numbers are cached per page, carried
+ * across a reload, compared for redraw, and reported on `viewport:changed`, and
+ * each of those had spelled the shape out for itself.
+ */
+export type Viewport = {
+  panX: number
+  panY: number
+  zoom: number
+}
+
 export type Tool =
   | 'SELECT'
   | 'FRAME'
@@ -122,10 +133,7 @@ export interface EditorEvents extends SceneGraphEvents {
   /** Fires after a page switch has finished loading fonts and recomputing layout. */
   'page:ready': (pageId: string) => void
   'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
-  'viewport:changed': (
-    viewport: { panX: number; panY: number; zoom: number },
-    previous: { panX: number; panY: number; zoom: number }
-  ) => void
+  'viewport:changed': (viewport: Viewport, previous: Viewport) => void
 }
 
 export type EditorEventName = keyof EditorEvents

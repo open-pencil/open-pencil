@@ -3,6 +3,7 @@ import {
   storageFetchTimeoutForBody,
   withTimeoutSignal
 } from '@/app/integrations/storage/fetch'
+import type { DownloadProgress } from '@/app/integrations/storage/types'
 import { IS_BROWSER } from '@/constants'
 
 import type { AppwriteConfig } from './config'
@@ -46,11 +47,6 @@ type AppwriteErrorPayload = {
 export type AppwriteUploadProgress = {
   sentBytes: number
   totalBytes: number
-}
-
-export type AppwriteDownloadProgress = {
-  receivedBytes: number
-  totalBytes: number | null
 }
 
 export class AppwriteHttpError extends Error {
@@ -372,7 +368,7 @@ export async function getObject(
   config: AppwriteConfig,
   bucketId: string,
   key: string,
-  onProgress?: (progress: AppwriteDownloadProgress) => void
+  onProgress?: (progress: DownloadProgress) => void
 ): Promise<Uint8Array | null> {
   const fileId = await appwriteFileId(key)
   const response = await appwriteFetch(

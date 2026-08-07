@@ -1,12 +1,7 @@
+import type { StorageSyncDependencies } from '@/app/storage/dependencies'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
-import type { LocalCanvasStore } from '@/app/storage/local-store/store'
-import { getOutbox, type Outbox } from '@/app/storage/sync/outbox'
+import { getOutbox } from '@/app/storage/sync/outbox'
 import type { StorageTargetID } from '@/app/storage/target'
-
-export type DisconnectDependencies = {
-  store: LocalCanvasStore
-  outbox: Outbox
-}
 
 export type DisconnectResult = {
   /** Locally backed rows that kept their bytes and became local-only. */
@@ -19,7 +14,7 @@ export type DisconnectResult = {
   cancelledJobIds: string[]
 }
 
-function defaultDependencies(): DisconnectDependencies {
+function defaultDependencies(): StorageSyncDependencies {
   return { store: getLocalCanvasStore(), outbox: getOutbox() }
 }
 
@@ -57,7 +52,7 @@ function defaultDependencies(): DisconnectDependencies {
  */
 export async function disconnectStorageTarget(
   targetId: StorageTargetID,
-  dependencies?: Partial<DisconnectDependencies>
+  dependencies?: Partial<StorageSyncDependencies>
 ): Promise<DisconnectResult> {
   const deps = { ...defaultDependencies(), ...dependencies }
   const result: DisconnectResult = {

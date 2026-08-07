@@ -21,5 +21,6 @@ export type {
   EditorOptions,
   EditorState,
   FigmaClipboardImageResolver,
-  Tool
+  Tool,
+  Viewport
 } from './types'

@@ -34,6 +34,18 @@ export type StorageTransferProgress = {
   totalBytes: number | null
 }
 
+/**
+ * A download in flight, as the provider clients report it.
+ *
+ * Distinct from `StorageTransferProgress`, which is what the sync engine
+ * consumes: an adapter renames the field on the way through. Every client
+ * counts received bytes the same way, so they share one shape.
+ */
+export type DownloadProgress = {
+  receivedBytes: number
+  totalBytes: number | null
+}
+
 export type StorageDocumentMetadata = {
   name: string
   updatedAt: string

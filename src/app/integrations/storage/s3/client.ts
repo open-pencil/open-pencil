@@ -8,6 +8,7 @@ import {
   parseS3ErrorXml,
   type ListedObject
 } from '@/app/integrations/storage/s3/xml'
+import type { DownloadProgress } from '@/app/integrations/storage/types'
 
 export function resolveS3Region(config: S3CompatibleConfig): string {
   const explicit = config.region?.trim()
@@ -214,8 +215,6 @@ export async function putObject(
     throw new S3HttpError(res.status, `Failed to upload ${key}: ${message}`, code)
   }
 }
-
-export type DownloadProgress = { receivedBytes: number; totalBytes: number | null }
 
 export async function getObject(
   config: S3CompatibleConfig,
