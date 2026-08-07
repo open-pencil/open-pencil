@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: './src/index.ts',
     copy: './src/copy.ts',
+    raw: './src/raw.ts',
     'node-defaults': './src/node-defaults.ts',
     'hit-test': './src/hit-test.ts',
     images: './src/images.ts',

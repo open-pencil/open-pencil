@@ -8,6 +8,7 @@ import {
   type PluginRelaunchDataEntry,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import { resolveVariableConsumptionEntry } from './variable-bindings'
@@ -18,6 +19,7 @@ export const LAYOUT_DIRECTION_PLUGIN_KEY = 'layoutDirection'
 export const NODE_TYPE_PLUGIN_KEY = 'nodeType'
 export const BOUND_VARIABLES_PLUGIN_KEY = 'boundVariables'
 export const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
+export const TEXT_PATH_BOX_PLUGIN_KEY = 'textPathBox'
 
 const NATIVE_EXPORT_FORMATS: Record<string, ExportFormatId> = {
   PNG: 'png',
@@ -49,6 +51,43 @@ export function applyExportSettingsPluginData(
     return
   }
   upsertPluginData(node, EXPORT_SETTINGS_PLUGIN_KEY, JSON.stringify(node.exportSettings))
+}
+
+/**
+ * textPathBox is OpenPencil-only state (the node-local rect the TEXT_PATH
+ * layout path maps onto, after import-time box expansion and resize scaling).
+ * The Kiwi schema has no home for it, and reconstructing it from an expanded,
+ * resized node is ambiguous — persist it as plugin data so save/reopen keeps
+ * reflow anchored correctly.
+ */
+export function applyTextPathBoxPluginData(node: {
+  textPathBox: Rect | null
+  pluginData: PluginDataEntry[]
+}): void {
+  if (!node.textPathBox) return
+  upsertPluginData(node, TEXT_PATH_BOX_PLUGIN_KEY, JSON.stringify(node.textPathBox))
+}
+
+export function extractTextPathBox(nc: NodeChange): Rect | null {
+  const value = getOpenPencilPluginValue(nc, TEXT_PATH_BOX_PLUGIN_KEY)
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value) as Partial<Rect> | null
+    if (!parsed || typeof parsed !== 'object') return null
+    const { x, y, width, height } = parsed
+    if (
+      typeof x !== 'number' ||
+      typeof y !== 'number' ||
+      typeof width !== 'number' ||
+      typeof height !== 'number'
+    ) {
+      return null
+    }
+    if (!Number.isFinite(x + y + width + height) || width <= 0 || height <= 0) return null
+    return { x, y, width, height }
+  } catch {
+    return null
+  }
 }
 
 function hasOpenPencilExportSettingsPluginData(pluginData: PluginDataEntry[]): boolean {

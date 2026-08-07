@@ -44,6 +44,13 @@ export function textAutoResizeChanges(
   changes: Partial<SceneNode>
 ): Partial<Pick<SceneNode, 'width' | 'height' | 'figmaDerivedLayout' | 'figmaDerivedTextGlyphs'>> {
   if (node?.type !== 'TEXT' || !hasTextAutoResizeChange(changes)) return {}
+  // Path text is laid out along its path (figmaDerivedTextGlyphs on textPathBox),
+  // not by paragraph auto-resize. Running the measurement here would null the
+  // derived glyphs — destroying the on-path lettering — whenever an imported
+  // TEXT_PATH carries textAutoResize HEIGHT/WIDTH_AND_HEIGHT and a keystroke
+  // can't reflow (font outlines or the layout path unavailable). pathTextEditChanges
+  // owns path-text reflow; leave its glyphs alone.
+  if (node.textPathBox) return {}
 
   const next = { ...node, ...changes }
   const mode = next.textAutoResize
