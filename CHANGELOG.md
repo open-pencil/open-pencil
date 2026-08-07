@@ -78,6 +78,7 @@
 
 ### Fixed
 
+- Stop reporting "Sync failed" and "Preview not synced" on documents when cloud storage has no usable credentials. Storage preferences (endpoint, bucket) alone were enough to queue uploads, so every save enqueued a job that could only fail — and the failure was recorded on the document while the workspace footer read "No cloud configured · Local storage only". A destination without credentials now gates uploads exactly like paused backup: saves stay local without queueing, blocked jobs park without marking the document, and a startup sweep lifts stale failure marks from documents whose destination cannot be attempted. Repairing the credentials resumes synchronization as before.
 - Make cloud storage setup a single visible action: choosing an inactive provider now saves and tests its connection before activating it, instead of hiding a second required “Use provider” button below the settings fold. Unconfigured workspaces also accept dropped `.fig` and `.deck` files into local storage.
 - Stop a slide from staying blank in the filmstrip forever. Rendering a slide before its document finished loading produced an empty frame, and that frame was cached and written to disk, so the first slide of a deck — the only one on screen when the filmstrip mounts — came back blank on every later open. Empty renders are never stored, are re-rendered on the next request, and any already saved are replaced rather than shown.
 - Keep saved slide thumbnails on screen while a deck opens, instead of showing a placeholder for every slide until the load finishes.

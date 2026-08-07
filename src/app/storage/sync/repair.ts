@@ -1,4 +1,5 @@
 import { backupIsActive } from '@/app/storage/backup'
+import { storageTargetUsable } from '@/app/storage/configured'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store/types'
@@ -147,4 +148,83 @@ export async function repairOrphanedPendingRows(
   }
 
   return result
+}
+
+export type UnusableTargetFailureDependencies = {
+  getStore: () => LocalCanvasStore
+  getOutbox: () => Outbox
+  /** Whether the destination can receive an upload right now. */
+  targetUsable: (targetId: StorageTargetID) => Promise<boolean>
+}
+
+const defaultUnusableTargetFailureDependencies: UnusableTargetFailureDependencies = {
+  getStore: getLocalCanvasStore,
+  getOutbox,
+  targetUsable: storageTargetUsable
+}
+
+/**
+ * Lift failure marks a destination could not have produced.
+ *
+ * A row whose target is currently unusable (preferences without credentials,
+ * say) cannot have a live sync failure: no upload is being attempted, and the
+ * workspace presents itself as local-only. Any `error` status or recorded
+ * message on such a row is a leftover — written by a job that was drained
+ * after the settings broke, or by an older build that recorded the block
+ * itself as a failure — and renders as a red badge on an otherwise healthy
+ * local document.
+ *
+ * The status is repaired from durable facts, matching the pause semantics:
+ * `pending` while a job (parked counts — resume() revives it) still owes the
+ * destination work, `local` when bytes are outstanding but nothing is queued,
+ * `synced` when nothing is owed. Rows whose target IS usable keep their
+ * recorded failure untouched — the sweep lifts noise, it does not launder
+ * real faults.
+ */
+export async function clearUnusableTargetFailures(
+  dependencies: Partial<UnusableTargetFailureDependencies> = {}
+): Promise<number> {
+  const deps = { ...defaultUnusableTargetFailureDependencies, ...dependencies }
+  const store = deps.getStore()
+  const queued = await indexQueuedTargets(deps.getOutbox())
+  const usableByTarget = new Map<StorageTargetID, boolean>()
+  let released = 0
+
+  for (const meta of await store.listMetas(false)) {
+    if (
+      meta.syncStatus !== 'error' &&
+      meta.lastSyncError === null &&
+      meta.lastThumbSyncError === null
+    ) {
+      continue
+    }
+    if (meta.syncTargetId === null) continue
+    let usable = usableByTarget.get(meta.syncTargetId)
+    if (usable === undefined) {
+      usable = await deps.targetUsable(meta.syncTargetId)
+      usableByTarget.set(meta.syncTargetId, usable)
+    }
+    if (usable) continue
+
+    let syncStatus = meta.syncStatus
+    if (meta.syncStatus === 'error') {
+      if (queued.get(meta.id)?.has(meta.syncTargetId) === true) {
+        // A durable job still owes the destination work — parked counts,
+        // because resume() revives it once settings are repaired.
+        syncStatus = 'pending'
+      } else {
+        // No job is coming: same settle the pending sweep applies.
+        syncStatus = hasOutstandingBody(meta) ? 'local' : 'synced'
+      }
+    }
+    await store.updateMeta(
+      meta.id,
+      { syncStatus, lastSyncError: null, lastThumbSyncError: null },
+      // Cheap compare-and-set, same as the pending sweep above.
+      { expectedRevision: meta.revision }
+    )
+    released += 1
+  }
+
+  return released
 }

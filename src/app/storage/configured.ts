@@ -10,6 +10,7 @@ import {
 } from '@/app/integrations/storage'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { settingsDialogOpen } from '@/app/settings/dialog'
+import { providerIdOfTarget, type StorageTargetID } from '@/app/storage/target'
 
 export type StorageCredentialStatuses = Record<StorageFieldID, CredentialStatus>
 
@@ -21,6 +22,30 @@ export function storageCredentialsSatisfied(
   return storageProviderRegistry
     .get(providerId)
     .credentialFields.every((field) => !field.required || statuses[field.id] === 'configured')
+}
+
+/**
+ * One-shot, non-reactive answer to "can this provider receive an upload right
+ * now" — the same definition the workspace footer uses: required preferences
+ * filled AND required credentials present.
+ *
+ * A target id resolves from preferences alone (credential rotation must not
+ * re-identify the destination), so a provider can name a destination it cannot
+ * currently write to. Enqueue-time gates need this fuller check; without it a
+ * half-configured provider enqueues jobs that can only fail, and each failure
+ * paints a healthy local document red.
+ */
+export async function storageProviderUsable(providerId: StorageProviderID): Promise<boolean> {
+  if (!storagePreferencesComplete(providerId)) return false
+  const statuses = await storageCredentialStatuses(providerId)
+  return storageCredentialsSatisfied(providerId, statuses)
+}
+
+/** Same check, addressed by target: unusable when the provider is gone too. */
+export async function storageTargetUsable(targetId: StorageTargetID): Promise<boolean> {
+  const providerId = providerIdOfTarget(targetId)
+  if (providerId === null) return false
+  return storageProviderUsable(providerId)
 }
 
 /**

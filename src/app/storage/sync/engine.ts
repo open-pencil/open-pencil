@@ -35,9 +35,18 @@ const MAX_BACKOFF_MS = 60_000
 const SYNC_LOCK = 'openpencil-storage-sync'
 
 export class StorageSyncBlockedError extends Error {
-  constructor(message: string) {
+  /**
+   * True when the block is a half-configured destination (preferences without
+   * credentials, say) rather than a fault with a specific document or target.
+   * The workspace already presents itself as local-only in that state, so the
+   * engine parks the job without recording a per-document failure.
+   */
+  readonly unconfigured: boolean
+
+  constructor(message: string, options?: { unconfigured?: boolean }) {
     super(message)
     this.name = 'StorageSyncBlockedError'
+    this.unconfigured = options?.unconfigured ?? false
   }
 }
 
@@ -753,7 +762,12 @@ export function createSyncEngine(deps: SyncEngineDependencies): SyncEngine {
         })
         // Record it on the document too — this branch used to leave no per-document
         // trace at all, so nothing could explain the pause afterwards.
-        await updateSyncFailureMeta(job, message)
+        //
+        // An UNCONFIGURED destination is the exception: the workspace already
+        // reads as local-only, so a red per-document badge would report a
+        // failure the user never asked to attempt. The parked job stays durable
+        // and resume() revives it once settings are repaired.
+        if (!error.unconfigured) await updateSyncFailureMeta(job, message)
         await captureFailure(job, error, job.attempts)
         setSyncUiForJob(job, 'blocked', message)
         return

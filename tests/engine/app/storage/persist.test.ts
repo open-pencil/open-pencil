@@ -182,6 +182,96 @@ describe('local-only documents', () => {
   })
 })
 
+describe('a destination that cannot be written to', () => {
+  /**
+   * Preferences without credentials: the provider names a destination, but no
+   * upload can succeed. This gates exactly like a pause — the row keeps its
+   * destination and stays local — because a job created here can only park
+   * and report a failure the user never asked to attempt.
+   */
+  test('a save against an unusable destination stays local and enqueues nothing', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const enqueueCanvas = vi.fn(async () => undefined)
+    const enqueueThumbnail = vi.fn(async () => undefined)
+
+    await persistStorageCanvasLocally(
+      {
+        syncTargetId: 's3-compatible#aaaaaaaa',
+        canvasId: 'half-configured',
+        name: 'Half configured',
+        figBytes: new Uint8Array([1, 2, 3]),
+        thumbnailBytes: new Uint8Array([4, 5])
+      },
+      { store, enqueueCanvas, enqueueThumbnail, destinationUsable: async () => false }
+    )
+
+    expect(enqueueCanvas).not.toHaveBeenCalled()
+    expect(enqueueThumbnail).not.toHaveBeenCalled()
+    const meta = await store.getMeta('half-configured')
+    expect(meta?.syncStatus).toBe('local')
+    // The document still knows where it belongs — unusable is not disconnected.
+    expect(meta?.syncTargetId).toBe('s3-compatible#aaaaaaaa')
+  })
+
+  test('a local-write save retires failure marks an earlier attempt recorded', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const enqueueCanvas = vi.fn(async () => undefined)
+    const figBytes = new Uint8Array([1, 2, 3])
+    const options = {
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      canvasId: 'stale-error',
+      name: 'Stale error',
+      figBytes
+    }
+
+    // An earlier failure, as the pre-fix blocked branch recorded it.
+    await persistStorageCanvasLocally(options, { store, enqueueCanvas })
+    await store.updateMeta('stale-error', {
+      syncStatus: 'error',
+      lastSyncError: 'Storage credentials are unavailable',
+      lastThumbSyncError: 'Storage credentials are unavailable'
+    })
+
+    await persistStorageCanvasLocally(options, {
+      store,
+      enqueueCanvas,
+      destinationUsable: async () => false
+    })
+
+    const meta = await store.getMeta('stale-error')
+    expect(meta?.syncStatus).toBe('local')
+    expect(meta?.lastSyncError).toBeNull()
+    expect(meta?.lastThumbSyncError).toBeNull()
+  })
+
+  test('repairing the destination re-enables uploads on the next save', async () => {
+    const store = createMemoryLocalCanvasStore()
+    const enqueueCanvas = vi.fn(async () => undefined)
+    const options = {
+      syncTargetId: 's3-compatible#aaaaaaaa',
+      canvasId: 'repaired',
+      name: 'Repaired',
+      figBytes: new Uint8Array([4, 5, 6])
+    }
+
+    await persistStorageCanvasLocally(options, {
+      store,
+      enqueueCanvas,
+      destinationUsable: async () => false
+    })
+    expect(enqueueCanvas).not.toHaveBeenCalled()
+
+    await persistStorageCanvasLocally(options, {
+      store,
+      enqueueCanvas,
+      destinationUsable: async () => true
+    })
+
+    expect(enqueueCanvas).toHaveBeenCalledTimes(1)
+    expect((await store.getMeta('repaired'))?.syncStatus).toBe('pending')
+  })
+})
+
 describe('pausing cloud backup', () => {
   /**
    * Pause, not withdraw. Clearing the API key to stop syncing destroys the one

@@ -11,7 +11,7 @@ import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { createSyncEngine, StorageSyncBlockedError } from '@/app/storage/sync/engine'
 import { migrateLegacyOutboxJobs } from '@/app/storage/sync/migrate-jobs'
 import { getOutbox } from '@/app/storage/sync/outbox'
-import { repairOrphanedPendingRows } from '@/app/storage/sync/repair'
+import { clearUnusableTargetFailures, repairOrphanedPendingRows } from '@/app/storage/sync/repair'
 import { markCrossTabLockUnavailable } from '@/app/storage/sync/status'
 import { providerIdOfTarget, targetIsCurrent, type StorageTargetID } from '@/app/storage/target'
 
@@ -41,7 +41,7 @@ async function resolveConfiguredTarget(targetId: StorageTargetID | null): Promis
     throw new StorageSyncBlockedError('Storage settings no longer point at this document’s bucket')
   }
   if (!storagePreferencesComplete(providerID)) {
-    throw new StorageSyncBlockedError('Storage is not configured')
+    throw new StorageSyncBlockedError('Storage is not configured', { unconfigured: true })
   }
   const provider = storageProviderRegistry.get(providerID)
   const statuses = await storageCredentialStatuses(providerID)
@@ -49,7 +49,9 @@ async function resolveConfiguredTarget(targetId: StorageTargetID | null): Promis
     (field) => field.required && statuses[field.id] !== 'configured'
   )
   if (missingCredential) {
-    throw new StorageSyncBlockedError('Storage credentials are unavailable')
+    throw new StorageSyncBlockedError('Storage credentials are unavailable', {
+      unconfigured: true
+    })
   }
   return createActiveStorageAdapter(providerID)
 }
@@ -152,6 +154,13 @@ export async function startStorageSync(): Promise<void> {
     // Same reasoning: a sweep that cannot read local state leaves the stranded
     // rows exactly as it found them, and healthy queued work still drains.
     console.warn('[Storage sync] orphaned pending repair failed:', error)
+  }
+  try {
+    // After the pending sweep, so a row it requeued keeps its fresh job and is
+    // judged here only on whether its destination can be attempted at all.
+    await clearUnusableTargetFailures()
+  } catch (error) {
+    console.warn('[Storage sync] unusable-target failure cleanup failed:', error)
   }
   await syncEngine.kick()
 }

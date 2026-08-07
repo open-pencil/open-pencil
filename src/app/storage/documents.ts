@@ -1,6 +1,7 @@
 import type { StorageAdapter, StorageDocument, StorageProviderID } from '@/app/integrations/storage'
 import { createActiveStorageAdapter } from '@/app/integrations/storage'
 import { backupIsActive } from '@/app/storage/backup'
+import { storageTargetUsable } from '@/app/storage/configured'
 import { createCanvasId } from '@/app/storage/id'
 import { getLocalCanvasStore, type LocalCanvasStore } from '@/app/storage/local-store'
 import {
@@ -27,6 +28,12 @@ export type StorageDocumentMutationDependencies = {
   enqueueMetadata: typeof enqueuePutMetadata
   enqueueDelete: typeof enqueueDeleteCanvas
   createId: typeof createCanvasId
+  /**
+   * Whether the destination can receive an upload right now (preferences AND
+   * credentials). Tests that inject the other seams and omit this one are
+   * treated as usable.
+   */
+  destinationUsable?: (targetId: StorageTargetID) => Promise<boolean>
 }
 
 export type StorageDocumentDeletionFailure = {
@@ -50,7 +57,8 @@ function dependenciesFor(
       persist: persistStorageCanvasLocally,
       enqueueMetadata: enqueuePutMetadata,
       enqueueDelete: enqueueDeleteCanvas,
-      createId: createCanvasId
+      createId: createCanvasId,
+      destinationUsable: storageTargetUsable
     }
   )
 }
@@ -82,13 +90,18 @@ async function readContent(
  * Whether a metadata edit on this row owes the remote anything.
  *
  * Two independent reasons for "no": the row names no destination, and backup is
- * deliberately paused. Both gate at ENQUEUE rather than at the adapter — a job
- * created and then refused parks and reports a red failure for a document the
- * user chose not to upload, and the row it left behind is `pending` with no job
- * that can ever clear it.
+ * deliberately paused. A destination that cannot be written to (preferences
+ * without credentials) is a third, and gates the same way pause does. All gate
+ * at ENQUEUE rather than at the adapter — a job created and then refused parks
+ * and reports a red failure for a document the user chose not to upload, and
+ * the row it left behind is `pending` with no job that can ever clear it.
  */
-function uploadsTo(targetId: StorageTargetID | null): boolean {
-  return targetId !== null && backupIsActive()
+async function uploadsTo(
+  targetId: StorageTargetID | null,
+  destinationUsable?: (targetId: StorageTargetID) => Promise<boolean>
+): Promise<boolean> {
+  if (targetId === null || !backupIsActive()) return false
+  return (destinationUsable ?? (async () => true))(targetId)
 }
 
 async function rewriteStorageDocument(
@@ -103,7 +116,7 @@ async function rewriteStorageDocument(
   // An edit never moves a document: an existing row keeps the destination it
   // already has, and only a row this edit creates takes the current one.
   const targetId = existing ? existing.syncTargetId : currentTargetIdFor(providerId)
-  const uploads = uploadsTo(targetId)
+  const uploads = await uploadsTo(targetId, runtime.destinationUsable)
   const syncStatus = uploads ? 'pending' : 'local'
   const metadata = existing
     ? await runtime.store.updateMeta(document.id, {
@@ -253,7 +266,7 @@ export async function permanentlyDeleteStorageDocument(
     return
   }
 
-  const uploads = uploadsTo(existing.syncTargetId)
+  const uploads = await uploadsTo(existing.syncTargetId, runtime.destinationUsable)
   // Hide it before anything else. Enqueueing first would let the pump delete
   // the remote object while the row is still live, and the acknowledgement
   // would then strip the bytes from a document still on screen.

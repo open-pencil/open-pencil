@@ -11,9 +11,11 @@ export {
 export { migrateLegacyOutboxJobs, type LegacyJobMigrationResult } from './migrate-jobs'
 export { createMemoryOutbox, getOutbox, resetOutboxForTests } from './outbox'
 export {
+  clearUnusableTargetFailures,
   repairOrphanedPendingRows,
   type OrphanedPendingRepairDependencies,
-  type OrphanedPendingRepairResult
+  type OrphanedPendingRepairResult,
+  type UnusableTargetFailureDependencies
 } from './repair'
 export {
   persistStorageCanvasLocally,

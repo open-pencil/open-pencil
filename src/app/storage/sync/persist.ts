@@ -1,6 +1,7 @@
 import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
 import { backupIsActive } from '@/app/storage/backup'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
+import { storageTargetUsable } from '@/app/storage/configured'
 import { computeBodyIdSafe } from '@/app/storage/identity/body'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
@@ -11,6 +12,12 @@ export type StoragePersistenceDependencies = {
   store: LocalCanvasStore
   enqueueCanvas(canvasId: string, revision: number): Promise<void>
   enqueueThumbnail?(canvasId: string, revision: number): Promise<void>
+  /**
+   * Whether the destination can receive an upload right now (preferences AND
+   * credentials). Defaults to the real check in production; tests that inject
+   * the other seams and omit this one are treated as usable.
+   */
+  destinationUsable?: (targetId: StorageTargetID) => Promise<boolean>
 }
 
 export type PersistStorageCanvasOptions = {
@@ -24,6 +31,29 @@ export type PersistStorageCanvasOptions = {
   thumbnailBytes?: Uint8Array | null
 }
 
+/**
+ * Where this save's upload should go, if anywhere.
+ *
+ * Pausing gates at ENQUEUE, not at the adapter. A job created and then refused
+ * would park and report a failure for a document the user chose not to upload —
+ * the same trap as a `pending` row with no job.
+ *
+ * A destination that cannot be written to (preferences without credentials,
+ * say) gates exactly like a pause: the row keeps its destination — half
+ * configured is not disconnected — but no job is created for a remote that can
+ * only refuse it, and the row settles as `local` rather than collecting a bogus
+ * failure badge. Repairing the settings re-enables uploads; the next save then
+ * enqueues as usual.
+ */
+async function uploadTargetFor(
+  syncTargetId: StorageTargetID | null,
+  destinationUsable?: (targetId: StorageTargetID) => Promise<boolean>
+): Promise<StorageTargetID | null> {
+  if (syncTargetId === null || !backupIsActive()) return null
+  const usable = await (destinationUsable ?? (async () => true))(syncTargetId)
+  return usable ? syncTargetId : null
+}
+
 /** Write locally before scheduling remote synchronization. */
 export async function persistStorageCanvasLocally(
   options: PersistStorageCanvasOptions,
@@ -32,12 +62,10 @@ export async function persistStorageCanvasLocally(
   const runtime = dependencies ?? {
     store: getLocalCanvasStore(),
     enqueueCanvas: enqueuePutCanvas,
-    enqueueThumbnail: enqueuePutThumb
+    enqueueThumbnail: enqueuePutThumb,
+    destinationUsable: storageTargetUsable
   }
-  // Pausing gates at ENQUEUE, not at the adapter. A job created and then
-  // refused would park and report a failure for a document the user chose not
-  // to upload — the same trap as a `pending` row with no job.
-  const target = backupIsActive() ? options.syncTargetId : null
+  const target = await uploadTargetFor(options.syncTargetId, runtime.destinationUsable)
   const format = options.sourceFormat ?? 'fig'
   const bodyId = await computeBodyIdSafe(options.figBytes, format)
   const existing = await runtime.store.getMeta(options.canvasId)
@@ -57,6 +85,17 @@ export async function persistStorageCanvasLocally(
     // clears it and eviction skips the row forever.
     syncStatus: target === null ? 'local' : 'pending'
   })
+
+  // A save that goes nowhere remote also retires the failure marks an earlier
+  // attempt recorded: with no upload intended they describe a state that no
+  // longer exists, and nothing else clears them while the destination stays
+  // unusable.
+  if (target === null && (existing?.lastSyncError || existing?.lastThumbSyncError)) {
+    await runtime.store.updateMeta(options.canvasId, {
+      lastSyncError: null,
+      lastThumbSyncError: null
+    })
+  }
 
   // Identical content: the remote already holds these exact bytes, so there is
   // nothing to upload. Autosave fires on activity that often changes nothing,
