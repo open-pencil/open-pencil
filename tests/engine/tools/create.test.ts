@@ -117,7 +117,6 @@ describe('render', () => {
   })
 })
 
-<<<<<<< HEAD
 describe('create_vector', () => {
   test('creates tightly bounded curved geometry from SVG path data', () => {
     const { figma, graph } = setupToolTest()
