@@ -9,6 +9,17 @@
 
 ### Added
 
+- Restore the active desktop file after Vite reloads the WebView during development.
+- Allow individual AI chat messages and tool executions to be removed from persisted history before retrying.
+- Persist the current AI conversation locally, including tool parts, and recover interrupted runs
+  from the latest valid message or completed tool result.
+- Queue additional AI instructions while a response is running, review or remove pending messages,
+  and resume a queue paused by stopping generation or encountering an error.
+- Persist Audio model assignments in AI settings ahead of future voice transcription support.
+- Mark model profiles with Text and Audio input capabilities, show those capabilities in the model
+  library, and restrict the Audio assignment to compatible profiles.
+- Configure OpenAI-compatible model profiles to use the Transcription API type.
+- Add Brazilian Portuguese localization and automatic `pt-BR` browser-language detection.
 - Export selections, pages, and documents as editable PowerPoint (`.pptx`) files from the File menu, CLI, and SDK. Text, rectangles, ellipses, and lines remain editable; visually complex layers are embedded as images.
 - Import HTML, CSS, Tailwind, and JSX as editable documents from the app, CLI, and SDK, and export standalone browser-ready HTML with compiled CSS and optional external assets.
 - Drag image files into the desktop app and paste Figma layers with their remote image fills.
@@ -38,6 +49,17 @@
 
 ### Changed
 
+- Show each AI tool's technical name, input, output, and rendered image sent to the model in
+  expandable chat activity cards.
+- Guide the design agent to inspect existing documents page by page, starting from top-level
+  structure and avoiding unfiltered `find_nodes` calls.
+- Require `list_pages` as the design agent's first tool call and prevent guessed document-root IDs
+  or repeated failed calls during project inspection.
+- Expose the page-listing, page-tree, page-switching, and image-export tools required by the Design
+  Agent's project-inspection workflow.
+- Paginate `find_nodes` results and support page, root, depth, name, and type filters with compact
+  hierarchy paths, direct child counts, progressive root expansion, and actionable continuation
+  hints.
 - Redesign the editor chrome and Design panel with denser, better-aligned controls, clearer selection and section states, improved menus and overlays, consistent light/dark theming, and better keyboard and screen-reader support.
 - Choose Freeform, vertical, horizontal, or grid flow directly from the contextual Layout section, with sizing controls grouped alongside it.
 - Choose Auto width, Auto height, or Fixed size directly from the Layout section for text layers.
@@ -49,6 +71,17 @@
 
 ### Fixed
 
+- Make AI and automation `switch_page` calls update the editor's visible page and subsequent tool context.
+
+- Preserve native copy, cut, paste, and select-all behavior for focused text fields in the desktop
+  app without breaking canvas keyboard commands.
+- Keep queued AI messages available when chat initialization fails, so they can be resumed safely.
+- Normalize incompatible Transcription model assignments and complete the Brazilian Portuguese UI
+  translation.
+- Allow OpenAI-compatible and Anthropic-compatible endpoints to run without an API key, including
+  when the desktop system credential store is unavailable.
+- Let multimodal Design models inspect images returned by `export_image`, using native tool-result
+  images with the Responses API and a compatible user-message fallback for Chat Completions.
 - Preserve Figma’s imported glyph outlines through layout and appearance updates so text keeps its intended weight and shape.
 - Keep swapped image avatars and thin stepper dividers at their effective imported size and position.
 - Scale proportion-constrained `.fig` instance geometry through fixed wrapper layers so imported logos and icons retain their intended size.

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { TooltipProvider } from 'reka-ui'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
+import ChatContextUsage from '@/components/chat/ChatContextUsage.vue'
 import ProviderModelSelect from '@/components/chat/ProviderModelSelect.vue'
-import AppInput from '@/components/ui/AppInput.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { useButtonUI } from '@/components/ui/button'
 import { useAIChat } from '@/app/ai/chat/use'
@@ -27,8 +27,10 @@ const emit = defineEmits<{
 }>()
 
 const input = ref('')
+const inputElement = ref<HTMLTextAreaElement>()
 
 const isStreaming = computed(() => status === 'streaming' || status === 'submitted')
+const hasInput = computed(() => input.value.trim().length > 0)
 const isACPProvider = computed(() => providerID.value.startsWith('acp:'))
 const acpAgentName = computed(() => {
   const agentId = providerID.value.replace('acp:', '')
@@ -67,12 +69,31 @@ const selectedProfileName = computed(
   () => designModelProfile.value?.name ?? selectedModelName.value
 )
 
-function handleSubmit(e: Event) {
-  e.preventDefault()
+function submitInput() {
   const text = input.value.trim()
   if (!text) return
   emit('submit', text)
   input.value = ''
+  void nextTick(resizeInput)
+}
+
+function handleSubmit(e: Event) {
+  e.preventDefault()
+  submitInput()
+}
+
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key !== 'Enter' || e.isComposing) return
+  if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  submitInput()
+}
+
+function resizeInput() {
+  const element = inputElement.value
+  if (!element) return
+  element.style.height = 'auto'
+  element.style.height = `${Math.min(element.scrollHeight, 160)}px`
 }
 </script>
 
@@ -105,7 +126,8 @@ function handleSubmit(e: Event) {
           <template #value>{{ selectedModelName }}</template>
         </ProviderModelSelect>
 
-        <div class="ml-auto">
+        <div class="ml-auto flex items-center gap-1">
+          <ChatContextUsage />
           <Tip :label="dialogs.providerSettings">
             <button
               type="button"
@@ -121,18 +143,21 @@ function handleSubmit(e: Event) {
       </div>
 
       <!-- Input form -->
-      <form class="flex gap-1.5" @submit="handleSubmit">
-        <AppInput
+      <form class="flex items-end gap-1.5" @submit="handleSubmit">
+        <textarea
+          ref="inputElement"
           v-model="input"
           data-test-id="chat-input"
           :placeholder="dialogs.describeChange"
-          class="min-w-0 flex-1 placeholder:text-muted"
-          :disabled="isStreaming"
+          rows="1"
+          class="min-h-6 min-w-0 flex-1 resize-none overflow-y-auto rounded border border-transparent bg-panel-field px-2 py-1 text-[11px] leading-4 text-surface outline-none placeholder:text-muted hover:bg-panel-field-hover focus:border-panel-focus focus:bg-panel-field-hover"
+          @input="resizeInput"
+          @keydown="handleKeydown"
           @paste.stop
           @copy.stop
           @cut.stop
         />
-        <Tip v-if="isStreaming" :label="dialogs.stopGenerating">
+        <Tip v-if="isStreaming && !hasInput" :label="dialogs.stopGenerating">
           <button
             type="button"
             data-test-id="chat-stop-button"
@@ -142,12 +167,12 @@ function handleSubmit(e: Event) {
             <icon-lucide-square class="size-3" />
           </button>
         </Tip>
-        <Tip v-else :label="dialogs.sendMessage">
+        <Tip v-else :label="isStreaming ? dialogs.queueMessage : dialogs.sendMessage">
           <button
             type="submit"
             data-test-id="chat-send-button"
             :class="sendButton.base"
-            :disabled="!input.trim()"
+            :disabled="!hasInput"
           >
             <icon-lucide-send class="size-3" />
           </button>

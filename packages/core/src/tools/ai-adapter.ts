@@ -51,7 +51,7 @@ export interface StepBudget {
 export interface AIAdapterOptions {
   getFigma: () => FigmaAPI
   onBeforeExecute?: (def: ToolDef) => void
-  onAfterExecute?: (def: ToolDef) => Promise<void> | void
+  onAfterExecute?: (def: ToolDef, figma: FigmaAPI) => Promise<void> | void
   onFlashNodes?: (nodeIds: string[]) => void
   onToolLog?: (entry: ToolLogEntry) => void
   getStepBudget?: () => StepBudget
@@ -167,7 +167,7 @@ export function toolsToAI(
 
         options.onBeforeExecute?.(def)
         try {
-          let execResult = await def.execute(options.getFigma(), args)
+          let execResult = await def.execute(figma, args)
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)
@@ -182,7 +182,7 @@ export function toolsToAI(
           emitToolLog(options, def, args, startTime, figma, nodeBefore, null, errorMsg)
           return { error: errorMsg }
         } finally {
-          await options.onAfterExecute?.(def)
+          await options.onAfterExecute?.(def, figma)
         }
       }
     }
@@ -193,7 +193,7 @@ export function toolsToAI(
           const r = output as { base64: string; mimeType: string }
           return {
             type: 'content' as const,
-            value: [{ type: 'media' as const, mediaType: r.mimeType, data: r.base64 }]
+            value: [{ type: 'image-data' as const, mediaType: r.mimeType, data: r.base64 }]
           }
         }
         return { type: 'json' as const, value: output as JsonObject }

@@ -16,10 +16,13 @@ function cleanEntry(entry: AppMenuEntry): unknown | null {
   if (entry.type === 'separator') return { type: 'separator' }
   const shortcut =
     entry.shortcut ?? (entry.command ? editorCommandMetadata(entry.command).shortcut : undefined)
+  const accelerator = ['copy', 'cut', 'paste', 'selection.selectAll'].includes(entry.id)
+    ? undefined
+    : (entry.accelerator ?? shortcutTokenToAccelerator(shortcut))
   return {
     id: entry.id,
     label: entry.label,
-    accelerator: entry.accelerator ?? shortcutTokenToAccelerator(shortcut),
+    accelerator,
     checkbox: entry.checkbox,
     sub: entry.sub?.map(cleanEntry).filter(Boolean)
   }
