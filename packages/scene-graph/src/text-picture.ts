@@ -24,17 +24,26 @@ export const TEXT_PICTURE_KEYS: ReadonlySet<string> = new Set([
 ])
 
 /**
- * Invalidate Figma-derived glyph outlines (path text / missing-font paint).
+ * Properties that change imported glyph outlines or per-glyph positioning.
  *
- * Intentionally omits width/height: resize updates the box and *also* scales
- * glyphs via scaledGeometryChanges. If width/height cleared glyphs here, live
- * resize fell through to Paragraph and drew garbled axis-aligned "enen.art"
- * on top of the path (DomeSticker). Content/style keys still wipe glyphs —
- * there is no path-layout reflow engine yet.
+ * Deliberately narrower than TEXT_PICTURE_KEYS. Width/height resize the box and
+ * *also* scale glyphs via scaledGeometryChanges, and fills, alignment and
+ * decoration repaint without moving an outline. Clearing glyphs for any of
+ * those made live resize fall through to Paragraph and draw garbled
+ * axis-aligned text on top of the path (DomeSticker).
  */
-export const TEXT_DERIVED_GLYPH_INVALIDATION_KEYS: ReadonlySet<string> = new Set(
-  [...TEXT_PICTURE_KEYS].filter((key) => key !== 'width' && key !== 'height')
-)
+export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set([
+  'text',
+  'fontSize',
+  'fontFamily',
+  'fontWeight',
+  'italic',
+  'textDirection',
+  'lineHeight',
+  'letterSpacing',
+  'textCase',
+  'styleRuns'
+])
 
 /**
  * Shared by SceneGraph.updateNode and updateNodePreview (drag hot path) so the
@@ -44,7 +53,7 @@ export const TEXT_DERIVED_GLYPH_INVALIDATION_KEYS: ReadonlySet<string> = new Set
 export function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode>): void {
   const keys = Object.keys(changes)
   if (node.textPicture && keys.some((key) => TEXT_PICTURE_KEYS.has(key))) node.textPicture = null
-  const glyphsInvalidated = keys.some((key) => TEXT_DERIVED_GLYPH_INVALIDATION_KEYS.has(key))
+  const glyphsInvalidated = keys.some((key) => GLYPH_AFFECTING_KEYS.has(key))
   // Path text glyphs ARE the layout (placed along textPathBox), not a
   // re-derivable paragraph cache — nulling them destroys the on-path lettering
   // (and its TEXT_PATH identity). A successful path-text edit supplies reflowed

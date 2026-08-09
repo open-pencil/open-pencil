@@ -125,6 +125,7 @@ export class SkiaRenderer {
   } | null = null
   sceneBackingPreviewUntil = 0
   sceneBackingNeedsCrispRender = false
+  sceneBackingAllocationFailed = false
   sceneBackingBuild: {
     surface: Surface
     graph: SceneGraph
@@ -465,6 +466,9 @@ export class SkiaRenderer {
     this.surface = surface
     this.sceneBackingBuild?.surface.delete()
     this.sceneBackingBuild = null
+    // The refused allocation was sized against the outgoing surface, so a new
+    // one earns a fresh attempt rather than inheriting the old verdict.
+    this.sceneBackingAllocationFailed = false
     beginSceneBackingPreview(this)
   }
 

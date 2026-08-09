@@ -200,9 +200,40 @@ describe('updateNode', () => {
     const textNode = expectDefined(graph.getNode(textId), 'text node')
     textNode.figmaDerivedTextGlyphs = glyphs
 
-    graph.updateNode(textId, { fontFamily: 'Noto Sans SC' })
+    graph.updateNode(textId, { textDirection: 'RTL' })
 
     expect(expectDefined(graph.getNode(textId), 'updated node').figmaDerivedTextGlyphs).toBeNull()
+  })
+
+  test('figmaDerivedTextGlyphs survive picture-only text property changes', () => {
+    const pictureOnlyChanges = [
+      { width: 120 },
+      { height: 24 },
+      { fills: [] },
+      { textAlignHorizontal: 'CENTER' as const },
+      { textAlignVertical: 'CENTER' as const },
+      { textDecoration: 'UNDERLINE' as const }
+    ]
+
+    for (const changes of pictureOnlyChanges) {
+      const graph = new SceneGraph()
+      const page = pageId(graph)
+      const textId = graph.createNode('TEXT', page, {
+        name: 'T',
+        text: 'Imported text',
+        width: 100,
+        height: 20
+      }).id
+      const glyphs = [{ commandsBlob: new Uint8Array([4, 5, 6]), x: 0, y: 10, fontSize: 14 }]
+      const textNode = expectDefined(graph.getNode(textId), 'text node')
+      textNode.figmaDerivedTextGlyphs = glyphs
+
+      graph.updateNode(textId, changes)
+
+      expect(expectDefined(graph.getNode(textId), 'updated node').figmaDerivedTextGlyphs).toBe(
+        glyphs
+      )
+    }
   })
 
   test('figmaDerivedTextGlyphs survive non-text property change on TEXT node', () => {

@@ -48,6 +48,96 @@ function buildCloneUpdates(
   return updates
 }
 
+export function reconcileEffectiveCloneGeometry(
+  ctx: OverrideContext,
+  scaledInstanceIds: Set<string>
+): void {
+  restoreScaledInstanceLeafBounds(ctx, scaledInstanceIds)
+  restoreThinCloneCrossPositions(ctx)
+}
+
+function restoreScaledInstanceLeafBounds(
+  ctx: OverrideContext,
+  scaledInstanceIds: Set<string>
+): void {
+  for (const instanceId of scaledInstanceIds) {
+    const instance = ctx.graph.getNode(instanceId)
+    if (instance?.layoutMode !== 'NONE' || instance.childIds.length !== 1) continue
+    const child = ctx.graph.getNode(instance.childIds[0])
+    if (
+      !child ||
+      child.childIds.length > 0 ||
+      child.horizontalConstraint !== 'SCALE' ||
+      child.verticalConstraint !== 'SCALE'
+    ) {
+      continue
+    }
+    const width = child.figmaDerivedLayout?.width
+    const height = child.figmaDerivedLayout?.height
+    const restoresDerivedBounds = width !== undefined && height !== undefined
+    const restoresImageBounds =
+      !restoresDerivedBounds &&
+      child.type === 'ROUNDED_RECTANGLE' &&
+      child.fills.some((fill) => fill.type === 'IMAGE')
+    if (!restoresDerivedBounds && !restoresImageBounds) continue
+    const restoredWidth = width ?? instance.width
+    const restoredHeight = height ?? instance.height
+    if (child.width === restoredWidth && child.height === restoredHeight) continue
+    ctx.graph.updateNode(child.id, { width: restoredWidth, height: restoredHeight })
+  }
+}
+
+function isThinCenteredCrossChild(parent: SceneNode, clone: SceneNode): boolean {
+  if (parent.counterAxisAlign !== 'CENTER') return false
+  if (parent.layoutMode === 'HORIZONTAL') return clone.height <= 1 && clone.width > clone.height
+  if (parent.layoutMode === 'VERTICAL') return clone.width <= 1 && clone.height > clone.width
+  return false
+}
+
+interface ThinCloneCrossPosition {
+  axis: 'x' | 'y'
+  position: number
+}
+
+function thinCloneCrossPosition(
+  graph: OverrideContext['graph'],
+  clone: SceneNode
+): ThinCloneCrossPosition | null {
+  if (
+    clone.source.format !== null ||
+    !clone.componentId ||
+    !clone.name.endsWith('Divider') ||
+    !clone.parentId ||
+    clone.figmaDerivedLayout?.x !== undefined ||
+    clone.figmaDerivedLayout?.y !== undefined
+  ) {
+    return null
+  }
+  const parent = graph.getNode(clone.parentId)
+  const source = graph.getNode(clone.componentId)
+  const sourceLayout = source?.figmaDerivedLayout
+  if (!parent || !source || sourceLayout?.x === undefined || sourceLayout.y === undefined)
+    return null
+  if (clone.width !== source.width || clone.height !== source.height) return null
+  if (!isThinCenteredCrossChild(parent, clone)) return null
+  return parent.layoutMode === 'HORIZONTAL'
+    ? { axis: 'y', position: sourceLayout.y }
+    : { axis: 'x', position: sourceLayout.x }
+}
+
+function restoreThinCloneCrossPositions(ctx: OverrideContext): void {
+  for (const clone of overrideCandidates(ctx.graph, ctx.activeNodeIds)) {
+    const crossPosition = thinCloneCrossPosition(ctx.graph, clone)
+    if (!crossPosition) continue
+    ctx.graph.updateNode(clone.id, {
+      figmaDerivedLayout: {
+        ...clone.figmaDerivedLayout,
+        [crossPosition.axis]: crossPosition.position
+      }
+    })
+  }
+}
+
 export function applyGeneratedFreeformStretch(ctx: OverrideContext): void {
   for (const node of overrideCandidates(ctx.graph, ctx.activeNodeIds)) {
     if (

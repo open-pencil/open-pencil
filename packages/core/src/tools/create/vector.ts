@@ -63,7 +63,7 @@ export const createVector = defineTool({
     path: {
       type: 'string',
       description:
-        'SVG path data (preferred, e.g. "M0 0 L100 0 L50 80 Z") or VectorNetwork JSON, e.g. {"vertices":[{"x":0,"y":0},{"x":10,"y":0}],"segments":[{"start":0,"end":1}],"regions":[]}',
+        'SVG path data (preferred, e.g. "M0 0 L100 0 L50 80 Z") or VectorNetwork JSON, e.g. {"vertices":[{"x":0,"y":0},{"x":10,"y":0}],"segments":[{"start":0,"end":1}],"regions":[]}'
     },
     fill: { type: 'color', description: 'Fill color (hex)' },
     stroke: { type: 'color', description: 'Stroke color (hex)' },

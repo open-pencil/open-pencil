@@ -10,6 +10,7 @@ import type { RenderLayer } from './pipeline'
 
 const now = typeof performance !== 'undefined' ? () => performance.now() : () => 0
 const SCENE_BACKING_SCALE = 3
+const MAX_SCENE_BACKING_DEVICE_PIXELS = 16_000_000
 const FRAME_BUDGET_60HZ_MS = 1000 / 60
 const MIN_SCENE_BACKING_IDLE_FRAMES = 2
 const MAX_SCENE_BACKING_IDLE_FRAMES = 18
@@ -166,9 +167,20 @@ function drawSceneBacking(
   return true
 }
 
+function sceneBackingScale(r: SkiaRenderer): number {
+  const viewportDevicePixels = r.viewportWidth * r.viewportHeight * r.dpr * r.dpr
+  if (viewportDevicePixels <= 0) return 1
+  return clamp(
+    Math.sqrt(MAX_SCENE_BACKING_DEVICE_PIXELS / viewportDevicePixels),
+    1,
+    SCENE_BACKING_SCALE
+  )
+}
+
 function sceneBackingGeometry(r: SkiaRenderer) {
-  const marginX = r.viewportWidth * ((SCENE_BACKING_SCALE - 1) / 2)
-  const marginY = r.viewportHeight * ((SCENE_BACKING_SCALE - 1) / 2)
+  const backingScale = sceneBackingScale(r)
+  const marginX = r.viewportWidth * ((backingScale - 1) / 2)
+  const marginY = r.viewportHeight * ((backingScale - 1) / 2)
   const width = Math.max(1, Math.ceil(r.viewportWidth + marginX * 2))
   const height = Math.max(1, Math.ceil(r.viewportHeight + marginY * 2))
   const backingPanX = r.panX + marginX
@@ -188,13 +200,24 @@ function sceneBackingGeometry(r: SkiaRenderer) {
 }
 
 function createSceneBackingSurface(r: SkiaRenderer, width: number, height: number): Surface | null {
-  return r.surface.makeSurface({
+  if (r.sceneBackingAllocationFailed) return null
+  const info = {
     width: Math.ceil(width * r.dpr),
     height: Math.ceil(height * r.dpr),
     colorType: r.ck.ColorType.RGBA_8888,
     alphaType: r.ck.AlphaType.Premul,
     colorSpace: r.ck.ColorSpace.SRGB
-  })
+  }
+  try {
+    return r.surface.makeSurface(info)
+  } catch (error) {
+    r.sceneBackingAllocationFailed = true
+    console.warn(
+      `Disabling retained scene backing after CanvasKit failed to allocate ${info.width}×${info.height}`,
+      error
+    )
+    return null
+  }
 }
 
 function ensureSubtreePictureCacheScope(
@@ -449,6 +472,7 @@ export function renderSceneBacking(
   graph: SceneGraph,
   sceneVersion: number
 ): boolean {
+  if (r.sceneBackingAllocationFailed) return false
   const positionPreviewVersion = graph.positionPreviewVersion
   const allowStaleZoom = now() < r.sceneBackingPreviewUntil
   const hasCoverage = backingCoverageContainsLiveViewport(

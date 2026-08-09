@@ -5,6 +5,7 @@ import { IS_BROWSER } from '#core/constants'
 import { importNodeChanges } from '#core/kiwi/fig/import'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
+import { registerFigPopulationWorker } from '#core/kiwi/fig/population/client'
 
 export interface ParseFigFileOptions {
   populate?: 'all' | 'first-page' | 'none'
@@ -36,12 +37,23 @@ function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Prom
     })
 
     worker.onmessage = (e: MessageEvent<WorkerParseResult>) => {
-      worker.terminate()
       if (e.data.error || !e.data.graph) {
+        worker.terminate()
         reject(new Error(e.data.error ?? 'Worker failed to parse .fig file'))
         return
       }
-      resolve(deserializeSceneGraph(e.data.graph))
+      try {
+        const graph = deserializeSceneGraph(e.data.graph)
+        if (options.populate === 'first-page') {
+          worker.onmessage = null
+          worker.onerror = null
+          registerFigPopulationWorker(graph, worker)
+        } else worker.terminate()
+        resolve(graph)
+      } catch (error) {
+        worker.terminate()
+        reject(error instanceof Error ? error : new Error(String(error)))
+      }
     }
 
     worker.onerror = (err) => {

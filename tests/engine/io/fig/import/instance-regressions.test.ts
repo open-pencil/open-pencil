@@ -24,6 +24,20 @@ describe('derived instance layout regressions', () => {
     layoutNodes = collectAllNodes(layoutGraph)
   })
 
+  test('retains imported glyph outlines through non-glyph layout updates', () => {
+    const glyphCount = () =>
+      layoutNodes.filter(
+        (node) => node.type === 'TEXT' && (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+      ).length
+
+    expect(glyphCount()).toBe(43)
+
+    computeAllLayouts(layoutGraph)
+    layoutNodes = collectAllNodes(layoutGraph)
+
+    expect(glyphCount()).toBe(43)
+  })
+
   test('preserves repeated badge overrides without moving sibling component wrappers', () => {
     const input = previewChild(layoutGraph, layoutNodes, 'Input')
     const inputRoot = childNamed(layoutGraph, input, '_input')
@@ -72,7 +86,25 @@ describe('derived instance layout regressions', () => {
       expect(closeIcon?.visible).toBe(true)
       expect(closeGlyph?.visible).toBe(true)
       expect(avatarShape?.fills.some((fill) => fill.type === 'IMAGE' && fill.visible)).toBe(true)
+      expect(avatarShape?.width).toBeCloseTo(avatar?.width ?? 0, 3)
+      expect(avatarShape?.height).toBeCloseTo(avatar?.height ?? 0, 3)
     }
+  })
+
+  test('keeps generated stepper dividers at their effective derived positions', () => {
+    const dividers = layoutNodes.filter(
+      (node) =>
+        node.name === 'Right Divider' &&
+        node.width > 100 &&
+        node.componentId &&
+        node.source.format === null
+    )
+    expect(dividers).toHaveLength(3)
+    const generatedDividers = dividers.filter(
+      (node) => layoutGraph.getNode(node.componentId)?.figmaDerivedLayout?.y === 13.5
+    )
+    expect(generatedDividers).toHaveLength(3)
+    for (const divider of generatedDividers) expect(divider.y).toBeCloseTo(13.5, 3)
   })
 
   test('does not collapse unrelated datepicker instances to the page origin', () => {
