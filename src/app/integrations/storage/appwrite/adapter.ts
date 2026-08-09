@@ -1,4 +1,8 @@
-import { parseStorageDocumentMetadata, serializeStorageDocumentMetadata } from '../metadata'
+import {
+  fallbackDocumentMetadata,
+  parseStorageDocumentMetadata,
+  serializeStorageDocumentMetadata
+} from '../metadata'
 import {
   NAMESPACE_MARKER_BODY,
   STORAGE_DOCUMENTS_PREFIX,
@@ -146,6 +150,33 @@ async function writeDocumentMetadata(
   )
 }
 
+/**
+ * Write the document body, translating the client's byte counter into the
+ * shape the sync engine consumes.
+ *
+ * Both the plain put and the versioned commit write the same object the same
+ * way; only what follows the write differs.
+ */
+async function writeDocumentBody(
+  config: AppwriteConfig,
+  bucketId: string,
+  id: string,
+  bytes: Uint8Array,
+  onProgress?: (progress: StorageTransferProgress) => void
+): Promise<void> {
+  await putObject(
+    config,
+    bucketId,
+    documentFigKey(id),
+    bytes,
+    'application/octet-stream',
+    onProgress
+      ? (progress) =>
+          onProgress({ transferredBytes: progress.sentBytes, totalBytes: progress.totalBytes })
+      : undefined
+  )
+}
+
 export function createAppwriteStorageAdapterWithConfig(
   resolveConfig: AppwriteConfigResolver
 ): StorageAdapter {
@@ -232,20 +263,7 @@ export function createAppwriteStorageAdapterWithConfig(
 
     async putDocument(id, bytes, onProgress) {
       const { config, bucketId } = await resolveStorage()
-      await putObject(
-        config,
-        bucketId,
-        documentFigKey(id),
-        bytes,
-        'application/octet-stream',
-        onProgress
-          ? (progress) =>
-              onProgress({
-                transferredBytes: progress.sentBytes,
-                totalBytes: progress.totalBytes
-              })
-          : undefined
-      )
+      await writeDocumentBody(config, bucketId, id, bytes, onProgress)
     },
 
     async putDocumentMetadata(id, metadata) {
@@ -269,17 +287,7 @@ export function createAppwriteStorageAdapterWithConfig(
       onProgress?: (progress: StorageTransferProgress) => void
     ): Promise<CommittedVersion> {
       const { config, bucketId } = await resolveStorage()
-      await putObject(
-        config,
-        bucketId,
-        documentFigKey(id),
-        bytes,
-        'application/octet-stream',
-        onProgress
-          ? (progress) =>
-              onProgress({ transferredBytes: progress.sentBytes, totalBytes: progress.totalBytes })
-          : undefined
-      )
+      await writeDocumentBody(config, bucketId, id, bytes, onProgress)
       const written = await readWritten()
       if (!written.stateId || !written.bodyId) throw new MissingVersionIdentityError(id)
       await writeDocumentMetadata(config, bucketId, id, written)
@@ -297,12 +305,7 @@ export function createAppwriteStorageAdapterWithConfig(
       const { config, bucketId } = await resolveStorage()
       const bytes = await getObject(config, bucketId, documentMetaKey(id))
       if (!bytes) return null
-      const parsed = parseStorageDocumentMetadata(bytes, {
-        name: id,
-        updatedAt: new Date(0).toISOString(),
-        sourceFormat: 'fig',
-        trashedAt: null
-      })
+      const parsed = parseStorageDocumentMetadata(bytes, fallbackDocumentMetadata(id))
       return parsed.authoritative ? parsed.metadata : null
     },
 

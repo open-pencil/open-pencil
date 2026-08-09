@@ -1,6 +1,12 @@
 import { unzipSync } from 'fflate'
 
 import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
+import {
+  concatParts,
+  encodeLength,
+  encodeText,
+  hashEnvelope
+} from '@/app/storage/identity/envelope'
 
 /**
  * Identity of a document's logical body — the content a remote copy must hold.
@@ -26,17 +32,6 @@ const ENVELOPE_VERSION = 1
  * body, and re-uploading it would be pure waste.
  */
 const VOLATILE_ENTRIES = new Set(['meta.json', 'thumbnail.png'])
-
-function encodeLength(value: number): Uint8Array {
-  // Length-prefix every field so `["ab", "c"]` cannot hash equal to `["a", "bc"]`.
-  const out = new Uint8Array(4)
-  new DataView(out.buffer).setUint32(0, value, false)
-  return out
-}
-
-function encodeText(value: string): Uint8Array {
-  return new TextEncoder().encode(value)
-}
 
 function buildEnvelope(
   format: StorageDocumentFormat,
@@ -64,23 +59,7 @@ function buildEnvelope(
     push(bytes)
   }
 
-  const total = parts.reduce((sum, part) => sum + part.byteLength, 0)
-  const envelope = new Uint8Array(new ArrayBuffer(total))
-  let offset = 0
-  for (const part of parts) {
-    envelope.set(part, offset)
-    offset += part.byteLength
-  }
-  return envelope
-}
-
-function toHex(buffer: ArrayBuffer): string {
-  return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-async function hashEnvelope(envelope: Uint8Array<ArrayBuffer>): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', envelope)
-  return `sha256:${toHex(digest)}`
+  return concatParts(parts)
 }
 
 /**

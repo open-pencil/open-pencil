@@ -5,6 +5,23 @@ export type ParsedStorageDocumentMetadata = {
   authoritative: boolean
 }
 
+/**
+ * What a document is called when its sidecar cannot say.
+ *
+ * Every caller of `parseStorageDocumentMetadata` needs the same floor: the id
+ * as a name, the epoch as a timestamp so any real write wins, and no trash
+ * state. Spelled out per call site, one of them would eventually disagree and
+ * a metadata read would start inventing a different document.
+ */
+export function fallbackDocumentMetadata(id: string): StorageDocumentMetadata {
+  return {
+    name: id,
+    updatedAt: new Date(0).toISOString(),
+    sourceFormat: 'fig',
+    trashedAt: null
+  }
+}
+
 export function parseStorageDocumentMetadata(
   bytes: Uint8Array | null,
   fallback: StorageDocumentMetadata

@@ -1,4 +1,10 @@
 import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
+import {
+  concatParts,
+  encodeLength,
+  encodeText,
+  hashEnvelope
+} from '@/app/storage/identity/envelope'
 
 /**
  * Semantic identity of a document's metadata — the fields a conflict detector
@@ -10,30 +16,8 @@ import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
  */
 const META_ENVELOPE_VERSION = 1
 
-function encodeLength(value: number): Uint8Array {
-  const out = new Uint8Array(4)
-  new DataView(out.buffer).setUint32(0, value, false)
-  return out
-}
-
-function encodeText(value: string): Uint8Array {
-  return new TextEncoder().encode(value)
-}
-
-function toHex(buffer: ArrayBuffer): string {
-  return [...new Uint8Array(buffer)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-async function hashParts(parts: Uint8Array[]): Promise<string> {
-  const total = parts.reduce((sum, part) => sum + part.byteLength, 0)
-  const envelope = new Uint8Array(new ArrayBuffer(total))
-  let offset = 0
-  for (const part of parts) {
-    envelope.set(part, offset)
-    offset += part.byteLength
-  }
-  const digest = await crypto.subtle.digest('SHA-256', envelope)
-  return `sha256:${toHex(digest)}`
+function hashParts(parts: Uint8Array[]): Promise<string> {
+  return hashEnvelope(concatParts(parts))
 }
 
 function pushText(parts: Uint8Array[], value: string): void {

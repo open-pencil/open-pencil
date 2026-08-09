@@ -1,13 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { nodeChangeToProps } from '@open-pencil/fig/node-change'
+import { parseFigBuffer } from '@open-pencil/fig'
+import { convertFigmaDerivedTextGlyphs, nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
-import { convertFigmaDerivedTextGlyphs } from '#core/kiwi/fig/node-change/derived-text-glyphs'
 import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'

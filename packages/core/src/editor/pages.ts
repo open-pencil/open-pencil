@@ -28,6 +28,46 @@ export function createPageActions(ctx: EditorContext) {
     return populationWorkerInstance
   }
 
+  /**
+   * Load every font the page needs, reporting whether a cached text picture was
+   * dropped as a result.
+   *
+   * Only a font actually resolving invalidates cached pictures. Switching page
+   * does not change the scene, and wiping every tier on each advance forced a
+   * full re-record — re-shaping every text node — even when returning to a
+   * slide shown seconds ago.
+   */
+  async function resolvePageFonts(childIds: string[]): Promise<boolean> {
+    const toLoad = fontManager.collectFontKeys(ctx.graph, childIds)
+    const requirements = collectGraphFontRequirements(ctx.graph, childIds)
+    fontManager.blockNodesUntilFontsResolve(childIds)
+    let fontsChangedText = false
+    try {
+      const results = await Promise.all(
+        toLoad.map(([family, style]) => ctx.loadFont(family, style, requirements.characters))
+      )
+      const requiredFallbacks = missingGraphFontScripts(requirements)
+      const fallbacks = await fontManager.ensureFallbackPack(
+        requiredFallbacks,
+        requirements.characters
+      )
+      const facesReady = results.every((result) => result !== null)
+      const fallbacksReady = requiredFallbacks.every(
+        (script) => (fallbacks[script]?.length ?? 0) > 0
+      )
+      if (facesReady && fallbacksReady) {
+        for (const node of requirements.nodes) {
+          if (node.type !== 'TEXT') continue
+          if (node.textPicture !== null) fontsChangedText = true
+          node.textPicture = null
+        }
+      }
+    } finally {
+      fontManager.unblockNodes(childIds)
+    }
+    return fontsChangedText
+  }
+
   async function switchPage(pageId: string) {
     const page = ctx.graph.getNode(pageId)
     if (page?.type !== 'CANVAS') return
@@ -63,35 +103,10 @@ export function createPageActions(ctx: EditorContext) {
     if (switchGeneration !== pageSwitchGeneration) return
 
     const childIds = ctx.graph.getChildren(pageId).map((node) => node.id)
-    const toLoad = fontManager.collectFontKeys(ctx.graph, childIds)
-    const requirements = collectGraphFontRequirements(ctx.graph, childIds)
-    fontManager.blockNodesUntilFontsResolve(childIds)
-    // Only a font actually resolving invalidates cached pictures. Switching page does not
-    // change the scene, and wiping every tier on each advance forced a full re-record —
-    // re-shaping every text node — even when returning to a slide shown seconds ago.
     let fontsChangedText = false
     try {
-      const results = await Promise.all(
-        toLoad.map(([family, style]) => ctx.loadFont(family, style, requirements.characters))
-      )
-      const requiredFallbacks = missingGraphFontScripts(requirements)
-      const fallbacks = await fontManager.ensureFallbackPack(
-        requiredFallbacks,
-        requirements.characters
-      )
-      const facesReady = results.every((result) => result !== null)
-      const fallbacksReady = requiredFallbacks.every(
-        (script) => (fallbacks[script]?.length ?? 0) > 0
-      )
-      if (facesReady && fallbacksReady) {
-        for (const node of requirements.nodes) {
-          if (node.type !== 'TEXT') continue
-          if (node.textPicture !== null) fontsChangedText = true
-          node.textPicture = null
-        }
-      }
+      fontsChangedText = await resolvePageFonts(childIds)
     } finally {
-      fontManager.unblockNodes(childIds)
       if (fontsChangedText || populated) ctx.getRenderer()?.invalidateAllPictures()
     }
     if (ctx.getRenderer() || populated) {

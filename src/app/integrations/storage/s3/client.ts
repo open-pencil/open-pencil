@@ -1,5 +1,6 @@
 import { AwsClient } from 'aws4fetch'
 
+import { declaredContentLength, readBodyWithProgress } from '@/app/integrations/storage/download'
 import { storageFetch, storageFetchTimeoutForBody } from '@/app/integrations/storage/fetch'
 import { inferS3Region } from '@/app/integrations/storage/s3/region'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
@@ -181,6 +182,11 @@ export async function headObject(config: S3CompatibleConfig, key: string): Promi
   return true
 }
 
+/** One place decides how a string body becomes bytes. */
+function toBytes(body: Uint8Array | string): Uint8Array {
+  return typeof body === 'string' ? new TextEncoder().encode(body) : body
+}
+
 export async function putObject(
   config: S3CompatibleConfig,
   key: string,
@@ -188,7 +194,7 @@ export async function putObject(
   contentType: string,
   onUploadProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
-  const bytes = typeof body === 'string' ? new TextEncoder().encode(body) : body
+  const bytes = toBytes(body)
   // Exact ArrayBuffer so fetch/UA can set Content-Length (required by B2 for large PUTs).
   const payload = bytes.buffer.slice(
     bytes.byteOffset,
@@ -228,25 +234,7 @@ export async function getObject(
   }
 
   // Stream so large figs can report download progress
-  const contentLength = Number(res.headers.get('content-length'))
-  const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null
-  const reader = res.body.getReader()
-  const chunks: Uint8Array[] = []
-  let receivedBytes = 0
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-    receivedBytes += value.byteLength
-    onProgress({ receivedBytes, totalBytes })
-  }
-  const out = new Uint8Array(receivedBytes)
-  let offset = 0
-  for (const chunk of chunks) {
-    out.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return out
+  return readBodyWithProgress(res.body, declaredContentLength(res.headers), onProgress)
 }
 
 export async function deleteObject(config: S3CompatibleConfig, key: string): Promise<void> {
@@ -406,7 +394,7 @@ export async function putObjectResumable(
   contentType: string,
   onUploadProgress?: (progress: UploadProgress) => void
 ): Promise<void> {
-  const bytes = typeof body === 'string' ? new TextEncoder().encode(body) : body
+  const bytes = toBytes(body)
   if (bytes.byteLength < MULTIPART_THRESHOLD_BYTES) {
     return putObject(config, key, bytes, contentType, onUploadProgress)
   }

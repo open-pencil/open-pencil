@@ -111,6 +111,27 @@ export function normalizeLocalCanvasMeta(
 }
 
 /** Meta row for a full canvas write (fig bytes present). */
+/**
+ * What a row is, as opposed to where its sync stands.
+ *
+ * Both builders resolve these identically, and they are the fields a caller is
+ * most likely to omit: `sourceFormat` and `trashedAt` fall back to the existing
+ * row rather than to a default, so a partial write cannot silently retype a
+ * document or restore it from the trash.
+ */
+function identityFields(
+  input: LocalCanvasWriteInput | LocalCanvasIndexInput,
+  existing: LocalCanvasMeta | null
+) {
+  return {
+    id: input.id,
+    syncTargetId: input.syncTargetId,
+    name: input.name,
+    sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
+    trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null)
+  }
+}
+
 export function buildWriteMeta(
   input: LocalCanvasWriteInput,
   existing: LocalCanvasMeta | null,
@@ -122,11 +143,7 @@ export function buildWriteMeta(
   // free to delete the only copy.
   const retargeted = existing !== null && existing.syncTargetId !== input.syncTargetId
   return {
-    id: input.id,
-    syncTargetId: input.syncTargetId,
-    name: input.name,
-    sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
-    trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),
+    ...identityFields(input, existing),
     updatedAt: input.updatedAt ?? new Date().toISOString(),
     revision: input.revision ?? (existing ? existing.revision + 1 : 1),
     bodyId: input.bodyId ?? null,
@@ -170,11 +187,7 @@ export function buildIndexMeta(
   existing: LocalCanvasMeta | null
 ): LocalCanvasMeta {
   return {
-    id: input.id,
-    syncTargetId: input.syncTargetId,
-    name: input.name,
-    sourceFormat: input.sourceFormat ?? existing?.sourceFormat ?? 'fig',
-    trashedAt: input.trashedAt !== undefined ? input.trashedAt : (existing?.trashedAt ?? null),
+    ...identityFields(input, existing),
     updatedAt: input.updatedAt,
     revision: input.revision ?? existing?.revision ?? 1,
     // A listing carries no bytes, so an index-only row has no body identity of

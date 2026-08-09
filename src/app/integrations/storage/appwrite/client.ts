@@ -1,3 +1,4 @@
+import { declaredContentLength, readBodyWithProgress } from '@/app/integrations/storage/download'
 import {
   STORAGE_FETCH_TIMEOUT_MS,
   storageFetchTimeoutForBody,
@@ -382,26 +383,7 @@ export async function getObject(
   await requireResponse(response)
   if (!onProgress || !response.body) return new Uint8Array(await response.arrayBuffer())
 
-  const contentLengthHeader = response.headers.get('content-length')
-  const contentLength = contentLengthHeader === null ? Number.NaN : Number(contentLengthHeader)
-  const totalBytes = Number.isFinite(contentLength) && contentLength >= 0 ? contentLength : null
-  const reader = response.body.getReader()
-  const chunks: Uint8Array[] = []
-  let receivedBytes = 0
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    chunks.push(value)
-    receivedBytes += value.byteLength
-    onProgress({ receivedBytes, totalBytes })
-  }
-  const bytes = new Uint8Array(receivedBytes)
-  let offset = 0
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return bytes
+  return readBodyWithProgress(response.body, declaredContentLength(response.headers), onProgress)
 }
 
 export async function listObjects(

@@ -1,6 +1,10 @@
 import { isTauri } from '@/app/tauri/env'
 
-import { parseStorageDocumentMetadata, serializeStorageDocumentMetadata } from '../metadata'
+import {
+  fallbackDocumentMetadata,
+  parseStorageDocumentMetadata,
+  serializeStorageDocumentMetadata
+} from '../metadata'
 import {
   NAMESPACE_MARKER_BODY,
   STORAGE_DOCUMENTS_PREFIX,
@@ -318,12 +322,7 @@ export function createS3StorageAdapterWithConfig(
       if (version?.authoritative) return version.manifest.metadata
       const bytes = await getObject(config, documentMetaKey(id))
       if (!bytes) return null
-      const parsed = parseStorageDocumentMetadata(bytes, {
-        name: id,
-        updatedAt: new Date(0).toISOString(),
-        sourceFormat: 'fig',
-        trashedAt: null
-      })
+      const parsed = parseStorageDocumentMetadata(bytes, fallbackDocumentMetadata(id))
       return parsed.authoritative ? parsed.metadata : null
     },
 
