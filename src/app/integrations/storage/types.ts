@@ -1,7 +1,28 @@
 import type { CredentialResolver } from '@/app/settings/credentials/types'
 
-export type StorageProviderID = string
+declare const STORAGE_PROVIDER_ID: unique symbol
+
+/**
+ * Which storage backend, never which destination.
+ *
+ * Branded so it cannot be compared with a `StorageTargetID`, which is also a
+ * string and reads alike. `document-sync-errors` filtered rows with
+ * `syncTargetId === providerId()` — false for every row, because a target id is
+ * `provider#hash` — and silently emptied the error map. Branding one of the two
+ * is not enough: while the other stayed a bare `string` the branded one was
+ * still assignable to it, and the comparison still compiled.
+ */
+export type StorageProviderID = string & { readonly [STORAGE_PROVIDER_ID]: true }
+
+/**
+ * Label a string that is already a provider id — a registry key, or the stored
+ * preference naming the active backend. The single place the brand is applied.
+ */
+export function asStorageProviderID(value: string): StorageProviderID {
+  return value as StorageProviderID
+}
 export type StorageFieldID = string
+export type StorageDocumentFormat = 'fig' | 'deck'
 
 export type StorageDocumentBinding = {
   providerId: StorageProviderID
@@ -13,9 +34,33 @@ export type StorageTransferProgress = {
   totalBytes: number | null
 }
 
+/**
+ * A download in flight, as the provider clients report it.
+ *
+ * Distinct from `StorageTransferProgress`, which is what the sync engine
+ * consumes: an adapter renames the field on the way through. Every client
+ * counts received bytes the same way, so they share one shape.
+ */
+export type DownloadProgress = {
+  receivedBytes: number
+  totalBytes: number | null
+}
+
 export type StorageDocumentMetadata = {
   name: string
   updatedAt: string
+  /** Native bytes stored for this document. Missing legacy metadata defaults to `.fig`. */
+  sourceFormat: StorageDocumentFormat
+  /** Soft-delete marker. The document bytes remain available until permanent deletion. */
+  trashedAt: string | null
+  /**
+   * Content identity of the body this metadata describes. Optional: sidecars
+   * written before identity existed lack it, and absence means "unknown",
+   * never "different". See `sync-conflict-detection`.
+   */
+  bodyId?: string
+  /** Whole-document state identity (body + semantic metadata), for conflict detection. */
+  stateId?: string
 }
 
 export type StorageDocument = StorageDocumentMetadata & {
@@ -23,6 +68,9 @@ export type StorageDocument = StorageDocumentMetadata & {
   thumbnailUrl?: string | null
   metadataAuthoritative?: boolean
 }
+
+/** What a versioned commit published: the state now at the head. */
+export type CommittedVersion = { stateId: string; bodyId: string }
 
 export type StorageUsage = {
   bytesUsed: number
@@ -42,12 +90,42 @@ export interface StorageAdapter {
     id: string,
     onProgress?: (progress: StorageTransferProgress) => void
   ): Promise<Uint8Array>
+  /**
+   * Upload the document body only. Metadata is NOT accepted here: a dispatch-time
+   * snapshot written after a multi-second upload can overwrite a rename that
+   * landed while the bytes were on the wire. The caller writes metadata after
+   * completion through `putDocumentMetadata`, read from the row at that moment.
+   */
   putDocument(
     id: string,
     bytes: Uint8Array,
-    metadata: StorageDocumentMetadata,
     onProgress?: (progress: StorageTransferProgress) => void
   ): Promise<void>
+  putDocumentMetadata(id: string, metadata: StorageDocumentMetadata): Promise<void>
+  /**
+   * Versioned-layout commit: ensure the body object, write the manifest, then
+   * update the head — the head is the only commit point. `readWritten` is
+   * invoked again after the body upload completes, so the committed manifest
+   * carries completion-time metadata (the rename-during-upload rule). Adapters
+   * without a versioned layout omit this and the engine uses the two-step
+   * `putDocument` + `putDocumentMetadata` path.
+   */
+  putDocumentVersion?(
+    id: string,
+    bytes: Uint8Array,
+    readWritten: () => Promise<StorageDocumentMetadata>,
+    onProgress?: (progress: StorageTransferProgress) => void
+  ): Promise<CommittedVersion>
+  /** Metadata-only version: a new manifest reusing the existing body, then head. */
+  putMetadataVersion?(id: string, written: StorageDocumentMetadata): Promise<CommittedVersion>
+  /** HEAD on the versioned body object — the migration re-confirmation sweep. */
+  hasRemoteBody?(bodyId: string): Promise<boolean>
+  /**
+   * Delete unreferenced bodies/manifests older than the retention safety
+   * window. Versioned-layout adapters only; the engine runs it best-effort
+   * when the queue idles.
+   */
+  collectGarbage?(nowMs?: number): Promise<{ deletedBodies: number; deletedManifests: number }>
   deleteDocument(id: string): Promise<void>
   getDocumentMetadata?(id: string): Promise<StorageDocumentMetadata | null>
   getUsage(): Promise<StorageUsage>
@@ -61,6 +139,17 @@ export type StoragePreferenceField = {
   kind: 'text' | 'url'
   required?: boolean
   placeholder?: string
+  /**
+   * Withhold this value from copied diagnostics and error detail.
+   *
+   * Credentials live in `credentialFields` and never reach a preference, so no
+   * provider declares this yet — which is precisely the risk. Diagnostics
+   * copied preference values by shape, so the first provider to put a token or
+   * a signed URL in a preference would have leaked it into a bug report with no
+   * code change anywhere. Classification is explicit so that cannot happen
+   * silently.
+   */
+  secret?: boolean
 }
 
 export type StorageCredentialField = {
@@ -79,6 +168,30 @@ export type StorageProviderRegistration = {
   id: StorageProviderID
   label: string
   description: string
+  icon?: string
+  /** Where to obtain credentials for this provider; rendered beside the description. */
+  helpUrl?: string
+  helpLabel?: string
+  /** Short cost summary, so the trade-off is visible before signing up. */
+  pricingNote?: string
+  /**
+   * What this destination can do about two devices editing one document,
+   * named by the decision the UI makes with it: `'none'` means overwrites are
+   * silent and the workspace must say so; `'detect'` means a moved remote is
+   * caught before a write and the conflict UX applies; `'prevent'` (reserved
+   * for providers with probe-verified conditional writes) means a clobbering
+   * write is refused outright.
+   */
+  conflictProtection: 'none' | 'detect' | 'prevent'
+  /** Offer the shared S3 CORS configuration helper for browser access. */
+  corsConfiguration?: 's3'
+  /**
+   * The vendor-neutral entry that works with anything speaking the protocol.
+   * It leads the provider list — a named vendor at the top reads as a
+   * recommendation, and the generic option is the one that always applies.
+   * Every other provider sorts alphabetically after it.
+   */
+  catchAll?: boolean
   preferenceFields: readonly StoragePreferenceField[]
   credentialFields: readonly StorageCredentialField[]
   createAdapter(runtime: StorageProviderRuntime): StorageAdapter

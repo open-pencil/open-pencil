@@ -57,13 +57,15 @@ export function createSaveActions({
 
   async function saveFigFileAs() {
     const data = await buildFigFile()
+    const suggestedName = getDownloadName()
 
     if (IS_TAURI) {
-      const path = await chooseTauriFigSavePath()
+      const path = await chooseTauriFigSavePath(suggestedName)
       if (!path) return
       setStorageBinding(null)
       setFilePath(path)
       setFileHandle(null)
+      setDownloadName(path.split(/[\\/]/).pop() ?? path)
       state.documentName = documentNameFromFigPath(path)
       if (await writeFile(data)) setSourceIdentity({ handle: null, path })
       startWatchingFile()
@@ -71,18 +73,19 @@ export function createSaveActions({
     }
 
     if (window.showSaveFilePicker) {
-      const handle = await chooseBrowserFigSaveHandle()
+      const handle = await chooseBrowserFigSaveHandle(suggestedName)
       if (!handle) return
       setStorageBinding(null)
       setFileHandle(handle)
       setFilePath(null)
+      setDownloadName(handle.name)
       state.documentName = documentNameFromFigPath(handle.name)
       if (await writeFile(data)) setSourceIdentity({ handle, path: null })
       startWatchingFile()
       return
     }
 
-    const filename = prompt('Save as:', getDownloadName() ?? 'Untitled.fig')
+    const filename = prompt('Save as:', suggestedName ?? 'Untitled.fig')
     if (!filename) return
     setStorageBinding(null)
     setDownloadName(filename)

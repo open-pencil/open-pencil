@@ -1,6 +1,6 @@
 # OpenPencil
 
-Open-source design editor. Opens `.fig` and `.pen` design files, includes built-in AI, and ships as a programmable toolkit with a headless Vue SDK for building custom editors.
+Open-source design editor. Opens `.fig`, `.pen`, and Figma Slides `.deck` files, includes built-in AI, and ships as a programmable toolkit with a headless Vue SDK for building custom editors.
 
 > **Status:** Active development. Usable today, with some rough edges as features evolve.
 
@@ -20,7 +20,7 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 
 ## What it does
 
-- **Opens `.fig` and `.pen` files** — read and write native Figma files, open supported Pencil documents from the app or OS file browser, copy & paste nodes between apps
+- **Opens `.fig`, `.pen`, and `.deck` files** — read and write native Figma Design and Figma Slides files, open supported Pencil documents from the app or OS file browser, copy & paste nodes between apps; present decks fullscreen with click/keyboard advance
 - **AI builds designs** — describe what you want in chat, 90+ tools create and modify nodes. Connect OpenRouter, Anthropic, OpenAI, Google AI, Z.ai, MiniMax, or compatible endpoints
 - **Fully programmable** — headless CLI, XPath queries, Figma Plugin API via `eval`, MCP server for AI agents, and desktop agent integrations for Claude Code, Codex, and Gemini CLI
 - **Lint, convert, and extract tokens** — inspect documents, lint naming/layout/accessibility, convert between supported formats, analyze colors/typography/spacing/clusters, and extract design tokens
@@ -29,6 +29,7 @@ Or download from the [releases page](https://github.com/open-pencil/open-pencil/
 - **Design-to-code export** — export selections as JSX/Tailwind, generate token outputs, and map designs into component-oriented code workflows
 - **Vue SDK for custom editors** — headless components and composables for embedding OpenPencil into other apps or building workflow-specific editing surfaces. [Read the SDK docs →](https://openpencil.dev/programmable/sdk/)
 - **Real-time collaboration** — P2P via WebRTC, no server, no account. Cursors, presence, follow mode
+- **Local-first cloud workspace** — connect Appwrite, Backblaze B2, a generic S3-compatible bucket, or an S3-enabled Bunny Storage Zone, with automatic background synchronization and no manual CORS setup for Appwrite or Bunny
 - **Auto layout & CSS Grid** — flex and grid layout via Yoga WASM, with gap, padding, alignment, track sizing
 - **~7 MB desktop app** — Tauri v2 for macOS, Windows, Linux. Also runs in the browser as a PWA
 

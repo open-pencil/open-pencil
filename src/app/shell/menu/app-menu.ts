@@ -43,6 +43,7 @@ export function useAppMenu() {
 
   const translatedMenuItemLabels: Partial<Record<string, keyof typeof menu.value>> = {
     new: 'new',
+    'new-deck': 'newDeck',
     open: 'open',
     'open-storage-workspace': 'openStorageWorkspace',
     save: 'save',
@@ -96,6 +97,9 @@ export function useAppMenu() {
   const actions: Partial<Record<string, () => void>> = {
     new: () => {
       void import('@/app/tabs').then((m) => m.createTab())
+    },
+    'new-deck': () => {
+      void import('@/app/tabs').then((m) => m.createDeckTab())
     },
     open: () => void openFileDialog(),
     'open-storage-workspace': () => openStorageWorkspace(router),

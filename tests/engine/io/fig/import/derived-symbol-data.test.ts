@@ -171,7 +171,10 @@ describe('fig import derived symbol data', () => {
         commandsBlob: glyphBlob,
         x: 4,
         y: 15,
-        fontSize: 14
+        fontSize: 14,
+        // Path text needs per-glyph rotation preserved through import (#396);
+        // plain text imports it as 0 rather than dropping the field.
+        rotation: 0
       }
     ])
   })

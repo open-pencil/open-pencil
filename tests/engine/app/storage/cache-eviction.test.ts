@@ -10,6 +10,12 @@ import type { LocalSyncStatus } from '@/app/storage/local-store'
 
 const MB = 1024 * 1024
 
+/**
+ * Seed a row whose bytes are genuinely on the remote: `syncStatus: 'synced'`
+ * AND a confirmed body upload at the current revision. Both are required for
+ * eviction — `syncStatus` alone can be set by a metadata-only put, which would
+ * make eviction destroy the only copy.
+ */
 async function seed(
   id: string,
   sizeMb: number,
@@ -17,14 +23,18 @@ async function seed(
   syncStatus: LocalSyncStatus = 'synced'
 ) {
   const local = getLocalCanvasStore()
-  await local.writeCanvas({
+  const meta = await local.writeCanvas({
     id,
-    providerId: 's3-compatible',
+    syncTargetId: 's3-compatible#00000000',
     name: id,
     figBytes: new Uint8Array(sizeMb * MB),
+    bodyId: `sha256:${id}`,
     syncStatus
   })
-  await local.updateMeta(id, { lastOpenedAt })
+  await local.updateMeta(id, {
+    lastOpenedAt,
+    ...(syncStatus === 'synced' ? { syncedBodyId: meta.bodyId } : {})
+  })
 }
 
 describe('evictLocalFigCache', () => {
@@ -71,6 +81,92 @@ describe('evictLocalFigCache', () => {
     const local = getLocalCanvasStore()
     await local.updateMeta('legacy', { figSize: undefined })
     const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+    expect(evicted).toBe(1)
+  })
+
+  test('keeps bytes when synced but no body upload was ever confirmed', async () => {
+    // A metadata-only put (rename/trash) can mark a row 'synced' without any
+    // body reaching the remote. Evicting here destroys the only copy.
+    await seed('sidecar-only', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    await local.updateMeta('sidecar-only', { syncedBodyId: null })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
+    expect(evicted).toBe(0)
+    expect((await local.getMeta('sidecar-only'))?.hasFig).toBe(true)
+    expect(await local.readFig('sidecar-only')).not.toBeNull()
+  })
+
+  test('keeps bytes when the local body has changed since the last upload', async () => {
+    // Body confirmed, then the user edited again — the new bytes exist only here.
+    await seed('stale-body', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    await local.updateMeta('stale-body', { bodyId: 'sha256:stale-body-edited' })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
+    expect(evicted).toBe(0)
+    expect(await local.readFig('stale-body')).not.toBeNull()
+  })
+
+  test('still evicts after a rename, which changes no bytes', async () => {
+    // The counterpart: `revision` advancing is not evidence the body differs.
+    // Comparing revisions kept renamed documents pinned in the cache forever.
+    await seed('renamed', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    const before = await local.getMeta('renamed')
+    await local.updateMeta('renamed', {
+      name: 'Renamed',
+      revision: (before?.revision ?? 1) + 1
+    })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
+    expect(evicted).toBe(1)
+  })
+})
+
+describe('lastOpenedAt is written by the product', () => {
+  /**
+   * The eviction tests used to set `lastOpenedAt` themselves, so six passing
+   * tests validated an ordering the product could not produce: nothing wrote
+   * the field, and `buildIndexMeta` dropped it on every reconcile. The LRU was
+   * really least-recently-WRITTEN.
+   */
+  test('survives an index-only reconcile', async () => {
+    const local = getLocalCanvasStore()
+    await local.writeCanvas({
+      id: 'kept',
+      syncTargetId: 's3-compatible#00000000',
+      name: 'kept',
+      figBytes: new Uint8Array([1]),
+      bodyId: 'sha256:kept'
+    })
+    await local.updateMeta('kept', { lastOpenedAt: '2026-05-05T00:00:00.000Z' })
+
+    // A remote listing re-upserts the row; the LRU key must not be erased.
+    await local.upsertIndexMeta({
+      id: 'kept',
+      syncTargetId: 's3-compatible#00000000',
+      name: 'kept',
+      updatedAt: new Date().toISOString(),
+      syncStatus: 'synced',
+      lastSyncedAt: new Date().toISOString(),
+      lastSyncError: null
+    })
+
+    expect((await local.getMeta('kept'))?.lastOpenedAt).toBe('2026-05-05T00:00:00.000Z')
+  })
+
+  test('falls back to a write timestamp when a document was never opened', async () => {
+    // Ordering must stay total: a never-opened document still needs a position.
+    await seed('never-opened', 6, '2026-01-01')
+    const local = getLocalCanvasStore()
+    await local.updateMeta('never-opened', { lastOpenedAt: undefined })
+
+    const evicted = await evictLocalFigCache(new Set(), 1 * MB)
+
     expect(evicted).toBe(1)
   })
 })

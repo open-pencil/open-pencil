@@ -4,6 +4,7 @@ import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
 } from '@open-pencil/core/constants'
+import { documentKindRules } from '@open-pencil/core/editor'
 import {
   ContextMenuPortal,
   ContextMenuRoot,
@@ -23,8 +24,11 @@ import {
 } from '@open-pencil/vue'
 import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
+import iconDeckUrl from '@/assets/icon-deck.svg?url'
+import iconPencilUrl from '@/assets/icon-pencil.svg?url'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
+import { usePanelResizing } from '@/app/shell/panel-resize'
 import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
 import IconLucidePanelLeft from '~icons/lucide/panel-left'
 import IconLucidePanelRight from '~icons/lucide/panel-right'
@@ -33,6 +37,11 @@ import CanvasMenu from './canvas/CanvasMenu.vue'
 import NumberField from './inputs/NumberField.vue'
 
 const store = useEditorStore()
+
+/** The document's own artwork while it loads, not a generic pencil. */
+const loadingIconUrl = computed(() =>
+  store.state.documentKind === 'deck' ? iconDeckUrl : iconPencilUrl
+)
 const collab = useCollabInjected()
 const sceneCanvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -40,15 +49,42 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const { updateCursor } = useCanvasCollaborationAwareness(store, collab)
 const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
+/**
+ * Selection chrome is hidden while a panel divider is being dragged.
+ *
+ * The overlay layer rebuilds only once the drag ends, so mid-drag its boxes, handles and
+ * size badges describe a canvas that no longer exists. Hiding them is more honest than
+ * painting them wrong, and cheaper. Tied to the drag itself rather than to a timer after
+ * the last resize, so it is the release that brings them back, not a guess at when the
+ * pointer stopped.
+ */
+const isResizing = usePanelResizing()
+
+/**
+ * Side panels and window resizes shrink the canvas host. Decks are always fit, so re-fit
+ * the artboard rather than leave it clipped under a widened panel; design files keep
+ * whatever camera the user set.
+ */
+function refitOnResize() {
+  if (documentKindRules(store.state.documentKind).autoFitOnResize) store.zoomToFit()
+}
+
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
-  showRulers: false
+  showRulers: false,
+  // The scene layer follows the host live and drives the re-fit: it holds the document
+  // pixels, so it is the one that must track the panel edge.
+  onResize: refitOnResize
 })
 const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
   canvasRef,
   store,
   {
-    layer: 'overlays'
+    layer: 'overlays',
+    // Selection handles and guides, not document pixels. Rebuilding its GPU surface every
+    // frame doubled the cost of a panel drag for chrome nobody is looking at mid-drag, so
+    // it catches up once the resize settles.
+    resizeMode: 'settle'
   }
 )
 const {
@@ -116,7 +152,10 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
           data-test-id="canvas-element"
           tabindex="-1"
           :style="{ cursor }"
-          class="absolute inset-0 block size-full touch-none outline-none"
+          :class="[
+            'absolute inset-0 block size-full touch-none outline-none',
+            isResizing ? 'opacity-0' : 'opacity-100'
+          ]"
         />
         <Transition
           enter-active-class="transition-opacity duration-150"
@@ -171,7 +210,18 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
             data-test-id="canvas-loading"
             class="absolute inset-0 z-50 flex items-center justify-center bg-canvas"
           >
-            <icon-lucide-pencil-line class="size-8 text-surface opacity-45" />
+            <!--
+              The format is known before the document parses — it is what the
+              workspace card already shows. A deck loading behind a pencil says
+              the app does not know what it is opening.
+            -->
+            <img
+              :src="loadingIconUrl"
+              alt=""
+              class="size-8 opacity-45"
+              data-slot="canvas-loading-icon"
+              :data-kind="store.state.documentKind"
+            />
             <div
               class="absolute bottom-1/2 left-1/2 h-0.5 w-25 -translate-x-1/2 translate-y-10 overflow-hidden rounded-full bg-surface/8"
             >

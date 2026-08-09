@@ -1,18 +1,103 @@
-import type { StorageProviderID } from '@/app/integrations/storage/types'
+import type { StorageDocumentFormat } from '@/app/integrations/storage/types'
+import type { StorageTargetID } from '@/app/storage/target'
 
-export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
+/**
+ * `local` means committed here with no upload currently intended — no target
+ * configured, or backup deliberately off. It is NOT a degraded `pending`:
+ * `pending` implies a durable job exists, and a row with no destination has
+ * nothing to enqueue, so calling it pending would strand it forever.
+ *
+ * `conflict` is modelled but unimplemented; nothing produces or resolves it.
+ */
+export type LocalSyncStatus = 'local' | 'synced' | 'pending' | 'error' | 'conflict'
 
 /** Metadata for a stored canvas cached on device (document bytes stored separately). */
 export type LocalCanvasMeta = {
   id: string
-  providerId: StorageProviderID
+  /**
+   * Where this document replicates to, or `null` for local-only.
+   *
+   * Replaces `providerId`, which meant "which shelf this belongs to" and made
+   * location part of identity — so a listing that resolved late could retag a
+   * row into the wrong bucket, and switching providers hid every document.
+   * A target names one immutable provider/configuration/credential tuple, so a
+   * stale read can at worst record a stale sync state, never move a document.
+   */
+  syncTargetId: StorageTargetID | null
   name: string
+  sourceFormat: StorageDocumentFormat
+  trashedAt: string | null
   updatedAt: string
   /** Monotonic local revision; increments on each local write. */
   revision: number
+  /**
+   * Identity of the current local body, or `null` for an index-only row whose
+   * bytes were never downloaded. Derived from content, not from `revision`:
+   * a rename bumps the revision without changing a single byte of the body.
+   */
+  bodyId: string | null
+  /**
+   * Body identity last CONFIRMED on the remote. `null` means unknown or never
+   * confirmed — never "the current bytes are up there".
+   *
+   * The body is current remotely only when `bodyId !== null && bodyId ===
+   * syncedBodyId`. This is the only field that proves a durable remote copy
+   * exists; `syncStatus` does not, because it used to be set by a metadata
+   * sidecar write alone, which made eviction drop the last copy of a document
+   * the remote had never seen.
+   */
+  syncedBodyId: string | null
+  /**
+   * Whole-document state (`stateId`) the current local edits are BASED on —
+   * the remote state this device last acknowledged. Conflict detection
+   * compares the remote's current `stateId` against this base: a difference
+   * means someone else wrote. `null` means unknown base (legacy row, fresh
+   * retarget) and never produces a conflict on its own. Advanced on every
+   * acknowledged write; `syncedBodyId` alone cannot play this role because it
+   * says nothing about the metadata base of a rename.
+   */
+  baseStateId: string | null
+  /**
+   * Whole-document state THIS device last published, or `null` if it has never
+   * published. Where `baseStateId` is the state our edits are BASED on — and is
+   * only advanced when the completing revision is still current — this records
+   * the publish itself, so it is written even when the row has moved past the
+   * completing revision mid-upload. Conflict detection uses it to tell our own
+   * recent upload apart from another device's write. Membership only, never
+   * ordered: a late completion writing an older value is harmless. Cleared on
+   * retarget, because a publish belongs to the destination that received it.
+   */
+  lastPublishedStateId: string | null
+  /**
+   * The row's `syncedBodyId` proof was established against the VERSIONED
+   * layout (`bodies/{bodyId}` exists remotely). A confirmation earned under
+   * the legacy fixed-key layout proves bytes reached `canvases/<id>.fig` —
+   * an address the versioned layout does not serve — so it must not carry
+   * over blindly: the migration sweep re-proves it with a HEAD, and a body
+   * write only confirms through the versioned commit.
+   */
+  versionedConfirmed?: boolean
+  /**
+   * The last destination this row replicated to. Unlike `syncTargetId` it
+   * survives disconnect: a row deleted while disconnected must still name the
+   * bucket that holds its replica, so reconnecting can complete the deferred
+   * delete instead of re-seeding the document the user removed.
+   */
+  lastKnownTargetId?: StorageTargetID | null
   syncStatus: LocalSyncStatus
   lastSyncedAt: string | null
+  /** Failure of the document body or its metadata. Never a thumbnail. */
   lastSyncError: string | null
+  /**
+   * Failure of the thumbnail upload alone.
+   *
+   * Kept apart from `lastSyncError` because the two mean very different things
+   * to the user: the document is safe either way, but a `putThumb` failure
+   * writing into `lastSyncError` presented a perfectly synced document as
+   * broken. A stale preview is cosmetic and gets a correspondingly quiet
+   * signal; nothing derives `syncStatus` from this field.
+   */
+  lastThumbSyncError: string | null
   /** Soft-deleted; hidden from UI until remote delete completes. */
   tombstoned: boolean
   hasFig: boolean
@@ -26,21 +111,48 @@ export type LocalCanvasMeta = {
 /** Index-only row for remote canvases not yet downloaded (no fig body). */
 export type LocalCanvasIndexInput = Omit<
   LocalCanvasMeta,
-  'hasFig' | 'hasThumb' | 'tombstoned' | 'revision'
+  | 'hasFig'
+  | 'hasThumb'
+  | 'tombstoned'
+  | 'revision'
+  | 'sourceFormat'
+  | 'trashedAt'
+  | 'bodyId'
+  | 'syncedBodyId'
+  | 'baseStateId'
+  // `lastPublishedStateId` is deliberately omitted entirely, not made optional:
+  // it records THIS device's publishes, so a remote listing can neither set nor
+  // clear it. `buildIndexMeta` preserves it from the existing row.
+  | 'lastPublishedStateId'
+  | 'lastThumbSyncError'
 > & {
   revision?: number
   hasFig?: boolean
   hasThumb?: boolean
+  sourceFormat?: StorageDocumentFormat
+  trashedAt?: string | null
+  bodyId?: string | null
+  syncedBodyId?: string | null
+  baseStateId?: string | null
+  lastThumbSyncError?: string | null
 }
 
 export type LocalCanvasWriteInput = {
   id: string
-  providerId: StorageProviderID
+  syncTargetId: StorageTargetID | null
   name: string
+  sourceFormat?: StorageDocumentFormat
   updatedAt?: string
+  trashedAt?: string | null
   figBytes: Uint8Array
   thumbBytes?: Uint8Array | null
   /** If set, keep this revision; otherwise increment from existing. */
   revision?: number
   syncStatus?: LocalSyncStatus
+  /** Identity of `figBytes`. Computed by the caller so the hash runs once. */
+  bodyId?: string | null
+  /** Set when the bytes being written are known to already exist remotely. */
+  syncedBodyId?: string | null
+  /** Conflict base the write builds on; preserved across writes, cleared on retarget. */
+  baseStateId?: string | null
 }

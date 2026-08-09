@@ -1,12 +1,34 @@
+import { pruneThumbnailsForMissingDocuments } from '@/app/editor/thumbnails/store'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
+import { bodyIsConfirmed } from '@/app/storage/local-store/meta'
 
 /** Keep at most this much cached fig data on device (metas/thumbs are tiny and stay). */
 export const FIG_CACHE_BUDGET_BYTES = 500 * 1024 * 1024
 
 /**
+ * Drop cached slide thumbnails for documents this device no longer holds.
+ *
+ * Reads the list with tombstones included on purpose: a trashed document can be restored,
+ * and it should come back with its filmstrip intact. Only documents that are gone from the
+ * store entirely count as deleted.
+ */
+export async function evictThumbnailsOfDeletedDocuments(): Promise<number> {
+  const metas = await getLocalCanvasStore().listMetas(true)
+  const removed = await pruneThumbnailsForMissingDocuments(metas.map((meta) => meta.id))
+  if (removed > 0) console.warn(`[Storage] Dropped ${removed} thumbnail(s) of deleted documents`)
+  return removed
+}
+
+/**
  * Evict least-recently-opened fig blobs until the cache fits the budget.
- * Only fully synced, non-tombstoned, not-currently-open canvases qualify —
- * evicting never loses data, it just forces a re-download on next open.
+ *
+ * The safety rule is: **only evict a blob the remote provably has.** That means
+ * the confirmed body identity equals the current one — not merely
+ * `syncStatus === 'synced'`, which a metadata-only put can set without any body
+ * ever reaching the remote. Getting this wrong deletes the user's only copy, so
+ * the check is deliberately conservative: a row whose body identity is unknown
+ * (a legacy row, or one never confirmed) is kept, at worst wasting cache space.
+ *
  * Returns the number of evicted figs.
  */
 export async function evictLocalFigCache(
@@ -27,8 +49,13 @@ export async function evictLocalFigCache(
       size = fig?.byteLength ?? 0
       await local.updateMeta(m.id, { figSize: size })
     }
+    // Tombstoned bytes are awaiting a remote delete, not competing for the live
+    // budget. Counting them let deleted documents permanently squeeze live ones.
+    if (m.tombstoned) continue
     totalBytes += size
-    if (m.tombstoned || m.syncStatus !== 'synced' || excludeIds.has(m.id)) continue
+    if (m.syncStatus !== 'synced' || excludeIds.has(m.id)) continue
+    // Never drop bytes the remote has not confirmed as exactly these bytes.
+    if (!bodyIsConfirmed(m)) continue
     candidates.push({
       id: m.id,
       size,

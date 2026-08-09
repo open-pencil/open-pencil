@@ -4,7 +4,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 import { propertySection } from '#tests/helpers/properties'
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/?test&no-rulers')
+  await page.goto('/editor?new=design&test&no-rulers')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 })

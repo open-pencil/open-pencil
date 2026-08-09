@@ -136,7 +136,7 @@ jobs:
 
       - name: Build packages for publish
         run: |
-          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/core packages/dom-css packages/cli packages/mcp packages/vue"
+          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/deck packages/core packages/dom-css packages/cli packages/mcp packages/vue"
           for dir in $publish_packages; do
             if [ -f "$dir/package.json" ] && node -p "require('./$dir/package.json').scripts?.build" 2>/dev/null | grep -qv undefined; then
               echo "Building $dir..."
@@ -164,7 +164,7 @@ jobs:
             fi
           }
           root_dir="$PWD"
-          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/core packages/dom-css packages/cli packages/mcp packages/vue"
+          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/deck packages/core packages/dom-css packages/cli packages/mcp packages/vue"
           for dir in $publish_packages; do
             pack_if_new "$dir"
           done
@@ -189,7 +189,7 @@ jobs:
               npm publish "./.npm-packages/${tarball}" --access public --provenance
             fi
           }
-          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/core packages/dom-css packages/cli packages/mcp packages/vue"
+          publish_packages="packages/scene-graph packages/pen packages/kiwi packages/fig packages/deck packages/core packages/dom-css packages/cli packages/mcp packages/vue"
           for dir in $publish_packages; do
             publish_if_new "$dir"
           done

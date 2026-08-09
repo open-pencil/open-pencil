@@ -66,7 +66,7 @@ function createMobileHudContext() {
   function disconnect() {
     if (!collab) return
     collab.disconnect()
-    void router.push('/')
+    void router.push('/editor')
   }
 
   function toggleFollowPeer(clientId: number) {

@@ -2,6 +2,7 @@ import { parsePenFile } from '@open-pencil/pen'
 
 import { sceneNodeToJSX, selectionToJSX } from '#core/design-jsx'
 
+import { exportDeckFile, parseDeckFile } from './formats/deck'
 import { exportFigFile, parseFigFile } from './formats/fig'
 import type { PPTXExportOptions } from './formats/pptx'
 import { headlessRenderNodes, renderNodesToImage, type RasterExportFormat } from './formats/raster'
@@ -21,6 +22,68 @@ import type {
 function lowerExt(name: string): string {
   const match = /\.([^.]+)$/.exec(name.toLowerCase())
   return match?.[1] ?? ''
+}
+
+/** Shared capability surface for native document formats (.fig / .deck). */
+const NATIVE_DOCUMENT_SUPPORT = {
+  readDocument: true,
+  writeDocument: true,
+  exportDocument: true,
+  exportPage: true,
+  exportSelection: true,
+  exportNode: true
+} as const
+
+const NATIVE_DOCUMENT_EXPORT_OPTIONS = {
+  scale: false,
+  quality: false
+} as const
+
+type NativeDocumentWriter = (
+  graph: Parameters<typeof exportFigFile>[0],
+  canvasKit?: Parameters<typeof exportFigFile>[1],
+  renderer?: Parameters<typeof exportFigFile>[2],
+  thumbnailPageId?: string,
+  renderThumbnail?: boolean
+) => Promise<Uint8Array>
+
+function nativeDocumentBytes(
+  format: 'fig' | 'deck',
+  write: NativeDocumentWriter
+): Pick<IOFormatAdapter, 'writeDocument' | 'exportContent'> {
+  return {
+    async writeDocument(graph, options?: FigWriteOptions, context?: IOContext) {
+      const data = await write(
+        graph,
+        context?.canvasKit,
+        context?.renderer,
+        options?.thumbnailPageId,
+        options?.renderThumbnail ?? false
+      )
+      return {
+        format,
+        mimeType: 'application/octet-stream',
+        extension: format,
+        data
+      }
+    },
+    async exportContent(request, options?: FigWriteOptions, context?: IOContext) {
+      const extracted = extractExportGraph(request.graph, request.target)
+      const data = await write(
+        extracted.graph,
+        context?.canvasKit,
+        context?.renderer,
+        options?.thumbnailPageId ?? extracted.pageId ?? undefined,
+        options?.renderThumbnail ?? false
+      )
+      return {
+        format,
+        mimeType: 'application/octet-stream',
+        extension: format,
+        data
+      }
+    }
+  }
 }
 
 function ensureSingleNode(target: ExportRequest['target']): string | null {
@@ -145,18 +208,8 @@ export const figFormat: IOFormatAdapter = {
   category: 'document',
   extensions: ['fig'],
   mimeTypes: ['application/octet-stream'],
-  support: {
-    readDocument: true,
-    writeDocument: true,
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  support: { ...NATIVE_DOCUMENT_SUPPORT },
+  exportOptions: { ...NATIVE_DOCUMENT_EXPORT_OPTIONS },
   matchesFile(fileName) {
     return lowerExt(fileName) === 'fig'
   },
@@ -165,37 +218,7 @@ export const figFormat: IOFormatAdapter = {
     const graph = await parseFigFile(data, { populate: 'first-page' })
     return { graph, sourceFormat: 'fig' }
   },
-  async writeDocument(graph, options?: FigWriteOptions, context?: IOContext) {
-    const data = await exportFigFile(
-      graph,
-      context?.canvasKit,
-      context?.renderer,
-      options?.thumbnailPageId,
-      options?.renderThumbnail ?? false
-    )
-    return {
-      format: 'fig',
-      mimeType: 'application/octet-stream',
-      extension: 'fig',
-      data
-    }
-  },
-  async exportContent(request, options?: FigWriteOptions, context?: IOContext) {
-    const extracted = extractExportGraph(request.graph, request.target)
-    const data = await exportFigFile(
-      extracted.graph,
-      context?.canvasKit,
-      context?.renderer,
-      options?.thumbnailPageId ?? extracted.pageId ?? undefined,
-      options?.renderThumbnail ?? false
-    )
-    return {
-      format: 'fig',
-      mimeType: 'application/octet-stream',
-      extension: 'fig',
-      data
-    }
-  }
+  ...nativeDocumentBytes('fig', exportFigFile)
 }
 
 export const penFormat: IOFormatAdapter = {
@@ -216,6 +239,25 @@ export const penFormat: IOFormatAdapter = {
     const graph = parsePenFile(text)
     return { graph, sourceFormat: 'pen' }
   }
+}
+
+export const deckFormat: IOFormatAdapter = {
+  id: 'deck',
+  label: 'Figma Slides',
+  role: 'native-document',
+  category: 'document',
+  extensions: ['deck'],
+  mimeTypes: ['application/octet-stream'],
+  support: { ...NATIVE_DOCUMENT_SUPPORT },
+  exportOptions: { ...NATIVE_DOCUMENT_EXPORT_OPTIONS },
+  matchesFile(fileName) {
+    return lowerExt(fileName) === 'deck'
+  },
+  async readDocument(input) {
+    const graph = await parseDeckFile(input.data, { populate: 'first-page' })
+    return { graph, sourceFormat: 'deck' }
+  },
+  ...nativeDocumentBytes('deck', exportDeckFile)
 }
 
 export const pngFormat = rasterFormat('PNG')
@@ -373,6 +415,7 @@ export const jsxFormat: IOFormatAdapter = {
 export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
   figFormat,
   penFormat,
+  deckFormat,
   pngFormat,
   jpgFormat,
   webpFormat,

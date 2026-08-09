@@ -32,6 +32,7 @@ import { createDefaultEditorState } from './state'
 import { createStructureActions } from './structure'
 import { createTextActions } from './text'
 import type {
+  CanvasRendererRole,
   EditorContext,
   EditorEventName,
   EditorEvents,
@@ -44,6 +45,30 @@ import { createVectorizeActions } from './vectorize'
 import { createViewportActions } from './viewport'
 
 export { createDefaultEditorState } from './state'
+
+/**
+ * Diagnostic for the idle-upload loop.
+ *
+ * Autosave keys on `sceneVersion`, which `requestRender()` bumps from ~136 call
+ * sites — many of which are not edits (lazy page population, async font
+ * resolution, collaboration awareness). A document merely open therefore
+ * re-saves indefinitely.
+ *
+ * Body identity already stops that costing bandwidth, but the local serialize
+ * and IndexedDB write still churn. Fixing that means splitting a content
+ * version out of the render counter, and doing so safely requires knowing WHICH
+ * site fires while the document sits untouched — no call site has yet been
+ * observed doing it.
+ *
+ * Enable in a dev build with `__openPencilTraceRender = true`, leave the
+ * document alone, and read the stacks. Off by default and absent in production.
+ */
+function traceRenderRequest(): void {
+  if (!import.meta.env.DEV) return
+  const flag = (globalThis as { __openPencilTraceRender?: boolean }).__openPencilTraceRender
+  if (!flag) return
+  console.trace('[requestRender]')
+}
 
 export function createEditor(options?: EditorOptions) {
   let _graph = options?.graph ?? new SceneGraph()
@@ -78,6 +103,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function requestRender() {
+    traceRenderRequest()
     state.renderVersion++
     state.sceneVersion++
     emitEditorEvent('render:requested', {
@@ -173,22 +199,33 @@ export function createEditor(options?: EditorOptions) {
   const structureBridge = createStructureBridge(structure, selection)
   const undoBridge = createUndoBridge(undoActions, selection)
 
-  function setCanvasKit(ck: CanvasKit, renderer: SkiaRenderer) {
-    _ck = ck
+  function selectRenderer(renderer: SkiaRenderer | null) {
     _renderer = renderer
-    _renderers.add(renderer)
-    _textEditor ??= new TextEditor(ck)
     setTextMeasurer(
-      typeof renderer.measureTextNode === 'function'
+      renderer && typeof renderer.measureTextNode === 'function'
         ? (node, maxWidth) => renderer.measureTextNode(node, maxWidth)
         : null
     )
   }
 
+  function setCanvasKit(
+    ck: CanvasKit,
+    renderer: SkiaRenderer,
+    role: CanvasRendererRole = 'primary'
+  ) {
+    _ck = ck
+    _renderers.add(renderer)
+    _textEditor ??= new TextEditor(ck)
+    // Renderer-backed exports and editor helpers must use the canvas that owns document
+    // pixels. Auxiliary canvases (selection chrome, guides, cursors) still register so
+    // graph mutations invalidate their caches, but they must not replace that authority.
+    if (role === 'primary' || !_renderer) selectRenderer(renderer)
+  }
+
   function removeCanvasRenderer(renderer: SkiaRenderer) {
     _renderers.delete(renderer)
     if (_renderer === renderer) {
-      _renderer = _renderers.values().next().value ?? null
+      selectRenderer(_renderers.values().next().value ?? null)
     }
   }
 

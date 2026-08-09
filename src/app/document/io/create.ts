@@ -72,13 +72,17 @@ export function createDocumentIOActions(
     getStorageBinding: sourceState.getStorageBinding,
     setDocumentSource: sourceActions.setDocumentSource,
     setStorageDocumentSource: sourceActions.setStorageDocumentSource,
+    setStorageDocumentIdentity: sourceActions.setStorageDocumentIdentity,
+    isProvisionalDocument: sourceActions.isProvisionalDocument,
     setPlannedFilePath: sourceActions.setPlannedFilePath,
     startWatchingCurrentFile: sourceActions.startWatchingCurrentFile,
     disposeDocumentIO: sourceActions.disposeDocumentIO,
     openFigFile,
     openDOMFile,
     importDOMText,
+    exportNativeDocument: sourceActions.exportNativeDocument,
     saveFigFile: sourceActions.saveFigFile,
-    saveFigFileAs: sourceActions.saveFigFileAs
+    saveFigFileAs: sourceActions.saveFigFileAs,
+    flushPendingSave: sourceActions.flushPendingSave
   }
 }

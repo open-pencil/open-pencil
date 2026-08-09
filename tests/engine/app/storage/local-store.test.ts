@@ -16,13 +16,14 @@ describe('local canvas store (memory)', () => {
     const fig = new Uint8Array([1, 2, 3, 4, 5])
     const meta = await store.writeCanvas({
       id: 'c1',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'Demo',
       figBytes: fig
     })
     expect(meta.revision).toBe(1)
     expect(meta.syncStatus).toBe('pending')
     expect(meta.hasFig).toBe(true)
+    expect(meta.sourceFormat).toBe('fig')
 
     const read = expectDefined(await store.readFig('c1'))
     expect([...read]).toEqual([1, 2, 3, 4, 5])
@@ -35,13 +36,13 @@ describe('local canvas store (memory)', () => {
     const store = createMemoryLocalCanvasStore()
     await store.writeCanvas({
       id: 'c1',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'A',
       figBytes: new Uint8Array([9])
     })
     const second = await store.writeCanvas({
       id: 'c1',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'A2',
       figBytes: new Uint8Array([9, 9])
     })
@@ -55,7 +56,7 @@ describe('local canvas store (memory)', () => {
     const store = createMemoryLocalCanvasStore()
     await store.writeCanvas({
       id: 'conditional',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'Draft',
       figBytes: new Uint8Array([1])
     })
@@ -70,8 +71,9 @@ describe('local canvas store (memory)', () => {
     const store = createMemoryLocalCanvasStore()
     const meta = await store.upsertIndexMeta({
       id: 'remote-1',
-      providerId: 's3-compatible',
+      syncTargetId: 's3-compatible#00000000',
       name: 'From bucket',
+      sourceFormat: 'deck',
       updatedAt: '2026-01-01T00:00:00.000Z',
       syncStatus: 'synced',
       lastSyncedAt: '2026-01-01T00:00:00.000Z',
@@ -79,6 +81,7 @@ describe('local canvas store (memory)', () => {
       hasFig: false
     })
     expect(meta.hasFig).toBe(false)
+    expect(meta.sourceFormat).toBe('deck')
     expect(await store.readFig('remote-1')).toBeNull()
   })
 })
@@ -90,13 +93,13 @@ describe('local canvas store (IndexedDB)', () => {
     const writes = await Promise.all([
       store.writeCanvas({
         id,
-        providerId: 's3-compatible',
+        syncTargetId: 's3-compatible#00000000',
         name: 'First',
         figBytes: new Uint8Array([1])
       }),
       store.writeCanvas({
         id,
-        providerId: 's3-compatible',
+        syncTargetId: 's3-compatible#00000000',
         name: 'Second',
         figBytes: new Uint8Array([2])
       })

@@ -2,6 +2,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 
+import { CARRIED_SLIDE_FIELDS } from '@open-pencil/deck'
 import { compressFigDataSync } from '@open-pencil/fig'
 import { buildComponentPropIndex, stringToGuid } from '@open-pencil/fig/node-change'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
@@ -81,6 +82,40 @@ function collectImageEntries(graph: SceneGraph): Array<{ name: string; data: Uin
 const THUMBNAIL_WIDTH = 400
 const THUMBNAIL_HEIGHT = 225
 
+/**
+ * How long the preview may hold up the save before it is abandoned.
+ *
+ * The thumbnail is a nicety; the bytes are the document. A headless render has
+ * to stand up its own CanvasKit and load a font the first time, and the saves
+ * that need it are exactly the ones running while the app tears a document
+ * down — so the wait is bounded rather than trusted.
+ */
+const HEADLESS_THUMBNAIL_TIMEOUT_MS = 5000
+
+/**
+ * Render the preview on a private CanvasKit surface, never at the save's expense.
+ *
+ * Returns null instead of throwing or hanging: the caller already has the 1x1
+ * placeholder, and shipping a document with a poor preview beats not shipping it.
+ */
+async function headlessFigThumbnail(graph: SceneGraph, pageId: string): Promise<Uint8Array | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined
+  try {
+    const { headlessRenderThumbnail } = await import('#core/io/formats/raster')
+    return await Promise.race([
+      headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT),
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), HEADLESS_THUMBNAIL_TIMEOUT_MS)
+      })
+    ])
+  } catch (error) {
+    console.warn('Thumbnail render failed; saving with a placeholder instead:', error)
+    return null
+  } finally {
+    if (timer !== undefined) clearTimeout(timer)
+  }
+}
+
 async function renderFigThumbnail(
   graph: SceneGraph,
   pageId: string | undefined,
@@ -95,12 +130,15 @@ async function renderFigThumbnail(
       THUMBNAIL_1X1
     )
   }
-  if (!renderHeadless || IS_BROWSER || IS_TAURI) return THUMBNAIL_1X1
-  const { headlessRenderThumbnail } = await import('#core/io/formats/raster')
-  return (
-    (await headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)) ??
-    THUMBNAIL_1X1
-  )
+  // Opt-in, because a headless render costs a CanvasKit and a font load that a
+  // caller exporting in bulk should not pay per document. It is NOT gated on
+  // the environment: `initCanvasKit` reuses the app's own CanvasKit in the
+  // browser, which is how the workspace already rasters cards for documents it
+  // never opened. Refusing it there is what left every browser-authored save
+  // with a 1x1 placeholder, since a save can easily outlive the canvas that
+  // drew the document.
+  if (!renderHeadless) return THUMBNAIL_1X1
+  return (await headlessFigThumbnail(graph, pageId)) ?? THUMBNAIL_1X1
 }
 
 function assignVariableGuid(
@@ -241,11 +279,31 @@ function appendVariablesForCollection(
 }
 
 function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange): void {
-  if (!page.source.id) return
+  // A deck page is a slide in disguise: hand back the fields it arrived with, so
+  // structurePagesToDeck can restore them onto the SLIDE. Plain .fig pages benefit too —
+  // they commonly carry editInfo, which used to be dropped on every round-trip.
+  //
+  // These must not depend on `source.id`: slides created in OpenPencil (New Deck / New
+  // slide) have no imported id, yet their speaker notes live in rawNodeFields and have to
+  // ride onto the exported SLIDE all the same. Only the canvas-style fields below need an
+  // imported identity to be meaningful.
   if (!('pageType' in page.source.fig.rawNodeFields)) delete canvasNc.pageType
+  for (const field of CARRIED_SLIDE_FIELDS) {
+    const value = page.source.fig.rawNodeFields[field]
+    if (value !== undefined) Object.assign(canvasNc, { [field]: structuredClone(value) })
+  }
+
+  // The stage colour is USER data, not imported passthrough — `setPageColor`
+  // writes it here so that saving carries it. Gating it on `source.id` meant a
+  // page created in OpenPencil kept its colour for the session and lost it on
+  // save, so the document reopened grey and then wrote that grey back.
   if ('backgroundColor' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundColor = structuredClone(page.source.fig.rawNodeFields.backgroundColor)
   }
+
+  // The rest genuinely do need an imported identity: they are fields we carry
+  // back out unchanged, and there is nothing to carry for a page we authored.
+  if (!page.source.id) return
   if ('backgroundPaints' in page.source.fig.rawNodeFields) {
     canvasNc.backgroundPaints = structuredClone(
       page.source.fig.rawNodeFields.backgroundPaints
@@ -337,8 +395,7 @@ interface InternalResourceContext {
   fontDigestMap: Map<string, Uint8Array>
   varIdToGuid: Map<string, GUID>
   modeIdToGuid: Map<string, GUID>
-  glyphBlobMap: Map<string, number>
-  blobIndexByHex: Map<string, number>
+  blobIndex: Map<string, number>
   assignedGuidValues: Set<string>
   componentPropertyDefinitionsById: ReturnType<typeof buildComponentPropIndex>
 }
@@ -359,8 +416,7 @@ function appendInternalResources(context: InternalResourceContext): void {
         context.nodeIdToGuid,
         context.fontDigestMap,
         context.varIdToGuid,
-        context.glyphBlobMap,
-        context.blobIndexByHex,
+        context.blobIndex,
         context.assignedGuidValues,
         context.componentPropertyDefinitionsById,
         context.modeIdToGuid
@@ -424,8 +480,10 @@ export async function exportFigFile(
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
   const fontDigestMap = await buildFontDigestMap(graph)
-  const glyphBlobMap = new Map<string, number>()
-  const blobIndexByHex = new Map<string, number>()
+  // One dedupe table for every blob push site: glyph outlines, vector
+  // networks, fill/stroke geometry and raw Figma payloads all share it, so
+  // byte-identical blobs are written exactly once.
+  const blobIndex = new Map<string, number>()
   const componentPropertyDefinitionsById = buildComponentPropIndex(graph)
 
   // Scan ALL imported source.ids BEFORE any new GUID assignment to find
@@ -489,8 +547,7 @@ export async function exportFigFile(
           nodeIdToGuid,
           fontDigestMap,
           varIdToGuid,
-          glyphBlobMap,
-          blobIndexByHex,
+          blobIndex,
           assignedGuidValues,
           componentPropertyDefinitionsById,
           modeIdToGuid
@@ -509,8 +566,7 @@ export async function exportFigFile(
     fontDigestMap,
     varIdToGuid,
     modeIdToGuid,
-    glyphBlobMap,
-    blobIndexByHex,
+    blobIndex,
     assignedGuidValues,
     componentPropertyDefinitionsById
   })

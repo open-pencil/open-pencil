@@ -55,6 +55,16 @@ watch(
 let tauriFontCacheConfigured = false
 let webFontUnavailableToastShown = false
 
+/**
+ * Warn that provider CATALOGS cannot be browsed in the web app.
+ *
+ * Only ever from a font that failed to load. It used to fire from
+ * `listFamilies()` too, which enumerates on every picker open — so simply
+ * opening a document authored on the web warned that its fonts were
+ * unavailable, when they had loaded fine. The message is about not being able
+ * to browse Google Fonts for something new; it is not a statement about the
+ * document in front of you, and firing it as one made it read as a failure.
+ */
 function showWebFontUnavailableToast(): void {
   if (webFontUnavailableToastShown || isTauri() || !onlineFontsEnabled.value) return
   if (!WEB_FONT_PROVIDER_IDS.some((provider) => fontProviderSettings.value[provider])) return
@@ -149,7 +159,6 @@ export async function listFamilies(): Promise<FontFamilyOption[]> {
       byFamily.set(font.family, { family: font.family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
-  showWebFontUnavailableToast()
   return fontManager.listFamilyOptions()
 }
 

@@ -40,6 +40,7 @@ export const userGuideSidebar = (
     items: [
       { text: labels.layers, link: `${prefix}/user-guide/layers-and-pages` },
       { text: labels.exporting, link: `${prefix}/user-guide/exporting` },
+      { text: labels.cloudStorage, link: `${prefix}/user-guide/cloud-storage` },
     ],
   },
   {

@@ -11,9 +11,10 @@ import type { Color, GUID, Matrix, Vector } from '@open-pencil/scene-graph/primi
 
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../source-metadata'
 /* eslint-disable max-lines */
-import { bytesToHex } from './bytes'
+import { appendBlob, type BlobIndex } from './blob-table'
 import {
   applyExportSettingsPluginData,
+  applyTextPathBoxPluginData,
   mergePluginData,
   NODE_TYPE_PLUGIN_KEY,
   serializePluginRelaunchData,
@@ -46,13 +47,13 @@ export function buildAssetRefToVarGuidMap(
 interface SceneNodeToKiwiContext {
   graph: SceneGraph
   blobs: Uint8Array[]
-  blobIndexByHex?: Map<string, number>
+  /** Shared dedupe table for every blob written during this export. */
+  blobIndex?: BlobIndex
   nodeIdToGuid?: Map<string, GUID>
   /** Reverse index of assigned GUID values ("sessionID:localID") for O(1)
    *  collision detection. Populated alongside every nodeIdToGuid.set() call. */
   assignedGuidValues?: Set<string>
   fontDigestMap?: Map<string, Uint8Array>
-  glyphBlobMap?: Map<string, number>
   varIdToGuid?: Map<string, GUID>
   modeIdToGuid?: Map<string, GUID>
   /** Variable GUIDs used only where raw effect aliases cannot retain asset refs. */
@@ -70,10 +71,15 @@ interface SceneNodeToKiwiContext {
     graph: SceneGraph,
     fontDigestMap: Map<string, Uint8Array> | undefined,
     blobs: Uint8Array[],
-    glyphBlobMap: Map<string, number> | undefined
+    blobIndex: BlobIndex | undefined
   ) => void
   serializeLayoutProps: (node: SceneNode, nc: KiwiNodeChange) => void
-  serializeGeometry: (node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]) => void
+  serializeGeometry: (
+    node: SceneNode,
+    nc: KiwiNodeChange,
+    blobs: Uint8Array[],
+    blobIndex: BlobIndex | undefined
+  ) => void
   serializeVariableBindings: (
     node: SceneNode,
     nc: KiwiNodeChange,
@@ -228,7 +234,7 @@ function materializeSafeVariableMap(
 }
 
 interface MaterializeFigmaPayloadOptions {
-  blobIndexByHex?: Map<string, number>
+  blobIndex?: BlobIndex
   includePaintVariables?: boolean
   includeVariableMaps?: boolean
 }
@@ -240,13 +246,7 @@ function materializeFigmaBlob(
 ): number {
   const blob = value.__openPencilFigmaBlob
   const bytes = blob instanceof Uint8Array ? blob : new Uint8Array(Object.values(blob ?? {}))
-  const key = bytesToHex(bytes)
-  const existing = options.blobIndexByHex?.get(key)
-  if (existing !== undefined) return existing
-  const index = blobs.length
-  blobs.push(bytes)
-  options.blobIndexByHex?.set(key, index)
-  return index
+  return appendBlob(blobs, options.blobIndex, bytes)
 }
 
 function normalizeFigmaPayloadValue(key: string, value: unknown): unknown {
@@ -372,13 +372,67 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
   'parameterConsumptionMap'
 ])
 
+/**
+ * Resize reflowed this path-text node (glyphs regenerated, strokeGeometry
+ * cleared). The raw strokeGeometry silhouettes are still at the pre-resize
+ * size, so exporting them would paint stale full-size outlines.
+ */
+function isReflowedStrokedPathText(node: SceneNode): boolean {
+  if (node.type !== 'TEXT' || node.source.fig.kiwiNodeType !== 'TEXT_PATH') return false
+  if ((node.figmaDerivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
+  if (node.strokeGeometry.length !== 0) return false
+  // Only when the node has stroke paint but its baked silhouettes were
+  // cleared by reflow (see resize.ts). Fill-only path text (no stroke paint,
+  // so strokeGeometry is always empty) is untouched and keeps its raw
+  // derivedTextData verbatim.
+  //
+  // This must key off live node.strokes, not rawNodeFields.strokeGeometry:
+  // clearResizedRawGeometry (resize.ts) deletes that raw field on every
+  // resize commit, so it's already gone by the time a reflowed node reaches
+  // export and can never be used to detect reflow here.
+  return node.strokes.length > 0
+}
+
+/**
+ * An imported path-text node that was edited after import — moving/rotating
+ * clears rawTransform (see clearEditedSourceMetadata), so the transform + size
+ * are recomputed from the node's post-expand box (exportNodeTransform /
+ * exportNodeSize). But the raw derivedTextData + baked silhouettes are still the
+ * PRE-expand (un-shifted) payload — exporting them against the shifted box
+ * re-triggers the import expand on reimport and drifts the node. Rebuild
+ * derivedTextData from the live (shifted) glyphs and re-derive silhouettes,
+ * exactly like the reflow path. rawTransform === null is the "edited" signal;
+ * pristine nodes keep rawTransform and their raw payload verbatim.
+ */
+function isEditedPathText(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    // "Edited" = the raw transform no longer backs the node. Editing does not
+    // clear source.fig.rawTransform directly; effectiveFigmaSourcePayload
+    // derives it from source.editedFields, so ask that, not the raw field.
+    effectiveFigmaSourcePayload(node).rawTransform === null &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+  )
+}
+
 function applyRawFigmaNodeFields(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
   nc: KiwiNodeChange
 ): void {
-  const materialized = materializeFigmaPayload(effectiveFigmaRawNodeFields(node), context.blobs, {
-    blobIndexByHex: context.blobIndexByHex,
+  let rawFields = effectiveFigmaRawNodeFields(node)
+  if (isReflowedStrokedPathText(node) || isEditedPathText(node)) {
+    // Strip before materializing so the stale blobs never enter the file:
+    // silhouettes are re-derived from glyphs by Figma/reimport, and
+    // derivedTextData was rebuilt from the reflowed glyphs by
+    // serializeTextProps (raw would clobber the new positions).
+    rawFields = { ...rawFields }
+    delete rawFields.strokeGeometry
+    delete rawFields.derivedTextData
+  }
+  const materialized = materializeFigmaPayload(rawFields, context.blobs, {
+    blobIndex: context.blobIndex,
     includePaintVariables: true,
     includeVariableMaps: true
   }) as Partial<KiwiNodeChange>
@@ -456,7 +510,7 @@ function applyInstancePayload(
         node.source.fig.symbolOverrides,
         context.blobs,
         {
-          blobIndexByHex: context.blobIndexByHex,
+          blobIndex: context.blobIndex,
           includePaintVariables: true,
           includeVariableMaps: true
         }
@@ -472,7 +526,7 @@ function applyInstancePayload(
       node.source.fig.componentPropAssignments,
       context.blobs,
       {
-        blobIndexByHex: context.blobIndexByHex,
+        blobIndex: context.blobIndex,
         includePaintVariables: true,
         includeVariableMaps: true
       }
@@ -483,7 +537,7 @@ function applyInstancePayload(
       node.source.fig.derivedSymbolData,
       context.blobs,
       {
-        blobIndexByHex: context.blobIndexByHex,
+        blobIndex: context.blobIndex,
         includePaintVariables: true,
         includeVariableMaps: true
       }
@@ -616,8 +670,16 @@ function applyComponentMetadata(
 }
 
 function exportNodeSize(node: SceneNode): Vector {
-  const rawSize = effectiveFigmaSourcePayload(node).rawSize
-  return rawSize ? { ...rawSize } : { x: node.width, y: node.height }
+  // rawSize and rawTransform are a matched pair describing the ORIGINAL Figma
+  // box. Once the transform no longer backs the node, exportNodeTransform
+  // recomputes it from node dims via computeExportTransform; pairing that with
+  // an un-expanded rawSize disagrees about the box (for rotation, a different
+  // centre) and the node drifts on reimport. Use rawSize only while the
+  // transform still backs it.
+  const payload = effectiveFigmaSourcePayload(node)
+  return payload.rawSize && payload.rawTransform
+    ? { ...payload.rawSize }
+    : { x: node.width, y: node.height }
 }
 
 function exportNodeTransform(context: SceneNodeToKiwiContext, node: SceneNode): Matrix {
@@ -721,7 +783,7 @@ function applyNodeVisualProps(
       context.graph,
       context.fontDigestMap,
       context.blobs,
-      context.glyphBlobMap
+      context.blobIndex
     )
   }
 
@@ -748,6 +810,19 @@ function applyNodeVisualProps(
   if (!node.autoRename) nc.autoRename = false
 }
 
+/**
+ * Import maps TEXT_PATH → TEXT. Re-emit Kiwi type 41 only while path fidelity
+ * remains (marker + baked glyphs). After the user edits characters we clear
+ * both — exporting TEXT_PATH without glyphs would be a lie to Figma.
+ */
+function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): string {
+  const isPathText =
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    node.type === 'TEXT' &&
+    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+  return isPathText ? 'TEXT_PATH' : context.mapToFigmaType(node.type)
+}
+
 export function sceneNodeToKiwiWithContext(
   node: SceneNode,
   parentGuid: GUID,
@@ -762,13 +837,15 @@ export function sceneNodeToKiwiWithContext(
 
   const strokePaints = createStrokePaints(context, node)
 
+  const exportType = exportKiwiNodeType(node, context)
+
   const nc: KiwiNodeChange = {
     guid,
     parentIndex: {
       guid: parentGuid,
       position: node.source.orderKey ?? context.fractionalPosition(childIndex)
     },
-    type: context.mapToFigmaType(node.type),
+    type: exportType,
     name: node.name,
     visible: node.visible,
     opacity: node.opacity,
@@ -800,7 +877,7 @@ export function sceneNodeToKiwiWithContext(
   if (strokePaints.length > 0) nc.strokePaints = strokePaints
 
   context.serializeLayoutProps(node, nc)
-  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs)
+  context.serializeGeometry(nodeForGeometryExport(node), nc, context.blobs, context.blobIndex)
   context.serializeVariableBindings(node, nc, context.graph, context.varIdToGuid)
   applyRawFigmaNodeFields(context, node, nc)
   const variableModeBySetMap = serializeVariableModes(
@@ -811,6 +888,7 @@ export function sceneNodeToKiwiWithContext(
   if (variableModeBySetMap) nc.variableModeBySetMap = variableModeBySetMap
 
   applyExportSettingsPluginData(node)
+  applyTextPathBoxPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {

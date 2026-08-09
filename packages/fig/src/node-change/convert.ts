@@ -11,9 +11,11 @@ import { convertFigmaDerivedTextGlyphs } from './derived-text-glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
 import { convertEffects, convertFills, convertStrokes } from './paint'
+import { expandPathTextLayoutBox } from './path-text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractTextPathBox,
   extractPluginData,
   extractPluginRelaunchData,
   getOpenPencilPluginValue,
@@ -107,7 +109,11 @@ const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   INSTANCE: 'INSTANCE',
   SYMBOL: 'COMPONENT',
   CONNECTOR: 'CONNECTOR',
-  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT'
+  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT',
+  // Figma Kiwi TEXT_PATH (41): no engine NodeType yet (no path-edit product).
+  // Map to TEXT and keep fidelity via derived glyphs + strokeGeometry paint;
+  // original type is stashed on source.fig.kiwiNodeType for unedited export.
+  TEXT_PATH: 'TEXT'
 }
 
 function mapNodeType(type?: string): NodeType | 'DOCUMENT' | 'VARIABLE' {
@@ -583,7 +589,7 @@ export function nodeChangeToProps(
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
 
-  return {
+  const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
     nodeType,
     name: nc.name ?? nodeType,
     source: extractSourceMetadata(nc, blobs),
@@ -638,6 +644,24 @@ export function nodeChangeToProps(
     componentPropertyValues: extractComponentPropertyValues(nc),
     ...extractComponentMetadata(nc)
   }
+
+  // See path-text-layout.ts — expand layout box before the node is created so
+  // clipsContent parents don't shave overflowing path lettering at first paint.
+  expandPathTextLayoutBox(props)
+  // A saved OpenPencil doc carries the true textPathBox (reflow may have
+  // scaled it); the expand-time reconstruction is only right for pristine
+  // Figma exports. Plugin box is in pre-expansion local coords — expand's
+  // shift is textPathBox.x/y by construction, so re-home it.
+  const pluginBox = extractTextPathBox(nc)
+  if (pluginBox && props.textPathBox) {
+    props.textPathBox = {
+      x: pluginBox.x + props.textPathBox.x,
+      y: pluginBox.y + props.textPathBox.y,
+      width: pluginBox.width,
+      height: pluginBox.height
+    }
+  }
+  return props
 }
 
 const COMPONENT_PROP_TYPE_MAP: Record<string, ComponentPropertyType> = {
@@ -894,7 +918,10 @@ function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['
     fig: {
       ...extractFigmaRawGeometry(nc, blobs),
       ...extractFigmaSymbolMetadata(nc, blobs),
-      layout: extractFigmaLayoutMetadata(nc)
+      layout: extractFigmaLayoutMetadata(nc),
+      // Engine type is TEXT; remember Kiwi TEXT_PATH so export can re-emit type 41
+      // while path-text fidelity (glyphs) still exists. Cleared on content edit.
+      kiwiNodeType: nc.type === 'TEXT_PATH' ? 'TEXT_PATH' : null
     }
   }
 }

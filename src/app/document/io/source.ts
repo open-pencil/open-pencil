@@ -1,16 +1,21 @@
-import type { Editor, EditorState } from '@open-pencil/core/editor'
+import { documentKindRules, type Editor, type EditorState } from '@open-pencil/core/editor'
+import { exportDeckFile } from '@open-pencil/core/io/formats/deck'
 import { exportFigFile } from '@open-pencil/core/io/formats/fig'
 
 import { createAutosave } from '@/app/document/autosave'
 import {
   documentNameFromFigPath,
   downloadNameFromPath,
-  figDownloadName
+  figDownloadName,
+  isNativeDocumentFormat
 } from '@/app/document/io/names'
 import { createSaveActions } from '@/app/document/io/save'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
-import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
+import type {
+  StorageDocumentBinding,
+  StorageDocumentFormat
+} from '@/app/integrations/storage/types'
 
 type DocumentSourceState = EditorState & {
   documentName: string
@@ -46,13 +51,57 @@ export function createDocumentSourceActions({
   setLastWriteTime,
   getRenderer
 }: DocumentSourceOptions) {
-  function buildFigFile() {
-    return exportFigFile(editor.graph, undefined, getRenderer() ?? undefined, state.currentPageId)
+  function currentSourceFormat(): string {
+    return documentKindRules(state.documentKind).saveFormat
+  }
+
+  function buildNativeFile() {
+    const renderer = getRenderer() ?? undefined
+    // The live renderer when there is one, a headless render when there is not.
+    //
+    // A save routinely outlives the canvas that drew the document: closing a tab
+    // disposes its renderer, returning to the workspace unmounts the editor
+    // before the flush that repaints the grid, and a tab that is merely open in
+    // the background never received a renderer at all — one canvas serves
+    // whichever tab is active. Every one of those saves used to ship a 1x1
+    // placeholder, which then forced the workspace to download whole documents
+    // just to draw its grid. Asking for the headless fallback costs nothing when
+    // a renderer is present, and the exporter never lets it delay or fail the
+    // write.
+    const ck = renderer?.ck
+    if (currentSourceFormat() === 'deck') {
+      return exportDeckFile(
+        editor.graph,
+        ck,
+        renderer,
+        state.currentPageId,
+        true,
+        getDownloadName() || state.documentName
+      )
+    }
+    return exportFigFile(editor.graph, ck, renderer, state.currentPageId, true)
+  }
+
+  // A document created blank has nothing worth keeping until it holds
+  // something. Cleared on the first real write, after which it is an ordinary
+  // document and saves like one — including when emptied again.
+  let provisional = false
+
+  /**
+   * Both halves matter. `canUndo` alone would let a stage-colour change on an
+   * empty canvas mint a document, and an empty canvas is not work. Objects
+   * alone would let `requestRender()` — which bumps `sceneVersion` from over a
+   * hundred call sites — save a document nobody touched.
+   */
+  function worthKeeping(): boolean {
+    if (!provisional) return true
+    if (!editor.undo.canUndo) return false
+    return editor.graph.getPages().some((page) => editor.graph.getChildren(page.id).length > 0)
   }
 
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
-    buildFigFile,
+    buildFigFile: buildNativeFile,
     getFilePath,
     setFilePath,
     getFileHandle,
@@ -62,19 +111,26 @@ export function createDocumentSourceActions({
     getStorageBinding,
     setStorageBinding,
     setSourceIdentity,
-    setSavedVersion,
+    // Every successful write funnels through here, whichever destination it
+    // took, so this is the one place that can retire the provisional flag —
+    // an explicit Save of a blank document is intent, and must stick.
+    setSavedVersion: (version: number) => {
+      provisional = false
+      setSavedVersion(version)
+    },
     setLastWriteTime,
     startWatchingFile: () => {
       void startWatchingFile()
     }
   })
 
-  const { disposeAutosave } = createAutosave({
+  const { disposeAutosave, flushAutosave } = createAutosave({
     state,
     getSavedVersion,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
     saveCurrentDocument: async () => {
-      await writeFile(await buildFigFile())
+      if (!worthKeeping()) return
+      await writeFile(await buildNativeFile())
     }
   })
 
@@ -86,27 +142,60 @@ export function createDocumentSourceActions({
   ) {
     stopWatchingFile()
     setStorageBinding(null)
-    const isFig = sourceFormat === 'fig'
-    setFileHandle(isFig ? (handle ?? null) : null)
-    setFilePath(isFig ? (path ?? null) : null)
+    const isNative = isNativeDocumentFormat(sourceFormat)
+    setFileHandle(isNative ? (handle ?? null) : null)
+    setFilePath(isNative ? (path ?? null) : null)
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSourceIdentity({ handle: handle ?? null, path: path ?? null })
     setSavedVersion(state.sceneVersion)
-    if (isFig && (handle || path)) {
+    if (isNative && (handle || path)) {
       void startWatchingFile()
     }
   }
 
-  function setStorageDocumentSource(binding: StorageDocumentBinding, documentName: string) {
+  /**
+   * Whether this document has yet to earn a row. Callers that write metadata
+   * (a rename, say) must not create one for a blank document — that would put
+   * back the card the provisional rule exists to avoid.
+   */
+  function isProvisionalDocument(): boolean {
+    return provisional
+  }
+
+  function setStorageDocumentSource(
+    binding: StorageDocumentBinding,
+    documentName: string,
+    sourceFormat: StorageDocumentFormat = 'fig',
+    options: { provisional?: boolean } = {}
+  ) {
     stopWatchingFile()
     setFileHandle(null)
     setFilePath(null)
-    setDownloadName(`${documentName}.fig`)
+    setDownloadName(`${documentName}.${sourceFormat}`)
     setSourceIdentity({ handle: null, path: null })
     setStorageBinding(binding)
     state.documentName = documentName
     state.autosaveEnabled = true
     setSavedVersion(state.sceneVersion)
+    // Opening an existing document is never provisional: it earned its row
+    // already, and emptying it must still be saved.
+    provisional = options.provisional ?? false
+  }
+
+  /**
+   * Name which workspace document this tab is, before its bytes have been parsed.
+   *
+   * Caches keyed on the document — the slide filmstrip's is one — otherwise cannot name it
+   * until the load finishes, and spend the whole load reading a key nothing was stored
+   * under, showing placeholders over thumbnails that are sitting right there.
+   *
+   * Identity ONLY, deliberately. `setStorageDocumentSource` is what makes a document
+   * saveable, and it must stay where it is: enabling autosave or pinning a saved version
+   * before `replaceGraph` has run pins the version of the document being replaced, so the
+   * load itself reads as an edit and an untouched document uploads itself on open.
+   */
+  function setStorageDocumentIdentity(binding: StorageDocumentBinding) {
+    setStorageBinding(binding)
   }
 
   function setPlannedFilePath(path: string) {
@@ -129,13 +218,18 @@ export function createDocumentSourceActions({
   }
 
   return {
+    /** Serialise the open document in its own native format (.fig or .deck). */
+    exportNativeDocument: buildNativeFile,
     setDocumentSource,
     setStorageDocumentSource,
+    setStorageDocumentIdentity,
+    isProvisionalDocument,
     setPlannedFilePath,
     startWatchingCurrentFile,
     disposeDocumentIO,
     saveFigFile,
     saveFigFileAs,
+    flushPendingSave: flushAutosave,
     getStorageBinding
   }
 }

@@ -14,6 +14,8 @@ export function bindSpaceHandTool(inputFocused: ComputedRef<boolean>, store: Edi
 
   useEventListener(window, 'keydown', (event: KeyboardEvent) => {
     if (event.code !== 'Space') return
+    // Space advances slides while presenting; do not steal it for the hand tool.
+    if (store.state.presenting) return
     if (inputFocused.value || store.state.editingTextId) return
     if (event.metaKey || event.ctrlKey || event.altKey) return
     event.preventDefault()

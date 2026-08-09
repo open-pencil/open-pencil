@@ -73,7 +73,7 @@ test('no autosave without file handle', async ({ browser }) => {
     deviceScaleFactor: 2
   })
   const freshPage = await context.newPage()
-  await freshPage.goto('/')
+  await freshPage.goto('/editor?new=design')
   const freshCanvas = new CanvasHelper(freshPage)
   await freshCanvas.waitForInit()
 

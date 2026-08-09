@@ -1,15 +1,15 @@
 import { normalizeFontFamily, weightToStyle } from '@open-pencil/scene-graph'
 
 import { effectiveFigmaRawNodeFields } from '../source-metadata'
-import { fractionalPosition, mapToFigmaType } from './basics'
-import { bytesToHex } from './bytes'
+import { computeExportTransform, fractionalPosition, mapToFigmaType } from './basics'
+import { appendBlob, type BlobIndex } from './blob-table'
 import { VARIABLE_BINDING_FIELDS } from './convert'
 import { buildDerivedTextData as buildSharedDerivedTextData } from './derived-text-data'
 import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export-runtime'
 import { applyFontFeaturesToKiwi } from './font/features'
 import { weightToFigmaStyle } from './font/style'
 import { fillToKiwiPaint, safeColor } from './paint'
-import { encodePathCommandsBlob } from './path-commands'
+import { bakeGlyphScale, encodePathCommandsBlob } from './path-commands'
 import {
   BOUND_VARIABLES_PLUGIN_KEY,
   LAYOUT_DIRECTION_PLUGIN_KEY,
@@ -31,7 +31,7 @@ export {
 import type { NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { GUID, JsonObject, Matrix } from '@open-pencil/scene-graph/primitives'
+import type { GUID, JsonObject } from '@open-pencil/scene-graph/primitives'
 
 import {
   buildAssetRefToVarGuidMap,
@@ -41,29 +41,31 @@ import {
 } from './export-node'
 import { exportTextData, fontVariationToKiwi } from './text-data-export'
 
+/**
+ * One record per line of the paragraph.
+ *
+ * Figma lays text out from these, so a line needs more than its type: emitting only
+ * `lineType` produced files whose frames rendered but whose text never appeared. The shape
+ * matches what Figma writes for plain text; credit to OpenFig.org, whose deck writer
+ * showed which of these fields actually matter.
+ */
 function textLines(text: string): NonNullable<NodeChange['textData']>['lines'] {
   const lineCount = Math.max(1, text.split('\n').length)
-  return Array.from({ length: lineCount }, () => ({ lineType: 'PLAIN' }))
-}
-
-function appendGlyphBlob(
-  blobs: Uint8Array[],
-  glyphBlobMap: Map<string, number>,
-  blob: Uint8Array
-): number {
-  const key = bytesToHex(blob)
-  const existing = glyphBlobMap.get(key)
-  if (existing !== undefined) return existing
-  const index = blobs.push(blob) - 1
-  glyphBlobMap.set(key, index)
-  return index
+  return Array.from({ length: lineCount }, () => ({
+    lineType: 'PLAIN',
+    styleId: 0,
+    indentationLevel: 0,
+    sourceDirectionality: 'AUTO',
+    listStartOffset: 0,
+    isFirstLineOfList: false
+  }))
 }
 
 function buildDerivedTextData(
   node: SceneNode,
   digestMap: Map<string, Uint8Array>,
   blobs: Uint8Array[],
-  glyphBlobMap: Map<string, number>,
+  blobIndex: BlobIndex | undefined,
   runtime: FigNodeChangeExportRuntime
 ): NodeChange['derivedTextData'] {
   const fontMeta: NonNullable<NodeChange['derivedTextData']>['fontMetaData'] = []
@@ -100,7 +102,16 @@ function buildDerivedTextData(
   const glyphs =
     derivedGlyphs.length > 0
       ? derivedGlyphs.map((glyph, index) => ({
-          commandsBlob: appendGlyphBlob(blobs, glyphBlobMap, glyph.commandsBlob),
+          commandsBlob: appendBlob(
+            blobs,
+            blobIndex,
+            bakeGlyphScale(
+              glyph.commandsBlob,
+              glyph.scaleX ?? 1,
+              glyph.scaleY ?? 1,
+              glyph.rotation ?? 0
+            )
+          ),
           position: { x: glyph.x, y: glyph.y },
           fontSize: glyph.fontSize,
           firstCharacter: index,
@@ -108,7 +119,8 @@ function buildDerivedTextData(
             index + 1 < derivedGlyphs.length
               ? Math.max(derivedGlyphs[index + 1].x - glyph.x, 0)
               : glyphAdvance,
-          rotation: 0
+          // Preserve path-text radians; hardcoding 0 used to flatten circular text on re-export.
+          rotation: glyph.rotation ?? 0
         }))
       : (
           runtime.getGlyphOutlineMetrics(
@@ -118,9 +130,9 @@ function buildDerivedTextData(
             node.fontSize
           ) ?? []
         ).map((glyph, index) => ({
-          commandsBlob: appendGlyphBlob(
+          commandsBlob: appendBlob(
             blobs,
-            glyphBlobMap,
+            blobIndex,
             encodePathCommandsBlob(glyph.commands, node.fontSize)
           ),
           position: { x: glyph.x || index * glyphAdvance, y: lineHeight },
@@ -200,7 +212,7 @@ function serializeTextProps(
   graph: SceneGraph,
   fontDigestMap: Map<string, Uint8Array> | undefined,
   blobs: Uint8Array[],
-  glyphBlobMap: Map<string, number> | undefined,
+  blobIndex: BlobIndex | undefined,
   runtime: FigNodeChangeExportRuntime
 ): void {
   upsertPluginData(node, TEXT_DIRECTION_PLUGIN_KEY, node.textDirection)
@@ -231,13 +243,7 @@ function serializeTextProps(
   if (node.textTruncation === 'ENDING') nc.textTruncation = 'ENDING'
   if (node.maxLines != null) nc.maxLines = node.maxLines
   if (fontDigestMap) {
-    nc.derivedTextData = buildDerivedTextData(
-      node,
-      fontDigestMap,
-      blobs,
-      glyphBlobMap ?? new Map(),
-      runtime
-    )
+    nc.derivedTextData = buildDerivedTextData(node, fontDigestMap, blobs, blobIndex, runtime)
   }
   if (node.leadingTrim !== 'NONE') nc.leadingTrim = node.leadingTrim
   if (node.lineHeight != null) nc.lineHeight = { value: node.lineHeight, units: 'PIXELS' }
@@ -391,7 +397,12 @@ function serializeLayoutProps(node: SceneNode, nc: KiwiNodeChange, graph: SceneG
   }
 }
 
-function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Array[]): void {
+function serializeGeometry(
+  node: SceneNode,
+  nc: KiwiNodeChange,
+  blobs: Uint8Array[],
+  blobIndex: BlobIndex | undefined
+): void {
   if (node.isMask) {
     nc.mask = true
     nc.maskType = node.maskType
@@ -403,16 +414,17 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
   if (node.vectorNetwork && node.type === 'VECTOR') {
     const { table, mirroringToId } = buildStyleOverrideTable(node.vectorNetwork)
     styleOverrides = table
-    const blobIdx = blobs.length
-    blobs.push(encodeVectorNetworkBlob(node.vectorNetwork, mirroringToId))
-    vectorData.vectorNetworkBlob = blobIdx
+    vectorData.vectorNetworkBlob = appendBlob(
+      blobs,
+      blobIndex,
+      encodeVectorNetworkBlob(node.vectorNetwork, mirroringToId)
+    )
     vectorData.normalizedSize = { x: node.width, y: node.height }
   }
 
   if (node.fillGeometry.length > 0) {
     nc.fillGeometry = node.fillGeometry.map((geometry) => {
-      const blobIdx = blobs.length
-      blobs.push(geometry.commandsBlob)
+      const blobIdx = appendBlob(blobs, blobIndex, geometry.commandsBlob)
       if (!geometry.fills || geometry.fills.length === 0) {
         return { windingRule: geometry.windingRule, commandsBlob: blobIdx }
       }
@@ -427,8 +439,7 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
 
   if (node.strokeGeometry.length > 0) {
     nc.strokeGeometry = node.strokeGeometry.map((g) => {
-      const blobIdx = blobs.length
-      blobs.push(g.commandsBlob)
+      const blobIdx = appendBlob(blobs, blobIndex, g.commandsBlob)
       return { windingRule: g.windingRule, commandsBlob: blobIdx }
     })
   }
@@ -468,37 +479,6 @@ function serializeVariableBindings(
   if (entries.length > 0) nc.variableConsumptionMap = { entries }
 }
 
-function computeExportTransform(node: SceneNode): Matrix {
-  const sx = node.flipX ? -1 : 1
-  const cos = Math.cos((node.rotation * Math.PI) / 180)
-  const sin = Math.sin((node.rotation * Math.PI) / 180)
-
-  const m00 = cos * sx
-  const m01 = -sin
-  const m10 = sin * sx
-  const m11 = cos
-  const corners = [
-    { x: 0, y: 0 },
-    { x: node.width, y: 0 },
-    { x: 0, y: node.height },
-    { x: node.width, y: node.height }
-  ].map((point) => ({
-    x: m00 * point.x + m01 * point.y,
-    y: m10 * point.x + m11 * point.y
-  }))
-  const offsetX = Math.min(...corners.map((point) => point.x))
-  const offsetY = Math.min(...corners.map((point) => point.y))
-
-  return {
-    m00,
-    m01,
-    m02: node.x - offsetX,
-    m10,
-    m11,
-    m12: node.y - offsetY
-  }
-}
-
 export function sceneNodeToKiwi(
   node: SceneNode,
   parentGuid: GUID,
@@ -509,8 +489,8 @@ export function sceneNodeToKiwi(
   nodeIdToGuid?: Map<string, GUID>,
   fontDigestMap?: Map<string, Uint8Array>,
   varIdToGuid?: Map<string, GUID>,
-  glyphBlobMap = new Map<string, number>(),
-  blobIndexByHex?: Map<string, number>,
+  /** Shared dedupe table for every blob this export writes. */
+  blobIndex: BlobIndex = new Map<string, number>(),
   assignedGuidValues?: Set<string>,
   runtime: FigNodeChangeExportRuntime = EMPTY_EXPORT_RUNTIME,
   componentPropertyDefinitionsById = buildComponentPropIndex(graph),
@@ -522,11 +502,10 @@ export function sceneNodeToKiwi(
   return sceneNodeToKiwiWithContext(node, parentGuid, childIndex, localIdCounter, {
     graph,
     blobs,
-    blobIndexByHex,
+    blobIndex,
     nodeIdToGuid,
     assignedGuidValues,
     fontDigestMap,
-    glyphBlobMap,
     varIdToGuid,
     modeIdToGuid,
     assetRefToVarGuid,
@@ -537,8 +516,8 @@ export function sceneNodeToKiwi(
     safeColor,
     computeExportTransform,
     serializeCornerRadii,
-    serializeTextProps: (textNode, nc, textGraph, digests, textBlobs, glyphs) =>
-      serializeTextProps(textNode, nc, textGraph, digests, textBlobs, glyphs, runtime),
+    serializeTextProps: (textNode, nc, textGraph, digests, textBlobs, textBlobIndex) =>
+      serializeTextProps(textNode, nc, textGraph, digests, textBlobs, textBlobIndex, runtime),
     serializeLayoutProps: (layoutNode, nc) => serializeLayoutProps(layoutNode, nc, graph),
     serializeGeometry,
     serializeVariableBindings,

@@ -4,6 +4,7 @@ export {
   BUILTIN_IO_FORMATS,
   figFormat,
   penFormat,
+  deckFormat,
   pngFormat,
   jpgFormat,
   webpFormat,
@@ -11,17 +12,21 @@ export {
   jsxFormat
 } from './formats'
 export { exportFigFile, parseFigFile, readFigFile, type ParseFigFileOptions } from './formats/fig'
+export { exportDeckFile, parseDeckFile, parseDeckFileSync, readDeckFile } from './formats/deck'
 export { parsePenFile, readPenFile } from '@open-pencil/pen'
 export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './formats/jsx'
 export {
   computeContentBounds,
+  isUniformPixels,
   renderNodesToImage,
+  renderNodesToPixels,
   renderThumbnail,
   initCanvasKit,
   headlessRenderNodes,
   headlessRenderThumbnail,
   type RasterExportFormat,
-  type ExportFormat
+  type ExportFormat,
+  type RenderedPixels
 } from './formats/raster'
 export {
   createSVGNodes,

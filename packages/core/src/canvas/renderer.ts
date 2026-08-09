@@ -15,7 +15,7 @@ import {
   COMPONENT_SET_BORDER_WIDTH,
   IS_BROWSER
 } from '#core/constants'
-import type { EditorState } from '#core/editor/types'
+import type { EditorState, Viewport } from '#core/editor/types'
 import { RenderProfiler } from '#core/profiler'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
@@ -28,6 +28,7 @@ import { destroyRenderer } from './renderer/lifecycle'
 import { installRendererDomainMethods } from './renderer/methods'
 import { initializeRendererPaints } from './renderer/paints'
 import * as RenderPipeline from './renderer/pipeline'
+import { beginSceneBackingPreview } from './renderer/retained-backing'
 import * as RendererState from './renderer/state'
 import * as RenderText from './text'
 export type { RenderOverlays, RulerTheme } from './renderer/types'
@@ -98,6 +99,8 @@ export class SkiaRenderer {
   vectorStrokeOutlineCache = new Map<string, Path[]>()
   fillGeometryCache = new Map<string, Path[]>()
   strokeGeometryCache = new Map<string, Path[]>()
+  /** Path-text glyph silhouettes (stroke-and-union, font units) keyed by blob hash + relative weight. */
+  glyphSilhouetteCache = new Map<string, Path>()
   scenePicture: SkPicture | null = null
   scenePictureVersion = -1
   scenePictureFontGeneration = -1
@@ -147,7 +150,7 @@ export class SkiaRenderer {
   sceneBackingAverageRecordMs = 40
   sceneBackingAverageViewportIntervalMs = 80
   sceneBackingLastViewportEventAt = 0
-  lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
+  lastSceneViewport: Viewport | null = null
   nodePictureCache = new Map<string, SkPicture | null>()
   nodePictureCacheGenerations = new Map<string, number>()
   subtreePictureCache = new Map<string, SubtreePictureCacheEntry>()
@@ -449,11 +452,24 @@ export class SkiaRenderer {
     return RendererFonts.prepareForExport(this, graph, pageId, nodeIds)
   }
 
+  /**
+   * Swap in a new onscreen surface after the canvas changed size.
+   *
+   * Only an in-flight backing build owns GPU memory derived from the outgoing surface. The
+   * recorded picture is device-independent, and the backing image was snapshotted from an
+   * offscreen surface and lives on the GL context — which is reused across the swap, not
+   * recreated. Discarding those as well made every resize frame re-record the entire scene,
+   * the dominant cost of dragging a panel over a photo-heavy deck.
+   */
   replaceSurface(surface: Surface): void {
     this.surface.delete()
     this.surface = surface
+    this.sceneBackingBuild?.surface.delete()
+    this.sceneBackingBuild = null
+    // The refused allocation was sized against the outgoing surface, so a new
+    // one earns a fresh attempt rather than inheriting the old verdict.
     this.sceneBackingAllocationFailed = false
-    this.invalidateScenePicture()
+    beginSceneBackingPreview(this)
   }
 
   invalidateScenePicture(): void {

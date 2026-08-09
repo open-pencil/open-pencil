@@ -34,8 +34,8 @@ export function sceneNodeToKiwi(
   nodeIdToGuid?: Map<string, GUID>,
   fontDigestMap?: Map<string, Uint8Array>,
   varIdToGuid?: Map<string, GUID>,
-  glyphBlobMap = new Map<string, number>(),
-  blobIndexByHex?: Map<string, number>,
+  /** Shared dedupe table for every blob this export writes. */
+  blobIndex = new Map<string, number>(),
   assignedGuidValues?: Set<string>,
   componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>,
   modeIdToGuid?: Map<string, GUID>
@@ -50,8 +50,7 @@ export function sceneNodeToKiwi(
     nodeIdToGuid,
     fontDigestMap,
     varIdToGuid,
-    glyphBlobMap,
-    blobIndexByHex,
+    blobIndex,
     assignedGuidValues,
     coreFigExportRuntime,
     componentPropertyDefinitionsById,

@@ -422,7 +422,7 @@ test.describe('@open-pencil/dom-css browser CSS runtime oracle', () => {
   })
 
   test('computes styles through the browser runtime sandbox', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/editor?new=design')
     await setStyledContent(page, '.card { width: 20px; }', '<article class="card">Host</article>')
     const document: DesignDocument = {
       type: 'document',

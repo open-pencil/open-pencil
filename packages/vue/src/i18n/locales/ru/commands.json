@@ -38,6 +38,9 @@
   "bringForward": "Переместить вперёд",
   "distributeHorizontal": "Распределить интервалы по горизонтали",
   "distributeVertical": "Распределить интервалы по вертикали",
+  "present": "Презентация",
+  "present": "Презентация",
+  "presentWithNotes": "Презентация с заметками",
   "selectInverse": "Инвертировать выделение",
   "sendBackward": "Переместить назад"
 }

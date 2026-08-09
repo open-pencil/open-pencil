@@ -3,6 +3,7 @@
   "nodeCopyString": " copia",
   "layers": "Capas",
   "pages": "Páginas",
+  "slides": "Diapositivas",
   "design": "Diseño",
   "code": "Código",
   "ai": "IA",
@@ -263,5 +264,6 @@
   "blendModeHue": "Tono",
   "blendModeSaturation": "Saturación",
   "blendModeColor": "Color",
-  "blendModeLuminosity": "Luminosidad"
+  "blendModeLuminosity": "Luminosidad",
+  "newSlide": "Nueva diapositiva"
 }

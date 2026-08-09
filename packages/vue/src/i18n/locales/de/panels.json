@@ -1,6 +1,7 @@
 {
   "layers": "Ebenen",
   "pages": "Seiten",
+  "slides": "Folien",
   "design": "Design",
   "code": "Code",
   "ai": "KI",
@@ -263,5 +264,6 @@
   "blendModeHue": "Farbton",
   "blendModeSaturation": "Sättigung",
   "blendModeColor": "Farbe",
-  "blendModeLuminosity": "Luminanz"
+  "blendModeLuminosity": "Luminanz",
+  "newSlide": "Neue Folie"
 }

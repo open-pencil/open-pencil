@@ -31,6 +31,10 @@ class TestStorageAdapter implements StorageAdapter {
     return Promise.resolve()
   }
 
+  putDocumentMetadata() {
+    return Promise.resolve()
+  }
+
   deleteDocument() {
     return Promise.resolve()
   }
@@ -47,11 +51,49 @@ function testProvider() {
     description: 'Storage used by registry tests',
     preferenceFields: [{ id: 'endpoint', label: 'Endpoint', kind: 'url', required: true }],
     credentialFields: [{ id: 'secret', label: 'Secret', required: true }],
+    conflictProtection: 'detect',
     createAdapter: (runtime) => new TestStorageAdapter(runtime)
   })
 }
 
 describe('storage provider registry', () => {
+  test('registers Appwrite with setup fields and one dedicated credential', () => {
+    const provider = storageProviderRegistry.get('appwrite-storage')
+
+    expect(provider.preferenceFields.map((field) => field.id)).toEqual([
+      'endpoint',
+      'project-id',
+      'bucket-id'
+    ])
+    expect(provider.credentialFields.map((field) => field.id)).toEqual(['api-key'])
+    expect(provider.icon).toContain('appwrite-logo.svg')
+    expect(appCredentialRefs().map(credentialKey)).toContain('v1:appwrite-storage:default:api-key')
+  })
+
+  test('registers Bunny Storage with its simplified connection fields', () => {
+    const provider = storageProviderRegistry.get('bunny-storage')
+
+    expect(provider.preferenceFields.map((field) => field.id)).toEqual(['storage-zone', 'endpoint'])
+    expect(provider.credentialFields.map((field) => field.id)).toEqual(['password'])
+    expect(provider.icon).toContain('bunny-logo.svg')
+    expect(appCredentialRefs().map(credentialKey)).toContain('v1:bunny-storage:default:password')
+  })
+
+  test('registers Backblaze B2 with dedicated S3 fields and credentials', () => {
+    const provider = storageProviderRegistry.get('backblaze-b2')
+
+    expect(provider.preferenceFields.map((field) => field.id)).toEqual(['bucket', 'endpoint'])
+    expect(provider.credentialFields.map((field) => field.id)).toEqual([
+      'application-key-id',
+      'application-key'
+    ])
+    expect(provider.icon).toContain('backblaze-logo.svg')
+    expect(provider.corsConfiguration).toBe('s3')
+    expect(appCredentialRefs().map(credentialKey)).toContain(
+      'v1:backblaze-b2:default:application-key'
+    )
+  })
+
   test('registers S3 preferences separately from credential fields', () => {
     const provider = storageProviderRegistry.get('s3-compatible')
 
@@ -64,6 +106,7 @@ describe('storage provider registry', () => {
       'access-key-id',
       'secret-access-key'
     ])
+    expect(provider.corsConfiguration).toBe('s3')
     expect(appCredentialRefs().map(credentialKey)).toContain(
       'v1:s3-compatible:default:secret-access-key'
     )

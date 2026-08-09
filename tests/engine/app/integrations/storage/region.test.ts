@@ -1,11 +1,24 @@
 import { describe, expect, test } from 'bun:test'
 
-import { inferS3Region } from '@/app/integrations/storage/s3/region'
+import {
+  inferBackblazeS3Region,
+  inferBunnyS3Region,
+  inferS3Region
+} from '@/app/integrations/storage/s3/region'
 
 describe('inferS3Region', () => {
   test('parses Backblaze B2 endpoints', () => {
     expect(inferS3Region('https://s3.eu-central-003.backblazeb2.com')).toBe('eu-central-003')
     expect(inferS3Region('s3.us-west-004.backblazeb2.com')).toBe('us-west-004')
+    expect(inferBackblazeS3Region('https://s3.us-east-005.backblazeb2.com/')).toBe('us-east-005')
+    expect(inferBackblazeS3Region('https://bucket.s3.us-east-005.backblazeb2.com')).toBeNull()
+  })
+
+  test('parses Bunny Storage S3 endpoints', () => {
+    expect(inferS3Region('https://de-s3.storage.bunnycdn.com')).toBe('de')
+    expect(inferS3Region('ny-s3.storage.bunnycdn.com')).toBe('ny')
+    expect(inferBunnyS3Region('https://syd-s3.storage.bunnycdn.com/')).toBe('syd')
+    expect(inferBunnyS3Region('https://storage.bunnycdn.com')).toBeNull()
   })
 
   test('parses AWS path-style endpoints', () => {

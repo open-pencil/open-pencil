@@ -425,6 +425,14 @@
     },
     {
       "files": [
+        "src/app/storage/local-store/meta.ts"
+      ],
+      "rules": {
+        "complexity": "off"
+      }
+    },
+    {
+      "files": [
         "**/kiwi/schema-runtime/**",
         "**/kiwi/src/schema-runtime/**"
       ],

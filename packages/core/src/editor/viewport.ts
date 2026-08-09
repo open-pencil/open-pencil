@@ -1,10 +1,67 @@
 import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
-import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
+import { RULER_SIZE, ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 
+import { documentKindRules } from './document-kind'
 import type { EditorContext } from './types'
 
+/** World-space breathing room zoomToBounds leaves around fitted content. */
+const VIEWPORT_FIT_PADDING = 80
+/** Default maximum scale for editing fit — content never scales above native size. */
+const VIEWPORT_FIT_MAX_SCALE = 1
+
+export interface ZoomToBoundsOptions {
+  /**
+   * World-space padding around the fitted bounds. Defaults to the editing margin
+   * ({@link VIEWPORT_FIT_PADDING}); presentation uses `0` for edge-to-edge fit.
+   */
+  padding?: number
+  /**
+   * Upper bound on the fitted scale. Defaults to `1` (editing); presentation passes
+   * `Infinity` so a slide can grow above 100% on a larger display.
+   */
+  maxScale?: number
+}
+
+function clamp(value: number, min: number, max: number): number {
+  // A degenerate range means the artboard is smaller than the viewport on this axis.
+  return min > max ? value : Math.min(max, Math.max(min, value))
+}
+
 export function createViewportActions(ctx: EditorContext) {
+  /**
+   * Keep the camera on the artboard for kinds that own one.
+   *
+   * While the slide fits it is centred, so panning cannot nudge it off centre. Once zoomed
+   * in past the fit, the camera is bounded by the slide's edges instead of drifting into
+   * empty space beside it.
+   */
+  function clampViewportToArtboard() {
+    if (!documentKindRules(ctx.state.documentKind).lockViewportToArtboard) return
+    const artboard = ctx.graph
+      .getChildren(ctx.state.currentPageId)
+      .find((node) => node.type === 'FRAME' && node.width > 0 && node.height > 0)
+    if (!artboard) return
+
+    const { width: viewW, height: viewH } = ctx.getViewportSize()
+    if (viewW <= 0 || viewH <= 0) return
+
+    const zoom = ctx.state.zoom
+    const left = artboard.x * zoom
+    const top = artboard.y * zoom
+    const width = artboard.width * zoom
+    const height = artboard.height * zoom
+
+    ctx.state.panX =
+      width <= viewW
+        ? (viewW - width) / 2 - left
+        : clamp(ctx.state.panX, viewW - (left + width), -left)
+    ctx.state.panY =
+      height <= viewH
+        ? (viewH - height) / 2 - top
+        : clamp(ctx.state.panY, viewH - (top + height), -top)
+  }
+
   function currentViewport() {
     return { panX: ctx.state.panX, panY: ctx.state.panY, zoom: ctx.state.zoom }
   }
@@ -23,12 +80,19 @@ export function createViewportActions(ctx: EditorContext) {
     }
   }
 
+  /** The zoom bounds for the open document kind. */
+  function zoomBounds() {
+    return documentKindRules(ctx.state.documentKind).zoomRange
+  }
+
   function setZoomAroundPoint(level: number, centerX: number, centerY: number) {
     const previous = currentViewport()
-    const newZoom = Math.max(0.02, Math.min(256, level))
+    const { min, max } = zoomBounds()
+    const newZoom = Math.max(min, Math.min(max, level))
     ctx.state.panX = centerX - (centerX - ctx.state.panX) * (newZoom / ctx.state.zoom)
     ctx.state.panY = centerY - (centerY - ctx.state.panY) * (newZoom / ctx.state.zoom)
     ctx.state.zoom = newZoom
+    clampViewportToArtboard()
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -45,22 +109,42 @@ export function createViewportActions(ctx: EditorContext) {
     const previous = currentViewport()
     ctx.state.panX += dx
     ctx.state.panY += dy
+    clampViewportToArtboard()
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
 
-  function zoomToBounds(minX: number, minY: number, maxX: number, maxY: number) {
+  function zoomToBounds(
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+    options?: ZoomToBoundsOptions
+  ) {
     const previous = currentViewport()
-    const padding = 80
+    const padding = options?.padding ?? VIEWPORT_FIT_PADDING
+    const maxScale = options?.maxScale ?? VIEWPORT_FIT_MAX_SCALE
     const w = maxX - minX + padding * 2
     const h = maxY - minY + padding * 2
+    if (w <= 0 || h <= 0) return
 
-    const { width: viewW, height: viewH } = ctx.getViewportSize()
-    const zoom = Math.min(viewW / w, viewH / h, 1)
+    const { width: fullW, height: fullH } = ctx.getViewportSize()
+    if (fullW <= 0 || fullH <= 0) return
+
+    // Rulers occupy the top/left strip — decks have none, and the user can hide them.
+    const appState = ctx.state as { showRulers?: boolean }
+    const rulersVisible =
+      documentKindRules(ctx.state.documentKind).rulers && appState.showRulers !== false
+    const ruler = rulersVisible ? RULER_SIZE : 0
+    const viewW = Math.max(1, fullW - ruler)
+    const viewH = Math.max(1, fullH - ruler)
+
+    const zoom = Math.min(viewW / w, viewH / h, maxScale)
 
     ctx.state.zoom = zoom
-    ctx.state.panX = (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
-    ctx.state.panY = (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
+    // Offset pan by ruler so content is centered in the usable region (not under rulers)
+    ctx.state.panX = ruler + (viewW - w * zoom) / 2 - minX * zoom + padding * zoom
+    ctx.state.panY = ruler + (viewH - h * zoom) / 2 - minY * zoom + padding * zoom
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }
@@ -69,8 +153,18 @@ export function createViewportActions(ctx: EditorContext) {
     const nodes = ctx.graph.getChildren(ctx.state.currentPageId)
     if (nodes.length === 0) return
 
-    const b = computeBounds(nodes)
-    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height)
+    // Prefer top-level FRAME artboards (deck slides) so we fit the full 1920×1080
+    // card, not only tight content bounds inside it.
+    const artboards = nodes.filter(
+      (node) => node.type === 'FRAME' && node.width > 0 && node.height > 0
+    )
+    const targets = artboards.length > 0 ? artboards : nodes
+    const b = computeBounds(targets)
+    // Presentation fills the stage edge to edge and may scale past 100%.
+    const fitOptions = ctx.state.presenting
+      ? { padding: 0, maxScale: Number.POSITIVE_INFINITY }
+      : undefined
+    zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height, fitOptions)
   }
 
   function zoomToLevel(level: number) {
@@ -79,9 +173,11 @@ export function createViewportActions(ctx: EditorContext) {
     const centerY = (-ctx.state.panY + viewH / 2) / ctx.state.zoom
 
     const previous = currentViewport()
-    ctx.state.zoom = Math.max(0.02, Math.min(256, level))
+    const { min, max } = zoomBounds()
+    ctx.state.zoom = Math.max(min, Math.min(max, level))
     ctx.state.panX = viewW / 2 - centerX
     ctx.state.panY = viewH / 2 - centerY
+    clampViewportToArtboard()
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }

@@ -1,4 +1,4 @@
-import type { Editor } from '@open-pencil/core/editor'
+import { documentKindRules, type Editor } from '@open-pencil/core/editor'
 
 import type { DragMarquee } from '#vue/shared/input/types'
 
@@ -16,7 +16,13 @@ export function handleMarqueeMove(
   const maxX = Math.max(d.startX, cx)
   const maxY = Math.max(d.startY, cy)
 
-  const scopeId = editor.state.enteredContainerId
+  // A deck slide is not selectable, so a marquee over the page really means a marquee
+  // inside the slide — scope to it and let the usual local-coordinate path apply.
+  const fixedArtboardId = documentKindRules(editor.state.documentKind).artboardSelectable
+    ? null
+    : (editor.graph.getChildren(editor.state.currentPageId).find((node) => node.type === 'FRAME')
+        ?.id ?? null)
+  const scopeId = editor.state.enteredContainerId ?? fixedArtboardId
   const parentId = scopeId ?? editor.state.currentPageId
   const localMin = scopeId ? canvasToLocal(minX, minY, scopeId) : { lx: minX, ly: minY }
   const localMax = scopeId ? canvasToLocal(maxX, maxY, scopeId) : { lx: maxX, ly: maxY }

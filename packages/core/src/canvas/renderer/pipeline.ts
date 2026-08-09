@@ -5,6 +5,7 @@ import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry
 
 import { drawPageGuides } from '#core/canvas/page-guides'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { documentKindRules } from '#core/editor/document-kind'
 import type { EditorState } from '#core/editor/types'
 
 import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-backing'
@@ -16,17 +17,68 @@ export function renderSceneToCanvas(
   pageId: string
 ): void {
   const prevViewport = r.worldViewport
+  const prevPageId = r.pageId
   r.worldViewport = { x: -1e9, y: -1e9, w: 2e9, h: 2e9 }
-  const pageNode = graph.getNode(pageId)
-  if (pageNode) {
-    for (const childId of pageNode.childIds) {
-      r.renderNode(canvas, graph, childId, {})
+  r.pageId = pageId
+  try {
+    const pageNode = graph.getNode(pageId)
+    if (pageNode) {
+      for (const childId of pageNode.childIds) {
+        r.renderNode(canvas, graph, childId, {})
+      }
     }
+  } finally {
+    r.pageId = prevPageId
+    r.worldViewport = prevViewport
   }
-  r.worldViewport = prevViewport
 }
 
 export type RenderLayer = 'full' | 'scene' | 'overlays'
+
+/** Build overlay props; strip selection/hover/collab chrome while presenting. */
+function overlaysFromEditorState(state: EditorState, textEditor: unknown): RenderOverlays {
+  if (state.presenting) {
+    return {
+      hoveredNodeId: null,
+      enteredContainerId: null,
+      editingTextId: null,
+      textEditor: null,
+      marquee: null,
+      snapGuides: [],
+      rotationPreview: null,
+      dropTargetId: null,
+      layoutInsertIndicator: null,
+      penState: null,
+      nodeEditState: null,
+      remoteCursors: [],
+      autoLayoutHover: null
+    }
+  }
+
+  return {
+    hoveredNodeId: state.hoveredNodeId,
+    enteredContainerId: state.enteredContainerId,
+    editingTextId: state.editingTextId,
+    textEditor: textEditor as RenderOverlays['textEditor'],
+    marquee: state.marquee,
+    snapGuides: state.snapGuides,
+    rotationPreview: state.rotationPreview,
+    dropTargetId: state.dropTargetId,
+    layoutInsertIndicator: state.layoutInsertIndicator,
+    penState: state.penState
+      ? ({
+          ...state.penState,
+          cursorX: state.penCursorX ?? undefined,
+          cursorY: state.penCursorY ?? undefined
+        } as RenderOverlays['penState'])
+      : null,
+    nodeEditState: state.nodeEditState ?? null,
+    // Decks draw no remote cursors: collaboration is withheld in slides mode, and a stale
+    // peer from a design tab must not paint over a slide.
+    remoteCursors: documentKindRules(state.documentKind).collaborative ? state.remoteCursors : [],
+    autoLayoutHover: state.autoLayoutHover
+  }
+}
 
 export function renderFromEditorState(
   r: SkiaRenderer,
@@ -52,28 +104,8 @@ export function renderFromEditorState(
   render(
     r,
     graph,
-    state.selectedIds,
-    {
-      hoveredNodeId: state.hoveredNodeId,
-      enteredContainerId: state.enteredContainerId,
-      editingTextId: state.editingTextId,
-      textEditor: textEditor as RenderOverlays['textEditor'],
-      marquee: state.marquee,
-      snapGuides: state.snapGuides,
-      rotationPreview: state.rotationPreview,
-      dropTargetId: state.dropTargetId,
-      layoutInsertIndicator: state.layoutInsertIndicator,
-      penState: state.penState
-        ? ({
-            ...state.penState,
-            cursorX: state.penCursorX ?? undefined,
-            cursorY: state.penCursorY ?? undefined
-          } as RenderOverlays['penState'])
-        : null,
-      nodeEditState: state.nodeEditState ?? null,
-      remoteCursors: state.remoteCursors,
-      autoLayoutHover: state.autoLayoutHover
-    },
+    state.presenting ? new Set<string>() : state.selectedIds,
+    overlaysFromEditorState(state, textEditor),
     state.sceneVersion,
     layer
   )

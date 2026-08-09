@@ -15,6 +15,22 @@ import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { RenderOverlays } from '#core/canvas/renderer/types'
 import type { TextEditor } from '#core/text/editor'
 
+import type { DocumentKind } from './document-kind'
+
+/** How a canvas renderer participates in editor-wide renderer-backed operations. */
+export type CanvasRendererRole = 'primary' | 'auxiliary'
+
+/**
+ * Where the camera is. The same three numbers are cached per page, carried
+ * across a reload, compared for redraw, and reported on `viewport:changed`, and
+ * each of those had spelled the shape out for itself.
+ */
+export type Viewport = {
+  panX: number
+  panY: number
+  zoom: number
+}
+
 export type Tool =
   | 'SELECT'
   | 'FRAME'
@@ -30,6 +46,8 @@ export type Tool =
 
 export interface EditorState {
   activeTool: Tool
+  /** Which document kind is open; drives format-specific editor behaviour. */
+  documentKind: DocumentKind
   currentPageId: string
   selectedIds: Set<string>
   marquee: Rect | null
@@ -78,6 +96,13 @@ export interface EditorState {
   rulerTheme?: RulerTheme
   panY: number
   zoom: number
+  /**
+   * Audience presentation mode for decks. While true, the camera uses an
+   * edge-to-edge fit (no editing padding / 100% cap) and chrome is suppressed.
+   */
+  presenting: boolean
+  /** This window is the presenter's driver view; the audience is a second window. */
+  presenterMode: boolean
   renderVersion: number
   sceneVersion: number
   loading: boolean
@@ -105,11 +130,10 @@ export interface EditorEvents extends SceneGraphEvents {
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
   'page:changed': (pageId: string, previousPageId: string) => void
+  /** Fires after a page switch has finished loading fonts and recomputing layout. */
+  'page:ready': (pageId: string) => void
   'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
-  'viewport:changed': (
-    viewport: { panX: number; panY: number; zoom: number },
-    previous: { panX: number; panY: number; zoom: number }
-  ) => void
+  'viewport:changed': (viewport: Viewport, previous: Viewport) => void
 }
 
 export type EditorEventName = keyof EditorEvents

@@ -44,7 +44,7 @@ async function startEmptyTextEdit(page: Page) {
 test('Hangul text input commits without CanvasKit paragraph errors', async ({ page }) => {
   const canvas = new CanvasHelper(page)
   await stubGoogleFonts(page)
-  await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
+  await page.goto('http://localhost:1420/editor?new=design&test&no-chrome&no-rulers')
   await canvas.waitForInit()
 
   const id = await startEmptyTextEdit(page)
@@ -77,7 +77,7 @@ test('Hangul text input commits without CanvasKit paragraph errors', async ({ pa
 test('Hangul composition updates are visible before IME commit', async ({ page }) => {
   const canvas = new CanvasHelper(page)
   await stubGoogleFonts(page)
-  await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
+  await page.goto('http://localhost:1420/editor?new=design&test&no-chrome&no-rulers')
   await canvas.waitForInit()
 
   const id = await startEmptyTextEdit(page)

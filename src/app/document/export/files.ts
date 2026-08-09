@@ -7,7 +7,7 @@ import type {
   IORegistry,
   RasterExportFormat
 } from '@open-pencil/core/io'
-import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
+import { renderNodesToImage, renderNodesToPixels } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { ExportOptions } from '@/app/document/export/types'
@@ -101,11 +101,17 @@ export function getExportBytes(data: ExportData): Uint8Array {
 }
 
 export function createExportTargetActions(editor: Editor, state: EditorState, io: IORegistry) {
+  /**
+   * @param supersample Draw at 2x and downsample. Right for files someone will inspect;
+   * wasteful for a raster shown immediately at the size it was asked for, where it costs
+   * four times the pixels and an extra full-size copy for no visible gain.
+   */
   async function renderExportImage(
     nodeIds: string[],
     scale: number,
     format: RasterExportFormat,
-    pageId = state.currentPageId
+    pageId = state.currentPageId,
+    supersample = true
   ): Promise<Uint8Array | null> {
     const renderer = editor.renderer
     if (!renderer) return null
@@ -113,8 +119,23 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     if (ids.length === 0) return null
     return renderNodesToImage(renderer.ck, renderer, editor.graph, pageId, ids, {
       scale,
-      format
+      format,
+      supersample
     })
+  }
+
+  /**
+   * Raw pixels for a page, for callers that display them immediately.
+   *
+   * Skips PNG encoding, which measured 476-1258ms for a full-screen slide and would only
+   * have to be decoded again by whatever shows it.
+   */
+  async function renderExportPixels(scale: number, pageId = state.currentPageId) {
+    const renderer = editor.renderer
+    if (!renderer) return null
+    const ids = editor.graph.getChildren(pageId).map((n) => n.id)
+    if (ids.length === 0) return null
+    return renderNodesToPixels(renderer.ck, renderer, editor.graph, pageId, ids, scale)
   }
 
   function getSelectionExportTarget(): ExportRequest['target'] {
@@ -127,7 +148,12 @@ export function createExportTargetActions(editor: Editor, state: EditorState, io
     return io.listExportFormats(state.selectedIds.size > 0 ? 'selection' : 'page')
   }
 
-  return { renderExportImage, getSelectionExportTarget, listSelectionExportFormats }
+  return {
+    renderExportImage,
+    renderExportPixels,
+    getSelectionExportTarget,
+    listSelectionExportFormats
+  }
 }
 
 export async function chooseTauriExportPath(fileName: string, format: string, ext: string) {

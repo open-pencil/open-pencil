@@ -1,8 +1,10 @@
 import { shallowRef, computed, triggerRef } from 'vue'
 
+import { documentKindForSourceFormat, documentKindRules } from '@open-pencil/core/editor'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { createEmptyDeckGraph } from '@open-pencil/deck'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
@@ -15,20 +17,73 @@ import {
   createActiveStorageAdapter,
   type StorageDocument
 } from '@/app/integrations/storage'
+import { renameStorageDocument } from '@/app/storage/documents'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
+import { currentTargetIdFor } from '@/app/storage/target'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 
 export interface Tab {
   id: string
   store: EditorStore
+  /**
+   * A blank tab the user has not put anything into yet, safe to recycle.
+   *
+   * Set at creation rather than inferred. The previous test was
+   * `name === 'Untitled' && !undo.canUndo`, and `!canUndo` means "not edited
+   * THIS SESSION", not "empty" — so a stored document opened and left untouched
+   * satisfied it, and New Design adopted that document's graph and saved it
+   * under a fresh id. No heuristic over document properties can be audited,
+   * and each new property silently changes what it means.
+   */
+  scratch: boolean
 }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const fileOpenCoordinator = createFileOpenCoordinator()
 
 let nextTabId = 1
+
+/**
+ * A document open the user asked for, which has not landed yet.
+ *
+ * The workspace opens by routing to the editor FIRST and loading straight
+ * after, so the editor mounts with no tabs and cannot tell an explicit open
+ * from a cold start — and restores the previous session on top of it. Checking
+ * for the binding afterwards does not help: the restore reads IndexedDB and
+ * wins the race against a document fetch. The intent has to be recorded before
+ * the navigation that hides it.
+ */
+let explicitOpens = 0
+
+/**
+ * Where to go when the last document closes.
+ *
+ * Injected rather than imported: pulling in the router singleton here drags
+ * `createWebHistory()` into every unit test, and those run without a DOM. It is
+ * also the wrong direction — navigation is the shell's concern, not the tab
+ * store's.
+ */
+let leaveEditor: (() => Promise<void>) | null = null
+
+export function setEditorExit(handler: () => Promise<void>): void {
+  leaveEditor = handler
+}
+
+export function isExplicitOpenPending(): boolean {
+  return explicitOpens > 0
+}
+
+export function beginExplicitOpen(): () => void {
+  explicitOpens++
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    explicitOpens--
+  }
+}
 
 function generateTabId(): string {
   return `tab-${nextTabId++}`
@@ -43,6 +98,10 @@ export const allTabs = computed(() =>
   tabsRef.value.map((t) => ({
     id: t.id,
     name: t.store.state.documentName,
+    // What the tab actually holds. A generic page glyph made a deck and a
+    // design indistinguishable in the strip, which is where you look to tell
+    // them apart.
+    format: documentKindRules(t.store.state.documentKind).saveFormat,
     isActive: t.id === activeTabId.value
   }))
 )
@@ -69,11 +128,63 @@ export function getTabsSnapshot(): Tab[] {
   return [...tabsRef.value]
 }
 
+/**
+ * Land pending edits in every open tab before another surface reads saved
+ * state. The workspace grid renders thumbnails from the last persisted bytes;
+ * without this, a colour change made seconds before navigating away still
+ * shows the old stage on the card.
+ */
+/**
+ * A store built before the currently-loaded code.
+ *
+ * Only reachable through dev-server HMR, which can leave a tab holding a store
+ * created before `flushPendingSave` existed. `EditorStore` always declares the
+ * method, so the guard below reads as dead code against that type — the type is
+ * what is wrong, not the call. Naming the stale shape keeps the guard honest
+ * rather than deleting protection the comment says is deliberate.
+ */
+type PossiblyStaleStore = { flushPendingSave?: () => Promise<void> }
+
+export async function flushOpenTabSaves(): Promise<void> {
+  // Optional call: a dev-server HMR can leave stores created before this
+  // action existed, and the workspace must not crash listing documents on
+  // their account.
+  await Promise.all(
+    tabsRef.value.map((tab) => (tab.store as PossiblyStaleStore).flushPendingSave?.())
+  )
+}
+
 export function createTab(store?: EditorStore, initialGraph?: SceneGraph): Tab {
   const s = store ?? createEditorStore(initialGraph)
-  const tab: Tab = { id: generateTabId(), store: s }
+  // Only a genuinely blank tab is scratch. One seeded with a graph already
+  // holds content, whoever produced it.
+  const tab: Tab = { id: generateTabId(), store: s, scratch: !store && !initialGraph }
   tabsRef.value = [...tabsRef.value, tab]
   activateTab(tab)
+  return tab
+}
+
+/**
+ * New Figma Slides document: dark chrome, one white 1920×1080 slide, starter title.
+ * Save path defaults to `.deck`.
+ */
+export async function createDeckTab(): Promise<Tab> {
+  const graph = createEmptyDeckGraph()
+  const pageId = graph.getPages()[0]?.id
+  if (pageId) computeAllLayouts(graph, pageId)
+
+  const tab = createTab(undefined, graph)
+  const { store } = tab
+  tab.scratch = false
+  store.state.documentName = 'Untitled'
+  store.setDocumentKind('deck')
+  store.setDocumentSource('Untitled.deck', 'deck')
+  store.clearSelection()
+  store.undo.clear()
+
+  const currentPageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
+  await store.switchPage(currentPageId)
+  await store.fitCurrentPageToViewport()
   return tab
 }
 
@@ -90,26 +201,55 @@ export function switchTab(tabId: string) {
   activateTab(tab)
 }
 
+/**
+ * Close a tab, landing any edit still inside the autosave debounce.
+ *
+ * `store.dispose()` runs `disposeAutosave`, which is the debounce's `stop` — it
+ * CANCELS a pending save rather than flushing it. So closing within the ~3s
+ * window silently discarded the last edit, with nothing anywhere recording that
+ * it had happened.
+ *
+ * The flush is fire-and-forget on purpose: it writes locally first and only
+ * then enqueues the upload, so the bytes are durable before this returns, and
+ * making every caller await a close would push async through the keyboard
+ * handler, the menu and the tab strip for no user-visible gain.
+ */
 export function closeTab(tabId: string) {
   const idx = tabsRef.value.findIndex((t) => t.id === tabId)
   if (idx === -1) return
 
   const closingTab = tabsRef.value[idx]
-  const wasActive = activeTabId.value === tabId
-  tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
+  const settled = closingTab.store
+    .flushPendingSave()
+    .catch((error: unknown) => console.warn('[Tabs] Flush on close failed:', error))
+  // Dispose only once the flush has settled — disposing first would cancel the
+  // very write we just asked for.
+  const disposeWhenSettled = () => void settled.then(() => closingTab.store.dispose())
 
-  if (tabsRef.value.length === 0) {
-    createTab()
-    closingTab.store.dispose()
+  if (tabsRef.value.length === 1) {
+    // The last document. Leave the editor FIRST, then empty the list: removing
+    // it here would re-render the editor with nothing to show and every reader
+    // of `getActiveStore()` would throw before any redirect could run.
+    const clear = () => {
+      tabsRef.value = []
+      activeTabId.value = ''
+      triggerRef(tabsRef)
+      disposeWhenSettled()
+    }
+    if (leaveEditor) void leaveEditor().then(clear)
+    else clear()
     return
   }
+
+  const wasActive = activeTabId.value === tabId
+  tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
   if (wasActive) {
     const newIdx = Math.min(idx, tabsRef.value.length - 1)
     activateTab(tabsRef.value[newIdx])
   }
 
-  closingTab.store.dispose()
+  disposeWhenSettled()
 }
 
 function yieldToUI(): Promise<void> {
@@ -122,11 +262,39 @@ function isDOMImportFile(file: File): boolean {
   return /\.(html?|xhtml)$/i.test(file.name)
 }
 
+/**
+ * Take the blank tab the app started with, or make a new one.
+ *
+ * Cold start creates an empty `Untitled` tab, and every route into a real
+ * document used to call `createTab()` directly — so opening one document from
+ * the workspace left two tabs, the first of them permanently empty.
+ *
+ * Only a scratch tab is consumed, which is what makes this safe: it is blank by
+ * construction, so nothing can be displaced. The earlier caution about
+ * "replacing a tab in the middle of the strip" was correct when emptiness had
+ * to be inferred from a name and an undo stack; it is decidable now.
+ */
+function takeScratchTab(): Tab {
+  const current = activeTab.value
+  const scratch = current?.scratch ? current : tabsRef.value.find((tab) => tab.scratch)
+  if (!scratch) return createTab()
+  scratch.scratch = false
+  activateTab(scratch)
+  return scratch
+}
+
+/**
+ * File opens consume only the ACTIVE tab, and never activate another.
+ *
+ * Deliberately narrower than `takeScratchTab`: two files opened concurrently
+ * must land in two tabs, and stealing a scratch tab from elsewhere in the strip
+ * — or switching to it — reorders what the user is looking at mid-open.
+ */
 function reusableTabStore(): EditorStore {
   const current = activeTab.value
-  const isUntouched =
-    current?.store.state.documentName === 'Untitled' && !current.store.undo.canUndo
-  return isUntouched ? current.store : createTab().store
+  if (!current?.scratch) return createTab().store
+  current.scratch = false
+  return current.store
 }
 
 function findStorageTab(providerId: string, documentId: string): Tab | undefined {
@@ -144,8 +312,19 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     return
   }
 
-  const store = reusableTabStore()
+  const tab = takeScratchTab()
+  const { store } = tab
   store.state.documentName = document.name
+  // Before the bytes are fetched or parsed, not after: the card that was just
+  // clicked already knows the format, and setting it only once the graph lands
+  // made every deck open behind a design-document shell — a pencil and a Pages
+  // list for a second, then a flip to slides.
+  store.setDocumentKind(documentKindForSourceFormat(document.sourceFormat))
+  // Same reason, for the same reason it must be early: caches keyed on the document cannot
+  // name it until this is set, so a filmstrip mounting during the load looked up a key
+  // nothing was stored under and showed placeholders over thumbnails already on disk.
+  // Identity only — `setStorageDocumentSource` below still owns saveability.
+  store.setStorageDocumentIdentity({ providerId, documentId: document.id })
   store.state.loading = true
   try {
     const local = getLocalCanvasStore()
@@ -160,29 +339,53 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     if (!bytes) {
       bytes = await createActiveStorageAdapter(providerId).getDocument(document.id)
       await seedStorageCanvasFromRemote({
-        providerId,
+        syncTargetId: currentTargetIdFor(providerId),
         canvasId: document.id,
         name: document.name,
+        sourceFormat: document.sourceFormat,
+        trashedAt: document.trashedAt,
         updatedAt: document.updatedAt,
-        figBytes: bytes
+        figBytes: bytes,
+        baseStateId: document.stateId ?? null
       })
     }
 
+    // The eviction LRU key. Nothing wrote it before, so the cache evicted
+    // least-recently-WRITTEN — an untouched document that autosaved once
+    // outranked one the user opens daily.
+    await local.updateMeta(document.id, { lastOpenedAt: new Date().toISOString() })
+
+    const sourceFormat = localMetadata?.sourceFormat ?? document.sourceFormat
     const fileBytes = new Uint8Array(bytes.byteLength)
     fileBytes.set(bytes)
-    const file = new File([fileBytes.buffer], `${document.name}.fig`, {
+    const file = new File([fileBytes.buffer], `${document.name}.${sourceFormat}`, {
       type: 'application/octet-stream'
     })
-    const imported = await readFigFile(file, { populate: 'first-page' })
+    const imported =
+      sourceFormat === 'fig'
+        ? await readFigFile(file, { populate: 'first-page' })
+        : (
+            await io.readDocument({
+              name: file.name,
+              mimeType: file.type,
+              data: fileBytes
+            })
+          ).graph
     const firstPageId = imported.getPages()[0]?.id
     if (firstPageId) computeAllLayouts(imported, firstPageId)
     store.replaceGraph(imported)
     store.undo.clear()
-    store.setStorageDocumentSource({ providerId, documentId: document.id }, document.name)
+    store.setDocumentKind(documentKindForSourceFormat(sourceFormat))
+    store.setStorageDocumentSource(
+      { providerId, documentId: document.id },
+      document.name,
+      sourceFormat
+    )
     store.clearSelection()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
     await store.fitCurrentPageToViewport()
+    switchTab(tab.id)
   } finally {
     store.state.loading = false
   }
@@ -251,9 +454,11 @@ export async function openFileInNewTab(
     store.replaceGraph(imported)
     store.undo.clear()
     store.setDocumentSource(file.name, sourceFormat, handle, path)
+    store.setDocumentKind(documentKindForSourceFormat(sourceFormat))
     store.clearSelection()
     const pageId = store.graph.getPages()[0]?.id ?? store.graph.rootId
     await store.switchPage(pageId)
+    // Fit whole slide (1920×1080 artboard) once canvas size is known
     await store.fitCurrentPageToViewport()
     completion.resolve(undefined)
   } catch (error) {
@@ -269,11 +474,57 @@ export function tabCount(): number {
   return tabsRef.value.length
 }
 
+/**
+ * Rename the document a tab holds.
+ *
+ * The tab strip is where the name is READ, so it is where renaming belongs; the
+ * editor header showed the same name a second time and only one of them could
+ * be the place you go to change it.
+ */
+export async function renameTab(tabId: string, name: string): Promise<void> {
+  const tab = tabsRef.value.find((t) => t.id === tabId)
+  if (!tab) return
+  const trimmed = name.trim()
+  // An empty name is a mis-click, not a request for an unnamed document.
+  if (!trimmed || trimmed === tab.store.state.documentName) return
+  const previous = tab.store.state.documentName
+  tab.store.state.documentName = trimmed
+
+  // Setting the name is not saving it. Autosave keys on `sceneVersion`, which a
+  // rename never bumps, so the new name lived in memory only and a reload
+  // brought the old one back. Go through the workspace's own rename: it writes
+  // the row and queues a metadata-only upload rather than re-sending the body.
+  const binding = tab.store.getStorageBinding()
+  // A document that has never been written has no row to rename, and creating
+  // one here would put back the card a blank Untitled is meant not to leave.
+  // The name is not lost: the first real save writes whatever it says by then.
+  if (!binding || tab.store.isProvisionalDocument()) return
+  try {
+    await renameStorageDocument(
+      binding.providerId,
+      {
+        id: binding.documentId,
+        name: previous,
+        sourceFormat: documentKindRules(tab.store.state.documentKind).saveFormat,
+        trashedAt: null,
+        updatedAt: new Date().toISOString(),
+        metadataAuthoritative: true
+      },
+      trimmed
+    )
+  } catch (error) {
+    // Keep the name the user typed on screen: the document is still open and
+    // still theirs to save. Reverting under them would look like a rejection.
+    console.warn('[Tabs] Persisting the new name failed:', error)
+  }
+}
+
 export function useTabsStore() {
   return {
     tabs: allTabs,
     activeTabId,
     createTab,
+    createDeckTab,
     switchTab,
     closeTab,
     getActiveTabId,
@@ -282,6 +533,7 @@ export function useTabsStore() {
     getTabsSnapshot,
     openFileInNewTab,
     openStorageDocumentInNewTab,
+    renameTab,
     getActiveStore,
     tabCount
   }

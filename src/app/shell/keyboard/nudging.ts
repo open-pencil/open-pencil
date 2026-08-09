@@ -13,6 +13,9 @@ const NUDGE_DELTAS: Partial<Record<string, [number, number]>> = {
 
 export function bindNudgeKeys(store: EditorStore) {
   useEventListener(window, 'keydown', (e: KeyboardEvent) => {
+    // Presentation owns the arrows; a later listener cannot win against capture-phase
+    // registry bindings, but stand down here so nudge never races them.
+    if (store.state.presenting) return
     if (isEditing(e) || store.state.editingTextId) return
     if (isReservedModShortcut(e)) e.preventDefault()
     if (e.metaKey || e.ctrlKey || e.altKey) return

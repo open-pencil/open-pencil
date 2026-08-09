@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Presenting</title>
+    <!--
+      The audience view: one canvas the presenter's window blits slide pixels into.
+
+      A real page rather than a document written into `about:blank`. Writing into a popup
+      races that window's own blank-page load, which can commit afterwards and discard
+      everything — leaving the browser's default grey on a projector. Serving it removes
+      the race, and survives `window.open` reusing an existing window by name.
+
+      Deliberately has no script and no bundle: the presenter owns all of the behaviour.
+    -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #1c1c1c;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: none;
+      }
+      /*
+        Sized to the window and letterboxed, rather than to the raster. As a flex item the
+        canvas defaults to min-width auto and refuses to shrink below its intrinsic pixel
+        size, so a 2880px raster would overflow a narrower window.
+      */
+      #slide {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        object-fit: contain;
+        display: block;
+      }
+      /*
+        Absolutely positioned, so it overlays the canvas rather than sitting beside it as a
+        second flex child.
+      */
+      #loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+      }
+      #loading[hidden] {
+        display: none;
+      }
+      #loading img {
+        width: 32px;
+        height: 32px;
+        opacity: 0.45;
+      }
+      #loading .bar {
+        position: relative;
+        width: 100px;
+        height: 2px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+      #loading .bar::after {
+        content: '';
+        position: absolute;
+        inset-block: 0;
+        width: 40%;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.25);
+        animation: slide 1s ease-in-out infinite;
+      }
+      @keyframes slide {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(250%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #loading .bar::after {
+          animation-duration: 3s;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="slide" hidden></canvas>
+    <div id="loading" role="progressbar" aria-label="Loading the presentation">
+      <img src="/favicon-32.png" alt="" />
+      <div class="bar"></div>
+    </div>
+  </body>
+</html>

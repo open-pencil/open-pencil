@@ -40,7 +40,6 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
         undefined,
         undefined,
         undefined,
-        undefined,
         new Set(),
         undefined,
         definitions
@@ -81,7 +80,6 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       new Map([['Inter|Regular', new Uint8Array([1, 2, 3])]]),
       undefined,
       new Map(),
-      undefined,
       undefined,
       runtime
     )

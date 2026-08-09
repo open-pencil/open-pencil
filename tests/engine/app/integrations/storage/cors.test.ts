@@ -45,8 +45,17 @@ describe('cloud S3 CORS helpers', () => {
     expect(origins).toContain(WEB_APP_ORIGIN)
     expect(origins).toContain('https://*.openpencil.dev')
     expect(origins).toContain('https://*.openpencil-app.pages.dev')
-    expect(origins).toContain('http://localhost:*')
-    expect(origins).toContain('http://127.0.0.1:*')
+    expect(origins).toContain('http://localhost:1420')
+    expect(origins).toContain('http://127.0.0.1:1420')
+  })
+
+  // B2 rejects the whole PutBucketCors with 400 if any origin has a '*' after
+  // the hostname, so a port wildcard silently breaks setup for every B2 user.
+  test('never emits a wildcard after the hostname', () => {
+    for (const origin of collectCloudCorsOrigins('https://example.com')) {
+      expect(origin).not.toMatch(/^[a-z]+:\/\/[^/]*[^*/]\*/)
+      expect(origin.replace(/^[a-z]+:\/\//, '')).not.toContain(':*')
+    }
   })
 
   test('detects typical browser CORS/network failures', () => {

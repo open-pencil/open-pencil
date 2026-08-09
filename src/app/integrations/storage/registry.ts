@@ -12,7 +12,14 @@ export class StorageProviderRegistry {
   readonly #registrations: ReadonlyMap<StorageProviderID, StorageProviderRegistration>
 
   constructor(registrations: readonly StorageProviderRegistration[]) {
-    const entries = registrations.map((registration) => [registration.id, registration] as const)
+    // Sorted here rather than by hand at the call site: declaration order is
+    // invisible to whoever adds the next provider, so a hand-ordered array
+    // drifts on the first append. Every consumer reads one canonical order.
+    const ordered = [...registrations].sort((a, b) => {
+      if (a.catchAll !== b.catchAll) return a.catchAll ? -1 : 1
+      return a.label.localeCompare(b.label)
+    })
+    const entries = ordered.map((registration) => [registration.id, registration] as const)
     const ids = new Set(entries.map(([id]) => id))
     if (ids.size !== entries.length) throw new Error('Storage provider IDs must be unique')
     this.#registrations = new Map(entries)
@@ -26,6 +33,17 @@ export class StorageProviderRegistry {
     const registration = this.#registrations.get(id)
     if (!registration) throw new Error(`Unknown storage provider: ${id}`)
     return registration
+  }
+
+  /**
+   * Probe without throwing.
+   *
+   * Ids read back from durable storage — a migrated row, a queued job — may
+   * name a provider this build no longer ships. That is a state to report, not
+   * an exception to raise from inside a migration.
+   */
+  has(id: string): id is StorageProviderID {
+    return this.#registrations.has(id as StorageProviderID)
   }
 
   createAdapter(id: StorageProviderID, context: StorageAdapterContext): StorageAdapter {

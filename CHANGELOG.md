@@ -30,6 +30,32 @@
 - Configure separate Design, Review, Fast, and Vision models, providers, endpoints, and credentials from AI settings.
 - Manage AI, agent, media, and storage credentials from unified Settings, using the system credential store on desktop and encrypted browser storage by default, with a session-only browser option.
 - Connect an S3-compatible storage workspace with local-first saves and background synchronization.
+- Drop `.deck` files into the cloud storage workspace; create Design or Slides documents; and sort, rename, duplicate, trash, restore, or permanently delete stored documents with cached viewport-only thumbnails.
+- Connect Bunny Storage by copying an S3-enabled Storage Zone name, endpoint, and password; browser users need no manual CORS configuration.
+- Connect Appwrite with a dedicated scoped API key; OpenPencil selects or creates the storage bucket and registers its web platform automatically.
+- Connect Cloudflare R2 as a storage destination — the first provider that can *prevent* conflicting writes: its conditional-write support is verified live, so a head update that loses a race refuses the overwrite instead of silently clobbering.
+- Connect Backblaze B2 through a dedicated provider using its bucket name, S3 endpoint, application key ID, and application key.
+- Empty every document from the cloud storage Trash at once with an explicit permanent-deletion confirmation.
+- Cloud storage now keeps a versioned remote layout: every upload publishes an immutable,
+  content-addressed body plus a version manifest through a per-document commit point, so a
+  reader can never see a half-written document, an interrupted upload leaves the previous
+  version untouched, and overwritten versions remain recoverable within the retention
+  window (last 10 versions per document, 24-hour safety floor). Documents already stored
+  under the old layout keep working and migrate on their next write; deleting a document
+  never removes bytes another document shares.
+- Figma Slides (`.deck`) support — open, edit, and save decks as a first-class document format
+  - New `@open-pencil/deck` package: archive parse/write, slide↔page restructure
+  - Each active slide becomes an editor page; left-rail filmstrip with lazy thumbnails
+  - File pickers, Tauri OS association, CLI/IO registry via `deckFormat`
+  - Fixed zoomed-out canvas backdrop (`#1c1c1c`) for decks — not user-editable
+  - **New Deck** (⌘⇧N): empty light slide (1920×1080 white card + starter title) on dark chrome
+  - Slides filmstrip **New slide** / **+** to append blank 1920×1080 white slides
+  - Drag a filmstrip thumbnail to reorder slides, with a drop indicator between cells;
+    disabled while presenting
+  - Opening a `.deck` and switching slides always fits the full 1920×1080 artboard in the viewport
+  - Slides mode defaults the right properties panel to minimum width
+  - Slides / deck mode hides canvas rulers (horizontal and vertical)
+  - Slide artboards render with Figma-like rounded corners (40px)
 - Add Japanese localization and improve menu translations across the existing supported languages. (#367)
 - Author richer Design JSX with components, instances, variables, gradients, structured fills, shadows, blur effects, masks, and inline SVG vectors.
 - Build custom property panels with new Vue SDK number fields, bindable values, property sections, responsive grids, segmented controls, property lists, color models, fill controls, and gradient primitives.
@@ -39,6 +65,10 @@
 ### Changed
 
 - Redesign the editor chrome and Design panel with denser, better-aligned controls, clearer selection and section states, improved menus and overlays, consistent light/dark theming, and better keyboard and screen-reader support.
+- Integrate the local browser-storage notice into the empty workspace instead of showing a separate full-width banner above it. A workspace that already holds documents now reads the same caveat from the sync status chip in the footer, which keeps the document grid at the top of the window.
+- Keep "Test connection" and the commit action side by side at the bottom of Cloud storage settings, whatever the form's length, and unlock adopting a provider only once a test of the values on screen has passed.
+- Keep the cloud-backup switch global and visible independently of the selected storage provider.
+- Center full-area empty and setup states consistently across panels, dialogs, and workspaces.
 - Choose Freeform, vertical, horizontal, or grid flow directly from the contextual Layout section, with sizing controls grouped alongside it.
 - Choose Auto width, Auto height, or Fixed size directly from the Layout section for text layers.
 - Scale the Layers panel to documents with thousands of nodes through virtualized rows, faster incremental updates, stable expansion, range selection, and scroll-to-selection.
@@ -49,12 +79,22 @@
 
 ### Fixed
 
+- Stop reporting "Sync failed" and "Preview not synced" on documents when cloud storage has no usable credentials. Storage preferences (endpoint, bucket) alone were enough to queue uploads, so every save enqueued a job that could only fail — and the failure was recorded on the document while the workspace footer read "No cloud configured · Local storage only". A destination without credentials now gates uploads exactly like paused backup: saves stay local without queueing, blocked jobs park without marking the document, and a startup sweep lifts stale failure marks from documents whose destination cannot be attempted. Repairing the credentials resumes synchronization as before.
+- Unconfigured workspaces accept dropped `.fig` and `.deck` files into local storage.
+- Stop a slide from staying blank in the filmstrip forever. Rendering a slide before its document finished loading produced an empty frame, and that frame was cached and written to disk, so the first slide of a deck — the only one on screen when the filmstrip mounts — came back blank on every later open. Empty renders are never stored, are re-rendered on the next request, and any already saved are replaced rather than shown.
+- Keep saved slide thumbnails on screen while a deck opens, instead of showing a placeholder for every slide until the load finishes.
+- Stop renaming a document from orphaning its slide thumbnails. Thumbnails are keyed on the document's identity rather than its display name, so each rename no longer left a full unreachable set behind, competing with thumbnails still in use for a fixed-size cache. Stale pages and deleted documents are now cleared as well; trashed documents keep theirs so restoring one restores its filmstrip.
+- Stop rewriting a `.deck` that nobody edited. Opening a deck minted a new identifier for every slide, and saving renumbered the slide scaffolding to match, so an untouched presentation produced different bytes on every open-and-close and re-uploaded itself to cloud storage each time. Slides now keep the identity the archive stores, and a save with no edits is byte-identical.
+- Stop hiding documents when the storage provider changes: the workspace lists every document held on this device, whatever destination it syncs to, and each card states where it lives — backed up here, backed up to another provider, detached from one, or on this device only. A scope filter narrows the list to the active destination when asked, and an empty list now says which emptiness it means instead of reporting "No stored documents yet." over a full library.
+- Show the saved stage colour in workspace document thumbnails: headless thumbnail rendering applies the page's stored `backgroundColor` instead of the default grey, and returning to the workspace flushes pending autosaves first so a card never paints the stale raster from before a colour change.
+- Embed a real preview in every saved `.fig` and `.deck` instead of a 1×1 placeholder. A save often runs after the canvas is gone — closing a tab, leaving for the workspace, or saving a background tab — so the exporter now renders the thumbnail on its own CanvasKit when no live renderer is available, without letting that render delay or fail the write.
 - Preserve Figma’s imported glyph outlines through layout and appearance updates so text keeps its intended weight and shape.
 - Keep swapped image avatars and thin stepper dividers at their effective imported size and position.
 - Scale proportion-constrained `.fig` instance geometry through fixed wrapper layers so imported logos and icons retain their intended size.
 - Match Figma auto-layout spacing, padding, min/max constraints, scalar variable bindings, CanvasKit-shaped generated text, imported text bounds, and nested instance geometry more closely.
 - Match Figma Plugin API vector path and network editing, including bounds, transforms, winding rules, region fills, validation, and handle mirroring. (#444)
 - Let AI and MCP tools create arbitrary vectors from SVG path data, validating input without leaving blank layers behind. (#440)
+- Import Figma text-on-path (`TEXT_PATH`) as text with rotated derived glyphs and freeform stroke geometry, instead of a solid black rectangle covering the artwork underneath. Resizing reflows the lettering along its path, editing is enabled when the font's outlines are available, and both save and `.fig` export round-trip the result. (#396)
 - Improve AI design accuracy by exposing every supported shape, including visible stroke colors and weights in visual descriptions, and accepting supported inline SVG attributes without false warnings. (#445, #447, #448)
 - Restore Anthropic AI connections in the web app instead of failing with a browser endpoint error. (#438)
 - Reconnect live CLI and automation sessions automatically after an unexpected bridge disconnection.

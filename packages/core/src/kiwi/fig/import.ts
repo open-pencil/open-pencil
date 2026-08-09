@@ -1,5 +1,6 @@
 import { isNotNil } from 'es-toolkit/predicate'
 
+import { pickCarriedSlideFields } from '@open-pencil/deck'
 import { populateAndApplyOverrides } from '@open-pencil/fig/instance-overrides'
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import {
@@ -35,6 +36,12 @@ function applyImportedCanvasMetadata(
   page.source.fig.rawNodeFields.strokeJoin = canvasNc.strokeJoin
   page.source.fig.rawNodeFields.strokeWeight = canvasNc.strokeWeight
   if (canvasNc.pageType) page.source.fig.rawNodeFields.pageType = canvasNc.pageType
+  // A deck slide arrives as a page, carrying fields the scene graph does not model —
+  // speaker notes and slide transitions among them. They only survive the round-trip if
+  // they are kept here; this whitelist is where they were being dropped.
+  for (const [field, value] of Object.entries(pickCarriedSlideFields(canvasNc))) {
+    page.source.fig.rawNodeFields[field] = structuredClone(value)
+  }
 }
 
 function applyImportedDocumentMetadata(graph: SceneGraph, docNc: NodeChange | undefined) {
@@ -297,7 +304,6 @@ function importPages(
   parentMap: Map<string, string>,
   childrenMap: Map<string, string[]>,
   created: Set<string>,
-  canvasIdToPageId: Map<string, string>,
   createSceneNode: (ncId: string, graphParentId: string) => void
 ): void {
   let docId: string | null = null
@@ -318,7 +324,6 @@ function importPages(
         const page = graph.addPage(canvasNc.name ?? 'Page')
         page.source.id = canvasId
         applyImportedCanvasMetadata(page, canvasNc)
-        canvasIdToPageId.set(canvasId, page.id)
         if (canvasNc.internalOnly) page.internalOnly = true
         created.add(canvasId)
         for (const childId of childrenMap.get(canvasId) ?? []) {
@@ -443,7 +448,6 @@ export function importNodeChanges(
   const assetRefs = buildAssetRefMap(changeMap)
   setVariableColorResolver(buildVariableColorResolver(changeMap, assetRefs))
 
-  const canvasIdToPageId = new Map<string, string>()
   const created = new Set<string>()
   const guidToNodeId = new Map<string, string>()
   const getChildren = (ncId: string): string[] => childrenMap.get(ncId) ?? []
@@ -462,8 +466,11 @@ export function importNodeChanges(
       props.textAutoResize = 'WIDTH_AND_HEIGHT'
     }
 
-    const parentId = canvasIdToPageId.get(graphParentId) ?? graphParentId
-    const node = graph.createNode(nodeType, parentId, props)
+    // `graphParentId` is always a SceneGraph node id (every caller passes
+    // `page.id` / `node.id`). SceneGraph mints ids as `0:${n}` — the same
+    // textual space as fig GUIDs — so translating it through a GUID-keyed map
+    // can only ever be a no-op or a false hit that reparents onto a stranger.
+    const node = graph.createNode(nodeType, graphParentId, props)
     guidToNodeId.set(ncId, node.id)
 
     for (const childId of getChildren(ncId)) {
@@ -471,7 +478,7 @@ export function importNodeChanges(
     }
   }
 
-  importPages(graph, changeMap, parentMap, childrenMap, created, canvasIdToPageId, createSceneNode)
+  importPages(graph, changeMap, parentMap, childrenMap, created, createSceneNode)
 
   importCollections(changeMap, graph)
   importVariableEntries(changeMap, parentMap, graph, assetRefs)

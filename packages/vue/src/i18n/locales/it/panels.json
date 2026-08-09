@@ -1,6 +1,7 @@
 {
   "layers": "Livelli",
   "pages": "Pagine",
+  "slides": "Slide",
   "design": "Design",
   "code": "Codice",
   "ai": "AI",
@@ -263,5 +264,6 @@
   "blendModeHue": "Tonalità",
   "blendModeSaturation": "Saturazione",
   "blendModeColor": "Colore",
-  "blendModeLuminosity": "Luminosità"
+  "blendModeLuminosity": "Luminosità",
+  "newSlide": "Nuova slide"
 }

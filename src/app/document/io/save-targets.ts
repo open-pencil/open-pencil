@@ -1,20 +1,54 @@
-export async function chooseTauriFigSavePath() {
+import { documentKindForFileName, documentKindRules } from '@open-pencil/core/editor'
+
+export type NativeSaveFormat = 'fig' | 'deck'
+
+/**
+ * Fallback for entry points that only have a file name. The document kind on the store is
+ * the real source of truth — prefer passing that in.
+ */
+function saveFormatFromName(name?: string | null): NativeSaveFormat {
+  return documentKindRules(documentKindForFileName(name ?? '')).saveFormat
+}
+
+export async function chooseTauriFigSavePath(suggestedName?: string | null) {
   const { save } = await import('@tauri-apps/plugin-dialog')
+  const format = saveFormatFromName(suggestedName)
+  const defaultPath =
+    suggestedName?.trim() || (format === 'deck' ? 'Untitled.deck' : 'Untitled.fig')
   return save({
-    defaultPath: 'Untitled.fig',
-    filters: [{ name: 'Figma file', extensions: ['fig'] }]
+    defaultPath,
+    filters:
+      format === 'deck'
+        ? [
+            { name: 'Figma Slides', extensions: ['deck'] },
+            { name: 'Figma Design', extensions: ['fig'] }
+          ]
+        : [
+            { name: 'Figma Design', extensions: ['fig'] },
+            { name: 'Figma Slides', extensions: ['deck'] }
+          ]
   })
 }
 
-export async function chooseBrowserFigSaveHandle() {
+export async function chooseBrowserFigSaveHandle(suggestedName?: string | null) {
   if (!window.showSaveFilePicker) return null
+  const format = saveFormatFromName(suggestedName)
+  const name = suggestedName?.trim() || (format === 'deck' ? 'Untitled.deck' : 'Untitled.fig')
   try {
     return await window.showSaveFilePicker({
-      suggestedName: 'Untitled.fig',
+      suggestedName: name,
       types: [
         {
-          description: 'Figma file',
-          accept: { 'application/octet-stream': ['.fig'] }
+          description: format === 'deck' ? 'Figma Slides' : 'Figma Design',
+          accept: {
+            'application/octet-stream': format === 'deck' ? ['.deck'] : ['.fig']
+          }
+        },
+        {
+          description: format === 'deck' ? 'Figma Design' : 'Figma Slides',
+          accept: {
+            'application/octet-stream': format === 'deck' ? ['.fig'] : ['.deck']
+          }
         }
       ]
     })

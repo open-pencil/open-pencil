@@ -8,13 +8,39 @@ type GLContext = ReturnType<CanvasKit['MakeGrContext']>
 
 export type CanvasGLContext = GLContext
 
-export function sizeCanvas(canvas: HTMLCanvasElement, editor: Editor) {
+/**
+ * The app layer extends the core editor with a viewport the canvas host owns. Modelled as
+ * optional here because core itself does not declare it.
+ */
+type ViewportAwareEditor = Editor & {
+  setViewportSize?: (width: number, height: number) => void
+}
+
+/**
+ * Match the backing store to the canvas host and publish the new size to the editor.
+ *
+ * Returns whether the backing store actually changed — assigning `width`/`height`
+ * reallocates and clears it even when the value is identical, and every such change
+ * forces a new GPU surface downstream, so callers skip that work when nothing moved.
+ */
+export function sizeCanvas(canvas: HTMLCanvasElement, editor: Editor): boolean {
   const dpr = window.devicePixelRatio || 1
-  canvas.width = canvas.clientWidth * dpr
-  canvas.height = canvas.clientHeight * dpr
-  if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
-    editor.setViewportSize(canvas.clientWidth, canvas.clientHeight)
+  // Truncated, matching the integer coercion an assignment would apply anyway.
+  const width = Math.trunc(canvas.clientWidth * dpr)
+  const height = Math.trunc(canvas.clientHeight * dpr)
+  const changed = canvas.width !== width || canvas.height !== height
+  if (changed) {
+    canvas.width = width
+    canvas.height = height
   }
+  // Probe with `typeof`, never `in`: the app hands us a proxy over an empty target, so an
+  // `in` check reports false for methods that are perfectly callable — which silently
+  // disabled this sync and left deck slides fitted to a stale canvas size.
+  const viewportAware = editor as ViewportAwareEditor
+  if (typeof viewportAware.setViewportSize === 'function') {
+    viewportAware.setViewportSize(canvas.clientWidth, canvas.clientHeight)
+  }
+  return changed
 }
 
 export function makeGLSurface(

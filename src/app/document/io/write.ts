@@ -1,7 +1,9 @@
-import type { EditorState } from '@open-pencil/core/editor'
+import { documentKindRules, type EditorState } from '@open-pencil/core/editor'
 
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
+import { currentTargetIdFor } from '@/app/storage/target'
+import { extractStorageThumbnail } from '@/app/storage/thumbnail'
 import { isTauri } from '@/app/tauri/env'
 
 type WriteDocumentState = EditorState & { documentName: string }
@@ -28,10 +30,12 @@ export function createDocumentWriter({
     const storage = getStorageBinding()
     if (storage) {
       await persistStorageCanvasLocally({
-        providerId: storage.providerId,
+        syncTargetId: currentTargetIdFor(storage.providerId),
         canvasId: storage.documentId,
         name: state.documentName || 'Untitled',
-        figBytes: data
+        sourceFormat: documentKindRules(state.documentKind).saveFormat,
+        figBytes: data,
+        thumbnailBytes: extractStorageThumbnail(data)
       })
       setSavedVersion(state.sceneVersion)
       return true

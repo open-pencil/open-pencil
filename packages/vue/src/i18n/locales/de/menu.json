@@ -5,7 +5,7 @@
   "object": "Objekt",
   "arrange": "Anordnen",
   "text": "Text",
-  "new": "Neu",
+  "new": "Neues Design",
   "open": "Öffnen…",
   "openStorageWorkspace": "Speicher-Arbeitsbereich öffnen…",
   "save": "Speichern",
@@ -56,6 +56,7 @@
   "arrangeAlignMiddle": "Mittig ausrichten",
   "arrangeAlignBottom": "Unten ausrichten",
   "multiplayerCursors": "Multiplayer-Cursor",
+  "newDeck": "Neues Deck",
   "renameSelection": "Auswahl umbenennen…",
   "rulers": "Lineale",
   "settings": "Einstellungen…"

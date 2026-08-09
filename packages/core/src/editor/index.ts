@@ -1,4 +1,11 @@
 export { createDefaultEditorState, createEditor } from './create'
+export {
+  documentKindForFileName,
+  documentKindForSourceFormat,
+  documentKindRules,
+  isFixedArtboard
+} from './document-kind'
+export type { DocumentKind, DocumentKindRules } from './document-kind'
 export type { Editor } from './create'
 export { createTextActions } from './text'
 export { opacityFromBuffer } from './nodes'
@@ -6,6 +13,7 @@ export { EDITOR_TOOLS, TOOL_SHORTCUTS } from './tool-registry'
 export type { RenameSelectionOptions, RenameSelectionPreview } from './structure/rename'
 export type { EditorToolDef } from './tool-registry'
 export type {
+  CanvasRendererRole,
   ClipboardImageResolution,
   EditorContext,
   EditorEventName,
@@ -13,5 +21,6 @@ export type {
   EditorOptions,
   EditorState,
   FigmaClipboardImageResolver,
-  Tool
+  Tool,
+  Viewport
 } from './types'

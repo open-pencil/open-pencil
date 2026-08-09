@@ -43,6 +43,19 @@ function sceneBackingPreviewIdleMs(r: SkiaRenderer): number {
   return clamp(Math.max(renderMs, inputIntervalMs * quietInputIntervals), minDelay, maxDelay)
 }
 
+/**
+ * Arm the stale-backing window before movement produces its first frame.
+ *
+ * {@link updateSceneBackingPreviewState} can only react to a viewport change it has already
+ * seen, so the opening frame of a drag would still pay a full re-record — the whole stall,
+ * concentrated into the moment the drag starts. Callers that know movement is beginning
+ * (a canvas resize, say) arm the window up front so that frame defers like the rest.
+ */
+export function beginSceneBackingPreview(r: SkiaRenderer): void {
+  r.sceneBackingPreviewUntil = now() + sceneBackingPreviewIdleMs(r)
+  r.sceneBackingNeedsCrispRender = !!r.sceneBacking
+}
+
 export function updateSceneBackingPreviewState(r: SkiaRenderer, layer: RenderLayer): void {
   if (layer !== 'scene') return
   const previous = r.lastSceneViewport
@@ -468,24 +481,41 @@ export function renderSceneBacking(
     allowStaleZoom,
     positionPreviewVersion
   )
+  /**
+   * While the viewport is still moving, re-recording the scene every frame is the dominant
+   * cost: a panel drag re-fits the deck, so each frame changes zoom and grows the viewport
+   * past the cached coverage. On a photo-heavy deck at dpr 2 that measured ~425ms at p90,
+   * against 55ms with the re-fit held still.
+   *
+   * So during the preview window, keep the backing we have. If it still covers the viewport
+   * it is drawn stale; if it does not, `drawSceneBacking` reports false and the pipeline
+   * renders the scene directly — the same path used while panning. Either way the crisp
+   * re-record waits until the movement settles.
+   */
+  let deferredRecord = false
   if (!hasCoverage) {
-    if (
-      !r.sceneBacking ||
-      !backingMetadataMatches(r, sceneVersion, positionPreviewVersion) ||
-      !backingScreenCoverageContainsViewport(r)
-    ) {
-      cancelSceneBackingBuild(r)
-      recordSceneBacking(r, graph, sceneVersion)
-    } else {
-      if (!sceneBackingBuildMatches(r, sceneVersion)) startSceneBackingBuild(r, graph, sceneVersion)
-      stepSceneBackingBuild(r, sceneVersion)
+    const reusable =
+      !!r.sceneBacking && backingMetadataMatches(r, sceneVersion, positionPreviewVersion)
+    deferredRecord = allowStaleZoom && reusable
+    if (!deferredRecord) {
+      if (!reusable || !backingScreenCoverageContainsViewport(r)) {
+        cancelSceneBackingBuild(r)
+        recordSceneBacking(r, graph, sceneVersion)
+      } else {
+        if (!sceneBackingBuildMatches(r, sceneVersion)) {
+          startSceneBackingBuild(r, graph, sceneVersion)
+        }
+        stepSceneBackingBuild(r, sceneVersion)
+      }
     }
   } else if (r.sceneBackingBuild) {
     stepSceneBackingBuild(r, sceneVersion)
   }
 
   const crisp = Math.abs((r.sceneBacking?.zoom ?? r.zoom) - r.zoom) <= 0.0001
-  r.sceneBackingNeedsCrispRender = !crisp || !!r.sceneBackingBuild
+  // A deferred record must still be requested once things settle, even when the zoom happens
+  // to match — otherwise the backing never catches up to the new viewport size.
+  r.sceneBackingNeedsCrispRender = !crisp || !!r.sceneBackingBuild || deferredRecord
   return drawSceneBacking(
     r,
     canvas,

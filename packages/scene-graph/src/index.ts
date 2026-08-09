@@ -22,9 +22,10 @@ import * as HitTest from './hit-test'
 import * as Instances from './instances'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
+import { toRawDeep } from './raw'
 import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
-import { GLYPH_AFFECTING_KEYS, TEXT_PICTURE_KEYS } from './text-picture'
+import { GLYPH_AFFECTING_KEYS, invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -70,6 +71,13 @@ export class SceneGraph {
   variableCollections = new Map<string, VariableCollection>()
   activeMode = new Map<string, string>()
   rootId: string
+  /**
+   * Figma Slides theme bindings from the source deck: the DOCUMENT's themeID,
+   * sourceLibraryKey and slideThemeMap. They point at the variable set and text styles on
+   * the internal-only canvas. Dropping them leaves Figma with no template style, which
+   * renders every slide unthemed, so they ride along verbatim for the round-trip.
+   */
+  deckTheme: Record<string, unknown> | null = null
   figKiwiVersion: number | null = null
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
@@ -291,7 +299,7 @@ export class SceneGraph {
     return node
   }
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
-    const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
+    const node = createDefaultNode(() => this.generateNodeId(), type, toRawDeep(overrides))
     this.nodes.get(parentId)?.childIds.push(node.id)
     return this.registerNode(node, parentId)
   }
@@ -301,7 +309,7 @@ export class SceneGraph {
     parentId: string | null,
     overrides: Partial<SceneNode> = {}
   ): SceneNode {
-    const node = createDefaultNode(() => id, type, overrides)
+    const node = createDefaultNode(() => id, type, toRawDeep(overrides))
     node.id = id
     const parent = parentId ? this.nodes.get(parentId) : undefined
     if (parent && !parent.childIds.includes(id)) parent.childIds.push(id)
@@ -374,6 +382,8 @@ export class SceneGraph {
     if (appliedChanges) this.emitter.emit('node:previewUpdated', id, appliedChanges)
   }
   updateNode(id: string, changes: Partial<SceneNode>): void {
+    // The graph must never store Vue reactive proxies — see toRawDeep.
+    changes = toRawDeep(changes)
     if (this.previewMutationDepth > 0) {
       this.updateNodePreview(id, changes)
       return
@@ -410,12 +420,7 @@ export class SceneGraph {
         set.add(id)
       }
     }
-    if (node.type === 'TEXT') {
-      const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
-      if (node.textPicture && textChanged) node.textPicture = null
-      const glyphChanged = Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))
-      if (node.figmaDerivedTextGlyphs && glyphChanged) node.figmaDerivedTextGlyphs = null
-    }
+    if (node.type === 'TEXT') invalidateTextCaches(node, changes)
     if (this.sourceMetadataPreservationDepth === 0) {
       markSourceFieldsEdited(node, Object.keys(changes))
     }

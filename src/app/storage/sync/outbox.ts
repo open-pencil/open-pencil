@@ -1,5 +1,6 @@
 import { openIdb, reqToPromise, txDone } from '@/app/storage/idb-util'
 import { makeJobId, supersedePutCanvasJobs, type OutboxJob } from '@/app/storage/sync/types'
+import type { StorageTargetID } from '@/app/storage/target'
 
 const DB_NAME = 'open-pencil-cloud-outbox'
 const DB_VERSION = 1
@@ -7,8 +8,9 @@ const STORE = 'jobs'
 
 export type OutboxEnqueueInput = Omit<
   OutboxJob,
-  'id' | 'createdAt' | 'attempts' | 'nextAttemptAt'
+  'id' | 'createdAt' | 'attempts' | 'nextAttemptAt' | 'targetId'
 > & {
+  targetId?: StorageTargetID | null
   id?: string
   attempts?: number
   nextAttemptAt?: number
@@ -36,6 +38,7 @@ function buildJob(partial: OutboxEnqueueInput): OutboxJob {
     canvasId: partial.canvasId,
     type: partial.type,
     revision: partial.revision,
+    targetId: partial.targetId ?? null,
     createdAt: Date.now(),
     attempts: partial.attempts ?? 0,
     nextAttemptAt: partial.nextAttemptAt ?? Date.now()
@@ -44,12 +47,19 @@ function buildJob(partial: OutboxEnqueueInput): OutboxJob {
 
 /**
  * Queue with the new job applied: putCanvas supersedes older revisions,
- * and only one putThumb/delete per canvas survives (latest wins).
+ * and only one metadata/thumbnail/delete job per canvas survives (latest wins).
  */
 function withJobQueued(queue: OutboxJob[], job: OutboxJob): OutboxJob[] {
   let next = queue
   if (job.type === 'putCanvas') {
-    next = supersedePutCanvasJobs(next, job.canvasId, job.revision)
+    next = supersedePutCanvasJobs(next, job.canvasId, job.revision, job.targetId)
+    next = next.filter(
+      (queued) =>
+        queued.canvasId !== job.canvasId ||
+        queued.type !== 'putMetadata' ||
+        queued.targetId !== job.targetId ||
+        queued.revision > job.revision
+    )
   }
   next = next.filter(
     (j) => !(j.canvasId === job.canvasId && j.type === job.type && j.type !== 'putCanvas')
@@ -84,7 +94,15 @@ export function createMemoryOutbox(): Outbox {
 export function createIdbOutbox(): Outbox {
   let dbPromise: Promise<IDBDatabase> | null = null
   function db() {
-    if (!dbPromise) dbPromise = openDb()
+    // Never memoize a rejection: one transient open failure (quota, private
+    // mode, a blocked upgrade from another tab) used to brick the outbox for
+    // the tab's whole lifetime, so every later save failed to queue.
+    if (!dbPromise) {
+      dbPromise = openDb().catch((error: unknown) => {
+        dbPromise = null
+        throw error
+      })
+    }
     return dbPromise
   }
 
@@ -117,7 +135,13 @@ export function createIdbOutbox(): Outbox {
     async update(job) {
       const database = await db()
       const tx = database.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).put(job)
+      const store = tx.objectStore(STORE)
+      // `put` is an upsert, so a retry/backoff write for a job that was already
+      // completed or superseded used to RESURRECT it. The zombie then re-ran,
+      // failed on missing local bytes, and demoted a healthy document to
+      // `error`. Only update a row that still exists.
+      const existing = (await reqToPromise(store.get(job.id))) as OutboxJob | undefined
+      if (existing) store.put(job)
       await txDone(tx)
     },
 

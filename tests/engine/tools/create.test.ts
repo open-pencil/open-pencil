@@ -204,3 +204,44 @@ describe('create_vector', () => {
     }
   })
 })
+
+describe('create_shape discoverability', () => {
+  test('every supported node type is named in the description', () => {
+    const tool = getTool('create_shape')
+    const supported = tool.params.type.enum ?? []
+    expect(supported.length).toBeGreaterThan(0)
+
+    // The enum is invisible to a model choosing a tool; it reads the prose.
+    // STAR/POLYGON/LINE were supported but unmentioned, so agents concluded
+    // stars were impossible and hand-rasterised them instead.
+    const missing = supported.filter((type) => !tool.description.includes(type))
+    expect(missing).toEqual([])
+  })
+})
+
+describe('render discoverability', () => {
+  test('describes the <svg> path route for arbitrary shapes', () => {
+    // Agents reach for eval + figma.createVector() when nothing tells them the
+    // render tool can take path data, then hand-build geometry and fail.
+    const description = getTool('render').description
+    expect(description).toContain('<svg')
+    expect(description).toContain('path')
+  })
+
+  test('renders <svg> path children as stroked vector nodes', async () => {
+    const { figma, graph } = setupToolTest()
+    const result = (await getTool('render').execute(figma, {
+      jsx: '<svg name="Boat" viewBox="0 0 640 700" size={600}><path d="M380 40 L380 560" stroke="#021A3B" stroke-width="6" fill="none" /><path d="M100 560 C175 695 585 695 660 560 Z" stroke="#021A3B" stroke-width="6" fill="none" /></svg>'
+    })) as ToolResult
+
+    const childIds = (result.children as string[] | undefined) ?? []
+    expect(childIds.length).toBe(2)
+    for (const id of childIds) {
+      const node = expectDefined(graph.getNode(id), 'rendered path node')
+      // The open path (a bare line) must survive with geometry and a stroke —
+      // that is the case a single shared vector network used to drop.
+      expect(expectDefined(node.vectorNetwork, 'vector network').vertices.length).toBeGreaterThan(0)
+      expect(node.strokes.length).toBeGreaterThan(0)
+    }
+  })
+})

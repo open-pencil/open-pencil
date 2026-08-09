@@ -1,27 +1,64 @@
-export type OutboxJobType = 'putCanvas' | 'putThumb' | 'deleteCanvas'
+import type { StorageTargetID } from '@/app/storage/target'
+
+export type OutboxJobType = 'putCanvas' | 'putMetadata' | 'putThumb' | 'deleteCanvas'
 
 export type OutboxJob = {
+  /**
+   * Destination captured when the job was queued.
+   *
+   * `runJob` resolves THIS, never the current selection. Without it, changing
+   * bucket or account between enqueue and drain silently redirected bytes to
+   * wherever the UI happened to point. `null` means the job predates targets
+   * and must be pinned or parked at migration, never guessed at drain time.
+   */
+  targetId: StorageTargetID | null
   id: string
   canvasId: string
   type: OutboxJobType
-  /** Local revision for putCanvas; used to supersede older puts. */
+  /** Local revision for document/metadata puts; used to supersede older puts. */
   revision: number
   createdAt: number
   attempts: number
   nextAttemptAt: number
 }
 
-export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error'
+/**
+ * `error` is a transient failure still being retried. `blocked` is terminal:
+ * every queued job is parked and nothing will move until the user repairs
+ * configuration. They are distinct because a blocked queue used to fall through
+ * and render as "Syncing…" indefinitely.
+ */
+/**
+ * `conflict` is separate from `blocked` because it is not a fault: nothing is
+ * broken, two devices edited one document, and it has its own resolution flow.
+ * Folding it into `blocked` rendered it as "Sync failed" and routed the user to
+ * the provider-error modal, which by design holds no snapshot for a conflict.
+ */
+export type SyncUiState = 'idle' | 'syncing' | 'offline' | 'error' | 'blocked' | 'conflict'
 
-/** Pure helper: drop older putCanvas jobs for same canvas when a newer revision is enqueued. */
+/**
+ * Pure helper: drop superseded putCanvas jobs for the same canvas.
+ *
+ * `>=` rather than `>` would keep a job at the SAME revision, so two enqueues
+ * at one revision both survived and uploaded identical bytes twice. The engine
+ * always uploads the row's current body regardless of which job triggered it,
+ * so any queued putCanvas for a canvas is fully redundant with a newer one —
+ * an equal revision included.
+ */
 export function supersedePutCanvasJobs(
   jobs: OutboxJob[],
   canvasId: string,
-  revision: number
+  revision: number,
+  targetId: StorageTargetID | null
 ): OutboxJob[] {
   return jobs.filter((job) => {
     if (job.canvasId !== canvasId || job.type !== 'putCanvas') return true
-    return job.revision >= revision
+    // Partitioned by destination. Without this, queueing an upload for target B
+    // silently discarded one already owed to target A — the two are different
+    // work and both are owed. Cancelling A's job is retargeting's decision to
+    // make explicitly, not a side effect of saving to somewhere else.
+    if (job.targetId !== targetId) return true
+    return job.revision > revision
   })
 }
 

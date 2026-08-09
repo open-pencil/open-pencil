@@ -11,6 +11,7 @@ export interface SidebarLabels {
   layers: string
   contextMenu: string
   exporting: string
+  cloudStorage: string
   autoLayout: string
   components: string
   variables: string
@@ -144,6 +145,7 @@ export const EN: SidebarLabels = {
   layers: 'Layers & Pages',
   contextMenu: 'Context Menu',
   exporting: 'Exporting',
+  cloudStorage: 'Cloud Storage',
   autoLayout: 'Auto Layout',
   components: 'Components',
   variables: 'Variables',
@@ -168,6 +170,7 @@ export const DE: SidebarLabels = {
   layers: 'Ebenen & Seiten',
   contextMenu: 'Kontextmenü',
   exporting: 'Exportieren',
+  cloudStorage: 'Cloud-Speicher',
   autoLayout: 'Auto-Layout',
   components: 'Komponenten',
   variables: 'Variablen',
@@ -192,6 +195,7 @@ export const IT: SidebarLabels = {
   layers: 'Livelli e pagine',
   contextMenu: 'Menu contestuale',
   exporting: 'Esportazione',
+  cloudStorage: 'Archiviazione cloud',
   autoLayout: 'Auto-layout',
   components: 'Componenti',
   variables: 'Variabili',
@@ -216,6 +220,7 @@ export const FR: SidebarLabels = {
   layers: 'Calques et pages',
   contextMenu: 'Menu contextuel',
   exporting: 'Exportation',
+  cloudStorage: 'Stockage cloud',
   autoLayout: 'Mise en page auto',
   components: 'Composants',
   variables: 'Variables',
@@ -240,6 +245,7 @@ export const ES: SidebarLabels = {
   layers: 'Capas y páginas',
   contextMenu: 'Menú contextual',
   exporting: 'Exportar',
+  cloudStorage: 'Almacenamiento en la nube',
   autoLayout: 'Auto-layout',
   components: 'Componentes',
   variables: 'Variables',
@@ -264,6 +270,7 @@ export const PL: SidebarLabels = {
   layers: 'Warstwy i strony',
   contextMenu: 'Menu kontekstowe',
   exporting: 'Eksportowanie',
+  cloudStorage: 'Magazyn w chmurze',
   autoLayout: 'Auto-layout',
   components: 'Komponenty',
   variables: 'Zmienne',
@@ -288,6 +295,7 @@ export const RU: SidebarLabels = {
   layers: 'Слои и страницы',
   contextMenu: 'Контекстное меню',
   exporting: 'Экспорт',
+  cloudStorage: 'Облачное хранилище',
   autoLayout: 'Авто-раскладка',
   components: 'Компоненты',
   variables: 'Переменные',

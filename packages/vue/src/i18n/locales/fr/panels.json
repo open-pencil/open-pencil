@@ -1,6 +1,7 @@
 {
   "layers": "Calques",
   "pages": "Pages",
+  "slides": "Diapositives",
   "design": "Design",
   "code": "Code",
   "ai": "IA",
@@ -263,5 +264,6 @@
   "blendModeHue": "Teinte",
   "blendModeSaturation": "Saturation",
   "blendModeColor": "Couleur",
-  "blendModeLuminosity": "Luminosité"
+  "blendModeLuminosity": "Luminosité",
+  "newSlide": "Nouvelle diapositive"
 }

@@ -27,8 +27,12 @@ export function createDocumentExportActions(
   io: IORegistry,
   downloadBlob: DownloadBlob
 ) {
-  const { renderExportImage, getSelectionExportTarget, listSelectionExportFormats } =
-    createExportTargetActions(editor, state, io)
+  const {
+    renderExportImage,
+    renderExportPixels,
+    getSelectionExportTarget,
+    listSelectionExportFormats
+  } = createExportTargetActions(editor, state, io)
 
   async function renderExportFile(
     target: ExportRequest['target'],
@@ -112,6 +116,7 @@ export function createDocumentExportActions(
 
   return {
     renderExportImage,
+    renderExportPixels,
     listSelectionExportFormats,
     exportTarget,
     exportTargets,

@@ -4,8 +4,13 @@
     "items": [
       {
         "id": "new",
-        "label": "New",
+        "label": "New Design",
         "accelerator": "CmdOrCtrl+N"
+      },
+      {
+        "id": "new-deck",
+        "label": "New Deck",
+        "accelerator": "CmdOrCtrl+Shift+N"
       },
       {
         "id": "open",
@@ -173,6 +178,18 @@
         "id": "view-multiplayer-cursors",
         "label": "Multiplayer Cursors",
         "checkbox": true
+      },
+      {
+        "type": "separator"
+      },
+      {
+        "id": "view.present",
+        "label": "Present",
+        "accelerator": "Alt+CmdOrCtrl+Enter"
+      },
+      {
+        "id": "view.presentWithNotes",
+        "label": "Presentation with notes"
       },
       {
         "type": "separator"

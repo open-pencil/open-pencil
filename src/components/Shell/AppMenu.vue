@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { watch } from 'vue'
-import { templateRef } from '@vueuse/core'
-
 import {
   MenubarCheckboxItem,
   MenubarContent,
@@ -24,7 +21,6 @@ import AppShortcutText from '@/components/ui/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu'
 import { IS_TAURI } from '@/constants'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
-import { useDocumentNameRename } from '@/app/shell/menu/document-name'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import {
   hasMenuSubItems,
@@ -39,18 +35,10 @@ import {
   updateMenuChecked
 } from '@/app/shell/menu/entry'
 import { useEditorStore } from '@/app/editor/active-store'
-import { openSettingsDialog } from '@/app/settings/dialog'
 
 const store = useEditorStore()
 
-const { rename, editingName, startRename, commitRename } = useDocumentNameRename(store)
-const nameInput = templateRef<HTMLInputElement>('nameInput')
-
-watch(nameInput, (input) => {
-  if (input) void rename.focusInput(input)
-})
-
-const { dialogs, menu: t } = useI18n()
+const { menu: t } = useI18n()
 
 const { topMenus } = useAppMenu()
 const menuCls = useMenuUI()
@@ -60,35 +48,19 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 
 <template>
   <div class="shrink-0 border-b border-border">
+    <!--
+      The sync chip rides this row because this header is the one surface that
+      renders for design AND Slides, on web AND Tauri — anywhere else and sync
+      state would be invisible to half the app.
+    -->
     <div class="flex items-center gap-2 px-2 py-1.5">
       <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />
-      <input
-        v-if="editingName"
-        ref="nameInput"
-        data-test-id="app-document-name-input"
-        class="min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0.5 text-xs text-surface outline-none"
-        :value="store.state.documentName"
-        @blur="commitRename($event)"
-        @keydown="rename.onKeydown"
-      />
-      <span
-        v-else
-        data-test-id="app-document-name"
-        class="min-w-0 flex-1 cursor-default truncate rounded px-1 py-0.5 text-xs text-surface hover:bg-hover"
-        @dblclick="startRename"
-        >{{ store.state.documentName }}</span
-      >
-      <Tip :label="dialogs.settings">
-        <button
-          type="button"
-          data-test-id="app-settings-trigger"
-          :aria-label="dialogs.settings"
-          class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
-          @click="openSettingsDialog()"
-        >
-          <icon-lucide-settings class="size-3.5" />
-        </button>
-      </Tip>
+      <!--
+        No document name and no settings gear here. The tab strip shows the name
+        and is where you rename it, and settings belong to the workspace — shown
+        twice, only one of them can be the place you go to change it.
+      -->
+      <div class="flex-1"></div>
       <Tip :label="`${t.toggleUI} (${appMenuShortcutLabel('toggle-ui')})`">
         <button
           data-test-id="app-toggle-ui"

@@ -4,6 +4,7 @@ import type { EditorState } from '#core/editor/types'
 export function createDefaultEditorState(pageId: string): EditorState {
   return {
     activeTool: 'SELECT',
+    documentKind: 'design',
     currentPageId: pageId,
     selectedIds: new Set<string>(),
     marquee: null,
@@ -23,6 +24,8 @@ export function createDefaultEditorState(pageId: string): EditorState {
     pageColor: { ...CANVAS_BG_COLOR },
     panY: 0,
     zoom: 1,
+    presenting: false,
+    presenterMode: false,
     renderVersion: 0,
     sceneVersion: 0,
     loading: false,

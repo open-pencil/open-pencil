@@ -5,7 +5,7 @@
   "object": "Oggetto",
   "arrange": "Disponi",
   "text": "Testo",
-  "new": "Nuovo",
+  "new": "Nuovo design",
   "open": "Apri…",
   "openStorageWorkspace": "Apri area di archiviazione…",
   "save": "Salva",
@@ -56,6 +56,7 @@
   "arrangeAlignMiddle": "Centra verticalmente",
   "arrangeAlignBottom": "Allinea in basso",
   "multiplayerCursors": "Cursori multigiocatore",
+  "newDeck": "Nuovo deck",
   "renameSelection": "Rinomina selezione…",
   "rulers": "Righelli",
   "settings": "Impostazioni…"

@@ -69,7 +69,7 @@ function createCollabPanelContext() {
     if (!collab) return
     collab.disconnect()
     popoverOpen.value = false
-    void router.push('/')
+    void router.push('/editor')
   }
 
   function toggleFollowPeer(clientId: number) {

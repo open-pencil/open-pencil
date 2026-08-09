@@ -45,7 +45,7 @@ function findCanvasData(entries: Partial<Record<string, Uint8Array>>): Uint8Arra
 }
 
 /** Parse a complete zipped `.fig` file into its Figma protocol payload and binary resources. */
-export function parseFigBuffer(buffer: ArrayBuffer): FigParseResult {
+export function parseFigBuffer(buffer: ArrayBufferLike): FigParseResult {
   const archive = unzipSync(new Uint8Array(buffer), {
     filter: (file) =>
       file.name === 'canvas.fig' ||

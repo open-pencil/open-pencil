@@ -5,15 +5,18 @@ export const CLOUD_CORS_STATIC_ORIGINS = [
   // Exact production origin — providers without partial-wildcard support
   // (e.g. R2) need it verbatim even when CORS is configured from dev.
   WEB_APP_ORIGIN,
-  // Wildcards: any openpencil.dev subdomain (staging, demo, …), Cloudflare
-  // Pages PR previews, and any local dev port. S3/B2 allow one '*' per origin.
-  // collectCloudCorsOrigins() also appends the current origin, so strict
-  // providers still get an exact match for wherever the app is running when
-  // CORS is applied.
+  // Hostname-prefix wildcards: any openpencil.dev subdomain (staging, demo, …)
+  // and Cloudflare Pages PR previews. Verified accepted by B2.
   'https://*.openpencil.dev',
   'https://*.openpencil-app.pages.dev',
-  'http://localhost:*',
-  'http://127.0.0.1:*'
+  // Local dev ports must be spelled out. B2 rejects a '*' anywhere after the
+  // hostname ("allowedOrigin value has '*' after the hostname") and fails the
+  // WHOLE PutBucketCors with 400, so a single 'http://localhost:*' entry made
+  // the entire document unusable. Vite pins the dev port (strictPort, 1420);
+  // collectCloudCorsOrigins() appends the live window.location.origin anyway,
+  // so anyone on another port still gets an exact match.
+  'http://localhost:1420',
+  'http://127.0.0.1:1420'
 ] as const
 
 export function collectCloudCorsOrigins(extra?: string | null): string[] {

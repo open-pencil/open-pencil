@@ -6,7 +6,7 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 
 test('tool-created CJK text requests fallback through app font loading', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
+  await page.goto('http://localhost:1420/editor?new=design&test&no-chrome&no-rulers')
   await canvas.waitForInit()
 
   const result = await page.evaluate(async () => {
@@ -68,7 +68,7 @@ test('tool-created CJK text requests fallback through app font loading', async (
 
 test('CJK text waits for fallback fonts and repaints after they load', async ({ page }) => {
   const canvas = new CanvasHelper(page)
-  await page.goto('http://localhost:1420/?test&no-chrome&no-rulers')
+  await page.goto('http://localhost:1420/editor?new=design&test&no-chrome&no-rulers')
   await canvas.waitForInit()
 
   const result = await page.evaluate(async () => {

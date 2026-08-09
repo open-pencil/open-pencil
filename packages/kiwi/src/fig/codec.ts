@@ -301,6 +301,14 @@ export interface NodeChange {
   backgroundPaints?: Paint[]
   strokeWeight?: number
   strokeAlign?: string
+  /** CANVAS background, which Figma writes explicitly rather than relying on a default. */
+  backgroundEnabled?: boolean
+  backgroundOpacity?: number
+  /** Slide-only fields; see CARRIED_SLIDE_FIELDS in @open-pencil/deck. */
+  slideSpeakerNotes?: string
+  overrideKey?: GUID
+  editInfo?: { userId?: string; lastEditedAt?: number; createdAt?: number }
+  sourceLibraryKey?: string
   strokeCap?: string
   strokeJoin?: string
   dashPattern?: number[]
@@ -349,7 +357,14 @@ export interface NodeChange {
   textAutoResize?: string
   textData?: {
     characters: string
-    lines?: Array<{ lineType?: string; styleId?: number; indentationLevel?: number }>
+    lines?: Array<{
+      lineType?: string
+      styleId?: number
+      indentationLevel?: number
+      sourceDirectionality?: string
+      listStartOffset?: number
+      isFirstLineOfList?: boolean
+    }>
     characterStyleIDs?: number[]
     styleOverrideTable?: NodeChange[]
   }
@@ -370,7 +385,8 @@ export interface NodeChange {
       fontSize: number
       firstCharacter: number
       advance: number
-      rotation: number
+      /** Radians along the text path; kiwi omits the field for axis-aligned text. */
+      rotation?: number
     }>
     fontMetaData?: Array<{
       key: { family: string; style: string; postscript?: string }

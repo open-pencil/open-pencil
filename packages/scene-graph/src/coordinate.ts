@@ -1,6 +1,6 @@
 import type { SceneGraph, SceneNode } from './index'
 import Matrix, { type Mat3 } from './matrix'
-import type { Vector } from './primitives'
+import type { Rect, Vector } from './primitives'
 
 export function getWorldMatrix(node: SceneNode, graph: SceneGraph): Mat3 {
   const chain: SceneNode[] = []
@@ -159,29 +159,42 @@ export function getNodeWorldBounds(node: SceneNode) {
   }
 }
 
-export function getWorldHandles(node: SceneNode, graph: SceneGraph) {
+/**
+ * World-space positions of the 8 selection handles. `localRect` overrides the
+ * node-local box the handles sit on — text-on-path draws its handles on the
+ * glyph-fitted path box, not node bounds, so its hit-test must pass that box
+ * or the visible handles are ~25px off and unclickable. Defaults to full node
+ * bounds.
+ */
+export function getWorldHandles(node: SceneNode, graph: SceneGraph, localRect?: Rect) {
   const matrix = getWorldMatrix(node, graph)
 
-  const w = node.width
-  const h = node.height
+  const x0 = localRect?.x ?? 0
+  const y0 = localRect?.y ?? 0
+  const w = localRect?.width ?? node.width
+  const h = localRect?.height ?? node.height
+  const mx = x0 + w / 2
+  const my = y0 + h / 2
+  const x1 = x0 + w
+  const y1 = y0 + h
 
   const localPts = [
-    0,
-    0, // nw
-    w / 2,
-    0, // n
-    w,
-    0, // ne
-    w,
-    h / 2, // e
-    w,
-    h, // se
-    w / 2,
-    h, // s
-    0,
-    h, // sw
-    0,
-    h / 2 // w
+    x0,
+    y0, // nw
+    mx,
+    y0, // n
+    x1,
+    y0, // ne
+    x1,
+    my, // e
+    x1,
+    y1, // se
+    mx,
+    y1, // s
+    x0,
+    y1, // sw
+    x0,
+    my // w
   ]
 
   const pts = Matrix.mapPoints(matrix, localPts)

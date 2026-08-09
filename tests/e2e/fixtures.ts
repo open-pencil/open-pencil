@@ -2,7 +2,14 @@ import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-export function useEditorSetup(url = '/') {
+/**
+ * `/` is the workspace; the editor lives at `/editor`.
+ *
+ * This default was `/` and was missed when the routes swapped, so every spec
+ * calling `useEditorSetup()` with no argument navigated to the workspace and
+ * then waited out its timeout on a canvas that was never going to appear.
+ */
+export function useEditorSetup(url = '/editor?new=design') {
   let page: Page
   let canvas: CanvasHelper
 
