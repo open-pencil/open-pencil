@@ -186,7 +186,7 @@ watch(canOpen, (value) => {
       ref="contentRef"
       role="tooltip"
       :class="cls.content"
-      class="pointer-events-none fixed"
+      class="pointer-events-none fixed whitespace-pre-line text-center"
       :style="contentStyle"
     >
       {{ label }}

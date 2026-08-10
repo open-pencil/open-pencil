@@ -33,6 +33,7 @@ export const APP_MENU_SCHEMA = [
     items: [
       { id: 'new', label: 'New', shortcut: 'MOD+N' },
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
+      { id: 'open-recent', label: 'Open Recent', target: 'native' },
       { id: 'open-storage-workspace', label: 'Open Storage Workspace…' },
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },

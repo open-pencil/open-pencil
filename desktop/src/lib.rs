@@ -41,6 +41,11 @@ fn take_pending_open(state: tauri::State<PendingOpen>) -> Vec<PendingOpenFile> {
         .unwrap_or_default()
 }
 
+#[tauri::command]
+fn set_recent_files(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), String> {
+    install_app_menu(&app, &paths).map_err(|error| error.to_string())
+}
+
 fn file_association_path(path: PathBuf) -> Option<PathBuf> {
     let path = path.canonicalize().ok()?;
     if !path.is_file() {
@@ -131,6 +136,7 @@ pub fn run() {
             list_system_fonts,
             load_system_font,
             proxy_http_request,
+            set_recent_files,
             take_pending_open
         ])
         .plugin(tauri_plugin_opener::init())
@@ -145,7 +151,7 @@ pub fn run() {
         })
         .setup(|app| {
             queue_open_paths(app.handle(), startup_open_paths());
-            Ok(install_app_menu(app)?)
+            Ok(install_app_menu(app.handle(), &[])?)
         })
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

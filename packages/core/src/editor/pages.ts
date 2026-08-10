@@ -13,7 +13,7 @@ import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
 
-export function createPageActions(ctx: EditorContext) {
+export function createPageActions(ctx: EditorContext, zoomToFit: () => void) {
   const pageViewportStore = createPageViewportStore(ctx)
   let populationWorkerInstance: ReturnType<typeof createFigPopulationWorker> | undefined
   let populationWorkerGeneration = 0
@@ -86,6 +86,7 @@ export function createPageActions(ctx: EditorContext) {
     if (ctx.getRenderer() || populated) {
       computeAllLayouts(ctx.graph, pageId)
     }
+    zoomToFit()
     ctx.requestRender()
   }
 

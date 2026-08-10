@@ -54,11 +54,18 @@ test('model library keeps reusable profiles and role assignments', async ({ page
   await page.getByLabel('Model ID').first().click()
   await page.getByRole('option', { name: 'Kimi K2.5' }).click()
   await page.getByRole('switch', { name: 'Image input' }).click()
+  await page.getByRole('switch', { name: 'Audio input' }).click()
   await page.getByRole('button', { name: 'Save model' }).click()
 
   await page.getByTestId('settings-model-assignment-fast').click()
   await page.getByRole('option', { name: 'Fast model' }).click()
   await page.getByTestId('settings-model-assignment-vision').click()
+  await page.getByRole('option', { name: 'Vision model' }).click()
+  await expect(page.getByTestId('settings-model-assignment-audio')).toContainText('None')
+  await page.getByTestId('settings-model-assignment-audio').click()
+  await expect(page.getByRole('option', { name: 'Fast model' })).toBeHidden()
+  await expect(page.getByRole('option', { name: 'Vision model' })).toBeVisible()
+  await expect(page.getByRole('option', { name: 'Same as Design' })).toBeHidden()
   await page.getByRole('option', { name: 'Vision model' }).click()
   await page.getByTestId('app-settings-done').click()
 
@@ -67,8 +74,13 @@ test('model library keeps reusable profiles and role assignments', async ({ page
   await page.getByTestId('app-settings-trigger').click()
   await expect(page.getByTestId('settings-model-list')).toContainText('Fast model')
   await expect(page.getByTestId('settings-model-list')).toContainText('Vision model')
+  await expect(page.locator('[data-model-id]').filter({ hasText: 'Fast model' })).toContainText(
+    'Text'
+  )
+  await expect(page.getByTestId('settings-model-list')).toContainText('Audio')
   await expect(page.getByTestId('settings-model-assignment-fast')).toContainText('Fast model')
   await expect(page.getByTestId('settings-model-assignment-vision')).toContainText('Vision model')
+  await expect(page.getByTestId('settings-model-assignment-audio')).toContainText('Vision model')
 })
 
 test('remembered browser credentials survive reload and clear centrally', async ({ page }) => {

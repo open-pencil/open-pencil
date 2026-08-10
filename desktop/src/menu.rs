@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::path::Path;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, Submenu, SubmenuBuilder};
 
 #[cfg(target_os = "macos")]
@@ -25,6 +26,7 @@ fn build_submenu<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     label: &str,
     items: &[MenuEntry],
+    recent_files: &[String],
 ) -> tauri::Result<Submenu<R>> {
     let mut builder = SubmenuBuilder::new(app, label);
 
@@ -35,8 +37,13 @@ fn build_submenu<R: tauri::Runtime>(
         }
 
         let label = entry.label.as_deref().unwrap_or_default();
+        if entry.id.as_deref() == Some("open-recent") {
+            let submenu = build_recent_files_submenu(app, label, recent_files)?;
+            builder = builder.item(&submenu);
+            continue;
+        }
         if !entry.sub.is_empty() {
-            let submenu = build_submenu(app, label, &entry.sub)?;
+            let submenu = build_submenu(app, label, &entry.sub, recent_files)?;
             builder = builder.item(&submenu);
             continue;
         }
@@ -54,17 +61,58 @@ fn build_submenu<R: tauri::Runtime>(
     builder.build()
 }
 
+fn recent_file_label(path: &str) -> String {
+    let path = Path::new(path);
+    let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .map(str::to_owned)
+        .unwrap_or_else(|| path.as_os_str().to_string_lossy().into_owned());
+    let parent = path
+        .parent()
+        .and_then(Path::file_name)
+        .and_then(|name| name.to_str());
+    parent.map_or(name.clone(), |parent| format!("{name} — {parent}"))
+}
+
+fn build_recent_files_submenu<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    label: &str,
+    recent_files: &[String],
+) -> tauri::Result<Submenu<R>> {
+    let mut builder =
+        SubmenuBuilder::with_id(app, "open-recent", label).enabled(!recent_files.is_empty());
+    for (index, path) in recent_files.iter().enumerate() {
+        let item = MenuItemBuilder::new(recent_file_label(path))
+            .id(format!("open-recent:{index}"))
+            .build(app)?;
+        builder = builder.item(&item);
+    }
+    if !recent_files.is_empty() {
+        builder = builder.separator().item(
+            &MenuItemBuilder::new("Clear Menu")
+                .id("clear-recent-files")
+                .build(app)?,
+        );
+    }
+    builder.build()
+}
+
 fn build_schema_menus<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
+    recent_files: &[String],
 ) -> tauri::Result<Vec<Submenu<R>>> {
     let groups: Vec<MenuGroup> = serde_json::from_str(include_str!("../generated/menu.json"))?;
     groups
         .iter()
-        .map(|group| build_submenu(app, &group.label, &group.items))
+        .map(|group| build_submenu(app, &group.label, &group.items, recent_files))
         .collect()
 }
 
-pub fn install_app_menu<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Result<()> {
+pub fn install_app_menu<R: tauri::Runtime>(
+    app: &tauri::AppHandle<R>,
+    recent_files: &[String],
+) -> tauri::Result<()> {
     #[cfg(target_os = "macos")]
     let app_menu = SubmenuBuilder::new(app, "OpenPencil")
         .item(&PredefinedMenuItem::about(
@@ -87,8 +135,7 @@ pub fn install_app_menu<R: tauri::Runtime>(app: &mut tauri::App<R>) -> tauri::Re
         .item(&PredefinedMenuItem::quit(app, None)?)
         .build()?;
 
-    let handle = app.handle().clone();
-    let schema_menus = build_schema_menus(&handle)?;
+    let schema_menus = build_schema_menus(app, recent_files)?;
     let mut builder = MenuBuilder::new(app);
 
     #[cfg(target_os = "macos")]

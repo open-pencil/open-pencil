@@ -8,7 +8,7 @@ import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
-interface AutomationHealth {
+export interface AutomationHealth {
   status: 'ok' | 'no_app'
   version?: string
   installCommand?: string
@@ -17,7 +17,7 @@ interface AutomationHealth {
 }
 
 export interface AutomationServerHandle {
-  disconnect: () => void
+  disconnect: () => void | Promise<void>
   authToken: string | null
 }
 
@@ -131,7 +131,7 @@ async function resolveDiscoveryPath(healthDiscoveryPath?: string): Promise<strin
   return expected
 }
 
-async function readHealth(): Promise<AutomationHealth | null> {
+export async function readAutomationHealth(): Promise<AutomationHealth | null> {
   try {
     const res = await fetch(`http://127.0.0.1:${AUTOMATION_HTTP_PORT}/health`, {
       signal: AbortSignal.timeout(1000)
@@ -171,7 +171,7 @@ function assertCompatibleMcpVersion(health: AutomationHealth): void {
 async function pollHealth(retries: number, delayMs: number): Promise<AutomationHealth | null> {
   for (let i = 0; i < retries; i++) {
     await promiseTimeout(delayMs)
-    const health = await readHealth()
+    const health = await readAutomationHealth()
     if (health) return health
   }
   return null
@@ -179,7 +179,7 @@ async function pollHealth(retries: number, delayMs: number): Promise<AutomationH
 
 export async function getAutomationAuthToken(): Promise<string | null> {
   if (runtimeAutomationAuthToken) return runtimeAutomationAuthToken
-  const health = await readHealth()
+  const health = await readAutomationHealth()
   if (!health) {
     throw new Error(
       'MCP server is not reachable. Ensure the desktop app is running and the MCP server has started.'
@@ -219,7 +219,7 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
       : null
   }
 
-  const existing = await readHealth()
+  const existing = await readAutomationHealth()
   if (existing) {
     assertCompatibleMcpVersion(existing)
     const discoveryPath = await resolveDiscoveryPath(existing.discoveryPath)
@@ -282,8 +282,8 @@ export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null>
       spawnedToken = token
       runtimeAutomationAuthToken = token
       return {
-        disconnect: () => {
-          void child.kill().catch((e) => {
+        disconnect: async () => {
+          await child.kill().catch((e) => {
             console.error('[MCP] Failed to kill server:', e)
           })
           if (runtimeAutomationAuthToken === token) {

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Prism from 'prismjs'
-import 'prismjs/components/prism-jsx'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { useClipboard } from '@vueuse/core'
 import { computed, ref, watch } from 'vue'
@@ -24,6 +23,16 @@ const importHTML = ref('')
 const importCSS = ref('')
 const importError = ref('')
 const importing = ref(false)
+const jsxGrammarReady = ref(false)
+
+// Prism language components are legacy scripts that expect `Prism` to exist
+// globally. Loading prism-jsx statically can run it before the Prism module in
+// production bundles, aborting app startup with "Can't find variable: Prism".
+;(globalThis as typeof globalThis & { Prism: typeof Prism }).Prism = Prism
+void import('prismjs/components/prism-jsx').then(() => {
+  jsxGrammarReady.value = true
+  return undefined
+})
 
 function toggleFormat() {
   jsxFormat.value = jsxFormat.value === 'openpencil' ? 'tailwind' : 'openpencil'
@@ -38,6 +47,7 @@ const jsxCode = useSceneComputed(() => {
 
 const highlightedLines = computed(() => {
   if (!jsxCode.value) return []
+  void jsxGrammarReady.value
   const grammar = Prism.languages.jsx ?? Prism.languages.javascript
   return jsxCode.value.split('\n').map((line) => Prism.highlight(line, grammar, 'jsx'))
 })

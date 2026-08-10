@@ -5,6 +5,7 @@ import { useI18n } from '@open-pencil/vue'
 import {
   aiModelSettings,
   isACPModelProfile,
+  isTranscriptionModelProfile,
   modelProfile,
   setModelRoleAssignment,
   type AIModelRole,
@@ -15,6 +16,7 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 const { dialogs } = useI18n()
 const SAME_AS_DESIGN = '__design__'
 const NO_MODEL = '__none__'
+type DisplayedModelRole = AIModelRole
 
 const roleDefinitions = computed(() => [
   {
@@ -36,25 +38,35 @@ const roleDefinitions = computed(() => [
     role: 'vision' as const,
     label: dialogs.value.modelRoleVision,
     description: dialogs.value.modelRoleVisionDescription
+  },
+  {
+    role: 'audio' as const,
+    label: dialogs.value.modelRoleAudio,
+    description: dialogs.value.modelRoleAudioDescription
   }
 ])
 
-function assignmentValue(role: AIModelRole): string {
+function assignmentValue(role: DisplayedModelRole): string {
   const assignment = aiModelSettings.value.assignments[role]
   if (assignment === null) return NO_MODEL
   return assignment === 'design' ? SAME_AS_DESIGN : assignment
 }
 
-function optionsForRole(role: AIModelRole) {
+function optionsForRole(role: DisplayedModelRole) {
   const profiles = aiModelSettings.value.models
     .filter((profile) => {
+      if (role !== 'audio' && isTranscriptionModelProfile(profile)) return false
       if (role === 'design') return profile.capabilities.includes('tools')
       if (isACPModelProfile(profile)) return false
       if (role === 'vision') return profile.capabilities.includes('vision')
+      if (role === 'audio') return profile.capabilities.includes('audio')
       return true
     })
     .map((profile) => ({ value: profile.id, label: profile.name }))
   if (role === 'design') return profiles
+  if (role === 'audio') {
+    return [{ value: NO_MODEL, label: dialogs.value.noModel }, ...profiles]
+  }
 
   const design = modelProfile(aiModelSettings.value.assignments.design)
   const canInherit =
@@ -66,7 +78,16 @@ function optionsForRole(role: AIModelRole) {
   ]
 }
 
-function updateAssignment(role: AIModelRole, value: string): void {
+function updateAssignment(role: DisplayedModelRole, value: string): void {
+  if (role === 'audio') {
+    if (value === NO_MODEL) {
+      setModelRoleAssignment('audio', null)
+      return
+    }
+    const profile = modelProfile(value)
+    if (profile) setModelRoleAssignment('audio', profile.id)
+    return
+  }
   if (role === 'design') {
     const profile = modelProfile(value)
     if (profile) setModelRoleAssignment('design', profile.id)

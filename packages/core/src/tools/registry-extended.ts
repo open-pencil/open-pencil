@@ -39,14 +39,11 @@ import {
   diffJsx,
   getComponents,
   getCurrentPage,
-  getPageTree,
   listAvailableFonts,
   listFonts,
-  listPages,
   pageBounds,
   queryNodes,
-  selectNodes,
-  switchPage
+  selectNodes
 } from './read'
 import type { ToolDef } from './schema'
 import {
@@ -84,7 +81,6 @@ import {
   booleanIntersect,
   booleanSubtract,
   booleanUnion,
-  exportImage,
   exportPdf,
   exportSvg,
   pathFlip,
@@ -102,13 +98,10 @@ import {
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
   // Read (advanced)
-  getPageTree,
   getCurrentPage,
-  listPages,
   selectNodes,
   queryNodes,
   getComponents,
-  switchPage,
   pageBounds,
   listFonts,
   listAvailableFonts,
@@ -180,7 +173,6 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   viewportSet,
   exportSvg,
   exportPdf,
-  exportImage,
   // Analyze & diff
   analyzeColors,
   analyzeTypography,

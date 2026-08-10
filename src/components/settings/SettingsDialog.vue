@@ -8,6 +8,7 @@ import { useAIChat } from '@/app/ai/chat/use'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen, settingsDialogSection } from '@/app/settings/dialog'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
+import MCPSettingsPanel from '@/components/settings/mcp/MCPSettingsPanel.vue'
 import StockPhotoKeysSection from '@/components/settings/provider/StockPhotoKeysSection.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import VectorizeSettingsSection from '@/components/settings/vectorize/VectorizeSettingsSection.vue'
@@ -60,6 +61,16 @@ const navigationClass =
         <button
           type="button"
           :class="navigationClass"
+          :data-state="settingsDialogSection === 'mcp' ? 'active' : 'inactive'"
+          data-test-id="settings-section-mcp"
+          @click="settingsDialogSection = 'mcp'"
+        >
+          <icon-lucide-server class="size-3.5" />
+          {{ dialogs.settingsMCP }}
+        </button>
+        <button
+          type="button"
+          :class="navigationClass"
           :data-state="settingsDialogSection === 'ai' ? 'active' : 'inactive'"
           data-test-id="settings-section-ai"
           @click="settingsDialogSection = 'ai'"
@@ -108,6 +119,7 @@ const navigationClass =
           <VectorizeSettingsSection />
         </section>
 
+        <MCPSettingsPanel v-else-if="settingsDialogSection === 'mcp'" />
         <StorageSettingsPanel v-else />
       </div>
     </div>

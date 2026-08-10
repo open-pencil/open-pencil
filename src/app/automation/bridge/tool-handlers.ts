@@ -46,6 +46,17 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     const figma = makeFigma(store, target.pageId)
     const result = await def.execute(figma, toolArgs)
 
+    if (
+      toolName === 'switch_page' &&
+      (!result || typeof result !== 'object' || !('error' in result))
+    ) {
+      await store.switchPage(figma.currentPageId)
+      const page = store.graph.getNode(figma.currentPageId)
+      target.pageId = figma.currentPageId
+      target.pageName = page?.name ?? target.pageName
+      return { ok: true, result }
+    }
+
     if (def.mutates) {
       const pageNode = store.graph.getNode(figma.currentPageId)
       if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)

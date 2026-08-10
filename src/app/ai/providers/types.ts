@@ -8,7 +8,7 @@ export type ModelConfig = {
   modelID: string
   customModelID: string
   customBaseURL: string
-  customAPIType: 'completions' | 'responses'
+  customAPIType: 'completions' | 'responses' | 'transcription'
 }
 
 export type ModelProviderRuntime = {

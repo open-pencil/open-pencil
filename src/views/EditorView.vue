@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -10,9 +10,9 @@ import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
-import { connectAutomation } from '@/app/automation/bridge/server'
-import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
+import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { isTauri } from '@/app/tauri/env'
+import { forgetDevOpenFilePath, readDevOpenFilePath } from '@/app/tauri/dev-file-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -39,6 +39,10 @@ const firstTab = createdInitialTab ? createTab() : (activeTab.value ?? createTab
 const store = useEditorStore()
 const { dialogs } = useI18n()
 const { isMobile } = useViewportKind()
+const showUILabel = computed(() => {
+  const shortcut = formatShortcut(appMenuShortcut('toggle-ui'))
+  return shortcut ? `${dialogs.value.showUI} (${shortcut})` : dialogs.value.showUI
+})
 
 if (createdInitialTab && route.meta.demo && !('test' in params)) {
   void createDemoShapes(firstTab.store)
@@ -60,8 +64,6 @@ useEventListener(
   { passive: false }
 )
 
-const automationCleanup = ref<(() => void) | null>(null)
-const mcpCleanup = ref<(() => void) | null>(null)
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 const initialEditorLayout = loadEditorLayout()
 
@@ -69,11 +71,23 @@ type PendingOpenFile = {
   path: string
 }
 
-async function openPendingAssociatedFiles() {
+async function openPendingAssociatedFiles(): Promise<boolean> {
   const { invoke } = await import('@tauri-apps/api/core')
   const files = await invoke<PendingOpenFile[]>('take_pending_open')
   for (const file of files) {
     await openFileFromPath(file.path)
+  }
+  return files.length > 0
+}
+
+async function restoreDevOpenFile() {
+  const path = readDevOpenFilePath()
+  if (!path) return
+  try {
+    await openFileFromPath(path)
+  } catch (error) {
+    forgetDevOpenFilePath()
+    console.warn('[Dev file restore]', error)
   }
 }
 
@@ -83,20 +97,12 @@ async function bindAssociatedFileOpen() {
   fileAssociationCleanup.value = await listen('open-associated-files', () => {
     void openPendingAssociatedFiles().catch((e) => console.error('[Open With]', e))
   })
-  await openPendingAssociatedFiles()
+  const openedAssociatedFile = await openPendingAssociatedFiles()
+  if (!openedAssociatedFile) await restoreDevOpenFile()
 }
 
 onMounted(async () => {
-  try {
-    const mcp = await spawnMCPIfNeeded()
-    mcpCleanup.value = mcp?.disconnect ?? null
-    const tauri = isTauri()
-    if (import.meta.env.DEV || tauri) {
-      automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
-    }
-  } catch (e) {
-    console.warn('[MCP]', e)
-  }
+  await startMCPRuntime(getActiveStore)
 
   try {
     await bindAssociatedFileOpen()
@@ -106,8 +112,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  mcpCleanup.value?.()
-  automationCleanup.value?.()
+  void stopMCPRuntime()
   fileAssociationCleanup.value?.()
 })
 </script>
@@ -196,11 +201,7 @@ onUnmounted(() => {
           <span data-test-id="editor-document-name" class="text-xs text-surface">{{
             store.state.documentName
           }}</span>
-          <Tip
-            :label="
-              dialogs.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })
-            "
-          >
+          <Tip :label="showUILabel">
             <button
               data-test-id="editor-show-ui"
               class="ml-1 flex size-6 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"

@@ -124,6 +124,31 @@ describe('AI adapter', () => {
     expect(calls).toEqual(['before', 'after'])
   })
 
+  test('executes and completes with the same FigmaAPI instance', async () => {
+    const graph = new SceneGraph()
+    const instances: FigmaAPI[] = []
+    let completedWith: FigmaAPI | null = null
+    const tools = toolsToAI(
+      ALL_TOOLS,
+      {
+        getFigma: () => {
+          const figma = new FigmaAPI(graph)
+          instances.push(figma)
+          return figma
+        },
+        onAfterExecute: (_def, figma) => {
+          completedWith = figma
+        }
+      },
+      { v, valibotSchema, tool }
+    )
+
+    await adapterTool(tools, 'list_pages').execute({})
+
+    expect(instances).toHaveLength(1)
+    expect(completedWith).toBe(instances[0])
+  })
+
   test('onAfterExecute called even on error', async () => {
     const graph = new SceneGraph()
     const figma = new FigmaAPI(graph)
