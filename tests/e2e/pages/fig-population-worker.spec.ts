@@ -3,6 +3,7 @@ import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 const editor = useEditorSetup()
 
 test('populates a real lazy FIG page in the retained parse worker', async () => {
+  test.setTimeout(90_000)
   await editor.page.evaluate(() => {
     const events: unknown[] = []
     Object.assign(window, { figPopulationWorkerEvents: events })
@@ -11,7 +12,7 @@ test('populates a real lazy FIG page in the retained parse worker', async () => 
     })
   })
   const openFile = editor.page.evaluate(() =>
-    window.openPencil?.openFile?.('/tests/fixtures/gold-preview.fig')
+    window.openPencil?.openFile?.('/tests/fixtures/material3.fig')
   )
   await openFile
   await editor.canvas.waitForRender()
@@ -23,18 +24,28 @@ test('populates a real lazy FIG page in the retained parse worker', async () => 
   })
   if (!targetPageId) throw new Error('Target page not found')
 
+  const populateEventCount = await editor.page.evaluate(
+    () =>
+      (Reflect.get(window, 'figPopulationWorkerEvents') as Array<{ event: string }>).filter(
+        ({ event }) => event === 'populate'
+      ).length
+  )
   await editor.page.evaluate((pageId) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return store.switchPage(pageId)
   }, targetPageId)
   await expect
-    .poll(() =>
-      editor.page.evaluate(() =>
-        (Reflect.get(window, 'figPopulationWorkerEvents') as Array<{ event: string }>).some(
-          ({ event }) => event === 'populate'
-        )
-      )
+    .poll(
+      () =>
+        editor.page.evaluate(
+          (previousCount) =>
+            (Reflect.get(window, 'figPopulationWorkerEvents') as Array<{ event: string }>).filter(
+              ({ event }) => event === 'populate'
+            ).length > previousCount,
+          populateEventCount
+        ),
+      { timeout: 45_000 }
     )
     .toBe(true)
 

@@ -1,6 +1,6 @@
 [package]
 name = "open_pencil"
-version = "0.13.2"
+version = "0.14.0"
 description = "OpenPencil desktop app"
 authors = ["Danila Poyarkov"]
 edition = "2021"

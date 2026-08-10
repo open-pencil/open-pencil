@@ -37,6 +37,10 @@ import {
 } from './layout/yoga-helpers'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {
+  graph.withLayoutMutations(() => computeLayoutInternal(graph, frameId))
+}
+
+function computeLayoutInternal(graph: SceneGraph, frameId: string): void {
   const frame = graph.getNode(frameId)
   if (!frame || frame.layoutMode === 'NONE') return
 
@@ -47,7 +51,7 @@ export function computeLayout(graph: SceneGraph, frameId: string): void {
       ? buildGridTree(graph, frame, rootDirection)
       : buildYogaTree(graph, frame, rootDirection)
   yogaRoot.calculateLayout(undefined, undefined, yogaDirection)
-  applyYogaLayout(graph, frame, yogaRoot, computeLayout)
+  applyYogaLayout(graph, frame, yogaRoot, computeLayoutInternal)
   freeYogaTree(yogaRoot)
 }
 function resolveComputedLayoutDirection(
@@ -60,12 +64,14 @@ function resolveComputedLayoutDirection(
 }
 
 export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
-  const rootId = scopeId ?? graph.rootId
-  const visited = new Set<string>()
-  computeLayoutsBottomUp(graph, rootId, visited)
-  if (applyEffectiveGeneratedTextLayout(graph, rootId)) {
-    computeLayoutsBottomUp(graph, rootId, new Set())
-  }
+  graph.withLayoutMutations(() => {
+    const rootId = scopeId ?? graph.rootId
+    const visited = new Set<string>()
+    computeLayoutsBottomUp(graph, rootId, visited)
+    if (applyEffectiveGeneratedTextLayout(graph, rootId)) {
+      computeLayoutsBottomUp(graph, rootId, new Set())
+    }
+  })
 }
 
 function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<string>): void {

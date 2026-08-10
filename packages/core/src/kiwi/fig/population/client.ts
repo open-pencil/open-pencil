@@ -44,13 +44,13 @@ export function registerFigPopulationWorker(graph: SceneGraph, worker: Worker): 
   emitTelemetry({ event: 'registered' })
 }
 
-function isDevelopmentBuild(meta: { env?: { DEV?: boolean } }): boolean {
-  return meta.env?.DEV ?? false
+function isDevelopmentBuild(env?: { DEV?: boolean }): boolean {
+  return env?.DEV ?? false
 }
 
 export function canUseFigPopulationWorker(graph: SceneGraph): boolean {
   return (
-    isDevelopmentBuild(import.meta) &&
+    isDevelopmentBuild(import.meta.env) &&
     populationWorkers.has(graph) &&
     getLazyFigImportContext(graph) !== undefined
   )
@@ -81,7 +81,10 @@ function createPopulationWorkerClient(graph: SceneGraph, worker: Worker): FigPop
   let disposed = false
   let applyingDelta = false
   const invalidate = () => {
-    if (applyingDelta || stale) return
+    // Layout recomputation (import-time or after a switch) is derived from the
+    // same scene graph the worker deltas were built from; it must not count as
+    // user divergence. Only real user edits invalidate the worker.
+    if (applyingDelta || stale || graph.isApplyingLayout) return
     revision++
     stale = true
     emitTelemetry({ event: 'stale', reason: 'graph-mutation' })

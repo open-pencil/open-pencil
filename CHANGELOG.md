@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.14.0 - 2026-08-07
+
 ### Breaking changes
 
 - **Core SDK:** Import scene graph types, geometry, coordinate, matrix, snapping, undo, and path helpers from `@open-pencil/scene-graph`; import `.pen` parsing from `@open-pencil/pen`; and import synchronous Kiwi decompression from `@open-pencil/kiwi` instead of the `@open-pencil/core` compatibility barrel.

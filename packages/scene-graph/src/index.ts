@@ -78,6 +78,7 @@ export class SceneGraph {
   private absPosCache = new Map<string, Vector>()
   private previewMutationDepth = 0
   private sourceMetadataPreservationDepth = 0
+  private layoutMutationDepth = 0
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
 
@@ -365,6 +366,17 @@ export class SceneGraph {
     } finally {
       this.sourceMetadataPreservationDepth--
     }
+  }
+  withLayoutMutations(fn: () => void): void {
+    this.layoutMutationDepth++
+    try {
+      fn()
+    } finally {
+      this.layoutMutationDepth--
+    }
+  }
+  get isApplyingLayout(): boolean {
+    return this.layoutMutationDepth > 0
   }
   updateNodePositionPreview(id: string, x: number, y: number): void {
     this.updateNodePreview(id, { x, y })
