@@ -351,6 +351,24 @@ export type FigmaLayoutMetadata = Partial<
     Record<'bordersTakeSpace' | 'stackReverseZIndex', boolean>
 >
 
+export interface LibraryAssetIdentity {
+  libraryId: string
+  assetKey: string
+  revisionId: string
+}
+
+export interface LibraryAssetSource {
+  identity: LibraryAssetIdentity
+  sourceNodeId: string | null
+  readOnly: boolean
+}
+
+export interface EnabledLibraryBinding {
+  libraryId: string
+  revisionId: string
+  enabled: boolean
+}
+
 export interface SceneNode {
   id: string
   type: NodeType
@@ -497,6 +515,7 @@ export interface SceneNode {
   overrideKey: string | null
   sharedSymbolVersion: string | null
   publishedVersion: string | null
+  librarySource: LibraryAssetSource | null
   isPublishable: boolean
   isSymbolPublishable: boolean
   symbolDescription: string

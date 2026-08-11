@@ -19,6 +19,7 @@
 - Convert image layers into editable vectors with Recraft or fal.ai from the canvas context menu. (#322)
 - Browse document components as thumbnails or a list in the Assets panel, group them by page, and drag instances directly onto the canvas. (#424)
 - Author multidimensional component variants in the Design panel, including property/value renaming, sparse-combination diagnostics, variant duplication, and exact instance transitions. (#239)
+- Create deterministic, dependency-complete component-library revisions through the provider-neutral Core library catalog, with browser IndexedDB persistence for local catalogs. (#239)
 - Create centered frames from Figma-style device and asset presets, or resize selected frames to a preset while preserving their names. (#418)
 - Manage pages by renaming, deleting, and dragging to reorder them in the Pages panel.
 - Create text by dragging a fixed-size text box or clicking for auto-width text.

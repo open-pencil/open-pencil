@@ -1,10 +1,11 @@
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type {
+  DocumentColorSpace,
+  EnabledLibraryBinding,
   SceneNode,
   Variable,
-  VariableCollection,
-  DocumentColorSpace
+  VariableCollection
 } from '@open-pencil/scene-graph'
 
 import { getLazyFigImportContext, setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
@@ -27,6 +28,7 @@ export interface SerializedSceneGraph {
   figKiwiVersion: number | null
   figSchemaDeflated: Uint8Array | null
   documentColorSpace: DocumentColorSpace
+  enabledLibraries?: Array<[string, EnabledLibraryBinding]>
   lazyFigImport?: SerializedLazyFigImportContext
 }
 
@@ -43,6 +45,7 @@ export function serializeSceneGraph(graph: SceneGraph): SerializedSceneGraph {
     figKiwiVersion: graph.figKiwiVersion,
     figSchemaDeflated: graph.figSchemaDeflated,
     documentColorSpace: graph.documentColorSpace,
+    enabledLibraries: [...graph.enabledLibraries],
     lazyFigImport: lazyFigImport
       ? {
           changeMap: [...lazyFigImport.changeMap],
@@ -132,6 +135,7 @@ export function deserializeSceneGraph(data: SerializedSceneGraph): SceneGraph {
   graph.figKiwiVersion = data.figKiwiVersion
   graph.figSchemaDeflated = data.figSchemaDeflated
   graph.documentColorSpace = data.documentColorSpace
+  graph.enabledLibraries = data.enabledLibraries ? new Map(data.enabledLibraries) : new Map()
   if (data.lazyFigImport) {
     setLazyFigImportContext(graph, {
       changeMap: new Map(data.lazyFigImport.changeMap),

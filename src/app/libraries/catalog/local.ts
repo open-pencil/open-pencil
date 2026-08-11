@@ -1,0 +1,95 @@
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+
+import type {
+  ComponentLibraryRevision,
+  LibraryCatalog,
+  LibrarySummary,
+  PublishLibraryInput
+} from '@open-pencil/core/library'
+import { createLibraryRevision } from '@open-pencil/core/library'
+
+const DATABASE_NAME = 'open-pencil-libraries'
+const DATABASE_VERSION = 1
+
+interface StoredLibraryRevision {
+  libraryId: string
+  revisionId: string
+  revision: ComponentLibraryRevision
+}
+
+interface LocalLibraryDatabase extends DBSchema {
+  revisions: {
+    key: [string, string]
+    value: StoredLibraryRevision
+    indexes: { 'by-library': string }
+  }
+  latest: {
+    key: string
+    value: LibrarySummary
+  }
+}
+
+export class LocalLibraryCatalog implements LibraryCatalog {
+  readonly #database: Promise<IDBPDatabase<LocalLibraryDatabase>>
+
+  constructor(databaseName = DATABASE_NAME) {
+    this.#database = openDB<LocalLibraryDatabase>(databaseName, DATABASE_VERSION, {
+      upgrade(database) {
+        if (!database.objectStoreNames.contains('revisions')) {
+          const revisions = database.createObjectStore('revisions', {
+            keyPath: ['libraryId', 'revisionId']
+          })
+          revisions.createIndex('by-library', 'libraryId')
+        }
+        if (!database.objectStoreNames.contains('latest')) {
+          database.createObjectStore('latest')
+        }
+      }
+    })
+  }
+
+  async listLibraries(): Promise<LibrarySummary[]> {
+    return (await this.#database).getAll('latest')
+  }
+
+  async getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision> {
+    const database = await this.#database
+    const resolvedRevisionId =
+      revisionId ?? (await database.get('latest', libraryId))?.latestRevisionId
+    const stored = resolvedRevisionId
+      ? await database.get('revisions', [libraryId, resolvedRevisionId])
+      : undefined
+    if (!stored)
+      throw new Error(`Library revision not found: ${libraryId}/${revisionId ?? 'latest'}`)
+    return stored.revision
+  }
+
+  async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
+    const database = await this.#database
+    const transaction = database.transaction(['latest', 'revisions'], 'readwrite')
+    const latest = await transaction.objectStore('latest').get(input.libraryId)
+    if ((input.previousRevisionId ?? null) !== (latest?.latestRevisionId ?? null)) {
+      transaction.abort()
+      throw new Error('Library revision conflict: latest revision has changed')
+    }
+    const revision = await createLibraryRevision(input)
+    const manifest = revision.manifest
+    await transaction.objectStore('revisions').put({
+      libraryId: manifest.libraryId,
+      revisionId: manifest.revisionId,
+      revision
+    })
+    await transaction.objectStore('latest').put(
+      {
+        libraryId: manifest.libraryId,
+        name: manifest.name,
+        latestRevisionId: manifest.revisionId,
+        publishedAt: manifest.publishedAt,
+        assetCount: manifest.assets.length
+      },
+      manifest.libraryId
+    )
+    await transaction.done
+    return revision
+  }
+}
