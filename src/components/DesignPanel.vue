@@ -24,6 +24,7 @@ import StrokeSection from './properties/StrokeSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
+import VariantAuthoringSection from './properties/component-properties/VariantAuthoringSection.vue'
 import FramePresetsSection from './properties/frame-presets/FramePresetsSection.vue'
 import FramePresetSelect from './properties/frame-presets/FramePresetSelect.vue'
 
@@ -125,6 +126,14 @@ const { panels } = useI18n()
     </div>
 
     <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
+    <VariantAuthoringSection
+      v-if="
+        node.type === 'COMPONENT_SET' ||
+        (node.type === 'COMPONENT' &&
+          node.parentId &&
+          store.graph.getNode(node.parentId)?.type === 'COMPONENT_SET')
+      "
+    />
 
     <FramePresetSelect v-if="node.type === 'FRAME'" />
 

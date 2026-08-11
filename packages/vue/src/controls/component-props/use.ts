@@ -14,11 +14,11 @@ import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 function variantOptions(editor: ReturnType<typeof useEditor>, instance: SceneNode, name: string) {
-  const component = instance.componentId ? editor.graph.getNode(instance.componentId) : null
-  const parent = component?.parentId ? editor.graph.getNode(component.parentId) : null
-  const values =
-    parent?.type === 'COMPONENT_SET' ? editor.collectVariantOptions(parent.id).get(name) : null
-  return [...(values ?? [])].map((value) => ({ value, label: value }))
+  return editor.getVariantOptionAvailability(instance.id, name).map(({ value, available }) => ({
+    value,
+    label: value,
+    disabled: !available
+  }))
 }
 
 export function useComponentProperties() {
