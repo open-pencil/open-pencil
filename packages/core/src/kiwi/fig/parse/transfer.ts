@@ -1,14 +1,9 @@
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type {
-  DocumentColorSpace,
-  EnabledLibraryBinding,
-  SceneNode,
-  Variable,
-  VariableCollection
-} from '@open-pencil/scene-graph'
+import type { EnabledLibraryBinding } from '@open-pencil/scene-graph'
 
 import { getLazyFigImportContext, setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
+import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
 export interface SerializedLazyFigImportContext {
   changeMap: Array<[string, InstanceNodeChange]>
@@ -17,17 +12,10 @@ export interface SerializedLazyFigImportContext {
   populatedRootIds: string[]
 }
 
-export interface SerializedSceneGraph {
-  rootId: string
-  nodes: Array<[string, SceneNode]>
-  images: Array<[string, Uint8Array]>
-  variables: Array<[string, Variable]>
-  variableCollections: Array<[string, VariableCollection]>
-  activeMode: Array<[string, string]>
+export interface SerializedSceneGraph extends PortableSceneGraphData {
   instanceIndex: Array<[string, string[]]>
   figKiwiVersion: number | null
   figSchemaDeflated: Uint8Array | null
-  documentColorSpace: DocumentColorSpace
   enabledLibraries?: Array<[string, EnabledLibraryBinding]>
   lazyFigImport?: SerializedLazyFigImportContext
 }

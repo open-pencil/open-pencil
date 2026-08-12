@@ -2,9 +2,11 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   createLibraryRevision,
+  deserializeLibraryRevision,
   diffLibraryManifests,
   extractLibrarySnapshot,
-  MemoryLibraryCatalog
+  MemoryLibraryCatalog,
+  serializeLibraryRevision
 } from '@open-pencil/core/library'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -82,6 +84,22 @@ describe('component library snapshots', () => {
     expect(diffLibraryManifests(base.manifest, next.manifest).map((change) => change.kind)).toEqual(
       ['renamed', 'modified']
     )
+  })
+
+  test('serializes portable revisions without losing component links', async () => {
+    const { graph } = setupLibraryGraph()
+    const revision = await createLibraryRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph
+    })
+    const restored = deserializeLibraryRevision(structuredClone(serializeLibraryRevision(revision)))
+    expect(restored.manifest).toEqual(revision.manifest)
+    const button = [...restored.graph.getAllNodes()].find((node) => node.componentKey === 'button')
+    const nested = button
+      ? restored.graph.getChildren(button.id).find((node) => node.type === 'INSTANCE')
+      : undefined
+    expect(restored.graph.getNode(nested?.componentId ?? '')?.componentKey).toBe('icon')
   })
 
   test('publishes immutable revisions with optimistic conflict detection', async () => {

@@ -4,9 +4,14 @@ import type {
   ComponentLibraryRevision,
   LibraryCatalog,
   LibrarySummary,
-  PublishLibraryInput
+  PublishLibraryInput,
+  SerializedComponentLibraryRevision
 } from '@open-pencil/core/library'
-import { createLibraryRevision } from '@open-pencil/core/library'
+import {
+  createLibraryRevision,
+  deserializeLibraryRevision,
+  serializeLibraryRevision
+} from '@open-pencil/core/library'
 
 const DATABASE_NAME = 'open-pencil-libraries'
 const DATABASE_VERSION = 1
@@ -14,7 +19,7 @@ const DATABASE_VERSION = 1
 interface StoredLibraryRevision {
   libraryId: string
   revisionId: string
-  revision: ComponentLibraryRevision
+  revision: SerializedComponentLibraryRevision
 }
 
 interface LocalLibraryDatabase extends DBSchema {
@@ -61,7 +66,7 @@ export class LocalLibraryCatalog implements LibraryCatalog {
       : undefined
     if (!stored)
       throw new Error(`Library revision not found: ${libraryId}/${revisionId ?? 'latest'}`)
-    return stored.revision
+    return deserializeLibraryRevision(stored.revision)
   }
 
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
@@ -77,7 +82,7 @@ export class LocalLibraryCatalog implements LibraryCatalog {
     await transaction.objectStore('revisions').put({
       libraryId: manifest.libraryId,
       revisionId: manifest.revisionId,
-      revision
+      revision: serializeLibraryRevision(revision)
     })
     await transaction.objectStore('latest').put(
       {
