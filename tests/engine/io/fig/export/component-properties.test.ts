@@ -11,6 +11,46 @@ describe('Figma component property roundtrip', () => {
     await initCodec()
   })
 
+  test('retains OpenPencil library bindings and materialized identity', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.enabledLibraries.set('design-system', {
+      libraryId: 'design-system',
+      revisionId: 'revision-1',
+      enabled: true
+    })
+    const component = graph.createNode('COMPONENT', page.id, {
+      name: 'Remote button',
+      componentKey: 'button',
+      librarySource: {
+        identity: {
+          libraryId: 'design-system',
+          assetKey: 'button',
+          revisionId: 'revision-1'
+        },
+        sourceNodeId: 'source-button',
+        readOnly: true
+      }
+    })
+    component.source.id = '50:1'
+
+    const bytes = await exportFigFile(graph)
+    const parsed = parseFigBuffer(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    )
+    const imported = importNodeChanges(parsed.nodeChanges, parsed.blobs, undefined, {
+      populate: 'all'
+    })
+    expect(imported.enabledLibraries.get('design-system')).toEqual({
+      libraryId: 'design-system',
+      revisionId: 'revision-1',
+      enabled: true
+    })
+    expect(
+      [...imported.getAllNodes()].find((node) => node.name === 'Remote button')?.librarySource
+    ).toEqual(component.librarySource)
+  })
+
   test('retains authored multidimensional variant definitions and combinations', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

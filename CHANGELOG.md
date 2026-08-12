@@ -25,6 +25,7 @@
 - Let AI, MCP, and headless tools discover enabled library components, rank preferred libraries before local assets, and insert components by stable library identity. (#239)
 - Publish the current document as an immutable local component library from the Assets panel, assigning durable collision-safe asset keys on first publication. (#239)
 - Review component-library asset changes before acceptance and undo or redo accepted instance updates as one editor history action. (#239)
+- Preserve enabled-library bindings and materialized definition identities through `.fig` save/reopen, and reject Figma API or AI edits to read-only library definitions. (#239)
 - Create centered frames from Figma-style device and asset presets, or resize selected frames to a preset while preserving their names. (#418)
 - Manage pages by renaming, deleting, and dragging to reorder them in the Pages panel.
 - Create text by dragging a fixed-size text box or clicking for auto-width text.

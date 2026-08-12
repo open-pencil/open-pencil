@@ -1,3 +1,9 @@
+export {
+  assertNodeEditable,
+  getNodeEditCapability,
+  ReadOnlyLibraryDefinitionError
+} from './capabilities'
+export type { NodeEditCapability } from './capabilities'
 export { createDefaultEditorState, createEditor } from './create'
 export type { Editor } from './create'
 export { reapplyInstanceComponentProperties } from './components/properties'
