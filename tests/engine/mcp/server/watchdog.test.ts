@@ -67,7 +67,7 @@ describe('MCP app-attach watchdog', () => {
     handle = null // already closed by the watchdog — afterEach must not double-close
   })
 
-  test('leaves the server running when an app registers before the timeout', async () => {
+  test('keeps a registered app alive past the initial grace period', async () => {
     handle = await startServer({
       httpPort: 0,
       withTcp: true,
@@ -91,5 +91,61 @@ describe('MCP app-attach watchdog', () => {
     } finally {
       browser.close()
     }
+  })
+
+  test('closes the server after a registered app disconnects for the grace period', async () => {
+    handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null,
+      appAttachTimeoutMs: 75
+    })
+    const port = handle.httpPort
+
+    const browser = await connectMockBrowser(port, new SceneGraph(), TEST_AUTH_TOKEN)
+    browser.close()
+    await sleep(300)
+
+    await expect(fetch(`http://127.0.0.1:${port}/health`)).rejects.toThrow()
+    handle = null
+  })
+
+  test('cancels pending shutdown when the app reconnects', async () => {
+    handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      enableEval: false,
+      mcpRoot: null,
+      appAttachTimeoutMs: 150
+    })
+    const port = handle.httpPort
+
+    const firstBrowser = await connectMockBrowser(port, new SceneGraph(), TEST_AUTH_TOKEN)
+    firstBrowser.close()
+    await sleep(50)
+    const secondBrowser = await connectMockBrowser(port, new SceneGraph(), TEST_AUTH_TOKEN)
+    try {
+      await sleep(250)
+      const health = await fetch(`http://127.0.0.1:${port}/health`)
+      expect(health.status).toBe(200)
+      const data = (await health.json()) as HealthResponse
+      expect(data.status).toBe('ok')
+    } finally {
+      secondBrowser.close()
+    }
+  })
+
+  test('rejects timer values that cannot be represented safely', async () => {
+    await expect(
+      startServer({ appAttachTimeoutMs: 2_147_483_648, socketPath: testSocketPath() })
+    ).rejects.toThrow('appAttachTimeoutMs must be an integer')
+    await expect(
+      startServer({ appAttachTimeoutMs: Number.POSITIVE_INFINITY, socketPath: testSocketPath() })
+    ).rejects.toThrow('appAttachTimeoutMs must be an integer')
   })
 })

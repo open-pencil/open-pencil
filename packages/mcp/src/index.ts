@@ -20,9 +20,10 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n` +
       `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origin\n` +
       `  OPENPENCIL_MCP_APP_TIMEOUT_MS  If set, close the server and remove its discovery\n` +
-      `                               file when no app has registered within this many ms of\n` +
-      `                               startup. Unset/0 disables it (default) — do not set this\n` +
-      `                               for manual/CLI use, since nothing may ever register.\n`
+      `                               file after no app is attached for this many ms. The\n` +
+      `                               grace period starts at startup and after disconnects.\n` +
+      `                               Unset/0 disables it (default) — do not set this for\n` +
+      `                               manual/CLI use, since nothing may ever register.\n`
   )
   process.exit(0)
 }
@@ -45,6 +46,7 @@ const port = rawPort
 // the PORT value alone determines whether TCP is enabled (PORT=0 is the kill switch).
 const withTcp = port > 0
 
+const MAX_APP_TIMEOUT_MS = 2_147_483_647
 const rawAppTimeoutText = process.env.OPENPENCIL_MCP_APP_TIMEOUT_MS?.trim()
 let appAttachTimeoutMs: number | undefined
 if (rawAppTimeoutText) {
@@ -55,6 +57,12 @@ if (rawAppTimeoutText) {
     process.exit(1)
   }
   appAttachTimeoutMs = Number.parseInt(rawAppTimeoutText, 10)
+  if (!Number.isSafeInteger(appAttachTimeoutMs) || appAttachTimeoutMs > MAX_APP_TIMEOUT_MS) {
+    process.stderr.write(
+      `Error: OPENPENCIL_MCP_APP_TIMEOUT_MS must be an integer in 0–${MAX_APP_TIMEOUT_MS}, got "${rawAppTimeoutText}"\n`
+    )
+    process.exit(1)
+  }
 }
 
 const handle = await startServer({

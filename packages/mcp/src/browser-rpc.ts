@@ -17,6 +17,8 @@ type BrowserRPCBridgeOptions = {
   onConnectionChange: () => void
 }
 
+type ConnectionListener = (connected: boolean) => void
+
 type BrowserMessage = {
   type: string
   id?: string
@@ -67,12 +69,25 @@ export function createBrowserRPCBridge({ authToken, onConnectionChange }: Browse
   // register message. Unauthenticated clients can only send register;
   // all other message types (request, response) are rejected.
   const authenticatedClients = new Set<WebSocket>()
+  const connectionListeners = new Set<ConnectionListener>()
   let browserWs: WebSocket | null = null
   let browserRegistered = false
   let bridgeClosed = false
 
   function isConnected(): boolean {
     return Boolean(browserWs && browserRegistered)
+  }
+
+  function notifyConnectionChange() {
+    onConnectionChange()
+    const connected = isConnected()
+    for (const listener of connectionListeners) listener(connected)
+  }
+
+  function subscribeConnectionChange(listener: ConnectionListener): () => void {
+    connectionListeners.add(listener)
+    listener(isConnected())
+    return () => connectionListeners.delete(listener)
   }
 
   function notifyConnectionWaiters() {
@@ -221,7 +236,7 @@ export function createBrowserRPCBridge({ authToken, onConnectionChange }: Browse
       }
     }
     notifyConnectionWaiters()
-    onConnectionChange()
+    notifyConnectionChange()
     broadcastRegisterPrompt()
   }
 
@@ -306,7 +321,7 @@ export function createBrowserRPCBridge({ authToken, onConnectionChange }: Browse
     // CLOSING→CLOSED transition), the waiter should keep waiting the full
     // APP_WAIT_TIMEOUT for a reconnect. registerBrowser will resolve it
     // via notifyConnectionWaiters if the browser reconnects in time.
-    onConnectionChange()
+    notifyConnectionChange()
   }
 
   function handleConnection(ws: WebSocket) {
@@ -330,11 +345,13 @@ export function createBrowserRPCBridge({ authToken, onConnectionChange }: Browse
     browserRegistered = false
     clients.clear()
     authenticatedClients.clear()
+    connectionListeners.clear()
   }
 
   return {
     close,
     isConnected,
+    subscribeConnectionChange,
     sendRPC,
     handleConnection,
     handleMessage,

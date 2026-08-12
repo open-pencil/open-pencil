@@ -30,11 +30,10 @@ const APP_VERSION =
 const noop = () => undefined
 const MAX_STARTUP_STDERR_LENGTH = 8_192
 const MCP_EXECUTABLE = 'openpencil-mcp-http'
-// If nothing registers with the spawned server within this window, it closes
-// itself and removes its discovery file. Without this, a server that outlives
-// a crashed/reloaded app keeps squatting the port with a stale discovery file
-// forever — the next launch finds it already listening and defers to it,
-// without ever checking whether an app is actually attached (issue #488).
+// While no app is attached, the spawned server waits this long for a register
+// or reconnect before closing itself and removing its discovery file. This
+// prevents a server that outlives a crashed/reloaded app from squatting the
+// port forever while still allowing brief renderer reloads (issue #488).
 const MCP_APP_ATTACH_TIMEOUT_MS = 30_000
 
 let runtimeAutomationAuthToken: string | null = DEV_AUTOMATION_AUTH_TOKEN

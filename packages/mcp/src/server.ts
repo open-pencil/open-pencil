@@ -71,15 +71,14 @@ export interface ServerOptions {
   authToken?: string | null
   corsOrigin?: string | null
   /**
-   * If set, and no app registers within this many milliseconds of startup,
-   * the server closes itself and removes its discovery file. Guards against
-   * orphaned servers: a server that outlives its spawning app (crash, forced
-   * reload) otherwise keeps squatting its port with a stale discovery file,
-   * and the next app launch finds a server already listening and defers to
-   * it forever without ever checking whether anything is actually attached.
-   * Undefined/0 disables the watchdog — the default, since a bare CLI
-   * invocation for manual testing should not self-terminate just because
-   * nobody connected yet. The desktop app opts in when it spawns the server.
+   * If set, the server starts a grace-period timer while no app is attached.
+   * The timer closes the server and removes its discovery file unless an app
+   * registers before it expires. A later app disconnect starts a new grace
+   * period, which lets app-spawned servers survive brief reloads while still
+   * cleaning up after renderer or process crashes. Undefined/0 disables the
+   * watchdog — the default, since a bare CLI invocation for manual testing
+   * should not self-terminate just because nobody connected yet. The desktop
+   * app opts in when it spawns the server.
    */
   appAttachTimeoutMs?: number
 }
@@ -403,6 +402,7 @@ function buildHandle(
 }
 
 export async function startServer(options: ServerOptions = {}): Promise<ServerHandle> {
+  validateAppAttachTimeout(options.appAttachTimeoutMs)
   const ctx = buildServerContext(options)
 
   // Wire shared connection handling BEFORE starting listeners so that
@@ -458,24 +458,50 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   return handle
 }
 
+const MAX_TIMER_MS = 2_147_483_647
+
+function validateAppAttachTimeout(timeoutMs: number | undefined): void {
+  if (timeoutMs === undefined) return
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 0 || timeoutMs > MAX_TIMER_MS) {
+    throw new RangeError(`appAttachTimeoutMs must be an integer in 0–${MAX_TIMER_MS}`)
+  }
+}
+
 /**
- * See ServerOptions.appAttachTimeoutMs. Fires once, `timeoutMs` after
- * startup: if no app has registered by then, closes the server (which also
- * removes its discovery file via cleanupDiscovery). A later disconnect after
- * a successful registration does not re-arm this — it is a startup grace
- * period, not an ongoing liveness requirement.
+ * Closes an app-spawned server after it remains unattached for the configured
+ * grace period. Registering an app cancels the pending shutdown; disconnecting
+ * starts a fresh grace period so renderer reloads can reconnect without
+ * leaving a permanently orphaned process behind.
  */
 function armAppAttachWatchdog(
   timeoutMs: number | undefined,
   browserRPC: ReturnType<typeof createBrowserRPCBridge>,
   handle: ServerHandle
 ): void {
-  if (!timeoutMs || timeoutMs <= 0) return
-  const timer = setTimeout(() => {
-    if (browserRPC.isConnected()) return
-    void handle.close().catch((e) => {
-      console.error('[MCP] Watchdog: failed to close orphaned (no_app) server:', e)
-    })
-  }, timeoutMs)
-  timer.unref()
+  if (timeoutMs === undefined || timeoutMs === 0) return
+
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let closing = false
+  const clearTimer = () => {
+    if (!timer) return
+    clearTimeout(timer)
+    timer = null
+  }
+  const armTimer = () => {
+    clearTimer()
+    timer = setTimeout(() => {
+      timer = null
+      if (browserRPC.isConnected() || closing) return
+      closing = true
+      unsubscribe()
+      void handle.close().catch((e) => {
+        console.error('[MCP] Watchdog: failed to close orphaned (no_app) server:', e)
+      })
+    }, timeoutMs)
+    timer.unref()
+  }
+  const unsubscribe = browserRPC.subscribeConnectionChange((connected) => {
+    if (connected) clearTimer()
+    else armTimer()
+  })
 }
