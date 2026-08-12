@@ -17,16 +17,9 @@ import { useI18n } from '@open-pencil/vue'
 
 import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
-import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
-import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
-import {
-  openPublishLibraryDialog,
-  readLibraryCatalogSource,
-  readLibraryPriority,
-  StorageLibraryCatalog,
-  useLibraryService
-} from '@/app/libraries'
+import { useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
+import LibraryManagerDialog from '@/components/libraries/LibraryManagerDialog.vue'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -73,7 +66,6 @@ const query = ref('')
 const assetView = ref<AssetView>('grid')
 const detailsOpen = ref(false)
 const librariesOpen = ref(false)
-const librariesLoading = ref(false)
 const applyingUpdateId = ref<string | null>(null)
 const updateReviewLibraryId = ref<string | null>(null)
 const updateReviewOpen = ref(false)
@@ -219,71 +211,8 @@ const selectedAsset = computed(
 const selectedPreviewNodeId = computed(() => selectedAsset.value?.componentId ?? null)
 
 onMounted(() => {
-  const source = readLibraryCatalogSource()
-  if (source === 'storage') void setCatalogSource('storage')
-  else void libraryService.refresh(editor)
+  void libraryService.refresh(editor)
 })
-
-async function setCatalogSource(source: 'local' | 'storage') {
-  librariesLoading.value = true
-  try {
-    if (source === 'local') {
-      libraryService.useLocalCatalog()
-    } else {
-      const providerId = activeStorageProviderID.value
-      if (!storagePreferencesComplete(providerId))
-        throw new Error(panels.value.storageNotConfigured)
-      const objects = createActiveStorageAdapter(providerId).libraryObjects
-      if (!objects) throw new Error(panels.value.storageLibrariesUnavailable)
-      libraryService.useStorageCatalog(new StorageLibraryCatalog(objects))
-    }
-    await libraryService.refresh(editor)
-  } catch (cause) {
-    console.warn('[Libraries] Failed to switch catalog', cause)
-  } finally {
-    librariesLoading.value = false
-  }
-}
-
-async function openLibraries() {
-  librariesOpen.value = true
-  librariesLoading.value = true
-  try {
-    await libraryService.refresh(editor)
-  } finally {
-    librariesLoading.value = false
-  }
-}
-
-function isLibraryEnabled(libraryId: string): boolean {
-  return editor.graph.enabledLibraries.get(libraryId)?.enabled ?? false
-}
-
-async function toggleLibrary(libraryId: string) {
-  librariesLoading.value = true
-  try {
-    if (isLibraryEnabled(libraryId)) await libraryService.disable(editor, libraryId)
-    else await libraryService.enable(editor, libraryId)
-  } finally {
-    librariesLoading.value = false
-  }
-}
-
-function makePreferredLibrary(libraryId: string) {
-  const priorities = libraryService.summaries.value.map((library) =>
-    readLibraryPriority(library.libraryId)
-  )
-  libraryService.setPriority(libraryId, Math.max(0, ...priorities) + 1)
-}
-
-function libraryUpdate(libraryId: string) {
-  return libraryService.updates.value.find((update) => update.libraryId === libraryId)
-}
-
-function reviewLibraryUpdate(libraryId: string) {
-  updateReviewLibraryId.value = libraryId
-  updateReviewOpen.value = true
-}
 
 async function applyReviewedUpdate() {
   const libraryId = updateReviewLibraryId.value
@@ -428,7 +357,7 @@ async function insertSelectedAsset() {
         type="button"
         :class="insertButton.base"
         :aria-label="panels.manageLibraries"
-        @click="openLibraries"
+        @click="librariesOpen = true"
       >
         <icon-lucide-library class="size-3.5" />
       </button>
@@ -585,99 +514,7 @@ async function insertSelectedAsset() {
       </AppPlaceholder>
     </div>
 
-    <AppDialogRoot v-model:open="librariesOpen" size="sm" data-test-id="asset-libraries-dialog">
-      <div class="flex items-center justify-between border-b border-border px-4 py-3">
-        <DialogTitle :class="dialog.title">{{ panels.manageLibraries }}</DialogTitle>
-        <button
-          type="button"
-          class="ml-auto mr-2 h-6 rounded px-2 text-[10px] text-component hover:bg-component/10"
-          @click="openPublishLibraryDialog"
-        >
-          {{ panels.publishLibrary }}
-        </button>
-        <DialogClose
-          class="flex size-7 cursor-pointer items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
-        >
-          <icon-lucide-x class="size-4" />
-        </DialogClose>
-      </div>
-      <div class="flex items-center gap-1 border-b border-border px-3 py-2">
-        <button
-          type="button"
-          class="h-6 rounded px-2 text-[10px] data-[active=true]:bg-hover data-[active=true]:text-surface text-muted"
-          :data-active="libraryService.catalogSource === 'local'"
-          @click="setCatalogSource('local')"
-        >
-          {{ panels.localLibraries }}
-        </button>
-        <button
-          type="button"
-          class="h-6 rounded px-2 text-[10px] data-[active=true]:bg-hover data-[active=true]:text-surface text-muted"
-          :data-active="libraryService.catalogSource === 'storage'"
-          @click="setCatalogSource('storage')"
-        >
-          {{ panels.storageLibraries }}
-        </button>
-      </div>
-      <div class="flex max-h-96 flex-col gap-1 overflow-y-auto p-3">
-        <div
-          v-for="library in libraryService.summaries.value"
-          :key="library.libraryId"
-          class="flex items-center gap-3 rounded border border-border px-3 py-2"
-        >
-          <icon-lucide-library class="size-4 shrink-0 text-component" />
-          <div class="min-w-0 flex-1">
-            <div class="truncate text-xs font-medium text-surface">{{ library.name }}</div>
-            <div class="text-[10px] text-muted">
-              {{ panels.libraryAssetCount({ count: library.assetCount }) }}
-              <span v-if="libraryUpdate(library.libraryId)" class="text-component">
-                · {{ panels.libraryUpdateAvailable }}
-              </span>
-            </div>
-          </div>
-          <button
-            v-if="isLibraryEnabled(library.libraryId)"
-            type="button"
-            :class="insertButton.base"
-            :aria-label="panels.preferLibrary"
-            @click="makePreferredLibrary(library.libraryId)"
-          >
-            <icon-lucide-star
-              class="size-3.5"
-              :class="
-                readLibraryPriority(library.libraryId) > 0 ? 'fill-current text-component' : ''
-              "
-            />
-          </button>
-          <button
-            v-if="libraryUpdate(library.libraryId)"
-            type="button"
-            class="h-6 rounded bg-component/15 px-2 text-[10px] font-medium text-component hover:bg-component/25 disabled:opacity-50"
-            :disabled="applyingUpdateId === library.libraryId"
-            @click="reviewLibraryUpdate(library.libraryId)"
-          >
-            {{ panels.applyLibraryUpdate }}
-          </button>
-          <button
-            type="button"
-            :class="insertButton.base"
-            :disabled="librariesLoading"
-            :aria-label="
-              isLibraryEnabled(library.libraryId) ? panels.disableLibrary : panels.enableLibrary
-            "
-            @click="toggleLibrary(library.libraryId)"
-          >
-            <icon-lucide-check v-if="isLibraryEnabled(library.libraryId)" class="size-3.5" />
-            <icon-lucide-plus v-else class="size-3.5" />
-          </button>
-        </div>
-        <AppPlaceholder
-          v-if="!librariesLoading && libraryService.summaries.value.length === 0"
-          :label="panels.noLibraries"
-          size="compact"
-        />
-      </div>
-    </AppDialogRoot>
+    <LibraryManagerDialog v-model="librariesOpen" />
 
     <AppDialogRoot v-model:open="updateReviewOpen" size="sm">
       <div class="flex items-center justify-between border-b border-border px-4 py-3">

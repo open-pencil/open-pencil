@@ -282,6 +282,10 @@ export class LibraryService implements ComponentCatalog {
     await this.refresh(editor)
   }
 
+  async applyAllUpdates(editor: EditorStore): Promise<void> {
+    for (const update of this.#updates.value) await this.applyUpdate(editor, update.libraryId)
+  }
+
   async applyAssetUpdate(editor: EditorStore, libraryId: string, assetKey: string): Promise<void> {
     const summary = this.#summaries.value.find((item) => item.libraryId === libraryId)
     if (!summary) return
