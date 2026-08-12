@@ -24,6 +24,8 @@ export type {
   StorageDocumentBinding,
   StorageDocumentMetadata,
   StorageFieldID,
+  LibraryObjectStore,
+  LibraryObjectSummary,
   StoragePreferenceField,
   StorageProviderID,
   StorageProviderRegistration,

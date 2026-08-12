@@ -264,6 +264,22 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
           return (await getObjectRange(config, figKey, start, endExclusive)) ?? new Uint8Array()
         }
       })
+    },
+
+    libraryObjects: {
+      async getObject(key) {
+        return getObject(await resolveConfig(runtime), key)
+      },
+      async putObject(key, bytes, contentType) {
+        await putObject(await resolveConfig(runtime), key, bytes, contentType)
+      },
+      async listObjects(prefix) {
+        return (await listObjects(await resolveConfig(runtime), prefix)).map((object) => ({
+          key: object.key,
+          size: object.size,
+          etag: null
+        }))
+      }
     }
   }
 }
