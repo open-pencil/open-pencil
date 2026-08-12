@@ -60,11 +60,11 @@ v0.14.0 established several foundations that earlier versions of this roadmap tr
 - Add workspace organization for projects, folders, templates, search, indexing, and server-generated previews while preserving stable document identity.
 - Add version history with automatic snapshots, named checkpoints, restore, retention controls, and an auditable record of important document and membership changes.
 - Provide a durable collaboration relay for deterministic initial sync, presence, reconnects, and restricted-network environments while keeping direct local/P2P workflows available where practical.
-- Publish a production-ready self-hosted deployment for teams that need their own storage, identity, network boundary, and retention policy.
-- Define a supported self-hosting operations contract: container deployment, PostgreSQL and S3-compatible storage, migrations, upgrades, backups, health checks, observability, and documented recovery procedures.
+- Publish a production-ready self-hosted deployment for teams that need their own storage, identity, network boundary, data location, and retention policy.
+- Make self-hosting maintainable with guided deployment, upgrades, backups, health monitoring, observability, and documented recovery procedures.
 - Provide explicit data-governance controls for export, deletion, encryption, retention, auditability, and deployment-region or residency requirements.
-- Keep AI and media capabilities BYOK: self-hosted and cloud users can connect their own model/provider credentials, with secrets resolved at operation time and never embedded in documents.
-- Define portable workspace and provider APIs so documents can move between device-only, OpenPencil Cloud, self-hosted, and user-owned S3-compatible storage without changing document identity.
+- Keep AI and media capabilities BYOK so Cloud and self-hosted users connect and control their own model and provider credentials.
+- Let documents move between device-only, OpenPencil Cloud, self-hosted, and user-owned storage without losing identity or history.
 - Add explicit conflict, offline, sync-health, migration, backup, quota, and recovery UX for every remote deployment mode.
 
 ### Agent workflows
@@ -123,7 +123,7 @@ v0.14.0 established several foundations that earlier versions of this roadmap tr
 - Comments: pins, threads, resolution state, and collaboration-aware display.
 - Shared libraries: publish, consume, and update components/styles across files.
 - Platform asset libraries: use licensed system-native and third-party icon sources, including SF Symbols where platform and redistribution rules allow, alongside the existing Iconify/Lucide workflow.
-- Figma Slides (`.deck`) interoperability: import/export, slide editing, presentation, speaker notes, and filmstrip workflows. This is an active exploration in [PR #474](https://github.com/open-pencil/open-pencil/pull/474), but ranks below core Figma Design fidelity, reliability, Cloud/self-hosting, and international-text work.
+- Figma Slides (`.deck`) interoperability: import/export, slide editing, presentation, speaker notes, and filmstrip workflows. This ranks below core Figma Design fidelity, reliability, Cloud/self-hosting, and international-text work.
 - Platform polish: Windows code signing, PWA support, packaged updater improvements, and desktop-side MCP bundling.
 
 ## Non-goals
