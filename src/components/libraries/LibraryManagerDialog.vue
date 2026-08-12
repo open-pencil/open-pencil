@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
@@ -13,6 +13,8 @@ import {
   StorageLibraryCatalog,
   useLibraryService
 } from '@/app/libraries'
+import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
+import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
@@ -25,17 +27,24 @@ const section = ref<'browse' | 'updates'>('browse')
 const loading = ref(false)
 const showAllPages = ref(false)
 const applying = ref<string | null>(null)
+const updateGroups = ref<LibraryAssetUpdateGroup[]>([])
 const navigationClass =
   'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
 
-const updateAssets = computed(() =>
-  service.updates.value.flatMap((update) =>
-    update.changes.flatMap((change) =>
-      change.kind === 'modified' || change.kind === 'renamed'
-        ? [{ libraryId: update.libraryId, assetKey: change.asset.key, name: change.asset.name }]
-        : []
-    )
-  )
+const visibleUpdateGroups = computed(() =>
+  scopeLibraryUpdateGroups(editor, updateGroups.value, showAllPages.value)
+)
+
+async function refreshUpdates() {
+  updateGroups.value = await service.getUpdateGroups(editor)
+}
+
+watch(
+  () => [open.value, service.updates.value, editor.state.currentPageId] as const,
+  ([isOpen]) => {
+    if (isOpen) void refreshUpdates()
+  },
+  { immediate: true }
 )
 
 onMounted(() => {
@@ -57,6 +66,7 @@ async function setSource(source: 'local' | 'storage') {
       service.useStorageCatalog(new StorageLibraryCatalog(objects))
     }
     await service.refresh(editor)
+    await refreshUpdates()
   } finally {
     loading.value = false
   }
@@ -79,7 +89,11 @@ function preferLibrary(libraryId: string) {
 async function updateAsset(libraryId: string, assetKey: string) {
   applying.value = `${libraryId}:${assetKey}`
   try {
-    await service.applyAssetUpdate(editor, libraryId, assetKey)
+    const group = visibleUpdateGroups.value.find(
+      (item) => item.libraryId === libraryId && item.assetKey === assetKey
+    )
+    if (group) await service.applyUpdatePlans(editor, group.plans, `Update ${group.name}`)
+    await refreshUpdates()
   } finally {
     applying.value = null
   }
@@ -88,7 +102,9 @@ async function updateAsset(libraryId: string, assetKey: string) {
 async function updateAll() {
   applying.value = 'all'
   try {
-    await service.applyAllUpdates(editor)
+    const plans = visibleUpdateGroups.value.flatMap((group) => group.plans)
+    await service.applyUpdatePlans(editor, plans, 'Update all library assets')
+    await refreshUpdates()
   } finally {
     applying.value = null
   }
@@ -126,9 +142,9 @@ async function updateAll() {
         >
           <icon-lucide-refresh-cw class="size-3.5" /> {{ panels.libraryUpdates }}
           <span
-            v-if="updateAssets.length"
+            v-if="visibleUpdateGroups.length"
             class="ml-auto rounded-full bg-accent px-1.5 text-[10px] text-white"
-            >{{ updateAssets.length }}</span
+            >{{ visibleUpdateGroups.length }}</span
           >
         </button>
       </nav>
@@ -195,14 +211,19 @@ async function updateAll() {
         <div class="min-h-0 flex-1 overflow-y-auto p-4">
           <h3 class="mb-3 text-sm font-semibold text-surface">{{ panels.libraryUpdates }}</h3>
           <div
-            v-for="asset in updateAssets"
+            v-for="asset in visibleUpdateGroups"
             :key="`${asset.libraryId}:${asset.assetKey}`"
             class="flex items-center gap-3 border-b border-border py-3"
           >
-            <icon-lucide-component class="size-4 text-component" /><span
-              class="min-w-0 flex-1 truncate text-xs text-surface"
-              >{{ asset.name }}</span
-            >
+            <icon-lucide-component class="size-4 text-component" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-xs text-surface">{{ asset.name }}</p>
+              <p class="text-[10px] text-muted">
+                {{ asset.plans.length }} instances<span v-if="asset.fallbackCount">
+                  · {{ asset.fallbackCount }} fallbacks</span
+                >
+              </p>
+            </div>
             <button
               type="button"
               class="rounded border border-border px-3 py-1 text-xs"
@@ -213,7 +234,7 @@ async function updateAll() {
             </button>
           </div>
           <AppPlaceholder
-            v-if="updateAssets.length === 0"
+            v-if="visibleUpdateGroups.length === 0"
             :label="panels.noLibraryUpdates"
             size="compact"
           />
@@ -227,7 +248,7 @@ async function updateAll() {
           <button
             type="button"
             class="rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-50"
-            :disabled="updateAssets.length === 0 || applying !== null"
+            :disabled="visibleUpdateGroups.length === 0 || applying !== null"
             @click="updateAll"
           >
             {{ panels.updateAll }}

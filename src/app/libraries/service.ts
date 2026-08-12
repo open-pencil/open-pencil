@@ -31,6 +31,7 @@ import {
   writeLibraryCatalogSource,
   writeLibraryPriority
 } from '@/app/libraries/preferences'
+import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
 
 export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
 
@@ -282,8 +283,44 @@ export class LibraryService implements ComponentCatalog {
     await this.refresh(editor)
   }
 
+  async getUpdateGroups(editor: EditorStore): Promise<LibraryAssetUpdateGroup[]> {
+    const groups: LibraryAssetUpdateGroup[] = []
+    for (const summary of this.#summaries.value) {
+      const latest = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
+      for (const asset of latest.manifest.assets) {
+        materializeLibraryAsset(editor.graph, latest, asset.key)
+        const plans = planOutdatedLibraryInstances(editor.graph, latest, new Set([asset.key]))
+        if (plans.length === 0) continue
+        groups.push({
+          libraryId: summary.libraryId,
+          assetKey: asset.key,
+          name: asset.name,
+          plans,
+          currentPageCount: plans.length,
+          allPagesCount: plans.length,
+          fallbackCount: plans.filter((plan) => plan.fallback).length
+        })
+      }
+    }
+    return groups
+  }
+
   async applyAllUpdates(editor: EditorStore): Promise<void> {
-    for (const update of this.#updates.value) await this.applyUpdate(editor, update.libraryId)
+    const groups = await this.getUpdateGroups(editor)
+    const plans = groups.flatMap((group) => group.plans)
+    if (plans.length === 0) return
+    this.#applyPlans(editor, plans, 'Update all library assets')
+    await this.refresh(editor)
+  }
+
+  async applyUpdatePlans(
+    editor: EditorStore,
+    plans: ReturnType<typeof planOutdatedLibraryInstances>,
+    label = 'Update library assets'
+  ): Promise<void> {
+    if (plans.length === 0) return
+    this.#applyPlans(editor, plans, label)
+    await this.refresh(editor)
   }
 
   async applyAssetUpdate(editor: EditorStore, libraryId: string, assetKey: string): Promise<void> {
