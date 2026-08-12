@@ -111,7 +111,7 @@ describe('effective generated FIG text layout', () => {
       componentId: 'parent',
       figmaDerivedLayout: { width: 120, height: 80 }
     })
-    const generatedText = graph.createNode('TEXT', parent.id, {
+    graph.createNode('TEXT', parent.id, {
       width: 100,
       height: 20,
       text: source.text,
