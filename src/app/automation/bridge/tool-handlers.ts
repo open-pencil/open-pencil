@@ -1,11 +1,12 @@
 import { renderTreeNode } from '@open-pencil/core/design-jsx'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import { ALL_TOOLS } from '@open-pencil/core/tools'
+import { ALL_TOOLS, registerComponentCatalog } from '@open-pencil/core/tools'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { ensureGraphFonts } from '@/app/editor/fonts'
+import { useLibraryService } from '@/app/libraries'
 
 type FigmaFactory = (store: AutomationTarget['store'], pageId?: string) => FigmaAPI
 
@@ -43,6 +44,9 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     const def = ALL_TOOLS.find((t) => t.name === toolName)
     if (!def) throw new Error(`Unknown tool: ${toolName}`)
     const store = target.store
+    const libraryService = useLibraryService()
+    libraryService.bindEditor(store)
+    registerComponentCatalog(store.graph, libraryService)
     const figma = makeFigma(store, target.pageId)
     const result = await def.execute(figma, toolArgs)
 
