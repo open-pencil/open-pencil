@@ -5,6 +5,7 @@ import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
   libraryUpdateImpact,
+  planOutdatedLibraryInstances,
   planLibraryInstanceUpdates,
   summarizeLibraryUpdate
 } from '@open-pencil/core/library'
@@ -256,6 +257,63 @@ export class LibraryService implements ComponentCatalog {
       inverse: restorePrevious
     })
     await this.refresh(editor)
+  }
+
+  async applyInstanceUpdate(editor: EditorStore, instanceId: string): Promise<void> {
+    const instance = editor.graph.getNode(instanceId)
+    const component =
+      instance?.type === 'INSTANCE' && instance.componentId
+        ? editor.graph.getNode(instance.componentId)
+        : null
+    const identity = component?.librarySource?.identity
+    if (!identity) return
+    const summary = this.#summaries.value.find((item) => item.libraryId === identity.libraryId)
+    if (!summary || summary.latestRevisionId === identity.revisionId) return
+    const latest = await this.#getRevision(identity.libraryId, summary.latestRevisionId)
+    materializeLibraryAsset(editor.graph, latest, identity.assetKey)
+    const plans = planOutdatedLibraryInstances(
+      editor.graph,
+      latest,
+      new Set([identity.assetKey]),
+      new Set([instanceId])
+    )
+    if (plans.length === 0) return
+    this.#applyPlans(editor, plans, `Update ${component.name}`)
+    await this.refresh(editor)
+  }
+
+  async applyAssetUpdate(editor: EditorStore, libraryId: string, assetKey: string): Promise<void> {
+    const summary = this.#summaries.value.find((item) => item.libraryId === libraryId)
+    if (!summary) return
+    const latest = await this.#getRevision(libraryId, summary.latestRevisionId)
+    materializeLibraryAsset(editor.graph, latest, assetKey)
+    const plans = planOutdatedLibraryInstances(editor.graph, latest, new Set([assetKey]))
+    if (plans.length === 0) return
+    this.#applyPlans(editor, plans, 'Update library asset')
+    await this.refresh(editor)
+  }
+
+  #applyPlans(
+    editor: EditorStore,
+    plans: ReturnType<typeof planOutdatedLibraryInstances>,
+    label: string
+  ): void {
+    const apply = () => {
+      for (const plan of plans) {
+        editor.graph.swapInstanceComponent(plan.instanceId, plan.componentId)
+        reapplyInstanceComponentProperties(editor, plan.instanceId)
+      }
+      editor.requestRender()
+    }
+    const restore = () => {
+      for (const plan of plans) {
+        editor.graph.swapInstanceComponent(plan.instanceId, plan.previousComponentId)
+        reapplyInstanceComponentProperties(editor, plan.instanceId)
+      }
+      editor.requestRender()
+    }
+    apply()
+    editor.pushUndoEntry({ label, forward: apply, inverse: restore })
   }
 
   async publish(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
