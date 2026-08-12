@@ -70,6 +70,18 @@ export interface ServerOptions {
   /** Auth token for /mcp and /rpc endpoints. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. */
   authToken?: string | null
   corsOrigin?: string | null
+  /**
+   * If set, and no app registers within this many milliseconds of startup,
+   * the server closes itself and removes its discovery file. Guards against
+   * orphaned servers: a server that outlives its spawning app (crash, forced
+   * reload) otherwise keeps squatting its port with a stale discovery file,
+   * and the next app launch finds a server already listening and defers to
+   * it forever without ever checking whether anything is actually attached.
+   * Undefined/0 disables the watchdog — the default, since a bare CLI
+   * invocation for manual testing should not self-terminate just because
+   * nobody connected yet. The desktop app opts in when it spawns the server.
+   */
+  appAttachTimeoutMs?: number
 }
 
 export interface ServerHandle {
@@ -429,7 +441,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   const resolvedSocketPath = state.socketResult?.resolvedPath ?? null
   const actualHttpPort = state.tcpResult?.port ?? 0
 
-  return buildHandle(
+  const handle = buildHandle(
     ctx.app,
     ctx.wss,
     ctx.browserRPC,
@@ -440,4 +452,30 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
     ctx.authToken,
     startedAt
   )
+
+  armAppAttachWatchdog(options.appAttachTimeoutMs, ctx.browserRPC, handle)
+
+  return handle
+}
+
+/**
+ * See ServerOptions.appAttachTimeoutMs. Fires once, `timeoutMs` after
+ * startup: if no app has registered by then, closes the server (which also
+ * removes its discovery file via cleanupDiscovery). A later disconnect after
+ * a successful registration does not re-arm this — it is a startup grace
+ * period, not an ongoing liveness requirement.
+ */
+function armAppAttachWatchdog(
+  timeoutMs: number | undefined,
+  browserRPC: ReturnType<typeof createBrowserRPCBridge>,
+  handle: ServerHandle
+): void {
+  if (!timeoutMs || timeoutMs <= 0) return
+  const timer = setTimeout(() => {
+    if (browserRPC.isConnected()) return
+    void handle.close().catch((e) => {
+      console.error('[MCP] Watchdog: failed to close orphaned (no_app) server:', e)
+    })
+  }, timeoutMs)
+  timer.unref()
 }

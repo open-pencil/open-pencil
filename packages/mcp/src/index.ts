@@ -18,7 +18,11 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for MCP and RPC auth\n` +
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: current working directory)\n` +
       `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n` +
-      `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origin\n`
+      `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origin\n` +
+      `  OPENPENCIL_MCP_APP_TIMEOUT_MS  If set, close the server and remove its discovery\n` +
+      `                               file when no app has registered within this many ms of\n` +
+      `                               startup. Unset/0 disables it (default) — do not set this\n` +
+      `                               for manual/CLI use, since nothing may ever register.\n`
   )
   process.exit(0)
 }
@@ -40,6 +44,18 @@ const port = rawPort
 // OPENPENCIL_MCP_TCP is accepted for backward compat but has no effect —
 // the PORT value alone determines whether TCP is enabled (PORT=0 is the kill switch).
 const withTcp = port > 0
+
+const rawAppTimeoutText = process.env.OPENPENCIL_MCP_APP_TIMEOUT_MS?.trim()
+let appAttachTimeoutMs: number | undefined
+if (rawAppTimeoutText) {
+  if (!/^\d+$/.test(rawAppTimeoutText)) {
+    process.stderr.write(
+      `Error: OPENPENCIL_MCP_APP_TIMEOUT_MS must be a non-negative integer, got "${rawAppTimeoutText}"\n`
+    )
+    process.exit(1)
+  }
+  appAttachTimeoutMs = Number.parseInt(rawAppTimeoutText, 10)
+}
 
 const handle = await startServer({
   httpPort: withTcp ? port : 0,
@@ -64,7 +80,8 @@ const handle = await startServer({
     }
     return trimmed
   })(),
-  corsOrigin: process.env.OPENPENCIL_MCP_CORS_ORIGIN?.trim() || null
+  corsOrigin: process.env.OPENPENCIL_MCP_CORS_ORIGIN?.trim() || null,
+  appAttachTimeoutMs
 })
 
 process.stderr.write(`OpenPencil MCP server\n`)
