@@ -25,6 +25,11 @@ import type {
 import type { EditorStore } from '@/app/editor/session'
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
 import { RoutedLibraryCatalog, type LibraryCatalogSource } from '@/app/libraries/catalog/routed'
+import {
+  readLibraryPriority,
+  writeLibraryCatalogSource,
+  writeLibraryPriority
+} from '@/app/libraries/preferences'
 
 export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
 
@@ -36,7 +41,6 @@ export class LibraryService implements ComponentCatalog {
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
   readonly #updateImpacts = shallowRef(new Map<string, LibraryUpdateImpact>())
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
-  readonly #priorities = new Map<string, number>()
   #activeEditor: EditorStore | null = null
 
   constructor(catalog?: LibraryCatalog) {
@@ -56,10 +60,12 @@ export class LibraryService implements ComponentCatalog {
 
   useLocalCatalog(): void {
     this.#routedCatalog?.useLocal()
+    writeLibraryCatalogSource('local')
   }
 
   useStorageCatalog(catalog: LibraryCatalog): void {
     this.#routedCatalog?.useStorage(catalog)
+    writeLibraryCatalogSource('storage')
   }
 
   get summaries() {
@@ -105,7 +111,7 @@ export class LibraryService implements ComponentCatalog {
             revisionId: revision.manifest.revisionId,
             asset,
             enabled: binding?.enabled ?? false,
-            priority: this.#priorities.get(summary.libraryId) ?? 0
+            priority: readLibraryPriority(summary.libraryId)
           }))
       )
     }
@@ -113,7 +119,7 @@ export class LibraryService implements ComponentCatalog {
   }
 
   setPriority(libraryId: string, priority: number): void {
-    this.#priorities.set(libraryId, priority)
+    writeLibraryPriority(libraryId, priority)
   }
 
   bindEditor(editor: EditorStore): void {
@@ -155,7 +161,7 @@ export class LibraryService implements ComponentCatalog {
           revisionId: binding.revisionId,
           asset,
           enabled: true,
-          priority: this.#priorities.get(binding.libraryId) ?? 0
+          priority: readLibraryPriority(binding.libraryId)
         }))
       )
     }

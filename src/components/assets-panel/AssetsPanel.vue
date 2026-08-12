@@ -19,7 +19,13 @@ import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
 import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
 import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
-import { openPublishLibraryDialog, StorageLibraryCatalog, useLibraryService } from '@/app/libraries'
+import {
+  openPublishLibraryDialog,
+  readLibraryCatalogSource,
+  readLibraryPriority,
+  StorageLibraryCatalog,
+  useLibraryService
+} from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
@@ -213,7 +219,9 @@ const selectedAsset = computed(
 const selectedPreviewNodeId = computed(() => selectedAsset.value?.componentId ?? null)
 
 onMounted(() => {
-  void libraryService.refresh(editor)
+  const source = readLibraryCatalogSource()
+  if (source === 'storage') void setCatalogSource('storage')
+  else void libraryService.refresh(editor)
 })
 
 async function setCatalogSource(source: 'local' | 'storage') {
@@ -259,6 +267,13 @@ async function toggleLibrary(libraryId: string) {
   } finally {
     librariesLoading.value = false
   }
+}
+
+function makePreferredLibrary(libraryId: string) {
+  const priorities = libraryService.summaries.value.map((library) =>
+    readLibraryPriority(library.libraryId)
+  )
+  libraryService.setPriority(libraryId, Math.max(0, ...priorities) + 1)
 }
 
 function libraryUpdate(libraryId: string) {
@@ -620,6 +635,20 @@ async function insertSelectedAsset() {
               </span>
             </div>
           </div>
+          <button
+            v-if="isLibraryEnabled(library.libraryId)"
+            type="button"
+            :class="insertButton.base"
+            :aria-label="panels.preferLibrary"
+            @click="makePreferredLibrary(library.libraryId)"
+          >
+            <icon-lucide-star
+              class="size-3.5"
+              :class="
+                readLibraryPriority(library.libraryId) > 0 ? 'fill-current text-component' : ''
+              "
+            />
+          </button>
           <button
             v-if="libraryUpdate(library.libraryId)"
             type="button"

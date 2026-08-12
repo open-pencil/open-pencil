@@ -243,6 +243,7 @@
   "storageLibraries": "Storage",
   "storageNotConfigured": "Storage is not configured",
   "storageLibrariesUnavailable": "This storage provider does not support libraries",
+  "preferLibrary": "Prefer this library",
   "assetVariantSummary": "{count} 個のバリアント · {names}",
   "duplicateVariantValues": "重複したバリアント値",
   "variantPropertyName": "Property name",

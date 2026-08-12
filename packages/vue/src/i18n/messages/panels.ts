@@ -39,6 +39,7 @@ export const panelMessageDefaults = {
   storageLibraries: 'Storage',
   storageNotConfigured: 'Storage is not configured',
   storageLibrariesUnavailable: 'This storage provider does not support libraries',
+  preferLibrary: 'Prefer this library',
   assetVariantSummary: params('{count} variants · {names}'),
   duplicateVariantValues: 'Duplicate variant values',
   variantPropertyName: 'Property name',
