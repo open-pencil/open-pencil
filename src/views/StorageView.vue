@@ -74,7 +74,18 @@ watch(settingsDialogOpen, (open, wasOpen) => {
         <h1 class="text-sm font-semibold">{{ dialogs.storageWorkspace }}</h1>
         <p class="text-[10px] text-muted">{{ activeStorageProviderID }}</p>
       </div>
-      <div class="ml-auto flex gap-2">
+      <div class="ml-auto flex items-center gap-2">
+        <Tip v-if="configured" :label="dialogs.refresh">
+          <button
+            type="button"
+            class="flex size-7 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface disabled:opacity-50"
+            :aria-label="dialogs.refresh"
+            :disabled="loading"
+            @click="refresh"
+          >
+            <icon-lucide-refresh-cw class="size-3.5" :class="{ 'animate-spin': loading }" />
+          </button>
+        </Tip>
         <button
           type="button"
           class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
@@ -95,23 +106,9 @@ watch(settingsDialogOpen, (open, wasOpen) => {
     </header>
 
     <section class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col p-6">
-      <div class="mb-4 flex shrink-0 items-center justify-between">
-        <p v-if="errorMessage && configured" class="text-xs text-danger" role="alert">
-          {{ errorMessage }}
-        </p>
-        <span v-else />
-        <Tip v-if="configured" :label="dialogs.refresh">
-          <button
-            type="button"
-            class="flex size-7 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface disabled:opacity-50"
-            :aria-label="dialogs.refresh"
-            :disabled="loading"
-            @click="refresh"
-          >
-            <icon-lucide-refresh-cw class="size-3.5" :class="{ 'animate-spin': loading }" />
-          </button>
-        </Tip>
-      </div>
+      <p v-if="errorMessage && configured" class="mb-4 shrink-0 text-xs text-danger" role="alert">
+        {{ errorMessage }}
+      </p>
 
       <div
         v-if="documents.length"

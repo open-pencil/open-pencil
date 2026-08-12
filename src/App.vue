@@ -4,6 +4,7 @@ import { useHead } from '@unhead/vue'
 import { TooltipProvider } from 'reka-ui'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
+import AppShell from '@/components/Shell/AppShell.vue'
 import AppToast from '@/components/Shell/AppToast.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -32,7 +33,9 @@ onMounted(() => {
 
 <template>
   <TooltipProvider :delay-duration="400">
-    <RouterView />
+    <AppShell>
+      <RouterView />
+    </AppShell>
     <SettingsDialog />
     <AppToast />
   </TooltipProvider>

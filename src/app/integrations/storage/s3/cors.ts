@@ -103,8 +103,10 @@ export function isLikelyCORSOrNetworkError(error: unknown): boolean {
 }
 
 export function formatBrowserCORSHelpMessage(): string {
+  const origin = IS_BROWSER ? window.location.origin : WEB_APP_ORIGIN
   return (
-    'CORS issue: the browser blocked access to your bucket. ' +
-    'Click “Copy CORS JSON”, paste it into your bucket CORS settings, wait about a minute, then try again.'
+    `The browser could not reach this bucket from ${origin}. ` +
+    'Your bucket may not allow requests from this site, or the endpoint may be unavailable. ' +
+    'Add this site to the bucket’s allowed CORS origins, then try again.'
   )
 }
