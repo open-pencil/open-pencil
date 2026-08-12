@@ -1,6 +1,7 @@
 import type { EditorCommandId } from '@open-pencil/vue'
 
 export type AppMenuTarget = 'all' | 'browser' | 'native'
+export type AppMenuHandler = 'editor' | 'shell'
 
 export interface AppMenuActionItem {
   type?: 'item'
@@ -11,6 +12,7 @@ export interface AppMenuActionItem {
   command?: EditorCommandId
   checkbox?: boolean
   target?: AppMenuTarget
+  handler?: AppMenuHandler
   sub?: AppMenuEntry[]
 }
 
@@ -33,7 +35,7 @@ export const APP_MENU_SCHEMA = [
     items: [
       { id: 'new', label: 'New', shortcut: 'MOD+N' },
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
-      { id: 'open-storage-workspace', label: 'Open Storage Workspace…' },
+      { id: 'open-storage-workspace', label: 'Open Storage Workspace…', handler: 'shell' },
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
@@ -124,15 +126,15 @@ export const APP_MENU_SCHEMA = [
         id: 'theme',
         label: 'Theme',
         sub: [
-          { id: 'theme-light', label: 'Light', checkbox: true },
-          { id: 'theme-dark', label: 'Dark', checkbox: true },
-          { id: 'theme-auto', label: 'Auto', checkbox: true }
+          { id: 'theme-light', label: 'Light', checkbox: true, handler: 'shell' },
+          { id: 'theme-dark', label: 'Dark', checkbox: true, handler: 'shell' },
+          { id: 'theme-auto', label: 'Auto', checkbox: true, handler: 'shell' }
         ]
       },
       { id: 'language', label: 'Language', target: 'browser' },
       { type: 'separator' },
       { id: 'toggle-ui', label: 'Toggle UI', shortcut: 'MOD+\\' },
-      { id: 'settings', label: 'Settings…' },
+      { id: 'settings', label: 'Settings…', handler: 'shell' },
       { type: 'separator' },
       { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
       {
