@@ -67,6 +67,8 @@ const detailsOpen = ref(false)
 const librariesOpen = ref(false)
 const librariesLoading = ref(false)
 const applyingUpdateId = ref<string | null>(null)
+const updateReviewLibraryId = ref<string | null>(null)
+const updateReviewOpen = ref(false)
 const selectedAssetId = ref<string | null>(null)
 const previewBlob = shallowRef<Blob | null>(null)
 const previewURL = useObjectUrl(previewBlob)
@@ -82,6 +84,13 @@ const viewOptions = computed(() => [
   { value: 'list', label: panels.value.listView }
 ])
 const viewUI = { root: 'w-16', item: 'px-1' }
+const reviewedUpdate = computed(() =>
+  updateReviewLibraryId.value
+    ? (libraryService.updates.value.find(
+        (update) => update.libraryId === updateReviewLibraryId.value
+      ) ?? null)
+    : null
+)
 
 function componentSetVariantInfo(componentSetId: string) {
   return [...editor.collectVariantOptions(componentSetId)].map(([name, values]) => ({
@@ -225,6 +234,18 @@ async function toggleLibrary(libraryId: string) {
 
 function libraryUpdate(libraryId: string) {
   return libraryService.updates.value.find((update) => update.libraryId === libraryId)
+}
+
+function reviewLibraryUpdate(libraryId: string) {
+  updateReviewLibraryId.value = libraryId
+  updateReviewOpen.value = true
+}
+
+async function applyReviewedUpdate() {
+  const libraryId = updateReviewLibraryId.value
+  if (!libraryId) return
+  await applyLibraryUpdate(libraryId)
+  updateReviewOpen.value = false
 }
 
 async function applyLibraryUpdate(libraryId: string) {
@@ -557,7 +578,7 @@ async function insertSelectedAsset() {
             type="button"
             class="h-6 rounded bg-component/15 px-2 text-[10px] font-medium text-component hover:bg-component/25 disabled:opacity-50"
             :disabled="applyingUpdateId === library.libraryId"
-            @click="applyLibraryUpdate(library.libraryId)"
+            @click="reviewLibraryUpdate(library.libraryId)"
           >
             {{ panels.applyLibraryUpdate }}
           </button>
@@ -579,6 +600,47 @@ async function insertSelectedAsset() {
           :label="panels.noLibraries"
           size="compact"
         />
+      </div>
+    </AppDialogRoot>
+
+    <AppDialogRoot v-model:open="updateReviewOpen" size="sm">
+      <div class="flex items-center justify-between border-b border-border px-4 py-3">
+        <DialogTitle :class="dialog.title">{{ panels.reviewLibraryUpdate }}</DialogTitle>
+        <DialogClose
+          class="flex size-7 items-center justify-center rounded text-muted hover:bg-hover"
+        >
+          <icon-lucide-x class="size-4" />
+        </DialogClose>
+      </div>
+      <div v-if="reviewedUpdate" class="flex max-h-80 flex-col gap-1 overflow-y-auto p-3">
+        <div
+          v-for="(change, index) in reviewedUpdate.changes"
+          :key="`${change.kind}:${index}`"
+          class="flex items-center gap-2 rounded border border-border px-2 py-1.5"
+        >
+          <span class="rounded bg-hover px-1.5 py-0.5 text-[9px] font-medium text-muted uppercase">
+            {{ change.kind }}
+          </span>
+          <span class="min-w-0 truncate text-xs text-surface">
+            {{ change.kind === 'removed' ? change.asset.name : change.asset.name }}
+          </span>
+        </div>
+        <p v-if="reviewedUpdate.changes.length === 0" class="text-xs text-muted">
+          {{ panels.noLibraryAssetChanges }}
+        </p>
+      </div>
+      <div class="flex justify-end gap-2 border-t border-border px-4 py-3">
+        <DialogClose class="h-7 rounded px-3 text-xs text-muted hover:bg-hover">
+          {{ panels.cancel }}
+        </DialogClose>
+        <button
+          type="button"
+          class="h-7 rounded bg-accent px-3 text-xs text-white disabled:opacity-50"
+          :disabled="!reviewedUpdate || applyingUpdateId === updateReviewLibraryId"
+          @click="applyReviewedUpdate"
+        >
+          {{ panels.applyLibraryUpdate }}
+        </button>
       </div>
     </AppDialogRoot>
 

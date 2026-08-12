@@ -24,6 +24,8 @@ export const panelMessageDefaults = {
   libraryAssetCount: params('{count} assets'),
   libraryUpdateAvailable: 'Update available',
   applyLibraryUpdate: 'Apply update',
+  reviewLibraryUpdate: 'Review library update',
+  noLibraryAssetChanges: 'No asset changes',
   publishLibrary: 'Publish library',
   publishingLibrary: 'Publishing…',
   publishLibraryHelp: 'Publish this file’s components as an immutable revision.',
