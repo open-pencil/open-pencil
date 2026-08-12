@@ -63,11 +63,7 @@ function hasRenderableGeometry(node: SceneNode): boolean {
   return node.fillGeometry.length > 0 || node.strokeGeometry.length > 0
 }
 
-function translatedBounds(
-  bounds: VisualBounds,
-  offset: Vector,
-  overflow: number
-): VisualBounds {
+function translatedBounds(bounds: VisualBounds, offset: Vector, overflow: number): VisualBounds {
   return {
     minX: bounds.minX + offset.x - overflow,
     minY: bounds.minY + offset.y - overflow,
