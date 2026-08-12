@@ -48,6 +48,11 @@ export interface LibrarySummary {
   assetCount: number
 }
 
+export interface StoredLibraryLatestManifest {
+  schemaVersion: typeof COMPONENT_LIBRARY_SCHEMA_VERSION
+  summary: LibrarySummary
+}
+
 export interface LibraryCatalog {
   listLibraries(): Promise<LibrarySummary[]>
   getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision>

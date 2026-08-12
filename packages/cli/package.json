@@ -9,6 +9,14 @@
   "bin": {
     "openpencil": "./bin/openpencil.js"
   },
+  "exports": {
+    "./library": {
+      "types": "./dist/library/index.d.mts",
+      "bun": "./src/library/index.ts",
+      "import": "./dist/library/index.mjs",
+      "default": "./dist/library/index.mjs"
+    }
+  },
   "files": [
     "bin",
     "dist"

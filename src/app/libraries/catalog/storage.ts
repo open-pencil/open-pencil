@@ -11,7 +11,8 @@ import type {
   LibraryCatalog,
   LibrarySummary,
   PublishLibraryInput,
-  SerializedComponentLibraryRevision
+  SerializedComponentLibraryRevision,
+  StoredLibraryLatestManifest
 } from '@open-pencil/core/library'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
@@ -19,11 +20,6 @@ import type { LibraryObjectStore } from '@/app/integrations/storage'
 const PREFIX = 'open-pencil/libraries'
 const textDecoder = new TextDecoder()
 const textEncoder = new TextEncoder()
-
-interface StoredLatestManifest {
-  schemaVersion: 1
-  summary: LibrarySummary
-}
 
 function latestKey(libraryId: string): string {
   return `${PREFIX}/${libraryId}/manifest.json`
@@ -68,7 +64,7 @@ function decodeRevision(bytes: Uint8Array): ComponentLibraryRevision {
   return deserializeLibraryRevision(parsed)
 }
 
-function decodeLatest(bytes: Uint8Array): StoredLatestManifest {
+function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest {
   const parsed = JSON.parse(textDecoder.decode(bytes)) as unknown
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('Invalid component library manifest')
@@ -83,7 +79,7 @@ function decodeLatest(bytes: Uint8Array): StoredLatestManifest {
   ) {
     throw new Error('Invalid component library manifest')
   }
-  return candidate as StoredLatestManifest
+  return candidate as StoredLibraryLatestManifest
 }
 
 export class StorageLibraryCatalog implements LibraryCatalog {
@@ -144,7 +140,7 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     await this.#objects.putObject(
       latestKey(manifest.libraryId),
       textEncoder.encode(
-        JSON.stringify({ schemaVersion: 1, summary } satisfies StoredLatestManifest)
+        JSON.stringify({ schemaVersion: 1, summary } satisfies StoredLibraryLatestManifest)
       ),
       'application/json'
     )
