@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed Windows desktop crashes when loading large system fonts for non-Latin text by using Tauri's binary IPC path and resolving native script fallbacks without parsing full font files in JavaScript.
+
 ### Fixed
 
 - Preserve open vector segments when the same vector network also contains filled regions. (#450)

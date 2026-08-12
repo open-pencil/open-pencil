@@ -85,6 +85,19 @@ export function textNeedsFallbackScript(node: SceneNode, script: FontFallbackScr
   return false
 }
 
+export function textFallbackScriptsWithoutCoverage(node: SceneNode): FontFallbackScript[] {
+  if (node.type !== 'TEXT') return []
+  const scripts = new Set<FontFallbackScript>()
+  let index = 0
+  for (const char of node.text) {
+    const { language } = styleForCharacter(node, index)
+    const script = fontFallbackScriptForCharacter(char, language)
+    if (script) scripts.add(script)
+    index += char.length
+  }
+  return [...scripts]
+}
+
 export function textNeededFallbackScripts(node: SceneNode): FontFallbackScript[] {
   const scripts = new Set<FontFallbackScript>()
   if (textNeedsFallbackScript(node, 'arabic')) scripts.add('arabic')
