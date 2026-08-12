@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import {
   createLibraryRevision,
+  libraryUpdateImpact,
   materializeLibraryAsset,
   planLibraryInstanceUpdates,
   summarizeLibraryUpdate
@@ -86,6 +87,10 @@ describe('library updates', () => {
       Size: 'Large'
     })
     expect(plans[0]?.fallback).toBe(false)
+    expect(libraryUpdateImpact(plans)).toEqual({
+      affectedInstanceCount: 1,
+      fallbackInstanceCount: 0
+    })
   })
 
   test('falls back to the new top-left variant when a combination was removed', async () => {
@@ -119,6 +124,10 @@ describe('library updates', () => {
     )
     expect(plans).toHaveLength(1)
     expect(plans[0]?.fallback).toBe(true)
+    expect(libraryUpdateImpact(plans)).toEqual({
+      affectedInstanceCount: 1,
+      fallbackInstanceCount: 1
+    })
     expect(consumer.getNode(plans[0]?.componentId ?? '')?.componentPropertyValues).toEqual({
       Size: 'Small'
     })

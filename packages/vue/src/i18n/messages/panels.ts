@@ -26,6 +26,7 @@ export const panelMessageDefaults = {
   applyLibraryUpdate: 'Apply update',
   reviewLibraryUpdate: 'Review library update',
   noLibraryAssetChanges: 'No asset changes',
+  libraryUpdateImpact: params('{affected} affected instances · {fallback} variant fallbacks'),
   publishLibrary: 'Publish library',
   publishingLibrary: 'Publishing…',
   publishLibraryHelp: 'Publish this file’s components as an immutable revision.',

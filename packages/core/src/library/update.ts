@@ -11,6 +11,11 @@ export interface LibraryUpdateSummary {
   changes: LibraryAssetChange[]
 }
 
+export interface LibraryUpdateImpact {
+  affectedInstanceCount: number
+  fallbackInstanceCount: number
+}
+
 export interface LibraryInstanceUpdate {
   instanceId: string
   previousComponentId: string
@@ -54,6 +59,13 @@ export function summarizeLibraryUpdate(
     currentRevisionId: current.manifest.revisionId,
     latestRevisionId: latest.manifest.revisionId,
     changes: diffLibraryManifests(current.manifest, latest.manifest)
+  }
+}
+
+export function libraryUpdateImpact(updates: LibraryInstanceUpdate[]): LibraryUpdateImpact {
+  return {
+    affectedInstanceCount: updates.length,
+    fallbackInstanceCount: updates.filter((update) => update.fallback).length
   }
 }
 

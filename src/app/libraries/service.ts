@@ -4,6 +4,7 @@ import { reapplyInstanceComponentProperties } from '@open-pencil/core/editor'
 import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
+  libraryUpdateImpact,
   planLibraryInstanceUpdates,
   summarizeLibraryUpdate
 } from '@open-pencil/core/library'
@@ -11,6 +12,7 @@ import type {
   ComponentLibraryRevision,
   LibraryCatalog,
   LibrarySummary,
+  LibraryUpdateImpact,
   LibraryUpdateSummary,
   PublishLibraryInput
 } from '@open-pencil/core/library'
@@ -32,6 +34,7 @@ export class LibraryService implements ComponentCatalog {
   readonly #summaries = shallowRef<LibrarySummary[]>([])
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
+  readonly #updateImpacts = shallowRef(new Map<string, LibraryUpdateImpact>())
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
   readonly #priorities = new Map<string, number>()
   #activeEditor: EditorStore | null = null
@@ -69,6 +72,10 @@ export class LibraryService implements ComponentCatalog {
 
   get updates() {
     return this.#updates
+  }
+
+  get updateImpacts() {
+    return this.#updateImpacts
   }
 
   async listLibraries(): Promise<LibrarySummary[]> {
@@ -161,6 +168,7 @@ export class LibraryService implements ComponentCatalog {
       this.#summaries.value.map((summary) => [summary.libraryId, summary])
     )
     const updates: LibraryUpdateSummary[] = []
+    const impacts = new Map<string, LibraryUpdateImpact>()
     for (const binding of editor.graph.enabledLibraries.values()) {
       if (!binding.enabled) continue
       const latestId = summariesById.get(binding.libraryId)?.latestRevisionId
@@ -168,9 +176,23 @@ export class LibraryService implements ComponentCatalog {
       const current = await this.#getRevision(binding.libraryId, binding.revisionId)
       const latest = await this.#getRevision(binding.libraryId, latestId)
       const summary = summarizeLibraryUpdate(current, latest)
-      if (summary) updates.push(summary)
+      if (summary) {
+        updates.push(summary)
+        const commonAssets = latest.manifest.assets.filter((asset) =>
+          current.manifest.assets.some((previous) => previous.key === asset.key)
+        )
+        const plans = planLibraryInstanceUpdates(
+          editor.graph,
+          binding.libraryId,
+          binding.revisionId,
+          latestId,
+          commonAssets
+        )
+        impacts.set(binding.libraryId, libraryUpdateImpact(plans))
+      }
     }
     this.#updates.value = updates
+    this.#updateImpacts.value = impacts
   }
 
   async applyUpdate(editor: EditorStore, libraryId: string): Promise<void> {

@@ -85,6 +85,12 @@ const viewOptions = computed(() => [
   { value: 'grid', label: panels.value.gridView },
   { value: 'list', label: panels.value.listView }
 ])
+const reviewedImpact = computed(() =>
+  updateReviewLibraryId.value
+    ? (libraryService.updateImpacts.value.get(updateReviewLibraryId.value) ?? null)
+    : null
+)
+
 const viewUI = { root: 'w-16', item: 'px-1' }
 const reviewedUpdate = computed(() =>
   updateReviewLibraryId.value
@@ -654,6 +660,14 @@ async function insertSelectedAsset() {
         </DialogClose>
       </div>
       <div v-if="reviewedUpdate" class="flex max-h-80 flex-col gap-1 overflow-y-auto p-3">
+        <p v-if="reviewedImpact" class="mb-2 text-[11px] text-muted">
+          {{
+            panels.libraryUpdateImpact({
+              affected: reviewedImpact.affectedInstanceCount,
+              fallback: reviewedImpact.fallbackInstanceCount
+            })
+          }}
+        </p>
         <div
           v-for="(change, index) in reviewedUpdate.changes"
           :key="`${change.kind}:${index}`"
