@@ -34,6 +34,16 @@ function sleep(ms: number): Promise<void> {
   })
 }
 
+async function waitForHealthStatus(port: number, status: HealthResponse['status']): Promise<void> {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const response = await fetch(`http://127.0.0.1:${port}/health`)
+    const health = (await response.json()) as HealthResponse
+    if (health.status === status) return
+    await sleep(5)
+  }
+  throw new Error(`Health endpoint did not report ${status}`)
+}
+
 describe('MCP app-attach watchdog', () => {
   let handle: ServerHandle | null = null
 
@@ -127,7 +137,7 @@ describe('MCP app-attach watchdog', () => {
 
     const firstBrowser = await connectMockBrowser(port, new SceneGraph(), TEST_AUTH_TOKEN)
     firstBrowser.close()
-    await sleep(50)
+    await waitForHealthStatus(port, 'no_app')
     const secondBrowser = await connectMockBrowser(port, new SceneGraph(), TEST_AUTH_TOKEN)
     try {
       await sleep(250)
@@ -143,9 +153,9 @@ describe('MCP app-attach watchdog', () => {
   test('rejects timer values that cannot be represented safely', async () => {
     await expect(
       startServer({ appAttachTimeoutMs: 2_147_483_648, socketPath: testSocketPath() })
-    ).rejects.toThrow('appAttachTimeoutMs must be an integer')
+    ).rejects.toThrow('appAttachTimeoutMs must be in the range 0–2147483647')
     await expect(
       startServer({ appAttachTimeoutMs: Number.POSITIVE_INFINITY, socketPath: testSocketPath() })
-    ).rejects.toThrow('appAttachTimeoutMs must be an integer')
+    ).rejects.toThrow('appAttachTimeoutMs must be a safe integer')
   })
 })

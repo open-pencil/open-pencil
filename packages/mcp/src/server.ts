@@ -462,8 +462,11 @@ const MAX_TIMER_MS = 2_147_483_647
 
 function validateAppAttachTimeout(timeoutMs: number | undefined): void {
   if (timeoutMs === undefined) return
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 0 || timeoutMs > MAX_TIMER_MS) {
-    throw new RangeError(`appAttachTimeoutMs must be an integer in 0–${MAX_TIMER_MS}`)
+  if (!Number.isSafeInteger(timeoutMs)) {
+    throw new RangeError('appAttachTimeoutMs must be a safe integer')
+  }
+  if (timeoutMs < 0 || timeoutMs > MAX_TIMER_MS) {
+    throw new RangeError(`appAttachTimeoutMs must be in the range 0–${MAX_TIMER_MS}`)
   }
 }
 
