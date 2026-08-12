@@ -23,6 +23,7 @@
 - Enable published component libraries per document, browse their assets alongside local components, and lazily materialize read-only definitions for offline linked instances. (#239)
 - Detect newer component-library revisions and explicitly apply stable-key updates to linked instances while preserving assignments and retaining old definitions. (#239)
 - Let AI, MCP, and headless tools discover enabled library components, rank preferred libraries before local assets, and insert components by stable library identity. (#239)
+- Publish the current document as an immutable local component library from the Assets panel, assigning durable collision-safe asset keys on first publication. (#239)
 - Create centered frames from Figma-style device and asset presets, or resize selected frames to a preset while preserving their names. (#418)
 - Manage pages by renaming, deleting, and dragging to reorder them in the Pages panel.
 - Create text by dragging a fixed-size text box or clicking for auto-width text.

@@ -4,6 +4,7 @@ import {
   createLibraryRevision,
   deserializeLibraryRevision,
   diffLibraryManifests,
+  ensureLibraryAssetKeys,
   extractLibrarySnapshot,
   MemoryLibraryCatalog,
   serializeLibraryRevision
@@ -84,6 +85,25 @@ describe('component library snapshots', () => {
     expect(diffLibraryManifests(base.manifest, next.manifest).map((change) => change.kind)).toEqual(
       ['renamed', 'modified']
     )
+  })
+
+  test('assigns durable unique keys once and preserves them across rename', () => {
+    const { graph, button, icon } = setupLibraryGraph()
+    graph.updateNode(button.id, { componentKey: null })
+    graph.updateNode(icon.id, { componentKey: null })
+    expect(
+      ensureLibraryAssetKeys(graph)
+        .map((assignment) => assignment.assetKey)
+        .sort()
+    ).toEqual(['button', 'icon'])
+    graph.updateNode(button.id, { name: 'Primary action' })
+    expect(
+      ensureLibraryAssetKeys(graph).find((assignment) => assignment.nodeId === button.id)
+    ).toEqual({
+      nodeId: button.id,
+      assetKey: 'button',
+      existing: true
+    })
   })
 
   test('serializes portable revisions without losing component links', async () => {

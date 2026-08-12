@@ -3,6 +3,7 @@ import { markRaw, shallowRef } from 'vue'
 import { reapplyInstanceComponentProperties } from '@open-pencil/core/editor'
 import {
   materializeLibraryAsset,
+  ensureLibraryAssetKeys,
   planLibraryInstanceUpdates,
   summarizeLibraryUpdate
 } from '@open-pencil/core/library'
@@ -180,6 +181,7 @@ export class LibraryService implements ComponentCatalog {
   }
 
   async publish(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
+    ensureLibraryAssetKeys(input.graph, input.assetNodeIds)
     const revision = await this.#catalog.publishRevision(input)
     this.#revisionCache.set(
       this.#revisionCacheKey(input.libraryId, revision.manifest.revisionId),

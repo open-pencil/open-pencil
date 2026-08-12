@@ -17,7 +17,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
-import { useLibraryService } from '@/app/libraries'
+import { useLibraryService, openPublishLibraryDialog } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
@@ -523,6 +523,13 @@ async function insertSelectedAsset() {
     <AppDialogRoot v-model:open="librariesOpen" size="sm" data-test-id="asset-libraries-dialog">
       <div class="flex items-center justify-between border-b border-border px-4 py-3">
         <DialogTitle :class="dialog.title">{{ panels.manageLibraries }}</DialogTitle>
+        <button
+          type="button"
+          class="ml-auto mr-2 h-6 rounded px-2 text-[10px] text-component hover:bg-component/10"
+          @click="openPublishLibraryDialog"
+        >
+          {{ panels.publishLibrary }}
+        </button>
         <DialogClose
           class="flex size-7 cursor-pointer items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
         >
