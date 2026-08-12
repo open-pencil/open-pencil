@@ -1,5 +1,6 @@
 import { cloneNodeProps, type SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
+import { findLibraryDefinition } from './definitions'
 import { assertLibraryAssetKey, assertLibraryId, libraryAssetIdentityKey } from './identity'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
 
@@ -10,22 +11,6 @@ export interface MaterializedLibraryAsset {
   componentSetId: string | null
   pageId: string
   created: boolean
-}
-
-function findMaterializedAsset(
-  graph: SceneGraph,
-  libraryId: string,
-  assetKey: string,
-  revisionId: string
-): SceneNode | undefined {
-  return [...graph.getAllNodes()].find((node) => {
-    const identity = node.librarySource?.identity
-    return (
-      identity?.libraryId === libraryId &&
-      identity.assetKey === assetKey &&
-      identity.revisionId === revisionId
-    )
-  })
 }
 
 function getInternalLibraryPage(graph: SceneGraph): SceneNode {
@@ -150,7 +135,7 @@ export function materializeLibraryAsset(
   const { libraryId, revisionId } = revision.manifest
   assertLibraryId(libraryId)
   assertLibraryAssetKey(assetKey)
-  const existing = findMaterializedAsset(consumer, libraryId, assetKey, revisionId)
+  const existing = findLibraryDefinition(consumer, libraryId, assetKey, revisionId)
   if (existing) {
     const component = defaultComponent(consumer, existing)
     if (!component) throw new Error(`Materialized asset has no component: ${assetKey}`)

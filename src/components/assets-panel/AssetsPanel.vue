@@ -66,6 +66,7 @@ const assetView = ref<AssetView>('grid')
 const detailsOpen = ref(false)
 const librariesOpen = ref(false)
 const librariesLoading = ref(false)
+const applyingUpdateId = ref<string | null>(null)
 const selectedAssetId = ref<string | null>(null)
 const previewBlob = shallowRef<Blob | null>(null)
 const previewURL = useObjectUrl(previewBlob)
@@ -219,6 +220,19 @@ async function toggleLibrary(libraryId: string) {
     else await libraryService.enable(editor, libraryId)
   } finally {
     librariesLoading.value = false
+  }
+}
+
+function libraryUpdate(libraryId: string) {
+  return libraryService.updates.value.find((update) => update.libraryId === libraryId)
+}
+
+async function applyLibraryUpdate(libraryId: string) {
+  applyingUpdateId.value = libraryId
+  try {
+    await libraryService.applyUpdate(editor, libraryId)
+  } finally {
+    applyingUpdateId.value = null
   }
 }
 
@@ -526,8 +540,20 @@ async function insertSelectedAsset() {
             <div class="truncate text-xs font-medium text-surface">{{ library.name }}</div>
             <div class="text-[10px] text-muted">
               {{ panels.libraryAssetCount({ count: library.assetCount }) }}
+              <span v-if="libraryUpdate(library.libraryId)" class="text-component">
+                · {{ panels.libraryUpdateAvailable }}
+              </span>
             </div>
           </div>
+          <button
+            v-if="libraryUpdate(library.libraryId)"
+            type="button"
+            class="h-6 rounded bg-component/15 px-2 text-[10px] font-medium text-component hover:bg-component/25 disabled:opacity-50"
+            :disabled="applyingUpdateId === library.libraryId"
+            @click="applyLibraryUpdate(library.libraryId)"
+          >
+            {{ panels.applyLibraryUpdate }}
+          </button>
           <button
             type="button"
             :class="insertButton.base"

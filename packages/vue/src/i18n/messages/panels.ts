@@ -22,6 +22,8 @@ export const panelMessageDefaults = {
   disableLibrary: 'Disable library',
   noLibraries: 'No published libraries',
   libraryAssetCount: params('{count} assets'),
+  libraryUpdateAvailable: 'Update available',
+  applyLibraryUpdate: 'Apply update',
   assetVariantSummary: params('{count} variants · {names}'),
   duplicateVariantValues: 'Duplicate variant values',
   variantPropertyName: 'Property name',

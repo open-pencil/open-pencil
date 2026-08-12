@@ -226,6 +226,8 @@
   "disableLibrary": "Disable library",
   "noLibraries": "No published libraries",
   "libraryAssetCount": "{count} assets",
+  "libraryUpdateAvailable": "Update available",
+  "applyLibraryUpdate": "Apply update",
   "assetVariantSummary": "{count} variantes · {names}",
   "duplicateVariantValues": "Valores de variante duplicados",
   "variantPropertyName": "Property name",

@@ -1,11 +1,17 @@
 import { markRaw, shallowRef } from 'vue'
 
-import { materializeLibraryAsset } from '@open-pencil/core/library'
+import { reapplyInstanceComponentProperties } from '@open-pencil/core/editor'
+import {
+  materializeLibraryAsset,
+  planLibraryInstanceUpdates,
+  summarizeLibraryUpdate
+} from '@open-pencil/core/library'
 import type {
   ComponentLibraryRevision,
   LibraryAssetDescriptor,
   LibraryCatalog,
   LibrarySummary,
+  LibraryUpdateSummary,
   PublishLibraryInput
 } from '@open-pencil/core/library'
 
@@ -23,6 +29,7 @@ export class LibraryService {
   readonly #catalog: LibraryCatalog
   readonly #summaries = shallowRef<LibrarySummary[]>([])
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
+  readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
 
   constructor(catalog: LibraryCatalog = new LocalLibraryCatalog()) {
@@ -35,6 +42,10 @@ export class LibraryService {
 
   get enabledAssets() {
     return this.#enabledAssets
+  }
+
+  get updates() {
+    return this.#updates
   }
 
   async refresh(editor: EditorStore): Promise<void> {
@@ -53,6 +64,52 @@ export class LibraryService {
       )
     }
     this.#enabledAssets.value = assets
+    await this.refreshUpdates(editor)
+  }
+
+  async refreshUpdates(editor: EditorStore): Promise<void> {
+    const summariesById = new Map(
+      this.#summaries.value.map((summary) => [summary.libraryId, summary])
+    )
+    const updates: LibraryUpdateSummary[] = []
+    for (const binding of editor.graph.enabledLibraries.values()) {
+      if (!binding.enabled) continue
+      const latestId = summariesById.get(binding.libraryId)?.latestRevisionId
+      if (!latestId || latestId === binding.revisionId) continue
+      const current = await this.#getRevision(binding.libraryId, binding.revisionId)
+      const latest = await this.#getRevision(binding.libraryId, latestId)
+      const summary = summarizeLibraryUpdate(current, latest)
+      if (summary) updates.push(summary)
+    }
+    this.#updates.value = updates
+  }
+
+  async applyUpdate(editor: EditorStore, libraryId: string): Promise<void> {
+    const update = this.#updates.value.find((item) => item.libraryId === libraryId)
+    if (!update) return
+    const current = await this.#getRevision(libraryId, update.currentRevisionId)
+    const latest = await this.#getRevision(libraryId, update.latestRevisionId)
+    const previousAssetKeys = new Set(current.manifest.assets.map((asset) => asset.key))
+    const updatable = latest.manifest.assets.filter((asset) => previousAssetKeys.has(asset.key))
+    for (const asset of updatable) materializeLibraryAsset(editor.graph, latest, asset.key)
+    const plans = planLibraryInstanceUpdates(
+      editor.graph,
+      libraryId,
+      update.currentRevisionId,
+      update.latestRevisionId,
+      updatable
+    )
+    for (const plan of plans) {
+      editor.graph.swapInstanceComponent(plan.instanceId, plan.componentId)
+      reapplyInstanceComponentProperties(editor, plan.instanceId)
+    }
+    editor.graph.enabledLibraries.set(libraryId, {
+      libraryId,
+      revisionId: update.latestRevisionId,
+      enabled: true
+    })
+    editor.requestRender()
+    await this.refresh(editor)
   }
 
   async publish(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {

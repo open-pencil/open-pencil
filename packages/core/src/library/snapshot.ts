@@ -129,7 +129,11 @@ export function extractLibrarySnapshot(
   }
 }
 
-function canonicalNode(graph: SceneGraph, node: SceneNode): unknown {
+function canonicalNode(
+  graph: SceneGraph,
+  node: SceneNode,
+  dependencyStack = new Set<string>()
+): unknown {
   const visualFields = Object.fromEntries(
     Object.entries(node).filter(
       ([key]) =>
@@ -145,9 +149,14 @@ function canonicalNode(graph: SceneGraph, node: SceneNode): unknown {
     component?.type === 'COMPONENT' || component?.type === 'COMPONENT_SET'
       ? assetKey(component)
       : null
+  const dependency =
+    component && dependencyKey && !dependencyStack.has(component.id)
+      ? canonicalNode(graph, component, new Set([...dependencyStack, component.id]))
+      : null
   return {
     ...visualFields,
     componentKey: dependencyKey,
+    componentDependency: dependency,
     children: node.childIds.flatMap((id) => {
       const child = graph.getNode(id)
       return child ? [canonicalNode(graph, child)] : []
@@ -165,7 +174,7 @@ export async function describeSnapshotAssets(
       name: node.name,
       description: node.symbolDescription,
       sourceNodeId: node.id,
-      contentHash: await contentHash(canonicalNode(snapshot.graph, node))
+      contentHash: await contentHash(canonicalNode(snapshot.graph, node, new Set([node.id])))
     }))
   )
 }
