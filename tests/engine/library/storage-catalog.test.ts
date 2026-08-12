@@ -55,6 +55,24 @@ describe('storage library catalog', () => {
     )
   })
 
+  test('rejects corrupted revision content', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const revision = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: sourceGraph()
+    })
+    const key = `open-pencil/libraries/design-system/revisions/${revision.manifest.revisionId}.json`
+    const bytes = objects.values.get(key)
+    if (!bytes) throw new Error('Expected revision object')
+    const source = new TextDecoder().decode(bytes).replace('Button', 'Corrupted')
+    objects.values.set(key, new TextEncoder().encode(source))
+    await expect(
+      catalog.getRevision('design-system', revision.manifest.revisionId)
+    ).rejects.toThrow('hash mismatch')
+  })
+
   test('rejects stale publication pointers', async () => {
     const catalog = new StorageLibraryCatalog(new MemoryObjects())
     await catalog.publishRevision({

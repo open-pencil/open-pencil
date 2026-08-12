@@ -2,7 +2,9 @@ import { decodeBase64, encodeBase64 } from '@open-pencil/core/bytes'
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
-  serializeLibraryRevision
+  MAX_LIBRARY_REVISION_BYTES,
+  serializeLibraryRevision,
+  validateLibraryRevision
 } from '@open-pencil/core/library'
 import type {
   ComponentLibraryRevision,
@@ -107,6 +109,8 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     if (!resolvedRevisionId) throw new Error(`Library not found: ${libraryId}`)
     const bytes = await this.#objects.getObject(revisionKey(libraryId, resolvedRevisionId))
     if (!bytes) throw new Error(`Library revision not found: ${libraryId}/${resolvedRevisionId}`)
+    if (bytes.byteLength > MAX_LIBRARY_REVISION_BYTES)
+      throw new Error('Component library revision exceeds size limit')
     const revision = decodeRevision(bytes)
     if (
       revision.manifest.libraryId !== libraryId ||
@@ -114,6 +118,7 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     ) {
       throw new Error('Library revision identity mismatch')
     }
+    await validateLibraryRevision(revision)
     return revision
   }
 

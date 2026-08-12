@@ -32,6 +32,7 @@
 - Bind the active library catalog into live automation requests so MCP component discovery and stable-identity insertion use the targeted document’s enabled libraries. (#239)
 - Show affected-instance and variant-fallback counts before accepting a component-library update. (#239)
 - Persist the selected local/storage catalog and preferred-library priorities, restoring them for Assets browsing and AI component ranking. (#239)
+- Validate downloaded library revisions against size, node, image, content-hash, and revision-hash limits before caching or materialization. (#239)
 - Create centered frames from Figma-style device and asset presets, or resize selected frames to a preset while preserving their names. (#418)
 - Manage pages by renaming, deleting, and dragging to reorder them in the Pages panel.
 - Create text by dragging a fixed-size text box or clicking for auto-width text.
