@@ -40,7 +40,15 @@ describe('library definition capabilities', () => {
     expect(() => {
       proxy.name = 'Changed'
     }).toThrow(ReadOnlyLibraryDefinitionError)
+    expect(() => {
+      proxy.opacity = 0.5
+    }).toThrow(ReadOnlyLibraryDefinitionError)
+    expect(() => proxy.remove()).toThrow(ReadOnlyLibraryDefinitionError)
     expect(graph.getNode(component.id)?.name).toBe('Remote button')
+    const instanceProxy = figma.getNodeById(instance.id)
+    if (!instanceProxy) throw new Error('Expected instance proxy')
+    instanceProxy.opacity = 0.5
+    expect(graph.getNode(instance.id)?.opacity).toBe(0.5)
     expect(() => updateNode.execute(figma, { id: component.id, opacity: 0.5 })).toThrow(
       ReadOnlyLibraryDefinitionError
     )

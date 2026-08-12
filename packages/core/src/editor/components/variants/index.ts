@@ -7,6 +7,7 @@ import type {
 } from '@open-pencil/scene-graph'
 import { buildVariantName, parseVariantName } from '@open-pencil/scene-graph/variant-name'
 
+import { assertNodeEditable } from '#core/editor/capabilities'
 import { restoreSubtree, snapshotSubtree } from '#core/editor/clipboard/subtree-history'
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 import type { EditorContext } from '#core/editor/types'
@@ -74,6 +75,13 @@ export function createVariantActions(ctx: EditorContext) {
     return node.childIds
       .map((id) => ctx.graph.getNode(id))
       .filter((child): child is SceneNode => child?.type === 'COMPONENT')
+  }
+
+  function assertComponentSetEditable(componentSetId: string): void {
+    assertNodeEditable(ctx.graph, componentSetId)
+    for (const variant of getComponentSetVariants(componentSetId)) {
+      assertNodeEditable(ctx.graph, variant.id)
+    }
   }
 
   function captureVariantSnapshot(componentSetId: string): VariantSnapshot | null {
@@ -171,6 +179,7 @@ export function createVariantActions(ctx: EditorContext) {
   }
 
   function reorderPropertyDefinitions(componentSetId: string, propertyIds: string[]): boolean {
+    assertComponentSetEditable(componentSetId)
     const componentSet = getComponentSet(componentSetId)
     const before = captureVariantSnapshot(componentSetId)
     if (!componentSet || !before) return false
@@ -207,6 +216,7 @@ export function createVariantActions(ctx: EditorContext) {
     propertyId: string,
     values: string[]
   ): boolean {
+    assertComponentSetEditable(componentSetId)
     const componentSet = getComponentSet(componentSetId)
     const definition = getVariantDefinitions(componentSetId).find((item) => item.id === propertyId)
     const currentValues = definition?.variantOptions ?? []
@@ -239,6 +249,7 @@ export function createVariantActions(ctx: EditorContext) {
     type: ComponentPropertyType = 'VARIANT',
     defaultValue = ''
   ): string | undefined {
+    assertComponentSetEditable(componentSetId)
     const node = getComponentSet(componentSetId)
     const normalizedName = name.trim()
     if (!node || !normalizedName) return undefined
@@ -280,6 +291,7 @@ export function createVariantActions(ctx: EditorContext) {
   }
 
   function removePropertyDefinition(componentSetId: string, propertyId: string): boolean {
+    assertComponentSetEditable(componentSetId)
     const node = getComponentSet(componentSetId)
     const definition = node?.componentPropertyDefinitions.find((item) => item.id === propertyId)
     const before = captureVariantSnapshot(componentSetId)
@@ -310,6 +322,7 @@ export function createVariantActions(ctx: EditorContext) {
     propertyId: string,
     newName: string
   ): boolean {
+    assertComponentSetEditable(componentSetId)
     const node = getComponentSet(componentSetId)
     const normalizedName = newName.trim()
     const definition = node?.componentPropertyDefinitions.find((item) => item.id === propertyId)
@@ -353,6 +366,7 @@ export function createVariantActions(ctx: EditorContext) {
     previousValue: string,
     newValue: string
   ): boolean {
+    assertComponentSetEditable(componentSetId)
     const definition = getVariantDefinitions(componentSetId).find((item) => item.id === propertyId)
     const normalizedValue = newValue.trim()
     const before = captureVariantSnapshot(componentSetId)
@@ -413,6 +427,7 @@ export function createVariantActions(ctx: EditorContext) {
     propertyId: string,
     value: string
   ): VariantMutationResult {
+    assertNodeEditable(ctx.graph, variantId)
     const variant = ctx.graph.getNode(variantId)
     const componentSetId = variant?.parentId
     if (variant?.type !== 'COMPONENT' || !componentSetId) return { kind: 'invalid' }
@@ -600,6 +615,7 @@ export function createVariantActions(ctx: EditorContext) {
   }
 
   function duplicateVariant(variantId: string): string | undefined {
+    assertNodeEditable(ctx.graph, variantId)
     const variant = ctx.graph.getNode(variantId)
     const componentSetId = variant?.parentId
     if (variant?.type !== 'COMPONENT' || !componentSetId || !getComponentSet(componentSetId)) {
@@ -636,6 +652,7 @@ export function createVariantActions(ctx: EditorContext) {
   }
 
   function removeVariant(variantId: string): boolean {
+    assertNodeEditable(ctx.graph, variantId)
     const variant = ctx.graph.getNode(variantId)
     const componentSetId = variant?.parentId
     if (variant?.type !== 'COMPONENT' || !componentSetId) return false

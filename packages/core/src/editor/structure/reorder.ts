@@ -1,8 +1,11 @@
+import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 import { computeLayout } from '#core/layout'
 
 export function createStructureReorderActions(ctx: EditorContext) {
   function doReorderChild(nodeId: string, parentId: string, insertIndex: number) {
+    assertNodeEditable(ctx.graph, nodeId)
+    assertNodeEditable(ctx.graph, parentId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
 
@@ -49,6 +52,8 @@ export function createStructureReorderActions(ctx: EditorContext) {
   }
 
   function reorderChildWithUndo(nodeId: string, newParentId: string, insertIndex: number) {
+    assertNodeEditable(ctx.graph, nodeId)
+    assertNodeEditable(ctx.graph, newParentId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const origParentId = node.parentId ?? ctx.state.currentPageId

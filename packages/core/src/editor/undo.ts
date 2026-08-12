@@ -5,6 +5,7 @@ import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
+import { assertNodeEditable } from './capabilities'
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
@@ -36,12 +37,14 @@ function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
 
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
+    for (const id of originals.keys()) assertNodeEditable(ctx.graph, id)
     pushPositionUndo(ctx, 'Move', originals, collectNodePositions(ctx, originals.keys()))
   }
 
   function commitMoveWithReparent(
     originals: Map<string, { x: number; y: number; parentId: string }>
   ) {
+    for (const id of originals.keys()) assertNodeEditable(ctx.graph, id)
     const finals = new Map<string, { x: number; y: number; parentId: string }>()
     for (const [id] of originals) {
       const n = ctx.graph.getNode(id)
@@ -99,6 +102,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitResize(nodeId: string, original: ResizeOriginal) {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const includesGeometry =
@@ -148,6 +152,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitRotation(nodeId: string, origRotation: number) {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const finalRotation = node.rotation
@@ -163,6 +168,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitNodeUpdate(nodeId: string, previous: Partial<SceneNode>, label = 'Update') {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const restoredPrevious = { ...previous, ...textAutoResizeChanges(node, previous) }

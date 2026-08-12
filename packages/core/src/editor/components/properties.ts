@@ -4,6 +4,7 @@ import type {
   SceneNode
 } from '@open-pencil/scene-graph'
 
+import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 
 interface PropertyTarget {
@@ -202,6 +203,7 @@ export function createComponentPropertyActions(
   function setInstanceComponentProperty(instanceId: string, propertyId: string, value: string) {
     const instance = ctx.graph.getNode(instanceId)
     if (instance?.type !== 'INSTANCE') return
+    assertNodeEditable(ctx.graph, instanceId)
     const definition = definitionsForInstance(ctx, instance).find((item) => item.id === propertyId)
     if (!definition) return
     if (definition.type === 'VARIANT') {

@@ -1,5 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { assertNodeEditable } from '#core/editor/capabilities'
+
 export interface NodeProxyInternals {
   id: symbol
   graph: symbol
@@ -23,10 +25,15 @@ export function raw(target: ProxyThis, internals: NodeProxyInternals): SceneNode
   return node
 }
 
+export function assertProxyEditable(target: ProxyThis, internals: NodeProxyInternals): void {
+  assertNodeEditable(graph(target, internals), nodeId(target, internals))
+}
+
 export function updateNode(
   target: ProxyThis,
   internals: NodeProxyInternals,
   changes: Partial<SceneNode>
 ): void {
+  assertProxyEditable(target, internals)
   graph(target, internals).updateNode(nodeId(target, internals), changes)
 }
