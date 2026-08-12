@@ -159,24 +159,53 @@ export class LibraryService implements ComponentCatalog {
     const latest = await this.#getRevision(libraryId, update.latestRevisionId)
     const previousAssetKeys = new Set(current.manifest.assets.map((asset) => asset.key))
     const updatable = latest.manifest.assets.filter((asset) => previousAssetKeys.has(asset.key))
-    for (const asset of updatable) materializeLibraryAsset(editor.graph, latest, asset.key)
-    const plans = planLibraryInstanceUpdates(
-      editor.graph,
-      libraryId,
-      update.currentRevisionId,
-      update.latestRevisionId,
-      updatable
-    )
-    for (const plan of plans) {
-      editor.graph.swapInstanceComponent(plan.instanceId, plan.componentId)
-      reapplyInstanceComponentProperties(editor, plan.instanceId)
+    const previousBinding = editor.graph.enabledLibraries.get(libraryId)
+
+    let appliedPlans: ReturnType<typeof planLibraryInstanceUpdates> = []
+    const applyRevision = () => {
+      for (const asset of updatable) materializeLibraryAsset(editor.graph, latest, asset.key)
+      appliedPlans = planLibraryInstanceUpdates(
+        editor.graph,
+        libraryId,
+        update.currentRevisionId,
+        update.latestRevisionId,
+        updatable
+      )
+      for (const plan of appliedPlans) {
+        editor.graph.swapInstanceComponent(plan.instanceId, plan.componentId)
+        reapplyInstanceComponentProperties(editor, plan.instanceId)
+      }
+      editor.graph.enabledLibraries.set(libraryId, {
+        libraryId,
+        revisionId: update.latestRevisionId,
+        enabled: true
+      })
+      editor.requestRender()
     }
-    editor.graph.enabledLibraries.set(libraryId, {
-      libraryId,
-      revisionId: update.latestRevisionId,
-      enabled: true
+    const restorePrevious = () => {
+      for (const plan of appliedPlans) {
+        editor.graph.swapInstanceComponent(plan.instanceId, plan.previousComponentId)
+        reapplyInstanceComponentProperties(editor, plan.instanceId)
+      }
+      const latestRoots = [...editor.graph.getAllNodes()].filter((node) => {
+        const identity = node.librarySource?.identity
+        if (identity?.libraryId !== libraryId || identity.revisionId !== update.latestRevisionId)
+          return false
+        const parent = node.parentId ? editor.graph.getNode(node.parentId) : undefined
+        return parent?.librarySource?.identity.revisionId !== update.latestRevisionId
+      })
+      for (const root of latestRoots) editor.graph.deleteNode(root.id)
+      if (previousBinding) editor.graph.enabledLibraries.set(libraryId, previousBinding)
+      else editor.graph.enabledLibraries.delete(libraryId)
+      editor.requestRender()
+    }
+
+    applyRevision()
+    editor.pushUndoEntry({
+      label: 'Update library',
+      forward: applyRevision,
+      inverse: restorePrevious
     })
-    editor.requestRender()
     await this.refresh(editor)
   }
 
