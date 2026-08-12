@@ -8,29 +8,30 @@ import {
 } from '@open-pencil/core/library'
 import type {
   ComponentLibraryRevision,
-  LibraryAssetDescriptor,
   LibraryCatalog,
   LibrarySummary,
   LibraryUpdateSummary,
   PublishLibraryInput
 } from '@open-pencil/core/library'
+import type {
+  ComponentCatalog,
+  ComponentCatalogInsertInput,
+  ComponentCatalogLibraryAsset
+} from '@open-pencil/core/tools'
 
 import type { EditorStore } from '@/app/editor/session'
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
 
-export interface EnabledLibraryAsset {
-  libraryId: string
-  libraryName: string
-  revisionId: string
-  asset: LibraryAssetDescriptor
-}
+export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
 
-export class LibraryService {
+export class LibraryService implements ComponentCatalog {
   readonly #catalog: LibraryCatalog
   readonly #summaries = shallowRef<LibrarySummary[]>([])
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
   readonly #revisionCache = new Map<string, ComponentLibraryRevision>()
+  readonly #priorities = new Map<string, number>()
+  #activeEditor: EditorStore | null = null
 
   constructor(catalog: LibraryCatalog = new LocalLibraryCatalog()) {
     this.#catalog = markRaw(catalog)
@@ -48,7 +49,71 @@ export class LibraryService {
     return this.#updates
   }
 
+  async listLibraries(): Promise<LibrarySummary[]> {
+    this.#summaries.value = await this.#catalog.listLibraries()
+    return this.#summaries.value
+  }
+
+  async listComponents(input: {
+    name?: string
+    libraryId?: string
+    enabledOnly?: boolean
+  }): Promise<EnabledLibraryAsset[]> {
+    const normalizedName = input.name?.trim().toLowerCase()
+    const libraries = await this.#catalog.listLibraries()
+    const assets: EnabledLibraryAsset[] = []
+    for (const summary of libraries) {
+      if (input.libraryId && input.libraryId !== summary.libraryId) continue
+      const revision = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
+      const binding = this.#activeEditor?.graph.enabledLibraries.get(summary.libraryId)
+      if (input.enabledOnly && !binding?.enabled) continue
+      assets.push(
+        ...revision.manifest.assets
+          .filter((asset) => !normalizedName || asset.name.toLowerCase().includes(normalizedName))
+          .map((asset) => ({
+            libraryId: summary.libraryId,
+            libraryName: summary.name,
+            revisionId: revision.manifest.revisionId,
+            asset,
+            enabled: binding?.enabled ?? false,
+            priority: this.#priorities.get(summary.libraryId) ?? 0
+          }))
+      )
+    }
+    return assets.sort((left, right) => right.priority - left.priority)
+  }
+
+  setPriority(libraryId: string, priority: number): void {
+    this.#priorities.set(libraryId, priority)
+  }
+
+  bindEditor(editor: EditorStore): void {
+    this.#activeEditor = editor
+  }
+
+  async insertComponent(
+    input: ComponentCatalogInsertInput
+  ): Promise<{ id: string; componentId: string }> {
+    const editor = this.#activeEditor
+    if (!editor) throw new Error('No active editor is bound to the library catalog')
+    const revisionId =
+      input.revisionId ?? editor.graph.enabledLibraries.get(input.libraryId)?.revisionId
+    if (!revisionId) throw new Error(`Library is not enabled: ${input.libraryId}`)
+    const materialized = await this.materialize(editor, input.libraryId, revisionId, input.assetKey)
+    let componentId = materialized.componentId
+    if (input.variantValues && materialized.componentSetId) {
+      const match = editor.findVariantByValues(materialized.componentSetId, input.variantValues)
+      if (match) componentId = match.id
+    }
+    const parentId = input.parentId ?? editor.state.currentPageId
+    const id = editor.createInstanceFromComponent(componentId, input.x, input.y, parentId)
+    if (!id) throw new Error(`Failed to insert library component: ${input.assetKey}`)
+    editor.requestRender()
+    return { id, componentId }
+  }
+
   async refresh(editor: EditorStore): Promise<void> {
+    this.#activeEditor = editor
     this.#summaries.value = await this.#catalog.listLibraries()
     const assets: EnabledLibraryAsset[] = []
     for (const binding of editor.graph.enabledLibraries.values()) {
@@ -59,7 +124,9 @@ export class LibraryService {
           libraryId: binding.libraryId,
           libraryName: revision.manifest.name,
           revisionId: binding.revisionId,
-          asset
+          asset,
+          enabled: true,
+          priority: this.#priorities.get(binding.libraryId) ?? 0
         }))
       )
     }
