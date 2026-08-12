@@ -22,11 +22,13 @@ import type {
 
 import type { EditorStore } from '@/app/editor/session'
 import { LocalLibraryCatalog } from '@/app/libraries/catalog/local'
+import { RoutedLibraryCatalog, type LibraryCatalogSource } from '@/app/libraries/catalog/routed'
 
 export type EnabledLibraryAsset = ComponentCatalogLibraryAsset
 
 export class LibraryService implements ComponentCatalog {
   readonly #catalog: LibraryCatalog
+  readonly #routedCatalog: RoutedLibraryCatalog | null
   readonly #summaries = shallowRef<LibrarySummary[]>([])
   readonly #enabledAssets = shallowRef<EnabledLibraryAsset[]>([])
   readonly #updates = shallowRef<LibraryUpdateSummary[]>([])
@@ -34,8 +36,27 @@ export class LibraryService implements ComponentCatalog {
   readonly #priorities = new Map<string, number>()
   #activeEditor: EditorStore | null = null
 
-  constructor(catalog: LibraryCatalog = new LocalLibraryCatalog()) {
-    this.#catalog = markRaw(catalog)
+  constructor(catalog?: LibraryCatalog) {
+    if (catalog) {
+      this.#catalog = markRaw(catalog)
+      this.#routedCatalog = catalog instanceof RoutedLibraryCatalog ? catalog : null
+    } else {
+      const routed = new RoutedLibraryCatalog(new LocalLibraryCatalog())
+      this.#catalog = markRaw(routed)
+      this.#routedCatalog = routed
+    }
+  }
+
+  get catalogSource(): LibraryCatalogSource {
+    return this.#routedCatalog?.source ?? 'local'
+  }
+
+  useLocalCatalog(): void {
+    this.#routedCatalog?.useLocal()
+  }
+
+  useStorageCatalog(catalog: LibraryCatalog): void {
+    this.#routedCatalog?.useStorage(catalog)
   }
 
   get summaries() {

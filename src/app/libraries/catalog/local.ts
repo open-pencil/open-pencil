@@ -69,6 +69,30 @@ export class LocalLibraryCatalog implements LibraryCatalog {
     return deserializeLibraryRevision(stored.revision)
   }
 
+  async cacheRevision(revision: ComponentLibraryRevision, updateLatest = true): Promise<void> {
+    const database = await this.#database
+    const transaction = database.transaction(['latest', 'revisions'], 'readwrite')
+    const manifest = revision.manifest
+    await transaction.objectStore('revisions').put({
+      libraryId: manifest.libraryId,
+      revisionId: manifest.revisionId,
+      revision: serializeLibraryRevision(revision)
+    })
+    if (updateLatest) {
+      await transaction.objectStore('latest').put(
+        {
+          libraryId: manifest.libraryId,
+          name: manifest.name,
+          latestRevisionId: manifest.revisionId,
+          publishedAt: manifest.publishedAt,
+          assetCount: manifest.assets.length
+        },
+        manifest.libraryId
+      )
+    }
+    await transaction.done
+  }
+
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
     const database = await this.#database
     const transaction = database.transaction(['latest', 'revisions'], 'readwrite')

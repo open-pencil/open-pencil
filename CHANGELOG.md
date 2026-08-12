@@ -28,6 +28,7 @@
 - Preserve enabled-library bindings and materialized definition identities through `.fig` save/reopen, and reject Figma API or AI edits to read-only library definitions. (#239)
 - Enforce read-only library capabilities across visual/layout Figma API setters, structural edits, editor history actions, variant authoring, and clipboard replacement while keeping instances editable. (#239)
 - Publish component-library revisions to storage-provider object namespaces with immutable revision objects, validated manifests, and conflict-checked latest pointers. (#239)
+- Switch the library manager between local and configured storage catalogs, caching remote revisions in IndexedDB for offline browsing and insertion. (#239)
 - Create centered frames from Figma-style device and asset presets, or resize selected frames to a preset while preserving their names. (#418)
 - Manage pages by renaming, deleting, and dragging to reorder them in the Pages panel.
 - Create text by dragging a fixed-size text box or clicking for auto-width text.

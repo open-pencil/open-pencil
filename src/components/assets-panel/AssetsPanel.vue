@@ -17,7 +17,9 @@ import { useI18n } from '@open-pencil/vue'
 
 import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
-import { useLibraryService, openPublishLibraryDialog } from '@/app/libraries'
+import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
+import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
+import { openPublishLibraryDialog, StorageLibraryCatalog, useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
@@ -207,6 +209,27 @@ const selectedPreviewNodeId = computed(() => selectedAsset.value?.componentId ??
 onMounted(() => {
   void libraryService.refresh(editor)
 })
+
+async function setCatalogSource(source: 'local' | 'storage') {
+  librariesLoading.value = true
+  try {
+    if (source === 'local') {
+      libraryService.useLocalCatalog()
+    } else {
+      const providerId = activeStorageProviderID.value
+      if (!storagePreferencesComplete(providerId))
+        throw new Error(panels.value.storageNotConfigured)
+      const objects = createActiveStorageAdapter(providerId).libraryObjects
+      if (!objects) throw new Error(panels.value.storageLibrariesUnavailable)
+      libraryService.useStorageCatalog(new StorageLibraryCatalog(objects))
+    }
+    await libraryService.refresh(editor)
+  } catch (cause) {
+    console.warn('[Libraries] Failed to switch catalog', cause)
+  } finally {
+    librariesLoading.value = false
+  }
+}
 
 async function openLibraries() {
   librariesOpen.value = true
@@ -556,6 +579,24 @@ async function insertSelectedAsset() {
         >
           <icon-lucide-x class="size-4" />
         </DialogClose>
+      </div>
+      <div class="flex items-center gap-1 border-b border-border px-3 py-2">
+        <button
+          type="button"
+          class="h-6 rounded px-2 text-[10px] data-[active=true]:bg-hover data-[active=true]:text-surface text-muted"
+          :data-active="libraryService.catalogSource === 'local'"
+          @click="setCatalogSource('local')"
+        >
+          {{ panels.localLibraries }}
+        </button>
+        <button
+          type="button"
+          class="h-6 rounded px-2 text-[10px] data-[active=true]:bg-hover data-[active=true]:text-surface text-muted"
+          :data-active="libraryService.catalogSource === 'storage'"
+          @click="setCatalogSource('storage')"
+        >
+          {{ panels.storageLibraries }}
+        </button>
       </div>
       <div class="flex max-h-96 flex-col gap-1 overflow-y-auto p-3">
         <div

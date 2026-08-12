@@ -1,4 +1,6 @@
 export { LocalLibraryCatalog } from './catalog/local'
+export { RoutedLibraryCatalog } from './catalog/routed'
+export type { LibraryCatalogSource } from './catalog/routed'
 export { StorageLibraryCatalog } from './catalog/storage'
 export { openPublishLibraryDialog, publishLibraryDialogOpen } from './publish/dialog'
 export { LibraryService, useLibraryService } from './service'
