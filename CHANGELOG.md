@@ -34,6 +34,7 @@
 - Persist the selected local/storage catalog and preferred-library priorities, restoring them for Assets browsing and AI component ranking. (#239)
 - Validate downloaded library revisions against size, node, image, content-hash, and revision-hash limits before caching or materialization. (#239)
 - Manage bounded filesystem component-library catalogs from the CLI with JSON-capable `libraries list` and immutable `libraries publish` commands. (#239)
+- Cover the complete local library lifecycle from multidimensional publication and cross-document insertion through `.fig` save/reopen and offline linked-instance editing. (#239)
 - Create centered frames from Figma-style device and asset presets, or resize selected frames to a preset while preserving their names. (#418)
 - Manage pages by renaming, deleting, and dragging to reorder them in the Pages panel.
 - Create text by dragging a fixed-size text box or clicking for auto-width text.
