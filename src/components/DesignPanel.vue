@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { useLibraryService } from '@/app/libraries'
+import { openLibraryReview, useLibraryService } from '@/app/libraries'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -44,6 +44,19 @@ const isComponentType = computed(() => {
   return type ? COMPONENT_TYPES.has(type) : false
 })
 const selectedIcon = computed(() => (node.value ? nodeIcon(node.value) : undefined))
+function openSelectedInstanceReview() {
+  const instance = node.value
+  if (instance?.type !== 'INSTANCE' || !instance.componentId) return
+  const component = store.graph.getNode(instance.componentId)
+  const identity = component?.librarySource?.identity
+  if (!identity) return
+  openLibraryReview({
+    libraryId: identity.libraryId,
+    assetKey: identity.assetKey,
+    instanceIds: [instance.id],
+    initialInstanceId: instance.id
+  })
+}
 const supportsLayoutGuides = computed(() => {
   const type = node.value?.type
   return type === 'FRAME' || type === 'COMPONENT' || type === 'COMPONENT_SET' || type === 'INSTANCE'
@@ -108,6 +121,7 @@ const { panels } = useI18n()
           :node="node"
           :editor="store"
           :service="libraryService"
+          @review="openSelectedInstanceReview"
         />
         <SelectionActionsControl />
       </template>

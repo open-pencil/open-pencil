@@ -9,5 +9,7 @@ export {
   writeLibraryCatalogSource,
   writeLibraryPriority
 } from './preferences'
+export { closeLibraryReview, libraryReviewRequest, openLibraryReview } from './review'
+export type { LibraryReviewRequest } from './review'
 export { LibraryService, useLibraryService } from './service'
 export type { EnabledLibraryAsset } from './service'

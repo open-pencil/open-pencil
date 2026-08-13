@@ -284,6 +284,10 @@ export class LibraryService implements ComponentCatalog {
     await this.refresh(editor)
   }
 
+  async getRevision(libraryId: string, revisionId?: string): Promise<ComponentLibraryRevision> {
+    return this.#getRevision(libraryId, revisionId)
+  }
+
   async getUpdateGroups(editor: EditorStore): Promise<LibraryAssetUpdateGroup[]> {
     const groups: LibraryAssetUpdateGroup[] = []
     for (const summary of this.#summaries.value) {
