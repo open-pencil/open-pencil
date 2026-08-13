@@ -217,7 +217,9 @@ async function updateAll() {
             <icon-lucide-component class="size-4 text-component" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs text-surface">{{ asset.name }}</p>
-              <p class="text-[10px] text-muted">{{ asset.instanceIds.length }} instances</p>
+              <p data-test-id="library-update-instance-count" class="text-[10px] text-muted">
+                {{ asset.instanceIds.length }} instances
+              </p>
             </div>
             <button
               type="button"
