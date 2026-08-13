@@ -119,7 +119,11 @@ export class StorageLibraryCatalog implements LibraryCatalog {
   }
 
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
-    const latest = await this.#latest(input.libraryId)
+    const manifestKey = latestKey(input.libraryId)
+    const latestValue = this.#objects.getObjectValue
+      ? await this.#objects.getObjectValue(manifestKey)
+      : { bytes: await this.#objects.getObject(manifestKey), etag: null }
+    const latest = latestValue.bytes ? decodeLatest(latestValue.bytes).summary : null
     if ((input.previousRevisionId ?? null) !== (latest?.latestRevisionId ?? null)) {
       throw new Error('Library revision conflict: latest revision has changed')
     }
@@ -138,11 +142,12 @@ export class StorageLibraryCatalog implements LibraryCatalog {
       assetCount: manifest.assets.length
     }
     await this.#objects.putObject(
-      latestKey(manifest.libraryId),
+      manifestKey,
       textEncoder.encode(
         JSON.stringify({ schemaVersion: 1, summary } satisfies StoredLibraryLatestManifest)
       ),
-      'application/json'
+      'application/json',
+      latest ? (latestValue.etag ? { ifMatch: latestValue.etag } : undefined) : { ifNoneMatch: '*' }
     )
     return revision
   }

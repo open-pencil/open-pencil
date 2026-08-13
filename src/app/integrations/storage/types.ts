@@ -41,9 +41,25 @@ export interface LibraryObjectSummary {
   etag: string | null
 }
 
+export interface LibraryObjectValue {
+  bytes: Uint8Array | null
+  etag: string | null
+}
+
+export interface LibraryObjectWriteOptions {
+  ifMatch?: string
+  ifNoneMatch?: '*'
+}
+
 export interface LibraryObjectStore {
   getObject(key: string): Promise<Uint8Array | null>
-  putObject(key: string, bytes: Uint8Array, contentType: string): Promise<void>
+  getObjectValue?(key: string): Promise<LibraryObjectValue>
+  putObject(
+    key: string,
+    bytes: Uint8Array,
+    contentType: string,
+    options?: LibraryObjectWriteOptions
+  ): Promise<void>
   listObjects(prefix: string): Promise<LibraryObjectSummary[]>
 }
 

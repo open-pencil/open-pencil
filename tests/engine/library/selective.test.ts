@@ -111,7 +111,6 @@ describe('selective library publication', () => {
 
   test('preserves nested component dependencies in retained assets', async () => {
     const sourceGraph = source(80)
-    const page = sourceGraph.getPages()[0]
     const button = [...sourceGraph.getAllNodes()].find((node) => node.componentKey === 'button')
     const card = [...sourceGraph.getAllNodes()].find((node) => node.componentKey === 'card')
     if (!button || !card) throw new Error('Components missing')

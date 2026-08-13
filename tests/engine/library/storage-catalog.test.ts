@@ -7,13 +7,29 @@ import { StorageLibraryCatalog } from '@/app/libraries/catalog/storage'
 
 class MemoryObjects implements LibraryObjectStore {
   readonly values = new Map<string, Uint8Array>()
+  readonly etags = new Map<string, string>()
+  #version = 0
 
   async getObject(key: string) {
     return this.values.get(key) ?? null
   }
 
-  async putObject(key: string, bytes: Uint8Array) {
+  async getObjectValue(key: string) {
+    return { bytes: await this.getObject(key), etag: this.etags.get(key) ?? null }
+  }
+
+  async putObject(
+    key: string,
+    bytes: Uint8Array,
+    _contentType?: string,
+    options?: { ifMatch?: string; ifNoneMatch?: '*' }
+  ) {
+    const current = this.etags.get(key)
+    if (options?.ifNoneMatch === '*' && current) throw new Error('revision conflict')
+    if (options?.ifMatch && options.ifMatch !== current) throw new Error('revision conflict')
     this.values.set(key, new Uint8Array(bytes))
+    this.#version += 1
+    this.etags.set(key, `etag-${this.#version}`)
   }
 
   async listObjects(prefix: string) {
@@ -71,6 +87,41 @@ describe('storage library catalog', () => {
     await expect(
       catalog.getRevision('design-system', revision.manifest.revisionId)
     ).rejects.toThrow('hash mismatch')
+  })
+
+  test('allows only one concurrent latest-pointer update', async () => {
+    const objects = new MemoryObjects()
+    const first = new StorageLibraryCatalog(objects)
+    const second = new StorageLibraryCatalog(objects)
+    const initial = await first.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: sourceGraph()
+    })
+    const delayedWrites: Array<() => void> = []
+    const originalPut = objects.putObject.bind(objects)
+    objects.putObject = async (key, bytes, contentType, options) => {
+      if (key.endsWith('/manifest.json')) {
+        await new Promise<void>((resolve) => {
+          delayedWrites.push(resolve)
+        })
+      }
+      return originalPut(key, bytes, contentType, options)
+    }
+    const publications = [first, second].map((catalog, index) =>
+      catalog.publishRevision({
+        libraryId: 'design-system',
+        name: 'Design system',
+        graph: sourceGraph(),
+        previousRevisionId: initial.manifest.revisionId,
+        description: `publisher-${index}`
+      })
+    )
+    while (delayedWrites.length < 2) await Bun.sleep(1)
+    for (const release of delayedWrites) release()
+    const results = await Promise.allSettled(publications)
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1)
   })
 
   test('rejects stale publication pointers', async () => {
