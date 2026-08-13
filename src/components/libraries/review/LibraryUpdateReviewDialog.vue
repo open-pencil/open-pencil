@@ -34,6 +34,25 @@ const modeOptions = computed(() => [
 const request = computed(() => libraryReviewRequest.value)
 const currentInstanceId = computed(() => request.value?.instanceIds[instanceIndex.value] ?? null)
 
+function pageIdForNode(nodeId: string): string | null {
+  let node = editor.graph.getNode(nodeId)
+  while (node?.parentId) {
+    const parent = editor.graph.getNode(node.parentId)
+    if (parent?.type === 'CANVAS') return parent.id
+    node = parent
+  }
+  return null
+}
+
+async function focusCurrentInstance() {
+  const instanceId = currentInstanceId.value
+  if (!instanceId) return
+  const pageId = pageIdForNode(instanceId)
+  if (pageId && pageId !== editor.state.currentPageId) await editor.switchPage(pageId)
+  editor.select([instanceId])
+  editor.zoomToSelection()
+}
+
 async function loadPreview() {
   const value = request.value
   const instanceId = currentInstanceId.value
@@ -43,7 +62,10 @@ async function loadPreview() {
   try {
     const revision = await service.getRevision(value.libraryId)
     const next = createLibraryUpdatePreview(editor.graph, instanceId, revision)
-    if (currentRequest === requestId) preview.value = next
+    if (currentRequest === requestId) {
+      preview.value = next
+      await focusCurrentInstance()
+    }
   } catch (cause) {
     toast.error(cause instanceof Error ? cause.message : String(cause))
   } finally {
@@ -71,12 +93,23 @@ async function updateAll() {
   closeLibraryReview()
 }
 
+watch(request, (value) => {
+  if (!value) return
+  instanceIndex.value = Math.max(0, value.instanceIds.indexOf(value.initialInstanceId))
+  mode.value = 'side-by-side'
+  opacity.value = [50]
+  preview.value = null
+})
 watch([request, currentInstanceId], () => void loadPreview(), { immediate: true })
 </script>
 
 <template>
   <AppDialogRoot v-model:open="open" size="xl" height="full" data-test-id="library-update-review">
-    <AppDialogHeader :heading="panels.reviewLibraryUpdate" :close-label="dialogs.close" />
+    <AppDialogHeader
+      :heading="panels.reviewLibraryUpdate"
+      :description="panels.reviewLibraryUpdateDescription"
+      :close-label="dialogs.close"
+    />
     <div
       v-if="request"
       class="border-b border-border px-4 py-3 text-center text-sm font-medium text-surface"
