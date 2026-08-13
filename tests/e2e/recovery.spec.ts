@@ -12,14 +12,14 @@ test('keeps an unsaved document recoverable after its tab closes', async ({ brow
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const id = store.createShape('RECTANGLE', 120, 120, 240, 140)
-    store.updateNode(id, { name: 'Retained recovery rectangle' })
     await store.persistRecoveryNow()
+    store.updateNode(id, { name: 'Retained recovery rectangle' })
   })
 
   await page.keyboard.press('ControlOrMeta+t')
   await expect(page.getByRole('button', { name: 'New tab' })).toBeVisible()
   await page.getByTestId('tabbar-tab').first().getByTestId('tabbar-close').click()
-  await expect(page.getByTestId('tabbar-tab')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'New tab' })).toBeHidden()
   await expect
     .poll(() =>
       page.evaluate(async () => {

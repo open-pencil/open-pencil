@@ -65,11 +65,9 @@ export function createDocumentRecovery({
     if (requestedVersion === protectedVersion) return
     if (!writing) {
       const generation = lifecycleGeneration
-      writing = runWrites(generation)
-        .catch((error) => console.warn('[Recovery] Snapshot failed:', error))
-        .finally(() => {
-          writing = null
-        })
+      writing = runWrites(generation).finally(() => {
+        writing = null
+      })
     }
     await writing
   }
@@ -77,7 +75,7 @@ export function createDocumentRecovery({
   const stop: WatchHandle = watchDebounced(
     () => state.sceneVersion,
     () => {
-      void persistNow()
+      void persistNow().catch((error) => console.warn('[Recovery] Snapshot failed:', error))
     },
     { debounce: 3000, maxWait: 10000 }
   )
