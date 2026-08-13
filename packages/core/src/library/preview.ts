@@ -3,6 +3,7 @@ import { cloneNodeProps, SceneGraph, type SceneNode } from '@open-pencil/scene-g
 import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
 
 import { libraryAssetKeyForComponent } from './instance-updates'
+import { libraryDependencyRoots } from './materialize'
 import type { ComponentLibraryRevision } from './types'
 
 export interface LibraryUpdatePreview {
@@ -10,6 +11,30 @@ export interface LibraryUpdatePreview {
   currentNodeId: string
   updatedNodeId: string
   fallback: boolean
+}
+
+function copyPreviewDefinitions(
+  source: SceneGraph,
+  target: SceneGraph,
+  components: SceneNode[],
+  pageId: string
+): Map<string, string> {
+  const mapped = new Map<string, string>()
+  const copy = (node: SceneNode, parentId: string): string => {
+    const existing = mapped.get(node.id)
+    if (existing) return existing
+    const created = target.createNode(node.type, parentId, cloneNodeProps(node, node.componentId))
+    mapped.set(node.id, created.id)
+    for (const child of source.getChildren(node.id)) copy(child, created.id)
+    return created.id
+  }
+  for (const component of components) copy(component, pageId)
+  for (const [sourceId, targetId] of mapped) {
+    const componentId = source.getNode(sourceId)?.componentId
+    const remapped = componentId ? mapped.get(componentId) : null
+    if (remapped) target.updateNode(targetId, { componentId: remapped })
+  }
+  return mapped
 }
 
 function copyTree(
@@ -84,8 +109,13 @@ export function createLibraryUpdatePreview(
 
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
+  const latestRoots = latest.manifest.assets.flatMap((descriptor) =>
+    libraryDependencyRoots(latest, descriptor)
+  )
   const currentComponentId = copyTree(consumer, graph, currentComponent, page.id)
-  const updatedComponentId = copyTree(latest.graph, graph, updatedComponent, page.id)
+  const latestMapped = copyPreviewDefinitions(latest.graph, graph, latestRoots, page.id)
+  const updatedComponentId = latestMapped.get(updatedComponent.id)
+  if (!updatedComponentId) throw new Error('Updated preview definition could not be copied')
   graph.updateNode(currentComponentId, {
     componentPropertyDefinitions: propertyDefinitions(consumer, currentComponent)
   })
