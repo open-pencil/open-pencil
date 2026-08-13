@@ -11,6 +11,7 @@
 
 ### Performance
 
+- Index Figma clipboard children once during import instead of rescanning every pasted node, keeping large flat pastes linear. (#500)
 - Reduce peak memory during `.fig` export by sharing immutable binary resources with the isolated export graph.
 
 ### Fixed
