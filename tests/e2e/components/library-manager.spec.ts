@@ -195,6 +195,17 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await expect(updateMenuItem).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(updateMenuItem).toBeHidden()
+  const reviewOrigin = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return {
+      pageId: store.state.currentPageId,
+      selectedIds: [...store.state.selectedIds],
+      panX: store.state.panX,
+      panY: store.state.panY,
+      zoom: store.state.zoom
+    }
+  })
   await instanceUpdate.click()
   await page.getByTestId('instance-review-update').click()
   const reviewDialog = page.getByTestId('library-update-review')
@@ -203,12 +214,39 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await expect(reviewDialog.getByRole('heading', { name: 'Updated' })).toBeVisible()
   await expect(reviewDialog.getByRole('img', { name: 'Current' })).toBeVisible()
   await expect(reviewDialog.getByRole('img', { name: 'Updated' })).toBeVisible()
+  await expect(reviewDialog.getByRole('button', { name: 'Previous instance' })).toBeDisabled()
+  await expect(reviewDialog.getByRole('button', { name: 'Next instance' })).toBeDisabled()
   await expect(reviewDialog).toHaveScreenshot('library-update-side-by-side.png', {
     animations: 'disabled'
   })
   await page.screenshot({ path: '/tmp/openpencil-library-review.png' })
+  await page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const otherPage = store.graph.getPages().find((page) => page.id !== store.state.currentPageId)
+    if (otherPage) await store.switchPage(otherPage.id)
+    store.clearSelection()
+    store.state.panX += 120
+    store.state.panY -= 80
+    store.state.zoom = 0.5
+  })
   await page.keyboard.press('Escape')
   await expect(reviewDialog).toBeHidden()
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) return null
+        return {
+          pageId: store.state.currentPageId,
+          selectedIds: [...store.state.selectedIds],
+          panX: store.state.panX,
+          panY: store.state.panY,
+          zoom: store.state.zoom
+        }
+      })
+    )
+    .toEqual(reviewOrigin)
   await instanceUpdate.click()
   await updateMenuItem.click()
   await expect(instanceUpdate).toBeHidden()

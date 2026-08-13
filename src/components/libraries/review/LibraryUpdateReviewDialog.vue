@@ -20,6 +20,16 @@ const instanceIndex = ref(0)
 const mode = ref<'side-by-side' | 'overlay'>('side-by-side')
 const opacity = ref([50])
 const loading = ref(false)
+const applying = ref(false)
+interface ReviewOrigin {
+  pageId: string
+  selectedIds: string[]
+  panX: number
+  panY: number
+  zoom: number
+}
+let origin: ReviewOrigin | null = null
+let accepted = false
 let requestId = 0
 const open = computed({
   get: () => libraryReviewRequest.value !== null,
@@ -73,28 +83,64 @@ async function loadPreview() {
   }
 }
 
+async function restoreOrigin() {
+  const value = origin
+  origin = null
+  if (!value || accepted) return
+  if (editor.state.currentPageId !== value.pageId) await editor.switchPage(value.pageId)
+  editor.select(value.selectedIds)
+  editor.state.panX = value.panX
+  editor.state.panY = value.panY
+  editor.state.zoom = value.zoom
+  editor.requestRepaint()
+}
+
 async function updateInstance() {
   const id = currentInstanceId.value
-  if (!id) return
-  await service.applyInstanceUpdate(editor, id)
-  closeLibraryReview()
+  if (!id || applying.value) return
+  applying.value = true
+  accepted = true
+  try {
+    await service.applyInstanceUpdate(editor, id)
+    closeLibraryReview()
+  } finally {
+    applying.value = false
+  }
 }
 
 async function updateAll() {
   const value = request.value
-  if (!value) return
-  await service.applyInstanceIdsUpdate(
-    editor,
-    value.libraryId,
-    value.assetKey,
-    value.instanceIds,
-    `Update ${value.assetKey}`
-  )
-  closeLibraryReview()
+  if (!value || applying.value) return
+  applying.value = true
+  accepted = true
+  try {
+    await service.applyInstanceIdsUpdate(
+      editor,
+      value.libraryId,
+      value.assetKey,
+      value.instanceIds,
+      `Update all ${preview.value?.graph.getNode(preview.value.updatedNodeId)?.name ?? value.assetKey} instances`
+    )
+    closeLibraryReview()
+  } finally {
+    applying.value = false
+  }
 }
 
-watch(request, (value) => {
-  if (!value) return
+watch(request, (value, previous) => {
+  if (!value) {
+    if (previous) void restoreOrigin()
+    return
+  }
+  origin = {
+    pageId: editor.state.currentPageId,
+    selectedIds: [...editor.state.selectedIds],
+    panX: editor.state.panX,
+    panY: editor.state.panY,
+    zoom: editor.state.zoom
+  }
+  accepted = false
+  applying.value = false
   instanceIndex.value = Math.max(0, value.instanceIds.indexOf(value.initialInstanceId))
   mode.value = 'side-by-side'
   opacity.value = [50]
@@ -115,6 +161,13 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
       class="border-b border-border px-4 py-3 text-center text-sm font-medium text-surface"
     >
       {{ preview?.graph.getNode(preview.updatedNodeId)?.name ?? panels.reviewLibraryUpdate }}
+    </div>
+    <div
+      v-if="preview?.fallback"
+      role="status"
+      class="border-b border-warning/40 bg-warning/10 px-4 py-2 text-xs text-warning"
+    >
+      {{ panels.libraryVariantFallbackWarning }}
     </div>
     <div
       v-if="preview"
@@ -178,12 +231,18 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
     </div>
     <AppDialogFooter :ui="{ footer: 'justify-between' }">
       <div class="flex items-center gap-2 text-xs text-muted">
-        <button type="button" :disabled="instanceIndex === 0" @click="instanceIndex--">
+        <button
+          type="button"
+          :aria-label="panels.previousLibraryInstance"
+          :disabled="applying || instanceIndex === 0"
+          @click="instanceIndex--"
+        >
           <icon-lucide-chevron-left class="size-4" />
         </button>
         <button
           type="button"
-          :disabled="!request || instanceIndex >= request.instanceIds.length - 1"
+          :aria-label="panels.nextLibraryInstance"
+          :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
           @click="instanceIndex++"
         >
           <icon-lucide-chevron-right class="size-4" />
@@ -199,6 +258,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
         <button
           type="button"
           class="rounded border border-border px-3 py-1.5 text-xs"
+          :disabled="applying"
           @click="updateInstance"
         >
           {{ panels.updateInstance }}
@@ -206,6 +266,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
         <button
           type="button"
           class="rounded bg-accent px-3 py-1.5 text-xs text-white"
+          :disabled="applying"
           @click="updateAll"
         >
           {{ panels.updateAll }}
