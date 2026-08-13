@@ -38,8 +38,15 @@ test('library manager scopes populated updates and does not mutate on discovery'
       width: 48,
       height: 20
     })
+    const card = store.graph.createNode('COMPONENT', pageNode.id, {
+      name: 'Card',
+      componentKey: 'card',
+      x: 180,
+      width: 160,
+      height: 100
+    })
     store.requestRender()
-    return component.id
+    return { buttonId: component.id, cardId: card.id }
   })
 
   await page.getByTestId('left-panel-assets-tab').click()
@@ -50,6 +57,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await publish.getByLabel('Library name').fill('Manager E2E')
   await expect(publish.getByText('Changes')).toBeVisible()
   await expect(publish.getByLabel('Button')).toBeChecked()
+  await expect(publish.getByLabel('Card')).toBeChecked()
   await publish.getByRole('button', { name: 'Publish library' }).click()
   await expect(publish.getByLabel('Library ID')).toBeHidden()
   await page.keyboard.press('Escape')
@@ -68,21 +76,30 @@ test('library manager scopes populated updates and does not mutate on discovery'
     .filter({ hasText: 'Button' })
     .getByTestId('asset-insert')
     .click()
+  await page
+    .getByTestId('asset-item')
+    .filter({ hasText: 'Card' })
+    .getByTestId('asset-insert')
+    .click()
 
   await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const instance = [...store.graph.getAllNodes()].find((node) => node.type === 'INSTANCE')
-    if (!instance?.componentId) throw new Error('Inserted instance missing')
+    const instances = [...store.graph.getAllNodes()].filter((node) => node.type === 'INSTANCE')
+    if (instances.some((instance) => !instance.componentId))
+      throw new Error('Inserted instance missing')
     const second = store.graph.addPage('Second')
-    store.graph.createNode('INSTANCE', second.id, { componentId: instance.componentId })
+    for (const instance of instances) {
+      if (instance.componentId)
+        store.graph.createNode('INSTANCE', second.id, { componentId: instance.componentId })
+    }
   })
 
   await page.getByTestId('tabbar-tab').nth(0).click()
-  await page.evaluate((componentId) => {
+  await page.evaluate(({ buttonId, cardId }) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    store.graph.updateNode(componentId, {
+    store.graph.updateNode(buttonId, {
       width: 144,
       height: 48,
       name: 'Button updated',
@@ -97,8 +114,9 @@ test('library manager scopes populated updates and does not mutate on discovery'
         }
       ]
     })
-    const label = store.graph.getChildren(componentId).find((node) => node.type === 'TEXT')
+    const label = store.graph.getChildren(buttonId).find((node) => node.type === 'TEXT')
     if (label) store.graph.updateNode(label.id, { text: 'New', x: 48, y: 14 })
+    store.graph.updateNode(cardId, { name: 'Card updated', width: 240, height: 140 })
     store.requestRender()
   }, source)
   await page.getByTestId('left-panel-assets-tab').click()
@@ -107,12 +125,20 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await publish.getByLabel('Revision description').fill('Wider button')
   await expect(publish.getByLabel('Library ID')).toBeDisabled()
   await expect(publish.getByLabel('Button updated')).toBeChecked()
+  await expect(publish.getByLabel('Card updated')).toBeChecked()
+  await publish.getByLabel('Card updated').click()
   await publish.getByLabel('Button updated').click()
   await expect(publish.getByRole('button', { name: 'Publish library' })).toBeDisabled()
   await publish.getByLabel('Button updated').click()
   await publish.getByRole('button', { name: 'Publish library' }).click()
   await expect(publish.getByLabel('Revision description')).toBeHidden()
+  await page.getByRole('button', { name: 'Publish library' }).click()
+  await expect(publish.getByLabel('Card updated')).toBeChecked()
+  await expect(publish.getByLabel('Button updated')).toHaveCount(0)
   await page.keyboard.press('Escape')
+  await expect(publish.getByLabel('Library ID')).toBeHidden()
+  await page.keyboard.press('Escape')
+  await expect(manager).toBeHidden()
   await page.getByTestId('tabbar-tab').nth(1).click()
 
   await page.getByTestId('left-panel-assets-tab').click()
@@ -145,7 +171,10 @@ test('library manager scopes populated updates and does not mutate on discovery'
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const ids = [...store.graph.getAllNodes()]
-      .filter((node) => node.type === 'INSTANCE')
+      .filter((node) => {
+        if (node.type !== 'INSTANCE' || !node.componentId) return false
+        return store.graph.getNode(node.componentId)?.name.includes('Button')
+      })
       .map((node) => node.id)
     store.select([ids[0]])
     return ids
@@ -211,6 +240,5 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await expect(reviewDialog).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(reviewDialog).toBeHidden()
-  await manager.getByRole('switch', { name: 'Show updates for all pages' }).click()
-  await expect(manager.getByText('No library updates')).toBeVisible()
+  await expect(manager.getByText('Card updated')).toHaveCount(0)
 })

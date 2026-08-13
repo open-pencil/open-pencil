@@ -298,6 +298,7 @@ export class LibraryService implements ComponentCatalog {
     for (const summary of this.#summaries.value) {
       const latest = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
       const assets = new Map(latest.manifest.assets.map((asset) => [asset.key, asset]))
+      const previousAssetsByRevision = new Map<string, Map<string, string>>()
       const instancesByAsset = new Map<string, string[]>()
       for (const node of editor.graph.getAllNodes()) {
         if (node.type !== 'INSTANCE' || !node.componentId) continue
@@ -306,7 +307,17 @@ export class LibraryService implements ComponentCatalog {
         if (!component || identity?.libraryId !== summary.libraryId) continue
         if (identity.revisionId === summary.latestRevisionId) continue
         const assetKey = libraryAssetKeyForComponent(editor.graph, component.id)
-        if (!assetKey || !assets.has(assetKey)) continue
+        const latestAsset = assetKey ? assets.get(assetKey) : undefined
+        if (!assetKey || !latestAsset) continue
+        let previousAssets = previousAssetsByRevision.get(identity.revisionId)
+        if (!previousAssets) {
+          const previous = await this.#getRevision(summary.libraryId, identity.revisionId)
+          previousAssets = new Map(
+            previous.manifest.assets.map((asset) => [asset.key, asset.contentHash])
+          )
+          previousAssetsByRevision.set(identity.revisionId, previousAssets)
+        }
+        if (previousAssets.get(assetKey) === latestAsset.contentHash) continue
         const ids = instancesByAsset.get(assetKey) ?? []
         ids.push(node.id)
         instancesByAsset.set(assetKey, ids)
