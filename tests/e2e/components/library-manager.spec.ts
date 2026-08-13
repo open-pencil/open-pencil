@@ -112,6 +112,12 @@ test('library manager scopes populated updates and does not mutate on discovery'
   const instanceUpdate = page.getByRole('button', { name: 'Update selected instance' })
   await expect(instanceUpdate).toBeVisible()
   await instanceUpdate.click()
+  const updateMenuItem = page.getByTestId('instance-update-selected')
+  await expect(updateMenuItem).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(updateMenuItem).toBeHidden()
+  await instanceUpdate.click()
+  await updateMenuItem.click()
   await expect(instanceUpdate).toBeHidden()
   const mixedComponents = await page.evaluate((ids) => {
     const store = window.openPencil?.getStore?.()
