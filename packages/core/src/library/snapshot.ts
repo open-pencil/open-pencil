@@ -15,7 +15,8 @@ const VOLATILE_NODE_FIELDS = new Set([
   'textPicture',
   'figmaDerivedTextGlyphs',
   'figmaDerivedLayout',
-  'librarySource'
+  'librarySource',
+  'pluginData'
 ])
 
 function assetKey(node: SceneNode): string {
@@ -129,20 +130,49 @@ export function extractLibrarySnapshot(
   }
 }
 
-function canonicalNode(
+function normalizedLibraryField(key: string, value: unknown): unknown {
+  if (key === 'lineHeight' && (value === null || value === 17)) return null
+  if (
+    key === 'fontFeatures' &&
+    Array.isArray(value) &&
+    (value.length === 0 ||
+      JSON.stringify(value) ===
+        JSON.stringify([
+          { tag: 'LIGA', enabled: true },
+          { tag: 'CALT', enabled: true }
+        ]))
+  ) {
+    return []
+  }
+  if (key === 'fills' && Array.isArray(value)) {
+    return value.map((paint) => {
+      if (!paint || typeof paint !== 'object' || Array.isArray(paint)) return paint
+      return Object.fromEntries(
+        Object.entries(paint).filter(
+          ([field, fieldValue]) => !(field === 'blendMode' && fieldValue === 'NORMAL')
+        )
+      )
+    })
+  }
+  return value
+}
+
+export function canonicalLibraryNode(
   graph: SceneGraph,
   node: SceneNode,
   dependencyStack = new Set<string>()
 ): unknown {
   const visualFields = Object.fromEntries(
-    Object.entries(node).filter(
-      ([key]) =>
-        !VOLATILE_NODE_FIELDS.has(key) &&
-        key !== 'componentId' &&
-        key !== 'instanceIndex' &&
-        key !== 'name' &&
-        key !== 'symbolDescription'
-    )
+    Object.entries(node)
+      .filter(
+        ([key]) =>
+          !VOLATILE_NODE_FIELDS.has(key) &&
+          key !== 'componentId' &&
+          key !== 'instanceIndex' &&
+          key !== 'name' &&
+          key !== 'symbolDescription'
+      )
+      .map(([key, value]) => [key, normalizedLibraryField(key, value)])
   )
   const component = node.componentId ? graph.getNode(node.componentId) : undefined
   const dependencyKey =
@@ -151,7 +181,7 @@ function canonicalNode(
       : null
   const dependency =
     component && dependencyKey && !dependencyStack.has(component.id)
-      ? canonicalNode(graph, component, new Set([...dependencyStack, component.id]))
+      ? canonicalLibraryNode(graph, component, new Set([...dependencyStack, component.id]))
       : null
   return {
     ...visualFields,
@@ -159,7 +189,7 @@ function canonicalNode(
     componentDependency: dependency,
     children: node.childIds.flatMap((id) => {
       const child = graph.getNode(id)
-      return child ? [canonicalNode(graph, child)] : []
+      return child ? [canonicalLibraryNode(graph, child)] : []
     })
   }
 }
@@ -174,7 +204,7 @@ export async function describeSnapshotAssets(
       name: node.name,
       description: node.symbolDescription,
       sourceNodeId: node.id,
-      contentHash: await contentHash(canonicalNode(snapshot.graph, node, new Set([node.id])))
+      contentHash: await contentHash(canonicalLibraryNode(snapshot.graph, node, new Set([node.id])))
     }))
   )
 }

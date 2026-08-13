@@ -84,7 +84,7 @@ test('preserves source publication identity across FIG save and reopen', async (
   await page.getByRole('button', { name: 'Publish library' }).click()
   await expect(publish.getByLabel('Library ID')).toHaveValue('source-lifecycle')
   await expect(publish.getByLabel('Library ID')).toBeDisabled()
-  await expect(publish.getByLabel('Source button')).toBeChecked()
+  await expect(publish.getByText('No asset changes')).toBeVisible()
   await page.keyboard.press('Escape')
   await page.keyboard.press('Escape')
 
