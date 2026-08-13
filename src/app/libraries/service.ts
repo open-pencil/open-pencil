@@ -467,7 +467,11 @@ export class LibraryService implements ComponentCatalog {
         graph: editor.graph,
         description: input.description,
         assetNodeIds: [...editor.graph.getAllNodes()]
-          .filter((node) => input.selectedAssetKeys.has(node.componentKey ?? ''))
+          .filter(
+            (node) =>
+              input.selectedAssetKeys.has(node.id) ||
+              input.selectedAssetKeys.has(node.componentKey ?? '')
+          )
           .map((node) => node.id)
       })
     }
