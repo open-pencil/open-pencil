@@ -17,7 +17,16 @@ function source(label: string) {
     name: 'Size=Small',
     componentPropertyValues: { Size: 'Small' }
   })
-  graph.createNode('TEXT', component.id, { name: 'Label', text: label })
+  graph.createNode('TEXT', component.id, {
+    name: 'Label',
+    text: label,
+    componentPropertyReferences: [{ propertyId: 'label', field: 'TEXT' }]
+  })
+  graph.updateNode(set.id, {
+    componentPropertyDefinitions: [
+      { id: 'label', name: 'Label', type: 'TEXT', defaultValue: label }
+    ]
+  })
   return graph
 }
 
@@ -37,7 +46,8 @@ describe('library update preview', () => {
     const consumer = new SceneGraph()
     const definition = materializeLibraryAsset(consumer, first, 'button')
     const instance = consumer.createNode('INSTANCE', consumer.getPages()[0].id, {
-      componentId: definition.componentId
+      componentId: definition.componentId,
+      componentPropertyAssignments: { label: 'Custom' }
     })
     const beforeNodes = [...consumer.nodes]
     const beforeBindings = [...consumer.enabledLibraries]
@@ -55,6 +65,12 @@ describe('library update preview', () => {
     expect(
       updatedComponentId ? preview.graph.getNode(updatedComponentId)?.componentPropertyValues : null
     ).toEqual({ Size: 'Small' })
+    expect(
+      preview.graph.getChildren(preview.currentNodeId).find((node) => node.type === 'TEXT')?.text
+    ).toBe('Custom')
+    expect(
+      preview.graph.getChildren(preview.updatedNodeId).find((node) => node.type === 'TEXT')?.text
+    ).toBe('Custom')
     expect([...consumer.nodes]).toEqual(beforeNodes)
     expect([...consumer.enabledLibraries]).toEqual(beforeBindings)
   })

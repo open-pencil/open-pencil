@@ -1,5 +1,7 @@
 import { cloneNodeProps, SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
+import { reapplyInstanceComponentProperties } from '#core/editor/components/properties'
+
 import { libraryAssetKeyForComponent } from './instance-updates'
 import type { ComponentLibraryRevision } from './types'
 
@@ -36,6 +38,14 @@ function sameVariant(left: SceneNode, right: SceneNode): boolean {
     entries.length === Object.keys(right.componentPropertyValues).length &&
     entries.every(([name, value]) => right.componentPropertyValues[name] === value)
   )
+}
+
+function propertyDefinitions(graph: SceneGraph, component: SceneNode) {
+  const parent = component.parentId ? graph.getNode(component.parentId) : null
+  return [
+    ...(parent?.type === 'COMPONENT_SET' ? parent.componentPropertyDefinitions : []),
+    ...component.componentPropertyDefinitions
+  ]
 }
 
 function createPreviewInstance(
@@ -76,8 +86,16 @@ export function createLibraryUpdatePreview(
   const page = graph.getPages()[0]
   const currentComponentId = copyTree(consumer, graph, currentComponent, page.id)
   const updatedComponentId = copyTree(latest.graph, graph, updatedComponent, page.id)
+  graph.updateNode(currentComponentId, {
+    componentPropertyDefinitions: propertyDefinitions(consumer, currentComponent)
+  })
+  graph.updateNode(updatedComponentId, {
+    componentPropertyDefinitions: propertyDefinitions(latest.graph, updatedComponent)
+  })
   const currentNodeId = createPreviewInstance(graph, page.id, currentComponentId, instance)
   const updatedNodeId = createPreviewInstance(graph, page.id, updatedComponentId, instance)
+  reapplyInstanceComponentProperties({ graph }, currentNodeId)
+  reapplyInstanceComponentProperties({ graph }, updatedNodeId)
   graph.updateNode(currentComponentId, { internalOnly: true })
   graph.updateNode(updatedComponentId, { internalOnly: true })
   return { graph, currentNodeId, updatedNodeId, fallback: !exact }

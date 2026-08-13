@@ -158,6 +158,9 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await expect(reviewDialog.getByRole('heading', { name: 'Updated' })).toBeVisible()
   await expect(reviewDialog.getByRole('img', { name: 'Current' })).toBeVisible()
   await expect(reviewDialog.getByRole('img', { name: 'Updated' })).toBeVisible()
+  await expect(reviewDialog).toHaveScreenshot('library-update-side-by-side.png', {
+    animations: 'disabled'
+  })
   await page.screenshot({ path: '/tmp/openpencil-library-review.png' })
   await page.keyboard.press('Escape')
   await expect(reviewDialog).toBeHidden()
