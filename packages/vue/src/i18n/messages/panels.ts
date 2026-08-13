@@ -32,6 +32,7 @@ export const panelMessageDefaults = {
   updateAll: 'Update all',
   noLibraryUpdates: 'No library updates',
   showUpdatesForAllPages: 'Show updates for all pages',
+  updateSelectedInstance: 'Update selected instance',
   reviewLibraryUpdate: 'Review library update',
   noLibraryAssetChanges: 'No asset changes',
   libraryUpdateImpact: params('{affected} affected instances · {fallback} variant fallbacks'),

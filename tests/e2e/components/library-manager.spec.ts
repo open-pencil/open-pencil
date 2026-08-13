@@ -98,6 +98,54 @@ test('library manager scopes populated updates and does not mutate on discovery'
 
   await manager.getByRole('switch', { name: 'Show updates for all pages' }).click()
   await expect(manager.getByTestId('library-update-instance-count')).toHaveText('Instances: 2')
-  await manager.getByRole('button', { name: 'Update all' }).click()
+  await page.keyboard.press('Escape')
+
+  const instances = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const ids = [...store.graph.getAllNodes()]
+      .filter((node) => node.type === 'INSTANCE')
+      .map((node) => node.id)
+    store.select([ids[0]])
+    return ids
+  })
+  const instanceUpdate = page.getByRole('button', { name: 'Update selected instance' })
+  await expect(instanceUpdate).toBeVisible()
+  await instanceUpdate.click()
+  await expect(instanceUpdate).toBeHidden()
+  const mixedComponents = await page.evaluate((ids) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return ids.map((id) => store.graph.getNode(id)?.componentId)
+  }, instances)
+  expect(new Set(mixedComponents).size).toBe(2)
+
+  await page.evaluate((id) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.select([id])
+  }, instances[1])
+  await expect(instanceUpdate).toBeVisible()
+
+  await page.keyboard.press('Meta+KeyZ')
+  const undoneComponents = await page.evaluate((ids) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return ids.map((id) => store.graph.getNode(id)?.componentId)
+  }, instances)
+  expect(new Set(undoneComponents).size).toBe(1)
+
+  await page.keyboard.press('Meta+Shift+KeyZ')
+  const redoneComponents = await page.evaluate((ids) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return ids.map((id) => store.graph.getNode(id)?.componentId)
+  }, instances)
+  expect(new Set(redoneComponents).size).toBe(2)
+
+  await page.getByTestId('left-panel-assets-tab').click()
+  await page.getByRole('button', { name: /libraries|updates/i }).click()
+  await manager.getByRole('button', { name: /Updates/ }).click()
+  await manager.getByRole('switch', { name: 'Show updates for all pages' }).click()
   await expect(manager.getByText('No library updates')).toBeVisible()
 })

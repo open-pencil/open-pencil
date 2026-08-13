@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { useLibraryService } from '@/app/libraries'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -25,11 +26,13 @@ import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
 import VariantAuthoringSection from './properties/component-properties/VariantAuthoringSection.vue'
+import InstanceUpdateAction from './properties/component-properties/instance-update/InstanceUpdateAction.vue'
 import FramePresetsSection from './properties/frame-presets/FramePresetsSection.vue'
 import FramePresetSelect from './properties/frame-presets/FramePresetSelect.vue'
 
 const variablesOpen = ref(false)
 const store = useEditorStore()
+const libraryService = useLibraryService()
 const activeTool = computed(() => store.state.activeTool)
 const { selectedNode: node, selectedCount: multiCount } = useSelectionState()
 const showBooleanOperations = computed(() => multiCount.value >= 2)
@@ -100,6 +103,12 @@ const { panels } = useI18n()
       </template>
       <span role="heading" aria-level="2">{{ node.name }}</span>
       <template #actions>
+        <InstanceUpdateAction
+          v-if="node.type === 'INSTANCE'"
+          :node="node"
+          :editor="store"
+          :service="libraryService"
+        />
         <SelectionActionsControl />
       </template>
     </PanelHeader>
