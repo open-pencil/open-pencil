@@ -1,20 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
-import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
-import {
-  openPublishLibraryDialog,
-  readLibraryCatalogSource,
-  readLibraryPriority,
-  StorageLibraryCatalog,
-  useLibraryService
-} from '@/app/libraries'
-import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
-import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'
+import { openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
+import { useLibraryManager } from '@/components/libraries/useLibraryManager'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
@@ -23,91 +12,20 @@ const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
 const { panels, dialogs } = useI18n()
-const section = ref<'browse' | 'updates'>('browse')
-const loading = ref(false)
-const showAllPages = ref(false)
-const applying = ref<string | null>(null)
-const updateGroups = ref<LibraryAssetUpdateGroup[]>([])
+const {
+  section,
+  loading,
+  showAllPages,
+  applying,
+  visibleUpdateGroups,
+  setSource,
+  toggleLibrary,
+  preferLibrary,
+  updateAsset,
+  updateAll
+} = useLibraryManager(open, editor, service)
 const navigationClass =
   'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
-
-const visibleUpdateGroups = computed(() =>
-  scopeLibraryUpdateGroups(editor, updateGroups.value, showAllPages.value)
-)
-
-async function refreshUpdates() {
-  updateGroups.value = await service.getUpdateGroups(editor)
-}
-
-watch(
-  () => [open.value, service.updates.value, editor.state.currentPageId] as const,
-  ([isOpen]) => {
-    if (isOpen) void refreshUpdates()
-  },
-  { immediate: true }
-)
-
-onMounted(() => {
-  const source = readLibraryCatalogSource()
-  if (source === 'storage') void setSource('storage')
-  else void service.refresh(editor)
-})
-
-async function setSource(source: 'local' | 'storage') {
-  loading.value = true
-  try {
-    if (source === 'local') service.useLocalCatalog()
-    else {
-      const providerId = activeStorageProviderID.value
-      if (!storagePreferencesComplete(providerId))
-        throw new Error(panels.value.storageNotConfigured)
-      const objects = createActiveStorageAdapter(providerId).libraryObjects
-      if (!objects) throw new Error(panels.value.storageLibrariesUnavailable)
-      service.useStorageCatalog(new StorageLibraryCatalog(objects))
-    }
-    await service.refresh(editor)
-    await refreshUpdates()
-  } finally {
-    loading.value = false
-  }
-}
-
-async function toggleLibrary(libraryId: string) {
-  if (editor.graph.enabledLibraries.get(libraryId)?.enabled)
-    await service.disable(editor, libraryId)
-  else await service.enable(editor, libraryId)
-}
-
-function preferLibrary(libraryId: string) {
-  const priority = Math.max(
-    0,
-    ...service.summaries.value.map((item) => readLibraryPriority(item.libraryId))
-  )
-  service.setPriority(libraryId, priority + 1)
-}
-
-async function updateAsset(libraryId: string, assetKey: string) {
-  applying.value = `${libraryId}:${assetKey}`
-  try {
-    const group = visibleUpdateGroups.value.find(
-      (item) => item.libraryId === libraryId && item.assetKey === assetKey
-    )
-    if (group) await service.applyUpdateGroups(editor, [group], `Update ${group.name}`)
-    await refreshUpdates()
-  } finally {
-    applying.value = null
-  }
-}
-
-async function updateAll() {
-  applying.value = 'all'
-  try {
-    await service.applyUpdateGroups(editor, visibleUpdateGroups.value, 'Update all library assets')
-    await refreshUpdates()
-  } finally {
-    applying.value = null
-  }
-}
 </script>
 
 <template>
@@ -225,7 +143,7 @@ async function updateAll() {
               type="button"
               class="rounded border border-border px-3 py-1 text-xs"
               :disabled="applying !== null"
-              @click="updateAsset(asset.libraryId, asset.assetKey)"
+              @click="updateAsset(asset)"
             >
               {{ panels.updateLibraryAsset }}
             </button>
