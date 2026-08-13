@@ -49,7 +49,11 @@ const navigationClass =
 
 <template>
   <AppDialogRoot v-model:open="open" size="lg" height="tall" data-test-id="asset-libraries-dialog">
-    <AppDialogHeader :heading="panels.manageLibraries" :close-label="dialogs.close">
+    <AppDialogHeader
+      :heading="panels.manageLibraries"
+      :description="panels.manageLibrariesDescription"
+      :close-label="dialogs.close"
+    >
       <template #actions>
         <button
           type="button"
