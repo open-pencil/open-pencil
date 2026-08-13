@@ -109,6 +109,40 @@ describe('selective library publication', () => {
     expect([...changed.nodes]).toEqual(before)
   })
 
+  test('preserves nested component dependencies in retained assets', async () => {
+    const sourceGraph = source(80)
+    const page = sourceGraph.getPages()[0]
+    const button = [...sourceGraph.getAllNodes()].find((node) => node.componentKey === 'button')
+    const card = [...sourceGraph.getAllNodes()].find((node) => node.componentKey === 'card')
+    if (!button || !card) throw new Error('Components missing')
+    sourceGraph.createNode('INSTANCE', card.id, { componentId: button.id })
+    const previous = await createLibraryRevision({
+      libraryId: 'library',
+      name: 'Library',
+      graph: sourceGraph
+    })
+    const changed = source(120)
+    const changedPage = changed.getPages()[0]
+    changed.createNode('COMPONENT', changedPage.id, {
+      name: 'Tooltip',
+      componentKey: 'tooltip'
+    })
+    const next = await createSelectiveLibraryRevision({
+      previous,
+      sourceGraph: changed,
+      selectedAssetKeys: new Set(['button']),
+      name: 'Library'
+    })
+    const retainedCard = next.manifest.assets.find((asset) => asset.key === 'card')
+    const retainedRoot = retainedCard ? next.graph.getNode(retainedCard.sourceNodeId) : null
+    const nested = retainedRoot
+      ? next.graph.getChildren(retainedRoot.id).find((node) => node.type === 'INSTANCE')
+      : null
+    expect(nested?.componentId ? next.graph.getNode(nested.componentId)?.componentKey : null).toBe(
+      'button'
+    )
+  })
+
   test('rejects publication when no pending change is selected', async () => {
     const previous = await initialRevision()
     expect(

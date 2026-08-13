@@ -23,7 +23,7 @@ function getInternalLibraryPage(graph: SceneGraph): SceneNode {
   return graph.getNode(page.id) ?? page
 }
 
-function dependencyRoots(
+export function libraryDependencyRoots(
   revision: ComponentLibraryRevision,
   descriptor: LibraryAssetDescriptor
 ): SceneNode[] {
@@ -153,7 +153,7 @@ export function materializeLibraryAsset(
     throw new Error(`Library asset not found: ${libraryAssetIdentityKey(libraryId, assetKey)}`)
   const page = getInternalLibraryPage(consumer)
   const mappedIds = new Map<string, string>()
-  for (const root of dependencyRoots(revision, descriptor)) {
+  for (const root of libraryDependencyRoots(revision, descriptor)) {
     copyLibraryTree(revision.graph, consumer, root.id, page.id, mappedIds)
   }
   markDefinitions(consumer, revision, mappedIds)
