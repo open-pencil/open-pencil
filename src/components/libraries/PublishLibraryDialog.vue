@@ -9,6 +9,8 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
 import AppCheckbox from '@/components/ui/AppCheckbox.vue'
 import AppInput from '@/components/ui/AppInput.vue'
+import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
+import AppTextarea from '@/components/ui/AppTextarea.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
 const editor = useEditorStore()
@@ -17,20 +19,36 @@ const { panels } = useI18n()
 const libraryId = ref('')
 const libraryName = ref('')
 const description = ref('')
+const query = ref('')
 const publishing = ref(false)
 const loading = ref(false)
 const error = ref('')
 const changes = ref<LibraryAssetChange[]>([])
 const selectedKeys = ref(new Set<string>())
+const changeLabels = computed(() => ({
+  added: panels.value.libraryChangeAdded,
+  modified: panels.value.libraryChangeModified,
+  renamed: panels.value.libraryChangeRenamed,
+  removed: panels.value.libraryChangeRemoved
+}))
 const publication = computed(() => readSourceLibraryPublication(editor.graph))
+const visibleChanges = computed(() => {
+  const normalized = query.value.trim().toLowerCase()
+  return normalized
+    ? changes.value.filter((change) => change.asset.name.toLowerCase().includes(normalized))
+    : changes.value
+})
 const selectionState = computed<boolean | 'indeterminate'>(() => {
-  if (selectedKeys.value.size === 0) return false
-  return selectedKeys.value.size === changes.value.length ? true : 'indeterminate'
+  const visibleKeys = visibleChanges.value.map((change) => change.asset.key)
+  const selectedVisible = visibleKeys.filter((key) => selectedKeys.value.has(key)).length
+  if (selectedVisible === 0) return false
+  return selectedVisible === visibleKeys.length ? true : 'indeterminate'
 })
 
 watch(publishLibraryDialogOpen, async (open) => {
   if (!open) return
   error.value = ''
+  query.value = ''
   loading.value = true
   const existing = publication.value
   libraryId.value = existing?.libraryId ?? libraryId.value
@@ -66,7 +84,13 @@ watch(publishLibraryDialogOpen, async (open) => {
 })
 
 function toggleAll(value: boolean) {
-  selectedKeys.value = value ? new Set(changes.value.map((change) => change.asset.key)) : new Set()
+  const visibleKeys = visibleChanges.value.map((change) => change.asset.key)
+  const next = new Set(selectedKeys.value)
+  for (const key of visibleKeys) {
+    if (value) next.add(key)
+    else next.delete(key)
+  }
+  selectedKeys.value = next
 }
 
 function toggleAsset(key: string, value: boolean) {
@@ -112,9 +136,16 @@ async function publish() {
       </label>
       <label class="flex flex-col gap-1 text-[11px] text-muted">
         {{ panels.revisionDescription }}
-        <AppInput v-model="description" />
+        <AppTextarea v-model="description" />
       </label>
-      <div class="rounded border border-border">
+      <div class="flex items-center justify-between rounded bg-surface px-2.5 py-2 text-xs">
+        <span class="text-muted">{{ panels.libraryDestination }}</span>
+        <span>{{
+          service.catalogSource === 'storage' ? panels.storageLibraries : panels.localLibraries
+        }}</span>
+      </div>
+      <AppInput v-model="query" type="search" :placeholder="panels.searchLibraryChanges" />
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-border">
         <div class="flex items-center gap-2 border-b border-border px-3 py-2 text-xs font-medium">
           <AppCheckbox
             :model-value="selectionState"
@@ -127,23 +158,44 @@ async function publish() {
         <div v-if="loading" class="px-3 py-6 text-center text-xs text-muted">
           {{ panels.loading }}
         </div>
-        <div v-else-if="changes.length === 0" class="px-3 py-6 text-center text-xs text-muted">
-          {{ panels.noLibraryAssetChanges }}
-        </div>
-        <label
-          v-for="change in changes"
-          v-else
-          :key="change.asset.key"
-          class="flex items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
+        <AppPlaceholder
+          v-else-if="changes.length === 0"
+          :label="panels.noLibraryAssetChanges"
+          size="compact"
         >
-          <AppCheckbox
-            :model-value="selectedKeys.has(change.asset.key)"
-            :ariaLabel="change.asset.name"
-            @update:model-value="(value) => toggleAsset(change.asset.key, value)"
-          />
-          <span class="min-w-0 flex-1 truncate text-xs">{{ change.asset.name }}</span>
-          <span class="text-[10px] capitalize text-muted">{{ change.kind }}</span>
-        </label>
+          <template #icon><icon-lucide-package-check /></template>
+        </AppPlaceholder>
+        <AppPlaceholder
+          v-else-if="visibleChanges.length === 0"
+          :label="panels.noLibraryChangesFound"
+          size="compact"
+        >
+          <template #icon><icon-lucide-search-x /></template>
+        </AppPlaceholder>
+        <div v-else class="min-h-0 overflow-y-auto">
+          <label
+            v-for="change in visibleChanges"
+            :key="change.asset.key"
+            class="flex items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
+          >
+            <AppCheckbox
+              :model-value="selectedKeys.has(change.asset.key)"
+              :ariaLabel="change.asset.name"
+              @update:model-value="(value) => toggleAsset(change.asset.key, value)"
+            />
+            <div
+              class="flex size-8 shrink-0 items-center justify-center rounded bg-surface text-muted"
+            >
+              <icon-lucide-layout-template
+                v-if="change.asset.type === 'COMPONENT_SET'"
+                class="size-4"
+              />
+              <icon-lucide-component v-else class="size-4" />
+            </div>
+            <span class="min-w-0 flex-1 truncate text-xs">{{ change.asset.name }}</span>
+            <span class="text-[10px] text-muted">{{ changeLabels[change.kind] }}</span>
+          </label>
+        </div>
       </div>
       <p v-if="error" role="alert" class="text-xs text-danger">{{ error }}</p>
     </form>

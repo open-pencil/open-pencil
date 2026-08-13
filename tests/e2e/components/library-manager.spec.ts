@@ -126,8 +126,17 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await expect(publish.getByLabel('Library ID')).toBeDisabled()
   await expect(publish.getByLabel('Button updated')).toBeChecked()
   await expect(publish.getByLabel('Card updated')).toBeChecked()
+  await expect(publish).toHaveScreenshot('library-publish-changes.png', {
+    animations: 'disabled'
+  })
+  const searchChanges = publish.getByPlaceholder('Search changes')
+  await searchChanges.fill('Button')
+  await expect(publish.getByLabel('Card updated')).toHaveCount(0)
+  await publish.getByLabel('Changes').click()
+  await searchChanges.fill('')
+  await expect(publish.getByLabel('Button updated')).not.toBeChecked()
+  await expect(publish.getByLabel('Card updated')).toBeChecked()
   await publish.getByLabel('Card updated').click()
-  await publish.getByLabel('Button updated').click()
   await expect(publish.getByRole('button', { name: 'Publish library' })).toBeDisabled()
   await publish.getByLabel('Button updated').click()
   await publish.getByRole('button', { name: 'Publish library' }).click()
