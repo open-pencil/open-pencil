@@ -1,15 +1,12 @@
-import type { LibraryInstanceUpdate } from '@open-pencil/core/library'
-
 import type { EditorStore } from '@/app/editor/session'
 
 export interface LibraryAssetUpdateGroup {
   libraryId: string
   assetKey: string
   name: string
-  plans: LibraryInstanceUpdate[]
+  instanceIds: string[]
   currentPageCount: number
   allPagesCount: number
-  fallbackCount: number
 }
 
 function pageIdForNode(editor: EditorStore, nodeId: string): string | null {
@@ -29,9 +26,11 @@ export function scopeLibraryUpdateGroups(
 ): LibraryAssetUpdateGroup[] {
   if (allPages) return groups
   return groups.flatMap((group) => {
-    const plans = group.plans.filter(
-      (plan) => pageIdForNode(editor, plan.instanceId) === editor.state.currentPageId
+    const instanceIds = group.instanceIds.filter(
+      (instanceId) => pageIdForNode(editor, instanceId) === editor.state.currentPageId
     )
-    return plans.length > 0 ? [{ ...group, plans, currentPageCount: plans.length }] : []
+    return instanceIds.length > 0
+      ? [{ ...group, instanceIds, currentPageCount: instanceIds.length }]
+      : []
   })
 }

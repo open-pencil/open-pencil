@@ -4,7 +4,7 @@ import { findLibraryDefinition } from './definitions'
 import type { ComponentLibraryRevision, LibraryAssetDescriptor } from './types'
 import type { LibraryInstanceUpdate } from './update'
 
-function componentRootAssetKey(graph: SceneGraph, componentId: string): string | null {
+export function libraryAssetKeyForComponent(graph: SceneGraph, componentId: string): string | null {
   let node = graph.getNode(componentId)
   while (node) {
     const identity = node.librarySource?.identity
@@ -60,7 +60,7 @@ export function planOutdatedLibraryInstances(
     const component = graph.getNode(instance.componentId)
     const identity = component?.librarySource?.identity
     if (!identity || identity.libraryId !== revision.manifest.libraryId) continue
-    const assetKey = componentRootAssetKey(graph, component.id)
+    const assetKey = libraryAssetKeyForComponent(graph, component.id)
     if (!assetKey || (assetKeys && !assetKeys.has(assetKey))) continue
     if (identity.revisionId === revision.manifest.revisionId) continue
     const descriptor = descriptors.get(assetKey)

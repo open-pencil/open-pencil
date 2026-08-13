@@ -92,7 +92,7 @@ async function updateAsset(libraryId: string, assetKey: string) {
     const group = visibleUpdateGroups.value.find(
       (item) => item.libraryId === libraryId && item.assetKey === assetKey
     )
-    if (group) await service.applyUpdatePlans(editor, group.plans, `Update ${group.name}`)
+    if (group) await service.applyUpdateGroups(editor, [group], `Update ${group.name}`)
     await refreshUpdates()
   } finally {
     applying.value = null
@@ -102,8 +102,7 @@ async function updateAsset(libraryId: string, assetKey: string) {
 async function updateAll() {
   applying.value = 'all'
   try {
-    const plans = visibleUpdateGroups.value.flatMap((group) => group.plans)
-    await service.applyUpdatePlans(editor, plans, 'Update all library assets')
+    await service.applyUpdateGroups(editor, visibleUpdateGroups.value, 'Update all library assets')
     await refreshUpdates()
   } finally {
     applying.value = null
@@ -218,11 +217,7 @@ async function updateAll() {
             <icon-lucide-component class="size-4 text-component" />
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs text-surface">{{ asset.name }}</p>
-              <p class="text-[10px] text-muted">
-                {{ asset.plans.length }} instances<span v-if="asset.fallbackCount">
-                  · {{ asset.fallbackCount }} fallbacks</span
-                >
-              </p>
+              <p class="text-[10px] text-muted">{{ asset.instanceIds.length }} instances</p>
             </div>
             <button
               type="button"

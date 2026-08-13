@@ -5,6 +5,7 @@ import {
   materializeLibraryAsset,
   ensureLibraryAssetKeys,
   libraryUpdateImpact,
+  libraryAssetKeyForComponent,
   planOutdatedLibraryInstances,
   planLibraryInstanceUpdates,
   summarizeLibraryUpdate
@@ -287,37 +288,70 @@ export class LibraryService implements ComponentCatalog {
     const groups: LibraryAssetUpdateGroup[] = []
     for (const summary of this.#summaries.value) {
       const latest = await this.#getRevision(summary.libraryId, summary.latestRevisionId)
-      for (const asset of latest.manifest.assets) {
-        materializeLibraryAsset(editor.graph, latest, asset.key)
-        const plans = planOutdatedLibraryInstances(editor.graph, latest, new Set([asset.key]))
-        if (plans.length === 0) continue
+      const assets = new Map(latest.manifest.assets.map((asset) => [asset.key, asset]))
+      const instancesByAsset = new Map<string, string[]>()
+      for (const node of editor.graph.getAllNodes()) {
+        if (node.type !== 'INSTANCE' || !node.componentId) continue
+        const component = editor.graph.getNode(node.componentId)
+        const identity = component?.librarySource?.identity
+        if (!component || identity?.libraryId !== summary.libraryId) continue
+        if (identity.revisionId === summary.latestRevisionId) continue
+        const assetKey = libraryAssetKeyForComponent(editor.graph, component.id)
+        if (!assetKey || !assets.has(assetKey)) continue
+        const ids = instancesByAsset.get(assetKey) ?? []
+        ids.push(node.id)
+        instancesByAsset.set(assetKey, ids)
+      }
+      for (const [assetKey, instanceIds] of instancesByAsset) {
+        const asset = assets.get(assetKey)
+        if (!asset) continue
         groups.push({
           libraryId: summary.libraryId,
-          assetKey: asset.key,
+          assetKey,
           name: asset.name,
-          plans,
-          currentPageCount: plans.length,
-          allPagesCount: plans.length,
-          fallbackCount: plans.filter((plan) => plan.fallback).length
+          instanceIds,
+          currentPageCount: instanceIds.length,
+          allPagesCount: instanceIds.length
         })
       }
     }
     return groups
   }
 
+  async #plansForGroups(
+    editor: EditorStore,
+    groups: LibraryAssetUpdateGroup[]
+  ): Promise<ReturnType<typeof planOutdatedLibraryInstances>> {
+    const plans: ReturnType<typeof planOutdatedLibraryInstances> = []
+    for (const group of groups) {
+      const latest = await this.#getRevision(group.libraryId)
+      materializeLibraryAsset(editor.graph, latest, group.assetKey)
+      plans.push(
+        ...planOutdatedLibraryInstances(
+          editor.graph,
+          latest,
+          new Set([group.assetKey]),
+          new Set(group.instanceIds)
+        )
+      )
+    }
+    return plans
+  }
+
   async applyAllUpdates(editor: EditorStore): Promise<void> {
     const groups = await this.getUpdateGroups(editor)
-    const plans = groups.flatMap((group) => group.plans)
+    const plans = await this.#plansForGroups(editor, groups)
     if (plans.length === 0) return
     this.#applyPlans(editor, plans, 'Update all library assets')
     await this.refresh(editor)
   }
 
-  async applyUpdatePlans(
+  async applyUpdateGroups(
     editor: EditorStore,
-    plans: ReturnType<typeof planOutdatedLibraryInstances>,
+    groups: LibraryAssetUpdateGroup[],
     label = 'Update library assets'
   ): Promise<void> {
+    const plans = await this.#plansForGroups(editor, groups)
     if (plans.length === 0) return
     this.#applyPlans(editor, plans, label)
     await this.refresh(editor)
