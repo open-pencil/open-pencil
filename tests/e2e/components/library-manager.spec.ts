@@ -75,15 +75,19 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await page.getByTestId('tabbar-tab').nth(1).click()
 
   await page.getByTestId('left-panel-assets-tab').click()
+  await expect(page.getByRole('button', { name: 'Review library updates' })).toBeVisible()
+  await page.getByRole('button', { name: 'Review library updates' }).click()
+  await expect(manager.getByRole('button', { name: /Updates/ })).toHaveAttribute(
+    'data-state',
+    'active'
+  )
+  await expect(manager.getByText('Button updated')).toBeVisible()
   const before = await page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     return [...store.graph.getAllNodes()].map((node) => node.id)
   })
-  await page.getByRole('button', { name: 'Manage libraries' }).click()
-  await manager.getByRole('button', { name: /Updates/ }).click()
-  await expect(manager.getByText('Button updated')).toBeVisible()
-  await expect(manager.getByTestId('library-update-instance-count')).toHaveText('1 instances')
+  await expect(manager.getByTestId('library-update-instance-count')).toHaveText('Instances: 1')
   expect(
     await page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
@@ -93,7 +97,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
   ).toEqual(before)
 
   await manager.getByRole('switch', { name: 'Show updates for all pages' }).click()
-  await expect(manager.getByTestId('library-update-instance-count')).toHaveText('2 instances')
+  await expect(manager.getByTestId('library-update-instance-count')).toHaveText('Instances: 2')
   await manager.getByRole('button', { name: 'Update all' }).click()
   await expect(manager.getByText('No library updates')).toBeVisible()
 })

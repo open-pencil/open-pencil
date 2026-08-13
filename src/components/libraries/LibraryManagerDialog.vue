@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { watch } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -8,6 +10,9 @@ import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
+const { initialSection = 'browse' } = defineProps<{
+  initialSection?: 'browse' | 'updates'
+}>()
 const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
@@ -24,6 +29,9 @@ const {
   updateAsset,
   updateAll
 } = useLibraryManager(open, editor, service)
+watch(open, (isOpen) => {
+  if (isOpen) section.value = initialSection
+})
 const navigationClass =
   'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
 </script>
@@ -108,7 +116,6 @@ const navigationClass =
           <button
             type="button"
             class="rounded border border-border px-2 py-1 text-xs"
-            :disabled="loading"
             @click="toggleLibrary(library.libraryId)"
           >
             {{

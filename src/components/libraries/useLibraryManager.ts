@@ -44,23 +44,40 @@ export function useLibraryManager(
     }
   }
 
-  async function setSource(source: 'local' | 'storage') {
-    if (source === 'local') service.useLocalCatalog()
-    else {
-      const providerId = activeStorageProviderID.value
-      if (!storagePreferencesComplete(providerId)) throw new Error('Storage is not configured')
-      const objects = createActiveStorageAdapter(providerId).libraryObjects
-      if (!objects) throw new Error('Storage libraries are unavailable')
-      service.useStorageCatalog(new StorageLibraryCatalog(objects))
+  async function runOperation(operation: () => Promise<void>): Promise<void> {
+    try {
+      await operation()
+    } catch (cause) {
+      toast.error(cause instanceof Error ? cause.message : String(cause))
     }
-    await refresh()
+  }
+
+  async function setSource(source: 'local' | 'storage') {
+    await runOperation(async () => {
+      if (source === 'local') service.useLocalCatalog()
+      else {
+        const providerId = activeStorageProviderID.value
+        if (!storagePreferencesComplete(providerId)) throw new Error('Storage is not configured')
+        const objects = createActiveStorageAdapter(providerId).libraryObjects
+        if (!objects) throw new Error('Storage libraries are unavailable')
+        service.useStorageCatalog(new StorageLibraryCatalog(objects))
+      }
+      await refresh()
+    })
   }
 
   async function toggleLibrary(libraryId: string) {
-    if (editor.graph.enabledLibraries.get(libraryId)?.enabled)
-      await service.disable(editor, libraryId)
-    else await service.enable(editor, libraryId)
-    await refresh()
+    loading.value = true
+    try {
+      await runOperation(async () => {
+        if (editor.graph.enabledLibraries.get(libraryId)?.enabled)
+          await service.disable(editor, libraryId)
+        else await service.enable(editor, libraryId)
+        await refresh()
+      })
+    } finally {
+      loading.value = false
+    }
   }
 
   function preferLibrary(libraryId: string) {
@@ -74,8 +91,10 @@ export function useLibraryManager(
   async function updateAsset(group: LibraryAssetUpdateGroup) {
     applying.value = `${group.libraryId}:${group.assetKey}`
     try {
-      await service.applyUpdateGroups(editor, [group], `Update ${group.name}`)
-      await refresh()
+      await runOperation(async () => {
+        await service.applyUpdateGroups(editor, [group], `Update ${group.name}`)
+        await refresh()
+      })
     } finally {
       applying.value = null
     }
@@ -84,19 +103,21 @@ export function useLibraryManager(
   async function updateAll() {
     applying.value = 'all'
     try {
-      await service.applyUpdateGroups(
-        editor,
-        visibleUpdateGroups.value,
-        'Update all library assets'
-      )
-      await refresh()
+      await runOperation(async () => {
+        await service.applyUpdateGroups(
+          editor,
+          visibleUpdateGroups.value,
+          'Update all library assets'
+        )
+        await refresh()
+      })
     } finally {
       applying.value = null
     }
   }
 
   watch(
-    () => [open.value, service.updates.value, editor.state.currentPageId] as const,
+    () => [open.value, editor.state.currentPageId] as const,
     ([isOpen]) => {
       if (isOpen) void refresh()
     },
@@ -104,7 +125,7 @@ export function useLibraryManager(
   )
 
   const source = readLibraryCatalogSource()
-  if (source === 'storage') void setSource('storage')
+  if (source === 'storage' && !open.value) void setSource('storage')
 
   return {
     section,
