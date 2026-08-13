@@ -54,6 +54,8 @@ export const panelMessageDefaults = {
   libraryName: 'Library name',
   revisionDescription: 'Revision description',
   libraryPublishFailed: 'Failed to publish library',
+  libraryChanges: 'Changes',
+  loading: 'Loading…',
   cancel: 'Cancel',
   localLibraries: 'Local',
   storageLibraries: 'Storage',
