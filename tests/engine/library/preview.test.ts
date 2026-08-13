@@ -45,12 +45,16 @@ describe('library update preview', () => {
     const preview = createLibraryUpdatePreview(consumer, instance.id, latest)
 
     expect(preview.fallback).toBe(false)
-    expect(preview.graph.getNode(preview.currentNodeId)?.componentPropertyValues).toEqual({
-      Size: 'Small'
-    })
-    expect(preview.graph.getNode(preview.updatedNodeId)?.componentPropertyValues).toEqual({
-      Size: 'Small'
-    })
+    expect(preview.graph.getNode(preview.currentNodeId)?.type).toBe('INSTANCE')
+    expect(preview.graph.getNode(preview.updatedNodeId)?.type).toBe('INSTANCE')
+    const currentComponentId = preview.graph.getNode(preview.currentNodeId)?.componentId
+    const updatedComponentId = preview.graph.getNode(preview.updatedNodeId)?.componentId
+    expect(
+      currentComponentId ? preview.graph.getNode(currentComponentId)?.componentPropertyValues : null
+    ).toEqual({ Size: 'Small' })
+    expect(
+      updatedComponentId ? preview.graph.getNode(updatedComponentId)?.componentPropertyValues : null
+    ).toEqual({ Size: 'Small' })
     expect([...consumer.nodes]).toEqual(beforeNodes)
     expect([...consumer.enabledLibraries]).toEqual(beforeBindings)
   })

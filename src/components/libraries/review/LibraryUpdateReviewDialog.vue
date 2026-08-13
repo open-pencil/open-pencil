@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@open-pencil/core/library'
@@ -17,7 +18,7 @@ const { panels, dialogs } = useI18n()
 const preview = shallowRef<LibraryUpdatePreview | null>(null)
 const instanceIndex = ref(0)
 const mode = ref<'side-by-side' | 'overlay'>('side-by-side')
-const opacity = ref(50)
+const opacity = ref([50])
 const loading = ref(false)
 let requestId = 0
 const open = computed({
@@ -60,7 +61,13 @@ async function updateInstance() {
 async function updateAll() {
   const value = request.value
   if (!value) return
-  await service.applyAssetUpdate(editor, value.libraryId, value.assetKey)
+  await service.applyInstanceIdsUpdate(
+    editor,
+    value.libraryId,
+    value.assetKey,
+    value.instanceIds,
+    `Update ${value.assetKey}`
+  )
   closeLibraryReview()
 }
 
@@ -94,7 +101,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
       <section
         class="flex min-h-0 flex-col p-4"
         :class="mode === 'overlay' ? 'absolute inset-0' : ''"
-        :style="mode === 'overlay' ? { opacity: opacity / 100 } : undefined"
+        :style="mode === 'overlay' ? { opacity: opacity[0] / 100 } : undefined"
       >
         <h3 class="text-xs font-semibold text-surface">{{ panels.updatedVersion }}</h3>
         <div class="flex flex-1 items-center justify-center">
@@ -107,14 +114,25 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
       </section>
       <div class="absolute bottom-3 left-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
         <SegmentedControl v-model="mode" :options="modeOptions" :label="panels.comparisonMode" />
-        <input
+        <SliderRoot
           v-if="mode === 'overlay'"
-          v-model.number="opacity"
-          type="range"
-          min="0"
-          max="100"
+          v-model="opacity"
+          :min="0"
+          :max="100"
+          :step="1"
           :aria-label="panels.overlayOpacity"
-        />
+          class="relative flex w-32 touch-none items-center"
+        >
+          <SliderTrack class="relative h-1.5 grow overflow-hidden rounded-full bg-hover">
+            <SliderRange class="absolute h-full bg-accent" />
+          </SliderTrack>
+          <SliderThumb
+            class="block size-3.5 rounded-full border border-accent bg-panel shadow outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          />
+        </SliderRoot>
+        <span v-if="mode === 'overlay'" class="w-8 text-right text-[10px] text-muted">
+          {{ opacity[0] }}%
+        </span>
       </div>
     </div>
     <div v-else class="flex min-h-0 flex-1 items-center justify-center text-xs text-muted">

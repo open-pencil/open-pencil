@@ -38,6 +38,22 @@ function sameVariant(left: SceneNode, right: SceneNode): boolean {
   )
 }
 
+function createPreviewInstance(
+  graph: SceneGraph,
+  pageId: string,
+  componentId: string,
+  source: SceneNode
+): string {
+  const instance = graph.createInstance(componentId, pageId, {
+    ...cloneNodeProps(source, componentId),
+    componentId,
+    x: 0,
+    y: 0
+  })
+  if (!instance) throw new Error('Preview instance could not be created')
+  return instance.id
+}
+
 export function createLibraryUpdatePreview(
   consumer: SceneGraph,
   instanceId: string,
@@ -58,9 +74,11 @@ export function createLibraryUpdatePreview(
 
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
-  const currentNodeId = copyTree(consumer, graph, currentComponent, page.id)
-  const updatedNodeId = copyTree(latest.graph, graph, updatedComponent, page.id)
-  graph.updateNode(currentNodeId, { x: 0, y: 0 })
-  graph.updateNode(updatedNodeId, { x: 0, y: 0 })
+  const currentComponentId = copyTree(consumer, graph, currentComponent, page.id)
+  const updatedComponentId = copyTree(latest.graph, graph, updatedComponent, page.id)
+  const currentNodeId = createPreviewInstance(graph, page.id, currentComponentId, instance)
+  const updatedNodeId = createPreviewInstance(graph, page.id, updatedComponentId, instance)
+  graph.updateNode(currentComponentId, { internalOnly: true })
+  graph.updateNode(updatedComponentId, { internalOnly: true })
   return { graph, currentNodeId, updatedNodeId, fallback: !exact }
 }

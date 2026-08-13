@@ -4,7 +4,7 @@ import { watch } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
+import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
 import { useLibraryManager } from '@/components/libraries/useLibraryManager'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
@@ -32,6 +32,17 @@ const {
 watch(open, (isOpen) => {
   if (isOpen) section.value = initialSection
 })
+function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
+  const initialInstanceId = group.instanceIds[0]
+  if (!initialInstanceId) return
+  openLibraryReview({
+    libraryId: group.libraryId,
+    assetKey: group.assetKey,
+    instanceIds: group.instanceIds,
+    initialInstanceId
+  })
+}
+
 const navigationClass =
   'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
 </script>
@@ -141,10 +152,12 @@ const navigationClass =
           >
             <icon-lucide-component class="size-4 text-component" />
             <div class="min-w-0 flex-1">
-              <p class="truncate text-xs text-surface">{{ asset.name }}</p>
-              <p data-test-id="library-update-instance-count" class="text-[10px] text-muted">
-                {{ panels.libraryInstanceCount({ count: asset.instanceIds.length }) }}
-              </p>
+              <button type="button" class="block w-full text-left" @click="reviewUpdate(asset)">
+                <p class="truncate text-xs text-surface">{{ asset.name }}</p>
+                <p data-test-id="library-update-instance-count" class="text-[10px] text-muted">
+                  {{ panels.libraryInstanceCount({ count: asset.instanceIds.length }) }}
+                </p>
+              </button>
             </div>
             <button
               type="button"
