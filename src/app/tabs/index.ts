@@ -36,7 +36,6 @@ function generateTabId(): string {
 }
 
 const tabsRef = shallowRef<Tab[]>([])
-const pendingRecoveryDeletions = new Set<Promise<void>>()
 const activeTabId = shallowRef('')
 
 export const activeTab = computed(() => tabsRef.value.find((t) => t.id === activeTabId.value))
@@ -98,13 +97,7 @@ export async function closeTab(tabId: string): Promise<void> {
 
   const closingTab = tabsRef.value[idx]
   const wasActive = activeTabId.value === tabId
-  const deletion = closingTab.store.discardRecovery()
-  pendingRecoveryDeletions.add(deletion)
-  try {
-    await deletion
-  } finally {
-    pendingRecoveryDeletions.delete(deletion)
-  }
+  await closingTab.store.persistRecoveryNow()
   closingTab.store.dispose()
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
@@ -304,10 +297,7 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
 }
 
 export async function prepareForReload(): Promise<void> {
-  await Promise.all([
-    ...pendingRecoveryDeletions,
-    ...tabsRef.value.map((tab) => tab.store.persistRecoveryNow())
-  ])
+  await Promise.all(tabsRef.value.map((tab) => tab.store.persistRecoveryNow()))
 }
 
 export function tabCount(): number {
