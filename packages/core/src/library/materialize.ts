@@ -51,7 +51,7 @@ function dependencyRoots(
   return [...roots.values()]
 }
 
-function copyTree(
+export function copyLibraryTree(
   source: SceneGraph,
   target: SceneGraph,
   sourceId: string,
@@ -63,7 +63,8 @@ function copyTree(
   if (!node) return
   const created = target.createNode(node.type, parentId, cloneNodeProps(node, node.componentId))
   mappedIds.set(sourceId, created.id)
-  for (const childId of node.childIds) copyTree(source, target, childId, created.id, mappedIds)
+  for (const childId of node.childIds)
+    copyLibraryTree(source, target, childId, created.id, mappedIds)
 }
 
 function markDefinitions(
@@ -153,7 +154,7 @@ export function materializeLibraryAsset(
   const page = getInternalLibraryPage(consumer)
   const mappedIds = new Map<string, string>()
   for (const root of dependencyRoots(revision, descriptor)) {
-    copyTree(revision.graph, consumer, root.id, page.id, mappedIds)
+    copyLibraryTree(revision.graph, consumer, root.id, page.id, mappedIds)
   }
   markDefinitions(consumer, revision, mappedIds)
   copyImages(revision.graph, consumer, mappedIds)
