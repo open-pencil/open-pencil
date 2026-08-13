@@ -15,6 +15,7 @@
 
 ### Fixed
 
+- Keep unsaved source-less documents recoverable after their editor tab is closed, matching Figma's retained offline-change behavior.
 - Decode zstd-compressed FIG containers, reject invalid compressed payloads, and preserve exact fixture byte ranges. (#397)
 - Compose caller CSS with Tailwind defaults when importing DOM/CSS documents. (#397)
 - Preserve desktop HTTP timeout, abort, and empty-response semantics. (#397)
