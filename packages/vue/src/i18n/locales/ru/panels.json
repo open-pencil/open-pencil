@@ -209,6 +209,7 @@
   "disableLibrary": "Disable library",
   "noLibraries": "No published libraries",
   "libraryAssetCount": "{count} assets",
+  "libraryInstanceCount": "{count} instance(s)",
   "libraryUpdateAvailable": "Update available",
   "applyLibraryUpdate": "Apply update",
   "browseLibraries": "Browse libraries",

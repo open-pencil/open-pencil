@@ -22,6 +22,7 @@ export const panelMessageDefaults = {
   disableLibrary: 'Disable library',
   noLibraries: 'No published libraries',
   libraryAssetCount: params('{count} assets'),
+  libraryInstanceCount: params('{count} instance(s)'),
   libraryUpdateAvailable: 'Update available',
   applyLibraryUpdate: 'Apply update',
   browseLibraries: 'Browse libraries',

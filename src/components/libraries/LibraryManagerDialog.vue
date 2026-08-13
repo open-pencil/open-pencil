@@ -136,7 +136,7 @@ const navigationClass =
             <div class="min-w-0 flex-1">
               <p class="truncate text-xs text-surface">{{ asset.name }}</p>
               <p data-test-id="library-update-instance-count" class="text-[10px] text-muted">
-                {{ asset.instanceIds.length }} instances
+                {{ panels.libraryInstanceCount({ count: asset.instanceIds.length }) }}
               </p>
             </div>
             <button
