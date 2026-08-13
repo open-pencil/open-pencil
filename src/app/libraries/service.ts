@@ -8,7 +8,11 @@ import {
   libraryAssetKeyForComponent,
   planOutdatedLibraryInstances,
   planLibraryInstanceUpdates,
-  summarizeLibraryUpdate
+  summarizeLibraryUpdate,
+  createSelectiveLibraryRevision,
+  discoverPublishableLibraryChanges,
+  readSourceLibraryPublication,
+  writeSourceLibraryPublication
 } from '@open-pencil/core/library'
 import type {
   ComponentLibraryRevision,
@@ -16,7 +20,8 @@ import type {
   LibrarySummary,
   LibraryUpdateImpact,
   LibraryUpdateSummary,
-  PublishLibraryInput
+  PublishLibraryInput,
+  LibraryAssetChange
 } from '@open-pencil/core/library'
 import type {
   ComponentCatalog,
@@ -413,6 +418,71 @@ export class LibraryService implements ComponentCatalog {
     }
     apply()
     editor.pushUndoEntry({ label, forward: apply, inverse: restore })
+  }
+
+  async discoverPublicationChanges(editor: EditorStore): Promise<{
+    publication: ReturnType<typeof readSourceLibraryPublication>
+    changes: LibraryAssetChange[]
+  }> {
+    const publication = readSourceLibraryPublication(editor.graph)
+    if (!publication) return { publication: null, changes: [] }
+    const previous = await this.#getRevision(publication.libraryId, publication.revisionId)
+    const { changes } = await discoverPublishableLibraryChanges(previous, editor.graph)
+    return { publication, changes }
+  }
+
+  async publishSelected(
+    editor: EditorStore,
+    input: {
+      libraryId: string
+      name: string
+      description?: string
+      selectedAssetKeys: ReadonlySet<string>
+    }
+  ): Promise<ComponentLibraryRevision> {
+    const publication = readSourceLibraryPublication(editor.graph)
+    let revision: ComponentLibraryRevision
+    if (publication) {
+      const previous = await this.#getRevision(publication.libraryId, publication.revisionId)
+      revision = await createSelectiveLibraryRevision({
+        previous,
+        sourceGraph: editor.graph,
+        selectedAssetKeys: input.selectedAssetKeys,
+        name: input.name,
+        description: input.description
+      })
+      revision = await this.#catalog.publishRevision({
+        libraryId: revision.manifest.libraryId,
+        name: revision.manifest.name,
+        graph: revision.graph,
+        assetNodeIds: revision.manifest.assets.map((asset) => asset.sourceNodeId),
+        previousRevisionId: revision.manifest.previousRevisionId,
+        description: revision.manifest.description,
+        publishedAt: revision.manifest.publishedAt
+      })
+    } else {
+      revision = await this.publish({
+        libraryId: input.libraryId,
+        name: input.name,
+        graph: editor.graph,
+        description: input.description,
+        assetNodeIds: [...editor.graph.getAllNodes()]
+          .filter((node) => input.selectedAssetKeys.has(node.componentKey ?? ''))
+          .map((node) => node.id)
+      })
+    }
+    writeSourceLibraryPublication(editor.graph, {
+      libraryId: revision.manifest.libraryId,
+      revisionId: revision.manifest.revisionId,
+      name: revision.manifest.name,
+      catalogSource: this.catalogSource
+    })
+    this.#revisionCache.set(
+      this.#revisionCacheKey(revision.manifest.libraryId, revision.manifest.revisionId),
+      revision
+    )
+    this.#summaries.value = await this.#catalog.listLibraries()
+    return revision
   }
 
   async publish(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
