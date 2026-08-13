@@ -255,6 +255,10 @@ bun run dev        # Dev server at localhost:1420
 bun run tauri dev  # Desktop app (requires Rust)
 ```
 
+Alternatively, open the repository in any [Dev Container](https://containers.dev/)-compatible tool. The container pins Bun, installs the workspace dependencies, and forwards the web editor on port 1420. Start it with `bun run dev` after the container is ready.
+
+The Dev Container supports the web editor, packages, CLI, and automated checks. Native Tauri development still requires the host setup described below because desktop windows and platform WebView dependencies are not provided in the container.
+
 ### Quality gates
 
 | Command             | Description           |
