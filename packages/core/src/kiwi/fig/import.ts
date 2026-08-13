@@ -43,6 +43,13 @@ function applyImportedDocumentMetadata(graph: SceneGraph, docNc: NodeChange | un
   const rootNode = graph.getNode(graph.rootId)
   if (!docNc || !rootNode) return
   rootNode.source.format = 'fig'
+  rootNode.pluginData = docNc.pluginData
+    ? docNc.pluginData.map((entry) => ({
+        pluginId: entry.pluginID,
+        key: entry.key,
+        value: entry.value
+      }))
+    : []
   rootNode.source.fig.rawNodeFields.strokeJoin = docNc.strokeJoin
   rootNode.source.fig.rawNodeFields.strokeWeight = docNc.strokeWeight
   const bindings = getOpenPencilPluginValue(docNc, ENABLED_LIBRARIES_PLUGIN_KEY)

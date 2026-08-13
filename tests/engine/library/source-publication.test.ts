@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
 import {
   readSourceLibraryPublication,
   writeSourceLibraryPublication
@@ -7,6 +8,24 @@ import {
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('source library publication identity', () => {
+  test('survives a FIG export and reimport', async () => {
+    initCodec()
+    const graph = new SceneGraph()
+    writeSourceLibraryPublication(graph, {
+      libraryId: 'design-system',
+      revisionId: 'revision-1',
+      name: 'Design system',
+      catalogSource: 'local'
+    })
+    const restored = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    expect(readSourceLibraryPublication(restored)).toEqual({
+      libraryId: 'design-system',
+      revisionId: 'revision-1',
+      name: 'Design system',
+      catalogSource: 'local'
+    })
+  })
+
   test('round-trips through root plugin data', () => {
     const graph = new SceneGraph()
     expect(readSourceLibraryPublication(graph)).toBeNull()
