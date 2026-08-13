@@ -10,6 +10,112 @@ async function openLibraries(page: Page) {
   await page.getByRole('button', { name: 'Manage libraries' }).click()
 }
 
+test('preserves source publication identity across FIG save and reopen', async ({ page }) => {
+  const canvas = new CanvasHelper(page)
+  await page.goto('/?test')
+  await canvas.waitForInit()
+  const componentId = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageNode = store.graph.getNode(store.state.currentPageId)
+    if (!pageNode) throw new Error('Current page missing')
+    return store.graph.createNode('COMPONENT', pageNode.id, {
+      name: 'Source button',
+      componentKey: 'source-button',
+      width: 80,
+      height: 32
+    }).id
+  })
+
+  await openAssets(page)
+  await openLibraries(page)
+  await page.getByRole('button', { name: 'Publish library' }).click()
+  const publish = page.getByRole('dialog').filter({ hasText: 'Publish library' })
+  await publish.getByLabel('Library ID').fill('source-lifecycle')
+  await publish.getByLabel('Library name').fill('Source lifecycle')
+  await publish.getByRole('button', { name: 'Publish library' }).click()
+  await expect(publish.getByLabel('Library ID')).toBeHidden()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('asset-libraries-dialog')).toBeHidden()
+  const firstRevision = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const value = store?.graph
+      .getNode(store.graph.rootId)
+      ?.pluginData.find((entry) => entry.key === 'sourceLibraryPublication')?.value
+    return value ? (JSON.parse(value) as { revisionId: string }).revisionId : null
+  })
+  expect(firstRevision).toBeTruthy()
+
+  const saved = await page.evaluate(async () => {
+    const writes: Uint8Array[] = []
+    window.showSaveFilePicker = async () =>
+      ({
+        name: 'source.fig',
+        getFile: async () => new File([], 'source.fig'),
+        createWritable: async () => ({
+          write: async (data: Uint8Array) => writes.push(data),
+          close: async () => undefined
+        })
+      }) as FileSystemFileHandle
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    await store.saveFigFileAs()
+    return Array.from(writes[0] ?? [])
+  })
+  expect(saved.length).toBeGreaterThan(0)
+
+  await page.evaluate((bytes) => {
+    const file = new File([new Uint8Array(bytes)], 'source.fig')
+    window.showOpenFilePicker = async () => [{ getFile: async () => file } as FileSystemFileHandle]
+  }, saved)
+  await page.keyboard.press('Meta+KeyO')
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        const root = store?.graph.getNode(store.graph.rootId)
+        return root?.pluginData.find((entry) => entry.key === 'sourceLibraryPublication')?.value
+      })
+    )
+    .toContain('source-lifecycle')
+
+  await openAssets(page)
+  await openLibraries(page)
+  await page.getByRole('button', { name: 'Publish library' }).click()
+  await expect(publish.getByLabel('Library ID')).toHaveValue('source-lifecycle')
+  await expect(publish.getByLabel('Library ID')).toBeDisabled()
+  await expect(publish.getByLabel('Source button')).toBeChecked()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Escape')
+
+  await page.evaluate((sourceId) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const component = [...store.graph.getAllNodes()].find(
+      (node) => node.source.id === sourceId || node.componentKey === 'source-button'
+    )
+    if (!component) throw new Error('Reopened source component missing')
+    store.graph.updateNode(component.id, { width: 144, name: 'Source button updated' })
+  }, componentId)
+  await openAssets(page)
+  await openLibraries(page)
+  await page.getByRole('button', { name: 'Publish library' }).click()
+  await expect(publish.getByLabel('Source button updated')).toBeChecked()
+  await expect(publish.getByText('Modified')).toBeVisible()
+  await publish.getByRole('button', { name: 'Publish library' }).click()
+  await expect(publish.getByLabel('Library ID')).toBeHidden()
+
+  const secondRevision = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const value = store?.graph
+      .getNode(store.graph.rootId)
+      ?.pluginData.find((entry) => entry.key === 'sourceLibraryPublication')?.value
+    return value ? (JSON.parse(value) as { revisionId: string }).revisionId : null
+  })
+  expect(secondRevision).toBeTruthy()
+  expect(secondRevision).not.toBe(firstRevision)
+})
+
 test('publishes, consumes, saves, and reopens a multidimensional library instance offline', async ({
   page
 }) => {
