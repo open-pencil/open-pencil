@@ -146,7 +146,12 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
         </div>
       </section>
       <div class="absolute bottom-3 left-3 flex items-center gap-3 rounded bg-panel p-1 shadow">
-        <SegmentedControl v-model="mode" :options="modeOptions" :label="panels.comparisonMode" />
+        <SegmentedControl
+          v-model="mode"
+          :options="modeOptions"
+          :label="panels.comparisonMode"
+          :ui="{ root: 'w-52' }"
+        />
         <SliderRoot
           v-if="mode === 'overlay'"
           v-model="opacity"

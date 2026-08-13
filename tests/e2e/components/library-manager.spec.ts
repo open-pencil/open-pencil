@@ -18,7 +18,25 @@ test('library manager scopes populated updates and does not mutate on discovery'
       name: 'Button',
       componentKey: 'button',
       width: 80,
-      height: 32
+      height: 32,
+      cornerRadius: 4,
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0.8, b: 0.1, a: 1 },
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
+    })
+    store.graph.createNode('TEXT', component.id, {
+      name: 'Label',
+      text: 'Old',
+      x: 16,
+      y: 6,
+      width: 48,
+      height: 20
     })
     store.requestRender()
     return component.id
@@ -62,7 +80,23 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await page.evaluate((componentId) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    store.graph.updateNode(componentId, { width: 144, name: 'Button updated' })
+    store.graph.updateNode(componentId, {
+      width: 144,
+      height: 48,
+      name: 'Button updated',
+      cornerRadius: 14,
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 1, g: 0.25, b: 0.1, a: 1 },
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
+      ]
+    })
+    const label = store.graph.getChildren(componentId).find((node) => node.type === 'TEXT')
+    if (label) store.graph.updateNode(label.id, { text: 'New', x: 48, y: 14 })
     store.requestRender()
   }, source)
   await page.getByTestId('left-panel-assets-tab').click()
@@ -163,6 +197,10 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await page.getByTestId('left-panel-assets-tab').click()
   await page.getByRole('button', { name: /libraries|updates/i }).click()
   await manager.getByRole('button', { name: /Updates/ }).click()
+  await manager.getByRole('button', { name: 'Button updated' }).click()
+  await expect(reviewDialog).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(reviewDialog).toBeHidden()
   await manager.getByRole('switch', { name: 'Show updates for all pages' }).click()
   await expect(manager.getByText('No library updates')).toBeVisible()
 })
