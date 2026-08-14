@@ -14,6 +14,7 @@ import Tip from '@/components/ui/Tip.vue'
 
 import type { JSXFormat } from '@open-pencil/core/design-jsx'
 
+const { active = true } = defineProps<{ active?: boolean }>()
 const store = useEditorStore()
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 const { dialogs } = useI18n()
@@ -29,6 +30,7 @@ function toggleFormat() {
 }
 
 const jsxCode = useSceneComputed(() => {
+  if (!active) return ''
   void store.state.sceneVersion
   const ids = [...store.state.selectedIds]
   if (ids.length === 0) return ''
