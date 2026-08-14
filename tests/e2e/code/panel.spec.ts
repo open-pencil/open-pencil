@@ -2,6 +2,7 @@ import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 import {
   getCodeNodeSummaries,
   getFirstSelectedNodeId,
+  getUndoLabel,
   hasNode,
   hasNodeNamed,
   waitForNode,
@@ -122,6 +123,38 @@ test('Reset restores generated source and original canvas state', async () => {
   await waitForNode(editor.page, originalId)
   expect(await hasNode(editor.page, originalId)).toBe(true)
   await expect(codeEditor()).toContainText('Rectangle')
+})
+
+test('HTML/CSS live preview commits as one undoable session', async () => {
+  await editor.canvas.drawRect(80, 80, 120, 90)
+  const originalId = await getFirstSelectedNodeId(editor.page)
+  await openCodePanel()
+  await selectSource('HTML/CSS')
+  await codeEditor().fill('<div style="width: 180px; height: 90px">First</div>')
+  await expect.poll(() => hasNode(editor.page, originalId)).toBe(false)
+  await codeEditor().fill('<div style="width: 220px; height: 110px">Final</div>')
+  await expect(editor.page.getByTestId('code-panel-status')).toContainText('Updated live')
+
+  await designTab().click()
+  await expect.poll(() => getUndoLabel(editor.page)).toBe('Edit HTML/CSS')
+  await editor.page.keyboard.press('Meta+z')
+  await waitForNode(editor.page, originalId)
+  expect(await hasNode(editor.page, originalId)).toBe(true)
+  await editor.page.keyboard.press('Meta+Shift+z')
+  await expect.poll(() => hasNode(editor.page, originalId)).toBe(false)
+})
+
+test('switching source formats commits the current live session', async () => {
+  await editor.canvas.drawRect(90, 90, 140, 100)
+  const originalId = await getFirstSelectedNodeId(editor.page)
+  await openCodePanel()
+  await codeEditor().fill('<Frame name="Committed on switch" />')
+  await waitForNodeNamed(editor.page, 'Committed on switch')
+  await selectSource('HTML/CSS')
+  await expect(codeEditor()).toContainText('<style>')
+  await expect.poll(() => getUndoLabel(editor.page)).toBe('Edit JSX')
+  await editor.page.keyboard.press('Meta+z')
+  await waitForNode(editor.page, originalId)
 })
 
 test('HTML/CSS uses the same editor and live reloads the canvas', async () => {

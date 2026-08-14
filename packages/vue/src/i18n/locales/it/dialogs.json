@@ -24,7 +24,6 @@
   "createCollection": "Crea raccolta",
   "localVariables": "Variabili locali",
   "noVariableCollections": "Nessuna raccolta di variabili",
-  "selectLayerForJSX": "Seleziona un livello per vedere il suo codice JSX",
   "connectAIProvider": "Collega un provider AI per iniziare a chattare.",
   "connect": "Connetti",
   "testConnection": "Verifica connessione",
@@ -267,5 +266,16 @@
   "dismiss": "Chiudi",
   "toolRunning": "Esecuzione…",
   "toolError": "Errore",
-  "permissionRequestTitle": "Richiesta di autorizzazione"
+  "permissionRequestTitle": "Richiesta di autorizzazione",
+  "codeSource": "Code source",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Updating…",
+  "codeUpdatedLive": "Updated live",
+  "codePreviewFailed": "Preview failed",
+  "codeGeneratedReadOnly": "Generated, read only",
+  "codeReset": "Reset"
 }

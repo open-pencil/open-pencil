@@ -41,6 +41,7 @@ const error = ref('')
 const designSession = shallowRef<DesignJSXEditSession | null>(null)
 let domSession: DOMCodeSession | null = null
 let previewQueue = Promise.resolve()
+let pendingPreview: Promise<void> | undefined
 let updateVersion = 0
 let disposing = false
 
@@ -57,18 +58,22 @@ const generatedJSX = useSceneComputed(() => {
 })
 
 const sourceOptions = computed(() => [
-  { value: 'design-jsx' as const, label: 'Design JSX' },
-  { value: 'tailwind-jsx' as const, label: 'Tailwind JSX' },
-  { value: 'html-css' as const, label: 'HTML/CSS' }
+  { value: 'design-jsx' as const, label: dialogs.value.codeSourceDesignJSX },
+  { value: 'tailwind-jsx' as const, label: dialogs.value.codeSourceTailwindJSX },
+  { value: 'html-css' as const, label: dialogs.value.codeSourceHTMLCSS }
 ])
 const readOnly = computed(() => source.value === 'tailwind-jsx')
 const dirty = computed(() => draft.value !== baseline.value)
-const editorLabel = computed(() => (source.value === 'html-css' ? 'HTML and CSS' : 'Design JSX'))
+const editorLabel = computed(() =>
+  source.value === 'html-css'
+    ? dialogs.value.codeEditorHTMLCSSLabel
+    : dialogs.value.codeEditorDesignLabel
+)
 const statusText = computed(() => {
-  if (status.value === 'updating') return 'Updating…'
-  if (status.value === 'error') return 'Preview failed'
-  if (dirty.value) return 'Updated live'
-  return 'Up to date'
+  if (status.value === 'updating') return dialogs.value.codeUpdating
+  if (status.value === 'error') return dialogs.value.codePreviewFailed
+  if (dirty.value) return dialogs.value.codeUpdatedLive
+  return dialogs.value.jsxUpToDate
 })
 
 function beginDesignSession(): boolean {
@@ -89,12 +94,14 @@ function beginDOMSession(): DOMCodeSession {
 }
 
 async function commitCurrentSession(): Promise<void> {
-  updateVersion += 1
+  await pendingPreview
   await previewQueue
+  updateVersion += 1
   if (designSession.value) commitDesignJSXSession(store, designSession.value)
   if (domSession) commitDOMCodeSession(store, domSession)
   designSession.value = null
   domSession = null
+  pendingPreview = undefined
 }
 
 async function runPreview(version: number): Promise<void> {
@@ -132,16 +139,18 @@ function updateDraft(value: string): void {
   draft.value = value
   error.value = ''
   updateVersion += 1
-  void schedulePreview()
+  pendingPreview = schedulePreview()
 }
 
 async function resetDraft(): Promise<void> {
-  updateVersion += 1
+  await pendingPreview
   await previewQueue
+  updateVersion += 1
   if (designSession.value) resetDesignJSXPreview(store, designSession.value)
   if (domSession) resetDOMCodePreview(store, domSession)
   designSession.value = null
   domSession = null
+  pendingPreview = undefined
   draft.value = baseline.value
   error.value = ''
   status.value = 'idle'
@@ -162,18 +171,6 @@ function generatedFor(next: Exclude<CodeSource, 'html-css'>): string {
   const ids = [...store.state.selectedIds]
   if (ids.length === 0) return starterSourceFor(next)
   return selectionToJSX(ids, store.graph, next === 'tailwind-jsx' ? 'tailwind' : 'openpencil')
-}
-
-function handlePanelUndo(event: KeyboardEvent): void {
-  if (!event.metaKey && !event.ctrlKey) return
-  if (event.code !== 'KeyZ') return
-  // CodeMirror handles draft history while focused. This fallback only handles the committed
-  // live-preview transaction when focus is elsewhere in the Code panel.
-  if (event.target instanceof Element && event.target.closest('.cm-editor')) return
-  event.preventDefault()
-  if (event.shiftKey) store.performRedo()
-  else store.performUndo()
-  store.requestRender()
 }
 
 watch(
@@ -200,16 +197,12 @@ watch(
 </script>
 
 <template>
-  <div
-    data-test-id="code-panel-root"
-    class="flex min-h-0 flex-1 flex-col"
-    @keydown="handlePanelUndo"
-  >
+  <div data-test-id="code-panel-root" class="flex min-h-0 flex-1 flex-col">
     <header class="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
       <AppSelect
         :model-value="source"
         :options="sourceOptions"
-        label="Code source"
+        :label="dialogs.codeSource"
         data-test-id="code-panel-source"
         :ui="{ trigger: 'h-7 min-w-0 flex-1 text-[11px]' }"
         @update:model-value="changeSource"
@@ -254,7 +247,7 @@ watch(
         class="min-w-0 truncate text-[11px]"
         :class="status === 'error' ? 'text-danger' : 'text-muted'"
       >
-        {{ readOnly ? 'Generated, read only' : statusText }}
+        {{ readOnly ? dialogs.codeGeneratedReadOnly : statusText }}
       </span>
       <div class="flex items-center gap-1">
         <AppTextButton
@@ -263,7 +256,7 @@ watch(
           :ui="{ base: 'rounded px-2 py-1 text-[11px] hover:bg-hover' }"
           @click="resetDraft"
         >
-          Reset
+          {{ dialogs.codeReset }}
         </AppTextButton>
         <AppTextButton
           data-test-id="code-panel-copy"

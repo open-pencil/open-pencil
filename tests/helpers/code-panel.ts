@@ -56,6 +56,14 @@ export function getCodeNodeSummaries(page: Page): Promise<CodeNodeSummary[]> {
   })
 }
 
+export function getUndoLabel(page: Page): Promise<string | null> {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.undo.undoLabel
+  })
+}
+
 export function getMobileDrawerSnap(page: Page): Promise<string> {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()

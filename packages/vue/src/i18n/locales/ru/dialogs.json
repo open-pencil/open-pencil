@@ -24,7 +24,6 @@
   "createCollection": "Создать коллекцию",
   "localVariables": "Локальные переменные",
   "noVariableCollections": "Нет коллекций переменных",
-  "selectLayerForJSX": "Выберите слой, чтобы увидеть его JSX-код",
   "connectAIProvider": "Подключите AI-провайдера, чтобы начать чат.",
   "connect": "Подключить",
   "testConnection": "Проверить подключение",
@@ -267,5 +266,16 @@
   "dismiss": "Закрыть",
   "toolRunning": "Выполняется…",
   "toolError": "Ошибка",
-  "permissionRequestTitle": "Запрос разрешения"
+  "permissionRequestTitle": "Запрос разрешения",
+  "codeSource": "Code source",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Updating…",
+  "codeUpdatedLive": "Updated live",
+  "codePreviewFailed": "Preview failed",
+  "codeGeneratedReadOnly": "Generated, read only",
+  "codeReset": "Reset"
 }
