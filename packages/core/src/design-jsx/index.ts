@@ -60,6 +60,7 @@ export { defineVars, designVar, isVariable, type DesignVariable, type VarDef } f
 export { createElement } from './mini-react'
 
 export { renderJSX, renderTreeNode, buildComponent } from './render'
+export { transformDesignJSXExpression } from './transform'
 
 import jsxReference from '#core/tools/prompts/jsx-reference.md'
 

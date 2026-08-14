@@ -1,0 +1,94 @@
+import { IS_BROWSER } from '@open-pencil/core/constants'
+import { transformDesignJSXExpression } from '@open-pencil/core/design-jsx'
+
+import { sandboxDocument } from '@/app/code/sandbox/document'
+import {
+  DESIGN_JSX_DEFAULT_TIMEOUT_MS,
+  DESIGN_JSX_MAX_DEPTH,
+  DESIGN_JSX_MAX_ELEMENTS,
+  DESIGN_JSX_MAX_OUTPUT_BYTES,
+  DESIGN_JSX_MAX_SOURCE_BYTES,
+  type DesignJSXSandboxLimits,
+  type DesignJSXSandboxResult
+} from '@/app/code/sandbox/types'
+import { validateDesignJSXOutput } from '@/app/code/sandbox/validate'
+
+function sourceByteLength(source: string): number {
+  return new TextEncoder().encode(source).byteLength
+}
+
+export async function evaluateDesignJSX(
+  source: string,
+  limits: DesignJSXSandboxLimits = {}
+): Promise<DesignJSXSandboxResult> {
+  if (!IS_BROWSER) {
+    return { ok: false, error: 'Design JSX execution requires a browser.' }
+  }
+  const sourceBytes = limits.sourceBytes ?? DESIGN_JSX_MAX_SOURCE_BYTES
+  if (sourceByteLength(source) > sourceBytes) {
+    return { ok: false, error: 'Design JSX source is too large.' }
+  }
+
+  let code: string
+  try {
+    code = transformDesignJSXExpression(source)
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) }
+  }
+
+  const iframe = document.createElement('iframe')
+  iframe.hidden = true
+  iframe.setAttribute('sandbox', 'allow-scripts')
+  iframe.srcdoc = sandboxDocument()
+  document.body.append(iframe)
+
+  return new Promise((resolve) => {
+    const id = crypto.randomUUID()
+    const timeoutMs = limits.timeoutMs ?? DESIGN_JSX_DEFAULT_TIMEOUT_MS
+    let settled = false
+
+    const finish = (result: DesignJSXSandboxResult) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      window.removeEventListener('message', onMessage)
+      iframe.remove()
+      // eslint-disable-next-line promise/no-multiple-resolved -- settled guard makes completion single-shot
+      resolve(result)
+    }
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== iframe.contentWindow || event.origin !== 'null') return
+      const message = event.data as {
+        type?: string
+        id?: string
+        ok?: boolean
+        value?: unknown
+        error?: string
+      }
+      if (message.type === 'open-pencil-design-jsx-ready') {
+        iframe.contentWindow?.postMessage({ type: 'open-pencil-design-jsx-run', id, code }, '*')
+        return
+      }
+      if (message.type !== 'open-pencil-design-jsx-result' || message.id !== id) return
+      if (!message.ok) {
+        finish({ ok: false, error: message.error ?? 'Design JSX execution failed.' })
+        return
+      }
+      try {
+        const roots = validateDesignJSXOutput(message.value, {
+          outputBytes: limits.outputBytes ?? DESIGN_JSX_MAX_OUTPUT_BYTES,
+          elements: limits.elements ?? DESIGN_JSX_MAX_ELEMENTS,
+          depth: limits.depth ?? DESIGN_JSX_MAX_DEPTH
+        })
+        finish({ ok: true, roots })
+      } catch (error) {
+        finish({ ok: false, error: error instanceof Error ? error.message : String(error) })
+      }
+    }
+    const timer = setTimeout(
+      () => finish({ ok: false, error: 'Design JSX execution timed out.' }),
+      timeoutMs
+    )
+    window.addEventListener('message', onMessage)
+  })
+}
