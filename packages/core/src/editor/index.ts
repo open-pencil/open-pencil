@@ -4,6 +4,12 @@ export {
   ReadOnlyLibraryDefinitionError
 } from './capabilities'
 export type { NodeEditCapability } from './capabilities'
+export { createDefaultEditorSharedState } from './state/shared'
+export {
+  copyEditorViewState,
+  createDefaultEditorViewState,
+  pickEditorViewState
+} from './state/view'
 export { createDefaultEditorState, createEditor } from './create'
 export type { Editor } from './create'
 export { reapplyInstanceComponentProperties } from './components/properties'
@@ -20,6 +26,8 @@ export type {
   EditorEvents,
   EditorOptions,
   EditorState,
+  EditorSharedState,
+  EditorViewState,
   FigmaClipboardImageResolver,
   Tool
 } from './types'

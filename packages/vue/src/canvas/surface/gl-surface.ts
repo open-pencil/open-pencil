@@ -1,5 +1,6 @@
 import type { CanvasKit, Surface } from 'canvaskit-wasm'
 
+import { IS_BROWSER } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
@@ -8,12 +9,20 @@ type GLContext = ReturnType<CanvasKit['MakeGrContext']>
 
 export type CanvasGLContext = GLContext
 
-export function sizeCanvas(canvas: HTMLCanvasElement, editor: Editor) {
-  const dpr = window.devicePixelRatio || 1
-  canvas.width = canvas.clientWidth * dpr
-  canvas.height = canvas.clientHeight * dpr
-  if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
-    editor.setViewportSize(canvas.clientWidth, canvas.clientHeight)
+export function sizeCanvas(
+  canvas: HTMLCanvasElement,
+  editor: Editor,
+  onViewportResize?: (width: number, height: number) => void
+) {
+  const dpr = IS_BROWSER ? window.devicePixelRatio || 1 : 1
+  const width = canvas.clientWidth
+  const height = canvas.clientHeight
+  canvas.width = width * dpr
+  canvas.height = height * dpr
+  if (onViewportResize) {
+    onViewportResize(width, height)
+  } else if ('setViewportSize' in editor && typeof editor.setViewportSize === 'function') {
+    editor.setViewportSize(width, height)
   }
 }
 

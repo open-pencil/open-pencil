@@ -53,7 +53,7 @@ export function createCanvasSurfaceManager({
     state.glContext?.delete()
     state.glContext = null
 
-    sizeCanvas(canvas, editor)
+    sizeCanvas(canvas, editor, options?.onViewportResize)
 
     const result = makeGLSurface(ck, canvas, editor, options, state.glContext)
     state.glContext = result.glContext
@@ -82,7 +82,7 @@ export function createCanvasSurfaceManager({
   function renderNow() {
     if (!state.renderer || isDestroyed()) return
     state.renderer.renderFromEditorState(
-      editor.state,
+      options?.getRenderState?.() ?? editor.state,
       editor.graph,
       editor.textEditor,
       canvasRef.value?.clientWidth ?? 0,
@@ -98,7 +98,10 @@ export function createCanvasSurfaceManager({
     }
   }
 
-  const renderLoop = createCanvasRenderLoop(editor, renderNow, { layer: options?.layer })
+  const renderLoop = createCanvasRenderLoop(editor, renderNow, {
+    layer: options?.layer,
+    getRenderState: options?.getRenderState
+  })
 
   function resizeCanvas(canvas: HTMLCanvasElement) {
     const ck = getCanvasKit()
@@ -107,7 +110,7 @@ export function createCanvasSurfaceManager({
       return
     }
 
-    sizeCanvas(canvas, editor)
+    sizeCanvas(canvas, editor, options?.onViewportResize)
 
     const result = makeGLSurface(ck, canvas, editor, options, state.glContext)
     state.glContext = result.glContext
@@ -134,7 +137,7 @@ export function createCanvasSurfaceManager({
     resizeCanvas,
     renderNow,
     destroy,
-    markDirty: renderLoop.markDirty,
+    markDirty: () => renderLoop.markDirty(),
     getRenderer: () => state.renderer
   }
 }
