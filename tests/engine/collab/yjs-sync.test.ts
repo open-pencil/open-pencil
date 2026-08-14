@@ -191,6 +191,17 @@ describe('collab yjs-sync', () => {
             noiseSize: 'invalid'
           },
           {
+            type: 'GRADIENT_LINEAR',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 0.8,
+            visible: true,
+            gradientStops: [
+              { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+              { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+            ],
+            gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+          },
+          {
             type: 'SOLID',
             color: { r: 1, g: 0, b: 0, a: 1 },
             opacity: 1,
@@ -212,8 +223,17 @@ describe('collab yjs-sync', () => {
     })
     expect(fillGeometry).toHaveLength(1)
     expect(fillGeometry[0]?.commandsBlob).toBeInstanceOf(Uint8Array)
-    expect(fillGeometry[0]?.fills).toHaveLength(1)
-    expect(fillGeometry[0]?.fills?.[0]?.type).toBe('SOLID')
+    expect(fillGeometry[0]?.fills).toHaveLength(2)
+    expect(fillGeometry[0]?.fills?.[0]).toMatchObject({
+      type: 'GRADIENT_LINEAR',
+      opacity: 0.8,
+      gradientStops: [
+        { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+        { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+      ],
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+    })
+    expect(fillGeometry[0]?.fills?.[1]?.type).toBe('SOLID')
     expect(props.strokeGeometry).toEqual([])
   })
 
