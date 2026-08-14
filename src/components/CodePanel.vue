@@ -173,7 +173,7 @@ function copyReference() {
           @click="startEditing"
         >
           <icon-lucide-pencil class="size-3" />
-          Edit
+          {{ dialogs.editJSX }}
         </AppTextButton>
         <AppTextButton
           data-test-id="code-panel-copy"
@@ -258,7 +258,7 @@ function copyReference() {
       </div>
       <div class="flex shrink-0 items-center justify-between border-t border-border px-3 py-2">
         <span class="text-[11px] text-muted">{{
-          draftDirty ? 'Unsaved changes' : 'Up to date'
+          draftDirty ? dialogs.jsxUnsavedChanges : dialogs.jsxUpToDate
         }}</span>
         <AppTextButton
           data-test-id="code-panel-apply-jsx"
@@ -272,7 +272,13 @@ function copyReference() {
           }"
           @click="applyDraft"
         >
-          {{ applying ? 'Applying…' : store.state.selectedIds.size > 0 ? 'Apply' : 'Insert' }}
+          {{
+            applying
+              ? dialogs.applyingJSX
+              : store.state.selectedIds.size > 0
+                ? dialogs.applyJSX
+                : dialogs.insertJSX
+          }}
         </AppTextButton>
       </div>
     </div>

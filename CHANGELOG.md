@@ -8,6 +8,7 @@
 - Add local crash recovery for unsaved and pathless documents, including MCP-created documents. (#487)
 - Add isolated visual inspection that sends bounded selection renders to the configured Vision model and returns text findings without retaining image data in Design chat history. (#232, #471)
 - Add image attachments to AI chat with bounded analysis, immediate transcript thumbnails, hover previews, and click-to-view images. (#232)
+- Add a CodeMirror-powered JSX editor that safely applies or inserts OpenPencil designs with completion, diagnostics, bounded execution, and undo support. (#130)
 - Allow supported AI model profiles to set a provider-specific reasoning effort. (#454)
 - Show unavailable or substituted document fonts with affected-layer selection and retry actions, and expose font fidelity through the Figma API and MCP tooling. (#503)
 
