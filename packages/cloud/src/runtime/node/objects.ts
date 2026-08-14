@@ -49,6 +49,8 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
     endpoint: config.s3Endpoint,
     region: config.s3Region,
     forcePathStyle: config.s3ForcePathStyle,
+    requestChecksumCalculation: 'WHEN_REQUIRED',
+    responseChecksumValidation: 'WHEN_REQUIRED',
     credentials: {
       accessKeyId: config.s3AccessKeyId,
       secretAccessKey: config.s3SecretAccessKey,

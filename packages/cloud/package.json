@@ -45,6 +45,7 @@
     "build": "bunx tsdown --config tsdown.config.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "test": "bun test tests",
+    "test:seaweedfs": "bun tests/seaweedfs-smoke.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
