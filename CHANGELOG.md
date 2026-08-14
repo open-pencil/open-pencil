@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add tested pane-registry and recursive split-tree models for independently viewed same-document canvases, capped at four visible panes.
 - Add explicit shared/view editor-state ownership and canvas render-state hooks as a foundation for independent same-document canvas panes.
 
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
