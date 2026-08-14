@@ -1,10 +1,11 @@
 import { computed, ref } from 'vue'
 
 import type { EditorStore } from '@/app/editor/session'
+import { libraryManagerDialogOpen } from '@/app/libraries'
 import type { LibraryService } from '@/app/libraries'
 
 export function useLibraryEntry(editor: EditorStore, service: LibraryService) {
-  const open = ref(false)
+  const open = libraryManagerDialogOpen
   const initialSection = ref<'browse' | 'updates'>('browse')
   const updateCount = computed(() => {
     const outdatedBindings = service.summaries.value.filter((summary) => {

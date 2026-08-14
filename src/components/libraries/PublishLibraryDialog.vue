@@ -6,7 +6,11 @@ import { readSourceLibraryPublication } from '@open-pencil/core/library'
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
+import {
+  libraryManagerDialogOpen,
+  publishLibraryDialogOpen,
+  useLibraryService
+} from '@/app/libraries'
 import AppCheckbox from '@/components/ui/AppCheckbox.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
@@ -47,6 +51,7 @@ const selectionState = computed<boolean | 'indeterminate'>(() => {
 
 watch(publishLibraryDialogOpen, async (open) => {
   if (!open) return
+  libraryManagerDialogOpen.value = false
   error.value = ''
   query.value = ''
   loading.value = true
@@ -114,6 +119,7 @@ async function publish() {
       selectedAssetKeys: selectedKeys.value
     })
     publishLibraryDialogOpen.value = false
+    libraryManagerDialogOpen.value = true
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : panels.value.libraryPublishFailed
   } finally {
