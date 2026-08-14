@@ -20,7 +20,6 @@ export function startCleanupWorker(
   const controller = new AbortController()
   const abort = () => controller.abort()
   options.signal?.addEventListener('abort', abort, { once: true })
-  let running: Promise<void> | undefined
 
   async function runOnce(): Promise<UploadCleanupResult> {
     return cleanup.cleanupExpiredUploads({
@@ -40,7 +39,7 @@ export function startCleanupWorker(
     }
   }
 
-  running = loop()
+  const running = loop()
   return {
     runOnce,
     async stop() {
@@ -53,13 +52,12 @@ export function startCleanupWorker(
 
 function waitForInterval(milliseconds: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) return Promise.resolve()
-  return new Promise((resolve) => {
-    const timer = setTimeout(done, milliseconds)
-    signal.addEventListener('abort', done, { once: true })
-    function done() {
-      clearTimeout(timer)
-      signal.removeEventListener('abort', done)
-      resolve()
-    }
-  })
+  return Promise.race([
+    new Promise<void>((resolve) => {
+      setTimeout(resolve, milliseconds)
+    }),
+    new Promise<void>((resolve) => {
+      signal.addEventListener('abort', () => resolve(), { once: true })
+    })
+  ])
 }

@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createUploadCleanupService } from '@open-pencil/cloud/server'
+import { createCloudTestDatabase } from '#cloud-test/helpers/database'
+import { createMemoryObjectStore } from '#cloud-test/helpers/objects'
 
-import { createCloudTestDatabase } from '../../helpers/database'
-import { createMemoryObjectStore } from '../../helpers/objects'
+import { createUploadCleanupService } from '@open-pencil/cloud/server'
 
 async function insertExpiredUploads(count: number) {
   const runtime = await createCloudTestDatabase()

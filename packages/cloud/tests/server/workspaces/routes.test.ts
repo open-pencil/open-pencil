@@ -1,14 +1,14 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createCloudTestDatabase } from '#cloud-test/helpers/database'
+import { createMemoryObjectStore } from '#cloud-test/helpers/objects'
+
 import {
   createCloudApp,
   createCloudAuth,
   parseCloudServerConfig,
   type CloudActor
 } from '@open-pencil/cloud/server'
-
-import { createCloudTestDatabase } from '../../helpers/database'
-import { createMemoryObjectStore } from '../../helpers/objects'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',

@@ -7,6 +7,7 @@ import type {
   StorageTransferProgress
 } from '../types'
 import { createCloudTransport } from './transport'
+import { uploadCloudObject } from './upload'
 
 const SERVER_URL_FIELD = 'server-url'
 const WORKSPACE_ID_FIELD = 'workspace-id'
@@ -94,47 +95,20 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
         document = await cloud.createDocument(workspaceId, { id, name: metadata.name })
       }
       const checksum = await sha256(bytes)
-      const pending = await cloud.createUpload(document.id, {
-        baseRevisionId: options?.remoteRevisionId ?? null,
-        byteSize: bytes.byteLength,
+      const pending = await uploadCloudObject({
+        cloud,
+        documentId: document.id,
+        bytes,
         checksum,
-        contentType: 'application/octet-stream'
+        baseRevisionId: options?.remoteRevisionId ?? null,
+        transport,
+        onProgress,
+        signal: options?.signal
       })
-      reportProgress(onProgress, 0, bytes.byteLength)
-      let multipart:
-        | { uploadId: string; parts: Array<{ partNumber: number; etag: string }> }
-        | undefined
-      if (pending.upload.kind === 'single') {
-        const response = await transport.objectFetch(pending.upload.url, {
-          method: pending.upload.method,
-          headers: pending.upload.headers,
-          body: Uint8Array.from(bytes)
-        })
-        if (!response.ok)
-          throw new Error(`Cloud document upload failed with HTTP ${response.status}`)
-      } else {
-        const parts = []
-        let transferredBytes = 0
-        for (const part of pending.upload.parts) {
-          const start = (part.partNumber - 1) * pending.upload.partSize
-          const end = Math.min(bytes.byteLength, start + pending.upload.partSize)
-          const response = await transport.objectFetch(part.url, {
-            method: part.method,
-            headers: part.headers,
-            body: Uint8Array.from(bytes.subarray(start, end))
-          })
-          if (!response.ok)
-            throw new Error(`Cloud multipart upload failed with HTTP ${response.status}`)
-          const etag = response.headers.get('etag')
-          if (!etag) throw new Error('Cloud multipart upload response did not include an ETag')
-          parts.push({ partNumber: part.partNumber, etag })
-          transferredBytes += end - start
-          reportProgress(onProgress, transferredBytes, bytes.byteLength)
-        }
-        multipart = { uploadId: pending.upload.uploadId, parts }
-      }
-      reportProgress(onProgress, bytes.byteLength, bytes.byteLength)
-      const committed = await cloud.commitUpload(pending.id, { checksum, multipart })
+      const committed = await cloud.commitUpload(pending.uploadId, {
+        checksum,
+        multipart: pending.multipart
+      })
       return { remoteRevisionId: committed.currentRevisionId }
     },
 

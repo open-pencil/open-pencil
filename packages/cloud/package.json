@@ -9,7 +9,8 @@
       "types": "./src/*",
       "bun": "./src/*",
       "default": "./dist/*"
-    }
+    },
+    "#cloud-test/*": "./tests/*"
   },
   "exports": {
     "./contract": {
