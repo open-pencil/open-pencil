@@ -35,6 +35,7 @@ Use public package exports across package/app boundaries. Do not import workspac
 - `@open-pencil/cloud/client` — runtime-neutral Cloud client helpers.
 - `@open-pencil/cloud/server` — portable Hono application assembly; deployment adapters own listeners and provider bindings.
 - `@open-pencil/cloud/runtime/node` — Node/PostgreSQL runtime assembly; portable server code receives injected Kysely dialects and must not import `pg`.
+- `@open-pencil/cloud/runtime/cloudflare` — Cloudflare Workers/Hyperdrive assembly with request-scoped PostgreSQL resources and scheduled cleanup.
 
 CanvasKit runtime loading is centralized in `@open-pencil/core/canvaskit` for app/browser use. Headless raster export may dynamically load `canvaskit-wasm/full`; elsewhere prefer `import type` and pass the CanvasKit instance in.
 

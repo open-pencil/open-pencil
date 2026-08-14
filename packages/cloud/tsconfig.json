@@ -16,10 +16,11 @@
       "#cloud-test/*": ["./tests/*"],
       "@open-pencil/cloud/contract": ["./src/contract/index.ts"],
       "@open-pencil/cloud/client": ["./src/client/index.ts"],
+      "@open-pencil/cloud/runtime/cloudflare": ["./src/runtime/cloudflare/index.ts"],
       "@open-pencil/cloud/runtime/node": ["./src/runtime/node/index.ts"],
       "@open-pencil/cloud/server": ["./src/server/index.ts"]
     }
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "deploy/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

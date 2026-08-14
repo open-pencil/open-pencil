@@ -25,6 +25,12 @@
       "import": "./dist/client.js",
       "default": "./dist/client.js"
     },
+    "./runtime/cloudflare": {
+      "types": "./dist/runtime-cloudflare.d.ts",
+      "bun": "./src/runtime/cloudflare/index.ts",
+      "import": "./dist/runtime-cloudflare.js",
+      "default": "./dist/runtime-cloudflare.js"
+    },
     "./runtime/node": {
       "types": "./dist/runtime-node.d.ts",
       "bun": "./src/runtime/node/index.ts",
@@ -45,9 +51,11 @@
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
     "check": "bun run typecheck && bun run test && bun run build",
-    "test": "bun test tests/client tests/contract tests/server",
+    "test": "bun test tests/client tests/contract tests/runtime tests/server",
     "test:e2e": "bun tests/e2e/run.ts",
     "test:e2e:garage": "bun tests/e2e/garage.ts",
+    "migrate": "bun src/runtime/node/migrate.ts",
+    "cleanup": "bun src/runtime/node/cleanup.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

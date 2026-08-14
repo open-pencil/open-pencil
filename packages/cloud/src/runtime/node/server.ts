@@ -8,8 +8,8 @@ import {
   startCleanupWorker
 } from '#cloud/server'
 
+import { createS3ObjectStore } from '../s3/objects'
 import { createNodeCloudDatabase } from './database'
-import { createS3ObjectStore } from './objects'
 
 export type NodeCloudServerOptions = {
   environment?: Readonly<Record<string, string | undefined>>
