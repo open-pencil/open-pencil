@@ -98,6 +98,7 @@ export function cloneSceneGraphForFigExport(graph: SceneGraph): SceneGraph {
   cloned.figKiwiVersion = graph.figKiwiVersion
   cloned.figSchemaDeflated = graph.figSchemaDeflated
   cloned.documentColorSpace = graph.documentColorSpace
+  cloned.enabledLibraries = new Map(graph.enabledLibraries)
 
   const lazyFigImport = getLazyFigImportContext(graph)
   if (lazyFigImport) {
