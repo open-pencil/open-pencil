@@ -12,7 +12,7 @@ import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
-import type { RenderOverlays } from '#core/canvas/renderer/types'
+import type { MeasurementMode, RenderOverlays } from '#core/canvas/renderer/types'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionEvent, FontResolutionSnapshot } from '#core/text/resolver'
 
@@ -46,6 +46,7 @@ export interface EditorState {
     direction: 'HORIZONTAL' | 'VERTICAL'
   } | null
   hoveredNodeId: string | null
+  measurementMode: MeasurementMode
   editingTextId: string | null
   penState: {
     vertices: VectorVertex[]

@@ -55,6 +55,7 @@ export function renderFromEditorState(
     state.selectedIds,
     {
       hoveredNodeId: state.hoveredNodeId,
+      measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
       textEditor: textEditor as RenderOverlays['textEditor'],
@@ -229,6 +230,9 @@ export function render(
     r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId)
     p.beginPhase('render:selection')
     r.drawSelection(canvas, graph, selectedIds, overlays)
+    if (overlays.measurementMode && overlays.measurementMode !== 'off') {
+      r.drawMeasurements(canvas, graph, selectedIds, overlays.hoveredNodeId)
+    }
     p.endPhase('render:selection')
     r.drawFlashes(canvas, graph)
     drawPageGuides(r, canvas, graph)
