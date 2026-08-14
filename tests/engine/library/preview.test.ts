@@ -166,6 +166,31 @@ describe('library update preview', () => {
     )
   })
 
+  test('copies current-side nested definitions and remaps their instances', async () => {
+    const firstGraph = propertySource('INSTANCE_SWAP', 'alternate')
+    const latestGraph = propertySource('INSTANCE_SWAP', 'alternate')
+    const { latest, consumer, definition } = await revisions(firstGraph, latestGraph, 'card')
+    const instance = consumer.createNode('INSTANCE', consumer.getPages()[0].id, {
+      componentId: definition.componentId
+    })
+
+    const preview = createLibraryUpdatePreview(consumer, instance.id, latest)
+    const currentNested = preview.graph
+      .getChildren(preview.currentNodeId)
+      .find((node) => node.type === 'INSTANCE')
+    const currentDefinitionNode = currentNested?.componentId
+      ? preview.graph.getNode(currentNested.componentId)
+      : null
+    const currentDependency = currentDefinitionNode?.componentId
+      ? preview.graph.getNode(currentDefinitionNode.componentId)
+      : null
+
+    expect(currentDefinitionNode?.name).toBe('Nested')
+    expect(currentDependency?.name).toBe('Alternate')
+    expect(currentDependency?.parentId).toBe(preview.graph.getPages()[0].id)
+    expect(consumer.getNode(currentNested?.componentId ?? '')).toBeUndefined()
+  })
+
   test('reports top-left fallback and reapplies compatible assignments', async () => {
     const firstGraph = source('Old')
     const latestGraph = source('Fallback')

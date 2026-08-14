@@ -37,15 +37,26 @@ function copyPreviewDefinitions(
   return mapped
 }
 
-function copyTree(
-  source: SceneGraph,
-  target: SceneGraph,
-  node: SceneNode,
-  parentId: string
-): string {
-  const created = target.createNode(node.type, parentId, cloneNodeProps(node, node.componentId))
-  for (const child of source.getChildren(node.id)) copyTree(source, target, child, created.id)
-  return created.id
+function consumerDependencyRoots(graph: SceneGraph, component: SceneNode): SceneNode[] {
+  const roots = new Map([[component.id, component]])
+  const visited = new Set<string>()
+  const pending = [component.id]
+  while (pending.length > 0) {
+    const id = pending.pop()
+    if (!id || visited.has(id)) continue
+    visited.add(id)
+    const node = graph.getNode(id)
+    if (!node) continue
+    pending.push(...node.childIds)
+    if (!node.componentId) continue
+    const dependency = graph.getNode(node.componentId)
+    if (!dependency) continue
+    const parent = dependency.parentId ? graph.getNode(dependency.parentId) : undefined
+    const root = parent?.type === 'COMPONENT_SET' ? parent : dependency
+    roots.set(root.id, root)
+    pending.push(root.id)
+  }
+  return [...roots.values()]
 }
 
 function revisionComponents(revision: ComponentLibraryRevision, assetKey: string): SceneNode[] {
@@ -112,7 +123,10 @@ export function createLibraryUpdatePreview(
   const latestRoots = latest.manifest.assets.flatMap((descriptor) =>
     libraryDependencyRoots(latest, descriptor)
   )
-  const currentComponentId = copyTree(consumer, graph, currentComponent, page.id)
+  const currentRoots = consumerDependencyRoots(consumer, currentComponent)
+  const currentMapped = copyPreviewDefinitions(consumer, graph, currentRoots, page.id)
+  const currentComponentId = currentMapped.get(currentComponent.id)
+  if (!currentComponentId) throw new Error('Current preview definition could not be copied')
   const latestMapped = copyPreviewDefinitions(latest.graph, graph, latestRoots, page.id)
   const updatedComponentId = latestMapped.get(updatedComponent.id)
   if (!updatedComponentId) throw new Error('Updated preview definition could not be copied')
