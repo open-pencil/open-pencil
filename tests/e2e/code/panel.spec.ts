@@ -162,6 +162,45 @@ test('edits and applies JSX as one undoable replacement', async () => {
   )
 })
 
+test('applies trusted variable helper descriptors', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const collection = {
+      id: 'colors',
+      name: 'Colors',
+      modes: [{ modeId: 'default', name: 'Default' }],
+      defaultModeId: 'default',
+      variableIds: []
+    }
+    store.graph.addCollection(collection)
+    store.graph.addVariable({
+      id: 'primary',
+      name: 'Primary',
+      type: 'COLOR',
+      collectionId: collection.id,
+      valuesByMode: { default: '#ff0000' }
+    })
+    store.clearSelection()
+  })
+  await codeTab().click()
+  const input = await enterJSXEditing()
+  await input.fill('<Frame name="Variable frame" fill={designVar("primary", "#ff0000")} />')
+  await editor.page.getByTestId('code-panel-apply-jsx').click()
+  await editor.page.waitForFunction(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Variable frame'
+    )
+  )
+  const bindings = await editor.page.evaluate(() => {
+    const node = [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].find(
+      (candidate) => candidate.name === 'Variable frame'
+    )
+    return node?.boundVariables
+  })
+  expect(bindings).toMatchObject({ 'fills/0/color': 'primary' })
+})
+
 test('replaces multiple roots at their original positions and supports redo', async () => {
   await codeTab().click()
   const originals = await editor.page.evaluate(() => {

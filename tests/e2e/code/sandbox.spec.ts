@@ -75,6 +75,22 @@ const Card = ({ title, visible }) => (
   })
 })
 
+test('converts variable helpers without executing host capabilities', async ({ page }) => {
+  const result = await evaluate(
+    page,
+    `const vars = defineVars({ primary: { name: 'Primary', value: '#ff0000' } })
+<Frame fill={vars.primary}><Text color={designVar('text', '#000')}>Hello</Text></Frame>`
+  )
+  expect(result.ok).toBe(true)
+  if (!result.ok) return
+  expect(result.roots[0]).toMatchObject({
+    type: 'frame',
+    props: {
+      fill: { __openPencilHelper: 'designVar' }
+    }
+  })
+})
+
 test('supports multiple roots through fragments', async ({ page }) => {
   const result = await evaluate(page, '<><Rectangle name="One" /><Ellipse name="Two" /></>')
   expect(result).toEqual({

@@ -18,9 +18,13 @@ self.onmessage = ({ data }) => {
     return { type, props: normalizedProps, children: normalizedChildren }
   }
   const helper = (name) => (...args) => ({ __openPencilHelper: name, args })
+  const helperRuntime = (name) => {
+    if (name === 'defineVars') return (vars) => Object.fromEntries(Object.entries(vars).map(([key, value]) => [key, { __openPencilHelper: 'designVar', args: [value] }]))
+    return helper(name)
+  }
   const names = Object.keys(elements)
   const tags = elements
-  const helpers = Object.fromEntries(helperNames.map((name) => [name, helper(name)]))
+  const helpers = Object.fromEntries(helperNames.map((name) => [name, helperRuntime(name)]))
   const validate = (value, depth = 0, state = { elements: 0, bytes: 0 }) => {
     if (depth > limits.depth) throw new Error('Design JSX output is too deeply nested.')
     if (value == null || typeof value === 'boolean') return state

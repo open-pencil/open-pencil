@@ -1,6 +1,8 @@
 import {
   angularGradient,
   backgroundBlur,
+  designVar,
+  defineVars,
   diamondGradient,
   dropShadow,
   foregroundBlur,
@@ -26,7 +28,9 @@ const HELPERS = {
   innerShadow,
   layerBlur,
   backgroundBlur,
-  foregroundBlur
+  foregroundBlur,
+  designVar,
+  defineVars
 }
 
 type HelperName = keyof typeof HELPERS

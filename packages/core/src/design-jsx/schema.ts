@@ -159,5 +159,7 @@ export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = [
   'innerShadow',
   'layerBlur',
   'backgroundBlur',
-  'foregroundBlur'
+  'foregroundBlur',
+  'designVar',
+  'defineVars'
 ].map((name) => ({ name, description: `OpenPencil ${name} helper.` }))
