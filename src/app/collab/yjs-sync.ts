@@ -1,7 +1,6 @@
 import * as Y from 'yjs'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-
+import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
 import type { EditorStore } from '@/app/editor/active-store'
 
 type YNodes = Y.Map<Y.Map<unknown>>
@@ -35,21 +34,6 @@ type YjsGraphSyncOptions = {
 
 function logCollabSyncError(context: string, error: unknown) {
   console.error(`[Collab] ${context}:`, error)
-}
-
-// Clone across the graph/Yjs boundary to avoid shared mutable nested data.
-export function syncNodePropsToYMap(node: SceneNode, ynode: Y.Map<unknown>) {
-  for (const [key, value] of Object.entries(node)) {
-    ynode.set(key, structuredClone(value))
-  }
-}
-
-export function yNodeToProps(ynode: Y.Map<unknown>): Record<string, unknown> {
-  const props: Record<string, unknown> = {}
-  for (const [key, value] of ynode.entries()) {
-    props[key] = structuredClone(value)
-  }
-  return props
 }
 
 export function bindCollabGraphEvents({
@@ -156,7 +140,7 @@ export function createYjsGraphSync({
           ynode = new Y.Map()
           ynodes.set(nodeId, ynode)
         }
-        syncNodePropsToYMap(node, ynode)
+        syncEncodedNodeToYMap(node, ynode)
 
         if (localYimages) {
           for (const fill of node.fills) {
@@ -189,7 +173,7 @@ export function createYjsGraphSync({
             ynode = new Y.Map()
             ynodes.set(node.id, ynode)
           }
-          syncNodePropsToYMap(node, ynode)
+          syncEncodedNodeToYMap(node, ynode)
         }
       })
       if (localYimages) {
@@ -244,20 +228,20 @@ export function createYjsGraphSync({
   function applyYnodeToGraph(nodeId: string, ynode: Y.Map<unknown>) {
     const store = getStore()
     const existing = store.graph.getNode(nodeId)
-    const props = yNodeToProps(ynode)
+    const props = decodeNodeFromYjs(ynode)
     const parentId = typeof props.parentId === 'string' ? props.parentId : null
 
     if (existing) {
-      store.graph.updateNode(nodeId, props as Partial<SceneNode>)
+      store.graph.updateNode(nodeId, props)
       if (parentId === null) store.graph.rootId = nodeId
       ensureCurrentPageExists(store)
       return
     }
 
-    const type = props.type as SceneNode['type'] | undefined
+    const type = props.type
     if (!type) return
     // Parent childIds may arrive before or after the child node.
-    store.graph.createNodeWithId(nodeId, type, parentId, props as Partial<SceneNode>)
+    store.graph.createNodeWithId(nodeId, type, parentId, props)
     if (parentId === null) store.graph.rootId = nodeId
     ensureCurrentPageExists(store)
   }
