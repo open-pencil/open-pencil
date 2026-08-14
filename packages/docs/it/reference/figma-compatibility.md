@@ -154,16 +154,16 @@ Confronto funzionalità per funzionalità delle capacità di Figma Design con lo
 
 | Funzionalità | Stato | Note |
 |-------------|-------|------|
-| Creare componenti | 🟡 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> crea da frame/gruppo; nessuna UI proprietà componente ancora |
-| Set di componenti | 🟡 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> combina componenti; bordo tratteggiato viola; nessuna modifica proprietà variante |
-| Istanze di componenti | 🟡 | Creare istanza dal menu contestuale; sync in tempo reale; nessuna UI modifica override |
-| Varianti | 🔲 | Cambio variante e selezione per proprietà |
-| Proprietà componente | 🔲 | Proprietà booleane, testo, scambio istanza |
+| Creare componenti | ✅ | Creazione da frame/gruppo; UI per testo, visibilità, scambio istanza e varianti |
+| Set di componenti | ✅ | Varianti multidimensionali sparse, convalida duplicati e predefinita in alto a sinistra |
+| Istanze di componenti | ✅ | Esplorazione Assets, inserimento, proprietà e override modificabili, sincronizzazione e revisione aggiornamenti |
+| Varianti | ✅ | Creazione, cambio nelle istanze e fallback in alto a sinistra |
+| Proprietà componente | ✅ | Testo, visibilità booleana e scambio istanza |
 | Propagazione override | ✅ | Modifiche al componente principale propagate; override preservati |
 | Variabili (colore, numero, stringa, booleano) | 🟡 | `COLOR` con UI completa; `FLOAT`/STRING/BOOLEAN definiti senza UI di modifica |
 | Collezioni e modi variabili | 🟡 | Collezioni, modi, cambio activeMode funzionano; nessuna UI tematizzazione |
 | Stili (colore, testo, effetto, layout) | 🔲 | Preset stile riutilizzabili nominati |
-| Librerie (pubblicare, condividere, aggiornare) | 🔲 | Librerie condivise componenti/stili |
+| Librerie (pubblicare, condividere, aggiornare) | ✅ | Revisioni locali/remote immutabili, pubblicazione selettiva, revisione aggiornamenti, uso offline e persistenza `.fig` |
 | Staccare istanza | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> converte istanza in frame |
 | Vai al componente principale | ✅ | Navigare al componente sorgente, cross-page |
 

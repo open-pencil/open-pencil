@@ -154,16 +154,16 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 
 | Funkcja | Status | Uwagi |
 |---------|--------|-------|
-| Tworzenie komponentów | 🟡 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> tworzy z ramki/grupy; brak UI właściwości komponentu jeszcze |
-| Zestawy komponentów | 🟡 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> łączy komponenty; przerywana fioletowa ramka; brak edycji właściwości wariantów |
-| Instancje komponentów | 🟡 | Tworzenie instancji z menu kontekstowego; sync na żywo; brak UI edycji nadpisań |
-| Warianty | 🔲 | Przełączanie wariantów i selekcja po właściwościach |
-| Właściwości komponentu | 🔲 | Właściwości boolean, tekst, zamiana instancji |
+| Tworzenie komponentów | ✅ | Tworzenie z ramki/grupy; UI tekstu, widoczności, zamiany instancji i wariantów |
+| Zestawy komponentów | ✅ | Wielowymiarowe niepełne warianty, walidacja duplikatów i domyślny wariant w lewym górnym rogu |
+| Instancje komponentów | ✅ | Przeglądanie Assets, wstawianie, edytowalne właściwości i nadpisania, synchronizacja i przegląd aktualizacji |
+| Warianty | ✅ | Tworzenie, przełączanie instancji i wariant zastępczy w lewym górnym rogu |
+| Właściwości komponentu | ✅ | Tekst, widoczność logiczna i zamiana instancji |
 | Propagacja nadpisań | ✅ | Zmiany w głównym komponencie propagowane; nadpisania zachowane |
 | Zmienne (kolor, liczba, string, boolean) | 🟡 | `COLOR` z pełnym UI; `FLOAT`/STRING/BOOLEAN zdefiniowane bez UI edycji |
 | Kolekcje i tryby zmiennych | 🟡 | Kolekcje, tryby, zmiana activeMode działają; brak UI tematyzacji |
 | Style (kolor, tekst, efekt, layout) | 🔲 | Presety stylów wielokrotnego użytku |
-| Biblioteki (publikuj, udostępniaj, aktualizuj) | 🔲 | Współdzielone biblioteki komponentów/stylów |
+| Biblioteki (publikuj, udostępniaj, aktualizuj) | ✅ | Niezmienne rewizje lokalne/zdalne, selektywna publikacja, przegląd aktualizacji, tryb offline i zapis w `.fig` |
 | Odłącz instancję | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> konwertuje instancję na ramkę |
 | Przejdź do głównego komponentu | ✅ | Nawigacja do komponentu źródłowego, cross-page |
 
