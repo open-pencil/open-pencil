@@ -1,5 +1,6 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { assertNodeEditable } from '#core/editor/capabilities'
 import { defineTool, nodeNotFound } from '#core/tools/schema'
 
 export const updateNode = defineTool({
@@ -34,6 +35,7 @@ export const updateNode = defineTool({
   execute: (figma, args) => {
     const node = figma.getNodeById(args.id)
     if (!node) return nodeNotFound(args.id)
+    assertNodeEditable(figma.graph, args.id)
     const updated: string[] = []
     if (args.x !== undefined) {
       node.x = args.x

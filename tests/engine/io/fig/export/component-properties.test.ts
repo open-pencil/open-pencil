@@ -11,6 +11,111 @@ describe('Figma component property roundtrip', () => {
     await initCodec()
   })
 
+  test('retains OpenPencil library bindings and materialized identity', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    graph.enabledLibraries.set('design-system', {
+      libraryId: 'design-system',
+      revisionId: 'revision-1',
+      enabled: true
+    })
+    const component = graph.createNode('COMPONENT', page.id, {
+      name: 'Remote button',
+      componentKey: 'button',
+      librarySource: {
+        identity: {
+          libraryId: 'design-system',
+          assetKey: 'button',
+          revisionId: 'revision-1'
+        },
+        sourceNodeId: 'source-button',
+        readOnly: true
+      }
+    })
+    component.source.id = '50:1'
+
+    const bytes = await exportFigFile(graph)
+    const parsed = parseFigBuffer(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    )
+    const imported = importNodeChanges(parsed.nodeChanges, parsed.blobs, undefined, {
+      populate: 'all'
+    })
+    expect(imported.enabledLibraries.get('design-system')).toEqual({
+      libraryId: 'design-system',
+      revisionId: 'revision-1',
+      enabled: true
+    })
+    expect(
+      [...imported.getAllNodes()].find((node) => node.name === 'Remote button')?.librarySource
+    ).toEqual(component.librarySource)
+  })
+
+  test('retains authored multidimensional variant definitions and combinations', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const componentSet = graph.createNode('COMPONENT_SET', page.id, {
+      name: 'Button',
+      componentPropertyDefinitions: [
+        {
+          id: '40:1',
+          name: 'Type',
+          type: 'VARIANT',
+          defaultValue: 'Primary',
+          variantOptions: ['Primary', 'Secondary']
+        },
+        {
+          id: '40:2',
+          name: 'Size',
+          type: 'VARIANT',
+          defaultValue: 'Small',
+          variantOptions: ['Small', 'Large']
+        },
+        {
+          id: '40:3',
+          name: 'State',
+          type: 'VARIANT',
+          defaultValue: 'Enabled',
+          variantOptions: ['Enabled', 'Disabled']
+        }
+      ]
+    })
+    componentSet.source.id = '40:0'
+    const combinations = [
+      { Type: 'Primary', Size: 'Small', State: 'Enabled' },
+      { Type: 'Primary', Size: 'Large', State: 'Enabled' },
+      { Type: 'Secondary', Size: 'Small', State: 'Disabled' }
+    ]
+    for (const [index, values] of combinations.entries()) {
+      const variant = graph.createNode('COMPONENT', componentSet.id, {
+        name: Object.entries(values)
+          .map(([name, value]) => `${name}=${value}`)
+          .join(', '),
+        componentPropertyValues: values
+      })
+      variant.source.id = `40:${index + 10}`
+    }
+
+    const bytes = await exportFigFile(graph)
+    const parsed = parseFigBuffer(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+    )
+    const imported = importNodeChanges(parsed.nodeChanges, parsed.blobs, undefined, {
+      populate: 'all'
+    })
+    const importedSet = [...imported.getAllNodes()].find(
+      (node) => node.type === 'COMPONENT_SET' && node.name === 'Button'
+    )
+    if (!importedSet) throw new Error('Expected imported component set')
+
+    expect(importedSet.componentPropertyDefinitions).toEqual(
+      componentSet.componentPropertyDefinitions
+    )
+    expect(importedSet.childIds.map((id) => imported.getNode(id)?.componentPropertyValues)).toEqual(
+      combinations
+    )
+  })
+
   test('retains typed definitions, refs, and assignments', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

@@ -3,7 +3,12 @@ import { tool } from 'ai'
 import * as v from 'valibot'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import { CORE_TOOLS, EXTENDED_TOOLS, toolsToAI } from '@open-pencil/core/tools'
+import {
+  CORE_TOOLS,
+  EXTENDED_TOOLS,
+  registerComponentCatalog,
+  toolsToAI
+} from '@open-pencil/core/tools'
 import type { StepBudget, ToolLogEntry } from '@open-pencil/core/tools'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
@@ -11,16 +16,9 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
-
-import { createVisualInspectionTool } from './vision'
+import { useLibraryService } from '@/app/libraries'
 
 export const MAX_AGENT_STEPS = 50
-
-const VISUAL_INSPECTION_TOOL_NAMES = new Set(['export_image'])
-const AI_CHAT_TOOLS = [
-  ...CORE_TOOLS,
-  ...EXTENDED_TOOLS.filter((definition) => VISUAL_INSPECTION_TOOL_NAMES.has(definition.name))
-]
 
 export interface StepUsage {
   inputTokens: number
@@ -93,54 +91,59 @@ export function clearToolLogEntries(store?: EditorStore): void {
 export function createAITools(store: EditorStore) {
   let beforeSnapshot: Map<string, SceneNode> | null = null
   const runState = getRunState(store)
+  const libraryService = useLibraryService()
+  libraryService.bindEditor(store)
+  registerComponentCatalog(store.graph, libraryService)
 
-  return {
-    ...toolsToAI(
-      AI_CHAT_TOOLS,
-      {
-        getFigma: () => makeFigmaFromStore(store),
-        onBeforeExecute: (def) => {
-          if (def.mutates) {
-            beforeSnapshot = store.snapshotPage()
-          }
-        },
-        onAfterExecute: async (def) => {
-          if (def.mutates) {
-            const pageId = store.state.currentPageId
-            const pageNode = store.graph.getNode(pageId)
-            if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
-            computeAllLayouts(store.graph, pageId)
-            store.requestRender()
-            if (beforeSnapshot) {
-              const before = beforeSnapshot
-              const after = store.snapshotPage()
-              store.pushUndoEntry({
-                label: `AI: ${def.name}`,
-                forward: () => store.restorePageFromSnapshot(after),
-                inverse: () => store.restorePageFromSnapshot(before)
-              })
-              beforeSnapshot = null
-            }
-          }
-        },
-        onFlashNodes: (nodeIds) => {
-          store.renderer?.aiClearActive()
-          if (nodeIds.length > 0) {
-            store.aiFlashDone(nodeIds)
-          }
-        },
-        onToolLog: (entry) => {
-          runState.toolLog.push(entry)
-        },
-        getStepBudget: (): StepBudget => ({
-          current: runState.currentSteps,
-          max: MAX_AGENT_STEPS
-        })
+  return toolsToAI(
+    [
+      ...CORE_TOOLS,
+      ...EXTENDED_TOOLS.filter((def) =>
+        ['get_components', 'list_libraries', 'insert_library_component'].includes(def.name)
+      )
+    ],
+    {
+      getFigma: () => makeFigmaFromStore(store),
+      onBeforeExecute: (def) => {
+        if (def.mutates) {
+          beforeSnapshot = store.snapshotPage()
+        }
       },
-      { v, valibotSchema, tool }
-    ),
-    inspect_visual: createVisualInspectionTool(store)
-  }
+      onAfterExecute: async (def) => {
+        if (def.mutates) {
+          const pageId = store.state.currentPageId
+          const pageNode = store.graph.getNode(pageId)
+          if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
+          computeAllLayouts(store.graph, pageId)
+          store.requestRender()
+          if (beforeSnapshot) {
+            const before = beforeSnapshot
+            const after = store.snapshotPage()
+            store.pushUndoEntry({
+              label: `AI: ${def.name}`,
+              forward: () => store.restorePageFromSnapshot(after),
+              inverse: () => store.restorePageFromSnapshot(before)
+            })
+            beforeSnapshot = null
+          }
+        }
+      },
+      onFlashNodes: (nodeIds) => {
+        store.renderer?.aiClearActive()
+        if (nodeIds.length > 0) {
+          store.aiFlashDone(nodeIds)
+        }
+      },
+      onToolLog: (entry) => {
+        runState.toolLog.push(entry)
+      },
+      getStepBudget: (): StepBudget => ({
+        current: runState.currentSteps,
+        max: MAX_AGENT_STEPS
+      })
+    },
+    { v, valibotSchema, tool }
+  )
 }
 
 export type AITools = ReturnType<typeof createAITools>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useObjectUrl } from '@vueuse/core'
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -12,11 +12,15 @@ import {
 } from 'reka-ui'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { useI18n } from '@open-pencil/vue'
 
 import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
+import { useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
+import LibraryManagerDialog from '@/components/libraries/LibraryManagerDialog.vue'
+import { useLibraryEntry } from '@/components/libraries/useLibraryEntry'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
 import AppInput from '@/components/ui/AppInput.vue'
@@ -41,6 +45,10 @@ type LocalAsset = {
   sourceLibraryKey: string | null
   description: string
   docsURL: string | null
+  libraryId: string | null
+  revisionId: string | null
+  assetKey: string | null
+  libraryName: string | null
   pageId: string
   pageName: string
 }
@@ -52,14 +60,23 @@ type AssetGroup = {
 }
 
 const editor = useEditorStore()
+const libraryService = useLibraryService()
+const remoteAssets = libraryService.enabledAssets
 const { panels, commands } = useI18n()
 const query = ref('')
 const assetView = ref<AssetView>('grid')
 const detailsOpen = ref(false)
+const {
+  open: librariesOpen,
+  initialSection: libraryInitialSection,
+  updateCount: libraryUpdateCount,
+  openManager: openLibraries
+} = useLibraryEntry(editor, libraryService)
 const selectedAssetId = ref<string | null>(null)
 const previewBlob = shallowRef<Blob | null>(null)
 const previewURL = useObjectUrl(previewBlob)
 const previewLoading = ref(false)
+const insertingAssetId = ref<string | null>(null)
 let previewRequestId = 0
 const insertButton = useButtonUI({ tone: 'ghost', size: 'iconSm' })
 const primaryButton = useButtonUI({ tone: 'accent', size: 'md' })
@@ -99,7 +116,8 @@ const pageByNodeId = computed(() => {
 })
 
 const assets = computed<LocalAsset[]>(() => {
-  return assetNodes.value
+  const local = assetNodes.value
+    .filter((node) => !node.librarySource?.readOnly)
     .filter((node) => {
       if (node.type === 'COMPONENT_SET') return true
       const parent = node.parentId ? editor.graph.getNode(node.parentId) : null
@@ -123,11 +141,38 @@ const assets = computed<LocalAsset[]>(() => {
         sourceLibraryKey: node.sourceLibraryKey,
         description: node.symbolDescription,
         docsURL: node.symbolLinks[0]?.uri ?? null,
+        libraryId: null,
+        revisionId: null,
+        assetKey: null,
+        libraryName: null,
         pageId: page?.id ?? editor.state.currentPageId,
         pageName: page?.name ?? panels.value.page
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name))
+  const remote = remoteAssets.value.map(({ libraryId, libraryName, revisionId, asset }) => ({
+    id: `${libraryId}:${asset.key}`,
+    name: asset.name,
+    node: createDefaultNode(() => asset.sourceNodeId, asset.type, {
+      name: asset.name,
+      symbolDescription: asset.description,
+      sourceLibraryKey: asset.key
+    }),
+    componentId: null,
+    variants: [],
+    variantCount: 0,
+    hasConflicts: false,
+    sourceLibraryKey: asset.key,
+    description: asset.description,
+    docsURL: null,
+    libraryId,
+    revisionId,
+    assetKey: asset.key,
+    libraryName,
+    pageId: `library:${libraryId}`,
+    pageName: libraryName
+  }))
+  return [...local, ...remote]
 })
 
 const filteredAssets = computed(() => {
@@ -154,6 +199,10 @@ const selectedAsset = computed(
   () => assets.value.find((asset) => asset.id === selectedAssetId.value) ?? null
 )
 const selectedPreviewNodeId = computed(() => selectedAsset.value?.componentId ?? null)
+
+onMounted(() => {
+  void libraryService.refresh(editor)
+})
 
 function clearPreview() {
   previewBlob.value = null
@@ -209,13 +258,31 @@ function insertionPoint(component: SceneNode, parentId: string) {
   }
 }
 
-function insertAsset(asset: LocalAsset) {
-  if (!asset.componentId) return
-  const component = editor.graph.getNode(asset.componentId)
+async function resolveAssetComponent(asset: LocalAsset): Promise<string | null> {
+  if (asset.componentId) return asset.componentId
+  if (!asset.libraryId || !asset.revisionId || !asset.assetKey) return null
+  insertingAssetId.value = asset.id
+  try {
+    const result = await libraryService.materialize(
+      editor,
+      asset.libraryId,
+      asset.revisionId,
+      asset.assetKey
+    )
+    return result.componentId
+  } finally {
+    insertingAssetId.value = null
+  }
+}
+
+async function insertAsset(asset: LocalAsset) {
+  const componentId = await resolveAssetComponent(asset)
+  if (!componentId) return
+  const component = editor.graph.getNode(componentId)
   if (!component) return
   const parentId = editor.state.enteredContainerId ?? editor.state.currentPageId
   const point = insertionPoint(component, parentId)
-  editor.createInstanceFromComponent(asset.componentId, point.x, point.y, parentId)
+  editor.createInstanceFromComponent(componentId, point.x, point.y, parentId)
   editor.requestRender()
 }
 
@@ -226,6 +293,7 @@ function onDragStart(event: DragEvent, asset: LocalAsset) {
 }
 
 function focusAsset(asset: LocalAsset) {
+  if (asset.libraryId) return
   void editor.focusComponent(asset.id)
 }
 
@@ -237,13 +305,13 @@ function onAssetKeydown(event: KeyboardEvent, asset: LocalAsset) {
   }
   if (event.code === 'Enter' || event.code === 'Space') {
     event.preventDefault()
-    insertAsset(asset)
+    void insertAsset(asset)
   }
 }
 
-function insertSelectedAsset() {
+async function insertSelectedAsset() {
   if (!selectedAsset.value) return
-  insertAsset(selectedAsset.value)
+  await insertAsset(selectedAsset.value)
   detailsOpen.value = false
 }
 </script>
@@ -259,6 +327,21 @@ function insertSelectedAsset() {
         class="min-w-0 flex-1"
         :placeholder="panels.searchLocalComponents"
       />
+      <button
+        type="button"
+        :class="insertButton.base"
+        class="relative"
+        :aria-label="libraryUpdateCount > 0 ? panels.reviewLibraryUpdates : panels.manageLibraries"
+        @click="openLibraries"
+      >
+        <icon-lucide-library class="size-3.5" />
+        <span
+          v-if="libraryUpdateCount > 0"
+          class="absolute top-0.5 right-0.5 min-w-2.5 rounded-full bg-accent px-0.5 text-center text-[8px] leading-2.5 text-white"
+        >
+          {{ libraryUpdateCount }}
+        </span>
+      </button>
       <SegmentedControl
         v-model="assetView"
         data-test-id="assets-view-toggle"
@@ -287,6 +370,7 @@ function insertSelectedAsset() {
                 data-test-id="asset-item"
                 :data-asset-id="asset.id"
                 :draggable="!!asset.componentId"
+                :aria-busy="insertingAssetId === asset.id"
                 :class="[
                   'group/asset rounded text-left text-xs text-surface outline-none hover:bg-hover focus-visible:ring-1 focus-visible:ring-accent',
                   assetView === 'grid'
@@ -366,6 +450,7 @@ function insertSelectedAsset() {
                       type="button"
                       :class="insertButton.base"
                       data-test-id="asset-insert"
+                      :disabled="insertingAssetId === asset.id"
                       @pointerdown.stop
                       @click.stop="insertAsset(asset)"
                     >
@@ -378,6 +463,7 @@ function insertSelectedAsset() {
             <ContextMenuPortal>
               <ContextMenuContent :class="contextMenu.content">
                 <ContextMenuItem
+                  v-if="!asset.libraryId"
                   data-test-id="asset-context-go-to-main"
                   :class="contextMenu.item"
                   @select="focusAsset(asset)"
@@ -408,6 +494,8 @@ function insertSelectedAsset() {
         </template>
       </AppPlaceholder>
     </div>
+
+    <LibraryManagerDialog v-model="librariesOpen" :initial-section="libraryInitialSection" />
 
     <AppDialogRoot
       v-if="selectedAsset"
