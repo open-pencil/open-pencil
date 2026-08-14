@@ -190,7 +190,7 @@ const drawerTransition = {
 
         <TabsContent value="code" class="mt-0 h-full data-[state=inactive]:hidden">
           <div data-test-id="mobile-drawer-code" class="flex h-full flex-col">
-            <CodePanel :active="getDrawerTab() === 'code'" />
+            <CodePanel :active="isOpen && getDrawerTab() === 'code'" />
           </div>
         </TabsContent>
 

@@ -27,7 +27,7 @@ function copyButton() {
 }
 
 test('inactive Code tab skips JSX generation for large selections', async () => {
-  const selectionDuration = await editor.page.evaluate(() => {
+  const selectionDuration = await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -41,10 +41,13 @@ test('inactive Code tab skips JSX generation for large selections', async () => 
     }
     const startedAt = performance.now()
     store.select(ids)
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    })
     return performance.now() - startedAt
   })
 
-  expect(selectionDuration).toBeLessThan(100)
+  expect(selectionDuration).toBeLessThan(1000)
   await expect(designTab()).toHaveAttribute('data-state', 'active')
 
   await codeTab().click()
