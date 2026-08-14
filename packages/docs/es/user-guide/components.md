@@ -32,7 +32,7 @@ Una biblioteca publica componentes como una revisión inmutable. Abre **Assets �
 
 Habilita bibliotecas desde **Administrar bibliotecas**. Sus recursos aparecen junto a los componentes locales. Las definiciones publicadas son de solo lectura en el documento consumidor, mientras que las instancias vinculadas y sus overrides siguen siendo editables.
 
-En **Actualizaciones**, compara la instancia actual y la nueva lado a lado. Puedes actualizar una instancia, un recurso, la página actual o todas las páginas. Las propiedades compatibles se conservan y las variantes ausentes muestran la alternativa antes de aceptar. Las actualizaciones se pueden deshacer y rehacer.
+En **Actualizaciones**, compara la instancia actual y la nueva lado a lado. Puedes actualizar una instancia, todas las instancias de un recurso, la página actual o todas las páginas. Las propiedades compatibles se conservan y las variantes ausentes muestran la alternativa antes de aceptar. Las actualizaciones se pueden deshacer y rehacer.
 
 Las bibliotecas pueden usar el catálogo local o un proveedor de almacenamiento configurado. Las revisiones descargadas se guardan en caché. Los enlaces habilitados y las definiciones materializadas se guardan en `.fig`, por lo que el documento puede abrirse aunque la biblioteca remota no esté disponible.
 

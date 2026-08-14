@@ -28,9 +28,9 @@ Biblioteka publikuje komponenty jako niezmienną rewizję. Otwórz **Assets → 
 
 Włącz bibliotekę w **Zarządzaj bibliotekami**. Jej zasoby pojawią się obok komponentów lokalnych. Opublikowane definicje są tylko do odczytu w dokumencie korzystającym z biblioteki, ale powiązane instancje i nadpisania pozostają edytowalne.
 
-W sekcji **Aktualizacje** porównaj obok siebie bieżącą i nową instancję. Zaktualizuj jedną instancję, zasób, bieżącą stronę lub wszystkie strony. Zgodne właściwości są zachowywane, a brak dokładnego wariantu pokazuje wariant zastępczy przed zatwierdzeniem. Aktualizacje można cofać i ponawiać.
+W sekcji **Aktualizacje** porównaj obok siebie bieżącą i nową instancję. Zaktualizuj jedną instancję, wszystkie instancje danego zasobu, bieżącą stronę lub wszystkie strony. Zgodne właściwości są zachowywane, a brak dokładnego wariantu pokazuje wariant zastępczy przed zatwierdzeniem. Aktualizacje można cofać i ponawiać.
 
-Biblioteki mogą korzystać z katalogu lokalnego lub skonfigurowanego dostawcy pamięci. Pobrane rewizje są buforowane. Włączone powiązania i zmaterializowane definicje są zapisywane w `.fig`, więc dokument można ponownie otworzyć bez dostępu do biblioteki zdalnej.
+Biblioteki mogą korzystać z katalogu lokalnego lub skonfigurowanego dostawcy przechowywania danych. Pobrane rewizje są przechowywane w pamięci podręcznej. Włączone powiązania i zmaterializowane definicje są zapisywane w `.fig`, więc dokument można ponownie otworzyć bez dostępu do biblioteki zdalnej.
 
 ## Tworzenie instancji
 Prawy przycisk → **Utwórz instancję**. Pojawia się 40 px na prawo.

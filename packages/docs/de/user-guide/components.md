@@ -33,7 +33,7 @@ Eine Bibliothek veröffentlicht Komponenten als unveränderliche Revision. Öffn
 
 Aktivieren Sie Bibliotheken unter **Bibliotheken verwalten**. Ihre Assets erscheinen neben lokalen Komponenten; veröffentlichte Definitionen sind im konsumierenden Dokument schreibgeschützt, verknüpfte Instanzen und Overrides bleiben bearbeitbar.
 
-Unter **Updates** können Sie die aktuelle und neue Instanz nebeneinander prüfen. Aktualisieren Sie eine Instanz, ein Asset, die aktuelle Seite oder alle Seiten. Kompatible Eigenschaften bleiben erhalten; fehlende Varianten zeigen vor dem Bestätigen den Fallback an. Updates unterstützen Rückgängig/Wiederholen.
+Unter **Updates** können Sie die aktuelle und neue Instanz nebeneinander prüfen. Aktualisieren Sie eine Instanz, alle Instanzen eines Assets, die aktuelle Seite oder alle Seiten. Kompatible Eigenschaften bleiben erhalten; fehlende Varianten zeigen vor dem Bestätigen den Fallback an. Updates unterstützen Rückgängig/Wiederholen.
 
 Bibliotheken können lokal oder über einen konfigurierten Speicheranbieter gespeichert werden. Heruntergeladene Revisionen werden lokal zwischengespeichert. Aktivierte Bindungen und materialisierte Definitionen werden in `.fig` gespeichert, sodass Dokumente auch ohne Verbindung zur Remote-Bibliothek geöffnet werden können.
 

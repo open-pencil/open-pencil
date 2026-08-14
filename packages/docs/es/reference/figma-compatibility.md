@@ -163,7 +163,7 @@ Comparación característica por característica de las capacidades de Figma Des
 | Variables (color, número, string, booleano) | 🟡 | `COLOR` con UI completa; `FLOAT`/STRING/BOOLEAN definidos sin UI de edición |
 | Colecciones y modos de variables | 🟡 | Colecciones, modos, cambio activeMode funcionan; sin UI de theming por variable |
 | Estilos (color, texto, efecto, layout) | 🔲 | Presets de estilo reutilizables con nombre |
-| Bibliotecas (publicar, compartir, actualizar) | ✅ | Revisiones locales/remotas inmutables, publicación selectiva, revisión de actualizaciones, uso sin conexión y persistencia `.fig` |
+| Bibliotecas (publicar, compartir, actualizar) | ✅ | Revisiones locales/de almacenamiento inmutables, habilitación, publicación selectiva, revisión de actualizaciones, uso sin conexión y persistencia `.fig` |
 | Desacoplar instancia | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> convierte instancia en frame |
 | Ir al componente principal | ✅ | Navegar al componente fuente, cross-page |
 

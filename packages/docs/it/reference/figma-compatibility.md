@@ -163,7 +163,7 @@ Confronto funzionalità per funzionalità delle capacità di Figma Design con lo
 | Variabili (colore, numero, stringa, booleano) | 🟡 | `COLOR` con UI completa; `FLOAT`/STRING/BOOLEAN definiti senza UI di modifica |
 | Collezioni e modi variabili | 🟡 | Collezioni, modi, cambio activeMode funzionano; nessuna UI tematizzazione |
 | Stili (colore, testo, effetto, layout) | 🔲 | Preset stile riutilizzabili nominati |
-| Librerie (pubblicare, condividere, aggiornare) | ✅ | Revisioni locali/remote immutabili, pubblicazione selettiva, revisione aggiornamenti, uso offline e persistenza `.fig` |
+| Librerie (pubblicare, condividere, aggiornare) | ✅ | Revisioni locali/di archiviazione immutabili, abilitazione, pubblicazione selettiva, revisione aggiornamenti, uso offline e persistenza `.fig` |
 | Staccare istanza | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> converte istanza in frame |
 | Vai al componente principale | ✅ | Navigare al componente sorgente, cross-page |
 

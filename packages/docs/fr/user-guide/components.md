@@ -28,7 +28,7 @@ Une bibliothèque publie des composants sous forme de révision immuable. Ouvrez
 
 Activez une bibliothèque dans **Gérer les bibliothèques**. Ses ressources apparaissent avec les composants locaux. Les définitions publiées sont en lecture seule dans le document consommateur, tandis que les instances liées et leurs surcharges restent modifiables.
 
-Dans **Mises à jour**, comparez côte à côte l'instance actuelle et la nouvelle. Appliquez la mise à jour à une instance, une ressource, la page actuelle ou toutes les pages. Les propriétés compatibles sont conservées et un repli est signalé avant validation si une variante exacte a disparu. Les mises à jour sont annulables.
+Dans **Mises à jour**, comparez côte à côte l'instance actuelle et la nouvelle. Appliquez la mise à jour à une instance, toutes les instances d'une ressource, la page actuelle ou toutes les pages. Les propriétés compatibles sont conservées et un repli est signalé avant validation si une variante exacte a disparu. Les mises à jour sont annulables.
 
 Les bibliothèques utilisent le catalogue local ou un fournisseur de stockage configuré. Les révisions téléchargées sont mises en cache. Les liaisons activées et définitions matérialisées sont enregistrées dans `.fig`, ce qui permet de rouvrir le document sans accès à la bibliothèque distante.
 

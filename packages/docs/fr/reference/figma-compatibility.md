@@ -163,7 +163,7 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 | Variables (couleur, nombre, chaîne, booléen) | 🟡 | `COLOR` avec UI complète ; `FLOAT`/STRING/BOOLEAN définis sans UI d'édition |
 | Collections et modes de variables | 🟡 | Collections, modes, changement activeMode fonctionnent ; pas d'UI de thématisation |
 | Styles (couleur, texte, effet, layout) | 🔲 | Presets de style réutilisables nommés |
-| Bibliothèques (publier, partager, mettre à jour) | ✅ | Révisions locales/distantes immuables, publication sélective, revue des mises à jour, mode hors ligne et persistance `.fig` |
+| Bibliothèques (publier, partager, mettre à jour) | ✅ | Révisions locales/de stockage immuables, activation, publication sélective, revue des mises à jour, mode hors ligne et persistance `.fig` |
 | Détacher une instance | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> convertit une instance en frame |
 | Aller au composant principal | ✅ | Naviguer vers le composant source, cross-page |
 

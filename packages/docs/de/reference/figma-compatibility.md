@@ -163,7 +163,7 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 | Variablen (Farbe, Zahl, String, Boolean) | 🟡 | `COLOR` mit vollem UI; `FLOAT`/STRING/BOOLEAN definiert ohne Bearbeitungs-UI |
 | Variablensammlungen & Modi | 🟡 | Sammlungen, Modi, activeMode-Wechsel funktionieren; kein Variablen-Theming-UI |
 | Stile (Farbe, Text, Effekt, Layout) | 🔲 | Wiederverwendbare benannte Stil-Presets |
-| Bibliotheken (veröffentlichen, teilen, aktualisieren) | ✅ | Unveränderliche lokale/Speicher-Revisionen, selektive Veröffentlichung, Update-Prüfung, Offline-Nutzung und `.fig`-Persistenz |
+| Bibliotheken (veröffentlichen, teilen, aktualisieren) | ✅ | Unveränderliche lokale/Speicher-Revisionen, Aktivierung, selektive Veröffentlichung, Update-Prüfung, Offline-Nutzung und `.fig`-Persistenz |
 | Instanz ablösen | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> wandelt Instanz in Frame um |
 | Zur Hauptkomponente navigieren | ✅ | Zur Quellkomponente navigieren, seitenübergreifend |
 

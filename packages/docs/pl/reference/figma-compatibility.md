@@ -163,7 +163,7 @@ Porównanie funkcja po funkcji możliwości Figma Design z aktualnym stanem impl
 | Zmienne (kolor, liczba, string, boolean) | 🟡 | `COLOR` z pełnym UI; `FLOAT`/STRING/BOOLEAN zdefiniowane bez UI edycji |
 | Kolekcje i tryby zmiennych | 🟡 | Kolekcje, tryby, zmiana activeMode działają; brak UI tematyzacji |
 | Style (kolor, tekst, efekt, layout) | 🔲 | Presety stylów wielokrotnego użytku |
-| Biblioteki (publikuj, udostępniaj, aktualizuj) | ✅ | Niezmienne rewizje lokalne/zdalne, selektywna publikacja, przegląd aktualizacji, tryb offline i zapis w `.fig` |
+| Biblioteki (publikuj, udostępniaj, aktualizuj) | ✅ | Niezmienne rewizje lokalne/z pamięci masowej, włączanie, selektywna publikacja, przegląd aktualizacji, tryb offline i zapis w `.fig` |
 | Odłącz instancję | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> konwertuje instancję na ramkę |
 | Przejdź do głównego komponentu | ✅ | Nawigacja do komponentu źródłowego, cross-page |
 

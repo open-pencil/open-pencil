@@ -28,7 +28,7 @@ Una libreria pubblica componenti come revisione immutabile. Apri **Assets → Ge
 
 Abilita una libreria da **Gestisci librerie**. I suoi asset appaiono accanto ai componenti locali. Le definizioni pubblicate sono in sola lettura nel documento che le usa, mentre istanze collegate e override restano modificabili.
 
-In **Aggiornamenti**, confronta affiancate l'istanza corrente e quella nuova. Aggiorna una singola istanza, un asset, la pagina corrente o tutte le pagine. Le proprietà compatibili vengono mantenute e, se manca una variante esatta, il fallback viene mostrato prima della conferma. Gli aggiornamenti supportano annulla/ripristina.
+In **Aggiornamenti**, confronta affiancate l'istanza corrente e quella nuova. Aggiorna una singola istanza, tutte le istanze di un asset, la pagina corrente o tutte le pagine. Le proprietà compatibili vengono mantenute e, se manca una variante esatta, il fallback viene mostrato prima della conferma. Gli aggiornamenti supportano annulla/ripristina.
 
 Le librerie possono usare il catalogo locale o un provider di archiviazione configurato. Le revisioni scaricate vengono memorizzate nella cache. I collegamenti abilitati e le definizioni materializzate vengono salvati in `.fig`, quindi il documento può essere riaperto senza accesso alla libreria remota.
 
