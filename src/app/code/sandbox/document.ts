@@ -61,5 +61,5 @@ export function sandboxDocument({ elements, helpers }: SandboxDocumentOptions): 
     worker.postMessage({ id: message.id, code: message.code, elements: ${escapedElements}, helpers: ${escapedHelpers} })
   })
   parent.postMessage({ type: 'open-pencil-design-jsx-ready' }, '*')
-  </scr${'ipt'}></body></html>`
+  </script></body></html>`
 }

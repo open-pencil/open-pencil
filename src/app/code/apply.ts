@@ -26,7 +26,7 @@ export async function applyDesignJSX(
   const selected = [...store.state.selectedIds]
     .map((id) => store.graph.getNode(id))
     .filter((node) => node !== undefined)
-  const first = selected[0]
+  const first = selected.at(0)
   const parentId = first?.parentId ?? store.state.currentPageId
   const viewportCenter = store.viewportCanvasCenter()
   const origin = first ? { x: first.x, y: first.y } : viewportCenter
