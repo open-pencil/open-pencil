@@ -12,7 +12,7 @@ import type {
 
 export interface SelectiveLibraryRevisionInput extends Omit<
   PublishLibraryInput,
-  'graph' | 'assetNodeIds' | 'libraryId'
+  'graph' | 'assetNodeIds' | 'libraryId' | 'previousRevisionId'
 > {
   previous: ComponentLibraryRevision
   sourceGraph: SceneGraph

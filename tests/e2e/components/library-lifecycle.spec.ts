@@ -68,7 +68,7 @@ test('preserves source publication identity across FIG save and reopen', async (
     const file = new File([new Uint8Array(bytes)], 'source.fig')
     window.showOpenFilePicker = async () => [{ getFile: async () => file } as FileSystemFileHandle]
   }, saved)
-  await page.keyboard.press('Meta+KeyO')
+  await page.keyboard.press('ControlOrMeta+KeyO')
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -182,7 +182,7 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
   await page.keyboard.press('Escape')
   await expect(page.getByTestId('asset-libraries-dialog')).toBeHidden()
 
-  await page.keyboard.press('Meta+KeyN')
+  await page.keyboard.press('ControlOrMeta+KeyN')
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -237,7 +237,7 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
     }
     window.showOpenFilePicker = async () => [{ getFile: async () => file } as FileSystemFileHandle]
   }, saved)
-  await page.keyboard.press('Meta+KeyO')
+  await page.keyboard.press('ControlOrMeta+KeyO')
 
   await expect
     .poll(() =>

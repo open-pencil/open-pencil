@@ -18,10 +18,12 @@ export function createStructureStateActions(ctx: EditorContext) {
   }
 
   function toggleVisibility() {
+    for (const id of ctx.state.selectedIds) assertNodeEditable(ctx.graph, id)
     for (const id of ctx.state.selectedIds) toggleNodeVisibility(id)
   }
 
   function toggleLock() {
+    for (const id of ctx.state.selectedIds) assertNodeEditable(ctx.graph, id)
     for (const id of ctx.state.selectedIds) toggleNodeLock(id)
   }
 

@@ -583,6 +583,7 @@ export function createVariantActions(ctx: EditorContext) {
     propertyName: string,
     newValue: string
   ): VariantTransitionResult {
+    assertNodeEditable(ctx.graph, instanceId)
     const instance = ctx.graph.getNode(instanceId)
     if (instance?.type !== 'INSTANCE' || !instance.componentId) return { kind: 'invalid' }
     const component = ctx.graph.getNode(instance.componentId)

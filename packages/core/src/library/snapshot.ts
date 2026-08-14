@@ -189,7 +189,7 @@ export function canonicalLibraryNode(
     componentDependency: dependency,
     children: node.childIds.flatMap((id) => {
       const child = graph.getNode(id)
-      return child ? [canonicalLibraryNode(graph, child)] : []
+      return child ? [canonicalLibraryNode(graph, child, dependencyStack)] : []
     })
   }
 }

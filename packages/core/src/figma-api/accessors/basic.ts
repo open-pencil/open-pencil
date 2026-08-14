@@ -155,6 +155,7 @@ export function installBasicNodeProxyAccessors(
       ;(this as { resize(width: number, height: number): void }).resize(width, height)
     },
     rescale(this: ProxyThis, scale: number): void {
+      assertEditable(this, internals)
       rescaleNodeTree(graph(this, internals), nodeId(this, internals), scale)
     }
   })

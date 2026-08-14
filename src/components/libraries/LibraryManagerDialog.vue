@@ -179,11 +179,7 @@ const navigationClass =
           />
         </div>
         <AppDialogFooter :ui="{ footer: 'justify-between' }">
-          <label class="flex items-center gap-2 text-xs text-muted"
-            ><AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />{{
-              panels.showUpdatesForAllPages
-            }}</label
-          >
+          <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
           <button
             type="button"
             class="rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-50"

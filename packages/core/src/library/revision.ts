@@ -1,6 +1,7 @@
 import { contentHash } from './hash'
 import { assertLibraryId } from './identity'
 import { describeSnapshotAssets, extractLibrarySnapshot } from './snapshot'
+import { COMPONENT_LIBRARY_SCHEMA_VERSION } from './types'
 import type {
   ComponentLibraryManifest,
   ComponentLibraryRevision,
@@ -14,13 +15,13 @@ export async function createLibraryRevision(
   const snapshot = extractLibrarySnapshot(input.graph, input.assetNodeIds)
   const assets = await describeSnapshotAssets(snapshot)
   const revisionId = await contentHash({
-    schemaVersion: 1,
+    schemaVersion: COMPONENT_LIBRARY_SCHEMA_VERSION,
     libraryId: input.libraryId,
     previousRevisionId: input.previousRevisionId ?? null,
     assets: assets.map(({ thumbnail: _, sourceNodeId: __, ...asset }) => asset)
   })
   const manifest: ComponentLibraryManifest = {
-    schemaVersion: 1,
+    schemaVersion: COMPONENT_LIBRARY_SCHEMA_VERSION,
     libraryId: input.libraryId,
     name: input.name.trim(),
     revisionId,

@@ -128,6 +128,8 @@ export function createUndoActions(ctx: EditorContext) {
     origRect: Rect,
     origChildren: Map<string, ResizeSnapshot>
   ) {
+    assertNodeEditable(ctx.graph, nodeId)
+    for (const childId of origChildren.keys()) assertNodeEditable(ctx.graph, childId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const finalRect = { x: node.x, y: node.y, width: node.width, height: node.height }
@@ -139,11 +141,15 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
+        assertNodeEditable(ctx.graph, nodeId)
+        for (const childId of finalChildren.keys()) assertNodeEditable(ctx.graph, childId)
         ctx.graph.updateNode(nodeId, finalRect)
         for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
+        assertNodeEditable(ctx.graph, nodeId)
+        for (const childId of origChildren.keys()) assertNodeEditable(ctx.graph, childId)
         ctx.graph.updateNode(nodeId, origRect)
         for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
         ctx.runLayoutForNode(nodeId)

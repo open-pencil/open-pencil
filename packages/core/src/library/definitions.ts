@@ -6,12 +6,15 @@ export function findLibraryDefinition(
   assetKey: string,
   revisionId: string
 ): SceneNode | undefined {
-  return [...graph.getAllNodes()].find((node) => {
+  for (const node of graph.getAllNodes()) {
     const identity = node.librarySource?.identity
-    return (
+    if (
       identity?.libraryId === libraryId &&
       identity.assetKey === assetKey &&
       identity.revisionId === revisionId
-    )
-  })
+    ) {
+      return node
+    }
+  }
+  return undefined
 }

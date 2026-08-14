@@ -99,10 +99,12 @@ async function updateInstance() {
   const id = currentInstanceId.value
   if (!id || applying.value) return
   applying.value = true
-  accepted = true
   try {
     await service.applyInstanceUpdate(editor, id)
+    accepted = true
     closeLibraryReview()
+  } catch (cause) {
+    toast.error(cause instanceof Error ? cause.message : String(cause))
   } finally {
     applying.value = false
   }
@@ -112,7 +114,6 @@ async function updateAll() {
   const value = request.value
   if (!value || applying.value) return
   applying.value = true
-  accepted = true
   try {
     await service.applyInstanceIdsUpdate(
       editor,
@@ -121,8 +122,10 @@ async function updateAll() {
       value.instanceIds,
       `Update all ${preview.value?.graph.getNode(preview.value.updatedNodeId)?.name ?? value.assetKey} instances`
     )
+    accepted = true
     closeLibraryReview()
-  } finally {
+  } catch (cause) {
+    toast.error(cause instanceof Error ? cause.message : String(cause))
     applying.value = false
   }
 }

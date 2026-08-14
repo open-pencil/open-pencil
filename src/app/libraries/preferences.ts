@@ -21,7 +21,8 @@ export function writeLibraryCatalogSource(source: LibraryCatalogSource): void {
 }
 
 export function readLibraryPriority(libraryId: string): number {
-  return preferences.value.priorities[libraryId] ?? 0
+  const value = preferences.value.priorities[libraryId]
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
 }
 
 export function writeLibraryPriority(libraryId: string, priority: number): void {

@@ -108,7 +108,11 @@ function copyImages(source: SceneGraph, target: SceneGraph, mappedIds: Map<strin
   const hashes = new Set<string>()
   for (const sourceId of mappedIds.keys()) {
     const node = source.getNode(sourceId)
-    for (const fill of node?.fills ?? []) {
+    const fills = [
+      ...(node?.fills ?? []),
+      ...(node?.fillGeometry.flatMap((geometry) => geometry.fills ?? []) ?? [])
+    ]
+    for (const fill of fills) {
       if (fill.type === 'IMAGE' && fill.imageHash) hashes.add(fill.imageHash)
     }
   }
@@ -136,6 +140,7 @@ export function materializeLibraryAsset(
   const { libraryId, revisionId } = revision.manifest
   assertLibraryId(libraryId)
   assertLibraryAssetKey(assetKey)
+  consumer.enabledLibraries.set(libraryId, { libraryId, revisionId, enabled: true })
   const existing = findLibraryDefinition(consumer, libraryId, assetKey, revisionId)
   if (existing) {
     const component = defaultComponent(consumer, existing)
@@ -158,7 +163,6 @@ export function materializeLibraryAsset(
   }
   markDefinitions(consumer, revision, mappedIds)
   copyImages(revision.graph, consumer, mappedIds)
-  consumer.enabledLibraries.set(libraryId, { libraryId, revisionId, enabled: true })
 
   const rootId = mappedIds.get(descriptor.sourceNodeId)
   const root = rootId ? consumer.getNode(rootId) : undefined

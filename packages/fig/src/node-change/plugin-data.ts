@@ -204,6 +204,11 @@ export function extractLibrarySource(nc: NodeChange): SceneNode['librarySource']
 export function applyLibrarySourcePluginData(node: SceneNode): void {
   if (node.librarySource) {
     upsertPluginData(node, LIBRARY_SOURCE_PLUGIN_KEY, JSON.stringify(node.librarySource))
+  } else {
+    node.pluginData = node.pluginData.filter(
+      (entry) =>
+        !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === LIBRARY_SOURCE_PLUGIN_KEY)
+    )
   }
 }
 

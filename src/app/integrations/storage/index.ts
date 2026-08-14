@@ -26,6 +26,8 @@ export type {
   StorageFieldID,
   LibraryObjectStore,
   LibraryObjectSummary,
+  LibraryObjectValue,
+  LibraryObjectWriteOptions,
   StoragePreferenceField,
   StorageProviderID,
   StorageProviderRegistration,

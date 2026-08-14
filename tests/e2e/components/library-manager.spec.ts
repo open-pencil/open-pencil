@@ -61,7 +61,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await publish.getByRole('button', { name: 'Publish library' }).click()
   await expect(publish.getByLabel('Library ID')).toBeHidden()
   await page.keyboard.press('Escape')
-  await page.keyboard.press('Meta+KeyN')
+  await page.keyboard.press('ControlOrMeta+KeyN')
   await expect.poll(() => page.evaluate(() => !!window.openPencil?.getStore?.())).toBe(true)
 
   await page.getByTestId('left-panel-assets-tab').click()
@@ -219,7 +219,6 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await expect(reviewDialog).toHaveScreenshot('library-update-side-by-side.png', {
     animations: 'disabled'
   })
-  await page.screenshot({ path: '/tmp/openpencil-library-review.png' })
   await page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -264,7 +263,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
   }, instances[1])
   await expect(instanceUpdate).toBeVisible()
 
-  await page.keyboard.press('Meta+KeyZ')
+  await page.keyboard.press('ControlOrMeta+KeyZ')
   const undoneComponents = await page.evaluate((ids) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -272,7 +271,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
   }, instances)
   expect(new Set(undoneComponents).size).toBe(1)
 
-  await page.keyboard.press('Meta+Shift+KeyZ')
+  await page.keyboard.press('ControlOrMeta+Shift+KeyZ')
   const redoneComponents = await page.evaluate((ids) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')

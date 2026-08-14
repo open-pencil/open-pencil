@@ -35,7 +35,9 @@ const catalogs = new WeakMap<object, ComponentCatalog>()
 
 export function registerComponentCatalog(owner: object, catalog: ComponentCatalog): () => void {
   catalogs.set(owner, catalog)
-  return () => catalogs.delete(owner)
+  return () => {
+    if (catalogs.get(owner) === catalog) catalogs.delete(owner)
+  }
 }
 
 export function getComponentCatalog(owner: object): ComponentCatalog | undefined {

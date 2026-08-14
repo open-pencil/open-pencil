@@ -38,11 +38,11 @@ export const insertLibraryComponent = defineTool({
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
         throw new TypeError('variant_values must be a JSON object')
       }
-      variantValues = Object.fromEntries(
-        Object.entries(parsed).filter(
-          (entry): entry is [string, string] => typeof entry[1] === 'string'
-        )
-      )
+      const entries = Object.entries(parsed)
+      if (entries.some(([, value]) => typeof value !== 'string')) {
+        throw new TypeError('variant_values values must be strings')
+      }
+      variantValues = Object.fromEntries(entries) as Record<string, string>
     }
     return catalog.insertComponent({
       libraryId: args.library_id,
