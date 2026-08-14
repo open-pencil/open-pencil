@@ -89,7 +89,7 @@ test('supports multiple roots through fragments', async ({ page }) => {
 test('cannot access the parent or application origin', async ({ page }) => {
   const result = await evaluate(page, '<Frame>{String(window.parent.document)}</Frame>')
   expect(result.ok).toBe(false)
-  if (!result.ok) expect(result.error).toContain('window is not defined')
+  if (!result.ok) expect(result.error).toMatch(/window is not defined|Can't find variable: window/)
 })
 
 test('blocks network requests from evaluated code', async ({ page }) => {
