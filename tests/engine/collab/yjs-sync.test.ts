@@ -170,7 +170,20 @@ describe('collab yjs-sync', () => {
     doc.getMap<Y.Map<unknown>>('nodes').set('remote', ynode)
     ynode.set('source', { format: 'fig', fig: { rawNodeFields: 'invalid' } })
     ynode.set('fillGeometry', [
-      { windingRule: 'EVENODD', commandsBlob: new Uint8Array([0]) },
+      {
+        windingRule: 'EVENODD',
+        commandsBlob: new Uint8Array([0]),
+        fills: [
+          null,
+          'invalid',
+          {
+            type: 'SOLID',
+            color: { r: 1, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true
+          }
+        ]
+      },
       { windingRule: 'NONZERO', commandsBlob: 'invalid' }
     ])
     ynode.set('strokeGeometry', 'invalid')
@@ -185,6 +198,8 @@ describe('collab yjs-sync', () => {
     })
     expect(fillGeometry).toHaveLength(1)
     expect(fillGeometry[0]?.commandsBlob).toBeInstanceOf(Uint8Array)
+    expect(fillGeometry[0]?.fills).toHaveLength(1)
+    expect(fillGeometry[0]?.fills?.[0]?.type).toBe('SOLID')
     expect(props.strokeGeometry).toEqual([])
   })
 

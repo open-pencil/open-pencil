@@ -1,9 +1,27 @@
-import type { Fill, GeometryPath, SceneNode, SourceMetadata } from '@open-pencil/scene-graph'
+import type {
+  Fill,
+  FillType,
+  GeometryPath,
+  SceneNode,
+  SourceMetadata
+} from '@open-pencil/scene-graph'
 import { copyFills } from '@open-pencil/scene-graph/copy'
 import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 const DERIVED_NODE_FIELDS = new Set<keyof SceneNode>(['textPicture'])
+const FILL_TYPES = new Set<FillType>([
+  'SOLID',
+  'GRADIENT_LINEAR',
+  'GRADIENT_RADIAL',
+  'GRADIENT_ANGULAR',
+  'GRADIENT_DIAMOND',
+  'IMAGE',
+  'VIDEO',
+  'PATTERN',
+  'NOISE',
+  'CUSTOM'
+])
 
 type YjsNodeLike = {
   entries(): IterableIterator<[string, unknown]>
@@ -75,7 +93,8 @@ function normalizeGeometryPaths(value: unknown): GeometryPath[] {
       windingRule: item.windingRule === 'EVENODD' ? 'EVENODD' : 'NONZERO',
       commandsBlob: new Uint8Array(item.commandsBlob)
     }
-    if (isFillArray(item.fills)) path.fills = copyFills(item.fills)
+    const fills = normalizeFills(item.fills)
+    if (fills.length > 0) path.fills = copyFills(fills)
     if (typeof item.fillStyleId === 'string') path.fillStyleId = item.fillStyleId
     paths.push(path)
   }
@@ -101,8 +120,29 @@ function normalizeMatrix(value: unknown): Matrix | null {
   }
 }
 
-function isFillArray(value: unknown): value is Fill[] {
-  return Array.isArray(value)
+function normalizeFills(value: unknown): Fill[] {
+  return Array.isArray(value) ? value.filter(isFill) : []
+}
+
+function isFill(value: unknown): value is Fill {
+  return (
+    isRecord(value) &&
+    typeof value.type === 'string' &&
+    FILL_TYPES.has(value.type as FillType) &&
+    isColor(value.color) &&
+    isFiniteNumber(value.opacity) &&
+    typeof value.visible === 'boolean'
+  )
+}
+
+function isColor(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isFiniteNumber(value.r) &&
+    isFiniteNumber(value.g) &&
+    isFiniteNumber(value.b) &&
+    isFiniteNumber(value.a)
+  )
 }
 
 function isFiniteNumber(value: unknown): value is number {
