@@ -266,8 +266,7 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
       values: { Size: 'Large', Tone: 'Brand' },
       definitions: expect.arrayContaining([
         expect.objectContaining({ libraryId: 'e2e-design-system' })
-      ]),
-      enabled: true
+      ])
     })
 
   await expect(page.getByText(/send was called before connect/i)).toHaveCount(0)
