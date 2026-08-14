@@ -45,6 +45,17 @@ export function createDocumentRoutes(service: DocumentService) {
       if (!documents) return context.json({ error: { code: 'not_found' as const } }, 404)
       return context.json({ documents })
     })
+    .get('/workspaces/:workspaceId/usage', async (context) => {
+      try {
+        return context.json({
+          usage: await service.usage(context.get('actor').userId, context.req.param('workspaceId'))
+        })
+      } catch (error) {
+        const response = domainError(context, error)
+        if (response) return response
+        throw error
+      }
+    })
     .post('/workspaces/:workspaceId/documents', async (context) => {
       try {
         const document = await service.create(
@@ -53,6 +64,16 @@ export function createDocumentRoutes(service: DocumentService) {
           parseCreateDocument(await context.req.json())
         )
         return context.json({ document }, 201)
+      } catch (error) {
+        const response = domainError(context, error)
+        if (response) return response
+        throw error
+      }
+    })
+    .delete('/documents/:documentId', async (context) => {
+      try {
+        await service.remove(context.get('actor').userId, context.req.param('documentId'))
+        return context.body(null, 204)
       } catch (error) {
         const response = domainError(context, error)
         if (response) return response

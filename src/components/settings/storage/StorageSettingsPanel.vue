@@ -21,11 +21,16 @@ import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { toast } from '@/app/shell/ui'
 import { resumeStorageSync } from '@/app/storage/sync'
 import AppInput from '@/components/ui/AppInput.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
 
 const { dialogs } = useI18n()
 const notifications = useNotificationMessages()
 const router = useRouter()
 const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
+const providerOptions = storageProviderRegistry.list().map((registration) => ({
+  value: registration.id,
+  label: registration.label
+}))
 const preferenceDrafts = ref<Record<string, string>>({
   ...readStoragePreferences(provider.value.id)
 })
@@ -41,6 +46,8 @@ const configured = computed(
 )
 
 function preferenceLabel(field: string): string {
+  if (field === 'server-url') return 'Server URL'
+  if (field === 'workspace-id') return 'Workspace ID'
   if (field === 'endpoint') return dialogs.value.storageEndpoint
   if (field === 'bucket') return dialogs.value.storageBucket
   if (field === 'region') return dialogs.value.storageRegion
@@ -121,6 +128,12 @@ onMounted(() => void refreshStatuses())
       <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsStorage }}</h3>
       <p class="mt-0.5 text-[10px] text-muted">{{ provider.description }}</p>
     </div>
+
+    <AppSelect
+      v-model="activeStorageProviderID"
+      label="Storage provider"
+      :options="providerOptions"
+    />
 
     <label
       v-for="field in provider.preferenceFields"

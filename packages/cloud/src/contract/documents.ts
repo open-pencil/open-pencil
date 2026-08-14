@@ -28,7 +28,15 @@ export const documentDownloadSchema = v.object({
 })
 export type DocumentDownload = v.InferOutput<typeof documentDownloadSchema>
 
+export const workspaceUsageSchema = v.object({
+  bytesUsed: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  objectCount: v.pipe(v.number(), v.integer(), v.minValue(0)),
+  documentCount: v.pipe(v.number(), v.integer(), v.minValue(0))
+})
+export type WorkspaceUsage = v.InferOutput<typeof workspaceUsageSchema>
+
 export const createDocumentSchema = v.object({
+  id: v.optional(v.pipe(v.string(), v.uuid())),
   name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(255))
 })
 export type CreateDocumentInput = v.InferOutput<typeof createDocumentSchema>

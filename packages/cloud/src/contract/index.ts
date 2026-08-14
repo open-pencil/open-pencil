@@ -17,6 +17,7 @@ export {
   createUploadSchema,
   documentDownloadSchema,
   documentSummarySchema,
+  workspaceUsageSchema,
   parseCommitUpload,
   parseCreateDocument,
   parseCreateUpload,
@@ -24,7 +25,8 @@ export {
   type CreateDocumentInput,
   type CreateUploadInput,
   type DocumentDownload,
-  type DocumentSummary
+  type DocumentSummary,
+  type WorkspaceUsage
 } from './documents'
 export {
   createWorkspaceSchema,

@@ -2,19 +2,22 @@ import type { CloudFetch } from '#cloud/client/discovery'
 import {
   documentDownloadSchema,
   documentSummarySchema,
+  workspaceUsageSchema,
   workspaceListSchema,
   type CommitUploadInput,
   type CreateDocumentInput,
   type CreateUploadInput,
   type DocumentDownload,
   type DocumentSummary,
-  type WorkspaceList
+  type WorkspaceList,
+  type WorkspaceUsage
 } from '#cloud/contract'
 import * as v from 'valibot'
 
 const documentsResponseSchema = v.object({ documents: v.array(documentSummarySchema) })
 const documentResponseSchema = v.object({ document: documentSummarySchema })
 const downloadResponseSchema = v.object({ document: documentDownloadSchema })
+const usageResponseSchema = v.object({ usage: workspaceUsageSchema })
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   upload: v.object({
@@ -82,12 +85,20 @@ export function createCloudClient(baseURL: string, options: CloudRequestOptions 
         code
       )
     }
+    if (response.status === 204) return null
     return response.json()
   }
 
   return {
     async listWorkspaces(): Promise<WorkspaceList> {
       return v.parse(workspaceListSchema, await request('/workspaces'))
+    },
+    async getUsage(workspaceId: string): Promise<WorkspaceUsage> {
+      const response = v.parse(
+        usageResponseSchema,
+        await request(`/workspaces/${encodeURIComponent(workspaceId)}/usage`)
+      )
+      return response.usage
     },
     async listDocuments(workspaceId: string): Promise<DocumentSummary[]> {
       const response = v.parse(
@@ -108,6 +119,9 @@ export function createCloudClient(baseURL: string, options: CloudRequestOptions 
         })
       )
       return response.document
+    },
+    async deleteDocument(documentId: string): Promise<void> {
+      await request(`/documents/${encodeURIComponent(documentId)}`, { method: 'DELETE' })
     },
     async getDocument(documentId: string): Promise<DocumentDownload> {
       const response = v.parse(

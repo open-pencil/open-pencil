@@ -71,6 +71,30 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       return listDocuments(database, userId, workspaceId)
     },
 
+    async usage(userId: string, workspaceId: string) {
+      const role = await workspaceRole(database, userId, workspaceId)
+      if (!role) throw new DocumentNotFoundError()
+      const result = await database
+        .selectFrom('document')
+        .leftJoin('documentRevision', 'documentRevision.id', 'document.currentRevisionId')
+        .leftJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
+        .select((expression) => [
+          expression.fn.count('document.id').as('documentCount'),
+          expression.fn.count('storageObject.id').as('objectCount'),
+          expression.fn
+            .coalesce(expression.fn.sum('storageObject.byteSize'), expression.val(0))
+            .as('bytesUsed')
+        ])
+        .where('document.workspaceId', '=', workspaceId)
+        .where('document.deletedAt', 'is', null)
+        .executeTakeFirstOrThrow()
+      return {
+        bytesUsed: Number(result.bytesUsed),
+        objectCount: Number(result.objectCount),
+        documentCount: Number(result.documentCount)
+      }
+    },
+
     async download(userId: string, documentId: string): Promise<DocumentDownload> {
       const document = await findDocument(database, userId, documentId)
       if (!document?.currentRevisionId) throw new DocumentNotFoundError()
@@ -102,6 +126,18 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       }
     },
 
+    async remove(userId: string, documentId: string): Promise<void> {
+      const document = await findDocument(database, userId, documentId)
+      if (!document) throw new DocumentNotFoundError()
+      if (!WRITABLE_ROLES.has(document.role)) throw new DocumentForbiddenError()
+      await database
+        .updateTable('document')
+        .set({ deletedAt: new Date() })
+        .where('id', '=', documentId)
+        .where('deletedAt', 'is', null)
+        .execute()
+    },
+
     async create(
       userId: string,
       workspaceId: string,
@@ -110,7 +146,7 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       const role = await workspaceRole(database, userId, workspaceId)
       if (!role) throw new DocumentNotFoundError()
       if (!WRITABLE_ROLES.has(role)) throw new DocumentForbiddenError()
-      const documentId = crypto.randomUUID()
+      const documentId = input.id ?? crypto.randomUUID()
       await insertDocument(database, {
         id: documentId,
         workspaceId,

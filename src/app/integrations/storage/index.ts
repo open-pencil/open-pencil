@@ -5,7 +5,12 @@ export {
   writeStoragePreference
 } from './preferences'
 export type { StoragePreferences } from './preferences'
-export { S3_STORAGE_PROVIDER, storageProviderRegistry } from './providers'
+export { createCloudStorageAdapter } from './cloud/adapter'
+export {
+  OPENPENCIL_CLOUD_PROVIDER,
+  S3_STORAGE_PROVIDER,
+  storageProviderRegistry
+} from './providers'
 export { defineStorageProvider, StorageProviderRegistry } from './registry'
 export { createS3StorageAdapter } from './s3/adapter'
 export type { S3StorageAdapter } from './s3/adapter'

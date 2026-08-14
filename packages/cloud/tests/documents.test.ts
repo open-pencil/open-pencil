@@ -134,6 +134,14 @@ describe('Cloud document routes', () => {
         }
       })
 
+      const usageResponse = await context.app.request(
+        `/api/workspaces/${context.workspaceId}/usage`
+      )
+      expect(usageResponse.status).toBe(200)
+      expect(await usageResponse.json()).toEqual({
+        usage: { bytesUsed: 128, objectCount: 1, documentCount: 1 }
+      })
+
       const downloadResponse = await context.app.request(`/api/documents/${document.document.id}`)
       expect(downloadResponse.status).toBe(200)
       expect(await downloadResponse.json()).toMatchObject({
