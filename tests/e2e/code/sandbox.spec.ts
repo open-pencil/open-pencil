@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 async function evaluate(page: Page, source: string, timeoutMs = 1_000) {
   return page.evaluate(
     async ({ source, timeoutMs }) => {
-      const { evaluateDesignJSX } = await import('/src/app/code/sandbox/evaluate.ts')
+      const { evaluateDesignJSX } = await import('@/app/code/sandbox/evaluate')
       return evaluateDesignJSX(source, { timeoutMs })
     },
     { source, timeoutMs }
@@ -68,13 +68,13 @@ test('terminates accidental infinite loops without freezing the host', async ({ 
 
 test('rejects oversized source and output', async ({ page }) => {
   const sourceResult = await page.evaluate(async () => {
-    const { evaluateDesignJSX } = await import('/src/app/code/sandbox/evaluate.ts')
+    const { evaluateDesignJSX } = await import('@/app/code/sandbox/evaluate')
     return evaluateDesignJSX('<Text>too large</Text>', { sourceBytes: 4 })
   })
   expect(sourceResult).toEqual({ ok: false, error: 'Design JSX source is too large.' })
 
   const outputResult = await page.evaluate(async () => {
-    const { evaluateDesignJSX } = await import('/src/app/code/sandbox/evaluate.ts')
+    const { evaluateDesignJSX } = await import('@/app/code/sandbox/evaluate')
     return evaluateDesignJSX('<Text>{"x".repeat(100)}</Text>', { outputBytes: 20 })
   })
   expect(outputResult).toEqual({ ok: false, error: 'Design JSX output is too large.' })
