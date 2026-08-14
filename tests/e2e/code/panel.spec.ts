@@ -151,7 +151,7 @@ test('HTML/CSS live preview commits as one undoable session', async () => {
   await expect.poll(() => hasNode(editor.page, originalId)).toBe(false)
   await codeEditor().fill('<div style="width: 220px; height: 110px">Final</div>')
   await expect(editor.page.getByTestId('code-panel-status')).toContainText('Updated live')
-  await expect(editor.page.getByTestId('code-panel-status')).toHaveCSS('color', 'rgb(74, 222, 128)')
+  await expect(editor.page.getByTestId('code-panel-status')).toHaveAttribute('data-tone', 'success')
 
   await designTab().click()
   await expect.poll(() => getUndoLabel(editor.page)).toBe('Edit HTML/CSS')
