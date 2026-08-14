@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import {
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogTitle
+} from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
 
 import {
@@ -15,6 +21,7 @@ import type { CredentialStatus } from '@/app/settings/credentials/types'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
+import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 
 const { dialogs } = useI18n()
 const editing = ref(false)
@@ -22,6 +29,7 @@ const draft = ref<MCPConnectionDraft>(createMCPConnectionDraft())
 const tokenDraft = ref('')
 const tokenStatus = ref<CredentialStatus>('missing')
 const error = ref('')
+const deleteOpen = ref(false)
 
 const savedConnection = computed(() =>
   draft.value.id
@@ -72,6 +80,7 @@ async function clearCredential(): Promise<void> {
 async function remove(): Promise<void> {
   if (!draft.value.id) return
   await removeMCPConnection(draft.value.id)
+  deleteOpen.value = false
   editing.value = false
 }
 
@@ -135,6 +144,7 @@ onMounted(() => {
         v-if="draft.authenticationType === 'bearer'"
         v-model="tokenDraft"
         :label="dialogs.mcpBearerToken"
+        input-id="mcp-bearer-token"
         :saved="tokenStatus === 'configured'"
         kind="api"
         :placeholder="
@@ -149,7 +159,7 @@ onMounted(() => {
           v-if="draft.id"
           type="button"
           class="text-[10px] text-danger hover:underline"
-          @click="remove"
+          @click="deleteOpen = true"
         >
           {{ dialogs.deleteMCPConnection }}
         </button>
@@ -203,4 +213,29 @@ onMounted(() => {
       </p>
     </div>
   </section>
+
+  <AppAlertDialogRoot v-model:open="deleteOpen">
+    <div class="border-b border-border px-4 py-3">
+      <AlertDialogTitle class="text-sm font-semibold text-surface">
+        {{ dialogs.deleteMCPConnection }}
+      </AlertDialogTitle>
+    </div>
+    <AppDialogBody>
+      <AlertDialogDescription class="text-xs text-muted">
+        {{ dialogs.deleteMCPConnectionDescription }}
+      </AlertDialogDescription>
+    </AppDialogBody>
+    <AppDialogFooter>
+      <AlertDialogCancel as-child>
+        <button class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover">
+          {{ dialogs.cancel }}
+        </button>
+      </AlertDialogCancel>
+      <AlertDialogAction as-child>
+        <button class="rounded bg-danger px-3 py-1.5 text-xs text-white" @click="remove">
+          {{ dialogs.deleteMCPConnection }}
+        </button>
+      </AlertDialogAction>
+    </AppDialogFooter>
+  </AppAlertDialogRoot>
 </template>

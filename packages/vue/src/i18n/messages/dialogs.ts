@@ -176,6 +176,7 @@ export const dialogMessageDefaults = {
   mcpBearerToken: 'Bearer token',
   mcpBearerTokenPlaceholder: 'Enter bearer token',
   deleteMCPConnection: 'Delete connection',
+  deleteMCPConnectionDescription: 'Delete this MCP connection and remove its saved bearer token?',
   noMCPConnections: 'No external MCP connections configured.',
   addModel: 'Add model',
   editModel: 'Edit model',

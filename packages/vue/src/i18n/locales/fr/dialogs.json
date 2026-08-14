@@ -100,6 +100,7 @@
   "mcpBearerToken": "Jeton Bearer",
   "mcpBearerTokenPlaceholder": "Saisissez le jeton Bearer",
   "deleteMCPConnection": "Supprimer la connexion",
+  "deleteMCPConnectionDescription": "Supprimer cette connexion MCP et son jeton Bearer enregistré ?",
   "noMCPConnections": "Aucune connexion MCP externe configurée.",
   "addModel": "Ajouter un modèle",
   "editModel": "Modifier le modèle",

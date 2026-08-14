@@ -100,6 +100,7 @@
   "mcpBearerToken": "Bearer-Token",
   "mcpBearerTokenPlaceholder": "Bearer-Token eingeben",
   "deleteMCPConnection": "Verbindung löschen",
+  "deleteMCPConnectionDescription": "Diese MCP-Verbindung und ihr gespeichertes Bearer-Token löschen?",
   "noMCPConnections": "Keine externen MCP-Verbindungen konfiguriert.",
   "addModel": "Modell hinzufügen",
   "editModel": "Modell bearbeiten",

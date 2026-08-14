@@ -100,6 +100,7 @@
   "mcpBearerToken": "Bearer 令牌",
   "mcpBearerTokenPlaceholder": "输入 Bearer 令牌",
   "deleteMCPConnection": "删除连接",
+  "deleteMCPConnectionDescription": "删除此 MCP 连接及其保存的 Bearer 令牌？",
   "noMCPConnections": "尚未配置外部 MCP 连接。",
   "addModel": "添加模型",
   "editModel": "编辑模型",

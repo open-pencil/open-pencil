@@ -50,7 +50,7 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
   await section.getByLabel('MCP server URL').fill('https://example.com/mcp')
   await section.getByRole('switch', { name: 'Enable for ACP agents' }).click()
   await section.getByRole('switch', { name: 'Use bearer authentication' }).click()
-  await section.getByPlaceholder('Enter bearer token').fill('secret-mcp-token')
+  await section.getByLabel('Bearer token').fill('secret-mcp-token')
   await section.getByRole('button', { name: 'Save' }).click()
 
   await expect(section).toContainText('GitHub')
@@ -65,6 +65,9 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
   await section.getByRole('button', { name: /GitHub/ }).click()
   await expect(section.getByPlaceholder(/Key saved/)).toBeVisible()
   await section.getByRole('button', { name: 'Delete connection' }).click()
+  const confirmation = page.getByRole('alertdialog')
+  await expect(confirmation).toContainText('remove its saved bearer token')
+  await confirmation.getByRole('button', { name: 'Delete connection' }).click()
   await expect(section).toContainText('No external MCP connections configured')
 })
 

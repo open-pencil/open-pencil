@@ -100,6 +100,7 @@
   "mcpBearerToken": "Bearerトークン",
   "mcpBearerTokenPlaceholder": "Bearerトークンを入力",
   "deleteMCPConnection": "接続を削除",
+  "deleteMCPConnectionDescription": "このMCP接続と保存されたBearerトークンを削除しますか？",
   "noMCPConnections": "外部MCP接続は設定されていません。",
   "addModel": "モデルを追加",
   "editModel": "モデルを編集",

@@ -12,6 +12,8 @@ import {
   type MCPConnectionSettings
 } from '@/app/integrations/mcp'
 
+import { captureACPSessionMCPServers } from '#tests/helpers/mcp/acp-session'
+
 let original: MCPConnectionSettings
 
 beforeEach(() => {
@@ -106,6 +108,29 @@ describe('MCP connections', () => {
     ])
 
     await setMCPConnectionCredential(connection.id, '')
+  })
+
+  test('delivers built-in and external server configuration over a real ACP session', async () => {
+    const draft = createMCPConnectionDraft()
+    draft.name = 'Smoke server'
+    draft.url = 'https://smoke.example.com/mcp'
+    draft.enabled = true
+    saveMCPConnectionDraft(draft)
+
+    expect(await captureACPSessionMCPServers()).toEqual([
+      {
+        type: 'http',
+        name: 'open-pencil',
+        url: expect.stringContaining('/mcp'),
+        headers: [{ name: 'Authorization', value: 'Bearer built-in-token' }]
+      },
+      {
+        type: 'http',
+        name: 'Smoke server',
+        url: 'https://smoke.example.com/mcp',
+        headers: []
+      }
+    ])
   })
 
   test('fails clearly when an enabled authenticated connection has no token', async () => {

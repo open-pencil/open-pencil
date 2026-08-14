@@ -2,6 +2,7 @@
 import AppInput from '@/components/ui/AppInput.vue'
 
 interface ProviderSettingsInputProps {
+  id?: string
   type?: 'text' | 'password' | 'number'
   placeholder?: string
   min?: number
@@ -9,7 +10,7 @@ interface ProviderSettingsInputProps {
   step?: number
 }
 
-const { type = 'text', placeholder, min, max, step } = defineProps<ProviderSettingsInputProps>()
+const { id, type = 'text', placeholder, min, max, step } = defineProps<ProviderSettingsInputProps>()
 
 const modelValue = defineModel<string | number>({ required: true })
 const emit = defineEmits<{ change: [] }>()
@@ -18,6 +19,7 @@ const emit = defineEmits<{ change: [] }>()
 <template>
   <AppInput
     v-model="modelValue"
+    :id="id"
     :type="type"
     :placeholder="placeholder"
     :min="min"

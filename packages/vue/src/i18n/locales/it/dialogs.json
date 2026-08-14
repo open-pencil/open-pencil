@@ -100,6 +100,7 @@
   "mcpBearerToken": "Token Bearer",
   "mcpBearerTokenPlaceholder": "Inserisci il token Bearer",
   "deleteMCPConnection": "Elimina connessione",
+  "deleteMCPConnectionDescription": "Eliminare questa connessione MCP e il token Bearer salvato?",
   "noMCPConnections": "Nessuna connessione MCP esterna configurata.",
   "addModel": "Aggiungi modello",
   "editModel": "Modifica modello",

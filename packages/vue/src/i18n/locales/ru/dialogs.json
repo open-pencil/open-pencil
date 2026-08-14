@@ -100,6 +100,7 @@
   "mcpBearerToken": "Bearer-токен",
   "mcpBearerTokenPlaceholder": "Введите Bearer-токен",
   "deleteMCPConnection": "Удалить подключение",
+  "deleteMCPConnectionDescription": "Удалить это подключение MCP и сохранённый Bearer-токен?",
   "noMCPConnections": "Внешние подключения MCP не настроены.",
   "addModel": "Добавить модель",
   "editModel": "Изменить модель",
