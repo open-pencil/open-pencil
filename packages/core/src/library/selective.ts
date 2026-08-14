@@ -37,9 +37,9 @@ function copyAssets(
   target: SceneGraph,
   source: ComponentLibraryRevision,
   assets: LibraryAssetDescriptor[],
-  pageId: string
+  pageId: string,
+  mappedIds = new Map<string, string>()
 ): string[] {
-  const mappedIds = new Map<string, string>()
   const roots = new Map(
     assets.flatMap((asset) =>
       libraryDependencyRoots(source, asset).map((root) => [root.id, root] as const)
@@ -79,9 +79,14 @@ export async function createSelectiveLibraryRevision(
   )
   const graph = new SceneGraph()
   const page = graph.getPages()[0]
+  const currentNodeIds = copyAssets(graph, current, currentAssets, page.id)
+  const currentKeys = new Set(currentAssets.map((asset) => asset.key))
+  const retainedWithoutCurrentDependencies = retainedAssets.filter(
+    (asset) => !currentKeys.has(asset.key)
+  )
   const assetNodeIds = [
-    ...copyAssets(graph, current, currentAssets, page.id),
-    ...copyAssets(graph, input.previous, retainedAssets, page.id)
+    ...currentNodeIds,
+    ...copyAssets(graph, input.previous, retainedWithoutCurrentDependencies, page.id)
   ]
   return createLibraryRevision({
     libraryId: input.previous.manifest.libraryId,

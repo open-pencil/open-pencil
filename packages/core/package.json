@@ -86,6 +86,7 @@
       "default": "./dist/rpc/index.js"
     },
     "./library": {
+      "bun": "./src/library/index.ts",
       "types": "./dist/library/index.d.ts",
       "import": "./dist/library/index.js",
       "default": "./dist/library/index.js"

@@ -20,8 +20,14 @@ export function serializeLibraryRevision(
       rootId: revision.graph.rootId,
       nodes: [...revision.graph.nodes].map(([id, node]) => [id, structuredClone(node)]),
       images: [...revision.graph.images].map(([hash, bytes]) => [hash, new Uint8Array(bytes)]),
-      variables: [...revision.graph.variables],
-      variableCollections: [...revision.graph.variableCollections],
+      variables: [...revision.graph.variables].map(([id, variable]) => [
+        id,
+        structuredClone(variable)
+      ]),
+      variableCollections: [...revision.graph.variableCollections].map(([id, collection]) => [
+        id,
+        structuredClone(collection)
+      ]),
       activeMode: [...revision.graph.activeMode],
       documentColorSpace: revision.graph.documentColorSpace
     }

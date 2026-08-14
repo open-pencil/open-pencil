@@ -244,7 +244,7 @@ test('publishes, consumes, saves, and reopens a multidimensional library instanc
       page.evaluate(() => {
         const store = window.openPencil?.getStore?.()
         if (!store) return null
-        const instance = store.graph.getAllNodes().find((node) => node.type === 'INSTANCE')
+        const instance = [...store.graph.getAllNodes()].find((node) => node.type === 'INSTANCE')
         const component = instance?.componentId ? store.graph.getNode(instance.componentId) : null
         const definitions = [...store.graph.getAllNodes()].filter((node) => node.librarySource)
         return instance && component
