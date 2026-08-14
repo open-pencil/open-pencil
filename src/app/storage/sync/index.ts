@@ -1,4 +1,9 @@
 export {
+  keepLocalConflictAsCopy,
+  replaceRemoteConflictVersion,
+  useRemoteConflictVersion
+} from './conflicts'
+export {
   clearStorageLocalMirror,
   enqueueDeleteCanvas,
   enqueuePutCanvas,
