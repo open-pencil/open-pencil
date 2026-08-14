@@ -1,3 +1,4 @@
+import { CloudAPIError } from '@open-pencil/cloud/client'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import {
@@ -48,6 +49,11 @@ export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number |
 }
 
 function isPermanentError(error: unknown): boolean {
+  if (error instanceof CloudAPIError) {
+    return (
+      error.status === 400 || error.status === 401 || error.status === 403 || error.status === 404
+    )
+  }
   if (!(error instanceof Error)) return false
   const msg = error.message.toLowerCase()
   return (
@@ -57,6 +63,14 @@ function isPermanentError(error: unknown): boolean {
     msg.includes('invalid access key') ||
     msg.includes('not configured')
   )
+}
+
+export type StorageSyncFailureKind = 'blocked' | 'conflict' | 'permanent' | 'transient'
+
+export function storageSyncFailureKind(error: unknown): StorageSyncFailureKind {
+  if (error instanceof CloudAPIError && error.code === 'revision_conflict') return 'conflict'
+  if (error instanceof StorageSyncBlockedError) return 'blocked'
+  return isPermanentError(error) ? 'permanent' : 'transient'
 }
 
 async function runJob(job: OutboxJob): Promise<void> {
@@ -176,7 +190,21 @@ async function pumpOnce(): Promise<void> {
     else scheduleWake(50)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    if (error instanceof StorageSyncBlockedError) {
+    const failureKind = storageSyncFailureKind(error)
+    if (failureKind === 'conflict') {
+      await getLocalCanvasStore().updateMeta(job.canvasId, {
+        syncStatus: 'conflict',
+        lastSyncError: 'Remote document changed since the last synchronized revision'
+      })
+      await outbox.update({
+        ...job,
+        attempts: job.attempts + 1,
+        nextAttemptAt: Number.MAX_SAFE_INTEGER
+      })
+      setSyncUI('error', 'A Cloud document has conflicting local and remote changes')
+      return
+    }
+    if (failureKind === 'blocked') {
       await outbox.update({
         ...job,
         nextAttemptAt: Number.MAX_SAFE_INTEGER

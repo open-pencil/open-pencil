@@ -64,6 +64,7 @@ const config = parseCloudServerConfig({
   authSecret: 'a-secure-auth-secret-with-at-least-32-characters',
   googleClientId: 'google-client',
   googleClientSecret: 'google-secret',
+  trustedOrigins: ['https://app.example.com'],
   s3Endpoint: 'https://objects.example.com',
   s3Region: 'us-east-1',
   s3Bucket: 'openpencil',
@@ -122,6 +123,28 @@ describe('createCloudApp', () => {
         collaboration: false
       }
     })
+  })
+
+  test('allows credentialed CORS for trusted origins only', async () => {
+    const trusted = await createCloudApp(services()).request('/api/session', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'https://app.example.com',
+        'Access-Control-Request-Method': 'GET'
+      }
+    })
+    expect(trusted.status).toBe(204)
+    expect(trusted.headers.get('access-control-allow-origin')).toBe('https://app.example.com')
+    expect(trusted.headers.get('access-control-allow-credentials')).toBe('true')
+
+    const untrusted = await createCloudApp(services()).request('/api/session', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: 'https://malicious.example.com',
+        'Access-Control-Request-Method': 'GET'
+      }
+    })
+    expect(untrusted.headers.get('access-control-allow-origin')).toBeNull()
   })
 
   test('reports unavailable readiness when the database cannot execute', async () => {

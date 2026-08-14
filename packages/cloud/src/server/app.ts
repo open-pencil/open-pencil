@@ -17,6 +17,7 @@ import { createDocumentRoutes, createDocumentService } from '#cloud/server/docum
 import type { ObjectStore } from '#cloud/server/objects'
 import { createWorkspaceRoutes, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
 
 export type CloudServices = {
@@ -56,10 +57,23 @@ function discoveryFromServices(services: CloudServices): CloudDiscovery {
 export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)
   const resolveSession = services.resolveSession ?? createCloudSessionResolver(services.auth)
+  const allowedOrigins = new Set(
+    [services.config.publicURL, ...services.config.trustedOrigins].map(
+      (origin) => new URL(origin).origin
+    )
+  )
+  const cloudCORS = cors({
+    origin: (origin) => (allowedOrigins.has(origin) ? origin : null),
+    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type'],
+    credentials: true,
+    maxAge: 600
+  })
   const workspaces = createWorkspaceRoutes(createWorkspaceService(services.database))
   const documents = createDocumentRoutes(createDocumentService(services.database, services.objects))
 
   return new Hono<CloudEnvironment>()
+    .use('/api/*', cloudCORS)
     .get('/health', (context) =>
       context.json({
         status: 'ok' as const,
