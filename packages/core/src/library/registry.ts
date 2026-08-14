@@ -1,4 +1,5 @@
 import { createLibraryRevision } from './revision'
+import { deserializeLibraryRevision, serializeLibraryRevision } from './serialization'
 import type {
   ComponentLibraryRevision,
   LibraryCatalog,
@@ -38,7 +39,7 @@ export class MemoryLibraryCatalog implements LibraryCatalog {
       : undefined
     if (!revision)
       throw new Error(`Library revision not found: ${libraryId}/${revisionId ?? 'latest'}`)
-    return revision
+    return deserializeLibraryRevision(serializeLibraryRevision(revision))
   }
 
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
@@ -47,8 +48,13 @@ export class MemoryLibraryCatalog implements LibraryCatalog {
       throw new Error('Library revision conflict: latest revision has changed')
     }
     const revision = await createLibraryRevision(input)
-    this.#revisions.set(revisionKey(input.libraryId, revision.manifest.revisionId), revision)
+    const currentLatestRevisionId = this.#latest.get(input.libraryId) ?? null
+    if ((input.previousRevisionId ?? null) !== currentLatestRevisionId) {
+      throw new Error('Library revision conflict: latest revision has changed')
+    }
+    const stored = deserializeLibraryRevision(serializeLibraryRevision(revision))
+    this.#revisions.set(revisionKey(input.libraryId, revision.manifest.revisionId), stored)
     this.#latest.set(input.libraryId, revision.manifest.revisionId)
-    return revision
+    return deserializeLibraryRevision(serializeLibraryRevision(stored))
   }
 }

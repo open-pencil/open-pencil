@@ -15,11 +15,11 @@ export function serializeLibraryRevision(
   revision: ComponentLibraryRevision
 ): SerializedComponentLibraryRevision {
   return {
-    manifest: revision.manifest,
+    manifest: structuredClone(revision.manifest),
     graph: {
       rootId: revision.graph.rootId,
-      nodes: [...revision.graph.nodes],
-      images: [...revision.graph.images],
+      nodes: [...revision.graph.nodes].map(([id, node]) => [id, structuredClone(node)]),
+      images: [...revision.graph.images].map(([hash, bytes]) => [hash, new Uint8Array(bytes)]),
       variables: [...revision.graph.variables],
       variableCollections: [...revision.graph.variableCollections],
       activeMode: [...revision.graph.activeMode],
@@ -33,8 +33,10 @@ export function deserializeLibraryRevision(
 ): ComponentLibraryRevision {
   const graph = new SceneGraph()
   graph.rootId = revision.graph.rootId
-  graph.nodes = new Map(revision.graph.nodes)
-  graph.images = new Map(revision.graph.images)
+  graph.nodes = new Map(revision.graph.nodes.map(([id, node]) => [id, structuredClone(node)]))
+  graph.images = new Map(
+    revision.graph.images.map(([hash, bytes]) => [hash, new Uint8Array(bytes)])
+  )
   graph.variables = new Map(revision.graph.variables)
   graph.variableCollections = new Map(revision.graph.variableCollections)
   graph.activeMode = new Map(revision.graph.activeMode)
@@ -46,5 +48,5 @@ export function deserializeLibraryRevision(
     instances.add(node.id)
     graph.instanceIndex.set(node.componentId, instances)
   }
-  return { manifest: revision.manifest, graph }
+  return { manifest: structuredClone(revision.manifest), graph }
 }
