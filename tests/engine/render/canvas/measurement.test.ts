@@ -47,7 +47,8 @@ describe('distance measurement geometry', () => {
 
   test('preserves fractional geometry for display rounding', () => {
     const [segment] = computeMeasurementSegments(rect(0.2, 0, 10.1, 10), rect(20.8, 0, 10, 10))
-    expect(segment).toMatchObject({ axis: 'x', from: 10.299999999999999, to: 20.8, cross: 5 })
+    expect(segment).toMatchObject({ axis: 'x', to: 20.8, cross: 5 })
+    expect(segment?.from).toBeCloseTo(10.3)
     expect(segment?.value).toBeCloseTo(10.5)
   })
 

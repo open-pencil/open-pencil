@@ -258,7 +258,9 @@ export function render(
     r.drawSnapGuides(canvas, overlays.snapGuides)
     r.drawMarquee(canvas, overlays.marquee)
     r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
-    r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
+    if (!measurementVisible(overlays)) {
+      r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
+    }
     r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
     r.drawPenOverlay(canvas, overlays.penState)
     r.drawRemoteCursors(canvas, graph, overlays.remoteCursors)
