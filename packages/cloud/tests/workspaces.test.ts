@@ -7,6 +7,7 @@ import {
   type CloudActor
 } from '../src/server'
 import { createCloudTestDatabase } from './database'
+import { createMemoryObjectStore } from './objects'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -34,12 +35,14 @@ const bob: CloudActor = {
 async function testApp(actor: CloudActor | null) {
   const runtime = await createCloudTestDatabase()
   const auth = createCloudAuth(config, runtime.database)
+  const objects = createMemoryObjectStore()
   return {
     runtime,
     app: createCloudApp({
       config,
       database: runtime.database,
       auth,
+      objects: objects.store,
       resolveSession: async () => actor
     })
   }
@@ -113,6 +116,7 @@ describe('Cloud workspace routes', () => {
         config,
         database: runtime.database,
         auth: createCloudAuth(config, runtime.database),
+        objects: createMemoryObjectStore().store,
         resolveSession: async () => bob
       })
 

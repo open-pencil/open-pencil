@@ -56,6 +56,9 @@ export interface UploadTable {
   documentId: string
   baseRevisionId: string | null
   objectKey: string
+  checksum: string
+  byteSize: number
+  contentType: string
   status: UploadStatus
   createdBy: string
   createdAt: TimestampColumn

@@ -33,6 +33,17 @@ export {
   type WorkspaceUpdate
 } from './db'
 export {
+  createDocumentRoutes,
+  createDocumentService,
+  DocumentConflictError,
+  DocumentForbiddenError,
+  DocumentNotFoundError,
+  UploadInvalidError,
+  type DocumentRouteEnvironment,
+  type DocumentService
+} from './documents'
+export type { ObjectStore, ObjectUpload, StoredObject } from './objects'
+export {
   createWorkspaceRoutes,
   createWorkspaceService,
   WorkspaceSlugConflictError,

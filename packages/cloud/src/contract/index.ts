@@ -12,6 +12,19 @@ export {
   type CloudDiscovery
 } from './discovery'
 export {
+  commitUploadSchema,
+  createDocumentSchema,
+  createUploadSchema,
+  documentSummarySchema,
+  parseCommitUpload,
+  parseCreateDocument,
+  parseCreateUpload,
+  type CommitUploadInput,
+  type CreateDocumentInput,
+  type CreateUploadInput,
+  type DocumentSummary
+} from './documents'
+export {
   createWorkspaceSchema,
   parseCreateWorkspace,
   workspaceListSchema,

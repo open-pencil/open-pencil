@@ -76,7 +76,16 @@ function services() {
   return {
     config,
     database,
-    auth: createCloudAuth(config, database)
+    auth: createCloudAuth(config, database),
+    objects: {
+      async createUpload() {
+        throw new Error('not used')
+      },
+      async head() {
+        return null
+      },
+      delete: noOperation
+    }
   }
 }
 
@@ -105,7 +114,7 @@ describe('createCloudApp', () => {
         enterpriseSSO: false
       },
       capabilities: {
-        documents: false,
+        documents: true,
         workspaces: true,
         collaboration: false
       }
