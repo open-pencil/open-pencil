@@ -47,6 +47,7 @@ const emit = defineEmits<{
 const host = useTemplateRef('host')
 const languageCompartment = new Compartment()
 const editableCompartment = new Compartment()
+const labelCompartment = new Compartment()
 let editor: EditorView | undefined
 let externalUpdate = false
 
@@ -94,8 +95,8 @@ onMounted(() => {
       ]),
       languageCompartment.of(languageExtensions(language)),
       editableCompartment.of(editableExtensions(readOnly)),
+      labelCompartment.of(EditorView.contentAttributes.of({ 'aria-label': label })),
       EditorView.lineWrapping,
-      EditorView.contentAttributes.of({ 'aria-label': label }),
       EditorView.theme({
         '&': { height: '100%', backgroundColor: 'transparent', color: 'var(--color-surface)' },
         '.cm-scroller': { overflow: 'auto', fontFamily: 'var(--font-mono)' },
@@ -142,6 +143,16 @@ watch(
   () => readOnly,
   (readOnly) =>
     editor?.dispatch({ effects: editableCompartment.reconfigure(editableExtensions(readOnly)) })
+)
+
+watch(
+  () => label,
+  (label) =>
+    editor?.dispatch({
+      effects: labelCompartment.reconfigure(
+        EditorView.contentAttributes.of({ 'aria-label': label })
+      )
+    })
 )
 
 onBeforeUnmount(() => editor?.destroy())

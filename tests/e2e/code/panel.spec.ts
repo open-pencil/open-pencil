@@ -77,6 +77,12 @@ test('shows one editor with line numbers and no import form', async () => {
   await expect(codePanel().getByRole('button', { name: /^Import$/ })).toHaveCount(0)
 })
 
+test('desktop exposes one Code panel and one editor', async () => {
+  await openCodePanel()
+  await expect(codePanel()).toHaveCount(1)
+  await expect(codePanel().locator('.cm-editor')).toHaveCount(1)
+})
+
 test('live previews Design JSX and keeps one undo transaction', async () => {
   await editor.canvas.drawRect(100, 100, 200, 150)
   const originalId = await getFirstSelectedNodeId(editor.page)
@@ -161,6 +167,7 @@ test('HTML/CSS uses the same editor and live reloads the canvas', async () => {
   await openCodePanel()
   await selectSource('HTML/CSS')
   await expect(codePanel().locator('[data-slot="code-editor"]')).toHaveCount(1)
+  await expect(codeEditor()).toHaveAttribute('aria-label', 'HTML and CSS')
   await codeEditor().fill(
     '<style>.card { width: 240px; height: 120px; background: red; }</style><div class="card">Hello</div>'
   )
