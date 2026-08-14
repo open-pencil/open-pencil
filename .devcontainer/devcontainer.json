@@ -23,7 +23,10 @@
     "source=open-pencil-docs-modules-${devcontainerId},target=/workspace/open-pencil/packages/docs/node_modules,type=volume",
     "source=open-pencil-docs-tool-modules-${devcontainerId},target=/workspace/open-pencil/tools/docs/node_modules,type=volume"
   ],
-  "postCreateCommand": "sudo chown -R $(id -u):$(id -g) node_modules packages/*/node_modules tools/docs/node_modules && git lfs pull && bun install --frozen-lockfile",
+  "postCreateCommand": "sudo chown -R $(id -u):$(id -g) node_modules packages/*/node_modules tools/docs/node_modules && if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then git lfs pull; fi && bun install --frozen-lockfile",
+  "containerEnv": {
+    "TAURI_DEV_HOST": "0.0.0.0"
+  },
   "forwardPorts": [1420],
   "portsAttributes": {
     "1420": {
