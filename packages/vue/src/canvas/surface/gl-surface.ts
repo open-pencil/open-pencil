@@ -1,5 +1,6 @@
 import type { CanvasKit, Surface } from 'canvaskit-wasm'
 
+import { IS_BROWSER } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 
 import type { UseCanvasOptions } from '#vue/canvas/surface/types'
@@ -13,7 +14,7 @@ export function sizeCanvas(
   editor: Editor,
   onViewportResize?: (width: number, height: number) => void
 ) {
-  const dpr = window.devicePixelRatio || 1
+  const dpr = IS_BROWSER ? window.devicePixelRatio || 1 : 1
   const width = canvas.clientWidth
   const height = canvas.clientHeight
   canvas.width = width * dpr

@@ -222,6 +222,36 @@ describe('canvas render loop', () => {
     }
   })
 
+  test('renders after supplied view state finishes loading without a version change', () => {
+    const scheduler = createFrameScheduler()
+    try {
+      const { editor, emit } = createEditor()
+      const viewState = { ...editor.state, loading: false }
+      let renders = 0
+      const loop = createCanvasRenderLoop(
+        editor,
+        () => {
+          renders++
+        },
+        { getRenderState: () => viewState }
+      )
+
+      emit('repaint:requested')
+      scheduler.flush()
+      loop.markRendered()
+      viewState.loading = true
+      emit('repaint:requested')
+      scheduler.flush()
+      expect(renders).toBe(1)
+
+      viewState.loading = false
+      scheduler.flush()
+      expect(renders).toBe(2)
+    } finally {
+      scheduler.restore()
+    }
+  })
+
   test('cancels pending renders when paused', () => {
     const scheduler = createFrameScheduler()
     try {

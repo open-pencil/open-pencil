@@ -68,6 +68,7 @@ export function createCanvasRenderLoop(
     frameScheduled = false
     const state = getRenderState()
     if (state.loading) {
+      dirty = true
       scheduleFrame()
       return
     }
