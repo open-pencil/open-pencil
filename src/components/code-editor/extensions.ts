@@ -15,12 +15,12 @@ const ELEMENTS = DESIGN_JSX_ELEMENTS.map(({ name }) => name)
 const PROPS = DESIGN_JSX_PROPERTIES.map(({ name }) => name)
 const HELPERS = DESIGN_JSX_HELPERS.map(({ name }) => name)
 
-const ELEMENT_SET = new Set(ELEMENTS)
+const BUILTIN_ELEMENTS = new Set(ELEMENTS)
 const PROPERTY_SET = new Set(PROPS)
 const HELPER_SET = new Set(HELPERS)
 
 function completionType(label: string): 'class' | 'function' | 'property' {
-  if (ELEMENT_SET.has(label)) return 'class'
+  if (BUILTIN_ELEMENTS.has(label)) return 'class'
   if (HELPER_SET.has(label)) return 'function'
   return 'property'
 }
@@ -40,8 +40,19 @@ function completeDesignJSX(context: CompletionContext): CompletionResult | null 
   }
 }
 
+function localComponentNames(view: EditorView): Set<string> {
+  const names = new Set<string>()
+  const source = view.state.doc.toString()
+  for (const match of source.matchAll(/\b(?:const|let|var|function)\s+([A-Z][\w$]*)/g)) {
+    const name = match[1]
+    if (name) names.add(name)
+  }
+  return names
+}
+
 function semanticDiagnostics(view: EditorView): Diagnostic[] {
   const diagnostics: Diagnostic[] = []
+  const knownElements = new Set([...BUILTIN_ELEMENTS, ...localComponentNames(view)])
   const tree = syntaxTree(view.state)
   tree.iterate({
     enter(node) {
@@ -62,7 +73,7 @@ function semanticDiagnostics(view: EditorView): Diagnostic[] {
           parentName === 'JSXSelfClosingTag' ||
           parentName === 'JSXCloseTag') &&
         /^[A-Z]/.test(name) &&
-        !ELEMENT_SET.has(name)
+        !knownElements.has(name)
       ) {
         diagnostics.push({
           from: node.from,

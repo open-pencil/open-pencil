@@ -64,6 +64,8 @@ export {
   DESIGN_JSX_ELEMENTS,
   DESIGN_JSX_HELPERS,
   DESIGN_JSX_PROPERTIES,
+  DESIGN_JSX_SUPPORTED_PROPERTIES,
+  DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
   type DesignJSXElementDefinition,
   type DesignJSXHelperDefinition,
   type DesignJSXPropertyDefinition

@@ -1,7 +1,27 @@
 <script setup lang="ts">
-import { basicSetup, EditorView } from 'codemirror'
+import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import {
+  bracketMatching,
+  defaultHighlightStyle,
+  foldGutter,
+  foldKeymap,
+  indentOnInput,
+  syntaxHighlighting
+} from '@codemirror/language'
 import { javascript } from '@codemirror/lang-javascript'
-import { keymap } from '@codemirror/view'
+import { lintKeymap } from '@codemirror/lint'
+import { searchKeymap } from '@codemirror/search'
+import { EditorState } from '@codemirror/state'
+import {
+  drawSelection,
+  EditorView,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  highlightSpecialChars,
+  keymap,
+  lineNumbers
+} from '@codemirror/view'
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 
 import { designJSXExtensions } from '@/components/code-editor/extensions'
@@ -26,7 +46,27 @@ onMounted(() => {
     doc: modelValue,
     parent,
     extensions: [
-      basicSetup,
+      lineNumbers(),
+      highlightActiveLineGutter(),
+      highlightSpecialChars(),
+      history(),
+      foldGutter(),
+      drawSelection(),
+      EditorState.allowMultipleSelections.of(true),
+      indentOnInput(),
+      syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      bracketMatching(),
+      closeBrackets(),
+      highlightActiveLine(),
+      keymap.of([
+        ...closeBracketsKeymap,
+        ...defaultKeymap,
+        ...searchKeymap,
+        ...historyKeymap,
+        ...foldKeymap,
+        ...completionKeymap,
+        ...lintKeymap
+      ]),
       javascript({ jsx: true, typescript: true }),
       ...designJSXExtensions(),
       EditorView.lineWrapping,

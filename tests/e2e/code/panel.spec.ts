@@ -239,6 +239,13 @@ test('shows OpenPencil diagnostics for unknown elements and properties', async (
   await expect(editor.page.locator('.cm-tooltip-lint')).toContainText('Unknown OpenPencil')
 })
 
+test('accepts locally declared component names in diagnostics', async () => {
+  await codeTab().click()
+  const input = await enterJSXEditing()
+  await input.fill('const Card = () => <Frame />\n<Card />')
+  await expect(editor.page.locator('.cm-lintRange')).toHaveCount(0)
+})
+
 test('can leave edit mode without applying the draft', async () => {
   await codeTab().click()
   await enterJSXEditing()
