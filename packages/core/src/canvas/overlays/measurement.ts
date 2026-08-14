@@ -1,8 +1,9 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
+import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
+import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
@@ -180,6 +181,29 @@ function drawPill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: n
   )
 }
 
+function drawTargetOutline(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, target: SceneNode) {
+  const world = getWorldMatrix(target, graph)
+  const view = Matrix.multiply(Matrix.translated(r.panX, r.panY), Matrix.scaled(r.zoom, r.zoom))
+  const points = Matrix.mapPoints(Matrix.multiply(view, world), [
+    0,
+    0,
+    target.width,
+    0,
+    target.width,
+    target.height,
+    0,
+    target.height
+  ])
+  const path = new r.ck.Path()
+  path.moveTo(points[0], points[1])
+  path.lineTo(points[2], points[3])
+  path.lineTo(points[4], points[5])
+  path.lineTo(points[6], points[7])
+  path.close()
+  canvas.drawPath(path, r.auxStroke)
+  path.delete()
+}
+
 export function drawMeasurements(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -193,7 +217,6 @@ export function drawMeasurements(
   if (!target || !from) return
   const to = getAxisAlignedWorldBounds(target, graph)
   const segments = computeMeasurementSegments(from, to)
-  if (segments.length === 0) return
 
   r.auxStroke.setStrokeWidth(1)
   r.auxStroke.setColor(
@@ -201,15 +224,8 @@ export function drawMeasurements(
   )
   r.auxStroke.setPathEffect(null)
 
-  canvas.drawRect(
-    r.ck.LTRBRect(
-      to.x * r.zoom + r.panX,
-      to.y * r.zoom + r.panY,
-      (to.x + to.width) * r.zoom + r.panX,
-      (to.y + to.height) * r.zoom + r.panY
-    ),
-    r.auxStroke
-  )
+  drawTargetOutline(r, canvas, graph, target)
+  if (segments.length === 0) return
 
   for (const segment of segments) {
     if (segment.axis === 'x') {
@@ -217,25 +233,13 @@ export function drawMeasurements(
       const x2 = segment.to * r.zoom + r.panX
       const y = segment.cross * r.zoom + r.panY
       canvas.drawLine(x1, y, x2, y, r.auxStroke)
-      drawPill(
-        r,
-        canvas,
-        String(Math.round(segment.value)),
-        center(x1, x2 - x1),
-        y - MEASUREMENT_PILL_HEIGHT / 2 - 2
-      )
+      drawPill(r, canvas, String(Math.round(segment.value)), center(x1, x2 - x1), y)
     } else {
       const x = segment.cross * r.zoom + r.panX
       const y1 = segment.from * r.zoom + r.panY
       const y2 = segment.to * r.zoom + r.panY
       canvas.drawLine(x, y1, x, y2, r.auxStroke)
-      drawPill(
-        r,
-        canvas,
-        String(Math.round(segment.value)),
-        x + MEASUREMENT_PILL_HEIGHT + 8,
-        center(y1, y2 - y1)
-      )
+      drawPill(r, canvas, String(Math.round(segment.value)), x, center(y1, y2 - y1))
     }
   }
 }

@@ -12,6 +12,13 @@ describe('distance measurement geometry', () => {
     ])
   })
 
+  test('anchors diagonal guides to the nearest corners', () => {
+    expect(computeMeasurementSegments(rect(120, 140, 100, 80), rect(300, 290, 120, 90))).toEqual([
+      { axis: 'x', from: 220, to: 300, cross: 220, value: 80 },
+      { axis: 'y', from: 220, to: 290, cross: 300, value: 70 }
+    ])
+  })
+
   test('measures from facing edges in either direction', () => {
     expect(computeMeasurementSegments(rect(40, 50), rect(0, 10))).toEqual([
       { axis: 'x', from: 20, to: 40, cross: 50, value: 20 },
@@ -32,6 +39,16 @@ describe('distance measurement geometry', () => {
       { axis: 'y', from: 0, to: 30, cross: 40, value: 30 },
       { axis: 'y', from: 80, to: 120, cross: 40, value: 40 }
     ])
+  })
+
+  test('does not measure overlap on either axis', () => {
+    expect(computeMeasurementSegments(rect(0, 0, 40, 40), rect(20, 20, 40, 40))).toEqual([])
+  })
+
+  test('preserves fractional geometry for display rounding', () => {
+    const [segment] = computeMeasurementSegments(rect(0.2, 0, 10.1, 10), rect(20.8, 0, 10, 10))
+    expect(segment).toMatchObject({ axis: 'x', from: 10.299999999999999, to: 20.8, cross: 5 })
+    expect(segment?.value).toBeCloseTo(10.5)
   })
 
   test('omits zero gaps for touching and identical bounds', () => {
