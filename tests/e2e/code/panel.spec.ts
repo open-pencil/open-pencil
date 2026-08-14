@@ -1,4 +1,12 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import {
+  getCodeNodeSummaries,
+  getFirstSelectedNodeId,
+  hasNode,
+  hasNodeNamed,
+  waitForNode,
+  waitForNodeNamed
+} from '#tests/helpers/code-panel'
 
 const editor = useEditorSetup()
 
@@ -70,43 +78,19 @@ test('shows one editor with line numbers and no import form', async () => {
 
 test('live previews Design JSX and keeps one undo transaction', async () => {
   await editor.canvas.drawRect(100, 100, 200, 150)
-  const originalId = await editor.page.evaluate(
-    () => [...(window.openPencil?.getStore?.().state.selectedIds ?? [])][0]
-  )
+  const originalId = await getFirstSelectedNodeId(editor.page)
   await openCodePanel()
   await codeEditor().fill('<Frame name="Live JSX" w={320} h={180} fill="#ffffff" />')
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Live JSX'
-    )
-  )
+  await waitForNodeNamed(editor.page, 'Live JSX')
   await codeEditor().fill('<Frame name="Live JSX final" w={360} h={180} fill="#ffffff" />')
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Live JSX final'
-    )
-  )
+  await waitForNodeNamed(editor.page, 'Live JSX final')
 
   await designTab().click()
   await editor.page.waitForTimeout(50)
   await editor.page.keyboard.press('Meta+z')
-  await editor.page.waitForFunction(
-    (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
-    originalId
-  )
-  expect(
-    await editor.page.evaluate(
-      (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
-      originalId
-    )
-  ).toBe(true)
-  expect(
-    await editor.page.evaluate(() =>
-      [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-        (node) => node.name === 'Live JSX final'
-      )
-    )
-  ).toBe(false)
+  await waitForNode(editor.page, originalId)
+  expect(await hasNode(editor.page, originalId)).toBe(true)
+  expect(await hasNodeNamed(editor.page, 'Live JSX final')).toBe(false)
 })
 
 test('Ctrl+Z edits the CodeMirror draft before touching the canvas transaction', async () => {
@@ -122,45 +106,21 @@ test('Ctrl+Z edits the CodeMirror draft before touching the canvas transaction',
 test('keeps the last valid preview while showing invalid-code diagnostics', async () => {
   await openCodePanel()
   await codeEditor().fill('<Frame name="Last valid" />')
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Last valid'
-    )
-  )
+  await waitForNodeNamed(editor.page, 'Last valid')
   await codeEditor().fill('<Frame>')
   await expect(editor.page.getByTestId('code-panel-error')).toBeVisible()
-  expect(
-    await editor.page.evaluate(() =>
-      [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-        (node) => node.name === 'Last valid'
-      )
-    )
-  ).toBe(true)
+  expect(await hasNodeNamed(editor.page, 'Last valid')).toBe(true)
 })
 
 test('Reset restores generated source and original canvas state', async () => {
   await editor.canvas.drawRect(100, 100, 200, 150)
-  const originalId = await editor.page.evaluate(
-    () => [...(window.openPencil?.getStore?.().state.selectedIds ?? [])][0]
-  )
+  const originalId = await getFirstSelectedNodeId(editor.page)
   await openCodePanel()
   await codeEditor().fill('<Frame name="Reset preview" />')
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Reset preview'
-    )
-  )
+  await waitForNodeNamed(editor.page, 'Reset preview')
   await editor.page.getByTestId('code-panel-reset').click()
-  await editor.page.waitForFunction(
-    (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
-    originalId
-  )
-  expect(
-    await editor.page.evaluate(
-      (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
-      originalId
-    )
-  ).toBe(true)
+  await waitForNode(editor.page, originalId)
+  expect(await hasNode(editor.page, originalId)).toBe(true)
   await expect(codeEditor()).toContainText('Rectangle')
 })
 
@@ -172,13 +132,7 @@ test('HTML/CSS uses the same editor and live reloads the canvas', async () => {
     '<style>.card { width: 240px; height: 120px; background: red; }</style><div class="card">Hello</div>'
   )
   await expect(editor.page.getByTestId('code-panel-status')).toContainText('Updated live')
-  const importedNodes = await editor.page.evaluate(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].map((node) => ({
-      type: node.type,
-      name: node.name,
-      text: node.text
-    }))
-  )
+  const importedNodes = await getCodeNodeSummaries(editor.page)
   expect(importedNodes.some((node) => node.type !== 'DOCUMENT' && node.type !== 'PAGE')).toBe(true)
 })
 

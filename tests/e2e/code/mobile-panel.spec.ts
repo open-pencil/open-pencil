@@ -1,4 +1,5 @@
 import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { getMobileDrawerSnap } from '#tests/helpers/code-panel'
 
 const editor = useEditorSetup()
 
@@ -20,7 +21,5 @@ test('mobile Code drawer mounts one live editor only while open', async () => {
   await expect(panel.locator('.cm-lineNumbers')).toBeVisible()
 
   await editor.page.getByTestId('mobile-ribbon-code').click()
-  await expect
-    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.mobileDrawerSnap))
-    .toBe('closed')
+  await expect.poll(() => getMobileDrawerSnap(editor.page)).toBe('closed')
 })
