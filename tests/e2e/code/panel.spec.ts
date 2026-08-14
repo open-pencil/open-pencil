@@ -208,7 +208,9 @@ test('replaces multiple roots at their original positions and supports redo', as
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
     const one = store.graph.createNode('RECTANGLE', pageId, { name: 'One', x: 40, y: 50 })
+    store.graph.createNode('TEXT', pageId, { name: 'Between' })
     const two = store.graph.createNode('ELLIPSE', pageId, { name: 'Two', x: 240, y: 250 })
+    store.graph.createNode('STAR', pageId, { name: 'After' })
     store.select([one.id, two.id])
     return [one.id, two.id]
   })
@@ -233,6 +235,12 @@ test('replaces multiple roots at their original positions and supports redo', as
     { x: 40, y: 50 },
     { x: 240, y: 250 }
   ])
+  const siblingOrder = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) return []
+    return store.graph.getChildren(store.state.currentPageId).map((node) => node.name)
+  })
+  expect(siblingOrder.slice(-4)).toEqual(['First', 'Second', 'Between', 'After'])
 
   await editor.page.keyboard.press('Meta+z')
   expect(

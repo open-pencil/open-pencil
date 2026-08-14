@@ -50,6 +50,7 @@ export async function applyDesignJSX(
   const origins = selected.map(({ x, y }) => ({ x, y }))
   const first = selected.at(0)
   const parentId = first?.parentId ?? store.state.currentPageId
+  const firstIndex = first ? (store.graph.getNode(parentId)?.childIds.indexOf(first.id) ?? -1) : -1
   const viewportCenter = store.viewportCanvasCenter()
   const origin = first ? { x: first.x, y: first.y } : viewportCenter
   const before = store.snapshotPage()
@@ -68,6 +69,7 @@ export async function applyDesignJSX(
         y: replacementOrigin.y
       })
       results.push(result)
+      if (firstIndex >= 0) store.graph.insertChildAt(result.id, parentId, firstIndex + index)
     }
     const nodeIds = results.map((result) => result.id)
     store.select(nodeIds)
