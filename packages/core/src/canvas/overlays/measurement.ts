@@ -26,6 +26,26 @@ function center(start: number, size: number) {
   return start + size / 2
 }
 
+function overlapCenter(startA: number, endA: number, startB: number, endB: number) {
+  return (Math.max(startA, startB) + Math.min(endA, endB)) / 2
+}
+
+function horizontalCross(from: Rect, to: Rect) {
+  const fromBottom = from.y + from.height
+  const toBottom = to.y + to.height
+  if (fromBottom < to.y) return fromBottom
+  if (toBottom < from.y) return from.y
+  return overlapCenter(from.y, fromBottom, to.y, toBottom)
+}
+
+function verticalCross(from: Rect, to: Rect) {
+  const fromRight = from.x + from.width
+  const toRight = to.x + to.width
+  if (fromRight < to.x) return to.x
+  if (toRight < from.x) return toRight
+  return overlapCenter(from.x, fromRight, to.x, toRight)
+}
+
 export function computeMeasurementSegments(from: Rect, to: Rect): MeasurementSegment[] {
   const segments: MeasurementSegment[] = []
   const fromRight = from.x + from.width
@@ -81,7 +101,7 @@ export function computeMeasurementSegments(from: Rect, to: Rect): MeasurementSeg
       axis: 'x',
       from: fromRight,
       to: to.x,
-      cross: (Math.max(from.y, to.y) + Math.min(fromBottom, toBottom)) / 2,
+      cross: horizontalCross(from, to),
       value: to.x - fromRight
     })
   } else if (toRight <= from.x) {
@@ -89,7 +109,7 @@ export function computeMeasurementSegments(from: Rect, to: Rect): MeasurementSeg
       axis: 'x',
       from: toRight,
       to: from.x,
-      cross: (Math.max(from.y, to.y) + Math.min(fromBottom, toBottom)) / 2,
+      cross: horizontalCross(from, to),
       value: from.x - toRight
     })
   }
@@ -99,7 +119,7 @@ export function computeMeasurementSegments(from: Rect, to: Rect): MeasurementSeg
       axis: 'y',
       from: fromBottom,
       to: to.y,
-      cross: (Math.max(from.x, to.x) + Math.min(fromRight, toRight)) / 2,
+      cross: verticalCross(from, to),
       value: to.y - fromBottom
     })
   } else if (toBottom <= from.y) {
@@ -107,7 +127,7 @@ export function computeMeasurementSegments(from: Rect, to: Rect): MeasurementSeg
       axis: 'y',
       from: toBottom,
       to: from.y,
-      cross: (Math.max(from.x, to.x) + Math.min(fromRight, toRight)) / 2,
+      cross: verticalCross(from, to),
       value: from.y - toBottom
     })
   }

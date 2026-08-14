@@ -7,15 +7,15 @@ const rect = (x: number, y: number, width = 20, height = 20) => ({ x, y, width, 
 describe('distance measurement geometry', () => {
   test('measures horizontal and vertical gaps between separated bounds', () => {
     expect(computeMeasurementSegments(rect(0, 0), rect(30, 40))).toEqual([
-      { axis: 'x', from: 20, to: 30, cross: 30, value: 10 },
-      { axis: 'y', from: 20, to: 40, cross: 25, value: 20 }
+      { axis: 'x', from: 20, to: 30, cross: 20, value: 10 },
+      { axis: 'y', from: 20, to: 40, cross: 30, value: 20 }
     ])
   })
 
   test('measures from facing edges in either direction', () => {
     expect(computeMeasurementSegments(rect(40, 50), rect(0, 10))).toEqual([
-      { axis: 'x', from: 20, to: 40, cross: 40, value: 20 },
-      { axis: 'y', from: 30, to: 50, cross: 30, value: 20 }
+      { axis: 'x', from: 20, to: 40, cross: 50, value: 20 },
+      { axis: 'y', from: 30, to: 50, cross: 20, value: 20 }
     ])
   })
 

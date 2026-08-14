@@ -42,7 +42,11 @@ test('Option hover shows temporary distances between layers', async () => {
     .toBe('shallow')
   await editor.canvas.waitForRender()
 
-  expect(await editor.canvas.canvas.screenshot()).toMatchSnapshot('distance-measurement.png')
+  expect(
+    await editor.page.screenshot({
+      clip: { x: 80, y: 90, width: 390, height: 340 }
+    })
+  ).toMatchSnapshot('distance-measurement.png')
 
   await editor.page.keyboard.up('Alt')
   await expect
