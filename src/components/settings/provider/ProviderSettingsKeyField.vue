@@ -7,12 +7,13 @@ import ProviderSettingsField from '@/components/settings/provider/ProviderSettin
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsLink from '@/components/settings/provider/ProviderSettingsLink.vue'
 
-const { label, modelValue, saved, kind, placeholder, keyURL, keyURLLabel } = defineProps<{
+const { label, modelValue, saved, kind, placeholder, keyURL, keyURLLabel, inputId } = defineProps<{
   label: string
   modelValue: string
   saved: boolean
   kind: 'api' | 'pexels' | 'unsplash'
   placeholder: string
+  inputId?: string
   keyURL?: string
   keyURLLabel?: string
 }>()
@@ -41,12 +42,14 @@ const clearDataTestId = computed(() => {
 <template>
   <ProviderSettingsField
     :label="label"
+    :label-for="inputId"
     :clear-label="saved ? dialogs.clear : undefined"
     :data-test-id="clearDataTestId"
     @clear="emit('clear')"
   >
     <ProviderSettingsInput
       :model-value="modelValue"
+      :id="inputId"
       type="password"
       :data-test-id="inputDataTestId"
       :placeholder="placeholder"
