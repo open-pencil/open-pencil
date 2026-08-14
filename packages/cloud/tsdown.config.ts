@@ -17,7 +17,17 @@ export default defineConfig({
     moduleSideEffects: false
   },
   deps: {
-    neverBundle: ['hono', /^hono\//, 'valibot'],
+    neverBundle: [
+      'better-auth',
+      /^better-auth\//,
+      'hono',
+      /^hono\//,
+      'jose',
+      'kysely',
+      /^kysely\//,
+      'pg',
+      'valibot'
+    ],
     onlyBundle: false
   },
   outputOptions: {
