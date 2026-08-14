@@ -48,7 +48,7 @@ function setLayoutMode(mode: string) {
       <IconButton
         v-if="ctx.isFlex"
         :label="panels.layoutWrap"
-        size="md"
+        size="xs"
         :active="ctx.node.layoutWrap === 'WRAP'"
         @click="ctx.updateProp('layoutWrap', ctx.node.layoutWrap === 'WRAP' ? 'NO_WRAP' : 'WRAP')"
       >

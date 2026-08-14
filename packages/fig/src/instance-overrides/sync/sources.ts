@@ -1,6 +1,7 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { overrideCandidates } from '../utils'
+import { cloneInstanceUpdate } from './clone-update'
 
 interface ChildSourceSnapshot {
   id: string
@@ -112,6 +113,43 @@ function resolveChildPath(graph: SceneGraph, parentId: string, path: number[]): 
   return node
 }
 
+function cloneIdsForReplacement(
+  graph: SceneGraph,
+  previousId: string,
+  replacementId: string,
+  cloneSources?: Map<string, string[]>
+): Set<string> {
+  return new Set([
+    ...(cloneSources?.get(previousId) ?? []),
+    ...(cloneSources?.get(replacementId) ?? []),
+    ...(graph.instanceIndex.get(previousId) ?? []),
+    ...(graph.instanceIndex.get(replacementId) ?? [])
+  ])
+}
+
+function indexReplacementClone(
+  cloneSources: Map<string, string[]> | undefined,
+  replacementId: string,
+  cloneId: string
+): void {
+  if (!cloneSources) return
+  const sourceIds = cloneSourceIds(cloneSources)
+  let known = sourceIds.get(replacementId)
+  if (!known) {
+    known = new Set()
+    sourceIds.set(replacementId, known)
+  }
+  if (known.has(cloneId)) return
+  known.add(cloneId)
+
+  let replacements = cloneSources.get(replacementId)
+  if (!replacements) {
+    replacements = []
+    cloneSources.set(replacementId, replacements)
+  }
+  replacements.push(cloneId)
+}
+
 /**
  * Redirect descendants that cloned the removed branch to its structural
  * replacements. Without this, deep instances keep componentId references to
@@ -128,30 +166,14 @@ export function remapRepopulatedChildSources(
   for (const previous of previousSources) {
     const replacement = resolveChildPath(graph, parentId, previous.path)
     if (!replacement || replacement.type !== previous.type) continue
-    const cloneIds = new Set([
-      ...(cloneSources?.get(previous.id) ?? []),
-      ...(graph.instanceIndex.get(previous.id) ?? [])
-    ])
+    const cloneIds = cloneIdsForReplacement(graph, previous.id, replacement.id, cloneSources)
     for (const cloneId of cloneIds) {
       const clone = graph.getNode(cloneId)
-      if (clone?.componentId !== previous.id) continue
-      graph.updateNode(cloneId, { componentId: replacement.id })
-      if (cloneSources) {
-        let replacements = cloneSources.get(replacement.id)
-        if (!replacements) {
-          replacements = []
-          cloneSources.set(replacement.id, replacements)
-        }
-        if (!replacements.includes(cloneId)) {
-          replacements.push(cloneId)
-          let known = cloneSourceIds(cloneSources).get(replacement.id)
-          if (!known) {
-            known = new Set()
-            cloneSourceIds(cloneSources).set(replacement.id, known)
-          }
-          known.add(cloneId)
-        }
+      if (clone?.componentId !== previous.id && clone?.componentId !== replacement.id) {
+        continue
       }
+      graph.updateNode(cloneId, cloneInstanceUpdate(replacement, replacement.id))
+      indexReplacementClone(cloneSources, replacement.id, cloneId)
     }
   }
 }

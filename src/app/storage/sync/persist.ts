@@ -1,8 +1,11 @@
+import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+
 import type { StorageProviderID } from '@/app/integrations/storage/types'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import { enqueuePutCanvas } from '@/app/storage/sync/engine'
+import { emitStorageWorkspaceEvent } from '@/app/storage/workspace/events'
 
 export type StoragePersistenceDependencies = {
   store: LocalCanvasStore
@@ -25,14 +28,26 @@ export async function persistStorageCanvasLocally(
     store: getLocalCanvasStore(),
     enqueueCanvas: enqueuePutCanvas
   }
+  const thumbnailBytes = await extractFigThumbnailFromReader({
+    size: options.figBytes.byteLength,
+    async read(start, endExclusive) {
+      return options.figBytes.subarray(start, endExclusive)
+    }
+  })
   const metadata = await runtime.store.writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
     name: options.name,
     figBytes: options.figBytes,
+    thumbBytes: thumbnailBytes,
     syncStatus: 'pending'
   })
   await runtime.enqueueCanvas(options.canvasId, metadata.revision)
+  emitStorageWorkspaceEvent({
+    providerId: options.providerId,
+    documentId: options.canvasId,
+    kind: 'changed'
+  })
   return { revision: metadata.revision }
 }
 

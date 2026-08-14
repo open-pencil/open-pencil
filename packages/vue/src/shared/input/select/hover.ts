@@ -45,12 +45,14 @@ function updateHoveredNode(
   cx: number,
   cy: number,
   editor: Editor,
-  fns: Pick<HitTestFns, 'hitTestInScope' | 'hitTestSectionTitle' | 'hitTestComponentLabel'>
+  fns: Pick<HitTestFns, 'hitTestInScope' | 'hitTestSectionTitle' | 'hitTestComponentLabel'>,
+  deep: boolean
 ) {
-  const hit =
-    fns.hitTestSectionTitle(cx, cy) ??
-    fns.hitTestComponentLabel(cx, cy) ??
-    fns.hitTestInScope(cx, cy, false)
+  const hit = deep
+    ? fns.hitTestInScope(cx, cy, true)
+    : (fns.hitTestSectionTitle(cx, cy) ??
+      fns.hitTestComponentLabel(cx, cy) ??
+      fns.hitTestInScope(cx, cy, false))
   const editNodeId = getNodeEditState(editor)?.nodeId
   editor.setHoveredNode(
     hit && !editor.state.selectedIds.has(hit.id) && hit.id !== editNodeId ? hit.id : null
@@ -61,7 +63,8 @@ export function updateHoverCursor(
   cx: number,
   cy: number,
   editor: Editor,
-  fns: Pick<HitTestFns, 'hitTestInScope' | 'hitTestSectionTitle' | 'hitTestComponentLabel'>
+  fns: Pick<HitTestFns, 'hitTestInScope' | 'hitTestSectionTitle' | 'hitTestComponentLabel'>,
+  deep = false
 ): string | null {
   if (getNodeEditState(editor)) {
     editor.setHoveredNode(null)
@@ -70,6 +73,6 @@ export function updateHoverCursor(
 
   const cursor =
     getResizeCursorForSelection(cx, cy, editor) ?? getRotationCursorForSelection(cx, cy, editor)
-  updateHoveredNode(cx, cy, editor, fns)
+  updateHoveredNode(cx, cy, editor, fns, deep)
   return cursor
 }

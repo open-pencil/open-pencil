@@ -3,11 +3,27 @@ import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewpor
 import { refAutoReset, useClipboard } from '@vueuse/core'
 import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
-import { getAcpDebugText, clearAcpDebugLog, hasAcpDebugEntries } from '@/app/ai/acp/transport'
+import { getACPDebugText, clearACPDebugLog, hasACPDebugEntries } from '@/app/ai/acp/transport'
 import { copyChatLog } from '@/app/ai/debug'
+import {
+  analyzeAttachedImages,
+  designMessageWithImageFindings
+} from '@/app/ai/attachment/image/analyze'
+import {
+  createImagePreviewURL,
+  isImageAttachmentMediaType,
+  prepareImageAttachment,
+  revokeImagePreviewURL
+} from '@/app/ai/attachment/image/prepare'
+import {
+  clearImageAttachmentPresentations,
+  setImageAttachmentPresentations
+} from '@/app/ai/attachment/image/presentation'
+import type { ImageAttachmentDraft } from '@/app/ai/attachment/image/types'
 import { clearToolLogEntries, didHitStepLimit } from '@/app/ai/tools'
 import { activeTab } from '@/app/tabs'
-import AcpPermissionDialog from '@/components/chat/AcpPermissionDialog.vue'
+import { getActiveEditorStore } from '@/app/editor/active-store'
+import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
@@ -19,15 +35,17 @@ import { useI18n } from '@open-pencil/vue'
 
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 const IS_DEV = import.meta.env.DEV
 
-const { isConfigured, ensureChat, resetChat } = useAIChat()
+const { isConfigured, ensureChat, resetChat, chatFailure, clearChatFailure } = useAIChat()
 const { copy } = useClipboard()
 const { dialogs } = useI18n()
 
 const chat = ref<Chat<UIMessage> | null>(null)
+const isPreparingImages = ref(false)
+let attachmentOperationVersion = 0
 
 void ensureChat()
   .then((c) => {
@@ -42,6 +60,18 @@ const debugCopied = refAutoReset(false, 1500)
 const acpLogCopied = refAutoReset(false, 1500)
 
 const messages = computed(() => chat.value?.messages ?? [])
+const failureMessage = computed(() => {
+  switch (chatFailure.value?.reason) {
+    case 'insufficient-credit':
+      return dialogs.value.chatInsufficientCredit
+    case 'output-limit':
+      return dialogs.value.chatOutputLimit
+    case 'request-failed':
+      return dialogs.value.chatRequestFailed
+    default:
+      return null
+  }
+})
 const status = computed(() => chat.value?.status ?? 'ready')
 const isThinking = computed(() => {
   const s = status.value
@@ -51,7 +81,7 @@ const isThinking = computed(() => {
   if (last.role !== 'assistant') return true
   const parts = last.parts
   if (parts.length === 0) return true
-  const lastPart = parts[parts.length - 1] as JsonObject
+  const lastPart = parts[parts.length - 1] as JSONObject
   if (lastPart.type === 'step-start') return true
   if ('toolCallId' in lastPart && lastPart.state === 'output-available') return true
   if ('toolCallId' in lastPart && lastPart.state === 'output-error') return true
@@ -73,33 +103,107 @@ function scrollToBottom() {
 
 watch(messages, scrollToBottom, { deep: true })
 watch(
-  () => chat.value?.error,
-  (error) => {
-    if (error) toast.error(error.message)
+  () => chatFailure.value?.reason,
+  (reason) => {
+    if (!reason) return
+    toast.error(failureMessage.value ?? dialogs.value.chatRequestFailed)
   }
 )
 watch(
   () => activeTab.value?.id,
   async () => {
+    attachmentOperationVersion += 1
+    isPreparingImages.value = false
+    clearImageAttachmentPresentations()
     const nextChat = await ensureChat()
     chat.value = nextChat ? markRaw(nextChat) : null
   }
 )
 
-async function handleSubmit(text: string) {
-  if (status.value === 'streaming' || status.value === 'submitted') return
-  try {
-    const c = await ensureChat()
-    if (c) chat.value = markRaw(c)
-  } catch (e) {
-    console.error('Failed to initialize chat:', e)
-    toast.error(e instanceof Error ? e.message : String(e))
+async function handleSubmit(text: string, images: ImageAttachmentDraft[] = []) {
+  if (status.value === 'streaming' || status.value === 'submitted' || isPreparingImages.value) {
+    for (const image of images) revokeImagePreviewURL(image.previewURL)
+    if (images.length > 0) toast.error(dialogs.value.chatRequestFailed)
     return
   }
-  chat.value?.sendMessage({ text }).catch((e: unknown) => {
+
+  const operationVersion = ++attachmentOperationVersion
+  if (images.length > 0) isPreparingImages.value = true
+  clearChatFailure()
+  try {
+    const currentChat = chat.value ?? (await ensureChat())
+    if (currentChat) chat.value = markRaw(currentChat)
+    if (!currentChat || operationVersion !== attachmentOperationVersion) {
+      for (const image of images) revokeImagePreviewURL(image.previewURL)
+      if (images.length > 0) toast.error(dialogs.value.chatRequestFailed)
+      return
+    }
+
+    if (images.length === 0) {
+      await currentChat.sendMessage({ text })
+      return
+    }
+
+    const messageId = crypto.randomUUID()
+    currentChat.messages = [
+      ...currentChat.messages,
+      { id: messageId, role: 'user', parts: [{ type: 'text', text }] }
+    ]
+    setImageAttachmentPresentations(
+      messageId,
+      images.map((image) => ({
+        id: crypto.randomUUID(),
+        messageId,
+        name: image.file.name,
+        mediaType: isImageAttachmentMediaType(image.file.type) ? image.file.type : 'image/png',
+        originalWidth: 0,
+        originalHeight: 0,
+        previewWidth: 0,
+        previewHeight: 0,
+        previewURL: image.previewURL,
+        displayText: text
+      }))
+    )
+
+    const preparedImages = await Promise.all(
+      images.map((image) => prepareImageAttachment(image.file))
+    )
+    const findings = await analyzeAttachedImages(getActiveEditorStore(), text, preparedImages)
+    if (operationVersion !== attachmentOperationVersion || chat.value !== currentChat) return
+
+    setImageAttachmentPresentations(
+      messageId,
+      preparedImages.map((prepared, index) => {
+        const image = images[index]
+        const previewURL = createImagePreviewURL(prepared.blob)
+        return {
+          id: crypto.randomUUID(),
+          messageId,
+          name: image?.file.name ?? `Image ${index + 1}`,
+          mediaType: prepared.mediaType,
+          originalWidth: prepared.originalWidth,
+          originalHeight: prepared.originalHeight,
+          previewWidth: prepared.width,
+          previewHeight: prepared.height,
+          previewURL,
+          displayText: text
+        }
+      })
+    )
+    await currentChat.sendMessage({
+      messageId,
+      text: designMessageWithImageFindings(
+        text,
+        images.map((image) => image.file.name),
+        findings
+      )
+    })
+  } catch (e) {
     console.error('Chat error:', e)
-    toast.error(e instanceof Error ? e.message : String(e))
-  })
+    toast.error(dialogs.value.chatRequestFailed)
+  } finally {
+    if (operationVersion === attachmentOperationVersion) isPreparingImages.value = false
+  }
 }
 
 function handleStop() {
@@ -107,22 +211,26 @@ function handleStop() {
 }
 
 async function handleCopyDebug() {
-  await copyChatLog(messages.value)
+  await copyChatLog(messages.value, chatFailure.value)
   debugCopied.value = true
 }
 
-async function handleCopyAcpLog() {
-  const text = getAcpDebugText()
+async function handleCopyACPLog() {
+  const text = getACPDebugText()
   if (!text) return
   await copy(text)
   acpLogCopied.value = true
 }
 
 function handleClearChat() {
+  attachmentOperationVersion += 1
+  isPreparingImages.value = false
+  clearChatFailure()
+  clearImageAttachmentPresentations()
   chat.value = null
   resetChat()
   clearToolLogEntries()
-  clearAcpDebugLog()
+  clearACPDebugLog()
 }
 </script>
 
@@ -205,9 +313,9 @@ function handleClearChat() {
           {{ debugCopied ? 'Copied' : 'Copy log' }}
         </AppTextButton>
         <AppTextButton
-          v-if="IS_DEV && hasAcpDebugEntries()"
+          v-if="IS_DEV && hasACPDebugEntries()"
           :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-hover' }"
-          @click="handleCopyAcpLog"
+          @click="handleCopyACPLog"
         >
           <icon-lucide-bug v-if="!acpLogCopied" class="size-3" />
           <icon-lucide-check v-else class="size-3 text-green-400" />
@@ -222,9 +330,15 @@ function handleClearChat() {
         </AppTextButton>
       </div>
 
-      <ChatInput :status="status" @submit="handleSubmit" @stop="handleStop" />
+      <ChatInput
+        :status="status"
+        :disabled="isPreparingImages"
+        @submit="handleSubmit"
+        @stop="handleStop"
+        @error="toast.error"
+      />
 
-      <AcpPermissionDialog />
+      <ACPPermissionDialog />
     </template>
   </div>
 </template>

@@ -4,7 +4,7 @@ import type { AnalyzeTypographyResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { bold, fmtHistogram, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 function weightName(w: number): string {
   if (w <= 100) return 'Thin'
@@ -35,7 +35,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<AnalyzeTypographyResult>(
+    const data = await loadRPCData<AnalyzeTypographyResult>(
       args.file,
       'analyze_typography',
       {},

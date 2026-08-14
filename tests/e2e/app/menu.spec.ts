@@ -20,6 +20,7 @@ test('File menu opens and shows items', async () => {
 
   const items = await menu.locator('[role="menuitem"]').allTextContents()
   expect(items.some((t) => t.includes('Open'))).toBe(true)
+  expect(items.some((t) => t.includes('Open storage workspace'))).toBe(true)
   expect(items.some((t) => t.includes('Save'))).toBe(true)
   expect(items.some((t) => t.includes('Save as'))).toBe(true)
 
@@ -77,6 +78,34 @@ function getStoreStateNumber(key: 'selectedIds' | 'zoom') {
   }, key)
 }
 
+test('Move to page is disabled without a selection', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.addPage('Second page')
+    store.switchPage(store.graph.getPages()[0].id)
+  })
+
+  await editor.page.locator('[role="menubar"] [role="menuitem"]', { hasText: 'Object' }).click()
+  const moveToPage = editor.page.getByRole('menuitem', { name: 'Move to page' })
+  await expect(moveToPage).toHaveAttribute('data-disabled')
+  await editor.page.keyboard.press('Escape')
+
+  await editor.canvas.drawRect(200, 200, 100, 100)
+  await editor.page.locator('[role="menubar"] [role="menuitem"]', { hasText: 'Object' }).click()
+  await expect(editor.page.getByRole('menuitem', { name: 'Move to page' })).not.toHaveAttribute(
+    'data-disabled'
+  )
+  await editor.page.keyboard.press('Escape')
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    for (const id of store.state.selectedIds) store.graph.deleteNode(id)
+    store.clearSelection()
+    store.undo.clear()
+  })
+})
+
 test('Undo via Edit menu works', async () => {
   await editor.canvas.drawRect(200, 200, 100, 100)
   const beforeUndo = await getStoreStateNumber('selectedIds')
@@ -126,4 +155,12 @@ test('Zoom to fit via View menu works', async () => {
 
   const zoomAfter = await getStoreStateNumber('zoom')
   expect(zoomAfter).not.toBe(zoomBefore)
+})
+
+test('Open storage workspace navigates from the File menu', async () => {
+  await editor.page.getByRole('menuitem', { name: 'File', exact: true }).click()
+  await editor.page.getByRole('menuitem', { name: 'Open storage workspace…' }).click()
+
+  await expect(editor.page).toHaveURL(/\/storage$/)
+  await expect(editor.page.getByRole('heading', { name: 'Storage workspace' })).toBeVisible()
 })

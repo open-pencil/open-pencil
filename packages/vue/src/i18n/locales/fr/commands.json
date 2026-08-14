@@ -34,5 +34,10 @@
   "outlineText": "Vectoriser le texte",
   "outlineStroke": "Vectoriser le contour",
   "useAsMask": "Utiliser comme masque",
-  "removeMask": "Retirer le masque"
+  "removeMask": "Retirer le masque",
+  "bringForward": "Avancer",
+  "distributeHorizontal": "Répartir l’espacement horizontal",
+  "distributeVertical": "Répartir l’espacement vertical",
+  "selectInverse": "Inverser la sélection",
+  "sendBackward": "Reculer"
 }

@@ -1,9 +1,17 @@
-import { openIdb, reqToPromise, txDone } from '@/app/storage/idb-util'
+import { openDB, type DBSchema } from 'idb'
+
 import { makeJobId, supersedePutCanvasJobs, type OutboxJob } from '@/app/storage/sync/types'
 
 const DB_NAME = 'open-pencil-cloud-outbox'
 const DB_VERSION = 1
 const STORE = 'jobs'
+
+interface OutboxDatabase extends DBSchema {
+  jobs: {
+    key: string
+    value: OutboxJob
+  }
+}
 
 export type OutboxEnqueueInput = Omit<
   OutboxJob,
@@ -22,10 +30,12 @@ export type Outbox = {
   clear(): Promise<void>
 }
 
-function openDb(): Promise<IDBDatabase> {
-  return openIdb(DB_NAME, DB_VERSION, (db) => {
-    if (!db.objectStoreNames.contains(STORE)) {
-      db.createObjectStore(STORE, { keyPath: 'id' })
+function openDatabase() {
+  return openDB<OutboxDatabase>(DB_NAME, DB_VERSION, {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains(STORE)) {
+        database.createObjectStore(STORE, { keyPath: 'id' })
+      }
     }
   })
 }
@@ -52,7 +62,8 @@ function withJobQueued(queue: OutboxJob[], job: OutboxJob): OutboxJob[] {
     next = supersedePutCanvasJobs(next, job.canvasId, job.revision)
   }
   next = next.filter(
-    (j) => !(j.canvasId === job.canvasId && j.type === job.type && j.type !== 'putCanvas')
+    (queued) =>
+      !(queued.canvasId === job.canvasId && queued.type === job.type && queued.type !== 'putCanvas')
   )
   return [...next, job]
 }
@@ -62,7 +73,7 @@ export function createMemoryOutbox(): Outbox {
 
   return {
     async list() {
-      return [...jobs].sort((a, b) => a.createdAt - b.createdAt)
+      return [...jobs].sort((left, right) => left.createdAt - right.createdAt)
     },
     async enqueue(partial) {
       const job = buildJob(partial)
@@ -70,10 +81,10 @@ export function createMemoryOutbox(): Outbox {
       return job
     },
     async update(job) {
-      jobs = jobs.map((j) => (j.id === job.id ? job : j))
+      jobs = jobs.map((queued) => (queued.id === job.id ? job : queued))
     },
     async remove(id) {
-      jobs = jobs.filter((j) => j.id !== id)
+      jobs = jobs.filter((job) => job.id !== id)
     },
     async clear() {
       jobs = []
@@ -82,57 +93,42 @@ export function createMemoryOutbox(): Outbox {
 }
 
 export function createIdbOutbox(): Outbox {
-  let dbPromise: Promise<IDBDatabase> | null = null
-  function db() {
-    if (!dbPromise) dbPromise = openDb()
-    return dbPromise
-  }
+  const database = openDatabase()
 
   return {
     async list() {
-      const database = await db()
-      const tx = database.transaction(STORE, 'readonly')
-      const all = (await reqToPromise(tx.objectStore(STORE).getAll())) as OutboxJob[]
-      await txDone(tx)
-      return all.sort((a, b) => a.createdAt - b.createdAt)
+      const all = await (await database).getAll(STORE)
+      return all.sort((left, right) => left.createdAt - right.createdAt)
     },
 
     async enqueue(partial) {
       const job = buildJob(partial)
       // Read and write in ONE transaction so concurrent enqueues can't compute
       // supersession from the same stale snapshot (duplicate/stale jobs).
-      const database = await db()
-      const tx = database.transaction(STORE, 'readwrite')
-      const store = tx.objectStore(STORE)
-      const existing = (await reqToPromise(store.getAll())) as OutboxJob[]
+      const transaction = (await database).transaction(STORE, 'readwrite')
+      const store = transaction.objectStore(STORE)
+      const existing = await store.getAll()
       const next = withJobQueued(existing, job)
-      for (const j of existing) {
-        if (!next.some((n) => n.id === j.id)) store.delete(j.id)
+      for (const queued of existing) {
+        if (!next.some((candidate) => candidate.id === queued.id)) {
+          await store.delete(queued.id)
+        }
       }
-      store.put(job)
-      await txDone(tx)
+      await store.put(job)
+      await transaction.done
       return job
     },
 
     async update(job) {
-      const database = await db()
-      const tx = database.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).put(job)
-      await txDone(tx)
+      await (await database).put(STORE, job)
     },
 
     async remove(id) {
-      const database = await db()
-      const tx = database.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).delete(id)
-      await txDone(tx)
+      await (await database).delete(STORE, id)
     },
 
     async clear() {
-      const database = await db()
-      const tx = database.transaction(STORE, 'readwrite')
-      tx.objectStore(STORE).clear()
-      await txDone(tx)
+      await (await database).clear(STORE)
     }
   }
 }

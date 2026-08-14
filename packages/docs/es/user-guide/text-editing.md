@@ -50,5 +50,12 @@ Abre el selector de fuentes en la sección Tipografía del panel de propiedades 
 ## Fuentes disponibles
 
 - **Fuente predeterminada** — Inter se carga automáticamente
-- **App de escritorio** — todas las fuentes del sistema están disponibles
-- **Navegador** — las fuentes del sistema están disponibles en Chrome y Edge
+- **App de escritorio** — fuentes del sistema y catálogos habilitados de Google Fonts, Fontsource, Bunny Fonts y Fontshare
+- **Navegador** — las fuentes del sistema están disponibles en Chrome y Edge; los catálogos online requieren la app de escritorio
+- **Fuentes descargadas** — la app de escritorio guarda en caché las variantes descargadas para reutilizarlas en el mismo equipo
+
+## Fuentes ausentes y sustituciones
+
+Si una familia o variante solicitada no se puede cargar, OpenPencil muestra una advertencia sobre el editor en lugar de considerar silenciosamente que la tipografía de respaldo es fiel al diseño.
+
+Despliega la advertencia para ver cada variante afectada y su sustituto activo. Usa **Seleccionar capas** para localizar los nodos de texto afectados o **Reintentar fuentes** después de cambiar el acceso a la red, el permiso de fuentes locales o los ajustes de proveedores. Una variante puede sintetizarse a partir de otra variante cargada de la misma familia; una familia ausente usa Inter como sustituto cuando está disponible.

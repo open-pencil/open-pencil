@@ -12,6 +12,8 @@ import {
 } from 'yoga-layout'
 
 import { applyYogaLayout } from './layout/apply'
+import { usesDetachedDerivedLayout } from './layout/derived'
+import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
 import { resolveNodeLayoutDirection } from './text/direction'
 export {
@@ -35,23 +37,23 @@ import {
 } from './layout/yoga-helpers'
 
 export function computeLayout(graph: SceneGraph, frameId: string): void {
+  graph.withLayoutMutations(() => computeLayoutInternal(graph, frameId))
+}
+
+function computeLayoutInternal(graph: SceneGraph, frameId: string): void {
   const frame = graph.getNode(frameId)
   if (!frame || frame.layoutMode === 'NONE') return
 
   const rootDirection = resolveComputedLayoutDirection(graph, frame)
+  const yogaDirection = rootDirection === 'RTL' ? Direction.RTL : Direction.LTR
   const yogaRoot =
     frame.layoutMode === 'GRID'
       ? buildGridTree(graph, frame, rootDirection)
       : buildYogaTree(graph, frame, rootDirection)
-  yogaRoot.calculateLayout(
-    undefined,
-    undefined,
-    rootDirection === 'RTL' ? Direction.RTL : Direction.LTR
-  )
-  applyYogaLayout(graph, frame, yogaRoot, computeLayout)
+  yogaRoot.calculateLayout(undefined, undefined, yogaDirection)
+  applyYogaLayout(graph, frame, yogaRoot, computeLayoutInternal)
   freeYogaTree(yogaRoot)
 }
-
 function resolveComputedLayoutDirection(
   graph: SceneGraph,
   node: Pick<SceneNode, 'layoutDirection' | 'parentId'>
@@ -62,8 +64,14 @@ function resolveComputedLayoutDirection(
 }
 
 export function computeAllLayouts(graph: SceneGraph, scopeId?: string): void {
-  const visited = new Set<string>()
-  computeLayoutsBottomUp(graph, scopeId ?? graph.rootId, visited)
+  graph.withLayoutMutations(() => {
+    const rootId = scopeId ?? graph.rootId
+    const visited = new Set<string>()
+    computeLayoutsBottomUp(graph, rootId, visited)
+    if (applyEffectiveGeneratedTextLayout(graph, rootId)) {
+      computeLayoutsBottomUp(graph, rootId, new Set())
+    }
+  })
 }
 
 function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<string>): void {
@@ -83,8 +91,6 @@ function computeLayoutsBottomUp(graph: SceneGraph, nodeId: string, visited: Set<
 function preservesImportedInstanceLayout(node: SceneNode): boolean {
   return node.type === 'INSTANCE' && node.source.format === 'fig'
 }
-
-// --- Flex layout ---
 
 function buildYogaTree(
   graph: SceneGraph,
@@ -118,7 +124,7 @@ function buildYogaTree(
     } else if (child.layoutMode !== 'NONE') {
       configureChildAsAutoLayout(yogaChild, child, frame, graph, direction)
     } else {
-      configureChildAsLeaf(yogaChild, child, frame)
+      configureChildAsLeaf(yogaChild, child, frame, graph)
     }
 
     root.insertChild(yogaChild, root.getChildCount())
@@ -150,13 +156,14 @@ function configureFlexContainer(
   yogaNode.setPadding(Edge.Bottom, node.paddingBottom)
   yogaNode.setPadding(Edge.Left, node.paddingLeft)
 
+  const primaryGap = node.primaryAxisAlign === 'SPACE_BETWEEN' ? 0 : node.itemSpacing
   yogaNode.setGap(
     Gutter.Column,
-    node.layoutMode === 'HORIZONTAL' ? node.itemSpacing : node.counterAxisSpacing
+    node.layoutMode === 'HORIZONTAL' ? primaryGap : node.counterAxisSpacing
   )
   yogaNode.setGap(
     Gutter.Row,
-    node.layoutMode === 'HORIZONTAL' ? node.counterAxisSpacing : node.itemSpacing
+    node.layoutMode === 'HORIZONTAL' ? node.counterAxisSpacing : primaryGap
   )
 
   applyMinMaxConstraints(yogaNode, node)
@@ -229,6 +236,91 @@ function configureChildAsGrid(
   }
 }
 
+type AxisSizing = SceneNode['primaryAxisSizing']
+function sizesFitParent(
+  parent: SceneNode,
+  childCount: number,
+  sizes: Array<number | undefined>,
+  axis: 'width' | 'height'
+): boolean {
+  if (sizes.some((size) => size === undefined)) return false
+  const padding =
+    axis === 'width'
+      ? parent.paddingLeft + parent.paddingRight
+      : parent.paddingTop + parent.paddingBottom
+  const gap =
+    parent.primaryAxisAlign === 'SPACE_BETWEEN'
+      ? 0
+      : parent.itemSpacing * Math.max(0, childCount - 1)
+  const available = axis === 'width' ? parent.width : parent.height
+  const total = sizes.reduce<number>((sum, size) => sum + (size ?? 0), padding + gap)
+  return Math.abs(total - available) < 0.001
+}
+
+function derivedMainAxisFitsParent(
+  graph: SceneGraph,
+  parent: SceneNode,
+  child: SceneNode,
+  axis: 'width' | 'height'
+): boolean {
+  const children = graph
+    .getChildren(parent.id)
+    .filter((candidate) => candidate.visible && candidate.layoutPositioning !== 'ABSOLUTE')
+  if (children.length === 0) return false
+
+  const sizes = children.map((candidate) => candidate.figmaDerivedLayout?.[axis])
+  return (
+    sizesFitParent(parent, children.length, sizes, axis) &&
+    child.figmaDerivedLayout?.[axis] !== undefined
+  )
+}
+
+function usesAuthoritativeGeneratedStretch(parent: SceneNode, child: SceneNode): boolean {
+  if (
+    child.layoutAlignSelf !== 'STRETCH' ||
+    parent.source.format === 'fig' ||
+    !parent.figmaDerivedLayout
+  ) {
+    return false
+  }
+  const derivedCrossSize =
+    parent.layoutMode === 'HORIZONTAL'
+      ? parent.figmaDerivedLayout.height
+      : parent.figmaDerivedLayout.width
+  const parentCrossSize = parent.layoutMode === 'HORIZONTAL' ? parent.height : parent.width
+  return derivedCrossSize !== undefined && Math.abs(derivedCrossSize - parentCrossSize) < 0.001
+}
+
+function configureAutoLayoutChildSizing(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  parent: SceneNode,
+  graph: SceneGraph,
+  widthSizing: AxisSizing,
+  heightSizing: AxisSizing
+): void {
+  const isParentRow = parent.layoutMode === 'HORIZONTAL'
+  const fixedDerivedMainAxis = isParentRow
+    ? derivedMainAxisFitsParent(graph, parent, child, 'width')
+    : derivedMainAxisFitsParent(graph, parent, child, 'height')
+  const stretchesAuthoritativeCrossAxis = usesAuthoritativeGeneratedStretch(parent, child)
+
+  if (isParentRow) {
+    if (fixedDerivedMainAxis) yogaChild.setWidth(child.figmaDerivedLayout?.width ?? child.width)
+    else setMainAxisSizing(yogaChild, 'width', widthSizing, child.width, child.layoutGrow)
+    if (!stretchesAuthoritativeCrossAxis) {
+      setCrossAxisSizing(yogaChild, 'height', heightSizing, child.height)
+    }
+    return
+  }
+
+  if (!stretchesAuthoritativeCrossAxis) {
+    setCrossAxisSizing(yogaChild, 'width', widthSizing, child.width)
+  }
+  if (fixedDerivedMainAxis) yogaChild.setHeight(child.figmaDerivedLayout?.height ?? child.height)
+  else setMainAxisSizing(yogaChild, 'height', heightSizing, child.height, child.layoutGrow)
+}
+
 function configureChildAsAutoLayout(
   yogaChild: YogaNode,
   child: SceneNode,
@@ -237,24 +329,22 @@ function configureChildAsAutoLayout(
   inheritedDirection: 'LTR' | 'RTL'
 ): void {
   const direction = resolveNodeLayoutDirection(child, inheritedDirection)
-  const isParentRow = parent.layoutMode === 'HORIZONTAL'
   const isChildRow = child.layoutMode === 'HORIZONTAL'
-
   const widthSizing = isChildRow ? child.primaryAxisSizing : child.counterAxisSizing
   const heightSizing = isChildRow ? child.counterAxisSizing : child.primaryAxisSizing
 
-  // Main axis: width for row parent, height for col parent — use grow for FILL
-  // Cross axis: height for row parent, width for col parent — use stretch for FILL
-  if (isParentRow) {
-    setMainAxisSizing(yogaChild, 'width', widthSizing, child.width, child.layoutGrow)
-    setCrossAxisSizing(yogaChild, 'height', heightSizing, child.height)
-  } else {
-    setCrossAxisSizing(yogaChild, 'width', widthSizing, child.width)
-    setMainAxisSizing(yogaChild, 'height', heightSizing, child.height, child.layoutGrow)
-  }
+  configureAutoLayoutChildSizing(yogaChild, child, parent, graph, widthSizing, heightSizing)
 
   const selfAlign = mapAlignSelf(child.layoutAlignSelf)
   if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
+
+  if (usesDetachedDerivedLayout(child)) {
+    const derived = child.figmaDerivedLayout
+    if (widthSizing === 'HUG') yogaChild.setWidth(derived?.width ?? child.width)
+    if (heightSizing === 'HUG') yogaChild.setHeight(derived?.height ?? child.height)
+    applyMinMaxConstraints(yogaChild, child)
+    return
+  }
 
   configureFlexContainer(yogaChild, child, direction)
 
@@ -270,13 +360,75 @@ function configureChildAsAutoLayout(
     } else if (gc.layoutMode !== 'NONE') {
       configureChildAsAutoLayout(yogaGC, gc, child, graph, direction)
     } else {
-      configureChildAsLeaf(yogaGC, gc, child)
+      configureChildAsLeaf(yogaGC, gc, child, graph)
     }
     yogaChild.insertChild(yogaGC, yogaChild.getChildCount())
   }
 }
 
-function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: SceneNode): void {
+function derivedGrowingLeafFitsParent(
+  graph: SceneGraph,
+  parent: SceneNode,
+  child: SceneNode,
+  axis: 'width' | 'height'
+): boolean {
+  if (
+    child.type !== 'TEXT' ||
+    child.layoutGrow <= 0 ||
+    child.figmaDerivedLayout?.[axis] === undefined
+  ) {
+    return false
+  }
+  const children = graph
+    .getChildren(parent.id)
+    .filter((candidate) => candidate.visible && candidate.layoutPositioning !== 'ABSOLUTE')
+  const sizes = children.map((candidate) => {
+    if (candidate.layoutGrow > 0) return candidate.figmaDerivedLayout?.[axis]
+    return axis === 'width' ? candidate.width : candidate.height
+  })
+  return sizesFitParent(parent, children.length, sizes, axis)
+}
+
+function configureTextLeafWithoutMeasurer(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  parent: SceneNode,
+  fixedDerivedMainAxis: boolean
+): void {
+  const hasStoredSize =
+    child.width > 0 && child.height > 0 && !(child.width === 100 && child.height === 100)
+
+  if (child.textAutoResize === 'WIDTH_AND_HEIGHT') {
+    if (hasStoredSize) {
+      yogaChild.setWidth(child.width)
+      yogaChild.setHeight(child.height)
+    } else {
+      const estimated = estimateTextSize(child)
+      yogaChild.setWidth(estimated.width)
+      yogaChild.setHeight(estimated.height)
+    }
+    return
+  }
+  if (child.textAutoResize !== 'HEIGHT') return
+
+  const isRow = parent.layoutMode === 'HORIZONTAL'
+  const measurementWidth = fixedDerivedMainAxis
+    ? (child.figmaDerivedLayout?.width ?? child.width)
+    : child.width
+  const stretches =
+    child.layoutAlignSelf === 'STRETCH' ||
+    (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
+  if (!(!isRow && stretches) && !fixedDerivedMainAxis) yogaChild.setWidth(child.width)
+  if (hasStoredSize) yogaChild.setHeight(child.height)
+  else yogaChild.setHeight(estimateTextSize(child, measurementWidth).height)
+}
+
+function configureChildAsLeaf(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  parent: SceneNode,
+  graph: SceneGraph
+): void {
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const selfOverride = child.layoutAlignSelf !== 'AUTO'
   const stretchCross = selfOverride
@@ -287,39 +439,19 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
   const textMeasurer = getTextMeasurer()
   const needsMeasureFunc = isText && textMeasurer && child.textAutoResize !== 'NONE'
 
-  if (needsMeasureFunc) {
-    configureTextLeaf(yogaChild, child, parent)
-  } else if (isText && !textMeasurer && child.textAutoResize !== 'NONE') {
-    // No CanvasKit — prefer stored dimensions from .fig import (Figma's
-    // ground truth) over the rough character-count estimate. Only fall back
-    // to estimateTextSize for newly-created nodes that still carry the
-    // 100×100 default SceneNode size.
-    const hasStoredSize =
-      child.width > 0 && child.height > 0 && !(child.width === 100 && child.height === 100)
+  const fixedDerivedMainAxis = isRow
+    ? derivedGrowingLeafFitsParent(graph, parent, child, 'width')
+    : derivedGrowingLeafFitsParent(graph, parent, child, 'height')
 
-    if (child.textAutoResize === 'WIDTH_AND_HEIGHT') {
-      if (hasStoredSize) {
-        yogaChild.setWidth(child.width)
-        yogaChild.setHeight(child.height)
-      } else {
-        const est = estimateTextSize(child)
-        yogaChild.setWidth(est.width)
-        yogaChild.setHeight(est.height)
-      }
-    } else if (child.textAutoResize === 'HEIGHT') {
-      const stretches =
-        child.layoutAlignSelf === 'STRETCH' ||
-        (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
-      if (!(!isRow && stretches)) {
-        yogaChild.setWidth(child.width)
-      }
-      if (hasStoredSize) {
-        yogaChild.setHeight(child.height)
-      } else {
-        const est = estimateTextSize(child, child.width)
-        yogaChild.setHeight(est.height)
-      }
-    }
+  if (fixedDerivedMainAxis) {
+    if (isRow) yogaChild.setWidth(child.figmaDerivedLayout?.width ?? child.width)
+    else yogaChild.setHeight(child.figmaDerivedLayout?.height ?? child.height)
+  }
+
+  if (needsMeasureFunc) {
+    configureTextLeaf(yogaChild, child, parent, fixedDerivedMainAxis)
+  } else if (isText && !textMeasurer && child.textAutoResize !== 'NONE') {
+    configureTextLeafWithoutMeasurer(yogaChild, child, parent, fixedDerivedMainAxis)
   } else {
     configureNonTextLeaf(yogaChild, child, isRow, stretchCross)
   }
@@ -330,11 +462,16 @@ function configureChildAsLeaf(yogaChild: YogaNode, child: SceneNode, parent: Sce
   applyMinMaxConstraints(yogaChild, child)
 }
 
-function configureTextLeaf(yogaChild: YogaNode, child: SceneNode, parent: SceneNode): void {
+function configureTextLeaf(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  parent: SceneNode,
+  fixedDerivedMainAxis = false
+): void {
   const autoResize = child.textAutoResize
   const isRow = parent.layoutMode === 'HORIZONTAL'
 
-  if (child.layoutGrow > 0) {
+  if (child.layoutGrow > 0 && !fixedDerivedMainAxis) {
     yogaChild.setFlexGrow(child.layoutGrow)
   }
 
@@ -364,11 +501,11 @@ function configureTextLeaf(yogaChild: YogaNode, child: SceneNode, parent: SceneN
     const stretchesCross =
       child.layoutAlignSelf === 'STRETCH' ||
       (child.layoutAlignSelf === 'AUTO' && parent.counterAxisAlign === 'STRETCH')
-    // Don't set fixed width when text stretches on cross axis (w="fill" in
-    // flex="col" parent) — setWidth blocks Yoga's alignSelf:stretch, leaving
-    // text at 100px default instead of filling the parent.
+    // Let Yoga stretch fill-width text instead of fixing its stored width.
     const fillsWidth = !isRow && stretchesCross
-    const fixedWidth = child.width
+    const fixedWidth = fixedDerivedMainAxis
+      ? (child.figmaDerivedLayout?.width ?? child.width)
+      : child.width
     if (child.layoutGrow <= 0 && !fillsWidth) {
       yogaChild.setWidth(fixedWidth)
     }
@@ -423,7 +560,7 @@ function configureNonTextLeaf(
 function setMainAxisSizing(
   yogaNode: YogaNode,
   axis: 'width' | 'height',
-  sizing: string,
+  sizing: AxisSizing,
   fixedValue: number,
   grow: number
 ): void {
@@ -452,7 +589,7 @@ function setMainAxisSizing(
 function setCrossAxisSizing(
   yogaNode: YogaNode,
   axis: 'width' | 'height',
-  sizing: string,
+  sizing: AxisSizing,
   fixedValue: number
 ): void {
   switch (sizing) {

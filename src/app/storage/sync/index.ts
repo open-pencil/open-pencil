@@ -17,15 +17,15 @@ export { setUploadProgress, uploadProgressByCanvas } from './progress'
 export {
   pendingSyncCount,
   setPendingSyncCount,
-  setSyncUi,
+  setSyncUI,
   syncStatusLabel,
-  syncUiDetail,
-  syncUiState
+  syncUIDetail,
+  syncUIState
 } from './status'
 export {
   makeJobId,
   supersedePutCanvasJobs,
   type OutboxJob,
   type OutboxJobType,
-  type SyncUiState
+  type SyncUIState
 } from './types'

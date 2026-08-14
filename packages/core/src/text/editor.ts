@@ -273,9 +273,9 @@ export class TextEditor {
     this.prepareMove(extend)
     const metrics = this.currentLineMetrics()
     if (!metrics) return
-    const isRtlStart = s.textDirection === 'RTL' && edge === 'start'
-    const isLtrEnd = s.textDirection !== 'RTL' && edge === 'end'
-    s.cursor = isRtlStart || isLtrEnd ? metrics.endExcludingWhitespaces : metrics.startIndex
+    const isRTLStart = s.textDirection === 'RTL' && edge === 'start'
+    const isLTREnd = s.textDirection !== 'RTL' && edge === 'end'
+    s.cursor = isRTLStart || isLTREnd ? metrics.endExcludingWhitespaces : metrics.startIndex
   }
 
   moveToLineStart(extend = false): void {

@@ -43,6 +43,10 @@ describe('roundtrip: export → re-import', () => {
       paddingRight: 24,
       paddingBottom: 24,
       paddingLeft: 24,
+      minWidth: 320,
+      minHeight: 240,
+      maxWidth: 500,
+      maxHeight: null,
       cornerRadius: 12,
       fills: [
         {
@@ -253,6 +257,15 @@ describe('roundtrip: export → re-import', () => {
     expect(container.paddingRight).toBe(24)
     expect(container.paddingBottom).toBe(24)
     expect(container.paddingLeft).toBe(24)
+  })
+
+  test('preserves min and max size constraints', () => {
+    const container = reImportedNodes.find((n) => n.name === 'Container')
+    expect(container).toBeDefined()
+    expect(expectDefined(container, 'container').minWidth).toBe(320)
+    expect(container.minHeight).toBe(240)
+    expect(container.maxWidth).toBe(500)
+    expect(container.maxHeight).toBeNull()
   })
 
   test('preserves corner radius', () => {

@@ -140,6 +140,29 @@ describe('fig roundtrip source metadata', () => {
     }
   })
 
+  test('does not restore cleared imported size constraints from raw metadata', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, { name: 'Cleared constraints' })
+    frame.source.format = 'fig'
+    frame.source.id = '4:501'
+    frame.source.fig.rawNodeFields.minSize = { value: { x: 120, y: 80 } }
+    frame.source.fig.rawNodeFields.maxSize = {
+      value: { x: 500, y: Number.POSITIVE_INFINITY }
+    }
+
+    const decoded = decodeExport(await exportFigFile(graph))
+    const exported = decoded.nodeChanges.find(
+      (nodeChange) => nodeChange.guid && guidToString(nodeChange.guid) === '4:501'
+    )
+
+    expect(exported).toBeDefined()
+    expect(exported?.minSize).toBeUndefined()
+    expect(exported?.maxSize).toBeUndefined()
+    expect(frame.source.fig.rawNodeFields.minSize).toBeDefined()
+    expect(frame.source.fig.rawNodeFields.maxSize).toBeDefined()
+  })
+
   test('preserves imported rich text schema metadata for round-trip', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

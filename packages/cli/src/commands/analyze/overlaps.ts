@@ -11,7 +11,7 @@ import {
 } from '@open-pencil/core/tools'
 
 import { bold, fail, fmtList, fmtSummary, kv } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 function validateScope(scope: string): string | undefined {
   const normalized = scope.toLowerCase()
@@ -86,7 +86,7 @@ function collectValidationError(args: {
   )
 }
 
-function buildRpcArgs(args: {
+function buildRPCArgs(args: {
   scope: string
   severity: string
   category?: string
@@ -193,13 +193,13 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const { rpcArgs, error } = buildRpcArgs(args)
+    const { rpcArgs, error } = buildRPCArgs(args)
     if (error) {
       console.error(fail(error))
       process.exit(1)
     }
 
-    const data = await loadRpcData<AnalyzeOverlapsResult>(
+    const data = await loadRPCData<AnalyzeOverlapsResult>(
       args.file,
       'analyze_overlaps',
       rpcArgs,

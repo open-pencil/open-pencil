@@ -2,6 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import type { ProtectionMap } from '../patches'
 import { overrideCandidates } from '../utils'
+import { cloneInstanceUpdate } from './clone-update'
 import { syncNodeProps } from './fields'
 import { indexCloneSubtree, remapRepopulatedChildSources, snapshotChildSources } from './sources'
 
@@ -20,7 +21,10 @@ export function recloneChildren(
 
   const previousSources = snapshotChildSources(graph, tgtNode.id)
   for (const childId of Array.from(tgtNode.childIds)) graph.deleteNode(childId)
-  graph.updateNode(tgtNode.id, { name: srcChild.name, componentId: srcChild.componentId })
+  graph.updateNode(
+    tgtNode.id,
+    cloneInstanceUpdate(srcChild, srcChild.componentId, { name: srcChild.name })
+  )
   syncNodeProps(graph, srcChild, tgtNode, protections)
   if (srcChild.childIds.length > 0) {
     graph.populateInstanceChildren(tgtNode.id, srcChildId, 'fig-import')

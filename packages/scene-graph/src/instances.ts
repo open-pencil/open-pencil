@@ -7,6 +7,10 @@ export type { NodeCloneMode } from './copy'
 const INSTANCE_SYNC_PROPS: (keyof SceneNode)[] = [
   'width',
   'height',
+  'minWidth',
+  'maxWidth',
+  'minHeight',
+  'maxHeight',
   'fills',
   'strokes',
   'effects',

@@ -76,8 +76,15 @@ Change the font weight in the Typography section of the properties panel. Availa
 ## Font Sources
 
 - **Default font** — Inter is loaded automatically
-- **Desktop app** — all system fonts are available
-- **Browser** — system fonts are available in Chrome and Edge
+- **Desktop app** — system fonts plus enabled Google Fonts, Fontsource, Bunny Fonts, and Fontshare catalogs
+- **Browser** — system fonts are available in Chrome and Edge; online font catalogs require the desktop app
+- **Downloaded fonts** — the desktop app caches downloaded faces for reuse on the same machine
+
+## Missing Fonts and Substitutions
+
+When a requested family or style cannot be loaded, OpenPencil displays a warning above the editor instead of silently treating fallback rendering as faithful typography.
+
+Expand the warning to see every affected face and its active substitute. Use **Select layers** to locate all affected text nodes or **Retry fonts** after changing network access, local-font permission, or provider settings. A style may be synthesized from another loaded face in the same family; a missing family falls back to Inter when available.
 
 ## Tips
 

@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 import { MCP_VERSION, registerTools } from '#mcp/server'
-import { createStdioRpcBridge } from '#mcp/stdio/bridge'
+import { createStdioRPCBridge } from '#mcp/stdio/bridge'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
@@ -49,7 +49,7 @@ const authToken = resolveAuthToken(rawAuthToken)
 // field records the override) via auto-discovery. Treating the env var as an
 // explicit pin would prevent the bridge from following discovery updates after
 // a server restart.
-const bridge = createStdioRpcBridge({
+const bridge = createStdioRPCBridge({
   authToken,
   onReady: () => {
     process.stderr.write(
@@ -64,7 +64,7 @@ const bridge = createStdioRpcBridge({
 })
 
 const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-registerTools(mcpServer, { enableEval, mcpRoot, sendRpc: bridge.sendRpc })
+registerTools(mcpServer, { enableEval, mcpRoot, sendRPC: bridge.sendRPC })
 
 const transport = new StdioServerTransport()
 mcpServer.connect(transport).catch((err) => {

@@ -16,7 +16,7 @@ import {
   createSlice,
   createVector,
   fetchIconsTool,
-  importSvg,
+  importSVG,
   insertIcon,
   searchIconsTool
 } from './create'
@@ -36,12 +36,15 @@ import {
   setVisible
 } from './modify'
 import {
-  diffJsx,
+  diffJSX,
   getComponents,
   getCurrentPage,
+  getFontStatus,
   getPageTree,
+  insertLibraryComponent,
   listAvailableFonts,
   listFonts,
+  listLibraries,
   listPages,
   pageBounds,
   queryNodes,
@@ -85,8 +88,8 @@ import {
   booleanSubtract,
   booleanUnion,
   exportImage,
-  exportPdf,
-  exportSvg,
+  exportPDF,
+  exportSVG,
   pathFlip,
   pathGet,
   pathMove,
@@ -108,11 +111,14 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   selectNodes,
   queryNodes,
   getComponents,
+  listLibraries,
+  insertLibraryComponent,
   switchPage,
   pageBounds,
+  getFontStatus,
   listFonts,
   listAvailableFonts,
-  diffJsx,
+  diffJSX,
   // Create (advanced)
   createShape,
   searchIconsTool,
@@ -123,7 +129,7 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   createPage,
   createVector,
   createSlice,
-  importSvg,
+  importSVG,
   // Modify (advanced)
   setEffects,
   setOpacity,
@@ -178,8 +184,8 @@ export const EXTENDED_TOOLS: ToolDef[] = [
   pathMove,
   viewportGet,
   viewportSet,
-  exportSvg,
-  exportPdf,
+  exportSVG,
+  exportPDF,
   exportImage,
   // Analyze & diff
   analyzeColors,

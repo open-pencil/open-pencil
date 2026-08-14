@@ -23,7 +23,7 @@ declare global {
 
 let activeStore: EditorStore | null = null
 
-function windowApi(): OpenPencilWindowAPI {
+function windowAPI(): OpenPencilWindowAPI {
   window.openPencil ??= {}
   window.openPencil.getStore ??= () => {
     if (!activeStore) throw new Error('OpenPencil store not initialized')
@@ -34,15 +34,15 @@ function windowApi(): OpenPencilWindowAPI {
 
 export function setOpenPencilStore(store: EditorStore) {
   activeStore = store
-  windowApi()
+  windowAPI()
 }
 
 export function exposeChatTransportOverride(
   setChatTransport: (factory: () => ChatTransport<UIMessage>) => void
 ) {
-  windowApi().setChatTransport = setChatTransport
+  windowAPI().setChatTransport = setChatTransport
 }
 
 export function setOpenPencilOpenFileHandler(openFile: (path: string) => Promise<void>) {
-  windowApi().openFile = openFile
+  windowAPI().openFile = openFile
 }

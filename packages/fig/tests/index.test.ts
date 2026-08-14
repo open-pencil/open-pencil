@@ -41,6 +41,8 @@ describe('@open-pencil/fig package API', () => {
   })
 
   it('parses complete .fig archives and image resources', () => {
+    const thumbnailPNG = new Uint8Array([1])
+    const metaJSON = '{}'
     const bytes = writeFigArchive({
       schemaDeflated: deflateSync(getSchemaBytes()),
       kiwiData: encodeMessage(
@@ -53,8 +55,8 @@ describe('@open-pencil/fig package API', () => {
           }
         ])
       ),
-      thumbnailPng: new Uint8Array([1]),
-      metaJson: '{}',
+      thumbnailPNG,
+      metaJSON,
       images: [{ name: 'images/hash', data: new Uint8Array([9, 8, 7]) }]
     })
     const parsed = parseFigBuffer(bytes.buffer as ArrayBuffer)
@@ -62,6 +64,8 @@ describe('@open-pencil/fig package API', () => {
     expect(parsed.nodeChanges).toHaveLength(1)
     expect(parsed.nodeChanges[0]?.type).toBe('DOCUMENT')
     expect(parsed.images).toEqual([['hash', new Uint8Array([9, 8, 7])]])
+    expect(parsed.thumbnailPNG).toEqual(thumbnailPNG)
+    expect(parsed.metaJSON).toBe(metaJSON)
   })
 
   it('rejects invalid fig-kiwi containers', () => {

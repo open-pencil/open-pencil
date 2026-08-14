@@ -34,5 +34,10 @@
   "outlineText": "Converti testo in tracciato",
   "outlineStroke": "Converti traccia in contorno",
   "useAsMask": "Usa come maschera",
-  "removeMask": "Rimuovi maschera"
+  "removeMask": "Rimuovi maschera",
+  "bringForward": "Porta avanti",
+  "distributeHorizontal": "Distribuisci spaziatura orizzontale",
+  "distributeVertical": "Distribuisci spaziatura verticale",
+  "selectInverse": "Inverti selezione",
+  "sendBackward": "Porta indietro"
 }

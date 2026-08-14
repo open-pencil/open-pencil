@@ -10,6 +10,7 @@ export const EDITOR_COMMAND_METADATA = {
   'edit.undo': { shortcut: 'MOD+Z', keybinding: '$mod+KeyZ' },
   'edit.redo': { shortcut: 'MOD+SHIFT+Z', keybinding: ['$mod+Shift+KeyZ', '$mod+KeyY'] },
   'selection.selectAll': { shortcut: 'MOD+A', keybinding: '$mod+KeyA' },
+  'selection.selectInverse': { shortcut: 'MOD+SHIFT+A', keybinding: '$mod+Shift+KeyA' },
   'selection.duplicate': {
     shortcut: 'MOD+D',
     keybinding: '$mod+KeyD',
@@ -38,10 +39,20 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: ['Control+Meta+KeyM', '$mod+Alt+KeyM'],
     contextTestId: 'context-toggle-mask'
   },
+  'selection.bringForward': {
+    shortcut: 'MOD+]',
+    keybinding: '$mod+BracketRight',
+    contextTestId: 'context-bring-forward'
+  },
   'selection.bringToFront': {
     shortcut: ']',
     keybinding: 'BracketRight',
     contextTestId: 'context-bring-to-front'
+  },
+  'selection.sendBackward': {
+    shortcut: 'MOD+[',
+    keybinding: '$mod+BracketLeft',
+    contextTestId: 'context-send-backward'
   },
   'selection.sendToBack': {
     shortcut: '[',
@@ -68,6 +79,8 @@ export const EDITOR_COMMAND_METADATA = {
     keybinding: 'Shift+KeyV',
     contextTestId: 'context-flip-vertical'
   },
+  'selection.distributeHorizontal': {},
+  'selection.distributeVertical': {},
   'selection.booleanUnion': {
     shortcut: 'ALT+SHIFT+U',
     keybinding: 'Alt+Shift+KeyU',

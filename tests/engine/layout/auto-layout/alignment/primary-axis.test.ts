@@ -40,6 +40,7 @@ describe('alignment - primary axis', () => {
     const frame = autoFrame(graph, pageId(graph), {
       width: 400,
       height: 100,
+      itemSpacing: 32,
       primaryAxisAlign: 'SPACE_BETWEEN'
     })
     rect(graph, frame.id, 50, 50)
@@ -52,6 +53,27 @@ describe('alignment - primary axis', () => {
     expect(children[0].x).toBe(0)
     expect(children[2].x).toBe(350)
     expect(children[1].x).toBeCloseTo(175, 0)
+  })
+
+  test('space-between alignment ignores stored primary spacing vertically', () => {
+    const graph = new SceneGraph()
+    const frame = autoFrame(graph, pageId(graph), {
+      layoutMode: 'VERTICAL',
+      width: 100,
+      height: 400,
+      itemSpacing: 32,
+      primaryAxisAlign: 'SPACE_BETWEEN'
+    })
+    rect(graph, frame.id, 50, 50)
+    rect(graph, frame.id, 50, 50)
+    rect(graph, frame.id, 50, 50)
+
+    computeLayout(graph, frame.id)
+
+    const children = graph.getChildren(frame.id)
+    expect(children[0].y).toBe(0)
+    expect(children[1].y).toBeCloseTo(175, 0)
+    expect(children[2].y).toBe(350)
   })
 
   test('center alignment (vertical)', () => {

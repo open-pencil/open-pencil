@@ -5,7 +5,7 @@ import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { createStdioRpcBridge } from '#mcp/stdio/bridge'
+import { createStdioRPCBridge } from '#mcp/stdio/bridge'
 
 const TEST_DIR = join(tmpdir(), `openpencil-test-stdio-auth-${process.pid}`)
 const TEST_SOCKET = join(TEST_DIR, 'mcp-test.sock')
@@ -41,16 +41,16 @@ async function writeMockDiscovery(
  * Creates and starts a minimal HTTP server on a Unix socket that
  * mimics the MCP server's health and RPC endpoints.
  */
-function createMockMcpServer(
+function createMockMCPServer(
   socketPath: string,
   options: {
     /** Auth token required for /rpc. null = no auth needed. */
     authToken?: string | null
     /** When true, the first /rpc request returns 401 regardless of auth. */
-    firstRpcFailsWith401?: boolean
+    firstRPCFailsWith401?: boolean
   } = {}
 ): Promise<Server> {
-  const { authToken = null, firstRpcFailsWith401 = false } = options
+  const { authToken = null, firstRPCFailsWith401 = false } = options
   let rpcCount = 0
 
   return new Promise((resolve, reject) => {
@@ -67,7 +67,7 @@ function createMockMcpServer(
         rpcCount++
 
         // Simulate first-call 401 for retry testing
-        if (firstRpcFailsWith401 && rpcCount === 1) {
+        if (firstRPCFailsWith401 && rpcCount === 1) {
           res.writeHead(401)
           res.end(JSON.stringify({ error: 'Unauthorized' }))
           return
@@ -105,24 +105,24 @@ function createMockMcpServer(
  * ready.
  */
 async function createBridgeAndWaitForReady(
-  options: Parameters<typeof createStdioRpcBridge>[0]
-): Promise<ReturnType<typeof createStdioRpcBridge>> {
+  options: Parameters<typeof createStdioRPCBridge>[0]
+): Promise<ReturnType<typeof createStdioRPCBridge>> {
   const { onReady: _ignored, ...rest } = options
   const TIMEOUT_MS = 5_000
 
   return new Promise((resolve, reject) => {
-    let bridge: ReturnType<typeof createStdioRpcBridge> | null = null
+    let bridge: ReturnType<typeof createStdioRPCBridge> | null = null
 
     const timer = setTimeout(() => {
       bridge?.close()
       reject(new Error('Bridge never became ready'))
     }, TIMEOUT_MS)
 
-    bridge = createStdioRpcBridge({
+    bridge = createStdioRPCBridge({
       ...rest,
       onReady: () => {
         clearTimeout(timer)
-        resolve(bridge as ReturnType<typeof createStdioRpcBridge>)
+        resolve(bridge as ReturnType<typeof createStdioRPCBridge>)
       }
     })
   })
@@ -132,7 +132,7 @@ const isUnix = process.platform !== 'win32'
 
 describe.skipIf(!isUnix)('MCP stdio authentication', () => {
   let httpServer: Server | null = null
-  let bridges: Array<ReturnType<typeof createStdioRpcBridge>> = []
+  let bridges: Array<ReturnType<typeof createStdioRPCBridge>> = []
   const origSocketEnv = process.env.OPENPENCIL_MCP_SOCKET
   const origDiscoveryEnv = process.env.OPENPENCIL_MCP_DISCOVERY_PATH
 
@@ -188,7 +188,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     // connect() succeeds on the first attempt.
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
     process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
-    httpServer = await createMockMcpServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
+    httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
 
     // Bridge without explicit authToken — should auto-discover
     const bridge = await createBridgeAndWaitForReady({
@@ -196,7 +196,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     })
     bridges.push(bridge)
 
-    const result = await bridge.sendRpc({ command: 'test' })
+    const result = await bridge.sendRPC({ command: 'test' })
     expect(result).toEqual({ result: 'ok-1' })
   }, 10_000)
 
@@ -204,9 +204,9 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
     process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
-    httpServer = await createMockMcpServer(TEST_SOCKET, {
+    httpServer = await createMockMCPServer(TEST_SOCKET, {
       authToken: AUTH_TOKEN,
-      firstRpcFailsWith401: true
+      firstRPCFailsWith401: true
     })
 
     const bridge = await createBridgeAndWaitForReady({
@@ -215,10 +215,10 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     })
     bridges.push(bridge)
 
-    // The bridge is ready. sendRpc hits the server:
+    // The bridge is ready. sendRPC hits the server:
     //   Attempt 1 → 401 → bridge re-reads discovery, retries
     //   Attempt 2 → 200 with ok-2 (second call to /rpc)
-    const result = await bridge.sendRpc({ command: 'test' })
+    const result = await bridge.sendRPC({ command: 'test' })
     expect(result).toEqual({ result: 'ok-2' })
   }, 10_000)
 
@@ -226,7 +226,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
     process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
-    httpServer = await createMockMcpServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
+    httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
 
     // Bridge has EXPLICIT wrong token — 401 must surface immediately
     const bridge = await createBridgeAndWaitForReady({
@@ -236,7 +236,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     })
     bridges.push(bridge)
 
-    await expect(bridge.sendRpc({ command: 'test' })).rejects.toThrow(
+    await expect(bridge.sendRPC({ command: 'test' })).rejects.toThrow(
       'Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'
     )
   }, 10_000)
@@ -245,7 +245,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, 'discovery-token-unused')
     process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
-    httpServer = await createMockMcpServer(TEST_SOCKET, { authToken: 'explicit-token' })
+    httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: 'explicit-token' })
 
     const bridge = await createBridgeAndWaitForReady({
       socketPath: TEST_SOCKET,
@@ -254,7 +254,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     })
     bridges.push(bridge)
 
-    const result = await bridge.sendRpc({ command: 'test' })
+    const result = await bridge.sendRPC({ command: 'test' })
     expect(result).toEqual({ result: 'ok-1' })
   }, 10_000)
 
@@ -262,7 +262,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     await mkdir(TEST_DIR, { recursive: true })
     await writeMockDiscovery(TEST_SOCKET, AUTH_TOKEN)
     process.env.OPENPENCIL_MCP_SOCKET = TEST_SOCKET
-    httpServer = await createMockMcpServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
+    httpServer = await createMockMCPServer(TEST_SOCKET, { authToken: AUTH_TOKEN })
 
     // Bridge with no explicit token — it auto-discovers from the discovery
     // file and should succeed because the discovery file has the correct token.
@@ -272,7 +272,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     })
     bridges.push(bridge)
 
-    const result = await bridge.sendRpc({ command: 'test' })
+    const result = await bridge.sendRPC({ command: 'test' })
     expect(result).toEqual({ result: 'ok-1' })
 
     // Explicitly verify that a wrong-token bridge gets 401
@@ -283,7 +283,7 @@ describe.skipIf(!isUnix)('MCP stdio authentication', () => {
     })
     bridges.push(badBridge)
 
-    await expect(badBridge.sendRpc({ command: 'test' })).rejects.toThrow(
+    await expect(badBridge.sendRPC({ command: 'test' })).rejects.toThrow(
       'Unauthorized: check OPENPENCIL_MCP_AUTH_TOKEN'
     )
   }, 10_000)

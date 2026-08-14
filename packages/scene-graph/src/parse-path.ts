@@ -8,6 +8,14 @@ interface SubPath {
   closed: boolean
 }
 
+export type VectorPathWindingRule = WindingRule | 'NONE'
+export type SVGPathParseResult = { ok: true; network: VectorNetwork } | { ok: false; error: string }
+
+interface ParseOptions {
+  includeOpenRegions: boolean
+  strictCommands: boolean
+}
+
 /**
  * Parse an SVG path `d` attribute into a VectorNetwork.
  *
@@ -15,6 +23,29 @@ interface SubPath {
  * (arcs → cubics via `.unarc()`, smooth curves → explicit via `.unshort()`).
  */
 export function parseSVGPath(d: string, windingRule: WindingRule = 'NONZERO'): VectorNetwork {
+  const parsed = parsePath(d, windingRule, {
+    includeOpenRegions: false,
+    strictCommands: false
+  })
+  return parsed.ok ? parsed.network : { vertices: [], segments: [], regions: [] }
+}
+
+/** Parse the strict absolute command subset accepted by Figma's VectorPath API. */
+export function parsePluginVectorPath(
+  d: string,
+  windingRule: VectorPathWindingRule
+): SVGPathParseResult {
+  return parsePath(d, windingRule, {
+    includeOpenRegions: windingRule !== 'NONE',
+    strictCommands: true
+  })
+}
+
+function parsePath(
+  d: string,
+  windingRule: VectorPathWindingRule,
+  options: ParseOptions
+): SVGPathParseResult {
   const vertices: VectorVertex[] = []
   const segments: VectorSegment[] = []
   const subPaths: SubPath[] = []
@@ -76,7 +107,20 @@ export function parseSVGPath(d: string, windingRule: WindingRule = 'NONZERO'): V
     addSegment(x1, y1, x2, y2, cp1x, cp1y, cp2x, cp2y)
   }
 
-  const normalized = svgpath(d).abs().unshort().unarc()
+  const parsed = svgpath(d)
+  const parseError = 'err' in parsed && typeof parsed.err === 'string' ? parsed.err : null
+  if (parseError) return { ok: false, error: parseError }
+  if (options.strictCommands) {
+    const unsupportedCommands = new Set<string>()
+    parsed.iterate((segment) => {
+      if (!['M', 'L', 'Q', 'C', 'Z'].includes(segment[0])) unsupportedCommands.add(segment[0])
+    })
+    const unsupportedCommand = unsupportedCommands.values().next().value
+    if (unsupportedCommand !== undefined) {
+      return { ok: false, error: `Unsupported path command ${unsupportedCommand}` }
+    }
+  }
+  const normalized = parsed.abs().unshort().unarc()
 
   normalized.iterate((seg) => {
     const cmd = seg[0]
@@ -130,13 +174,18 @@ export function parseSVGPath(d: string, windingRule: WindingRule = 'NONZERO'): V
   })
 
   const regions: VectorRegion[] = []
-  const closedPaths = subPaths.filter((sp) => sp.closed && sp.segmentIndices.length > 0)
-  if (closedPaths.length > 0) {
+  const regionPaths = subPaths.filter(
+    (subPath) =>
+      windingRule !== 'NONE' &&
+      subPath.segmentIndices.length > 0 &&
+      (subPath.closed || options.includeOpenRegions)
+  )
+  if (regionPaths.length > 0 && windingRule !== 'NONE') {
     regions.push({
       windingRule,
-      loops: closedPaths.map((sp) => sp.segmentIndices)
+      loops: regionPaths.map((subPath) => subPath.segmentIndices)
     })
   }
 
-  return { vertices, segments, regions }
+  return { ok: true, network: { vertices, segments, regions } }
 }

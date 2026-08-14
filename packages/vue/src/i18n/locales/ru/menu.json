@@ -7,6 +7,7 @@
   "text": "Текст",
   "new": "Создать",
   "open": "Открыть…",
+  "openStorageWorkspace": "Открыть рабочее пространство хранилища…",
   "save": "Сохранить",
   "saveAs": "Сохранить как…",
   "exportSelection": "Экспорт выделения…",
@@ -53,5 +54,9 @@
   "arrangeAlignRight": "Выровнять по правому краю",
   "arrangeAlignTop": "Выровнять по верхнему краю",
   "arrangeAlignMiddle": "Выровнять по центру по вертикали",
-  "arrangeAlignBottom": "Выровнять по нижнему краю"
+  "arrangeAlignBottom": "Выровнять по нижнему краю",
+  "multiplayerCursors": "Курсоры участников",
+  "renameSelection": "Переименовать выделение…",
+  "rulers": "Линейки",
+  "settings": "Настройки…"
 }

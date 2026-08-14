@@ -13,6 +13,7 @@ import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { decodeBase64 } from '#core/bytes'
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
+import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'
 import { renderThumbnail } from '#core/io/formats/raster'
 import { populateAllLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import {
@@ -23,6 +24,7 @@ import {
   makeDocumentNodeChange,
   makeCanvasNodeChange
 } from '#core/kiwi/fig/node-change/serialize'
+import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 
 const THUMBNAIL_1X1 = decodeBase64(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
@@ -379,12 +381,15 @@ function appendInternalResources(context: InternalResourceContext): void {
 }
 
 export async function exportFigFile(
-  graph: SceneGraph,
+  sourceGraph: SceneGraph,
   ck?: CanvasKit,
   renderer?: SkiaRenderer,
   pageId?: string,
   renderHeadlessThumbnail = false
 ): Promise<Uint8Array> {
+  // Lazy population synchronizes component trees and therefore mutates its graph. Saving must not
+  // rewrite the live editor document or restore component values over edits made by the user.
+  const graph = cloneSceneGraphForFigExport(sourceGraph)
   populateAllLazyFigImportRoots(graph)
   await initCodec()
 
@@ -412,6 +417,7 @@ export async function exportFigFile(
   const documentNc = makeDocumentNodeChange(docGuid, graph.documentColorSpace)
   const rootNode = graph.getNode(graph.rootId)
   if (rootNode) Object.assign(documentNc, rootNode.source.fig.rawNodeFields)
+  applyEnabledLibrariesPluginData(documentNc, graph)
   const nodeChanges: KiwiNodeChange[] = [documentNc]
 
   const blobs: Uint8Array[] = []
@@ -529,7 +535,7 @@ export async function exportFigFile(
   const kiwiData = compiled.encodeMessage(msg)
 
   const currentPageId = pageId ?? pages[0]?.id
-  const thumbnailPng = await renderFigThumbnail(
+  const thumbnailPNG = await renderFigThumbnail(
     graph,
     currentPageId,
     ck,
@@ -537,7 +543,7 @@ export async function exportFigFile(
     renderHeadlessThumbnail
   )
 
-  const metaJson = JSON.stringify({
+  const metaJSON = JSON.stringify({
     version: 1,
     app: 'OpenPencil',
     createdAt: new Date().toISOString()
@@ -550,18 +556,18 @@ export async function exportFigFile(
   if (IS_TAURI) {
     const { invoke } = await import('@tauri-apps/api/core')
     return new Uint8Array(
-      await invoke<number[]>('build_fig_file', {
+      await invoke<ArrayBuffer>('build_fig_file', {
         schemaDeflated: Array.from(schemaDeflated),
         kiwiData: Array.from(kiwiData),
-        thumbnailPng: Array.from(thumbnailPng),
-        metaJson,
+        thumbnailPng: Array.from(thumbnailPNG),
+        metaJson: metaJSON,
         images: imageEntries.map((e) => ({ name: e.name, data: Array.from(e.data) })),
         figKiwiVersion: version
       })
     )
   }
 
-  return compressFigData(schemaDeflated, kiwiData, thumbnailPng, metaJson, imageEntries, version)
+  return compressFigData(schemaDeflated, kiwiData, thumbnailPNG, metaJSON, imageEntries, version)
 }
 
 export { compressFigDataSync } from '@open-pencil/fig'
@@ -573,8 +579,8 @@ function canUseWorker(): boolean {
 function compressViaWorker(
   schemaDeflated: Uint8Array,
   kiwiData: Uint8Array,
-  thumbnailPng: Uint8Array,
-  metaJson: string,
+  thumbnailPNG: Uint8Array,
+  metaJSON: string,
   imageEntries: Array<{ name: string; data: Uint8Array }>,
   figKiwiVersion?: number
 ): Promise<Uint8Array> {
@@ -599,8 +605,8 @@ function compressViaWorker(
     worker.postMessage({
       schemaDeflated,
       kiwiData,
-      thumbnailPng,
-      metaJson,
+      thumbnailPNG,
+      metaJSON,
       images: imageEntries,
       figKiwiVersion
     })
@@ -610,8 +616,8 @@ function compressViaWorker(
 export function compressFigData(
   schemaDeflated: Uint8Array,
   kiwiData: Uint8Array,
-  thumbnailPng: Uint8Array,
-  metaJson: string,
+  thumbnailPNG: Uint8Array,
+  metaJSON: string,
   imageEntries: Array<{ name: string; data: Uint8Array }>,
   figKiwiVersion?: number
 ): Promise<Uint8Array> {
@@ -619,8 +625,8 @@ export function compressFigData(
     return compressViaWorker(
       schemaDeflated,
       kiwiData,
-      thumbnailPng,
-      metaJson,
+      thumbnailPNG,
+      metaJSON,
       imageEntries,
       figKiwiVersion
     )
@@ -629,8 +635,8 @@ export function compressFigData(
     compressFigDataSync(
       schemaDeflated,
       kiwiData,
-      thumbnailPng,
-      metaJson,
+      thumbnailPNG,
+      metaJSON,
       imageEntries,
       figKiwiVersion
     )

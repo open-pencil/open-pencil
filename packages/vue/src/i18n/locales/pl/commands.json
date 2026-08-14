@@ -34,5 +34,10 @@
   "outlineText": "Kontur tekstu",
   "outlineStroke": "Kontur obrysu",
   "useAsMask": "Użyj jako maski",
-  "removeMask": "Usuń maskę"
+  "removeMask": "Usuń maskę",
+  "bringForward": "Przesuń do przodu",
+  "distributeHorizontal": "Rozłóż odstępy w poziomie",
+  "distributeVertical": "Rozłóż odstępy w pionie",
+  "selectInverse": "Odwróć zaznaczenie",
+  "sendBackward": "Przesuń do tyłu"
 }

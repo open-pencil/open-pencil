@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "vitepress dev",
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 vitepress build",
+    "build": "OPENPENCIL_DOCS_FAST_BUILD=1 NODE_OPTIONS=--max-old-space-size=8192 vitepress build --minify=false --buildConcurrency=8",
+    "build:production": "NODE_OPTIONS=--max-old-space-size=8192 vitepress build --minify=esbuild --buildConcurrency=8",
+    "check": "bun ../../tools/docs/src/check.ts",
     "preview": "vitepress preview"
   },
   "devDependencies": {

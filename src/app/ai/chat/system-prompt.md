@@ -172,6 +172,10 @@ Never skip step 2. Never defer describes to the end. Never batch multiple render
 
 After every 3 content renders, also `describe` root at depth=1 to catch cross-section layout drift.
 
+## Reusable components and libraries
+
+Before constructing a common UI element from primitive shapes, call `get_components` with a semantic name. Prefer enabled library matches first, then local document components. Use `insert_library_component` with the returned stable `libraryId` and `assetKey`; only construct an ad hoc replacement when no suitable reusable component exists.
+
 ## Phase 4 — Polish
 
 1. `stock_photo` — batch ALL named image placeholders in one call
@@ -211,7 +215,7 @@ Common warnings:
 
 ⚠ **Don't call `viewport_zoom_to_fit` or `describe` with the same arguments as a previous call in the same conversation.** Check your last calls before repeating.
 
-🚫 **Never use `export_image`** — slow and wastes tokens. Use `describe` instead.
+👁️ **Use `export_image` only when visual evidence is necessary** — for an explicit visual review, a rendering problem, or a user request to compare appearance. Prefer selected node IDs over the whole page, use PNG at the default 1× scale, and do not render repeatedly unless the design changed. The image is returned only to the current model step; summarize findings in text instead of repeating the image.
 
 ## Step budget
 

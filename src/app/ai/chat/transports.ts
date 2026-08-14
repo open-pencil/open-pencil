@@ -1,12 +1,19 @@
 import { Chat } from '@ai-sdk/vue'
 import { DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
-import type { ChatTransport, LanguageModel, UIMessage } from 'ai'
+import type { ChatTransport, FinishReason, LanguageModel, UIMessage } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
+import { ref } from 'vue'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
+import {
+  classifyAIChatError,
+  classifyAIChatFinish,
+  type AIChatFailure
+} from '@/app/ai/chat/failure'
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
+import { buildReasoningProviderOptions, type AIProviderOptions } from '@/app/ai/chat/reasoning'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
 import { createAIModelRuntime } from '@/app/ai/models'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/app/ai/tools'
@@ -28,6 +35,7 @@ type ToolLoopTransportOptions = {
   model: LanguageModel
   effectiveModelID: string
   maxOutputTokens: number
+  reasoningEffort: string
 }
 
 const ANTHROPIC_CACHE_CONTROL = {
@@ -40,6 +48,14 @@ function supportsAnthropicCaching(providerID: AIProviderID, modelID: string): bo
     providerID === 'anthropic-compatible' ||
     (providerID === 'openrouter' && modelID.startsWith('anthropic/'))
   )
+}
+
+function mergeProviderOptions(
+  cacheOptions: typeof ANTHROPIC_CACHE_CONTROL | undefined,
+  reasoningOptions: AIProviderOptions | undefined
+): AIProviderOptions | undefined {
+  if (!cacheOptions && !reasoningOptions) return undefined
+  return { ...cacheOptions, ...reasoningOptions }
 }
 
 export async function createACPTransport(providerID: AIProviderID) {
@@ -57,12 +73,17 @@ export function createToolLoopTransport({
   providerID,
   model,
   effectiveModelID,
-  maxOutputTokens
+  maxOutputTokens,
+  reasoningEffort
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store)
   const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
     ? ANTHROPIC_CACHE_CONTROL
     : undefined
+  const providerOptions = mergeProviderOptions(
+    cacheProviderOptions,
+    buildReasoningProviderOptions(providerID, reasoningEffort)
+  )
 
   const agent = new ToolLoopAgent({
     model,
@@ -70,13 +91,13 @@ export function createToolLoopTransport({
     tools,
     stopWhen: stepCountIs(MAX_AGENT_STEPS),
     maxOutputTokens,
-    providerOptions: cacheProviderOptions,
+    providerOptions,
     prepareCall: (options) => {
       resetRunSteps(store)
       return {
         ...options,
         maxOutputTokens,
-        providerOptions: cacheProviderOptions
+        providerOptions
       }
     },
     onStepFinish: ({ usage }) => {
@@ -103,12 +124,29 @@ export function createChatSessionManager({
   credentialsReady,
   getActiveEditorStore
 }: ChatSessionOptions) {
+  const failure = ref<AIChatFailure | null>(null)
   let transportDirty = false
   let currentChatStore: EditorStore | null = null
   let currentChatMessages = new WeakMap<EditorStore, UIMessage[]>()
   let chat: Chat<UIMessage> | null = null
   let acpTransportInstance: { destroy(): Promise<void> } | null = null
   let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
+
+  function handleChatFinish({
+    finishReason,
+    isAbort,
+    isError
+  }: {
+    finishReason?: FinishReason
+    isAbort: boolean
+    isError: boolean
+  }): void {
+    if (!isAbort && !isError) failure.value = classifyAIChatFinish(finishReason)
+  }
+
+  function clearFailure(): void {
+    failure.value = null
+  }
 
   function markTransportDirty() {
     transportDirty = true
@@ -142,7 +180,8 @@ export function createChatSessionManager({
         modelID: runtime.role.profile.modelID,
         customModelID: runtime.role.profile.customModelID
       }),
-      maxOutputTokens: runtime.role.profile.maxOutputTokens
+      maxOutputTokens: runtime.role.profile.maxOutputTokens,
+      reasoningEffort: runtime.role.profile.reasoningEffort ?? ''
     })
   }
 
@@ -160,7 +199,14 @@ export function createChatSessionManager({
       const transport: ChatTransport<UIMessage> = isACPProvider.value
         ? await createActiveACPTransport()
         : await createTransport(store)
-      chat = new Chat<UIMessage>({ transport, messages })
+      chat = new Chat<UIMessage>({
+        transport,
+        messages,
+        onError: (error) => {
+          failure.value = classifyAIChatError(error)
+        },
+        onFinish: handleChatFinish
+      })
       currentChatStore = store
       transportDirty = false
     }
@@ -169,6 +215,7 @@ export function createChatSessionManager({
 
   function resetChat() {
     if (currentChatStore) currentChatMessages.delete(currentChatStore)
+    failure.value = null
     chat = null
     currentChatStore = null
     transportDirty = false
@@ -179,5 +226,5 @@ export function createChatSessionManager({
     markTransportDirty()
   }
 
-  return { ensureChat, resetChat, markTransportDirty, setOverrideTransport }
+  return { ensureChat, resetChat, markTransportDirty, setOverrideTransport, failure, clearFailure }
 }

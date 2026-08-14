@@ -34,5 +34,10 @@
   "outlineText": "Contornear texto",
   "outlineStroke": "Cortornear trazo",
   "useAsMask": "Usar como máscara",
-  "removeMask": "Quitar máscara"
+  "removeMask": "Quitar máscara",
+  "bringForward": "Adelantar",
+  "distributeHorizontal": "Distribuir espacio horizontal",
+  "distributeVertical": "Distribuir espacio vertical",
+  "selectInverse": "Invertir selección",
+  "sendBackward": "Atrasar"
 }

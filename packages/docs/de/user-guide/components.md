@@ -7,15 +7,35 @@ description: Wiederverwendbare Komponenten, Instanzen, Komponenten-Sets, Overrid
 
 Komponenten sind wiederverwendbare Design-Elemente. Bearbeiten Sie die Hauptkomponente und alle Instanzen aktualisieren sich automatisch.
 
+## Komponenten durchsuchen
+
+Öffnen Sie links den Tab **Assets**, um lokale Komponenten und aktivierte Bibliotheken zu durchsuchen. Sie können suchen, zwischen Raster- und Listenansicht wechseln und Komponenten per Klick, <kbd>Enter</kbd> oder Drag-and-drop einfügen. Heruntergeladene Bibliotheksrevisionen bleiben auch offline verfügbar.
+
 ## Komponente erstellen
 
 Wählen Sie einen Frame oder eine Gruppe und drücken Sie <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> (Strg + Alt + K). Der Knoten wird zu einer wiederverwendbaren Komponente.
 
 Komponenten zeigen ein lila Label mit Diamant-Symbol.
 
-## Komponenten-Sets
+## Komponenten-Sets und Varianten
 
 Wählen Sie zwei oder mehr Komponenten und drücken Sie <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (Shift + Strg + K), um sie zu einem Komponenten-Set zu kombinieren — ein Container mit gestricheltem lila Rand.
+
+Varianten können mehrere Dimensionen wie `Größe=Klein`, `Status=Hover` und `Theme=Dunkel` verwenden. Nicht jede Kombination ist erforderlich. Die Variante oben links ist Standard und dient als Fallback, wenn eine Aktualisierung keine exakte Kombination mehr enthält. Im Eigenschaften-Panel können Sie Dimensionen und Werte hinzufügen, umbenennen, sortieren und entfernen; doppelte Kombinationen werden abgelehnt.
+
+## Komponenteneigenschaften
+
+Komponenten unterstützen Text-, boolesche Sichtbarkeits- und Instanztausch-Eigenschaften. Verknüpfen Sie eine Eigenschaft mit einem untergeordneten Feld und ändern Sie danach den Wert einer Instanz, ohne sie zu lösen. Definitionen und Zuweisungen bleiben in `.fig`-Dateien erhalten.
+
+## Komponentenbibliotheken
+
+Eine Bibliothek veröffentlicht Komponenten als unveränderliche Revision. Öffnen Sie **Assets → Bibliotheken verwalten → Bibliothek veröffentlichen**, legen Sie beim ersten Mal eine stabile Bibliotheks-ID und einen Namen fest, wählen Sie die Änderungen aus und veröffentlichen Sie. Bei späteren Veröffentlichungen bleiben nicht ausgewählte Änderungen ausstehend.
+
+Aktivieren Sie Bibliotheken unter **Bibliotheken verwalten**. Ihre Assets erscheinen neben lokalen Komponenten; veröffentlichte Definitionen sind im konsumierenden Dokument schreibgeschützt, verknüpfte Instanzen und Overrides bleiben bearbeitbar.
+
+Unter **Updates** können Sie die aktuelle und neue Instanz nebeneinander prüfen. Aktualisieren Sie eine Instanz, alle Instanzen eines Assets, die aktuelle Seite oder alle Seiten. Kompatible Eigenschaften bleiben erhalten; fehlende Varianten zeigen vor dem Bestätigen den Fallback an. Updates unterstützen Rückgängig/Wiederholen.
+
+Bibliotheken können lokal oder über einen konfigurierten Speicheranbieter gespeichert werden. Heruntergeladene Revisionen werden lokal zwischengespeichert. Aktivierte Bindungen und materialisierte Definitionen werden in `.fig` gespeichert, sodass Dokumente auch ohne Verbindung zur Remote-Bibliothek geöffnet werden können.
 
 ## Instanzen erstellen
 

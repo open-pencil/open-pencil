@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
+import { getAutomationAuthToken, spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 
 import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
@@ -24,6 +24,81 @@ afterEach(async () => {
 })
 
 describe('Tauri MCP spawning', () => {
+  test('retains an early startup failure for MCP-dependent features', async () => {
+    installTauriMockWindow()
+    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { platform: 'Win32', userAgent: 'Windows' }
+    })
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
+      if (cmd === 'plugin:fs|exists') return false
+      if (cmd === 'plugin:shell|spawn') {
+        const onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent
+          .onmessage
+        queueMicrotask(() => {
+          onEvent({
+            event: 'Stderr',
+            payload: Array.from(
+              new TextEncoder().encode('El sistema no puede encontrar el archivo especificado.')
+            )
+          })
+          onEvent({ event: 'Terminated', payload: { code: 1, signal: null } })
+        })
+        return 88
+      }
+      return null
+    })
+
+    expect(await spawnMCPIfNeeded()).toBeNull()
+    expect(getAutomationAuthToken()).rejects.toThrow('MCP server exited before startup completed')
+  })
+
+  test('retains unexpected spawn errors for MCP-dependent features', async () => {
+    installTauriMockWindow()
+    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
+    })
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
+    await mockTauriIPC((cmd) => {
+      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
+      if (cmd === 'plugin:fs|exists') return false
+      if (cmd === 'plugin:shell|spawn') throw new Error('shell permission denied')
+      return null
+    })
+
+    expect(await spawnMCPIfNeeded()).toBeNull()
+    expect(getAutomationAuthToken()).rejects.toThrow('shell permission denied')
+  })
+
+  test('retains a language-independent missing executable diagnostic', async () => {
+    installTauriMockWindow()
+    Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { platform: 'MacIntel', userAgent: 'Macintosh' }
+    })
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
+    await mockTauriIPC((cmd) => {
+      if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
+      if (cmd === 'plugin:fs|exists') return false
+      if (cmd === 'mcp_executable_available') return false
+      return null
+    })
+
+    expect(await spawnMCPIfNeeded()).toBeNull()
+    expect(getAutomationAuthToken()).rejects.toThrow('MCP automation is not installed')
+  })
+
   test('spawns MCP server with shell plugin when health check is missing', async () => {
     installTauriMockWindow()
     Object.assign(globalThis.window, { location: { origin: 'tauri://localhost' } })
@@ -51,6 +126,7 @@ describe('Tauri MCP spawning', () => {
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
+      if (cmd === 'mcp_executable_available') return true
       if (cmd === 'plugin:shell|spawn') {
         expect(args).toMatchObject({
           program: 'openpencil-mcp-http',
@@ -61,16 +137,20 @@ describe('Tauri MCP spawning', () => {
               OPENPENCIL_MCP_AUTH_TOKEN: expect.any(String),
               OPENPENCIL_MCP_CORS_ORIGIN: 'tauri://localhost',
               OPENPENCIL_MCP_TCP: '1',
-              OPENPENCIL_MCP_ROOT: '/mock/home'
+              OPENPENCIL_MCP_ROOT: '/mock/home',
+              OPENPENCIL_MCP_APP_TIMEOUT_MS: '30000'
             }
           }
         })
         onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent.onmessage
         return 77
       }
+      const pathArg = (args as { path?: string })?.path
+      if (cmd === 'plugin:fs|exists') {
+        return pathArg === DISCOVERY_PATH
+      }
       if (cmd === 'plugin:fs|read_text_file') {
         // Only return discovery data when reading the expected discovery path
-        const pathArg = (args as { path?: string })?.path
         if (pathArg === DISCOVERY_PATH) return new TextEncoder().encode(DISCOVERY_JSON)
         return null
       }
@@ -82,6 +162,7 @@ describe('Tauri MCP spawning', () => {
     })
 
     const handle = await spawnMCPIfNeeded()
+    await expect(getAutomationAuthToken()).resolves.toBe('discovery-token')
     onEvent?.({ event: 'Stderr', payload: [119, 97, 114, 110] })
     handle?.disconnect()
     await Promise.resolve()

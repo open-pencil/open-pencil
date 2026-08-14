@@ -7,6 +7,7 @@
   "text": "Text",
   "new": "Neu",
   "open": "Öffnen…",
+  "openStorageWorkspace": "Speicher-Arbeitsbereich öffnen…",
   "save": "Speichern",
   "saveAs": "Speichern unter…",
   "exportSelection": "Auswahl exportieren…",
@@ -53,5 +54,9 @@
   "arrangeAlignRight": "Rechts ausrichten",
   "arrangeAlignTop": "Oben ausrichten",
   "arrangeAlignMiddle": "Mittig ausrichten",
-  "arrangeAlignBottom": "Unten ausrichten"
+  "arrangeAlignBottom": "Unten ausrichten",
+  "multiplayerCursors": "Multiplayer-Cursor",
+  "renameSelection": "Auswahl umbenennen…",
+  "rulers": "Lineale",
+  "settings": "Einstellungen…"
 }

@@ -11,11 +11,11 @@ import {
   makeSlideFrame,
   pageId,
   placements,
-  slideXml,
+  slideXML,
   solidFill,
   solidStroke,
   stubRasterize,
-  unzipPptx
+  unzipPPTX
 } from './helpers'
 
 describe('renderNodesToPPTX()', () => {
@@ -44,7 +44,7 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const files = unzipPptx(data)
+    const files = unzipPPTX(data)
     expect(files['ppt/presentation.xml']).toBeDefined()
     expect(files['ppt/slides/slide1.xml']).toBeDefined()
     expect(files['ppt/slides/slide2.xml']).toBeDefined()
@@ -70,7 +70,7 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const xml = slideXml(unzipPptx(data), 1)
+    const xml = slideXML(unzipPPTX(data), 1)
     expect(xml).toContain('Hello')
     expect(xml).toContain('PPTX')
     // Bold partial run survives as its own <a:r> with b="1".
@@ -117,8 +117,8 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const files = unzipPptx(data)
-    const xml = slideXml(files, 1)
+    const files = unzipPPTX(data)
+    const xml = slideXML(files, 1)
     expect(xml).toContain('0000FF')
     // Gradient rect got rasterized into a media image.
     const media = Object.keys(files).filter((f) => f.startsWith('ppt/media/') && !f.endsWith('/'))
@@ -166,7 +166,7 @@ describe('renderNodesToPPTX()', () => {
     if (!data) return
     // The icon frame rasterized once (whole container), not once per path.
     expect(rasterCalls).toEqual([[iconFrame.id]])
-    const media = Object.keys(unzipPptx(data)).filter(
+    const media = Object.keys(unzipPPTX(data)).filter(
       (f) => f.startsWith('ppt/media/') && !f.endsWith('/')
     )
     expect(media).toHaveLength(1)
@@ -199,7 +199,7 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const [rect, ...rest] = placements(slideXml(unzipPptx(data), 1))
+    const [rect, ...rest] = placements(slideXML(unzipPPTX(data), 1))
     expect(rest).toHaveLength(0)
     // Rotation comes from the parent frame, and the rect is centered on it —
     // the unrotated box origin, not the rotated corner at (550, 150).
@@ -236,7 +236,7 @@ describe('renderNodesToPPTX()', () => {
     expect(data).not.toBeNull()
     if (!data) return
     expect(rasterCalls).toEqual([[frame.id]])
-    expect(slideXml(unzipPptx(data), 1)).not.toContain('FF0000')
+    expect(slideXML(unzipPPTX(data), 1)).not.toContain('FF0000')
     expect(stats).not.toBeNull()
     if (!stats) return
     const reported: PPTXExportStats = stats
@@ -274,7 +274,7 @@ describe('renderNodesToPPTX()', () => {
     expect(data).not.toBeNull()
     if (!data) return
     expect(rasterCalls).toEqual([[frame.id]])
-    expect(slideXml(unzipPptx(data), 1)).not.toContain('FF0000')
+    expect(slideXML(unzipPPTX(data), 1)).not.toContain('FF0000')
     expect(stats).not.toBeNull()
     if (!stats) return
     const reported: PPTXExportStats = stats
@@ -309,7 +309,7 @@ describe('renderNodesToPPTX()', () => {
     expect(data).not.toBeNull()
     if (!data) return
     expect(rasterCalls).toEqual([])
-    expect(slideXml(unzipPptx(data), 1)).toContain('FF0000')
+    expect(slideXML(unzipPPTX(data), 1)).toContain('FF0000')
   })
 
   test('a clipped frame with an overflowing child rasterizes as one image', async () => {
@@ -348,7 +348,7 @@ describe('renderNodesToPPTX()', () => {
     // The frame rasterized once, so the cropped part of the child cannot leak
     // back in as a separate native shape.
     expect(rasterCalls).toEqual([[clipped.id]])
-    expect(slideXml(unzipPptx(data), 1)).not.toContain('FF0000')
+    expect(slideXML(unzipPPTX(data), 1)).not.toContain('FF0000')
     expect(stats).not.toBeNull()
     if (!stats) return
     const reported: PPTXExportStats = stats
@@ -384,7 +384,7 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const xml = slideXml(unzipPptx(data), 1)
+    const xml = slideXML(unzipPPTX(data), 1)
     expect(xml).toContain('FF0000')
     expect(stats).not.toBeNull()
     if (!stats) return
@@ -407,7 +407,7 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const xml = slideXml(unzipPptx(data), 1)
+    const xml = slideXML(unzipPPTX(data), 1)
     expect(xml).toContain('FF0000')
     // 50% alpha survives instead of rendering fully opaque.
     expect(xml).toContain('<a:alpha val="50000"/>')
@@ -431,9 +431,9 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const files = unzipPptx(data)
+    const files = unzipPPTX(data)
     // A slide-sized shape carries the border instead of a flattened image.
-    const [border, ...rest] = placements(slideXml(files, 1))
+    const [border, ...rest] = placements(slideXML(files, 1))
     expect(rest).toHaveLength(0)
     expect(border.width).toBeCloseTo(SLIDE_WIDTH_IN, 2)
     expect(
@@ -485,7 +485,7 @@ describe('renderNodesToPPTX()', () => {
     // Baking the children into the background image would draw them twice —
     // once flattened, once as the native text added right after.
     expect(calls).toEqual([{ ids: [frame.id], paintOnly: true }])
-    expect(slideXml(unzipPptx(data), 1)).toContain('On the gradient')
+    expect(slideXML(unzipPPTX(data), 1)).toContain('On the gradient')
   })
 
   test('solid frame background maps to slide background color', async () => {
@@ -500,7 +500,7 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const xml = slideXml(unzipPptx(data), 1)
+    const xml = slideXML(unzipPPTX(data), 1)
     expect(xml.toUpperCase()).toContain('336699')
   })
 
@@ -516,7 +516,7 @@ describe('renderNodesToPPTX()', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const xml = slideXml(unzipPptx(data), 1)
+    const xml = slideXML(unzipPPTX(data), 1)
     expect(xml).toContain('<a:alpha val="50000"/>')
   })
 
@@ -538,7 +538,7 @@ describe('renderNodesToPPTX()', () => {
       { graph, target: { scope: 'document' } },
       { rasterize: stubRasterize }
     )
-    const files = unzipPptx(result.data as Uint8Array)
+    const files = unzipPPTX(result.data as Uint8Array)
     expect(files['ppt/slides/slide1.xml']).toBeDefined()
     expect(files['ppt/slides/slide2.xml']).toBeDefined()
   })

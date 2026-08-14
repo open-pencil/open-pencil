@@ -25,7 +25,7 @@ Appuyez sur <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) pour ouv
 | **Compatible OpenAI** | Tout endpoint au format API OpenAI | URL de base personnalisée + clé. Supporte le basculement entre API Completions et Responses. |
 | **Compatible Anthropic** | Tout endpoint au format API Anthropic | URL de base personnalisée + clé |
 
-Pas de backend, pas d'abonnement — votre clé communique directement avec le fournisseur.
+Pas de backend ni d’abonnement : votre clé communique directement avec le fournisseur. Les requêtes du navigateur sont soumises à la politique CORS du fournisseur, et la fiabilité des appels d’outils en streaming varie selon les déploiements. Consultez la référence en anglais sur la [compatibilité des fournisseurs et modèles BYOK](/programmable/byok-provider-compatibility) pour les résultats mesurés et les tests reproductibles.
 
 ## Fonctionnalités
 

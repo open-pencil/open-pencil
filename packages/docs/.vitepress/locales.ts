@@ -26,7 +26,7 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/de',
       {
-        guide: 'Guide',
+        overview: 'Überblick',
         userGuide: 'Benutzerhandbuch',
         programmable: 'Automation',
         sdk: 'SDK',
@@ -45,7 +45,7 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/it',
       {
-        guide: 'Guida',
+        overview: 'Panoramica',
         userGuide: 'Guida utente',
         programmable: 'Automation',
         sdk: 'SDK',
@@ -64,7 +64,7 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/fr',
       {
-        guide: 'Guide',
+        overview: 'Vue d’ensemble',
         userGuide: 'Guide utilisateur',
         programmable: 'Automation',
         sdk: 'SDK',
@@ -83,7 +83,7 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/es',
       {
-        guide: 'Guía',
+        overview: 'Resumen',
         userGuide: 'Guía del usuario',
         programmable: 'Automation',
         sdk: 'SDK',
@@ -102,7 +102,7 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/pl',
       {
-        guide: 'Przewodnik',
+        overview: 'Przegląd',
         userGuide: 'Podręcznik',
         programmable: 'Automation',
         sdk: 'SDK',
@@ -121,7 +121,7 @@ export const docsLocales = {
     themeConfig: localeThemeConfig(
       '/ru',
       {
-        guide: 'Руководство',
+        overview: 'Обзор',
         userGuide: 'Руководство',
         programmable: 'Automation',
         sdk: 'SDK',

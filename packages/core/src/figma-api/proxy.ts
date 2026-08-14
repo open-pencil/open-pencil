@@ -16,18 +16,25 @@ import {
   setNodeStrokeOkHCL
 } from '#core/color/okhcl'
 import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
+import { assertNodeEditable } from '#core/editor/capabilities'
 
 import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
 import { installVariableModeNodeProxyAccessors } from './accessors/variables'
-import { installVectorNodeProxyAccessors, type FigmaVectorPath } from './accessors/vector'
+import {
+  installVectorNodeProxyAccessors,
+  type FigmaVectorNetwork,
+  type FigmaVectorPath
+} from './accessors/vector'
 import { installVisualNodeProxyAccessors } from './accessors/visual'
 import type { FigmaFontName } from './fonts'
+import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
 import { setFirstStrokeAlign, setFirstStrokeWeight, setIndependentStrokeWeight } from './strokes'
 import * as TextProxy from './text'
 import * as Traversal from './traversal'
+import type { FigmaTransform } from './types'
 
 const MIXED = Symbol('mixed')
 
@@ -58,11 +65,13 @@ export class FigmaNodeProxy {
   declare readonly width: number
   declare readonly height: number
   declare rotation: number
+  declare readonly relativeTransform: FigmaTransform
   declare resize: (width: number, height: number) => void
   declare resizeWithoutConstraints: (width: number, height: number) => void
-  declare readonly absoluteTransform: [[number, number, number], [number, number, number]]
+  declare rescale: (scale: number) => void
+  declare readonly absoluteTransform: FigmaTransform
   declare readonly absoluteBoundingBox: Rect
-  declare readonly absoluteRenderBounds: Rect
+  declare readonly absoluteRenderBounds: Rect | null
 
   declare fills: readonly Fill[]
   declare strokes: readonly Stroke[]
@@ -105,7 +114,10 @@ export class FigmaNodeProxy {
   declare maxWidth: number | null
   declare minHeight: number | null
   declare maxHeight: number | null
-  declare readonly vectorPaths: readonly FigmaVectorPath[]
+  declare vectorPaths: readonly FigmaVectorPath[]
+  declare vectorNetwork: FigmaVectorNetwork
+  declare setVectorNetworkAsync: (vectorNetwork: FigmaVectorNetwork) => Promise<void>
+  declare handleMirroring: SceneNode['handleMirroring'] | typeof MIXED
   declare readonly explicitVariableModes: Readonly<Record<string, string>>
   declare readonly resolvedVariableModes: Readonly<Record<string, string>>
 
@@ -113,6 +125,18 @@ export class FigmaNodeProxy {
     this[INTERNAL_ID] = id
     this[INTERNAL_GRAPH] = graph
     this[INTERNAL_API] = api
+    if (graph.getNode(id)?.type === 'VECTOR') {
+      installVectorNodeProxyAccessors(
+        this,
+        { id: INTERNAL_ID, graph: INTERNAL_GRAPH, api: INTERNAL_API },
+        MIXED
+      )
+    }
+  }
+
+  private _update(changes: Partial<SceneNode>): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], changes)
   }
 
   private _raw(): SceneNode {
@@ -146,7 +170,7 @@ export class FigmaNodeProxy {
   }
 
   set dashPattern(v: readonly number[]) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { dashPattern: [...v] })
+    this._update({ dashPattern: [...v] })
   }
 
   get strokeCap(): string {
@@ -156,7 +180,7 @@ export class FigmaNodeProxy {
   set strokeCap(v: string) {
     const strokeCap = v as SceneNode['strokeCap']
     const node = this._raw()
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       strokeCap,
       strokes: node.strokes.map((stroke) => ({ ...stroke, cap: strokeCap }))
     })
@@ -169,7 +193,7 @@ export class FigmaNodeProxy {
   set strokeJoin(v: string) {
     const strokeJoin = v as SceneNode['strokeJoin']
     const node = this._raw()
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       strokeJoin,
       strokes: node.strokes.map((stroke) => ({ ...stroke, join: strokeJoin }))
     })
@@ -180,7 +204,7 @@ export class FigmaNodeProxy {
   }
 
   set strokeMiterLimit(v: number) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { strokeMiterLimit: v })
+    this._update({ strokeMiterLimit: v })
   }
 
   get strokeTopWeight(): number {
@@ -222,7 +246,7 @@ export class FigmaNodeProxy {
   }
 
   set characters(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { text: v })
+    this._update({ text: v })
   }
 
   get fontSize(): number {
@@ -230,7 +254,7 @@ export class FigmaNodeProxy {
   }
 
   set fontSize(v: number) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { fontSize: v })
+    this._update({ fontSize: v })
   }
 
   get fontName(): FigmaFontName {
@@ -246,7 +270,7 @@ export class FigmaNodeProxy {
   }
 
   set fontWeight(v: number) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { fontWeight: v })
+    this._update({ fontWeight: v })
   }
 
   get textAlignHorizontal(): string {
@@ -254,7 +278,7 @@ export class FigmaNodeProxy {
   }
 
   set textAlignHorizontal(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       textAlignHorizontal: v as SceneNode['textAlignHorizontal']
     })
   }
@@ -264,7 +288,7 @@ export class FigmaNodeProxy {
   }
 
   set textDirection(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       textDirection: v as SceneNode['textDirection']
     })
   }
@@ -274,7 +298,7 @@ export class FigmaNodeProxy {
   }
 
   set textAlignVertical(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       textAlignVertical: v as SceneNode['textAlignVertical']
     })
   }
@@ -284,7 +308,7 @@ export class FigmaNodeProxy {
   }
 
   set textAutoResize(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       textAutoResize: v as SceneNode['textAutoResize']
     })
   }
@@ -294,7 +318,7 @@ export class FigmaNodeProxy {
   }
 
   set letterSpacing(v: number) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { letterSpacing: v })
+    this._update({ letterSpacing: v })
   }
 
   get lineHeight(): number | null {
@@ -302,7 +326,7 @@ export class FigmaNodeProxy {
   }
 
   set lineHeight(v: number | null) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { lineHeight: v })
+    this._update({ lineHeight: v })
   }
 
   get textCase(): string {
@@ -310,7 +334,7 @@ export class FigmaNodeProxy {
   }
 
   set textCase(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { textCase: v as SceneNode['textCase'] })
+    this._update({ textCase: v as SceneNode['textCase'] })
   }
 
   get textDecoration(): string {
@@ -318,7 +342,7 @@ export class FigmaNodeProxy {
   }
 
   set textDecoration(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       textDecoration: v as SceneNode['textDecoration']
     })
   }
@@ -328,7 +352,7 @@ export class FigmaNodeProxy {
   }
 
   set maxLines(v: number | null) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { maxLines: v })
+    this._update({ maxLines: v })
   }
 
   get textTruncation(): string {
@@ -336,7 +360,7 @@ export class FigmaNodeProxy {
   }
 
   set textTruncation(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], {
+    this._update({
       textTruncation: v as SceneNode['textTruncation']
     })
   }
@@ -346,7 +370,7 @@ export class FigmaNodeProxy {
   }
 
   set autoRename(v: boolean) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { autoRename: v })
+    this._update({ autoRename: v })
   }
 
   insertCharacters(start: number, characters: string): void {
@@ -362,7 +386,7 @@ export class FigmaNodeProxy {
   }
 
   set isMask(v: boolean) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { isMask: v })
+    this._update({ isMask: v })
   }
 
   get maskType(): string {
@@ -370,7 +394,7 @@ export class FigmaNodeProxy {
   }
 
   set maskType(v: string) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { maskType: v as SceneNode['maskType'] })
+    this._update({ maskType: v as SceneNode['maskType'] })
   }
 
   // --- UI state ---
@@ -380,10 +404,18 @@ export class FigmaNodeProxy {
   }
 
   set expanded(v: boolean) {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], { expanded: v })
+    this._update({ expanded: v })
   }
 
   // --- Components ---
+
+  get backgrounds(): readonly Fill[] {
+    return getPageBackgrounds(this._raw())
+  }
+
+  set backgrounds(value: readonly Fill[]) {
+    setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value)
+  }
 
   get mainComponent(): FigmaNodeProxy | null {
     const n = this._raw()
@@ -417,15 +449,20 @@ export class FigmaNodeProxy {
   }
 
   appendChild(child: FigmaNodeProxy): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
     this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
   }
 
   insertChild(index: number, child: FigmaNodeProxy): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    assertNodeEditable(this[INTERNAL_GRAPH], child[INTERNAL_ID])
     this[INTERNAL_GRAPH].reparentNode(child[INTERNAL_ID], this[INTERNAL_ID])
     this[INTERNAL_GRAPH].reorderChild(child[INTERNAL_ID], this[INTERNAL_ID], index)
   }
 
   clone(): FigmaNodeProxy {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     const n = this._raw()
     const parentId = n.parentId ?? this[INTERNAL_API].currentPageId
     const cloned = this[INTERNAL_GRAPH].cloneTree(this[INTERNAL_ID], parentId)
@@ -434,6 +471,7 @@ export class FigmaNodeProxy {
   }
 
   remove(): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     this[INTERNAL_GRAPH].deleteNode(this[INTERNAL_ID])
   }
 
@@ -479,6 +517,7 @@ export class FigmaNodeProxy {
   }
 
   setPluginData(key: string, value: string): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     PluginData.setPluginData(this[INTERNAL_GRAPH], this._raw(), key, value)
   }
 
@@ -491,6 +530,7 @@ export class FigmaNodeProxy {
   }
 
   setSharedPluginData(namespace: string, key: string, value: string): void {
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
     PluginData.setSharedPluginData(this[INTERNAL_GRAPH], this._raw(), namespace, key, value)
   }
 
@@ -503,7 +543,7 @@ export class FigmaNodeProxy {
   }
 
   setFillOkHCL(color: OkHCLColor, index = 0): void {
-    this[INTERNAL_GRAPH].updateNode(this[INTERNAL_ID], setNodeFillOkHCL(this._raw(), index, color))
+    this._update(setNodeFillOkHCL(this._raw(), index, color))
   }
 
   getStrokeOkHCL(index = 0): OkHCLPayload | null {
@@ -511,10 +551,7 @@ export class FigmaNodeProxy {
   }
 
   setStrokeOkHCL(color: OkHCLColor, index = 0): void {
-    this[INTERNAL_GRAPH].updateNode(
-      this[INTERNAL_ID],
-      setNodeStrokeOkHCL(this._raw(), index, color)
-    )
+    this._update(setNodeStrokeOkHCL(this._raw(), index, color))
   }
 
   // --- Serialization ---
@@ -559,4 +596,3 @@ const proxyInternals = {
 
 installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installVariableModeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
-installVectorNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)

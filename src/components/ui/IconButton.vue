@@ -3,6 +3,7 @@ import { computed, normalizeClass, useAttrs } from 'vue'
 import { tv } from 'tailwind-variants'
 
 import theme from '@/theme/icon-button'
+import type { ControlSize } from '@/theme/control'
 import Tip from '@/components/ui/Tip.vue'
 
 const {
@@ -10,14 +11,14 @@ const {
   disabled = false,
   label,
   side = 'top',
-  size = 'sm',
+  size = 'xs',
   type = 'button'
 } = defineProps<{
   active?: boolean
   disabled?: boolean
   label?: string
   side?: 'top' | 'bottom' | 'left' | 'right'
-  size?: 'sm' | 'md'
+  size?: ControlSize
   type?: 'button' | 'submit' | 'reset'
 }>()
 

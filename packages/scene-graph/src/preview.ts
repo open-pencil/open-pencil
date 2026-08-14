@@ -53,6 +53,9 @@ export function updateNodePreview(
   if (!node) return null
   // The graph must never store Vue reactive proxies — see toRawDeep.
   changes = toRawDeep(changes)
+  changes = Object.fromEntries(
+    (Object.entries(changes) as Array<[string, unknown]>).filter(([, value]) => value !== undefined)
+  ) as Partial<SceneNode>
   if ((Object.keys(changes) as (keyof SceneNode)[]).every((key) => node[key] === changes[key])) {
     return null
   }

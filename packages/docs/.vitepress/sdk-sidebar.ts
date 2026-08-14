@@ -9,6 +9,7 @@ const SDK_COMPONENT_PAGES = [
   { text: 'ToolbarItem', slug: 'toolbar-item' },
   { text: 'PageListRoot', slug: 'page-list-root' },
   { text: 'PropertySection', slug: 'property-section', canonical: true },
+  { text: 'PropertyGrid', slug: 'property-grid', canonical: true },
   { text: 'SegmentedControl', slug: 'segmented-control', canonical: true },
   { text: 'PropertyListRoot', slug: 'property-list-root' },
   { text: 'PropertyListItem', slug: 'property-list-item' },
@@ -52,8 +53,11 @@ const SDK_COMPOSABLE_PAGES = [
   { text: 'useFillControls', slug: 'use-fill-controls' },
   { text: 'useStrokeControls', slug: 'use-stroke-controls' },
   { text: 'useEffectsControls', slug: 'use-effects-controls' },
+  { text: 'useMask', slug: 'use-mask', canonical: true },
+  { text: 'useDocumentWorkspace', slug: 'use-document-workspace', canonical: true },
   { text: 'useVariablesEditor', slug: 'use-variables-editor' },
-  { text: 'usePageList', slug: 'use-page-list' }
+  { text: 'usePageList', slug: 'use-page-list' },
+  { text: 'useI18n', slug: 'use-i18n' },
 ] as const
 
 const SDK_ADVANCED_PAGES = [
@@ -75,7 +79,13 @@ const SDK_ADVANCED_PAGES = [
   { text: 'useLayerTree', slug: 'use-layer-tree' },
   { text: 'useToolbar', slug: 'use-toolbar' },
   { text: 'usePropertyList', slug: 'use-property-list' },
-  { text: 'useNumberField', slug: 'use-number-field' }
+  { text: 'useNumberField', slug: 'use-number-field', canonical: true },
+  { text: 'useOkHCL', slug: 'use-okhcl' },
+  { text: 'useVariables', slug: 'use-variables' },
+  { text: 'useVariablesDialogState', slug: 'use-variables-dialog-state' },
+  { text: 'useVariablesTable', slug: 'use-variables-table' },
+  { text: 'Locale APIs', slug: 'locale-apis' },
+  { text: 'useViewportKind', slug: 'use-viewport-kind' },
 ] as const
 
 export const sdkSidebar = (prefix: string): DefaultTheme.SidebarItem[] => [

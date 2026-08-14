@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { openLibraryReview, useLibraryService } from '@/app/libraries'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -24,11 +25,14 @@ import StrokeSection from './properties/StrokeSection.vue'
 import TypographySection from './properties/TypographySection.vue'
 import VariablesSection from './properties/VariablesSection.vue'
 import ComponentPropertiesSection from './properties/component-properties/ComponentPropertiesSection.vue'
+import VariantAuthoringSection from './properties/component-properties/VariantAuthoringSection.vue'
+import InstanceUpdateAction from './properties/component-properties/instance-update/InstanceUpdateAction.vue'
 import FramePresetsSection from './properties/frame-presets/FramePresetsSection.vue'
 import FramePresetSelect from './properties/frame-presets/FramePresetSelect.vue'
 
 const variablesOpen = ref(false)
 const store = useEditorStore()
+const libraryService = useLibraryService()
 const activeTool = computed(() => store.state.activeTool)
 const { selectedNode: node, selectedCount: multiCount } = useSelectionState()
 const showBooleanOperations = computed(() => multiCount.value >= 2)
@@ -40,6 +44,19 @@ const isComponentType = computed(() => {
   return type ? COMPONENT_TYPES.has(type) : false
 })
 const selectedIcon = computed(() => (node.value ? nodeIcon(node.value) : undefined))
+function openSelectedInstanceReview() {
+  const instance = node.value
+  if (instance?.type !== 'INSTANCE' || !instance.componentId) return
+  const component = store.graph.getNode(instance.componentId)
+  const identity = component?.librarySource?.identity
+  if (!identity) return
+  openLibraryReview({
+    libraryId: identity.libraryId,
+    assetKey: identity.assetKey,
+    instanceIds: [instance.id],
+    initialInstanceId: instance.id
+  })
+}
 const supportsLayoutGuides = computed(() => {
   const type = node.value?.type
   return type === 'FRAME' || type === 'COMPONENT' || type === 'COMPONENT_SET' || type === 'INSTANCE'
@@ -99,6 +116,13 @@ const { panels } = useI18n()
       </template>
       <span role="heading" aria-level="2">{{ node.name }}</span>
       <template #actions>
+        <InstanceUpdateAction
+          v-if="node.type === 'INSTANCE'"
+          :node="node"
+          :editor="store"
+          :service="libraryService"
+          @review="openSelectedInstanceReview"
+        />
         <SelectionActionsControl />
       </template>
     </PanelHeader>
@@ -125,6 +149,14 @@ const { panels } = useI18n()
     </div>
 
     <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
+    <VariantAuthoringSection
+      v-if="
+        node.type === 'COMPONENT_SET' ||
+        (node.type === 'COMPONENT' &&
+          node.parentId &&
+          store.graph.getNode(node.parentId)?.type === 'COMPONENT_SET')
+      "
+    />
 
     <FramePresetSelect v-if="node.type === 'FRAME'" />
 

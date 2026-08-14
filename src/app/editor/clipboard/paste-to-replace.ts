@@ -3,14 +3,14 @@ import { toast } from '@/app/shell/ui'
 import { readTauriClipboardText } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
 
-function isDesignClipboardHtml(text: string) {
+function isDesignClipboardHTML(text: string) {
   return text.includes('<!--(openpencil)') || text.includes('(figma)')
 }
 
-async function readClipboardHtml() {
+async function readClipboardHTML() {
   if (isTauri()) {
     const text = await readTauriClipboardText()
-    return text && isDesignClipboardHtml(text) ? text : null
+    return text && isDesignClipboardHTML(text) ? text : null
   }
 
   if (typeof navigator.clipboard.read !== 'function') return null
@@ -24,7 +24,7 @@ async function readClipboardHtml() {
 
 export async function pasteClipboardToReplace(store: EditorStore) {
   try {
-    const html = await readClipboardHtml()
+    const html = await readClipboardHTML()
     if (!html) {
       toast.error('Clipboard does not contain design data')
       return

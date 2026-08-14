@@ -7,6 +7,7 @@
   "text": "文本",
   "new": "新建",
   "open": "打开…",
+  "openStorageWorkspace": "打开存储工作区…",
   "save": "保存",
   "saveAs": "另存为…",
   "exportSelection": "导出所选内容…",
@@ -53,5 +54,9 @@
   "arrangeAlignRight": "右对齐",
   "arrangeAlignTop": "顶部对齐",
   "arrangeAlignMiddle": "垂直居中",
-  "arrangeAlignBottom": "底部对齐"
+  "arrangeAlignBottom": "底部对齐",
+  "multiplayerCursors": "多人光标",
+  "renameSelection": "重命名所选内容…",
+  "rulers": "标尺",
+  "settings": "设置…"
 }

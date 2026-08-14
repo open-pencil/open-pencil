@@ -13,13 +13,16 @@ jobs:
       contents: read
       deployments: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-bun
 
-      - run: bun run --filter @open-pencil/docs build
+      - name: Build SDK packages for documentation
+        run: bun run build:packages
 
-      - uses: cloudflare/wrangler-action@v3
+      - run: bun run --filter @open-pencil/docs build:production
+
+      - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

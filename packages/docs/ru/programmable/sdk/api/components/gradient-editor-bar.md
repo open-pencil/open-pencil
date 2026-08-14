@@ -7,7 +7,7 @@ description: Headless-примитив перетаскиваемой полос
 
 `GradientEditorBar` — примитив перетаскиваемой полосы, используемый внутри редакторов градиента.
 
-## Props
+## Свойства
 
 <SdkPropsTable
   :rows="[
@@ -17,7 +17,7 @@ description: Headless-примитив перетаскиваемой полос
   ]"
 />
 
-## Events
+## События
 
 <SdkEventsTable
   :rows="[
@@ -26,7 +26,7 @@ description: Headless-примитив перетаскиваемой полос
   ]"
 />
 
-## Slots
+## Слоты
 
 <SdkSlotsTable
   :rows="[

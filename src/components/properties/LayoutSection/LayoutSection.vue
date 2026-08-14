@@ -23,7 +23,7 @@ const CONTAINER_TYPES = ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE']
         <template v-if="CONTAINER_TYPES.includes(ctx.node.type)" #actions>
           <IconButton
             :label="ctx.node.layoutMode === 'NONE' ? panels.addAutoLayout : panels.removeAutoLayout"
-            size="md"
+            size="xs"
             :active="ctx.node.layoutMode !== 'NONE'"
             class="data-[state=on]:bg-accent/15"
             @click="

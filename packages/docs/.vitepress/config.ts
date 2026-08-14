@@ -11,6 +11,23 @@ import { rootThemeConfig } from './root-theme'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo'
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url))
+const fastBuild = process.env.OPENPENCIL_DOCS_FAST_BUILD === '1'
+
+const llmsPlugin = llmstxt({
+  domain: BASE,
+  ignoreFiles: LOCALE_PREFIXES.map((locale) => `${locale}/**`),
+  generateLLMsTxt: !fastBuild,
+  generateLLMsFullTxt: !fastBuild,
+  generateLLMFriendlyDocsForEachPage: !fastBuild,
+  injectLLMHint: false,
+  customTemplateVariables: {
+    title: 'OpenPencil',
+    description:
+      'Open-source, AI-native design editor and toolkit. Opens Figma .fig files, provides a programmable scene graph, CLI, MCP server, and Vue SDK for custom editor shells.',
+    details:
+      'Use this file as the compact map for agents. For complete Markdown content, fetch https://openpencil.dev/llms-full.txt.'
+  }
+})
 
 export default defineConfig({
   title: 'OpenPencil',
@@ -22,7 +39,7 @@ export default defineConfig({
 
   sitemap: {
     hostname: BASE,
-    transformItems: withAlternateSitemapLinks,
+    transformItems: withAlternateSitemapLinks
   },
 
   head: siteHead,
@@ -32,6 +49,9 @@ export default defineConfig({
   markdown: {
     codeTransformers: [
       transformerTwoslash({
+        typesCache: createFileSystemTypesCache({
+          dir: fileURLToPath(new URL('./cache/twoslash', import.meta.url))
+        }),
         twoslashOptions: {
           compilerOptions: {
             baseUrl: repoRoot,
@@ -39,10 +59,7 @@ export default defineConfig({
               '@open-pencil/vue': ['packages/vue/src/index.ts'],
               '#vue/*': ['packages/vue/src/*']
             }
-          },
-          typesCache: createFileSystemTypesCache({
-            dir: fileURLToPath(new URL('./cache/twoslash', import.meta.url))
-          })
+          }
         }
       })
     ]
@@ -55,25 +72,10 @@ export default defineConfig({
         '#vue': fileURLToPath(new URL('../../vue/src', import.meta.url))
       }
     },
-    plugins: [
-      tailwindcss(),
-      llmstxt({
-        domain: BASE,
-        ignoreFiles: LOCALE_PREFIXES.map((locale) => `${locale}/**`),
-        generateLLMFriendlyDocsForEachPage: true,
-        injectLLMHint: false,
-        customTemplateVariables: {
-          title: 'OpenPencil',
-          description:
-            'Open-source, AI-native design editor and toolkit. Opens Figma .fig files, provides a programmable scene graph, CLI, MCP server, and Vue SDK for custom editor shells.',
-          details:
-            'Use this file as the compact map for agents. For complete Markdown content, fetch https://openpencil.dev/llms-full.txt.'
-        }
-      })
-    ]
+    plugins: [tailwindcss(), llmsPlugin]
   },
 
   locales: docsLocales,
 
-  themeConfig: rootThemeConfig(),
+  themeConfig: rootThemeConfig()
 })

@@ -29,7 +29,7 @@ describe('Tauri font helpers', () => {
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('load_system_font')
       expect(args).toEqual({ family: 'System UI', style: 'Bold Italic' })
-      return [1, 2, 3, 4]
+      return new Uint8Array([1, 2, 3, 4]).buffer
     })
 
     const { loadFont } = await import('@/app/editor/fonts')

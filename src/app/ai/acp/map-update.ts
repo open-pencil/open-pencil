@@ -1,7 +1,7 @@
 import type { SessionUpdate } from '@agentclientprotocol/sdk'
 import type { UIMessageChunk } from 'ai'
 
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 export interface MapResult {
   chunks: UIMessageChunk[]
@@ -88,12 +88,12 @@ export function mapUpdate(update: SessionUpdate, textId: string, textStarted: bo
   return { chunks, textStarted }
 }
 
-export function textFromContent(content: JsonObject[] | undefined): string | undefined {
+export function textFromContent(content: JSONObject[] | undefined): string | undefined {
   if (!content) return undefined
   const parts: string[] = []
   for (const c of content) {
     if (c.type !== 'content') continue
-    const inner = c.content as JsonObject | undefined
+    const inner = c.content as JSONObject | undefined
     if (inner?.type === 'text' && typeof inner.text === 'string') {
       parts.push(inner.text)
     }

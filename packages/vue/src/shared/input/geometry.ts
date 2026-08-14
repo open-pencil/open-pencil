@@ -6,8 +6,8 @@ import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/scene-graph/c
 import { degToRad } from '@open-pencil/scene-graph/geometry'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import resizeCursorSvg from '#vue/shared/assets/resize-cursor.svg?raw'
-import rotateCursorSvg from '#vue/shared/assets/rotate-cursor.svg?raw'
+import resizeCursorSVG from '#vue/shared/assets/resize-cursor.svg?raw'
+import rotateCursorSVG from '#vue/shared/assets/rotate-cursor.svg?raw'
 import type { CornerPosition, HandlePosition } from '#vue/shared/input/types'
 
 export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
@@ -293,9 +293,9 @@ export function buildRotationCursor(angleDeg: number): string {
   if (cached) return cached
   let svg: string
   if (key === 0) {
-    svg = rotateCursorSvg
+    svg = rotateCursorSVG
   } else {
-    svg = rotateCursorSvg
+    svg = rotateCursorSVG
       .replace(
         '<path',
         `<g transform='translate(1002 2110) rotate(${key}) translate(-1002 -2110)'><path`
@@ -314,7 +314,7 @@ export function cornerRotationCursor(corner: CornerPosition, nodeRotation = 0): 
 export function buildResizeCursor(angleDeg: number): string {
   const normalized = ((Math.round(angleDeg) % 360) + 360) % 360
 
-  const svg = resizeCursorSvg
+  const svg = resizeCursorSVG
     .replace(
       '<path',
       `<g transform='translate(512 512) rotate(${normalized}) translate(-512 -512)'><path`

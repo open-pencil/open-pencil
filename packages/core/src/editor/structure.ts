@@ -1,4 +1,4 @@
-import type { NodeType, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_FRAME_FILL } from '#core/constants'
 
@@ -13,6 +13,11 @@ import {
   outlineStrokeSelected as outlineStrokeSelectedImpl
 } from './structure/flatten'
 import { ungroupSelected as ungroupImpl } from './structure/group'
+import {
+  defaultNodeName,
+  previewRenamedNodes,
+  type RenameSelectionOptions
+} from './structure/rename'
 import { createStructureReorderActions } from './structure/reorder'
 import { createStructureStateActions } from './structure/state'
 import type { EditorContext } from './types'
@@ -20,9 +25,6 @@ import type { EditorContext } from './types'
 export function createStructureActions(ctx: EditorContext) {
   const reorderActions = createStructureReorderActions(ctx)
   const stateActions = createStructureStateActions(ctx)
-  function defaultNodeName(type: NodeType): string {
-    return type.charAt(0) + type.slice(1).toLowerCase()
-  }
 
   function isTopLevel(parentId: string | null): boolean {
     return !parentId || parentId === ctx.graph.rootId || parentId === ctx.state.currentPageId
@@ -97,6 +99,34 @@ export function createStructureActions(ctx: EditorContext) {
     ctx.setSelectedIds(new Set())
   }
 
+  function selectedNodes(): SceneNode[] {
+    return [...ctx.state.selectedIds]
+      .map((id) => ctx.graph.getNode(id))
+      .filter((node): node is SceneNode => node != null)
+  }
+
+  function previewRenameSelected(options: RenameSelectionOptions) {
+    return previewRenamedNodes(selectedNodes(), options)
+  }
+
+  function renameSelected(options: RenameSelectionOptions) {
+    const nodes = selectedNodes()
+    if (nodes.length === 0) return
+    const before = new Map(nodes.map((node) => [node.id, node.name]))
+    const preview = previewRenamedNodes(nodes, options)
+    if (preview.error) return
+    const applyNames = (names: ReadonlyMap<string, string>) => {
+      for (const [id, nextName] of names) ctx.graph.updateNode(id, { name: nextName })
+    }
+
+    applyNames(preview.names)
+    ctx.undo.push({
+      label: 'Rename selection',
+      forward: () => applyNames(preview.names),
+      inverse: () => applyNames(before)
+    })
+  }
+
   function renameNode(id: string, name: string) {
     const node = ctx.graph.getNode(id)
     if (!node) return
@@ -119,6 +149,8 @@ export function createStructureActions(ctx: EditorContext) {
     outlineStrokeSelected,
     ...stateActions,
     moveToPage,
+    previewRenameSelected,
+    renameSelected,
     renameNode
   }
 }

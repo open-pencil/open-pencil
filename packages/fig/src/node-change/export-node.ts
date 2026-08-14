@@ -14,6 +14,7 @@ import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../sou
 import { bytesToHex } from './bytes'
 import {
   applyExportSettingsPluginData,
+  applyLibrarySourcePluginData,
   applyTextPathBoxPluginData,
   mergePluginData,
   NODE_TYPE_PLUGIN_KEY,
@@ -886,6 +887,7 @@ export function sceneNodeToKiwiWithContext(
   if (variableModeBySetMap) nc.variableModeBySetMap = variableModeBySetMap
 
   applyExportSettingsPluginData(node)
+  applyLibrarySourcePluginData(node)
   applyTextPathBoxPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData

@@ -82,6 +82,12 @@ export { useAppearance } from '#vue/controls/appearance/use'
 export { useMask } from '#vue/controls/mask/use'
 export { useTypography } from '#vue/controls/typography/use'
 export type { UseTypographyOptions } from '#vue/controls/typography/use'
+export { useDocumentWorkspace } from '#vue/document/workspace/use'
+export type {
+  DocumentWorkspaceItem,
+  DocumentWorkspaceSource,
+  UseDocumentWorkspaceOptions
+} from '#vue/document/workspace/use'
 export { useExport } from '#vue/document/export/use'
 export type { ExportFormatId, ExportSetting } from '#vue/document/export/use'
 export { useFillControls } from '#vue/controls/fill/use'
@@ -213,11 +219,13 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
-  useComponentProperties
+  useComponentProperties,
+  useVariantAuthoring
 } from '#vue/controls/component-props'
 export type {
   ComponentPropertyControl,
-  ComponentPropertyOption
+  ComponentPropertyOption,
+  VariantDefinitionControl
 } from '#vue/controls/component-props'
 export type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 export { PageListRoot } from '#vue/primitives/PageList'

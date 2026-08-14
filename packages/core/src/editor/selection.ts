@@ -27,6 +27,13 @@ export function createSelectionActions(ctx: EditorContext) {
     ctx.setSelectedIds(new Set(children.map((n) => n.id)))
   }
 
+  function selectInverse() {
+    const children = ctx.graph.getChildren(ctx.state.currentPageId)
+    ctx.setSelectedIds(
+      new Set(children.filter((node) => !ctx.state.selectedIds.has(node.id)).map((node) => node.id))
+    )
+  }
+
   const containerActions = createSelectionContainerActions(ctx)
   const hitTestActions = createSelectionHitTestActions(ctx, select, clearSelection)
   const overlayActions = createSelectionOverlayActions(ctx)
@@ -36,6 +43,7 @@ export function createSelectionActions(ctx: EditorContext) {
     select,
     clearSelection,
     selectAll,
+    selectInverse,
     ...overlayActions,
     ...containerActions,
     ...readActions,

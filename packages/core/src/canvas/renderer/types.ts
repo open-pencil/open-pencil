@@ -11,8 +11,11 @@ export interface RulerTheme {
   label: Color
 }
 
+export type MeasurementMode = 'off' | 'shallow' | 'deep'
+
 export interface RenderOverlays {
   hoveredNodeId?: string | null
+  measurementMode?: MeasurementMode
   enteredContainerId?: string | null
   editingTextId?: string | null
   textEditor?: TextEditor | null

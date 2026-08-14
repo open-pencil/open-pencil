@@ -54,8 +54,10 @@ export function connectAutomation(getStore: () => EditorStore, authToken: string
         if (msg.type !== 'request' || !msg.id) return
         try {
           const result = await handleRequest(msg.id, msg.command, msg.args)
+          if (socket.readyState !== WebSocket.OPEN) return
           socket.send(JSON.stringify({ type: 'response', id: msg.id, ...(result as object) }))
         } catch (e) {
+          if (socket.readyState !== WebSocket.OPEN) return
           socket.send(
             JSON.stringify({
               type: 'response',

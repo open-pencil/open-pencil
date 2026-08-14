@@ -29,6 +29,7 @@ type SyncFn = (
 ) => void
 
 type DirectSyncKey = 'text' | 'visible' | 'opacity' | 'locked' | 'layoutGrow' | 'textAutoResize'
+type ScalarBindingKey = 'opacity'
 type CopiedSyncKey = 'fills' | 'strokes' | 'effects' | 'styleRuns'
 
 function assignDirectUpdate(
@@ -128,6 +129,20 @@ const COPIED_SYNCERS: SyncFn[] = [
   copiedSync('styleRuns', 'styleRuns')
 ]
 
+function syncScalarBinding(
+  key: ScalarBindingKey,
+  source: SceneNode,
+  target: SceneNode,
+  updates: Partial<SceneNode>
+): void {
+  const sourceVariableId = source.boundVariables[key]
+  const targetVariableId = target.boundVariables[key]
+  if (targetVariableId === sourceVariableId) return
+  const bindings = { ...(updates.boundVariables ?? target.boundVariables) }
+  if (sourceVariableId) bindings[key] = sourceVariableId
+  updates.boundVariables = sourceVariableId ? bindings : omit(bindings, [key])
+}
+
 function syncFields(
   source: SceneNode,
   target: SceneNode,
@@ -136,6 +151,7 @@ function syncFields(
 ): void {
   for (const sync of DIRECT_SYNCERS) sync(source, target, updates, protections)
   for (const sync of COPIED_SYNCERS) sync(source, target, updates, protections)
+  syncScalarBinding('opacity', source, target, updates)
 }
 
 export function syncNodeProps(

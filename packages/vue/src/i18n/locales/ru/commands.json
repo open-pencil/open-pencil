@@ -34,5 +34,10 @@
   "outlineText": "Преобразовать текст в контуры",
   "outlineStroke": "Преобразовать обводку в контур",
   "useAsMask": "Использовать как маску",
-  "removeMask": "Убрать маску"
+  "removeMask": "Убрать маску",
+  "bringForward": "Переместить вперёд",
+  "distributeHorizontal": "Распределить интервалы по горизонтали",
+  "distributeVertical": "Распределить интервалы по вертикали",
+  "selectInverse": "Инвертировать выделение",
+  "sendBackward": "Переместить назад"
 }

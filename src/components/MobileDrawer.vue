@@ -4,6 +4,7 @@ import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { motion } from 'motion-v'
 import type { PanInfo } from 'motion-v'
 import { computed, ref } from 'vue'
+import { useI18n } from '@open-pencil/vue'
 
 import ChatPanel from './ChatPanel.vue'
 import CodePanel from './CodePanel.vue'
@@ -24,6 +25,7 @@ type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'
 
 const store = useEditorStore()
+const { dialogs } = useI18n()
 
 const headerRef = ref<HTMLElement | null>(null)
 
@@ -119,7 +121,11 @@ const drawerTransition = {
     @panEnd="onPanEnd"
   >
     <TabsRoot :model-value="getDrawerTab()" class="flex min-h-0 flex-1 flex-col">
-      <nav ref="headerRef" aria-label="Mobile panel navigation" class="flex shrink-0 flex-col">
+      <nav
+        ref="headerRef"
+        :aria-label="dialogs.mobilePanelNavigation"
+        class="flex shrink-0 flex-col"
+      >
         <div class="flex w-full justify-center pt-2">
           <div class="h-1 w-8 rounded-full bg-muted/40" />
         </div>
@@ -184,7 +190,7 @@ const drawerTransition = {
 
         <TabsContent value="code" class="mt-0 h-full data-[state=inactive]:hidden">
           <div data-test-id="mobile-drawer-code" class="flex h-full flex-col">
-            <CodePanel />
+            <CodePanel :active="isOpen && getDrawerTab() === 'code'" />
           </div>
         </TabsContent>
 

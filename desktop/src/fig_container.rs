@@ -15,7 +15,7 @@ pub fn build_fig_file(
     meta_json: String,
     images: Option<Vec<ImageEntry>>,
     fig_kiwi_version: Option<u32>,
-) -> Result<Vec<u8>, String> {
+) -> Result<tauri::ipc::Response, String> {
     let mut encoder = zstd::Encoder::new(Vec::new(), 3).map_err(|e| e.to_string())?;
     encoder
         .include_contentsize(true)
@@ -63,5 +63,5 @@ pub fn build_fig_file(
     }
 
     let result = zip.finish().map_err(|e| e.to_string())?;
-    Ok(result.into_inner())
+    Ok(tauri::ipc::Response::new(result.into_inner()))
 }

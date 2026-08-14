@@ -25,7 +25,7 @@ Drücken Sie <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>), um den
 | **OpenAI-kompatibel** | Jeder Endpunkt mit OpenAI-API-Format | Eigene Basis-URL + Schlüssel. Unterstützt Completions- und Responses-API-Umschaltung. |
 | **Anthropic-kompatibel** | Jeder Endpunkt mit Anthropic-API-Format | Eigene Basis-URL + Schlüssel |
 
-Kein Backend, kein Abonnement — Ihr Schlüssel kommuniziert direkt mit dem Anbieter.
+Kein Backend, kein Abonnement — Ihr Schlüssel kommuniziert direkt mit dem Anbieter. Browser-Anfragen unterliegen den CORS-Richtlinien des Anbieters, und Modelldeployments unterscheiden sich bei der Zuverlässigkeit gestreamter Tool-Aufrufe. Messwerte und reproduzierbare Tests finden Sie in der englischen Referenz zur [BYOK-Anbieter- und Modellkompatibilität](/programmable/byok-provider-compatibility).
 
 ## Funktionen
 

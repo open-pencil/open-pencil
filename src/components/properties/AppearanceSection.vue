@@ -135,7 +135,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
         <div class="flex h-6 items-center justify-end">
           <IconButton
             :label="panels.independentCornerRadii"
-            size="md"
+            size="xs"
             :active="independentCorners === true"
             @click="actions.toggleIndependentCorners"
           >
@@ -189,7 +189,7 @@ function blendModeOptions(value: BlendMode | typeof MIXED) {
         <template #actions>
           <IconButton
             :label="panels.independentCornerRadii"
-            size="md"
+            size="xs"
             active
             @click="actions.toggleIndependentCorners"
           >

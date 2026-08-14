@@ -1,5 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/core'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { verifyComponentPropDefs, verifyDerivedTextData } from './raw-verifiers/helpers'
 
@@ -202,12 +202,12 @@ interface VariableConsumptionMapShape {
 }
 
 function verifyVarAlias(a: unknown, b: unknown): boolean {
-  const aVal = a as JsonObject | undefined
-  const bVal = b as JsonObject | undefined
+  const aVal = a as JSONObject | undefined
+  const bVal = b as JSONObject | undefined
   if (!aVal && !bVal) return true
   if (!aVal || !bVal) return false
-  const aAlias = (aVal.value as JsonObject)?.alias as JsonObject | undefined
-  const bAlias = (bVal.value as JsonObject)?.alias as JsonObject | undefined
+  const aAlias = (aVal.value as JSONObject)?.alias as JSONObject | undefined
+  const bAlias = (bVal.value as JSONObject)?.alias as JSONObject | undefined
   const aGuid = aAlias?.guid
   const bGuid = bAlias?.guid
   const aRef = aAlias?.assetRef
@@ -233,7 +233,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
     'letterSpacing',
     (ctx) => {
       if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
-      const g1raw = ctx.b as JsonObject | undefined
+      const g1raw = ctx.b as JSONObject | undefined
       const node = ctx.aNodes.get(ctx.path)
       if (!node || node.fontSize == null) return true
       const expected = node.letterSpacing
@@ -252,7 +252,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
     'lineHeight',
     (ctx) => {
       if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
-      const g1raw = ctx.b as JsonObject | undefined
+      const g1raw = ctx.b as JSONObject | undefined
       const node = ctx.aNodes.get(ctx.path)
       if (!node || node.lineHeight == null) return true
       const expected = node.lineHeight

@@ -5,6 +5,7 @@ import { onScopeDispose } from 'vue'
 import { editorCommandMetadata } from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
+import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
@@ -115,7 +116,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     {
       id: 'export-selection-png',
       keys: appMenuTinykeysShortcut('export-selection') ?? '$mod+Shift+KeyE',
-      run: ({ actions }) => actions.exportSelectionPng()
+      run: ({ actions }) => actions.exportSelectionPNG()
     },
     {
       id: 'save-as',
@@ -135,13 +136,19 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       run: ({ closeActiveTab }) => closeActiveTab()
     },
     { id: 'new-tab', keys: ['$mod+KeyN', '$mod+KeyT'], run: ({ createTab }) => createTab() },
+    {
+      id: 'rename-selection',
+      keys: appMenuTinykeysShortcut('selection.rename') ?? '$mod+KeyR',
+      run: ({ store }) => requestRenameSelection(store)
+    },
     ...commandShortcuts(
       'edit.undo',
       'view.zoom100',
       'view.zoomFit',
       'view.zoomSelection',
       'selection.duplicate',
-      'selection.selectAll'
+      'selection.selectAll',
+      'selection.selectInverse'
     ),
     {
       id: 'save',
@@ -159,7 +166,12 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
       keys: 'Shift+KeyA',
       run: ({ actions }) => actions.toggleAutoLayout()
     },
-    ...commandShortcuts('selection.bringToFront', 'selection.sendToBack'),
+    ...commandShortcuts(
+      'selection.bringForward',
+      'selection.bringToFront',
+      'selection.sendBackward',
+      'selection.sendToBack'
+    ),
     { id: 'delete-backspace', keys: 'Backspace', run: ({ actions }) => actions.smartDelete(false) },
     { id: 'delete', keys: 'Delete', run: ({ actions }) => actions.smartDelete(false) },
     { id: 'delete-alt', keys: 'Alt+Delete', run: ({ actions }) => actions.smartDelete(true) },

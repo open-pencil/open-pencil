@@ -83,6 +83,67 @@ describe('fig-import: variable asset refs', () => {
     })
   })
 
+  test('imports native scalar variable bindings', () => {
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      {
+        ...node('VARIABLE_SET', 20, 1),
+        variableSetModes: [{ id: { sessionID: 10, localID: 1 }, name: 'Default' }]
+      } as NodeChange,
+      {
+        ...node('VARIABLE', 21, 1),
+        variableSetID: { guid: { sessionID: 1, localID: 20 } },
+        variableResolvedType: 'FLOAT',
+        variableDataValues: {
+          entries: [
+            {
+              modeID: { sessionID: 10, localID: 1 },
+              variableData: {
+                dataType: 'FLOAT',
+                resolvedDataType: 'FLOAT',
+                value: { floatValue: 50 }
+              }
+            }
+          ]
+        }
+      } as NodeChange,
+      node('FRAME', 30, 1, {
+        opacity: 0.2,
+        variableConsumptionMap: {
+          entries: [
+            {
+              variableField: 'OPACITY',
+              variableData: {
+                dataType: 'ALIAS',
+                resolvedDataType: 'FLOAT',
+                value: { alias: { guid: { sessionID: 1, localID: 21 } } }
+              }
+            },
+            {
+              variableField: 'WIDTH',
+              variableData: {
+                dataType: 'ALIAS',
+                resolvedDataType: 'FLOAT',
+                value: { alias: { guid: { sessionID: 1, localID: 21 } } }
+              }
+            }
+          ]
+        }
+      })
+    ])
+
+    const frame = expectDefined(
+      [...graph.getAllNodes()].find((candidate) => candidate.name === 'FRAME_30'),
+      'bound frame'
+    )
+    expect(frame.opacity).toBe(0.5)
+    expect(frame.width).toBe(50)
+    expect(frame.boundVariables.opacity).toBe('1:21')
+    expect(frame.boundVariables.width).toBe('1:21')
+    expect(graph.resolveNumberVariableForNode(frame.id, '1:21')).toBe(50)
+  })
+
   test('resolves color variables and aliases by assetRef', () => {
     const graph = importNodeChanges([
       doc(),

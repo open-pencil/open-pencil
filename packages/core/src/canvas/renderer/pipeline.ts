@@ -55,6 +55,7 @@ export function renderFromEditorState(
     state.selectedIds,
     {
       hoveredNodeId: state.hoveredNodeId,
+      measurementMode: state.measurementMode,
       enteredContainerId: state.enteredContainerId,
       editingTextId: state.editingTextId,
       textEditor: textEditor as RenderOverlays['textEditor'],
@@ -128,6 +129,36 @@ function measure<T>(fn: () => T): { value: T; duration: number } {
   const start = now()
   const value = fn()
   return { value, duration: now() - start }
+}
+
+function measurementVisible(overlays: RenderOverlays): boolean {
+  return (
+    overlays.measurementMode !== undefined &&
+    overlays.measurementMode !== 'off' &&
+    !overlays.editingTextId &&
+    !overlays.nodeEditState &&
+    !overlays.penState
+  )
+}
+
+function drawInteractiveOverlays(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  selectedIds: Set<string>,
+  overlays: RenderOverlays
+) {
+  const measuring = measurementVisible(overlays)
+  const hoveredNodeId =
+    measuring || overlays.hoveredNodeId === overlays.nodeEditState?.nodeId
+      ? null
+      : overlays.hoveredNodeId
+  r.drawHoverHighlight(canvas, graph, hoveredNodeId)
+  r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId)
+  r.profiler.beginPhase('render:selection')
+  r.drawSelection(canvas, graph, selectedIds, overlays)
+  if (measuring) r.drawMeasurements(canvas, graph, selectedIds, overlays.hoveredNodeId)
+  r.profiler.endPhase('render:selection')
 }
 
 export function render(
@@ -221,21 +252,15 @@ export function render(
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
 
-    r.drawHoverHighlight(
-      canvas,
-      graph,
-      overlays.hoveredNodeId === overlays.nodeEditState?.nodeId ? null : overlays.hoveredNodeId
-    )
-    r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId)
-    p.beginPhase('render:selection')
-    r.drawSelection(canvas, graph, selectedIds, overlays)
-    p.endPhase('render:selection')
+    drawInteractiveOverlays(r, canvas, graph, selectedIds, overlays)
     r.drawFlashes(canvas, graph)
     drawPageGuides(r, canvas, graph)
     r.drawSnapGuides(canvas, overlays.snapGuides)
     r.drawMarquee(canvas, overlays.marquee)
     r.drawLayoutInsertIndicator(canvas, overlays.layoutInsertIndicator)
-    r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
+    if (!measurementVisible(overlays)) {
+      r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
+    }
     r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
     r.drawPenOverlay(canvas, overlays.penState)
     r.drawRemoteCursors(canvas, graph, overlays.remoteCursors)

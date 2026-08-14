@@ -5,6 +5,7 @@ import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import { createResizeSnapshot, type ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
+import { assertNodeEditable } from './capabilities'
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
@@ -93,6 +94,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitResize(nodeId: string, original: ResizeOriginal) {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     // Snapshot full geometry when the inverse payload carries any of it
@@ -110,11 +112,13 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
+        assertNodeEditable(ctx.graph, nodeId)
         // Geometric replay — keep the raw Figma payload (see commitResizePreview).
         ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, final))
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
+        assertNodeEditable(ctx.graph, nodeId)
         ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, original))
         ctx.runLayoutForNode(nodeId)
       }
@@ -126,6 +130,8 @@ export function createUndoActions(ctx: EditorContext) {
     origRect: Rect,
     origChildren: Map<string, ResizeSnapshot>
   ) {
+    assertNodeEditable(ctx.graph, nodeId)
+    for (const childId of origChildren.keys()) assertNodeEditable(ctx.graph, childId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const finalRect = { x: node.x, y: node.y, width: node.width, height: node.height }
@@ -137,6 +143,8 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
+        assertNodeEditable(ctx.graph, nodeId)
+        for (const childId of finalChildren.keys()) assertNodeEditable(ctx.graph, childId)
         // Geometric replay — keep the raw Figma payload (see commitResizePreview).
         ctx.graph.preserveSourceMetadataDuring(() => {
           ctx.graph.updateNode(nodeId, finalRect)
@@ -145,6 +153,8 @@ export function createUndoActions(ctx: EditorContext) {
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
+        assertNodeEditable(ctx.graph, nodeId)
+        for (const childId of origChildren.keys()) assertNodeEditable(ctx.graph, childId)
         ctx.graph.preserveSourceMetadataDuring(() => {
           ctx.graph.updateNode(nodeId, origRect)
           for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)

@@ -7,6 +7,7 @@ import { IS_TAURI } from '@open-pencil/core/constants'
 import { useAIChat } from '@/app/ai/chat/use'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen, settingsDialogSection } from '@/app/settings/dialog'
+import MCPConnectionsSection from '@/components/settings/mcp/MCPConnectionsSection.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import StockPhotoKeysSection from '@/components/settings/provider/StockPhotoKeysSection.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
@@ -70,6 +71,16 @@ const navigationClass =
         <button
           type="button"
           :class="navigationClass"
+          :data-state="settingsDialogSection === 'mcp' ? 'active' : 'inactive'"
+          data-test-id="settings-section-mcp"
+          @click="settingsDialogSection = 'mcp'"
+        >
+          <icon-lucide-plug class="size-3.5" />
+          {{ dialogs.mcpConnections }}
+        </button>
+        <button
+          type="button"
+          :class="navigationClass"
           :data-state="settingsDialogSection === 'media' ? 'active' : 'inactive'"
           data-test-id="settings-section-media"
           @click="settingsDialogSection = 'media'"
@@ -96,6 +107,14 @@ const navigationClass =
           data-test-id="settings-ai-panel"
         >
           <ModelsPanel />
+        </section>
+
+        <section
+          v-else-if="settingsDialogSection === 'mcp'"
+          class="flex flex-col"
+          data-test-id="settings-mcp-panel"
+        >
+          <MCPConnectionsSection />
         </section>
 
         <section

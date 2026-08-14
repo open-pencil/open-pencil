@@ -4,7 +4,7 @@ import type { ClientRequest, RequestOptions } from 'node:http'
 import { readDiscoveryFile } from '#mcp/transport/discovery'
 import { getSocketPath, platformHasUnixSockets } from '#mcp/transport/paths'
 
-type StdioRpcBridgeOptions = {
+type StdioRPCBridgeOptions = {
   /** Override socket path (if known). Auto-discovered if omitted. */
   socketPath?: string | null
   /** Auth token for /rpc Bearer header. */
@@ -31,13 +31,13 @@ type TransportMode = 'socket' | 'tcp'
  * This replaces the previous WebSocket-based bridge with a simpler
  * HTTP approach that natively supports Unix domain sockets.
  */
-export function createStdioRpcBridge({
+export function createStdioRPCBridge({
   socketPath: socketPathOverride,
   authToken,
   reconnectDelayMs = 2000,
   onReady,
   onReconnect
-}: StdioRpcBridgeOptions) {
+}: StdioRPCBridgeOptions) {
   let resolvedSocketPath: string | null = socketPathOverride ?? null
   let resolvedHttpPort: number | null = null
   let transportMode: TransportMode | null = null
@@ -139,9 +139,9 @@ export function createStdioRpcBridge({
     body?: Record<string, unknown>
   ): Promise<{ status: number; data: unknown; req: ClientRequest }> {
     return new Promise((resolve, reject) => {
-      const bodyJson = body ? JSON.stringify(body) : undefined
+      const bodyJSON = body ? JSON.stringify(body) : undefined
       const headers: Record<string, string> = {
-        ...(bodyJson ? { 'Content-Type': 'application/json' } : {}),
+        ...(bodyJSON ? { 'Content-Type': 'application/json' } : {}),
         ...(resolvedAuthToken ? { Authorization: `Bearer ${resolvedAuthToken}` } : {})
       }
 
@@ -178,12 +178,12 @@ export function createStdioRpcBridge({
       // unresponsive connections. Set 5s shorter than the outer RPC_TIMEOUT
       // so this fires deterministically first, producing a clear "server
       // unreachable" signal rather than racing with the outer timer.
-      // If the outer sendRpc timer already rejected, the error handler
+      // If the outer sendRPC timer already rejected, the error handler
       // is a no-op (settled guard in attempt()).
       req.setTimeout(RPC_TIMEOUT - 5_000, () => {
         req.destroy(new Error('Socket timeout'))
       })
-      if (bodyJson) req.write(bodyJson)
+      if (bodyJSON) req.write(bodyJSON)
       req.end()
     })
   }
@@ -305,7 +305,7 @@ export function createStdioRpcBridge({
    * caller. This makes server restarts with a new auto-generated token
    * seamless to the AI agent.
    */
-  function sendRpc(body: Record<string, unknown>): Promise<unknown> {
+  function sendRPC(body: Record<string, unknown>): Promise<unknown> {
     // If not ready, await the in-flight connect() promise first — the
     // bridge may still be resolving transport. Only reject after that
     // completes and we're still not ready.
@@ -457,5 +457,5 @@ export function createStdioRpcBridge({
   // Start connection
   connectPromise = connect()
 
-  return { sendRpc, close }
+  return { sendRPC, close }
 }

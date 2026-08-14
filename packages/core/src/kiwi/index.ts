@@ -41,7 +41,7 @@ export {
   KIWI,
   SESSION_ID,
   ZSTD_MAGIC,
-  buildMultiplayerUrl,
+  buildMultiplayerURL,
   isZstdCompressed,
   hasFigWireHeader,
   skipFigWireHeader,

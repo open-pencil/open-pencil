@@ -64,10 +64,10 @@ function pickPexelsSize(src: PexelsPhoto['src'], targetDim: number): string {
   return src.original
 }
 
-let pexelsApiKey: string | null = null
+let pexelsAPIKey: string | null = null
 
-export function setPexelsApiKey(key: string | null): void {
-  pexelsApiKey = key
+export function setPexelsAPIKey(key: string | null): void {
+  pexelsAPIKey = key
   if (key) {
     registerStockPhotoProvider(pexelsProvider)
     setActiveStockPhotoProvider('pexels')
@@ -77,11 +77,11 @@ export function setPexelsApiKey(key: string | null): void {
 const pexelsProvider: StockPhotoProvider = {
   name: 'pexels',
   async search(query, { perPage, orientation, targetDim }) {
-    if (!pexelsApiKey) throw new Error('Pexels API key not configured')
+    if (!pexelsAPIKey) throw new Error('Pexels API key not configured')
     const response = await ofetch.raw<{ photos: PexelsPhoto[] }>(
       'https://api.pexels.com/v1/search',
       {
-        headers: { Authorization: pexelsApiKey },
+        headers: { Authorization: pexelsAPIKey },
         ignoreResponseError: true,
         query: { query, per_page: perPage, orientation },
         retry: 0

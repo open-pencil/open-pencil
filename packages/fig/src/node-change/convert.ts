@@ -15,6 +15,7 @@ import { expandPathTextLayoutBox } from './path-text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractLibrarySource,
   extractTextPathBox,
   extractPluginData,
   extractPluginRelaunchData,
@@ -67,54 +68,7 @@ import type {
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 export { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-
-export const VARIABLE_BINDING_FIELDS: Record<string, string> = {
-  // Corner radius
-  cornerRadius: 'CORNER_RADIUS',
-  topLeftRadius: 'RECTANGLE_TOP_LEFT_CORNER_RADIUS',
-  topRightRadius: 'RECTANGLE_TOP_RIGHT_CORNER_RADIUS',
-  bottomLeftRadius: 'RECTANGLE_BOTTOM_LEFT_CORNER_RADIUS',
-  bottomRightRadius: 'RECTANGLE_BOTTOM_RIGHT_CORNER_RADIUS',
-  // Stroke
-  strokeWeight: 'STROKE_WEIGHT',
-  borderTopWeight: 'BORDER_TOP_WEIGHT',
-  borderBottomWeight: 'BORDER_BOTTOM_WEIGHT',
-  borderLeftWeight: 'BORDER_LEFT_WEIGHT',
-  borderRightWeight: 'BORDER_RIGHT_WEIGHT',
-  // Auto-layout spacing & padding
-  itemSpacing: 'STACK_SPACING',
-  paddingLeft: 'STACK_PADDING_LEFT',
-  paddingTop: 'STACK_PADDING_TOP',
-  paddingRight: 'STACK_PADDING_RIGHT',
-  paddingBottom: 'STACK_PADDING_BOTTOM',
-  counterAxisSpacing: 'STACK_COUNTER_SPACING',
-  // Grid gaps
-  gridRowGap: 'GRID_ROW_GAP',
-  gridColumnGap: 'GRID_COLUMN_GAP',
-  // Visibility & opacity
-  visible: 'VISIBLE',
-  opacity: 'OPACITY',
-  // Dimensions
-  width: 'WIDTH',
-  height: 'HEIGHT',
-  minWidth: 'MIN_WIDTH',
-  maxWidth: 'MAX_WIDTH',
-  minHeight: 'MIN_HEIGHT',
-  maxHeight: 'MAX_HEIGHT',
-  // Position & rotation
-  x: 'X_POSITION',
-  y: 'Y_POSITION',
-  rotation: 'ROTATION',
-  // Text
-  fontSize: 'FONT_SIZE',
-  letterSpacing: 'LETTER_SPACING',
-  lineHeight: 'LINE_HEIGHT',
-  fontFamily: 'FONT_FAMILY'
-}
-
-export const VARIABLE_BINDING_FIELDS_INVERSE: Record<string, string> = Object.fromEntries(
-  Object.entries(VARIABLE_BINDING_FIELDS).map(([k, v]) => [v, k])
-)
+export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable-bindings'
 
 interface FigVariableModeMap {
   entries?: Array<{
@@ -276,7 +230,7 @@ export function mapArcData(data?: Partial<ArcData>): ArcData | null {
   }
 }
 
-function convertTransformProps(
+export function convertFigmaTransformProps(
   nc: NodeChange
 ): Pick<SceneNode, 'x' | 'y' | 'width' | 'height' | 'rotation' | 'flipX' | 'flipY'> {
   const width = nc.size?.x ?? 100
@@ -640,7 +594,7 @@ export function nodeChangeToProps(
     nodeType,
     name: nc.name ?? nodeType,
     source: extractSourceMetadata(nc, blobs),
-    ...convertTransformProps(nc),
+    ...convertFigmaTransformProps(nc),
     opacity: nc.opacity ?? 1,
     visible: nc.visible ?? true,
     locked: nc.locked ?? false,
@@ -682,6 +636,7 @@ export function nodeChangeToProps(
     variableModes: extractVariableModes(nc),
     exportSettings: extractExportSettings(nc),
     pluginData: extractPluginData(nc),
+    librarySource: extractLibrarySource(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),

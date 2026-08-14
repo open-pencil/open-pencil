@@ -1,28 +1,28 @@
 import { computed, ref } from 'vue'
 
-import type { SyncUiState } from '@/app/storage/sync/types'
+import type { SyncUIState } from '@/app/storage/sync/types'
 
 /** Global subtle sync status for UI chips. */
-export const syncUiState = ref<SyncUiState>('idle')
-export const syncUiDetail = ref<string | null>(null)
+export const syncUIState = ref<SyncUIState>('idle')
+export const syncUIDetail = ref<string | null>(null)
 export const pendingSyncCount = ref(0)
 
 export const syncStatusLabel = computed(() => {
-  switch (syncUiState.value) {
+  switch (syncUIState.value) {
     case 'syncing':
-      return syncUiDetail.value ?? 'Syncing…'
+      return syncUIDetail.value ?? 'Syncing…'
     case 'offline':
       return 'Offline · will sync'
     case 'error':
-      return syncUiDetail.value ?? 'Sync failed'
+      return syncUIDetail.value ?? 'Sync failed'
     default:
       return null
   }
 })
 
-export function setSyncUi(state: SyncUiState, detail: string | null = null) {
-  syncUiState.value = state
-  syncUiDetail.value = detail
+export function setSyncUI(state: SyncUIState, detail: string | null = null) {
+  syncUIState.value = state
+  syncUIDetail.value = detail
 }
 
 export function setPendingSyncCount(count: number) {

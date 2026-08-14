@@ -87,6 +87,7 @@ function parseProfile(value: unknown, connectionIds: Set<string>): AIModelProfil
     modelID: stringValue(value.modelID),
     customModelID: stringValue(value.customModelID),
     maxOutputTokens: normalizedMaxOutputTokens(value.maxOutputTokens),
+    reasoningEffort: stringValue(value.reasoningEffort).trim() || undefined,
     capabilities: [...new Set(capabilities)]
   }
 }
@@ -203,6 +204,14 @@ export function modelConnection(connectionId: string): AIModelConnection | null 
   )
 }
 
+export function isDesignModelProfile(profile: AIModelProfile): boolean {
+  return profile.capabilities.includes('tools')
+}
+
+export function designModelProfiles(): AIModelProfile[] {
+  return aiModelSettings.value.models.filter(isDesignModelProfile)
+}
+
 export function isACPModelProfile(profile: AIModelProfile | null): boolean {
   return Boolean(profile && modelConnection(profile.connectionId)?.providerID.startsWith('acp:'))
 }
@@ -213,7 +222,7 @@ export function resolveAIModelRole(role: AIModelRole): ResolvedAIModelRole | nul
   const profileId = assignment === 'design' ? aiModelSettings.value.assignments.design : assignment
   const profile = modelProfile(profileId)
   if (!profile) return null
-  if (role === 'design' && !profile.capabilities.includes('tools')) return null
+  if (role === 'design' && !isDesignModelProfile(profile)) return null
   if (role === 'vision' && !profile.capabilities.includes('vision')) return null
   const connection = modelConnection(profile.connectionId)
   return connection ? { requestedRole: role, profile, connection } : null
@@ -269,6 +278,7 @@ function draftForProfile(
     customBaseURL: connection.customBaseURL,
     customAPIType: connection.customAPIType,
     maxOutputTokens: profile.maxOutputTokens,
+    reasoningEffort: profile.reasoningEffort ?? '',
     capabilities: [...profile.capabilities]
   }
 }
@@ -286,6 +296,7 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     customBaseURL: connection?.customBaseURL ?? '',
     customAPIType: connection?.customAPIType ?? 'completions',
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
+    reasoningEffort: '',
     capabilities: ['tools']
   }
 }
@@ -319,6 +330,7 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     modelID: draft.modelID.trim() || provider?.defaultModel || '',
     customModelID: draft.customModelID.trim(),
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
+    reasoningEffort: draft.reasoningEffort.trim() || undefined,
     capabilities: [...new Set(draft.capabilities)]
   }
   const index = aiModelSettings.value.models.findIndex((model) => model.id === profile.id)
@@ -340,14 +352,17 @@ export function modelConnectionUsageCount(connectionId: string): number {
 
 export function removeModelProfile(profileId: string): void {
   if (aiModelSettings.value.models.length <= 1) return
+  const removesDesignAssignment = aiModelSettings.value.assignments.design === profileId
+  const fallback = aiModelSettings.value.models.find(
+    (profile) => profile.id !== profileId && isDesignModelProfile(profile)
+  )
+  if (removesDesignAssignment && !fallback) return
+
   const removed = modelProfile(profileId)
   aiModelSettings.value.models = aiModelSettings.value.models.filter(
     (profile) => profile.id !== profileId
   )
-  const fallback =
-    aiModelSettings.value.models.find((profile) => profile.capabilities.includes('tools')) ??
-    aiModelSettings.value.models[0]
-  if (aiModelSettings.value.assignments.design === profileId) {
+  if (removesDesignAssignment && fallback) {
     aiModelSettings.value.assignments.design = fallback.id
     if (
       aiModelSettings.value.assignments.vision === 'design' &&
@@ -377,7 +392,7 @@ export function setModelRoleAssignment(role: AIModelRole, assignment: AIModelRol
   if (role === 'design') {
     if (assignment === null || assignment === 'design') return
     const profile = modelProfile(assignment)
-    if (!profile?.capabilities.includes('tools')) return
+    if (!profile || !isDesignModelProfile(profile)) return
     aiModelSettings.value.assignments.design = assignment
     return
   }

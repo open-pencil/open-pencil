@@ -1,9 +1,27 @@
 import type { SceneGraph, SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { copyGeometryPaths, scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
+import { constrainedChildRect } from '@open-pencil/scene-graph/resize'
 
+import { readEffectiveFigmaRawField } from '../source-metadata'
+import { isFieldProtected } from './patches'
 import { buildClonesMap } from './sync'
 import type { OverrideContext } from './types'
 import { overrideCandidates } from './utils'
+
+const MAX_CLONE_CHAIN_DEPTH = 10
+
+interface ScaleDescendantAxes {
+  horizontal: boolean
+  vertical: boolean
+}
+
+interface InstanceScale {
+  basis: SceneNode
+  scaleThroughFixedWrappers: boolean
+  sx: number
+  sy: number
+  useCurrentChildAsSource: boolean
+}
 
 /**
  * Apply SCALE constraint resizing to children of instances whose size
@@ -18,14 +36,13 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
     if (node.type !== 'INSTANCE' || !node.componentId) continue
     const comp = graph.getNode(node.componentId)
     if (!comp || comp.width <= 0 || comp.height <= 0) continue
-    const basis = resolveScaleBasis(graph, node, comp)
-    if (!basis) continue
+    const scale = resolveInstanceScale(graph, node, comp)
+    if (!scale) continue
 
-    // Skip if instance uses auto-layout — layout engine handles child sizing
+    positionPinnedAbsoluteChildren(ctx, node, scale.basis)
     if (node.layoutMode !== 'NONE') continue
 
-    const sx = node.width / basis.width
-    const sy = node.height / basis.height
+    const { sx, sy } = scale
     if (Math.abs(sx - 1) < 0.001 && Math.abs(sy - 1) < 0.001) continue
 
     const figmaId = ctx.nodeIdToGuid.get(node.id)
@@ -38,24 +55,163 @@ export function applyConstraintScaling(ctx: OverrideContext): void {
       sy,
       scaled,
       ctx.geometryOverrideNodes,
-      basis !== comp,
-      strokeScale
+      scale.useCurrentChildAsSource,
+      strokeScale,
+      scale.scaleThroughFixedWrappers
     )
   }
 
   if (scaled.size > 0) propagateScaling(ctx, scaled)
-  normalizeOutOfBoundsSingleChildren(ctx)
+}
+
+function resolveInstanceScale(
+  graph: SceneGraph,
+  instance: SceneNode,
+  component: SceneNode
+): InstanceScale | null {
+  const targetAspectRatio = resolveTargetAspectRatio(instance)
+  const resolvedBasis = resolveScaleBasis(graph, instance, component)
+  if (!targetAspectRatio && !resolvedBasis) return null
+  const basis = resolvedBasis ?? component
+  const scaleThroughFixedWrappers = targetAspectRatio !== null
+  return {
+    basis,
+    scaleThroughFixedWrappers,
+    sx: instance.width / basis.width,
+    sy: instance.height / basis.height,
+    useCurrentChildAsSource: basis !== component
+  }
+}
+
+function resolveTargetAspectRatio(instance: SceneNode): { width: number; height: number } | null {
+  const rawTarget = readEffectiveFigmaRawField(instance, 'targetAspectRatio')
+  if (!rawTarget || typeof rawTarget !== 'object' || !('value' in rawTarget)) return null
+  const value = rawTarget.value
+  if (!value || typeof value !== 'object' || !('x' in value) || !('y' in value)) return null
+  const { x, y } = value
+  if (
+    typeof x !== 'number' ||
+    typeof y !== 'number' ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    x <= 0 ||
+    y <= 0
+  ) {
+    return null
+  }
+  return { width: x, height: y }
+}
+
+function isCloneOfSource(graph: SceneGraph, child: SceneNode, sourceId: string): boolean {
+  let current: SceneNode | undefined = child
+  for (let depth = 0; depth < MAX_CLONE_CHAIN_DEPTH && current?.componentId; depth++) {
+    if (current.componentId === sourceId) return true
+    current = graph.getNode(current.componentId)
+  }
+  return false
+}
+
+function pinnedPositionUpdates(
+  ctx: OverrideContext,
+  child: SceneNode,
+  resized: ReturnType<typeof constrainedChildRect>
+): Partial<SceneNode> {
+  const updates: Partial<SceneNode> = {}
+  const horizontalPinned =
+    child.horizontalConstraint === 'MAX' || child.horizontalConstraint === 'CENTER'
+  const verticalPinned = child.verticalConstraint === 'MAX' || child.verticalConstraint === 'CENTER'
+  if (
+    horizontalPinned &&
+    child.figmaDerivedLayout?.x === undefined &&
+    !isFieldProtected(ctx.protectedFields, child.id, 'x') &&
+    child.x !== resized.x
+  ) {
+    updates.x = resized.x
+  }
+  if (
+    verticalPinned &&
+    child.figmaDerivedLayout?.y === undefined &&
+    !isFieldProtected(ctx.protectedFields, child.id, 'y') &&
+    child.y !== resized.y
+  ) {
+    updates.y = resized.y
+  }
+  return updates
+}
+
+function stretchedChildSizeUpdates(
+  ctx: OverrideContext,
+  child: SceneNode,
+  resized: ReturnType<typeof constrainedChildRect>
+): Partial<SceneNode> {
+  const updates: Partial<SceneNode> = {}
+  if (
+    child.horizontalConstraint === 'STRETCH' &&
+    child.figmaDerivedLayout?.width === undefined &&
+    !isFieldProtected(ctx.protectedFields, child.id, 'width') &&
+    child.width !== resized.width
+  ) {
+    updates.width = resized.width
+  }
+  if (
+    child.verticalConstraint === 'STRETCH' &&
+    child.figmaDerivedLayout?.height === undefined &&
+    !isFieldProtected(ctx.protectedFields, child.id, 'height') &&
+    child.height !== resized.height
+  ) {
+    updates.height = resized.height
+  }
+  return updates
+}
+
+function pinnedChildUpdates(
+  ctx: OverrideContext,
+  child: SceneNode,
+  resized: ReturnType<typeof constrainedChildRect>
+): Partial<SceneNode> {
+  return {
+    ...pinnedPositionUpdates(ctx, child, resized),
+    ...stretchedChildSizeUpdates(ctx, child, resized)
+  }
+}
+
+function positionPinnedAbsoluteChildren(
+  ctx: OverrideContext,
+  instance: SceneNode,
+  source: SceneNode
+): void {
+  const count = Math.min(instance.childIds.length, source.childIds.length)
+  for (let index = 0; index < count; index++) {
+    const child = ctx.graph.getNode(instance.childIds[index])
+    const sourceChild = ctx.graph.getNode(source.childIds[index])
+    if (!child || !sourceChild || child.layoutPositioning !== 'ABSOLUTE') continue
+    if (child.componentId && !isCloneOfSource(ctx.graph, child, sourceChild.id)) continue
+
+    const resized = constrainedChildRect(
+      sourceChild,
+      source,
+      instance,
+      child.horizontalConstraint,
+      child.verticalConstraint
+    )
+    const updates = pinnedChildUpdates(ctx, child, resized)
+    if (Object.keys(updates).length > 0) ctx.graph.updateNode(child.id, updates)
+  }
 }
 
 function resolveScaleBasis(
   graph: SceneGraph,
   instance: SceneNode,
   component: SceneNode
-): { width: number; height: number } | null {
+): SceneNode | null {
   if (instance.width !== component.width || instance.height !== component.height) return component
 
   let source: SceneNode = component
-  for (let depth = 0; depth < 10 && source.type === 'INSTANCE' && source.componentId; depth++) {
+  for (
+    let depth = 0;
+    depth < MAX_CLONE_CHAIN_DEPTH && source.type === 'INSTANCE' && source.componentId;
+    depth++
+  ) {
     const next = graph.getNode(source.componentId)
     if (!next || next.width <= 0 || next.height <= 0) break
     if (instance.width !== next.width || instance.height !== next.height) return next
@@ -117,6 +273,40 @@ function scaledGeometryUpdates(
   return updates
 }
 
+function scaleDescendantAxes(
+  graph: SceneGraph,
+  node: SceneNode,
+  cache: Map<string, ScaleDescendantAxes>
+): ScaleDescendantAxes {
+  const cached = cache.get(node.id)
+  if (cached) return cached
+  const result: ScaleDescendantAxes = { horizontal: false, vertical: false }
+  for (const child of graph.getChildren(node.id)) {
+    const nested = scaleDescendantAxes(graph, child, cache)
+    result.horizontal ||= child.horizontalConstraint === 'SCALE' || nested.horizontal
+    result.vertical ||= child.verticalConstraint === 'SCALE' || nested.vertical
+    if (result.horizontal && result.vertical) break
+  }
+  cache.set(node.id, result)
+  return result
+}
+
+function childScaleAxes(
+  graph: SceneGraph,
+  child: SceneNode,
+  scaleThroughFixedWrappers: boolean,
+  cache: Map<string, ScaleDescendantAxes>
+): ScaleDescendantAxes {
+  const descendantAxes = scaleDescendantAxes(graph, child, cache)
+  return {
+    horizontal:
+      child.horizontalConstraint === 'SCALE' ||
+      (scaleThroughFixedWrappers && descendantAxes.horizontal),
+    vertical:
+      child.verticalConstraint === 'SCALE' || (scaleThroughFixedWrappers && descendantAxes.vertical)
+  }
+}
+
 function scaleChildren(
   graph: SceneGraph,
   instance: SceneNode,
@@ -126,7 +316,9 @@ function scaleChildren(
   scaled: Set<string>,
   geometryOverrideNodes: Set<string>,
   useCurrentChildAsSource = false,
-  strokeScale?: number
+  strokeScale?: number,
+  scaleThroughFixedWrappers = false,
+  descendantScaleCache = new Map<string, ScaleDescendantAxes>()
 ): void {
   const len = Math.min(instance.childIds.length, comp.childIds.length)
   for (let i = 0; i < len; i++) {
@@ -134,8 +326,9 @@ function scaleChildren(
     const compChild = graph.getNode(comp.childIds[i])
     if (!child || !compChild) continue
 
-    const hScale = child.horizontalConstraint === 'SCALE'
-    const vScale = child.verticalConstraint === 'SCALE'
+    const scaleAxes = childScaleAxes(graph, child, scaleThroughFixedWrappers, descendantScaleCache)
+    const hScale = scaleAxes.horizontal
+    const vScale = scaleAxes.vertical
     if (!hScale && !vScale) continue
 
     const updates: Partial<SceneNode> = {}
@@ -168,31 +361,10 @@ function scaleChildren(
         scaled,
         geometryOverrideNodes,
         useCurrentChildAsSource,
-        strokeScale
+        strokeScale,
+        scaleThroughFixedWrappers,
+        descendantScaleCache
       )
-    }
-  }
-}
-
-function normalizeOutOfBoundsSingleChildren(ctx: OverrideContext): void {
-  const { graph } = ctx
-  for (const parent of overrideCandidates(graph, ctx.activeNodeIds)) {
-    if (parent.childIds.length !== 1) continue
-    const child = graph.getNode(parent.childIds[0])
-    if (!child?.visible || !child.componentId) continue
-    if (ctx.geometryOverrideNodes.has(child.id) || child.figmaDerivedLayout?.x !== undefined)
-      continue
-    const outsideParent =
-      child.x < -0.01 ||
-      child.y < -0.01 ||
-      child.x + child.width > parent.width + 0.01 ||
-      child.y + child.height > parent.height + 0.01
-    if (outsideParent) {
-      graph.updateNode(child.id, {
-        x: 0,
-        y: 0,
-        figmaDerivedLayout: { ...child.figmaDerivedLayout, x: 0, y: 0 }
-      })
     }
   }
 }

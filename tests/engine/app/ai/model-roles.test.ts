@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
+import { buildReasoningProviderOptions } from '@/app/ai/chat/reasoning'
 import {
+  aiModelSettings,
   createAIModelRuntime,
   createModelProfileDraft,
+  designModelProfiles,
   modelSettingsSnapshot,
   removeModelProfile,
   replaceAIModelSettings,
@@ -99,6 +102,33 @@ describe('AI model profiles and role assignments', () => {
     expect(resolveAIModelRole('vision')).toBeNull()
   })
 
+  test('switches the design agent between saved profiles', () => {
+    const switchable = designModelProfiles()
+    expect(switchable.map((profile) => profile.id)).toEqual(['model-design', 'model-fast'])
+
+    setModelRoleAssignment('design', 'model-fast')
+    expect(resolveAIModelRole('design')?.profile.id).toBe('model-fast')
+    expect(resolveAIModelRole('design')?.connection.id).toBe('connection-google')
+
+    setModelRoleAssignment('design', 'model-design')
+    expect(resolveAIModelRole('design')?.profile.id).toBe('model-design')
+  })
+
+  test('refuses to assign a profile that cannot use tools as the design agent', () => {
+    aiModelSettings.value.models.push({
+      id: 'model-textonly',
+      name: 'Text only',
+      connectionId: 'connection-google',
+      modelID: 'text-only',
+      customModelID: '',
+      maxOutputTokens: 4096,
+      capabilities: []
+    })
+
+    setModelRoleAssignment('design', 'model-textonly')
+    expect(resolveAIModelRole('design')?.profile.id).toBe('model-design')
+  })
+
   test('reuses matching provider connections when adding models', () => {
     const draft = createModelProfileDraft()
     draft.name = 'Review model'
@@ -148,12 +178,55 @@ describe('AI model profiles and role assignments', () => {
     expect(saveModelProfileDraft(draft).maxOutputTokens).toBe(16_384)
   })
 
+  test('persists provider-specific reasoning effort', () => {
+    const draft = createModelProfileDraft('model-fast')
+    draft.reasoningEffort = 'none'
+    expect(saveModelProfileDraft(draft).reasoningEffort).toBe('none')
+    expect(createModelProfileDraft('model-fast').reasoningEffort).toBe('none')
+  })
+
+  test('maps reasoning effort to supported provider options', () => {
+    expect(buildReasoningProviderOptions('openai-compatible', 'none')).toEqual({
+      openai: { reasoningEffort: 'none' }
+    })
+    expect(buildReasoningProviderOptions('openrouter', 'high')).toEqual({
+      openrouter: { reasoning: { effort: 'high' } }
+    })
+    expect(buildReasoningProviderOptions('google', 'high')).toBeUndefined()
+    expect(buildReasoningProviderOptions('openai', '')).toBeUndefined()
+  })
+
   test('repairs assignments when removing a model', () => {
     removeModelProfile('model-design')
     const settings = modelSettingsSnapshot()
     expect(settings.assignments.design).toBe('model-fast')
     expect(settings.assignments.vision).toBeNull()
     expect(settings.connections.map((connection) => connection.id)).toEqual(['connection-google'])
+  })
+
+  test('keeps the assigned design profile when no capable fallback exists', () => {
+    const settings = settingsFixture()
+    settings.models = [
+      settings.models[0],
+      {
+        id: 'model-text-only',
+        name: 'Text-only model',
+        connectionId: 'connection-google',
+        modelID: 'text-only',
+        customModelID: '',
+        maxOutputTokens: 4096,
+        capabilities: []
+      }
+    ]
+    replaceAIModelSettings(settings)
+
+    removeModelProfile('model-design')
+
+    expect(modelSettingsSnapshot().models.map((profile) => profile.id)).toEqual([
+      'model-design',
+      'model-text-only'
+    ])
+    expect(resolveAIModelRole('design')?.profile.id).toBe('model-design')
   })
 
   test('includes configured connection credentials in persistence changes', () => {

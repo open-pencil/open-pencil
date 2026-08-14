@@ -1,5 +1,6 @@
 import type {
   FontResolutionDemand,
+  FontResolutionListener,
   FontResolutionLoader,
   FontResolutionSettled,
   FontResolutionSnapshot
@@ -19,8 +20,14 @@ function idleSnapshot(key: string): FontResolutionSnapshot {
 
 export class FontResolver {
   private readonly entries = new Map<string, FontResolutionEntry>()
+  private readonly listeners = new Set<FontResolutionListener>()
 
   constructor(private readonly load: FontResolutionLoader) {}
+
+  subscribe(listener: FontResolutionListener): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
 
   state(demand: FontResolutionDemand | string): FontResolutionSnapshot {
     const key = typeof demand === 'string' ? demand : demand.key
@@ -82,9 +89,12 @@ export class FontResolver {
   reset(demand?: FontResolutionDemand | string): void {
     if (demand === undefined) {
       this.entries.clear()
+      this.notify('reset', idleSnapshot('*'))
       return
     }
-    this.entries.delete(typeof demand === 'string' ? demand : demand.key)
+    const key = typeof demand === 'string' ? demand : demand.key
+    this.entries.delete(key)
+    this.notify('reset', idleSnapshot(key))
   }
 
   private request(
@@ -108,6 +118,7 @@ export class FontResolver {
     }
     this.addConsumer(entry, onSettled, nodeId)
     this.entries.set(demand.key, entry)
+    this.notify('started', snapshot)
     entry.promise = this.resolve(entry)
     return entry.promise
   }
@@ -157,6 +168,7 @@ export class FontResolver {
   ): FontResolutionSnapshot {
     if (this.entries.get(entry.demand.key) !== entry) return idleSnapshot(entry.demand.key)
     entry.snapshot = snapshot
+    this.notify('settled', snapshot)
     for (const [callback, nodeIds] of entry.callbacks) {
       try {
         callback(snapshot, [...nodeIds])
@@ -167,5 +179,9 @@ export class FontResolver {
     entry.callbacks.clear()
     entry.nodeIds.clear()
     return snapshot
+  }
+
+  private notify(event: Parameters<FontResolutionListener>[0], snapshot: FontResolutionSnapshot) {
+    for (const listener of this.listeners) listener(event, snapshot)
   }
 }

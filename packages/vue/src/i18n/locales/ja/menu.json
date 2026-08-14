@@ -7,6 +7,7 @@
   "text": "テキスト",
   "new": "新規作成",
   "open": "開く…",
+  "openStorageWorkspace": "ストレージワークスペースを開く…",
   "save": "保存",
   "saveAs": "名前を付けて保存…",
   "exportSelection": "選択範囲をエクスポート…",
@@ -53,5 +54,9 @@
   "arrangeAlignRight": "右揃え",
   "arrangeAlignTop": "上揃え",
   "arrangeAlignMiddle": "上下中央揃え",
-  "arrangeAlignBottom": "下揃え"
+  "arrangeAlignBottom": "下揃え",
+  "multiplayerCursors": "マルチプレイヤーカーソル",
+  "renameSelection": "選択範囲の名前を変更…",
+  "rulers": "ルーラー",
+  "settings": "設定…"
 }

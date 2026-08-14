@@ -4,12 +4,14 @@ import { populateAndApplyOverrides } from '@open-pencil/fig/instance-overrides'
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import {
   applyStyleRefsToFields,
+  ENABLED_LIBRARIES_PLUGIN_KEY,
+  getOpenPencilPluginValue,
   guidToString,
   nodeChangeToProps,
   shouldImportTextAsAutoSize,
   sortChildren,
-  setVariableColorResolver,
-  VARIABLE_BINDING_FIELDS_INVERSE
+  resolveVariableConsumptionEntry,
+  setVariableColorResolver
 } from '@open-pencil/fig/node-change'
 import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -41,8 +43,33 @@ function applyImportedDocumentMetadata(graph: SceneGraph, docNc: NodeChange | un
   const rootNode = graph.getNode(graph.rootId)
   if (!docNc || !rootNode) return
   rootNode.source.format = 'fig'
+  rootNode.pluginData = docNc.pluginData
+    ? docNc.pluginData.map((entry) => ({
+        pluginId: entry.pluginID,
+        key: entry.key,
+        value: entry.value
+      }))
+    : []
   rootNode.source.fig.rawNodeFields.strokeJoin = docNc.strokeJoin
   rootNode.source.fig.rawNodeFields.strokeWeight = docNc.strokeWeight
+  const bindings = getOpenPencilPluginValue(docNc, ENABLED_LIBRARIES_PLUGIN_KEY)
+  if (!bindings) return
+  try {
+    const parsed = JSON.parse(bindings) as unknown
+    if (!Array.isArray(parsed)) return
+    for (const entry of parsed) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+      const value = entry as { libraryId?: unknown; revisionId?: unknown; enabled?: unknown }
+      if (typeof value.libraryId !== 'string' || typeof value.revisionId !== 'string') continue
+      graph.enabledLibraries.set(value.libraryId, {
+        libraryId: value.libraryId,
+        revisionId: value.revisionId,
+        enabled: value.enabled === true
+      })
+    }
+  } catch (error) {
+    console.warn('Ignored malformed OpenPencil library metadata', error)
+  }
 }
 
 function assetRefKey(assetRef: AssetRef): string {
@@ -53,7 +80,7 @@ function buildAssetRefMap(changeMap: Map<string, NodeChange>): Map<string, strin
   const refs = new Map<string, string>()
   for (const [id, nc] of changeMap) {
     if (typeof nc.key !== 'string') continue
-    refs.set(nc.key, id)
+    if (typeof nc.version !== 'string' || !refs.has(nc.key)) refs.set(nc.key, id)
     if (typeof nc.version === 'string')
       refs.set(assetRefKey({ key: nc.key, version: nc.version }), id)
     if (typeof nc.userFacingVersion === 'string') {
@@ -351,20 +378,20 @@ function importVariableBindings(
     const nodeId = guidToNodeId.get(ncId)
     if (!nodeId) continue
     for (const entry of nc.variableConsumptionMap.entries) {
-      const varGuid = entry.variableData?.value?.alias?.guid
-      if (!varGuid) continue
-      const field = VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField ?? '']
-      if (field) graph.bindVariable(nodeId, field, guidToString(varGuid))
+      const binding = resolveVariableConsumptionEntry(entry)
+      if (binding) graph.bindVariable(nodeId, binding.field, binding.variableId)
     }
   }
 }
 
 function remapComponentIds(graph: SceneGraph, guidToNodeId: Map<string, string>): void {
-  for (const node of graph.getAllNodes()) {
-    if (node.type !== 'INSTANCE' || !node.componentId) continue
-    const remapped = guidToNodeId.get(node.componentId)
-    if (remapped) node.componentId = remapped
-  }
+  graph.preserveSourceMetadataDuring(() => {
+    for (const node of graph.getAllNodes()) {
+      if (node.type !== 'INSTANCE' || !node.componentId) continue
+      const remapped = guidToNodeId.get(node.componentId)
+      if (remapped) graph.updateNode(node.id, { componentId: remapped })
+    }
+  })
 }
 
 function applyVariantPropSpecs(graph: SceneGraph): void {
@@ -385,8 +412,11 @@ function parseDocumentColorSpace(nodeChanges: NodeChange[]): 'srgb' | 'display-p
   return documentNode?.documentColorProfile === 'DISPLAY_P3' ? 'display-p3' : 'srgb'
 }
 
-function applyStyleRefs(changeMap: Map<string, NodeChange>): void {
-  for (const nc of changeMap.values()) applyStyleRefsToFields(changeMap, nc)
+function applyStyleRefs(
+  changeMap: Map<string, NodeChange>,
+  assetRefs: ReadonlyMap<string, string>
+): void {
+  for (const nc of changeMap.values()) applyStyleRefsToFields(changeMap, nc, assetRefs)
 }
 
 export interface FigImportOptions {
@@ -441,8 +471,8 @@ export function importNodeChanges(
   }
 
   const { changeMap, parentMap, childrenMap } = buildChangeMaps(nodeChanges)
-  applyStyleRefs(changeMap)
   const assetRefs = buildAssetRefMap(changeMap)
+  applyStyleRefs(changeMap, assetRefs)
   setVariableColorResolver(buildVariableColorResolver(changeMap, assetRefs))
 
   const canvasIdToPageId = new Map<string, string>()

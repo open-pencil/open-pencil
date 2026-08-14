@@ -1,6 +1,7 @@
 import type { EditorCommandId } from '@open-pencil/vue'
 
 export type AppMenuTarget = 'all' | 'browser' | 'native'
+export type AppMenuHandler = 'editor' | 'shell'
 
 export interface AppMenuActionItem {
   type?: 'item'
@@ -11,6 +12,7 @@ export interface AppMenuActionItem {
   command?: EditorCommandId
   checkbox?: boolean
   target?: AppMenuTarget
+  handler?: AppMenuHandler
   sub?: AppMenuEntry[]
 }
 
@@ -33,6 +35,7 @@ export const APP_MENU_SCHEMA = [
     items: [
       { id: 'new', label: 'New', shortcut: 'MOD+N' },
       { id: 'open', label: 'Open…', shortcut: 'MOD+O' },
+      { id: 'open-storage-workspace', label: 'Open Storage Workspace…', handler: 'shell' },
       { type: 'separator' },
       { id: 'save', label: 'Save', shortcut: 'MOD+S' },
       { id: 'save-as', label: 'Save As…', shortcut: 'MOD+SHIFT+S' },
@@ -70,7 +73,7 @@ export const APP_MENU_SCHEMA = [
       { id: 'copy', label: 'Copy', shortcut: 'MOD+C' },
       { id: 'cut', label: 'Cut', shortcut: 'MOD+X' },
       { id: 'paste', label: 'Paste', shortcut: 'MOD+V' },
-      { id: 'paste-to-replace', label: 'Paste to replace' },
+      { id: 'paste-to-replace', label: 'Paste to replace', shortcut: 'MOD+SHIFT+R' },
       {
         id: 'selection.duplicate',
         label: 'Duplicate',
@@ -81,11 +84,17 @@ export const APP_MENU_SCHEMA = [
         label: 'Delete',
         command: 'selection.delete'
       },
+      { id: 'selection.rename', label: 'Rename Selection…', shortcut: 'MOD+R' },
       { type: 'separator' },
       {
         id: 'selection.selectAll',
         label: 'Select All',
         command: 'selection.selectAll'
+      },
+      {
+        id: 'selection.selectInverse',
+        label: 'Select Inverse',
+        command: 'selection.selectInverse'
       }
     ]
   },
@@ -110,18 +119,23 @@ export const APP_MENU_SCHEMA = [
       { id: 'zoom-in', label: 'Zoom In', shortcut: 'MOD+=' },
       { id: 'zoom-out', label: 'Zoom Out', shortcut: 'MOD+-' },
       { type: 'separator' },
+      { id: 'view-rulers', label: 'Rulers', checkbox: true },
+      { id: 'view-multiplayer-cursors', label: 'Multiplayer Cursors', checkbox: true },
+      { type: 'separator' },
       {
         id: 'theme',
         label: 'Theme',
         sub: [
-          { id: 'theme-light', label: 'Light', checkbox: true },
-          { id: 'theme-dark', label: 'Dark', checkbox: true },
-          { id: 'theme-auto', label: 'Auto', checkbox: true }
+          { id: 'theme-light', label: 'Light', checkbox: true, handler: 'shell' },
+          { id: 'theme-dark', label: 'Dark', checkbox: true, handler: 'shell' },
+          { id: 'theme-auto', label: 'Auto', checkbox: true, handler: 'shell' }
         ]
       },
       { id: 'language', label: 'Language', target: 'browser' },
       { type: 'separator' },
       { id: 'toggle-ui', label: 'Toggle UI', shortcut: 'MOD+\\' },
+      { id: 'settings', label: 'Settings…', handler: 'shell' },
+      { type: 'separator' },
       { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
       {
         id: 'dev-tools',
@@ -148,6 +162,33 @@ export const APP_MENU_SCHEMA = [
         id: 'selection.ungroup',
         label: 'Ungroup Selection',
         command: 'selection.ungroup'
+      },
+      { type: 'separator' },
+      {
+        id: 'selection.toggleMask',
+        label: 'Use as Mask',
+        command: 'selection.toggleMask'
+      },
+      {
+        id: 'selection.toggleVisibility',
+        label: 'Show/Hide',
+        command: 'selection.toggleVisibility'
+      },
+      {
+        id: 'selection.toggleLock',
+        label: 'Lock/Unlock',
+        command: 'selection.toggleLock'
+      },
+      { type: 'separator' },
+      {
+        id: 'selection.flipHorizontal',
+        label: 'Flip Horizontal',
+        command: 'selection.flipHorizontal'
+      },
+      {
+        id: 'selection.flipVertical',
+        label: 'Flip Vertical',
+        command: 'selection.flipVertical'
       },
       { type: 'separator' },
       {
@@ -197,15 +238,41 @@ export const APP_MENU_SCHEMA = [
         command: 'selection.createComponentSet'
       },
       {
+        id: 'selection.createInstance',
+        label: 'Create Instance',
+        command: 'selection.createInstance'
+      },
+      {
+        id: 'selection.goToMainComponent',
+        label: 'Go to Main Component',
+        command: 'selection.goToMainComponent'
+      },
+      {
         id: 'selection.detachInstance',
         label: 'Detach Instance',
         command: 'selection.detachInstance'
       },
       { type: 'separator' },
       {
+        id: 'selection.moveToPage',
+        label: 'Move to Page',
+        command: 'selection.moveToPage',
+        target: 'browser'
+      },
+      {
+        id: 'selection.bringForward',
+        label: 'Bring Forward',
+        command: 'selection.bringForward'
+      },
+      {
         id: 'selection.bringToFront',
         label: 'Bring to Front',
         command: 'selection.bringToFront'
+      },
+      {
+        id: 'selection.sendBackward',
+        label: 'Send Backward',
+        command: 'selection.sendBackward'
       },
       {
         id: 'selection.sendToBack',
@@ -237,7 +304,18 @@ export const APP_MENU_SCHEMA = [
       { type: 'separator' },
       { id: 'arrange.align-top', label: 'Align Top', shortcut: 'ALT+W' },
       { id: 'arrange.align-middle', label: 'Align Middle', shortcut: 'ALT+V' },
-      { id: 'arrange.align-bottom', label: 'Align Bottom', shortcut: 'ALT+S' }
+      { id: 'arrange.align-bottom', label: 'Align Bottom', shortcut: 'ALT+S' },
+      { type: 'separator' },
+      {
+        id: 'selection.distributeHorizontal',
+        label: 'Distribute Horizontal Spacing',
+        command: 'selection.distributeHorizontal'
+      },
+      {
+        id: 'selection.distributeVertical',
+        label: 'Distribute Vertical Spacing',
+        command: 'selection.distributeVertical'
+      }
     ]
   }
 ] satisfies AppMenuGroupSchema[]

@@ -1,6 +1,7 @@
 import { EN, EN_PROG } from './labels'
 import { sdkSidebar } from './sdk-sidebar'
 import {
+  developmentSidebar,
   guideSidebar,
   programmableSidebar,
   referenceSidebar,
@@ -13,7 +14,7 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
   search: { provider: 'local' },
 
   nav: [
-    { text: 'Guide', link: '/guide/getting-started' },
+    { text: 'Overview', link: '/getting-started' },
     { text: 'User Guide', link: '/user-guide/' },
     { text: 'Automation', link: '/programmable/' },
     { text: 'SDK', link: '/programmable/sdk/' },
@@ -26,18 +27,9 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     '/user-guide/': userGuideSidebar('', EN),
     '/programmable/sdk/': sdkSidebar(''),
     '/programmable/': programmableSidebar('', EN_PROG),
-    '/reference/': referenceSidebar('', 'Reference'),
-    '/': [
-      ...guideSidebar('', EN),
-      {
-        text: 'Development',
-        items: [
-          { text: 'Contributing', link: '/development/contributing' },
-          { text: 'Testing', link: '/development/testing' },
-          { text: 'Roadmap', link: '/development/roadmap' },
-        ],
-      },
-    ],
+    '/reference/': referenceSidebar('', 'Reference', EN),
+    '/development/': developmentSidebar('', 'Development', EN),
+    '/': guideSidebar('', EN),
   },
 
   socialLinks: [{ icon: 'github', link: 'https://github.com/open-pencil/open-pencil' }],

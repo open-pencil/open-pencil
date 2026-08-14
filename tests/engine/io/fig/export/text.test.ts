@@ -7,7 +7,7 @@ import {
   parseFigFile,
   SceneGraph
 } from '@open-pencil/core'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { parseFixture } from '#tests/helpers/fig-fixtures'
@@ -151,7 +151,7 @@ describe('text node export', () => {
     const dataRaw = await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
     const message = compiled.decodeMessage(dataRaw)
 
-    const nodeChanges = message.nodeChanges as JsonObject[]
+    const nodeChanges = message.nodeChanges as JSONObject[]
     const textNc = nodeChanges.find((nc) => nc.type === 'TEXT')
     expect(textNc).toBeDefined()
 
@@ -207,19 +207,19 @@ describe('text node export', () => {
     const message = compiled.decodeMessage(
       await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
     )
-    const nodeChanges = message.nodeChanges as JsonObject[]
+    const nodeChanges = message.nodeChanges as JSONObject[]
     const textNc = expectDefined(
       nodeChanges.find((nc) => nc.type === 'TEXT'),
       'text node change'
     )
-    const derivedTextData = textNc.derivedTextData as JsonObject
+    const derivedTextData = textNc.derivedTextData as JSONObject
     const fontMetaData = expectDefined(
-      derivedTextData.fontMetaData as JsonObject[] | undefined,
+      derivedTextData.fontMetaData as JSONObject[] | undefined,
       'font metadata'
     )
 
-    expect((textNc.fontName as JsonObject).style).toBe('Semi Bold')
-    expect((fontMetaData[0].key as JsonObject).style).toBe('Semi Bold')
+    expect((textNc.fontName as JSONObject).style).toBe('Semi Bold')
+    expect((fontMetaData[0].key as JSONObject).style).toBe('Semi Bold')
   })
 
   test('auto-layout text children export height auto-resize for Figma rendering', async () => {
@@ -260,7 +260,7 @@ describe('text node export', () => {
     const message = compiled.decodeMessage(
       await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
     )
-    const nodeChanges = message.nodeChanges as JsonObject[]
+    const nodeChanges = message.nodeChanges as JSONObject[]
     const textNc = expectDefined(
       nodeChanges.find((nc) => nc.type === 'TEXT'),
       'text node change'
@@ -309,14 +309,14 @@ describe('text node export', () => {
     const dataRaw = await decompressFigKiwiDataAsync(chunks?.[1] ?? new Uint8Array())
     const message = compiled.decodeMessage(dataRaw)
 
-    const nodeChanges = message.nodeChanges as JsonObject[]
+    const nodeChanges = message.nodeChanges as JSONObject[]
     const textNc = nodeChanges.find((nc) => nc.type === 'TEXT')
 
-    const derivedTextData = textNc?.derivedTextData as JsonObject | undefined
-    const fontMetaData = derivedTextData?.fontMetaData as JsonObject[] | undefined
+    const derivedTextData = textNc?.derivedTextData as JSONObject | undefined
+    const fontMetaData = derivedTextData?.fontMetaData as JSONObject[] | undefined
     expect(fontMetaData?.length).toBe(2)
 
-    const families = (fontMetaData ?? []).map((m) => (m.key as JsonObject)?.style as string)
+    const families = (fontMetaData ?? []).map((m) => (m.key as JSONObject)?.style as string)
     expect(families).toContain('Bold')
     expect(families).toContain('Regular')
   })

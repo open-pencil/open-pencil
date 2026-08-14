@@ -41,7 +41,7 @@ export function useKeyboard() {
       void openFileDialog()
     },
     closeActiveTab: () => {
-      if (activeTabRef.value) closeTab(activeTabRef.value.id)
+      if (activeTabRef.value) void closeTab(activeTabRef.value.id)
     },
     createTab: () => createTab()
   })

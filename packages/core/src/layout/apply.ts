@@ -2,7 +2,25 @@ import type { Node as YogaNode } from 'yoga-layout'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { usesDetachedDerivedLayout } from './derived'
+
 export type ComputeLayoutFn = (graph: SceneGraph, frameId: string) => void
+
+function preservesImportedHugCrossSize(
+  graph: SceneGraph,
+  frame: SceneNode,
+  axis: 'width' | 'height'
+): boolean {
+  if (frame.source.format !== 'fig' || frame.counterAxisSizing !== 'HUG') return false
+  const expectedMode = axis === 'width' ? 'VERTICAL' : 'HORIZONTAL'
+  if (frame.layoutMode !== expectedMode) return false
+  return graph
+    .getChildren(frame.id)
+    .some(
+      (child) =>
+        child.layoutAlignSelf === 'STRETCH' && child.figmaDerivedLayout?.[axis] !== undefined
+    )
+}
 
 function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode): void {
   if (frame.layoutMode === 'GRID') {
@@ -24,28 +42,77 @@ function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode)
     else updates.height = derived?.height ?? computedH
   }
   if (frame.counterAxisSizing === 'HUG') {
-    if (frame.layoutMode === 'HORIZONTAL') updates.height = derived?.height ?? computedH
-    else updates.width = derived?.width ?? computedW
+    if (frame.layoutMode === 'HORIZONTAL') {
+      updates.height = preservesImportedHugCrossSize(graph, frame, 'height')
+        ? frame.height
+        : (derived?.height ?? computedH)
+    } else {
+      updates.width = preservesImportedHugCrossSize(graph, frame, 'width')
+        ? frame.width
+        : (derived?.width ?? computedW)
+    }
   }
 
   graph.updateNode(frame.id, updates)
 }
 
+function frameSourceIsFig(graph: SceneGraph, parentId: string | null): boolean {
+  return parentId ? graph.getNode(parentId)?.source.format === 'fig' : false
+}
+
+function computedChildPosition(
+  child: SceneNode,
+  yogaChild: YogaNode,
+  axis: 'x' | 'y',
+  preservesImportedGeometry: boolean
+): number {
+  if (preservesImportedGeometry) return child[axis]
+  const computed = axis === 'x' ? yogaChild.getComputedLeft() : yogaChild.getComputedTop()
+  if (child.type === 'INSTANCE') return computed
+  return child.figmaDerivedLayout?.[axis] ?? computed
+}
+
+function preservesStaleImportedTextSize(child: SceneNode, axis: 'width' | 'height'): boolean {
+  const derivedSize = child.figmaDerivedLayout?.[axis]
+  return (
+    child.type === 'TEXT' &&
+    child.source.format === 'fig' &&
+    derivedSize !== undefined &&
+    Math.abs(child[axis] - derivedSize) > 0.001
+  )
+}
+
+function computedChildSize(
+  child: SceneNode,
+  yogaChild: YogaNode,
+  axis: 'width' | 'height',
+  preservesImportedFrameGeometry: boolean
+): number {
+  if (preservesImportedFrameGeometry || preservesStaleImportedTextSize(child, axis)) {
+    return child[axis]
+  }
+  const computed = axis === 'width' ? yogaChild.getComputedWidth() : yogaChild.getComputedHeight()
+  if (child.type === 'TEXT' && child.source.format === 'fig') {
+    return computed > 0 ? computed : child[axis]
+  }
+  return child.figmaDerivedLayout?.[axis] ?? computed
+}
+
 function updateChildFromYoga(graph: SceneGraph, child: SceneNode, yogaChild: YogaNode): void {
   if (!child.visible || child.layoutPositioning === 'ABSOLUTE') return
 
-  const derived = child.figmaDerivedLayout
+  const preservesImportedFrameGeometry =
+    child.type === 'FRAME' &&
+    child.source.format === 'fig' &&
+    frameSourceIsFig(graph, child.parentId)
+  const preservesImportedPosition =
+    preservesImportedFrameGeometry ||
+    (child.source.format === 'fig' && Math.abs(child.rotation) > 0.001)
   graph.updateNode(child.id, {
-    x:
-      child.type === 'INSTANCE'
-        ? yogaChild.getComputedLeft()
-        : (derived?.x ?? yogaChild.getComputedLeft()),
-    y:
-      child.type === 'INSTANCE'
-        ? yogaChild.getComputedTop()
-        : (derived?.y ?? yogaChild.getComputedTop()),
-    width: derived?.width ?? yogaChild.getComputedWidth(),
-    height: derived?.height ?? yogaChild.getComputedHeight()
+    x: computedChildPosition(child, yogaChild, 'x', preservesImportedPosition),
+    y: computedChildPosition(child, yogaChild, 'y', preservesImportedPosition),
+    width: computedChildSize(child, yogaChild, 'width', preservesImportedFrameGeometry),
+    height: computedChildSize(child, yogaChild, 'height', preservesImportedFrameGeometry)
   })
 }
 
@@ -94,16 +161,18 @@ export function applyYogaLayout(
 
     updateChildFromYoga(graph, child, yogaChild)
 
+    if (!child.visible) continue
     if (preservesImportedInstanceInternals(child)) continue
 
+    if (usesDetachedDerivedLayout(child)) {
+      computeLayout(graph, child.id)
+      continue
+    }
+
     if (child.layoutMode !== 'NONE') {
-      if (child.layoutMode === 'GRID' && child.visible && child.layoutPositioning !== 'ABSOLUTE') {
+      if (child.layoutMode === 'GRID' && child.layoutPositioning !== 'ABSOLUTE') {
         computeLayout(graph, child.id)
-      } else if (
-        frame.layoutMode === 'GRID' &&
-        child.visible &&
-        child.layoutPositioning !== 'ABSOLUTE'
-      ) {
+      } else if (frame.layoutMode === 'GRID' && child.layoutPositioning !== 'ABSOLUTE') {
         recomputeGridChild(graph, child, computeLayout)
       } else {
         applyYogaLayout(graph, child, yogaChild, computeLayout)

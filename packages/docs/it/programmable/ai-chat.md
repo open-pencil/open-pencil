@@ -25,7 +25,7 @@ Premi <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) per aprire l'a
 | **Compatibile OpenAI** | Qualsiasi endpoint con formato API OpenAI | URL base personalizzato + chiave. Supporta toggle tra API Completions e Responses. |
 | **Compatibile Anthropic** | Qualsiasi endpoint con formato API Anthropic | URL base personalizzato + chiave |
 
-Nessun backend, nessun abbonamento — la tua chiave comunica direttamente con il provider.
+Nessun backend o abbonamento: la tua chiave comunica direttamente con il provider. Le richieste del browser dipendono dalla policy CORS del provider e l’affidabilità delle chiamate agli strumenti in streaming varia tra i deployment. Consulta il riferimento in inglese sulla [compatibilità di provider e modelli BYOK](/programmable/byok-provider-compatibility) per risultati misurati e test riproducibili.
 
 ## Funzionalità
 

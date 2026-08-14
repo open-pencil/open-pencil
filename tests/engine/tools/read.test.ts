@@ -112,6 +112,36 @@ describe('query_nodes', () => {
   })
 })
 
+describe('get_font_status', () => {
+  test('returns font fidelity diagnostics for agents', () => {
+    const { figma } = setupToolTest()
+    const text = figma.createText()
+    text.name = 'Missing label'
+    text.fontName = { family: 'Unavailable Sans', style: 'Regular' }
+
+    const tool = getTool('get_font_status')
+    const result = tool.execute(figma, {}) as {
+      faithful: boolean
+      issues: Array<{
+        family: string
+        style: string
+        status: string
+        nodeIds: string[]
+      }>
+    }
+
+    expect(result.faithful).toBe(false)
+    expect(result.issues).toEqual([
+      expect.objectContaining({
+        family: 'Unavailable Sans',
+        style: 'Regular',
+        status: 'unresolved',
+        nodeIds: [text.id]
+      })
+    ])
+  })
+})
+
 describe('get_node', () => {
   test('returns node details', () => {
     const { figma } = setupToolTest()

@@ -22,13 +22,13 @@ const modelValue = computed({
 function onMiddleClick(e: MouseEvent, tabId: string) {
   if (e.button === 1) {
     e.preventDefault()
-    closeTab(tabId)
+    void closeTab(tabId)
   }
 }
 
 function onClose(e: MouseEvent, tabId: string) {
   e.stopPropagation()
-  closeTab(tabId)
+  void closeTab(tabId)
 }
 </script>
 

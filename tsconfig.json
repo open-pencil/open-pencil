@@ -43,8 +43,14 @@
       "#tests/*": [
         "./tests/*"
       ],
+      "#docs-config/*": [
+        "./packages/docs/.vitepress/*"
+      ],
       "tinykeys": [
         "./node_modules/tinykeys/dist/tinykeys.d.ts"
+      ],
+      "@open-pencil/cli/library": [
+        "./packages/cli/src/library/index.ts"
       ],
       "@open-pencil/vue": [
         "./packages/vue/src/index.ts"

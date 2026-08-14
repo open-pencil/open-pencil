@@ -2,9 +2,21 @@ import type { UIMessage } from 'ai'
 
 import { buildDebugLog } from '@open-pencil/core/tools'
 import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
+import type { AIChatFailure } from '@/app/ai/chat/failure'
 import { getStepUsages, getToolLogEntries } from '@/app/ai/tools'
+
+const MAX_FAILURE_DETAIL_LENGTH = 240
+const SENSITIVE_DETAIL_PATTERN =
+  /(api[-_ ]?key|authorization|token|secret|password)(\s*[:=]\s*|\s+)([^\s,;]+)/gi
+
+export function safeFailureDetail(detail: string): string {
+  const redacted = detail.replace(SENSITIVE_DETAIL_PATTERN, '$1$2[redacted]')
+  return redacted.length <= MAX_FAILURE_DETAIL_LENGTH
+    ? redacted
+    : `${redacted.slice(0, MAX_FAILURE_DETAIL_LENGTH)}…`
+}
 
 export function formatTokenUsage(): string {
   const steps = getStepUsages()
@@ -155,7 +167,7 @@ export function formatDiagnostics(log: ToolDebugLog): string {
 }
 
 function formatToolPart(part: Record<string, unknown>): string {
-  const inv = part.toolInvocation as JsonObject | undefined
+  const inv = part.toolInvocation as JSONObject | undefined
   if (inv) {
     const lines = [`  [tool] ${String(inv.toolName)} (${String(inv.state)})`]
     if (inv.args) lines.push(`    args: ${JSON.stringify(inv.args)}`)
@@ -182,7 +194,7 @@ function formatMessageStats(messages: UIMessage[]): string {
     if (msg.role === 'user') userMessages++
     else if (msg.role === 'assistant') assistantMessages++
     for (const part of msg.parts) {
-      const p = part as JsonObject
+      const p = part as JSONObject
       if (p.type === 'text') {
         totalTextLength += typeof p.text === 'string' ? p.text.length : 0
       } else if (
@@ -205,7 +217,7 @@ function formatMessageStats(messages: UIMessage[]): string {
   return lines.join('\n')
 }
 
-export function serializeChatLog(messages: UIMessage[]): string {
+export function serializeChatLog(messages: UIMessage[], failure?: AIChatFailure | null): string {
   const sections: string[] = []
 
   const toolLog = getToolLogEntries()
@@ -223,6 +235,15 @@ export function serializeChatLog(messages: UIMessage[]): string {
 
   sections.push('=== DIAGNOSTICS ===')
   sections.push(formatDiagnostics(debugLog))
+  sections.push('')
+
+  sections.push('=== ERRORS ===')
+  if (failure) {
+    const detail = failure.detail ? `: ${safeFailureDetail(failure.detail)}` : ''
+    sections.push(`  ${failure.reason}${detail}`)
+  } else {
+    sections.push('  (none recorded)')
+  }
   sections.push('')
 
   sections.push('=== MESSAGE STATS ===')
@@ -245,7 +266,7 @@ export function serializeChatLog(messages: UIMessage[]): string {
     const parts: string[] = []
 
     for (const part of msg.parts) {
-      const p = part as JsonObject
+      const p = part as JSONObject
       if (p.type === 'text') {
         parts.push(`  ${p.text as string}`)
       } else if (p.type === 'reasoning') {
@@ -270,7 +291,7 @@ export function serializeChatLog(messages: UIMessage[]): string {
   return sections.join('\n\n')
 }
 
-export function copyChatLog(messages: UIMessage[]): Promise<void> {
-  const text = serializeChatLog(messages)
+export function copyChatLog(messages: UIMessage[], failure?: AIChatFailure | null): Promise<void> {
+  const text = serializeChatLog(messages, failure)
   return navigator.clipboard.writeText(text)
 }

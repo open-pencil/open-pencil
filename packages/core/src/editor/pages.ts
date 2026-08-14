@@ -1,6 +1,10 @@
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
+import {
+  canUseFigPopulationWorker,
+  createFigPopulationWorker
+} from '#core/kiwi/fig/population/client'
 import { computeAllLayouts } from '#core/layout'
 import { fontManager } from '#core/text/fonts'
 import { collectGraphFontRequirements } from '#core/text/requirements'
@@ -11,10 +15,20 @@ import type { EditorContext } from './types'
 
 export function createPageActions(ctx: EditorContext) {
   const pageViewportStore = createPageViewportStore(ctx)
+  let populationWorkerInstance: ReturnType<typeof createFigPopulationWorker> | undefined
+  let populationWorkerGeneration = 0
+  let pageSwitchGeneration = 0
+
+  function populationWorker() {
+    if (!canUseFigPopulationWorker(ctx.graph)) return null
+    populationWorkerInstance ??= createFigPopulationWorker(ctx.graph)
+    return populationWorkerInstance
+  }
 
   async function switchPage(pageId: string) {
     const page = ctx.graph.getNode(pageId)
     if (page?.type !== 'CANVAS') return
+    const switchGeneration = ++pageSwitchGeneration
 
     pageViewportStore.saveCurrentPageViewport()
 
@@ -26,7 +40,24 @@ export function createPageActions(ctx: EditorContext) {
 
     pageViewportStore.restorePageViewport(pageId)
 
-    const populated = populateLazyFigImportRoots(ctx.graph, [pageId])
+    ctx.state.loading = true
+    let populated: boolean
+    try {
+      const worker = populationWorker()
+      const workerGeneration = populationWorkerGeneration
+      const workerResult = worker ? await worker.populate(pageId) : null
+      if (workerGeneration !== populationWorkerGeneration) return
+      if (workerResult === null) {
+        worker?.terminate()
+        populationWorkerInstance = undefined
+        populated = populateLazyFigImportRoots(ctx.graph, [pageId])
+      } else {
+        populated = workerResult
+      }
+    } finally {
+      if (switchGeneration === pageSwitchGeneration) ctx.state.loading = false
+    }
+    if (switchGeneration !== pageSwitchGeneration) return
 
     const childIds = ctx.graph.getChildren(pageId).map((node) => node.id)
     const toLoad = fontManager.collectFontKeys(ctx.graph, childIds)
@@ -56,6 +87,15 @@ export function createPageActions(ctx: EditorContext) {
       computeAllLayouts(ctx.graph, pageId)
     }
     ctx.requestRender()
+  }
+
+  function clearPageViewports() {
+    populationWorkerGeneration++
+    pageSwitchGeneration++
+    ctx.state.loading = false
+    populationWorkerInstance?.terminate()
+    populationWorkerInstance = undefined
+    pageViewportStore.clearPageViewports()
   }
 
   function addPage(name?: string) {
@@ -106,6 +146,6 @@ export function createPageActions(ctx: EditorContext) {
     movePage,
     renamePage,
     setPageColor,
-    clearPageViewports: pageViewportStore.clearPageViewports
+    clearPageViewports
   }
 }

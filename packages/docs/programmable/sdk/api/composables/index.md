@@ -38,6 +38,10 @@ These are the main composables most `@open-pencil/vue` consumers will use.
 - [useStrokeControls](./use-stroke-controls)
 - [useEffectsControls](./use-effects-controls)
 
+## Document workspaces
+
+- [useDocumentWorkspace](./use-document-workspace)
+
 ## Variables, navigation, and localization
 
 - [useVariablesEditor](./use-variables-editor)

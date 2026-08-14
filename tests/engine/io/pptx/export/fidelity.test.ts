@@ -12,11 +12,11 @@ import {
   makeSlideFrame,
   pageId,
   placements,
-  slideXml,
+  slideXML,
   solidFill,
   solidStroke,
   stubRasterize,
-  unzipPptx
+  unzipPPTX
 } from './helpers'
 
 function shadow(overrides: Partial<Effect> = {}): Effect {
@@ -46,7 +46,7 @@ describe('PPTX fidelity fallbacks', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const [frame] = placements(slideXml(unzipPptx(data), 2))
+    const [frame] = placements(slideXML(unzipPPTX(data), 2))
     expect(frame.width).toBeCloseTo(7.5, 2)
     expect(frame.height).toBeCloseTo(7.5, 2)
     expect(frame.centerX).toBeCloseTo(13.333 / 2, 2)
@@ -108,7 +108,7 @@ describe('PPTX fidelity fallbacks', () => {
     })
     expect(data).not.toBeNull()
     if (!data) return
-    const [shadowShape, shape] = placements(slideXml(unzipPptx(data), 1))
+    const [shadowShape, shape] = placements(slideXML(unzipPPTX(data), 1))
     expect(shadowShape.centerX).toBeCloseTo(shape.centerX, 3)
     expect(shadowShape.centerY - shape.centerY).toBeCloseTo(inches(10), 3)
   })

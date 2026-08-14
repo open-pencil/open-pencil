@@ -4,13 +4,17 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogDescription,
-  AlertDialogTitle
+  AlertDialogTitle,
+  CollapsibleContent,
+  CollapsibleRoot,
+  CollapsibleTrigger
 } from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
 
 import { ACP_AGENTS, AI_PROVIDERS, type AIProviderID } from '@open-pencil/core/constants'
 
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
+import { resolveModelsDevModel } from '@/app/ai/models/catalog'
 import {
   testProviderConnection,
   type ProviderConnectionTestFailureReason
@@ -38,6 +42,9 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 
+const CUSTOM_MODEL_VALUE = '__custom__'
+const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
+
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { dialogs } = useI18n()
@@ -48,18 +55,44 @@ const saveError = ref<string | null>(null)
 const connectionTestStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')
 const connectionTestReason = ref<ProviderConnectionTestFailureReason | null>(null)
 const deleteOpen = ref(false)
+const advancedOpen = ref(Boolean(draft.customModelID.trim()))
+const customModelSelected = ref(Boolean(draft.customModelID.trim()))
+const catalogModel = ref<(typeof providerDef.value.models)[number] | null>(null)
 
 const providerDef = computed(
   () => AI_PROVIDERS.find((provider) => provider.id === draft.providerID) ?? AI_PROVIDERS[0]
 )
 const isACP = computed(() => draft.providerID.startsWith('acp:'))
+const supportsReasoningEffort = computed(() =>
+  ['openai', 'openai-compatible', 'openrouter'].includes(draft.providerID)
+)
 const providerDisplayName = computed(() => {
   if (!isACP.value) return providerDef.value.name
   const agentID = draft.providerID.slice('acp:'.length)
   return ACP_AGENTS.find((agent) => agent.id === agentID)?.name ?? draft.providerID
 })
-const modelOptions = computed(() =>
-  providerDef.value.models.map((model) => ({ value: model.id, label: model.name }))
+const modelOptions = computed(() => [
+  ...providerDef.value.models.map((model) => ({ value: model.id, label: model.name })),
+  ...(providerDef.value.supportsCustomModel
+    ? [{ value: CUSTOM_MODEL_VALUE, label: dialogs.value.customModel }]
+    : [])
+])
+const selectedModelValue = computed(() =>
+  customModelSelected.value ? CUSTOM_MODEL_VALUE : draft.modelID
+)
+const knownModel = computed(() => {
+  if (draft.customModelID.trim()) return catalogModel.value
+  return (
+    catalogModel.value ??
+    providerDef.value.models.find((model) => model.id === draft.modelID) ??
+    null
+  )
+})
+const knownCapabilities = computed<AIModelCapability[]>(() => [
+  ...(knownModel.value?.capabilities ?? ['tools'])
+])
+const outputTokenRecommendation = computed(
+  () => knownModel.value?.recommendedMaxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS
 )
 const modelDisplayName = computed(() => {
   const modelId = draft.customModelID.trim() || draft.modelID
@@ -72,13 +105,18 @@ const visionEnabled = capabilityModel('vision')
 const canSave = computed(
   () =>
     Boolean(draft.name.trim()) &&
-    (isACP.value || Boolean(draft.customModelID.trim() || draft.modelID.trim()))
+    (isACP.value ||
+      (customModelSelected.value
+        ? Boolean(draft.customModelID.trim())
+        : Boolean(draft.modelID.trim())))
 )
 const canTest = computed(() => {
   if (isACP.value) return false
   if (!keyInput.value.trim() && !hasExistingKey.value) return false
   if (providerDef.value.supportsCustomBaseURL && !draft.customBaseURL.trim()) return false
-  return Boolean(draft.customModelID.trim() || draft.modelID.trim())
+  return customModelSelected.value
+    ? Boolean(draft.customModelID.trim())
+    : Boolean(draft.modelID.trim())
 })
 
 function capabilityModel(capability: AIModelCapability) {
@@ -103,6 +141,24 @@ async function refreshKeyStatus(): Promise<void> {
   keyStatus.value = connection ? await modelConnectionCredentialStatus(connection.id) : 'missing'
 }
 
+function effectiveModelID(): string {
+  return customModelSelected.value ? draft.customModelID.trim() : draft.modelID.trim()
+}
+
+async function refreshCatalogModel(): Promise<void> {
+  const providerID = draft.providerID
+  const modelID = effectiveModelID()
+  catalogModel.value = await resolveModelsDevModel(providerID, modelID)
+  if (providerID !== draft.providerID || modelID !== effectiveModelID()) return
+  applyKnownModelMetadata()
+}
+
+function applyKnownModelMetadata(): void {
+  if (!knownModel.value) return
+  draft.capabilities = [...knownCapabilities.value]
+  draft.maxOutputTokens = outputTokenRecommendation.value
+}
+
 function updateProvider(providerID: AIProviderID): void {
   draft.providerID = providerID
   draft.sourceConnectionId = null
@@ -111,17 +167,34 @@ function updateProvider(providerID: AIProviderID): void {
   draft.customModelID = ''
   draft.customBaseURL = ''
   draft.customAPIType = 'completions'
+  advancedOpen.value = false
+  customModelSelected.value = false
   if (providerID.startsWith('acp:')) {
     draft.capabilities = ['tools']
     if (!draft.name.trim()) draft.name = providerDisplayName.value
+  } else {
+    applyKnownModelMetadata()
   }
   keyInput.value = ''
   resetConnectionTest()
+  void refreshCatalogModel()
   void refreshKeyStatus()
 }
 
 function updateModel(modelID: string): void {
+  if (modelID === CUSTOM_MODEL_VALUE) {
+    customModelSelected.value = true
+    draft.customModelID = ''
+    advancedOpen.value = true
+    catalogModel.value = null
+    resetConnectionTest()
+    return
+  }
   draft.modelID = modelID
+  customModelSelected.value = false
+  draft.customModelID = ''
+  applyKnownModelMetadata()
+  void refreshCatalogModel()
   if (!draft.name.trim()) draft.name = modelDisplayName.value
   resetConnectionTest()
 }
@@ -129,6 +202,7 @@ function updateModel(modelID: string): void {
 async function save(): Promise<void> {
   saveError.value = null
   try {
+    applyKnownModelMetadata()
     if (!draft.name.trim()) draft.name = modelDisplayName.value || providerDisplayName.value
     const profile = saveModelProfileDraft(draft)
     if (keyInput.value.trim()) {
@@ -188,6 +262,13 @@ watch(
   () => [draft.customBaseURL, draft.customModelID, draft.customAPIType, draft.modelID],
   resetConnectionTest
 )
+watch(
+  () => draft.customModelID,
+  () => {
+    if (customModelSelected.value) void refreshCatalogModel()
+  }
+)
+void refreshCatalogModel()
 void refreshKeyStatus()
 </script>
 
@@ -235,29 +316,46 @@ void refreshKeyStatus()
       </ProviderSettingsField>
 
       <template v-if="!isACP">
+        <div class="flex items-center gap-2 pt-1">
+          <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
+            {{ dialogs.modelConfiguration }}
+          </p>
+          <div class="h-px flex-1 bg-border" />
+        </div>
+
         <ProviderSettingsField v-if="modelOptions.length" :label="dialogs.modelID">
           <AppSelect
-            :model-value="draft.modelID"
+            :model-value="selectedModelValue"
             :options="modelOptions"
             :label="dialogs.modelID"
             @update:model-value="updateModel(String($event))"
           />
         </ProviderSettingsField>
 
+        <ProviderSettingsField
+          v-if="providerDef.supportsCustomModel && selectedModelValue === CUSTOM_MODEL_VALUE"
+          :label="dialogs.customModelID"
+        >
+          <ProviderSettingsInput
+            v-model="draft.customModelID"
+            :aria-label="dialogs.customModelID"
+            data-test-id="provider-settings-custom-model"
+            placeholder="e.g. llama-3.3-70b"
+          />
+        </ProviderSettingsField>
+
+        <div class="flex items-center gap-2 pt-1">
+          <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
+            {{ dialogs.connectionSettings }}
+          </p>
+          <div class="h-px flex-1 bg-border" />
+        </div>
+
         <ProviderSettingsField v-if="providerDef.supportsCustomBaseURL" :label="dialogs.baseURL">
           <ProviderSettingsInput
             v-model="draft.customBaseURL"
             :aria-label="dialogs.baseURL"
             placeholder="http://localhost:11434/v1"
-          />
-        </ProviderSettingsField>
-
-        <ProviderSettingsField v-if="providerDef.supportsCustomModel" :label="dialogs.modelID">
-          <ProviderSettingsInput
-            v-model="draft.customModelID"
-            :aria-label="dialogs.modelID"
-            data-test-id="provider-settings-custom-model"
-            placeholder="e.g. llama-3.3-70b"
           />
         </ProviderSettingsField>
 
@@ -275,25 +373,14 @@ void refreshKeyStatus()
           />
         </ProviderSettingsField>
 
-        <ProviderSettingsField :label="dialogs.maxOutputTokens">
-          <ProviderSettingsInput
-            v-model.number="draft.maxOutputTokens"
-            :aria-label="dialogs.maxOutputTokens"
-            type="number"
-            :min="1024"
-            :max="128000"
-            :step="1024"
-          />
-        </ProviderSettingsField>
-
         <ProviderSettingsKeyField
           v-model="keyInput"
           :label="dialogs.apiKey"
           :saved="hasExistingKey"
           kind="api"
           :placeholder="hasExistingKey ? dialogs.keySavedReplace : providerDef.keyPlaceholder"
-          :key-url="providerDef.keyURL"
-          :key-url-label="dialogs.getAPIKeyGeneric"
+          :key-u-r-l="providerDef.keyURL"
+          :key-u-r-l-label="dialogs.getAPIKeyGeneric"
           @clear="clearKey"
         />
 
@@ -305,19 +392,67 @@ void refreshKeyStatus()
         />
       </template>
 
-      <div class="rounded border border-border p-2.5">
-        <p class="mb-2 text-[11px] font-medium text-surface">{{ dialogs.modelCapabilities }}</p>
-        <div class="flex flex-col gap-2">
-          <div class="flex items-center justify-between gap-3">
-            <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityTools }}</span>
-            <AppSwitch v-model="toolsEnabled" :label="dialogs.modelCapabilityTools" />
+      <CollapsibleRoot v-model:open="advancedOpen" class="rounded border border-border">
+        <CollapsibleTrigger
+          class="flex w-full items-center gap-2 px-2.5 py-2 text-left text-[11px] text-muted hover:text-surface"
+        >
+          <icon-lucide-chevron-right
+            class="size-3 transition-transform [[data-state=open]>&]:rotate-90"
+          />
+          {{ dialogs.advancedModelSettings }}
+        </CollapsibleTrigger>
+        <CollapsibleContent class="border-t border-border p-2.5">
+          <div class="flex flex-col gap-3">
+            <div>
+              <p class="text-[11px] font-medium text-surface">{{ dialogs.modelCapabilities }}</p>
+              <p class="mt-0.5 text-[10px] text-muted">
+                {{
+                  knownModel ? dialogs.modelCapabilitiesDetected : dialogs.modelCapabilitiesManual
+                }}
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityTools }}</span>
+                <span v-if="knownModel" class="text-[10px] text-surface">
+                  {{
+                    knownCapabilities.includes('tools') ? dialogs.supported : dialogs.unsupported
+                  }}
+                </span>
+                <AppSwitch v-else v-model="toolsEnabled" :label="dialogs.modelCapabilityTools" />
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityVision }}</span>
+                <span v-if="knownModel" class="text-[10px] text-surface">
+                  {{
+                    knownCapabilities.includes('vision') ? dialogs.supported : dialogs.unsupported
+                  }}
+                </span>
+                <AppSwitch v-else v-model="visionEnabled" :label="dialogs.modelCapabilityVision" />
+              </div>
+            </div>
+
+            <ProviderSettingsField v-if="supportsReasoningEffort" :label="dialogs.reasoningEffort">
+              <ProviderSettingsInput
+                v-model="draft.reasoningEffort"
+                :aria-label="dialogs.reasoningEffort"
+                :placeholder="dialogs.reasoningEffortPlaceholder"
+              />
+              <p class="mt-1 text-[10px] text-muted">{{ dialogs.reasoningEffortDescription }}</p>
+            </ProviderSettingsField>
+
+            <div class="border-t border-border pt-2.5">
+              <p class="text-[11px] font-medium text-surface">{{ dialogs.outputLimit }}</p>
+              <p class="mt-0.5 text-[10px] text-muted">
+                {{ dialogs.outputLimitAutomatic }} ·
+                {{ outputTokenRecommendation.toLocaleString() }}
+                {{ dialogs.tokens }}
+              </p>
+            </div>
           </div>
-          <div class="flex items-center justify-between gap-3">
-            <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityVision }}</span>
-            <AppSwitch v-model="visionEnabled" :label="dialogs.modelCapabilityVision" />
-          </div>
-        </div>
-      </div>
+        </CollapsibleContent>
+      </CollapsibleRoot>
 
       <p v-if="saveError" class="text-[10px] text-danger" role="alert">{{ saveError }}</p>
     </div>

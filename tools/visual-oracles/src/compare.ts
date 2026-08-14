@@ -61,7 +61,7 @@ if (opts.node) {
 
 async function runWithClipboard() {
   console.log('📋 Reading clipboard…')
-  const html = await readClipboardHtml()
+  const html = await readClipboardHTML()
   if (!html) bail('No HTML on clipboard. Copy an element in Figma first.')
 
   const parsed = await parseFigmaClipboard(html)
@@ -97,7 +97,7 @@ async function runWithNodeId(nodeId: string) {
   await $`osascript -e 'tell application "System Events" to keystroke "c" using command down'`.quiet()
   await Bun.sleep(1000)
 
-  const html = await readClipboardHtml()
+  const html = await readClipboardHTML()
   if (!html) bail('Failed to copy from Figma')
   const parsed = await parseFigmaClipboard(html)
   if (!parsed) bail('Clipboard has no Figma data after copy')
@@ -161,8 +161,8 @@ async function renderFigmaViaPaste() {
     await Bun.sleep(2000)
 
     // Get pasted selection
-    const selJson = await $`figma-use selection get --json`.quiet()
-    const selection = JSON.parse(selJson.text().trim())
+    const selJSON = await $`figma-use selection get --json`.quiet()
+    const selection = JSON.parse(selJSON.text().trim())
     if (!selection.length) throw new Error('Nothing pasted. Ensure clipboard has Figma data.')
 
     const nodeId = selection[0].id
@@ -267,7 +267,7 @@ async function diffAlpha(compareOursPath: string, total: number) {
 
 // --- Helpers ---
 
-async function readClipboardHtml(): Promise<string | null> {
+async function readClipboardHTML(): Promise<string | null> {
   const proc = Bun.spawn(
     [
       'swift',

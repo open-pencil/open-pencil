@@ -19,7 +19,11 @@ export function round(n: number, decimals = 2): number {
   return Math.round(n * factor) / factor
 }
 
-export function geometryBlobToSVGPath(blob: Uint8Array): string {
+function coordinate(value: number, decimals: number | null): number {
+  return decimals === null ? value : round(value, decimals)
+}
+
+export function geometryBlobToSVGPath(blob: Uint8Array, decimals: number | null = 2): string {
   if (blob.length === 0) return ''
   const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   let o = 0
@@ -32,35 +36,35 @@ export function geometryBlobToSVGPath(blob: Uint8Array): string {
         parts.push('Z')
         break
       case CMD_MOVE_TO: {
-        const x = round(dv.getFloat32(o, true))
-        const y = round(dv.getFloat32(o + 4, true))
+        const x = coordinate(dv.getFloat32(o, true), decimals)
+        const y = coordinate(dv.getFloat32(o + 4, true), decimals)
         o += 8
         parts.push(`M${x} ${y}`)
         break
       }
       case CMD_LINE_TO: {
-        const x = round(dv.getFloat32(o, true))
-        const y = round(dv.getFloat32(o + 4, true))
+        const x = coordinate(dv.getFloat32(o, true), decimals)
+        const y = coordinate(dv.getFloat32(o + 4, true), decimals)
         o += 8
         parts.push(`L${x} ${y}`)
         break
       }
       case CMD_QUAD_TO: {
-        const x1 = round(dv.getFloat32(o, true))
-        const y1 = round(dv.getFloat32(o + 4, true))
-        const x = round(dv.getFloat32(o + 8, true))
-        const y = round(dv.getFloat32(o + 12, true))
+        const x1 = coordinate(dv.getFloat32(o, true), decimals)
+        const y1 = coordinate(dv.getFloat32(o + 4, true), decimals)
+        const x = coordinate(dv.getFloat32(o + 8, true), decimals)
+        const y = coordinate(dv.getFloat32(o + 12, true), decimals)
         o += 16
         parts.push(`Q${x1} ${y1} ${x} ${y}`)
         break
       }
       case CMD_CUBIC_TO: {
-        const x1 = round(dv.getFloat32(o, true))
-        const y1 = round(dv.getFloat32(o + 4, true))
-        const x2 = round(dv.getFloat32(o + 8, true))
-        const y2 = round(dv.getFloat32(o + 12, true))
-        const x = round(dv.getFloat32(o + 16, true))
-        const y = round(dv.getFloat32(o + 20, true))
+        const x1 = coordinate(dv.getFloat32(o, true), decimals)
+        const y1 = coordinate(dv.getFloat32(o + 4, true), decimals)
+        const x2 = coordinate(dv.getFloat32(o + 8, true), decimals)
+        const y2 = coordinate(dv.getFloat32(o + 12, true), decimals)
+        const x = coordinate(dv.getFloat32(o + 16, true), decimals)
+        const y = coordinate(dv.getFloat32(o + 20, true), decimals)
         o += 24
         parts.push(`C${x1} ${y1} ${x2} ${y2} ${x} ${y}`)
         break
@@ -73,7 +77,12 @@ export function geometryBlobToSVGPath(blob: Uint8Array): string {
   return parts.join('')
 }
 
-function segmentToSVG(seg: VectorSegment, vertices: VectorVertex[], forward: boolean): string {
+function segmentToSVG(
+  seg: VectorSegment,
+  vertices: VectorVertex[],
+  forward: boolean,
+  decimals: number | null
+): string {
   const start = forward ? vertices[seg.start] : vertices[seg.end]
   const end = forward ? vertices[seg.end] : vertices[seg.start]
   const ts = forward ? seg.tangentStart : { x: -seg.tangentEnd.x, y: -seg.tangentEnd.y }
@@ -86,42 +95,135 @@ function segmentToSVG(seg: VectorSegment, vertices: VectorVertex[], forward: boo
     Math.abs(te.y) < 0.001
 
   if (isStraight) {
-    return `L${round(end.x)} ${round(end.y)}`
+    return `L${coordinate(end.x, decimals)} ${coordinate(end.y, decimals)}`
   }
 
-  const cp1x = round(start.x + ts.x)
-  const cp1y = round(start.y + ts.y)
-  const cp2x = round(end.x + te.x)
-  const cp2y = round(end.y + te.y)
-  return `C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${round(end.x)} ${round(end.y)}`
+  const cp1x = coordinate(start.x + ts.x, decimals)
+  const cp1y = coordinate(start.y + ts.y, decimals)
+  const cp2x = coordinate(end.x + te.x, decimals)
+  const cp2y = coordinate(end.y + te.y, decimals)
+  return `C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${coordinate(end.x, decimals)} ${coordinate(end.y, decimals)}`
 }
 
-export function vectorNetworkToSVGPaths(network: VectorNetwork): string[] {
+function traceOrderedSegments(
+  segmentIndices: readonly number[],
+  segments: VectorSegment[],
+  vertices: VectorVertex[],
+  decimals: number | null
+): string {
+  if (segmentIndices.length === 0) return ''
+  const first = segments[segmentIndices[0]]
+  const second = segmentIndices.length > 1 ? segments[segmentIndices[1]] : null
+  // Start at the first segment endpoint that does not connect to the second segment.
+  const secondConnectsStart = second?.start === first.start || second?.end === first.start
+  const secondConnectsEnd = second?.start === first.end || second?.end === first.end
+  const firstForward = !second || secondConnectsEnd || !secondConnectsStart
+  const startIndex = firstForward ? first.start : first.end
+  let currentIndex = startIndex
+  const parts = [
+    `M${coordinate(vertices[startIndex].x, decimals)} ${coordinate(vertices[startIndex].y, decimals)}`
+  ]
+
+  for (const segmentIndex of segmentIndices) {
+    const segment = segments[segmentIndex]
+    const isConnected = segment.start === currentIndex || segment.end === currentIndex
+    const forward = segment.start === currentIndex || !isConnected
+    if (!isConnected) {
+      const segmentStart = forward ? segment.start : segment.end
+      parts.push(
+        `M${coordinate(vertices[segmentStart].x, decimals)} ${coordinate(vertices[segmentStart].y, decimals)}`
+      )
+      currentIndex = segmentStart
+    }
+    parts.push(segmentToSVG(segment, vertices, forward, decimals))
+    currentIndex = forward ? segment.end : segment.start
+  }
+  if (parts.length === segmentIndices.length + 1 && currentIndex === startIndex) parts.push('Z')
+  return parts.join('')
+}
+
+type SegmentAdjacency = ReadonlyMap<number, readonly number[]>
+
+function buildSegmentAdjacency(segments: VectorSegment[]): SegmentAdjacency {
+  const adjacency = new Map<number, number[]>()
+  for (let index = 0; index < segments.length; index++) {
+    const segment = segments[index]
+    for (const vertexIndex of [segment.start, segment.end]) {
+      const incidentSegments = adjacency.get(vertexIndex)
+      if (incidentSegments) incidentSegments.push(index)
+      else adjacency.set(vertexIndex, [index])
+    }
+  }
+  return adjacency
+}
+
+function findConnectedSegment(
+  remaining: ReadonlySet<number>,
+  adjacency: SegmentAdjacency,
+  vertexIndex: number
+): number | undefined {
+  return adjacency.get(vertexIndex)?.find((index) => remaining.has(index))
+}
+
+function extendSegmentChain(
+  chain: number[],
+  startVertex: number,
+  remaining: Set<number>,
+  segments: VectorSegment[],
+  adjacency: SegmentAdjacency
+): void {
+  let currentIndex = startVertex
+  let nextIndex = findConnectedSegment(remaining, adjacency, currentIndex)
+  while (nextIndex !== undefined) {
+    chain.push(nextIndex)
+    remaining.delete(nextIndex)
+    const segment = segments[nextIndex]
+    currentIndex = segment.start === currentIndex ? segment.end : segment.start
+    nextIndex = findConnectedSegment(remaining, adjacency, currentIndex)
+  }
+}
+
+function unfilledSegmentsToPath(network: VectorNetwork, decimals: number | null): string {
+  const { vertices, segments } = network
+  const remaining = new Set(segments.map((_, index) => index))
+  const adjacency = buildSegmentAdjacency(segments)
+  const parts: string[] = []
+
+  while (remaining.size > 0) {
+    const firstIndex = remaining.values().next().value
+    if (firstIndex === undefined) break
+    remaining.delete(firstIndex)
+    const first = segments[firstIndex]
+
+    const backward: number[] = []
+    extendSegmentChain(backward, first.start, remaining, segments, adjacency)
+    backward.reverse()
+
+    const forward: number[] = []
+    extendSegmentChain(forward, first.end, remaining, segments, adjacency)
+
+    parts.push(
+      traceOrderedSegments([...backward, firstIndex, ...forward], segments, vertices, decimals)
+    )
+  }
+
+  return parts.join('')
+}
+
+export function vectorNetworkToSVGPaths(
+  network: VectorNetwork,
+  decimals: number | null = 2
+): string[] {
   const { vertices, segments, regions } = network
 
   if (regions.length > 0) {
-    return regions.map((region) => {
-      const parts: string[] = []
-      for (const loop of region.loops) {
-        if (loop.length === 0) continue
-        const firstSeg = segments[loop[0]]
-        parts.push(`M${round(vertices[firstSeg.start].x)} ${round(vertices[firstSeg.start].y)}`)
-        for (const segIdx of loop) {
-          parts.push(segmentToSVG(segments[segIdx], vertices, true))
-        }
-        parts.push('Z')
-      }
-      return parts.join('')
-    })
+    return regions.map((region) =>
+      region.loops.map((loop) => traceOrderedSegments(loop, segments, vertices, decimals)).join('')
+    )
   }
 
-  const parts: string[] = []
-  for (const seg of segments) {
-    parts.push(`M${round(vertices[seg.start].x)} ${round(vertices[seg.start].y)}`)
-    parts.push(segmentToSVG(seg, vertices, true))
-  }
-
-  return parts.length > 0 ? [parts.join('')] : []
+  const path = unfilledSegmentsToPath(network, decimals)
+  return path ? [path] : []
 }
 
 export function makePolygonPoints(node: SceneNode): string {

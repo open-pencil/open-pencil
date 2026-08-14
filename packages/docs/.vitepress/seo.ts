@@ -1,4 +1,10 @@
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
 export const BASE = 'https://openpencil.dev'
+
+const docsRoot = fileURLToPath(new URL('..', import.meta.url))
 
 export const LOCALE_PREFIXES = ['de', 'fr', 'es', 'it', 'pl', 'ru'] as const
 
@@ -62,16 +68,31 @@ function localizedUrl(slug: string, prefix: string): string {
   return `${BASE}${prefix || ''}`
 }
 
+function availableLocalesForPage(relativePath: string) {
+  const canonicalPath = stripLocalePrefix(relativePath)
+
+  return Object.values(LOCALES).filter((locale) => {
+    const localeDirectory = locale.prefix.replace(/^\//, '')
+    return existsSync(resolve(docsRoot, localeDirectory, canonicalPath))
+  })
+}
+
 export function withAlternateSitemapLinks<T extends SitemapItem>(items: T[]): T[] {
+  const linksBySlug = new Map<string, Array<{ lang: string; url: string }>>()
+
+  for (const item of items) {
+    const path = new URL(item.url, BASE).pathname.replace(/^\//, '')
+    const slug = slugForPath(path)
+    const localeKey = localeKeyForPath(path)
+    const locale = LOCALES[localeKey]
+    const links = linksBySlug.get(slug) ?? []
+    links.push({ lang: locale.hreflang, url: new URL(item.url, BASE).href })
+    linksBySlug.set(slug, links)
+  }
+
   return items.map((item) => {
-    const slug = slugForPath(item.url)
-    return {
-      ...item,
-      links: Object.values(LOCALES).map((locale) => {
-        const url = slug ? `${BASE}${locale.prefix}/${slug}` : `${BASE}${locale.prefix || '/'}`
-        return { lang: locale.hreflang, url }
-      })
-    }
+    const path = new URL(item.url, BASE).pathname.replace(/^\//, '')
+    return { ...item, links: linksBySlug.get(slugForPath(path)) }
   })
 }
 
@@ -89,20 +110,18 @@ export function applyPageSeo(pageData: PageDataLike): void {
   head.push(['meta', { property: 'og:url', content: pageUrl }])
   head.push(['meta', { property: 'og:locale', content: locale.ogLocale }])
 
-  for (const [key, loc] of Object.entries(LOCALES)) {
-    if (key !== localeKey) {
-      head.push(['meta', { property: 'og:locale:alternate', content: loc.ogLocale }])
+  for (const localeOption of availableLocalesForPage(pageData.relativePath)) {
+    if (localeOption.prefix !== locale.prefix) {
+      head.push(['meta', { property: 'og:locale:alternate', content: localeOption.ogLocale }])
     }
-  }
 
-  for (const localeOption of Object.values(LOCALES)) {
     head.push([
       'link',
       {
         rel: 'alternate',
         hreflang: localeOption.hreflang,
-        href: localizedUrl(slug, localeOption.prefix)
-      }
+        href: localizedUrl(slug, localeOption.prefix),
+      },
     ])
   }
   head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: enSlug }])

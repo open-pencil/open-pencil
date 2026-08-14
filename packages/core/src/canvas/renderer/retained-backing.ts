@@ -1,7 +1,13 @@
 import type { Canvas, Image as CKImage, Surface } from 'canvaskit-wasm'
 
-import type { SceneGraph } from '@open-pencil/scene-graph'
-import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+import { getWorldMatrix, TransformMatrix, type SceneGraph } from '@open-pencil/scene-graph'
+import {
+  computeDescendantVisualBounds,
+  effectOverflow,
+  strokeOverflow,
+  unionVisualBounds,
+  type VisualBounds
+} from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { clearSubtreePictureCache } from '#core/canvas/renderer/state'
@@ -10,6 +16,7 @@ import type { RenderLayer } from './pipeline'
 
 const now = typeof performance !== 'undefined' ? () => performance.now() : () => 0
 const SCENE_BACKING_SCALE = 3
+const MAX_SCENE_BACKING_DEVICE_PIXELS = 16_000_000
 const FRAME_BUDGET_60HZ_MS = 1000 / 60
 const MIN_SCENE_BACKING_IDLE_FRAMES = 2
 const MAX_SCENE_BACKING_IDLE_FRAMES = 18
@@ -153,9 +160,20 @@ function drawSceneBacking(
   return true
 }
 
+function sceneBackingScale(r: SkiaRenderer): number {
+  const viewportDevicePixels = r.viewportWidth * r.viewportHeight * r.dpr * r.dpr
+  if (viewportDevicePixels <= 0) return 1
+  return clamp(
+    Math.sqrt(MAX_SCENE_BACKING_DEVICE_PIXELS / viewportDevicePixels),
+    1,
+    SCENE_BACKING_SCALE
+  )
+}
+
 function sceneBackingGeometry(r: SkiaRenderer) {
-  const marginX = r.viewportWidth * ((SCENE_BACKING_SCALE - 1) / 2)
-  const marginY = r.viewportHeight * ((SCENE_BACKING_SCALE - 1) / 2)
+  const backingScale = sceneBackingScale(r)
+  const marginX = r.viewportWidth * ((backingScale - 1) / 2)
+  const marginY = r.viewportHeight * ((backingScale - 1) / 2)
   const width = Math.max(1, Math.ceil(r.viewportWidth + marginX * 2))
   const height = Math.max(1, Math.ceil(r.viewportHeight + marginY * 2))
   const backingPanX = r.panX + marginX
@@ -175,13 +193,24 @@ function sceneBackingGeometry(r: SkiaRenderer) {
 }
 
 function createSceneBackingSurface(r: SkiaRenderer, width: number, height: number): Surface | null {
-  return r.surface.makeSurface({
+  if (r.sceneBackingAllocationFailed) return null
+  const info = {
     width: Math.ceil(width * r.dpr),
     height: Math.ceil(height * r.dpr),
     colorType: r.ck.ColorType.RGBA_8888,
     alphaType: r.ck.AlphaType.Premul,
     colorSpace: r.ck.ColorSpace.SRGB
-  })
+  }
+  try {
+    return r.surface.makeSurface(info)
+  } catch (error) {
+    r.sceneBackingAllocationFailed = true
+    console.warn(
+      `Disabling retained scene backing after CanvasKit failed to allocate ${info.width}×${info.height}`,
+      error
+    )
+    return null
+  }
 }
 
 function ensureSubtreePictureCacheScope(
@@ -204,6 +233,56 @@ function ensureSubtreePictureCacheScope(
   r.subtreePictureCacheFontGeneration = r.fontGeneration
 }
 
+/**
+ * Retained pictures are recorded in world coordinates, so their recording bounds must account for
+ * the complete ancestor transform chain. The regular visual-bounds helper intentionally accepts
+ * only an absolute origin and a node-local rotation; that is insufficient for descendants of
+ * reflected or rotated instances and can clip otherwise valid draw commands from the picture.
+ */
+export function computeRetainedSubtreeBounds(
+  graph: SceneGraph,
+  childId: string
+): VisualBounds | null {
+  const visualBounds = computeDescendantVisualBounds(
+    [childId],
+    (id) => graph.getNode(id),
+    (id) => graph.getAbsolutePosition(id)
+  )
+  let transformedBounds: VisualBounds | null = null
+  const pending = [childId]
+
+  while (pending.length > 0) {
+    const nodeId = pending.pop()
+    if (!nodeId) continue
+    const node = graph.getNode(nodeId)
+    if (!node?.visible) continue
+
+    const stroke = strokeOverflow(node.strokes)
+    const effects = effectOverflow(node.effects)
+    const points = TransformMatrix.mapPoints(getWorldMatrix(node, graph), [
+      -stroke - effects.left,
+      -stroke - effects.top,
+      node.width + stroke + effects.right,
+      -stroke - effects.top,
+      node.width + stroke + effects.right,
+      node.height + stroke + effects.bottom,
+      -stroke - effects.left,
+      node.height + stroke + effects.bottom
+    ])
+    const xs = [points[0], points[2], points[4], points[6]]
+    const ys = [points[1], points[3], points[5], points[7]]
+    transformedBounds = unionVisualBounds(transformedBounds, {
+      minX: Math.min(...xs),
+      minY: Math.min(...ys),
+      maxX: Math.max(...xs),
+      maxY: Math.max(...ys)
+    })
+    pending.push(...node.childIds)
+  }
+
+  return unionVisualBounds(visualBounds, transformedBounds)
+}
+
 function cachedSubtreePicture(
   r: SkiaRenderer,
   graph: SceneGraph,
@@ -223,11 +302,7 @@ function cachedSubtreePicture(
   }
 
   cached?.picture.delete()
-  const bounds = computeDescendantVisualBounds(
-    [childId],
-    (id) => graph.getNode(id),
-    (id) => graph.getAbsolutePosition(id)
-  )
+  const bounds = computeRetainedSubtreeBounds(graph, childId)
   if (!bounds) return null
 
   const recorder = new r.ck.PictureRecorder()
@@ -436,6 +511,7 @@ export function renderSceneBacking(
   graph: SceneGraph,
   sceneVersion: number
 ): boolean {
+  if (r.sceneBackingAllocationFailed) return false
   const positionPreviewVersion = graph.positionPreviewVersion
   const allowStaleZoom = now() < r.sceneBackingPreviewUntil
   const hasCoverage = backingCoverageContainsLiveViewport(

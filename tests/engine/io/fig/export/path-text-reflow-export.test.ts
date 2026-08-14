@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { parseFigBuffer } from '@open-pencil/kiwi/fig/parse'
+import { parseFigBuffer } from '@open-pencil/fig'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
 import {

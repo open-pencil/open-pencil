@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  buildMultiplayerUrl,
+  buildMultiplayerURL,
   getKiwiMessageType,
   hasFigWireHeader,
   isKiwiMessage,
@@ -47,7 +47,7 @@ describe('Figma Kiwi protocol helpers', () => {
   })
 
   test('builds multiplayer URLs', () => {
-    const url = new URL(buildMultiplayerUrl('file-key', 'tracking-id'))
+    const url = new URL(buildMultiplayerURL('file-key', 'tracking-id'))
     expect(url.protocol).toBe('wss:')
     expect(url.pathname).toBe('/api/multiplayer/file-key')
     expect(url.searchParams.get('role')).toBe('editor')

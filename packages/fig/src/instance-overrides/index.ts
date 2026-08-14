@@ -1,5 +1,5 @@
 export { buildDsdLayoutUpdates } from './derived-symbol-data/layout'
-export { propagateDsdChanges } from './derived-symbol-data/propagate'
+export { applyGeneratedFreeformStretch, propagateDsdChanges } from './derived-symbol-data/propagate'
 export { protectField, type ProtectionMap } from './patches'
 export { syncChildrenDeep, syncNodeProps } from './sync'
 export type {
@@ -16,7 +16,7 @@ export type {
 
 import { isEqual } from 'es-toolkit/predicate'
 
-import { guidToString } from '@open-pencil/fig/node-change'
+import { guidToString, resolvedNumericBindingUpdate } from '@open-pencil/fig/node-change'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import {
   copyFills,
@@ -24,11 +24,15 @@ import {
   hasSameCopySource,
   markCopySource
 } from '@open-pencil/scene-graph/copy'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { applyComponentProperties } from './component-props'
 import { applyConstraintScaling } from './constraints'
 import { applyDerivedSymbolData } from './derived-symbol-data'
+import {
+  applyGeneratedFreeformStretch,
+  reconcileEffectiveCloneGeometry
+} from './derived-symbol-data/propagate'
 import { populateInstances } from './populate'
 import { preComputeRoots } from './resolve'
 import { applySymbolOverrides } from './symbol/overrides'
@@ -58,7 +62,7 @@ function buildKiwiPropertyNodes(
 ): Set<string> {
   const result = new Set<string>()
   for (const [nodeId, change] of changedNodeEntries(changeMap, guidToNodeId)) {
-    const nc = change as JsonObject
+    const nc = change as JSONObject
     const node = graph.getNode(nodeId)
     if (!node?.componentId) continue
     const comp = graph.getNode(node.componentId)
@@ -69,7 +73,14 @@ function buildKiwiPropertyNodes(
     const hasDiffVisible = nc.visible === false && comp.visible
     const hasDiffFills = nc.fillPaints !== undefined && !isEqual(node.fills, comp.fills)
     const hasDiffStrokes = nc.strokePaints !== undefined && !isEqual(node.strokes, comp.strokes)
-    if (hasDiffRadius || hasDiffVisible || hasDiffFills || hasDiffStrokes) result.add(nodeId)
+    const hasDiffText =
+      nc.textData !== undefined &&
+      node.type === 'TEXT' &&
+      comp.type === 'TEXT' &&
+      node.text !== comp.text
+    if (hasDiffRadius || hasDiffVisible || hasDiffFills || hasDiffStrokes || hasDiffText) {
+      result.add(nodeId)
+    }
   }
   return result
 }
@@ -265,8 +276,20 @@ function buildOverrideContext(
   }
 }
 
+function applyResolvedNumericBindings(graph: SceneGraph, activeNodeIds?: Set<string>): void {
+  for (const node of overrideCandidates(graph, activeNodeIds)) {
+    const updates: Partial<SceneNode> = {}
+    for (const [field, variableId] of Object.entries(node.boundVariables)) {
+      if (Array.isArray(variableId)) continue
+      const value = graph.resolveNumberVariableForNode(node.id, variableId)
+      if (value === undefined) continue
+      Object.assign(updates, resolvedNumericBindingUpdate(field, value))
+    }
+    if (Object.keys(updates).length > 0) graph.updateNode(node.id, updates)
+  }
+}
+
 /**
- * Populate empty instances from their components and apply symbol overrides.
  *
  * Shared between .fig file import and clipboard paste. Both paths produce
  * a SceneGraph with INSTANCE nodes whose componentId references have been
@@ -348,6 +371,14 @@ export function populateAndApplyOverrides(
   propagateResolvedFills(graph, new Set([...ctx.kiwiPropertyNodes, ...overriddenNodes]))
   propagateResolvedTextClones(graph, ctx.activeNodeIds)
   applyConstraintScaling(ctx)
+  const scaledInstances = new Set<string>()
+  for (const node of overrideCandidates(graph, ctx.activeNodeIds)) {
+    if (node.type !== 'INSTANCE' || !node.componentId) continue
+    const component = graph.getNode(node.componentId)
+    if (component && (node.width !== component.width || node.height !== component.height)) {
+      scaledInstances.add(node.id)
+    }
+  }
   applyComponentProperties(ctx)
 
   // Final component-property swaps can replace descendants targeted by earlier
@@ -361,4 +392,9 @@ export function populateAndApplyOverrides(
     ctx.protectedFields,
     ctx.preComputedClones
   )
+  // Final swaps recreate descendants from component defaults. Reconcile only
+  // geometry that already had an authoritative effective size or cross-axis position.
+  reconcileEffectiveCloneGeometry(ctx, scaledInstances)
+  applyResolvedNumericBindings(graph, ctx.activeNodeIds)
+  applyGeneratedFreeformStretch(ctx)
 }

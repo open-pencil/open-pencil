@@ -31,8 +31,16 @@ Doppio click su un nodo testo per entrare in modalità modifica. Clicca fuori pe
 Ricerca, anteprima e scroll virtuale.
 
 ## Fonti dei font
-- **App desktop** — tutti i font di sistema disponibili
-- **Browser** — font di sistema disponibili in Chrome e Edge
+- **Font predefinito** — Inter viene caricato automaticamente
+- **App desktop** — font di sistema e cataloghi abilitati di Google Fonts, Fontsource, Bunny Fonts e Fontshare
+- **Browser** — font di sistema disponibili in Chrome ed Edge; i cataloghi online richiedono l’app desktop
+- **Font scaricati** — l’app desktop memorizza nella cache gli stili scaricati per riutilizzarli sullo stesso dispositivo
+
+## Font mancanti e sostituzioni
+
+Quando una famiglia o uno stile richiesto non può essere caricato, OpenPencil mostra un avviso sopra l’editor invece di considerare silenziosamente fedele il rendering di fallback.
+
+Espandi l’avviso per vedere ogni stile interessato e il sostituto attivo. Usa **Seleziona livelli** per individuare i nodi di testo interessati o **Riprova i font** dopo aver modificato l’accesso alla rete, il permesso per i font locali o le impostazioni dei provider. Uno stile può essere sintetizzato da un altro stile caricato della stessa famiglia; una famiglia mancante usa Inter come sostituto quando disponibile.
 
 ## Suggerimenti
 - Input IME (cinese, giapponese, coreano) completamente supportato.

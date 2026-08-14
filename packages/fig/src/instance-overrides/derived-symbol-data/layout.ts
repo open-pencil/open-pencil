@@ -1,9 +1,10 @@
 import {
+  convertFigmaTransformProps,
   convertFigmaDerivedTextGlyphs,
   convertLetterSpacing,
   convertLineHeight
 } from '@open-pencil/fig/node-change'
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { getNodeLocalMatrix, type SceneNode } from '@open-pencil/scene-graph'
 
 import type { DerivedSymbolOverride, OverrideContext } from '../types'
 import { resolveDsdGeometry } from './geometry'
@@ -40,6 +41,26 @@ function resolveSizeOnlyPosition(
     source.x + source.width <= targetParent.width + 0.01 &&
     source.y + source.height <= targetParent.height + 0.01
   return fitsTargetParent ? { x: source.x, y: source.y } : null
+}
+
+function preserveTransformedPositionAfterResize(
+  node: SceneNode,
+  width: number,
+  height: number
+): Pick<SceneNode, 'x' | 'y'> | null {
+  if (node.rotation === 0 && !node.flipX && !node.flipY) return null
+
+  // Figma's transform is anchored to the node's local coordinate system, while SceneNode
+  // rotation/reflection is applied around its center. If derived symbol data changes only the
+  // size, retaining x/y moves that center and therefore changes the effective transform. Keep
+  // the existing matrix translation and solve x/y again for the new center instead.
+  const matrix = getNodeLocalMatrix(node)
+  const centerX = width / 2
+  const centerY = height / 2
+  return {
+    x: matrix[2] - centerX + matrix[0] * centerX + matrix[1] * centerY,
+    y: matrix[5] - centerY + matrix[3] * centerX + matrix[4] * centerY
+  }
 }
 
 function buildDsdTextUpdates(
@@ -79,12 +100,21 @@ export function buildDsdLayoutUpdates(
     figmaDerivedLayout.height = d.size.y
   }
   if (d.transform) {
-    updates.x = d.transform.m02
-    updates.y = d.transform.m12
-    figmaDerivedLayout.x = d.transform.m02
-    figmaDerivedLayout.y = d.transform.m12
+    const transformed = convertFigmaTransformProps({
+      transform: d.transform,
+      size: d.size ?? { x: target.width, y: target.height }
+    })
+    updates.x = transformed.x
+    updates.y = transformed.y
+    updates.rotation = transformed.rotation
+    updates.flipX = transformed.flipX
+    updates.flipY = transformed.flipY
+    figmaDerivedLayout.x = transformed.x
+    figmaDerivedLayout.y = transformed.y
   } else if (d.size) {
-    const position = resolveSizeOnlyPosition(ctx, _visibleSiblingCount, target)
+    const position =
+      preserveTransformedPositionAfterResize(target, d.size.x, d.size.y) ??
+      resolveSizeOnlyPosition(ctx, _visibleSiblingCount, target)
     if (position) {
       updates.x = position.x
       updates.y = position.y

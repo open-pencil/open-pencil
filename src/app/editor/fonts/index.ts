@@ -22,6 +22,7 @@ import {
 import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
+import { IS_TAURI } from '@/constants'
 
 if (typeof navigator !== 'undefined') {
   fontManager.setFallbackUserAgent(navigator.userAgent)
@@ -177,7 +178,9 @@ export async function ensureGraphFonts(
     const requirements = collectGraphFontRequirements(graph, nodeIds)
     const { characters } = requirements
     await Promise.all(fontKeys.map(([family, style]) => loadFont(family, style, characters)))
-    const fallbackScripts = missingGraphFontScripts(requirements)
+    const fallbackScripts = missingGraphFontScripts(requirements, {
+      treatUnknownCoverageAsMissing: IS_TAURI
+    })
     if (fallbackScripts.length > 0) {
       const fallbacks = await fontManager.ensureFallbackPack(fallbackScripts, characters)
       if (Object.values(fallbacks).some((families) => families.length > 0)) {
@@ -207,9 +210,9 @@ async function loadSystemFont(family: string, style = 'Regular'): Promise<ArrayB
   if (!isTauri()) return null
   try {
     const { invoke } = await import('@tauri-apps/api/core')
-    const data = await invoke<number[] | null>('load_system_font', { family, style })
-    if (!data?.length) return null
-    return new Uint8Array(data).buffer
+    const data = await invoke<ArrayBuffer>('load_system_font', { family, style })
+    if (data.byteLength === 0) return null
+    return data
   } catch {
     return null
   }

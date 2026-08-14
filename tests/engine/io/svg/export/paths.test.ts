@@ -108,6 +108,25 @@ describe('vectorNetworkToSVGPaths()', () => {
     expect(paths[0]).toContain('C')
   })
 
+  test('traces arbitrarily ordered open segments as one path', () => {
+    const paths = vectorNetworkToSVGPaths({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 20, y: 0 },
+        { x: 30, y: 0 }
+      ],
+      segments: [
+        { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+      ],
+      regions: []
+    })
+
+    expect(paths).toEqual(['M0 0L10 0L20 0L30 0'])
+  })
+
   test('region with loop', () => {
     const paths = vectorNetworkToSVGPaths({
       vertices: [
@@ -125,6 +144,60 @@ describe('vectorNetworkToSVGPaths()', () => {
     expect(paths).toHaveLength(1)
     expect(paths[0]).toContain('M0 0')
     expect(paths[0]).toContain('Z')
+  })
+
+  test('traces non-directional region segments continuously', () => {
+    const paths = vectorNetworkToSVGPaths({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 50, y: 100 }
+      ],
+      segments: [
+        { start: 1, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 0, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+      ],
+      regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2]] }]
+    })
+
+    expect(paths).toEqual(['M0 0L100 0L50 100L0 0Z'])
+  })
+
+  test('starts a new subpath for disconnected region segments', () => {
+    const paths = vectorNetworkToSVGPaths({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 20, y: 0 },
+        { x: 30, y: 0 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+      ],
+      regions: [{ windingRule: 'NONZERO', loops: [[0, 1]] }]
+    })
+
+    expect(paths).toEqual(['M0 0L10 0M20 0L30 0'])
+  })
+
+  test('recognizes closed unfilled segment chains', () => {
+    const paths = vectorNetworkToSVGPaths({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+        { x: 0, y: 10 }
+      ],
+      segments: [
+        { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+        { start: 2, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+      ],
+      regions: []
+    })
+
+    expect(paths).toEqual(['M10 0L0 10L0 0L10 0Z'])
   })
 
   test('empty network', () => {

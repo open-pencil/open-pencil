@@ -1,7 +1,12 @@
 /* eslint-disable max-lines -- scene dispatch stays together while shape domains live in sibling modules */
 import type { Canvas, Path } from 'canvaskit-wasm'
 
-import type { SceneNode, SceneGraph, Fill } from '@open-pencil/scene-graph'
+import {
+  getAbsolutePositionFull,
+  type SceneNode,
+  type SceneGraph,
+  type Fill
+} from '@open-pencil/scene-graph'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
@@ -39,26 +44,46 @@ function drawVisibleFills(
 ): void {
   paintFills(r, node.fills, node, graph, draw)
 }
-function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number): boolean {
+
+function hasNodeTransform(node: SceneNode): boolean {
+  return node.rotation !== 0 || node.flipX || node.flipY
+}
+
+function hasOverflowPathTextPaint(node: SceneNode): boolean {
+  return (
+    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 || node.strokeGeometry.length > 0)
+  )
+}
+
+function isCulled(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  node: SceneNode,
+  absX: number,
+  absY: number,
+  hasTransformedAncestor: boolean
+): boolean {
   const canCull =
     node.childIds.length === 0 ||
     ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') &&
       node.clipsContent)
-  if (!canCull) return false
+  if (!canCull || hasOverflowPathTextPaint(node)) return false
 
   const vp = r.worldViewport
-  // Leaf cull uses width×height only. TEXT_PATH glyphs and their outlines often
-  // sit outside that box (negative x, past height) — without padding we cull a
-  // node whose lettering is still on-screen (especially when zoomed on the
-  // outline alone). Scoped to path text so ordinary nodes keep tight bounds.
-  const pad =
-    node.type === 'TEXT' && (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
-      ? Math.max(node.width, node.height, 64) * 0.25
-      : 0
+  if (hasTransformedAncestor) {
+    const bounds = getAbsolutePositionFull(node, graph)
+    return (
+      bounds.boundX > vp.x + vp.w ||
+      bounds.boundY > vp.y + vp.h ||
+      bounds.boundX + bounds.width < vp.x ||
+      bounds.boundY + bounds.height < vp.y
+    )
+  }
   const bw = node.width
   const bh = node.height
   if (node.rotation !== 0) {
-    const diag = Math.hypot(bw, bh) + pad * 2
+    const diag = Math.hypot(bw, bh)
     const cx = absX + bw / 2
     const cy = absY + bh / 2
     return (
@@ -68,12 +93,7 @@ function isCulled(r: SkiaRenderer, node: SceneNode, absX: number, absY: number):
       cy + diag / 2 < vp.y
     )
   }
-  return (
-    absX - pad > vp.x + vp.w ||
-    absY - pad > vp.y + vp.h ||
-    absX + bw + pad < vp.x ||
-    absY + bh + pad < vp.y
-  )
+  return absX > vp.x + vp.w || absY > vp.y + vp.h || absX + bw < vp.x || absY + bh < vp.y
 }
 
 function applyNodeTransforms(
@@ -85,14 +105,17 @@ function applyNodeTransforms(
 ): void {
   const rotation =
     overlays.rotationPreview?.nodeId === nodeId ? overlays.rotationPreview.angle : node.rotation
-  if (rotation !== 0) {
-    if (node.type === 'LINE') canvas.rotate(rotation, 0, 0)
-    else canvas.rotate(rotation, node.width / 2, node.height / 2)
-  }
-
   if (node.flipX || node.flipY) {
     canvas.translate(node.flipX ? node.width : 0, node.flipY ? node.height : 0)
     canvas.scale(node.flipX ? -1 : 1, node.flipY ? -1 : 1)
+  }
+
+  // Keep drawing transforms in the same order as getNodeLocalMatrix and Figma's raw matrix.
+  // Reflected quarter-turn connector instances are visibly reversed when rotation is applied
+  // before the reflection.
+  if (rotation !== 0) {
+    if (node.type === 'LINE') canvas.rotate(rotation, 0, 0)
+    else canvas.rotate(rotation, node.width / 2, node.height / 2)
   }
 }
 function renderNodeContent(
@@ -146,7 +169,8 @@ function renderChildIds(
   childIds: string[],
   overlays: RenderOverlays,
   absX: number,
-  absY: number
+  absY: number,
+  hasTransformedAncestor: boolean
 ): void {
   renderMaskedChildIds(
     r,
@@ -156,7 +180,7 @@ function renderChildIds(
       const child = graph.getNode(childId)
       return child?.visible && child.isMask ? child.maskType : null
     },
-    (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY),
+    (childId) => r.renderNode(canvas, graph, childId, overlays, absX, absY, hasTransformedAncestor),
     (childId) => {
       const child = graph.getNode(childId)
       if (child) renderMaskNodeContent(r, canvas, graph, child, childId, overlays)
@@ -176,7 +200,8 @@ function renderChildren(
   node: SceneNode,
   overlays: RenderOverlays,
   absX: number,
-  absY: number
+  absY: number,
+  hasTransformedAncestor: boolean
 ): void {
   if (node.type === 'BOOLEAN_OPERATION') return
   const isClippableContainer =
@@ -192,10 +217,10 @@ function renderChildren(
     } else {
       canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, true)
     }
-    renderChildIds(r, canvas, graph, node.childIds, overlays, absX, absY)
+    renderChildIds(r, canvas, graph, node.childIds, overlays, absX, absY, hasTransformedAncestor)
     canvas.restore()
   } else {
-    renderChildIds(r, canvas, graph, node.childIds, overlays, absX, absY)
+    renderChildIds(r, canvas, graph, node.childIds, overlays, absX, absY, hasTransformedAncestor)
   }
 }
 export function renderNode(
@@ -205,7 +230,8 @@ export function renderNode(
   nodeId: string,
   overlays: RenderOverlays,
   parentAbsX = 0,
-  parentAbsY = 0
+  parentAbsY = 0,
+  hasTransformedAncestor = false
 ): void {
   const node = graph.getNode(nodeId)
   if (
@@ -226,7 +252,7 @@ export function renderNode(
   const absX = parentAbsX + node.x
   const absY = parentAbsY + node.y
 
-  if (isCulled(r, node, absX, absY)) {
+  if (isCulled(r, graph, node, absX, absY, hasTransformedAncestor)) {
     r._culledCount++
     return
   }
@@ -274,7 +300,16 @@ export function renderNode(
   applyNodeTransforms(r, canvas, node, nodeId, overlays)
   renderNodeContent(r, canvas, graph, node, nodeId, overlays)
   drawLayoutGrids(r, canvas, node)
-  renderChildren(r, canvas, graph, node, overlays, absX, absY)
+  renderChildren(
+    r,
+    canvas,
+    graph,
+    node,
+    overlays,
+    absX,
+    absY,
+    hasTransformedAncestor || hasNodeTransform(node)
+  )
 
   if (layerBlur) {
     canvas.restore()
@@ -552,13 +587,9 @@ function drawNodeStroke(
     return
   }
   if (stroke.align !== 'INSIDE') {
-    // Figma bakes OUTSIDE/CENTER strokes into strokeGeometry command blobs.
-    // Filling those paths is the correct paint (not canvas.stroke of the AABB).
-    // TEXT_PATH circular outlines live here — without this branch they became a
-    // white rectangular border around the text box.
-    if (node.type === 'VECTOR' || node.type === 'TEXT')
+    if (node.type === 'VECTOR' || node.type === 'TEXT') {
       drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
-    else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
+    } else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
     return
   }
 
@@ -578,19 +609,9 @@ function drawNodeStroke(
   canvas.restore()
 }
 
-/**
- * Path text with a baked OUTSIDE stroke: Figma's strokeGeometry for these nodes
- * is often a *solid letter silhouette* (outer contour of fill+stroke), not a
- * thin ring. If we paint fills first then strokeGeometry, white covers the
- * black glyph interiors → solid white letters. Stroke-then-fill keeps black
- * bodies inside the white outline (DomeSticker / ArnoCoenen.art).
- */
 function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
   return (
     node.type === 'TEXT' &&
-    // Only TEXT_PATH stand-ins want stroke-first painting; ordinary text can
-    // also carry glyphs (missing-font paint) + a stroke, where fill-then-stroke
-    // is correct — don't invert its paint order.
     node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
     (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
     node.strokeGeometry.length > 0
@@ -640,13 +661,8 @@ export function renderShapeUncached(
   const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
   const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   const pathTextStrokeFirst = isPathTextWithStrokeGeometry(node)
-  // Reflowed path text has no strokeGeometry (mutually exclusive with
-  // pathTextStrokeFirst) — strokes come from per-glyph silhouettes instead;
-  // paintNodeStrokes must not run or its empty-sg fallback strokes the AABB.
   const reflowedPathText = isReflowedPathText(node)
 
-  // Default Figma/Skia order is fill then stroke. Path text is the exception
-  // (see isPathTextWithStrokeGeometry) — invert only for that case.
   if (pathTextStrokeFirst) {
     paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
   }
@@ -730,21 +746,10 @@ function drawGradientText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boo
   }
 }
 
-/**
- * FIXED/TRUNCATE text normally clips to the layout box (Figma-like wrapping).
- * Imported path text is different: Figma still draws glyphs/OUTSIDE strokes that
- * sit outside width×height (e.g. x≈-37 on DomeSticker). Clipping here shaved
- * the left of the circular arc even when the parent frame had room.
- */
 function shouldClipTextToLayoutBox(node: SceneNode): boolean {
-  // Only TEXT_PATH lettering legitimately paints outside width×height; an
-  // ordinary missing-font text box (which also carries glyphs/strokeGeometry)
-  // set to Fixed/Truncate must still clip, or its overflow spills out.
-  const hasOverflowTextPaint =
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
-    ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 || node.strokeGeometry.length > 0)
   return (
-    !hasOverflowTextPaint && (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
+    !hasOverflowPathTextPaint(node) &&
+    (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
   )
 }
 

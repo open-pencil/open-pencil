@@ -25,6 +25,19 @@ test('font settings popover exposes web font access without desktop-only cache a
   await expect(
     typography.getByRole('img', { name: /Missing font: Missing Test Sans/ })
   ).toBeVisible()
+  const fontBanner = page.getByTestId('font-status-banner')
+  await expect(fontBanner).toContainText('1 font face is unavailable or substituted')
+  await page.getByTestId('font-status-toggle').click()
+  await expect(page.getByTestId('font-status-issue')).toContainText(
+    'Missing Test Sans Regular → Inter'
+  )
+  await page.getByTestId('font-status-select').click()
+  await expect(page.getByTestId('font-status-banner')).toBeVisible()
+  const selected = await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    return store ? [...store.state.selectedIds] : []
+  })
+  expect(selected).toHaveLength(1)
   const fontSettings = page.getByRole('button', { name: 'Font settings' })
   await expect(fontSettings).toHaveAttribute('data-test-id', 'font-settings-trigger')
   await fontSettings.hover()

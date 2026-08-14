@@ -1,6 +1,6 @@
 {
   "name": "@open-pencil/core",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -84,6 +84,12 @@
       "types": "./dist/rpc/index.d.ts",
       "import": "./dist/rpc/index.js",
       "default": "./dist/rpc/index.js"
+    },
+    "./library": {
+      "bun": "./src/library/index.ts",
+      "types": "./dist/library/index.d.ts",
+      "import": "./dist/library/index.js",
+      "default": "./dist/library/index.js"
     },
     "./lint": {
       "types": "./dist/lint/index.d.ts",

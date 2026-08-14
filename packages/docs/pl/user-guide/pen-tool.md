@@ -1,6 +1,6 @@
 ---
 title: Narzędzie pióro
-description: Ścieżki wektorowe z krzywymi Béziera in OpenPencil.
+description: Ścieżki wektorowe z krzywymi Béziera w OpenPencil.
 ---
 # Narzędzie pióro
 
@@ -8,15 +8,15 @@ description: Ścieżki wektorowe z krzywymi Béziera in OpenPencil.
 **P**
 
 ## Stawianie punktów
-- **Click** — corner point
-- **Click + drag** — curve point with Bézier tangent handles
-  - **Hold <kbd>Space</kbd>** while dragging to move the point itself
+- **Kliknięcie** — umieszcza punkt narożny
+- **Kliknięcie + przeciągnięcie** — umieszcza punkt krzywej z uchwytami stycznych Béziera
+  - **Przytrzymaj <kbd>Space</kbd>** podczas przeciągania, aby przesunąć sam punkt
 
 ## Zamykanie ścieżki
-Click the first point to close into a loop.
+Kliknij pierwszy punkt, aby zamknąć ścieżkę w pętlę.
 
 ## Otwarte ścieżki
-<kbd>Escape</kbd> to commit as open path.
+Naciśnij <kbd>Escape</kbd>, aby zatwierdzić otwartą ścieżkę.
 
 ## Sieci wektorowe
 Ścieżki w OpenPencil korzystają z sieci wektorowych — elastycznego modelu obsługującego rozgałęzione ścieżki i złożoną topologię. Jest to ten sam model, co w Figmie, więc ścieżki zachowują pełną kompatybilność z plikami .fig.

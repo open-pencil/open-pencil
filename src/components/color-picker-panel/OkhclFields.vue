@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { colorToCSS } from '@open-pencil/core/color'
-import { fromPercent, toPercent } from '@open-pencil/vue'
+import { fromPercent, toPercent, useI18n } from '@open-pencil/vue'
 
 import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 
 const ctx = useColorPickerPanelContext()
+const { panels } = useI18n()
 const percentText = (value: number) => `${Math.round(toPercent(value))}%`
 </script>
 
 <template>
   <div v-if="ctx.isOkHCLFormat && ctx.okhcl?.okhcl" class="flex flex-col gap-2">
     <OkhclChannelSlider
-      label="Hue"
+      :label="panels.hue"
       :model-value="ctx.okhcl.okhcl.h"
       :min="0"
       :max="360"
@@ -28,7 +29,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
     />
 
     <OkhclChannelSlider
-      label="Chroma"
+      :label="panels.chroma"
       :model-value="ctx.okhcl.okhcl.c"
       :min="0"
       :max="0.4"
@@ -46,7 +47,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
     />
 
     <OkhclChannelSlider
-      label="Lightness"
+      :label="panels.lightness"
       :model-value="ctx.okhcl.okhcl.l"
       :min="0"
       :max="1"
@@ -64,7 +65,7 @@ const percentText = (value: number) => `${Math.round(toPercent(value))}%`
     />
 
     <OkhclChannelSlider
-      label="Alpha"
+      :label="panels.alpha"
       :model-value="ctx.okhcl.okhcl.a ?? 1"
       :min="0"
       :max="1"

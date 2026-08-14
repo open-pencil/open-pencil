@@ -1,7 +1,9 @@
+import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 
 export function createStructureStateActions(ctx: EditorContext) {
   function toggleNodeVisibility(id: string) {
+    assertNodeEditable(ctx.graph, id)
     const node = ctx.graph.getNode(id)
     if (!node) return
     ctx.graph.updateNode(id, { visible: !node.visible })
@@ -9,16 +11,19 @@ export function createStructureStateActions(ctx: EditorContext) {
   }
 
   function toggleNodeLock(id: string) {
+    assertNodeEditable(ctx.graph, id)
     const node = ctx.graph.getNode(id)
     if (!node) return
     ctx.graph.updateNode(id, { locked: !node.locked })
   }
 
   function toggleVisibility() {
+    for (const id of ctx.state.selectedIds) assertNodeEditable(ctx.graph, id)
     for (const id of ctx.state.selectedIds) toggleNodeVisibility(id)
   }
 
   function toggleLock() {
+    for (const id of ctx.state.selectedIds) assertNodeEditable(ctx.graph, id)
     for (const id of ctx.state.selectedIds) toggleNodeLock(id)
   }
 

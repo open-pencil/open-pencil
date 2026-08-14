@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { loadDocument, prepareDocumentForRpc } from '#cli/headless'
+import { loadDocument, prepareDocumentForRPC } from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 
@@ -61,7 +61,7 @@ describe('headless CLI lazy .fig preparation', () => {
     expect(page1Instance ? graph.getChildren(page1Instance.id) : []).toHaveLength(1)
     expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(0)
 
-    prepareDocumentForRpc(graph, 'tree', { page: 'Page 2' })
+    prepareDocumentForRPC(graph, 'tree', { page: 'Page 2' })
 
     expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(1)
   })
@@ -70,7 +70,7 @@ describe('headless CLI lazy .fig preparation', () => {
     const graph = await createLazyFixture()
     const page2Instance = pageInstance(graph, 'Page 2')
 
-    prepareDocumentForRpc(graph, 'find', {})
+    prepareDocumentForRPC(graph, 'find', {})
 
     expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(1)
   })
@@ -79,7 +79,7 @@ describe('headless CLI lazy .fig preparation', () => {
     const graph = await createLazyFixture()
     const page2Instance = pageInstance(graph, 'Page 2')
 
-    prepareDocumentForRpc(graph, 'pages')
+    prepareDocumentForRPC(graph, 'pages')
 
     expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(0)
   })

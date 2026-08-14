@@ -19,6 +19,8 @@ export const NODE_TYPE_PLUGIN_KEY = 'nodeType'
 export const BOUND_VARIABLES_PLUGIN_KEY = 'boundVariables'
 export const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
 export const TEXT_PATH_BOX_PLUGIN_KEY = 'textPathBox'
+export const LIBRARY_SOURCE_PLUGIN_KEY = 'librarySource'
+export const ENABLED_LIBRARIES_PLUGIN_KEY = 'enabledLibraries'
 
 const NATIVE_EXPORT_FORMATS: Record<string, ExportFormatId> = {
   PNG: 'png',
@@ -199,6 +201,49 @@ export function extractPluginData(nc: NodeChange): PluginDataEntry[] {
     key: entry.key,
     value: entry.value
   }))
+}
+
+export function extractLibrarySource(nc: NodeChange): SceneNode['librarySource'] {
+  const value = getOpenPencilPluginValue(nc, LIBRARY_SOURCE_PLUGIN_KEY)
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    const source = parsed as {
+      identity?: { libraryId?: unknown; assetKey?: unknown; revisionId?: unknown }
+      sourceNodeId?: unknown
+      readOnly?: unknown
+    }
+    if (
+      typeof source.identity?.libraryId !== 'string' ||
+      typeof source.identity.assetKey !== 'string' ||
+      typeof source.identity.revisionId !== 'string'
+    ) {
+      return null
+    }
+    return {
+      identity: {
+        libraryId: source.identity.libraryId,
+        assetKey: source.identity.assetKey,
+        revisionId: source.identity.revisionId
+      },
+      sourceNodeId: typeof source.sourceNodeId === 'string' ? source.sourceNodeId : null,
+      readOnly: source.readOnly === true
+    }
+  } catch {
+    return null
+  }
+}
+
+export function applyLibrarySourcePluginData(node: SceneNode): void {
+  if (node.librarySource) {
+    upsertPluginData(node, LIBRARY_SOURCE_PLUGIN_KEY, JSON.stringify(node.librarySource))
+  } else {
+    node.pluginData = node.pluginData.filter(
+      (entry) =>
+        !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === LIBRARY_SOURCE_PLUGIN_KEY)
+    )
+  }
 }
 
 export function getOpenPencilPluginValue(nc: NodeChange, key: string): string | null {

@@ -5,13 +5,10 @@ import * as Y from 'yjs'
 import type { Fill, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import { nodeVisualBounds } from '@open-pencil/scene-graph/geometry'
+import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
-import {
-  createYjsGraphSync,
-  registerYjsObservers,
-  syncNodePropsToYMap,
-  yNodeToProps
-} from '@/app/collab/yjs-sync'
+import { decodeNodeFromYjs, syncEncodedNodeToYMap } from '@/app/collab/node-codec'
+import { createYjsGraphSync, registerYjsObservers } from '@/app/collab/yjs-sync'
 import { createEditorStore } from '@/app/editor/session'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
@@ -19,7 +16,7 @@ import { connectYDocs } from '#tests/helpers/yjs'
 
 // Test copy of the private apply path.
 function applyYnodeToGraph(peer: SceneGraph, nodeId: string, ynode: Y.Map<unknown>) {
-  const props = yNodeToProps(ynode)
+  const props = decodeNodeFromYjs(ynode)
   if (peer.getNode(nodeId)) {
     peer.updateNode(nodeId, props as Partial<SceneNode>)
     return
@@ -38,7 +35,7 @@ function seedHostIntoYjs(host: SceneGraph): Y.Map<Y.Map<unknown>> {
     for (const node of host.getAllNodes()) {
       const ynode = new Y.Map<unknown>()
       ynodes.set(node.id, ynode)
-      syncNodePropsToYMap(node, ynode)
+      syncEncodedNodeToYMap(node, ynode)
     }
   })
   return ynodes
@@ -149,6 +146,97 @@ describe('collab yjs-sync', () => {
     expect(page.childIds).toContain('remote-id')
   })
 
+  test('excludes derived text pictures from collaboration payloads', () => {
+    const graph = new SceneGraph()
+    const page = firstPage(graph)
+    const text = graph.createNode('TEXT', page.id, {
+      text: 'Shared text',
+      textPicture: new Uint8Array([4, 5, 6])
+    })
+    const doc = new Y.Doc()
+    const ynode = new Y.Map<unknown>()
+    doc.getMap<Y.Map<unknown>>('nodes').set(text.id, ynode)
+
+    syncEncodedNodeToYMap(text, ynode)
+
+    expect(ynode.has('textPicture')).toBe(false)
+    ynode.set('textPicture', new Uint8Array([9]))
+    expect(decodeNodeFromYjs(ynode).textPicture).toBeNull()
+  })
+
+  test('normalizes malformed source metadata and geometry at the remote boundary', () => {
+    const doc = new Y.Doc()
+    const ynode = new Y.Map<unknown>()
+    doc.getMap<Y.Map<unknown>>('nodes').set('remote', ynode)
+    ynode.set('source', { format: 'fig', fig: { rawNodeFields: 'invalid' } })
+    ynode.set('fillGeometry', [
+      {
+        windingRule: 'EVENODD',
+        commandsBlob: new Uint8Array([0]),
+        fills: [
+          null,
+          'invalid',
+          {
+            type: 'GRADIENT_LINEAR',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            gradientStops: 'invalid'
+          },
+          {
+            type: 'NOISE',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            noiseSize: 'invalid'
+          },
+          {
+            type: 'GRADIENT_LINEAR',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 0.8,
+            visible: true,
+            gradientStops: [
+              { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+              { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+            ],
+            gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+          },
+          {
+            type: 'SOLID',
+            color: { r: 1, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true
+          }
+        ]
+      },
+      { windingRule: 'NONZERO', commandsBlob: 'invalid' }
+    ])
+    ynode.set('strokeGeometry', 'invalid')
+
+    const props = decodeNodeFromYjs(ynode)
+    const source = props.source as SceneNode['source']
+    const fillGeometry = props.fillGeometry as GeometryPath[]
+
+    expect(source).toEqual({
+      ...createDefaultSourceMetadata(),
+      format: 'fig'
+    })
+    expect(fillGeometry).toHaveLength(1)
+    expect(fillGeometry[0]?.commandsBlob).toBeInstanceOf(Uint8Array)
+    expect(fillGeometry[0]?.fills).toHaveLength(2)
+    expect(fillGeometry[0]?.fills?.[0]).toMatchObject({
+      type: 'GRADIENT_LINEAR',
+      opacity: 0.8,
+      gradientStops: [
+        { color: { r: 1, g: 0, b: 0, a: 1 }, position: 0 },
+        { color: { r: 0, g: 0, b: 1, a: 1 }, position: 1 }
+      ],
+      gradientTransform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+    })
+    expect(fillGeometry[0]?.fills?.[1]?.type).toBe('SOLID')
+    expect(props.strokeGeometry).toEqual([])
+  })
+
   test('binary geometry fields round-trip as Uint8Array, not strings', () => {
     const host = new SceneGraph()
     const page = firstPage(host)
@@ -163,9 +251,9 @@ describe('collab yjs-sync', () => {
     const doc = new Y.Doc()
     const ynode = new Y.Map<unknown>()
     doc.getMap<Y.Map<unknown>>('nodes').set(ellipse.id, ynode)
-    syncNodePropsToYMap(ellipse, ynode)
+    syncEncodedNodeToYMap(ellipse, ynode)
     blob[0] = 99
-    const props = yNodeToProps(ynode)
+    const props = decodeNodeFromYjs(ynode)
 
     expect(typeof ynode.get('fillGeometry')).not.toBe('string')
     const decoded = props.fillGeometry as GeometryPath[]
@@ -207,11 +295,11 @@ describe('collab yjs-sync', () => {
     doc.transact(() => {
       const pageYnode = new Y.Map<unknown>()
       ynodes.set(hostPage.id, pageYnode)
-      syncNodePropsToYMap({ ...hostPage, childIds: [] } as SceneNode, pageYnode)
+      syncEncodedNodeToYMap({ ...hostPage, childIds: [] } as SceneNode, pageYnode)
 
       const rectYnode = new Y.Map<unknown>()
       ynodes.set(rect.id, rectYnode)
-      syncNodePropsToYMap(rect, rectYnode)
+      syncEncodedNodeToYMap(rect, rectYnode)
     })
 
     const peer = new SceneGraph()

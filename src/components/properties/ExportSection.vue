@@ -40,7 +40,7 @@ const FORMAT_OPTIONS: { value: ExportFormatId; label: string }[] = [
 ]
 
 const previewBlob = shallowRef<Blob | null>(null)
-const previewUrl = useObjectUrl(previewBlob)
+const previewURL = useObjectUrl(previewBlob)
 const showPreview = ref(false)
 const exporting = ref(false)
 
@@ -175,8 +175,8 @@ watch(previewKey, updatePreview, { flush: 'post' })
       </button>
     </Tip>
 
-    <div v-if="showPreview && previewUrl" class="mt-1 overflow-hidden rounded border border-border">
-      <img :src="previewUrl" :class="['block w-full', CHECKERBOARD_BACKGROUND]" />
+    <div v-if="showPreview && previewURL" class="mt-1 overflow-hidden rounded border border-border">
+      <img :src="previewURL" :class="['block w-full', CHECKERBOARD_BACKGROUND]" />
     </div>
     <div
       v-else-if="showPreview"

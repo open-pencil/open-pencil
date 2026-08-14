@@ -51,6 +51,83 @@ describe('@open-pencil/fig NodeChange policy', () => {
     })
   })
 
+  test('preserves the translation of rotated and mirrored Figma instances', () => {
+    const props = nodeChangeToProps(
+      {
+        type: 'INSTANCE',
+        size: { x: 955, y: 95.99996185302734 },
+        transform: {
+          m00: -4.371139183945161e-8,
+          m01: -1,
+          m02: 2326,
+          m10: -1,
+          m11: 4.371139183945161e-8,
+          m12: 2254
+        }
+      } as NodeChange,
+      []
+    )
+
+    expect(props.rotation).toBeCloseTo(-90, 5)
+    expect(props.flipX).toBe(true)
+    expect(props.x).toBeCloseTo(1800.5, 4)
+    expect(props.y).toBeCloseTo(1728.5, 4)
+  })
+
+  const reflectedTransforms: Array<{
+    name: string
+    transform: NonNullable<NodeChange['transform']>
+    rotation: number
+  }> = [
+    {
+      name: 'horizontal reflection',
+      transform: { m00: -1, m01: 0, m02: 400, m10: 0, m11: 1, m12: 200 },
+      rotation: 0
+    },
+    {
+      name: 'vertical reflection represented as a rotated horizontal reflection',
+      transform: { m00: 1, m01: 0, m02: 400, m10: 0, m11: -1, m12: 200 },
+      rotation: 180
+    },
+    {
+      name: 'negative quarter-turn reflection',
+      transform: { m00: 0, m01: -1, m02: 400, m10: -1, m11: 0, m12: 200 },
+      rotation: -90
+    },
+    {
+      name: 'positive quarter-turn reflection',
+      transform: { m00: 0, m01: 1, m02: 400, m10: 1, m11: 0, m12: 200 },
+      rotation: 90
+    }
+  ]
+
+  test.each(reflectedTransforms)('reconstructs $name matrices', ({ transform, rotation }) => {
+    const width = 120
+    const height = 80
+    const props = nodeChangeToProps(
+      { type: 'INSTANCE', size: { x: width, y: height }, transform } as NodeChange,
+      []
+    )
+
+    expect(props.rotation).toBeCloseTo(rotation, 5)
+    expect(props.flipX).toBe(true)
+
+    const actualRotation = props.rotation ?? 0
+    const x = props.x ?? 0
+    const y = props.y ?? 0
+    const radians = (actualRotation * Math.PI) / 180
+    const cos = Math.cos(radians)
+    const sin = Math.sin(radians)
+    const centerX = width / 2
+    const centerY = height / 2
+    expect(-cos).toBeCloseTo(transform.m00, 5)
+    expect(sin).toBeCloseTo(transform.m01, 5)
+    expect(sin).toBeCloseTo(transform.m10, 5)
+    expect(cos).toBeCloseTo(transform.m11, 5)
+    expect(x + centerX - (-cos * centerX + sin * centerY)).toBeCloseTo(transform.m02, 5)
+    expect(y + centerY - (sin * centerX + cos * centerY)).toBeCloseTo(transform.m12, 5)
+  })
+
   test('keeps resolved variable alpha in paint opacity', () => {
     setVariableColorResolver(() => ({ r: 1, g: 0, b: 0, a: 0.4 }))
     try {

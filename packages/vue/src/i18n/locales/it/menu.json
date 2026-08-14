@@ -7,6 +7,7 @@
   "text": "Testo",
   "new": "Nuovo",
   "open": "Apri…",
+  "openStorageWorkspace": "Apri area di archiviazione…",
   "save": "Salva",
   "saveAs": "Salva con nome…",
   "exportSelection": "Esporta selezione…",
@@ -53,5 +54,9 @@
   "arrangeAlignRight": "Allinea a destra",
   "arrangeAlignTop": "Allinea in alto",
   "arrangeAlignMiddle": "Centra verticalmente",
-  "arrangeAlignBottom": "Allinea in basso"
+  "arrangeAlignBottom": "Allinea in basso",
+  "multiplayerCursors": "Cursori multigiocatore",
+  "renameSelection": "Rinomina selezione…",
+  "rulers": "Righelli",
+  "settings": "Impostazioni…"
 }

@@ -21,7 +21,7 @@ const emit = defineEmits<{ update: [fill: Fill] }>()
 const store = useEditorStore()
 
 const imageBlob = shallowRef<Blob | null>(null)
-const imagePreviewUrl = useObjectUrl(imageBlob)
+const imagePreviewURL = useObjectUrl(imageBlob)
 
 watch(
   () => fill.imageHash,
@@ -63,10 +63,10 @@ const scaleMode = computed({
 <template>
   <div class="space-y-2">
     <div
-      v-if="imagePreviewUrl"
+      v-if="imagePreviewURL"
       class="flex h-24 items-center justify-center overflow-hidden rounded border border-border"
     >
-      <img :src="imagePreviewUrl" class="max-h-full max-w-full object-contain" />
+      <img :src="imagePreviewURL" class="max-h-full max-w-full object-contain" />
     </div>
     <button
       class="flex h-7 w-full cursor-pointer items-center justify-center gap-1 rounded border border-border bg-input text-xs text-surface hover:bg-hover"

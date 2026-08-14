@@ -32,7 +32,7 @@ function firstText(root: Document | Element, name: string): string | null {
   return elementsByName(root, name)[0]?.textContent ?? null
 }
 
-export function parseS3ErrorXml(
+export function parseS3ErrorXML(
   source: string,
   status: number
 ): { message: string; code: string | null } {
@@ -45,7 +45,7 @@ export function parseS3ErrorXml(
   return { message, code }
 }
 
-export function parseListObjectsV2Xml(source: string): ListedObject[] {
+export function parseListObjectsV2XML(source: string): ListedObject[] {
   return parseListObjectsV2Page(source).objects
 }
 

@@ -28,4 +28,10 @@ Double-cliquez sur un nœud texte pour entrer en mode édition. Cliquez à l'ext
 | Souligné | <kbd>⌘</kbd><kbd>U</kbd> | <kbd>Ctrl</kbd> + <kbd>U</kbd> |
 
 ## Sélecteur de police
-Recherche, aperçu et défilement virtuel. Les polices système sont disponibles sur l'application de bureau, ainsi que dans Chrome et Edge.
+Recherche, aperçu et défilement virtuel. L’application de bureau donne accès aux polices système et aux catalogues activés de Google Fonts, Fontsource, Bunny Fonts et Fontshare. Chrome et Edge peuvent également donner accès aux polices système. Les polices téléchargées sont mises en cache pour être réutilisées sur le même appareil.
+
+## Polices manquantes et substitutions
+
+Lorsqu’une famille ou un style demandé ne peut pas être chargé, OpenPencil affiche un avertissement au-dessus de l’éditeur au lieu de considérer silencieusement le rendu de secours comme fidèle.
+
+Dépliez l’avertissement pour voir chaque style concerné et son remplacement actif. Utilisez **Sélectionner les calques** pour localiser les nœuds de texte concernés ou **Réessayer les polices** après avoir modifié l’accès réseau, l’autorisation des polices locales ou les réglages des fournisseurs. Un style peut être synthétisé à partir d’un autre style chargé de la même famille ; une famille manquante utilise Inter comme remplacement lorsqu’il est disponible.

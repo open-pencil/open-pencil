@@ -48,6 +48,47 @@ describe('text measurement', () => {
     expect(graph.getNode(tabs.id)?.height).toBe(42)
   })
 
+  test('direct imported text keeps its NodeChange bounds over glyph layout metadata', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const frame = autoFrame(graph, page, {
+      width: 424,
+      height: 100,
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED'
+    })
+    const text = graph.createNode('TEXT', frame.id, {
+      text: 'Truncated preview',
+      width: 424,
+      height: 40,
+      textAutoResize: 'HEIGHT',
+      figmaDerivedLayout: { width: 424, height: 120 },
+      source: {
+        format: 'fig',
+        id: '1:2',
+        orderKey: '!',
+        editedFields: [],
+        fig: {
+          rawNodeFields: {},
+          rawTransform: null,
+          rawSize: null,
+          layout: null,
+          derivedSymbolDataLayoutVersion: null,
+          derivedSymbolData: [],
+          symbolOverrides: [],
+          componentPropAssignments: [],
+          uniformScaleFactor: null
+        }
+      }
+    })
+
+    setTextMeasurer(() => ({ width: 424, height: 120 }))
+    computeAllLayouts(graph, page)
+    setTextMeasurer(null)
+
+    expect(graph.getNode(text.id)?.height).toBe(40)
+  })
+
   test('live text without derived glyphs still uses CanvasKit measurement', () => {
     const graph = new SceneGraph()
     const page = pageId(graph)

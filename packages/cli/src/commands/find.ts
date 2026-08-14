@@ -4,7 +4,7 @@ import type { FindNodeResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { printNodeResults } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Find nodes by name or type' },
@@ -22,7 +22,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const results = await loadRpcData<FindNodeResult[]>(
+    const results = await loadRPCData<FindNodeResult[]>(
       args.file,
       'find',
       {

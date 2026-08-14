@@ -11,7 +11,7 @@ import {
   AI_DONE_DURATION_MS
 } from '#core/constants'
 
-export function drawAiOverlays(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
+export function drawAIOverlays(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
   const now = performance.now()
 
   for (const nodeId of r._aiActiveNodes) {

@@ -34,5 +34,10 @@
   "outlineText": "Text in Pfade umwandeln",
   "outlineStroke": "Kontur in Pfad umwandeln",
   "useAsMask": "Als Maske verwenden",
-  "removeMask": "Maske entfernen"
+  "removeMask": "Maske entfernen",
+  "bringForward": "Nach vorne",
+  "distributeHorizontal": "Horizontalen Abstand verteilen",
+  "distributeVertical": "Vertikalen Abstand verteilen",
+  "selectInverse": "Auswahl umkehren",
+  "sendBackward": "Nach hinten"
 }

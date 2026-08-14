@@ -6,12 +6,12 @@ import { z } from 'zod'
 
 import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
-import type { RpcJsonObject } from '#mcp/json'
+import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
 import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
 import { paramToZod } from '#mcp/tool/schema'
 
-export type RpcSender = (body: Record<string, unknown>) => Promise<unknown>
+export type RPCSender = (body: Record<string, unknown>) => Promise<unknown>
 
 const automationTargetSchema = {
   document_id: z.string().describe('Optional OpenPencil document/tab ID to target').optional(),
@@ -35,11 +35,11 @@ function splitAutomationTarget(args: Record<string, unknown>): {
 export interface RegisterToolsOptions {
   enableEval: boolean
   mcpRoot?: string | null
-  sendRpc: RpcSender
+  sendRPC: RPCSender
 }
 
 export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions) {
-  const { enableEval, sendRpc } = options
+  const { enableEval, sendRPC } = options
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
   const register = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
 
@@ -58,13 +58,13 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       async (args: Record<string, unknown>) => {
         try {
           const { target, args: toolArgs } = splitAutomationTarget(args)
-          const result = await sendRpc({
+          const result = await sendRPC({
             command: 'tool',
             args: { ...target, name: def.name, args: toolArgs }
           })
           const res = result as { ok?: boolean; result?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
-          const r = res.result as RpcJsonObject | undefined
+          const r = res.result as RPCJSONObject | undefined
           const filePath = typeof toolArgs.path === 'string' ? toolArgs.path : null
           if (r && filePath && resolvedRoot) {
             const written = await writeToolOutput(def.name, r, filePath, resolvedRoot)
@@ -111,7 +111,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     },
     async () => {
       try {
-        const result = await sendRpc({ command: 'list_documents', args: {} })
+        const result = await sendRPC({ command: 'list_documents', args: {} })
         const res = result as { ok?: boolean; result?: unknown; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
         return ok(res.result ?? {})
@@ -145,7 +145,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
             ? await resolveSafePath(args.path, resolvedRoot)
             : undefined
         const { target } = splitAutomationTarget(args)
-        const result = await sendRpc({
+        const result = await sendRPC({
           command: 'save_file',
           args: { ...target, path: safePath?.realPath }
         })
@@ -179,7 +179,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         try {
           const safe = await resolveSafePath(args.path, resolvedRoot)
           const { target } = splitAutomationTarget(args)
-          const result = await sendRpc({
+          const result = await sendRPC({
             command: 'open_file',
             args: { ...target, path: safe.realPath }
           })
@@ -210,7 +210,7 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           const safePath =
             args.path !== undefined ? await resolveSafePath(args.path, resolvedRoot) : undefined
           const { target } = splitAutomationTarget(args)
-          const result = await sendRpc({
+          const result = await sendRPC({
             command: 'new_document',
             args: { ...target, path: safePath?.realPath }
           })

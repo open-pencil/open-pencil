@@ -1,13 +1,13 @@
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
-import { handleExport, handleExportJsx } from '@/app/automation/bridge/export-handlers'
+import { handleExport, handleExportJSX } from '@/app/automation/bridge/export-handlers'
 import {
   handleNewDocument,
   handleOpenFile,
   handleSaveFile
 } from '@/app/automation/bridge/file-handlers'
-import { handleRpcFallback } from '@/app/automation/bridge/rpc-handler'
+import { handleRPCFallback } from '@/app/automation/bridge/rpc-handler'
 import { handleSelection } from '@/app/automation/bridge/selection-handler'
 import {
   isUnknownRecord,
@@ -34,7 +34,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     eval: handleEval,
     tool: handleTool,
     export: handleExport,
-    export_jsx: handleExportJsx,
+    export_jsx: handleExportJSX,
     selection: handleSelection,
     save_file: handleSaveFile,
     new_document: handleNewDocument,
@@ -61,7 +61,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     const handler = commandHandlers[command]
     const result = handler
       ? await handler(target, targetArgs)
-      : await handleRpcFallback(target, command, targetArgs)
+      : await handleRPCFallback(target, command, targetArgs)
     return responseWithTarget(result, target)
   }
 

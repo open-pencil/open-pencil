@@ -113,6 +113,24 @@ describe('pathTextEditChanges — reflow on character edit', () => {
     expect(lastGlyphX(20)).toBeGreaterThan(lastGlyphX(0))
   })
 
+  test('clears stale path glyphs when text becomes empty', () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0])
+    const node = graph.createNode('TEXT', page.id, {
+      text: 'AB',
+      textPathBox: { x: 0, y: 0, width: 100, height: 50 },
+      strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array(4) }],
+      figmaDerivedTextGlyphs: [
+        { commandsBlob: new Uint8Array(4), x: 10, y: 20, fontSize: 20, rotation: 0 }
+      ]
+    })
+
+    expect(pathTextEditChanges(node, { text: '  ' })).toEqual({
+      figmaDerivedTextGlyphs: null,
+      strokeGeometry: []
+    })
+  })
+
   test('falls back to {} when the node has no path data', () => {
     const graph = new SceneGraph()
     const page = expectDefined(graph.getPages()[0])

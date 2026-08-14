@@ -107,10 +107,19 @@ function testClipboard(page: Page) {
   return page.evaluate(() => window.__OPENPENCIL_TEST_CLIPBOARD__)
 }
 
-async function dispatchClipboardEvent(page: Page, type: 'copy' | 'cut' | 'paste') {
-  await page.evaluate((eventType) => {
-    window.dispatchEvent(new ClipboardEvent(eventType, { bubbles: true, cancelable: true }))
-  }, type)
+async function dispatchClipboardEvent(
+  page: Page,
+  type: 'copy' | 'cut' | 'paste',
+  target = 'window'
+) {
+  await page.evaluate(
+    ({ eventType, selector }) => {
+      const eventTarget = selector === 'window' ? window : document.querySelector(selector)
+      if (!eventTarget) throw new Error(`Clipboard event target not found: ${selector}`)
+      eventTarget.dispatchEvent(new ClipboardEvent(eventType, { bubbles: true, cancelable: true }))
+    },
+    { eventType: type, selector: target }
+  )
 }
 
 test('Tauri copy writes selected design HTML without requiring ClipboardEvent.clipboardData', async ({
@@ -170,6 +179,30 @@ test('Tauri cut writes design data and deletes selection only after clipboard wr
   expect(clipboard.text).toBe('Rectangle')
   await expect(page.getByText('Clipboard access is blocked in this browser context')).toHaveCount(0)
   canvas.assertNoErrors()
+})
+
+test('Tauri clipboard events from editable fields keep native text behavior', async ({ page }) => {
+  const canvas = await createTauriEditorPage(page)
+  await canvas.drawRect(160, 160, 96, 72)
+  const before = await testClipboard(page)
+
+  await page.evaluate(() => {
+    const host = document.createElement('div')
+    host.innerHTML =
+      '<input data-clipboard-probe="input"><textarea data-clipboard-probe="textarea"></textarea><div contenteditable="true"><span>Text</span></div>'
+    document.body.append(host)
+  })
+
+  await dispatchClipboardEvent(page, 'copy', '[data-clipboard-probe="input"]')
+  expect(await testClipboard(page)).toEqual(before)
+  await dispatchClipboardEvent(page, 'copy', '[data-clipboard-probe="textarea"]')
+  expect(await testClipboard(page)).toEqual(before)
+  await dispatchClipboardEvent(page, 'cut', '[contenteditable] span')
+  expect(await testClipboard(page)).toEqual(before)
+  await dispatchClipboardEvent(page, 'paste', '[contenteditable] span')
+
+  expect(await testClipboard(page)).toEqual(before)
+  expect(await pageChildren(page)).toHaveLength(1)
 })
 
 test('Tauri context-menu copy uses plugin clipboard fallback instead of blocked browser command', async ({

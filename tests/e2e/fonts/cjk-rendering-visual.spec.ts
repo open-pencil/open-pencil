@@ -51,12 +51,12 @@ test('international text is correct on its first visible paint', async ({ page }
   const result = await page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store?.renderer) throw new Error('OpenPencil renderer not initialized')
-    const fontModuleUrl = performance
+    const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
       .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
-    if (!fontModuleUrl) throw new Error('Active font manager module not found')
-    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+    if (!fontModuleURL) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
     const pageId = store.state.currentPageId
@@ -250,12 +250,12 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
       text: ''
     })
     const nodeIds = [tool.id, typed.id]
-    const fontModuleUrl = performance
+    const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
       .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
-    if (!fontModuleUrl) throw new Error('Active font manager module not found')
-    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+    if (!fontModuleURL) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
     fontManager.blockNodesUntilFontsResolve(nodeIds)
@@ -282,12 +282,12 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
   })
   await canvas.waitForRender()
   const pending = await page.evaluate(async (nodeIds) => {
-    const fontModuleUrl = performance
+    const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
       .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
-    if (!fontModuleUrl) throw new Error('Active font manager module not found')
-    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+    if (!fontModuleURL) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
     return nodeIds.every((id) => fontManager.isNodeBlocked(id))
@@ -298,12 +298,12 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
   const resolved = await page.evaluate(async ({ nodeIds, toolId, typedId }) => {
     const store = window.openPencil?.getStore?.()
     if (!store?.renderer) throw new Error('OpenPencil renderer not initialized')
-    const fontModuleUrl = performance
+    const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
       .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
-    if (!fontModuleUrl) throw new Error('Active font manager module not found')
-    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+    if (!fontModuleURL) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
     const [cjk, arabic] = await Promise.all([

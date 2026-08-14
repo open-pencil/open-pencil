@@ -24,11 +24,11 @@ export interface ResolvedRenderColor {
 
 const DEFAULT_COLOR_SPACE: RenderColorSpace = 'display-p3'
 
-const toRgb = converter('rgb')
+const toRGB = converter('rgb')
 const toP3 = converter('p3')
-const toDisplayableRgb = toGamut('rgb', 'oklch')
+const toDisplayableRGB = toGamut('rgb', 'oklch')
 const toDisplayableP3 = toGamut('p3', 'oklch')
-const isDisplayableRgb = inGamut('rgb')
+const isDisplayableRGB = inGamut('rgb')
 const isDisplayableP3 = inGamut('p3')
 
 function normalizeOkLCH(color: OkHCLColor) {
@@ -46,7 +46,7 @@ function resolveTargetSpace(options?: ColorPreviewOptions): RenderColorSpace {
   return options?.colorSpace ?? options?.documentColorSpace ?? DEFAULT_COLOR_SPACE
 }
 
-function formatCssForTarget(color: Color, targetSpace: RenderColorSpace): string {
+function formatCSSForTarget(color: Color, targetSpace: RenderColorSpace): string {
   if (targetSpace === 'display-p3') {
     const p3 = toP3({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a })
     return formatCss({
@@ -77,7 +77,7 @@ export function resolveOkHCLForPreview(
   if (targetSpace === 'display-p3') {
     const clipped = !isDisplayableP3(oklch)
     const p3 = toP3(toDisplayableP3(oklch))
-    const rgb = toRgb({ mode: 'p3', r: p3.r, g: p3.g, b: p3.b, alpha: p3.alpha ?? oklch.alpha })
+    const rgb = toRGB({ mode: 'p3', r: p3.r, g: p3.g, b: p3.b, alpha: p3.alpha ?? oklch.alpha })
     const resolved = normalizeColor({
       r: rgb.r,
       g: rgb.g,
@@ -100,8 +100,8 @@ export function resolveOkHCLForPreview(
     }
   }
 
-  const clipped = !isDisplayableRgb(oklch)
-  const rgb = toRgb(toDisplayableRgb(oklch))
+  const clipped = !isDisplayableRGB(oklch)
+  const rgb = toRGB(toDisplayableRGB(oklch))
   const resolved = normalizeColor({
     r: rgb.r,
     g: rgb.g,
@@ -132,7 +132,7 @@ export function resolveRGBAForPreview(
   const targetSpace = resolveTargetSpace(options)
   return {
     color: resolved,
-    cssColor: formatCssForTarget(resolved, targetSpace),
+    cssColor: formatCSSForTarget(resolved, targetSpace),
     sourceSpace: 'srgb',
     targetSpace,
     clipped: false
@@ -161,7 +161,7 @@ export function resolveNodeStrokeColor(
   return resolveRGBAForPreview(stroke.color, options)
 }
 
-export function colorToDisplayCss(color: Color, options?: ColorPreviewOptions): string {
+export function colorToDisplayCSS(color: Color, options?: ColorPreviewOptions): string {
   return resolveRGBAForPreview(color, options).cssColor
 }
 

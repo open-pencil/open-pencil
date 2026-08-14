@@ -140,7 +140,9 @@ npx skills add open-pencil/skills@open-pencil
 
 Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [skills](https://skills.sh). The skill covers the CLI, MCP tools, JSX rendering, eval, and the running app's automation bridge.
 
-## Tools (91)
+## Tools
+
+OpenPencil currently registers 100+ shared design tools, plus MCP-only document and prompt operations when applicable.
 
 ### Document
 
@@ -165,6 +167,8 @@ Works with Claude Code, Cursor, Windsurf, Codex, and any agent that supports [sk
 | `list_variables` | List design variables |
 | `list_collections` | List variable collections |
 | `list_fonts` | List fonts used in the current page |
+| `list_available_fonts` | List font families the current host can render |
+| `get_font_status` | Report requested faces, loaded sources, active substitutions, and affected nodes |
 | `page_bounds` | Get bounding box of all objects on the current page |
 | `node_bounds` | Get bounding box of a node |
 | `node_ancestors` | Get ancestor chain of a node |

@@ -9,19 +9,20 @@ import {
   normalizeFontFamily,
   styleToWeight,
   weightToStyle
-} from '#core/text/font-style'
+} from '#core/text/font/style'
 
-export * from '#core/text/font-sources'
-export * from '#core/text/font-style'
+export * from '#core/text/font/sources'
+export * from '#core/text/font/style'
 import { fontFallbackEntry } from '#core/text/fallbacks'
 import type { FontFallbackScript } from '#core/text/fallbacks'
 import type {
   DownloadedFontCache,
   FontFamilyOption,
   FontInfo,
+  FontLoadedSource,
   HostFontLoader,
   LocalFontAccessState
-} from '#core/text/font-sources'
+} from '#core/text/font/sources'
 import { collectGraphFontKeys } from '#core/text/requirements'
 import { normalizedCoverageText, WebFontResolver } from '#core/text/web-fonts'
 import type { WebFontFetch, WebFontProviderId } from '#core/text/web-fonts'
@@ -39,6 +40,7 @@ const BUNDLED_FONTS: Record<string, string> = {
 
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
+  private loadedFamilySources = new Map<string, FontLoadedSource>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
   private remoteCoverage = new Map<string, Set<string>>()
   private blockedNodeIds = new Set<string>()
@@ -122,11 +124,6 @@ export class FontManager {
     this.hostFontLoader = loader
   }
 
-  /** @deprecated Use setHostFontLoader. Scheduled for removal in v0.15. */
-  setHostFallbackFontLoader(loader: HostFontLoader | null): void {
-    this.setHostFontLoader(loader)
-  }
-
   setOnlineFontProviders(settings: Partial<Record<WebFontProviderId, boolean>>): void {
     this.webFonts.setEnabled(settings)
   }
@@ -146,7 +143,7 @@ export class FontManager {
   ): Promise<ArrayBuffer | null> {
     const cached = await this.readDownloadedFont(family, style, characters)
     if (!cached) return null
-    return this.registerAndCache(family, style, cached)
+    return this.registerAndCache(family, style, cached, 'cache')
   }
 
   async requestLocalFontAccess(): Promise<FontInfo[]> {
@@ -208,11 +205,6 @@ export class FontManager {
     this.webFonts.preloadFamilies()
   }
 
-  preloadGoogleFamilies(): void {
-    if (!this.webFonts.enabledProviders().includes('google')) return
-    void this.webFonts.listFamilies('google')
-  }
-
   async fetchBundledFont(url: string): Promise<ArrayBuffer | null> {
     if (IS_BROWSER) {
       const response = await fetch(url)
@@ -221,8 +213,8 @@ export class FontManager {
     const { readFile } = await import(/* @vite-ignore */ 'node:fs/promises')
     const { resolve, dirname } = await import(/* @vite-ignore */ 'node:path')
     const { fileURLToPath } = await import(/* @vite-ignore */ 'node:url')
-    const packageJsonUrl = import.meta.resolve('@open-pencil/core/package.json')
-    const packageRoot = dirname(fileURLToPath(packageJsonUrl))
+    const packageJSONURL = import.meta.resolve('@open-pencil/core/package.json')
+    const packageRoot = dirname(fileURLToPath(packageJSONURL))
     const assetPath = resolve(packageRoot, `assets${url}`)
     const buf = await readFile(assetPath)
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
@@ -236,15 +228,18 @@ export class FontManager {
       return loaded
     }
 
-    const localBuffer =
-      (await this.loadHostFont(family, style)) ?? (await this.findLocalFont(family, style))
-    if (localBuffer) return this.registerAndCache(family, style, localBuffer)
+    const hostBuffer = await this.loadHostFont(family, style)
+    if (hostBuffer) return this.registerAndCache(family, style, hostBuffer, 'local')
+    const localBuffer = await this.findLocalFont(family, style)
+    if (localBuffer) return this.registerAndCache(family, style, localBuffer, 'local')
 
-    const bundledUrl = BUNDLED_FONTS[cacheKey]
-    if (!bundledUrl) return null
+    const bundledURL = BUNDLED_FONTS[cacheKey]
+    if (!bundledURL) return null
     try {
-      const buffer = await this.fetchBundledFont(bundledUrl)
-      return buffer && !isVariableFont(buffer) ? this.registerAndCache(family, style, buffer) : null
+      const buffer = await this.fetchBundledFont(bundledURL)
+      return buffer && !isVariableFont(buffer)
+        ? this.registerAndCache(family, style, buffer, 'bundled')
+        : null
     } catch (e) {
       console.warn(`Bundled font load failed for "${family}" ${style}:`, e)
       return null
@@ -271,15 +266,15 @@ export class FontManager {
       )
       const normalized = normalizeFontFamily(family)
       const families = normalized === family ? [family] : [family, normalized]
-      const buffers = await this.webFonts.fetchFont(families, style, requestedCharacters)
-      if (buffers.length === 0) return null
-      const primary = buffers[0]
+      const resolved = await this.webFonts.fetchFont(families, style, requestedCharacters)
+      if (!resolved || resolved.buffers.length === 0) return null
+      const primary = resolved.buffers[0]
       await this.writeDownloadedFont(family, style, primary, requestedCharacters)
-      const registered = this.registerAndCache(family, style, primary)
+      const registered = this.registerAndCache(family, style, primary, resolved.provider)
       const loadedCoverage = this.remoteCoverage.get(`${family}|${style}`) ?? new Set<string>()
       for (const character of requestedCharacters) loadedCoverage.add(character)
       this.remoteCoverage.set(`${family}|${style}`, loadedCoverage)
-      for (const supplemental of buffers.slice(1)) {
+      for (const supplemental of resolved.buffers.slice(1)) {
         this.registerSupplemental(family, style, supplemental)
       }
       return registered
@@ -315,8 +310,17 @@ export class FontManager {
     await this.loadFont(family, weightToStyle(weight))
   }
 
-  markLoaded(family: string, style: string, data: ArrayBuffer): void {
-    this.registerAndCache(family, style, data)
+  markLoaded(
+    family: string,
+    style: string,
+    data: ArrayBuffer,
+    source: FontLoadedSource = 'registered'
+  ): void {
+    this.registerAndCache(family, style, data, source)
+  }
+
+  loadedFontSource(family: string, style: string): FontLoadedSource | null {
+    return this.loadedFamilySources.get(`${family}|${style}`) ?? null
   }
 
   isLoaded(family: string): boolean {
@@ -420,7 +424,7 @@ export class FontManager {
         }))
       if (
         buffer &&
-        this.registerAndCache(family, 'Regular', buffer) &&
+        this.registerAndCache(family, 'Regular', buffer, 'fallback') &&
         !targetFamilies.includes(family)
       ) {
         targetFamilies.push(family)
@@ -517,15 +521,22 @@ export class FontManager {
     this.registerFontInBrowser(family, style, buffer)
   }
 
-  private registerAndCache(family: string, style: string, buffer: ArrayBuffer): ArrayBuffer | null {
+  private registerAndCache(
+    family: string,
+    style: string,
+    buffer: ArrayBuffer,
+    source?: FontLoadedSource
+  ): ArrayBuffer | null {
     const key = `${family}|${style}`
     const existing = this.loadedFamilies.get(key)
     if (existing === buffer) {
+      if (source) this.loadedFamilySources.set(key, source)
       this.registerFontInCanvasKit(family, buffer)
       return buffer
     }
     if (existing) this.registerSupplemental(family, style, existing)
     this.loadedFamilies.set(key, buffer)
+    if (source) this.loadedFamilySources.set(key, source)
     this.registerFontInCanvasKit(family, buffer)
     this.registerFontInBrowser(family, style, buffer)
     return buffer

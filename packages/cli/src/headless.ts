@@ -40,7 +40,7 @@ function populateRequestedPage(graph: SceneGraph, pageName?: string): void {
   if (page) populateDocumentPage(graph, page.id)
 }
 
-export function prepareDocumentForRpc(graph: SceneGraph, command: string, args?: unknown): void {
+export function prepareDocumentForRPC(graph: SceneGraph, command: string, args?: unknown): void {
   if (command === 'pages' || command === 'variables') return
   if (command === 'tree') {
     populateRequestedPage(graph, pageNameFromArgs(args))

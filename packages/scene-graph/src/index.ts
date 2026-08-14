@@ -29,7 +29,7 @@ import { invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
-export type { GUID, Color, Vector } from './primitives'
+export type { GUID, Color, Size, Vector } from './primitives'
 export * from './types'
 
 import type { Emitter } from 'nanoevents'
@@ -38,6 +38,7 @@ import { getAbsolutePosition } from './coordinate'
 import type { Color, Rect, Vector } from './primitives'
 import type {
   DocumentColorSpace,
+  EnabledLibraryBinding,
   NodeType,
   SceneGraphEventHandlers,
   SceneGraphEvents,
@@ -51,6 +52,7 @@ import type {
 
 export {
   cloneVectorNetwork,
+  mergeVectorNetworks,
   normalizeVectorNetwork,
   transformVectorNetwork,
   validateVectorNetwork,
@@ -74,10 +76,12 @@ export class SceneGraph {
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
   documentColorSpace: DocumentColorSpace = 'display-p3'
+  enabledLibraries = new Map<string, EnabledLibraryBinding>()
   readonly emitter: Emitter<SceneGraphEvents> = createNanoEvents()
   private absPosCache = new Map<string, Vector>()
   private previewMutationDepth = 0
   private sourceMetadataPreservationDepth = 0
+  private layoutMutationDepth = 0
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
 
@@ -365,6 +369,17 @@ export class SceneGraph {
       this.sourceMetadataPreservationDepth--
     }
   }
+  withLayoutMutations(fn: () => void): void {
+    this.layoutMutationDepth++
+    try {
+      fn()
+    } finally {
+      this.layoutMutationDepth--
+    }
+  }
+  get isApplyingLayout(): boolean {
+    return this.layoutMutationDepth > 0
+  }
   updateNodePositionPreview(id: string, x: number, y: number): void {
     this.updateNodePreview(id, { x, y })
   }
@@ -382,7 +397,15 @@ export class SceneGraph {
 
     const node = this.nodes.get(id)
     if (!node) return
+    let entries = Object.entries(changes) as Array<[string, unknown]>
+    changes = Object.fromEntries(
+      entries.filter(([, value]) => value !== undefined)
+    ) as Partial<SceneNode>
     changes = styleDetachmentChanges(node, changes)
+    entries = Object.entries(changes) as Array<[string, unknown]>
+    changes = Object.fromEntries(
+      entries.filter(([, value]) => value !== undefined)
+    ) as Partial<SceneNode>
 
     // Only clear absPosCache when layout-affecting properties change.
     // Fills, strokes, effects, plugin data changes do NOT affect absolute position.
@@ -404,10 +427,6 @@ export class SceneGraph {
       }
     }
     if (node.type === 'TEXT') invalidateTextCaches(node, changes)
-    const entries = Object.entries(changes) as Array<[string, unknown]>
-    changes = Object.fromEntries(
-      entries.filter(([, value]) => value !== undefined)
-    ) as Partial<SceneNode>
     if (this.sourceMetadataPreservationDepth === 0) {
       markSourceFieldsEdited(node, Object.keys(changes))
     }

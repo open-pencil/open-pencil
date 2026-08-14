@@ -7,29 +7,13 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { canvas, doc, node } from '../helpers'
 
 describe('fig-import: auto-layout alignment', () => {
-  test('keeps variable-bound leading padding independent', () => {
+  test('keeps leading padding independent when trailing fields are omitted', () => {
     const props = nodeChangeToProps(
       {
         type: 'FRAME',
         stackMode: 'VERTICAL',
         stackVerticalPadding: 8,
-        stackHorizontalPadding: 6,
-        variableConsumptionMap: {
-          entries: [
-            {
-              variableField: 'STACK_PADDING_TOP',
-              variableData: {
-                value: { alias: { guid: { sessionID: 2, localID: 1 } } }
-              }
-            },
-            {
-              variableField: 'STACK_PADDING_LEFT',
-              variableData: {
-                value: { alias: { guid: { sessionID: 2, localID: 2 } } }
-              }
-            }
-          ]
-        }
+        stackHorizontalPadding: 6
       } as NodeChange,
       []
     )
@@ -37,6 +21,22 @@ describe('fig-import: auto-layout alignment', () => {
     expect(props.paddingBottom).toBe(0)
     expect(props.paddingLeft).toBe(6)
     expect(props.paddingRight).toBe(0)
+  })
+
+  test('imports min and max size vectors as axis constraints', () => {
+    const props = nodeChangeToProps(
+      {
+        type: 'FRAME',
+        minSize: { value: { x: 192, y: 0 } },
+        maxSize: { value: { x: 672, y: -1 } }
+      } as NodeChange,
+      []
+    )
+
+    expect(props.minWidth).toBe(192)
+    expect(props.minHeight).toBeNull()
+    expect(props.maxWidth).toBe(672)
+    expect(props.maxHeight).toBeNull()
   })
 
   test('maps SPACE_EVENLY kiwi primary alignment to Figma space-between', () => {

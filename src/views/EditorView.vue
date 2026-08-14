@@ -8,7 +8,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
-import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
+import { openFileFromPath, useEditorMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
@@ -20,10 +20,12 @@ import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
+import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
+import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -45,7 +47,7 @@ if (createdInitialTab && route.meta.demo && !('test' in params)) {
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()
-useMenu()
+useEditorMenu()
 
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
@@ -86,15 +88,11 @@ async function bindAssociatedFileOpen() {
 }
 
 onMounted(async () => {
-  try {
-    const mcp = await spawnMCPIfNeeded()
-    mcpCleanup.value = mcp?.disconnect ?? null
-    const tauri = isTauri()
-    if (import.meta.env.DEV || tauri) {
-      automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
-    }
-  } catch (e) {
-    console.warn('[MCP]', e)
+  const mcp = await spawnMCPIfNeeded()
+  mcpCleanup.value = mcp?.disconnect ?? null
+  const tauri = isTauri()
+  if (import.meta.env.DEV || (tauri && mcp)) {
+    automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
   }
 
   try {
@@ -114,6 +112,8 @@ onUnmounted(() => {
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
     <SafariBanner />
+    <FontStatusBanner />
+    <RenameSelectionDialog />
     <TabBar />
 
     <!-- Desktop layout -->

@@ -76,11 +76,19 @@ export function createEditorStoreModules(
     getDocumentFilePath: documentIO.getDocumentFilePath,
     getSourceIdentity: documentIO.getSourceIdentity,
     getStorageBinding: documentIO.getStorageBinding,
+    getRecoveryId: documentIO.getRecoveryId,
+    adoptRecoverySnapshot: documentIO.adoptRecoverySnapshot,
+    persistRecoveryNow: documentIO.persistRecoveryNow,
+    discardRecovery: documentIO.discardRecovery,
     setDocumentSource: documentIO.setDocumentSource,
     setStorageDocumentSource: documentIO.setStorageDocumentSource,
     setPlannedFilePath: documentIO.setPlannedFilePath,
     startWatchingCurrentFile: documentIO.startWatchingCurrentFile,
-    dispose: documentIO.disposeDocumentIO,
+    dispose: () => {
+      editor.dispose()
+      editor.clearPageViewports()
+      documentIO.disposeDocumentIO()
+    },
     ...documentExport,
     ...mobileClipboard,
     ...profiler

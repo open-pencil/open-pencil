@@ -26,6 +26,37 @@ function copyButton() {
   return editor.page.getByTestId('code-panel-copy')
 }
 
+test('inactive Code tab skips JSX generation for large selections', async () => {
+  const selectionDuration = await editor.page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageId = store.state.currentPageId
+    const ids: string[] = []
+    for (let frameIndex = 0; frameIndex < 50; frameIndex++) {
+      const frame = store.graph.createNode('FRAME', pageId, { name: `Frame ${frameIndex}` })
+      ids.push(frame.id)
+      for (let childIndex = 0; childIndex < 100; childIndex++) {
+        store.graph.createNode('RECTANGLE', frame.id, { name: `Child ${childIndex}` })
+      }
+    }
+    const startedAt = performance.now()
+    store.select(ids)
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    })
+    return performance.now() - startedAt
+  })
+
+  expect(selectionDuration).toBeLessThan(1000)
+  await expect(designTab()).toHaveAttribute('data-state', 'active')
+
+  await codeTab().click()
+  await expect(codePanel()).toContainText('Frame')
+
+  await editor.page.evaluate(() => window.openPencil?.getStore?.().clearSelection())
+  await designTab().click()
+})
+
 test('Code tab shows empty state with no selection', async () => {
   await codeTab().click()
   await expect(codePanelEmpty()).toBeVisible()

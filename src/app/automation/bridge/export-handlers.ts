@@ -21,7 +21,7 @@ export async function handleExport(target: AutomationTarget, args: unknown): Pro
   }
 }
 
-export async function handleExportJsx(target: AutomationTarget, args: unknown): Promise<unknown> {
+export async function handleExportJSX(target: AutomationTarget, args: unknown): Promise<unknown> {
   const store = target.store
   const jsxArgs = args as { nodeIds?: string[]; style?: string } | undefined
   const style = (jsxArgs?.style ?? 'openpencil') as 'openpencil' | 'tailwind'

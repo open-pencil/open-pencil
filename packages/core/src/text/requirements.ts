@@ -3,7 +3,24 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
 import { transformTextCase } from '#core/text/case'
 import { cjkFallbackScriptForLanguage, type FontFallbackScript } from '#core/text/fallbacks'
-import { weightToStyle } from '#core/text/font-style'
+import { weightToStyle } from '#core/text/font/style'
+
+export function collectNodeFontFaces(node: SceneNode): Array<{ family: string; style: string }> {
+  if (node.type !== 'TEXT') return []
+  const family = node.fontFamily || DEFAULT_FONT_FAMILY
+  const faces = new Map<string, { family: string; style: string }>()
+  const add = (faceFamily: string, style: string) => {
+    faces.set(`${faceFamily}\0${style}`, { family: faceFamily, style })
+  }
+  add(family, weightToStyle(node.fontWeight || 400, node.italic))
+  for (const run of node.styleRuns) {
+    const runFamily = run.style.fontFamily ?? family
+    const weight = run.style.fontWeight ?? node.fontWeight
+    const italic = run.style.italic ?? node.italic
+    add(runFamily, weightToStyle(weight, italic))
+  }
+  return [...faces.values()]
+}
 
 export function collectGraphFontKeys(
   graph: SceneGraph,
@@ -14,13 +31,8 @@ export function collectGraphFontKeys(
     const node = graph.getNode(nodeId)
     if (!node) return
     if (node.type === 'TEXT') {
-      const family = node.fontFamily || DEFAULT_FONT_FAMILY
-      fontKeys.add(`${family}\0${weightToStyle(node.fontWeight || 400, node.italic)}`)
-      for (const run of node.styleRuns) {
-        const runFamily = run.style.fontFamily ?? family
-        const weight = run.style.fontWeight ?? node.fontWeight
-        const italic = run.style.italic ?? node.italic
-        fontKeys.add(`${runFamily}\0${weightToStyle(weight, italic)}`)
+      for (const { family, style } of collectNodeFontFaces(node)) {
+        fontKeys.add(`${family}\0${style}`)
       }
     }
     for (const childId of node.childIds) collect(childId)

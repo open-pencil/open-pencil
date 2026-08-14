@@ -15,12 +15,12 @@ test('tool-created CJK text requests fallback through app font loading', async (
 
     const { ensureGraphFonts, loadFont } = await import('/src/app/editor/fonts/index.ts')
     await loadFont('Inter', 'Regular')
-    const fontModuleUrl = performance
+    const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
       .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
-    if (!fontModuleUrl) throw new Error('Active font manager module not found')
-    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+    if (!fontModuleURL) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
     const originalEnsureFallbackPack = fontManager.ensureFallbackPack.bind(fontManager)
@@ -77,12 +77,12 @@ test('CJK text waits for fallback fonts and repaints after they load', async ({ 
     const renderer = store.renderer
     const response = await fetch('/tests/fixtures/fonts/NotoSansCJK-Test.otf')
     const fallbackData = await response.arrayBuffer()
-    const fontModuleUrl = performance
+    const fontModuleURL = performance
       .getEntriesByType('resource')
       .map((entry) => entry.name)
       .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
-    if (!fontModuleUrl) throw new Error('Active font manager module not found')
-    const { fontManager } = (await import(/* @vite-ignore */ fontModuleUrl)) as {
+    if (!fontModuleURL) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
       fontManager: FontManager
     }
     const manager = fontManager as typeof fontManager & { cjkFallbackFamilies: string[] }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { FontPickerRoot } from '@open-pencil/vue'
+import { FontPickerRoot, useI18n } from '@open-pencil/vue'
 
 import { useSelectUI } from '@/components/ui/select'
 import { usePopoverUI } from '@/components/ui/popover'
@@ -15,7 +15,9 @@ import { WEB_FONT_PROVIDER_IDS } from '@open-pencil/core/text'
 
 import type { FontPickerUI } from '@open-pencil/vue'
 
-const { label = 'Font family' } = defineProps<{ label?: string }>()
+const { panels } = useI18n()
+const { label: labelProp } = defineProps<{ label?: string }>()
+const label = computed(() => labelProp ?? panels.value.fontFamily)
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ select: [family: string] }>()
 
@@ -59,7 +61,10 @@ function loadPreviewFont(family: string, source: string) {
     :list-families="listFamilies"
     :local-font-access="localFontAccess"
     :ui="ui"
-    empty-fonts-hint="Use the desktop app or Chrome/Edge to access system fonts."
+    :search-placeholder="panels.searchFonts"
+    :empty-search-text="panels.noFontsFound"
+    :empty-fonts-text="panels.noLocalFontsAvailable"
+    :empty-fonts-hint="panels.localFontsAccessHint"
     @select="emit('select', $event)"
   >
     <template #trigger>

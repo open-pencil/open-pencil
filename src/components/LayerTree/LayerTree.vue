@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAttrs } from 'vue'
+import { useAttrs, watch } from 'vue'
 import { tv } from 'tailwind-variants'
 import {
   TreeItem,
@@ -56,6 +56,17 @@ const renameControls = {
   onKeydown: rename.onKeydown,
   focusInput: rename.focusInput
 }
+
+watch(
+  () => store.state.renameNodeId,
+  (id) => {
+    if (!id) return
+    const node = store.graph.getNode(id)
+    store.state.renameNodeId = null
+    if (node) rename.start(node.id, node.name)
+  },
+  { immediate: true }
+)
 
 function onLayerRightClick(e: MouseEvent) {
   const row = (e.target as HTMLElement).closest<HTMLElement>('[data-node-id]')

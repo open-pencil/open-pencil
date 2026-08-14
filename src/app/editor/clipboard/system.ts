@@ -1,7 +1,7 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { readTauriClipboardText, writeTauriClipboardHtml } from '@/app/tauri/clipboard'
+import { readTauriClipboardText, writeTauriClipboardHTML } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
 
 function createTransfer() {
@@ -9,7 +9,7 @@ function createTransfer() {
   return new DataTransfer()
 }
 
-function isDesignClipboardHtml(text: string) {
+function isDesignClipboardHTML(text: string) {
   return text.includes('<!--(openpencil)') || text.includes('(figma)')
 }
 
@@ -22,7 +22,7 @@ export async function copySelectionToTauriClipboard(store: EditorStore) {
     const html = transfer.getData('text/html')
     const plainText = transfer.getData('text/plain')
     if (!html && !plainText) return false
-    await writeTauriClipboardHtml(html || plainText, plainText)
+    await writeTauriClipboardHTML(html || plainText, plainText)
     return true
   } catch (error) {
     console.warn('Tauri clipboard copy failed', error)
@@ -34,7 +34,7 @@ export async function pasteFromTauriClipboard(store: EditorStore, cursorPos?: Ve
   if (!isTauri()) return false
   try {
     const text = await readTauriClipboardText()
-    if (!text || !isDesignClipboardHtml(text)) return false
+    if (!text || !isDesignClipboardHTML(text)) return false
     await store.pasteFromHTML(text, cursorPos)
     return true
   } catch (error) {

@@ -8,13 +8,14 @@ export interface SidebarLabels {
   shapes: string
   text: string
   pen: string
+  vectorEditing: string
   layers: string
   contextMenu: string
   exporting: string
   autoLayout: string
   components: string
   variables: string
-  guide: string
+  overview: string
   gettingStarted: string
   features: string
   architecture: string
@@ -37,7 +38,7 @@ export interface ProgrammableLabels {
 }
 
 export interface NavLabels {
-  guide: string
+  overview: string
   userGuide: string
   programmable: string
   sdk: string
@@ -141,13 +142,14 @@ export const EN: SidebarLabels = {
   shapes: 'Drawing Shapes',
   text: 'Text Editing',
   pen: 'Pen Tool',
+  vectorEditing: 'Vector Editing',
   layers: 'Layers & Pages',
   contextMenu: 'Context Menu',
   exporting: 'Exporting',
   autoLayout: 'Auto Layout',
   components: 'Components',
   variables: 'Variables',
-  guide: 'Guide',
+  overview: 'Overview',
   gettingStarted: 'Getting Started',
   features: 'Features',
   architecture: 'Architecture',
@@ -165,13 +167,14 @@ export const DE: SidebarLabels = {
   shapes: 'Formen zeichnen',
   text: 'Textbearbeitung',
   pen: 'Stiftwerkzeug',
+  vectorEditing: 'Vektorbearbeitung',
   layers: 'Ebenen & Seiten',
   contextMenu: 'Kontextmenü',
   exporting: 'Exportieren',
   autoLayout: 'Auto-Layout',
   components: 'Komponenten',
   variables: 'Variablen',
-  guide: 'Anleitung',
+  overview: 'Überblick',
   gettingStarted: 'Erste Schritte',
   features: 'Funktionen',
   architecture: 'Architektur',
@@ -189,13 +192,14 @@ export const IT: SidebarLabels = {
   shapes: 'Disegno forme',
   text: 'Modifica testo',
   pen: 'Strumento penna',
+  vectorEditing: 'Modifica vettoriale',
   layers: 'Livelli e pagine',
   contextMenu: 'Menu contestuale',
   exporting: 'Esportazione',
   autoLayout: 'Auto-layout',
   components: 'Componenti',
   variables: 'Variabili',
-  guide: 'Guida',
+  overview: 'Panoramica',
   gettingStarted: 'Per iniziare',
   features: 'Funzionalità',
   architecture: 'Architettura',
@@ -213,13 +217,14 @@ export const FR: SidebarLabels = {
   shapes: 'Dessiner des formes',
   text: 'Édition de texte',
   pen: 'Outil plume',
+  vectorEditing: 'Édition vectorielle',
   layers: 'Calques et pages',
   contextMenu: 'Menu contextuel',
   exporting: 'Exportation',
   autoLayout: 'Mise en page auto',
   components: 'Composants',
   variables: 'Variables',
-  guide: 'Guide',
+  overview: 'Vue d’ensemble',
   gettingStarted: 'Premiers pas',
   features: 'Fonctionnalités',
   architecture: 'Architecture',
@@ -237,13 +242,14 @@ export const ES: SidebarLabels = {
   shapes: 'Dibujar formas',
   text: 'Edición de texto',
   pen: 'Herramienta pluma',
+  vectorEditing: 'Edición vectorial',
   layers: 'Capas y páginas',
   contextMenu: 'Menú contextual',
   exporting: 'Exportar',
   autoLayout: 'Auto-layout',
   components: 'Componentes',
   variables: 'Variables',
-  guide: 'Guía',
+  overview: 'Resumen',
   gettingStarted: 'Primeros pasos',
   features: 'Características',
   architecture: 'Arquitectura',
@@ -261,13 +267,14 @@ export const PL: SidebarLabels = {
   shapes: 'Rysowanie kształtów',
   text: 'Edycja tekstu',
   pen: 'Narzędzie pióro',
+  vectorEditing: 'Edycja wektorów',
   layers: 'Warstwy i strony',
   contextMenu: 'Menu kontekstowe',
   exporting: 'Eksportowanie',
   autoLayout: 'Auto-layout',
   components: 'Komponenty',
   variables: 'Zmienne',
-  guide: 'Przewodnik',
+  overview: 'Przegląd',
   gettingStarted: 'Rozpoczęcie pracy',
   features: 'Funkcje',
   architecture: 'Architektura',
@@ -285,13 +292,14 @@ export const RU: SidebarLabels = {
   shapes: 'Рисование фигур',
   text: 'Редактирование текста',
   pen: 'Инструмент «Перо»',
+  vectorEditing: 'Редактирование векторов',
   layers: 'Слои и страницы',
   contextMenu: 'Контекстное меню',
   exporting: 'Экспорт',
   autoLayout: 'Авто-раскладка',
   components: 'Компоненты',
   variables: 'Переменные',
-  guide: 'Руководство',
+  overview: 'Обзор',
   gettingStarted: 'Начало работы',
   features: 'Возможности',
   architecture: 'Архитектура',

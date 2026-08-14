@@ -1,8 +1,11 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 import { renderNodesToImage, SceneGraph, SkiaRenderer } from '@open-pencil/core'
+import { getWorldMatrix } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
+import { prepareSelectionRenderGraph } from '#core/io/formats/raster/render'
+import { extractExportGraph } from '#core/io/subgraph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -33,6 +36,64 @@ beforeAll(async () => {
 })
 
 describe('raster export', () => {
+  test('preserves transformed top-level nodes when preparing a page export', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const connector = graph.createNode('FRAME', page.id, {
+      x: 120,
+      y: 80,
+      width: 40,
+      height: 20,
+      rotation: 90,
+      flipX: true,
+      fills: []
+    })
+    const before = getWorldMatrix(connector, graph)
+
+    const extracted = extractExportGraph(graph, { scope: 'selection', nodeIds: page.childIds })
+    const exportPageId = expectDefined(extracted.pageId, 'export page')
+    prepareSelectionRenderGraph(graph, extracted.graph, exportPageId, page.childIds)
+
+    const exportedConnector = expectDefined(extracted.graph.getNode(connector.id), 'connector')
+    expect(getWorldMatrix(exportedConnector, extracted.graph)).toEqual(before)
+  })
+
+  test('preserves the world transform when flattening a nested export selection', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const parent = graph.createNode('FRAME', page.id, {
+      x: 200,
+      y: 100,
+      width: 100,
+      height: 80,
+      rotation: -90,
+      flipX: true,
+      fills: []
+    })
+    const connector = graph.createNode('FRAME', parent.id, {
+      x: 15,
+      y: 25,
+      width: 40,
+      height: 20,
+      rotation: 90,
+      flipX: true,
+      fills: []
+    })
+    const before = getWorldMatrix(connector, graph)
+    const extracted = extractExportGraph(graph, {
+      scope: 'selection',
+      nodeIds: [connector.id]
+    })
+    const exportPageId = expectDefined(extracted.pageId, 'export page')
+    prepareSelectionRenderGraph(graph, extracted.graph, exportPageId, [connector.id])
+
+    const exportedConnector = expectDefined(extracted.graph.getNode(connector.id), 'connector')
+    const after = getWorldMatrix(exportedConnector, extracted.graph)
+    for (let index = 0; index < before.length; index++) {
+      expect(after[index]).toBeCloseTo(before[index], 8)
+    }
+  })
+
   test('selection export excludes ancestor backgrounds', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

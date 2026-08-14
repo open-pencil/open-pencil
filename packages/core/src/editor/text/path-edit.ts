@@ -22,7 +22,10 @@ export function pathTextEditChanges(
   changes: Partial<SceneNode>
 ): Partial<Pick<SceneNode, 'figmaDerivedTextGlyphs' | 'strokeGeometry'>> {
   if (node?.type !== 'TEXT') return {}
-  if (typeof changes.text !== 'string' || changes.text.trim().length === 0) return {}
+  if (typeof changes.text !== 'string') return {}
+  if (changes.text.trim().length === 0) {
+    return node.textPathBox ? { figmaDerivedTextGlyphs: null, strokeGeometry: [] } : {}
+  }
   if (!node.textPathBox || !node.figmaDerivedTextGlyphs?.length) return {}
   const data = getTextPathData(node)
   if (!data) return {}

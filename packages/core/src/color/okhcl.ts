@@ -20,9 +20,9 @@ export interface OkHCLPayload {
   color: OkHCLColor
 }
 
-const toRgb = converter('rgb')
-const toOklch = converter('oklch')
-const toDisplayableRgb = toGamut('rgb', 'oklch')
+const toRGB = converter('rgb')
+const toOkHCL = converter('oklch')
+const toDisplayableRGB = toGamut('rgb', 'oklch')
 const OKHCL_PLUGIN_KEY = 'okhcl'
 
 function clampUnit(value: number): number {
@@ -47,8 +47,8 @@ function normalizeOkHCLColor(color: OkHCLColor): OkHCLColor {
 
 export function okhclToRGBA(color: OkHCLColor): Color {
   const normalized = normalizeOkHCLColor(color)
-  const rgb = toRgb(
-    toDisplayableRgb({
+  const rgb = toRGB(
+    toDisplayableRGB({
       mode: 'oklch',
       l: normalized.l,
       c: normalized.c,
@@ -65,7 +65,7 @@ export function okhclToRGBA(color: OkHCLColor): Color {
 }
 
 export function rgbaToOkHCL(color: Color): OkHCLColor {
-  const oklch = toOklch({
+  const oklch = toOkHCL({
     mode: 'rgb',
     r: color.r,
     g: color.g,

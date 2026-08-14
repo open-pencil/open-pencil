@@ -25,7 +25,7 @@ Naciśnij <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>), aby otwor
 | **Kompatybilny z OpenAI** | Dowolny endpoint w formacie API OpenAI | Własny bazowy URL + klucz. Obsługuje przełączanie między API Completions i Responses. |
 | **Kompatybilny z Anthropic** | Dowolny endpoint w formacie API Anthropic | Własny bazowy URL + klucz |
 
-Bez backendu, bez subskrypcji — Twój klucz komunikuje się bezpośrednio z dostawcą.
+Bez backendu i subskrypcji — klucz komunikuje się bezpośrednio z dostawcą. Żądania z przeglądarki podlegają zasadom CORS dostawcy, a niezawodność strumieniowych wywołań narzędzi zależy od wdrożenia modelu. Zobacz anglojęzyczną stronę [zgodności dostawców i modeli BYOK](/programmable/byok-provider-compatibility), aby poznać zmierzone wyniki i odtwarzalne testy.
 
 ## Funkcje
 

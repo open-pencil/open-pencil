@@ -8,7 +8,7 @@ import {
   sortChildren
 } from '@open-pencil/fig/node-change'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
-import type { NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
+import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -139,25 +139,31 @@ export function figmaNodesBounds(
 interface ClipboardImportMaps {
   guidMap: Map<string, KiwiNodeChange>
   parentMap: Map<string, string>
+  childMap: Map<string, string[]>
 }
 
 function buildClipboardMaps(nodeChanges: KiwiNodeChange[]): ClipboardImportMaps {
   const guidMap = new Map<string, KiwiNodeChange>()
   const parentMap = new Map<string, string>()
+  const childMap = new Map<string, string[]>()
   for (const nc of nodeChanges) {
     if (!nc.guid) continue
     const id = `${nc.guid.sessionID}:${nc.guid.localID}`
     guidMap.set(id, nc)
     if (nc.parentIndex?.guid) {
-      parentMap.set(id, `${nc.parentIndex.guid.sessionID}:${nc.parentIndex.guid.localID}`)
+      const parentId = `${nc.parentIndex.guid.sessionID}:${nc.parentIndex.guid.localID}`
+      parentMap.set(id, parentId)
+      const siblings = childMap.get(parentId)
+      if (siblings) siblings.push(id)
+      else childMap.set(parentId, [id])
     }
   }
-  return { guidMap, parentMap }
+  return { guidMap, parentMap, childMap }
 }
 
 function findInternalNodeIds(
   guidMap: Map<string, KiwiNodeChange>,
-  parentMap: Map<string, string>
+  childMap: Map<string, string[]>
 ): { internalCanvasIds: Set<string>; internalFigmaIds: Set<string> } {
   const internalCanvasIds = new Set<string>()
   for (const [id, nc] of guidMap) {
@@ -169,8 +175,8 @@ function findInternalNodeIds(
   const internalFigmaIds = new Set<string>()
   function markInternal(id: string) {
     internalFigmaIds.add(id)
-    for (const [childId, pid] of parentMap) {
-      if (pid === id && !internalFigmaIds.has(childId)) markInternal(childId)
+    for (const childId of childMap.get(id) ?? []) {
+      if (!internalFigmaIds.has(childId)) markInternal(childId)
     }
   }
   for (const canvasId of internalCanvasIds) markInternal(canvasId)
@@ -230,8 +236,8 @@ export function importClipboardNodes(
   offsetY = 0,
   blobs: Uint8Array[] = []
 ): string[] {
-  const { guidMap, parentMap } = buildClipboardMaps(nodeChanges)
-  const { internalCanvasIds, internalFigmaIds } = findInternalNodeIds(guidMap, parentMap)
+  const { guidMap, parentMap, childMap } = buildClipboardMaps(nodeChanges)
+  const { internalCanvasIds, internalFigmaIds } = findInternalNodeIds(guidMap, childMap)
   const { topLevel, internalTopLevel } = classifyTopLevelNodes(
     guidMap,
     parentMap,
@@ -262,12 +268,9 @@ export function importClipboardNodes(
     created.set(figmaId, node.id)
     if (ourParentId === targetParentId && !internalFigmaIds.has(figmaId)) createdIds.push(node.id)
 
-    const children: string[] = []
-    for (const [childId, pid] of parentMap) {
-      if (pid === figmaId && !NON_VISUAL_TYPES.has(guidMap.get(childId)?.type ?? '')) {
-        children.push(childId)
-      }
-    }
+    const children = (childMap.get(figmaId) ?? []).filter(
+      (childId) => !NON_VISUAL_TYPES.has(guidMap.get(childId)?.type ?? '')
+    )
     sortChildren(children, nc, guidMap)
     for (const childId of children) {
       createNode(childId, node.id)
@@ -283,7 +286,9 @@ export function importClipboardNodes(
 
   remapComponentIds(created, graph)
 
-  populateAndApplyOverrides(graph, guidMap as Map<string, InstanceNodeChange>, created, blobs)
+  graph.preserveSourceMetadataDuring(() => {
+    populateAndApplyOverrides(graph, guidMap as Map<string, InstanceNodeChange>, created, blobs)
+  })
 
   for (const figmaId of internalTopLevel) {
     const ourId = created.get(figmaId)
@@ -321,6 +326,8 @@ export async function buildFigmaClipboardHTML(
     }
   }
 
+  const nodeIdToGuid = new Map<string, GUID>()
+  const assignedGuidValues = new Set<string>()
   const blobs: Uint8Array[] = []
   for (let i = 0; i < nodes.length; i++) {
     collectTextNodes(nodes[i])
@@ -332,8 +339,12 @@ export async function buildFigmaClipboardHTML(
         localIdCounter,
         graph,
         blobs,
+        nodeIdToGuid,
+        fontDigestMap,
         undefined,
-        fontDigestMap
+        undefined,
+        undefined,
+        assignedGuidValues
       )
     )
   }

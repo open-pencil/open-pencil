@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { fontManager, type FontFallbackScript } from '@open-pencil/core/text'
+import {
+  collectGraphFontRequirements,
+  fontManager,
+  missingGraphFontScripts,
+  type FontFallbackScript
+} from '@open-pencil/core/text'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { ensureGraphFonts } from '@/app/editor/fonts'
@@ -9,6 +14,21 @@ import { expectDefined } from '#tests/helpers/assert'
 import { repoPath } from '#tests/helpers/paths'
 
 describe('app font loading', () => {
+  test('requests platform fallback before parsing large native primary fonts', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const text = graph.createNode('TEXT', page.id, {
+      text: '현대 소나타',
+      fontFamily: 'Native Arial',
+      fontSize: 32
+    })
+    const requirements = collectGraphFontRequirements(graph, [text.id])
+
+    expect(missingGraphFontScripts(requirements, { treatUnknownCoverageAsMissing: true })).toEqual([
+      'cjk-kr'
+    ])
+  })
+
   test('ensureGraphFonts loads fallback packs when loaded primary font misses CJK glyphs', async () => {
     const interData = await Bun.file(repoPath('public/Inter-Regular.ttf')).arrayBuffer()
     fontManager.markLoaded('Inter', 'Regular', interData)

@@ -23,6 +23,19 @@ export const TEXT_PICTURE_KEYS: ReadonlySet<string> = new Set([
   'height'
 ])
 
+export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set([
+  'text',
+  'fontSize',
+  'fontFamily',
+  'fontWeight',
+  'italic',
+  'textDirection',
+  'lineHeight',
+  'letterSpacing',
+  'textCase',
+  'styleRuns'
+])
+
 /**
  * Invalidate Figma-derived glyph outlines (path text / missing-font paint).
  *

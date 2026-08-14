@@ -8,12 +8,12 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { BLACK } from '#core/constants'
 
-const toRgb = converter('rgb')
+const toRGB = converter('rgb')
 
 export function parseColor(input: string): Color {
   const parsed = parse(input)
   if (!parsed) return { ...BLACK }
-  const rgb = toRgb(parsed)
+  const rgb = toRGB(parsed)
   return {
     r: rgb.r,
     g: rgb.g,
@@ -70,11 +70,11 @@ export function colorToFill(color: string | Color) {
   }
 }
 
-const euclideanRgb255 = differenceEuclidean('rgb')
+const euclideanRGB255 = differenceEuclidean('rgb')
 
 export function colorDistance(c1: Color, c2: Color): number {
   return (
-    euclideanRgb255(
+    euclideanRGB255(
       { mode: 'rgb', r: c1.r, g: c1.g, b: c1.b },
       { mode: 'rgb', r: c2.r, g: c2.g, b: c2.b }
     ) * 255

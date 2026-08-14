@@ -34,5 +34,10 @@
   "outlineText": "文本转轮廓",
   "outlineStroke": "描边转轮廓",
   "useAsMask": "用作蒙版",
-  "removeMask": "取消蒙版"
+  "removeMask": "取消蒙版",
+  "bringForward": "上移一层",
+  "distributeHorizontal": "水平等距分布",
+  "distributeVertical": "垂直等距分布",
+  "selectInverse": "反向选择",
+  "sendBackward": "下移一层"
 }

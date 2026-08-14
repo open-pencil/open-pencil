@@ -30,7 +30,13 @@ export type CanvasMenuOptions = {
 
 const CANVAS_MENU_GROUPS = [
   ['selection.duplicate', 'selection.delete'],
-  ['selection.moveToPageWhenAvailable', 'selection.bringToFront', 'selection.sendToBack'],
+  [
+    'selection.moveToPageWhenAvailable',
+    'selection.bringForward',
+    'selection.bringToFront',
+    'selection.sendBackward',
+    'selection.sendToBack'
+  ],
   [
     'selection.group',
     'selection.frameSelection',

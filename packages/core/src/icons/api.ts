@@ -9,7 +9,7 @@ export function createIconifyAPIClient(
   fetcher: typeof globalThis.fetch = globalThis.fetch,
   baseURL = ICONIFY_API
 ) {
-  const iconifyApi = createFetch({ fetch: fetcher }).create({
+  const iconifyAPI = createFetch({ fetch: fetcher }).create({
     baseURL,
     retry: 0,
     timeout: FETCH_TIMEOUT_MS
@@ -17,7 +17,7 @@ export function createIconifyAPIClient(
 
   return {
     async fetchCollection(prefix: string, iconNames: string[]): Promise<IconifyResponse> {
-      const response = await iconifyApi.raw<IconifyResponse>(`/${prefix}.json`, {
+      const response = await iconifyAPI.raw<IconifyResponse>(`/${prefix}.json`, {
         ignoreResponseError: true,
         query: { icons: iconNames.join(',') }
       })
@@ -31,7 +31,7 @@ export function createIconifyAPIClient(
       query: string,
       options?: { limit?: number; prefix?: string }
     ): Promise<IconSearchResult> {
-      const response = await iconifyApi.raw<IconSearchResult>('/search', {
+      const response = await iconifyAPI.raw<IconSearchResult>('/search', {
         ignoreResponseError: true,
         query: { query, limit: options?.limit, prefix: options?.prefix }
       })

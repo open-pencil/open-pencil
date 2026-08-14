@@ -98,6 +98,22 @@ describe('FontResolver', () => {
     expect(resolver.pendingNodeIds(demand)).toEqual([])
   })
 
+  test('notifies subscribers when resolution starts, settles, and resets', async () => {
+    const resolver = new FontResolver(async () => true)
+    const demand = { key: 'observed', candidates: [candidate('local')] }
+    const events: string[] = []
+    const unsubscribe = resolver.subscribe((event, snapshot) => {
+      events.push(`${event}:${snapshot.state}`)
+    })
+
+    await resolver.demand(demand)
+    resolver.reset(demand)
+    unsubscribe()
+    await resolver.demand({ key: 'ignored', candidates: [candidate('local')] })
+
+    expect(events).toEqual(['started:loading', 'settled:loaded', 'reset:idle'])
+  })
+
   test('exhausts after every candidate is unavailable', async () => {
     const resolver = new FontResolver(async () => false)
     const demand = faceDemand()

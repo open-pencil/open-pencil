@@ -222,7 +222,7 @@ function onToggleSides(activeNode: SceneNode | null) {
         </Tip>
         <IconButton
           :label="panels.strokeSides"
-          size="md"
+          size="xs"
           class="size-[26px] shrink-0"
           :active="expandedSides"
           data-property="stroke-sides"
@@ -235,7 +235,7 @@ function onToggleSides(activeNode: SceneNode | null) {
       <div v-if="!isMixed && items.length > 0" class="mt-1.5 flex items-center gap-1.5">
         <IconButton
           :label="panels.strokeDash"
-          size="md"
+          size="xs"
           class="shrink-0"
           :active="strokeCtx.dashState(items[0]).on"
           data-property="stroke-dash"
