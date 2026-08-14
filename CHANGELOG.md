@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add explicit shared/view editor-state ownership and canvas render-state hooks as a foundation for independent same-document canvas panes.
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
 - Add a reproducible Dev Container for web, package, CLI, and non-browser test development.
 - Add local crash recovery for unsaved and pathless documents, including MCP-created documents. (#487)
