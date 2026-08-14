@@ -86,6 +86,14 @@ describe('Design JSX sandbox output', () => {
     ).toThrow('deeply nested')
   })
 
+  test('counts container and primitive data toward the output limit', () => {
+    const tiny = resolveDesignJSXValidationLimits({ outputBytes: 1 })
+    expect(() => validateDesignJSXOutput([], tiny)).toThrow('must return an OpenPencil element')
+    expect(() => validateDesignJSXOutput(true, tiny)).toThrow('too large')
+    expect(() => validateDesignJSXOutput(1, tiny)).toThrow('too large')
+    expect(() => validateDesignJSXOutput(frame(), tiny)).toThrow('too large')
+  })
+
   test('rejects unknown helper descriptors during trusted conversion', () => {
     const roots = validateDesignJSXOutput(
       frame({ fill: { __openPencilHelper: 'unknown', args: [] } }),

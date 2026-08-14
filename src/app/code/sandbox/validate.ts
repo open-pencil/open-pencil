@@ -25,9 +25,17 @@ function validatePrimitive(
   limits: DesignJSXValidationLimits,
   state: ValidationState
 ): boolean {
-  if (value === null || typeof value === 'boolean') return true
+  if (value === null) {
+    addBytes(state, limits, 4)
+    return true
+  }
+  if (typeof value === 'boolean') {
+    addBytes(state, limits, value ? 4 : 5)
+    return true
+  }
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) throw new Error('Design JSX output contains an invalid number.')
+    addBytes(state, limits, 8)
     return true
   }
   if (typeof value === 'string') {
@@ -47,6 +55,7 @@ function validateRecord(
   depth: number
 ): void {
   const keys = Object.keys(record)
+  addBytes(state, limits, 2 + Math.max(0, keys.length - 1))
   if (keys.length > limits.objectKeys) {
     throw new Error('Design JSX output contains too many object properties.')
   }
@@ -73,6 +82,7 @@ function validateValue(
   if (depth > limits.depth) throw new Error('Design JSX output is too deeply nested.')
   if (validatePrimitive(value, limits, state)) return
   if (Array.isArray(value)) {
+    addBytes(state, limits, 2 + Math.max(0, value.length - 1))
     if (value.length > limits.arrayLength) {
       throw new Error('Design JSX output contains an array that is too long.')
     }

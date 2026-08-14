@@ -29,9 +29,20 @@ self.onmessage = ({ data }) => {
   const helpers = Object.fromEntries(helperNames.map((name) => [name, helperRuntime(name)]))
   const validate = (value, depth = 0, state = { elements: 0, bytes: 0 }) => {
     if (depth > limits.depth) throw new Error('Design JSX output is too deeply nested.')
-    if (value == null || typeof value === 'boolean') return state
+    if (value === null) {
+      state.bytes += 4
+      if (state.bytes > limits.outputBytes) throw new Error('Design JSX output is too large.')
+      return state
+    }
+    if (typeof value === 'boolean') {
+      state.bytes += value ? 4 : 5
+      if (state.bytes > limits.outputBytes) throw new Error('Design JSX output is too large.')
+      return state
+    }
     if (typeof value === 'number') {
       if (!Number.isFinite(value)) throw new Error('Design JSX output contains an invalid number.')
+      state.bytes += 8
+      if (state.bytes > limits.outputBytes) throw new Error('Design JSX output is too large.')
       return state
     }
     if (typeof value === 'string') {
@@ -41,12 +52,16 @@ self.onmessage = ({ data }) => {
       return state
     }
     if (Array.isArray(value)) {
+      state.bytes += 2 + Math.max(0, value.length - 1)
+      if (state.bytes > limits.outputBytes) throw new Error('Design JSX output is too large.')
       if (value.length > limits.arrayLength) throw new Error('Design JSX output contains an array that is too long.')
       for (const item of value) validate(item, depth + 1, state)
       return state
     }
     if (typeof value !== 'object') throw new Error('Design JSX output contains an unsupported value.')
     const keys = Object.keys(value)
+    state.bytes += 2 + Math.max(0, keys.length - 1)
+    if (state.bytes > limits.outputBytes) throw new Error('Design JSX output is too large.')
     if (keys.length > limits.objectKeys) throw new Error('Design JSX output contains too many object properties.')
     if ('type' in value && 'props' in value && 'children' in value && ++state.elements > limits.elements) throw new Error('Design JSX output has too many elements.')
     for (const key of keys) {
