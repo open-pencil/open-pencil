@@ -3,18 +3,18 @@ import { describe, expect, test } from 'bun:test'
 import {
   copyEditorViewState,
   createDefaultEditorState,
-  EDITOR_SHARED_STATE_KEYS,
-  EDITOR_VIEW_STATE_KEYS,
+  createDefaultEditorViewState,
   pickEditorViewState
 } from '@open-pencil/core/editor'
 
 describe('editor state ownership', () => {
-  test('classifies every editor state field as shared or view-local', () => {
+  test('composes editor state from shared and view defaults', () => {
     const state = createDefaultEditorState('page')
-    const keys = [...EDITOR_SHARED_STATE_KEYS, ...EDITOR_VIEW_STATE_KEYS]
+    const view = createDefaultEditorViewState('page')
 
-    expect(new Set(keys).size).toBe(keys.length)
-    for (const key of Object.keys(state)) expect(keys).toContain(key as keyof typeof state)
+    expect(pickEditorViewState(state)).toEqual(view)
+    expect(state.activeTool).toBe('SELECT')
+    expect(state.documentName).toBe('Untitled')
   })
 
   test('copies mutable view state for an independent canvas surface', () => {
