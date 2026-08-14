@@ -1,6 +1,6 @@
 const workerSource = String.raw`
 self.onmessage = ({ data }) => {
-  const { id, code } = data
+  const { id, code, elements, helpers: helperNames } = data
   const blocked = () => { throw new Error('Network access is unavailable in Design JSX.') }
   self.fetch = blocked
   self.XMLHttpRequest = undefined
@@ -16,9 +16,8 @@ self.onmessage = ({ data }) => {
     children: normalizeChildren(children)
   })
   const helper = (name) => (...args) => ({ __openPencilHelper: name, args })
-  const names = ['Frame', 'Text', 'Rectangle', 'Ellipse', 'Line', 'Star', 'Polygon', 'Vector', 'Group', 'Section', 'Component', 'ComponentSet', 'Instance', 'View', 'Rect', 'Page', 'Icon']
-  const tags = Object.fromEntries(names.map((name) => [name, name]))
-  const helperNames = ['solid', 'gradient', 'linearGradient', 'radialGradient', 'angularGradient', 'diamondGradient', 'dropShadow', 'innerShadow', 'layerBlur', 'backgroundBlur', 'foregroundBlur', 'designVar', 'defineVars']
+  const names = Object.keys(elements)
+  const tags = elements
   const helpers = Object.fromEntries(helperNames.map((name) => [name, helper(name)]))
   try {
     const argumentNames = ['__h', '__fragment', ...names, ...helperNames]
@@ -32,8 +31,15 @@ self.onmessage = ({ data }) => {
 }
 `
 
-export function sandboxDocument(): string {
+export type SandboxDocumentOptions = {
+  elements: Record<string, string>
+  helpers: string[]
+}
+
+export function sandboxDocument({ elements, helpers }: SandboxDocumentOptions): string {
   const escapedWorkerSource = JSON.stringify(workerSource)
+  const escapedElements = JSON.stringify(elements)
+  const escapedHelpers = JSON.stringify(helpers)
   return `<!doctype html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src 'none'; img-src 'none'; media-src 'none'; font-src 'none'; style-src 'none'; object-src 'none'; frame-src 'none'; worker-src blob:; base-uri 'none'; form-action 'none'"></head><body><script>
   const workerURL = URL.createObjectURL(new Blob([${escapedWorkerSource}], { type: 'text/javascript' }))
   const workers = new Map()
@@ -52,7 +58,7 @@ export function sandboxDocument(): string {
       worker.terminate()
       workers.delete(message.id)
     }
-    worker.postMessage({ id: message.id, code: message.code })
+    worker.postMessage({ id: message.id, code: message.code, elements: ${escapedElements}, helpers: ${escapedHelpers} })
   })
   parent.postMessage({ type: 'open-pencil-design-jsx-ready' }, '*')
   </scr${'ipt'}></body></html>`

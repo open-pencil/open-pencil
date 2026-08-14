@@ -12,4 +12,9 @@ export type DesignJSXSandboxLimits = {
   timeoutMs?: number
 }
 
+export type DesignJSXHelperDescriptor = {
+  __openPencilHelper: string
+  args: unknown[]
+}
+
 export type DesignJSXSandboxResult = { ok: true; roots: unknown[] } | { ok: false; error: string }

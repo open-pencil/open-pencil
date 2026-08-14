@@ -119,6 +119,61 @@ test('selecting a frame shows Frame in JSX', async () => {
   expect(code).toContain('Frame')
 })
 
+test('edits and applies JSX as one undoable replacement', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await editor.canvas.waitForRender()
+  const originalId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    return [...(store?.state.selectedIds ?? [])][0]
+  })
+
+  await codeTab().click()
+  await editor.page.getByTestId('code-panel-edit').click()
+  const input = editor.page.locator('[data-slot="code-editor"] .cm-content')
+  await expect(input).toBeVisible()
+  await input.fill('<Frame name="Edited from JSX" w={320} h={180} fill={solid("#ffffff")} />')
+  await editor.page.getByTestId('code-panel-apply-jsx').click()
+  await editor.page.waitForFunction(() =>
+    window.openPencil
+      ?.getStore?.()
+      .graph.getAllNodes()
+      .some((node) => node.name === 'Edited from JSX')
+  )
+
+  const applied = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const selectedId = [...store.state.selectedIds][0]
+    return { selectedId, name: selectedId ? store.graph.getNode(selectedId)?.name : undefined }
+  })
+  expect(applied.name).toBe('Edited from JSX')
+  expect(applied.selectedId).not.toBe(originalId)
+
+  await editor.page.keyboard.press('Meta+z')
+  await editor.page.waitForFunction(
+    (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
+    originalId
+  )
+})
+
+test('keeps large JSX drafts contained inside CodeMirror', async () => {
+  test.setTimeout(30_000)
+  await codeTab().click()
+  await editor.page.getByTestId('code-panel-edit').click()
+  const editorRoot = editor.page.locator('[data-slot="code-editor"]')
+  const input = editorRoot.locator('.cm-content')
+  const largeSource = `<Frame>${'<Text>Large draft</Text>\n'.repeat(2000)}</Frame>`
+  await input.fill(largeSource)
+
+  const geometry = await editorRoot.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.querySelector('.cm-scroller')?.scrollHeight ?? 0,
+    panelHeight: element.closest('[data-test-id="code-panel-root"]')?.clientHeight ?? 0
+  }))
+  expect(geometry.clientHeight).toBeLessThanOrEqual(geometry.panelHeight)
+  expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight)
+})
+
 test('switching back to Design tab works', async () => {
   await designTab().click()
 

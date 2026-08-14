@@ -28,12 +28,12 @@ test('evaluates JSX into plain inert data', async ({ page }) => {
     ok: true,
     roots: [
       {
-        type: 'Frame',
+        type: 'frame',
         props: {
           w: 320,
           fill: { __openPencilHelper: 'solid', args: ['#fff'] }
         },
-        children: [{ type: 'Text', props: {}, children: ['Hello'] }]
+        children: [{ type: 'text', props: {}, children: ['Hello'] }]
       }
     ]
   })

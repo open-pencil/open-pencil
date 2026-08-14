@@ -1,5 +1,9 @@
 import { IS_BROWSER } from '@open-pencil/core/constants'
-import { transformDesignJSXExpression } from '@open-pencil/core/design-jsx'
+import {
+  DESIGN_JSX_ELEMENTS,
+  DESIGN_JSX_HELPERS,
+  transformDesignJSXExpression
+} from '@open-pencil/core/design-jsx'
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
 import {
@@ -39,7 +43,12 @@ export async function evaluateDesignJSX(
   const iframe = document.createElement('iframe')
   iframe.hidden = true
   iframe.setAttribute('sandbox', 'allow-scripts')
-  iframe.srcdoc = sandboxDocument()
+  iframe.srcdoc = sandboxDocument({
+    elements: Object.fromEntries(
+      DESIGN_JSX_ELEMENTS.map(({ name, runtimeType }) => [name, runtimeType])
+    ),
+    helpers: DESIGN_JSX_HELPERS.map(({ name }) => name)
+  })
   document.body.append(iframe)
 
   return new Promise((resolve) => {

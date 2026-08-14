@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { useClipboard } from '@vueuse/core'
-import { computed, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, ref, watch } from 'vue'
 
 import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
 
+import { applyDesignJSX } from '@/app/code/apply'
 import { highlightJSX } from '@/app/code/highlight'
 import { useEditorStore } from '@/app/editor/active-store'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
@@ -13,6 +14,8 @@ import AppTextButton from '@/components/ui/AppTextButton.vue'
 import Tip from '@/components/ui/Tip.vue'
 
 import type { JSXFormat } from '@open-pencil/core/design-jsx'
+
+const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/CodeEditor.vue'))
 
 const { active = true } = defineProps<{ active?: boolean }>()
 const store = useEditorStore()
@@ -24,6 +27,11 @@ const importHTML = ref('')
 const importCSS = ref('')
 const importError = ref('')
 const importing = ref(false)
+const editing = ref(false)
+const draft = ref('')
+const draftDirty = ref(false)
+const applying = ref(false)
+const applyError = ref('')
 
 function toggleFormat() {
   jsxFormat.value = jsxFormat.value === 'openpencil' ? 'tailwind' : 'openpencil'
@@ -41,6 +49,36 @@ const highlightedLines = computed(() => {
   if (!jsxCode.value) return []
   return jsxCode.value.split('\n').map(highlightJSX)
 })
+
+watch(jsxCode, (value) => {
+  if (!draftDirty.value) draft.value = value
+})
+
+function startEditing() {
+  draft.value = jsxCode.value || '<Frame name="New frame" w={320} h={240} fill="#ffffff" />'
+  draftDirty.value = false
+  applyError.value = ''
+  editing.value = true
+}
+
+function updateDraft(value: string) {
+  draft.value = value
+  draftDirty.value = value !== jsxCode.value
+  applyError.value = ''
+}
+
+async function applyDraft() {
+  if (applying.value || draft.value.trim().length === 0) return
+  applying.value = true
+  applyError.value = ''
+  const result = await applyDesignJSX(store, draft.value)
+  applying.value = false
+  if (!result.ok) {
+    applyError.value = result.error
+    return
+  }
+  draftDirty.value = false
+}
 
 const { copy: copyRef, copied: copiedRef } = useClipboard({ copiedDuring: 2000 })
 
@@ -95,7 +133,6 @@ function copyReference() {
 <template>
   <div data-test-id="code-panel-root" class="flex min-h-0 flex-1 flex-col">
     <div
-      v-if="jsxCode"
       data-test-id="code-panel-header"
       class="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5"
     >
@@ -130,6 +167,14 @@ function copyReference() {
             <icon-lucide-book-open v-else class="size-3" />
           </AppTextButton>
         </Tip>
+        <AppTextButton
+          data-test-id="code-panel-edit"
+          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
+          @click="startEditing"
+        >
+          <icon-lucide-pencil class="size-3" />
+          Edit
+        </AppTextButton>
         <AppTextButton
           data-test-id="code-panel-copy"
           :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
@@ -202,8 +247,38 @@ function copyReference() {
       </div>
     </div>
 
+    <div v-if="editing" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <CodeEditor :model-value="draft" @update:model-value="updateDraft" @apply="applyDraft" />
+      <div
+        v-if="applyError"
+        data-test-id="code-panel-jsx-error"
+        class="shrink-0 border-t border-red-500/40 bg-red-500/10 px-3 py-2 text-[11px] text-red-200"
+      >
+        {{ applyError }}
+      </div>
+      <div class="flex shrink-0 items-center justify-between border-t border-border px-3 py-2">
+        <span class="text-[11px] text-muted">{{
+          draftDirty ? 'Unsaved changes' : 'Up to date'
+        }}</span>
+        <AppTextButton
+          data-test-id="code-panel-apply-jsx"
+          :ui="{
+            base: [
+              'rounded px-2 py-1 text-[11px]',
+              !applying && draft.trim()
+                ? 'bg-accent text-black hover:bg-accent/90'
+                : 'cursor-not-allowed opacity-50'
+            ].join(' ')
+          }"
+          @click="applyDraft"
+        >
+          {{ applying ? 'Applying…' : store.state.selectedIds.size > 0 ? 'Apply' : 'Insert' }}
+        </AppTextButton>
+      </div>
+    </div>
+
     <AppPlaceholder
-      v-if="!jsxCode"
+      v-else-if="!jsxCode"
       data-test-id="code-panel-empty"
       :label="dialogs.selectLayerForJSX"
     >
