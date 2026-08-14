@@ -56,4 +56,28 @@ describe('routed library catalog', () => {
       { libraryId: 'design-system', latestRevisionId: published.manifest.revisionId }
     ])
   })
+
+  test('does not replace corrupted remote revisions with cached data', async () => {
+    const objects = new MemoryObjects()
+    const remote = new StorageLibraryCatalog(objects)
+    const local = new LocalLibraryCatalog(`library-cache-${crypto.randomUUID()}`)
+    const routed = new RoutedLibraryCatalog(local)
+    routed.useStorage(remote)
+    const published = await routed.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: graph()
+    })
+    const key = `open-pencil/libraries/design-system/revisions/${published.manifest.revisionId}.json`
+    const bytes = objects.values.get(key)
+    if (!bytes) throw new Error('Expected remote revision')
+    objects.values.set(
+      key,
+      new TextEncoder().encode(new TextDecoder().decode(bytes).replace('Button', 'Corrupted'))
+    )
+
+    await expect(
+      routed.getRevision('design-system', published.manifest.revisionId)
+    ).rejects.toThrow('hash mismatch')
+  })
 })

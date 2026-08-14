@@ -1,8 +1,9 @@
-import type {
-  ComponentLibraryRevision,
-  LibraryCatalog,
-  LibrarySummary,
-  PublishLibraryInput
+import {
+  isLibraryRevisionIntegrityError,
+  type ComponentLibraryRevision,
+  type LibraryCatalog,
+  type LibrarySummary,
+  type PublishLibraryInput
 } from '@open-pencil/core/library'
 
 import type { LocalLibraryCatalog } from './local'
@@ -50,6 +51,7 @@ export class RoutedLibraryCatalog implements LibraryCatalog {
       await this.#local.cacheRevision(revision, revisionId === undefined)
       return revision
     } catch (error) {
+      if (isLibraryRevisionIntegrityError(error)) throw error
       console.warn('[Libraries] Remote revision unavailable, using cached revision', error)
       return this.#local.getRevision(libraryId, revisionId)
     }
