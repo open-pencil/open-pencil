@@ -1,4 +1,11 @@
-export { configuredSocialProviders, createCloudAuth, type CloudAuth } from './auth'
+export {
+  configuredSocialProviders,
+  createCloudAuth,
+  createCloudSessionResolver,
+  type CloudActor,
+  type CloudAuth,
+  type CloudSessionResolver
+} from './auth'
 export { createCloudApp, type CloudApp, type CloudServices } from './app'
 export {
   CloudConfigError,
@@ -23,6 +30,12 @@ export {
   type Upload,
   type UploadStatus,
   type Workspace,
-  type WorkspaceRole,
   type WorkspaceUpdate
 } from './db'
+export {
+  createWorkspaceRoutes,
+  createWorkspaceService,
+  WorkspaceSlugConflictError,
+  type WorkspaceRouteEnvironment,
+  type WorkspaceService
+} from './workspaces'

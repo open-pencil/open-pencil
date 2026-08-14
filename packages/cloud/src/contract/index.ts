@@ -11,3 +11,14 @@ export {
   type CloudDeployment,
   type CloudDiscovery
 } from './discovery'
+export {
+  createWorkspaceSchema,
+  parseCreateWorkspace,
+  workspaceListSchema,
+  workspaceRoleSchema,
+  workspaceSummarySchema,
+  type CreateWorkspaceInput,
+  type WorkspaceList,
+  type WorkspaceRole,
+  type WorkspaceSummary
+} from './workspaces'

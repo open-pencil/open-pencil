@@ -13,6 +13,5 @@ export type {
   Upload,
   UploadStatus,
   Workspace,
-  WorkspaceRole,
   WorkspaceUpdate
 } from './schema'

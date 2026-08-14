@@ -24,6 +24,12 @@
       "import": "./dist/client.js",
       "default": "./dist/client.js"
     },
+    "./runtime/node": {
+      "types": "./dist/runtime-node.d.ts",
+      "bun": "./src/runtime/node/index.ts",
+      "import": "./dist/runtime-node.js",
+      "default": "./dist/runtime-node.js"
+    },
     "./server": {
       "types": "./dist/server.d.ts",
       "bun": "./src/server/index.ts",
@@ -46,8 +52,10 @@
     "hono": "^4.12.5",
     "jose": "^6.2.8",
     "kysely": "^0.29.5",
-    "pg": "^8.23.0",
     "valibot": "^1.2.0"
+  },
+  "optionalDependencies": {
+    "pg": "^8.23.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.4.1",

@@ -1,8 +1,8 @@
+import type { WorkspaceRole } from '#cloud/contract'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
 export type TimestampColumn = ColumnType<Date, Date | string | undefined, Date | string>
 
-export type WorkspaceRole = 'admin' | 'editor' | 'viewer'
 export type UploadStatus = 'pending' | 'committed' | 'abandoned'
 
 export interface WorkspaceTable {

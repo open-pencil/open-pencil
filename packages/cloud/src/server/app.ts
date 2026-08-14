@@ -4,9 +4,16 @@ import {
   parseCloudDiscovery,
   type CloudDiscovery
 } from '#cloud/contract'
-import { configuredSocialProviders, type CloudAuth } from '#cloud/server/auth'
+import {
+  configuredSocialProviders,
+  createCloudSessionResolver,
+  type CloudActor,
+  type CloudAuth,
+  type CloudSessionResolver
+} from '#cloud/server/auth'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
+import { createWorkspaceRoutes, createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
 import type { Kysely } from 'kysely'
 
@@ -14,6 +21,13 @@ export type CloudServices = {
   config: CloudServerConfig
   database: Kysely<CloudDatabase>
   auth: CloudAuth
+  resolveSession?: CloudSessionResolver
+}
+
+type CloudEnvironment = {
+  Variables: {
+    actor: CloudActor
+  }
 }
 
 function discoveryFromServices(services: CloudServices): CloudDiscovery {
@@ -30,7 +44,7 @@ function discoveryFromServices(services: CloudServices): CloudDiscovery {
     },
     capabilities: {
       documents: false,
-      workspaces: false,
+      workspaces: true,
       collaboration: false
     }
   })
@@ -38,8 +52,10 @@ function discoveryFromServices(services: CloudServices): CloudDiscovery {
 
 export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)
+  const resolveSession = services.resolveSession ?? createCloudSessionResolver(services.auth)
+  const workspaces = createWorkspaceRoutes(createWorkspaceService(services.database))
 
-  return new Hono()
+  return new Hono<CloudEnvironment>()
     .get('/health', (context) =>
       context.json({
         status: 'ok' as const,
@@ -56,6 +72,14 @@ export function createCloudApp(services: CloudServices) {
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
     .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
+    .use('/api/*', async (context, next) => {
+      const actor = await resolveSession(context.req.raw)
+      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      context.set('actor', actor)
+      return next()
+    })
+    .get('/api/session', (context) => context.json({ user: context.get('actor') }))
+    .route('/api/workspaces', workspaces)
 }
 
 export type CloudApp = ReturnType<typeof createCloudApp>
