@@ -9,8 +9,9 @@ import {
 } from 'kysely'
 
 import { createCloudDatabase } from '../src/server'
+import { createCloudTestDatabase } from './database'
 
-function dummyPostgresDialect(): Dialect {
+function testDialect(): Dialect {
   return {
     createAdapter: () => new PostgresAdapter(),
     createDriver: () => new DummyDriver(),
@@ -19,9 +20,48 @@ function dummyPostgresDialect(): Dialect {
   }
 }
 
+function testDatabase() {
+  return createCloudDatabase({ dialect: testDialect() })
+}
+
 describe('Cloud database', () => {
+  test('runs migrations and application queries in embedded PostgreSQL', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const workspaceId = crypto.randomUUID()
+      await runtime.database
+        .insertInto('workspace')
+        .values({
+          id: workspaceId,
+          name: 'Test workspace',
+          slug: `test-${workspaceId}`,
+          createdBy: 'user-1'
+        })
+        .execute()
+      await runtime.database
+        .insertInto('workspaceMember')
+        .values({ workspaceId, userId: 'user-1', role: 'admin' })
+        .execute()
+
+      const workspace = await runtime.database
+        .selectFrom('workspace')
+        .innerJoin('workspaceMember', 'workspaceMember.workspaceId', 'workspace.id')
+        .select(['workspace.id', 'workspace.name', 'workspaceMember.role'])
+        .where('workspaceMember.userId', '=', 'user-1')
+        .executeTakeFirstOrThrow()
+
+      expect(workspace).toMatchObject({
+        id: workspaceId,
+        name: 'Test workspace',
+        role: 'admin'
+      })
+    } finally {
+      await runtime.close()
+    }
+  })
+
   test('uses camel-case application fields with snake-case SQL identifiers', () => {
-    const database = createCloudDatabase({ dialect: dummyPostgresDialect() })
+    const database = testDatabase()
     const query = database
       .selectFrom('workspaceMember')
       .select(['workspaceId', 'userId'])
@@ -35,7 +75,7 @@ describe('Cloud database', () => {
   })
 
   test('compiles immutable revision insertion against PostgreSQL', () => {
-    const database = createCloudDatabase({ dialect: dummyPostgresDialect() })
+    const database = testDatabase()
     const query = database
       .insertInto('documentRevision')
       .values({

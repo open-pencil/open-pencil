@@ -16,20 +16,6 @@ export default defineConfig({
   treeshake: {
     moduleSideEffects: false
   },
-  deps: {
-    neverBundle: [
-      'better-auth',
-      /^better-auth\//,
-      'hono',
-      /^hono\//,
-      'jose',
-      'kysely',
-      /^kysely\//,
-      'pg',
-      'valibot'
-    ],
-    onlyBundle: false
-  },
   outputOptions: {
     minifyInternalExports: false
   }
