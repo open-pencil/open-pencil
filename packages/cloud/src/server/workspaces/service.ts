@@ -30,12 +30,14 @@ function generatedSlug(name: string): string {
   return `${fallbackSlug(name)}-${crypto.randomUUID().slice(0, 8)}`
 }
 
+type DatabaseError = { code?: unknown }
+
 function isUniqueViolation(error: unknown): boolean {
   return (
     typeof error === 'object' &&
     error !== null &&
     'code' in error &&
-    (error as { code?: unknown }).code === '23505'
+    (error as DatabaseError).code === '23505'
   )
 }
 

@@ -12,7 +12,8 @@ import {
   listDocuments,
   workspaceRole
 } from '#cloud/server/documents/repository'
-import type { ObjectStore, ObjectUpload } from '#cloud/server/objects'
+import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
+import type { ObjectStore } from '#cloud/server/objects'
 import type { Kysely } from 'kysely'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
@@ -169,7 +170,7 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       userId: string,
       documentId: string,
       input: CreateUploadInput
-    ): Promise<{ id: string; upload: ObjectUpload }> {
+    ): Promise<CreateDocumentUploadResult> {
       const document = await findDocument(database, userId, documentId)
       if (!document) throw new DocumentNotFoundError()
       if (!WRITABLE_ROLES.has(document.role)) throw new DocumentForbiddenError()

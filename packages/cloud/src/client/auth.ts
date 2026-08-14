@@ -1,5 +1,9 @@
 import type { CloudDiscovery } from '#cloud/contract'
 
+export type CloudSocialSignInResponse = {
+  url?: unknown
+}
+
 export type CloudSocialProvider = CloudDiscovery['authentication']['socialProviders'][number]
 
 function returnURL(): string {
@@ -30,7 +34,7 @@ export async function signInToCloud(
     })
   })
   if (!response.ok) throw new Error(`Cloud sign-in failed with HTTP ${response.status}`)
-  const body = (await response.json()) as { url?: unknown }
+  const body = (await response.json()) as CloudSocialSignInResponse
   if (typeof body.url !== 'string') throw new Error('Cloud sign-in response did not include a URL')
   globalThis.location.assign(body.url)
 }

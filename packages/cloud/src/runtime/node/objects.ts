@@ -20,6 +20,21 @@ const MULTIPART_THRESHOLD = 32 * 1024 * 1024
 const MULTIPART_PART_SIZE = 16 * 1024 * 1024
 const MAX_MULTIPART_PARTS = 10_000
 
+type S3ErrorMetadata = {
+  $metadata?: {
+    httpStatusCode?: number
+  }
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    '$metadata' in error &&
+    (error as S3ErrorMetadata).$metadata?.httpStatusCode === 404
+  )
+}
+
 function encryption(config: CloudServerConfig) {
   return config.s3ServerSideEncryption
     ? {
@@ -210,14 +225,7 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
           contentType: object.ContentType
         }
       } catch (error) {
-        if (
-          typeof error === 'object' &&
-          error !== null &&
-          '$metadata' in error &&
-          (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404
-        ) {
-          return null
-        }
+        if (isNotFoundError(error)) return null
         throw error
       }
     },

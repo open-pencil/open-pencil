@@ -1,5 +1,6 @@
 import type { DocumentSummary, WorkspaceRole } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
+import type { CreateDocumentRecord } from '#cloud/server/documents/types'
 import type { Kysely, Transaction } from 'kysely'
 
 export type DocumentDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
@@ -8,15 +9,12 @@ function toISOString(value: Date | string): string {
   return value instanceof Date ? value.toISOString() : value
 }
 
-function documentSummary(row: {
-  id: string
-  workspaceId: string
-  name: string
-  currentRevisionId: string | null
-  version: number
+export type DocumentSummaryRow = Omit<DocumentSummary, 'createdAt' | 'updatedAt'> & {
   createdAt: Date | string
   updatedAt: Date | string
-}): DocumentSummary {
+}
+
+function documentSummary(row: DocumentSummaryRow): DocumentSummary {
   return {
     ...row,
     createdAt: toISOString(row.createdAt),
@@ -81,7 +79,7 @@ export async function findDocument(
 
 export async function insertDocument(
   database: DocumentDatabase,
-  input: { id: string; workspaceId: string; name: string; createdBy: string }
+  input: CreateDocumentRecord
 ): Promise<void> {
   await database.insertInto('document').values(input).execute()
 }

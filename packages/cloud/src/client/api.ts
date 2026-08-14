@@ -49,6 +49,12 @@ const uploadResponseSchema = v.object({
   ])
 })
 
+export type CloudErrorResponse = {
+  error?: {
+    code?: unknown
+  }
+}
+
 export type CloudRequestOptions = {
   fetch?: CloudFetch
   signal?: AbortSignal
@@ -83,7 +89,7 @@ async function responseBody(response: Response): Promise<unknown> {
   if (response.ok) return response.status === 204 ? null : response.json()
   let code: string | undefined
   try {
-    const body = (await response.json()) as { error?: { code?: unknown } }
+    const body = (await response.json()) as CloudErrorResponse
     if (typeof body.error?.code === 'string') code = body.error.code
   } catch (error) {
     console.warn('[Cloud] API error response was not JSON:', error)

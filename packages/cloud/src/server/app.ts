@@ -4,10 +4,10 @@ import {
   parseCloudDiscovery,
   type CloudDiscovery
 } from '#cloud/contract'
+import type { CloudAPIEnvironment } from '#cloud/server/api/types'
 import {
   configuredSocialProviders,
   createCloudSessionResolver,
-  type CloudActor,
   type CloudAuth,
   type CloudSessionResolver
 } from '#cloud/server/auth'
@@ -28,11 +28,7 @@ export type CloudServices = {
   resolveSession?: CloudSessionResolver
 }
 
-type CloudEnvironment = {
-  Variables: {
-    actor: CloudActor
-  }
-}
+type CloudEnvironment = CloudAPIEnvironment
 
 function discoveryFromServices(services: CloudServices): CloudDiscovery {
   const apiURL = new URL('/api', services.config.publicURL).href.replace(/\/$/, '')

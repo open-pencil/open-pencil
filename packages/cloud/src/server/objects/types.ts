@@ -43,6 +43,25 @@ export type ObjectUpload = ObjectSingleUpload | ObjectMultipartUpload
 
 export type CompletedObjectPart = { partNumber: number; etag: string }
 
+export type CreateObjectDownloadInput = {
+  key: string
+  expiresAt: Date
+}
+
+export type CreateObjectUploadInput = CreateObjectDownloadInput & {
+  byteSize: number
+  checksum: string
+  contentType: string
+}
+
+export type CompleteObjectUploadInput = {
+  key: string
+  uploadId: string
+  parts: CompletedObjectPart[]
+}
+
+export type AbortObjectUploadInput = Omit<CompleteObjectUploadInput, 'parts'>
+
 export type StoredObject = {
   byteSize: number
   checksum: string
@@ -53,20 +72,10 @@ export type StoredObject = {
 export interface ObjectStore {
   readonly capabilities: ObjectStoreCapabilities
   checkReadiness(): Promise<ObjectStoreReadiness>
-  createDownload(input: { key: string; expiresAt: Date }): Promise<ObjectDownload>
-  createUpload(input: {
-    key: string
-    byteSize: number
-    checksum: string
-    contentType: string
-    expiresAt: Date
-  }): Promise<ObjectUpload>
-  completeUpload(input: {
-    key: string
-    uploadId: string
-    parts: CompletedObjectPart[]
-  }): Promise<void>
-  abortUpload(input: { key: string; uploadId: string }): Promise<void>
+  createDownload(input: CreateObjectDownloadInput): Promise<ObjectDownload>
+  createUpload(input: CreateObjectUploadInput): Promise<ObjectUpload>
+  completeUpload(input: CompleteObjectUploadInput): Promise<void>
+  abortUpload(input: AbortObjectUploadInput): Promise<void>
   head(key: string): Promise<StoredObject | null>
   delete(key: string): Promise<void>
 }

@@ -6,6 +6,7 @@ import type {
   StorageProviderRuntime,
   StorageTransferProgress
 } from '../types'
+import { createCloudTransport } from './transport'
 
 const SERVER_URL_FIELD = 'server-url'
 const WORKSPACE_ID_FIELD = 'workspace-id'
@@ -32,15 +33,16 @@ function reportProgress(
 }
 
 export function createCloudStorageAdapter(runtime: StorageProviderRuntime): StorageAdapter {
+  const transport = createCloudTransport()
   const serverURL = requiredPreference(runtime, SERVER_URL_FIELD)
   const workspaceId = requiredPreference(runtime, WORKSPACE_ID_FIELD)
 
   async function client() {
-    const discovery = await discoverCloud(serverURL)
+    const discovery = await discoverCloud(serverURL, { fetch: transport.apiFetch })
     if (!discovery.capabilities.documents) {
       throw new Error('This OpenPencil Cloud server does not support document storage')
     }
-    return createCloudAPIClient(discovery.apiURL)
+    return createCloudAPIClient(discovery.apiURL, { fetch: transport.apiFetch })
   }
 
   return {
@@ -69,7 +71,7 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
 
     async getDocument(id, onProgress) {
       const download = await (await client()).getDocument(id)
-      const response = await fetch(download.download.url, {
+      const response = await transport.objectFetch(download.download.url, {
         method: download.download.method,
         headers: download.download.headers
       })
@@ -103,7 +105,7 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
         | { uploadId: string; parts: Array<{ partNumber: number; etag: string }> }
         | undefined
       if (pending.upload.kind === 'single') {
-        const response = await fetch(pending.upload.url, {
+        const response = await transport.objectFetch(pending.upload.url, {
           method: pending.upload.method,
           headers: pending.upload.headers,
           body: Uint8Array.from(bytes)
@@ -116,7 +118,7 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
         for (const part of pending.upload.parts) {
           const start = (part.partNumber - 1) * pending.upload.partSize
           const end = Math.min(bytes.byteLength, start + pending.upload.partSize)
-          const response = await fetch(part.url, {
+          const response = await transport.objectFetch(part.url, {
             method: part.method,
             headers: part.headers,
             body: Uint8Array.from(bytes.subarray(start, end))
