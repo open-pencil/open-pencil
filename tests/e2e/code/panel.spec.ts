@@ -229,6 +229,16 @@ test('rolls back all roots when one cannot render', async () => {
   expect(names).not.toContain('Temporary')
 })
 
+test('shows OpenPencil diagnostics for unknown elements and properties', async () => {
+  await codeTab().click()
+  const input = await enterJSXEditing()
+  await input.fill('<Mystery unknownProp="value" />')
+  const diagnostics = editor.page.locator('.cm-lintRange')
+  await expect(diagnostics).toHaveCount(2)
+  await diagnostics.first().hover()
+  await expect(editor.page.locator('.cm-tooltip-lint')).toContainText('Unknown OpenPencil')
+})
+
 test('can leave edit mode without applying the draft', async () => {
   await codeTab().click()
   await enterJSXEditing()

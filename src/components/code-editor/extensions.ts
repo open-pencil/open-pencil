@@ -16,6 +16,7 @@ const PROPS = DESIGN_JSX_PROPERTIES.map(({ name }) => name)
 const HELPERS = DESIGN_JSX_HELPERS.map(({ name }) => name)
 
 const ELEMENT_SET = new Set(ELEMENTS)
+const PROPERTY_SET = new Set(PROPS)
 const HELPER_SET = new Set(HELPERS)
 
 function completionType(label: string): 'class' | 'function' | 'property' {
@@ -39,6 +40,42 @@ function completeDesignJSX(context: CompletionContext): CompletionResult | null 
   }
 }
 
+function semanticDiagnostics(view: EditorView): Diagnostic[] {
+  const diagnostics: Diagnostic[] = []
+  const tree = syntaxTree(view.state)
+  tree.iterate({
+    enter(node) {
+      if (node.name !== 'JSXIdentifier') return
+      const parentName = node.node.parent?.name
+      const name = view.state.doc.sliceString(node.from, node.to)
+      if (parentName === 'JSXAttribute' && !PROPERTY_SET.has(name)) {
+        diagnostics.push({
+          from: node.from,
+          to: node.to,
+          severity: 'warning',
+          message: `Unknown OpenPencil property “${name}”.`
+        })
+        return
+      }
+      if (
+        (parentName === 'JSXOpenTag' ||
+          parentName === 'JSXSelfClosingTag' ||
+          parentName === 'JSXCloseTag') &&
+        /^[A-Z]/.test(name) &&
+        !ELEMENT_SET.has(name)
+      ) {
+        diagnostics.push({
+          from: node.from,
+          to: node.to,
+          severity: 'warning',
+          message: `Unknown OpenPencil element <${name}>.`
+        })
+      }
+    }
+  })
+  return diagnostics
+}
+
 function syntaxDiagnostics(view: EditorView): Diagnostic[] {
   const errors: Diagnostic[] = []
   const tree = syntaxTree(view.state)
@@ -58,5 +95,8 @@ function syntaxDiagnostics(view: EditorView): Diagnostic[] {
 }
 
 export function designJSXExtensions(): Extension[] {
-  return [autocompletion({ override: [completeDesignJSX] }), linter(syntaxDiagnostics)]
+  return [
+    autocompletion({ override: [completeDesignJSX] }),
+    linter((view) => [...syntaxDiagnostics(view), ...semanticDiagnostics(view)])
+  ]
 }
