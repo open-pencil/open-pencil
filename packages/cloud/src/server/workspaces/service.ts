@@ -30,17 +30,6 @@ function generatedSlug(name: string): string {
   return `${fallbackSlug(name)}-${crypto.randomUUID().slice(0, 8)}`
 }
 
-type DatabaseError = { code?: unknown }
-
-function isUniqueViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as DatabaseError).code === '23505'
-  )
-}
-
 export function createWorkspaceService(database: Kysely<CloudDatabase>) {
   return {
     list(userId: string): Promise<WorkspaceSummary[]> {
@@ -54,15 +43,15 @@ export function createWorkspaceService(database: Kysely<CloudDatabase>) {
     async create(userId: string, input: CreateWorkspaceInput): Promise<WorkspaceSummary> {
       const workspaceId = crypto.randomUUID()
       const slug = input.slug ?? generatedSlug(input.name)
-      try {
-        await database.transaction().execute(async (transaction) => {
-          await insertWorkspace(transaction, userId, { ...input, id: workspaceId, slug })
-          await insertWorkspaceMember(transaction, workspaceId, userId, 'admin')
+      await database.transaction().execute(async (transaction) => {
+        const inserted = await insertWorkspace(transaction, userId, {
+          ...input,
+          id: workspaceId,
+          slug
         })
-      } catch (error) {
-        if (isUniqueViolation(error)) throw new WorkspaceSlugConflictError(slug)
-        throw error
-      }
+        if (!inserted) throw new WorkspaceSlugConflictError(slug)
+        await insertWorkspaceMember(transaction, workspaceId, userId, 'admin')
+      })
       const workspace = await findWorkspace(database, userId, workspaceId)
       if (!workspace) throw new Error('Created workspace could not be read')
       return workspace

@@ -66,8 +66,8 @@ export async function insertWorkspace(
   database: WorkspaceDatabase,
   actorId: string,
   input: CreateWorkspaceInput & { id: string; slug: string }
-): Promise<void> {
-  await database
+): Promise<boolean> {
+  const inserted = await database
     .insertInto('workspace')
     .values({
       id: input.id,
@@ -75,7 +75,10 @@ export async function insertWorkspace(
       slug: input.slug,
       createdBy: actorId
     })
-    .execute()
+    .onConflict((conflict) => conflict.column('slug').doNothing())
+    .returning('id')
+    .executeTakeFirst()
+  return inserted !== undefined
 }
 
 export async function insertWorkspaceMember(
