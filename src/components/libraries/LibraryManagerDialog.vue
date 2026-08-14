@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { nextTick, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
@@ -17,6 +17,12 @@ const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
 const { panels, dialogs } = useI18n()
+
+async function openPublish() {
+  open.value = false
+  await nextTick()
+  openPublishLibraryDialog()
+}
 const {
   section,
   loading,
@@ -58,7 +64,7 @@ const navigationClass =
         <button
           type="button"
           class="ml-auto text-xs text-component hover:underline"
-          @click="openPublishLibraryDialog"
+          @click="openPublish"
         >
           {{ panels.publishLibrary }}
         </button>
