@@ -1,16 +1,18 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'bun:test'
 
 import {
   buildACPMCPServers,
   createMCPConnectionDraft,
   mcpConnectionSettingsSnapshot,
   parseMCPConnectionSettings,
+  removeMCPConnection,
   replaceMCPConnectionSettings,
   saveMCPConnectionDraft,
   setMCPConnectionCredential,
   validateMCPConnectionURL,
   type MCPConnectionSettings
 } from '@/app/integrations/mcp'
+import { appCredentialServices } from '@/app/settings/credentials/app'
 
 import { captureACPSessionMCPServers } from '#tests/helpers/mcp/acp-session'
 
@@ -22,6 +24,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   replaceMCPConnectionSettings(original)
 })
 
@@ -35,7 +38,7 @@ describe('MCP connections', () => {
     )
   })
 
-  test('repairs malformed storage without retaining invalid connections', () => {
+  test('repairs malformed, reserved, and duplicate persisted connections', () => {
     expect(parseMCPConnectionSettings(null)).toEqual({ version: 1, connections: [] })
     expect(
       parseMCPConnectionSettings({
@@ -46,6 +49,20 @@ describe('MCP connections', () => {
             name: 'Valid',
             enabled: true,
             transport: { type: 'streamable-http', url: 'https://example.com/mcp' },
+            authentication: { type: 'none' }
+          },
+          {
+            id: 'mcp-reserved',
+            name: 'Open-Pencil',
+            enabled: true,
+            transport: { type: 'streamable-http', url: 'https://reserved.example.com/mcp' },
+            authentication: { type: 'none' }
+          },
+          {
+            id: 'mcp-duplicate-name',
+            name: 'valid',
+            enabled: true,
+            transport: { type: 'streamable-http', url: 'https://duplicate.example.com/mcp' },
             authentication: { type: 'none' }
           },
           {
@@ -81,6 +98,10 @@ describe('MCP connections', () => {
     expect(() => saveMCPConnectionDraft(duplicate)).toThrow('unique')
     duplicate.name = 'open-pencil'
     expect(() => saveMCPConnectionDraft(duplicate)).toThrow('reserved')
+
+    duplicate.id = 'mcp-../../unsafe' as typeof duplicate.id
+    duplicate.name = 'Safe name'
+    expect(() => saveMCPConnectionDraft(duplicate)).toThrow('ID is invalid')
   })
 
   test('composes enabled external servers after the built-in server', async () => {
@@ -90,24 +111,40 @@ describe('MCP connections', () => {
     draft.enabled = true
     draft.authenticationType = 'bearer'
     const connection = saveMCPConnectionDraft(draft)
-    await setMCPConnectionCredential(connection.id, 'secret-token')
+    try {
+      await setMCPConnectionCredential(connection.id, 'secret-token')
+      expect(await buildACPMCPServers({ authorizationToken: 'built-in-token' })).toEqual([
+        {
+          type: 'http',
+          name: 'open-pencil',
+          url: expect.stringContaining('/mcp'),
+          headers: [{ name: 'Authorization', value: 'Bearer built-in-token' }]
+        },
+        {
+          type: 'http',
+          name: 'GitHub',
+          url: 'https://example.com/mcp',
+          headers: [{ name: 'Authorization', value: 'Bearer secret-token' }]
+        }
+      ])
+    } finally {
+      await setMCPConnectionCredential(connection.id, '')
+    }
+  })
 
-    expect(await buildACPMCPServers({ authorizationToken: 'built-in-token' })).toEqual([
-      {
-        type: 'http',
-        name: 'open-pencil',
-        url: expect.stringContaining('/mcp'),
-        headers: [{ name: 'Authorization', value: 'Bearer built-in-token' }]
-      },
-      {
-        type: 'http',
-        name: 'GitHub',
-        url: 'https://example.com/mcp',
-        headers: [{ name: 'Authorization', value: 'Bearer secret-token' }]
-      }
-    ])
+  test('keeps the connection when credential deletion fails', async () => {
+    const draft = createMCPConnectionDraft()
+    draft.name = 'Protected connection'
+    draft.url = 'https://example.com/mcp'
+    const connection = saveMCPConnectionDraft(draft)
+    vi.spyOn(appCredentialServices.manager, 'clear').mockRejectedValue(
+      new Error('Credential store unavailable')
+    )
 
-    await setMCPConnectionCredential(connection.id, '')
+    await expect(removeMCPConnection(connection.id)).rejects.toThrow('unavailable')
+    expect(mcpConnectionSettingsSnapshot().connections.map((item) => item.id)).toContain(
+      connection.id
+    )
   })
 
   test('delivers built-in and external server configuration over a real ACP session', async () => {

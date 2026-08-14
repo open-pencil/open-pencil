@@ -175,6 +175,7 @@ export const dialogMessageDefaults = {
   mcpBearerAuthentication: 'Use bearer authentication',
   mcpBearerToken: 'Bearer token',
   mcpBearerTokenPlaceholder: 'Enter bearer token',
+  mcpBearerTokenRequired: 'Enter a bearer token before enabling this connection.',
   deleteMCPConnection: 'Delete connection',
   deleteMCPConnectionDescription: 'Delete this MCP connection and remove its saved bearer token?',
   noMCPConnections: 'No external MCP connections configured.',

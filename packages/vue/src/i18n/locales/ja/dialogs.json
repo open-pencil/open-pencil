@@ -99,6 +99,7 @@
   "mcpBearerAuthentication": "Bearer認証を使用",
   "mcpBearerToken": "Bearerトークン",
   "mcpBearerTokenPlaceholder": "Bearerトークンを入力",
+  "mcpBearerTokenRequired": "この接続を有効にする前にBearerトークンを入力してください。",
   "deleteMCPConnection": "接続を削除",
   "deleteMCPConnectionDescription": "このMCP接続と保存されたBearerトークンを削除しますか？",
   "noMCPConnections": "外部MCP接続は設定されていません。",

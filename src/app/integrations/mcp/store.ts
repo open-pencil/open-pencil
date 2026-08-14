@@ -70,10 +70,14 @@ export function parseMCPConnectionSettings(value: unknown): MCPConnectionSetting
   }
   const connections: MCPConnection[] = []
   const ids = new Set<string>()
+  const names = new Set<string>()
   for (const candidate of value.connections) {
     const connection = parseConnection(candidate)
     if (!connection || ids.has(connection.id)) continue
+    const normalizedName = connection.name.toLowerCase()
+    if (normalizedName === 'open-pencil' || names.has(normalizedName)) continue
     ids.add(connection.id)
+    names.add(normalizedName)
     connections.push(connection)
   }
   return { version: 1, connections }
@@ -133,6 +137,9 @@ export function saveMCPConnectionDraft(draft: MCPConnectionDraft): MCPConnection
   )
   if (duplicateName) throw new Error('Connection names must be unique')
   const url = validateMCPConnectionURL(draft.url.trim()).toString()
+  if (draft.id && !MCP_CONNECTION_ID_PATTERN.test(draft.id)) {
+    throw new Error('Connection ID is invalid')
+  }
   const id = draft.id ?? (`mcp-${crypto.randomUUID()}` as MCPConnectionID)
   const authentication: MCPAuthentication =
     draft.authenticationType === 'bearer'
@@ -164,10 +171,10 @@ export function mcpConnectionCredentialStatus(id: MCPConnectionID): Promise<Cred
 }
 
 export async function removeMCPConnection(id: MCPConnectionID): Promise<void> {
+  await appCredentialServices.manager.clear(mcpConnectionCredentialRef(id))
   mcpConnectionSettings.value.connections = mcpConnectionSettings.value.connections.filter(
     (connection) => connection.id !== id
   )
-  await appCredentialServices.manager.clear(mcpConnectionCredentialRef(id))
 }
 
 export function replaceMCPConnectionSettings(settings: MCPConnectionSettings): void {

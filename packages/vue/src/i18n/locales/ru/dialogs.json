@@ -99,6 +99,7 @@
   "mcpBearerAuthentication": "Использовать Bearer-аутентификацию",
   "mcpBearerToken": "Bearer-токен",
   "mcpBearerTokenPlaceholder": "Введите Bearer-токен",
+  "mcpBearerTokenRequired": "Введите Bearer-токен перед включением этого подключения.",
   "deleteMCPConnection": "Удалить подключение",
   "deleteMCPConnectionDescription": "Удалить это подключение MCP и сохранённый Bearer-токен?",
   "noMCPConnections": "Внешние подключения MCP не настроены.",

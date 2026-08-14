@@ -62,6 +62,7 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
   await expect(section).toContainText('https://example.com/mcp')
+  await expect(section).toContainText('Enabled')
   await section.getByRole('button', { name: /GitHub/ }).click()
   await expect(section.getByPlaceholder(/Key saved/)).toBeVisible()
   await section.getByRole('button', { name: 'Delete connection' }).click()

@@ -58,6 +58,14 @@ async function startEdit(id: string): Promise<void> {
 async function save(): Promise<void> {
   error.value = ''
   try {
+    if (
+      draft.value.enabled &&
+      draft.value.authenticationType === 'bearer' &&
+      !tokenDraft.value.trim() &&
+      tokenStatus.value !== 'configured'
+    ) {
+      throw new Error(dialogs.value.mcpBearerTokenRequired)
+    }
     const connection = saveMCPConnectionDraft(draft.value)
     if (draft.value.authenticationType === 'none') {
       await setMCPConnectionCredential(connection.id, '')
@@ -72,16 +80,29 @@ async function save(): Promise<void> {
 
 async function clearCredential(): Promise<void> {
   if (!draft.value.id) return
-  await setMCPConnectionCredential(draft.value.id, '')
-  tokenDraft.value = ''
-  tokenStatus.value = 'missing'
+  error.value = ''
+  try {
+    await setMCPConnectionCredential(draft.value.id, '')
+    draft.value.enabled = false
+    saveMCPConnectionDraft(draft.value)
+    tokenDraft.value = ''
+    tokenStatus.value = 'missing'
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : String(cause)
+  }
 }
 
 async function remove(): Promise<void> {
   if (!draft.value.id) return
-  await removeMCPConnection(draft.value.id)
-  deleteOpen.value = false
-  editing.value = false
+  error.value = ''
+  try {
+    await removeMCPConnection(draft.value.id)
+    deleteOpen.value = false
+    editing.value = false
+  } catch (cause) {
+    deleteOpen.value = false
+    error.value = cause instanceof Error ? cause.message : String(cause)
+  }
 }
 
 watch(

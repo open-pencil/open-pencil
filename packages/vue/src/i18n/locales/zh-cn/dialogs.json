@@ -99,6 +99,7 @@
   "mcpBearerAuthentication": "使用 Bearer 身份验证",
   "mcpBearerToken": "Bearer 令牌",
   "mcpBearerTokenPlaceholder": "输入 Bearer 令牌",
+  "mcpBearerTokenRequired": "启用此连接前请输入 Bearer 令牌。",
   "deleteMCPConnection": "删除连接",
   "deleteMCPConnectionDescription": "删除此 MCP 连接及其保存的 Bearer 令牌？",
   "noMCPConnections": "尚未配置外部 MCP 连接。",

@@ -99,6 +99,7 @@
   "mcpBearerAuthentication": "Użyj uwierzytelniania Bearer",
   "mcpBearerToken": "Token Bearer",
   "mcpBearerTokenPlaceholder": "Wprowadź token Bearer",
+  "mcpBearerTokenRequired": "Wprowadź token Bearer przed włączeniem tego połączenia.",
   "deleteMCPConnection": "Usuń połączenie",
   "deleteMCPConnectionDescription": "Usunąć to połączenie MCP i zapisany token Bearer?",
   "noMCPConnections": "Nie skonfigurowano zewnętrznych połączeń MCP.",

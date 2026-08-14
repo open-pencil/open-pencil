@@ -99,6 +99,7 @@
   "mcpBearerAuthentication": "Utiliser l’authentification Bearer",
   "mcpBearerToken": "Jeton Bearer",
   "mcpBearerTokenPlaceholder": "Saisissez le jeton Bearer",
+  "mcpBearerTokenRequired": "Saisissez un jeton Bearer avant d’activer cette connexion.",
   "deleteMCPConnection": "Supprimer la connexion",
   "deleteMCPConnectionDescription": "Supprimer cette connexion MCP et son jeton Bearer enregistré ?",
   "noMCPConnections": "Aucune connexion MCP externe configurée.",
