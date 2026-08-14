@@ -31,8 +31,17 @@ export async function applyDesignJSX(
       const parent = left.parentId ? store.graph.getNode(left.parentId) : undefined
       return (parent?.childIds.indexOf(left.id) ?? 0) - (parent?.childIds.indexOf(right.id) ?? 0)
     })
-  if (selected.some(({ locked }) => locked)) {
-    return { ok: false, error: 'Unlock the selected layers before applying JSX.' }
+  const lockedSelection = selected.some(({ id, locked }) => {
+    if (locked) return true
+    return [...store.graph.getAllNodes()].some(
+      (node) => node.locked && store.graph.isDescendant(node.id, id)
+    )
+  })
+  if (lockedSelection) {
+    return {
+      ok: false,
+      error: 'Unlock the selected layers and their contents before applying JSX.'
+    }
   }
   const parentIds = new Set(selected.map(({ parentId }) => parentId ?? store.state.currentPageId))
   if (parentIds.size > 1) {

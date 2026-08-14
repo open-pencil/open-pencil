@@ -249,6 +249,33 @@ test('replaces multiple roots at their original positions and supports redo', as
   )
 })
 
+test('does not replace a selection containing locked descendants', async () => {
+  const selection = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageId = store.state.currentPageId
+    const frame = store.graph.createNode('FRAME', pageId, { name: 'Protected frame' })
+    store.graph.createNode('RECTANGLE', frame.id, { name: 'Locked child', locked: true })
+    store.select([frame.id])
+    return frame.id
+  })
+  await codeTab().click()
+  const input = await enterJSXEditing()
+  await input.fill('<Frame name="Replacement" />')
+  await editor.page.getByTestId('code-panel-apply-jsx').click()
+  await expect(editor.page.getByText(/Unlock the selected layers and their contents/)).toBeVisible()
+  const state = await editor.page.evaluate(
+    (id) => ({
+      original: window.openPencil?.getStore?.().graph.getNode(id)?.name,
+      replacement: [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+        (node) => node.name === 'Replacement'
+      )
+    }),
+    selection
+  )
+  expect(state).toEqual({ original: 'Protected frame', replacement: false })
+})
+
 test('rolls back all roots when one cannot render', async () => {
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
