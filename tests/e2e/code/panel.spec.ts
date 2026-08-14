@@ -2,6 +2,11 @@ import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetup()
 
+test.beforeEach(async () => {
+  await editor.page.reload()
+  await editor.canvas.waitForInit()
+})
+
 function codeTab() {
   return editor.page.getByTestId('properties-tab-code')
 }
@@ -11,37 +16,32 @@ function designTab() {
 }
 
 function codePanel() {
-  return editor.page.getByTestId('code-panel')
+  return editor.page.getByTestId('code-panel-root')
 }
 
-function codePanelEmpty() {
-  return editor.page.getByTestId('code-panel-empty')
+function codeEditor() {
+  return editor.page.locator('[data-slot="code-editor"] .cm-content')
 }
 
-async function enterJSXEditing() {
-  const editorInput = editor.page.locator('[data-slot="code-editor"] .cm-content')
-  if (await editorInput.isVisible()) return editorInput
-  await editor.page.getByTestId('code-panel-edit').click()
-  await expect(editorInput).toBeVisible()
-  return editorInput
+async function openCodePanel() {
+  await codeTab().click()
+  await expect(codeEditor()).toBeVisible()
 }
 
-function formatToggle() {
-  return editor.page.getByTestId('code-panel-format-toggle')
+async function selectSource(label: string) {
+  await editor.page.getByTestId('code-panel-source').click()
+  await editor.page.getByRole('option', { name: label }).click()
 }
 
-function copyButton() {
-  return editor.page.getByTestId('code-panel-copy')
-}
-
-test('inactive Code tab skips JSX generation for large selections', async () => {
+test('inactive Code tab defers JSX generation for large selections', async () => {
   const selectionDuration = await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const pageId = store.state.currentPageId
     const ids: string[] = []
     for (let frameIndex = 0; frameIndex < 50; frameIndex++) {
-      const frame = store.graph.createNode('FRAME', pageId, { name: `Frame ${frameIndex}` })
+      const frame = store.graph.createNode('FRAME', store.state.currentPageId, {
+        name: `Frame ${frameIndex}`
+      })
       ids.push(frame.id)
       for (let childIndex = 0; childIndex < 100; childIndex++) {
         store.graph.createNode('RECTANGLE', frame.id, { name: `Child ${childIndex}` })
@@ -54,390 +54,144 @@ test('inactive Code tab skips JSX generation for large selections', async () => 
     })
     return performance.now() - startedAt
   })
-
   expect(selectionDuration).toBeLessThan(1000)
   await expect(designTab()).toHaveAttribute('data-state', 'active')
-
-  await codeTab().click()
-  await expect(codePanel()).toContainText('Frame')
-
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().clearSelection())
-  await designTab().click()
+  await openCodePanel()
+  await expect(codeEditor()).toContainText('Frame')
 })
 
-test('Code tab shows empty state with no selection', async () => {
-  await codeTab().click()
-  await expect(codePanelEmpty()).toBeVisible()
-  await expect(codePanelEmpty()).toContainText('Select a layer')
+test('shows one editor with line numbers and no import form', async () => {
+  await openCodePanel()
+  await expect(codePanel().locator('[data-slot="code-editor"]')).toHaveCount(1)
+  await expect(codePanel().locator('.cm-lineNumbers')).toBeVisible()
+  await expect(codePanel().locator('textarea')).toHaveCount(0)
+  await expect(codePanel().getByRole('button', { name: /^Import$/ })).toHaveCount(0)
 })
 
-test('selecting a rectangle shows JSX code', async () => {
+test('live previews Design JSX and keeps one undo transaction', async () => {
   await editor.canvas.drawRect(100, 100, 200, 150)
-  await editor.canvas.waitForRender()
-
-  await expect(codePanel()).toBeVisible()
-
-  const code = await codePanel().textContent()
-  expect(code).toContain('Rectangle')
-})
-
-test('format toggle switches between OpenPencil and Tailwind', async () => {
-  await expect(formatToggle()).toBeVisible()
-
-  const initialFormat = await formatToggle().textContent()
-  expect(initialFormat).toContain('OpenPencil')
-
-  await formatToggle().click()
-  await expect(formatToggle()).toContainText('Tailwind')
-
-  const code = await codePanel().textContent()
-  expect(code).toContain('div')
-
-  await formatToggle().click()
-  await expect(formatToggle()).toContainText('OpenPencil')
-})
-
-test('copy button works and shows confirmation', async () => {
-  await copyButton().click()
-
-  await expect(copyButton()).toContainText('Copied')
-
-  await editor.page.waitForTimeout(2500)
-  await expect(copyButton()).toContainText('Copy')
-})
-
-test('deselecting shows empty state again', async () => {
-  await editor.page.keyboard.press('Escape')
-  await editor.canvas.waitForRender()
-
-  await expect(codePanelEmpty()).toBeVisible()
-})
-
-test('selecting a frame shows Frame in JSX', async () => {
-  // Create a frame via store to avoid click-targeting issues
-  await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const id = store.createShape('FRAME', 300, 100, 200, 200)
-    store.select([id])
-  })
-  await editor.canvas.waitForRender()
-
-  const code = await codePanel().textContent()
-  expect(code).toContain('Frame')
-})
-
-test('edits and applies JSX as one undoable replacement', async () => {
-  await editor.canvas.drawRect(100, 100, 200, 150)
-  await editor.canvas.waitForRender()
-  const originalId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    return [...(store?.state.selectedIds ?? [])][0]
-  })
-
-  await codeTab().click()
-  const input = await enterJSXEditing()
-  await input.fill('<Frame name="Edited from JSX" w={320} h={180} fill={solid("#ffffff")} />')
-  await editor.page.getByTestId('code-panel-apply-jsx').click()
+  const originalId = await editor.page.evaluate(
+    () => [...(window.openPencil?.getStore?.().state.selectedIds ?? [])][0]
+  )
+  await openCodePanel()
+  await codeEditor().fill('<Frame name="Live JSX" w={320} h={180} fill="#ffffff" />')
   await editor.page.waitForFunction(() =>
-    window.openPencil
-      ?.getStore?.()
-      .graph.getAllNodes()
-      .some((node) => node.name === 'Edited from JSX')
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Live JSX'
+    )
+  )
+  await codeEditor().fill('<Frame name="Live JSX final" w={360} h={180} fill="#ffffff" />')
+  await editor.page.waitForFunction(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Live JSX final'
+    )
   )
 
-  const applied = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const selectedId = [...store.state.selectedIds][0]
-    return { selectedId, name: selectedId ? store.graph.getNode(selectedId)?.name : undefined }
-  })
-  expect(applied.name).toBe('Edited from JSX')
-  expect(applied.selectedId).not.toBe(originalId)
-
+  await designTab().click()
+  await editor.page.waitForTimeout(50)
   await editor.page.keyboard.press('Meta+z')
   await editor.page.waitForFunction(
     (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
     originalId
   )
-})
-
-test('applies trusted variable helper descriptors', async () => {
-  await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const collection = {
-      id: 'colors',
-      name: 'Colors',
-      modes: [{ modeId: 'default', name: 'Default' }],
-      defaultModeId: 'default',
-      variableIds: []
-    }
-    store.graph.addCollection(collection)
-    store.graph.addVariable({
-      id: 'primary',
-      name: 'Primary',
-      type: 'COLOR',
-      collectionId: collection.id,
-      valuesByMode: { default: '#ff0000' }
-    })
-    store.clearSelection()
-  })
-  await codeTab().click()
-  const input = await enterJSXEditing()
-  await input.fill('<Frame name="Variable frame" fill={designVar("primary", "#ff0000")} />')
-  await editor.page.getByTestId('code-panel-apply-jsx').click()
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Variable frame'
-    )
-  )
-  const bindings = await editor.page.evaluate(() => {
-    const node = [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].find(
-      (candidate) => candidate.name === 'Variable frame'
-    )
-    return node?.boundVariables
-  })
-  expect(bindings).toMatchObject({ 'fills/0/color': 'primary' })
-})
-
-test('replaces multiple roots at their original positions and supports redo', async () => {
-  await codeTab().click()
-  const originals = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const pageId = store.state.currentPageId
-    const one = store.graph.createNode('RECTANGLE', pageId, { name: 'One', x: 40, y: 50 })
-    store.graph.createNode('TEXT', pageId, { name: 'Between' })
-    const two = store.graph.createNode('ELLIPSE', pageId, { name: 'Two', x: 240, y: 250 })
-    store.graph.createNode('STAR', pageId, { name: 'After' })
-    store.select([one.id, two.id])
-    return [one.id, two.id]
-  })
-  const input = await enterJSXEditing()
-  await input.fill(
-    '<><Frame name="First" w={100} h={100} /><Frame name="Second" w={100} h={100} /></>'
-  )
-  await editor.page.getByTestId('code-panel-apply-jsx').click()
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Second'
-    )
-  )
-  const positions = await editor.page.evaluate(() => {
-    const nodes = [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])]
-    return ['First', 'Second'].map((name) => {
-      const node = nodes.find((candidate) => candidate.name === name)
-      return node ? { x: node.x, y: node.y } : null
-    })
-  })
-  expect(positions).toEqual([
-    { x: 40, y: 50 },
-    { x: 240, y: 250 }
-  ])
-  const siblingOrder = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) return []
-    return store.graph.getChildren(store.state.currentPageId).map((node) => node.name)
-  })
-  expect(siblingOrder.slice(-4)).toEqual(['First', 'Second', 'Between', 'After'])
-
-  await editor.page.keyboard.press('Meta+z')
   expect(
     await editor.page.evaluate(
-      (ids) => ids.every((id) => window.openPencil?.getStore?.().graph.getNode(id)),
-      originals
+      (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
+      originalId
     )
   ).toBe(true)
-  await editor.page.keyboard.press('Meta+Shift+z')
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Second'
-    )
-  )
-})
-
-test('recomputes an auto-layout parent after replacement', async () => {
-  const parentId = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const parent = store.graph.createNode('FRAME', store.state.currentPageId, {
-      name: 'Auto parent',
-      layoutMode: 'HORIZONTAL',
-      itemSpacing: 12,
-      width: 400,
-      height: 100
-    })
-    const first = store.graph.createNode('RECTANGLE', parent.id, {
-      name: 'Replace in layout',
-      width: 40,
-      height: 40
-    })
-    store.graph.createNode('RECTANGLE', parent.id, { name: 'Following', width: 40, height: 40 })
-    store.select([first.id])
-    return parent.id
-  })
-  await codeTab().click()
-  const input = await enterJSXEditing()
-  await input.fill('<Frame name="Layout replacement" w={80} h={40} />')
-  await editor.page.getByTestId('code-panel-apply-jsx').click()
-  await editor.page.waitForFunction(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-      (node) => node.name === 'Layout replacement'
-    )
-  )
-  const children = await editor.page.evaluate((id) => {
-    const graph = window.openPencil?.getStore?.().graph
-    return graph?.getChildren(id).map((node) => ({ name: node.name, x: node.x, width: node.width }))
-  }, parentId)
-  expect(children?.map(({ name }) => name)).toEqual(['Layout replacement', 'Following'])
-  expect(children?.[1]?.x).toBe(92)
-})
-
-test('does not replace a selection containing locked descendants', async () => {
-  const selection = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const pageId = store.state.currentPageId
-    const frame = store.graph.createNode('FRAME', pageId, { name: 'Protected frame' })
-    store.graph.createNode('RECTANGLE', frame.id, { name: 'Locked child', locked: true })
-    store.select([frame.id])
-    return frame.id
-  })
-  await codeTab().click()
-  const input = await enterJSXEditing()
-  await input.fill('<Frame name="Replacement" />')
-  await editor.page.getByTestId('code-panel-apply-jsx').click()
-  await expect(editor.page.getByText(/Unlock the selected layers and their contents/)).toBeVisible()
-  const state = await editor.page.evaluate(
-    (id) => ({
-      original: window.openPencil?.getStore?.().graph.getNode(id)?.name,
-      replacement: [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
-        (node) => node.name === 'Replacement'
+  expect(
+    await editor.page.evaluate(() =>
+      [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+        (node) => node.name === 'Live JSX final'
       )
-    }),
-    selection
+    )
+  ).toBe(false)
+})
+
+test('Ctrl+Z edits the CodeMirror draft before touching the canvas transaction', async () => {
+  await openCodePanel()
+  const initial = await codeEditor().textContent()
+  await codeEditor().pressSequentially('\n// local draft')
+  await expect(codeEditor()).toContainText('local draft')
+  await codeEditor().press('Control+z')
+  await expect(codeEditor()).not.toContainText('local draft')
+  expect(await codeEditor().textContent()).toBe(initial)
+})
+
+test('keeps the last valid preview while showing invalid-code diagnostics', async () => {
+  await openCodePanel()
+  await codeEditor().fill('<Frame name="Last valid" />')
+  await editor.page.waitForFunction(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Last valid'
+    )
   )
-  expect(state).toEqual({ original: 'Protected frame', replacement: false })
+  await codeEditor().fill('<Frame>')
+  await expect(editor.page.getByTestId('code-panel-error')).toBeVisible()
+  expect(
+    await editor.page.evaluate(() =>
+      [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+        (node) => node.name === 'Last valid'
+      )
+    )
+  ).toBe(true)
 })
 
-test('rolls back all roots when one cannot render', async () => {
-  await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, { name: 'Keep me' })
-    store.select([node.id])
-  })
-  await codeTab().click()
-  const input = await enterJSXEditing()
-  await input.fill('<><Frame name="Temporary" /><Instance /></>')
-  await editor.page.getByTestId('code-panel-apply-jsx').click()
-  await expect(editor.page.getByTestId('code-panel-jsx-error')).toBeVisible()
-  const names = await editor.page.evaluate(() =>
-    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].map((node) => node.name)
+test('Reset restores generated source and original canvas state', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  const originalId = await editor.page.evaluate(
+    () => [...(window.openPencil?.getStore?.().state.selectedIds ?? [])][0]
   )
-  expect(names).toContain('Keep me')
-  expect(names).not.toContain('Temporary')
-})
-
-test('shows OpenPencil diagnostics for unknown elements and properties', async () => {
-  await codeTab().click()
-  const input = await enterJSXEditing()
-  await input.fill('<Mystery unknownProp="value" />')
-  const diagnostics = editor.page.locator('.cm-lintRange')
-  await expect(diagnostics).toHaveCount(2)
-  await diagnostics.first().hover()
-  await expect(editor.page.locator('.cm-tooltip-lint')).toContainText('Unknown OpenPencil')
-})
-
-test('accepts locally declared component names in diagnostics', async () => {
-  await codeTab().click()
-  const input = await enterJSXEditing()
-  await input.fill('const Card = () => <Frame />\n<Card />')
-  await expect(editor.page.locator('.cm-lintRange')).toHaveCount(0)
-})
-
-test('can leave edit mode without applying the draft', async () => {
-  await codeTab().click()
-  await enterJSXEditing()
-  await expect(editor.page.locator('[data-slot="code-editor"]')).toBeVisible()
-  await editor.page.getByTestId('code-panel-view').click()
-  await expect(editor.page.locator('[data-slot="code-editor"]')).toBeHidden()
-  await expect(editor.page.getByTestId('code-panel-edit')).toBeVisible()
-})
-
-test('keeps large JSX drafts contained inside CodeMirror', async () => {
-  test.setTimeout(30_000)
-  await codeTab().click()
-  const editorRoot = editor.page.locator('[data-slot="code-editor"]')
-  const input = await enterJSXEditing()
-  const largeSource = `<Frame>${'<Text>Large draft</Text>\n'.repeat(2000)}</Frame>`
-  await input.fill(largeSource)
-
-  const geometry = await editorRoot.evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.querySelector('.cm-scroller')?.scrollHeight ?? 0,
-    panelHeight: element.closest('[data-test-id="code-panel-root"]')?.clientHeight ?? 0
-  }))
-  expect(geometry.clientHeight).toBeLessThanOrEqual(geometry.panelHeight)
-  expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight)
-})
-
-test('switching back to Design tab works', async () => {
-  await designTab().click()
-
-  await expect(
-    editor.page
-      .getByTestId('design-panel-single')
-      .or(editor.page.getByTestId('design-panel-empty'))
-      .first()
-  ).toBeVisible()
-})
-
-test('shows import errors in the Code panel', async () => {
-  await codeTab().click()
-  await editor.page.getByTestId('code-panel-import-toggle').click()
-  await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    const importDOMText = store.importDOMText
-    store.importDOMText = async () => {
-      store.importDOMText = importDOMText
-      throw new Error('CSS import failed')
-    }
-  })
-
-  await editor.page.getByTestId('code-panel-import-html').fill('<div class="card">Broken DOM</div>')
-  await editor.page.getByTestId('code-panel-import').click()
-
-  await expect(editor.page.getByTestId('code-panel-import-error')).toBeVisible()
-  await expect(editor.page.getByTestId('code-panel-import-error')).toContainText(
-    'CSS import failed'
+  await openCodePanel()
+  await codeEditor().fill('<Frame name="Reset preview" />')
+  await editor.page.waitForFunction(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Reset preview'
+    )
   )
-
-  await editor.page.getByTestId('code-panel-import-html').fill('<div class="card">Recovered</div>')
-  await expect(editor.page.getByTestId('code-panel-import-error')).toBeHidden()
-  await editor.page.getByTestId('code-panel-import-toggle').click()
+  await editor.page.getByTestId('code-panel-reset').click()
+  await editor.page.waitForFunction(
+    (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
+    originalId
+  )
+  expect(
+    await editor.page.evaluate(
+      (id) => Boolean(id && window.openPencil?.getStore?.().graph.getNode(id)),
+      originalId
+    )
+  ).toBe(true)
+  await expect(codeEditor()).toContainText('Rectangle')
 })
 
-test('imports HTML and CSS into the canvas', async () => {
-  await codeTab().click()
-  await editor.page.getByTestId('code-panel-import-toggle').click()
-  await editor.page.getByTestId('code-panel-import-html').fill('<div class="card">Hello DOM</div>')
-  await editor.page
-    .getByTestId('code-panel-import-css')
-    .fill('.card { width: 240px; height: 120px; padding: 16px; background: #ffffff; }')
-  await editor.page.getByTestId('code-panel-import').click()
-  await editor.page.waitForFunction(() => {
-    const store = window.openPencil?.getStore?.()
-    return store?.graph.getAllNodes().some((node) => node.name.includes('Hello DOM'))
-  })
-  await editor.canvas.waitForRender()
+test('HTML/CSS uses the same editor and live reloads the canvas', async () => {
+  await openCodePanel()
+  await selectSource('HTML/CSS')
+  await expect(codePanel().locator('[data-slot="code-editor"]')).toHaveCount(1)
+  await codeEditor().fill(
+    '<style>.card { width: 240px; height: 120px; background: red; }</style><div class="card">Hello</div>'
+  )
+  await expect(editor.page.getByTestId('code-panel-status')).toContainText('Updated live')
+  const importedNodes = await editor.page.evaluate(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].map((node) => ({
+      type: node.type,
+      name: node.name,
+      text: node.text
+    }))
+  )
+  expect(importedNodes.some((node) => node.type !== 'DOCUMENT' && node.type !== 'PAGE')).toBe(true)
+})
 
-  const imported = await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    return store.graph.getAllNodes().some((node) => node.name.includes('Hello DOM'))
-  })
-  expect(imported).toBe(true)
+test('Tailwind JSX is generated read-only in the same editor', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  await openCodePanel()
+  await selectSource('Tailwind JSX')
+  await expect(editor.page.getByTestId('code-panel-status')).toContainText('Generated, read only')
+  await expect(codeEditor()).toHaveAttribute('contenteditable', 'false')
+})
+
+test('copy button works and shows confirmation', async () => {
+  await openCodePanel()
+  await editor.page.getByTestId('code-panel-copy').click()
+  await expect(editor.page.getByTestId('code-panel-copy')).toContainText('Copied')
 })

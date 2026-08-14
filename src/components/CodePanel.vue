@@ -1,337 +1,280 @@
 <script setup lang="ts">
-import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
-import { useClipboard } from '@vueuse/core'
-import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue'
+import { useClipboard, useDebounceFn } from '@vueuse/core'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 
 import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
 
-import { applyDesignJSX } from '@/app/code/apply'
-import { highlightJSX } from '@/app/code/highlight'
+import {
+  commitDesignJSXSession,
+  createDesignJSXEditSession,
+  previewDesignJSX,
+  resetDesignJSXPreview,
+  type DesignJSXEditSession
+} from '@/app/code/live-preview'
+import {
+  commitDOMCodeSession,
+  createDOMCodeSession,
+  previewDOMCode,
+  resetDOMCodePreview,
+  type DOMCodeSession
+} from '@/app/code/dom-preview'
+import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
-import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
 import Tip from '@/components/ui/Tip.vue'
-
-import type { JSXFormat } from '@open-pencil/core/design-jsx'
 
 const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/CodeEditor.vue'))
 
 const { active = true } = defineProps<{ active?: boolean }>()
 const store = useEditorStore()
-const { copy, copied } = useClipboard({ copiedDuring: 2000 })
+const editorActive = computed(() => active)
 const { dialogs } = useI18n()
-const jsxFormat = ref<JSXFormat>('openpencil')
-const showImporter = ref(false)
-const importHTML = ref('')
-const importCSS = ref('')
-const importError = ref('')
-const importing = ref(false)
-const editing = ref(false)
+const { copy, copied } = useClipboard({ copiedDuring: 2000 })
+const { copy: copyReference, copied: copiedReference } = useClipboard({ copiedDuring: 2000 })
+const source = ref<CodeSource>('design-jsx')
 const draft = ref('')
-const draftDirty = ref(false)
-const applying = ref(false)
-const applyError = ref('')
+const baseline = ref('')
+const status = ref<'idle' | 'updating' | 'updated' | 'error'>('idle')
+const error = ref('')
+const designSession = shallowRef<DesignJSXEditSession | null>(null)
+let domSession: DOMCodeSession | null = null
+let previewQueue = Promise.resolve()
+let updateVersion = 0
+let disposing = false
 
-function toggleFormat() {
-  jsxFormat.value = jsxFormat.value === 'openpencil' ? 'tailwind' : 'openpencil'
-}
-
-const jsxCode = useSceneComputed(() => {
-  if (!active) return ''
+const generatedJSX = useSceneComputed(() => {
+  if (!editorActive.value || source.value === 'html-css' || designSession.value) return ''
   void store.state.sceneVersion
   const ids = [...store.state.selectedIds]
-  if (ids.length === 0) return ''
-  return selectionToJSX(ids, store.graph, jsxFormat.value)
+  if (ids.length === 0) return starterSourceFor(source.value)
+  return selectionToJSX(
+    ids,
+    store.graph,
+    source.value === 'tailwind-jsx' ? 'tailwind' : 'openpencil'
+  )
 })
 
-const highlightedLines = computed(() => {
-  if (!jsxCode.value) return []
-  return jsxCode.value.split('\n').map(highlightJSX)
+const sourceOptions = computed(() => [
+  { value: 'design-jsx' as const, label: 'Design JSX' },
+  { value: 'tailwind-jsx' as const, label: 'Tailwind JSX' },
+  { value: 'html-css' as const, label: 'HTML/CSS' }
+])
+const readOnly = computed(() => source.value === 'tailwind-jsx')
+const dirty = computed(() => draft.value !== baseline.value)
+const editorLabel = computed(() => (source.value === 'html-css' ? 'HTML and CSS' : 'Design JSX'))
+const statusText = computed(() => {
+  if (status.value === 'updating') return 'Updating…'
+  if (status.value === 'error') return 'Preview failed'
+  if (dirty.value) return 'Updated live'
+  return 'Up to date'
 })
 
-watch(jsxCode, (value) => {
-  if (!draftDirty.value) draft.value = value
-})
-
-function startEditing() {
-  if (jsxFormat.value !== 'openpencil') {
-    jsxFormat.value = 'openpencil'
-    void nextTick().then(startEditing)
-    return
-  }
-  draft.value = jsxCode.value || '<Frame name="New frame" w={320} h={240} fill="#ffffff" />'
-  draftDirty.value = false
-  applyError.value = ''
-  editing.value = true
-}
-
-function stopEditing() {
-  editing.value = false
-  applyError.value = ''
-}
-
-function updateDraft(value: string) {
-  draft.value = value
-  draftDirty.value = value !== jsxCode.value
-  applyError.value = ''
-}
-
-async function applyDraft() {
-  if (applying.value || draft.value.trim().length === 0) return
-  applying.value = true
-  applyError.value = ''
-  const result = await applyDesignJSX(store, draft.value)
-  applying.value = false
+function beginDesignSession(): boolean {
+  if (designSession.value) return true
+  const result = createDesignJSXEditSession(store)
   if (!result.ok) {
-    applyError.value = result.error
+    status.value = 'error'
+    error.value = result.error
+    return false
+  }
+  designSession.value = result.session
+  return true
+}
+
+function beginDOMSession(): DOMCodeSession {
+  domSession ??= createDOMCodeSession(store)
+  return domSession
+}
+
+async function commitCurrentSession(): Promise<void> {
+  updateVersion += 1
+  await previewQueue
+  if (designSession.value) commitDesignJSXSession(store, designSession.value)
+  if (domSession) commitDOMCodeSession(store, domSession)
+  designSession.value = null
+  domSession = null
+}
+
+async function runPreview(version: number): Promise<void> {
+  if (version !== updateVersion || readOnly.value || !draft.value.trim()) return
+  status.value = 'updating'
+  error.value = ''
+  let result: { ok: true } | { ok: false; error: string }
+  if (source.value === 'html-css') {
+    result = await previewDOMCode(store, beginDOMSession(), draft.value)
+  } else if (beginDesignSession()) {
+    result = await previewDesignJSX(store, designSession.value as DesignJSXEditSession, draft.value)
+  } else {
+    result = { ok: false, error: error.value }
+  }
+  if (version !== updateVersion) return
+  if (!result.ok) {
+    status.value = 'error'
+    error.value = result.error
     return
   }
-  draftDirty.value = false
+  status.value = 'updated'
 }
 
-const { copy: copyRef, copied: copiedRef } = useClipboard({ copiedDuring: 2000 })
+const schedulePreview = useDebounceFn(
+  () => {
+    const version = updateVersion
+    previewQueue = previewQueue.then(() => runPreview(version))
+    return previewQueue
+  },
+  350,
+  { maxWait: 1_000 }
+)
 
-const canImport = computed(() => importHTML.value.trim().length > 0)
+function updateDraft(value: string): void {
+  draft.value = value
+  error.value = ''
+  updateVersion += 1
+  void schedulePreview()
+}
 
-watch([importHTML, importCSS], () => {
-  importError.value = ''
+async function resetDraft(): Promise<void> {
+  updateVersion += 1
+  await previewQueue
+  if (designSession.value) resetDesignJSXPreview(store, designSession.value)
+  if (domSession) resetDOMCodePreview(store, domSession)
+  designSession.value = null
+  domSession = null
+  draft.value = baseline.value
+  error.value = ''
+  status.value = 'idle'
+}
+
+async function changeSource(next: CodeSource): Promise<void> {
+  if (next === source.value) return
+  await commitCurrentSession()
+  source.value = next
+  const initial = next === 'html-css' ? starterSourceFor(next) : generatedFor(next)
+  baseline.value = initial
+  draft.value = initial
+  error.value = ''
+  status.value = 'idle'
+}
+
+function generatedFor(next: Exclude<CodeSource, 'html-css'>): string {
+  const ids = [...store.state.selectedIds]
+  if (ids.length === 0) return starterSourceFor(next)
+  return selectionToJSX(ids, store.graph, next === 'tailwind-jsx' ? 'tailwind' : 'openpencil')
+}
+
+function handlePanelUndo(event: KeyboardEvent): void {
+  if (!event.metaKey && !event.ctrlKey) return
+  if (event.code !== 'KeyZ') return
+  // CodeMirror handles draft history while focused. This fallback only handles the committed
+  // live-preview transaction when focus is elsewhere in the Code panel.
+  if (event.target instanceof Element && event.target.closest('.cm-editor')) return
+  event.preventDefault()
+  if (event.shiftKey) store.performRedo()
+  else store.performUndo()
+  store.requestRender()
+}
+
+watch(
+  generatedJSX,
+  (value) => {
+    if (source.value === 'html-css' || designSession.value || dirty.value) return
+    baseline.value = value
+    draft.value = value
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  disposing = true
+  void commitCurrentSession()
 })
 
-function errorMessage(error: unknown) {
-  if (error instanceof Error && error.message) return error.message
-  return dialogs.value.importFailed
-}
-
-function toggleImporter() {
-  editing.value = false
-  showImporter.value = !showImporter.value
-}
-
-async function pasteImportHTML() {
-  try {
-    importError.value = ''
-    importHTML.value = await navigator.clipboard.readText()
-  } catch (e) {
-    importError.value = errorMessage(e)
+watch(
+  () => editorActive.value,
+  (value) => {
+    if (!value && !disposing) void commitCurrentSession()
   }
-}
-
-async function importCode() {
-  if (!canImport.value || importing.value) return
-  try {
-    importing.value = true
-    importError.value = ''
-    await store.importDOMText(importHTML.value, {
-      cssText: importCSS.value.trim() || undefined
-    })
-  } catch (e) {
-    importError.value = errorMessage(e)
-  } finally {
-    importing.value = false
-  }
-}
-
-function copyCode() {
-  copy(jsxCode.value)
-}
-
-function copyReference() {
-  copyRef(JSX_REFERENCE)
-}
+)
 </script>
 
 <template>
-  <div data-test-id="code-panel-root" class="flex min-h-0 flex-1 flex-col">
-    <div
-      data-test-id="code-panel-header"
-      class="flex shrink-0 items-center justify-between border-b border-border px-3 py-1.5"
-    >
-      <div class="flex items-center gap-1.5">
-        <span class="text-[11px] text-muted">JSX</span>
+  <div
+    data-test-id="code-panel-root"
+    class="flex min-h-0 flex-1 flex-col"
+    @keydown="handlePanelUndo"
+  >
+    <header class="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+      <AppSelect
+        :model-value="source"
+        :options="sourceOptions"
+        label="Code source"
+        data-test-id="code-panel-source"
+        :ui="{ trigger: 'h-7 min-w-0 flex-1 text-[11px]' }"
+        @update:model-value="changeSource"
+      />
+      <Tip :label="dialogs.copyJSXReference">
         <AppTextButton
-          data-test-id="code-panel-format-toggle"
-          :ui="{ base: 'rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
-          @click="toggleFormat"
+          v-if="source !== 'html-css'"
+          data-test-id="code-panel-copy-ref"
+          :ui="{ base: 'rounded p-1.5 text-[11px] hover:bg-hover' }"
+          @click="copyReference(JSX_REFERENCE)"
         >
-          {{ jsxFormat === 'openpencil' ? 'OpenPencil' : 'Tailwind' }}
+          <icon-lucide-check v-if="copiedReference" class="size-3 text-[var(--color-success)]" />
+          <icon-lucide-book-open v-else class="size-3" />
         </AppTextButton>
-      </div>
+      </Tip>
+    </header>
+
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <CodeEditor
+        :model-value="draft"
+        :language="source"
+        :read-only="readOnly"
+        :label="editorLabel"
+        @update:model-value="updateDraft"
+      />
+    </div>
+
+    <div
+      v-if="error"
+      role="alert"
+      data-test-id="code-panel-error"
+      class="shrink-0 border-t border-red-500/40 bg-red-500/10 px-3 py-2 text-[11px] text-red-200"
+    >
+      {{ error }}
+    </div>
+
+    <footer
+      class="flex shrink-0 items-center justify-between gap-2 border-t border-border px-3 py-2"
+    >
+      <span
+        data-test-id="code-panel-status"
+        class="min-w-0 truncate text-[11px]"
+        :class="status === 'error' ? 'text-danger' : 'text-muted'"
+      >
+        {{ readOnly ? 'Generated, read only' : statusText }}
+      </span>
       <div class="flex items-center gap-1">
         <AppTextButton
-          data-test-id="code-panel-import-toggle"
-          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
-          @click="toggleImporter"
+          v-if="dirty && !readOnly"
+          data-test-id="code-panel-reset"
+          :ui="{ base: 'rounded px-2 py-1 text-[11px] hover:bg-hover' }"
+          @click="resetDraft"
         >
-          <icon-lucide-file-input class="size-3" />
-          {{ dialogs.importLabel }}
-        </AppTextButton>
-        <Tip :label="dialogs.copyJSXReference">
-          <AppTextButton
-            data-test-id="code-panel-copy-ref"
-            :ui="{
-              base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover'
-            }"
-            @click="copyReference"
-          >
-            <icon-lucide-check v-if="copiedRef" class="size-3 text-[var(--color-success)]" />
-            <icon-lucide-book-open v-else class="size-3" />
-          </AppTextButton>
-        </Tip>
-        <AppTextButton
-          v-if="editing"
-          data-test-id="code-panel-view"
-          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
-          @click="stopEditing"
-        >
-          <icon-lucide-eye class="size-3" />
-          {{ dialogs.viewJSX }}
-        </AppTextButton>
-        <AppTextButton
-          v-else
-          data-test-id="code-panel-edit"
-          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
-          @click="startEditing"
-        >
-          <icon-lucide-pencil class="size-3" />
-          {{ dialogs.editJSX }}
+          Reset
         </AppTextButton>
         <AppTextButton
           data-test-id="code-panel-copy"
-          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
-          @click="copyCode"
+          :ui="{ base: 'flex items-center gap-1 rounded px-2 py-1 text-[11px] hover:bg-hover' }"
+          @click="copy(draft)"
         >
           <icon-lucide-check v-if="copied" class="size-3 text-[var(--color-success)]" />
           <icon-lucide-copy v-else class="size-3" />
           {{ copied ? dialogs.copied : dialogs.copy }}
         </AppTextButton>
       </div>
-    </div>
-
-    <div
-      v-if="!editing && (showImporter || !jsxCode)"
-      data-test-id="code-panel-importer"
-      class="shrink-0 border-b border-border p-3"
-    >
-      <div class="mb-2 flex items-center justify-between gap-2">
-        <div class="min-w-0">
-          <div class="text-xs font-medium text-surface">{{ dialogs.importHTMLCSS }}</div>
-          <div class="text-[11px] text-muted">
-            {{ dialogs.importHTMLCSSDescription }}
-          </div>
-        </div>
-        <AppTextButton
-          data-test-id="code-panel-paste-import"
-          :ui="{ base: 'rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
-          @click="pasteImportHTML"
-        >
-          {{ dialogs.paste }}
-        </AppTextButton>
-      </div>
-      <textarea
-        v-model="importHTML"
-        data-test-id="code-panel-import-html"
-        class="mb-2 h-28 w-full resize-none rounded border border-border bg-panel px-2 py-1.5 font-mono text-xs text-surface outline-none placeholder:text-muted/50 focus:border-accent"
-        placeholder='<div class="card">Hello</div>'
-        spellcheck="false"
-      />
-      <textarea
-        v-model="importCSS"
-        data-test-id="code-panel-import-css"
-        class="mb-2 h-20 w-full resize-none rounded border border-border bg-panel px-2 py-1.5 font-mono text-xs text-surface outline-none placeholder:text-muted/50 focus:border-accent"
-        placeholder=".card { width: 240px; padding: 16px; border-radius: 12px; background: white; }"
-        spellcheck="false"
-      />
-      <div
-        v-if="importError"
-        data-test-id="code-panel-import-error"
-        class="mb-2 rounded border border-red-500/40 bg-red-500/10 px-2 py-1.5 text-[11px] text-red-200"
-      >
-        {{ importError }}
-      </div>
-      <div class="flex items-center justify-between gap-2">
-        <span class="text-[11px] text-muted">{{ dialogs.importReplacesDocument }}</span>
-        <AppTextButton
-          data-test-id="code-panel-import"
-          :ui="{
-            base: [
-              'rounded px-2 py-1 text-[11px]',
-              canImport && !importing
-                ? 'bg-accent text-black hover:bg-accent/90'
-                : 'cursor-not-allowed opacity-50'
-            ].join(' ')
-          }"
-          @click="importCode"
-        >
-          {{ importing ? dialogs.importing : dialogs.importToCanvas }}
-        </AppTextButton>
-      </div>
-    </div>
-
-    <div v-if="editing" class="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <CodeEditor :model-value="draft" @update:model-value="updateDraft" @apply="applyDraft" />
-      <div
-        v-if="applyError"
-        data-test-id="code-panel-jsx-error"
-        class="shrink-0 border-t border-red-500/40 bg-red-500/10 px-3 py-2 text-[11px] text-red-200"
-      >
-        {{ applyError }}
-      </div>
-      <div class="flex shrink-0 items-center justify-between border-t border-border px-3 py-2">
-        <span class="text-[11px] text-muted">{{
-          draftDirty ? dialogs.jsxUnsavedChanges : dialogs.jsxUpToDate
-        }}</span>
-        <AppTextButton
-          data-test-id="code-panel-apply-jsx"
-          :ui="{
-            base: [
-              'rounded px-2 py-1 text-[11px]',
-              !applying && draft.trim()
-                ? 'bg-accent text-black hover:bg-accent/90'
-                : 'cursor-not-allowed opacity-50'
-            ].join(' ')
-          }"
-          @click="applyDraft"
-        >
-          {{
-            applying
-              ? dialogs.applyingJSX
-              : store.state.selectedIds.size > 0
-                ? dialogs.applyJSX
-                : dialogs.insertJSX
-          }}
-        </AppTextButton>
-      </div>
-    </div>
-
-    <AppPlaceholder
-      v-else-if="!jsxCode"
-      data-test-id="code-panel-empty"
-      :label="dialogs.selectLayerForJSX"
-    >
-      <template #icon>
-        <icon-lucide-code-2 class="size-5" />
-      </template>
-    </AppPlaceholder>
-
-    <ScrollAreaRoot v-else data-test-id="code-panel" class="min-h-0 flex-1">
-      <ScrollAreaViewport class="code-highlight size-full">
-        <div class="p-3">
-          <div v-for="(html, i) in highlightedLines" :key="i" class="flex text-xs leading-5">
-            <span
-              class="mr-3 shrink-0 text-right text-muted/40 select-none"
-              style="min-width: 1.5em"
-              >{{ i + 1 }}</span
-            >
-            <pre
-              class="m-0 min-w-0 flex-1 break-words whitespace-pre-wrap"
-            ><code v-html="html" /></pre>
-          </div>
-        </div>
-      </ScrollAreaViewport>
-      <ScrollAreaScrollbar orientation="vertical" class="flex w-1.5 touch-none p-px select-none">
-        <ScrollAreaThumb class="relative flex-1 rounded-full bg-white/10" />
-      </ScrollAreaScrollbar>
-    </ScrollAreaRoot>
+    </footer>
   </div>
 </template>

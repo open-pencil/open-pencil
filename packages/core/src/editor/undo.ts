@@ -207,6 +207,14 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push(entry)
   }
 
+  function performUndo() {
+    ctx.undo.undo()
+  }
+
+  function performRedo() {
+    ctx.undo.redo()
+  }
+
   return {
     commitMove,
     commitMoveWithReparent,
@@ -219,6 +227,8 @@ export function createUndoActions(ctx: EditorContext) {
     redoAction,
     snapshotPage,
     restorePageFromSnapshot,
-    pushUndoEntry
+    pushUndoEntry,
+    performUndo,
+    performRedo
   }
 }

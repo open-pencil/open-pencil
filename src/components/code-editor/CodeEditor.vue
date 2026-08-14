@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { defaultKeymap, history, historyKeymap, redo, undo } from '@codemirror/commands'
+import { html } from '@codemirror/lang-html'
+import { javascript } from '@codemirror/lang-javascript'
 import {
   bracketMatching,
   defaultHighlightStyle,
@@ -9,10 +11,9 @@ import {
   indentOnInput,
   syntaxHighlighting
 } from '@codemirror/language'
-import { javascript } from '@codemirror/lang-javascript'
 import { lintKeymap } from '@codemirror/lint'
 import { searchKeymap } from '@codemirror/search'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState, Transaction, type Extension } from '@codemirror/state'
 import {
   drawSelection,
   EditorView,
@@ -25,19 +26,41 @@ import {
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 
 import { designJSXExtensions } from '@/components/code-editor/extensions'
+import type { CodeEditorLanguage } from '@/components/code-editor/types'
 
-const { modelValue } = defineProps<{
+const {
+  modelValue,
+  language = 'design-jsx',
+  readOnly = false,
+  label = 'Code'
+} = defineProps<{
   modelValue: string
+  language?: CodeEditorLanguage
+  readOnly?: boolean
+  label?: string
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
-  apply: []
 }>()
 
 const host = useTemplateRef('host')
+const languageCompartment = new Compartment()
+const editableCompartment = new Compartment()
 let editor: EditorView | undefined
 let externalUpdate = false
+
+function languageExtensions(language: CodeEditorLanguage): Extension {
+  if (language === 'html-css') return html()
+  return [
+    javascript({ jsx: true, typescript: true }),
+    ...(language === 'design-jsx' ? designJSXExtensions() : [])
+  ]
+}
+
+function editableExtensions(readOnly: boolean): Extension {
+  return [EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]
+}
 
 onMounted(() => {
   const parent = host.value
@@ -59,6 +82,8 @@ onMounted(() => {
       closeBrackets(),
       highlightActiveLine(),
       keymap.of([
+        { key: 'Ctrl-z', run: undo },
+        { key: 'Ctrl-Shift-z', run: redo },
         ...closeBracketsKeymap,
         ...defaultKeymap,
         ...searchKeymap,
@@ -67,9 +92,10 @@ onMounted(() => {
         ...completionKeymap,
         ...lintKeymap
       ]),
-      javascript({ jsx: true, typescript: true }),
-      ...designJSXExtensions(),
+      languageCompartment.of(languageExtensions(language)),
+      editableCompartment.of(editableExtensions(readOnly)),
       EditorView.lineWrapping,
+      EditorView.contentAttributes.of({ 'aria-label': label }),
       EditorView.theme({
         '&': { height: '100%', backgroundColor: 'transparent', color: 'var(--color-surface)' },
         '.cm-scroller': { overflow: 'auto', fontFamily: 'var(--font-mono)' },
@@ -85,15 +111,6 @@ onMounted(() => {
           backgroundColor: 'color-mix(in srgb, var(--color-accent) 22%, transparent)'
         }
       }),
-      keymap.of([
-        {
-          key: 'Mod-Enter',
-          run: () => {
-            emit('apply')
-            return true
-          }
-        }
-      ]),
       EditorView.updateListener.of((update) => {
         if (!update.docChanged || externalUpdate) return
         emit('update:modelValue', update.state.doc.toString())
@@ -107,9 +124,24 @@ watch(
   (value) => {
     if (!editor || editor.state.doc.toString() === value) return
     externalUpdate = true
-    editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: value } })
+    editor.dispatch({
+      changes: { from: 0, to: editor.state.doc.length, insert: value },
+      annotations: Transaction.addToHistory.of(false)
+    })
     externalUpdate = false
   }
+)
+
+watch(
+  () => language,
+  (language) =>
+    editor?.dispatch({ effects: languageCompartment.reconfigure(languageExtensions(language)) })
+)
+
+watch(
+  () => readOnly,
+  (readOnly) =>
+    editor?.dispatch({ effects: editableCompartment.reconfigure(editableExtensions(readOnly)) })
 )
 
 onBeforeUnmount(() => editor?.destroy())
