@@ -6,7 +6,13 @@ export {
   type CloudAuth,
   type CloudSessionResolver
 } from './auth'
-export { createCloudApp, type CloudAPI, type CloudApp, type CloudServices } from './app'
+export {
+  createCloudAPIRouter,
+  type CloudAPI,
+  type CloudAPIEnvironment,
+  type CloudAPIServices
+} from './api'
+export { createCloudApp, type CloudApp, type CloudServices } from './app'
 export {
   createUploadCleanupService,
   startCleanupWorker,

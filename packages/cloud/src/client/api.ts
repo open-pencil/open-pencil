@@ -14,7 +14,7 @@ import {
   type WorkspaceList,
   type WorkspaceUsage
 } from '#cloud/contract'
-import type { CloudAPI } from '#cloud/server/app'
+import type { CloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
@@ -74,12 +74,12 @@ export class CloudAPIError extends Error {
   }
 }
 
-function serverURL(apiURL: string): string {
-  const url = new URL(apiURL)
+function apiURL(baseURL: string): string {
+  const url = new URL(baseURL)
   if (url.protocol !== 'https:' && url.protocol !== 'http:') {
     throw new CloudAPIError('OpenPencil Cloud API URL must use HTTP or HTTPS', 0)
   }
-  url.pathname = url.pathname.replace(/\/api\/?$/, '') || '/'
+  url.pathname = url.pathname.replace(/\/$/, '')
   url.search = ''
   url.hash = ''
   return url.href
@@ -102,25 +102,25 @@ async function responseBody(response: Response): Promise<unknown> {
 }
 
 export function createCloudAPIClient(baseURL: string, options: CloudRequestOptions = {}) {
-  const client = hc<CloudAPI>(serverURL(baseURL), {
+  const client = hc<CloudAPI>(apiURL(baseURL), {
     fetch: options.fetch,
     init: { credentials: 'include', signal: options.signal }
   })
 
   return {
     async getSession(): Promise<CloudSession | null> {
-      const response = await client.api.session.$get()
+      const response = await client.session.$get()
       if (response.status === 401) return null
       return v.parse(cloudSessionSchema, await responseBody(response))
     },
     async listWorkspaces(): Promise<WorkspaceList> {
-      return v.parse(workspaceListSchema, await responseBody(await client.api.workspaces.$get()))
+      return v.parse(workspaceListSchema, await responseBody(await client.workspaces.$get()))
     },
     async getUsage(workspaceId: string): Promise<WorkspaceUsage> {
       const response = v.parse(
         usageResponseSchema,
         await responseBody(
-          await client.api.workspaces[':workspaceId'].usage.$get({
+          await client.workspaces[':workspaceId'].usage.$get({
             param: { workspaceId }
           })
         )
@@ -131,7 +131,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = v.parse(
         documentsResponseSchema,
         await responseBody(
-          await client.api.workspaces[':workspaceId'].documents.$get({
+          await client.workspaces[':workspaceId'].documents.$get({
             param: { workspaceId }
           })
         )
@@ -145,7 +145,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = v.parse(
         documentResponseSchema,
         await responseBody(
-          await client.api.workspaces[':workspaceId'].documents.$post({
+          await client.workspaces[':workspaceId'].documents.$post({
             param: { workspaceId },
             json: input
           })
@@ -154,16 +154,12 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.document
     },
     async deleteDocument(documentId: string): Promise<void> {
-      await responseBody(
-        await client.api.documents[':documentId'].$delete({ param: { documentId } })
-      )
+      await responseBody(await client.documents[':documentId'].$delete({ param: { documentId } }))
     },
     async getDocument(documentId: string): Promise<DocumentDownload> {
       const response = v.parse(
         downloadResponseSchema,
-        await responseBody(
-          await client.api.documents[':documentId'].$get({ param: { documentId } })
-        )
+        await responseBody(await client.documents[':documentId'].$get({ param: { documentId } }))
       )
       return response.document
     },
@@ -171,7 +167,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return v.parse(
         uploadResponseSchema,
         await responseBody(
-          await client.api.documents[':documentId'].uploads.$post({
+          await client.documents[':documentId'].uploads.$post({
             param: { documentId },
             json: input
           })
@@ -182,7 +178,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = v.parse(
         documentResponseSchema,
         await responseBody(
-          await client.api.uploads[':uploadId'].commit.$post({
+          await client.uploads[':uploadId'].commit.$post({
             param: { uploadId },
             json: input
           })

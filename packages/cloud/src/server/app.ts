@@ -4,7 +4,7 @@ import {
   parseCloudDiscovery,
   type CloudDiscovery
 } from '#cloud/contract'
-import type { CloudAPIEnvironment } from '#cloud/server/api/types'
+import { createCloudAPIRouter, type CloudAPIEnvironment } from '#cloud/server/api'
 import {
   configuredSocialProviders,
   createCloudSessionResolver,
@@ -13,9 +13,9 @@ import {
 } from '#cloud/server/auth'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
-import { createDocumentRoutes, createDocumentService } from '#cloud/server/documents'
+import { createDocumentService } from '#cloud/server/documents'
 import type { ObjectStore } from '#cloud/server/objects'
-import { createWorkspaceRoutes, createWorkspaceService } from '#cloud/server/workspaces'
+import { createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
@@ -65,10 +65,12 @@ export function createCloudApp(services: CloudServices) {
     credentials: true,
     maxAge: 600
   })
-  const workspaces = createWorkspaceRoutes(createWorkspaceService(services.database))
-  const documents = createDocumentRoutes(createDocumentService(services.database, services.objects))
+  const workspaces = createWorkspaceService(services.database)
+  const documents = createDocumentService(services.database, services.objects)
 
-  const cloudAPI = new Hono<CloudEnvironment>()
+  const cloudAPI = createCloudAPIRouter({ documents, workspaces })
+
+  return new Hono<CloudEnvironment>()
     .use('/api/*', cloudCORS)
     .get('/health', (context) =>
       context.json({
@@ -105,11 +107,7 @@ export function createCloudApp(services: CloudServices) {
       context.set('actor', actor)
       return next()
     })
-    .get('/api/session', (context) => context.json({ user: context.get('actor') }))
-    .route('/api', documents)
-    .route('/api/workspaces', workspaces)
-  return cloudAPI
+    .route('/api', cloudAPI)
 }
 
-export type CloudAPI = ReturnType<typeof createCloudApp>
-export type CloudApp = CloudAPI
+export type CloudApp = ReturnType<typeof createCloudApp>
