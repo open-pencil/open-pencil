@@ -8,9 +8,10 @@ import type {
 } from '@agentclientprotocol/sdk'
 import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 
-import { AUTOMATION_HTTP_PORT, type ACPAgentDef } from '@open-pencil/core/constants'
+import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
+import { buildACPMCPServers } from '@/app/integrations/mcp'
 
 import { mapUpdate } from './map-update'
 import { spawnACPProcess } from './process'
@@ -271,16 +272,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     try {
       sessionResult = await connection.newSession({
         cwd: this.cwd,
-        mcpServers: [
-          {
-            type: 'http' as const,
-            name: 'open-pencil',
-            url: `http://127.0.0.1:${AUTOMATION_HTTP_PORT}/mcp`,
-            headers: automationAuthToken
-              ? [{ name: 'Authorization', value: `Bearer ${automationAuthToken}` }]
-              : []
-          }
-        ]
+        mcpServers: await buildACPMCPServers({ authorizationToken: automationAuthToken })
       })
     } catch (e) {
       await child.kill().catch(() => undefined)
