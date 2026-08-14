@@ -154,16 +154,16 @@ Feature-für-Feature-Vergleich der Figma-Design-Funktionen mit dem aktuellen Imp
 
 | Funktion | Status | Anmerkungen |
 |----------|--------|-------------|
-| Komponenten erstellen | 🟡 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> erstellt aus Frame/Gruppe; noch kein Komponenten-Eigenschafts-UI |
-| Komponenten-Sets | 🟡 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> kombiniert Komponenten; gestrichelter violetter Rand; keine Varianten-Eigenschaftsbearbeitung |
-| Komponenteninstanzen | 🟡 | Instanz aus Kontextmenü erstellen; Live-Sync; kein Override-Bearbeitungs-UI |
-| Varianten | 🔲 | Variantenwechsel und eigenschaftsbasierte Auswahl |
-| Komponenteneigenschaften | 🔲 | Boolesche, Text-, Instanztausch-Eigenschaften |
+| Komponenten erstellen | ✅ | Erstellung aus Frame/Gruppe; UI für Text, Sichtbarkeit, Instanztausch und Varianten |
+| Komponenten-Sets | ✅ | Mehrdimensionale, lückenhafte Varianten mit Duplikatprüfung und Standard oben links |
+| Komponenteninstanzen | ✅ | Assets-Browser, Einfügen, bearbeitbare Eigenschaften und Overrides, Live-Sync und Update-Prüfung |
+| Varianten | ✅ | Authoring, Instanzwechsel und Fallback auf die Variante oben links |
+| Komponenteneigenschaften | ✅ | Text-, boolesche Sichtbarkeits- und Instanztausch-Eigenschaften |
 | Override-Propagation | ✅ | Änderungen an Hauptkomponente werden propagiert; Overrides erhalten |
 | Variablen (Farbe, Zahl, String, Boolean) | 🟡 | `COLOR` mit vollem UI; `FLOAT`/STRING/BOOLEAN definiert ohne Bearbeitungs-UI |
 | Variablensammlungen & Modi | 🟡 | Sammlungen, Modi, activeMode-Wechsel funktionieren; kein Variablen-Theming-UI |
 | Stile (Farbe, Text, Effekt, Layout) | 🔲 | Wiederverwendbare benannte Stil-Presets |
-| Bibliotheken (veröffentlichen, teilen, aktualisieren) | 🔲 | Geteilte Komponenten-/Stil-Bibliotheken |
+| Bibliotheken (veröffentlichen, teilen, aktualisieren) | ✅ | Unveränderliche lokale/Speicher-Revisionen, Aktivierung, selektive Veröffentlichung, Update-Prüfung, Offline-Nutzung und `.fig`-Persistenz |
 | Instanz ablösen | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> wandelt Instanz in Frame um |
 | Zur Hauptkomponente navigieren | ✅ | Zur Quellkomponente navigieren, seitenübergreifend |
 

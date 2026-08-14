@@ -156,16 +156,16 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Create components | 🟡 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> creates from frame/group or wraps selection; no component properties UI yet |
-| Component sets | 🟡 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> combines components; dashed purple border; no variant property editing |
-| Component instances | 🟡 | Create instance from context menu with child cloning and componentId mapping; live sync from component; no override editing UI |
-| Variants | 🔲 | Variant switching and property-based selection |
-| Component properties | 🔲 | Boolean, text, instance swap properties |
+| Create components | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> creates from frame/group or wraps selection; component properties UI supports text, visibility, instance swap, and variants |
+| Component sets | ✅ | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> combines components; multidimensional sparse variant authoring with duplicate validation and top-left default |
+| Component instances | ✅ | Assets browsing, insertion, editable component properties and overrides, variant switching, live sync, and update review |
+| Variants | ✅ | Multidimensional sparse combinations, authoring, instance switching, duplicate validation, and top-left fallback |
+| Component properties | ✅ | Authoring and instance editing for boolean visibility, text, and instance-swap properties |
 | Override propagation | ✅ | Changes to main component propagate to all instances; overrides preserved |
 | Variables (color, number, string, boolean) | 🟡 | `COLOR` full UI (dialog, TanStack Table, inline editing, undo/redo, demo collections); `FLOAT`/STRING/BOOLEAN defined but no editing UI |
 | Variable collections & modes | 🟡 | Collections, modes, activeMode switching work; no variable-driven theming UI yet |
 | Styles (color, text, effect, layout) | 🔲 | Reusable named style presets |
-| Libraries (publish, share, update) | 🔲 | Shared component/style libraries |
+| Libraries (publish, share, update) | ✅ | Immutable local/storage revisions, selective publication, enablement, scoped update review, offline materialization, and `.fig` persistence |
 | Detach instance | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> converts instance back to frame |
 | Go to main component | ✅ | Navigate to source component, cross-page |
 
