@@ -175,6 +175,17 @@ test('switching source formats commits the current live session', async () => {
   await waitForNode(editor.page, originalId)
 })
 
+test('Reset before debounce cancels the pending preview', async () => {
+  await editor.canvas.drawRect(100, 100, 200, 150)
+  const originalId = await getFirstSelectedNodeId(editor.page)
+  await openCodePanel()
+  await codeEditor().fill('<Frame name="Stale reset preview" />')
+  await editor.page.getByTestId('code-panel-reset').click()
+  await editor.page.waitForTimeout(450)
+  expect(await hasNode(editor.page, originalId)).toBe(true)
+  expect(await hasNodeNamed(editor.page, 'Stale reset preview')).toBe(false)
+})
+
 test('HTML/CSS uses the same editor and live reloads the canvas', async () => {
   await openCodePanel()
   await selectSource('HTML/CSS')

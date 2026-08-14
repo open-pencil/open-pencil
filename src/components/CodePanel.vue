@@ -44,6 +44,7 @@ const designSession = shallowRef<DesignJSXEditSession | null>(null)
 let domSession: DOMCodeSession | null = null
 let previewQueue = Promise.resolve()
 let pendingPreview: Promise<void> | undefined
+let commitPromise: Promise<void> | undefined
 let updateVersion = 0
 let disposing = false
 
@@ -103,17 +104,25 @@ function beginDOMSession(): DOMCodeSession {
 }
 
 async function commitCurrentSession(): Promise<void> {
-  const design = designSession.value
-  const dom = domSession
-  designSession.value = null
-  domSession = null
-  if (!design && !dom) return
-  await pendingPreview
-  await previewQueue
-  updateVersion += 1
-  if (design) commitDesignJSXSession(store, design)
-  if (dom) commitDOMCodeSession(store, dom)
-  pendingPreview = undefined
+  if (commitPromise) return commitPromise
+  const operation = (async () => {
+    await pendingPreview
+    await previewQueue
+    updateVersion += 1
+    const design = designSession.value
+    const dom = domSession
+    designSession.value = null
+    domSession = null
+    if (design) commitDesignJSXSession(store, design)
+    if (dom) commitDOMCodeSession(store, dom)
+    pendingPreview = undefined
+  })()
+  commitPromise = operation
+  try {
+    await operation
+  } finally {
+    if (commitPromise === operation) commitPromise = undefined
+  }
 }
 
 async function runPreview(version: number): Promise<void> {
@@ -139,8 +148,7 @@ async function runPreview(version: number): Promise<void> {
 }
 
 const schedulePreview = useDebounceFn(
-  () => {
-    const version = updateVersion
+  (version: number) => {
     previewQueue = previewQueue.then(() => runPreview(version))
     return previewQueue
   },
@@ -152,17 +160,17 @@ function updateDraft(value: string): void {
   draft.value = value
   error.value = ''
   updateVersion += 1
-  pendingPreview = schedulePreview()
+  pendingPreview = schedulePreview(updateVersion)
 }
 
 async function resetDraft(): Promise<void> {
+  updateVersion += 1
+  await pendingPreview
+  await previewQueue
   const design = designSession.value
   const dom = domSession
   designSession.value = null
   domSession = null
-  await pendingPreview
-  await previewQueue
-  updateVersion += 1
   if (design) resetDesignJSXPreview(store, design)
   if (dom) resetDOMCodePreview(store, dom)
   pendingPreview = undefined
