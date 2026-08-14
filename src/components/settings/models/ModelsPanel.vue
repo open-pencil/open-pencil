@@ -6,6 +6,7 @@ import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
 
 import { aiModelSettings, modelConnection, modelConnectionCredentialStatus } from '@/app/ai/models'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
+import MCPConnectionsSection from '@/components/settings/mcp/MCPConnectionsSection.vue'
 import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
 
@@ -156,6 +157,8 @@ watch(
         </button>
       </div>
     </section>
+
+    <MCPConnectionsSection />
 
     <section class="mt-5 border-t border-border pt-4">
       <div class="mb-3">

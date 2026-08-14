@@ -150,6 +150,7 @@ export function createDefaultNode(
     overrideKey: null,
     sharedSymbolVersion: null,
     publishedVersion: null,
+    librarySource: null,
     isPublishable: false,
     isSymbolPublishable: false,
     symbolDescription: '',

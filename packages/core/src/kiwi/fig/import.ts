@@ -4,6 +4,8 @@ import { populateAndApplyOverrides } from '@open-pencil/fig/instance-overrides'
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import {
   applyStyleRefsToFields,
+  ENABLED_LIBRARIES_PLUGIN_KEY,
+  getOpenPencilPluginValue,
   guidToString,
   nodeChangeToProps,
   shouldImportTextAsAutoSize,
@@ -41,8 +43,33 @@ function applyImportedDocumentMetadata(graph: SceneGraph, docNc: NodeChange | un
   const rootNode = graph.getNode(graph.rootId)
   if (!docNc || !rootNode) return
   rootNode.source.format = 'fig'
+  rootNode.pluginData = docNc.pluginData
+    ? docNc.pluginData.map((entry) => ({
+        pluginId: entry.pluginID,
+        key: entry.key,
+        value: entry.value
+      }))
+    : []
   rootNode.source.fig.rawNodeFields.strokeJoin = docNc.strokeJoin
   rootNode.source.fig.rawNodeFields.strokeWeight = docNc.strokeWeight
+  const bindings = getOpenPencilPluginValue(docNc, ENABLED_LIBRARIES_PLUGIN_KEY)
+  if (!bindings) return
+  try {
+    const parsed = JSON.parse(bindings) as unknown
+    if (!Array.isArray(parsed)) return
+    for (const entry of parsed) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+      const value = entry as { libraryId?: unknown; revisionId?: unknown; enabled?: unknown }
+      if (typeof value.libraryId !== 'string' || typeof value.revisionId !== 'string') continue
+      graph.enabledLibraries.set(value.libraryId, {
+        libraryId: value.libraryId,
+        revisionId: value.revisionId,
+        enabled: value.enabled === true
+      })
+    }
+  } catch (error) {
+    console.warn('Ignored malformed OpenPencil library metadata', error)
+  }
 }
 
 function assetRefKey(assetRef: AssetRef): string {

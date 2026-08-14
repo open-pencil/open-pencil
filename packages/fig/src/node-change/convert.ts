@@ -14,6 +14,7 @@ import { convertEffects, convertFills, convertStrokes } from './paint'
 import {
   extractBoundVariables,
   extractExportSettings,
+  extractLibrarySource,
   extractPluginData,
   extractPluginRelaunchData,
   getOpenPencilPluginValue,
@@ -624,6 +625,7 @@ export function nodeChangeToProps(
     variableModes: extractVariableModes(nc),
     exportSettings: extractExportSettings(nc),
     pluginData: extractPluginData(nc),
+    librarySource: extractLibrarySource(nc),
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),

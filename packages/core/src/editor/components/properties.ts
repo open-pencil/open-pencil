@@ -4,6 +4,7 @@ import type {
   SceneNode
 } from '@open-pencil/scene-graph'
 
+import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 
 interface PropertyTarget {
@@ -12,7 +13,7 @@ interface PropertyTarget {
   source: SceneNode
 }
 
-function definitionOwners(ctx: EditorContext, instance: SceneNode): SceneNode[] {
+function definitionOwners(ctx: Pick<EditorContext, 'graph'>, instance: SceneNode): SceneNode[] {
   if (!instance.componentId) return []
   const component = ctx.graph.getNode(instance.componentId)
   if (!component) return []
@@ -21,7 +22,7 @@ function definitionOwners(ctx: EditorContext, instance: SceneNode): SceneNode[] 
 }
 
 function definitionsForInstance(
-  ctx: EditorContext,
+  ctx: Pick<EditorContext, 'graph'>,
   instance: SceneNode
 ): ComponentPropertyDefinition[] {
   const byId = new Map<string, ComponentPropertyDefinition>()
@@ -34,7 +35,7 @@ function definitionsForInstance(
 }
 
 function findPropertyPath(
-  ctx: EditorContext,
+  ctx: Pick<EditorContext, 'graph'>,
   sourceParent: SceneNode,
   propertyId: string,
   path: number[] = []
@@ -50,7 +51,11 @@ function findPropertyPath(
   return null
 }
 
-function nodeAtPath(ctx: EditorContext, root: SceneNode, path: number[]): SceneNode | null {
+function nodeAtPath(
+  ctx: Pick<EditorContext, 'graph'>,
+  root: SceneNode,
+  path: number[]
+): SceneNode | null {
   let node = root
   for (const index of path) {
     const childId = node.childIds[index]
@@ -62,7 +67,7 @@ function nodeAtPath(ctx: EditorContext, root: SceneNode, path: number[]): SceneN
 }
 
 function propertyTarget(
-  ctx: EditorContext,
+  ctx: Pick<EditorContext, 'graph'>,
   instance: SceneNode,
   propertyId: string
 ): PropertyTarget | null {
@@ -74,7 +79,7 @@ function propertyTarget(
   return node ? { node, field: match.field, source: match.source } : null
 }
 
-function swapTargetId(ctx: EditorContext, value: string): string | null {
+function swapTargetId(ctx: Pick<EditorContext, 'graph'>, value: string): string | null {
   const direct = ctx.graph.getNode(value)
   if (direct?.type === 'COMPONENT') return direct.id
   for (const node of ctx.graph.getAllNodes()) {
@@ -98,7 +103,7 @@ function targetValue(target: PropertyTarget | null): string {
 }
 
 function propertyOverrides(
-  ctx: EditorContext,
+  ctx: Pick<EditorContext, 'graph'>,
   instance: SceneNode,
   target: PropertyTarget | null,
   value: string,
@@ -117,7 +122,7 @@ function propertyOverrides(
 }
 
 function updatePropertyTarget(
-  ctx: EditorContext,
+  ctx: Pick<EditorContext, 'graph'>,
   target: PropertyTarget | null,
   value: string,
   swapComponentId: string | null
@@ -136,7 +141,7 @@ function updatePropertyTarget(
 }
 
 function applyPropertyValue(
-  ctx: EditorContext,
+  ctx: Pick<EditorContext, 'graph'>,
   instanceId: string,
   definition: ComponentPropertyDefinition,
   value: string
@@ -155,7 +160,10 @@ function applyPropertyValue(
   updatePropertyTarget(ctx, target, value, swapComponentId)
 }
 
-export function reapplyInstanceComponentProperties(ctx: EditorContext, instanceId: string): void {
+export function reapplyInstanceComponentProperties(
+  ctx: Pick<EditorContext, 'graph'>,
+  instanceId: string
+): void {
   const instance = ctx.graph.getNode(instanceId)
   if (instance?.type !== 'INSTANCE') return
   const definitions = new Map(
@@ -195,6 +203,7 @@ export function createComponentPropertyActions(
   function setInstanceComponentProperty(instanceId: string, propertyId: string, value: string) {
     const instance = ctx.graph.getNode(instanceId)
     if (instance?.type !== 'INSTANCE') return
+    assertNodeEditable(ctx.graph, instanceId)
     const definition = definitionsForInstance(ctx, instance).find((item) => item.id === propertyId)
     if (!definition) return
     if (definition.type === 'VARIANT') {

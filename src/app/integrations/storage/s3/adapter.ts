@@ -22,6 +22,7 @@ import {
   S3HttpError,
   deleteObject,
   getObject,
+  getObjectValue,
   getObjectRange,
   headObject,
   headObjectSize,
@@ -264,6 +265,32 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
           return (await getObjectRange(config, figKey, start, endExclusive)) ?? new Uint8Array()
         }
       })
+    },
+
+    libraryObjects: {
+      async getObject(key) {
+        return getObject(await resolveConfig(runtime), key)
+      },
+      async getObjectValue(key) {
+        return getObjectValue(await resolveConfig(runtime), key)
+      },
+      async putObject(key, bytes, contentType, options) {
+        try {
+          await putObject(await resolveConfig(runtime), key, bytes, contentType, undefined, options)
+        } catch (error) {
+          if (error instanceof S3HttpError && (error.status === 409 || error.status === 412)) {
+            throw new Error('Library revision conflict: latest revision has changed')
+          }
+          throw error
+        }
+      },
+      async listObjects(prefix) {
+        return (await listObjects(await resolveConfig(runtime), prefix)).map((object) => ({
+          key: object.key,
+          size: object.size,
+          etag: null
+        }))
+      }
     }
   }
 }
