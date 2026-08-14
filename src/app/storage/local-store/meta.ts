@@ -33,6 +33,7 @@ export function buildWriteMeta(
     hasFig: true,
     hasThumb,
     figSize: input.figBytes.byteLength,
+    remoteRevisionId: existing?.remoteRevisionId,
     lastOpenedAt: existing?.lastOpenedAt
   }
 }
@@ -53,6 +54,7 @@ export function buildIndexMeta(
     lastSyncError: input.lastSyncError,
     tombstoned: false,
     hasFig: input.hasFig ?? existing?.hasFig ?? false,
-    hasThumb: input.hasThumb ?? existing?.hasThumb ?? false
+    hasThumb: input.hasThumb ?? existing?.hasThumb ?? false,
+    remoteRevisionId: input.remoteRevisionId ?? existing?.remoteRevisionId
   }
 }

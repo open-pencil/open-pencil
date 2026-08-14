@@ -63,7 +63,8 @@ export function createStorageWorkspaceSource(
           updatedAt: document.updatedAt,
           syncStatus: 'synced',
           lastSyncedAt: document.updatedAt,
-          lastSyncError: null
+          lastSyncError: null,
+          remoteRevisionId: document.remoteRevisionId
         })
       }
       if (activeStorageProviderID.value !== providerID) return null

@@ -17,6 +17,8 @@ export type LocalCanvasMeta = {
   tombstoned: boolean
   hasFig: boolean
   hasThumb: boolean
+  /** Last Cloud revision observed after a verified download or successful upload. */
+  remoteRevisionId?: string | null
   /** Size of the cached fig blob in bytes (set on write; backfilled by eviction). */
   figSize?: number
   /** Last time this canvas was opened on this device (LRU eviction key). */

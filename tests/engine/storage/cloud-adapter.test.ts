@@ -53,7 +53,8 @@ describe('OpenPencil Cloud storage adapter', () => {
           id: documentId,
           name: 'Homepage',
           updatedAt: '2026-01-01T00:00:00.000Z',
-          metadataAuthoritative: true
+          metadataAuthoritative: true,
+          remoteRevisionId: revisionId
         }
       ])
     } finally {
@@ -99,6 +100,8 @@ describe('OpenPencil Cloud storage adapter', () => {
         new Uint8Array([1, 2, 3]),
         { name: 'Homepage', updatedAt: '2026-01-01T00:00:00.000Z' }
       )
+      const uploadRequest = requests.find((request) => request.url.endsWith('/uploads'))
+      expect(await uploadRequest?.json()).toMatchObject({ baseRevisionId: null })
       const objectRequest = requests.find((request) => request.url.includes('objects.example.com'))
       expect(objectRequest?.method).toBe('PUT')
       expect(objectRequest?.headers.get('x-amz-checksum-sha256')).toBe('signed-checksum')

@@ -6,10 +6,13 @@ import {
   createActiveStorageAdapter,
   storageCredentialStatuses,
   storagePreferencesComplete,
-  storageProviderRegistry
+  storageProviderRegistry,
+  type StorageAdapter,
+  type StorageProviderID
 } from '@/app/integrations/storage'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
+import type { LocalCanvasMeta } from '@/app/storage/local-store'
 import { getOutbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUI } from '@/app/storage/sync/status'
@@ -73,6 +76,48 @@ export function storageSyncFailureKind(error: unknown): StorageSyncFailureKind {
   return isPermanentError(error) ? 'permanent' : 'transient'
 }
 
+async function putCanvasJob(
+  job: OutboxJob,
+  providerID: StorageProviderID,
+  meta: LocalCanvasMeta,
+  adapter: StorageAdapter
+): Promise<void> {
+  if (meta.revision > job.revision || !meta.hasFig) return
+  const store = getLocalCanvasStore()
+  const fig = await store.readFig(job.canvasId)
+  if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
+  setUploadProgress(job.canvasId, 0)
+  let syncResult: { remoteRevisionId?: string | null } | undefined
+  try {
+    syncResult =
+      (await adapter.putDocument(
+        job.canvasId,
+        fig,
+        { name: meta.name, updatedAt: meta.updatedAt },
+        ({ transferredBytes, totalBytes }) => {
+          if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
+        },
+        { remoteRevisionId: meta.remoteRevisionId ?? null }
+      )) ?? undefined
+  } finally {
+    setUploadProgress(job.canvasId, null)
+  }
+  const latest = await store.getMeta(job.canvasId)
+  if (!latest || latest.revision !== job.revision || latest.tombstoned) return
+  await store.updateMeta(
+    job.canvasId,
+    {
+      syncStatus: 'synced',
+      lastSyncedAt: new Date().toISOString(),
+      lastSyncError: null,
+      remoteRevisionId: syncResult?.remoteRevisionId ?? latest.remoteRevisionId
+    },
+    { expectedRevision: job.revision }
+  )
+  await evictLocalFigCache(new Set([job.canvasId]))
+  emitStorageWorkspaceEvent({ providerId: providerID, documentId: job.canvasId, kind: 'synced' })
+}
+
 async function runJob(job: OutboxJob): Promise<void> {
   const store = getLocalCanvasStore()
   const meta = await store.getMeta(job.canvasId)
@@ -105,46 +150,7 @@ async function runJob(job: OutboxJob): Promise<void> {
   }
 
   if (job.type === 'putCanvas') {
-    // Superseded by a newer local revision already on disk
-    if (meta.revision > job.revision) return
-    if (!meta.hasFig) return
-    const fig = await store.readFig(job.canvasId)
-    if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
-    setUploadProgress(job.canvasId, 0)
-    try {
-      await adapter.putDocument(
-        job.canvasId,
-        fig,
-        {
-          name: meta.name,
-          updatedAt: meta.updatedAt
-        },
-        ({ transferredBytes, totalBytes }) => {
-          if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
-        }
-      )
-    } finally {
-      setUploadProgress(job.canvasId, null)
-    }
-    // Only mark synced if still on this revision and no other pending work for newer rev
-    const latest = await store.getMeta(job.canvasId)
-    if (latest && latest.revision === job.revision && !latest.tombstoned) {
-      await store.updateMeta(
-        job.canvasId,
-        {
-          syncStatus: 'synced',
-          lastSyncedAt: new Date().toISOString(),
-          lastSyncError: null
-        },
-        { expectedRevision: job.revision }
-      )
-      await evictLocalFigCache(new Set([job.canvasId]))
-      emitStorageWorkspaceEvent({
-        providerId: providerID,
-        documentId: job.canvasId,
-        kind: 'synced'
-      })
-    }
+    await putCanvasJob(job, providerID, meta, adapter)
     return
   }
 

@@ -58,6 +58,7 @@ export type SeedStorageCanvasOptions = {
   updatedAt: string
   figBytes: Uint8Array
   thumbnailBytes?: Uint8Array | null
+  remoteRevisionId?: string | null
   markSynced?: boolean
 }
 
@@ -77,7 +78,8 @@ export async function seedStorageCanvasFromRemote(
   await getLocalCanvasStore().updateMeta(options.canvasId, {
     lastSyncedAt: options.updatedAt || new Date().toISOString(),
     syncStatus: 'synced',
-    lastSyncError: null
+    lastSyncError: null,
+    remoteRevisionId: options.remoteRevisionId
   })
   await evictLocalFigCache(new Set([options.canvasId]))
 }

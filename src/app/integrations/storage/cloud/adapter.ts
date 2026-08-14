@@ -62,7 +62,8 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
         id: document.id,
         name: document.name,
         updatedAt: document.updatedAt,
-        metadataAuthoritative: true
+        metadataAuthoritative: true,
+        remoteRevisionId: document.currentRevisionId
       }))
     },
 
@@ -83,7 +84,7 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
       return bytes
     },
 
-    async putDocument(id, bytes, metadata, onProgress) {
+    async putDocument(id, bytes, metadata, onProgress, options) {
       const cloud = await client()
       const documents = await cloud.listDocuments(workspaceId)
       let document = documents.find((candidate) => candidate.id === id)
@@ -92,7 +93,7 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
       }
       const checksum = await sha256(bytes)
       const pending = await cloud.createUpload(document.id, {
-        baseRevisionId: document.currentRevisionId,
+        baseRevisionId: options?.remoteRevisionId ?? null,
         byteSize: bytes.byteLength,
         checksum,
         contentType: 'application/octet-stream'
@@ -105,7 +106,8 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
       })
       if (!response.ok) throw new Error(`Cloud document upload failed with HTTP ${response.status}`)
       reportProgress(onProgress, bytes.byteLength, bytes.byteLength)
-      await cloud.commitUpload(pending.id, { checksum })
+      const committed = await cloud.commitUpload(pending.id, { checksum })
+      return { remoteRevisionId: committed.currentRevisionId }
     },
 
     async deleteDocument(id) {
