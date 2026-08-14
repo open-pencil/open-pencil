@@ -88,12 +88,16 @@ export function createCanvasRenderLoop(
     scheduler.schedule(renderFrame)
   }
 
-  const unsubscribe = [
-    editor.onEditorEvent('render:requested', scheduleFrame),
-    editor.onEditorEvent('viewport:changed', scheduleFrame)
-  ]
+  const scheduleDirtyFrame = () => {
+    dirty = true
+    scheduleFrame()
+  }
 
-  unsubscribe.push(editor.onEditorEvent('repaint:requested', scheduleFrame))
+  const unsubscribe = [
+    editor.onEditorEvent('render:requested', scheduleDirtyFrame),
+    editor.onEditorEvent('viewport:changed', scheduleFrame),
+    editor.onEditorEvent('repaint:requested', scheduleDirtyFrame)
+  ]
 
   if (shouldScheduleForSelection(options.layer)) {
     unsubscribe.push(editor.onEditorEvent('selection:changed', scheduleFrame))

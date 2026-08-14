@@ -68,6 +68,8 @@ export function useAppMenu() {
     'theme-auto': 'themeAuto',
     'zoom-in': 'zoomIn',
     'zoom-out': 'zoomOut',
+    'view-split-right': 'splitRight',
+    'view-split-down': 'splitDown',
     'text.bold': 'bold',
     'text.italic': 'italic',
     'text.underline': 'underline',
@@ -166,6 +168,16 @@ export function useAppMenu() {
     }
   }
 
+  function disabled(item: AppMenuActionItem): boolean | undefined {
+    switch (item.id) {
+      case 'view-split-right':
+      case 'view-split-down':
+        return store.visiblePaneCount.value >= store.panes.maxVisiblePanes
+      default:
+        return undefined
+    }
+  }
+
   function menuLabel(entry: AppMenuActionItem): string {
     const key = translatedMenuItemLabels[entry.id]
     return key ? menu.value[key] : entry.label
@@ -201,6 +213,7 @@ export function useAppMenu() {
       label: menuLabel(entry),
       shortcut: appMenuShortcutLabel(entry.id),
       action: itemAction(entry),
+      disabled: disabled(entry),
       checked: checked(entry),
       onCheckedChange: onCheckedChange(entry),
       sub: entry.sub?.map(buildEntry).filter((item): item is MenuEntry => item !== null)

@@ -45,6 +45,13 @@ describe('canvas pane registry', () => {
     expect(second?.selectedIds.size).toBe(0)
     expect(second?.hoveredNodeId).toBeNull()
     expect(registry.visiblePaneCount.value).toBe(2)
+    expect(state.selectedIds.size).toBe(0)
+
+    state.panX = 120
+    expect(registry.setActivePane(first.id)).toBe(true)
+    expect(second?.panX).toBe(120)
+    expect(state.selectedIds).toEqual(new Set(['selected']))
+    expect(state.panX).toBe(0)
   })
 
   test('refuses the last close and enforces the pane cap', () => {
