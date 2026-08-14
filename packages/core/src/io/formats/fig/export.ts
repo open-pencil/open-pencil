@@ -554,7 +554,7 @@ export async function exportFigFile(
   if (IS_TAURI) {
     const { invoke } = await import('@tauri-apps/api/core')
     return new Uint8Array(
-      await invoke<number[]>('build_fig_file', {
+      await invoke<ArrayBuffer>('build_fig_file', {
         schemaDeflated: Array.from(schemaDeflated),
         kiwiData: Array.from(kiwiData),
         thumbnailPng: Array.from(thumbnailPNG),

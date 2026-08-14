@@ -12,10 +12,12 @@
 
 ### Performance
 
+- Index Figma clipboard children once during import instead of rescanning every pasted node, keeping large flat pastes linear. (#500)
 - Reduce peak memory during `.fig` export by sharing immutable binary resources with the isolated export graph.
 
 ### Fixed
 
+- Transfer native `.fig` exports over binary Tauri IPC instead of JSON byte arrays, preventing large desktop saves from being truncated or exhausting WebView memory. (#484)
 - Keep unsaved source-less documents recoverable after their editor tab is closed, matching Figma's retained offline-change behavior.
 - Decode zstd-compressed FIG containers, reject invalid compressed payloads, and preserve exact fixture byte ranges. (#397)
 - Compose caller CSS with Tailwind defaults when importing DOM/CSS documents. (#397)
