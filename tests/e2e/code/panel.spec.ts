@@ -156,6 +156,75 @@ test('edits and applies JSX as one undoable replacement', async () => {
   )
 })
 
+test('replaces multiple roots at their original positions and supports redo', async () => {
+  await codeTab().click()
+  const originals = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const pageId = store.state.currentPageId
+    const one = store.graph.createNode('RECTANGLE', pageId, { name: 'One', x: 40, y: 50 })
+    const two = store.graph.createNode('ELLIPSE', pageId, { name: 'Two', x: 240, y: 250 })
+    store.select([one.id, two.id])
+    return [one.id, two.id]
+  })
+  await editor.page.getByTestId('code-panel-edit').click()
+  const input = editor.page.locator('[data-slot="code-editor"] .cm-content')
+  await input.fill(
+    '<><Frame name="First" w={100} h={100} /><Frame name="Second" w={100} h={100} /></>'
+  )
+  await editor.page.getByTestId('code-panel-apply-jsx').click()
+  await editor.page.waitForFunction(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Second'
+    )
+  )
+  const positions = await editor.page.evaluate(() => {
+    const nodes = [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])]
+    return ['First', 'Second'].map((name) => {
+      const node = nodes.find((candidate) => candidate.name === name)
+      return node ? { x: node.x, y: node.y } : null
+    })
+  })
+  expect(positions).toEqual([
+    { x: 40, y: 50 },
+    { x: 240, y: 250 }
+  ])
+
+  await editor.page.keyboard.press('Meta+z')
+  expect(
+    await editor.page.evaluate(
+      (ids) => ids.every((id) => window.openPencil?.getStore?.().graph.getNode(id)),
+      originals
+    )
+  ).toBe(true)
+  await editor.page.keyboard.press('Meta+Shift+z')
+  await editor.page.waitForFunction(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Second'
+    )
+  )
+})
+
+test('rolls back all roots when one cannot render', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, { name: 'Keep me' })
+    store.select([node.id])
+  })
+  await codeTab().click()
+  await editor.page.getByTestId('code-panel-edit').click()
+  const input = editor.page.locator('[data-slot="code-editor"] .cm-content')
+  await input.fill('<><Frame name="Temporary" /><Instance /></>')
+  await editor.page.getByTestId('code-panel-apply-jsx').click()
+  await expect(editor.page.getByTestId('code-panel-jsx-error')).toBeVisible()
+  const names = await editor.page.evaluate(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].map((node) => node.name)
+  )
+  expect(names).toContain('Keep me')
+  expect(names).not.toContain('Temporary')
+})
+
 test('keeps large JSX drafts contained inside CodeMirror', async () => {
   test.setTimeout(30_000)
   await codeTab().click()

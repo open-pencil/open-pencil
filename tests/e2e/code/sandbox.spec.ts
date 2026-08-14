@@ -44,6 +44,48 @@ test('evaluates JSX into plain inert data', async ({ page }) => {
   })
 })
 
+test('supports local constants, function components, arrays, and conditionals', async ({
+  page
+}) => {
+  const result = await evaluate(
+    page,
+    `const colors = { surface: '#fff' }
+const Card = ({ title, visible }) => (
+  <Frame fill={colors.surface}>
+    {visible ? <Text>{title}</Text> : null}
+    {[1, 2].map((item) => <Text>{item}</Text>)}
+  </Frame>
+)
+<Card title="Hello" visible />`
+  )
+
+  expect(result).toEqual({
+    ok: true,
+    roots: [
+      {
+        type: 'frame',
+        props: { fill: '#fff' },
+        children: [
+          { type: 'text', props: {}, children: ['Hello'] },
+          { type: 'text', props: {}, children: [1] },
+          { type: 'text', props: {}, children: [2] }
+        ]
+      }
+    ]
+  })
+})
+
+test('supports multiple roots through fragments', async ({ page }) => {
+  const result = await evaluate(page, '<><Rectangle name="One" /><Ellipse name="Two" /></>')
+  expect(result).toEqual({
+    ok: true,
+    roots: [
+      { type: 'rectangle', props: { name: 'One' }, children: [] },
+      { type: 'ellipse', props: { name: 'Two' }, children: [] }
+    ]
+  })
+})
+
 test('cannot access the parent or application origin', async ({ page }) => {
   const result = await evaluate(page, '<Frame>{String(window.parent.document)}</Frame>')
   expect(result.ok).toBe(false)

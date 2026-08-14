@@ -10,11 +10,13 @@ self.onmessage = ({ data }) => {
 
   const normalizeChildren = (children) => children.flat(Infinity).filter((child) => child != null && child !== false)
   const __fragment = ''
-  const __h = (type, props, ...children) => ({
-    type,
-    props: props == null ? {} : props,
-    children: normalizeChildren(children)
-  })
+  const __h = (type, props, ...children) => {
+    const normalizedProps = props == null ? {} : props
+    const normalizedChildren = normalizeChildren(children)
+    if (typeof type === 'function') return type({ ...normalizedProps, children: normalizedChildren })
+    if (type === __fragment) return normalizedChildren
+    return { type, props: normalizedProps, children: normalizedChildren }
+  }
   const helper = (name) => (...args) => ({ __openPencilHelper: name, args })
   const names = Object.keys(elements)
   const tags = elements

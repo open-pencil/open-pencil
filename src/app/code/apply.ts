@@ -26,6 +26,19 @@ export async function applyDesignJSX(
   const selected = [...store.state.selectedIds]
     .map((id) => store.graph.getNode(id))
     .filter((node) => node !== undefined)
+    .sort((left, right) => {
+      if (left.parentId !== right.parentId) return left.id.localeCompare(right.id)
+      const parent = left.parentId ? store.graph.getNode(left.parentId) : undefined
+      return (parent?.childIds.indexOf(left.id) ?? 0) - (parent?.childIds.indexOf(right.id) ?? 0)
+    })
+  if (selected.some(({ locked }) => locked)) {
+    return { ok: false, error: 'Unlock the selected layers before applying JSX.' }
+  }
+  const parentIds = new Set(selected.map(({ parentId }) => parentId ?? store.state.currentPageId))
+  if (parentIds.size > 1) {
+    return { ok: false, error: 'Select layers with the same parent before applying JSX.' }
+  }
+  const origins = selected.map(({ x, y }) => ({ x, y }))
   const first = selected.at(0)
   const parentId = first?.parentId ?? store.state.currentPageId
   const viewportCenter = store.viewportCanvasCenter()
@@ -36,10 +49,14 @@ export async function applyDesignJSX(
     for (const node of selected) store.graph.deleteNode(node.id)
     const results = []
     for (const [index, root] of roots.entries()) {
-      const result = await renderTree(store.graph, root, {
-        parentId,
+      const replacementOrigin = origins.at(index) ?? {
         x: origin.x + index * 24,
         y: origin.y + index * 24
+      }
+      const result = await renderTree(store.graph, root, {
+        parentId,
+        x: replacementOrigin.x,
+        y: replacementOrigin.y
       })
       results.push(result)
     }
