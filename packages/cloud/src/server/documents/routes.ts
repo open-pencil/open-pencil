@@ -59,6 +59,20 @@ export function createDocumentRoutes(service: DocumentService) {
         throw error
       }
     })
+    .get('/documents/:documentId', async (context) => {
+      try {
+        return context.json({
+          document: await service.download(
+            context.get('actor').userId,
+            context.req.param('documentId')
+          )
+        })
+      } catch (error) {
+        const response = domainError(context, error)
+        if (response) return response
+        throw error
+      }
+    })
     .post('/documents/:documentId/uploads', async (context) => {
       try {
         const result = await service.createUpload(

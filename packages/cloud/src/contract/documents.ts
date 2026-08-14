@@ -13,6 +13,21 @@ export const documentSummarySchema = v.object({
 })
 export type DocumentSummary = v.InferOutput<typeof documentSummarySchema>
 
+export const documentDownloadSchema = v.object({
+  document: documentSummarySchema,
+  revisionId: v.pipe(v.string(), v.uuid()),
+  byteSize: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  checksum: checksumSchema,
+  contentType: v.string(),
+  download: v.object({
+    url: v.pipe(v.string(), v.url()),
+    method: v.literal('GET'),
+    headers: v.record(v.string(), v.string()),
+    expiresAt: v.string()
+  })
+})
+export type DocumentDownload = v.InferOutput<typeof documentDownloadSchema>
+
 export const createDocumentSchema = v.object({
   name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(255))
 })

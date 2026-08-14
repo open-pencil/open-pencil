@@ -15,6 +15,7 @@ export {
   commitUploadSchema,
   createDocumentSchema,
   createUploadSchema,
+  documentDownloadSchema,
   documentSummarySchema,
   parseCommitUpload,
   parseCreateDocument,
@@ -22,6 +23,7 @@ export {
   type CommitUploadInput,
   type CreateDocumentInput,
   type CreateUploadInput,
+  type DocumentDownload,
   type DocumentSummary
 } from './documents'
 export {

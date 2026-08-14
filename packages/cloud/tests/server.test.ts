@@ -78,6 +78,9 @@ function services() {
     database,
     auth: createCloudAuth(config, database),
     objects: {
+      async createDownload() {
+        throw new Error('not used')
+      },
       async createUpload() {
         throw new Error('not used')
       },

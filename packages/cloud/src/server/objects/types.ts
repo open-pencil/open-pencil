@@ -1,3 +1,10 @@
+export type ObjectDownload = {
+  url: string
+  method: 'GET'
+  headers: Readonly<Record<string, string>>
+  expiresAt: string
+}
+
 export type ObjectUpload = {
   url: string
   method: 'PUT'
@@ -12,6 +19,7 @@ export type StoredObject = {
 }
 
 export interface ObjectStore {
+  createDownload(input: { key: string; expiresAt: Date }): Promise<ObjectDownload>
   createUpload(input: {
     key: string
     byteSize: number

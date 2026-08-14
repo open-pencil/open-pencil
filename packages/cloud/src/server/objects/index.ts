@@ -1,1 +1,1 @@
-export type { ObjectStore, ObjectUpload, StoredObject } from './types'
+export type { ObjectDownload, ObjectStore, ObjectUpload, StoredObject } from './types'

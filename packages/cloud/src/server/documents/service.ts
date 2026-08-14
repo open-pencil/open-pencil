@@ -2,6 +2,7 @@ import type {
   CommitUploadInput,
   CreateDocumentInput,
   CreateUploadInput,
+  DocumentDownload,
   DocumentSummary
 } from '#cloud/contract'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -14,6 +15,7 @@ import {
 import type { ObjectStore, ObjectUpload } from '#cloud/server/objects'
 import type { Kysely } from 'kysely'
 
+const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
 const UPLOAD_LIFETIME_MS = 15 * 60 * 1000
 const WRITABLE_ROLES = new Set(['admin', 'editor'])
 
@@ -32,8 +34,72 @@ export class UploadInvalidError extends Error {
 
 export function createDocumentService(database: Kysely<CloudDatabase>, objects: ObjectStore) {
   return {
+    async cleanupExpiredUploads(now = new Date()): Promise<number> {
+      const uploads = await database
+        .selectFrom('upload')
+        .select(['id', 'objectKey'])
+        .where('status', '=', 'pending')
+        .where('expiresAt', '<=', now)
+        .execute()
+      let cleaned = 0
+      for (const upload of uploads) {
+        const result = await database
+          .updateTable('upload')
+          .set({ status: 'abandoned' })
+          .where('id', '=', upload.id)
+          .where('status', '=', 'pending')
+          .where('expiresAt', '<=', now)
+          .executeTakeFirst()
+        if (Number(result.numUpdatedRows) === 0) continue
+        try {
+          await objects.delete(upload.objectKey)
+        } catch (error) {
+          await database
+            .updateTable('upload')
+            .set({ status: 'pending' })
+            .where('id', '=', upload.id)
+            .where('status', '=', 'abandoned')
+            .execute()
+          throw error
+        }
+        cleaned++
+      }
+      return cleaned
+    },
+
     list(userId: string, workspaceId: string): Promise<DocumentSummary[] | undefined> {
       return listDocuments(database, userId, workspaceId)
+    },
+
+    async download(userId: string, documentId: string): Promise<DocumentDownload> {
+      const document = await findDocument(database, userId, documentId)
+      if (!document?.currentRevisionId) throw new DocumentNotFoundError()
+      const revision = await database
+        .selectFrom('documentRevision')
+        .innerJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
+        .select([
+          'documentRevision.id as revisionId',
+          'storageObject.objectKey',
+          'storageObject.byteSize',
+          'storageObject.checksum',
+          'storageObject.contentType'
+        ])
+        .where('documentRevision.id', '=', document.currentRevisionId)
+        .where('documentRevision.documentId', '=', documentId)
+        .executeTakeFirst()
+      if (!revision) throw new DocumentNotFoundError()
+      const download = await objects.createDownload({
+        key: revision.objectKey,
+        expiresAt: new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
+      })
+      return {
+        document,
+        revisionId: revision.revisionId,
+        byteSize: Number(revision.byteSize),
+        checksum: revision.checksum,
+        contentType: revision.contentType,
+        download
+      }
     },
 
     async create(
@@ -118,6 +184,12 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
         .executeTakeFirst()
       if (!upload) throw new DocumentNotFoundError()
       if (!WRITABLE_ROLES.has(upload.role)) throw new DocumentForbiddenError()
+      if (input.checksum !== upload.checksum) throw new UploadInvalidError()
+      if (upload.status === 'committed') {
+        const document = await findDocument(database, userId, upload.documentId)
+        if (!document) throw new DocumentNotFoundError()
+        return document
+      }
       if (upload.status !== 'pending' || new Date(upload.expiresAt).getTime() <= Date.now()) {
         throw new UploadInvalidError()
       }
@@ -135,6 +207,14 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       const revisionId = crypto.randomUUID()
       const storageObjectId = crypto.randomUUID()
       await database.transaction().execute(async (transaction) => {
+        const lockedUpload = await transaction
+          .selectFrom('upload')
+          .select('status')
+          .where('id', '=', uploadId)
+          .forUpdate()
+          .executeTakeFirstOrThrow()
+        if (lockedUpload.status === 'committed') return
+        if (lockedUpload.status !== 'pending') throw new UploadInvalidError()
         const document = await transaction
           .selectFrom('document')
           .select(['currentRevisionId'])

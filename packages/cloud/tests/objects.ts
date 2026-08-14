@@ -2,7 +2,16 @@ import type { ObjectStore, StoredObject } from '../src/server'
 
 export function createMemoryObjectStore() {
   const stored = new Map<string, StoredObject>()
+  const deletedKeys: string[] = []
   const store: ObjectStore = {
+    async createDownload(input) {
+      return {
+        url: `https://objects.example.com/${input.key}`,
+        method: 'GET',
+        headers: {},
+        expiresAt: input.expiresAt.toISOString()
+      }
+    },
     async createUpload(input) {
       return {
         url: `https://objects.example.com/${input.key}`,
@@ -19,10 +28,12 @@ export function createMemoryObjectStore() {
     },
     async delete(key) {
       stored.delete(key)
+      deletedKeys.push(key)
     }
   }
   return {
     store,
+    deletedKeys,
     put(key: string, object: StoredObject) {
       stored.set(key, object)
     }

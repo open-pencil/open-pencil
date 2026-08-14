@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   createCloudApp,
   createCloudAuth,
+  createDocumentService,
   parseCloudServerConfig,
   type CloudActor
 } from '../src/server'
@@ -120,11 +121,79 @@ describe('Cloud document routes', () => {
       expect(committed.document.currentRevisionId).toBeString()
       expect(committed.document.version).toBe(1)
 
+      const repeatedCommit = await context.app.request(`/api/uploads/${upload.id}/commit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checksum })
+      })
+      expect(repeatedCommit.status).toBe(200)
+      expect(await repeatedCommit.json()).toMatchObject({
+        document: {
+          currentRevisionId: committed.document.currentRevisionId,
+          version: 1
+        }
+      })
+
+      const downloadResponse = await context.app.request(`/api/documents/${document.document.id}`)
+      expect(downloadResponse.status).toBe(200)
+      expect(await downloadResponse.json()).toMatchObject({
+        document: {
+          document: { id: document.document.id, version: 1 },
+          revisionId: committed.document.currentRevisionId,
+          byteSize: 128,
+          checksum,
+          download: { method: 'GET' }
+        }
+      })
+
       const revision = await context.runtime.database
         .selectFrom('documentRevision')
         .select(['parentRevisionId'])
         .executeTakeFirstOrThrow()
       expect(revision.parentRevisionId).toBeNull()
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('abandons and deletes expired pending uploads', async () => {
+    const context = await testApp()
+    try {
+      const create = await context.app.request(`/api/workspaces/${context.workspaceId}/documents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'Homepage' })
+      })
+      const document = (await create.json()) as { document: { id: string } }
+      const uploadResponse = await context.app.request(
+        `/api/documents/${document.document.id}/uploads`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            baseRevisionId: null,
+            byteSize: 128,
+            checksum,
+            contentType: 'application/octet-stream'
+          })
+        }
+      )
+      const upload = (await uploadResponse.json()) as { id: string }
+      const row = await context.runtime.database
+        .selectFrom('upload')
+        .select('objectKey')
+        .where('id', '=', upload.id)
+        .executeTakeFirstOrThrow()
+      const service = createDocumentService(context.runtime.database, context.objects.store)
+      expect(await service.cleanupExpiredUploads(new Date(Date.now() + 16 * 60 * 1000))).toBe(1)
+      expect(context.objects.deletedKeys).toEqual([row.objectKey])
+      expect(
+        await context.runtime.database
+          .selectFrom('upload')
+          .select('status')
+          .where('id', '=', upload.id)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: 'abandoned' })
     } finally {
       await context.runtime.close()
     }

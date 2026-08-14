@@ -2,6 +2,7 @@ import type { CloudServerConfig } from '#cloud/server'
 import type { ObjectStore } from '#cloud/server/objects'
 import {
   DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client
@@ -20,6 +21,21 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
   })
 
   return {
+    async createDownload(input) {
+      const expiresIn = Math.max(1, Math.floor((input.expiresAt.getTime() - Date.now()) / 1000))
+      const url = await getSignedURL(
+        client,
+        new GetObjectCommand({ Bucket: config.s3Bucket, Key: input.key }),
+        { expiresIn }
+      )
+      return {
+        url,
+        method: 'GET',
+        headers: {},
+        expiresAt: input.expiresAt.toISOString()
+      }
+    },
+
     async createUpload(input) {
       const expiresIn = Math.max(1, Math.floor((input.expiresAt.getTime() - Date.now()) / 1000))
       const command = new PutObjectCommand({
