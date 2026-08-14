@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "types": ["bun"],
+    "paths": {
+      "#cloud/*": ["./src/*"],
+      "@open-pencil/cloud/contract": ["./src/contract/index.ts"],
+      "@open-pencil/cloud/client": ["./src/client/index.ts"],
+      "@open-pencil/cloud/server": ["./src/server/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

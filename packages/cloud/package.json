@@ -1,0 +1,53 @@
+{
+  "name": "@open-pencil/cloud",
+  "version": "0.14.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#cloud/*": {
+      "types": "./src/*",
+      "bun": "./src/*",
+      "default": "./dist/*"
+    }
+  },
+  "exports": {
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "bun": "./src/contract/index.ts",
+      "import": "./dist/contract.js",
+      "default": "./dist/contract.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "bun": "./src/client/index.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "bun": "./src/server/index.ts",
+      "import": "./dist/server.js",
+      "default": "./dist/server.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "check": "bun run typecheck && bun run test && bun run build",
+    "test": "bun test tests",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "hono": "^4.12.5",
+    "valibot": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "tsdown": "^0.22.3",
+    "typescript": "~5.8.3"
+  }
+}
