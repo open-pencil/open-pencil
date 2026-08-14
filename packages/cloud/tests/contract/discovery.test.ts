@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CLOUD_DISCOVERY_PATH, CLOUD_PROTOCOL_VERSION, parseCloudDiscovery } from '../src/contract'
+import {
+  CLOUD_DISCOVERY_PATH,
+  CLOUD_PROTOCOL_VERSION,
+  parseCloudDiscovery
+} from '@open-pencil/cloud/contract'
 
 const discovery = {
   protocolVersion: CLOUD_PROTOCOL_VERSION,

@@ -5,9 +5,10 @@ import {
   createCloudAuth,
   parseCloudServerConfig,
   type CloudActor
-} from '../src/server'
-import { createCloudTestDatabase } from './database'
-import { createMemoryObjectStore } from './objects'
+} from '@open-pencil/cloud/server'
+
+import { createCloudTestDatabase } from '../../helpers/database'
+import { createMemoryObjectStore } from '../../helpers/objects'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',

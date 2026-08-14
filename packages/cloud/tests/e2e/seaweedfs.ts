@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto'
 
 import { CreateBucketCommand, S3Client } from '@aws-sdk/client-s3'
 
-import { createS3ObjectStore } from '../src/runtime/node'
-import { parseCloudServerConfig } from '../src/server'
+import { createS3ObjectStore } from '@open-pencil/cloud/runtime/node'
+import { parseCloudServerConfig } from '@open-pencil/cloud/server'
 
 const endpoint = process.env.S3_ENDPOINT ?? 'http://localhost:8333'
 const bucket = process.env.S3_BUCKET ?? 'openpencil-smoke'

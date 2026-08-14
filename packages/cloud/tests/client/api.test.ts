@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CloudAPIError, createCloudAPIClient } from '../src/client'
+import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
 
 const workspaceId = '11111111-1111-4111-8111-111111111111'
 const documentId = '22222222-2222-4222-8222-222222222222'

@@ -12,14 +12,15 @@ import {
   type QueryResult
 } from 'kysely'
 
-import { CLOUD_PROTOCOL_VERSION } from '../src/contract'
+import { CLOUD_PROTOCOL_VERSION } from '@open-pencil/cloud/contract'
 import {
   createCloudApp,
   createCloudAuth,
   parseCloudServerConfig,
   type CloudDatabase
-} from '../src/server'
-import { createCloudTestDatabase } from './database'
+} from '@open-pencil/cloud/server'
+
+import { createCloudTestDatabase } from '../helpers/database'
 
 function dummyPostgresDialect(): Dialect {
   return {

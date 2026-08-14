@@ -1,4 +1,4 @@
-import type { ObjectStore, StoredObject } from '../src/server'
+import type { ObjectStore, StoredObject } from '@open-pencil/cloud/server'
 
 export function createMemoryObjectStore() {
   const stored = new Map<string, StoredObject>()

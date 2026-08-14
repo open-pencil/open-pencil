@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CloudClientError, discoverCloud } from '../src/client'
-import { CLOUD_PROTOCOL_VERSION } from '../src/contract'
+import { CloudClientError, discoverCloud } from '@open-pencil/cloud/client'
+import { CLOUD_PROTOCOL_VERSION } from '@open-pencil/cloud/contract'
 
 const discovery = {
   protocolVersion: CLOUD_PROTOCOL_VERSION,

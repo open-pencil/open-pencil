@@ -6,7 +6,7 @@ import {
   createCloudDatabase,
   migrateCloudDatabase,
   parseCloudServerConfig
-} from '../src/server'
+} from '@open-pencil/cloud/server'
 
 export type CloudTestDatabase = {
   database: ReturnType<typeof createCloudDatabase>

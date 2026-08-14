@@ -8,8 +8,9 @@ import {
   type Dialect
 } from 'kysely'
 
-import { createCloudDatabase } from '../src/server'
-import { createCloudTestDatabase } from './database'
+import { createCloudDatabase } from '@open-pencil/cloud/server'
+
+import { createCloudTestDatabase } from '../../helpers/database'
 
 function testDialect(): Dialect {
   return {

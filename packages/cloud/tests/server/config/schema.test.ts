@@ -4,7 +4,7 @@ import {
   CloudConfigError,
   cloudServerConfigFromEnvironment,
   parseCloudServerConfig
-} from '../src/server'
+} from '@open-pencil/cloud/server'
 
 const baseConfig = {
   deployment: 'self-hosted',

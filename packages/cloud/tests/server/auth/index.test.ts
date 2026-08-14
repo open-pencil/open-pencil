@@ -10,8 +10,12 @@ import {
   type Dialect
 } from 'kysely'
 
-import { configuredSocialProviders, createCloudAuth, parseCloudServerConfig } from '../src/server'
-import type { CloudDatabase } from '../src/server'
+import {
+  configuredSocialProviders,
+  createCloudAuth,
+  parseCloudServerConfig
+} from '@open-pencil/cloud/server'
+import type { CloudDatabase } from '@open-pencil/cloud/server'
 
 function dummyPostgresDialect(): Dialect {
   return {

@@ -22,7 +22,7 @@ The Cloud container runs database migrations before accepting requests. Named vo
 From the repository root, while Compose is running:
 
 ```sh
-bun --filter @open-pencil/cloud test:seaweedfs
+bun --filter @open-pencil/cloud test:e2e
 ```
 
 The test verifies readiness, a presigned single PUT, and a 33 MiB, three-part presigned upload, including ordered ETags, completion, metadata SHA-256, object size, verified GET bytes, and deletion.
