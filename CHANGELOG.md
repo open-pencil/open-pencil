@@ -4,6 +4,7 @@
 
 ### Added
 
+- Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
 - Add a reproducible Dev Container for web, package, CLI, and non-browser test development.
 - Add local crash recovery for unsaved and pathless documents, including MCP-created documents. (#487)
 - Add isolated visual inspection that sends bounded selection renders to the configured Vision model and returns text findings without retaining image data in Design chat history. (#232, #471)

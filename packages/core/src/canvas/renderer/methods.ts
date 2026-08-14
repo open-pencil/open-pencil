@@ -26,6 +26,15 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     Overlays.drawHoverHighlight(this, canvas, graph, hoveredNodeId)
   },
 
+  drawMeasurements(
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>,
+    targetId?: string | null
+  ): void {
+    Overlays.drawMeasurements(this, canvas, graph, selectedIds, targetId)
+  },
+
   drawEnteredContainer(
     canvas: Canvas,
     graph: SceneGraph,
