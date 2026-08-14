@@ -131,8 +131,29 @@ function isFill(value: unknown): value is Fill {
     FILL_TYPES.has(value.type as FillType) &&
     isColor(value.color) &&
     isFiniteNumber(value.opacity) &&
-    typeof value.visible === 'boolean'
+    typeof value.visible === 'boolean' &&
+    isOptionalGradientStops(value.gradientStops) &&
+    isOptionalMatrix(value.gradientTransform) &&
+    isOptionalMatrix(value.imageTransform) &&
+    isOptionalVector(value.patternSpacing) &&
+    isOptionalVector(value.noiseSize)
   )
+}
+
+function isOptionalGradientStops(value: unknown): boolean {
+  return (
+    value === undefined ||
+    (Array.isArray(value) &&
+      value.every((stop) => isRecord(stop) && isFiniteNumber(stop.position) && isColor(stop.color)))
+  )
+}
+
+function isOptionalMatrix(value: unknown): boolean {
+  return value === undefined || normalizeMatrix(value) !== null
+}
+
+function isOptionalVector(value: unknown): boolean {
+  return value === undefined || normalizeVector(value) !== null
 }
 
 function isColor(value: unknown): boolean {

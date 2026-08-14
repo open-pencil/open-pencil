@@ -177,6 +177,20 @@ describe('collab yjs-sync', () => {
           null,
           'invalid',
           {
+            type: 'GRADIENT_LINEAR',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            gradientStops: 'invalid'
+          },
+          {
+            type: 'NOISE',
+            color: { r: 0, g: 0, b: 0, a: 1 },
+            opacity: 1,
+            visible: true,
+            noiseSize: 'invalid'
+          },
+          {
             type: 'SOLID',
             color: { r: 1, g: 0, b: 0, a: 1 },
             opacity: 1,
