@@ -1,5 +1,6 @@
 import { renderTree } from '@open-pencil/core/design-jsx'
 import type { TreeNode } from '@open-pencil/core/design-jsx'
+import { computeAllLayouts } from '@open-pencil/core/layout'
 
 import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'
 import { evaluateDesignJSX } from '@/app/code/sandbox/evaluate'
@@ -72,6 +73,7 @@ export async function applyDesignJSX(
       if (firstIndex >= 0) store.graph.insertChildAt(result.id, parentId, firstIndex + index)
     }
     const nodeIds = results.map((result) => result.id)
+    computeAllLayouts(store.graph, store.state.currentPageId)
     store.select(nodeIds)
     store.requestRender()
     const after = store.snapshotPage()

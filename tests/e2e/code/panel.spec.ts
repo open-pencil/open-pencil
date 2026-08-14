@@ -257,6 +257,43 @@ test('replaces multiple roots at their original positions and supports redo', as
   )
 })
 
+test('recomputes an auto-layout parent after replacement', async () => {
+  const parentId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const parent = store.graph.createNode('FRAME', store.state.currentPageId, {
+      name: 'Auto parent',
+      layoutMode: 'HORIZONTAL',
+      itemSpacing: 12,
+      width: 400,
+      height: 100
+    })
+    const first = store.graph.createNode('RECTANGLE', parent.id, {
+      name: 'Replace in layout',
+      width: 40,
+      height: 40
+    })
+    store.graph.createNode('RECTANGLE', parent.id, { name: 'Following', width: 40, height: 40 })
+    store.select([first.id])
+    return parent.id
+  })
+  await codeTab().click()
+  const input = await enterJSXEditing()
+  await input.fill('<Frame name="Layout replacement" w={80} h={40} />')
+  await editor.page.getByTestId('code-panel-apply-jsx').click()
+  await editor.page.waitForFunction(() =>
+    [...(window.openPencil?.getStore?.().graph.getAllNodes() ?? [])].some(
+      (node) => node.name === 'Layout replacement'
+    )
+  )
+  const children = await editor.page.evaluate((id) => {
+    const graph = window.openPencil?.getStore?.().graph
+    return graph?.getChildren(id).map((node) => ({ name: node.name, x: node.x, width: node.width }))
+  }, parentId)
+  expect(children?.map(({ name }) => name)).toEqual(['Layout replacement', 'Following'])
+  expect(children?.[1]?.x).toBe(92)
+})
+
 test('does not replace a selection containing locked descendants', async () => {
   const selection = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
