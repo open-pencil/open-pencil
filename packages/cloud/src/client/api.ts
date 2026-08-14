@@ -1,9 +1,11 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
+  cloudSessionSchema,
   documentDownloadSchema,
   documentSummarySchema,
   workspaceUsageSchema,
   workspaceListSchema,
+  type CloudSession,
   type CommitUploadInput,
   type CreateDocumentInput,
   type CreateUploadInput,
@@ -90,6 +92,21 @@ export function createCloudClient(baseURL: string, options: CloudRequestOptions 
   }
 
   return {
+    async getSession(): Promise<CloudSession | null> {
+      const response = await fetchImplementation(apiURL(baseURL, '/session'), {
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        signal: options.signal
+      })
+      if (response.status === 401) return null
+      if (!response.ok) {
+        throw new CloudAPIError(
+          `OpenPencil Cloud session request failed with HTTP ${response.status}`,
+          response.status
+        )
+      }
+      return v.parse(cloudSessionSchema, await response.json())
+    },
     async listWorkspaces(): Promise<WorkspaceList> {
       return v.parse(workspaceListSchema, await request('/workspaces'))
     },

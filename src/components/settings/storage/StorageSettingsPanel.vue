@@ -14,6 +14,7 @@ import {
   storageProviderRegistry,
   writeStoragePreference
 } from '@/app/integrations/storage'
+import { useCloudStorageSettings } from '@/app/integrations/storage/cloud/settings'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { credentialRef } from '@/app/settings/credentials/reference'
@@ -37,6 +38,15 @@ const preferenceDrafts = ref<Record<string, string>>({
 const credentialDrafts = ref<Record<string, string>>({})
 const credentialStatuses = ref<Record<string, CredentialStatus>>({})
 const busy = ref(false)
+const cloudSettings = useCloudStorageSettings()
+const isCloudProvider = computed(() => provider.value.id === 'openpencil-cloud')
+const cloudWorkspace = computed({
+  get: () => preferenceDrafts.value['workspace-id'] ?? '',
+  set: (value: string) => {
+    preferenceDrafts.value['workspace-id'] = value
+    writeStoragePreference(provider.value.id, 'workspace-id', value)
+  }
+})
 const configured = computed(
   () =>
     storagePreferencesComplete(provider.value.id) &&
@@ -91,6 +101,36 @@ async function openWorkspace(): Promise<void> {
   await router.push('/storage')
 }
 
+async function connectCloud(): Promise<void> {
+  try {
+    cloudSettings.serverURL.value = preferenceDrafts.value['server-url'] ?? ''
+    await cloudSettings.connect()
+    preferenceDrafts.value = { ...readStoragePreferences(provider.value.id) }
+    const state = cloudSettings.state.value
+    if (state?.session) toast.info(`Connected as ${state.session.user.email}`)
+    else toast.info('Cloud server connected. Sign in to continue.')
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function signInCloud(providerID: 'apple' | 'google'): Promise<void> {
+  try {
+    await cloudSettings.signIn(providerID)
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function signOutCloud(): Promise<void> {
+  try {
+    await cloudSettings.signOut()
+    toast.info('Signed out of OpenPencil Cloud.')
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
 async function testConnection(): Promise<void> {
   busy.value = true
   try {
@@ -136,7 +176,9 @@ onMounted(() => void refreshStatuses())
     />
 
     <label
-      v-for="field in provider.preferenceFields"
+      v-for="field in provider.preferenceFields.filter(
+        (preference) => !(isCloudProvider && preference.id === 'workspace-id')
+      )"
       :key="field.id"
       class="flex flex-col gap-1 text-[10px] text-muted"
     >
@@ -149,6 +191,52 @@ onMounted(() => void refreshStatuses())
         @change="savePreferences"
       />
     </label>
+
+    <div v-if="isCloudProvider" class="flex flex-col gap-2 rounded border border-border p-2">
+      <button
+        type="button"
+        class="rounded bg-hover px-2 py-1.5 text-[10px] text-surface hover:bg-active"
+        :disabled="cloudSettings.isLoading.value"
+        @click="connectCloud"
+      >
+        Connect to server
+      </button>
+      <template v-if="cloudSettings.state.value">
+        <div
+          v-if="cloudSettings.state.value.session"
+          class="flex items-center justify-between gap-2"
+        >
+          <span class="truncate text-[10px] text-muted">
+            {{ cloudSettings.state.value.session.user.email }}
+          </span>
+          <button
+            type="button"
+            class="rounded px-2 py-1 text-[10px] text-muted hover:bg-hover"
+            @click="signOutCloud"
+          >
+            Sign out
+          </button>
+        </div>
+        <div v-else class="flex gap-2">
+          <button
+            v-for="socialProvider in cloudSettings.state.value.discovery.authentication
+              .socialProviders"
+            :key="socialProvider"
+            type="button"
+            class="flex-1 rounded bg-hover px-2 py-1.5 text-[10px] capitalize text-surface hover:bg-active"
+            @click="signInCloud(socialProvider)"
+          >
+            Sign in with {{ socialProvider }}
+          </button>
+        </div>
+        <AppSelect
+          v-if="cloudSettings.workspaceOptions.value.length"
+          v-model="cloudWorkspace"
+          label="Cloud workspace"
+          :options="cloudSettings.workspaceOptions.value"
+        />
+      </template>
+    </div>
 
     <div
       v-for="field in provider.credentialFields"

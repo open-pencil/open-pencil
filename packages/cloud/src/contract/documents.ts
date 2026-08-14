@@ -28,6 +28,16 @@ export const documentDownloadSchema = v.object({
 })
 export type DocumentDownload = v.InferOutput<typeof documentDownloadSchema>
 
+export const cloudActorSchema = v.object({
+  userId: v.string(),
+  email: v.pipe(v.string(), v.email()),
+  name: v.string()
+})
+export type CloudActorContract = v.InferOutput<typeof cloudActorSchema>
+
+export const cloudSessionSchema = v.object({ user: cloudActorSchema })
+export type CloudSession = v.InferOutput<typeof cloudSessionSchema>
+
 export const workspaceUsageSchema = v.object({
   bytesUsed: v.pipe(v.number(), v.integer(), v.minValue(0)),
   objectCount: v.pipe(v.number(), v.integer(), v.minValue(0)),

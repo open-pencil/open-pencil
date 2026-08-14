@@ -5,6 +5,7 @@ export {
   type CloudRequestOptions,
   type CloudUpload
 } from './api'
+export { signInToCloud, signOutFromCloud, type CloudSocialProvider } from './auth'
 export {
   CloudClientError,
   discoverCloud,

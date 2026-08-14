@@ -12,6 +12,8 @@ export {
   type CloudDiscovery
 } from './discovery'
 export {
+  cloudActorSchema,
+  cloudSessionSchema,
   commitUploadSchema,
   createDocumentSchema,
   createUploadSchema,
@@ -21,6 +23,8 @@ export {
   parseCommitUpload,
   parseCreateDocument,
   parseCreateUpload,
+  type CloudActorContract,
+  type CloudSession,
   type CommitUploadInput,
   type CreateDocumentInput,
   type CreateUploadInput,
