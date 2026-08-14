@@ -172,6 +172,10 @@ Never skip step 2. Never defer describes to the end. Never batch multiple render
 
 After every 3 content renders, also `describe` root at depth=1 to catch cross-section layout drift.
 
+## Reusable components and libraries
+
+Before constructing a common UI element from primitive shapes, call `get_components` with a semantic name. Prefer enabled library matches first, then local document components. Use `insert_library_component` with the returned stable `libraryId` and `assetKey`; only construct an ad hoc replacement when no suitable reusable component exists.
+
 ## Phase 4 — Polish
 
 1. `stock_photo` — batch ALL named image placeholders in one call

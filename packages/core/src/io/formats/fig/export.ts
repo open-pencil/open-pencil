@@ -13,6 +13,7 @@ import type { GUID } from '@open-pencil/scene-graph/primitives'
 import { decodeBase64 } from '#core/bytes'
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
+import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'
 import { renderThumbnail } from '#core/io/formats/raster'
 import { populateAllLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import {
@@ -416,6 +417,7 @@ export async function exportFigFile(
   const documentNc = makeDocumentNodeChange(docGuid, graph.documentColorSpace)
   const rootNode = graph.getNode(graph.rootId)
   if (rootNode) Object.assign(documentNc, rootNode.source.fig.rawNodeFields)
+  applyEnabledLibrariesPluginData(documentNc, graph)
   const nodeChanges: KiwiNodeChange[] = [documentNc]
 
   const blobs: Uint8Array[] = []

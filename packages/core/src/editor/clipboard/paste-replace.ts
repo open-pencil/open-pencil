@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
+import { getNodeEditCapability } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 import { computeAllLayouts } from '#core/layout'
 
@@ -12,7 +13,10 @@ type CenterNodesAt = (nodeIds: string[], cx: number, cy: number) => void
 export function selectedReplacementTargets(ctx: EditorContext) {
   const selected = [...ctx.state.selectedIds]
     .map((id) => ctx.graph.getNode(id))
-    .filter((node): node is SceneNode => node != null && !node.locked)
+    .filter(
+      (node): node is SceneNode =>
+        node != null && !node.locked && getNodeEditCapability(ctx.graph, node.id).editable
+    )
   const selectedSet = new Set(selected.map((node) => node.id))
   return selected.filter((node) => !node.parentId || !selectedSet.has(node.parentId))
 }

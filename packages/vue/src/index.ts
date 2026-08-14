@@ -219,11 +219,13 @@ export {
   compatibleComponentPropertyDefinitions,
   instanceSwapOptions,
   mergedComponentPropertyValue,
-  useComponentProperties
+  useComponentProperties,
+  useVariantAuthoring
 } from '#vue/controls/component-props'
 export type {
   ComponentPropertyControl,
-  ComponentPropertyOption
+  ComponentPropertyOption,
+  VariantDefinitionControl
 } from '#vue/controls/component-props'
 export type { CornerGeometryKey, CornerRadiusKey } from '#vue/controls/appearance/types'
 export { PageListRoot } from '#vue/primitives/PageList'

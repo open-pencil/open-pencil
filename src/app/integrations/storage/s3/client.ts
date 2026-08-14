@@ -8,6 +8,7 @@ import {
   parseS3ErrorXML,
   type ListedObject
 } from '@/app/integrations/storage/s3/xml'
+import type { LibraryObjectWriteOptions } from '@/app/integrations/storage/types'
 
 export function resolveS3Region(config: S3CompatibleConfig): string {
   const explicit = config.region?.trim()
@@ -204,7 +205,8 @@ export async function putObject(
   key: string,
   body: Uint8Array | string,
   contentType: string,
-  onUploadProgress?: (progress: UploadProgress) => void
+  onUploadProgress?: (progress: UploadProgress) => void,
+  options?: LibraryObjectWriteOptions
 ): Promise<void> {
   const bytes = typeof body === 'string' ? new TextEncoder().encode(body) : body
   // Exact ArrayBuffer so fetch/UA can set Content-Length (required by B2 for large PUTs).
@@ -218,7 +220,9 @@ export async function putObject(
     {
       method: 'PUT',
       headers: {
-        'Content-Type': contentType
+        'Content-Type': contentType,
+        ...(options?.ifMatch ? { 'If-Match': options.ifMatch } : {}),
+        ...(options?.ifNoneMatch ? { 'If-None-Match': options.ifNoneMatch } : {})
       },
       body: payload
     },
@@ -226,6 +230,18 @@ export async function putObject(
   )
   if (!res.ok) {
     throw new S3HttpError(res.status, `Failed to upload ${key}`)
+  }
+}
+
+export async function getObjectValue(
+  config: S3CompatibleConfig,
+  key: string
+): Promise<{ bytes: Uint8Array | null; etag: string | null }> {
+  const res = await s3Request(config, objectURL(config, key), { method: 'GET' })
+  if (res.status === 404) return { bytes: null, etag: null }
+  return {
+    bytes: new Uint8Array(await res.arrayBuffer()),
+    etag: res.headers.get('etag')
   }
 }
 

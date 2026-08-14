@@ -1,4 +1,5 @@
 export { getComponents } from './read/components'
+export { insertLibraryComponent, listLibraries } from './read/libraries'
 export { getFontStatus, listAvailableFonts, listFonts } from './read/fonts'
 export { diffJSX, getJSX } from './read/jsx'
 export { findNodes, getNode, getPageTree } from './read/nodes'

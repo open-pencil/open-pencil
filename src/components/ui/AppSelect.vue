@@ -20,7 +20,7 @@ import type { ComponentUI } from '@/components/ui/types'
 
 interface AppSelectProps<TValue extends string | number> {
   label?: string
-  options: { value: TValue; label: string }[]
+  options: { value: TValue; label: string; disabled?: boolean }[]
   placeholder?: string
   ui?: ComponentUI<AppSelectTheme>
 }
@@ -56,6 +56,7 @@ const styles = tv(theme)()
             v-for="opt in options"
             :key="String(opt.value)"
             :value="opt.value"
+            :disabled="opt.disabled"
             :class="styles.item({ class: ui?.item })"
           >
             <SelectItemIndicator :class="styles.indicator({ class: ui?.indicator })">
