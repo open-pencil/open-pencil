@@ -177,6 +177,7 @@
   "copyMessage": "Kopiuj wiadomość",
   "copyJSXReference": "Skopiuj referencję propsów JSX do schowka",
   "editJSX": "Edit",
+  "viewJSX": "View",
   "applyJSX": "Apply",
   "insertJSX": "Insert",
   "applyingJSX": "Applying…",

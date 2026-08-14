@@ -177,6 +177,7 @@
   "copyMessage": "Nachricht kopieren",
   "copyJSXReference": "JSX-Prop-Referenz in die Zwischenablage kopieren",
   "editJSX": "Edit",
+  "viewJSX": "View",
   "applyJSX": "Apply",
   "insertJSX": "Insert",
   "applyingJSX": "Applying…",

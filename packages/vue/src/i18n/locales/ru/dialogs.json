@@ -177,6 +177,7 @@
   "copyMessage": "Скопировать сообщение",
   "copyJSXReference": "Скопировать справку по JSX-свойствам в буфер",
   "editJSX": "Edit",
+  "viewJSX": "View",
   "applyJSX": "Apply",
   "insertJSX": "Insert",
   "applyingJSX": "Applying…",

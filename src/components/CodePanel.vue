@@ -54,15 +54,21 @@ watch(jsxCode, (value) => {
   if (!draftDirty.value) draft.value = value
 })
 
-async function startEditing() {
+function startEditing() {
   if (jsxFormat.value !== 'openpencil') {
     jsxFormat.value = 'openpencil'
-    await nextTick()
+    void nextTick().then(startEditing)
+    return
   }
   draft.value = jsxCode.value || '<Frame name="New frame" w={320} h={240} fill="#ffffff" />'
   draftDirty.value = false
   applyError.value = ''
   editing.value = true
+}
+
+function stopEditing() {
+  editing.value = false
+  applyError.value = ''
 }
 
 function updateDraft(value: string) {
@@ -173,6 +179,16 @@ function copyReference() {
           </AppTextButton>
         </Tip>
         <AppTextButton
+          v-if="editing"
+          data-test-id="code-panel-view"
+          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
+          @click="stopEditing"
+        >
+          <icon-lucide-eye class="size-3" />
+          {{ dialogs.viewJSX }}
+        </AppTextButton>
+        <AppTextButton
+          v-else
           data-test-id="code-panel-edit"
           :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] hover:bg-hover' }"
           @click="startEditing"

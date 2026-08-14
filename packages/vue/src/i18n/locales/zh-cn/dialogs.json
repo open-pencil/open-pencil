@@ -177,6 +177,7 @@
   "copyMessage": "复制消息",
   "copyJSXReference": "复制 JSX 属性参考到剪贴板",
   "editJSX": "Edit",
+  "viewJSX": "View",
   "applyJSX": "Apply",
   "insertJSX": "Insert",
   "applyingJSX": "Applying…",

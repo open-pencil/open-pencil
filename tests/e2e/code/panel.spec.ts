@@ -18,6 +18,14 @@ function codePanelEmpty() {
   return editor.page.getByTestId('code-panel-empty')
 }
 
+async function enterJSXEditing() {
+  const editorInput = editor.page.locator('[data-slot="code-editor"] .cm-content')
+  if (await editorInput.isVisible()) return editorInput
+  await editor.page.getByTestId('code-panel-edit').click()
+  await expect(editorInput).toBeVisible()
+  return editorInput
+}
+
 function formatToggle() {
   return editor.page.getByTestId('code-panel-format-toggle')
 }
@@ -128,9 +136,7 @@ test('edits and applies JSX as one undoable replacement', async () => {
   })
 
   await codeTab().click()
-  await editor.page.getByTestId('code-panel-edit').click()
-  const input = editor.page.locator('[data-slot="code-editor"] .cm-content')
-  await expect(input).toBeVisible()
+  const input = await enterJSXEditing()
   await input.fill('<Frame name="Edited from JSX" w={320} h={180} fill={solid("#ffffff")} />')
   await editor.page.getByTestId('code-panel-apply-jsx').click()
   await editor.page.waitForFunction(() =>
@@ -167,8 +173,7 @@ test('replaces multiple roots at their original positions and supports redo', as
     store.select([one.id, two.id])
     return [one.id, two.id]
   })
-  await editor.page.getByTestId('code-panel-edit').click()
-  const input = editor.page.locator('[data-slot="code-editor"] .cm-content')
+  const input = await enterJSXEditing()
   await input.fill(
     '<><Frame name="First" w={100} h={100} /><Frame name="Second" w={100} h={100} /></>'
   )
@@ -213,8 +218,7 @@ test('rolls back all roots when one cannot render', async () => {
     store.select([node.id])
   })
   await codeTab().click()
-  await editor.page.getByTestId('code-panel-edit').click()
-  const input = editor.page.locator('[data-slot="code-editor"] .cm-content')
+  const input = await enterJSXEditing()
   await input.fill('<><Frame name="Temporary" /><Instance /></>')
   await editor.page.getByTestId('code-panel-apply-jsx').click()
   await expect(editor.page.getByTestId('code-panel-jsx-error')).toBeVisible()
@@ -225,12 +229,20 @@ test('rolls back all roots when one cannot render', async () => {
   expect(names).not.toContain('Temporary')
 })
 
+test('can leave edit mode without applying the draft', async () => {
+  await codeTab().click()
+  await enterJSXEditing()
+  await expect(editor.page.locator('[data-slot="code-editor"]')).toBeVisible()
+  await editor.page.getByTestId('code-panel-view').click()
+  await expect(editor.page.locator('[data-slot="code-editor"]')).toBeHidden()
+  await expect(editor.page.getByTestId('code-panel-edit')).toBeVisible()
+})
+
 test('keeps large JSX drafts contained inside CodeMirror', async () => {
   test.setTimeout(30_000)
   await codeTab().click()
-  await editor.page.getByTestId('code-panel-edit').click()
   const editorRoot = editor.page.locator('[data-slot="code-editor"]')
-  const input = editorRoot.locator('.cm-content')
+  const input = await enterJSXEditing()
   const largeSource = `<Frame>${'<Text>Large draft</Text>\n'.repeat(2000)}</Frame>`
   await input.fill(largeSource)
 

@@ -36,6 +36,7 @@ export const dialogMessageDefaults = {
   selectLayerForJSX: 'Select a layer to see its JSX code',
   copyJSXReference: 'Copy JSX prop reference to clipboard',
   editJSX: 'Edit',
+  viewJSX: 'View',
   applyJSX: 'Apply',
   insertJSX: 'Insert',
   applyingJSX: 'Applying…',

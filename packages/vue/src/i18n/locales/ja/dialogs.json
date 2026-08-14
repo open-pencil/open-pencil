@@ -177,6 +177,7 @@
   "copyMessage": "メッセージをコピー",
   "copyJSXReference": "JSXのprops参照をクリップボードにコピー",
   "editJSX": "Edit",
+  "viewJSX": "View",
   "applyJSX": "Apply",
   "insertJSX": "Insert",
   "applyingJSX": "Applying…",
