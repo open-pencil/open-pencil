@@ -141,6 +141,8 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await publish.getByLabel('Button updated').click()
   await publish.getByRole('button', { name: 'Publish library' }).click()
   await expect(publish.getByLabel('Revision description')).toBeHidden()
+  await page.getByTestId('left-panel-assets-tab').click()
+  await page.getByRole('button', { name: 'Manage libraries' }).click()
   await page.getByRole('button', { name: 'Publish library' }).click()
   await expect(publish.getByLabel('Card updated')).toBeChecked()
   await expect(publish.getByLabel('Button updated')).toHaveCount(0)
