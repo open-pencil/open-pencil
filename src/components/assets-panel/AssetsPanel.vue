@@ -19,6 +19,7 @@ import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
 import { useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
+import LibraryManagerDialog from '@/components/libraries/LibraryManagerDialog.vue'
 import { useLibraryEntry } from '@/components/libraries/useLibraryEntry'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
@@ -65,10 +66,12 @@ const { panels, commands } = useI18n()
 const query = ref('')
 const assetView = ref<AssetView>('grid')
 const detailsOpen = ref(false)
-const { updateCount: libraryUpdateCount, openManager: openLibraries } = useLibraryEntry(
-  editor,
-  libraryService
-)
+const {
+  open: librariesOpen,
+  initialSection: libraryInitialSection,
+  updateCount: libraryUpdateCount,
+  openManager: openLibraries
+} = useLibraryEntry(editor, libraryService)
 const selectedAssetId = ref<string | null>(null)
 const previewBlob = shallowRef<Blob | null>(null)
 const previewURL = useObjectUrl(previewBlob)
@@ -491,6 +494,8 @@ async function insertSelectedAsset() {
         </template>
       </AppPlaceholder>
     </div>
+
+    <LibraryManagerDialog v-model="librariesOpen" :initial-section="libraryInitialSection" />
 
     <AppDialogRoot
       v-if="selectedAsset"
