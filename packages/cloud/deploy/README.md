@@ -19,13 +19,13 @@ The Cloud container runs database migrations before accepting requests. Named vo
 
 ## Object-store smoke test
 
-From the repository root, while Compose is running:
+From the repository root:
 
 ```sh
 bun --filter @open-pencil/cloud test:e2e
 ```
 
-The test verifies readiness, a presigned single PUT, and a 33 MiB, three-part presigned upload, including ordered ETags, completion, metadata SHA-256, object size, verified GET bytes, and deletion.
+The test runner creates an isolated Compose project and removes its containers and volumes when finished. It verifies object-store readiness, a presigned single PUT, and a 33 MiB, three-part presigned upload, including ordered ETags, completion, metadata SHA-256, object size, verified GET bytes, and deletion. It then exercises the complete Cloud API revision flow against real PostgreSQL and SeaweedFS, including migrations, idempotent commits, stale-base conflicts, multipart cleanup, usage, and soft deletion.
 
 ## Stop
 

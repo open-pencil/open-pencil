@@ -141,6 +141,19 @@ jobs:
       - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test
 
+  cloud-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Run Cloud PostgreSQL and SeaweedFS E2E
+        run: bun --filter @open-pencil/cloud test:e2e
+
   unit-tests:
     timeout-minutes: 10
     runs-on: ubuntu-latest

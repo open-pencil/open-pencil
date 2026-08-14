@@ -45,7 +45,7 @@
     "build": "bunx tsdown --config tsdown.config.ts",
     "check": "bun run typecheck && bun run test && bun run build",
     "test": "bun test tests/client tests/contract tests/server",
-    "test:e2e": "bun tests/e2e/seaweedfs.ts",
+    "test:e2e": "bun tests/e2e/run.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
