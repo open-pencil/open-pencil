@@ -1,7 +1,5 @@
 # Changelog
 
-## Unreleased
-
 ### Added
 
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
@@ -20,6 +18,7 @@
 
 ### Fixed
 
+- Harden collaboration node synchronization against malformed remote source metadata and geometry while excluding derived text-renderer caches.
 - Transfer native `.fig` exports over binary Tauri IPC instead of JSON byte arrays, preventing large desktop saves from being truncated or exhausting WebView memory. (#484)
 - Keep unsaved source-less documents recoverable after their editor tab is closed, matching Figma's retained offline-change behavior.
 - Decode zstd-compressed FIG containers, reject invalid compressed payloads, and preserve exact fixture byte ranges. (#397)
