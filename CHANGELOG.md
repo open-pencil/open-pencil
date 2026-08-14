@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Add reusable remote MCP connections for ACP agents, with Streamable HTTP endpoints and bearer tokens stored in the configured credential backend.
+
 ## 0.14.0 - 2026-08-10
 
 ### Breaking changes

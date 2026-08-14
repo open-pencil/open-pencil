@@ -34,6 +34,40 @@ test('storage settings keep secrets behind the credential manager', async ({ pag
   await expect(secretField.locator('input')).not.toHaveAttribute('placeholder', /Key saved/)
 })
 
+test('MCP connections keep bearer tokens out of ordinary settings', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  await page.getByTestId('app-settings-trigger').click()
+  const section = page.locator('[data-mcp-connections]')
+  await section.getByRole('button', { name: 'Add connection' }).click()
+  await section.getByLabel('Connection name').fill('GitHub')
+  await section.getByLabel('MCP server URL').fill('http://example.com/mcp')
+  await section.getByRole('button', { name: 'Save' }).click()
+  await expect(section.getByRole('alert')).toContainText('must use HTTPS')
+
+  await section.getByLabel('MCP server URL').fill('https://example.com/mcp')
+  await section.getByRole('switch', { name: 'Enable for ACP agents' }).click()
+  await section.getByRole('switch', { name: 'Use bearer authentication' }).click()
+  await section.getByPlaceholder('Enter bearer token').fill('secret-mcp-token')
+  await section.getByRole('button', { name: 'Save' }).click()
+
+  await expect(section).toContainText('GitHub')
+  await expect(section).toContainText('Enabled')
+  await expect(section).not.toContainText('secret-mcp-token')
+
+  await page.getByTestId('app-settings-done').click()
+  await page.reload()
+  await canvas.waitForInit()
+  await page.getByTestId('app-settings-trigger').click()
+  await expect(section).toContainText('https://example.com/mcp')
+  await section.getByRole('button', { name: /GitHub/ }).click()
+  await expect(section.getByPlaceholder(/Key saved/)).toBeVisible()
+  await section.getByRole('button', { name: 'Delete connection' }).click()
+  await expect(section).toContainText('No external MCP connections configured')
+})
+
 test('model library keeps reusable profiles and role assignments', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
