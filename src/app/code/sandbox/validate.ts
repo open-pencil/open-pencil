@@ -4,6 +4,9 @@ type ValidationLimits = {
   outputBytes: number
   elements: number
   depth: number
+  arrayLength?: number
+  objectKeys?: number
+  stringLength?: number
 }
 
 type ValidationState = {
@@ -35,6 +38,9 @@ function validatePrimitive(
     return true
   }
   if (typeof value === 'string') {
+    if (limits.stringLength !== undefined && value.length > limits.stringLength) {
+      throw new Error('Design JSX output contains a string that is too long.')
+    }
     addBytes(state, limits, new TextEncoder().encode(value).byteLength)
     return true
   }
@@ -48,6 +54,9 @@ function validateRecord(
   depth: number
 ): void {
   const keys = Object.keys(record)
+  if (limits.objectKeys !== undefined && keys.length > limits.objectKeys) {
+    throw new Error('Design JSX output contains too many object properties.')
+  }
   for (const key of keys) {
     if (BLOCKED_KEYS.has(key)) throw new Error(`Design JSX output contains blocked key "${key}".`)
   }
@@ -71,6 +80,9 @@ function validateValue(
   if (depth > limits.depth) throw new Error('Design JSX output is too deeply nested.')
   if (validatePrimitive(value, limits, state)) return
   if (Array.isArray(value)) {
+    if (limits.arrayLength !== undefined && value.length > limits.arrayLength) {
+      throw new Error('Design JSX output contains an array that is too long.')
+    }
     for (const item of value) validateValue(item, limits, state, depth + 1)
     return
   }

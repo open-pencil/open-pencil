@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import type { evaluateDesignJSX as EvaluateDesignJSX } from '@/app/code/sandbox/evaluate'
+
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 test.beforeEach(async ({ page }) => {
@@ -11,7 +13,10 @@ test.beforeEach(async ({ page }) => {
 async function evaluate(page: Page, source: string, timeoutMs = 1_000) {
   return page.evaluate(
     async ({ source, timeoutMs }) => {
-      const { evaluateDesignJSX } = await import('@/app/code/sandbox/evaluate')
+      const modulePath = '/src/app/code/sandbox/evaluate.ts'
+      const { evaluateDesignJSX } = (await import(/* @vite-ignore */ modulePath)) as {
+        evaluateDesignJSX: typeof EvaluateDesignJSX
+      }
       return evaluateDesignJSX(source, { timeoutMs })
     },
     { source, timeoutMs }
@@ -68,14 +73,37 @@ test('terminates accidental infinite loops without freezing the host', async ({ 
 
 test('rejects oversized source and output', async ({ page }) => {
   const sourceResult = await page.evaluate(async () => {
-    const { evaluateDesignJSX } = await import('@/app/code/sandbox/evaluate')
+    const modulePath = '/src/app/code/sandbox/evaluate.ts'
+    const { evaluateDesignJSX } = (await import(/* @vite-ignore */ modulePath)) as {
+      evaluateDesignJSX: typeof EvaluateDesignJSX
+    }
     return evaluateDesignJSX('<Text>too large</Text>', { sourceBytes: 4 })
   })
   expect(sourceResult).toEqual({ ok: false, error: 'Design JSX source is too large.' })
 
   const outputResult = await page.evaluate(async () => {
-    const { evaluateDesignJSX } = await import('@/app/code/sandbox/evaluate')
+    const modulePath = '/src/app/code/sandbox/evaluate.ts'
+    const { evaluateDesignJSX } = (await import(/* @vite-ignore */ modulePath)) as {
+      evaluateDesignJSX: typeof EvaluateDesignJSX
+    }
     return evaluateDesignJSX('<Text>{"x".repeat(100)}</Text>', { outputBytes: 20 })
   })
   expect(outputResult).toEqual({ ok: false, error: 'Design JSX output is too large.' })
+
+  const arrayResult = await page.evaluate(async () => {
+    const modulePath = '/src/app/code/sandbox/evaluate.ts'
+    const { evaluateDesignJSX } = (await import(/* @vite-ignore */ modulePath)) as {
+      evaluateDesignJSX: typeof EvaluateDesignJSX
+    }
+    return evaluateDesignJSX(
+      '<Frame>{Array.from({ length: 10 }, (_, i) => <Text>{i}</Text>)}</Frame>',
+      {
+        arrayLength: 5
+      }
+    )
+  })
+  expect(arrayResult).toEqual({
+    ok: false,
+    error: 'Design JSX output contains an array that is too long.'
+  })
 })
