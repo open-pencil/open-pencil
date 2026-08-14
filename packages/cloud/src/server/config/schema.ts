@@ -28,7 +28,12 @@ const rawCloudServerConfigSchema = v.object({
   s3Region: v.pipe(v.string(), v.trim(), v.minLength(1)),
   s3Bucket: v.pipe(v.string(), v.trim(), v.minLength(1)),
   s3AccessKeyId: v.pipe(v.string(), v.trim(), v.minLength(1)),
-  s3SecretAccessKey: v.pipe(v.string(), v.minLength(1))
+  s3SecretAccessKey: v.pipe(v.string(), v.minLength(1)),
+  s3SessionToken: optionalTextSchema,
+  s3ForcePathStyle: v.optional(v.boolean(), true),
+  s3ChecksumVerification: v.optional(v.picklist(['native', 'metadata']), 'native'),
+  s3ServerSideEncryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
+  s3KmsKeyId: optionalTextSchema
 })
 
 export type CloudServerConfig = v.InferOutput<typeof rawCloudServerConfigSchema>
@@ -60,5 +65,8 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
     'appleKeyId',
     'applePrivateKey'
   ])
+  if (config.s3KmsKeyId && config.s3ServerSideEncryption !== 'aws:kms') {
+    throw new CloudConfigError('S3 KMS key ID requires aws:kms server-side encryption')
+  }
   return config
 }

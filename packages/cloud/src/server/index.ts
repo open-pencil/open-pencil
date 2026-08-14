@@ -42,7 +42,14 @@ export {
   type DocumentRouteEnvironment,
   type DocumentService
 } from './documents'
-export type { ObjectDownload, ObjectStore, ObjectUpload, StoredObject } from './objects'
+export type {
+  ObjectDownload,
+  ObjectStore,
+  ObjectStoreCapabilities,
+  ObjectStoreReadiness,
+  ObjectUpload,
+  StoredObject
+} from './objects'
 export {
   createWorkspaceRoutes,
   createWorkspaceService,

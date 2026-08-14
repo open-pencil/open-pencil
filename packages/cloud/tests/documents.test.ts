@@ -106,6 +106,7 @@ describe('Cloud document routes', () => {
       context.objects.put(uploadRow.objectKey, {
         byteSize: 128,
         checksum,
+        checksumVerification: 'native',
         contentType: 'application/octet-stream'
       })
 

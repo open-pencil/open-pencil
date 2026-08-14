@@ -4,6 +4,14 @@ export function createMemoryObjectStore() {
   const stored = new Map<string, StoredObject>()
   const deletedKeys: string[] = []
   const store: ObjectStore = {
+    capabilities: {
+      nativeSHA256: true,
+      multipartUpload: false,
+      conditionalWrites: false
+    },
+    async checkReadiness() {
+      return { ok: true, checksumVerification: 'native' }
+    },
     async createDownload(input) {
       return {
         url: `https://objects.example.com/${input.key}`,

@@ -9,18 +9,76 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl as getSignedURL } from '@aws-sdk/s3-request-presigner'
 
+const CHECKSUM_METADATA_KEY = 'openpencil-sha256'
+const READINESS_BODY = new TextEncoder().encode('openpencil-ready')
+const READINESS_CHECKSUM = 'Hq6g3mmWpyBNobXoWZIz/d0/d8KLjJyEKqNnJh6KXjA='
+
+function encryption(config: CloudServerConfig) {
+  return config.s3ServerSideEncryption
+    ? {
+        ServerSideEncryption: config.s3ServerSideEncryption,
+        ...(config.s3KmsKeyId ? { SSEKMSKeyId: config.s3KmsKeyId } : {})
+      }
+    : {}
+}
+
 export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
   const client = new S3Client({
     endpoint: config.s3Endpoint,
     region: config.s3Region,
-    forcePathStyle: true,
+    forcePathStyle: config.s3ForcePathStyle,
     credentials: {
       accessKeyId: config.s3AccessKeyId,
-      secretAccessKey: config.s3SecretAccessKey
+      secretAccessKey: config.s3SecretAccessKey,
+      ...(config.s3SessionToken ? { sessionToken: config.s3SessionToken } : {})
     }
   })
+  const nativeSHA256 = config.s3ChecksumVerification === 'native'
+
+  async function headObject(key: string) {
+    return client.send(
+      new HeadObjectCommand({
+        Bucket: config.s3Bucket,
+        Key: key,
+        ...(nativeSHA256 ? { ChecksumMode: 'ENABLED' as const } : {})
+      })
+    )
+  }
 
   return {
+    capabilities: {
+      nativeSHA256,
+      multipartUpload: false,
+      conditionalWrites: false
+    },
+
+    async checkReadiness() {
+      const key = `.openpencil/readiness/${crypto.randomUUID()}`
+      try {
+        await client.send(
+          new PutObjectCommand({
+            Bucket: config.s3Bucket,
+            Key: key,
+            Body: READINESS_BODY,
+            ContentType: 'application/octet-stream',
+            ChecksumSHA256: nativeSHA256 ? READINESS_CHECKSUM : undefined,
+            Metadata: { [CHECKSUM_METADATA_KEY]: READINESS_CHECKSUM },
+            ...encryption(config)
+          })
+        )
+        const object = await headObject(key)
+        const checksum = nativeSHA256
+          ? object.ChecksumSHA256
+          : object.Metadata?.[CHECKSUM_METADATA_KEY]
+        return {
+          ok: object.ContentLength === READINESS_BODY.byteLength && checksum === READINESS_CHECKSUM,
+          checksumVerification: nativeSHA256 ? 'native' : 'metadata'
+        }
+      } finally {
+        await client.send(new DeleteObjectCommand({ Bucket: config.s3Bucket, Key: key }))
+      }
+    },
+
     async createDownload(input) {
       const expiresIn = Math.max(1, Math.floor((input.expiresAt.getTime() - Date.now()) / 1000))
       const url = await getSignedURL(
@@ -42,18 +100,24 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
         Bucket: config.s3Bucket,
         Key: input.key,
         ContentType: input.contentType,
-        ChecksumSHA256: input.checksum
+        ChecksumSHA256: nativeSHA256 ? input.checksum : undefined,
+        Metadata: { [CHECKSUM_METADATA_KEY]: input.checksum },
+        ...encryption(config)
       })
       const url = await getSignedURL(client, command, {
         expiresIn,
-        unhoistableHeaders: new Set(['x-amz-checksum-sha256'])
+        unhoistableHeaders: new Set([
+          ...(nativeSHA256 ? ['x-amz-checksum-sha256'] : []),
+          `x-amz-meta-${CHECKSUM_METADATA_KEY}`
+        ])
       })
       return {
         url,
         method: 'PUT',
         headers: {
           'Content-Type': input.contentType,
-          'x-amz-checksum-sha256': input.checksum
+          ...(nativeSHA256 ? { 'x-amz-checksum-sha256': input.checksum } : {}),
+          [`x-amz-meta-${CHECKSUM_METADATA_KEY}`]: input.checksum
         },
         expiresAt: input.expiresAt.toISOString()
       }
@@ -61,18 +125,15 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
 
     async head(key) {
       try {
-        const object = await client.send(
-          new HeadObjectCommand({
-            Bucket: config.s3Bucket,
-            Key: key,
-            ChecksumMode: 'ENABLED'
-          })
-        )
-        if (object.ContentLength == null || !object.ChecksumSHA256 || !object.ContentType)
-          return null
+        const object = await headObject(key)
+        const checksum = nativeSHA256
+          ? object.ChecksumSHA256
+          : object.Metadata?.[CHECKSUM_METADATA_KEY]
+        if (object.ContentLength == null || !checksum || !object.ContentType) return null
         return {
           byteSize: object.ContentLength,
-          checksum: object.ChecksumSHA256,
+          checksum,
+          checksumVerification: nativeSHA256 ? 'native' : 'metadata',
           contentType: object.ContentType
         }
       } catch (error) {

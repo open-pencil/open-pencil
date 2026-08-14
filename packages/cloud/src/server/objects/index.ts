@@ -1,1 +1,8 @@
-export type { ObjectDownload, ObjectStore, ObjectUpload, StoredObject } from './types'
+export type {
+  ObjectDownload,
+  ObjectStore,
+  ObjectStoreCapabilities,
+  ObjectStoreReadiness,
+  ObjectUpload,
+  StoredObject
+} from './types'

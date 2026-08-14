@@ -83,7 +83,20 @@ export function createCloudApp(services: CloudServices) {
     .get('/ready', async (context) => {
       try {
         await services.database.selectFrom('workspace').select('id').limit(1).execute()
-        return context.json({ status: 'ready' as const })
+        const objects = await services.objects.checkReadiness()
+        if (!objects.ok) {
+          return context.json(
+            { status: 'unavailable' as const, dependency: 'object_storage' as const },
+            503
+          )
+        }
+        return context.json({
+          status: 'ready' as const,
+          objectStorage: {
+            checksumVerification: objects.checksumVerification,
+            multipartUpload: services.objects.capabilities.multipartUpload
+          }
+        })
       } catch {
         return context.json({ status: 'unavailable' as const }, 503)
       }

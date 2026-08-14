@@ -19,6 +19,7 @@ import {
   parseCloudServerConfig,
   type CloudDatabase
 } from '../src/server'
+import { createCloudTestDatabase } from './database'
 
 function dummyPostgresDialect(): Dialect {
   return {
@@ -79,6 +80,14 @@ function services() {
     database,
     auth: createCloudAuth(config, database),
     objects: {
+      capabilities: {
+        nativeSHA256: true,
+        multipartUpload: false,
+        conditionalWrites: false
+      },
+      async checkReadiness() {
+        return { ok: true, checksumVerification: 'native' as const }
+      },
       async createDownload() {
         throw new Error('not used')
       },
@@ -145,6 +154,22 @@ describe('createCloudApp', () => {
       }
     })
     expect(untrusted.headers.get('access-control-allow-origin')).toBeNull()
+  })
+
+  test('reports object storage capabilities when ready', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const available = services()
+      available.database = runtime.database
+      const response = await createCloudApp(available).request('/ready')
+      expect(response.status).toBe(200)
+      expect(await response.json()).toEqual({
+        status: 'ready',
+        objectStorage: { checksumVerification: 'native', multipartUpload: false }
+      })
+    } finally {
+      await runtime.close()
+    }
   })
 
   test('reports unavailable readiness when the database cannot execute', async () => {

@@ -11,6 +11,13 @@ function splitOrigins(value: string | undefined): string[] {
     : []
 }
 
+function optionalBoolean(value: string | undefined): boolean | undefined {
+  if (value == null) return undefined
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return undefined
+}
+
 export function cloudServerConfigFromEnvironment(environment: CloudEnvironment): CloudServerConfig {
   return parseCloudServerConfig({
     deployment: environment.OPENPENCIL_CLOUD_DEPLOYMENT ?? 'self-hosted',
@@ -29,6 +36,11 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
     s3Region: environment.S3_REGION,
     s3Bucket: environment.S3_BUCKET,
     s3AccessKeyId: environment.S3_ACCESS_KEY_ID,
-    s3SecretAccessKey: environment.S3_SECRET_ACCESS_KEY
+    s3SecretAccessKey: environment.S3_SECRET_ACCESS_KEY,
+    s3SessionToken: environment.S3_SESSION_TOKEN,
+    s3ForcePathStyle: optionalBoolean(environment.S3_FORCE_PATH_STYLE),
+    s3ChecksumVerification: environment.S3_CHECKSUM_VERIFICATION,
+    s3ServerSideEncryption: environment.S3_SERVER_SIDE_ENCRYPTION,
+    s3KmsKeyId: environment.S3_KMS_KEY_ID
   })
 }
