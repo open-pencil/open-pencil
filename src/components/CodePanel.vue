@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useClipboard, useDebounceFn } from '@vueuse/core'
 import { computed, defineAsyncComponent, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { tv } from 'tailwind-variants'
 
 import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
@@ -24,6 +25,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppTextButton from '@/components/ui/AppTextButton.vue'
 import Tip from '@/components/ui/Tip.vue'
+import statusTheme from '@/theme/status'
 
 const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/CodeEditor.vue'))
 
@@ -69,6 +71,13 @@ const editorLabel = computed(() =>
     ? dialogs.value.codeEditorHTMLCSSLabel
     : dialogs.value.codeEditorDesignLabel
 )
+const statusTone = computed(() => {
+  if (status.value === 'error') return 'error'
+  if (status.value === 'updated') return 'success'
+  return 'neutral'
+})
+const statusStyles = computed(() => tv(statusTheme)({ tone: statusTone.value }))
+
 const statusText = computed(() => {
   if (status.value === 'updating') return dialogs.value.codeUpdating
   if (status.value === 'error') return dialogs.value.codePreviewFailed
@@ -244,8 +253,9 @@ watch(
     >
       <span
         data-test-id="code-panel-status"
-        class="min-w-0 truncate text-[11px]"
-        :class="status === 'error' ? 'text-[var(--color-error)]' : 'text-muted'"
+        class="min-w-0 truncate"
+        :data-tone="statusTone"
+        :class="statusStyles.text()"
       >
         {{ readOnly ? dialogs.codeGeneratedReadOnly : statusText }}
       </span>
@@ -253,9 +263,12 @@ watch(
         <AppTextButton
           v-if="dirty && !readOnly"
           data-test-id="code-panel-reset"
-          :ui="{ base: 'rounded px-2 py-1 text-[11px] hover:bg-hover' }"
+          :ui="{
+            base: 'flex items-center gap-1 rounded px-2 py-1 text-[11px] hover:bg-hover'
+          }"
           @click="resetDraft"
         >
+          <icon-lucide-rotate-ccw class="size-3" />
           {{ dialogs.codeReset }}
         </AppTextButton>
         <AppTextButton

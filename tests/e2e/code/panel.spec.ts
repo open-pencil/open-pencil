@@ -135,6 +135,7 @@ test('Reset restores generated source and original canvas state', async () => {
   await openCodePanel()
   await codeEditor().fill('<Frame name="Reset preview" />')
   await waitForNodeNamed(editor.page, 'Reset preview')
+  await expect(editor.page.getByTestId('code-panel-reset').locator('svg')).toHaveCount(1)
   await editor.page.getByTestId('code-panel-reset').click()
   await waitForNode(editor.page, originalId)
   expect(await hasNode(editor.page, originalId)).toBe(true)
@@ -150,6 +151,7 @@ test('HTML/CSS live preview commits as one undoable session', async () => {
   await expect.poll(() => hasNode(editor.page, originalId)).toBe(false)
   await codeEditor().fill('<div style="width: 220px; height: 110px">Final</div>')
   await expect(editor.page.getByTestId('code-panel-status')).toContainText('Updated live')
+  await expect(editor.page.getByTestId('code-panel-status')).toHaveCSS('color', 'rgb(74, 222, 128)')
 
   await designTab().click()
   await expect.poll(() => getUndoLabel(editor.page)).toBe('Edit HTML/CSS')
