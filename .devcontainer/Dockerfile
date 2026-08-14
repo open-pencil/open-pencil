@@ -6,7 +6,6 @@ ARG CA_CERTIFICATES_VERSION=20250419
 ARG GIT_VERSION=1:2.47.3-0+deb13u1
 ARG GIT_LFS_VERSION=3.6.1-1+deb13u1
 ARG OPENSSH_CLIENT_VERSION=1:10.0p1-7+deb13u4
-ARG SUDO_VERSION=1.9.16p2-3+deb13u2
 
 USER root
 
@@ -16,17 +15,20 @@ RUN apt-get update \
         git=${GIT_VERSION} \
         git-lfs=${GIT_LFS_VERSION} \
         openssh-client=${OPENSSH_CLIENT_VERSION} \
-        sudo=${SUDO_VERSION} \
     && rm -rf /var/lib/apt/lists/* \
-    && git lfs install --system
-
-COPY setup-dependencies /usr/local/bin/open-pencil-setup-dependencies
-
-RUN chown root:root /usr/local/bin/open-pencil-setup-dependencies \
-    && chmod 0755 /usr/local/bin/open-pencil-setup-dependencies \
-    && printf '%s\n' \
-        'bun ALL=(root) NOPASSWD: /usr/local/bin/open-pencil-setup-dependencies' \
-        > /etc/sudoers.d/bun \
-    && chmod 0440 /etc/sudoers.d/bun
+    && git lfs install --system \
+    && install -d -o bun -g bun \
+        /workspace/open-pencil/node_modules \
+        /workspace/open-pencil/packages/scene-graph/node_modules \
+        /workspace/open-pencil/packages/pen/node_modules \
+        /workspace/open-pencil/packages/kiwi/node_modules \
+        /workspace/open-pencil/packages/fig/node_modules \
+        /workspace/open-pencil/packages/core/node_modules \
+        /workspace/open-pencil/packages/dom-css/node_modules \
+        /workspace/open-pencil/packages/vue/node_modules \
+        /workspace/open-pencil/packages/cli/node_modules \
+        /workspace/open-pencil/packages/mcp/node_modules \
+        /workspace/open-pencil/packages/docs/node_modules \
+        /workspace/open-pencil/tools/docs/node_modules
 
 USER bun
