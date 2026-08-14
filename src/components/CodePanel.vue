@@ -234,7 +234,7 @@ watch(
       v-if="error"
       role="alert"
       data-test-id="code-panel-error"
-      class="shrink-0 border-t border-red-500/40 bg-red-500/10 px-3 py-2 text-[11px] text-red-200"
+      class="shrink-0 border-t border-[var(--color-error-border)] bg-[var(--color-error-bg)] px-3 py-2 text-[11px] leading-snug text-[var(--color-error)]"
     >
       {{ error }}
     </div>
@@ -245,7 +245,7 @@ watch(
       <span
         data-test-id="code-panel-status"
         class="min-w-0 truncate text-[11px]"
-        :class="status === 'error' ? 'text-danger' : 'text-muted'"
+        :class="status === 'error' ? 'text-[var(--color-error)]' : 'text-muted'"
       >
         {{ readOnly ? dialogs.codeGeneratedReadOnly : statusText }}
       </span>

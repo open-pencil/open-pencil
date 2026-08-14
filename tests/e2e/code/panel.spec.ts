@@ -115,7 +115,17 @@ test('keeps the last valid preview while showing invalid-code diagnostics', asyn
   await codeEditor().fill('<Frame name="Last valid" />')
   await waitForNodeNamed(editor.page, 'Last valid')
   await codeEditor().fill('<Frame>')
-  await expect(editor.page.getByTestId('code-panel-error')).toBeVisible()
+  const errorAlert = editor.page.getByTestId('code-panel-error')
+  await expect(errorAlert).toBeVisible()
+  await expect(errorAlert).toHaveCSS('color', 'rgb(248, 113, 113)')
+
+  await editor.page.evaluate(async () => {
+    const themeModulePath = '/src/app/shell/theme.ts'
+    const themeModule = await import(themeModulePath)
+    themeModule.useAppTheme().setTheme('light')
+  })
+  await editor.page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
+  await expect(errorAlert).toHaveCSS('color', 'rgb(185, 28, 28)')
   expect(await hasNodeNamed(editor.page, 'Last valid')).toBe(true)
 })
 
