@@ -8,6 +8,15 @@ export {
 } from './auth'
 export { createCloudApp, type CloudAPI, type CloudApp, type CloudServices } from './app'
 export {
+  createUploadCleanupService,
+  startCleanupWorker,
+  type CleanupWorker,
+  type CleanupWorkerOptions,
+  type UploadCleanupOptions,
+  type UploadCleanupResult,
+  type UploadCleanupService
+} from './cleanup'
+export {
   CloudConfigError,
   cloudServerConfigFromEnvironment,
   parseCloudServerConfig,

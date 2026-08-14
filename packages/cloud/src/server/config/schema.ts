@@ -33,7 +33,14 @@ const rawCloudServerConfigSchema = v.object({
   s3ForcePathStyle: v.optional(v.boolean(), true),
   s3ChecksumVerification: v.optional(v.picklist(['native', 'metadata']), 'native'),
   s3ServerSideEncryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
-  s3KmsKeyId: optionalTextSchema
+  s3KmsKeyId: optionalTextSchema,
+  cleanupEnabled: v.optional(v.boolean(), true),
+  cleanupBatchSize: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)),
+    100
+  ),
+  cleanupIntervalMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 60_000),
+  cleanupLeaseDurationMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 5 * 60_000)
 })
 
 export type CloudServerConfig = v.InferOutput<typeof rawCloudServerConfigSchema>

@@ -55,6 +55,12 @@ describe('Cloud server configuration', () => {
       'https://app.example.com',
       'https://desktop.example.com'
     ])
+    expect(config).toMatchObject({
+      cleanupEnabled: true,
+      cleanupBatchSize: 100,
+      cleanupIntervalMs: 60_000,
+      cleanupLeaseDurationMs: 300_000
+    })
   })
 
   test('rejects short auth secrets', () => {

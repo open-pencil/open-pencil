@@ -42,5 +42,6 @@ Add `--volumes` only when you intentionally want to remove all persisted Cloud d
 - Configure `OPENPENCIL_CLOUD_URL` and `OPENPENCIL_CLOUD_TRUSTED_ORIGINS` for the actual browser origins.
 - Keep `S3_CHECKSUM_VERIFICATION=metadata` for this SeaweedFS profile. OpenPencil stores the document SHA-256 as immutable object metadata and verifies it before committing a revision.
 - Configure Google or Apple variables in `.env` only when enabling those providers.
+- Configure `OPENPENCIL_CLOUD_CLEANUP_BATCH_SIZE`, `OPENPENCIL_CLOUD_CLEANUP_INTERVAL_MS`, and `OPENPENCIL_CLOUD_CLEANUP_LEASE_MS` for the expected upload volume. The Node runtime runs a bounded cleanup worker by default; set `OPENPENCIL_CLOUD_CLEANUP_ENABLED=false` when cleanup is managed by a separate process.
 - Back up both named volumes. Immutable revision keys remove any dependency on bucket versioning, but do not replace backups.
 - Scale PostgreSQL and SeaweedFS independently for production; the single-node services here prioritize an understandable reference setup.

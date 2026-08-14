@@ -204,13 +204,17 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
     },
 
     async abortUpload(input) {
-      await client.send(
-        new AbortMultipartUploadCommand({
-          Bucket: config.s3Bucket,
-          Key: input.key,
-          UploadId: input.uploadId
-        })
-      )
+      try {
+        await client.send(
+          new AbortMultipartUploadCommand({
+            Bucket: config.s3Bucket,
+            Key: input.key,
+            UploadId: input.uploadId
+          })
+        )
+      } catch (error) {
+        if (!isNotFoundError(error)) throw error
+      }
     },
 
     async head(key) {

@@ -2,7 +2,9 @@ import {
   cloudServerConfigFromEnvironment,
   createCloudApp,
   createCloudAuth,
-  migrateCloudDatabase
+  createUploadCleanupService,
+  migrateCloudDatabase,
+  startCleanupWorker
 } from '#cloud/server'
 
 import { createNodeCloudDatabase } from './database'
@@ -19,11 +21,20 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
   const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
   const auth = createCloudAuth(config, database)
   await migrateCloudDatabase(database, auth)
+  const objects = createS3ObjectStore(config)
+  const cleanup = config.cleanupEnabled
+    ? startCleanupWorker(createUploadCleanupService(database, objects), {
+        batchSize: config.cleanupBatchSize,
+        intervalMs: config.cleanupIntervalMs,
+        leaseDurationMs: config.cleanupLeaseDurationMs,
+        onError: (error) => console.error('[Cloud] Cleanup worker failed:', error)
+      })
+    : undefined
   const app = createCloudApp({
     config,
     database,
     auth,
-    objects: createS3ObjectStore(config)
+    objects
   })
   const server = Bun.serve({
     fetch: app.fetch,
@@ -36,6 +47,7 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     server,
     async stop() {
       await server.stop()
+      await cleanup?.stop()
       await database.destroy()
     }
   }

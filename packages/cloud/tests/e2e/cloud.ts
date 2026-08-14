@@ -10,7 +10,7 @@ import { createNodeCloudDatabase, createS3ObjectStore } from '@open-pencil/cloud
 import {
   createCloudApp,
   createCloudAuth,
-  createDocumentService,
+  createUploadCleanupService,
   migrateCloudDatabase,
   parseCloudServerConfig,
   type CloudActor,
@@ -148,19 +148,40 @@ try {
     throw new Error('Committed revision download did not match its SHA-256')
   }
 
-  const abandonedUpload = await client.createUpload(document.id, {
-    baseRevisionId: secondRevision.currentRevisionId,
-    byteSize: secondBytes.byteLength,
-    checksum: secondChecksum,
-    contentType: 'application/octet-stream'
-  })
-  if (abandonedUpload.upload.kind !== 'multipart') {
-    throw new Error('Expected cleanup fixture to use multipart upload')
-  }
-  const cleaned = await createDocumentService(database, objects).cleanupExpiredUploads(
-    new Date(Date.now() + 16 * 60 * 1000)
+  const abandonedUploads = await Promise.all(
+    Array.from({ length: 3 }, () =>
+      client.createUpload(document.id, {
+        baseRevisionId: secondRevision.currentRevisionId,
+        byteSize: secondBytes.byteLength,
+        checksum: secondChecksum,
+        contentType: 'application/octet-stream'
+      })
+    )
   )
-  if (cleaned !== 1) throw new Error(`Expected one abandoned upload, received ${cleaned}`)
+  if (abandonedUploads.some((upload) => upload.upload.kind !== 'multipart')) {
+    throw new Error('Expected cleanup fixtures to use multipart uploads')
+  }
+  const cleanupOptions = {
+    batchSize: 2,
+    leaseDurationMs: 5 * 60 * 1000,
+    now: new Date(Date.now() + 16 * 60 * 1000)
+  }
+  const cleanupWorkers = [
+    createUploadCleanupService(database, objects),
+    createUploadCleanupService(database, objects)
+  ]
+  const cleanupResults = await Promise.all(
+    cleanupWorkers.map((cleanup) => cleanup.cleanupExpiredUploads(cleanupOptions))
+  )
+  if (
+    cleanupResults.reduce((total, result) => total + result.claimed, 0) !== 3 ||
+    cleanupResults.reduce((total, result) => total + result.cleaned, 0) !== 3 ||
+    cleanupResults.some((result) => result.failed !== 0)
+  ) {
+    throw new Error(
+      `Concurrent cleanup returned unexpected results: ${JSON.stringify(cleanupResults)}`
+    )
+  }
 
   const usage = await client.getUsage(workspaceBody.workspace.id)
   if (

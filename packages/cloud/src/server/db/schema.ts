@@ -1,9 +1,9 @@
 import type { WorkspaceRole } from '#cloud/contract'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
-export type TimestampColumn = ColumnType<Date, Date | string | undefined, Date | string>
+export type TimestampColumn = ColumnType<Date, Date | string | undefined, Date | string | null>
 
-export type UploadStatus = 'pending' | 'committed' | 'abandoned'
+export type UploadStatus = 'pending' | 'cleaning' | 'committed' | 'abandoned'
 
 export interface WorkspaceTable {
   id: string
@@ -61,6 +61,8 @@ export interface UploadTable {
   contentType: string
   multipartUploadId: string | null
   status: UploadStatus
+  cleanupClaimId: Generated<string | null>
+  cleanupClaimedAt: TimestampColumn | null
   createdBy: string
   createdAt: TimestampColumn
   expiresAt: TimestampColumn

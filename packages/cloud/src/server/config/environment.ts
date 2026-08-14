@@ -18,6 +18,12 @@ function optionalBoolean(value: string | undefined): boolean | undefined {
   return undefined
 }
 
+function optionalInteger(value: string | undefined): number | undefined {
+  if (value == null || value.trim() === '') return undefined
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) ? parsed : undefined
+}
+
 export function cloudServerConfigFromEnvironment(environment: CloudEnvironment): CloudServerConfig {
   return parseCloudServerConfig({
     deployment: environment.OPENPENCIL_CLOUD_DEPLOYMENT ?? 'self-hosted',
@@ -41,6 +47,10 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
     s3ForcePathStyle: optionalBoolean(environment.S3_FORCE_PATH_STYLE),
     s3ChecksumVerification: environment.S3_CHECKSUM_VERIFICATION,
     s3ServerSideEncryption: environment.S3_SERVER_SIDE_ENCRYPTION,
-    s3KmsKeyId: environment.S3_KMS_KEY_ID
+    s3KmsKeyId: environment.S3_KMS_KEY_ID,
+    cleanupEnabled: optionalBoolean(environment.OPENPENCIL_CLOUD_CLEANUP_ENABLED),
+    cleanupBatchSize: optionalInteger(environment.OPENPENCIL_CLOUD_CLEANUP_BATCH_SIZE),
+    cleanupIntervalMs: optionalInteger(environment.OPENPENCIL_CLOUD_CLEANUP_INTERVAL_MS),
+    cleanupLeaseDurationMs: optionalInteger(environment.OPENPENCIL_CLOUD_CLEANUP_LEASE_MS)
   })
 }

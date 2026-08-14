@@ -5,6 +5,7 @@ import type {
   DocumentDownload,
   DocumentSummary
 } from '#cloud/contract'
+import { createUploadCleanupService } from '#cloud/server/cleanup'
 import type { CloudDatabase } from '#cloud/server/db'
 import {
   findDocument,
@@ -34,45 +35,16 @@ export class UploadInvalidError extends Error {
 }
 
 export function createDocumentService(database: Kysely<CloudDatabase>, objects: ObjectStore) {
+  const cleanup = createUploadCleanupService(database, objects)
   return {
     async cleanupExpiredUploads(now = new Date()): Promise<number> {
-      const uploads = await database
-        .selectFrom('upload')
-        .select(['id', 'objectKey', 'multipartUploadId'])
-        .where('status', '=', 'pending')
-        .where('expiresAt', '<=', now)
-        .execute()
-      let cleaned = 0
-      for (const upload of uploads) {
-        const result = await database
-          .updateTable('upload')
-          .set({ status: 'abandoned' })
-          .where('id', '=', upload.id)
-          .where('status', '=', 'pending')
-          .where('expiresAt', '<=', now)
-          .executeTakeFirst()
-        if (Number(result.numUpdatedRows) === 0) continue
-        try {
-          if (upload.multipartUploadId) {
-            await objects.abortUpload({
-              key: upload.objectKey,
-              uploadId: upload.multipartUploadId
-            })
-          } else {
-            await objects.delete(upload.objectKey)
-          }
-        } catch (error) {
-          await database
-            .updateTable('upload')
-            .set({ status: 'pending' })
-            .where('id', '=', upload.id)
-            .where('status', '=', 'abandoned')
-            .execute()
-          throw error
-        }
-        cleaned++
-      }
-      return cleaned
+      const result = await cleanup.cleanupExpiredUploads({
+        batchSize: 100,
+        leaseDurationMs: 5 * 60 * 1000,
+        now
+      })
+      if (result.failed > 0) throw new Error('One or more expired uploads could not be cleaned')
+      return result.cleaned
     },
 
     list(userId: string, workspaceId: string): Promise<DocumentSummary[] | undefined> {
