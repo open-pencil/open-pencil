@@ -59,8 +59,19 @@ export const createUploadSchema = v.object({
 })
 export type CreateUploadInput = v.InferOutput<typeof createUploadSchema>
 
+export const completedUploadPartSchema = v.object({
+  partNumber: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10_000)),
+  etag: v.pipe(v.string(), v.minLength(1), v.maxLength(255))
+})
+
 export const commitUploadSchema = v.object({
-  checksum: checksumSchema
+  checksum: checksumSchema,
+  multipart: v.optional(
+    v.object({
+      uploadId: v.pipe(v.string(), v.minLength(1)),
+      parts: v.pipe(v.array(completedUploadPartSchema), v.minLength(1), v.maxLength(10_000))
+    })
+  )
 })
 export type CommitUploadInput = v.InferOutput<typeof commitUploadSchema>
 

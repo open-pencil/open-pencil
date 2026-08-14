@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CloudAPIError, createCloudClient } from '../src/client'
+import { CloudAPIError, createCloudAPIClient } from '../src/client'
 
 const workspaceId = '11111111-1111-4111-8111-111111111111'
 const documentId = '22222222-2222-4222-8222-222222222222'
@@ -16,10 +16,10 @@ const document = {
   updatedAt: '2026-01-01T00:00:00.000Z'
 }
 
-describe('createCloudClient', () => {
+describe('createCloudAPIClient', () => {
   test('validates document metadata and sends authenticated requests', async () => {
     const requests: Request[] = []
-    const client = createCloudClient('https://cloud.example.com/api', {
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
       fetch: async (input, init) => {
         requests.push(new Request(input, init))
         return Response.json({ documents: [document] })
@@ -35,7 +35,7 @@ describe('createCloudClient', () => {
 
   test('creates upload sessions and commits revisions', async () => {
     const requests: Request[] = []
-    const client = createCloudClient('https://cloud.example.com/api/', {
+    const client = createCloudAPIClient('https://cloud.example.com/api/', {
       fetch: async (input, init) => {
         const request = new Request(input, init)
         requests.push(request)
@@ -43,6 +43,7 @@ describe('createCloudClient', () => {
           return Response.json({
             id: '44444444-4444-4444-8444-444444444444',
             upload: {
+              kind: 'single',
               url: 'https://objects.example.com/upload',
               method: 'PUT',
               headers: { 'x-amz-checksum-sha256': 'checksum' },
@@ -60,6 +61,8 @@ describe('createCloudClient', () => {
       checksum: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=',
       contentType: 'application/octet-stream'
     })
+    expect(upload.upload.kind).toBe('single')
+    if (upload.upload.kind !== 'single') throw new Error('Expected a single upload')
     expect(upload.upload.method).toBe('PUT')
     expect(
       await client.commitUpload(upload.id, {
@@ -70,7 +73,7 @@ describe('createCloudClient', () => {
   })
 
   test('preserves stable API error codes', async () => {
-    const client = createCloudClient('https://cloud.example.com/api', {
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
       fetch: async () => Response.json({ error: { code: 'revision_conflict' } }, { status: 409 })
     })
 

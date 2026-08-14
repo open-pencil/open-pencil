@@ -72,7 +72,7 @@ export function createCloudApp(services: CloudServices) {
   const workspaces = createWorkspaceRoutes(createWorkspaceService(services.database))
   const documents = createDocumentRoutes(createDocumentService(services.database, services.objects))
 
-  return new Hono<CloudEnvironment>()
+  const cloudAPI = new Hono<CloudEnvironment>()
     .use('/api/*', cloudCORS)
     .get('/health', (context) =>
       context.json({
@@ -112,6 +112,8 @@ export function createCloudApp(services: CloudServices) {
     .get('/api/session', (context) => context.json({ user: context.get('actor') }))
     .route('/api', documents)
     .route('/api/workspaces', workspaces)
+  return cloudAPI
 }
 
-export type CloudApp = ReturnType<typeof createCloudApp>
+export type CloudAPI = ReturnType<typeof createCloudApp>
+export type CloudApp = CloudAPI

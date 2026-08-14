@@ -2,7 +2,7 @@ import { useAsyncState } from '@vueuse/core'
 import { computed, ref } from 'vue'
 
 import {
-  createCloudClient,
+  createCloudAPIClient,
   discoverCloud,
   type CloudSocialProvider
 } from '@open-pencil/cloud/client'
@@ -20,7 +20,7 @@ export function useCloudStorageSettings() {
       const url = serverURL.value.trim()
       if (!url) return null
       const discovery = await discoverCloud(url)
-      const client = createCloudClient(discovery.apiURL)
+      const client = createCloudAPIClient(discovery.apiURL)
       const session = await client.getSession()
       const workspaces = session ? (await client.listWorkspaces()).workspaces : []
       return { discovery, session, workspaces }

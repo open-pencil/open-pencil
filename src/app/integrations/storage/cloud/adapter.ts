@@ -1,4 +1,4 @@
-import { createCloudClient, discoverCloud } from '@open-pencil/cloud/client'
+import { createCloudAPIClient, discoverCloud } from '@open-pencil/cloud/client'
 
 import type {
   StorageAdapter,
@@ -40,7 +40,7 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
     if (!discovery.capabilities.documents) {
       throw new Error('This OpenPencil Cloud server does not support document storage')
     }
-    return createCloudClient(discovery.apiURL)
+    return createCloudAPIClient(discovery.apiURL)
   }
 
   return {
@@ -99,14 +99,40 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
         contentType: 'application/octet-stream'
       })
       reportProgress(onProgress, 0, bytes.byteLength)
-      const response = await fetch(pending.upload.url, {
-        method: pending.upload.method,
-        headers: pending.upload.headers,
-        body: Uint8Array.from(bytes)
-      })
-      if (!response.ok) throw new Error(`Cloud document upload failed with HTTP ${response.status}`)
+      let multipart:
+        | { uploadId: string; parts: Array<{ partNumber: number; etag: string }> }
+        | undefined
+      if (pending.upload.kind === 'single') {
+        const response = await fetch(pending.upload.url, {
+          method: pending.upload.method,
+          headers: pending.upload.headers,
+          body: Uint8Array.from(bytes)
+        })
+        if (!response.ok)
+          throw new Error(`Cloud document upload failed with HTTP ${response.status}`)
+      } else {
+        const parts = []
+        let transferredBytes = 0
+        for (const part of pending.upload.parts) {
+          const start = (part.partNumber - 1) * pending.upload.partSize
+          const end = Math.min(bytes.byteLength, start + pending.upload.partSize)
+          const response = await fetch(part.url, {
+            method: part.method,
+            headers: part.headers,
+            body: Uint8Array.from(bytes.subarray(start, end))
+          })
+          if (!response.ok)
+            throw new Error(`Cloud multipart upload failed with HTTP ${response.status}`)
+          const etag = response.headers.get('etag')
+          if (!etag) throw new Error('Cloud multipart upload response did not include an ETag')
+          parts.push({ partNumber: part.partNumber, etag })
+          transferredBytes += end - start
+          reportProgress(onProgress, transferredBytes, bytes.byteLength)
+        }
+        multipart = { uploadId: pending.upload.uploadId, parts }
+      }
       reportProgress(onProgress, bytes.byteLength, bytes.byteLength)
-      const committed = await cloud.commitUpload(pending.id, { checksum })
+      const committed = await cloud.commitUpload(pending.id, { checksum, multipart })
       return { remoteRevisionId: committed.currentRevisionId }
     },
 

@@ -22,6 +22,7 @@ export function createMemoryObjectStore() {
     },
     async createUpload(input) {
       return {
+        kind: 'single',
         url: `https://objects.example.com/${input.key}`,
         method: 'PUT',
         headers: {
@@ -31,6 +32,8 @@ export function createMemoryObjectStore() {
         expiresAt: input.expiresAt.toISOString()
       }
     },
+    completeUpload: async () => undefined,
+    abortUpload: async () => undefined,
     async head(key) {
       return stored.get(key) ?? null
     },

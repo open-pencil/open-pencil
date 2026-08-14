@@ -93,6 +93,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('byte_size', 'bigint', (column) => column.notNull())
     .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .addColumn('content_type', 'text', (column) => column.notNull())
+    .addColumn('multipart_upload_id', 'text')
     .addColumn('expires_at', 'timestamptz', (column) => column.notNull())
     .addCheckConstraint('upload_status_check', sql`status in ('pending', 'committed', 'abandoned')`)
     .execute()

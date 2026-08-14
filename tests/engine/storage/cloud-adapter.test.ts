@@ -83,6 +83,7 @@ describe('OpenPencil Cloud storage adapter', () => {
         return Response.json({
           id: '44444444-4444-4444-8444-444444444444',
           upload: {
+            kind: 'single',
             url: 'https://objects.example.com/upload',
             method: 'PUT',
             headers: { 'x-amz-checksum-sha256': 'signed-checksum' },

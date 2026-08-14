@@ -7,8 +7,8 @@ import {
   DocumentNotFoundError,
   UploadInvalidError
 } from '#cloud/server/documents/service'
+import { validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
-import { ValiError } from 'valibot'
 
 export type DocumentRouteEnvironment = {
   Variables: {
@@ -17,9 +17,6 @@ export type DocumentRouteEnvironment = {
 }
 
 function domainError(context: Context, error: unknown): Response | null {
-  if (error instanceof ValiError) {
-    return context.json({ error: { code: 'invalid_request' as const } }, 400)
-  }
   if (error instanceof DocumentNotFoundError) {
     return context.json({ error: { code: 'not_found' as const } }, 404)
   }
@@ -56,20 +53,24 @@ export function createDocumentRoutes(service: DocumentService) {
         throw error
       }
     })
-    .post('/workspaces/:workspaceId/documents', async (context) => {
-      try {
-        const document = await service.create(
-          context.get('actor').userId,
-          context.req.param('workspaceId'),
-          parseCreateDocument(await context.req.json())
-        )
-        return context.json({ document }, 201)
-      } catch (error) {
-        const response = domainError(context, error)
-        if (response) return response
-        throw error
+    .post(
+      '/workspaces/:workspaceId/documents',
+      validatedJSON(parseCreateDocument),
+      async (context) => {
+        try {
+          const document = await service.create(
+            context.get('actor').userId,
+            context.req.param('workspaceId'),
+            context.req.valid('json')
+          )
+          return context.json({ document }, 201)
+        } catch (error) {
+          const response = domainError(context, error)
+          if (response) return response
+          throw error
+        }
       }
-    })
+    )
     .delete('/documents/:documentId', async (context) => {
       try {
         await service.remove(context.get('actor').userId, context.req.param('documentId'))
@@ -94,12 +95,12 @@ export function createDocumentRoutes(service: DocumentService) {
         throw error
       }
     })
-    .post('/documents/:documentId/uploads', async (context) => {
+    .post('/documents/:documentId/uploads', validatedJSON(parseCreateUpload), async (context) => {
       try {
         const result = await service.createUpload(
           context.get('actor').userId,
           context.req.param('documentId'),
-          parseCreateUpload(await context.req.json())
+          context.req.valid('json')
         )
         return context.json(result, 201)
       } catch (error) {
@@ -108,12 +109,12 @@ export function createDocumentRoutes(service: DocumentService) {
         throw error
       }
     })
-    .post('/uploads/:uploadId/commit', async (context) => {
+    .post('/uploads/:uploadId/commit', validatedJSON(parseCommitUpload), async (context) => {
       try {
         const document = await service.commitUpload(
           context.get('actor').userId,
           context.req.param('uploadId'),
-          parseCommitUpload(await context.req.json())
+          context.req.valid('json')
         )
         return context.json({ document })
       } catch (error) {

@@ -1,7 +1,7 @@
 export {
   CloudAPIError,
-  createCloudClient,
-  type CloudClient,
+  createCloudAPIClient,
+  type CloudAPIClient,
   type CloudRequestOptions,
   type CloudUpload
 } from './api'

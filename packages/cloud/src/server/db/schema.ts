@@ -59,6 +59,7 @@ export interface UploadTable {
   checksum: string
   byteSize: number
   contentType: string
+  multipartUploadId: string | null
   status: UploadStatus
   createdBy: string
   createdAt: TimestampColumn

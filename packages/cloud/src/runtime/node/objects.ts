@@ -1,17 +1,24 @@
 import type { CloudServerConfig } from '#cloud/server'
 import type { ObjectStore } from '#cloud/server/objects'
 import {
+  AbortMultipartUploadCommand,
+  CompleteMultipartUploadCommand,
+  CreateMultipartUploadCommand,
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
-  S3Client
+  S3Client,
+  UploadPartCommand
 } from '@aws-sdk/client-s3'
 import { getSignedUrl as getSignedURL } from '@aws-sdk/s3-request-presigner'
 
 const CHECKSUM_METADATA_KEY = 'openpencil-sha256'
 const READINESS_BODY = new TextEncoder().encode('openpencil-ready')
 const READINESS_CHECKSUM = 'Hq6g3mmWpyBNobXoWZIz/d0/d8KLjJyEKqNnJh6KXjA='
+const MULTIPART_THRESHOLD = 32 * 1024 * 1024
+const MULTIPART_PART_SIZE = 16 * 1024 * 1024
+const MAX_MULTIPART_PARTS = 10_000
 
 function encryption(config: CloudServerConfig) {
   return config.s3ServerSideEncryption
@@ -48,7 +55,7 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
   return {
     capabilities: {
       nativeSHA256,
-      multipartUpload: false,
+      multipartUpload: true,
       conditionalWrites: false
     },
 
@@ -95,6 +102,48 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
     },
 
     async createUpload(input) {
+      if (input.byteSize > MULTIPART_THRESHOLD) {
+        const created = await client.send(
+          new CreateMultipartUploadCommand({
+            Bucket: config.s3Bucket,
+            Key: input.key,
+            ContentType: input.contentType,
+            Metadata: { [CHECKSUM_METADATA_KEY]: input.checksum },
+            ...encryption(config)
+          })
+        )
+        if (!created.UploadId) throw new Error('S3 did not return a multipart upload ID')
+        const partCount = Math.ceil(input.byteSize / MULTIPART_PART_SIZE)
+        if (partCount > MAX_MULTIPART_PARTS) throw new Error('Object requires too many S3 parts')
+        const expiresIn = Math.max(1, Math.floor((input.expiresAt.getTime() - Date.now()) / 1000))
+        const parts = await Promise.all(
+          Array.from({ length: partCount }, async (_, index) => {
+            const partNumber = index + 1
+            return {
+              partNumber,
+              url: await getSignedURL(
+                client,
+                new UploadPartCommand({
+                  Bucket: config.s3Bucket,
+                  Key: input.key,
+                  UploadId: created.UploadId,
+                  PartNumber: partNumber
+                }),
+                { expiresIn }
+              ),
+              method: 'PUT' as const,
+              headers: {}
+            }
+          })
+        )
+        return {
+          kind: 'multipart',
+          uploadId: created.UploadId,
+          partSize: MULTIPART_PART_SIZE,
+          parts,
+          expiresAt: input.expiresAt.toISOString()
+        }
+      }
       const expiresIn = Math.max(1, Math.floor((input.expiresAt.getTime() - Date.now()) / 1000))
       const command = new PutObjectCommand({
         Bucket: config.s3Bucket,
@@ -112,6 +161,7 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
         ])
       })
       return {
+        kind: 'single',
         url,
         method: 'PUT',
         headers: {
@@ -121,6 +171,29 @@ export function createS3ObjectStore(config: CloudServerConfig): ObjectStore {
         },
         expiresAt: input.expiresAt.toISOString()
       }
+    },
+
+    async completeUpload(input) {
+      await client.send(
+        new CompleteMultipartUploadCommand({
+          Bucket: config.s3Bucket,
+          Key: input.key,
+          UploadId: input.uploadId,
+          MultipartUpload: {
+            Parts: input.parts.map((part) => ({ ETag: part.etag, PartNumber: part.partNumber }))
+          }
+        })
+      )
+    },
+
+    async abortUpload(input) {
+      await client.send(
+        new AbortMultipartUploadCommand({
+          Bucket: config.s3Bucket,
+          Key: input.key,
+          UploadId: input.uploadId
+        })
+      )
     },
 
     async head(key) {

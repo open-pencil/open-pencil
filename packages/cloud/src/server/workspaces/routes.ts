@@ -1,9 +1,9 @@
 import { parseCreateWorkspace } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
+import { validatedJSON } from '#cloud/server/validation'
 import type { WorkspaceService } from '#cloud/server/workspaces/service'
 import { WorkspaceSlugConflictError } from '#cloud/server/workspaces/service'
 import { Hono } from 'hono'
-import { ValiError } from 'valibot'
 
 export type WorkspaceRouteEnvironment = {
   Variables: {
@@ -17,15 +17,14 @@ export function createWorkspaceRoutes(service: WorkspaceService) {
       const workspaces = await service.list(context.get('actor').userId)
       return context.json({ workspaces })
     })
-    .post('/', async (context) => {
+    .post('/', validatedJSON(parseCreateWorkspace), async (context) => {
       try {
-        const input = parseCreateWorkspace(await context.req.json())
-        const workspace = await service.create(context.get('actor').userId, input)
+        const workspace = await service.create(
+          context.get('actor').userId,
+          context.req.valid('json')
+        )
         return context.json({ workspace }, 201)
       } catch (error) {
-        if (error instanceof ValiError) {
-          return context.json({ error: { code: 'invalid_request' as const } }, 400)
-        }
         if (error instanceof WorkspaceSlugConflictError) {
           return context.json({ error: { code: 'slug_conflict' as const } }, 409)
         }

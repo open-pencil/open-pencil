@@ -37,7 +37,7 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
     async cleanupExpiredUploads(now = new Date()): Promise<number> {
       const uploads = await database
         .selectFrom('upload')
-        .select(['id', 'objectKey'])
+        .select(['id', 'objectKey', 'multipartUploadId'])
         .where('status', '=', 'pending')
         .where('expiresAt', '<=', now)
         .execute()
@@ -52,7 +52,14 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
           .executeTakeFirst()
         if (Number(result.numUpdatedRows) === 0) continue
         try {
-          await objects.delete(upload.objectKey)
+          if (upload.multipartUploadId) {
+            await objects.abortUpload({
+              key: upload.objectKey,
+              uploadId: upload.multipartUploadId
+            })
+          } else {
+            await objects.delete(upload.objectKey)
+          }
         } catch (error) {
           await database
             .updateTable('upload')
@@ -180,19 +187,27 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
           checksum: input.checksum,
           byteSize: input.byteSize,
           contentType: input.contentType,
+          multipartUploadId: null,
           status: 'pending',
           createdBy: userId,
           expiresAt
         })
         .execute()
-      const upload = await objects.createUpload({
+      const objectUpload = await objects.createUpload({
         key: objectKey,
         byteSize: input.byteSize,
         checksum: input.checksum,
         contentType: input.contentType,
         expiresAt
       })
-      return { id: uploadId, upload }
+      if (objectUpload.kind === 'multipart') {
+        await database
+          .updateTable('upload')
+          .set({ multipartUploadId: objectUpload.uploadId })
+          .where('id', '=', uploadId)
+          .execute()
+      }
+      return { id: uploadId, upload: objectUpload }
     },
 
     async commitUpload(
@@ -211,6 +226,7 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
           'upload.checksum',
           'upload.byteSize',
           'upload.contentType',
+          'upload.multipartUploadId',
           'upload.status',
           'upload.expiresAt',
           'workspaceMember.role'
@@ -225,6 +241,19 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
         const document = await findDocument(database, userId, upload.documentId)
         if (!document) throw new DocumentNotFoundError()
         return document
+      }
+      if (input.multipart) {
+        if (
+          !objects.capabilities.multipartUpload ||
+          input.multipart.uploadId !== upload.multipartUploadId
+        ) {
+          throw new UploadInvalidError()
+        }
+        await objects.completeUpload({
+          key: upload.objectKey,
+          uploadId: input.multipart.uploadId,
+          parts: input.multipart.parts
+        })
       }
       if (upload.status !== 'pending' || new Date(upload.expiresAt).getTime() <= Date.now()) {
         throw new UploadInvalidError()

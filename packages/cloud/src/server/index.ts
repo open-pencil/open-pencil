@@ -6,7 +6,7 @@ export {
   type CloudAuth,
   type CloudSessionResolver
 } from './auth'
-export { createCloudApp, type CloudApp, type CloudServices } from './app'
+export { createCloudApp, type CloudAPI, type CloudApp, type CloudServices } from './app'
 export {
   CloudConfigError,
   cloudServerConfigFromEnvironment,
@@ -43,11 +43,15 @@ export {
   type DocumentService
 } from './documents'
 export type {
+  CompletedObjectPart,
   ObjectDownload,
+  ObjectMultipartUpload,
+  ObjectSingleUpload,
   ObjectStore,
   ObjectStoreCapabilities,
   ObjectStoreReadiness,
   ObjectUpload,
+  ObjectUploadPart,
   StoredObject
 } from './objects'
 export {

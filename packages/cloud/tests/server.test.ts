@@ -94,6 +94,8 @@ function services() {
       async createUpload() {
         throw new Error('not used')
       },
+      completeUpload: noOperation,
+      abortUpload: noOperation,
       async head() {
         return null
       },

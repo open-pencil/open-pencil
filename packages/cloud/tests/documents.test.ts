@@ -96,7 +96,7 @@ describe('Cloud document routes', () => {
       expect(uploadResponse.status).toBe(201)
       const upload = (await uploadResponse.json()) as {
         id: string
-        upload: { url: string; headers: Record<string, string> }
+        upload: { kind: string; url: string; headers: Record<string, string> }
       }
       const uploadRow = await context.runtime.database
         .selectFrom('upload')
