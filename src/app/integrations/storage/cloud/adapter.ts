@@ -1,11 +1,10 @@
-import { createCloudAPIClient, discoverCloud } from '@open-pencil/cloud/client'
-
 import type {
   StorageAdapter,
   StorageDocumentMetadata,
   StorageProviderRuntime,
   StorageTransferProgress
 } from '../types'
+import { cloudConnectionService } from './service'
 import { createCloudTransport } from './transport'
 import { uploadCloudObject } from './upload'
 
@@ -39,11 +38,12 @@ export function createCloudStorageAdapter(runtime: StorageProviderRuntime): Stor
   const workspaceId = requiredPreference(runtime, WORKSPACE_ID_FIELD)
 
   async function client() {
-    const discovery = await discoverCloud(serverURL, { fetch: transport.apiFetch })
-    if (!discovery.capabilities.documents) {
+    const connection = await cloudConnectionService.connect(serverURL)
+    if (!connection.discovery?.capabilities.documents) {
       throw new Error('This OpenPencil Cloud server does not support document storage')
     }
-    return createCloudAPIClient(discovery.apiURL, { fetch: transport.apiFetch })
+    if (!connection.client) throw new Error('OpenPencil Cloud is unavailable')
+    return connection.client
   }
 
   return {

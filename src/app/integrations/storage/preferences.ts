@@ -1,22 +1,13 @@
-import { useLocalStorage } from '@vueuse/core'
-
+import {
+  activeStorageProviderID,
+  readStoragePreferences,
+  writeStoragePreferenceUnchecked,
+  type StoragePreferences
+} from './preference-store'
 import { storageProviderRegistry } from './providers'
 import type { StorageFieldID, StorageProviderID } from './types'
 
-export type StoragePreferences = Record<StorageProviderID, Record<StorageFieldID, string>>
-
-export const activeStorageProviderID = useLocalStorage<StorageProviderID>(
-  'open-pencil:storage:provider',
-  's3-compatible'
-)
-
-const storedPreferences = useLocalStorage<StoragePreferences>('open-pencil:storage:preferences', {})
-
-export function readStoragePreferences(
-  providerID: StorageProviderID
-): Readonly<Record<StorageFieldID, string>> {
-  return { ...storedPreferences.value[providerID] }
-}
+export { activeStorageProviderID, readStoragePreferences, type StoragePreferences }
 
 export function writeStoragePreference(
   providerID: StorageProviderID,
@@ -27,13 +18,7 @@ export function writeStoragePreference(
   if (!provider.preferenceFields.some((definition) => definition.id === field)) {
     throw new Error(`Unknown preference field for ${providerID}: ${field}`)
   }
-  storedPreferences.value = {
-    ...storedPreferences.value,
-    [providerID]: {
-      ...storedPreferences.value[providerID],
-      [field]: value.trim()
-    }
-  }
+  writeStoragePreferenceUnchecked(providerID, field, value)
 }
 
 export function storagePreferencesComplete(providerID: StorageProviderID): boolean {

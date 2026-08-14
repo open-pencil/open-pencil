@@ -45,6 +45,25 @@ describe('OpenPencil Cloud storage adapter', () => {
           authentication: { socialProviders: [], enterpriseSSO: false }
         })
       }
+      if (url.endsWith('/api/session')) {
+        return Response.json({
+          user: { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
+        })
+      }
+      if (url.endsWith('/api/workspaces')) {
+        return Response.json({
+          workspaces: [
+            {
+              id: workspaceId,
+              name: 'Team',
+              slug: 'team',
+              role: 'admin',
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z'
+            }
+          ]
+        })
+      }
       return Response.json({ documents: [document()] })
     }
     try {
@@ -76,6 +95,25 @@ describe('OpenPencil Cloud storage adapter', () => {
           authURL: 'https://cloud.example.com/api/auth',
           capabilities: { documents: true, workspaces: true, collaboration: false },
           authentication: { socialProviders: [], enterpriseSSO: false }
+        })
+      }
+      if (request.url.endsWith('/api/session')) {
+        return Response.json({
+          user: { userId: 'alice', email: 'alice@example.com', name: 'Alice' }
+        })
+      }
+      if (request.url.endsWith('/workspaces')) {
+        return Response.json({
+          workspaces: [
+            {
+              id: workspaceId,
+              name: 'Team',
+              slug: 'team',
+              role: 'admin',
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z'
+            }
+          ]
         })
       }
       if (request.url.endsWith('/documents')) return Response.json({ documents: [document()] })

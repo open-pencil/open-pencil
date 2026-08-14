@@ -44,7 +44,7 @@ const cloudWorkspace = computed({
   get: () => preferenceDrafts.value['workspace-id'] ?? '',
   set: (value: string) => {
     preferenceDrafts.value['workspace-id'] = value
-    writeStoragePreference(provider.value.id, 'workspace-id', value)
+    cloudSettings.selectWorkspace(value)
   }
 })
 const configured = computed(
@@ -219,8 +219,8 @@ onMounted(() => void refreshStatuses())
         </div>
         <div v-else class="flex gap-2">
           <button
-            v-for="socialProvider in cloudSettings.state.value.discovery.authentication
-              .socialProviders"
+            v-for="socialProvider in cloudSettings.state.value.discovery?.authentication
+              .socialProviders ?? []"
             :key="socialProvider"
             type="button"
             class="flex-1 rounded bg-hover px-2 py-1.5 text-[10px] capitalize text-surface hover:bg-active"
