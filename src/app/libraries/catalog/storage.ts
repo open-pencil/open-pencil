@@ -74,8 +74,19 @@ function decodeLatest(bytes: Uint8Array): StoredLibraryLatestManifest {
     candidate.schemaVersion !== 1 ||
     !candidate.summary ||
     typeof candidate.summary !== 'object' ||
-    Array.isArray(candidate.summary) ||
-    typeof (candidate.summary as { libraryId?: unknown }).libraryId !== 'string'
+    Array.isArray(candidate.summary)
+  ) {
+    throw new Error('Invalid component library manifest')
+  }
+  const summary = candidate.summary as Partial<LibrarySummary>
+  if (
+    typeof summary.libraryId !== 'string' ||
+    typeof summary.name !== 'string' ||
+    typeof summary.latestRevisionId !== 'string' ||
+    typeof summary.publishedAt !== 'string' ||
+    typeof summary.assetCount !== 'number' ||
+    !Number.isSafeInteger(summary.assetCount) ||
+    summary.assetCount < 0
   ) {
     throw new Error('Invalid component library manifest')
   }
@@ -126,6 +137,9 @@ export class StorageLibraryCatalog implements LibraryCatalog {
     const latest = latestValue.bytes ? decodeLatest(latestValue.bytes).summary : null
     if ((input.previousRevisionId ?? null) !== (latest?.latestRevisionId ?? null)) {
       throw new Error('Library revision conflict: latest revision has changed')
+    }
+    if (latest && !latestValue.etag) {
+      throw new Error('Storage provider does not support conditional library publication')
     }
     const revision = await createLibraryRevision(input)
     const manifest = revision.manifest

@@ -219,8 +219,17 @@ export class LibraryService implements ComponentCatalog {
     const previousBinding = editor.graph.enabledLibraries.get(libraryId)
 
     let appliedPlans: ReturnType<typeof planLibraryInstanceUpdates> = []
+    let createdRootIds: string[] = []
     const applyRevision = () => {
+      const existingNodeIds = new Set(editor.graph.nodes.keys())
       for (const asset of updatable) materializeLibraryAsset(editor.graph, latest, asset.key)
+      createdRootIds = [...editor.graph.getAllNodes()]
+        .filter((node) => {
+          if (existingNodeIds.has(node.id)) return false
+          const parent = node.parentId ? editor.graph.getNode(node.parentId) : undefined
+          return !parent || existingNodeIds.has(parent.id)
+        })
+        .map((node) => node.id)
       appliedPlans = planLibraryInstanceUpdates(
         editor.graph,
         libraryId,
@@ -244,14 +253,9 @@ export class LibraryService implements ComponentCatalog {
         editor.graph.swapInstanceComponent(plan.instanceId, plan.previousComponentId)
         reapplyInstanceComponentProperties(editor, plan.instanceId)
       }
-      const latestRoots = [...editor.graph.getAllNodes()].filter((node) => {
-        const identity = node.librarySource?.identity
-        if (identity?.libraryId !== libraryId || identity.revisionId !== update.latestRevisionId)
-          return false
-        const parent = node.parentId ? editor.graph.getNode(node.parentId) : undefined
-        return parent?.librarySource?.identity.revisionId !== update.latestRevisionId
-      })
-      for (const root of latestRoots) editor.graph.deleteNode(root.id)
+      for (const rootId of createdRootIds) {
+        if (editor.graph.getNode(rootId)) editor.graph.deleteNode(rootId)
+      }
       if (previousBinding) editor.graph.enabledLibraries.set(libraryId, previousBinding)
       else editor.graph.enabledLibraries.delete(libraryId)
       editor.requestRender()

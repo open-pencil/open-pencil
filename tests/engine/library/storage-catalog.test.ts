@@ -89,6 +89,25 @@ describe('storage library catalog', () => {
     ).rejects.toThrow('hash mismatch')
   })
 
+  test('rejects updates when the provider cannot return latest-manifest ETags', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const initial = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph: sourceGraph()
+    })
+    objects.getObjectValue = async (key) => ({ bytes: await objects.getObject(key), etag: null })
+    await expect(
+      catalog.publishRevision({
+        libraryId: 'design-system',
+        name: 'Design system',
+        graph: sourceGraph(),
+        previousRevisionId: initial.manifest.revisionId
+      })
+    ).rejects.toThrow('does not support conditional library publication')
+  })
+
   test('allows only one concurrent latest-pointer update', async () => {
     const objects = new MemoryObjects()
     const first = new StorageLibraryCatalog(objects)
