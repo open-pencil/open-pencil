@@ -64,12 +64,13 @@ function isHelper(value: unknown): value is DesignJSXHelperDescriptor {
 
 function convertValue(value: unknown): unknown {
   if (isHelper(value)) {
-    if (!(value.__openPencilHelper in HELPERS)) {
-      throw new Error(`Unknown Design JSX helper "${value.__openPencilHelper}".`)
+    const helperName = value.__openPencilHelper
+    const helper = Object.hasOwn(HELPERS, helperName)
+      ? (HELPERS[helperName as HelperName] as (...args: unknown[]) => unknown)
+      : undefined
+    if (typeof helper !== 'function') {
+      throw new TypeError(`Unknown Design JSX helper "${helperName}".`)
     }
-    const helper = HELPERS[value.__openPencilHelper as HelperName] as (
-      ...args: unknown[]
-    ) => unknown
     return helper(...value.args.map(convertValue))
   }
   if (Array.isArray(value)) return value.map(convertValue)
@@ -91,5 +92,6 @@ function convertTree(value: unknown): TreeNode {
 }
 
 export function convertDesignJSXRoots(values: unknown[]): TreeNode[] {
+  // Call validateDesignJSXOutput first; it enforces the depth bound used by this recursion.
   return values.map(convertTree)
 }

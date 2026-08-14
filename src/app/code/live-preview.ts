@@ -131,6 +131,8 @@ export function commitDesignJSXSession(store: EditorStore, session: DesignJSXEdi
   const after = session.previewSnapshot
   if (!after) return
   const previewIds = [...session.previewNodeIds]
+  const originalSnapshot = session.originalSnapshot
+  const originalSelectionIds = [...session.originalSelectionIds]
   store.pushUndoEntry({
     label: session.originalSelectionIds.length > 0 ? 'Edit JSX' : 'Insert JSX',
     forward: () => {
@@ -138,8 +140,8 @@ export function commitDesignJSXSession(store: EditorStore, session: DesignJSXEdi
       store.select(previewIds)
     },
     inverse: () => {
-      store.restorePageFromSnapshot(session.originalSnapshot)
-      store.select(session.originalSelectionIds)
+      store.restorePageFromSnapshot(originalSnapshot)
+      store.select(originalSelectionIds)
     }
   })
 }

@@ -7,6 +7,7 @@ import {
 
 import { sandboxDocument } from '@/app/code/sandbox/document'
 import {
+  DESIGN_JSX_DEFAULT_READY_TIMEOUT_MS,
   DESIGN_JSX_DEFAULT_TIMEOUT_MS,
   DESIGN_JSX_MAX_SOURCE_BYTES,
   resolveDesignJSXValidationLimits,
@@ -54,7 +55,9 @@ export async function evaluateDesignJSX(
   return new Promise((resolve) => {
     const id = crypto.randomUUID()
     const timeoutMs = limits.timeoutMs ?? DESIGN_JSX_DEFAULT_TIMEOUT_MS
+    const readyTimeoutMs = limits.readyTimeoutMs ?? DESIGN_JSX_DEFAULT_READY_TIMEOUT_MS
     let settled = false
+    let timer: ReturnType<typeof setTimeout>
 
     const finish = (result: DesignJSXSandboxResult) => {
       if (settled) return
@@ -75,6 +78,12 @@ export async function evaluateDesignJSX(
         error?: string
       }
       if (message.type === 'open-pencil-design-jsx-ready') {
+        clearTimeout(timer)
+        // eslint-disable-next-line promise/no-multiple-resolved -- finish has a settled guard
+        timer = setTimeout(
+          () => finish({ ok: false, error: 'Design JSX execution timed out.' }),
+          timeoutMs
+        )
         iframe.contentWindow?.postMessage({ type: 'open-pencil-design-jsx-run', id, code }, '*')
         return
       }
@@ -90,9 +99,9 @@ export async function evaluateDesignJSX(
         finish({ ok: false, error: error instanceof Error ? error.message : String(error) })
       }
     }
-    const timer = setTimeout(
-      () => finish({ ok: false, error: 'Design JSX execution timed out.' }),
-      timeoutMs
+    timer = setTimeout(
+      () => finish({ ok: false, error: 'Design JSX sandbox did not become ready.' }),
+      readyTimeoutMs
     )
     window.addEventListener('message', onMessage)
   })

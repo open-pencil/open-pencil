@@ -6,6 +6,7 @@ export const DESIGN_JSX_MAX_ARRAY_LENGTH = 5_000
 export const DESIGN_JSX_MAX_OBJECT_KEYS = 1_000
 export const DESIGN_JSX_MAX_STRING_LENGTH = 100_000
 export const DESIGN_JSX_DEFAULT_TIMEOUT_MS = 1_000
+export const DESIGN_JSX_DEFAULT_READY_TIMEOUT_MS = 5_000
 
 export type DesignJSXValidationLimits = {
   outputBytes: number
@@ -25,6 +26,7 @@ export type DesignJSXSandboxLimits = {
   objectKeys?: number
   stringLength?: number
   timeoutMs?: number
+  readyTimeoutMs?: number
 }
 
 export function resolveDesignJSXValidationLimits(

@@ -28,7 +28,8 @@ function completionType(label: string): 'class' | 'function' | 'property' {
 function completeDesignJSX(context: CompletionContext): CompletionResult | null {
   const before = context.matchBefore(/[\w]*$/)
   if (!before || (before.from === before.to && !context.explicit)) return null
-  const line = context.state.doc.lineAt(context.pos).text.slice(0, context.pos - before.from)
+  const documentLine = context.state.doc.lineAt(context.pos)
+  const line = documentLine.text.slice(0, context.pos - documentLine.from)
   const isInsideTag = line.lastIndexOf('<') > line.lastIndexOf('>')
   const labels = isInsideTag ? [...ELEMENTS, ...PROPS] : HELPERS
   return {

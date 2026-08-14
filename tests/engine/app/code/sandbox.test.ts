@@ -95,10 +95,12 @@ describe('Design JSX sandbox output', () => {
   })
 
   test('rejects unknown helper descriptors during trusted conversion', () => {
-    const roots = validateDesignJSXOutput(
-      frame({ fill: { __openPencilHelper: 'unknown', args: [] } }),
-      limits
-    )
-    expect(() => convertDesignJSXRoots(roots)).toThrow('Unknown Design JSX helper')
+    for (const helperName of ['unknown', 'toString', 'constructor', 'valueOf']) {
+      const roots = validateDesignJSXOutput(
+        frame({ fill: { __openPencilHelper: helperName, args: [] } }),
+        limits
+      )
+      expect(() => convertDesignJSXRoots(roots)).toThrow('Unknown Design JSX helper')
+    }
   })
 })

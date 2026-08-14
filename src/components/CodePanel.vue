@@ -85,16 +85,16 @@ const statusText = computed(() => {
   return dialogs.value.jsxUpToDate
 })
 
-function beginDesignSession(): boolean {
-  if (designSession.value) return true
+function beginDesignSession(): DesignJSXEditSession | null {
+  if (designSession.value) return designSession.value
   const result = createDesignJSXEditSession(store)
   if (!result.ok) {
     status.value = 'error'
     error.value = result.error
-    return false
+    return null
   }
   designSession.value = result.session
-  return true
+  return result.session
 }
 
 function beginDOMSession(): DOMCodeSession {
@@ -103,13 +103,16 @@ function beginDOMSession(): DOMCodeSession {
 }
 
 async function commitCurrentSession(): Promise<void> {
+  const design = designSession.value
+  const dom = domSession
+  designSession.value = null
+  domSession = null
+  if (!design && !dom) return
   await pendingPreview
   await previewQueue
   updateVersion += 1
-  if (designSession.value) commitDesignJSXSession(store, designSession.value)
-  if (domSession) commitDOMCodeSession(store, domSession)
-  designSession.value = null
-  domSession = null
+  if (design) commitDesignJSXSession(store, design)
+  if (dom) commitDOMCodeSession(store, dom)
   pendingPreview = undefined
 }
 
@@ -120,10 +123,11 @@ async function runPreview(version: number): Promise<void> {
   let result: { ok: true } | { ok: false; error: string }
   if (source.value === 'html-css') {
     result = await previewDOMCode(store, beginDOMSession(), draft.value)
-  } else if (beginDesignSession()) {
-    result = await previewDesignJSX(store, designSession.value as DesignJSXEditSession, draft.value)
   } else {
-    result = { ok: false, error: error.value }
+    const session = beginDesignSession()
+    result = session
+      ? await previewDesignJSX(store, session, draft.value)
+      : { ok: false, error: error.value }
   }
   if (version !== updateVersion) return
   if (!result.ok) {
@@ -152,13 +156,15 @@ function updateDraft(value: string): void {
 }
 
 async function resetDraft(): Promise<void> {
+  const design = designSession.value
+  const dom = domSession
+  designSession.value = null
+  domSession = null
   await pendingPreview
   await previewQueue
   updateVersion += 1
-  if (designSession.value) resetDesignJSXPreview(store, designSession.value)
-  if (domSession) resetDOMCodePreview(store, domSession)
-  designSession.value = null
-  domSession = null
+  if (design) resetDesignJSXPreview(store, design)
+  if (dom) resetDOMCodePreview(store, dom)
   pendingPreview = undefined
   draft.value = baseline.value
   error.value = ''
@@ -216,9 +222,8 @@ watch(
         :ui="{ trigger: 'h-7 min-w-0 flex-1 text-[11px]' }"
         @update:model-value="changeSource"
       />
-      <Tip :label="dialogs.copyJSXReference">
+      <Tip v-if="source !== 'html-css'" :label="dialogs.copyJSXReference">
         <AppTextButton
-          v-if="source !== 'html-css'"
           data-test-id="code-panel-copy-ref"
           :ui="{ base: 'rounded p-1.5 text-[11px] hover:bg-hover' }"
           @click="copyReference(JSX_REFERENCE)"
