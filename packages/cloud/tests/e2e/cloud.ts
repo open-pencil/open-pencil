@@ -10,6 +10,7 @@ import { createNodeCloudDatabase, createS3ObjectStore } from '@open-pencil/cloud
 import {
   createCloudApp,
   createCloudAuth,
+  createDocumentCleanupService,
   createUploadCleanupService,
   migrateCloudDatabase,
   parseCloudServerConfig,
@@ -194,6 +195,32 @@ try {
   await client.deleteDocument(document.id)
   if ((await client.listDocuments(workspaceBody.workspace.id)).length !== 0) {
     throw new Error('Soft-deleted document remained in the workspace listing')
+  }
+  const documentCleanup = await createDocumentCleanupService(
+    database,
+    objects
+  ).cleanupDeletedDocuments({
+    batchSize: 1,
+    leaseDurationMs: 5 * 60 * 1000,
+    retentionMs: 0
+  })
+  if (
+    documentCleanup.cleaned !== 1 ||
+    documentCleanup.objectsDeleted !== 2 ||
+    documentCleanup.bytesReclaimed !== firstBytes.byteLength + secondBytes.byteLength
+  ) {
+    throw new Error(
+      `Document cleanup returned unexpected results: ${JSON.stringify(documentCleanup)}`
+    )
+  }
+  if (
+    await database
+      .selectFrom('document')
+      .select('id')
+      .where('id', '=', document.id)
+      .executeTakeFirst()
+  ) {
+    throw new Error('Retained document metadata was not removed')
   }
   console.log('Cloud full-stack E2E passed (PostgreSQL, single PUT, multipart, conflict, cleanup)')
 } finally {

@@ -1,31 +1,49 @@
+import type { DocumentCleanupResult, DocumentCleanupService } from './documents'
 import type { UploadCleanupResult, UploadCleanupService } from './uploads'
 
 export type CleanupWorkerOptions = {
   batchSize: number
+  documentRetentionMs: number
   intervalMs: number
   leaseDurationMs: number
   signal?: AbortSignal
   onError?: (error: unknown) => void
 }
 
+export type CleanupResult = {
+  uploads: UploadCleanupResult
+  documents: DocumentCleanupResult
+}
+
+export type CleanupServices = {
+  documents: DocumentCleanupService
+  uploads: UploadCleanupService
+}
+
 export type CleanupWorker = {
-  runOnce(): Promise<UploadCleanupResult>
+  runOnce(): Promise<CleanupResult>
   stop(): Promise<void>
 }
 
 export function startCleanupWorker(
-  cleanup: UploadCleanupService,
+  cleanup: CleanupServices,
   options: CleanupWorkerOptions
 ): CleanupWorker {
   const controller = new AbortController()
   const abort = () => controller.abort()
   options.signal?.addEventListener('abort', abort, { once: true })
 
-  async function runOnce(): Promise<UploadCleanupResult> {
-    return cleanup.cleanupExpiredUploads({
+  async function runOnce(): Promise<CleanupResult> {
+    const uploads = await cleanup.uploads.cleanupExpiredUploads({
       batchSize: options.batchSize,
       leaseDurationMs: options.leaseDurationMs
     })
+    const documents = await cleanup.documents.cleanupDeletedDocuments({
+      batchSize: options.batchSize,
+      leaseDurationMs: options.leaseDurationMs,
+      retentionMs: options.documentRetentionMs
+    })
+    return { uploads, documents }
   }
 
   async function loop(): Promise<void> {

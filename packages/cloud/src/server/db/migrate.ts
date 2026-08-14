@@ -5,11 +5,13 @@ import { Migrator, type Migration, type MigrationProvider } from 'kysely/migrati
 
 import * as foundation from './migrations/001_foundation'
 import * as cleanupClaims from './migrations/002_upload_cleanup_claims'
+import * as documentCleanupClaims from './migrations/003_document_cleanup_claims'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
   '001_foundation': foundation,
-  '002_upload_cleanup_claims': cleanupClaims
+  '002_upload_cleanup_claims': cleanupClaims,
+  '003_document_cleanup_claims': documentCleanupClaims
 }
 
 class CloudMigrationProvider implements MigrationProvider {

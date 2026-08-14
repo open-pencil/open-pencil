@@ -31,6 +31,8 @@ export interface DocumentTable {
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
   deletedAt: TimestampColumn | null
+  cleanupClaimId: Generated<string | null>
+  cleanupClaimedAt: TimestampColumn | null
 }
 
 export interface StorageObjectTable {

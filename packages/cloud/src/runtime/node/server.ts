@@ -2,6 +2,7 @@ import {
   cloudServerConfigFromEnvironment,
   createCloudApp,
   createCloudAuth,
+  createDocumentCleanupService,
   createUploadCleanupService,
   migrateCloudDatabase,
   startCleanupWorker
@@ -23,12 +24,19 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
   await migrateCloudDatabase(database, auth)
   const objects = createS3ObjectStore(config)
   const cleanup = config.cleanupEnabled
-    ? startCleanupWorker(createUploadCleanupService(database, objects), {
-        batchSize: config.cleanupBatchSize,
-        intervalMs: config.cleanupIntervalMs,
-        leaseDurationMs: config.cleanupLeaseDurationMs,
-        onError: (error) => console.error('[Cloud] Cleanup worker failed:', error)
-      })
+    ? startCleanupWorker(
+        {
+          documents: createDocumentCleanupService(database, objects),
+          uploads: createUploadCleanupService(database, objects)
+        },
+        {
+          batchSize: config.cleanupBatchSize,
+          documentRetentionMs: config.documentRetentionMs,
+          intervalMs: config.cleanupIntervalMs,
+          leaseDurationMs: config.cleanupLeaseDurationMs,
+          onError: (error) => console.error('[Cloud] Cleanup worker failed:', error)
+        }
+      )
     : undefined
   const app = createCloudApp({
     config,

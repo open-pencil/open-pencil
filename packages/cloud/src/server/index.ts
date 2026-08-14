@@ -14,10 +14,16 @@ export {
 } from './api'
 export { createCloudApp, type CloudApp, type CloudServices } from './app'
 export {
+  createDocumentCleanupService,
   createUploadCleanupService,
   startCleanupWorker,
+  type CleanupResult,
+  type CleanupServices,
   type CleanupWorker,
   type CleanupWorkerOptions,
+  type DocumentCleanupOptions,
+  type DocumentCleanupResult,
+  type DocumentCleanupService,
   type UploadCleanupOptions,
   type UploadCleanupResult,
   type UploadCleanupService

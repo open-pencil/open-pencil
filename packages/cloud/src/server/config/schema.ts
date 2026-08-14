@@ -40,7 +40,11 @@ const rawCloudServerConfigSchema = v.object({
     100
   ),
   cleanupIntervalMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 60_000),
-  cleanupLeaseDurationMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 5 * 60_000)
+  cleanupLeaseDurationMs: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1000)), 5 * 60_000),
+  documentRetentionMs: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(0)),
+    30 * 24 * 60 * 60_000
+  )
 })
 
 export type CloudServerConfig = v.InferOutput<typeof rawCloudServerConfigSchema>

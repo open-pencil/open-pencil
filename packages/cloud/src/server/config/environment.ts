@@ -51,6 +51,7 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
     cleanupEnabled: optionalBoolean(environment.OPENPENCIL_CLOUD_CLEANUP_ENABLED),
     cleanupBatchSize: optionalInteger(environment.OPENPENCIL_CLOUD_CLEANUP_BATCH_SIZE),
     cleanupIntervalMs: optionalInteger(environment.OPENPENCIL_CLOUD_CLEANUP_INTERVAL_MS),
-    cleanupLeaseDurationMs: optionalInteger(environment.OPENPENCIL_CLOUD_CLEANUP_LEASE_MS)
+    cleanupLeaseDurationMs: optionalInteger(environment.OPENPENCIL_CLOUD_CLEANUP_LEASE_MS),
+    documentRetentionMs: optionalInteger(environment.OPENPENCIL_CLOUD_DOCUMENT_RETENTION_MS)
   })
 }
