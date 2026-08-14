@@ -9,7 +9,7 @@ const endpoint = process.env.S3_ENDPOINT ?? 'http://localhost:8333'
 const bucket = process.env.S3_BUCKET ?? 'openpencil-smoke'
 const accessKeyId = process.env.S3_ACCESS_KEY_ID ?? 'openpencil'
 const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY ?? 'openpencil-development-secret'
-const region = process.env.S3_REGION ?? 'us-east-1'
+const provider = process.env.S3_COMPAT_PROVIDER ?? 'S3-compatible storage'
 
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
@@ -17,7 +17,7 @@ const config = parseCloudServerConfig({
   databaseURL: 'postgresql://openpencil:openpencil-development-password@localhost/openpencil',
   authSecret: 'object-store-smoke-secret-at-least-32-characters',
   s3Endpoint: endpoint,
-  s3Region: region,
+  s3Region: process.env.S3_REGION ?? 'us-east-1',
   s3Bucket: bucket,
   s3AccessKeyId: accessKeyId,
   s3SecretAccessKey: secretAccessKey,
@@ -27,7 +27,7 @@ const config = parseCloudServerConfig({
 
 const client = new S3Client({
   endpoint,
-  region,
+  region: process.env.S3_REGION ?? 'us-east-1',
   forcePathStyle: true,
   credentials: { accessKeyId, secretAccessKey }
 })
@@ -44,7 +44,7 @@ if (!readiness.ok || readiness.checksumVerification !== 'metadata') {
   throw new Error(`Unexpected object-store readiness: ${JSON.stringify(readiness)}`)
 }
 
-const singleBytes = new TextEncoder().encode('OpenPencil Cloud SeaweedFS smoke')
+const singleBytes = new TextEncoder().encode(`OpenPencil Cloud ${provider} smoke`)
 const singleChecksum = createHash('sha256').update(singleBytes).digest('base64')
 const singleKey = `smoke/${crypto.randomUUID()}-single.fig`
 const singleUpload = await store.createUpload({
@@ -119,5 +119,5 @@ const downloadedChecksum = createHash('sha256')
 if (downloadedChecksum !== checksum) throw new Error('Downloaded object checksum did not match')
 await store.delete(key)
 console.log(
-  `SeaweedFS smoke passed (single PUT, ${parts.length} multipart parts, verified GET, ${byteSize} bytes)`
+  `${provider} smoke passed (single PUT, ${parts.length} multipart parts, verified GET, ${byteSize} bytes)`
 )

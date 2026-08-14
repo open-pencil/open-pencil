@@ -27,6 +27,38 @@ bun --filter @open-pencil/cloud test:e2e
 
 The test runner creates an isolated Compose project and removes its containers and volumes when finished. It verifies object-store readiness, a presigned single PUT, and a 33 MiB, three-part presigned upload, including ordered ETags, completion, metadata SHA-256, object size, verified GET bytes, and deletion. It then exercises the complete Cloud API revision flow against real PostgreSQL and SeaweedFS, including migrations, idempotent commits, stale-base conflicts, multipart cleanup, usage, and soft deletion.
 
+## Garage compatibility profile
+
+Garage is available as a lightweight secondary S3-compatible profile:
+
+```sh
+cd packages/cloud/deploy
+docker compose -f compose.garage.yml up -d --wait
+```
+
+Run its isolated compatibility test from the repository root:
+
+```sh
+bun --filter @open-pencil/cloud test:e2e:garage
+```
+
+The profile pins Garage `v2.3.0`, creates a single-node layout, access key, and bucket automatically, and persists metadata and object data in separate volumes. Configure Cloud with:
+
+```text
+S3_ENDPOINT=http://garage:3900
+S3_REGION=garage
+S3_FORCE_PATH_STYLE=true
+S3_CHECKSUM_VERIFICATION=metadata
+```
+
+Do not configure `S3_SERVER_SIDE_ENCRYPTION` or `S3_KMS_KEY_ID` for Garage. This profile verifies integrity through OpenPencil SHA-256 object metadata rather than provider-computed native S3 checksums. The single-node profile is for compatibility and lightweight self-hosting; production redundancy requires a deliberate multi-node Garage layout.
+
+Stop and remove the Garage profile with:
+
+```sh
+docker compose -f compose.garage.yml down
+```
+
 ## Stop
 
 ```sh
