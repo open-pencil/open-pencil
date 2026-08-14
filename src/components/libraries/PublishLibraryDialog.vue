@@ -123,29 +123,38 @@ async function publish() {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="publishLibraryDialogOpen" size="sm">
+  <AppDialogRoot v-model:open="publishLibraryDialogOpen" size="md" height="tall">
     <AppDialogHeader :heading="panels.publishLibrary" :description="panels.publishLibraryHelp" />
-    <form class="flex min-h-0 flex-col gap-3 px-4 py-3" @submit.prevent="publish">
-      <label class="flex flex-col gap-1 text-[11px] text-muted">
-        {{ panels.libraryId }}
-        <AppInput v-model="libraryId" required :disabled="!!publication" />
-      </label>
-      <label class="flex flex-col gap-1 text-[11px] text-muted">
-        {{ panels.libraryName }}
-        <AppInput v-model="libraryName" required />
-      </label>
-      <label class="flex flex-col gap-1 text-[11px] text-muted">
+    <form class="flex min-h-0 flex-1 flex-col gap-3 px-4 py-4" @submit.prevent="publish">
+      <div class="grid grid-cols-2 gap-3">
+        <label class="flex flex-col gap-1.5 text-xs text-muted">
+          {{ panels.libraryId }}
+          <AppInput v-model="libraryId" required size="md" :disabled="!!publication" />
+        </label>
+        <label class="flex flex-col gap-1.5 text-xs text-muted">
+          {{ panels.libraryName }}
+          <AppInput v-model="libraryName" required size="md" />
+        </label>
+      </div>
+      <AppInput
+        v-model="query"
+        type="search"
+        size="md"
+        :placeholder="panels.searchLibraryChanges"
+      />
+      <label class="flex flex-col gap-1.5 text-xs text-muted">
         {{ panels.revisionDescription }}
-        <AppTextarea v-model="description" />
+        <AppTextarea v-model="description" :rows="2" />
       </label>
-      <div class="flex items-center justify-between rounded bg-surface px-2.5 py-2 text-xs">
+      <div
+        class="flex items-center justify-between rounded-lg border border-border bg-input px-3 py-2 text-xs"
+      >
         <span class="text-muted">{{ panels.libraryDestination }}</span>
         <span>{{
           service.catalogSource === 'storage' ? panels.storageLibraries : panels.localLibraries
         }}</span>
       </div>
-      <AppInput v-model="query" type="search" :placeholder="panels.searchLibraryChanges" />
-      <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-border">
+      <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border">
         <div class="flex items-center gap-2 border-b border-border px-3 py-2 text-xs font-medium">
           <AppCheckbox
             :model-value="selectionState"
@@ -176,7 +185,7 @@ async function publish() {
           <label
             v-for="change in visibleChanges"
             :key="change.asset.key"
-            class="flex items-center gap-2 border-b border-border px-3 py-2 last:border-b-0"
+            class="flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-b-0"
           >
             <AppCheckbox
               :model-value="selectedKeys.has(change.asset.key)"
@@ -184,7 +193,7 @@ async function publish() {
               @update:model-value="(value) => toggleAsset(change.asset.key, value)"
             />
             <div
-              class="flex size-8 shrink-0 items-center justify-center rounded bg-surface text-muted"
+              class="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-canvas text-muted"
             >
               <icon-lucide-layout-template
                 v-if="change.asset.type === 'COMPONENT_SET'"
@@ -202,14 +211,14 @@ async function publish() {
     <AppDialogFooter>
       <button
         type="button"
-        class="h-7 rounded px-3 text-xs text-muted hover:bg-hover"
+        class="h-8 rounded-md px-3 text-xs text-muted hover:bg-hover"
         @click="publishLibraryDialogOpen = false"
       >
         {{ panels.cancel }}
       </button>
       <button
         type="button"
-        class="h-7 rounded bg-accent px-3 text-xs text-white disabled:opacity-50"
+        class="h-8 rounded-md bg-accent px-4 text-xs font-medium text-white hover:bg-accent/90 disabled:opacity-50"
         :disabled="
           publishing ||
           loading ||
