@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { useClipboard } from '@vueuse/core'
-import { computed, defineAsyncComponent, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, ref, watch } from 'vue'
 
 import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
@@ -54,7 +54,11 @@ watch(jsxCode, (value) => {
   if (!draftDirty.value) draft.value = value
 })
 
-function startEditing() {
+async function startEditing() {
+  if (jsxFormat.value !== 'openpencil') {
+    jsxFormat.value = 'openpencil'
+    await nextTick()
+  }
   draft.value = jsxCode.value || '<Frame name="New frame" w={320} h={240} fill="#ffffff" />'
   draftDirty.value = false
   applyError.value = ''
@@ -94,6 +98,7 @@ function errorMessage(error: unknown) {
 }
 
 function toggleImporter() {
+  editing.value = false
   showImporter.value = !showImporter.value
 }
 
@@ -188,7 +193,7 @@ function copyReference() {
     </div>
 
     <div
-      v-if="showImporter || !jsxCode"
+      v-if="!editing && (showImporter || !jsxCode)"
       data-test-id="code-panel-importer"
       class="shrink-0 border-b border-border p-3"
     >
