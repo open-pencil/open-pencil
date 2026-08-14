@@ -154,16 +154,16 @@ Comparación característica por característica de las capacidades de Figma Des
 
 | Característica | Estado | Notas |
 |---------------|--------|-------|
-| Crear componentes | 🟡 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> crea desde frame/grupo o envuelve selección; sin UI de propiedades de componente aún |
-| Conjuntos de componentes | 🟡 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> combina componentes; borde punteado púrpura; sin edición de propiedades de variante |
-| Instancias de componentes | 🟡 | Crear instancia desde menú contextual con clonación de hijos y mapeo componentId; sync en vivo; sin UI de edición de overrides |
-| Variantes | 🔲 | Cambio de variante y selección por propiedades |
-| Propiedades de componente | 🔲 | Propiedades booleanas, texto, intercambio de instancia |
+| Crear componentes | ✅ | Creación desde frame/grupo; UI de texto, visibilidad, intercambio de instancia y variantes |
+| Conjuntos de componentes | ✅ | Variantes multidimensionales dispersas, validación de duplicados y valor predeterminado superior izquierdo |
+| Instancias de componentes | ✅ | Exploración de Assets, inserción, propiedades y overrides editables, sincronización y revisión de actualizaciones |
+| Variantes | ✅ | Autoría, cambio en instancias y alternativa superior izquierda |
+| Propiedades de componente | ✅ | Texto, visibilidad booleana e intercambio de instancia |
 | Propagación de overrides | ✅ | Cambios en componente principal se propagan; overrides preservados |
 | Variables (color, número, string, booleano) | 🟡 | `COLOR` con UI completa; `FLOAT`/STRING/BOOLEAN definidos sin UI de edición |
 | Colecciones y modos de variables | 🟡 | Colecciones, modos, cambio activeMode funcionan; sin UI de theming por variable |
 | Estilos (color, texto, efecto, layout) | 🔲 | Presets de estilo reutilizables con nombre |
-| Bibliotecas (publicar, compartir, actualizar) | 🔲 | Bibliotecas compartidas de componentes/estilos |
+| Bibliotecas (publicar, compartir, actualizar) | ✅ | Revisiones locales/de almacenamiento inmutables, habilitación, publicación selectiva, revisión de actualizaciones, uso sin conexión y persistencia `.fig` |
 | Desacoplar instancia | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> convierte instancia en frame |
 | Ir al componente principal | ✅ | Navegar al componente fuente, cross-page |
 

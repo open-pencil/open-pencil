@@ -154,16 +154,16 @@ Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design a
 
 | Fonctionnalité | Statut | Notes |
 |---------------|--------|-------|
-| Créer des composants | 🟡 | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> crée depuis frame/groupe ; pas d'UI de propriétés de composant encore |
-| Ensembles de composants | 🟡 | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> combine des composants ; bordure pointillée violette ; pas d'édition de propriétés de variante |
-| Instances de composants | 🟡 | Créer instance depuis menu contextuel ; sync en direct ; pas d'UI d'édition de surcharges |
-| Variantes | 🔲 | Changement de variante et sélection par propriétés |
-| Propriétés de composant | 🔲 | Propriétés booléennes, texte, échange d'instance |
+| Créer des composants | ✅ | Création depuis cadre/groupe ; UI de texte, visibilité, échange d'instance et variantes |
+| Ensembles de composants | ✅ | Variantes multidimensionnelles clairsemées, validation des doublons et valeur par défaut en haut à gauche |
+| Instances de composants | ✅ | Navigation Assets, insertion, propriétés et surcharges modifiables, synchronisation et revue des mises à jour |
+| Variantes | ✅ | Création, changement sur les instances et repli en haut à gauche |
+| Propriétés de composant | ✅ | Texte, visibilité booléenne et échange d'instance |
 | Propagation des surcharges | ✅ | Changements du composant principal propagés ; surcharges préservées |
 | Variables (couleur, nombre, chaîne, booléen) | 🟡 | `COLOR` avec UI complète ; `FLOAT`/STRING/BOOLEAN définis sans UI d'édition |
 | Collections et modes de variables | 🟡 | Collections, modes, changement activeMode fonctionnent ; pas d'UI de thématisation |
 | Styles (couleur, texte, effet, layout) | 🔲 | Presets de style réutilisables nommés |
-| Bibliothèques (publier, partager, mettre à jour) | 🔲 | Bibliothèques partagées de composants/styles |
+| Bibliothèques (publier, partager, mettre à jour) | ✅ | Révisions locales/de stockage immuables, activation, publication sélective, revue des mises à jour, mode hors ligne et persistance `.fig` |
 | Détacher une instance | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> convertit une instance en frame |
 | Aller au composant principal | ✅ | Naviguer vers le composant source, cross-page |
 

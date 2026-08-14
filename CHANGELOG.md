@@ -35,6 +35,10 @@
 - Allow supported AI model profiles to set a provider-specific reasoning effort. (#454)
 - Show unavailable or substituted document fonts with affected-layer selection and retry actions, and expose font fidelity through the Figma API and MCP tooling. (#503)
 
+### Changed
+
+- Move MCP connections into their own Settings destination instead of presenting them as part of model configuration.
+
 ### Performance
 
 - Defer JSX generation and syntax highlighting until the Code panel is active, keeping large canvas selections responsive. (#500)
