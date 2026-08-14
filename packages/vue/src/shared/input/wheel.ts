@@ -5,6 +5,9 @@ import type { Editor } from '@open-pencil/core/editor'
 
 import { createRafScheduler } from '#vue/shared/input/raf-scheduler'
 
+const WHEEL_DELTA_LINE = 1
+const WHEEL_DELTA_PAGE = 2
+
 type WheelAccum = {
   deltaX: number
   deltaY: number
@@ -14,20 +17,35 @@ type WheelAccum = {
   hasZoom: boolean
 }
 
+type WheelPanInput = Pick<WheelEvent, 'deltaX' | 'deltaY' | 'deltaMode' | 'shiftKey'>
+type WheelModifierInput = Pick<WheelEvent, 'ctrlKey' | 'metaKey'>
+
+export type WheelPanDelta = { dx: number; dy: number }
+
 function isMacOs() {
   return typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
 }
 
-function normalizeWheelDelta(e: WheelEvent): { dx: number; dy: number } {
-  let { deltaX, deltaY } = e
-  if (e.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+function normalizedWheelDelta(event: WheelPanInput): WheelPanDelta {
+  let { deltaX, deltaY } = event
+  if (event.deltaMode === WHEEL_DELTA_LINE) {
     deltaX *= 40
     deltaY *= 40
-  } else if (e.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+  } else if (event.deltaMode === WHEEL_DELTA_PAGE) {
     deltaX *= 800
     deltaY *= 800
   }
   return { dx: deltaX, dy: deltaY }
+}
+
+export function isWheelZoom(event: WheelModifierInput): boolean {
+  return event.ctrlKey || event.metaKey
+}
+
+export function wheelPanDelta(event: WheelPanInput): WheelPanDelta {
+  const delta = normalizedWheelDelta(event)
+  if (!event.shiftKey || Math.abs(delta.dx) >= Math.abs(delta.dy)) return delta
+  return { dx: delta.dy, dy: 0 }
 }
 
 const WHEEL_ZOOM_SPEED = 1.25
@@ -71,18 +89,18 @@ export function setupWheelPanZoom(canvasRef: Ref<HTMLCanvasElement | null>, edit
 
   const wheelScheduler = createRafScheduler(flushWheel)
 
-  function onWheel(e: WheelEvent) {
+  function onWheel(event: WheelEvent) {
     const canvas = canvasRef.value
     if (!canvas) return
-    const { dx, dy } = normalizeWheelDelta(e)
 
-    if (e.ctrlKey || e.metaKey) {
+    if (isWheelZoom(event)) {
       const rect = canvas.getBoundingClientRect()
-      wheelAccum.zoomCenterX = e.clientX - rect.left
-      wheelAccum.zoomCenterY = e.clientY - rect.top
-      wheelAccum.zoomScale *= 2 ** wheelZoomDelta(e)
+      wheelAccum.zoomCenterX = event.clientX - rect.left
+      wheelAccum.zoomCenterY = event.clientY - rect.top
+      wheelAccum.zoomScale *= 2 ** wheelZoomDelta(event)
       wheelAccum.hasZoom = true
     } else {
+      const { dx, dy } = wheelPanDelta(event)
       wheelAccum.deltaX -= dx
       wheelAccum.deltaY -= dy
     }

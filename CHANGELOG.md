@@ -36,6 +36,11 @@
 - Allow supported AI model profiles to set a provider-specific reasoning effort. (#454)
 - Show unavailable or substituted document fonts with affected-layer selection and retry actions, and expose font fidelity through the Figma API and MCP tooling. (#503)
 
+### Changed
+
+- Pan horizontally with Shift+wheel while preserving native horizontal trackpad movement.
+- Move MCP connections into their own Settings destination instead of presenting them as part of model configuration.
+
 ### Performance
 
 - Defer JSX generation and syntax highlighting until the Code panel is active, keeping large canvas selections responsive. (#500)
@@ -44,6 +49,7 @@
 
 ### Fixed
 
+- Harden collaboration node synchronization against malformed remote source metadata and geometry while excluding derived text-renderer caches.
 - Transfer native `.fig` exports over binary Tauri IPC instead of JSON byte arrays, preventing large desktop saves from being truncated or exhausting WebView memory. (#484)
 - Keep unsaved source-less documents recoverable after their editor tab is closed, matching Figma's retained offline-change behavior.
 - Decode zstd-compressed FIG containers, reject invalid compressed payloads, and preserve exact fixture byte ranges. (#397)
