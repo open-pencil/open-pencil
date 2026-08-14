@@ -1,3 +1,5 @@
+import type { DesignJSXValidationLimits } from '@/app/code/sandbox/types'
+
 const workerSource = String.raw`
 self.onmessage = ({ data }) => {
   const { id, code, elements, helpers: helperNames, limits } = data
@@ -71,14 +73,7 @@ self.onmessage = ({ data }) => {
 export type SandboxDocumentOptions = {
   elements: Record<string, string>
   helpers: string[]
-  limits: {
-    outputBytes: number
-    elements: number
-    depth: number
-    arrayLength: number
-    objectKeys: number
-    stringLength: number
-  }
+  limits: DesignJSXValidationLimits
 }
 
 export function sandboxDocument({ elements, helpers, limits }: SandboxDocumentOptions): string {

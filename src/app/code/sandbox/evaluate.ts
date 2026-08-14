@@ -8,13 +8,8 @@ import {
 import { sandboxDocument } from '@/app/code/sandbox/document'
 import {
   DESIGN_JSX_DEFAULT_TIMEOUT_MS,
-  DESIGN_JSX_MAX_ARRAY_LENGTH,
-  DESIGN_JSX_MAX_DEPTH,
-  DESIGN_JSX_MAX_ELEMENTS,
-  DESIGN_JSX_MAX_OBJECT_KEYS,
-  DESIGN_JSX_MAX_OUTPUT_BYTES,
   DESIGN_JSX_MAX_SOURCE_BYTES,
-  DESIGN_JSX_MAX_STRING_LENGTH,
+  resolveDesignJSXValidationLimits,
   type DesignJSXSandboxLimits,
   type DesignJSXSandboxResult
 } from '@/app/code/sandbox/types'
@@ -43,6 +38,7 @@ export async function evaluateDesignJSX(
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
 
+  const validationLimits = resolveDesignJSXValidationLimits(limits)
   const iframe = document.createElement('iframe')
   iframe.hidden = true
   iframe.setAttribute('sandbox', 'allow-scripts')
@@ -51,14 +47,7 @@ export async function evaluateDesignJSX(
       DESIGN_JSX_ELEMENTS.map(({ name, runtimeType }) => [name, runtimeType])
     ),
     helpers: DESIGN_JSX_HELPERS.map(({ name }) => name),
-    limits: {
-      outputBytes: limits.outputBytes ?? DESIGN_JSX_MAX_OUTPUT_BYTES,
-      elements: limits.elements ?? DESIGN_JSX_MAX_ELEMENTS,
-      depth: limits.depth ?? DESIGN_JSX_MAX_DEPTH,
-      arrayLength: limits.arrayLength ?? DESIGN_JSX_MAX_ARRAY_LENGTH,
-      objectKeys: limits.objectKeys ?? DESIGN_JSX_MAX_OBJECT_KEYS,
-      stringLength: limits.stringLength ?? DESIGN_JSX_MAX_STRING_LENGTH
-    }
+    limits: validationLimits
   })
   document.body.append(iframe)
 
@@ -95,11 +84,7 @@ export async function evaluateDesignJSX(
         return
       }
       try {
-        const roots = validateDesignJSXOutput(message.value, {
-          outputBytes: limits.outputBytes ?? DESIGN_JSX_MAX_OUTPUT_BYTES,
-          elements: limits.elements ?? DESIGN_JSX_MAX_ELEMENTS,
-          depth: limits.depth ?? DESIGN_JSX_MAX_DEPTH
-        })
+        const roots = validateDesignJSXOutput(message.value, validationLimits)
         finish({ ok: true, roots })
       } catch (error) {
         finish({ ok: false, error: error instanceof Error ? error.message : String(error) })

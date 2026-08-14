@@ -1,13 +1,6 @@
-const BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor'])
+import type { DesignJSXValidationLimits } from '@/app/code/sandbox/types'
 
-type ValidationLimits = {
-  outputBytes: number
-  elements: number
-  depth: number
-  arrayLength?: number
-  objectKeys?: number
-  stringLength?: number
-}
+const BLOCKED_KEYS = new Set(['__proto__', 'prototype', 'constructor'])
 
 type ValidationState = {
   elements: number
@@ -22,14 +15,14 @@ function isPlainRecord(value: unknown): value is PlainRecord {
   return prototype === Object.prototype || prototype === null
 }
 
-function addBytes(state: ValidationState, limits: ValidationLimits, bytes: number): void {
+function addBytes(state: ValidationState, limits: DesignJSXValidationLimits, bytes: number): void {
   state.bytes += bytes
   if (state.bytes > limits.outputBytes) throw new Error('Design JSX output is too large.')
 }
 
 function validatePrimitive(
   value: unknown,
-  limits: ValidationLimits,
+  limits: DesignJSXValidationLimits,
   state: ValidationState
 ): boolean {
   if (value === null || typeof value === 'boolean') return true
@@ -38,7 +31,7 @@ function validatePrimitive(
     return true
   }
   if (typeof value === 'string') {
-    if (limits.stringLength !== undefined && value.length > limits.stringLength) {
+    if (value.length > limits.stringLength) {
       throw new Error('Design JSX output contains a string that is too long.')
     }
     addBytes(state, limits, new TextEncoder().encode(value).byteLength)
@@ -49,12 +42,12 @@ function validatePrimitive(
 
 function validateRecord(
   record: PlainRecord,
-  limits: ValidationLimits,
+  limits: DesignJSXValidationLimits,
   state: ValidationState,
   depth: number
 ): void {
   const keys = Object.keys(record)
-  if (limits.objectKeys !== undefined && keys.length > limits.objectKeys) {
+  if (keys.length > limits.objectKeys) {
     throw new Error('Design JSX output contains too many object properties.')
   }
   for (const key of keys) {
@@ -73,14 +66,14 @@ function validateRecord(
 
 function validateValue(
   value: unknown,
-  limits: ValidationLimits,
+  limits: DesignJSXValidationLimits,
   state: ValidationState,
   depth: number
 ): void {
   if (depth > limits.depth) throw new Error('Design JSX output is too deeply nested.')
   if (validatePrimitive(value, limits, state)) return
   if (Array.isArray(value)) {
-    if (limits.arrayLength !== undefined && value.length > limits.arrayLength) {
+    if (value.length > limits.arrayLength) {
       throw new Error('Design JSX output contains an array that is too long.')
     }
     for (const item of value) validateValue(item, limits, state, depth + 1)
@@ -92,8 +85,13 @@ function validateValue(
   validateRecord(value, limits, state, depth)
 }
 
-export function validateDesignJSXOutput(value: unknown, limits: ValidationLimits): unknown[] {
+export function validateDesignJSXOutput(
+  value: unknown,
+  limits: DesignJSXValidationLimits
+): unknown[] {
+  if (value === undefined) throw new Error('Design JSX must return an OpenPencil element.')
   const roots = Array.isArray(value) ? value : [value]
+  if (roots.length === 0) throw new Error('Design JSX must return an OpenPencil element.')
   const state: ValidationState = { elements: 0, bytes: 0 }
   validateValue(roots, limits, state, 0)
   return roots

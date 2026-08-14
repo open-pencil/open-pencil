@@ -37,8 +37,23 @@ type HelperName = keyof typeof HELPERS
 
 type PlainRecord = { [key: string]: unknown }
 
+type SerializedDesignJSXElement = {
+  type: string
+  props: PlainRecord
+  children: unknown[]
+}
+
 function isRecord(value: unknown): value is PlainRecord {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isSerializedElement(value: unknown): value is SerializedDesignJSXElement {
+  return (
+    isRecord(value) &&
+    typeof value.type === 'string' &&
+    isRecord(value.props) &&
+    Array.isArray(value.children)
+  )
 }
 
 function isHelper(value: unknown): value is DesignJSXHelperDescriptor {
@@ -64,11 +79,9 @@ function convertValue(value: unknown): unknown {
 }
 
 function convertTree(value: unknown): TreeNode {
-  if (!isRecord(value) || typeof value.type !== 'string' || !isRecord(value.props)) {
+  if (!isSerializedElement(value)) {
     throw new Error('Design JSX must return an OpenPencil element.')
   }
-  if (!Array.isArray(value.children))
-    throw new Error('Design JSX element children must be an array.')
   const children = value.children.map((child): TreeNode | string => {
     if (typeof child === 'string') return child
     if (typeof child === 'number') return String(child)
