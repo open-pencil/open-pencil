@@ -2,7 +2,11 @@
 import { computed, ref, watch } from 'vue'
 
 import type { LibraryAssetChange } from '@open-pencil/core/library'
-import { readSourceLibraryPublication } from '@open-pencil/core/library'
+import {
+  ensureLibraryAssetKeys,
+  publishableLibraryRoots,
+  readSourceLibraryPublication
+} from '@open-pencil/core/library'
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -58,22 +62,22 @@ watch(publishLibraryDialogOpen, async (open) => {
       const discovered = await service.discoverPublicationChanges(editor)
       changes.value = discovered.changes
     } else {
-      changes.value = [...editor.graph.getAllNodes()]
-        .filter(
-          (node): node is typeof node & { type: 'COMPONENT' | 'COMPONENT_SET' } =>
-            node.type === 'COMPONENT' || node.type === 'COMPONENT_SET'
-        )
-        .map((node) => ({
-          kind: 'added' as const,
-          asset: {
-            key: node.componentKey ?? node.id,
-            name: node.name,
-            description: '',
-            type: node.type,
-            sourceNodeId: node.id,
-            contentHash: ''
-          }
-        }))
+      const roots = publishableLibraryRoots(editor.graph)
+      ensureLibraryAssetKeys(
+        editor.graph,
+        roots.map((node) => node.id)
+      )
+      changes.value = roots.map((node) => ({
+        kind: 'added' as const,
+        asset: {
+          key: node.componentKey ?? node.id,
+          name: node.name,
+          description: '',
+          type: node.type,
+          sourceNodeId: node.id,
+          contentHash: ''
+        }
+      }))
     }
     selectedKeys.value = new Set(changes.value.map((change) => change.asset.key))
   } catch (cause) {

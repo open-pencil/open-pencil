@@ -17,14 +17,23 @@ function normalizeAssetKey(name: string): string {
   return normalized || 'component'
 }
 
+export function publishableLibraryRoots(
+  graph: SceneGraph
+): Array<SceneNode & { type: 'COMPONENT' | 'COMPONENT_SET' }> {
+  return [...graph.getAllNodes()].filter(
+    (node): node is SceneNode & { type: 'COMPONENT' | 'COMPONENT_SET' } => {
+      if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
+      if (node.librarySource?.readOnly) return false
+      const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+      return parent?.type !== 'COMPONENT_SET'
+    }
+  )
+}
+
 function publishedRoots(graph: SceneGraph, assetNodeIds?: string[]): SceneNode[] {
-  const selected = assetNodeIds ? new Set(assetNodeIds) : null
-  return [...graph.getAllNodes()].filter((node) => {
-    if (node.type !== 'COMPONENT' && node.type !== 'COMPONENT_SET') return false
-    if (selected && !selected.has(node.id)) return false
-    const parent = node.parentId ? graph.getNode(node.parentId) : undefined
-    return parent?.type !== 'COMPONENT_SET'
-  })
+  if (!assetNodeIds) return publishableLibraryRoots(graph)
+  const selected = new Set(assetNodeIds)
+  return publishableLibraryRoots(graph).filter((node) => selected.has(node.id))
 }
 
 export function ensureLibraryAssetKeys(

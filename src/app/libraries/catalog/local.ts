@@ -94,6 +94,8 @@ export class LocalLibraryCatalog implements LibraryCatalog {
   }
 
   async publishRevision(input: PublishLibraryInput): Promise<ComponentLibraryRevision> {
+    const revision = await createLibraryRevision(input)
+    const serializedRevision = serializeLibraryRevision(revision)
     const database = await this.#database
     const transaction = database.transaction(['latest', 'revisions'], 'readwrite')
     const latest = await transaction.objectStore('latest').get(input.libraryId)
@@ -101,12 +103,11 @@ export class LocalLibraryCatalog implements LibraryCatalog {
       transaction.abort()
       throw new Error('Library revision conflict: latest revision has changed')
     }
-    const revision = await createLibraryRevision(input)
     const manifest = revision.manifest
     await transaction.objectStore('revisions').put({
       libraryId: manifest.libraryId,
       revisionId: manifest.revisionId,
-      revision: serializeLibraryRevision(revision)
+      revision: serializedRevision
     })
     await transaction.objectStore('latest').put(
       {
