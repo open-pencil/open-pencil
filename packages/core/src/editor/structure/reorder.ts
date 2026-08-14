@@ -1,8 +1,11 @@
+import { assertNodeEditable } from '#core/editor/capabilities'
 import type { EditorContext } from '#core/editor/types'
 import { computeLayout } from '#core/layout'
 
 export function createStructureReorderActions(ctx: EditorContext) {
   function doReorderChild(nodeId: string, parentId: string, insertIndex: number) {
+    assertNodeEditable(ctx.graph, nodeId)
+    assertNodeEditable(ctx.graph, parentId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
 
@@ -49,6 +52,8 @@ export function createStructureReorderActions(ctx: EditorContext) {
   }
 
   function reorderChildWithUndo(nodeId: string, newParentId: string, insertIndex: number) {
+    assertNodeEditable(ctx.graph, nodeId)
+    assertNodeEditable(ctx.graph, newParentId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const origParentId = node.parentId ?? ctx.state.currentPageId
@@ -77,6 +82,8 @@ export function createStructureReorderActions(ctx: EditorContext) {
   }
 
   function applyChildOrder(parentId: string, childIds: readonly string[]) {
+    assertNodeEditable(ctx.graph, parentId)
+    for (const childId of childIds) assertNodeEditable(ctx.graph, childId)
     const current = ctx.graph.getNode(parentId)?.childIds ?? []
     for (const [index, childId] of childIds.entries()) {
       if (current[index] === childId) continue
@@ -91,6 +98,7 @@ export function createStructureReorderActions(ctx: EditorContext) {
     reorder: (childIds: readonly string[], selectedIds: ReadonlySet<string>) => string[]
   ) {
     const selectedIds = ctx.state.selectedIds
+    for (const id of selectedIds) assertNodeEditable(ctx.graph, id)
     const parentIds = new Set<string>()
     for (const id of selectedIds) {
       const parentId = ctx.graph.getNode(id)?.parentId

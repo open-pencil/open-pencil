@@ -29,8 +29,22 @@ export type Tool =
   | 'PEN'
   | 'HAND'
 
-export interface EditorState {
+export interface EditorSharedState {
   activeTool: Tool
+  remoteCursors: Array<{
+    name: string
+    color: Color
+    x: number
+    y: number
+    selection?: string[]
+  }>
+  documentName: string
+  rulerTheme?: RulerTheme
+  sceneVersion: number
+  loading: boolean
+}
+
+export interface EditorViewState {
   currentPageId: string
   selectedIds: Set<string>
   marquee: Rect | null
@@ -61,33 +75,24 @@ export interface EditorState {
   } | null
   penCursorX: number | null
   penCursorY: number | null
-  remoteCursors: Array<{
-    name: string
-    color: Color
-    x: number
-    y: number
-    selection?: string[]
-  }>
   autoLayoutHover: {
     nodeId: string
     kind: 'frame' | 'children' | 'spacing' | 'spacing-value' | 'padding' | 'padding-value'
     index?: number
     side?: 'top' | 'right' | 'bottom' | 'left'
   } | null
-  documentName: string
   panX: number
   pageColor: Color
-  rulerTheme?: RulerTheme
   panY: number
   zoom: number
   renderVersion: number
-  sceneVersion: number
-  loading: boolean
   enteredContainerId: string | null
   nodeEditState?: RenderOverlays['nodeEditState'] | null
   cursorCanvasX?: number | null
   cursorCanvasY?: number | null
 }
+
+export interface EditorState extends EditorSharedState, EditorViewState {}
 
 export interface ClipboardImageResolution {
   total: number
