@@ -5,6 +5,7 @@ export {
   writeStoragePreference
 } from './preferences'
 export type { StoragePreferences } from './preferences'
+export { cloudConnectionService } from './cloud/service'
 export { createCloudStorageAdapter } from './cloud/adapter'
 export {
   OPENPENCIL_CLOUD_PROVIDER,
