@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import type {
   Fill,
   FillType,
@@ -38,10 +40,19 @@ export function encodeNodeForYjs(node: SceneNode): Record<string, unknown> {
 
 export function syncEncodedNodeToYMap(
   node: SceneNode,
-  ynode: { delete(key: string): void; set(key: string, value: unknown): void }
+  ynode: {
+    delete(key: string): void
+    get(key: string): unknown
+    has(key: string): boolean
+    set(key: string, value: unknown): void
+  }
 ): void {
-  for (const key of DERIVED_NODE_FIELDS) ynode.delete(key)
-  for (const [key, value] of Object.entries(encodeNodeForYjs(node))) ynode.set(key, value)
+  for (const key of DERIVED_NODE_FIELDS) {
+    if (ynode.has(key)) ynode.delete(key)
+  }
+  for (const [key, value] of Object.entries(encodeNodeForYjs(node))) {
+    if (!isEqual(ynode.get(key), value)) ynode.set(key, value)
+  }
 }
 
 export function decodeNodeFromYjs(ynode: YjsNodeLike): Partial<SceneNode> {

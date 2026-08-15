@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { tv } from 'tailwind-variants'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
 
 import AppMenu from '@/components/Shell/AppMenu.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import splitterTheme from '@/theme/splitter'
 import AssetsPanel from './assets-panel/AssetsPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'
 import PagesPanel from './PagesPanel.vue'
@@ -23,6 +25,7 @@ const panelOptions = computed(() => [
   { value: 'assets', label: panels.value.assets }
 ])
 const panelTabsUI = { root: 'w-full' }
+const splitterStyles = tv(splitterTheme)({ direction: 'vertical' })
 </script>
 
 <template>
@@ -66,10 +69,8 @@ const panelTabsUI = { root: 'w-full' }
       >
         <PagesPanel />
       </SplitterPanel>
-      <SplitterResizeHandle class="group relative z-10 -my-1 h-2 cursor-row-resize">
-        <div
-          class="pointer-events-none absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border"
-        />
+      <SplitterResizeHandle :class="splitterStyles.handle()">
+        <div :class="splitterStyles.divider()" />
       </SplitterResizeHandle>
       <SplitterPanel :default-size="70" :min-size="20" class="flex flex-col overflow-hidden">
         <header

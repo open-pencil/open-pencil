@@ -58,5 +58,8 @@
   "multiplayerCursors": "Cursores multijugador",
   "renameSelection": "Renombrar selección…",
   "rulers": "Reglas",
-  "settings": "Ajustes…"
+  "settings": "Ajustes…",
+  "splitRight": "Dividir a la derecha",
+  "splitDown": "Dividir hacia abajo",
+  "closeView": "Cerrar vista"
 }

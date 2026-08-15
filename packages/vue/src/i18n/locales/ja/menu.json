@@ -58,5 +58,8 @@
   "multiplayerCursors": "マルチプレイヤーカーソル",
   "renameSelection": "選択範囲の名前を変更…",
   "rulers": "ルーラー",
-  "settings": "設定…"
+  "settings": "設定…",
+  "splitRight": "右に分割",
+  "splitDown": "下に分割",
+  "closeView": "ビューを閉じる"
 }

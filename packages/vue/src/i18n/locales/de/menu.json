@@ -58,5 +58,8 @@
   "multiplayerCursors": "Multiplayer-Cursor",
   "renameSelection": "Auswahl umbenennen…",
   "rulers": "Lineale",
-  "settings": "Einstellungen…"
+  "settings": "Einstellungen…",
+  "splitRight": "Nach rechts teilen",
+  "splitDown": "Nach unten teilen",
+  "closeView": "Ansicht schließen"
 }

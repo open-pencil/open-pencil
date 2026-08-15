@@ -40,7 +40,11 @@ function componentDropPlacement(componentId: string, cx: number, cy: number, edi
   }
 }
 
-export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: Editor) {
+export function useCanvasDrop(
+  canvasRef: Ref<HTMLCanvasElement | null>,
+  editor: Editor,
+  onActivate?: () => void
+) {
   const isDraggingOver = ref(false)
 
   useEventListener(canvasRef, 'dragover', (e: DragEvent) => {
@@ -52,6 +56,7 @@ export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: 
 
   useEventListener(canvasRef, 'dragenter', (e: DragEvent) => {
     if (!hasComponentData(e) && !hasFileData(e)) return
+    onActivate?.()
     e.preventDefault()
     isDraggingOver.value = true
   })
@@ -61,6 +66,7 @@ export function useCanvasDrop(canvasRef: Ref<HTMLCanvasElement | null>, editor: 
   })
 
   useEventListener(canvasRef, 'drop', (e: DragEvent) => {
+    onActivate?.()
     e.preventDefault()
     isDraggingOver.value = false
 

@@ -50,6 +50,7 @@
         "canvaskit-wasm": "^0.40.0",
         "culori": "^4.0.2",
         "dedent": "^1.7.1",
+        "es-toolkit": "^1.46.1",
         "fflate": "^0.8.2",
         "fzstd": "^0.1.1",
         "hast-util-to-html": "^9.0.5",

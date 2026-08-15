@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
+import { create as createPRNG } from 'lib0/prng'
 import * as Y from 'yjs'
+import { TestConnector, type TestYInstance } from 'yjs/testHelper'
 
 import type { Fill, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -47,11 +49,17 @@ function firstPage(graph: SceneGraph): SceneNode {
 
 type SyncedStores = ReturnType<typeof createSyncedStores>
 
-function createSyncedStores() {
+type SyncedStoreOptions = {
+  hostDoc?: Y.Doc
+  peerDoc?: Y.Doc
+  connectImmediately?: boolean
+}
+
+function createSyncedStores(options: SyncedStoreOptions = {}) {
   const hostStore = createEditorStore(new SceneGraph())
   const peerStore = createEditorStore(new SceneGraph())
-  const hostDoc = new Y.Doc()
-  const peerDoc = new Y.Doc()
+  const hostDoc = options.hostDoc ?? new Y.Doc()
+  const peerDoc = options.peerDoc ?? new Y.Doc()
   const hostNodes = hostDoc.getMap<Y.Map<unknown>>('nodes')
   const peerNodes = peerDoc.getMap<Y.Map<unknown>>('nodes')
   const hostImages = hostDoc.getMap<Uint8Array>('images')
@@ -101,13 +109,17 @@ function createSyncedStores() {
     applyYjsToGraph: peerSync.applyYjsToGraph
   })
 
-  const disconnectYDocs = connectYDocs(hostDoc, peerDoc)
+  const disconnectYDocs =
+    options.connectImmediately === false ? undefined : connectYDocs(hostDoc, peerDoc)
 
   return {
     hostStore,
     peerStore,
     hostSync,
     peerSync,
+    hostDoc,
+    peerDoc,
+    disconnectYDocs,
     get hostSuppressGraphSync() {
       return hostSuppressGraphSync
     },
@@ -115,15 +127,15 @@ function createSyncedStores() {
       return peerSuppressGraphSync
     },
     cleanup: () => {
-      disconnectYDocs()
+      disconnectYDocs?.()
       hostDoc.destroy()
       peerDoc.destroy()
     }
   }
 }
 
-function withSyncedStores(run: (stores: SyncedStores) => void) {
-  const stores = createSyncedStores()
+function withSyncedStores(run: (stores: SyncedStores) => void, options: SyncedStoreOptions = {}) {
+  const stores = createSyncedStores(options)
   try {
     run(stores)
   } finally {
@@ -343,6 +355,97 @@ describe('collab yjs-sync', () => {
       expect(getNodeOrThrow(hostStore.graph, rect.id).x).toBe(42)
       expect(getNodeOrThrow(hostStore.graph, rect.id).y).toBe(24)
     })
+  })
+
+  test('unchanged node synchronization emits no Yjs update', () => {
+    withSyncedStores(({ hostStore, hostSync, hostDoc }) => {
+      const hostPage = firstPage(hostStore.graph)
+      const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, { width: 80, height: 60 })
+      hostSync.syncNodeToYjs(rect.id)
+
+      let updateCount = 0
+      let updateBytes = 0
+      const trackUpdate = (update: Uint8Array) => {
+        updateCount++
+        updateBytes += update.byteLength
+      }
+      hostDoc.on('update', trackUpdate)
+      for (let index = 0; index < 100; index++) hostSync.syncNodeToYjs(rect.id)
+      hostDoc.off('update', trackUpdate)
+
+      expect(updateCount).toBe(0)
+      expect(updateBytes).toBe(0)
+    })
+  })
+
+  test('repeated drag-like updates stay field-sized and do not echo', () => {
+    withSyncedStores(({ hostStore, peerStore, hostSync, hostDoc, peerDoc }) => {
+      const hostPage = firstPage(hostStore.graph)
+      const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, { width: 80, height: 60 })
+      hostSync.syncAllNodesToYjs()
+      hostSync.syncNodeToYjs(rect.id)
+
+      let hostUpdateCount = 0
+      let hostUpdateBytes = 0
+      let peerUpdateCount = 0
+      const trackHostUpdate = (update: Uint8Array) => {
+        hostUpdateCount++
+        hostUpdateBytes += update.byteLength
+      }
+      const trackPeerUpdate = () => {
+        peerUpdateCount++
+      }
+      hostDoc.on('update', trackHostUpdate)
+      peerDoc.on('update', trackPeerUpdate)
+
+      for (let index = 1; index <= 100; index++) {
+        hostStore.graph.updateNode(rect.id, { x: index })
+        hostSync.syncNodeToYjs(rect.id)
+      }
+
+      hostDoc.off('update', trackHostUpdate)
+      peerDoc.off('update', trackPeerUpdate)
+      expect(getNodeOrThrow(peerStore.graph, rect.id).x).toBe(100)
+      expect(hostUpdateCount).toBe(100)
+      expect(peerUpdateCount).toBe(100)
+      expect(hostUpdateBytes).toBeLessThan(8_000)
+    })
+  })
+
+  test('queued concurrent edits converge through the official Yjs test connector', () => {
+    const connector = new TestConnector(createPRNG(526))
+    const hostDoc: TestYInstance = connector.createY(1)
+    const peerDoc: TestYInstance = connector.createY(2)
+    connector.syncAll()
+
+    withSyncedStores(
+      ({ hostStore, peerStore, hostSync, peerSync }) => {
+        const hostPage = firstPage(hostStore.graph)
+        const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, {
+          width: 80,
+          height: 60
+        })
+        hostSync.syncAllNodesToYjs()
+        hostSync.syncNodeToYjs(rect.id)
+        connector.flushAllMessages()
+        expect(getNodeOrThrow(peerStore.graph, rect.id).type).toBe('RECTANGLE')
+
+        hostDoc.disconnect()
+        hostStore.graph.updateNode(rect.id, { x: 42 })
+        hostSync.syncNodeToYjs(rect.id)
+        peerStore.graph.updateNode(rect.id, { y: 24 })
+        peerSync.syncNodeToYjs(rect.id)
+
+        hostDoc.connect()
+        expect(connector.flushRandomMessage()).toBe(true)
+        connector.flushAllMessages()
+
+        expect(getNodeOrThrow(hostStore.graph, rect.id)).toMatchObject({ x: 42, y: 24 })
+        expect(getNodeOrThrow(peerStore.graph, rect.id)).toMatchObject({ x: 42, y: 24 })
+        expect(Y.encodeStateVector(hostDoc)).toEqual(Y.encodeStateVector(peerDoc))
+      },
+      { hostDoc, peerDoc, connectImmediately: false }
+    )
   })
 
   test('image fills sync image bytes', () => {

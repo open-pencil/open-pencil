@@ -38,7 +38,9 @@ export function useCanvasInput(
   hitTestSectionTitle: (cx: number, cy: number) => SceneNode | null,
   hitTestComponentLabel: (cx: number, cy: number) => SceneNode | null,
   hitTestFrameTitle: (cx: number, cy: number) => SceneNode | null,
-  onCursorMove?: (cx: number, cy: number) => void
+  onCursorMove?: (cx: number, cy: number) => void,
+  onActivate?: () => void,
+  isEnabled: () => boolean = () => true
 ) {
   const drag = ref<DragState | null>(null)
   const cursorOverride = ref<string | null>(null)
@@ -96,6 +98,7 @@ export function useCanvasInput(
   }
 
   function updateModifier(code: string, held: boolean) {
+    if (!isEnabled()) return
     if (code === 'AltLeft' || code === 'AltRight') altHeld = held
     if (code === 'MetaLeft' || code === 'MetaRight') metaHeld = held
     if (code === 'ControlLeft' || code === 'ControlRight') controlHeld = held
@@ -200,6 +203,8 @@ export function useCanvasInput(
   }
 
   function onMouseDown(e: MouseEvent) {
+    onActivate?.()
+    if (!isEnabled()) return
     editor.setMeasurementMode('off')
     const paddingEdit = autoLayoutPaddingEdit.value
     if (paddingEdit) {
@@ -228,6 +233,7 @@ export function useCanvasInput(
   }
 
   function onMouseMove(e: MouseEvent) {
+    if (!isEnabled()) return
     pointerInside.value = true
     const coords = getCoords(e)
     lastPointer.value = { cx: coords.cx, cy: coords.cy }
@@ -310,6 +316,7 @@ export function useCanvasInput(
   }
 
   function onMouseUp() {
+    if (!isEnabled()) return
     if (!drag.value) return
     const d = drag.value
 
@@ -355,6 +362,7 @@ export function useCanvasInput(
   useEventListener(window, 'blur', resetMeasurementModifiers)
   useEventListener(canvasRef, 'mouseleave', () => {
     pointerInside.value = false
+    if (!isEnabled()) return
     editor.setMeasurementMode('off')
     if (!drag.value) {
       editor.setHoveredNode(null)
@@ -365,6 +373,7 @@ export function useCanvasInput(
   })
 
   const stopToolListener = editor.onEditorEvent('tool:changed', () => {
+    if (!isEnabled()) return
     editor.setMeasurementMode('off')
   })
   onScopeDispose(stopToolListener)
@@ -376,6 +385,13 @@ export function useCanvasInput(
     autoLayoutPaddingEdit,
     updateAutoLayoutPaddingEdit,
     commitAutoLayoutPaddingEdit,
-    cancelAutoLayoutPaddingEdit
+    cancelAutoLayoutPaddingEdit,
+    cleanupInteractions() {
+      cancelAutoLayoutPaddingEdit()
+      drag.value = null
+      cursorOverride.value = null
+      pointerInside.value = false
+      resetMeasurementModifiers()
+    }
   }
 }

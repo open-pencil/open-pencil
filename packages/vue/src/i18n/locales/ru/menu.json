@@ -58,5 +58,8 @@
   "multiplayerCursors": "Курсоры участников",
   "renameSelection": "Переименовать выделение…",
   "rulers": "Линейки",
-  "settings": "Настройки…"
+  "settings": "Настройки…",
+  "splitRight": "Разделить вправо",
+  "splitDown": "Разделить вниз",
+  "closeView": "Закрыть вид"
 }
