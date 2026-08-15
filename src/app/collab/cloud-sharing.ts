@@ -39,6 +39,28 @@ export function isCloudDocument(store: EditorStore): boolean {
   return cloudBinding(store) !== null
 }
 
+export async function resolveCloudShare(
+  serverURL: string,
+  shareId: string,
+  secret: string,
+  guestName?: string
+) {
+  const connection = await cloudConnectionService.connect(serverURL)
+  if (!connection.client) throw new Error('OpenPencil Cloud is not connected')
+  return connection.client.resolveDocumentShare(shareId, { secret, guestName })
+}
+
+export async function loadCloudSharedDocument(
+  serverURL: string,
+  shareId: string,
+  secret: string,
+  guestName?: string
+) {
+  const connection = await cloudConnectionService.connect(serverURL)
+  if (!connection.client) throw new Error('OpenPencil Cloud is not connected')
+  return connection.client.getSharedDocument(shareId, { secret, guestName })
+}
+
 export async function getCloudDocumentAccess(store: EditorStore) {
   const { binding, client } = await cloudClient(store)
   return client.getDocumentAccess(binding.documentId)
@@ -55,6 +77,13 @@ export async function loadCloudShareState(store: EditorStore) {
   return { access, shares, grants, invitations }
 }
 
+function capabilityURL(serverURL: string, shareId: string, secret: string): string {
+  return new URL(
+    `/cloud/share/${shareId}?server=${encodeURIComponent(serverURL)}#${secret}`,
+    window.location.origin
+  ).href
+}
+
 export async function createCloudShare(
   store: EditorStore,
   input: CreateDocumentShareInput
@@ -63,7 +92,7 @@ export async function createCloudShare(
   const capability = await client.createDocumentShare(binding.documentId, input)
   return {
     share: capability.share,
-    url: new URL(capability.path, serverURL).href
+    url: capabilityURL(serverURL, capability.share.id, capability.secret)
   }
 }
 
@@ -82,7 +111,10 @@ export async function rotateCloudShare(
 ): Promise<CloudShareCapability> {
   const { binding, client, serverURL } = await cloudClient(store)
   const capability = await client.rotateDocumentShare(binding.documentId, shareId)
-  return { share: capability.share, url: new URL(capability.path, serverURL).href }
+  return {
+    share: capability.share,
+    url: capabilityURL(serverURL, capability.share.id, capability.secret)
+  }
 }
 
 export async function revokeCloudShare(store: EditorStore, shareId: string): Promise<void> {

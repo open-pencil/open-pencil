@@ -4,24 +4,13 @@ import type { CreateDocumentRecord } from '#cloud/server/documents/types'
 import type { Kysely, Transaction } from 'kysely'
 
 import { resolveDocumentAccess } from './access'
+import { documentSummary, getDocumentSummaryRow } from './summary'
 
 export type DocumentDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
-
-function toISOString(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : value
-}
 
 export type DocumentSummaryRow = Omit<DocumentSummary, 'createdAt' | 'updatedAt'> & {
   createdAt: Date | string
   updatedAt: Date | string
-}
-
-function documentSummary(row: DocumentSummaryRow): DocumentSummary {
-  return {
-    ...row,
-    createdAt: toISOString(row.createdAt),
-    updatedAt: toISOString(row.updatedAt)
-  }
 }
 
 export async function workspaceRole(
@@ -61,12 +50,7 @@ export async function findDocument(
 ): Promise<(DocumentSummary & { role: WorkspaceRole }) | undefined> {
   const access = await resolveDocumentAccess(database, userId, documentId)
   if (!access) return undefined
-  const row = await database
-    .selectFrom('document')
-    .select(['id', 'workspaceId', 'name', 'currentRevisionId', 'version', 'createdAt', 'updatedAt'])
-    .where('id', '=', documentId)
-    .where('deletedAt', 'is', null)
-    .executeTakeFirst()
+  const row = await getDocumentSummaryRow(database, documentId)
   if (!row) return undefined
   const role: WorkspaceRole = access.permission === 'edit' ? 'editor' : 'viewer'
   return { ...documentSummary(row), role }

@@ -14,6 +14,7 @@ import {
   listDocuments,
   workspaceRole
 } from '#cloud/server/documents/repository'
+import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
 import type { ObjectStore } from '#cloud/server/objects'
 import type { Kysely } from 'kysely'
@@ -37,6 +38,38 @@ export class UploadInvalidError extends Error {
 
 export function createDocumentService(database: Kysely<CloudDatabase>, objects: ObjectStore) {
   const cleanup = createUploadCleanupService(database, objects)
+
+  async function createDownload(documentId: string): Promise<DocumentDownload> {
+    const row = await getDocumentSummaryRow(database, documentId)
+    if (!row?.currentRevisionId) throw new DocumentNotFoundError()
+    const document: DocumentSummary = documentSummary(row)
+    const revision = await database
+      .selectFrom('documentRevision')
+      .innerJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
+      .select([
+        'documentRevision.id as revisionId',
+        'storageObject.objectKey',
+        'storageObject.byteSize',
+        'storageObject.checksum',
+        'storageObject.contentType'
+      ])
+      .where('documentRevision.id', '=', document.currentRevisionId)
+      .where('documentRevision.documentId', '=', documentId)
+      .executeTakeFirst()
+    if (!revision) throw new DocumentNotFoundError()
+    return {
+      document,
+      revisionId: revision.revisionId,
+      byteSize: Number(revision.byteSize),
+      checksum: revision.checksum,
+      contentType: revision.contentType,
+      download: await objects.createDownload({
+        key: revision.objectKey,
+        expiresAt: new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
+      })
+    }
+  }
+
   return {
     async cleanupExpiredUploads(now = new Date()): Promise<number> {
       const result = await cleanup.cleanupExpiredUploads({
@@ -82,35 +115,14 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       return access
     },
 
+    async downloadShared(documentId: string): Promise<DocumentDownload> {
+      return createDownload(documentId)
+    },
+
     async download(userId: string, documentId: string): Promise<DocumentDownload> {
-      const document = await findDocument(database, userId, documentId)
-      if (!document?.currentRevisionId) throw new DocumentNotFoundError()
-      const revision = await database
-        .selectFrom('documentRevision')
-        .innerJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
-        .select([
-          'documentRevision.id as revisionId',
-          'storageObject.objectKey',
-          'storageObject.byteSize',
-          'storageObject.checksum',
-          'storageObject.contentType'
-        ])
-        .where('documentRevision.id', '=', document.currentRevisionId)
-        .where('documentRevision.documentId', '=', documentId)
-        .executeTakeFirst()
-      if (!revision) throw new DocumentNotFoundError()
-      const download = await objects.createDownload({
-        key: revision.objectKey,
-        expiresAt: new Date(Date.now() + DOWNLOAD_LIFETIME_MS)
-      })
-      return {
-        document,
-        revisionId: revision.revisionId,
-        byteSize: Number(revision.byteSize),
-        checksum: revision.checksum,
-        contentType: revision.contentType,
-        download
-      }
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      return createDownload(documentId)
     },
 
     async remove(userId: string, documentId: string): Promise<void> {

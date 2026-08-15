@@ -92,6 +92,7 @@ export type {
 export {
   createDocumentSharingRoutes,
   createDocumentSharingService,
+  createPublicDocumentRoutes,
   createPublicSharingRoutes,
   DocumentShareInvalidError,
   type DocumentShareCapability,

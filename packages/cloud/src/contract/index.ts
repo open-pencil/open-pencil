@@ -59,6 +59,7 @@ export {
   parseUpdateDocumentShare,
   putDocumentGrantSchema,
   resolveDocumentShareSchema,
+  resolvedDocumentShareSchema,
   updateDocumentShareSchema,
   type AcceptDocumentInvitationInput,
   type CreateDocumentInvitationInput,
@@ -68,6 +69,7 @@ export {
   type DocumentShare,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
+  type ResolvedDocumentShare,
   type UpdateDocumentShareInput
 } from './sharing'
 export {

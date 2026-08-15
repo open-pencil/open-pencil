@@ -1,5 +1,6 @@
 import * as v from 'valibot'
 
+import { collaborationPrincipalSchema } from './collaboration'
 import { documentPermissionSchema } from './documents'
 
 export const documentShareSchema = v.object({
@@ -33,6 +34,14 @@ export const resolveDocumentShareSchema = v.object({
   guestName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80)))
 })
 export type ResolveDocumentShareInput = v.InferOutput<typeof resolveDocumentShareSchema>
+
+export const resolvedDocumentShareSchema = v.object({
+  documentId: v.pipe(v.string(), v.uuid()),
+  permission: documentPermissionSchema,
+  principal: collaborationPrincipalSchema,
+  roomEpoch: v.pipe(v.number(), v.integer(), v.minValue(0))
+})
+export type ResolvedDocumentShare = v.InferOutput<typeof resolvedDocumentShareSchema>
 
 export const documentGrantSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),

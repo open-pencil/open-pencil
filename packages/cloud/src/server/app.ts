@@ -19,7 +19,11 @@ import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import type { ObjectStore } from '#cloud/server/objects'
-import { createDocumentSharingService, createPublicSharingRoutes } from '#cloud/server/sharing'
+import {
+  createDocumentSharingService,
+  createPublicDocumentRoutes,
+  createPublicSharingRoutes
+} from '#cloud/server/sharing'
 import { createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
@@ -112,6 +116,7 @@ export function createCloudApp(services: CloudServices) {
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
     .route('/api', createPublicSharingRoutes(sharing))
+    .route('/api', createPublicDocumentRoutes(sharing, documents))
     .route('/api', createPublicCollaborationRoutes(collaboration))
     .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
     .use('/api/*', async (context, next) => {

@@ -8,6 +8,7 @@ import {
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  resolvedDocumentShareSchema,
   workspaceListSchema,
   workspaceUsageSchema,
   type CloudSession,
@@ -24,6 +25,7 @@ import {
   type DocumentShare,
   type DocumentSummary,
   type PutDocumentGrantInput,
+  type ResolveDocumentShareInput,
   type UpdateDocumentShareInput,
   type WorkspaceList,
   type WorkspaceUsage
@@ -52,6 +54,11 @@ const invitationCapabilityResponseSchema = v.object({
   token: v.string()
 })
 const collaborationTicketResponseSchema = v.object({ ticket: collaborationTicketSchema })
+const resolvedShareResponseSchema = v.object({ resolution: resolvedDocumentShareSchema })
+const sharedDocumentResponseSchema = v.object({
+  resolution: resolvedDocumentShareSchema,
+  document: documentDownloadSchema
+})
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   upload: v.variant('kind', [
@@ -312,6 +319,41 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         await client.documents[':documentId'].invitations[':invitationId'].$delete({
           param: { documentId, invitationId }
         })
+      )
+    },
+    async resolveDocumentShare(shareId: string, input: ResolveDocumentShareInput) {
+      const response = v.parse(
+        resolvedShareResponseSchema,
+        await responseBody(
+          await (options.fetch ?? globalThis.fetch)(
+            new URL(`shares/${encodeURIComponent(shareId)}/resolve`, apiURL(baseURL)),
+            {
+              method: 'POST',
+              credentials: 'include',
+              signal: options.signal,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(input)
+            }
+          )
+        )
+      )
+      return response.resolution
+    },
+    async getSharedDocument(shareId: string, input: ResolveDocumentShareInput) {
+      return v.parse(
+        sharedDocumentResponseSchema,
+        await responseBody(
+          await (options.fetch ?? globalThis.fetch)(
+            new URL(`shares/${encodeURIComponent(shareId)}/document`, apiURL(baseURL)),
+            {
+              method: 'POST',
+              credentials: 'include',
+              signal: options.signal,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(input)
+            }
+          )
+        )
       )
     },
     async getCollaborationTicket(documentId: string): Promise<CollaborationTicket> {

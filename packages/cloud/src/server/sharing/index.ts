@@ -1,3 +1,4 @@
+export { createPublicDocumentRoutes } from './document-routes'
 export {
   createDocumentSharingRoutes,
   createPublicSharingRoutes,

@@ -33,6 +33,9 @@ function services() {
         canManageSharing: true,
         sources: ['owner' as const]
       }),
+      downloadShared: async () => {
+        throw new Error('not used')
+      },
       download: async () => {
         throw new Error('not used')
       },

@@ -58,6 +58,11 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     resetFollow
   })
 
+  function connectWithAccess(roomId: string, accessMode: 'edit' | 'view') {
+    getStore().setAccessMode(accessMode)
+    connect(roomId)
+  }
+
   function shareCurrentDoc(): string {
     const roomId = generateRoomId()
     connect(roomId)
@@ -72,6 +77,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     remotePeers,
     followingPeer,
     connect,
+    connectWithAccess,
     disconnect,
     shareCurrentDoc,
     updateCursor,
