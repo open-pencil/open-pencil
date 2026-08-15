@@ -31,7 +31,8 @@ export type UpdateDocumentShareInput = v.InferOutput<typeof updateDocumentShareS
 
 export const resolveDocumentShareSchema = v.object({
   secret: v.pipe(v.string(), v.minLength(32), v.maxLength(128)),
-  guestName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80)))
+  guestName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80))),
+  guestId: v.optional(v.pipe(v.string(), v.minLength(16), v.maxLength(128)))
 })
 export type ResolveDocumentShareInput = v.InferOutput<typeof resolveDocumentShareSchema>
 

@@ -117,7 +117,7 @@ export function createCloudApp(services: CloudServices) {
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
     .route('/api', createPublicSharingRoutes(sharing))
     .route('/api', createPublicDocumentRoutes(sharing, documents))
-    .route('/api', createPublicCollaborationRoutes(collaboration))
+    .route('/api', createPublicCollaborationRoutes(collaboration, resolveSession))
     .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
     .use('/api/*', async (context, next) => {
       const actor = await resolveSession(context.req.raw)

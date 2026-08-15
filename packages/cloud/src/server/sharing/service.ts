@@ -173,24 +173,30 @@ export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
       await requireSharingAccess(database, userId, documentId)
       const id = crypto.randomUUID()
       const secret = nanoid(SHARE_SECRET_SIZE)
-      await database
-        .insertInto('documentShare')
-        .values({
-          id,
-          documentId,
-          permission: input.permission,
-          secretHash: await sha256(secret),
-          createdBy: userId,
-          expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
-          revokedAt: null,
-          lastUsedAt: null
-        })
-        .execute()
-      const row = await database
-        .selectFrom('documentShare')
-        .selectAll()
-        .where('id', '=', id)
-        .executeTakeFirstOrThrow()
+      const row = await database.transaction().execute(async (transaction) => {
+        const document = await transaction
+          .selectFrom('document')
+          .select('collaborationEpoch')
+          .where('id', '=', documentId)
+          .forUpdate()
+          .executeTakeFirstOrThrow()
+        const created = await transaction
+          .insertInto('documentShare')
+          .values({
+            id,
+            documentId,
+            permission: input.permission,
+            secretHash: await sha256(secret),
+            roomEpoch: document.collaborationEpoch,
+            createdBy: userId,
+            expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+            revokedAt: null,
+            lastUsedAt: null
+          })
+          .returningAll()
+          .executeTakeFirstOrThrow()
+        return created
+      })
       return { share: shareContract(row), secret, path: `/share/${id}#${secret}` }
     },
 
@@ -216,24 +222,49 @@ export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
       shareId: string
     ): Promise<DocumentShareCapability> {
       const secret = nanoid(SHARE_SECRET_SIZE)
-      const row = await updateActiveShare(userId, documentId, shareId, {
-        secretHash: await sha256(secret),
-        roomEpoch: (expression) => expression('roomEpoch', '+', 1),
-        updatedAt: new Date()
+      const row = await database.transaction().execute(async (transaction) => {
+        await requireSharingAccess(transaction, userId, documentId)
+        const document = await transaction
+          .updateTable('document')
+          .set({ collaborationEpoch: (expression) => expression('collaborationEpoch', '+', 1) })
+          .where('id', '=', documentId)
+          .returning('collaborationEpoch')
+          .executeTakeFirstOrThrow()
+        const updated = await transaction
+          .updateTable('documentShare')
+          .set({
+            secretHash: await sha256(secret),
+            roomEpoch: document.collaborationEpoch,
+            updatedAt: new Date()
+          })
+          .where('id', '=', shareId)
+          .where('documentId', '=', documentId)
+          .where('revokedAt', 'is', null)
+          .returningAll()
+          .executeTakeFirst()
+        if (!updated) throw new DocumentNotFoundError()
+        return updated
       })
       return { share: shareContract(row), secret, path: `/share/${shareId}#${secret}` }
     },
 
     async revokeShare(userId: string, documentId: string, shareId: string): Promise<void> {
-      await requireSharingAccess(database, userId, documentId)
-      const result = await database
-        .updateTable('documentShare')
-        .set({ revokedAt: new Date(), updatedAt: new Date() })
-        .where('id', '=', shareId)
-        .where('documentId', '=', documentId)
-        .where('revokedAt', 'is', null)
-        .executeTakeFirst()
-      if (Number(result.numUpdatedRows) === 0) throw new DocumentNotFoundError()
+      await database.transaction().execute(async (transaction) => {
+        await requireSharingAccess(transaction, userId, documentId)
+        const result = await transaction
+          .updateTable('documentShare')
+          .set({ revokedAt: new Date(), updatedAt: new Date() })
+          .where('id', '=', shareId)
+          .where('documentId', '=', documentId)
+          .where('revokedAt', 'is', null)
+          .executeTakeFirst()
+        if (Number(result.numUpdatedRows) === 0) throw new DocumentNotFoundError()
+        await transaction
+          .updateTable('document')
+          .set({ collaborationEpoch: (expression) => expression('collaborationEpoch', '+', 1) })
+          .where('id', '=', documentId)
+          .executeTakeFirst()
+      })
     },
 
     async resolveShare(
@@ -270,7 +301,11 @@ export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
         .execute()
       const principal: ResolvedSharePrincipal = actor
         ? { kind: 'user', userId: actor.userId, name: actor.name, email: actor.email }
-        : { kind: 'guest', guestId: nanoid(), name: input.guestName ?? 'Guest' }
+        : {
+            kind: 'guest',
+            guestId: input.guestId ?? nanoid(),
+            name: input.guestName ?? 'Guest'
+          }
       return {
         documentId: row.documentId,
         permission: row.permission,

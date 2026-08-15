@@ -8,13 +8,14 @@ import {
   createCollabRuntime,
   createInitialCollabState
 } from '@/app/collab/session'
-import { DEFAULT_COLLAB_STATE, type CollabState, type RemotePeer } from '@/app/collab/types'
+import type { CollabState } from '@/app/collab/types'
 import { createYjsGraphSync } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
+import { toast } from '@/app/shell/ui'
 
 export { COLLAB_KEY, useCollabInjected } from '@/app/collab/context'
-export { DEFAULT_COLLAB_STATE }
-export type { CollabState, RemotePeer }
+export { DEFAULT_COLLAB_STATE } from '@/app/collab/types'
+export type { CloudCollaborationCredentials, CollabState, RemotePeer } from '@/app/collab/types'
 
 export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
   const getStore = () =>
@@ -46,7 +47,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
       runtime.suppressYjsEvents = value
     }
   })
-  const { connect, disconnect } = createCollabConnectionActions({
+  const { connect, connectCloud, disconnect } = createCollabConnectionActions({
     runtime,
     state,
     getStore,
@@ -55,7 +56,12 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     broadcastAwareness,
     applyYjsToGraph,
     syncNodeToYjs,
-    resetFollow
+    resetFollow,
+    getLocalName: () => storedName.value,
+    onCloudTicketError: (error) => {
+      const message = error instanceof Error ? error.message : String(error)
+      toast.error(`Cloud collaboration disconnected: ${message}`)
+    }
   })
 
   function connectWithAccess(roomId: string, accessMode: 'edit' | 'view') {
@@ -77,6 +83,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     remotePeers,
     followingPeer,
     connect,
+    connectCloud,
     connectWithAccess,
     disconnect,
     shareCurrentDoc,

@@ -61,6 +61,27 @@ export async function loadCloudSharedDocument(
   return connection.client.getSharedDocument(shareId, { secret, guestName })
 }
 
+export async function loadCloudSharedCollaborationTicket(
+  serverURL: string,
+  shareId: string,
+  secret: string,
+  guestName: string,
+  guestId: string
+) {
+  const connection = await cloudConnectionService.connect(serverURL)
+  if (!connection.client) throw new Error('OpenPencil Cloud is not connected')
+  return connection.client.getSharedCollaborationTicket(shareId, {
+    secret,
+    guestName,
+    guestId
+  })
+}
+
+export async function getCloudCollaborationTicket(store: EditorStore) {
+  const { binding, client } = await cloudClient(store)
+  return client.getCollaborationTicket(binding.documentId)
+}
+
 export async function getCloudDocumentAccess(store: EditorStore) {
   const { binding, client } = await cloudClient(store)
   return client.getDocumentAccess(binding.documentId)

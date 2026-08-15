@@ -356,6 +356,27 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         )
       )
     },
+    async getSharedCollaborationTicket(
+      shareId: string,
+      input: ResolveDocumentShareInput
+    ): Promise<CollaborationTicket> {
+      const response = v.parse(
+        collaborationTicketResponseSchema,
+        await responseBody(
+          await (options.fetch ?? globalThis.fetch)(
+            `${apiURL(baseURL).replace(/\/$/, '')}/shares/${encodeURIComponent(shareId)}/collaboration-ticket`,
+            {
+              method: 'POST',
+              credentials: 'include',
+              signal: options.signal,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(input)
+            }
+          )
+        )
+      )
+      return response.ticket
+    },
     async getCollaborationTicket(documentId: string): Promise<CollaborationTicket> {
       const response = v.parse(
         collaborationTicketResponseSchema,

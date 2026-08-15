@@ -7,13 +7,15 @@ import * as foundation from './migrations/001_foundation'
 import * as cleanupClaims from './migrations/002_upload_cleanup_claims'
 import * as documentCleanupClaims from './migrations/003_document_cleanup_claims'
 import * as documentSharing from './migrations/004_document_sharing'
+import * as documentCollaborationEpoch from './migrations/005_document_collaboration_epoch'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
   '001_foundation': foundation,
   '002_upload_cleanup_claims': cleanupClaims,
   '003_document_cleanup_claims': documentCleanupClaims,
-  '004_document_sharing': documentSharing
+  '004_document_sharing': documentSharing,
+  '005_document_collaboration_epoch': documentCollaborationEpoch
 }
 
 class CloudMigrationProvider implements MigrationProvider {

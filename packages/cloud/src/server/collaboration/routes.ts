@@ -1,5 +1,5 @@
 import { parseResolveDocumentShare } from '#cloud/contract'
-import type { CloudActor } from '#cloud/server/auth'
+import type { CloudActor, CloudSessionResolver } from '#cloud/server/auth'
 import type { CollaborationTicketService } from '#cloud/server/collaboration/service'
 import { DocumentNotFoundError } from '#cloud/server/documents'
 import { DocumentShareInvalidError } from '#cloud/server/sharing'
@@ -35,7 +35,10 @@ export function createCollaborationRoutes(service: CollaborationTicketService) {
   )
 }
 
-export function createPublicCollaborationRoutes(service: CollaborationTicketService) {
+export function createPublicCollaborationRoutes(
+  service: CollaborationTicketService,
+  resolveSession?: CloudSessionResolver
+) {
   return new Hono().post(
     '/shares/:shareId/collaboration-ticket',
     validatedJSON(parseResolveDocumentShare),
@@ -44,7 +47,8 @@ export function createPublicCollaborationRoutes(service: CollaborationTicketServ
         return context.json({
           ticket: await service.issueShareTicket(
             context.req.param('shareId'),
-            context.req.valid('json')
+            context.req.valid('json'),
+            resolveSession ? ((await resolveSession(context.req.raw)) ?? undefined) : undefined
           )
         })
       } catch (error) {

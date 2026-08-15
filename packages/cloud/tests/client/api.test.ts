@@ -5,6 +5,17 @@ import { CloudAPIError, createCloudAPIClient } from '@open-pencil/cloud/client'
 const workspaceId = '11111111-1111-4111-8111-111111111111'
 const documentId = '22222222-2222-4222-8222-222222222222'
 const revisionId = '33333333-3333-4333-8333-333333333333'
+const collaborationTicket = {
+  token: 'signed-token',
+  documentId,
+  roomId: `cloud:${documentId}:2`,
+  roomKey: 'r'.repeat(43),
+  principal: { kind: 'guest' as const, guestId: 'stable-guest-id-123', name: 'Guest' },
+  permission: 'view' as const,
+  roomEpoch: 2,
+  expiresAt: '2026-01-01T00:05:00.000Z',
+  serverEnforcedWrites: false as const
+}
 
 const document = {
   id: documentId,
@@ -70,6 +81,28 @@ describe('createCloudAPIClient', () => {
       })
     ).toEqual(document)
     expect(requests.every((request) => request.method === 'POST')).toBe(true)
+  })
+
+  test('requests and validates public collaboration tickets without dropping the API prefix', async () => {
+    const requests: Request[] = []
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
+      fetch: async (input, init) => {
+        requests.push(new Request(input, init))
+        return Response.json({ ticket: collaborationTicket })
+      }
+    })
+
+    expect(
+      await client.getSharedCollaborationTicket('share-id', {
+        secret: 'x'.repeat(32),
+        guestName: 'Guest',
+        guestId: 'stable-guest-id-123'
+      })
+    ).toEqual(collaborationTicket)
+    expect(requests[0]?.url).toBe(
+      'https://cloud.example.com/api/shares/share-id/collaboration-ticket'
+    )
+    expect(requests[0]?.credentials).toBe('include')
   })
 
   test('preserves stable API error codes', async () => {

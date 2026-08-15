@@ -64,6 +64,7 @@ export interface DocumentTable {
   workspaceId: string
   name: string
   currentRevisionId: string | null
+  collaborationEpoch: Generated<number>
   version: Generated<number>
   createdBy: string
   createdAt: TimestampColumn

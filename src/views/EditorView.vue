@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, provide, ref } from 'vue'
-import { useEventListener, useUrlSearchParams } from '@vueuse/core'
+import { useEventListener, useLocalStorage, useUrlSearchParams } from '@vueuse/core'
+import { nanoid } from 'nanoid'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
@@ -12,14 +13,19 @@ import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useEditorMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
-import { loadCloudSharedDocument } from '@/app/collab/cloud-sharing'
+import {
+  getCloudCollaborationTicket,
+  loadCloudSharedCollaborationTicket,
+  loadCloudSharedDocument
+} from '@/app/collab/cloud-sharing'
 import { connectAutomation } from '@/app/automation/bridge/server'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
-import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
+import { activeTab, createTab, getActiveStore, tabCount } from '@/app/tabs'
+import { onActiveDocumentOpened } from '@/app/tabs/events'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -53,6 +59,7 @@ useKeyboard()
 useEditorMenu()
 
 const collab = useCollab(getActiveStore)
+const cloudGuestId = useLocalStorage('op-cloud-collab-guest-id', nanoid())
 provide(COLLAB_KEY, collab)
 
 async function openCloudShare() {
@@ -78,7 +85,22 @@ async function openCloudShare() {
   store.replaceGraph(graph)
   store.state.documentName = shared.document.document.name
   store.setAccessMode(shared.resolution.permission)
+  const guestName = collab.state.value.localName.trim() || shared.resolution.principal.name
+  const ticketRequest = () =>
+    loadCloudSharedCollaborationTicket(server, shareId, secret, guestName, cloudGuestId.value)
+  collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
   await store.fitCurrentPageToViewport()
+}
+
+async function connectCloudDocument() {
+  if (route.name === 'cloud-share') return
+  const binding = store.getStorageBinding()
+  if (binding?.providerId !== 'openpencil-cloud') {
+    if (collab.state.value.identity.source === 'cloud') collab.disconnect()
+    return
+  }
+  const ticketRequest = () => getCloudCollaborationTicket(store)
+  collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
 }
 
 useEventListener(
@@ -93,6 +115,7 @@ useEventListener(
 const automationCleanup = ref<(() => void) | null>(null)
 const mcpCleanup = ref<(() => void) | null>(null)
 const fileAssociationCleanup = ref<(() => void) | null>(null)
+const activeDocumentCleanup = ref<(() => void) | null>(null)
 const initialEditorLayout = loadEditorLayout()
 
 type PendingOpenFile = {
@@ -119,9 +142,13 @@ async function bindAssociatedFileOpen() {
 onMounted(async () => {
   try {
     await openCloudShare()
+    await connectCloudDocument()
   } catch (error) {
     console.error('[Cloud share]', error)
   }
+  activeDocumentCleanup.value = onActiveDocumentOpened((openedStore) => {
+    if (openedStore === getActiveStore()) void connectCloudDocument()
+  })
   const mcp = await spawnMCPIfNeeded()
   mcpCleanup.value = mcp?.disconnect ?? null
   const tauri = isTauri()
@@ -140,6 +167,7 @@ onUnmounted(() => {
   mcpCleanup.value?.()
   automationCleanup.value?.()
   fileAssociationCleanup.value?.()
+  activeDocumentCleanup.value?.()
 })
 </script>
 
