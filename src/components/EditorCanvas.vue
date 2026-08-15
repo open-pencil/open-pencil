@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, type Component } from 'vue'
+import { computed, onUnmounted, ref, watch, type Component } from 'vue'
 import {
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
   AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
@@ -92,6 +92,9 @@ const {
   () => isActivePane.value
 )
 
+watch(isActivePane, (active) => {
+  if (!active) cleanupInteractions()
+})
 onUnmounted(cleanupInteractions)
 
 useTextEdit(canvasRef, store, { isEnabled: () => isActivePane.value })

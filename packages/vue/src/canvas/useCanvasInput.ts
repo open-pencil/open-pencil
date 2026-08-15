@@ -387,9 +387,9 @@ export function useCanvasInput(
     commitAutoLayoutPaddingEdit,
     cancelAutoLayoutPaddingEdit,
     cleanupInteractions() {
+      cancelAutoLayoutPaddingEdit()
       drag.value = null
       cursorOverride.value = null
-      autoLayoutPaddingEdit.value = null
       pointerInside.value = false
       resetMeasurementModifiers()
     }

@@ -37,9 +37,9 @@ export function useTextEditingSession({
   isEnabled?: () => boolean
 }) {
   watch(
-    () => store.state.editingTextId,
-    (id, _, onCleanup) => {
-      if (!isEnabled?.() && isEnabled) return
+    () => [store.state.editingTextId, isEnabled?.() ?? true] as const,
+    ([id, enabled], _, onCleanup) => {
+      if (!enabled) return
       if (id) {
         const el = createHiddenTextArea()
         textareaRef.value = el
