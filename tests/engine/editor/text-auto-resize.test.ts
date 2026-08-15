@@ -51,11 +51,10 @@ describe('editor text auto-resize updates', () => {
     expect(getNodeOrThrow(editor.graph, text.id).height).toBe(48)
   })
 
-  test('path text keeps its on-path glyphs when edited (never auto-resizes)', () => {
-    // Regression: an imported TEXT_PATH can carry textAutoResize HEIGHT. Editing
-    // its text used to run the paragraph auto-resize, which nulls the derived
-    // glyphs — destroying the on-path lettering (outline "explodes") whenever the
-    // keystroke can't reflow. Path text must be exempt from auto-resize.
+  test('direct edits drop stale path glyphs without paragraph auto-resize', () => {
+    // A mutation outside the font-gated canvas edit session cannot reflow the
+    // glyphs. It must clear stale outlines/path identity without applying
+    // paragraph auto-resize to the imported path-text box.
     setTextMeasurer((node) => ({ width: node.width, height: node.lineHeight ?? 20 }))
 
     const editor = createEditor()
@@ -68,7 +67,23 @@ describe('editor text auto-resize updates', () => {
       textAutoResize: 'HEIGHT',
       width: 200,
       height: 200,
+      fontFamily: 'NoSuchFont',
       fontSize: 80,
+      textPathData: {
+        network: {
+          vertices: [
+            { x: 0, y: 100 },
+            { x: 200, y: 100 }
+          ],
+          segments: [
+            { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+          ],
+          regions: []
+        },
+        normalizedSize: { x: 200, y: 200 },
+        tValue: 0,
+        forward: true
+      },
       textPathBox: { x: 0, y: 0, width: 200, height: 200 },
       figmaDerivedTextGlyphs: glyphs
     })
@@ -76,9 +91,8 @@ describe('editor text auto-resize updates', () => {
     editor.updateNode(text.id, { text: 'abc' })
 
     const updated = getNodeOrThrow(editor.graph, text.id)
-    // Glyphs survive (not nulled) and the box is not paragraph-resized.
-    expect(updated.figmaDerivedTextGlyphs).not.toBeNull()
-    expect(updated.figmaDerivedTextGlyphs?.length).toBe(2)
+    expect(updated.figmaDerivedTextGlyphs).toBeNull()
+    expect(updated.textPathData).toBeNull()
     expect(updated.height).toBe(200)
   })
 

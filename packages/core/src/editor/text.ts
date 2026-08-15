@@ -1,8 +1,10 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { copyDerivedGlyphs, copyGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 import { weightToStyle } from '#core/text/fonts'
 import { hasGlyphOutlines } from '#core/text/opentype'
 
+import { pathTextEditChanges } from './text/path-edit'
 import {
   createTextEditSession,
   resizeTextNodeForEdit,
@@ -22,8 +24,26 @@ import type { EditorContext } from './types'
  * Fonts) would extend hasGlyphOutlines without changing this gate.
  */
 function isPathTextEditable(node: SceneNode): boolean {
-  if (!node.textPathBox) return true
+  if (!node.textPathData) return true
   return hasGlyphOutlines(node.fontFamily, weightToStyle(node.fontWeight, node.italic))
+}
+
+type PathTextEditSnapshot = Pick<
+  SceneNode,
+  'figmaDerivedTextGlyphs' | 'strokeGeometry' | 'textPathData' | 'textPathBox'
+>
+
+function snapshotPathText(
+  node: SceneNode | undefined,
+  includeClearedPathState = false
+): PathTextEditSnapshot | null {
+  if (!node || (!includeClearedPathState && !node.textPathData)) return null
+  return {
+    figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
+    strokeGeometry: copyGeometryPaths(node.strokeGeometry),
+    textPathData: node.textPathData ? structuredClone(node.textPathData) : null,
+    textPathBox: node.textPathBox ? { ...node.textPathBox } : null
+  }
 }
 
 type InstanceOverridesSnapshot = {
@@ -79,6 +99,12 @@ function applyTextInstanceOverride(
 export function createTextActions(ctx: EditorContext) {
   let activeSession: TextEditSession | null = null
 
+  function updateTextEditNode(nodeId: string, changes: Partial<SceneNode>) {
+    const node = ctx.graph.getNode(nodeId)
+    if (!node) return
+    ctx.graph.updateNode(nodeId, { ...changes, ...pathTextEditChanges(node, changes) })
+  }
+
   function startTextEditing(nodeId: string) {
     const te = ctx.getTextEditor()
     if (ctx.state.editingTextId) commitTextEdit()
@@ -112,6 +138,7 @@ export function createTextActions(ctx: EditorContext) {
     }
     const result = { nodeId: textState.nodeId, text: textState.text }
     const before = activeSession?.before ?? { text: '', styleRuns: [], size: {} }
+    const beforePathText = activeSession?.beforePathText ?? null
     const node = ctx.graph.getNode(result.nodeId)
     const after = snapshotTextNode(node, result.text)
     after.text = result.text
@@ -131,11 +158,15 @@ export function createTextActions(ctx: EditorContext) {
       return
     }
 
-    ctx.graph.updateNode(result.nodeId, {
+    updateTextEditNode(result.nodeId, {
       text: after.text,
       styleRuns: after.styleRuns,
       ...sizeChanges
     })
+    const afterPathText = snapshotPathText(
+      ctx.graph.getNode(result.nodeId),
+      beforePathText !== null
+    )
     if (before.text !== after.text) {
       applyTextInstanceOverride(ctx, containingInstances, result.nodeId, after.text)
     }
@@ -149,7 +180,8 @@ export function createTextActions(ctx: EditorContext) {
         ctx.graph.updateNode(result.nodeId, {
           text: after.text,
           styleRuns: after.styleRuns,
-          ...after.size
+          ...after.size,
+          ...afterPathText
         })
         restoreInstanceOverrides(ctx, instanceOverridesAfter)
       },
@@ -157,12 +189,13 @@ export function createTextActions(ctx: EditorContext) {
         ctx.graph.updateNode(result.nodeId, {
           text: before.text,
           styleRuns: before.styleRuns,
-          ...before.size
+          ...before.size,
+          ...beforePathText
         })
         restoreInstanceOverrides(ctx, instanceOverridesBefore)
       }
     })
   }
 
-  return { startTextEditing, commitTextEdit }
+  return { startTextEditing, updateTextEditNode, commitTextEdit }
 }

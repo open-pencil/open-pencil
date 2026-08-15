@@ -11,6 +11,7 @@ import {
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
+import { resolveVariableConsumptionEntry } from './variable-bindings'
 
 export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
@@ -117,6 +118,10 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
   const bindings = parseBoundVariablesPluginValue(
     getOpenPencilPluginValue(nc, BOUND_VARIABLES_PLUGIN_KEY)
   )
+  for (const entry of nc.variableConsumptionMap?.entries ?? []) {
+    const binding = resolveVariableConsumptionEntry(entry)
+    if (binding) bindings[binding.field] = binding.variableId
+  }
   nc.fillPaints?.forEach((paint, i) => {
     const variableGuid =
       paint.colorVariableBinding?.variableID ?? paint.colorVar?.value?.alias?.guid

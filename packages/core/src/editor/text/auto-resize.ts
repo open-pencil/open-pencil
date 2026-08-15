@@ -50,7 +50,7 @@ export function textAutoResizeChanges(
   // TEXT_PATH carries textAutoResize HEIGHT/WIDTH_AND_HEIGHT and a keystroke
   // can't reflow (font outlines or the layout path unavailable). pathTextEditChanges
   // owns path-text reflow; leave its glyphs alone.
-  if (node.textPathBox) return {}
+  if (node.textPathData) return {}
 
   const next = { ...node, ...changes }
   const mode = next.textAutoResize

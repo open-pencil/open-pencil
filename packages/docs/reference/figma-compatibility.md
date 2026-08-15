@@ -80,6 +80,7 @@ Feature-by-feature comparison of Figma Design capabilities with Open Pencil's cu
 | Feature | Status | Notes |
 |---------|--------|-------|
 | Text tool & inline editing | ✅ | Canvas-native editing, phantom textarea, cursor/selection/word select, drag to select, double/triple-click, rich text style runs (<kbd>⌘</kbd><kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd>, **S** button) |
+| Text on a path | 🟡 | Imports, renders, selects, resizes, edits, and exports Figma `TEXT_PATH`; character editing requires the referenced font's outlines to be available locally |
 | Text rendering (Paragraph API) | ✅ | CanvasKit Paragraph for shaping, line-breaking, metrics |
 | Font loading (system fonts) | ✅ | Inter default, font-kit in Tauri with OnceLock cache + preloading, queryLocalFonts in browser |
 | Font family & weight | ✅ | FontPicker with virtual scroll, search, CSS preview; weight selection in properties panel |

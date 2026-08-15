@@ -32,12 +32,14 @@ type ResizeOriginal = Rect &
 
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
+    for (const id of originals.keys()) assertNodeEditable(ctx.graph, id)
     pushPositionUndo(ctx, 'Move', originals, collectNodePositions(ctx, originals.keys()))
   }
 
   function commitMoveWithReparent(
     originals: Map<string, { x: number; y: number; parentId: string }>
   ) {
+    for (const id of originals.keys()) assertNodeEditable(ctx.graph, id)
     const finals = new Map<string, { x: number; y: number; parentId: string }>()
     for (const [id] of originals) {
       const n = ctx.graph.getNode(id)
@@ -167,6 +169,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitRotation(nodeId: string, origRotation: number) {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const finalRotation = node.rotation
@@ -182,6 +185,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitNodeUpdate(nodeId: string, previous: Partial<SceneNode>, label = 'Update') {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const restoredPrevious = { ...previous, ...textAutoResizeChanges(node, previous) }

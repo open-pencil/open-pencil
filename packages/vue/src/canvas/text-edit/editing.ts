@@ -143,7 +143,7 @@ export function createTextEditActions(store: Editor) {
   function syncText(nodeId: string, text: string, runs?: SceneNode['styleRuns']) {
     const changes: Partial<SceneNode> = { text }
     if (runs !== undefined) changes.styleRuns = runs
-    store.graph.updateNode(nodeId, changes)
+    store.updateTextEditNode(nodeId, changes)
     const updated = store.graph.getNode(nodeId)
     if (updated) store.textEditor?.rebuildParagraph(updated)
     store.requestRender()

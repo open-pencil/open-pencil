@@ -45,17 +45,10 @@ export function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode
   const keys = Object.keys(changes)
   if (node.textPicture && keys.some((key) => TEXT_PICTURE_KEYS.has(key))) node.textPicture = null
   const glyphsInvalidated = keys.some((key) => GLYPH_AFFECTING_KEYS.has(key))
-  // Path text glyphs ARE the layout (placed along textPathBox), not a
-  // re-derivable paragraph cache — nulling them destroys the on-path lettering
-  // (and its text-on-path identity). A successful path-text edit supplies reflowed
-  // glyphs in `changes` (so this is already skipped); when it can't reflow, keep
-  // the existing glyphs instead of wiping them.
-  if (
-    node.figmaDerivedTextGlyphs &&
-    glyphsInvalidated &&
-    !changes.figmaDerivedTextGlyphs &&
-    !node.textPathBox
-  ) {
+  // A successful path-text edit supplies reflowed glyphs in `changes`. Every
+  // other mutation path must drop stale baked glyphs and path identity rather
+  // than pair new text/style with old visible outlines.
+  if (node.figmaDerivedTextGlyphs && glyphsInvalidated && !changes.figmaDerivedTextGlyphs) {
     node.figmaDerivedTextGlyphs = null
     node.textPathData = null
   }

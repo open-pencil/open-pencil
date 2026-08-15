@@ -262,6 +262,7 @@ describe('TEXT_PATH edit invalidation', () => {
     const page = graph.getPages()[0]
     const node = graph.createNode('TEXT', page.id, {
       text: 'ArnoCoenen.art',
+      textPathBox: { x: 0, y: 0, width: 100, height: 100 },
       textPathData: {
         network: { vertices: [], segments: [], regions: [] },
         normalizedSize: { x: 1, y: 1 },
@@ -284,5 +285,6 @@ describe('TEXT_PATH edit invalidation', () => {
     const updated = expectDefined(graph.getNode(node.id))
     expect(updated.figmaDerivedTextGlyphs).toBeNull()
     expect(updated.textPathData).toBeNull()
+    expect(updated.textPathBox).not.toBeNull()
   })
 })
