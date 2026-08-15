@@ -13,7 +13,7 @@ import type {
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/service'
-import type { Kysely } from 'kysely'
+import type { Kysely, UpdateObject } from 'kysely'
 import { nanoid } from 'nanoid'
 
 import { resolveDocumentAccess } from '../documents/access'
@@ -133,6 +133,25 @@ async function requireSharingAccess(
 }
 
 export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
+  async function updateActiveShare(
+    userId: string,
+    documentId: string,
+    shareId: string,
+    changes: UpdateObject<CloudDatabase, 'documentShare'>
+  ) {
+    await requireSharingAccess(database, userId, documentId)
+    const row = await database
+      .updateTable('documentShare')
+      .set(changes)
+      .where('id', '=', shareId)
+      .where('documentId', '=', documentId)
+      .where('revokedAt', 'is', null)
+      .returningAll()
+      .executeTakeFirst()
+    if (!row) throw new DocumentNotFoundError()
+    return row
+  }
+
   return {
     async listShares(userId: string, documentId: string): Promise<DocumentShare[]> {
       await requireSharingAccess(database, userId, documentId)
@@ -181,22 +200,13 @@ export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
       shareId: string,
       input: UpdateDocumentShareInput
     ): Promise<DocumentShare> {
-      await requireSharingAccess(database, userId, documentId)
-      const row = await database
-        .updateTable('documentShare')
-        .set({
-          ...(input.permission ? { permission: input.permission } : {}),
-          ...(input.expiresAt !== undefined
-            ? { expiresAt: input.expiresAt ? new Date(input.expiresAt) : null }
-            : {}),
-          updatedAt: new Date()
-        })
-        .where('id', '=', shareId)
-        .where('documentId', '=', documentId)
-        .where('revokedAt', 'is', null)
-        .returningAll()
-        .executeTakeFirst()
-      if (!row) throw new DocumentNotFoundError()
+      const row = await updateActiveShare(userId, documentId, shareId, {
+        ...(input.permission ? { permission: input.permission } : {}),
+        ...(input.expiresAt !== undefined
+          ? { expiresAt: input.expiresAt ? new Date(input.expiresAt) : null }
+          : {}),
+        updatedAt: new Date()
+      })
       return shareContract(row)
     },
 
@@ -205,21 +215,12 @@ export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
       documentId: string,
       shareId: string
     ): Promise<DocumentShareCapability> {
-      await requireSharingAccess(database, userId, documentId)
       const secret = nanoid(SHARE_SECRET_SIZE)
-      const row = await database
-        .updateTable('documentShare')
-        .set({
-          secretHash: await sha256(secret),
-          roomEpoch: (expression) => expression('roomEpoch', '+', 1),
-          updatedAt: new Date()
-        })
-        .where('id', '=', shareId)
-        .where('documentId', '=', documentId)
-        .where('revokedAt', 'is', null)
-        .returningAll()
-        .executeTakeFirst()
-      if (!row) throw new DocumentNotFoundError()
+      const row = await updateActiveShare(userId, documentId, shareId, {
+        secretHash: await sha256(secret),
+        roomEpoch: (expression) => expression('roomEpoch', '+', 1),
+        updatedAt: new Date()
+      })
       return { share: shareContract(row), secret, path: `/share/${shareId}#${secret}` }
     },
 
