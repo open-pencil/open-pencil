@@ -51,7 +51,7 @@ function hasNodeTransform(node: SceneNode): boolean {
 
 function hasOverflowPathTextPaint(node: SceneNode): boolean {
   return (
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    node.source?.fig?.kiwiNodeType === 'TEXT_PATH' &&
     ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 || node.strokeGeometry.length > 0)
   )
 }
