@@ -65,6 +65,7 @@
     "hono": "^4.12.5",
     "jose": "^6.2.8",
     "kysely": "^0.29.5",
+    "nanoid": "^6.0.1",
     "valibot": "^1.2.0"
   },
   "optionalDependencies": {

@@ -54,12 +54,15 @@ export {
   type WorkspaceUpdate
 } from './db'
 export {
+  canEditDocument,
   createDocumentRoutes,
   createDocumentService,
   DocumentConflictError,
   DocumentForbiddenError,
   DocumentNotFoundError,
+  resolveDocumentAccess,
   UploadInvalidError,
+  type AccessDatabase,
   type DocumentRouteEnvironment,
   type DocumentService
 } from './documents'

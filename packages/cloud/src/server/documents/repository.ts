@@ -3,6 +3,8 @@ import type { CloudDatabase } from '#cloud/server/db'
 import type { CreateDocumentRecord } from '#cloud/server/documents/types'
 import type { Kysely, Transaction } from 'kysely'
 
+import { resolveDocumentAccess } from './access'
+
 export type DocumentDatabase = Kysely<CloudDatabase> | Transaction<CloudDatabase>
 
 function toISOString(value: Date | string): string {
@@ -57,24 +59,17 @@ export async function findDocument(
   userId: string,
   documentId: string
 ): Promise<(DocumentSummary & { role: WorkspaceRole }) | undefined> {
+  const access = await resolveDocumentAccess(database, userId, documentId)
+  if (!access) return undefined
   const row = await database
     .selectFrom('document')
-    .innerJoin('workspaceMember', 'workspaceMember.workspaceId', 'document.workspaceId')
-    .select([
-      'document.id',
-      'document.workspaceId',
-      'document.name',
-      'document.currentRevisionId',
-      'document.version',
-      'document.createdAt',
-      'document.updatedAt',
-      'workspaceMember.role'
-    ])
-    .where('document.id', '=', documentId)
-    .where('document.deletedAt', 'is', null)
-    .where('workspaceMember.userId', '=', userId)
+    .select(['id', 'workspaceId', 'name', 'currentRevisionId', 'version', 'createdAt', 'updatedAt'])
+    .where('id', '=', documentId)
+    .where('deletedAt', 'is', null)
     .executeTakeFirst()
-  return row ? { ...documentSummary(row), role: row.role } : undefined
+  if (!row) return undefined
+  const role: WorkspaceRole = access.permission === 'edit' ? 'editor' : 'viewer'
+  return { ...documentSummary(row), role }
 }
 
 export async function insertDocument(

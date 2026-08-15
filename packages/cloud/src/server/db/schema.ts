@@ -1,9 +1,47 @@
-import type { WorkspaceRole } from '#cloud/contract'
+import type { DocumentPermission, WorkspaceRole } from '#cloud/contract'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
 export type TimestampColumn = ColumnType<Date, Date | string | undefined, Date | string | null>
 
 export type UploadStatus = 'pending' | 'cleaning' | 'committed' | 'abandoned'
+
+export interface DocumentShareTable {
+  id: string
+  documentId: string
+  permission: DocumentPermission
+  secretHash: string
+  roomEpoch: Generated<number>
+  createdBy: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+  expiresAt: TimestampColumn | null
+  revokedAt: TimestampColumn | null
+  lastUsedAt: TimestampColumn | null
+}
+
+export interface DocumentGrantTable {
+  id: string
+  documentId: string
+  userId: string
+  permission: DocumentPermission
+  createdBy: string
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+  revokedAt: TimestampColumn | null
+}
+
+export interface DocumentInvitationTable {
+  id: string
+  documentId: string
+  emailNormalized: string
+  permission: DocumentPermission
+  tokenHash: string
+  invitedBy: string
+  invitedAt: TimestampColumn
+  expiresAt: TimestampColumn
+  acceptedAt: TimestampColumn | null
+  revokedAt: TimestampColumn | null
+}
 
 export interface WorkspaceTable {
   id: string
@@ -76,6 +114,9 @@ export interface CloudDatabase {
   document: DocumentTable
   storageObject: StorageObjectTable
   documentRevision: DocumentRevisionTable
+  documentShare: DocumentShareTable
+  documentGrant: DocumentGrantTable
+  documentInvitation: DocumentInvitationTable
   upload: UploadTable
 }
 
@@ -86,6 +127,12 @@ export type Document = Selectable<DocumentTable>
 export type NewDocument = Insertable<DocumentTable>
 export type DocumentRevision = Selectable<DocumentRevisionTable>
 export type NewDocumentRevision = Insertable<DocumentRevisionTable>
+export type DocumentShare = Selectable<DocumentShareTable>
+export type NewDocumentShare = Insertable<DocumentShareTable>
+export type DocumentGrant = Selectable<DocumentGrantTable>
+export type NewDocumentGrant = Insertable<DocumentGrantTable>
+export type DocumentInvitation = Selectable<DocumentInvitationTable>
+export type NewDocumentInvitation = Insertable<DocumentInvitationTable>
 export type StorageObject = Selectable<StorageObjectTable>
 export type NewStorageObject = Insertable<StorageObjectTable>
 export type Upload = Selectable<UploadTable>

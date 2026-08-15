@@ -7,6 +7,7 @@ import type {
 } from '#cloud/contract'
 import { createUploadCleanupService } from '#cloud/server/cleanup'
 import type { CloudDatabase } from '#cloud/server/db'
+import { canEditDocument, resolveDocumentAccess } from '#cloud/server/documents/access'
 import {
   findDocument,
   insertDocument,
@@ -75,6 +76,12 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       }
     },
 
+    async access(userId: string, documentId: string) {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      return access
+    },
+
     async download(userId: string, documentId: string): Promise<DocumentDownload> {
       const document = await findDocument(database, userId, documentId)
       if (!document?.currentRevisionId) throw new DocumentNotFoundError()
@@ -107,9 +114,9 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
     },
 
     async remove(userId: string, documentId: string): Promise<void> {
-      const document = await findDocument(database, userId, documentId)
-      if (!document) throw new DocumentNotFoundError()
-      if (!WRITABLE_ROLES.has(document.role)) throw new DocumentForbiddenError()
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      if (!canEditDocument(access)) throw new DocumentForbiddenError()
       await database
         .updateTable('document')
         .set({ deletedAt: new Date() })
@@ -143,9 +150,11 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       documentId: string,
       input: CreateUploadInput
     ): Promise<CreateDocumentUploadResult> {
+      const access = await resolveDocumentAccess(database, userId, documentId)
+      if (!access) throw new DocumentNotFoundError()
+      if (!canEditDocument(access)) throw new DocumentForbiddenError()
       const document = await findDocument(database, userId, documentId)
       if (!document) throw new DocumentNotFoundError()
-      if (!WRITABLE_ROLES.has(document.role)) throw new DocumentForbiddenError()
       if (document.currentRevisionId !== input.baseRevisionId) throw new DocumentConflictError()
       const uploadId = crypto.randomUUID()
       const objectKey = `documents/${document.workspaceId}/${documentId}/uploads/${uploadId}.fig`
@@ -191,7 +200,6 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       const upload = await database
         .selectFrom('upload')
         .innerJoin('document', 'document.id', 'upload.documentId')
-        .innerJoin('workspaceMember', 'workspaceMember.workspaceId', 'document.workspaceId')
         .select([
           'upload.documentId',
           'upload.baseRevisionId',
@@ -201,14 +209,15 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
           'upload.contentType',
           'upload.multipartUploadId',
           'upload.status',
-          'upload.expiresAt',
-          'workspaceMember.role'
+          'upload.expiresAt'
         ])
         .where('upload.id', '=', uploadId)
-        .where('workspaceMember.userId', '=', userId)
+        .where('upload.createdBy', '=', userId)
         .executeTakeFirst()
       if (!upload) throw new DocumentNotFoundError()
-      if (!WRITABLE_ROLES.has(upload.role)) throw new DocumentForbiddenError()
+      const access = await resolveDocumentAccess(database, userId, upload.documentId)
+      if (!access) throw new DocumentNotFoundError()
+      if (!canEditDocument(access)) throw new DocumentForbiddenError()
       if (input.checksum !== upload.checksum) throw new UploadInvalidError()
       if (upload.status === 'committed') {
         const document = await findDocument(database, userId, upload.documentId)

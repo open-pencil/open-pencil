@@ -81,6 +81,17 @@ export function createDocumentRoutes(service: DocumentService) {
         throw error
       }
     })
+    .get('/documents/:documentId/access', async (context) => {
+      try {
+        return context.json({
+          access: await service.access(context.get('actor').userId, context.req.param('documentId'))
+        })
+      } catch (error) {
+        const response = domainError(context, error)
+        if (response) return response
+        throw error
+      }
+    })
     .get('/documents/:documentId', async (context) => {
       try {
         return context.json({

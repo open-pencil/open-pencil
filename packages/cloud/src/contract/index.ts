@@ -17,7 +17,10 @@ export {
   commitUploadSchema,
   createDocumentSchema,
   createUploadSchema,
+  documentAccessSchema,
+  documentAccessSourceSchema,
   documentDownloadSchema,
+  documentPermissionSchema,
   documentSummarySchema,
   workspaceUsageSchema,
   parseCommitUpload,
@@ -28,7 +31,10 @@ export {
   type CommitUploadInput,
   type CreateDocumentInput,
   type CreateUploadInput,
+  type DocumentAccess,
+  type DocumentAccessSource,
   type DocumentDownload,
+  type DocumentPermission,
   type DocumentSummary,
   type WorkspaceUsage
 } from './documents'

@@ -2,6 +2,19 @@ import * as v from 'valibot'
 
 const checksumSchema = v.pipe(v.string(), v.regex(/^[A-Za-z0-9+/]{43}=$/))
 
+export const documentPermissionSchema = v.picklist(['view', 'edit'])
+export type DocumentPermission = v.InferOutput<typeof documentPermissionSchema>
+
+export const documentAccessSourceSchema = v.picklist(['owner', 'workspace', 'direct-grant'])
+export type DocumentAccessSource = v.InferOutput<typeof documentAccessSourceSchema>
+
+export const documentAccessSchema = v.object({
+  permission: documentPermissionSchema,
+  canManageSharing: v.boolean(),
+  sources: v.array(documentAccessSourceSchema)
+})
+export type DocumentAccess = v.InferOutput<typeof documentAccessSchema>
+
 export const documentSummarySchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   workspaceId: v.pipe(v.string(), v.uuid()),

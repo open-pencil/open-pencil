@@ -20,6 +20,11 @@ function services() {
       cleanupExpiredUploads: async () => 0,
       list: async () => [],
       usage: async () => ({ bytesUsed: 0, objectCount: 0, documentCount: 0 }),
+      access: async () => ({
+        permission: 'edit' as const,
+        canManageSharing: true,
+        sources: ['owner' as const]
+      }),
       download: async () => {
         throw new Error('not used')
       },
