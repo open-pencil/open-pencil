@@ -26,6 +26,12 @@ export type KiwiNodeChange = NodeChange & Record<string, unknown>
 
 type KiwiBooleanOperation = NonNullable<NodeChange['booleanOperation']>
 
+interface KiwiSymbolOverridePayload {
+  guidPath?: { guids?: GUID[] }
+  textData?: { characters?: string }
+  [key: string]: unknown
+}
+
 function toKiwiBooleanOperation(operation: SceneNode['booleanOperation']): KiwiBooleanOperation {
   return operation === 'EXCLUDE' ? 'XOR' : (operation ?? 'UNION')
 }
@@ -345,6 +351,73 @@ function getOrCreateNodeGuid(
   return guid
 }
 
+function isDescendantOf(context: SceneNodeToKiwiContext, nodeId: string, ancestorId: string) {
+  let current = context.graph.getNode(nodeId)
+  while (current?.parentId) {
+    if (current.parentId === ancestorId) return true
+    current = context.graph.getNode(current.parentId)
+  }
+  return false
+}
+
+function serializeTextOverrides(
+  context: SceneNodeToKiwiContext,
+  instance: SceneNode,
+  localIdCounter: { value: number }
+): KiwiSymbolOverridePayload[] {
+  const result: KiwiSymbolOverridePayload[] = []
+  for (const [key, value] of Object.entries(instance.overrides)) {
+    if (!key.endsWith(':text') || typeof value !== 'string') continue
+    const targetId = key.slice(0, -':text'.length)
+    const target = context.graph.getNode(targetId)
+    if (!target || !isDescendantOf(context, targetId, instance.id)) continue
+
+    const sourceId = target.componentId
+    if (!sourceId) continue
+    const source = context.graph.getNode(sourceId)
+    const overrideGuid = source?.overrideKey ? parseGuidOrNull(source.overrideKey) : null
+    const targetGuid = overrideGuid ?? getOrCreateNodeGuid(context, sourceId, localIdCounter)
+    if (!targetGuid) continue
+
+    result.push({
+      guidPath: { guids: [targetGuid] },
+      textData: { characters: value }
+    })
+  }
+  return result
+}
+
+function overridePathKey(payload: KiwiSymbolOverridePayload): string | null {
+  const guids = payload.guidPath?.guids
+  return guids?.length
+    ? guids.map(({ sessionID, localID }) => `${sessionID}:${localID}`).join('/')
+    : null
+}
+
+function mergeTextOverrides(
+  symbolOverrides: KiwiSymbolOverridePayload[],
+  textOverrides: KiwiSymbolOverridePayload[]
+): void {
+  for (const textOverride of textOverrides) {
+    const pathKey = overridePathKey(textOverride)
+    let existingIndex = -1
+    if (pathKey) {
+      for (let index = symbolOverrides.length - 1; index >= 0; index--) {
+        if (overridePathKey(symbolOverrides[index]) !== pathKey) continue
+        existingIndex = index
+        break
+      }
+    }
+    if (existingIndex < 0) symbolOverrides.push(textOverride)
+    else {
+      symbolOverrides[existingIndex] = {
+        ...symbolOverrides[existingIndex],
+        textData: textOverride.textData
+      }
+    }
+  }
+}
+
 /**
  * Fields that are ALWAYS set by explicit serialization and must NOT be
  * overwritten by rawNodeFields (which may contain stale Figma defaults).
@@ -364,6 +437,8 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
   'derivedSymbolData',
   'derivedSymbolDataLayoutVersion',
   'sourceLibraryKey',
+  'minSize',
+  'maxSize',
   // Variable consumption maps: explicit serialization always sets these when
   // bindings exist, and our VARIABLE_BINDING_FIELDS mapping may produce different
   // kiwi field names than the original raw data for library variable references.
@@ -504,17 +579,18 @@ function applyInstancePayload(
   )
   if (symbolID) {
     const symbolData: Record<string, unknown> = { symbolID }
+    const symbolOverrides: KiwiSymbolOverridePayload[] = []
     if (node.source.fig.symbolOverrides.length > 0) {
-      symbolData.symbolOverrides = materializeFigmaPayload(
-        node.source.fig.symbolOverrides,
-        context.blobs,
-        {
+      symbolOverrides.push(
+        ...(materializeFigmaPayload(node.source.fig.symbolOverrides, context.blobs, {
           blobIndexByHex: context.blobIndexByHex,
           includePaintVariables: true,
           includeVariableMaps: true
-        }
+        }) as KiwiSymbolOverridePayload[])
       )
     }
+    mergeTextOverrides(symbolOverrides, serializeTextOverrides(context, node, localIdCounter))
+    if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (node.source.fig.uniformScaleFactor != null) {
       symbolData.uniformScaleFactor = node.source.fig.uniformScaleFactor
     }

@@ -244,28 +244,23 @@ export function convertFigmaTransformProps(
     const t = nc.transform
     const det = t.m00 * t.m11 - t.m01 * t.m10
     if (det < 0) flipX = true
-    const sx = flipX ? -1 : 1
-    rotation = Math.atan2(t.m10 * sx, t.m00 * sx) * (180 / Math.PI)
+    rotation = Math.atan2(t.m10, flipX ? t.m11 : t.m00) * (180 / Math.PI)
 
-    if (rotation !== 0 && !flipX) {
-      const radians = (rotation * Math.PI) / 180
-      const cos = Math.cos(radians)
-      const sin = Math.sin(radians)
-      x = t.m02 - (width / 2) * (1 - cos) - sin * (height / 2)
-      y = t.m12 - (height / 2) * (1 - cos) + sin * (width / 2)
-    } else {
-      const corners = [
-        { x: 0, y: 0 },
-        { x: width, y: 0 },
-        { x: 0, y: height },
-        { x: width, y: height }
-      ].map((point) => ({
-        x: t.m00 * point.x + t.m01 * point.y + t.m02,
-        y: t.m10 * point.x + t.m11 * point.y + t.m12
-      }))
-      x = Math.min(...corners.map((point) => point.x))
-      y = Math.min(...corners.map((point) => point.y))
-    }
+    // Scene nodes apply their reflection and rotation around the center. Decompose the Figma
+    // matrix into that same linear transform, then recover the node translation so recomposing
+    // it produces the original matrix. Reflected rotations need their angle read from the
+    // second row; treating them as ordinary rotations reverses connector instances by 180°.
+    const radians = (rotation * Math.PI) / 180
+    const cos = Math.cos(radians)
+    const sin = Math.sin(radians)
+    const centerX = width / 2
+    const centerY = height / 2
+    const m00 = flipX ? -cos : cos
+    const m01 = flipX ? sin : -sin
+    const m10 = sin
+    const m11 = cos
+    x = t.m02 - centerX + m00 * centerX + m01 * centerY
+    y = t.m12 - centerY + m10 * centerX + m11 * centerY
   }
 
   return { x, y, width, height, rotation, flipX, flipY: false }
@@ -388,25 +383,15 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
   }
 }
 
-function consumesVariableField(nc: NodeChange, field: string): boolean {
-  return nc.variableConsumptionMap?.entries?.some((entry) => entry.variableField === field) ?? false
-}
-
 function convertLayoutPadding(
   nc: NodeChange
 ): Pick<SceneNode, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> {
   const basePadding = nc.stackPadding ?? 0
-  const verticalPadding = nc.stackVerticalPadding ?? basePadding
-  const horizontalPadding = nc.stackHorizontalPadding ?? basePadding
   return {
-    paddingTop: verticalPadding,
-    paddingBottom:
-      nc.stackPaddingBottom ??
-      (consumesVariableField(nc, 'STACK_PADDING_TOP') ? basePadding : verticalPadding),
-    paddingLeft: horizontalPadding,
-    paddingRight:
-      nc.stackPaddingRight ??
-      (consumesVariableField(nc, 'STACK_PADDING_LEFT') ? basePadding : horizontalPadding)
+    paddingTop: nc.stackVerticalPadding ?? basePadding,
+    paddingBottom: nc.stackPaddingBottom ?? basePadding,
+    paddingLeft: nc.stackHorizontalPadding ?? basePadding,
+    paddingRight: nc.stackPaddingRight ?? basePadding
   }
 }
 
@@ -428,6 +413,16 @@ function visibleContainerDerivedLayout(
     width: nc.size?.x ?? 100,
     height: nc.size?.y ?? 100
   }
+}
+
+function minimumSizeDimension(size: NodeChange['minSize'], axis: 'x' | 'y'): number | null {
+  const value = size?.value?.[axis]
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+}
+
+function maximumSizeDimension(size: NodeChange['maxSize'], axis: 'x' | 'y'): number | null {
+  const value = size?.value?.[axis]
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null
 }
 
 function convertLayoutProps(
@@ -623,10 +618,10 @@ export function nodeChangeToProps(
     verticalConstraint: mapConstraint(nc.verticalConstraint as string),
     ...convertLayoutProps(nc),
     ...vectorAndStrokeProps,
-    minWidth: (nc.minWidth ?? null) as number | null,
-    maxWidth: (nc.maxWidth ?? null) as number | null,
-    minHeight: (nc.minHeight ?? null) as number | null,
-    maxHeight: (nc.maxHeight ?? null) as number | null,
+    minWidth: minimumSizeDimension(nc.minSize, 'x'),
+    maxWidth: maximumSizeDimension(nc.maxSize, 'x'),
+    minHeight: minimumSizeDimension(nc.minSize, 'y'),
+    maxHeight: maximumSizeDimension(nc.maxSize, 'y'),
     isMask: nc.mask ?? false,
     maskType: (nc.maskType ?? 'ALPHA') as 'ALPHA' | 'VECTOR' | 'LUMINANCE',
     maskIsOutline: nc.maskIsOutline ?? false,
