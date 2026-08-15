@@ -58,5 +58,8 @@
   "multiplayerCursors": "Kursory wielu użytkowników",
   "renameSelection": "Zmień nazwę zaznaczenia…",
   "rulers": "Linijki",
-  "settings": "Ustawienia…"
+  "settings": "Ustawienia…",
+  "splitRight": "Podziel w prawo",
+  "splitDown": "Podziel w dół",
+  "closeView": "Zamknij widok"
 }

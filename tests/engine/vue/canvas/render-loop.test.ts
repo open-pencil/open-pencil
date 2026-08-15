@@ -185,6 +185,37 @@ describe('canvas render loop', () => {
     }
   })
 
+  test('repaint events dirty every canvas view even when its local version is unchanged', () => {
+    const scheduler = createFrameScheduler()
+    try {
+      const { editor, emit } = createEditor()
+      const firstView = { ...editor.state, selectedIds: new Set<string>() }
+      const secondView = { ...editor.state, selectedIds: new Set<string>() }
+      let firstRenders = 0
+      let secondRenders = 0
+      const firstLoop = createCanvasRenderLoop(editor, () => firstRenders++, {
+        layer: 'scene',
+        getRenderState: () => firstView
+      })
+      const secondLoop = createCanvasRenderLoop(editor, () => secondRenders++, {
+        layer: 'scene',
+        getRenderState: () => secondView
+      })
+
+      emit('repaint:requested')
+      scheduler.flush()
+      firstLoop.markRendered()
+      secondLoop.markRendered()
+      expect([firstRenders, secondRenders]).toEqual([1, 1])
+
+      emit('repaint:requested')
+      scheduler.flush()
+      expect([firstRenders, secondRenders]).toEqual([2, 2])
+    } finally {
+      scheduler.restore()
+    }
+  })
+
   test('reads versions and selection from the supplied canvas view state', () => {
     const scheduler = createFrameScheduler()
     try {
@@ -211,12 +242,12 @@ describe('canvas render loop', () => {
 
       emit('repaint:requested')
       scheduler.flush()
-      expect(renders).toBe(1)
+      expect(renders).toBe(2)
 
       viewState.renderVersion++
       emit('repaint:requested')
       scheduler.flush()
-      expect(renders).toBe(2)
+      expect(renders).toBe(3)
     } finally {
       scheduler.restore()
     }
