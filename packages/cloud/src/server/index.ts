@@ -29,6 +29,13 @@ export {
   type UploadCleanupService
 } from './cleanup'
 export {
+  createCollaborationRoutes,
+  createCollaborationTicketService,
+  createPublicCollaborationRoutes,
+  type CollaborationRouteEnvironment,
+  type CollaborationTicketService
+} from './collaboration'
+export {
   CloudConfigError,
   cloudServerConfigFromEnvironment,
   parseCloudServerConfig,

@@ -11,6 +11,10 @@ import {
   type CloudAuth,
   type CloudSessionResolver
 } from '#cloud/server/auth'
+import {
+  createCollaborationTicketService,
+  createPublicCollaborationRoutes
+} from '#cloud/server/collaboration'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
@@ -46,7 +50,7 @@ function discoveryFromServices(services: CloudServices): CloudDiscovery {
     capabilities: {
       documents: true,
       workspaces: true,
-      collaboration: false
+      collaboration: true
     }
   })
 }
@@ -69,8 +73,13 @@ export function createCloudApp(services: CloudServices) {
   const workspaces = createWorkspaceService(services.database)
   const documents = createDocumentService(services.database, services.objects)
   const sharing = createDocumentSharingService(services.database)
+  const collaboration = createCollaborationTicketService(
+    services.database,
+    sharing,
+    services.config.authSecret
+  )
 
-  const cloudAPI = createCloudAPIRouter({ documents, sharing, workspaces })
+  const cloudAPI = createCloudAPIRouter({ collaboration, documents, sharing, workspaces })
 
   return new Hono<CloudEnvironment>()
     .use('/api/*', cloudCORS)
@@ -103,6 +112,7 @@ export function createCloudApp(services: CloudServices) {
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
     .route('/api', createPublicSharingRoutes(sharing))
+    .route('/api', createPublicCollaborationRoutes(collaboration))
     .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
     .use('/api/*', async (context, next) => {
       const actor = await resolveSession(context.req.raw)

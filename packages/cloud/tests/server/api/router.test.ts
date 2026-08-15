@@ -16,6 +16,14 @@ const actor: CloudActor = {
 
 function services() {
   return {
+    collaboration: {
+      issueUserTicket: async () => {
+        throw new Error('not used')
+      },
+      issueShareTicket: async () => {
+        throw new Error('not used')
+      }
+    },
     documents: {
       cleanupExpiredUploads: async () => 0,
       list: async () => [],

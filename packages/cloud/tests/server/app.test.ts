@@ -132,7 +132,7 @@ describe('createCloudApp', () => {
       capabilities: {
         documents: true,
         workspaces: true,
-        collaboration: false
+        collaboration: true
       }
     })
   })

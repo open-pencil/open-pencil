@@ -1,6 +1,7 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
   cloudSessionSchema,
+  collaborationTicketSchema,
   documentAccessSchema,
   documentDownloadSchema,
   documentGrantSchema,
@@ -10,6 +11,7 @@ import {
   workspaceListSchema,
   workspaceUsageSchema,
   type CloudSession,
+  type CollaborationTicket,
   type CommitUploadInput,
   type CreateDocumentInput,
   type CreateDocumentInvitationInput,
@@ -49,6 +51,7 @@ const invitationCapabilityResponseSchema = v.object({
   invitation: documentInvitationSchema,
   token: v.string()
 })
+const collaborationTicketResponseSchema = v.object({ ticket: collaborationTicketSchema })
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   upload: v.variant('kind', [
@@ -310,6 +313,17 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
           param: { documentId, invitationId }
         })
       )
+    },
+    async getCollaborationTicket(documentId: string): Promise<CollaborationTicket> {
+      const response = v.parse(
+        collaborationTicketResponseSchema,
+        await responseBody(
+          await client.documents[':documentId']['collaboration-ticket'].$post({
+            param: { documentId }
+          })
+        )
+      )
+      return response.ticket
     },
     async createUpload(documentId: string, input: CreateUploadInput): Promise<CloudUpload> {
       return v.parse(

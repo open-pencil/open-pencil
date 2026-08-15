@@ -1,4 +1,10 @@
 export {
+  collaborationPrincipalSchema,
+  collaborationTicketSchema,
+  type CollaborationPrincipal,
+  type CollaborationTicket
+} from './collaboration'
+export {
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   cloudAuthenticationSchema,
