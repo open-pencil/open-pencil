@@ -1,4 +1,5 @@
 import { createNodeCloudDatabase } from '#cloud/runtime/node/database'
+import { createSMTPInvitationDelivery } from '#cloud/runtime/node/email'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cloudServerConfigFromEnvironment,
@@ -28,11 +29,23 @@ export function createNodeCloudApplication(options: NodeCloudApplicationOptions 
   })
   const auth = createCloudAuth(config, database)
   const objects = createS3ObjectStore(config)
+  const invitationDelivery =
+    config.smtpHost && config.smtpPort && config.emailFrom
+      ? createSMTPInvitationDelivery({
+          host: config.smtpHost,
+          port: config.smtpPort,
+          secure: config.smtpSecure ?? config.smtpPort === 465,
+          user: config.smtpUser,
+          password: config.smtpPassword,
+          from: config.emailFrom
+        })
+      : undefined
   const app = createCloudApp({
     config,
     database,
     auth,
-    objects
+    objects,
+    invitationDelivery
   })
   return { app, config, database, objects }
 }

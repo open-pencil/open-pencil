@@ -61,6 +61,16 @@ Stop and remove the Garage profile with:
 docker compose -f compose.garage.yml down
 ```
 
+### Invitation email
+
+The Node deployment can send document invitations through SMTP. Configure
+`OPENPENCIL_CLOUD_SMTP_HOST`, `OPENPENCIL_CLOUD_SMTP_PORT`,
+`OPENPENCIL_CLOUD_SMTP_SECURE`, and `OPENPENCIL_CLOUD_EMAIL_FROM`. Add
+`OPENPENCIL_CLOUD_SMTP_USER` and `OPENPENCIL_CLOUD_SMTP_PASSWORD` together when
+the server requires authentication. Vue Email renders matching HTML and plain-text bodies.
+Cloudflare deployments should inject an HTTP-based `InvitationDelivery` adapter instead of
+Nodemailer.
+
 ## Stop
 
 ```sh

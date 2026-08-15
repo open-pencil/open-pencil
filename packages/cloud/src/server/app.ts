@@ -18,6 +18,7 @@ import {
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
+import type { InvitationDelivery } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
 import {
   createDocumentSharingService,
@@ -35,6 +36,7 @@ export type CloudServices = {
   auth: CloudAuth
   objects: ObjectStore
   resolveSession?: CloudSessionResolver
+  invitationDelivery?: InvitationDelivery
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -76,7 +78,10 @@ export function createCloudApp(services: CloudServices) {
   })
   const workspaces = createWorkspaceService(services.database)
   const documents = createDocumentService(services.database, services.objects)
-  const sharing = createDocumentSharingService(services.database)
+  const sharing = createDocumentSharingService(services.database, {
+    delivery: services.invitationDelivery,
+    publicURL: services.config.publicURL
+  })
   const collaboration = createCollaborationTicketService(
     services.database,
     sharing,

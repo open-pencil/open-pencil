@@ -8,6 +8,7 @@ export {
   createDocumentSharingService,
   DocumentShareInvalidError,
   type DocumentShareCapability,
+  type DocumentSharingServiceOptions,
   type DocumentSharingService,
   type ResolvedDocumentShare,
   type ResolvedSharePrincipal

@@ -73,6 +73,11 @@ export {
   type DocumentRouteEnvironment,
   type DocumentService
 } from './documents'
+export {
+  noOpInvitationDelivery,
+  type DocumentInvitationMessage,
+  type InvitationDelivery
+} from './invitations'
 export type {
   AbortObjectUploadInput,
   CompletedObjectPart,

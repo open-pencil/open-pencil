@@ -34,6 +34,12 @@ const rawCloudServerConfigSchema = v.object({
   s3ChecksumVerification: v.optional(v.picklist(['native', 'metadata']), 'native'),
   s3ServerSideEncryption: v.optional(v.picklist(['AES256', 'aws:kms'])),
   s3KmsKeyId: optionalTextSchema,
+  smtpHost: optionalTextSchema,
+  smtpPort: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(65_535))),
+  smtpSecure: v.optional(v.boolean()),
+  smtpUser: optionalTextSchema,
+  smtpPassword: optionalTextSchema,
+  emailFrom: optionalTextSchema,
   cleanupEnabled: v.optional(v.boolean(), true),
   cleanupBatchSize: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)),
@@ -76,6 +82,11 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
     'appleKeyId',
     'applePrivateKey'
   ])
+  requireTogether(config, 'SMTP', ['smtpHost', 'smtpPort', 'emailFrom'])
+  requireTogether(config, 'SMTP authentication', ['smtpUser', 'smtpPassword'])
+  if (config.deployment === 'official' && config.smtpHost && config.smtpSecure === false) {
+    throw new CloudConfigError('Official SMTP delivery must use a secure connection')
+  }
   if (config.s3KmsKeyId && config.s3ServerSideEncryption !== 'aws:kms') {
     throw new CloudConfigError('S3 KMS key ID requires aws:kms server-side encryption')
   }

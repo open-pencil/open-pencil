@@ -15,6 +15,7 @@ import type {
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/service'
+import type { InvitationDelivery } from '#cloud/server/invitations'
 import type { Kysely, UpdateObject } from 'kysely'
 import { sql } from 'kysely'
 import { nanoid } from 'nanoid'
@@ -135,7 +136,15 @@ async function requireSharingAccess(
   if (!access.canManageSharing) throw new DocumentForbiddenError()
 }
 
-export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
+export type DocumentSharingServiceOptions = {
+  delivery?: InvitationDelivery
+  publicURL?: string
+}
+
+export function createDocumentSharingService(
+  database: Kysely<CloudDatabase>,
+  options: DocumentSharingServiceOptions = {}
+) {
   async function updateActiveShare(
     userId: string,
     documentId: string,
@@ -465,7 +474,31 @@ export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
         ])
         .where('id', '=', id)
         .executeTakeFirstOrThrow()
-      return { invitation: invitationContract(row), token }
+      const invitation = invitationContract(row)
+      if (options.delivery && options.publicURL) {
+        const [inviter, document] = await Promise.all([
+          database.selectFrom('user').select('name').where('id', '=', userId).executeTakeFirst(),
+          database
+            .selectFrom('document')
+            .select('name')
+            .where('id', '=', documentId)
+            .executeTakeFirstOrThrow()
+        ])
+        const acceptanceURL = new URL(
+          `/cloud/invitations/${id}?server=${encodeURIComponent(options.publicURL)}#${token}`,
+          options.publicURL
+        ).href
+        await options.delivery.sendDocumentInvitation({
+          deliveryId: id,
+          recipientEmail: invitation.email,
+          inviterName: inviter?.name ?? 'An OpenPencil user',
+          documentName: document.name,
+          permission: invitation.permission,
+          expiresAt: invitation.expiresAt,
+          acceptanceURL
+        })
+      }
+      return { invitation, token }
     },
 
     async acceptInvitation(

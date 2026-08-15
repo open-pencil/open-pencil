@@ -153,6 +153,73 @@ describe('document sharing service', () => {
     }
   })
 
+  test('delivers fragment-protected invitation URLs without storing raw tokens', async () => {
+    const context = await seed()
+    const delivered: Array<{
+      recipientEmail: string
+      inviterName: string
+      documentName: string
+      acceptanceURL: string
+    }> = []
+    try {
+      await context.runtime.database
+        .insertInto('user')
+        .values({
+          id: '11111111-1111-4111-8111-111111111111',
+          name: 'Owner Name',
+          email: 'owner@example.com',
+          emailVerified: true,
+          image: null
+        })
+        .execute()
+      const workspace = await context.runtime.database
+        .selectFrom('document')
+        .select('workspaceId')
+        .where('id', '=', context.documentId)
+        .executeTakeFirstOrThrow()
+      await context.runtime.database
+        .updateTable('workspaceMember')
+        .set({ userId: '11111111-1111-4111-8111-111111111111' })
+        .where('workspaceId', '=', workspace.workspaceId)
+        .where('userId', '=', 'owner')
+        .execute()
+      const sharing = createDocumentSharingService(context.runtime.database, {
+        publicURL: 'https://cloud.example.com',
+        delivery: {
+          async sendDocumentInvitation(message) {
+            delivered.push(message)
+          }
+        }
+      })
+      const created = await sharing.createInvitation(
+        '11111111-1111-4111-8111-111111111111',
+        context.documentId,
+        {
+          email: 'person@example.com',
+          permission: 'edit'
+        }
+      )
+      expect(delivered).toHaveLength(1)
+      expect(delivered[0]).toMatchObject({
+        recipientEmail: 'person@example.com',
+        inviterName: 'Owner Name',
+        documentName: 'Homepage'
+      })
+      const deliveryURL = new URL(delivered[0]?.acceptanceURL ?? '')
+      expect(deliveryURL.pathname).toBe(`/cloud/invitations/${created.invitation.id}`)
+      expect(deliveryURL.searchParams.get('server')).toBe('https://cloud.example.com')
+      expect(deliveryURL.hash).toBe(`#${created.token}`)
+      const stored = await context.runtime.database
+        .selectFrom('documentInvitation')
+        .select('tokenHash')
+        .where('id', '=', created.invitation.id)
+        .executeTakeFirstOrThrow()
+      expect(stored.tokenHash).not.toContain(created.token)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('prevents viewers from managing sharing', async () => {
     const context = await seed()
     try {
