@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeBuildCommand": "bun run generate:tauri-menu && vite build --mode native-test"
+  },
+  "app": {
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": false
+  }
+}

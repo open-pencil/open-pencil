@@ -117,6 +117,11 @@ pub fn run() {
 
     let mut builder = tauri::Builder::default();
 
+    #[cfg(feature = "native-test")]
+    {
+        builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+    }
+
     #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
