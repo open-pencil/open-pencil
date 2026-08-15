@@ -3,11 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { parseFigBuffer } from '@open-pencil/fig'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
-import {
-  calibratePathTextLayout,
-  getTextPathData,
-  reflowPathTextGlyphs
-} from '#core/text/path-layout'
+import { calibratePathTextLayout, getTextPathData, reflowPathTextGlyphs } from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { loadFigFixture } from '#tests/helpers/fig-fixtures'

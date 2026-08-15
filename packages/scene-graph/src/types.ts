@@ -30,14 +30,6 @@ export interface FigmaSourcePayload {
   derivedSymbolData: unknown[]
   derivedSymbolDataLayoutVersion: number | null
   uniformScaleFactor: number | null
-  /**
-   * Figma Kiwi type when the engine type is a stand-in (TEXT_PATH → TEXT).
-   * Export re-emits this while path-text fidelity remains; cleared when the
-   * user edits text content (glyphs invalidated). Not an OpenPencil plugin key
-   * — Figma would ignore that for native node type. Widen this union if another
-   * Figma type ever needs a stand-in.
-   */
-  kiwiNodeType: 'TEXT_PATH' | null
 }
 
 export interface SourceMetadata {
@@ -317,6 +309,13 @@ export interface PluginRelaunchDataEntry {
  * One Figma-baked glyph outline for display (path text / missing-font fidelity).
  * commandsBlob is in font units; paint multiplies by fontSize (and scaleX/Y).
  */
+export interface TextPathData {
+  network: VectorNetwork
+  normalizedSize: Vector
+  tValue: number
+  forward: boolean
+}
+
 export interface FigmaDerivedTextGlyph {
   commandsBlob: Uint8Array
   x: number
@@ -558,12 +557,9 @@ export interface SceneNode {
 
   textPicture: Uint8Array | null
   figmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
-  /**
-   * Node-local rect that an imported TEXT_PATH layout path (rawNodeFields
-   * vectorData, in normalizedSize space) maps onto. Set at import (accounts
-   * for the expandPathTextLayoutBox shift), scaled on resize so text can be
-   * re-laid out along the scaled path. Null for non-path text.
-   */
+  /** Format-neutral layout path for text-on-path nodes. */
+  textPathData: TextPathData | null
+  /** Node-local box that maps textPathData into the node coordinate space. */
   textPathBox: Rect | null
 }
 

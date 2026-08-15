@@ -14,7 +14,7 @@ import {
   pathTextSelectionBand,
   pointAtArc,
   sampleTextPath
-} from '#core/text/path-layout'
+} from '#core/text/path'
 
 function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
   const chain: SceneNode[] = []
@@ -109,7 +109,7 @@ function drawSingleSelection(
   // Imported text-on-path node → path curve overlay. The cheap two-field check
   // is the gate; drawTextPathSelection re-checks the retained data and falls
   // back to the plain rectangle if it can't be sampled.
-  const isPathText = node.source.fig.kiwiNodeType === 'TEXT_PATH' && node.textPathBox !== null
+  const isPathText = node.textPathData !== null && node.textPathBox !== null
   const editing = overlays.editingTextId === id
   // While editing: normal text hands off to the flat text-edit overlay, but path
   // text keeps its path overlay (curved band + path) — its flat text-edit overlay

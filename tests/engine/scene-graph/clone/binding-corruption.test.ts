@@ -261,8 +261,7 @@ describe('instance child bindings are independent from component', () => {
           componentPropAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
-          uniformScaleFactor: null,
-          kiwiNodeType: null
+          uniformScaleFactor: null
         }
       }
     })

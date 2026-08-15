@@ -4,6 +4,8 @@
 
 ### Added
 
+- Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
+
 - Add tested pane-registry and recursive split-tree models for independently viewed same-document canvases, capped at four visible panes.
 - Add explicit shared/view editor-state ownership and canvas render-state hooks as a foundation for independent same-document canvas panes.
 

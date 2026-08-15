@@ -25,6 +25,7 @@ type ResizeOriginal = Rect &
       | 'strokeGeometry'
       | 'figmaDerivedTextGlyphs'
       | 'strokes'
+      | 'textPathData'
       | 'textPathBox'
     >
   >
@@ -105,6 +106,7 @@ export function createUndoActions(ctx: EditorContext) {
       'strokeGeometry' in original ||
       'figmaDerivedTextGlyphs' in original ||
       'strokes' in original ||
+      'textPathData' in original ||
       'textPathBox' in original
     const final: ResizeOriginal = hasGeometry
       ? createResizeSnapshot(node)

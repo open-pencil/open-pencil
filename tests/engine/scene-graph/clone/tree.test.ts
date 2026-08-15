@@ -124,8 +124,7 @@ describe('SceneGraph.cloneTree', () => {
           componentPropAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
-          uniformScaleFactor: null,
-          kiwiNodeType: null
+          uniformScaleFactor: null
         }
       }
     })

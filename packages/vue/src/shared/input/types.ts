@@ -4,6 +4,7 @@ import type {
   GeometryPath,
   NodeType,
   Stroke,
+  TextPathData,
   VectorNetwork
 } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
@@ -57,6 +58,7 @@ export interface DragResize {
   origStrokeGeometry: GeometryPath[]
   origFigmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
   origStrokes: Stroke[]
+  origTextPathData: TextPathData | null
   origTextPathBox: Rect | null
   origChildren: Map<string, ResizeSnapshot> | null
 }

@@ -4,7 +4,6 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { pathTextEditChanges } from '#core/editor/text/path-edit'
 import { fontManager } from '#core/text/fonts'
-import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -46,13 +45,11 @@ describe('pathTextEditChanges — reflow on character edit', () => {
         { commandsBlob: new Uint8Array(4), x: 90, y: 50, fontSize: 40, rotation: 0 }
       ]
     })
-    node.source.fig.kiwiNodeType = 'TEXT_PATH'
-    node.source.fig.rawNodeFields = {
-      vectorData: {
-        vectorNetworkBlob: encodeVectorNetworkBlob(straightLineNetwork()),
-        normalizedSize: { x: 400, y: 100 }
-      },
-      textPathStart: { tValue: 0, forward: true }
+    node.textPathData = {
+      network: straightLineNetwork(),
+      normalizedSize: { x: 400, y: 100 },
+      tValue: 0,
+      forward: true
     }
 
     const changes = pathTextEditChanges(node, { text: 'Edited' })
@@ -96,13 +93,11 @@ describe('pathTextEditChanges — reflow on character edit', () => {
           { commandsBlob: new Uint8Array(4), x: 90, y: 50, fontSize: 40, rotation: 0 }
         ]
       })
-      node.source.fig.kiwiNodeType = 'TEXT_PATH'
-      node.source.fig.rawNodeFields = {
-        vectorData: {
-          vectorNetworkBlob: encodeVectorNetworkBlob(straightLineNetwork()),
-          normalizedSize: { x: 400, y: 100 }
-        },
-        textPathStart: { tValue: 0, forward: true }
+      node.textPathData = {
+        network: straightLineNetwork(),
+        normalizedSize: { x: 400, y: 100 },
+        tValue: 0,
+        forward: true
       }
       const changes = pathTextEditChanges(node, { text: 'ABCD' })
       const glyphs = expectDefined(changes.figmaDerivedTextGlyphs, 'reflowed glyphs')
@@ -140,8 +135,7 @@ describe('pathTextEditChanges — reflow on character edit', () => {
         { commandsBlob: new Uint8Array(4), x: 0, y: 0, fontSize: 40, rotation: 0 }
       ]
     })
-    node.source.fig.kiwiNodeType = 'TEXT_PATH'
-    // No textPathBox / rawNodeFields.vectorData — not reflowable.
+    // No textPathData / textPathBox — not reflowable.
     expect(pathTextEditChanges(node, { text: 'Edited' })).toEqual({})
   })
 
@@ -170,13 +164,11 @@ describe('pathTextEditChanges — reflow on character edit', () => {
         { commandsBlob: new Uint8Array(4), x: 90, y: 50, fontSize: 20, rotation: 0 }
       ]
     })
-    node.source.fig.kiwiNodeType = 'TEXT_PATH'
-    node.source.fig.rawNodeFields = {
-      vectorData: {
-        vectorNetworkBlob: encodeVectorNetworkBlob(straightLineNetwork()),
-        normalizedSize: { x: 400, y: 100 }
-      },
-      textPathStart: { tValue: 0, forward: true }
+    node.textPathData = {
+      network: straightLineNetwork(),
+      normalizedSize: { x: 400, y: 100 },
+      tValue: 0,
+      forward: true
     }
 
     const changes = pathTextEditChanges(node, { text: 'Hi', fontSize: 48 })

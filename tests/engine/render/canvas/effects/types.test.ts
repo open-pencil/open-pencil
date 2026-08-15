@@ -2,11 +2,8 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
-import {
-  createDefaultSourceMetadata,
-  type SceneGraph,
-  type SceneNode
-} from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 
 import { applyClippedBlur } from '#core/canvas/effects'
 import { renderNode } from '#core/canvas/scene'
@@ -171,8 +168,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           componentPropAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
-          uniformScaleFactor: null,
-          kiwiNodeType: null
+          uniformScaleFactor: null
         }
       }
     }
@@ -223,8 +219,7 @@ describe('Renderer handles all effect types (Behavioral)', () => {
           componentPropAssignments: [],
           derivedSymbolData: [],
           derivedSymbolDataLayoutVersion: null,
-          uniformScaleFactor: null,
-          kiwiNodeType: null
+          uniformScaleFactor: null
         }
       }
     }

@@ -32,6 +32,7 @@ export type ResizeSnapshot = Pick<
   | 'strokeGeometry'
   | 'figmaDerivedTextGlyphs'
   | 'strokes'
+  | 'textPathData'
   | 'textPathBox'
 >
 
@@ -143,6 +144,7 @@ export function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
     strokeGeometry: copyGeometryPaths(node.strokeGeometry),
     figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
     strokes: copyStrokes(node.strokes),
+    textPathData: node.textPathData ? structuredClone(node.textPathData) : null,
     textPathBox: node.textPathBox ? { ...node.textPathBox } : null
   }
 }
@@ -184,6 +186,7 @@ export function scaledGeometryChanges(
     | 'strokeGeometry'
     | 'figmaDerivedTextGlyphs'
     | 'strokes'
+    | 'textPathData'
     | 'textPathBox'
   >,
   origWidth: number,

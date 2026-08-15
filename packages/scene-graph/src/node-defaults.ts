@@ -16,8 +16,7 @@ export function createDefaultSourceMetadata(): SourceMetadata {
       componentPropAssignments: [],
       derivedSymbolData: [],
       derivedSymbolDataLayoutVersion: null,
-      uniformScaleFactor: null,
-      kiwiNodeType: null
+      uniformScaleFactor: null
     }
   }
 }
@@ -167,6 +166,7 @@ export function createDefaultNode(
     flipY: false,
     textPicture: null,
     figmaDerivedTextGlyphs: null,
+    textPathData: null,
     textPathBox: null,
     ...overrides
   }

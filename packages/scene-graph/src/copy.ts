@@ -288,6 +288,7 @@ export function cloneNodeProps(
           copyDerivedGlyphs(src.figmaDerivedTextGlyphs) ?? []
         )
       : null,
+    textPathData: src.textPathData ? structuredClone(src.textPathData) : null,
     textPathBox: src.textPathBox ? { ...src.textPathBox } : null,
     gridPosition: src.gridPosition ? { ...src.gridPosition } : null
   }

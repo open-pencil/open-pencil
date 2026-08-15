@@ -12,8 +12,7 @@ import {
   pointAtArc,
   reflowPathTextGlyphs,
   sampleTextPath
-} from '#core/text/path-layout'
-import { encodeVectorNetworkBlob } from '#core/vector'
+} from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'
 import { loadFigFixture } from '#tests/helpers/fig-fixtures'
@@ -197,13 +196,11 @@ describe('path-text reflow — synthetic circle', () => {
       text: 'abc',
       textPathBox: { ...box }
     })
-    node.source.fig.kiwiNodeType = 'TEXT_PATH'
-    node.source.fig.rawNodeFields = {
-      vectorData: {
-        vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
-        normalizedSize: { x: 256, y: 256 }
-      },
-      textPathStart: { tValue: 0.25, forward: false }
+    node.textPathData = {
+      network: circleNetwork(),
+      normalizedSize: { x: 256, y: 256 },
+      tValue: 0.25,
+      forward: false
     }
 
     const data = expectDefined(getTextPathData(node), 'synthetic path data')
@@ -282,13 +279,11 @@ function makeCircleTextPathNode(tValue = 0, forward = true): SceneNode {
     text: 'abc',
     textPathBox: { x: 0, y: 0, width: 256, height: 256 }
   })
-  node.source.fig.kiwiNodeType = 'TEXT_PATH'
-  node.source.fig.rawNodeFields = {
-    vectorData: {
-      vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
-      normalizedSize: { x: 256, y: 256 }
-    },
-    textPathStart: { tValue, forward }
+  node.textPathData = {
+    network: circleNetwork(),
+    normalizedSize: { x: 256, y: 256 },
+    tValue,
+    forward
   }
   return node
 }
@@ -329,8 +324,8 @@ describe('selection overlay — path helpers', () => {
     expect(rMax - rMin).toBeLessThan(1)
     expect(Math.abs(rMax - 100)).toBeLessThan(1)
 
-    // Ineligible: a TEXT_PATH marker with no retained vectorData → null → the
-    // overlay branch is skipped and drawNodeSelection (rectangle) runs.
+    // Ineligible: no materialized path data → null → the overlay branch is
+    // skipped and drawNodeSelection (rectangle) runs.
     const graph = new SceneGraph()
     const page = expectDefined(graph.getPages()[0])
     const bare = graph.createNode('TEXT', page.id, {
@@ -340,7 +335,6 @@ describe('selection overlay — path helpers', () => {
       height: 40,
       text: 'x'
     })
-    bare.source.fig.kiwiNodeType = 'TEXT_PATH'
     expect(getTextPathData(bare)).toBeNull()
   })
 

@@ -1,4 +1,9 @@
-import type { FigmaDerivedTextGlyph, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
+import type {
+  FigmaDerivedTextGlyph,
+  GeometryPath,
+  SceneNode,
+  TextPathData
+} from '@open-pencil/scene-graph'
 import { transformGeometryPaths } from '@open-pencil/scene-graph/copy'
 import { geometryBlobBounds } from '@open-pencil/scene-graph/geometry'
 
@@ -80,9 +85,12 @@ function shiftPathTextGeometry(props: Partial<SceneNode>, dx: number, dy: number
  * Grow width/height to cover strokeGeometry + glyph pads, then shift local
  * geometry by (dx, dy) and compensate with x/y so the design does not jump.
  */
-export function expandPathTextLayoutBox(props: Partial<SceneNode> & { nodeType: string }): void {
-  if (props.nodeType !== 'TEXT') return
-  if (props.source?.fig.kiwiNodeType !== 'TEXT_PATH') return
+export function expandPathTextLayoutBox(
+  props: Partial<SceneNode> & { nodeType: string },
+  data: TextPathData | null
+): void {
+  if (props.nodeType !== 'TEXT' || !data) return
+  props.textPathData = data
 
   const width = props.width ?? 0
   const height = props.height ?? 0

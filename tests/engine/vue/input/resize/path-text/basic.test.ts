@@ -106,6 +106,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
       strokes: copyStrokes(text.strokes),
+      textPathData: null,
       textPathBox: null
     }
 
@@ -121,6 +122,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origStrokeGeometry: [],
       origFigmaDerivedTextGlyphs: null,
       origStrokes: [],
+      origTextPathData: null,
       origTextPathBox: null,
       origChildren: new Map([[text.id, origChild]])
     }
@@ -192,6 +194,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
       strokes: copyStrokes(text.strokes),
+      textPathData: null,
       textPathBox: null
     }
     const drag: DragResize = reactive({
@@ -206,6 +209,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origStrokeGeometry: [],
       origFigmaDerivedTextGlyphs: null,
       origStrokes: [],
+      origTextPathData: null,
       origTextPathBox: null,
       origChildren: new Map([[text.id, origChild]])
     }) as DragResize
@@ -231,15 +235,20 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       width: 100,
       height: 100,
       text: 'A',
+      textPathData: {
+        network: { vertices: [], segments: [], regions: [] },
+        normalizedSize: { x: 100, y: 100 },
+        tValue: 0,
+        forward: true
+      },
       figmaDerivedTextGlyphs: glyphs
     })
-    text.source.fig.kiwiNodeType = 'TEXT_PATH'
 
     graph.updateNodePreview(text.id, { width: 50, height: 80 })
 
     const updated = expectDefined(graph.getNode(text.id))
     expect(updated.figmaDerivedTextGlyphs).not.toBeNull()
     expect(updated.figmaDerivedTextGlyphs).toHaveLength(1)
-    expect(updated.source.fig.kiwiNodeType).toBe('TEXT_PATH')
+    expect(updated.textPathData).not.toBeNull()
   })
 })

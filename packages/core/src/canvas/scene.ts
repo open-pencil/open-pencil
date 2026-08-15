@@ -51,8 +51,9 @@ function hasNodeTransform(node: SceneNode): boolean {
 
 function hasOverflowPathTextPaint(node: SceneNode): boolean {
   return (
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
-    ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 || node.strokeGeometry.length > 0)
+    node.textPathData != null &&
+    ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 ||
+      (Array.isArray(node.strokeGeometry) && node.strokeGeometry.length > 0))
   )
 }
 
@@ -612,7 +613,7 @@ function drawNodeStroke(
 function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
   return (
     node.type === 'TEXT' &&
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    node.textPathData !== null &&
     (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
     node.strokeGeometry.length > 0
   )

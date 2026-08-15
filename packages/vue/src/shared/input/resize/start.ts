@@ -23,6 +23,7 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
         origStrokeGeometry: snap.strokeGeometry,
         origFigmaDerivedTextGlyphs: snap.figmaDerivedTextGlyphs,
         origStrokes: snap.strokes,
+        origTextPathData: snap.textPathData,
         origTextPathBox: snap.textPathBox,
         origChildren: collectResizeDescendants(editor.graph, id)
       }

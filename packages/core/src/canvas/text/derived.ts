@@ -241,7 +241,7 @@ export function isReflowedPathText(node: SceneNode): boolean {
     (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
     node.textPathBox !== null &&
     node.strokeGeometry.length === 0 &&
-    node.source.fig.kiwiNodeType === 'TEXT_PATH'
+    node.textPathData !== null
   )
 }
 

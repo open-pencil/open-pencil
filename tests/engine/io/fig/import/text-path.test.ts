@@ -22,7 +22,15 @@ function emptyBlob(size = 8): Uint8Array {
 }
 
 describe('TEXT_PATH import mapping', () => {
-  test('maps TEXT_PATH to TEXT and records kiwiNodeType marker', () => {
+  test('maps TEXT_PATH to TEXT and materializes format-neutral path data', () => {
+    const networkBlob = encodeVectorNetworkBlob({
+      vertices: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 }
+      ],
+      segments: [{ start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],
+      regions: []
+    })
     const props = nodeChangeToProps(
       {
         type: 'TEXT_PATH',
@@ -30,6 +38,12 @@ describe('TEXT_PATH import mapping', () => {
         fontSize: 24,
         textData: { characters: 'Hello' },
         size: { x: 100, y: 100 },
+        vectorData: {
+          vectorNetworkBlob: 0,
+          normalizedSize: { x: 100, y: 100 },
+          styleOverrideTable: []
+        },
+        textPathStart: { tValue: 0.25, forward: false },
         fillPaints: [
           {
             type: 'SOLID',
@@ -40,13 +54,15 @@ describe('TEXT_PATH import mapping', () => {
           }
         ]
       } as NodeChange,
-      []
+      [networkBlob]
     )
 
     expect(props.nodeType).toBe('TEXT')
     expect(props.name).toBe('Along path')
     expect(props.text).toBe('Hello')
-    expect(props.source?.fig.kiwiNodeType).toBe('TEXT_PATH')
+    expect(props.textPathData?.tValue).toBe(0.25)
+    expect(props.textPathData?.forward).toBe(false)
+    expect(props.textPathData?.network.vertices).toHaveLength(2)
   })
 
   test('preserves glyph rotation from derivedTextData', () => {
@@ -94,7 +110,7 @@ describe('TEXT_PATH real fixture (optional local)', () => {
     expect(pathText.type).toBe('TEXT')
     expect(pathText.type).not.toBe('RECTANGLE')
     expect(pathText.text).toContain('ArnoCoenen')
-    expect(pathText.source.fig.kiwiNodeType).toBe('TEXT_PATH')
+    expect(pathText.textPathData).not.toBeNull()
     expect(pathText.figmaDerivedTextGlyphs?.length).toBeGreaterThan(0)
     expect(pathText.figmaDerivedTextGlyphs?.some((g) => (g.rotation ?? 0) !== 0)).toBe(true)
     expect(pathText.strokeGeometry.length).toBeGreaterThan(0)
@@ -139,10 +155,16 @@ describe('TEXT_PATH resize export', () => {
   test('bakes glyph scaleX/scaleY into blobs — Kiwi Glyph has no scale field', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
-    const node = graph.createNode('TEXT', page.id, {
+    graph.createNode('TEXT', page.id, {
       text: 'A',
       width: 100,
       height: 100,
+      textPathData: {
+        network: { vertices: [], segments: [], regions: [] },
+        normalizedSize: { x: 100, y: 100 },
+        tValue: 0,
+        forward: true
+      },
       figmaDerivedTextGlyphs: [
         {
           commandsBlob: unitSquareBlob(),
@@ -155,7 +177,6 @@ describe('TEXT_PATH resize export', () => {
         }
       ]
     })
-    node.source.fig.kiwiNodeType = 'TEXT_PATH'
 
     const out = await exportFigFile(graph)
     const reparsed = reparse(out)
@@ -188,11 +209,25 @@ describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
       text: 'A',
       width: 100,
       height: 100,
+      textPathData: {
+        network: {
+          vertices: [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 }
+          ],
+          segments: [
+            { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+          ],
+          regions: []
+        },
+        normalizedSize: { x: 100, y: 100 },
+        tValue: 0.3,
+        forward: false
+      },
       figmaDerivedTextGlyphs: [
         { commandsBlob: unitSquareBlob(), x: 10, y: 20, fontSize: 40, rotation: 0 }
       ]
     })
-    node.source.fig.kiwiNodeType = 'TEXT_PATH'
     node.source.fig.rawNodeFields = {
       vectorData: {
         vectorNetworkBlob: { __openPencilFigmaBlob: networkBlob },
@@ -222,11 +257,17 @@ describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
 })
 
 describe('TEXT_PATH edit invalidation', () => {
-  test('clears kiwiNodeType when text content is edited', () => {
+  test('clears format-neutral path data when text content is edited', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]
     const node = graph.createNode('TEXT', page.id, {
       text: 'ArnoCoenen.art',
+      textPathData: {
+        network: { vertices: [], segments: [], regions: [] },
+        normalizedSize: { x: 1, y: 1 },
+        tValue: 0,
+        forward: true
+      },
       figmaDerivedTextGlyphs: [
         {
           commandsBlob: emptyBlob(),
@@ -237,12 +278,11 @@ describe('TEXT_PATH edit invalidation', () => {
         }
       ]
     })
-    node.source.fig.kiwiNodeType = 'TEXT_PATH'
 
     graph.updateNode(node.id, { text: 'Edited' })
 
     const updated = expectDefined(graph.getNode(node.id))
     expect(updated.figmaDerivedTextGlyphs).toBeNull()
-    expect(updated.source.fig.kiwiNodeType).toBeNull()
+    expect(updated.textPathData).toBeNull()
   })
 })

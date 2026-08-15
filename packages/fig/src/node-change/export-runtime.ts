@@ -1,4 +1,4 @@
-import type { OutlineCommand } from './path-commands'
+import type { OutlineCommand } from './path/commands'
 
 export interface FigGlyphOutlineMetric {
   commands: OutlineCommand[]

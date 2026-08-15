@@ -11,7 +11,7 @@ import { convertFigmaDerivedTextGlyphs } from './derived-text-glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
 import { convertEffects, convertFills, convertStrokes } from './paint'
-import { expandPathTextLayoutBox } from './path-text-layout'
+import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
@@ -32,6 +32,7 @@ import {
   resolveVectorNetwork,
   resolveVectorStyleOverrideFills
 } from './vector-geometry'
+import { decodeVectorNetworkBlob, type StyleOverride } from './vector-network'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { importStyleRuns } from './style-runs'
@@ -63,7 +64,8 @@ import type {
   ComponentPropertyType,
   SymbolLink,
   VariantPropSpec,
-  VariableModeMap
+  VariableModeMap,
+  Vector
 } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -111,9 +113,7 @@ const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   SYMBOL: 'COMPONENT',
   CONNECTOR: 'CONNECTOR',
   SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT',
-  // Figma Kiwi TEXT_PATH (41): no engine NodeType yet (no path-edit product).
-  // Map to TEXT and keep fidelity via derived glyphs + strokeGeometry paint;
-  // original type is stashed on source.fig.kiwiNodeType for unedited export.
+  // Map to TEXT while retaining a format-neutral text path for rendering/editing.
   TEXT_PATH: 'TEXT'
 }
 
@@ -513,6 +513,39 @@ function convertLayoutGrids(value: unknown): LayoutGrid[] {
   return Array.isArray(value) ? structuredClone(value as LayoutGrid[]) : []
 }
 
+function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['textPathData'] {
+  if (nc.type !== 'TEXT_PATH') return null
+  const vectorData = nc.vectorData as
+    | {
+        vectorNetworkBlob?: number
+        normalizedSize?: Vector
+        styleOverrideTable?: StyleOverride[]
+      }
+    | undefined
+  const blobIndex = vectorData?.vectorNetworkBlob
+  const normalizedSize = vectorData?.normalizedSize
+  if (
+    typeof blobIndex !== 'number' ||
+    !normalizedSize ||
+    normalizedSize.x <= 0 ||
+    normalizedSize.y <= 0
+  ) {
+    return null
+  }
+  const blob = blobs[blobIndex]
+  const textPathStart = nc.textPathStart as { tValue?: number; forward?: boolean } | undefined
+  try {
+    return {
+      network: decodeVectorNetworkBlob(blob, vectorData.styleOverrideTable),
+      normalizedSize: { x: normalizedSize.x, y: normalizedSize.y },
+      tValue: textPathStart?.tValue ?? 0,
+      forward: textPathStart?.forward ?? true
+    }
+  } catch {
+    return null
+  }
+}
+
 function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
   const vectorNetwork = resolveVectorNetwork(nc, blobs)
   const strokeCap = getVectorStrokeCap(nc, vectorNetwork)
@@ -584,6 +617,7 @@ export function nodeChangeToProps(
   const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
+  const textPathData = convertTextPathData(nc, blobs)
 
   const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
     nodeType,
@@ -642,9 +676,9 @@ export function nodeChangeToProps(
     ...extractComponentMetadata(nc)
   }
 
-  // See path-text-layout.ts — expand layout box before the node is created so
+  // See path/text-layout.ts — expand the layout box before node creation so
   // clipsContent parents don't shave overflowing path lettering at first paint.
-  expandPathTextLayoutBox(props)
+  expandPathTextLayoutBox(props, textPathData)
   // A saved OpenPencil doc carries the true textPathBox (reflow may have
   // scaled it); the expand-time reconstruction is only right for pristine
   // Figma exports. Plugin box is in pre-expansion local coords — expand's
@@ -915,10 +949,7 @@ function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['
     fig: {
       ...extractFigmaRawGeometry(nc, blobs),
       ...extractFigmaSymbolMetadata(nc, blobs),
-      layout: extractFigmaLayoutMetadata(nc),
-      // Engine type is TEXT; remember Kiwi TEXT_PATH so export can re-emit type 41
-      // while path-text fidelity (glyphs) still exists. Cleared on content edit.
-      kiwiNodeType: nc.type === 'TEXT_PATH' ? 'TEXT_PATH' : null
+      layout: extractFigmaLayoutMetadata(nc)
     }
   }
 }

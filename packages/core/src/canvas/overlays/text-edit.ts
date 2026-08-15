@@ -17,7 +17,7 @@ export function drawTextEditOverlay(
   // them drops axis-aligned boxes over the artwork that have nothing to do with
   // the on-path glyphs. Draw an on-path caret instead (the curved selection band
   // + path stay visible via drawSelection).
-  if (node.source.fig.kiwiNodeType === 'TEXT_PATH') {
+  if (node.textPathData !== null) {
     drawPathTextCaret(r, canvas, node, editor)
     return
   }

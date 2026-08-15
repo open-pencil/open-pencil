@@ -4,11 +4,7 @@ import { toRaw } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import {
-  calibratePathTextLayout,
-  getTextPathData,
-  reflowPathTextGlyphs
-} from '@open-pencil/core/text'
+import { calibratePathTextLayout, reflowPathTextGlyphs } from '@open-pencil/core/text'
 import { cloneVectorNetwork } from '@open-pencil/scene-graph'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { copyDerivedGlyphs, copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
@@ -29,24 +25,19 @@ import type { DragResize } from '#vue/shared/input/types'
  */
 /**
  * Figma resize semantics for imported text-on-path: constant font size,
- * glyphs re-placed along the scaled path (see core/text/path-layout). Used
+ * glyphs re-placed along the scaled path (see core/text/path). Used
  * instead of geometric glyph/silhouette scaling whenever the node still has
  * its layout path. Baked node-level silhouettes cannot follow re-placed
  * glyphs, so strokeGeometry is cleared — the renderer rebuilds silhouettes
  * per glyph — and stroke weight stays constant like the font size.
  */
 function reflowedPathTextChanges(
-  editor: Editor,
-  nodeId: string,
-  orig: Pick<ResizeSnapshot, 'textPathBox' | 'figmaDerivedTextGlyphs' | 'strokes'>,
+  orig: Pick<ResizeSnapshot, 'textPathData' | 'textPathBox' | 'figmaDerivedTextGlyphs' | 'strokes'>,
   sx: number,
   sy: number
 ): Partial<SceneNode> | null {
-  if (!orig.textPathBox || !orig.figmaDerivedTextGlyphs?.length) return null
-  const node = editor.graph.getNode(nodeId)
-  if (!node) return null
-  const data = getTextPathData(node)
-  if (!data) return null
+  if (!orig.textPathData || !orig.textPathBox || !orig.figmaDerivedTextGlyphs?.length) return null
+  const data = orig.textPathData
   const layout = calibratePathTextLayout(orig.figmaDerivedTextGlyphs, data, orig.textPathBox)
   if (!layout) return null
   const box = {
@@ -78,6 +69,7 @@ function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean
         strokeGeometry: d.origStrokeGeometry,
         figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs,
         strokes: d.origStrokes,
+        textPathData: d.origTextPathData,
         textPathBox: d.origTextPathBox
       },
       origRect.width,
@@ -113,13 +105,7 @@ function applyConstrainedChildren(
     if (orig && orig.width > 0 && orig.height > 0) {
       const width = childChanges.width ?? orig.width
       const height = childChanges.height ?? orig.height
-      const reflow = reflowedPathTextChanges(
-        editor,
-        childId,
-        orig,
-        width / orig.width,
-        height / orig.height
-      )
+      const reflow = reflowedPathTextChanges(orig, width / orig.width, height / orig.height)
       if (reflow) Object.assign(childChanges, reflow)
     }
     editor.graph.updateNodePreview(childId, childChanges)
@@ -142,9 +128,8 @@ export function applyResize(
   const { changes, newRect } = resizeChanges(d, cx, cy, constrain)
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
-      editor,
-      d.nodeId,
       {
+        textPathData: d.origTextPathData,
         textPathBox: d.origTextPathBox,
         figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs,
         strokes: d.origStrokes
@@ -193,6 +178,7 @@ function snapshotResizeFinal(node: SceneNode): Partial<SceneNode> {
     final.figmaDerivedTextGlyphs = copyDerivedGlyphs(node.figmaDerivedTextGlyphs)
   }
   if (node.textPathBox) final.textPathBox = { ...node.textPathBox }
+  if (node.textPathData) final.textPathData = structuredClone(node.textPathData)
   if (node.strokes.length > 0) final.strokes = copyStrokes(node.strokes)
   return final
 }
@@ -246,6 +232,7 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
         strokeGeometry: orig.strokeGeometry,
         figmaDerivedTextGlyphs: orig.figmaDerivedTextGlyphs,
         strokes: orig.strokes,
+        textPathData: orig.textPathData,
         textPathBox: orig.textPathBox
       })
     }
@@ -278,6 +265,7 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
         ? { figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs }
         : {}),
       ...(d.origStrokes.length > 0 ? { strokes: d.origStrokes } : {}),
+      ...(d.origTextPathData ? { textPathData: d.origTextPathData } : {}),
       ...(d.origTextPathBox ? { textPathBox: d.origTextPathBox } : {})
     })
   }

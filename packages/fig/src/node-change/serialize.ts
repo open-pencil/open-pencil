@@ -9,7 +9,7 @@ import { EMPTY_EXPORT_RUNTIME, type FigNodeChangeExportRuntime } from './export-
 import { applyFontFeaturesToKiwi } from './font/features'
 import { weightToFigmaStyle } from './font/style'
 import { fillToKiwiPaint, safeColor } from './paint'
-import { bakeGlyphScale, encodePathCommandsBlob } from './path-commands'
+import { bakeGlyphScale, encodePathCommandsBlob } from './path/commands'
 import {
   BOUND_VARIABLES_PLUGIN_KEY,
   LAYOUT_DIRECTION_PLUGIN_KEY,

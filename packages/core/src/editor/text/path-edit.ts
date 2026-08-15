@@ -7,7 +7,7 @@ import {
   calibratePathTextLayout,
   getTextPathData,
   layoutPathTextFromAdvances
-} from '#core/text/path-layout'
+} from '#core/text/path'
 
 /**
  * Re-flow imported path text when its characters change: rebuild glyph

@@ -7,8 +7,7 @@ import type { Fill, SceneNode, Stroke, VectorNetwork } from '@open-pencil/scene-
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import { exportFigFile } from '#core/io/formats/fig/export'
-import { getTextPathData, layoutPathTextFromAdvances } from '#core/text/path-layout'
-import { encodeVectorNetworkBlob } from '#core/vector'
+import { getTextPathData, layoutPathTextFromAdvances } from '#core/text/path'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import type { DragResize, OrigChildState } from '#vue/shared/input/types'
 
@@ -107,13 +106,11 @@ describe('group resize reflows path text instead of squashing it', () => {
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareGeometryBlob(256) }],
       textPathBox: { ...box }
     })
-    text.source.fig.kiwiNodeType = 'TEXT_PATH'
-    text.source.fig.rawNodeFields = {
-      vectorData: {
-        vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
-        normalizedSize: { x: 256, y: 256 }
-      },
-      textPathStart: { tValue: 0.25, forward: false }
+    text.textPathData = {
+      network: circleNetwork(),
+      normalizedSize: { x: 256, y: 256 },
+      tValue: 0.25,
+      forward: false
     }
 
     const data = expectDefined(getTextPathData(text), 'synthetic path data')
@@ -152,6 +149,7 @@ describe('group resize reflows path text instead of squashing it', () => {
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
       strokes: copyStrokes(text.strokes),
+      textPathData: structuredClone(expectDefined(text.textPathData)),
       textPathBox: { ...box }
     }
 
@@ -167,6 +165,7 @@ describe('group resize reflows path text instead of squashing it', () => {
       origStrokeGeometry: [],
       origFigmaDerivedTextGlyphs: null,
       origStrokes: [],
+      origTextPathData: null,
       origTextPathBox: null,
       origChildren: new Map([[text.id, origChild]])
     }
@@ -225,13 +224,11 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareGeometryBlob(256) }],
       textPathBox: { ...box }
     })
-    text.source.fig.kiwiNodeType = 'TEXT_PATH'
-    text.source.fig.rawNodeFields = {
-      vectorData: {
-        vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
-        normalizedSize: { x: 256, y: 256 }
-      },
-      textPathStart: { tValue: 0.25, forward: false }
+    text.textPathData = {
+      network: circleNetwork(),
+      normalizedSize: { x: 256, y: 256 },
+      tValue: 0.25,
+      forward: false
     }
 
     const data = expectDefined(getTextPathData(text), 'synthetic path data')
@@ -272,6 +269,7 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
       origStrokes: copyStrokes(text.strokes),
+      origTextPathData: structuredClone(expectDefined(text.textPathData)),
       origTextPathBox: { ...box },
       origChildren: null
     }
@@ -336,13 +334,11 @@ describe('resize + export integration: real commit path clears stale raw payload
     // buggy branch, so this must mimic a genuine import to be a real regression
     // guard.
     text.source.id = '1:2'
-    text.source.fig.kiwiNodeType = 'TEXT_PATH'
-    text.source.fig.rawNodeFields = {
-      vectorData: {
-        vectorNetworkBlob: encodeVectorNetworkBlob(circleNetwork()),
-        normalizedSize: { x: 256, y: 256 }
-      },
-      textPathStart: { tValue: 0.25, forward: false }
+    text.textPathData = {
+      network: circleNetwork(),
+      normalizedSize: { x: 256, y: 256 },
+      tValue: 0.25,
+      forward: false
     }
 
     const data = expectDefined(getTextPathData(text), 'synthetic path data')
@@ -400,6 +396,7 @@ describe('resize + export integration: real commit path clears stale raw payload
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
       origStrokes: copyStrokes(text.strokes),
+      origTextPathData: structuredClone(expectDefined(text.textPathData)),
       origTextPathBox: { ...box },
       origChildren: null
     }

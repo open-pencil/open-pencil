@@ -452,7 +452,7 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
  * size, so exporting them would paint stale full-size outlines.
  */
 function isReflowedStrokedPathText(node: SceneNode): boolean {
-  if (node.type !== 'TEXT' || node.source.fig.kiwiNodeType !== 'TEXT_PATH') return false
+  if (node.type !== 'TEXT' || node.textPathData === null) return false
   if ((node.figmaDerivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
   if (node.strokeGeometry.length !== 0) return false
   // Only when the node has stroke paint but its baked silhouettes were
@@ -481,7 +481,7 @@ function isReflowedStrokedPathText(node: SceneNode): boolean {
 function isEditedPathText(node: SceneNode): boolean {
   return (
     node.type === 'TEXT' &&
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    node.textPathData !== null &&
     // "Edited" = the raw transform no longer backs the node. Editing does not
     // clear source.fig.rawTransform directly; effectiveFigmaSourcePayload
     // derives it from source.editedFields, so ask that, not the raw field.
@@ -887,12 +887,12 @@ function applyNodeVisualProps(
 
 /**
  * Import maps TEXT_PATH → TEXT. Re-emit Kiwi type 41 only while path fidelity
- * remains (marker + baked glyphs). After the user edits characters we clear
- * both — exporting TEXT_PATH without glyphs would be a lie to Figma.
+ * remains (materialized path data + baked glyphs). After an edit that cannot
+ * reflow glyphs, invalidation clears the path data so export falls back to TEXT.
  */
 function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): string {
   const isPathText =
-    node.source.fig.kiwiNodeType === 'TEXT_PATH' &&
+    node.textPathData !== null &&
     node.type === 'TEXT' &&
     (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
   return isPathText ? 'TEXT_PATH' : context.mapToFigmaType(node.type)

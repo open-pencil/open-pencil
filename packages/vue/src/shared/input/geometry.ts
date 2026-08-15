@@ -173,7 +173,7 @@ function getCursorAngleFromHandle(handle: HandlePosition, rotation: number): num
  * fallbacks the overlay takes (no path data / unsamplable path).
  */
 function selectionHandleRect(node: SceneNode): Rect | undefined {
-  if (node.source.fig.kiwiNodeType !== 'TEXT_PATH' || !node.textPathBox) return undefined
+  if (node.textPathData === null || !node.textPathBox) return undefined
   const data = getTextPathData(node)
   const box =
     (data && fitTextPathBoxToGlyphs(data, node.textPathBox, node.figmaDerivedTextGlyphs)) ??

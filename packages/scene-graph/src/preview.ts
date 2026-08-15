@@ -1,4 +1,3 @@
-import { toRawDeep } from './raw'
 import { invalidateTextCaches } from './text-picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
@@ -51,8 +50,6 @@ export function updateNodePreview(
 ): Partial<SceneNode> | null {
   const node = graph.nodes.get(id)
   if (!node) return null
-  // The graph must never store Vue reactive proxies — see toRawDeep.
-  changes = toRawDeep(changes)
   changes = Object.fromEntries(
     (Object.entries(changes) as Array<[string, unknown]>).filter(([, value]) => value !== undefined)
   ) as Partial<SceneNode>
