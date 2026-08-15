@@ -22,6 +22,7 @@ Dependency auditing:
 ```sh
 bun run check:audit       # Fails on critical advisories
 bun run check:audit:high  # Reports the current high-severity backlog
+bun run check:cloud-policy # Runs project-specific Semgrep rules in Docker
 ```
 
 The high-severity audit is initially informational in CI because existing transitive dependencies have unresolved advisories. New dependency work should not increase that backlog. Promote it to a required check once the recorded findings are remediated or explicitly accepted.
