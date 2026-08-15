@@ -417,6 +417,21 @@
   "overrides": [
     {
       "files": [
+        "packages/cloud/src/**/*.ts",
+        "packages/cloud/deploy/**/*.ts"
+      ],
+      "rules": {
+        "typescript/no-unsafe-assignment": "error",
+        "typescript/no-unsafe-argument": "error",
+        "typescript/no-unsafe-call": "error",
+        "typescript/no-unsafe-member-access": "error",
+        "typescript/no-unsafe-return": "error",
+        "typescript/switch-exhaustiveness-check": "error",
+        "typescript/no-deprecated": "error"
+      }
+    },
+    {
+      "files": [
         "src/**/*.ts",
         "packages/*/src/**/*.ts"
       ],

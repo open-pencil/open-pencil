@@ -37,6 +37,7 @@
     "check:deps": "knip --include unlisted,unresolved,binaries",
     "check:docs": "bun --filter @open-pencil/docs check",
     "check:audit": "bun audit --audit-level=critical",
+    "check:audit:high": "bun audit --audit-level=high",
     "check:secrets": "bun tools/secret-scan/src/index.ts",
     "check:monorepo": "sherif --ignore-rule root-package-dependencies",
     "check:native-test": "tsc --noEmit -p tests/e2e/native/tsconfig.json",

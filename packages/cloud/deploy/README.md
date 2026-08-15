@@ -1,5 +1,7 @@
 # OpenPencil Cloud reference deployment
 
+See [Backend security checks](./security.md) for local and CI hardening guidance.
+
 This profile runs OpenPencil Cloud with PostgreSQL 17 and a SeaweedFS S3-compatible object store. It is intended as a self-hosting reference and local integration environment.
 
 ## Start

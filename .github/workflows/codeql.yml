@@ -1,0 +1,43 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'packages/cloud/**'
+      - 'src/app/collab/**'
+      - 'src/app/integrations/storage/cloud/**'
+      - '.github/workflows/codeql.yml'
+  push:
+    branches: [master]
+  schedule:
+    - cron: '43 4 * * 2'
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze JavaScript and TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          build-mode: none
+          queries: security-extended,security-and-quality
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:javascript-typescript

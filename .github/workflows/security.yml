@@ -1,0 +1,67 @@
+name: Security checks
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/**'
+      - 'packages/cloud/**'
+      - 'bun.lock'
+      - 'package.json'
+  push:
+    branches: [master]
+  schedule:
+    - cron: '19 5 * * 3'
+  workflow_dispatch:
+
+concurrency:
+  group: security-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  workflows:
+    name: GitHub Actions policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download actionlint
+        id: actionlint
+        shell: bash
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash \
+            | bash -s -- 1.7.12 "${RUNNER_TEMP}"
+          echo "executable=${RUNNER_TEMP}/actionlint" >> "${GITHUB_OUTPUT}"
+
+      - name: Validate workflows
+        shell: bash
+        run: "${{ steps.actionlint.outputs.executable }} -color"
+
+      - name: Audit workflow security
+        uses: zizmorcore/zizmor-action@v1
+        continue-on-error: true
+        with:
+          min-severity: high
+          min-confidence: high
+          advanced-security: false
+          annotations: true
+
+  dependencies:
+    name: Dependency vulnerabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Reject critical dependency vulnerabilities
+        run: bun audit --audit-level=critical
+
+      - name: Report high-severity dependency vulnerabilities
+        continue-on-error: true
+        run: bun audit --audit-level=high
