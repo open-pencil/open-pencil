@@ -36,11 +36,13 @@ function setLayoutMode(mode: string) {
         @change="setLayoutMode"
       >
         <template #option="{ option }">
-          <Tip :label="option.label" class="flex items-center justify-center">
-            <icon-lucide-move v-if="option.value === 'NONE'" class="size-3.5" />
-            <icon-lucide-rows-2 v-else-if="option.value === 'VERTICAL'" class="size-3.5" />
-            <icon-lucide-columns-2 v-else-if="option.value === 'HORIZONTAL'" class="size-3.5" />
-            <icon-lucide-layout-grid v-else class="size-3.5" />
+          <Tip :label="option.label">
+            <span class="flex items-center justify-center">
+              <icon-lucide-move v-if="option.value === 'NONE'" class="size-3.5" />
+              <icon-lucide-rows-2 v-else-if="option.value === 'VERTICAL'" class="size-3.5" />
+              <icon-lucide-columns-2 v-else-if="option.value === 'HORIZONTAL'" class="size-3.5" />
+              <icon-lucide-layout-grid v-else class="size-3.5" />
+            </span>
           </Tip>
         </template>
       </SegmentedControl>

@@ -24,7 +24,6 @@
   "createCollection": "コレクションを作成",
   "localVariables": "ローカル変数",
   "noVariableCollections": "変数コレクションがありません",
-  "selectLayerForJSX": "JSXコードを表示するレイヤーを選択してください",
   "connectAIProvider": "チャットを始めるには、AIプロバイダーを接続してください。",
   "connect": "接続",
   "testConnection": "接続をテスト",
@@ -192,6 +191,7 @@
   "copiedExclamation": "コピーしました！",
   "copyMessage": "メッセージをコピー",
   "copyJSXReference": "JSXのprops参照をクリップボードにコピー",
+  "jsxUpToDate": "Up to date",
   "newTab": "新しいタブ",
   "closeTab": "{name} を閉じる",
   "showUI": "UIを表示 ({shortcut})",
@@ -276,5 +276,16 @@
   "dismiss": "閉じる",
   "toolRunning": "実行中…",
   "toolError": "エラー",
-  "permissionRequestTitle": "権限リクエスト"
+  "permissionRequestTitle": "権限リクエスト",
+  "codeSource": "Code source",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Updating…",
+  "codeUpdatedLive": "Updated live",
+  "codePreviewFailed": "Preview failed",
+  "codeGeneratedReadOnly": "Generated, read only",
+  "codeReset": "Reset"
 }

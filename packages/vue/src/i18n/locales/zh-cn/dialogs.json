@@ -24,7 +24,6 @@
   "createCollection": "创建集合",
   "localVariables": "本地变量",
   "noVariableCollections": "没有变量集合",
-  "selectLayerForJSX": "选择一个图层以查看其 JSX 代码",
   "connectAIProvider": "连接 AI 提供商以开始聊天。",
   "connect": "连接",
   "testConnection": "测试连接",
@@ -192,6 +191,7 @@
   "copiedExclamation": "已复制！",
   "copyMessage": "复制消息",
   "copyJSXReference": "复制 JSX 属性参考到剪贴板",
+  "jsxUpToDate": "Up to date",
   "newTab": "新标签页",
   "closeTab": "关闭 {name}",
   "showUI": "显示界面（{shortcut}）",
@@ -276,5 +276,16 @@
   "dismiss": "关闭",
   "toolRunning": "正在运行…",
   "toolError": "错误",
-  "permissionRequestTitle": "权限请求"
+  "permissionRequestTitle": "权限请求",
+  "codeSource": "Code source",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Updating…",
+  "codeUpdatedLive": "Updated live",
+  "codePreviewFailed": "Preview failed",
+  "codeGeneratedReadOnly": "Generated, read only",
+  "codeReset": "Reset"
 }

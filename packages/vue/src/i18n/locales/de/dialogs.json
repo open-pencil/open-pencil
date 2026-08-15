@@ -24,7 +24,6 @@
   "createCollection": "Sammlung erstellen",
   "localVariables": "Lokale Variablen",
   "noVariableCollections": "Keine Variablensammlungen",
-  "selectLayerForJSX": "Wähle eine Ebene, um ihren JSX-Code zu sehen",
   "connectAIProvider": "Verbinde einen KI-Anbieter, um den Chat zu starten.",
   "connect": "Verbinden",
   "testConnection": "Verbindung testen",
@@ -192,6 +191,7 @@
   "copiedExclamation": "Kopiert!",
   "copyMessage": "Nachricht kopieren",
   "copyJSXReference": "JSX-Prop-Referenz in die Zwischenablage kopieren",
+  "jsxUpToDate": "Up to date",
   "newTab": "Neuer Tab",
   "closeTab": "{name} schließen",
   "showUI": "UI anzeigen ({shortcut})",
@@ -276,5 +276,16 @@
   "dismiss": "Schließen",
   "toolRunning": "Wird ausgeführt…",
   "toolError": "Fehler",
-  "permissionRequestTitle": "Berechtigungsanfrage"
+  "permissionRequestTitle": "Berechtigungsanfrage",
+  "codeSource": "Code source",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Updating…",
+  "codeUpdatedLive": "Updated live",
+  "codePreviewFailed": "Preview failed",
+  "codeGeneratedReadOnly": "Generated, read only",
+  "codeReset": "Reset"
 }
