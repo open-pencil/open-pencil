@@ -3,17 +3,28 @@ import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
 
-interface ScreenPoint {
+interface ClientPoint {
   x: number
   y: number
 }
 
-type ElementScreenGeometry = Pick<DOMRect, 'height' | 'width' | 'x' | 'y'>
+type ElementClientGeometry = Pick<DOMRect, 'height' | 'width' | 'x' | 'y'>
 
 const USER32_DECLARATION = String.raw`
 using System;
 using System.Runtime.InteropServices;
 public static class NativeInput {
+  [StructLayout(LayoutKind.Sequential)]
+  public struct Point {
+    public int X;
+    public int Y;
+  }
+  [DllImport("user32.dll")]
+  public static extern bool ClientToScreen(IntPtr window, ref Point point);
+  [DllImport("user32.dll")]
+  public static extern uint GetDpiForWindow(IntPtr window);
+  [DllImport("user32.dll")]
+  public static extern bool SetProcessDpiAwarenessContext(IntPtr value);
   [DllImport("user32.dll")]
   public static extern bool SetCursorPos(int x, int y);
   [DllImport("user32.dll")]
@@ -26,9 +37,17 @@ public static class NativeInput {
 
 const FOREGROUND_SCRIPT = String.raw`
 $process = Get-Process OpenPencil -ErrorAction Stop | Select-Object -First 1
+[NativeInput]::SetProcessDpiAwarenessContext([IntPtr](-4)) | Out-Null
 [NativeInput]::ShowWindow($process.MainWindowHandle, 9) | Out-Null
 [NativeInput]::SetForegroundWindow($process.MainWindowHandle) | Out-Null
 Start-Sleep -Milliseconds 150
+$clientOrigin = New-Object NativeInput+Point
+if (-not [NativeInput]::ClientToScreen($process.MainWindowHandle, [ref]$clientOrigin)) {
+  throw 'ClientToScreen failed'
+}
+$dpi = [NativeInput]::GetDpiForWindow($process.MainWindowHandle)
+if ($dpi -eq 0) { throw 'GetDpiForWindow failed' }
+$scale = $dpi / 96.0
 `
 
 async function runPowerShell(script: string): Promise<void> {
@@ -37,23 +56,21 @@ async function runPowerShell(script: string): Promise<void> {
   await execFileAsync('powershell.exe', ['-NoProfile', '-EncodedCommand', encoded])
 }
 
-export async function readElementScreenGeometry(selector: string): Promise<ElementScreenGeometry> {
+export async function readElementClientGeometry(selector: string): Promise<ElementClientGeometry> {
   return browser.execute((targetSelector) => {
     const element = document.querySelector(targetSelector)
     if (!(element instanceof HTMLElement)) throw new Error(`Element not found: ${targetSelector}`)
     const rect = element.getBoundingClientRect()
-    const borderX = (window.outerWidth - window.innerWidth) / 2
-    const titleBar = window.outerHeight - window.innerHeight - borderX
     return {
-      x: Math.round(window.screenX + borderX + rect.left),
-      y: Math.round(window.screenY + titleBar + rect.top),
-      width: Math.round(rect.width),
-      height: Math.round(rect.height)
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height
     }
   }, selector)
 }
 
-export async function nativeDrag(from: ScreenPoint, to: ScreenPoint): Promise<void> {
+export async function nativeDrag(from: ClientPoint, to: ClientPoint): Promise<void> {
   const steps = Array.from({ length: 20 }, (_, index) => {
     const progress = (index + 1) / 20
     return {
@@ -64,13 +81,15 @@ export async function nativeDrag(from: ScreenPoint, to: ScreenPoint): Promise<vo
   const moves = steps
     .map(
       (point) =>
-        `[NativeInput]::SetCursorPos(${point.x}, ${point.y}) | Out-Null\nStart-Sleep -Milliseconds 35`
+        `$x = [int][Math]::Round($clientOrigin.X + (${point.x} * $scale))\n$y = [int][Math]::Round($clientOrigin.Y + (${point.y} * $scale))\n[NativeInput]::SetCursorPos($x, $y) | Out-Null\nStart-Sleep -Milliseconds 35`
     )
     .join('\n')
   await runPowerShell(`
 Add-Type -TypeDefinition '${USER32_DECLARATION}'
 ${FOREGROUND_SCRIPT}
-[NativeInput]::SetCursorPos(${from.x}, ${from.y}) | Out-Null
+$x = [int][Math]::Round($clientOrigin.X + (${from.x} * $scale))
+$y = [int][Math]::Round($clientOrigin.Y + (${from.y} * $scale))
+[NativeInput]::SetCursorPos($x, $y) | Out-Null
 Start-Sleep -Milliseconds 100
 [NativeInput]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
 Start-Sleep -Milliseconds 250

@@ -5,7 +5,7 @@ import {
   readNativeLayerOrder
 } from '#tests/helpers/tauri/editor-snapshot'
 import { startNativeEventRecorder } from '#tests/helpers/tauri/event-recorder'
-import { nativeDrag, readElementScreenGeometry } from '#tests/helpers/tauri/windows-input'
+import { nativeDrag, readElementClientGeometry } from '#tests/helpers/tauri/windows-input'
 
 describe('native layer dragging', () => {
   it('delivers a WebView drag sequence and reorders once', async function () {
@@ -22,10 +22,10 @@ describe('native layer dragging', () => {
     const recorder = await startNativeEventRecorder()
 
     await recorder.clear()
-    const sourceGeometry = await readElementScreenGeometry(
+    const sourceGeometry = await readElementClientGeometry(
       `[data-node-id="${ids.third}"] [data-test-id="layers-item"]`
     )
-    const targetGeometry = await readElementScreenGeometry(
+    const targetGeometry = await readElementClientGeometry(
       `[data-node-id="${ids.first}"] [data-test-id="layers-item"]`
     )
     await nativeDrag(

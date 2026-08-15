@@ -13,6 +13,7 @@ async function installTauriClipboardMock(page: Page) {
     const state = {
       text: '',
       html: '',
+      failHtmlWrites: false,
       writes: [] as Array<{ cmd: string; args: unknown }>
     }
 
@@ -37,6 +38,7 @@ async function installTauriClipboardMock(page: Page) {
           state.writes.push({ cmd, args })
           switch (cmd) {
             case 'plugin:clipboard-manager|write_html': {
+              if (state.failHtmlWrites) throw new Error('Clipboard write failed')
               state.html = String(args?.html ?? '')
               state.text = String(args?.altText ?? state.html)
               return null
@@ -107,6 +109,12 @@ function testClipboard(page: Page) {
   return page.evaluate(() => window.__OPENPENCIL_TEST_CLIPBOARD__)
 }
 
+function failTauriHTMLWrites(page: Page) {
+  return page.evaluate(() => {
+    window.__OPENPENCIL_TEST_CLIPBOARD__.failHtmlWrites = true
+  })
+}
+
 async function dispatchClipboardEvent(
   page: Page,
   type: 'copy' | 'cut' | 'paste',
@@ -164,9 +172,7 @@ test('Tauri paste restores copied design data from plugin clipboard text', async
   canvas.assertNoErrors()
 })
 
-test('Tauri cut writes design data and deletes selection only after clipboard write succeeds', async ({
-  page
-}) => {
+test('Tauri cut writes design data and deletes the selection', async ({ page }) => {
   const canvas = await createTauriEditorPage(page)
   await canvas.drawRect(160, 160, 96, 72)
 
@@ -178,6 +184,25 @@ test('Tauri cut writes design data and deletes selection only after clipboard wr
   expect(clipboard.html).toContain('(figma)')
   expect(clipboard.text).toBe('Rectangle')
   await expect(page.getByText('Clipboard access is blocked in this browser context')).toHaveCount(0)
+  canvas.assertNoErrors()
+})
+
+test('Tauri cut keeps the selection when the clipboard write fails', async ({ page }) => {
+  const canvas = await createTauriEditorPage(page)
+  await canvas.drawRect(160, 160, 96, 72)
+  await failTauriHTMLWrites(page)
+
+  await dispatchClipboardEvent(page, 'cut')
+  await canvas.waitForRender()
+
+  await expect.poll(() => pageChildren(page)).toEqual([{ name: 'Rectangle', type: 'RECTANGLE' }])
+  expect(await selectedCount(page)).toBe(1)
+  const clipboard = await testClipboard(page)
+  expect(clipboard.html).toBe('')
+  expect(clipboard.text).toBe('')
+  expect(
+    clipboard.writes.some((entry) => entry.cmd === 'plugin:clipboard-manager|write_html')
+  ).toBe(true)
   canvas.assertNoErrors()
 })
 
