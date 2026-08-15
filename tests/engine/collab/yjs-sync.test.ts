@@ -1,6 +1,8 @@
 import { describe, test, expect } from 'bun:test'
 
+import { create as createPRNG } from 'lib0/prng'
 import * as Y from 'yjs'
+import { TestConnector, type TestYInstance } from 'yjs/testHelper'
 
 import type { Fill, GeometryPath, SceneNode } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -47,11 +49,17 @@ function firstPage(graph: SceneGraph): SceneNode {
 
 type SyncedStores = ReturnType<typeof createSyncedStores>
 
-function createSyncedStores() {
+type SyncedStoreOptions = {
+  hostDoc?: Y.Doc
+  peerDoc?: Y.Doc
+  connectImmediately?: boolean
+}
+
+function createSyncedStores(options: SyncedStoreOptions = {}) {
   const hostStore = createEditorStore(new SceneGraph())
   const peerStore = createEditorStore(new SceneGraph())
-  const hostDoc = new Y.Doc()
-  const peerDoc = new Y.Doc()
+  const hostDoc = options.hostDoc ?? new Y.Doc()
+  const peerDoc = options.peerDoc ?? new Y.Doc()
   const hostNodes = hostDoc.getMap<Y.Map<unknown>>('nodes')
   const peerNodes = peerDoc.getMap<Y.Map<unknown>>('nodes')
   const hostImages = hostDoc.getMap<Uint8Array>('images')
@@ -101,7 +109,8 @@ function createSyncedStores() {
     applyYjsToGraph: peerSync.applyYjsToGraph
   })
 
-  const disconnectYDocs = connectYDocs(hostDoc, peerDoc)
+  const disconnectYDocs =
+    options.connectImmediately === false ? undefined : connectYDocs(hostDoc, peerDoc)
 
   return {
     hostStore,
@@ -118,15 +127,15 @@ function createSyncedStores() {
       return peerSuppressGraphSync
     },
     cleanup: () => {
-      disconnectYDocs()
+      disconnectYDocs?.()
       hostDoc.destroy()
       peerDoc.destroy()
     }
   }
 }
 
-function withSyncedStores(run: (stores: SyncedStores) => void) {
-  const stores = createSyncedStores()
+function withSyncedStores(run: (stores: SyncedStores) => void, options: SyncedStoreOptions = {}) {
+  const stores = createSyncedStores(options)
   try {
     run(stores)
   } finally {
@@ -403,9 +412,14 @@ describe('collab yjs-sync', () => {
     })
   })
 
-  test('concurrent edits converge after reconnecting peers', () => {
+  test('queued concurrent edits converge through the official Yjs test connector', () => {
+    const connector = new TestConnector(createPRNG(526))
+    const hostDoc: TestYInstance = connector.createY(1)
+    const peerDoc: TestYInstance = connector.createY(2)
+    connector.syncAll()
+
     withSyncedStores(
-      ({ hostStore, peerStore, hostSync, peerSync, hostDoc, peerDoc, disconnectYDocs }) => {
+      ({ hostStore, peerStore, hostSync, peerSync }) => {
         const hostPage = firstPage(hostStore.graph)
         const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, {
           width: 80,
@@ -413,22 +427,24 @@ describe('collab yjs-sync', () => {
         })
         hostSync.syncAllNodesToYjs()
         hostSync.syncNodeToYjs(rect.id)
-        disconnectYDocs()
+        connector.flushAllMessages()
+        expect(getNodeOrThrow(peerStore.graph, rect.id).type).toBe('RECTANGLE')
 
+        hostDoc.disconnect()
         hostStore.graph.updateNode(rect.id, { x: 42 })
         hostSync.syncNodeToYjs(rect.id)
         peerStore.graph.updateNode(rect.id, { y: 24 })
         peerSync.syncNodeToYjs(rect.id)
 
-        const hostUpdate = Y.encodeStateAsUpdate(hostDoc, Y.encodeStateVector(peerDoc))
-        const peerUpdate = Y.encodeStateAsUpdate(peerDoc, Y.encodeStateVector(hostDoc))
-        Y.applyUpdate(hostDoc, peerUpdate)
-        Y.applyUpdate(peerDoc, hostUpdate)
+        hostDoc.connect()
+        expect(connector.flushRandomMessage()).toBe(true)
+        connector.flushAllMessages()
 
         expect(getNodeOrThrow(hostStore.graph, rect.id)).toMatchObject({ x: 42, y: 24 })
         expect(getNodeOrThrow(peerStore.graph, rect.id)).toMatchObject({ x: 42, y: 24 })
         expect(Y.encodeStateVector(hostDoc)).toEqual(Y.encodeStateVector(peerDoc))
-      }
+      },
+      { hostDoc, peerDoc, connectImmediately: false }
     )
   })
 
