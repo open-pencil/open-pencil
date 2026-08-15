@@ -58,7 +58,7 @@ describe('document recovery controller', () => {
     recovery.disposeRecovery()
   })
 
-  test('coalesces concurrent changes to the latest scene version', async () => {
+  test('recovery coalesces 100 changes during encoding to the latest scene version', async () => {
     let release: (() => void) | null = null
     let calls = 0
     const { state, store, recovery } = setup(async () => {
@@ -73,8 +73,10 @@ describe('document recovery controller', () => {
     state.sceneVersion = 1
     const pending = recovery.persistNow()
     await Promise.resolve()
-    state.sceneVersion = 2
-    void recovery.persistNow()
+    for (let version = 2; version <= 101; version++) {
+      state.sceneVersion = version
+      void recovery.persistNow()
+    }
     const releaseFirst = () => {
       if (release) release()
     }
@@ -82,7 +84,7 @@ describe('document recovery controller', () => {
     await pending
 
     expect(calls).toBe(2)
-    expect((await store.read('recovery-1'))?.sceneVersion).toBe(2)
+    expect((await store.read('recovery-1'))?.sceneVersion).toBe(101)
     recovery.disposeRecovery()
   })
 
