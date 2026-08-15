@@ -15,6 +15,7 @@
         "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
         "@chenglou/pretext": "^0.0.7",
         "@open-pencil/cli": "workspace:*",
+        "@open-pencil/cloud": "workspace:*",
         "@open-pencil/core": "workspace:*",
         "@open-pencil/dom-css": "workspace:*",
         "@open-pencil/fig": "workspace:*",

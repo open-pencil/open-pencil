@@ -86,6 +86,7 @@ export function createCloudApp(services: CloudServices) {
   const cloudAPI = createCloudAPIRouter({ collaboration, documents, sharing, workspaces })
 
   return new Hono<CloudEnvironment>()
+    .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
     .get('/health', (context) =>
       context.json({

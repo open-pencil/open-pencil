@@ -16,7 +16,9 @@ import collaborationTheme from '@/theme/collaboration'
 const collab = useCollabPanelContext()
 const store = useEditorStore()
 const cloudDialogOpen = ref(false)
-const cloudDocument = computed(() => isCloudDocument(store))
+const cloudDocument = computed(
+  () => collab.state.identity.source === 'cloud' || isCloudDocument(store)
+)
 const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
 const connection = computed(() => {
   if (collab.state.connected) return 'connected'

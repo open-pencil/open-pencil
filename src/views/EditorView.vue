@@ -23,6 +23,7 @@ import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
+import { setOpenPencilStore } from '@/app/browser-bridge'
 import { useEditorStore } from '@/app/editor/active-store'
 import { activeTab, createTab, getActiveStore, tabCount } from '@/app/tabs'
 import { onActiveDocumentOpened } from '@/app/tabs/events'
@@ -82,14 +83,16 @@ async function openCloudShare() {
   const graph = await readFigFile(file, { populate: 'first-page' })
   const firstPageId = graph.getPages()[0]?.id
   if (firstPageId) computeAllLayouts(graph, firstPageId)
-  store.replaceGraph(graph)
-  store.state.documentName = shared.document.document.name
-  store.setAccessMode(shared.resolution.permission)
+  const loadedStore = getActiveStore()
+  loadedStore.replaceGraph(graph)
+  loadedStore.state.documentName = shared.document.document.name
+  loadedStore.setAccessMode(shared.resolution.permission)
+  setOpenPencilStore(loadedStore)
   const guestName = collab.state.value.localName.trim() || shared.resolution.principal.name
   const ticketRequest = () =>
     loadCloudSharedCollaborationTicket(server, shareId, secret, guestName, cloudGuestId.value)
   collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
-  await store.fitCurrentPageToViewport()
+  await loadedStore.fitCurrentPageToViewport()
 }
 
 async function connectCloudDocument() {

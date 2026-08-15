@@ -91,6 +91,7 @@
     "@nanostores/i18n": "^1.3.3",
     "@nanostores/vue": "^1.1.0",
     "@open-pencil/cli": "workspace:*",
+    "@open-pencil/cloud": "workspace:*",
     "@open-pencil/core": "workspace:*",
     "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/fig": "workspace:*",
