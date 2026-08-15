@@ -108,6 +108,9 @@ function createSyncedStores() {
     peerStore,
     hostSync,
     peerSync,
+    hostDoc,
+    peerDoc,
+    disconnectYDocs,
     get hostSuppressGraphSync() {
       return hostSuppressGraphSync
     },
@@ -343,6 +346,90 @@ describe('collab yjs-sync', () => {
       expect(getNodeOrThrow(hostStore.graph, rect.id).x).toBe(42)
       expect(getNodeOrThrow(hostStore.graph, rect.id).y).toBe(24)
     })
+  })
+
+  test('unchanged node synchronization emits no Yjs update', () => {
+    withSyncedStores(({ hostStore, hostSync, hostDoc }) => {
+      const hostPage = firstPage(hostStore.graph)
+      const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, { width: 80, height: 60 })
+      hostSync.syncNodeToYjs(rect.id)
+
+      let updateCount = 0
+      let updateBytes = 0
+      const trackUpdate = (update: Uint8Array) => {
+        updateCount++
+        updateBytes += update.byteLength
+      }
+      hostDoc.on('update', trackUpdate)
+      for (let index = 0; index < 100; index++) hostSync.syncNodeToYjs(rect.id)
+      hostDoc.off('update', trackUpdate)
+
+      expect(updateCount).toBe(0)
+      expect(updateBytes).toBe(0)
+    })
+  })
+
+  test('repeated drag-like updates stay field-sized and do not echo', () => {
+    withSyncedStores(({ hostStore, peerStore, hostSync, hostDoc, peerDoc }) => {
+      const hostPage = firstPage(hostStore.graph)
+      const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, { width: 80, height: 60 })
+      hostSync.syncAllNodesToYjs()
+      hostSync.syncNodeToYjs(rect.id)
+
+      let hostUpdateCount = 0
+      let hostUpdateBytes = 0
+      let peerUpdateCount = 0
+      const trackHostUpdate = (update: Uint8Array) => {
+        hostUpdateCount++
+        hostUpdateBytes += update.byteLength
+      }
+      const trackPeerUpdate = () => {
+        peerUpdateCount++
+      }
+      hostDoc.on('update', trackHostUpdate)
+      peerDoc.on('update', trackPeerUpdate)
+
+      for (let index = 1; index <= 100; index++) {
+        hostStore.graph.updateNode(rect.id, { x: index })
+        hostSync.syncNodeToYjs(rect.id)
+      }
+
+      hostDoc.off('update', trackHostUpdate)
+      peerDoc.off('update', trackPeerUpdate)
+      expect(getNodeOrThrow(peerStore.graph, rect.id).x).toBe(100)
+      expect(hostUpdateCount).toBe(100)
+      expect(peerUpdateCount).toBe(100)
+      expect(hostUpdateBytes).toBeLessThan(8_000)
+    })
+  })
+
+  test('concurrent edits converge after reconnecting peers', () => {
+    withSyncedStores(
+      ({ hostStore, peerStore, hostSync, peerSync, hostDoc, peerDoc, disconnectYDocs }) => {
+        const hostPage = firstPage(hostStore.graph)
+        const rect = hostStore.graph.createNode('RECTANGLE', hostPage.id, {
+          width: 80,
+          height: 60
+        })
+        hostSync.syncAllNodesToYjs()
+        hostSync.syncNodeToYjs(rect.id)
+        disconnectYDocs()
+
+        hostStore.graph.updateNode(rect.id, { x: 42 })
+        hostSync.syncNodeToYjs(rect.id)
+        peerStore.graph.updateNode(rect.id, { y: 24 })
+        peerSync.syncNodeToYjs(rect.id)
+
+        const hostUpdate = Y.encodeStateAsUpdate(hostDoc, Y.encodeStateVector(peerDoc))
+        const peerUpdate = Y.encodeStateAsUpdate(peerDoc, Y.encodeStateVector(hostDoc))
+        Y.applyUpdate(hostDoc, peerUpdate)
+        Y.applyUpdate(peerDoc, hostUpdate)
+
+        expect(getNodeOrThrow(hostStore.graph, rect.id)).toMatchObject({ x: 42, y: 24 })
+        expect(getNodeOrThrow(peerStore.graph, rect.id)).toMatchObject({ x: 42, y: 24 })
+        expect(Y.encodeStateVector(hostDoc)).toEqual(Y.encodeStateVector(peerDoc))
+      }
+    )
   })
 
   test('image fills sync image bytes', () => {

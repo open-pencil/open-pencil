@@ -7,6 +7,7 @@
 - Add tested pane-registry and recursive split-tree models for independently viewed same-document canvases, capped at four visible panes.
 - Add explicit shared/view editor-state ownership and canvas render-state hooks as a foundation for independent same-document canvas panes.
 
+- Improve collaboration efficiency by avoiding redundant unchanged-field Yjs writes and covering repeated and concurrent two-peer edits.
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
 - Add a single CodeMirror editor for live Design JSX and HTML/CSS canvas previews, with Tailwind JSX viewing, completion, diagnostics, line numbers, bounded execution, and session-level undo. (#130)
 - Allow supported AI model profiles to set a provider-specific reasoning effort. (#454)
