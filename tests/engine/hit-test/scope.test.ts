@@ -311,6 +311,10 @@ describe('hitTest — frame with children', () => {
     graph.reorderChild(child.id, right.id, 0)
     expect(graph.getAbsolutePosition(child.id)).toEqual({ x: 420, y: 120 })
     expect(graph.hitTest(430, 130, right.id)?.id).toBe(child.id)
+
+    graph.reorderChild(right.id, child.id, 0)
+    expect(right.parentId).toBe(page)
+    expect(child.parentId).toBe(right.id)
   })
 
   test('unrotated child inside a flipped ancestor uses transformed hit testing', () => {
