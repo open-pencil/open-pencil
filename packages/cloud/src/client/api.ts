@@ -326,7 +326,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         resolvedShareResponseSchema,
         await responseBody(
           await (options.fetch ?? globalThis.fetch)(
-            new URL(`shares/${encodeURIComponent(shareId)}/resolve`, apiURL(baseURL)),
+            `${apiURL(baseURL).replace(/\/$/, '')}/shares/${encodeURIComponent(shareId)}/resolve`,
             {
               method: 'POST',
               credentials: 'include',
@@ -344,7 +344,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         sharedDocumentResponseSchema,
         await responseBody(
           await (options.fetch ?? globalThis.fetch)(
-            new URL(`shares/${encodeURIComponent(shareId)}/document`, apiURL(baseURL)),
+            `${apiURL(baseURL).replace(/\/$/, '')}/shares/${encodeURIComponent(shareId)}/document`,
             {
               method: 'POST',
               credentials: 'include',
