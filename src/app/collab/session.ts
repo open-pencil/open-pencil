@@ -187,6 +187,7 @@ export function connectCollabSession({
 
   const roomConnection = connectCollabRoom({
     roomId,
+    canSendUpdates: store.canMutate,
     ydoc: runtime.ydoc,
     awareness: runtime.awareness,
     setConnected: () => {
@@ -200,16 +201,18 @@ export function connectCollabSession({
 
   runtime.stopZoomWatch = watchAwarenessZoom(store, () => runtime.awareness)
 
-  runtime.unbindGraphEvents = bindCollabGraphEvents({
-    store,
-    getYdoc: () => runtime.ydoc,
-    getYnodes: () => runtime.ynodes,
-    getSuppressGraphSync: () => runtime.suppressGraphSync,
-    setSuppressYjsEvents: (value) => {
-      runtime.suppressYjsEvents = value
-    },
-    syncNodeToYjs
-  })
+  runtime.unbindGraphEvents = store.canMutate()
+    ? bindCollabGraphEvents({
+        store,
+        getYdoc: () => runtime.ydoc,
+        getYnodes: () => runtime.ynodes,
+        getSuppressGraphSync: () => runtime.suppressGraphSync,
+        setSuppressYjsEvents: (value) => {
+          runtime.suppressYjsEvents = value
+        },
+        syncNodeToYjs
+      })
+    : null
 }
 
 export function resetCollabRuntime(runtime: CollabRuntime) {

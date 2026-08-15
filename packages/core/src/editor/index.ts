@@ -24,6 +24,7 @@ export type { EditorToolDef } from './tool-registry'
 export type { VariantConflict, VariantValidationIssue } from './components/variants'
 export type {
   ClipboardImageResolution,
+  EditorAccessMode,
   EditorContext,
   EditorEventName,
   EditorEvents,
