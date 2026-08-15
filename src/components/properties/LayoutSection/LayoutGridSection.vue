@@ -93,10 +93,12 @@ function isGrid(grid: LayoutGrid): boolean {
           "
         >
           <template #option="{ option }">
-            <Tip :label="option.label" class="flex items-center justify-center">
-              <icon-lucide-columns-3 v-if="option.value === 'COLUMNS'" class="size-3.5" />
-              <icon-lucide-rows-3 v-else-if="option.value === 'ROWS'" class="size-3.5" />
-              <icon-lucide-layout-grid v-else class="size-3.5" />
+            <Tip :label="option.label">
+              <span class="flex items-center justify-center">
+                <icon-lucide-columns-3 v-if="option.value === 'COLUMNS'" class="size-3.5" />
+                <icon-lucide-rows-3 v-else-if="option.value === 'ROWS'" class="size-3.5" />
+                <icon-lucide-layout-grid v-else class="size-3.5" />
+              </span>
             </Tip>
           </template>
         </SegmentedControl>

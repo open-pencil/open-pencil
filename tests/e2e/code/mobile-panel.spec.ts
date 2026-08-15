@@ -1,10 +1,11 @@
-import { test, expect, useEditorSetup } from '#tests/e2e/fixtures'
+import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
+import { getMobileDrawerSnap } from '#tests/helpers/code-panel'
 
 const editor = useEditorSetup()
 
 test.use({ viewport: { width: 390, height: 844 } })
 
-test('closed mobile Code drawer defers JSX until reopened', async () => {
+test('mobile Code drawer mounts one live editor only while open', async () => {
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -13,21 +14,12 @@ test('closed mobile Code drawer defers JSX until reopened', async () => {
   })
 
   await editor.page.getByTestId('mobile-ribbon-code').click()
-  await expect(editor.page.getByTestId('code-panel')).toBeVisible()
+  const panel = editor.page.getByTestId('code-panel-root')
+  await expect(panel).toBeVisible()
+  await expect(panel.locator('[data-slot="code-editor"]')).toHaveCount(1)
+  await expect(panel.locator('.cm-content')).toContainText('Frame')
+  await expect(panel.locator('.cm-lineNumbers')).toBeVisible()
 
   await editor.page.getByTestId('mobile-ribbon-code').click()
-  await expect
-    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.mobileDrawerSnap))
-    .toBe('closed')
-
-  await editor.page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    store.clearSelection()
-    const rectangleId = store.createShape('RECTANGLE', 120, 0, 100, 100)
-    store.select([rectangleId])
-  })
-
-  await editor.page.getByTestId('mobile-ribbon-code').click()
-  await expect(editor.page.getByTestId('code-panel')).toContainText('Rectangle')
+  await expect.poll(() => getMobileDrawerSnap(editor.page)).toBe('closed')
 })
