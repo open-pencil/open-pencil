@@ -1,5 +1,9 @@
 {
   "name": "@open-pencil/package-quality-tools",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "check": "bun --cwd ../.. tools/package-quality/src/check/metadata.ts && bun --cwd ../.. tools/package-quality/src/check/publint.ts && bun --cwd ../.. tools/package-quality/src/check/attw.ts",
+    "smoke": "bun --cwd ../.. tools/package-quality/src/smoke.ts"
+  }
 }

@@ -69,7 +69,6 @@ const TOOL_LAYOUT_MESSAGE =
 
 const strictToolsLayout = createFileRule('open-pencil/strict-tools-layout', (sourceRel) => {
   if (!sourceRel.startsWith('tools/') || !TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
-  if (sourceRel === 'tools/test.ts') return null
   const [, domain, segment] = sourceRel.split('/')
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(domain))
     return 'Tool package folders must use kebab-case domain names.'

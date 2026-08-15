@@ -352,8 +352,39 @@
         "canvaskit-wasm",
       ],
     },
+    "tools/architecture": {
+      "name": "@open-pencil/architecture-tools",
+    },
     "tools/docs": {
       "name": "@open-pencil/docs-tools",
+    },
+    "tools/i18n": {
+      "name": "@open-pencil/i18n-tools",
+    },
+    "tools/package-quality": {
+      "name": "@open-pencil/package-quality-tools",
+    },
+    "tools/pr-review-guidance": {
+      "name": "@open-pencil/pr-review-guidance",
+    },
+    "tools/release-packages": {
+      "name": "@open-pencil/release-packages",
+    },
+    "tools/secret-scan": {
+      "name": "@open-pencil/tools-secret-scan",
+      "version": "0.0.0",
+    },
+    "tools/tauri-menu": {
+      "name": "@open-pencil/tauri-menu-tools",
+    },
+    "tools/type-shapes": {
+      "name": "@open-pencil/type-shapes-tools",
+    },
+    "tools/unit-tests": {
+      "name": "@open-pencil/tool-unit-tests",
+    },
+    "tools/visual-oracles": {
+      "name": "@open-pencil/visual-oracle-tools",
     },
   },
   "overrides": {
@@ -946,6 +977,8 @@
 
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
 
+    "@open-pencil/architecture-tools": ["@open-pencil/architecture-tools@workspace:tools/architecture"],
+
     "@open-pencil/cli": ["@open-pencil/cli@workspace:packages/cli"],
 
     "@open-pencil/cloud": ["@open-pencil/cloud@workspace:packages/cloud"],
@@ -960,13 +993,31 @@
 
     "@open-pencil/fig": ["@open-pencil/fig@workspace:packages/fig"],
 
+    "@open-pencil/i18n-tools": ["@open-pencil/i18n-tools@workspace:tools/i18n"],
+
     "@open-pencil/kiwi": ["@open-pencil/kiwi@workspace:packages/kiwi"],
 
     "@open-pencil/mcp": ["@open-pencil/mcp@workspace:packages/mcp"],
 
+    "@open-pencil/package-quality-tools": ["@open-pencil/package-quality-tools@workspace:tools/package-quality"],
+
     "@open-pencil/pen": ["@open-pencil/pen@workspace:packages/pen"],
 
+    "@open-pencil/pr-review-guidance": ["@open-pencil/pr-review-guidance@workspace:tools/pr-review-guidance"],
+
+    "@open-pencil/release-packages": ["@open-pencil/release-packages@workspace:tools/release-packages"],
+
     "@open-pencil/scene-graph": ["@open-pencil/scene-graph@workspace:packages/scene-graph"],
+
+    "@open-pencil/tauri-menu-tools": ["@open-pencil/tauri-menu-tools@workspace:tools/tauri-menu"],
+
+    "@open-pencil/tool-unit-tests": ["@open-pencil/tool-unit-tests@workspace:tools/unit-tests"],
+
+    "@open-pencil/tools-secret-scan": ["@open-pencil/tools-secret-scan@workspace:tools/secret-scan"],
+
+    "@open-pencil/type-shapes-tools": ["@open-pencil/type-shapes-tools@workspace:tools/type-shapes"],
+
+    "@open-pencil/visual-oracle-tools": ["@open-pencil/visual-oracle-tools@workspace:tools/visual-oracles"],
 
     "@open-pencil/vue": ["@open-pencil/vue@workspace:packages/vue"],
 
