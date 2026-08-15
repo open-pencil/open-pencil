@@ -288,6 +288,27 @@ describe('hitTest — frame with children', () => {
     const hitOutside = graph.hitTest(160, 130, frame.id)
     expect(hitOutside).toBeNull()
   })
+
+  test('unrotated child inside a flipped ancestor uses transformed hit testing', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const frame = graph.createNode('FRAME', page, {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 100,
+      flipX: true
+    })
+    const child = graph.createNode('RECTANGLE', frame.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40
+    })
+
+    expect(graph.hitTest(250, 140, frame.id)?.id).toBe(child.id)
+    expect(graph.hitTest(130, 140, frame.id)).toBeNull()
+  })
 })
 
 describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {

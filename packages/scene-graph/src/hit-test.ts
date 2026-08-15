@@ -17,7 +17,26 @@ function hasVisibleFillOrStroke(node: SceneNode): boolean {
   return node.fills.some((f) => f.visible) || node.strokes.some((s) => s.visible)
 }
 
+function hasTransformedAncestor(node: SceneNode, graph: SceneGraph): boolean {
+  let current: SceneNode | undefined = node
+  while (current) {
+    if (current.rotation !== 0 || current.flipX || current.flipY) return true
+    current = current.parentId ? graph.getNode(current.parentId) : undefined
+  }
+  return false
+}
+
 function containsPoint(px: number, py: number, node: SceneNode, graph: SceneGraph): boolean {
+  if (!hasTransformedAncestor(node, graph)) {
+    const absolute = graph.getAbsolutePosition(node.id)
+    return (
+      px >= absolute.x &&
+      px <= absolute.x + node.width &&
+      py >= absolute.y &&
+      py <= absolute.y + node.height
+    )
+  }
+
   const m = getWorldMatrix(node, graph)
 
   const inv = Matrix.invert(m)
