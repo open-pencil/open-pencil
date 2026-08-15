@@ -2,7 +2,11 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import type { Canvas } from 'canvaskit-wasm'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  createDefaultSourceMetadata,
+  type SceneGraph,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 import { applyClippedBlur } from '#core/canvas/effects'
 import { renderNode } from '#core/canvas/scene'
@@ -291,7 +295,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       rotation: 0,
       opacity: 1,
       effects: [{ type: 'LAYER_BLUR', visible: true, radius: 10 }],
-      childIds: []
+      childIds: [],
+      source: createDefaultSourceMetadata()
     }
     const graph: Partial<SceneGraph> = {
       getNode: mock(() => node as SceneNode)
@@ -315,7 +320,8 @@ describe('Renderer handles all effect types (Behavioral)', () => {
       rotation: 0,
       opacity: 1,
       effects: [{ type: 'FOREGROUND_BLUR', visible: true, radius: 20 }],
-      childIds: []
+      childIds: [],
+      source: createDefaultSourceMetadata()
     }
     const graph: Partial<SceneGraph> = {
       getNode: mock(() => node as SceneNode)

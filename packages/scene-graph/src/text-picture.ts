@@ -45,9 +45,7 @@ export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set([
  * on top of the path (DomeSticker). Content/style keys still wipe glyphs —
  * there is no path-layout reflow engine yet.
  */
-export const TEXT_DERIVED_GLYPH_INVALIDATION_KEYS: ReadonlySet<string> = new Set(
-  [...TEXT_PICTURE_KEYS].filter((key) => key !== 'width' && key !== 'height')
-)
+export const TEXT_DERIVED_GLYPH_INVALIDATION_KEYS: ReadonlySet<string> = GLYPH_AFFECTING_KEYS
 
 /**
  * Shared by SceneGraph.updateNode and updateNodePreview (drag hot path) so the

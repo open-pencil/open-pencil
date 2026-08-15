@@ -25,10 +25,11 @@ import { updateNodePreview } from './preview'
 import { toRawDeep } from './raw'
 import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
-import { invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
+import { GLYPH_AFFECTING_KEYS, invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
+export { createDefaultSourceMetadata } from './node-defaults'
 export type { GUID, Color, Size, Vector } from './primitives'
 export * from './types'
 
@@ -313,6 +314,7 @@ export class SceneGraph {
   }
 
   static TEXT_PICTURE_KEYS: ReadonlySet<string> = TEXT_PICTURE_KEYS
+  static GLYPH_AFFECTING_KEYS: ReadonlySet<string> = GLYPH_AFFECTING_KEYS
 
   static LAYOUT_AFFECTING_KEYS: ReadonlySet<string> = new Set([
     'x',
