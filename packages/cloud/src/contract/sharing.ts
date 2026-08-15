@@ -44,6 +44,14 @@ export const resolvedDocumentShareSchema = v.object({
 })
 export type ResolvedDocumentShare = v.InferOutput<typeof resolvedDocumentShareSchema>
 
+export const cloudUserProfileSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+  email: v.pipe(v.string(), v.email()),
+  image: v.nullable(v.pipe(v.string(), v.url()))
+})
+export type CloudUserProfile = v.InferOutput<typeof cloudUserProfileSchema>
+
 export const documentGrantSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   documentId: v.pipe(v.string(), v.uuid()),
@@ -54,6 +62,11 @@ export const documentGrantSchema = v.object({
   updatedAt: v.string()
 })
 export type DocumentGrant = v.InferOutput<typeof documentGrantSchema>
+
+export const lookupCloudUserSchema = v.object({
+  email: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.email())
+})
+export type LookupCloudUserInput = v.InferOutput<typeof lookupCloudUserSchema>
 
 export const putDocumentGrantSchema = v.object({ permission: documentPermissionSchema })
 export type PutDocumentGrantInput = v.InferOutput<typeof putDocumentGrantSchema>
@@ -80,6 +93,10 @@ export const documentInvitationSchema = v.object({
   acceptedAt: v.nullable(v.string())
 })
 export type DocumentInvitation = v.InferOutput<typeof documentInvitationSchema>
+
+export function parseLookupCloudUser(input: unknown): LookupCloudUserInput {
+  return v.parse(lookupCloudUserSchema, input)
+}
 
 export function parseCreateDocumentShare(input: unknown): CreateDocumentShareInput {
   return v.parse(createDocumentShareSchema, input)

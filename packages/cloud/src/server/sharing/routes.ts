@@ -1,6 +1,7 @@
 import {
   parseAcceptDocumentInvitation,
   parseCreateDocumentInvitation,
+  parseLookupCloudUser,
   parseCreateDocumentShare,
   parsePutDocumentGrant,
   parseResolveDocumentShare,
@@ -18,6 +19,28 @@ export type SharingRouteEnvironment = {
 
 export function createDocumentSharingRoutes(service: DocumentSharingService) {
   return new Hono<SharingRouteEnvironment>()
+    .post('/documents/:documentId/users/lookup', validatedJSON(parseLookupCloudUser), (context) =>
+      sharingRoute(context, async () =>
+        context.json({
+          user: await service.lookupUser(
+            context.get('actor').userId,
+            context.req.param('documentId'),
+            context.req.valid('json')
+          )
+        })
+      )
+    )
+    .get('/documents/:documentId/users/:userId', (context) =>
+      sharingRoute(context, async () =>
+        context.json({
+          user: await service.userProfile(
+            context.get('actor').userId,
+            context.req.param('documentId'),
+            context.req.param('userId')
+          )
+        })
+      )
+    )
     .get('/documents/:documentId/shares', (context) =>
       sharingRoute(context, async () =>
         context.json({

@@ -283,6 +283,113 @@ test.describe('Cloud sharing browser journey', () => {
     await revokedContext.close()
     await regeneratedContext.close()
     await editorContext.close()
+
+    const invitationResponse = owner.waitForResponse(
+      (response) =>
+        response.url().endsWith(`/api/documents/${documentId}/invitations`) &&
+        response.request().method() === 'POST'
+    )
+    await dialog.getByLabel('Email address').fill('recipient@cloud-e2e.test')
+    await dialog.getByRole('button', { name: 'Invite' }).click()
+    const invitationCapability = await invitationResponse.then((response) => response.json())
+    await expect(dialog.getByText('recipient@cloud-e2e.test')).toBeVisible()
+
+    const authenticatedContext = await browser.newContext()
+    await configureCloudContext(authenticatedContext, 'recipient')
+    const authenticatedRecipient = await authenticatedContext.newPage()
+    await authenticatedRecipient.goto('/?test')
+    const invitationAcceptance = await authenticatedRecipient.evaluate(
+      async ({ serverURL, invitationId, token }) => {
+        const response = await fetch(`${serverURL}/api/invitations/${invitationId}/accept`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        })
+        return { status: response.status, body: await response.json() }
+      },
+      {
+        serverURL: cloudURL,
+        invitationId: invitationCapability.invitation.id,
+        token: invitationCapability.token
+      }
+    )
+    expect(invitationAcceptance.status).toBe(200)
+    expect(invitationAcceptance.body.grant.permission).toBe('view')
+    const repeatedAcceptanceStatus = await authenticatedRecipient.evaluate(
+      async ({ serverURL, invitationId, token }) =>
+        fetch(`${serverURL}/api/invitations/${invitationId}/accept`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        }).then((response) => response.status),
+      {
+        serverURL: cloudURL,
+        invitationId: invitationCapability.invitation.id,
+        token: invitationCapability.token
+      }
+    )
+    expect(repeatedAcceptanceStatus).toBe(404)
+    const authenticatedTicket = await authenticatedRecipient.evaluate(
+      async ({ serverURL, id }) =>
+        fetch(`${serverURL}/api/documents/${id}/collaboration-ticket`, {
+          method: 'POST',
+          credentials: 'include'
+        }).then((response) => response.json()),
+      { serverURL: cloudURL, id: documentId }
+    )
+    expect(authenticatedTicket.ticket.principal).toEqual({
+      kind: 'user',
+      userId: '22222222-2222-4222-8222-222222222222',
+      email: 'recipient@cloud-e2e.test',
+      name: 'Cloud Recipient'
+    })
+    expect(authenticatedTicket.ticket.permission).toBe('view')
+
+    await owner.evaluate(
+      async ({ serverURL, id, userId }) => {
+        const response = await fetch(`${serverURL}/api/documents/${id}/grants/${userId}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ permission: 'edit' })
+        })
+        if (!response.ok) throw new Error(`Grant update failed with HTTP ${response.status}`)
+      },
+      { serverURL: cloudURL, id: documentId, userId: authenticatedTicket.ticket.principal.userId }
+    )
+    const editTicket = await authenticatedRecipient.evaluate(
+      async ({ serverURL, id }) =>
+        fetch(`${serverURL}/api/documents/${id}/collaboration-ticket`, {
+          method: 'POST',
+          credentials: 'include'
+        }).then((response) => response.json()),
+      { serverURL: cloudURL, id: documentId }
+    )
+    expect(editTicket.ticket.permission).toBe('edit')
+
+    await owner.evaluate(
+      async ({ serverURL, id, userId }) => {
+        const response = await fetch(`${serverURL}/api/documents/${id}/grants/${userId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        })
+        if (!response.ok) throw new Error(`Grant revocation failed with HTTP ${response.status}`)
+      },
+      { serverURL: cloudURL, id: documentId, userId: authenticatedTicket.ticket.principal.userId }
+    )
+    const revokedGrantTicketStatus = await authenticatedRecipient.evaluate(
+      async ({ serverURL, id }) =>
+        fetch(`${serverURL}/api/documents/${id}/collaboration-ticket`, {
+          method: 'POST',
+          credentials: 'include'
+        }).then((response) => response.status),
+      { serverURL: cloudURL, id: documentId }
+    )
+    expect(revokedGrantTicketStatus).toBe(404)
+
+    await authenticatedContext.close()
     await ownerContext.close()
   })
 })

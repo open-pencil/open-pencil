@@ -1,11 +1,13 @@
 import type {
   AcceptDocumentInvitationInput,
+  CloudUserProfile,
   CreateDocumentInvitationInput,
   CreateDocumentShareInput,
   DocumentGrant,
   DocumentInvitation,
   DocumentPermission,
   DocumentShare,
+  LookupCloudUserInput,
   PutDocumentGrantInput,
   ResolveDocumentShareInput,
   UpdateDocumentShareInput
@@ -14,6 +16,7 @@ import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/service'
 import type { Kysely, UpdateObject } from 'kysely'
+import { sql } from 'kysely'
 import { nanoid } from 'nanoid'
 
 import { resolveDocumentAccess } from '../documents/access'
@@ -153,6 +156,35 @@ export function createDocumentSharingService(database: Kysely<CloudDatabase>) {
   }
 
   return {
+    async lookupUser(
+      userId: string,
+      documentId: string,
+      input: LookupCloudUserInput
+    ): Promise<CloudUserProfile | null> {
+      await requireSharingAccess(database, userId, documentId)
+      const user = await database
+        .selectFrom('user')
+        .select(['id', 'name', 'email', 'image'])
+        .where(sql<string>`lower(email)`, '=', input.email)
+        .executeTakeFirst()
+      return user ?? null
+    },
+
+    async userProfile(
+      userId: string,
+      documentId: string,
+      profileUserId: string
+    ): Promise<CloudUserProfile | null> {
+      await requireSharingAccess(database, userId, documentId)
+      return (
+        (await database
+          .selectFrom('user')
+          .select(['id', 'name', 'email', 'image'])
+          .where('id', '=', profileUserId)
+          .executeTakeFirst()) ?? null
+      )
+    },
+
     async listShares(userId: string, documentId: string): Promise<DocumentShare[]> {
       await requireSharingAccess(database, userId, documentId)
       const rows = await database

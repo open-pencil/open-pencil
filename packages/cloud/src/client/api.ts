@@ -2,6 +2,7 @@ import type { CloudFetch } from '#cloud/client/discovery'
 import {
   cloudSessionSchema,
   collaborationTicketSchema,
+  cloudUserProfileSchema,
   documentAccessSchema,
   documentDownloadSchema,
   documentGrantSchema,
@@ -11,7 +12,9 @@ import {
   resolvedDocumentShareSchema,
   workspaceListSchema,
   workspaceUsageSchema,
+  type AcceptDocumentInvitationInput,
   type CloudSession,
+  type CloudUserProfile,
   type CollaborationTicket,
   type CommitUploadInput,
   type CreateDocumentInput,
@@ -24,6 +27,7 @@ import {
   type DocumentInvitation,
   type DocumentShare,
   type DocumentSummary,
+  type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
   type UpdateDocumentShareInput,
@@ -59,6 +63,7 @@ const sharedDocumentResponseSchema = v.object({
   resolution: resolvedDocumentShareSchema,
   document: documentDownloadSchema
 })
+const userLookupResponseSchema = v.object({ user: v.nullable(cloudUserProfileSchema) })
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   upload: v.variant('kind', [
@@ -149,6 +154,32 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = await client.session.$get()
       if (response.status === 401) return null
       return v.parse(cloudSessionSchema, await responseBody(response))
+    },
+    async lookupUser(
+      documentId: string,
+      input: LookupCloudUserInput
+    ): Promise<CloudUserProfile | null> {
+      const response = v.parse(
+        userLookupResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].users.lookup.$post({
+            param: { documentId },
+            json: input
+          })
+        )
+      )
+      return response.user
+    },
+    async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
+      const response = v.parse(
+        userLookupResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].users[':userId'].$get({
+            param: { documentId, userId }
+          })
+        )
+      )
+      return response.user
     },
     async listWorkspaces(): Promise<WorkspaceList> {
       return v.parse(workspaceListSchema, await responseBody(await client.workspaces.$get()))
@@ -313,6 +344,21 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
           })
         )
       )
+    },
+    async acceptDocumentInvitation(
+      invitationId: string,
+      input: AcceptDocumentInvitationInput
+    ): Promise<DocumentGrant> {
+      const response = v.parse(
+        grantResponseSchema,
+        await responseBody(
+          await client.invitations[':invitationId'].accept.$post({
+            param: { invitationId },
+            json: input
+          })
+        )
+      )
+      return response.grant
     },
     async revokeDocumentInvitation(documentId: string, invitationId: string): Promise<void> {
       await responseBody(

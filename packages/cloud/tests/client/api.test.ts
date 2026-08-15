@@ -83,6 +83,50 @@ describe('createCloudAPIClient', () => {
     expect(requests.every((request) => request.method === 'POST')).toBe(true)
   })
 
+  test('looks up authorized user profiles and accepts invitations', async () => {
+    const invitationId = '44444444-4444-4444-8444-444444444444'
+    const grant = {
+      id: '55555555-5555-4555-8555-555555555555',
+      documentId,
+      userId: 'recipient-user',
+      permission: 'view' as const,
+      createdBy: 'owner-user',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z'
+    }
+    const requests: Request[] = []
+    const client = createCloudAPIClient('https://cloud.example.com/api', {
+      fetch: async (input, init) => {
+        const request = new Request(input, init)
+        requests.push(request)
+        return request.url.endsWith('/users/lookup')
+          ? Response.json({
+              user: {
+                id: 'recipient-user',
+                name: 'Recipient',
+                email: 'recipient@example.com',
+                image: null
+              }
+            })
+          : Response.json({ grant })
+      }
+    })
+
+    expect(await client.lookupUser(documentId, { email: 'recipient@example.com' })).toEqual({
+      id: 'recipient-user',
+      name: 'Recipient',
+      email: 'recipient@example.com',
+      image: null
+    })
+    expect(await client.acceptDocumentInvitation(invitationId, { token: 't'.repeat(32) })).toEqual(
+      grant
+    )
+    expect(requests.map((request) => request.url)).toEqual([
+      `https://cloud.example.com/api/documents/${documentId}/users/lookup`,
+      `https://cloud.example.com/api/invitations/${invitationId}/accept`
+    ])
+  })
+
   test('requests and validates public collaboration tickets without dropping the API prefix', async () => {
     const requests: Request[] = []
     const client = createCloudAPIClient('https://cloud.example.com/api', {

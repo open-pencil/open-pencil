@@ -109,7 +109,18 @@ export interface UploadTable {
   expiresAt: TimestampColumn
 }
 
+export interface AuthUserTable {
+  id: string
+  name: string
+  email: string
+  emailVerified: boolean
+  image: string | null
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+}
+
 export interface CloudDatabase {
+  user: AuthUserTable
   workspace: WorkspaceTable
   workspaceMember: WorkspaceMemberTable
   document: DocumentTable

@@ -50,6 +50,18 @@ const fixture = new Uint8Array(await readFile(fixturePath))
 const fixtureChecksum = checksum(fixture)
 
 await database
+  .insertInto('user')
+  .values(
+    Object.values(cloudE2EActors).map((actor) => ({
+      id: actor.userId,
+      name: actor.name,
+      email: actor.email,
+      emailVerified: true,
+      image: null
+    }))
+  )
+  .execute()
+await database
   .insertInto('workspace')
   .values({
     id: workspaceId,
