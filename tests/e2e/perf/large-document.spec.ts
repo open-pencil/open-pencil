@@ -130,7 +130,7 @@ for (const nodeCount of SCALES) {
       }
     }, fixture)
 
-    console.log(`\nLarge-document profile (${nodeCount} nodes)`, { ...result, pointerProfile })
+    console.debug(`\nLarge-document profile (${nodeCount} nodes)`, { ...result, pointerProfile })
 
     expect(fixture.nodeCount).toBe(nodeCount)
     expect(pointerProfile.calls).toBeGreaterThan(0)

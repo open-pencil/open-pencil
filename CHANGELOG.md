@@ -55,6 +55,7 @@
 
 ### Fixed
 
+- Restore visible above, below, and child drop feedback while dragging layers in the Layers panel.
 - Place editor-created instances beside nested source components in world space, including transformed source and destination parents.
 - Harden collaboration node synchronization against malformed remote source metadata and geometry while excluding derived text-renderer caches.
 - Transfer native `.fig` exports over binary Tauri IPC instead of JSON byte arrays, preventing large desktop saves from being truncated or exhausting WebView memory. (#484)

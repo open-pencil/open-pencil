@@ -74,6 +74,8 @@ defineExpose({ rowEl })
       :has-children="hasChildren"
       :is-selected="isSelected"
       :is-dragging="isDragging"
+      :instruction="ctx.instruction.value"
+      :instruction-target-id="ctx.instructionTargetId.value"
       :focused="ctx.focused.value"
       :pad-left="padLeft"
       :actions="actions"
