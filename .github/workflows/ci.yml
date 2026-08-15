@@ -31,6 +31,31 @@ jobs:
       - name: Build Storybook
         run: bun run build-storybook
 
+  native-test-contracts:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop -> target
+          key: native-test
+
+      - name: Install Tauri dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Typecheck native tests
+        run: bun run check:native-test
+
+      - name: Check test-only Tauri feature
+        run: cargo check --manifest-path desktop/Cargo.toml --features native-test
+
   unit-tests:
     runs-on: ubuntu-latest
     strategy:

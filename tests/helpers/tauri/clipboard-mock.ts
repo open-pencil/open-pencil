@@ -52,7 +52,7 @@ export async function installTauriClipboardMock(page: Page): Promise<TauriClipbo
       case 'plugin:process|restart':
         return null
       default:
-        return null
+        throw new Error(`Unexpected Tauri command: ${cmd}`)
     }
   })
 

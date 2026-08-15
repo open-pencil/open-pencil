@@ -94,11 +94,13 @@ async function installRecorder(): Promise<void> {
           target instanceof HTMLInputElement ||
           target instanceof HTMLTextAreaElement ||
           target.closest('[contenteditable="true"], .cm-editor') !== null
+        const identityTarget =
+          target.closest('[data-test-id], [data-slot], [data-node-id]') ?? target
         return {
           tag: target.tagName,
-          testId: target.getAttribute('data-test-id'),
-          slot: target.getAttribute('data-slot'),
-          nodeId: target.getAttribute('data-node-id'),
+          testId: identityTarget.getAttribute('data-test-id'),
+          slot: identityTarget.getAttribute('data-slot'),
+          nodeId: identityTarget.closest('[data-node-id]')?.getAttribute('data-node-id') ?? null,
           editable
         }
       }
@@ -185,5 +187,16 @@ export async function startNativeEventRecorder(): Promise<NativeEventRecorder> {
         delete recorderWindow.__OPENPENCIL_NATIVE_EVENT_RECORDER__
       })
     }
+  }
+}
+
+export async function withNativeEventRecorder<T>(
+  run: (recorder: NativeEventRecorder) => Promise<T>
+): Promise<T> {
+  const recorder = await startNativeEventRecorder()
+  try {
+    return await run(recorder)
+  } finally {
+    await recorder.stop()
   }
 }

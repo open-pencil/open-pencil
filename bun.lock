@@ -345,9 +345,6 @@
       "name": "@open-pencil/docs-tools",
     },
   },
-  "trustedDependencies": [
-    "@wdio/tauri-service",
-  ],
   "overrides": {
     "protobufjs": "7.5.5",
     "websocket-driver": "0.7.5",

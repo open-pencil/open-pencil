@@ -4,7 +4,15 @@
     "beforeBuildCommand": "bun run generate:tauri-menu && vite build --mode native-test"
   },
   "app": {
-    "withGlobalTauri": true
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "OpenPencil Native Test",
+        "width": 1280,
+        "height": 800,
+        "dragDropEnabled": false
+      }
+    ]
   },
   "bundle": {
     "active": false

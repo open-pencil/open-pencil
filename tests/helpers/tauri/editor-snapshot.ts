@@ -32,7 +32,8 @@ export type NativeEditorSnapshot = {
   renderVersion: number
   sceneVersion: number
   editingText: string | null
-  editingNodeCount: number
+  editingNodeExists: boolean
+  textNodeCount: number
 }
 
 export async function readNativeEditorSnapshot(): Promise<NativeEditorSnapshot> {
@@ -41,13 +42,18 @@ export async function readNativeEditorSnapshot(): Promise<NativeEditorSnapshot> 
     if (!store) throw new Error('OpenPencil editor is not ready')
     const editingTextId = store.state.editingTextId
     const node = editingTextId ? store.graph.getNode(editingTextId) : null
+    let textNodeCount = 0
+    for (const pageNode of store.graph.getChildren(store.state.currentPageId)) {
+      if (pageNode.type === 'TEXT') textNodeCount++
+    }
     return {
       editingTextId,
       selectedIds: [...store.state.selectedIds],
       renderVersion: store.state.renderVersion,
       sceneVersion: store.state.sceneVersion,
       editingText: node?.type === 'TEXT' ? (node.text ?? '') : null,
-      editingNodeCount: editingTextId ? Number(store.graph.getNode(editingTextId) !== undefined) : 0
+      editingNodeExists: editingTextId !== null && node !== undefined,
+      textNodeCount
     }
   })
 }

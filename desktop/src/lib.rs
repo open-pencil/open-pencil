@@ -122,7 +122,10 @@ pub fn run() {
         builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
     }
 
-    #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
+    #[cfg(all(
+        any(target_os = "macos", windows, target_os = "linux"),
+        not(feature = "native-test")
+    ))]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             queue_open_paths(app, open_paths_from_args(args, Path::new(&cwd)));
