@@ -498,6 +498,7 @@ export class SceneGraph {
     }
 
     node.parentId = parentId
+    this.absPosCache.clear()
     idx = Math.min(idx, newParent.childIds.length)
     newParent.childIds.splice(idx, 0, nodeId)
 

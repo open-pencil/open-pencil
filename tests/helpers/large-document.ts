@@ -21,7 +21,7 @@ export async function seedLargeDocument(
     const cards = Math.ceil(count / 10)
     const columns = Math.ceil(Math.sqrt(cards))
     const cardWidth = 240
-    const cardHeight = 220
+    const cardHeight = 236
     const gap = 32
 
     for (let cardIndex = 0; cardIndex < cards && leafIds.length < count; cardIndex++) {
@@ -67,8 +67,6 @@ export async function seedLargeDocument(
         const node = graph.createNode(isText ? 'TEXT' : 'RECTANGLE', frame.id, {
           name: `${isText ? 'Label' : 'Row'} ${cardIndex}-${childIndex}`,
           text: isText ? `Item ${cardIndex}-${childIndex}` : undefined,
-          x: 12,
-          y: 12 + childIndex * 18,
           width: 200,
           height: 14,
           cornerRadius: isText ? 0 : 4,
