@@ -8,10 +8,7 @@ interface ScreenPoint {
   y: number
 }
 
-interface ElementScreenGeometry extends ScreenPoint {
-  height: number
-  width: number
-}
+type ElementScreenGeometry = Pick<DOMRect, 'height' | 'width' | 'x' | 'y'>
 
 const USER32_DECLARATION = String.raw`
 using System;
