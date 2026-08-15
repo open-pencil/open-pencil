@@ -72,7 +72,9 @@ export function createCloudflareWorker() {
             leaseDurationMs: runtime.config.cleanupLeaseDurationMs,
             retentionMs: runtime.config.documentRetentionMs
           })
-        ]).finally(() => runtime.database.destroy())
+        ]).finally(() => {
+          void runtime.database.destroy()
+        })
       )
     }
   }

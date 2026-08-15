@@ -102,10 +102,11 @@ async function claimDocuments(
           expression('cleanupClaimedAt', '<=', staleBefore)
         ])
       )
-      .where(({ not, exists, selectFrom }) =>
-        not(
-          exists(
-            selectFrom('upload')
+      .where((expression) =>
+        expression.not(
+          expression.exists(
+            expression
+              .selectFrom('upload')
               .select('upload.id')
               .whereRef('upload.documentId', '=', 'document.id')
               .where('upload.status', 'in', ['pending', 'cleaning'])
@@ -143,10 +144,11 @@ async function documentObjects(
     .innerJoin('storageObject', 'storageObject.id', 'documentRevision.storageObjectId')
     .select(['storageObject.id', 'storageObject.objectKey', 'storageObject.byteSize'])
     .where('documentRevision.documentId', '=', documentId)
-    .where(({ not, exists, selectFrom }) =>
-      not(
-        exists(
-          selectFrom('documentRevision as otherRevision')
+    .where((expression) =>
+      expression.not(
+        expression.exists(
+          expression
+            .selectFrom('documentRevision as otherRevision')
             .select('otherRevision.id')
             .whereRef('otherRevision.storageObjectId', '=', 'storageObject.id')
             .where('otherRevision.documentId', '!=', documentId)
@@ -190,10 +192,11 @@ async function removeDocumentMetadata(
       const deleted = await transaction
         .deleteFrom('storageObject')
         .where('id', '=', object.id)
-        .where(({ not, exists, selectFrom }) =>
-          not(
-            exists(
-              selectFrom('documentRevision')
+        .where((expression) =>
+          expression.not(
+            expression.exists(
+              expression
+                .selectFrom('documentRevision')
                 .select('documentRevision.id')
                 .whereRef('documentRevision.storageObjectId', '=', 'storageObject.id')
             )
