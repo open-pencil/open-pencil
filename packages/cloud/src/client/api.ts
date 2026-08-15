@@ -1,16 +1,28 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
   cloudSessionSchema,
+  documentAccessSchema,
   documentDownloadSchema,
+  documentGrantSchema,
+  documentInvitationSchema,
+  documentShareSchema,
   documentSummarySchema,
   workspaceListSchema,
   workspaceUsageSchema,
   type CloudSession,
   type CommitUploadInput,
   type CreateDocumentInput,
+  type CreateDocumentInvitationInput,
+  type CreateDocumentShareInput,
   type CreateUploadInput,
+  type DocumentAccess,
   type DocumentDownload,
+  type DocumentGrant,
+  type DocumentInvitation,
+  type DocumentShare,
   type DocumentSummary,
+  type PutDocumentGrantInput,
+  type UpdateDocumentShareInput,
   type WorkspaceList,
   type WorkspaceUsage
 } from '#cloud/contract'
@@ -22,6 +34,21 @@ const documentsResponseSchema = v.object({ documents: v.array(documentSummarySch
 const documentResponseSchema = v.object({ document: documentSummarySchema })
 const downloadResponseSchema = v.object({ document: documentDownloadSchema })
 const usageResponseSchema = v.object({ usage: workspaceUsageSchema })
+const accessResponseSchema = v.object({ access: documentAccessSchema })
+const sharesResponseSchema = v.object({ shares: v.array(documentShareSchema) })
+const shareResponseSchema = v.object({ share: documentShareSchema })
+const shareCapabilityResponseSchema = v.object({
+  share: documentShareSchema,
+  secret: v.string(),
+  path: v.string()
+})
+const grantsResponseSchema = v.object({ grants: v.array(documentGrantSchema) })
+const grantResponseSchema = v.object({ grant: documentGrantSchema })
+const invitationsResponseSchema = v.object({ invitations: v.array(documentInvitationSchema) })
+const invitationCapabilityResponseSchema = v.object({
+  invitation: documentInvitationSchema,
+  token: v.string()
+})
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   upload: v.variant('kind', [
@@ -162,6 +189,127 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
         await responseBody(await client.documents[':documentId'].$get({ param: { documentId } }))
       )
       return response.document
+    },
+    async getDocumentAccess(documentId: string): Promise<DocumentAccess> {
+      const response = v.parse(
+        accessResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].access.$get({ param: { documentId } })
+        )
+      )
+      return response.access
+    },
+    async listDocumentShares(documentId: string): Promise<DocumentShare[]> {
+      const response = v.parse(
+        sharesResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].shares.$get({ param: { documentId } })
+        )
+      )
+      return response.shares
+    },
+    async createDocumentShare(documentId: string, input: CreateDocumentShareInput) {
+      return v.parse(
+        shareCapabilityResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].shares.$post({
+            param: { documentId },
+            json: input
+          })
+        )
+      )
+    },
+    async updateDocumentShare(
+      documentId: string,
+      shareId: string,
+      input: UpdateDocumentShareInput
+    ): Promise<DocumentShare> {
+      const response = v.parse(
+        shareResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].shares[':shareId'].$patch({
+            param: { documentId, shareId },
+            json: input
+          })
+        )
+      )
+      return response.share
+    },
+    async rotateDocumentShare(documentId: string, shareId: string) {
+      return v.parse(
+        shareCapabilityResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].shares[':shareId'].rotate.$post({
+            param: { documentId, shareId }
+          })
+        )
+      )
+    },
+    async revokeDocumentShare(documentId: string, shareId: string): Promise<void> {
+      await responseBody(
+        await client.documents[':documentId'].shares[':shareId'].$delete({
+          param: { documentId, shareId }
+        })
+      )
+    },
+    async listDocumentGrants(documentId: string): Promise<DocumentGrant[]> {
+      const response = v.parse(
+        grantsResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].grants.$get({ param: { documentId } })
+        )
+      )
+      return response.grants
+    },
+    async putDocumentGrant(
+      documentId: string,
+      userId: string,
+      input: PutDocumentGrantInput
+    ): Promise<DocumentGrant> {
+      const response = v.parse(
+        grantResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].grants[':userId'].$put({
+            param: { documentId, userId },
+            json: input
+          })
+        )
+      )
+      return response.grant
+    },
+    async revokeDocumentGrant(documentId: string, userId: string): Promise<void> {
+      await responseBody(
+        await client.documents[':documentId'].grants[':userId'].$delete({
+          param: { documentId, userId }
+        })
+      )
+    },
+    async listDocumentInvitations(documentId: string): Promise<DocumentInvitation[]> {
+      const response = v.parse(
+        invitationsResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].invitations.$get({ param: { documentId } })
+        )
+      )
+      return response.invitations
+    },
+    async createDocumentInvitation(documentId: string, input: CreateDocumentInvitationInput) {
+      return v.parse(
+        invitationCapabilityResponseSchema,
+        await responseBody(
+          await client.documents[':documentId'].invitations.$post({
+            param: { documentId },
+            json: input
+          })
+        )
+      )
+    },
+    async revokeDocumentInvitation(documentId: string, invitationId: string): Promise<void> {
+      await responseBody(
+        await client.documents[':documentId'].invitations[':invitationId'].$delete({
+          param: { documentId, invitationId }
+        })
+      )
     },
     async createUpload(documentId: string, input: CreateUploadInput): Promise<CloudUpload> {
       return v.parse(

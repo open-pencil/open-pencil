@@ -1,0 +1,166 @@
+import { describe, expect, test } from 'bun:test'
+
+import { createCloudTestDatabase } from '#cloud-test/helpers/database'
+
+import {
+  createDocumentSharingService,
+  DocumentForbiddenError,
+  DocumentShareInvalidError
+} from '@open-pencil/cloud/server'
+
+async function seed() {
+  const runtime = await createCloudTestDatabase()
+  const workspaceId = crypto.randomUUID()
+  const documentId = crypto.randomUUID()
+  await runtime.database
+    .insertInto('workspace')
+    .values({ id: workspaceId, name: 'Design', slug: `design-${workspaceId}`, createdBy: 'owner' })
+    .execute()
+  await runtime.database
+    .insertInto('workspaceMember')
+    .values([
+      { workspaceId, userId: 'owner', role: 'admin' },
+      { workspaceId, userId: 'viewer', role: 'viewer' }
+    ])
+    .execute()
+  await runtime.database
+    .insertInto('document')
+    .values({ id: documentId, workspaceId, name: 'Homepage', createdBy: 'owner' })
+    .execute()
+  return { runtime, documentId, sharing: createDocumentSharingService(runtime.database) }
+}
+
+describe('document sharing service', () => {
+  test('creates hash-only capabilities and resolves user and guest principals', async () => {
+    const context = await seed()
+    try {
+      const capability = await context.sharing.createShare('owner', context.documentId, {
+        permission: 'view'
+      })
+      expect(capability.secret).toHaveLength(32)
+      expect(capability.path).toBe(`/share/${capability.share.id}#${capability.secret}`)
+      const stored = await context.runtime.database
+        .selectFrom('documentShare')
+        .select(['secretHash', 'lastUsedAt'])
+        .where('id', '=', capability.share.id)
+        .executeTakeFirstOrThrow()
+      expect(stored.secretHash).not.toContain(capability.secret)
+      expect(stored.lastUsedAt).toBeNull()
+
+      const guest = await context.sharing.resolveShare(capability.share.id, {
+        secret: capability.secret,
+        guestName: 'Visitor'
+      })
+      expect(guest).toMatchObject({
+        documentId: context.documentId,
+        permission: 'view',
+        principal: { kind: 'guest', name: 'Visitor' }
+      })
+      const user = await context.sharing.resolveShare(
+        capability.share.id,
+        { secret: capability.secret },
+        { userId: 'alice', name: 'Alice', email: 'alice@example.com' }
+      )
+      expect(user.principal).toEqual({
+        kind: 'user',
+        userId: 'alice',
+        name: 'Alice',
+        email: 'alice@example.com'
+      })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('rotates and revokes capabilities without exposing prior secrets', async () => {
+    const context = await seed()
+    try {
+      const original = await context.sharing.createShare('owner', context.documentId, {
+        permission: 'edit'
+      })
+      const rotated = await context.sharing.rotateShare(
+        'owner',
+        context.documentId,
+        original.share.id
+      )
+      expect(rotated.secret).not.toBe(original.secret)
+      expect(rotated.share.roomEpoch).toBe(1)
+      await expect(
+        context.sharing.resolveShare(original.share.id, { secret: original.secret })
+      ).rejects.toBeInstanceOf(DocumentShareInvalidError)
+      expect(
+        await context.sharing.resolveShare(original.share.id, { secret: rotated.secret })
+      ).toMatchObject({ permission: 'edit', roomEpoch: 1 })
+
+      await context.sharing.revokeShare('owner', context.documentId, original.share.id)
+      await expect(
+        context.sharing.resolveShare(original.share.id, { secret: rotated.secret })
+      ).rejects.toBeInstanceOf(DocumentShareInvalidError)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('manages direct grants and pending invitations', async () => {
+    const context = await seed()
+    try {
+      const grant = await context.sharing.putGrant('owner', context.documentId, 'outside-user', {
+        permission: 'view'
+      })
+      expect(grant).toMatchObject({ userId: 'outside-user', permission: 'view' })
+      expect(await context.sharing.listGrants('owner', context.documentId)).toHaveLength(1)
+      await context.sharing.revokeGrant('owner', context.documentId, 'outside-user')
+      expect(await context.sharing.listGrants('owner', context.documentId)).toEqual([])
+
+      const created = await context.sharing.createInvitation('owner', context.documentId, {
+        email: 'person@example.com',
+        permission: 'edit'
+      })
+      expect(created.token).toHaveLength(32)
+      expect(created.invitation).toMatchObject({
+        email: 'person@example.com',
+        permission: 'edit'
+      })
+      expect(await context.sharing.listInvitations('owner', context.documentId)).toHaveLength(1)
+      const accepted = await context.sharing.acceptInvitation(
+        { userId: 'invited-user', name: 'Invited', email: 'person@example.com' },
+        created.invitation.id,
+        { token: created.token }
+      )
+      expect(accepted).toMatchObject({
+        userId: 'invited-user',
+        permission: 'edit'
+      })
+      expect(
+        (await context.sharing.listInvitations('owner', context.documentId))[0]?.acceptedAt
+      ).toBeString()
+      await expect(
+        context.sharing.acceptInvitation(
+          { userId: 'second-user', name: 'Second', email: 'person@example.com' },
+          created.invitation.id,
+          { token: created.token }
+        )
+      ).rejects.toBeInstanceOf(DocumentShareInvalidError)
+
+      const pending = await context.sharing.createInvitation('owner', context.documentId, {
+        email: 'pending@example.com',
+        permission: 'view'
+      })
+      await context.sharing.revokeInvitation('owner', context.documentId, pending.invitation.id)
+      expect(await context.sharing.listInvitations('owner', context.documentId)).toHaveLength(1)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('prevents viewers from managing sharing', async () => {
+    const context = await seed()
+    try {
+      await expect(
+        context.sharing.createShare('viewer', context.documentId, { permission: 'view' })
+      ).rejects.toBeInstanceOf(DocumentForbiddenError)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+})

@@ -39,6 +39,32 @@ export {
   type WorkspaceUsage
 } from './documents'
 export {
+  acceptDocumentInvitationSchema,
+  createDocumentInvitationSchema,
+  createDocumentShareSchema,
+  documentGrantSchema,
+  documentInvitationSchema,
+  documentShareSchema,
+  parseAcceptDocumentInvitation,
+  parseCreateDocumentInvitation,
+  parseCreateDocumentShare,
+  parsePutDocumentGrant,
+  parseResolveDocumentShare,
+  parseUpdateDocumentShare,
+  putDocumentGrantSchema,
+  resolveDocumentShareSchema,
+  updateDocumentShareSchema,
+  type AcceptDocumentInvitationInput,
+  type CreateDocumentInvitationInput,
+  type CreateDocumentShareInput,
+  type DocumentGrant,
+  type DocumentInvitation,
+  type DocumentShare,
+  type PutDocumentGrantInput,
+  type ResolveDocumentShareInput,
+  type UpdateDocumentShareInput
+} from './sharing'
+export {
   createWorkspaceSchema,
   parseCreateWorkspace,
   workspaceListSchema,

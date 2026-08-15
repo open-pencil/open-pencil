@@ -83,6 +83,17 @@ export type {
   StoredObject
 } from './objects'
 export {
+  createDocumentSharingRoutes,
+  createDocumentSharingService,
+  createPublicSharingRoutes,
+  DocumentShareInvalidError,
+  type DocumentShareCapability,
+  type DocumentSharingService,
+  type ResolvedDocumentShare,
+  type ResolvedSharePrincipal,
+  type SharingRouteEnvironment
+} from './sharing'
+export {
   createWorkspaceRoutes,
   createWorkspaceService,
   WorkspaceSlugConflictError,

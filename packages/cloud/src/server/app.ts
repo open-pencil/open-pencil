@@ -15,6 +15,7 @@ import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import type { ObjectStore } from '#cloud/server/objects'
+import { createDocumentSharingService, createPublicSharingRoutes } from '#cloud/server/sharing'
 import { createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
@@ -60,15 +61,16 @@ export function createCloudApp(services: CloudServices) {
   )
   const cloudCORS = cors({
     origin: (origin) => (allowedOrigins.has(origin) ? origin : null),
-    allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type'],
     credentials: true,
     maxAge: 600
   })
   const workspaces = createWorkspaceService(services.database)
   const documents = createDocumentService(services.database, services.objects)
+  const sharing = createDocumentSharingService(services.database)
 
-  const cloudAPI = createCloudAPIRouter({ documents, workspaces })
+  const cloudAPI = createCloudAPIRouter({ documents, sharing, workspaces })
 
   return new Hono<CloudEnvironment>()
     .use('/api/*', cloudCORS)
@@ -100,6 +102,7 @@ export function createCloudApp(services: CloudServices) {
       }
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
+    .route('/api', createPublicSharingRoutes(sharing))
     .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
     .use('/api/*', async (context, next) => {
       const actor = await resolveSession(context.req.raw)

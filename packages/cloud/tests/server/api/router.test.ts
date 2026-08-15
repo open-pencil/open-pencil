@@ -39,6 +39,35 @@ function services() {
         throw new Error('not used')
       }
     },
+    sharing: {
+      listShares: async () => [],
+      createShare: async () => {
+        throw new Error('not used')
+      },
+      updateShare: async () => {
+        throw new Error('not used')
+      },
+      rotateShare: async () => {
+        throw new Error('not used')
+      },
+      revokeShare: async () => undefined,
+      resolveShare: async () => {
+        throw new Error('not used')
+      },
+      listGrants: async () => [],
+      putGrant: async () => {
+        throw new Error('not used')
+      },
+      revokeGrant: async () => undefined,
+      listInvitations: async () => [],
+      createInvitation: async () => {
+        throw new Error('not used')
+      },
+      acceptInvitation: async () => {
+        throw new Error('not used')
+      },
+      revokeInvitation: async () => undefined
+    },
     workspaces: {
       list: async () => [],
       get: async () => undefined,
