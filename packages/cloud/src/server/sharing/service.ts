@@ -1,6 +1,7 @@
 import type {
   AcceptDocumentInvitationInput,
   CloudUserProfile,
+  CreateInvitationContinuationInput,
   CreateDocumentInvitationInput,
   CreateDocumentShareInput,
   DocumentGrant,
@@ -25,6 +26,10 @@ import { resolveDocumentAccess } from '../documents/access'
 
 const SHARE_SECRET_SIZE = 32
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
+
+export class InvitationDeliveryError extends Error {
+  override readonly name = 'InvitationDeliveryError'
+}
 
 export class DocumentShareInvalidError extends Error {
   override readonly name = 'DocumentShareInvalidError'
@@ -107,6 +112,63 @@ async function validInvitationToken(
   )
 }
 
+async function continuationKey(secret: string): Promise<CryptoKey> {
+  const source = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    'HKDF',
+    false,
+    ['deriveKey']
+  )
+  return crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new TextEncoder().encode('openpencil-cloud-invitation-continuation'),
+      info: new Uint8Array()
+    },
+    source,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  )
+}
+
+function encodeBytes(bytes: Uint8Array): string {
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+}
+
+function decodeBytes(value: string): Uint8Array {
+  const padded = value
+    .replaceAll('-', '+')
+    .replaceAll('_', '/')
+    .padEnd(Math.ceil(value.length / 4) * 4, '=')
+  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0))
+}
+
+async function encryptContinuation(secret: string, token: string): Promise<string> {
+  const nonce = crypto.getRandomValues(new Uint8Array(12))
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: nonce },
+    await continuationKey(secret),
+    new TextEncoder().encode(token)
+  )
+  return `${encodeBytes(nonce)}.${encodeBytes(new Uint8Array(encrypted))}`
+}
+
+async function decryptContinuation(secret: string, value: string): Promise<string> {
+  const [nonce, encrypted] = value.split('.')
+  if (!nonce || !encrypted) throw new DocumentShareInvalidError()
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: decodeBytes(nonce).slice() },
+    await continuationKey(secret),
+    decodeBytes(encrypted).slice()
+  )
+  return new TextDecoder().decode(decrypted)
+}
+
 function recipientHint(email: string): string {
   const [local = '', domain = ''] = email.split('@')
   const visible = local.slice(0, Math.min(2, local.length))
@@ -161,8 +223,10 @@ async function requireSharingAccess(
 }
 
 export type DocumentSharingServiceOptions = {
+  continuationSecret?: string
   delivery?: InvitationDelivery
   publicURL?: string
+  appURL?: string
 }
 
 export function createDocumentSharingService(
@@ -499,7 +563,7 @@ export function createDocumentSharingService(
         .where('id', '=', id)
         .executeTakeFirstOrThrow()
       const invitation = invitationContract(row)
-      if (options.delivery && options.publicURL) {
+      if (options.delivery && options.publicURL && options.appURL) {
         const [inviter, document] = await Promise.all([
           database.selectFrom('user').select('name').where('id', '=', userId).executeTakeFirst(),
           database
@@ -510,19 +574,73 @@ export function createDocumentSharingService(
         ])
         const acceptanceURL = new URL(
           `/cloud/invitations/${id}?server=${encodeURIComponent(options.publicURL)}#${token}`,
-          options.publicURL
+          options.appURL
         ).href
-        await options.delivery.sendDocumentInvitation({
-          deliveryId: id,
-          recipientEmail: invitation.email,
-          inviterName: inviter?.name ?? 'An OpenPencil user',
-          documentName: document.name,
-          permission: invitation.permission,
-          expiresAt: invitation.expiresAt,
-          acceptanceURL
-        })
+        try {
+          await options.delivery.sendDocumentInvitation({
+            deliveryId: id,
+            recipientEmail: invitation.email,
+            inviterName: inviter?.name ?? 'An OpenPencil user',
+            documentName: document.name,
+            permission: invitation.permission,
+            expiresAt: invitation.expiresAt,
+            acceptanceURL
+          })
+        } catch (error) {
+          await database
+            .updateTable('documentInvitation')
+            .set({ revokedAt: new Date() })
+            .where('id', '=', id)
+            .execute()
+          throw new InvitationDeliveryError('Invitation delivery failed', { cause: error })
+        }
       }
       return { invitation, token }
+    },
+
+    async createInvitationContinuation(input: CreateInvitationContinuationInput) {
+      if (!options.continuationSecret) throw new DocumentShareInvalidError()
+      await this.previewInvitation(input.invitationId, { token: input.token })
+      const id = nanoid()
+      const expiresAt = new Date(Date.now() + 10 * 60_000)
+      await database
+        .insertInto('invitationContinuation')
+        .values({
+          id,
+          invitationId: input.invitationId,
+          tokenEncrypted: await encryptContinuation(options.continuationSecret, input.token),
+          expiresAt,
+          consumedAt: null
+        })
+        .execute()
+      return { id }
+    },
+
+    async consumeInvitationContinuation(id: string): Promise<{
+      invitationId: string
+      token: string
+    }> {
+      if (!options.continuationSecret) throw new DocumentShareInvalidError()
+      return database.transaction().execute(async (transaction) => {
+        const row = await transaction
+          .selectFrom('invitationContinuation')
+          .select(['invitationId', 'tokenEncrypted', 'expiresAt', 'consumedAt'])
+          .where('id', '=', id)
+          .forUpdate()
+          .executeTakeFirst()
+        if (row?.consumedAt || !row || new Date(row.expiresAt).getTime() <= Date.now()) {
+          throw new DocumentShareInvalidError()
+        }
+        await transaction
+          .updateTable('invitationContinuation')
+          .set({ consumedAt: new Date() })
+          .where('id', '=', id)
+          .execute()
+        return {
+          invitationId: row.invitationId,
+          token: await decryptContinuation(options.continuationSecret ?? '', row.tokenEncrypted)
+        }
+      })
     },
 
     async previewInvitation(

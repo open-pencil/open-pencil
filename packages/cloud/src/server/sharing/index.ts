@@ -7,6 +7,7 @@ export {
 export {
   createDocumentSharingService,
   DocumentShareInvalidError,
+  InvitationDeliveryError,
   type DocumentShareCapability,
   type DocumentSharingServiceOptions,
   type DocumentSharingService,

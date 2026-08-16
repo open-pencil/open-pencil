@@ -14,7 +14,8 @@ function returnURL(): string {
 
 export async function signInToCloud(
   discovery: CloudDiscovery,
-  provider: CloudSocialProvider
+  provider: CloudSocialProvider,
+  callbackURL = returnURL()
 ): Promise<void> {
   if (!discovery.authentication.socialProviders.includes(provider)) {
     throw new Error(`Cloud sign-in provider is unavailable: ${provider}`)
@@ -28,8 +29,8 @@ export async function signInToCloud(
     },
     body: JSON.stringify({
       provider,
-      callbackURL: returnURL(),
-      errorCallbackURL: returnURL(),
+      callbackURL,
+      errorCallbackURL: callbackURL,
       disableRedirect: true
     })
   })

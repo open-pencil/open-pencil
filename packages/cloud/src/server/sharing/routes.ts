@@ -1,5 +1,6 @@
 import {
   parseAcceptDocumentInvitation,
+  parseCreateInvitationContinuation,
   parseCreateDocumentInvitation,
   parseLookupCloudUser,
   parseCreateDocumentShare,
@@ -184,6 +185,21 @@ export function createDocumentSharingRoutes(service: DocumentSharingService) {
 
 export function createPublicSharingRoutes(service: DocumentSharingService) {
   return new Hono()
+    .post(
+      '/invitations/continuations',
+      validatedJSON(parseCreateInvitationContinuation),
+      (context) =>
+        sharingRoute(context, async () =>
+          context.json(await service.createInvitationContinuation(context.req.valid('json')), 201)
+        )
+    )
+    .post('/invitations/continuations/:continuationId/consume', (context) =>
+      sharingRoute(context, async () =>
+        context.json(
+          await service.consumeInvitationContinuation(context.req.param('continuationId'))
+        )
+      )
+    )
     .post(
       '/invitations/:invitationId/preview',
       validatedJSON(parseAcceptDocumentInvitation),

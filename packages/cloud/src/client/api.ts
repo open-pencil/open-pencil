@@ -1,14 +1,16 @@
 import type { CloudFetch } from '#cloud/client/discovery'
 import {
   cloudSessionSchema,
-  collaborationTicketSchema,
   cloudUserProfileSchema,
+  collaborationTicketSchema,
+  createInvitationContinuationSchema,
   documentAccessSchema,
   documentDownloadSchema,
   documentGrantSchema,
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
   workspaceListSchema,
@@ -17,6 +19,8 @@ import {
   type CloudSession,
   type CloudUserProfile,
   type CollaborationTicket,
+  type CreateInvitationContinuationInput,
+  type InvitationContinuation,
   type CommitUploadInput,
   type CreateDocumentInput,
   type CreateDocumentInvitationInput,
@@ -345,6 +349,36 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
             param: { documentId },
             json: input
           })
+        )
+      )
+    },
+    async createInvitationContinuation(
+      input: CreateInvitationContinuationInput
+    ): Promise<InvitationContinuation> {
+      return v.parse(
+        invitationContinuationSchema,
+        await responseBody(
+          await (options.fetch ?? globalThis.fetch)(
+            `${apiURL(baseURL).replace(/\/$/, '')}/invitations/continuations`,
+            {
+              method: 'POST',
+              credentials: 'include',
+              signal: options.signal,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(input)
+            }
+          )
+        )
+      )
+    },
+    async consumeInvitationContinuation(id: string): Promise<CreateInvitationContinuationInput> {
+      return v.parse(
+        createInvitationContinuationSchema,
+        await responseBody(
+          await (options.fetch ?? globalThis.fetch)(
+            `${apiURL(baseURL).replace(/\/$/, '')}/invitations/continuations/${encodeURIComponent(id)}/consume`,
+            { method: 'POST', credentials: 'include', signal: options.signal }
+          )
         )
       )
     },

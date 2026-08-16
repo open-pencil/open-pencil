@@ -185,6 +185,7 @@ describe('document sharing service', () => {
         .execute()
       const sharing = createDocumentSharingService(context.runtime.database, {
         publicURL: 'https://cloud.example.com',
+        appURL: 'https://app.example.com',
         delivery: {
           async sendDocumentInvitation(message) {
             delivered.push(message)
@@ -215,6 +216,7 @@ describe('document sharing service', () => {
         expiresAt: created.invitation.expiresAt,
         recipientHint: 'pe****@example.com'
       })
+      expect(deliveryURL.origin).toBe('https://app.example.com')
       expect(deliveryURL.pathname).toBe(`/cloud/invitations/${created.invitation.id}`)
       expect(deliveryURL.searchParams.get('server')).toBe('https://cloud.example.com')
       expect(deliveryURL.hash).toBe(`#${created.token}`)
@@ -224,6 +226,88 @@ describe('document sharing service', () => {
         .where('id', '=', created.invitation.id)
         .executeTakeFirstOrThrow()
       expect(stored.tokenHash).not.toContain(created.token)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('encrypts and consumes OAuth invitation continuations once', async () => {
+    const context = await seed()
+    try {
+      const sharing = createDocumentSharingService(context.runtime.database, {
+        continuationSecret: 'continuation-test-secret-at-least-32-characters'
+      })
+      const created = await sharing.createInvitation('owner', context.documentId, {
+        email: 'continuation@example.com',
+        permission: 'view'
+      })
+      const continuation = await sharing.createInvitationContinuation({
+        invitationId: created.invitation.id,
+        token: created.token
+      })
+      const stored = await context.runtime.database
+        .selectFrom('invitationContinuation')
+        .select('tokenEncrypted')
+        .where('id', '=', continuation.id)
+        .executeTakeFirstOrThrow()
+      expect(stored.tokenEncrypted).not.toContain(created.token)
+      expect(await sharing.consumeInvitationContinuation(continuation.id)).toEqual({
+        invitationId: created.invitation.id,
+        token: created.token
+      })
+      await expect(sharing.consumeInvitationContinuation(continuation.id)).rejects.toBeInstanceOf(
+        DocumentShareInvalidError
+      )
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('revokes invitations when delivery fails', async () => {
+    const context = await seed()
+    try {
+      const sharing = createDocumentSharingService(context.runtime.database, {
+        publicURL: 'https://cloud.example.com',
+        appURL: 'https://app.example.com',
+        delivery: {
+          async sendDocumentInvitation() {
+            throw new Error('SMTP unavailable')
+          }
+        }
+      })
+      await context.runtime.database
+        .insertInto('user')
+        .values({
+          id: '11111111-1111-4111-8111-111111111111',
+          name: 'Owner',
+          email: 'owner-delivery@example.com',
+          emailVerified: true,
+          image: null
+        })
+        .execute()
+      const workspace = await context.runtime.database
+        .selectFrom('document')
+        .select('workspaceId')
+        .where('id', '=', context.documentId)
+        .executeTakeFirstOrThrow()
+      await context.runtime.database
+        .updateTable('workspaceMember')
+        .set({ userId: '11111111-1111-4111-8111-111111111111' })
+        .where('workspaceId', '=', workspace.workspaceId)
+        .where('userId', '=', 'owner')
+        .execute()
+      await expect(
+        sharing.createInvitation('11111111-1111-4111-8111-111111111111', context.documentId, {
+          email: 'failed@example.com',
+          permission: 'view'
+        })
+      ).rejects.toThrow('Invitation delivery failed')
+      const row = await context.runtime.database
+        .selectFrom('documentInvitation')
+        .select(['id', 'revokedAt'])
+        .where('emailNormalized', '=', 'failed@example.com')
+        .executeTakeFirstOrThrow()
+      expect(row.revokedAt).not.toBeNull()
     } finally {
       await context.runtime.close()
     }

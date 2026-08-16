@@ -119,6 +119,15 @@ export interface AuthUserTable {
   updatedAt: TimestampColumn
 }
 
+export interface InvitationContinuationTable {
+  id: string
+  invitationId: string
+  tokenEncrypted: string
+  expiresAt: TimestampColumn
+  consumedAt: TimestampColumn | null
+  createdAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   user: AuthUserTable
   workspace: WorkspaceTable
@@ -129,6 +138,7 @@ export interface CloudDatabase {
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable
+  invitationContinuation: InvitationContinuationTable
   upload: UploadTable
 }
 

@@ -22,16 +22,40 @@ async function client() {
   return { discovery, client: createCloudAPIClient(discovery.apiURL) }
 }
 
+async function resumeContinuation() {
+  const continuation = typeof route.query.continuation === 'string' ? route.query.continuation : ''
+  if (!continuation || !serverURL.value) return false
+  const cloud = await client()
+  const restored = await cloud.client.consumeInvitationContinuation(continuation)
+  token.value = restored.token
+  invitation.value = await cloud.client.previewDocumentInvitation(restored.invitationId, {
+    token: restored.token
+  })
+  await router.replace({
+    name: 'cloud-invitation',
+    params: { invitationId: restored.invitationId },
+    query: { server: serverURL.value }
+  })
+  return true
+}
+
 async function load() {
   const server = typeof route.query.server === 'string' ? route.query.server : ''
   const secret = window.location.hash.slice(1)
   history.replaceState(history.state, '', `${window.location.pathname}${window.location.search}`)
+  serverURL.value = server
+  try {
+    if (await resumeContinuation()) return
+  } catch {
+    error.value = 'This invitation is invalid or no longer available.'
+    loading.value = false
+    return
+  }
   if (!invitationId || !server || !secret) {
     error.value = 'This invitation is invalid or no longer available.'
     loading.value = false
     return
   }
-  serverURL.value = server
   token.value = secret
   try {
     const cloud = await client()
@@ -51,7 +75,14 @@ async function accept() {
     if (!session) {
       const provider = cloud.discovery.authentication.socialProviders[0]
       if (!provider) throw new Error('No sign-in provider is configured')
-      await signInToCloud(cloud.discovery, provider)
+      const continuation = await cloud.client.createInvitationContinuation({
+        invitationId,
+        token: token.value
+      })
+      const callback = new URL(window.location.href)
+      callback.hash = ''
+      callback.searchParams.set('continuation', continuation.id)
+      await signInToCloud(cloud.discovery, provider, callback.href)
       return
     }
     await cloud.client.acceptDocumentInvitation(invitationId, { token: token.value })

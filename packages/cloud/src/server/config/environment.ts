@@ -28,6 +28,7 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
   return parseCloudServerConfig({
     deployment: environment.OPENPENCIL_CLOUD_DEPLOYMENT ?? 'self-hosted',
     publicURL: environment.OPENPENCIL_CLOUD_URL,
+    appURL: environment.OPENPENCIL_CLOUD_APP_URL,
     databaseURL: environment.DATABASE_URL,
     authSecret: environment.BETTER_AUTH_SECRET,
     trustedOrigins: splitOrigins(environment.OPENPENCIL_CLOUD_TRUSTED_ORIGINS),

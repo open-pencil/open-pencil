@@ -63,6 +63,8 @@ docker compose -f compose.garage.yml down
 
 ### Invitation email
 
+`OPENPENCIL_CLOUD_URL` configures the API origin. `OPENPENCIL_CLOUD_APP_URL` configures the browser editor origin used in emailed invitation links and must also appear in `OPENPENCIL_CLOUD_TRUSTED_ORIGINS`.
+
 The Node deployment can send document invitations through SMTP. Configure
 `OPENPENCIL_CLOUD_SMTP_HOST`, `OPENPENCIL_CLOUD_SMTP_PORT`,
 `OPENPENCIL_CLOUD_SMTP_SECURE`, and `OPENPENCIL_CLOUD_EMAIL_FROM`. Add

@@ -82,6 +82,19 @@ export const acceptDocumentInvitationSchema = v.object({
 })
 export type AcceptDocumentInvitationInput = v.InferOutput<typeof acceptDocumentInvitationSchema>
 
+export const createInvitationContinuationSchema = v.object({
+  invitationId: v.pipe(v.string(), v.uuid()),
+  token: v.pipe(v.string(), v.minLength(32), v.maxLength(128))
+})
+export type CreateInvitationContinuationInput = v.InferOutput<
+  typeof createInvitationContinuationSchema
+>
+
+export const invitationContinuationSchema = v.object({
+  id: v.pipe(v.string(), v.minLength(16), v.maxLength(128))
+})
+export type InvitationContinuation = v.InferOutput<typeof invitationContinuationSchema>
+
 export const invitationPreviewSchema = v.object({
   documentName: v.string(),
   inviterName: v.string(),
@@ -102,6 +115,12 @@ export const documentInvitationSchema = v.object({
   acceptedAt: v.nullable(v.string())
 })
 export type DocumentInvitation = v.InferOutput<typeof documentInvitationSchema>
+
+export function parseCreateInvitationContinuation(
+  input: unknown
+): CreateInvitationContinuationInput {
+  return v.parse(createInvitationContinuationSchema, input)
+}
 
 export function parseLookupCloudUser(input: unknown): LookupCloudUserInput {
   return v.parse(lookupCloudUserSchema, input)

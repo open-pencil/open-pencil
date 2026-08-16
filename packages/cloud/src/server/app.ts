@@ -80,7 +80,9 @@ export function createCloudApp(services: CloudServices) {
   const documents = createDocumentService(services.database, services.objects)
   const sharing = createDocumentSharingService(services.database, {
     delivery: services.invitationDelivery,
-    publicURL: services.config.publicURL
+    continuationSecret: services.config.authSecret,
+    publicURL: services.config.publicURL,
+    appURL: services.config.appURL ?? services.config.publicURL
   })
   const collaboration = createCollaborationTicketService(
     services.database,

@@ -14,6 +14,7 @@ const optionalTextSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1
 const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
+  appURL: v.optional(httpURLSchema),
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),
   trustedOrigins: v.optional(v.array(httpURLSchema), []),
@@ -75,6 +76,14 @@ function requireTogether(
 
 export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   const config = v.parse(rawCloudServerConfigSchema, input)
+  if (
+    config.appURL &&
+    !config.trustedOrigins.some(
+      (origin) => new URL(origin).origin === new URL(config.appURL ?? '').origin
+    )
+  ) {
+    throw new CloudConfigError('Cloud app URL must be included in trusted origins')
+  }
   requireTogether(config, 'Google', ['googleClientId', 'googleClientSecret'])
   requireTogether(config, 'Apple', [
     'appleClientId',
