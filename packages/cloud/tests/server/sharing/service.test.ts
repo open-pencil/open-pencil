@@ -206,6 +206,15 @@ describe('document sharing service', () => {
         documentName: 'Homepage'
       })
       const deliveryURL = new URL(delivered[0]?.acceptanceURL ?? '')
+      expect(
+        await sharing.previewInvitation(created.invitation.id, { token: created.token })
+      ).toEqual({
+        documentName: 'Homepage',
+        inviterName: 'Owner Name',
+        permission: 'edit',
+        expiresAt: created.invitation.expiresAt,
+        recipientHint: 'pe****@example.com'
+      })
       expect(deliveryURL.pathname).toBe(`/cloud/invitations/${created.invitation.id}`)
       expect(deliveryURL.searchParams.get('server')).toBe('https://cloud.example.com')
       expect(deliveryURL.hash).toBe(`#${created.token}`)

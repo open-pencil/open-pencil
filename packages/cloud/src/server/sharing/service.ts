@@ -7,6 +7,7 @@ import type {
   DocumentInvitation,
   DocumentPermission,
   DocumentShare,
+  InvitationPreview,
   LookupCloudUserInput,
   PutDocumentGrantInput,
   ResolveDocumentShareInput,
@@ -87,6 +88,29 @@ function grantContract(row: {
     createdAt: dateString(row.createdAt) ?? '',
     updatedAt: dateString(row.updatedAt) ?? ''
   }
+}
+
+async function validInvitationToken(
+  invitation: {
+    tokenHash: string
+    expiresAt: Date | string
+    acceptedAt: Date | string | null
+    revokedAt: Date | string | null
+  },
+  token: string
+): Promise<boolean> {
+  return (
+    hashesEqual(invitation.tokenHash, await sha256(token)) &&
+    !invitation.acceptedAt &&
+    !invitation.revokedAt &&
+    new Date(invitation.expiresAt).getTime() > Date.now()
+  )
+}
+
+function recipientHint(email: string): string {
+  const [local = '', domain = ''] = email.split('@')
+  const visible = local.slice(0, Math.min(2, local.length))
+  return `${visible}${'*'.repeat(Math.max(3, local.length - visible.length))}@${domain}`
 }
 
 function invitationContract(row: {
@@ -501,6 +525,42 @@ export function createDocumentSharingService(
       return { invitation, token }
     },
 
+    async previewInvitation(
+      invitationId: string,
+      input: AcceptDocumentInvitationInput
+    ): Promise<InvitationPreview> {
+      const invitation = await database
+        .selectFrom('documentInvitation')
+        .innerJoin('document', 'document.id', 'documentInvitation.documentId')
+        .select([
+          'documentInvitation.emailNormalized',
+          'documentInvitation.permission',
+          'documentInvitation.tokenHash',
+          'documentInvitation.expiresAt',
+          'documentInvitation.acceptedAt',
+          'documentInvitation.revokedAt',
+          'documentInvitation.invitedBy',
+          'document.name as documentName'
+        ])
+        .where('documentInvitation.id', '=', invitationId)
+        .executeTakeFirst()
+      if (!invitation || !(await validInvitationToken(invitation, input.token))) {
+        throw new DocumentShareInvalidError()
+      }
+      const inviter = await database
+        .selectFrom('user')
+        .select('name')
+        .where(sql<string>`id::text`, '=', invitation.invitedBy)
+        .executeTakeFirst()
+      return {
+        documentName: invitation.documentName,
+        inviterName: inviter?.name ?? 'An OpenPencil user',
+        permission: invitation.permission,
+        expiresAt: dateString(invitation.expiresAt) ?? '',
+        recipientHint: recipientHint(invitation.emailNormalized)
+      }
+    },
+
     async acceptInvitation(
       actor: CloudActor,
       invitationId: string,
@@ -523,10 +583,7 @@ export function createDocumentSharingService(
       if (
         !invitation ||
         invitation.emailNormalized !== actor.email.trim().toLowerCase() ||
-        !hashesEqual(invitation.tokenHash, await sha256(input.token)) ||
-        invitation.acceptedAt ||
-        invitation.revokedAt ||
-        new Date(invitation.expiresAt).getTime() <= Date.now()
+        !(await validInvitationToken(invitation, input.token))
       ) {
         throw new DocumentShareInvalidError()
       }

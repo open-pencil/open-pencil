@@ -297,40 +297,32 @@ test.describe('Cloud sharing browser journey', () => {
     const authenticatedContext = await browser.newContext()
     await configureCloudContext(authenticatedContext, 'recipient')
     const authenticatedRecipient = await authenticatedContext.newPage()
-    await authenticatedRecipient.goto('/?test')
-    const invitationAcceptance = await authenticatedRecipient.evaluate(
-      async ({ serverURL, invitationId, token }) => {
-        const response = await fetch(`${serverURL}/api/invitations/${invitationId}/accept`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        })
-        return { status: response.status, body: await response.json() }
-      },
-      {
-        serverURL: cloudURL,
-        invitationId: invitationCapability.invitation.id,
-        token: invitationCapability.token
-      }
-    )
-    expect(invitationAcceptance.status).toBe(200)
-    expect(invitationAcceptance.body.grant.permission).toBe('view')
-    const repeatedAcceptanceStatus = await authenticatedRecipient.evaluate(
-      async ({ serverURL, invitationId, token }) =>
-        fetch(`${serverURL}/api/invitations/${invitationId}/accept`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
-        }).then((response) => response.status),
-      {
-        serverURL: cloudURL,
-        invitationId: invitationCapability.invitation.id,
-        token: invitationCapability.token
-      }
-    )
-    expect(repeatedAcceptanceStatus).toBe(404)
+    const invitationURL = new URL(
+      `/cloud/invitations/${invitationCapability.invitation.id}?server=${encodeURIComponent(cloudURL ?? '')}#${invitationCapability.token}`,
+      'http://localhost:1420'
+    ).href
+    await authenticatedRecipient.goto(invitationURL)
+    await expect(authenticatedRecipient).toHaveURL(/\/cloud\/invitations\/[^#?]+\?server=/)
+    expect(authenticatedRecipient.url()).not.toContain('#')
+    await expect(authenticatedRecipient.getByText('Cloud sharing fixture')).toBeVisible()
+    await authenticatedRecipient.getByRole('button', { name: 'Accept invitation' }).click()
+    await expect(authenticatedRecipient).toHaveURL(/\/storage$/)
+    expect(
+      await authenticatedRecipient.evaluate(
+        async ({ serverURL, invitationId, token }) =>
+          fetch(`${serverURL}/api/invitations/${invitationId}/accept`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          }).then((response) => response.status),
+        {
+          serverURL: cloudURL,
+          invitationId: invitationCapability.invitation.id,
+          token: invitationCapability.token
+        }
+      )
+    ).toBe(404)
     const authenticatedTicket = await authenticatedRecipient.evaluate(
       async ({ serverURL, id }) =>
         fetch(`${serverURL}/api/documents/${id}/collaboration-ticket`, {

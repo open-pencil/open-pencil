@@ -76,6 +76,9 @@ function services() {
       createInvitation: async () => {
         throw new Error('not used')
       },
+      previewInvitation: async () => {
+        throw new Error('not used')
+      },
       acceptInvitation: async () => {
         throw new Error('not used')
       },

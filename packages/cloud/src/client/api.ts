@@ -9,6 +9,7 @@ import {
   documentInvitationSchema,
   documentShareSchema,
   documentSummarySchema,
+  invitationPreviewSchema,
   resolvedDocumentShareSchema,
   workspaceListSchema,
   workspaceUsageSchema,
@@ -27,6 +28,7 @@ import {
   type DocumentInvitation,
   type DocumentShare,
   type DocumentSummary,
+  type InvitationPreview,
   type LookupCloudUserInput,
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
@@ -52,6 +54,7 @@ const shareCapabilityResponseSchema = v.object({
 })
 const grantsResponseSchema = v.object({ grants: v.array(documentGrantSchema) })
 const grantResponseSchema = v.object({ grant: documentGrantSchema })
+const invitationPreviewResponseSchema = v.object({ invitation: invitationPreviewSchema })
 const invitationsResponseSchema = v.object({ invitations: v.array(documentInvitationSchema) })
 const invitationCapabilityResponseSchema = v.object({
   invitation: documentInvitationSchema,
@@ -344,6 +347,27 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
           })
         )
       )
+    },
+    async previewDocumentInvitation(
+      invitationId: string,
+      input: AcceptDocumentInvitationInput
+    ): Promise<InvitationPreview> {
+      const response = v.parse(
+        invitationPreviewResponseSchema,
+        await responseBody(
+          await (options.fetch ?? globalThis.fetch)(
+            `${apiURL(baseURL).replace(/\/$/, '')}/invitations/${encodeURIComponent(invitationId)}/preview`,
+            {
+              method: 'POST',
+              credentials: 'include',
+              signal: options.signal,
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(input)
+            }
+          )
+        )
+      )
+      return response.invitation
     },
     async acceptDocumentInvitation(
       invitationId: string,

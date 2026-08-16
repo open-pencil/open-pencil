@@ -82,6 +82,15 @@ export const acceptDocumentInvitationSchema = v.object({
 })
 export type AcceptDocumentInvitationInput = v.InferOutput<typeof acceptDocumentInvitationSchema>
 
+export const invitationPreviewSchema = v.object({
+  documentName: v.string(),
+  inviterName: v.string(),
+  permission: documentPermissionSchema,
+  expiresAt: v.string(),
+  recipientHint: v.string()
+})
+export type InvitationPreview = v.InferOutput<typeof invitationPreviewSchema>
+
 export const documentInvitationSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   documentId: v.pipe(v.string(), v.uuid()),

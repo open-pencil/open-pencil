@@ -183,10 +183,21 @@ export function createDocumentSharingRoutes(service: DocumentSharingService) {
 }
 
 export function createPublicSharingRoutes(service: DocumentSharingService) {
-  return new Hono().post(
-    '/shares/:shareId/resolve',
-    validatedJSON(parseResolveDocumentShare),
-    (context) =>
+  return new Hono()
+    .post(
+      '/invitations/:invitationId/preview',
+      validatedJSON(parseAcceptDocumentInvitation),
+      (context) =>
+        sharingRoute(context, async () =>
+          context.json({
+            invitation: await service.previewInvitation(
+              context.req.param('invitationId'),
+              context.req.valid('json')
+            )
+          })
+        )
+    )
+    .post('/shares/:shareId/resolve', validatedJSON(parseResolveDocumentShare), (context) =>
       sharingRoute(context, async () =>
         context.json({
           resolution: await service.resolveShare(
@@ -195,5 +206,5 @@ export function createPublicSharingRoutes(service: DocumentSharingService) {
           )
         })
       )
-  )
+    )
 }

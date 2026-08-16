@@ -99,16 +99,28 @@ describe('createCloudAPIClient', () => {
       fetch: async (input, init) => {
         const request = new Request(input, init)
         requests.push(request)
-        return request.url.endsWith('/users/lookup')
-          ? Response.json({
-              user: {
-                id: 'recipient-user',
-                name: 'Recipient',
-                email: 'recipient@example.com',
-                image: null
-              }
-            })
-          : Response.json({ grant })
+        if (request.url.endsWith('/users/lookup')) {
+          return Response.json({
+            user: {
+              id: 'recipient-user',
+              name: 'Recipient',
+              email: 'recipient@example.com',
+              image: null
+            }
+          })
+        }
+        if (request.url.endsWith('/preview')) {
+          return Response.json({
+            invitation: {
+              documentName: 'Homepage',
+              inviterName: 'Alice',
+              permission: 'view',
+              expiresAt: '2026-01-08T00:00:00.000Z',
+              recipientHint: 're*******@example.com'
+            }
+          })
+        }
+        return Response.json({ grant })
       }
     })
 
@@ -118,11 +130,15 @@ describe('createCloudAPIClient', () => {
       email: 'recipient@example.com',
       image: null
     })
+    expect(
+      await client.previewDocumentInvitation(invitationId, { token: 't'.repeat(32) })
+    ).toMatchObject({ documentName: 'Homepage', recipientHint: 're*******@example.com' })
     expect(await client.acceptDocumentInvitation(invitationId, { token: 't'.repeat(32) })).toEqual(
       grant
     )
     expect(requests.map((request) => request.url)).toEqual([
       `https://cloud.example.com/api/documents/${documentId}/users/lookup`,
+      `https://cloud.example.com/api/invitations/${invitationId}/preview`,
       `https://cloud.example.com/api/invitations/${invitationId}/accept`
     ])
   })
