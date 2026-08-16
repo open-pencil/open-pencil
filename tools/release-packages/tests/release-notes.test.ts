@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-import { releaseNotesFromChangelog } from '../src/release-notes'
+import { readReleaseNotes } from '../src/release-notes'
 
 const changelog = `# Changelog
 
@@ -14,7 +17,7 @@ const changelog = `# Changelog
 
 ### Added
 
-- Shipped feature.
+- Shipped **feature**.
 
 ### Fixed
 
@@ -27,12 +30,20 @@ const changelog = `# Changelog
 - Previous fix.
 `
 
-describe('releaseNotesFromChangelog', () => {
-  test('extracts the requested version without its heading', () => {
-    expect(releaseNotesFromChangelog(changelog, '1.2.0')).toBe(
+async function changelogPath(contents = changelog) {
+  const directory = join(tmpdir(), `open-pencil-release-notes-${crypto.randomUUID()}`)
+  await mkdir(directory, { recursive: true })
+  const path = join(directory, 'CHANGELOG.md')
+  await writeFile(path, contents)
+  return path
+}
+
+describe('readReleaseNotes', () => {
+  test('extracts the requested version without its heading and preserves Markdown', async () => {
+    expect(await readReleaseNotes(await changelogPath(), '1.2.0')).toBe(
       `### Added
 
-- Shipped feature.
+- Shipped **feature**.
 
 ### Fixed
 
@@ -41,12 +52,12 @@ describe('releaseNotesFromChangelog', () => {
     )
   })
 
-  test('rejects missing and empty release sections', () => {
-    expect(() => releaseNotesFromChangelog(changelog, '9.9.9')).toThrow(
+  test('rejects missing and empty release sections', async () => {
+    await expect(readReleaseNotes(await changelogPath(), '9.9.9')).rejects.toThrow(
       'Changelog section not found for 9.9.9'
     )
-    expect(() => releaseNotesFromChangelog('## 1.2.0 — 2026-08-16\n', '1.2.0')).toThrow(
-      'Changelog section is empty for 1.2.0'
-    )
+    await expect(
+      readReleaseNotes(await changelogPath('## 1.2.0 — 2026-08-16\n'), '1.2.0')
+    ).rejects.toThrow('Changelog section is empty for 1.2.0')
   })
 })
