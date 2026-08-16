@@ -235,6 +235,12 @@ Self-review checklist:
 - If upstream docs contradict local patterns, prefer current upstream APIs and update local wrappers deliberately.
 - `es-toolkit` is available in core for small, focused utility helpers when it clearly improves readability. Prefer subpath imports such as `es-toolkit/object`, `es-toolkit/array`, and `es-toolkit/predicate`; good fits include `omit` / `pick` for object key selection, `uniq` for dedupe, and `isNotNil` for typed nullish filtering. Do not replace clear native JavaScript just for consistency, and avoid `es-toolkit/compat` unless deliberately migrating lodash-compatible behavior.
 
+### Native WebView tests
+
+Native desktop interaction checks live under `tests/e2e/native/**` and run through WebdriverIO against an explicit test-only Tauri binary. Use `bun run test:native` to build and run them, or `bun run build:native-test` when only the binary is needed. The embedded WebDriver plugin is compiled only with the `native-test` Cargo feature and must never be enabled in normal development or production binaries.
+
+Keep responsibilities distinct: engine tests cover state contracts, Playwright browser E2E covers application integration, and native tests answer only whether the real platform WebView and Tauri shell deliver an interaction correctly. Platform-limited checks must skip rather than claim coverage. Synthetic composition tests do not prove real IME behavior, and native clipboard behavior remains a separate acceptance gap unless the test receives trusted OS clipboard events.
+
 ## Rendering
 
 - Canvas is CanvasKit (Skia WASM) on a WebGL surface, not DOM
