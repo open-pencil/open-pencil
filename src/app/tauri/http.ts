@@ -1,3 +1,5 @@
+import type { FetchFunction } from '@/app/http/types'
+
 export interface ProxyHttpHeader {
   name: string
   value: string
@@ -72,7 +74,7 @@ export interface TauriFetchOptions {
   maxResponseBytes?: number
 }
 
-export function createTauriFetch(options: TauriFetchOptions = {}): typeof fetch {
+export function createTauriFetch(options: TauriFetchOptions = {}): FetchFunction {
   return (input, init) => tauriFetch(input, init, options.maxResponseBytes, options.timeoutMs)
 }
 
