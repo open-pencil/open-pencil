@@ -481,7 +481,7 @@ export class SceneGraph {
 
     const oldParent = node.parentId ? this.nodes.get(node.parentId) : undefined
     const newParent = this.nodes.get(parentId)
-    if (!newParent) return
+    if (!newParent || this.isDescendant(parentId, nodeId)) return
 
     // Remove from old parent
     if (oldParent) {
@@ -498,6 +498,7 @@ export class SceneGraph {
     }
 
     node.parentId = parentId
+    this.absPosCache.clear()
     idx = Math.min(idx, newParent.childIds.length)
     newParent.childIds.splice(idx, 0, nodeId)
 

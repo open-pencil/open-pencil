@@ -17,7 +17,40 @@ function hasVisibleFillOrStroke(node: SceneNode): boolean {
   return node.fills.some((f) => f.visible) || node.strokes.some((s) => s.visible)
 }
 
-function containsPoint(px: number, py: number, node: SceneNode, graph: SceneGraph): boolean {
+function hasTransformedAncestor(
+  node: SceneNode,
+  graph: SceneGraph,
+  cache: Map<string, boolean>
+): boolean {
+  const cached = cache.get(node.id)
+  if (cached !== undefined) return cached
+  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
+  const transformed =
+    node.rotation !== 0 ||
+    node.flipX ||
+    node.flipY ||
+    (parent ? hasTransformedAncestor(parent, graph, cache) : false)
+  cache.set(node.id, transformed)
+  return transformed
+}
+
+function containsPoint(
+  px: number,
+  py: number,
+  node: SceneNode,
+  graph: SceneGraph,
+  transformCache: Map<string, boolean>
+): boolean {
+  if (!hasTransformedAncestor(node, graph, transformCache)) {
+    const absolute = graph.getAbsolutePosition(node.id)
+    return (
+      px >= absolute.x &&
+      px <= absolute.x + node.width &&
+      py >= absolute.y &&
+      py <= absolute.y + node.height
+    )
+  }
+
   const m = getWorldMatrix(node, graph)
 
   const inv = Matrix.invert(m)
@@ -33,10 +66,11 @@ function hitTestOpaqueContainer(
   py: number,
   child: SceneNode,
   childId: string,
-  deep: boolean
+  deep: boolean,
+  transformCache: Map<string, boolean>
 ): SceneNode | null {
-  if (!containsPoint(px, py, child, graph)) return null
-  const childHit = hitTestChildren(graph, px, py, childId, deep)
+  if (!containsPoint(px, py, child, graph, transformCache)) return null
+  const childHit = hitTestChildren(graph, px, py, childId, deep, transformCache)
   if (childHit) return child
   if (hasVisibleFillOrStroke(child)) return child
   return null
@@ -47,23 +81,25 @@ function hitTestTransparentContainer(
   py: number,
   child: SceneNode,
   childId: string,
-  deep: boolean
+  deep: boolean,
+  transformCache: Map<string, boolean>
 ): SceneNode | null {
   if (child.type === 'GROUP') {
-    if (!containsPoint(px, py, child, graph)) return null
+    if (!containsPoint(px, py, child, graph, transformCache)) return null
 
-    if (deep) return hitTestChildren(graph, px, py, childId, deep) ?? child
+    if (deep) return hitTestChildren(graph, px, py, childId, deep, transformCache) ?? child
 
     return child
   }
 
-  const childHit = hitTestChildren(graph, px, py, childId, deep)
+  const childHit = hitTestChildren(graph, px, py, childId, deep, transformCache)
   if (childHit) {
     if (child.locked) return child
     return childHit
   }
 
-  if (containsPoint(px, py, child, graph) && hasVisibleFillOrStroke(child)) return child
+  if (containsPoint(px, py, child, graph, transformCache) && hasVisibleFillOrStroke(child))
+    return child
   return null
 }
 
@@ -72,13 +108,14 @@ function hitTestChildren(
   px: number,
   py: number,
   parentId: string,
-  deep = false
+  deep = false,
+  transformCache = new Map<string, boolean>()
 ): SceneNode | null {
   const parent = graph.nodes.get(parentId)
   if (!parent) return null
 
   if (parent.clipsContent) {
-    if (!containsPoint(px, py, parent, graph)) return null
+    if (!containsPoint(px, py, parent, graph, transformCache)) return null
   }
 
   for (let i = parent.childIds.length - 1; i >= 0; i--) {
@@ -87,17 +124,17 @@ function hitTestChildren(
     if (!child || child.internalOnly || !child.visible) continue
     if (CONTAINER_TYPES.has(child.type)) {
       if (OPAQUE_CONTAINER_TYPES.has(child.type) && !deep) {
-        const hit = hitTestOpaqueContainer(graph, px, py, child, childId, deep)
+        const hit = hitTestOpaqueContainer(graph, px, py, child, childId, deep, transformCache)
         if (hit) return hit
         continue
       }
 
-      const hit = hitTestTransparentContainer(graph, px, py, child, childId, deep)
+      const hit = hitTestTransparentContainer(graph, px, py, child, childId, deep, transformCache)
       if (hit) return hit
       continue
     }
 
-    if (containsPoint(px, py, child, graph)) return child
+    if (containsPoint(px, py, child, graph, transformCache)) return child
   }
 
   return null

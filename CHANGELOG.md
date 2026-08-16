@@ -47,6 +47,7 @@
 
 ### Performance
 
+- Use cached axis-aligned world positions for hit testing untransformed layer chains and add representative 500/2,000-node interaction profiles. (#527)
 - Coalesce writable-document autosaves that overlap an active `.fig` export while preserving a trailing save for newer edits. (#528)
 - Defer JSX generation and syntax highlighting until the Code panel is active, keeping large canvas selections responsive. (#500)
 - Index Figma clipboard children once during import instead of rescanning every pasted node, keeping large flat pastes linear. (#500)
@@ -54,6 +55,7 @@
 
 ### Fixed
 
+- Restore visible above, below, and child drop feedback while dragging layers in the Layers panel.
 - Place editor-created instances beside nested source components in world space, including transformed source and destination parents.
 - Harden collaboration node synchronization against malformed remote source metadata and geometry while excluding derived text-renderer caches.
 - Transfer native `.fig` exports over binary Tauri IPC instead of JSON byte arrays, preventing large desktop saves from being truncated or exhausting WebView memory. (#484)
