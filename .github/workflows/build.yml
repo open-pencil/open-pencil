@@ -54,47 +54,17 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       - name: Extract release notes
+        if: startsWith(github.ref, 'refs/tags/v')
         id: changelog
         shell: bash
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES_FILE="$RUNNER_TEMP/release-notes.md"
+          bun tools/release-packages/src/extract-release-notes.ts "$VERSION" "$NOTES_FILE"
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
           echo "release_notes<<$EOF" >> "$GITHUB_OUTPUT"
-          awk '/^## /{if(found)exit; found=1; next} found{print}' CHANGELOG.md >> "$GITHUB_OUTPUT"
+          cat "$NOTES_FILE" >> "$GITHUB_OUTPUT"
           echo "$EOF" >> "$GITHUB_OUTPUT"
-
-      - name: Add new contributors to release notes
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: release_body
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_NOTES: ${{ steps.changelog.outputs.release_notes }}
-        run: |
-          PREV_TAG=$(git tag -l 'v*' --sort=-version:refname | sed -n '2p')
-          NEW=""
-          if [ -n "$PREV_TAG" ]; then
-            PREV=$(git log "$PREV_TAG" --format='%aE' | sort -u)
-            NEW=$(comm -23 \
-              <(git log "${PREV_TAG}..${{ github.ref_name }}" --format='%aE' | sort -u) \
-              <(echo "$PREV") \
-            | while read -r email; do
-                git log "${PREV_TAG}..${{ github.ref_name }}" --format="%aE %aN" \
-                  | grep "^${email} " | head -1 | sed 's/^[^ ]* //'
-              done)
-          fi
-
-          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          {
-            echo "body<<$EOF"
-            printf '%s\n' "$RELEASE_NOTES"
-            if [ -n "$NEW" ]; then
-              echo ""
-              echo "### New Contributors"
-              echo ""
-              echo "$NEW" | while read -r name; do echo "- $name"; done
-            fi
-            echo "$EOF"
-          } >> "$GITHUB_OUTPUT"
 
       - name: Build Tauri
         uses: tauri-apps/tauri-action@v0
@@ -111,8 +81,8 @@ jobs:
           tauriScript: bunx tauri
           args: --target ${{ matrix.target }}
           tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
-          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && format('OpenPencil {0}', github.ref_name) || '' }}
-          releaseBody: ${{ steps.release_body.outputs.body || steps.changelog.outputs.release_notes }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+          releaseBody: ${{ steps.changelog.outputs.release_notes }}
           releaseDraft: true
           uploadUpdaterJson: true
           uploadUpdaterSignatures: true
