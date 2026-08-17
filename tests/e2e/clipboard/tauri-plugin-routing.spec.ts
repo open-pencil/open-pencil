@@ -36,6 +36,18 @@ function selectedCount(page: Page): Promise<number> {
   })
 }
 
+async function selectProbeText(page: Page, selector: string) {
+  await page.evaluate((probeSelector) => {
+    const probe = document.querySelector(probeSelector)
+    const selection = window.getSelection()
+    if (!probe || !selection) throw new Error(`Text selection probe not found: ${probeSelector}`)
+    const range = document.createRange()
+    range.selectNodeContents(probe)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }, selector)
+}
+
 async function dispatchClipboardEvent(
   page: Page,
   type: 'copy' | 'cut' | 'paste',
@@ -145,6 +157,33 @@ test('Tauri clipboard events from editable fields keep native text behavior', as
 
   expect(clipboard.snapshot()).toEqual(before)
   expect(await pageChildren(page)).toHaveLength(1)
+})
+
+test('Tauri copy preserves selected document text instead of copying canvas layers', async ({
+  page
+}) => {
+  const { canvas, clipboard } = await createTauriEditorPage(page)
+  await canvas.drawRect(160, 160, 96, 72)
+  const before = clipboard.snapshot()
+
+  await page.evaluate(() => {
+    const probe = document.createElement('div')
+    probe.className = 'select-text'
+    probe.dataset.clipboardProbe = 'document-text'
+    probe.textContent = 'Assistant response'
+    document.body.append(probe)
+  })
+  await selectProbeText(page, '[data-clipboard-probe="document-text"]')
+  expect(
+    await page.evaluate(() => ({
+      collapsed: window.getSelection()?.isCollapsed,
+      text: window.getSelection()?.toString()
+    }))
+  ).toEqual({ collapsed: false, text: 'Assistant response' })
+  await dispatchClipboardEvent(page, 'copy', '[data-clipboard-probe="document-text"]')
+
+  expect(clipboard.snapshot()).toEqual(before)
+  expect(await selectedCount(page)).toBe(1)
 })
 
 test('Tauri context-menu copy uses plugin clipboard fallback instead of blocked browser command', async ({
