@@ -57,6 +57,7 @@
 
 ### Fixed
 
+- Keep text-editing carets, hit testing, and selection highlights aligned with vertically centered or bottom-aligned text. (#539)
 - Match AI chat code-block syntax colors and backgrounds to the active light or dark theme. (#537)
 - Let desktop users select and copy AI chat text without replacing it with the selected canvas layers. (#538)
 - Restore visible above, below, and child drop feedback while dragging layers in the Layers panel.

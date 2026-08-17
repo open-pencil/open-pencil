@@ -1,12 +1,16 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit } from 'canvaskit-wasm'
+import type { CanvasKit, Paragraph, RectWithDirection } from 'canvaskit-wasm'
 
 import { TextEditor, type SceneNode } from '@open-pencil/core'
+import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 
 import { expectDefined } from '#tests/helpers/assert'
 
-const mockCk = {} as CanvasKit
+const mockCk = {
+  RectHeightStyle: { Max: 0 },
+  RectWidthStyle: { Tight: 0 }
+} as Pick<CanvasKit, 'RectHeightStyle' | 'RectWidthStyle'> as CanvasKit
 
 function createEditor(text = 'Hello World') {
   const editor = new TextEditor(mockCk)
@@ -17,6 +21,33 @@ function createEditor(text = 'Hello World') {
 
 function editorState(editor: TextEditor) {
   return expectDefined(editor.state, 'text editor state')
+}
+
+function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical']) {
+  const rects = [{ rect: [4, 2, 14, 12] }] as RectWithDirection[]
+  const paragraph = {
+    delete: () => undefined,
+    getGlyphPositionAtCoordinate: (_x: number, y: number) => ({ pos: Math.round(y) }),
+    getHeight: () => 20,
+    getLineMetrics: () => [{ height: 10, left: 3 }],
+    getRectsForRange: () => rects
+  } as Pick<
+    Paragraph,
+    'delete' | 'getGlyphPositionAtCoordinate' | 'getHeight' | 'getLineMetrics' | 'getRectsForRange'
+  > as Paragraph
+  const renderer = {
+    buildParagraph: () => paragraph,
+    fontGeneration: 1
+  }
+  const editor = new TextEditor(mockCk)
+  editor.setRenderer(renderer as Parameters<TextEditor['setRenderer']>[0])
+  const node = createDefaultNode(() => 'aligned-text', 'TEXT', {
+    height: 100,
+    text: 'Hello',
+    textAlignVertical
+  })
+  editor.start(node)
+  return { editor, paragraph }
 }
 
 describe('TextEditor', () => {
@@ -109,6 +140,33 @@ describe('TextEditor', () => {
     editorState(editor).cursor = 5
     editor.delete(node)
     expect(editor.state?.text).toBe(' World')
+  })
+
+  test('offsets hit testing, caret, and selection for vertical alignment', () => {
+    for (const [alignment, offset] of [
+      ['TOP', 0],
+      ['CENTER', 40],
+      ['BOTTOM', 80]
+    ] as const) {
+      const { editor } = createParagraphEditor(alignment)
+      editorState(editor).selectionAnchor = 0
+      editorState(editor).cursor = 5
+
+      expect(editor.getSelectionRects()).toEqual([{ x: 4, y: 2 + offset, width: 10, height: 10 }])
+      editorState(editor).selectionAnchor = null
+      expect(editor.getCaretRect()).toEqual({ x: 14, y0: 2 + offset, y1: 12 + offset })
+
+      editor.setCursorAt(4, offset + 3)
+      expect(editorState(editor).cursor).toBe(3)
+    }
+  })
+
+  test('offsets the empty-text caret for vertical alignment', () => {
+    const { editor } = createParagraphEditor('BOTTOM')
+    editorState(editor).text = ''
+    editorState(editor).cursor = 0
+
+    expect(editor.getCaretRect()).toEqual({ x: 3, y0: 80, y1: 90 })
   })
 
   test('moveLeft', () => {
