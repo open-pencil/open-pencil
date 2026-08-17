@@ -95,11 +95,15 @@ export type {
   StoredObject
 } from './objects'
 export {
+  capabilityHashMatches,
   createDocumentSharingRoutes,
   createDocumentSharingService,
   createPublicDocumentRoutes,
   createPublicSharingRoutes,
+  decryptContinuationToken,
   DocumentShareInvalidError,
+  encryptContinuationToken,
+  hashCapability,
   type DocumentShareCapability,
   type DocumentSharingService,
   type ResolvedDocumentShare,

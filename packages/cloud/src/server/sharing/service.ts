@@ -23,17 +23,17 @@ import { sql } from 'kysely'
 import { nanoid } from 'nanoid'
 
 import { resolveDocumentAccess } from '../documents/access'
+import {
+  createInvitationContinuationService,
+  invitationMatchesActor,
+  invitationTokenIsActive,
+  recipientHint
+} from './continuation'
+import { capabilityHashMatches, hashCapability } from './crypto'
+import { DocumentShareInvalidError, InvitationDeliveryError } from './errors'
 
 const SHARE_SECRET_SIZE = 32
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
-
-export class InvitationDeliveryError extends Error {
-  override readonly name = 'InvitationDeliveryError'
-}
-
-export class DocumentShareInvalidError extends Error {
-  override readonly name = 'DocumentShareInvalidError'
-}
 
 export type DocumentShareCapability = {
   share: DocumentShare
@@ -95,86 +95,6 @@ function grantContract(row: {
   }
 }
 
-async function validInvitationToken(
-  invitation: {
-    tokenHash: string
-    expiresAt: Date | string
-    acceptedAt: Date | string | null
-    revokedAt: Date | string | null
-  },
-  token: string
-): Promise<boolean> {
-  return (
-    hashesEqual(invitation.tokenHash, await sha256(token)) &&
-    !invitation.acceptedAt &&
-    !invitation.revokedAt &&
-    new Date(invitation.expiresAt).getTime() > Date.now()
-  )
-}
-
-async function continuationKey(secret: string): Promise<CryptoKey> {
-  const source = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(secret),
-    'HKDF',
-    false,
-    ['deriveKey']
-  )
-  return crypto.subtle.deriveKey(
-    {
-      name: 'HKDF',
-      hash: 'SHA-256',
-      salt: new TextEncoder().encode('openpencil-cloud-invitation-continuation'),
-      info: new Uint8Array()
-    },
-    source,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  )
-}
-
-function encodeBytes(bytes: Uint8Array): string {
-  let binary = ''
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
-}
-
-function decodeBytes(value: string): Uint8Array {
-  const padded = value
-    .replaceAll('-', '+')
-    .replaceAll('_', '/')
-    .padEnd(Math.ceil(value.length / 4) * 4, '=')
-  return Uint8Array.from(atob(padded), (character) => character.charCodeAt(0))
-}
-
-async function encryptContinuation(secret: string, token: string): Promise<string> {
-  const nonce = crypto.getRandomValues(new Uint8Array(12))
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv: nonce },
-    await continuationKey(secret),
-    new TextEncoder().encode(token)
-  )
-  return `${encodeBytes(nonce)}.${encodeBytes(new Uint8Array(encrypted))}`
-}
-
-async function decryptContinuation(secret: string, value: string): Promise<string> {
-  const [nonce, encrypted] = value.split('.')
-  if (!nonce || !encrypted) throw new DocumentShareInvalidError()
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: decodeBytes(nonce).slice() },
-    await continuationKey(secret),
-    decodeBytes(encrypted).slice()
-  )
-  return new TextDecoder().decode(decrypted)
-}
-
-function recipientHint(email: string): string {
-  const [local = '', domain = ''] = email.split('@')
-  const visible = local.slice(0, Math.min(2, local.length))
-  return `${visible}${'*'.repeat(Math.max(3, local.length - visible.length))}@${domain}`
-}
-
 function invitationContract(row: {
   id: string
   documentId: string
@@ -195,21 +115,6 @@ function invitationContract(row: {
     expiresAt: dateString(row.expiresAt) ?? '',
     acceptedAt: dateString(row.acceptedAt)
   }
-}
-
-async function sha256(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value)
-  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
-  return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-function hashesEqual(left: string, right: string): boolean {
-  if (left.length !== right.length) return false
-  let difference = 0
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= left.charCodeAt(index) ^ right.charCodeAt(index)
-  }
-  return difference === 0
 }
 
 async function requireSharingAccess(
@@ -251,6 +156,50 @@ export function createDocumentSharingService(
     if (!row) throw new DocumentNotFoundError()
     return row
   }
+
+  async function previewInvitation(
+    invitationId: string,
+    input: AcceptDocumentInvitationInput
+  ): Promise<InvitationPreview> {
+    const invitation = await database
+      .selectFrom('documentInvitation')
+      .innerJoin('document', 'document.id', 'documentInvitation.documentId')
+      .select([
+        'documentInvitation.emailNormalized',
+        'documentInvitation.permission',
+        'documentInvitation.tokenHash',
+        'documentInvitation.expiresAt',
+        'documentInvitation.acceptedAt',
+        'documentInvitation.revokedAt',
+        'documentInvitation.invitedBy',
+        'document.name as documentName'
+      ])
+      .where('documentInvitation.id', '=', invitationId)
+      .executeTakeFirst()
+    if (!invitation || !invitationTokenIsActive(invitation, input.token)) {
+      throw new DocumentShareInvalidError()
+    }
+    const inviter = await database
+      .selectFrom('user')
+      .select('name')
+      .where(sql<string>`id::text`, '=', invitation.invitedBy)
+      .executeTakeFirst()
+    return {
+      documentName: invitation.documentName,
+      inviterName: inviter?.name ?? 'An OpenPencil user',
+      permission: invitation.permission,
+      expiresAt: dateString(invitation.expiresAt) ?? '',
+      recipientHint: recipientHint(invitation.emailNormalized)
+    }
+  }
+
+  const continuation = options.continuationSecret
+    ? createInvitationContinuationService(
+        database,
+        options.continuationSecret,
+        async (invitationId, token) => previewInvitation(invitationId, { token })
+      )
+    : null
 
   return {
     async lookupUser(
@@ -315,7 +264,7 @@ export function createDocumentSharingService(
             id,
             documentId,
             permission: input.permission,
-            secretHash: await sha256(secret),
+            secretHash: hashCapability(secret),
             roomEpoch: document.collaborationEpoch,
             createdBy: userId,
             expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
@@ -362,7 +311,7 @@ export function createDocumentSharingService(
         const updated = await transaction
           .updateTable('documentShare')
           .set({
-            secretHash: await sha256(secret),
+            secretHash: hashCapability(secret),
             roomEpoch: document.collaborationEpoch,
             updatedAt: new Date()
           })
@@ -418,7 +367,7 @@ export function createDocumentSharingService(
         .executeTakeFirst()
       if (
         !row ||
-        !hashesEqual(row.secretHash, await sha256(input.secret)) ||
+        !capabilityHashMatches(row.secretHash, input.secret) ||
         (row.expiresAt && new Date(row.expiresAt).getTime() <= Date.now())
       ) {
         throw new DocumentShareInvalidError()
@@ -541,7 +490,7 @@ export function createDocumentSharingService(
           documentId,
           emailNormalized: input.email,
           permission: input.permission,
-          tokenHash: await sha256(token),
+          tokenHash: hashCapability(token),
           invitedBy: userId,
           expiresAt: new Date(Date.now() + INVITATION_LIFETIME_MS),
           acceptedAt: null,
@@ -599,85 +548,16 @@ export function createDocumentSharingService(
     },
 
     async createInvitationContinuation(input: CreateInvitationContinuationInput) {
-      if (!options.continuationSecret) throw new DocumentShareInvalidError()
-      await this.previewInvitation(input.invitationId, { token: input.token })
-      const id = nanoid()
-      const expiresAt = new Date(Date.now() + 10 * 60_000)
-      await database
-        .insertInto('invitationContinuation')
-        .values({
-          id,
-          invitationId: input.invitationId,
-          tokenEncrypted: await encryptContinuation(options.continuationSecret, input.token),
-          expiresAt,
-          consumedAt: null
-        })
-        .execute()
-      return { id }
+      if (!continuation) throw new DocumentShareInvalidError()
+      return continuation.create(input)
     },
 
-    async consumeInvitationContinuation(id: string): Promise<{
-      invitationId: string
-      token: string
-    }> {
-      if (!options.continuationSecret) throw new DocumentShareInvalidError()
-      return database.transaction().execute(async (transaction) => {
-        const row = await transaction
-          .selectFrom('invitationContinuation')
-          .select(['invitationId', 'tokenEncrypted', 'expiresAt', 'consumedAt'])
-          .where('id', '=', id)
-          .forUpdate()
-          .executeTakeFirst()
-        if (row?.consumedAt || !row || new Date(row.expiresAt).getTime() <= Date.now()) {
-          throw new DocumentShareInvalidError()
-        }
-        await transaction
-          .updateTable('invitationContinuation')
-          .set({ consumedAt: new Date() })
-          .where('id', '=', id)
-          .execute()
-        return {
-          invitationId: row.invitationId,
-          token: await decryptContinuation(options.continuationSecret ?? '', row.tokenEncrypted)
-        }
-      })
+    async consumeInvitationContinuation(id: string) {
+      if (!continuation) throw new DocumentShareInvalidError()
+      return continuation.consume(id)
     },
 
-    async previewInvitation(
-      invitationId: string,
-      input: AcceptDocumentInvitationInput
-    ): Promise<InvitationPreview> {
-      const invitation = await database
-        .selectFrom('documentInvitation')
-        .innerJoin('document', 'document.id', 'documentInvitation.documentId')
-        .select([
-          'documentInvitation.emailNormalized',
-          'documentInvitation.permission',
-          'documentInvitation.tokenHash',
-          'documentInvitation.expiresAt',
-          'documentInvitation.acceptedAt',
-          'documentInvitation.revokedAt',
-          'documentInvitation.invitedBy',
-          'document.name as documentName'
-        ])
-        .where('documentInvitation.id', '=', invitationId)
-        .executeTakeFirst()
-      if (!invitation || !(await validInvitationToken(invitation, input.token))) {
-        throw new DocumentShareInvalidError()
-      }
-      const inviter = await database
-        .selectFrom('user')
-        .select('name')
-        .where(sql<string>`id::text`, '=', invitation.invitedBy)
-        .executeTakeFirst()
-      return {
-        documentName: invitation.documentName,
-        inviterName: inviter?.name ?? 'An OpenPencil user',
-        permission: invitation.permission,
-        expiresAt: dateString(invitation.expiresAt) ?? '',
-        recipientHint: recipientHint(invitation.emailNormalized)
-      }
-    },
+    previewInvitation,
 
     async acceptInvitation(
       actor: CloudActor,
@@ -700,8 +580,8 @@ export function createDocumentSharingService(
         .executeTakeFirst()
       if (
         !invitation ||
-        invitation.emailNormalized !== actor.email.trim().toLowerCase() ||
-        !(await validInvitationToken(invitation, input.token))
+        !invitationMatchesActor(actor, invitation.emailNormalized) ||
+        !invitationTokenIsActive(invitation, input.token)
       ) {
         throw new DocumentShareInvalidError()
       }

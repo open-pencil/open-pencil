@@ -68,6 +68,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1110.0",
     "@aws-sdk/s3-request-presigner": "^3.1110.0",
+    "@noble/hashes": "^2.3.0",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",
     "better-auth": "^1.6.28",

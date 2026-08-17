@@ -1,5 +1,5 @@
 import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents'
-import { DocumentShareInvalidError, InvitationDeliveryError } from '#cloud/server/sharing/service'
+import { DocumentShareInvalidError, InvitationDeliveryError } from '#cloud/server/sharing/errors'
 import type { Context } from 'hono'
 
 export function sharingDomainError(context: Context, error: unknown): Response | null {

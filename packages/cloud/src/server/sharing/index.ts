@@ -1,3 +1,10 @@
+export {
+  capabilityHashMatches,
+  decryptContinuationToken,
+  encryptContinuationToken,
+  hashCapability
+} from './crypto'
+export { DocumentShareInvalidError, InvitationDeliveryError } from './errors'
 export { createPublicDocumentRoutes } from './document-routes'
 export {
   createDocumentSharingRoutes,
@@ -6,8 +13,6 @@ export {
 } from './routes'
 export {
   createDocumentSharingService,
-  DocumentShareInvalidError,
-  InvitationDeliveryError,
   type DocumentShareCapability,
   type DocumentSharingServiceOptions,
   type DocumentSharingService,

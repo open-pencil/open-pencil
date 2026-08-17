@@ -251,6 +251,7 @@ describe('document sharing service', () => {
         .where('id', '=', continuation.id)
         .executeTakeFirstOrThrow()
       expect(stored.tokenEncrypted).not.toContain(created.token)
+      expect(stored.tokenEncrypted.split('.')).toHaveLength(5)
       expect(await sharing.consumeInvitationContinuation(continuation.id)).toEqual({
         invitationId: created.invitation.id,
         token: created.token
