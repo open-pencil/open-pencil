@@ -95,7 +95,7 @@ export async function loadCloudShareState(store: EditorStore) {
     client.listDocumentGrants(binding.documentId),
     client.listDocumentInvitations(binding.documentId)
   ])
-  return { access, shares, grants, invitations }
+  return { access, shares, grants, invitations, binding, client }
 }
 
 function capabilityURL(serverURL: string, shareId: string, secret: string): string {

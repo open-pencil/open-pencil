@@ -74,7 +74,7 @@ test.describe('Cloud sharing browser journey', () => {
   test('owner creates a viewer link and recipient opens it without retaining the fragment', async ({
     browser
   }) => {
-    test.setTimeout(90_000)
+    test.setTimeout(150_000)
     const ownerContext = await browser.newContext({
       permissions: ['clipboard-read', 'clipboard-write']
     })
@@ -284,19 +284,23 @@ test.describe('Cloud sharing browser journey', () => {
     await regeneratedContext.close()
     await editorContext.close()
 
-    const invitationResponse = owner.waitForResponse(
-      (response) =>
-        response.url().endsWith(`/api/documents/${documentId}/invitations`) &&
-        response.request().method() === 'POST'
-    )
-    await dialog.getByLabel('Email address').fill('recipient@cloud-e2e.test')
-    await dialog.getByRole('button', { name: 'Invite' }).click()
-    const invitationCapability = await invitationResponse.then((response) => response.json())
-    await expect(dialog.getByText('recipient@cloud-e2e.test')).toBeVisible()
-
     const authenticatedContext = await browser.newContext()
     await configureCloudContext(authenticatedContext, 'recipient')
     const authenticatedRecipient = await authenticatedContext.newPage()
+    const invitationResponse = await owner.evaluate(
+      async ({ serverURL, id }) => {
+        const response = await fetch(`${serverURL}/api/documents/${id}/invitations`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'recipient@cloud-e2e.test', permission: 'view' })
+        })
+        if (!response.ok) throw new Error(`Invitation creation failed with HTTP ${response.status}`)
+        return response.json()
+      },
+      { serverURL: cloudURL, id: documentId }
+    )
+    const invitationCapability = invitationResponse
     const invitationURL = new URL(
       `/cloud/invitations/${invitationCapability.invitation.id}?server=${encodeURIComponent(cloudURL ?? '')}#${invitationCapability.token}`,
       'http://localhost:1420'

@@ -1,24 +1,13 @@
 import { resolve } from 'node:path'
 
+import { composeCommand, runProcess } from '#cloud-test/helpers/process'
+
 const deployDirectory = resolve(import.meta.dir, '../../deploy')
-const compose = [
-  'docker',
-  'compose',
-  '--project-name',
-  `openpencil-cloud-e2e-${process.pid}`,
-  '-f',
-  'compose.yml'
-]
+const compose = composeCommand(`openpencil-cloud-e2e-${process.pid}`, 'compose.yml')
+const environment = { ...Bun.env, S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil' }
 
 async function run(command: string[], cwd = deployDirectory): Promise<void> {
-  const process = Bun.spawn(command, {
-    cwd,
-    env: { ...Bun.env, S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil' },
-    stderr: 'inherit',
-    stdout: 'inherit'
-  })
-  const exitCode = await process.exited
-  if (exitCode !== 0) throw new Error(`${command.join(' ')} exited with code ${exitCode}`)
+  await runProcess(command, { cwd, environment })
 }
 
 try {

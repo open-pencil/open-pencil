@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useClipboard } from '@vueuse/core'
 
 import type {
+  CloudUserProfile,
   DocumentAccess,
   DocumentGrant,
   DocumentInvitation,
@@ -38,6 +39,7 @@ const { copy } = useClipboard({ copiedDuring: 2000 })
 const access = ref<DocumentAccess | null>(null)
 const shares = ref<DocumentShare[]>([])
 const grants = ref<DocumentGrant[]>([])
+const grantProfiles = ref<Record<string, CloudUserProfile>>({})
 const invitations = ref<DocumentInvitation[]>([])
 const inviteEmail = ref('')
 const invitePermission = ref<DocumentPermission>('view')
@@ -71,6 +73,15 @@ async function refresh() {
     access.value = state.access
     shares.value = state.shares
     grants.value = state.grants
+    const profiles = await Promise.all(
+      state.grants.map(async (grant) => {
+        const profile = await state.client.getUserProfile(grant.documentId, grant.userId)
+        return profile ? ([grant.userId, profile] as const) : null
+      })
+    )
+    grantProfiles.value = Object.fromEntries(
+      profiles.filter((entry): entry is readonly [string, CloudUserProfile] => entry !== null)
+    )
     invitations.value = state.invitations
     if (state.shares[0]) linkPermission.value = state.shares[0].permission
   } catch (error) {
@@ -85,11 +96,23 @@ async function invite() {
   if (!email) return
   loading.value = true
   try {
-    invitations.value.push(
-      await inviteCloudUser(store, { email, permission: invitePermission.value })
-    )
+    const state = await loadCloudShareState(store)
+    const user = await state.client.lookupUser(state.binding.documentId, { email })
+    if (user) {
+      const existing = grants.value.find((grant) => grant.userId === user.id)
+      const grant = await updateCloudGrant(store, user.id, invitePermission.value)
+      grants.value = existing
+        ? grants.value.map((item) => (item.id === existing.id ? grant : item))
+        : [...grants.value, grant]
+      grantProfiles.value = { ...grantProfiles.value, [user.id]: user }
+      toast.info(existing ? 'Access updated' : 'Access granted')
+    } else {
+      invitations.value.push(
+        await inviteCloudUser(store, { email, permission: invitePermission.value })
+      )
+      toast.info('Invitation created')
+    }
     inviteEmail.value = ''
-    toast.info('Invitation created')
   } catch (error) {
     toast.error(`Could not invite person: ${errorMessage(error)}`)
   } finally {
@@ -245,9 +268,16 @@ onMounted(refresh)
             <span
               class="flex size-7 items-center justify-center rounded-full bg-hover text-[10px] text-surface"
             >
-              {{ grant.userId.slice(0, 2).toUpperCase() }}
+              {{ (grantProfiles[grant.userId]?.name ?? grant.userId).slice(0, 2).toUpperCase() }}
             </span>
-            <span class="min-w-0 flex-1 truncate text-[11px] text-surface">{{ grant.userId }}</span>
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-[11px] text-surface">
+                {{ grantProfiles[grant.userId]?.name ?? grant.userId }}
+              </div>
+              <div v-if="grantProfiles[grant.userId]" class="truncate text-[9px] text-muted">
+                {{ grantProfiles[grant.userId].email }}
+              </div>
+            </div>
             <AppSelect
               :model-value="grant.permission"
               class="w-24"

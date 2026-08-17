@@ -1,21 +1,19 @@
 import { resolve } from 'node:path'
 
+import { composeCommand, runProcess } from '#cloud-test/helpers/process'
+
 const deployDirectory = resolve(import.meta.dir, '../../deploy')
 const repositoryDirectory = resolve(import.meta.dir, '../../../..')
 const projectName = `openpencil-cloud-browser-e2e-${process.pid}`
-const compose = ['docker', 'compose', '--project-name', projectName, '-f', 'compose.yml']
+const compose = composeCommand(projectName, 'compose.yml')
 let cloud: ReturnType<typeof Bun.spawn> | null = null
 let playwrightExitCode = 1
 
 async function run(command: string[], cwd = deployDirectory): Promise<void> {
-  const process = Bun.spawn(command, {
+  await runProcess(command, {
     cwd,
-    env: { ...Bun.env, S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil' },
-    stderr: 'inherit',
-    stdout: 'inherit'
+    environment: { ...Bun.env, S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil' }
   })
-  const exitCode = await process.exited
-  if (exitCode !== 0) throw new Error(`${command.join(' ')} exited with code ${exitCode}`)
 }
 
 type CloudBrowserE2EFixture = {

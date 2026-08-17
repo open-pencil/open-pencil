@@ -1,8 +1,10 @@
 import { resolve } from 'node:path'
 
+import { composeCommand, runProcess } from '#cloud-test/helpers/process'
+
 const deployDirectory = resolve(import.meta.dir, '../../deploy')
 const projectName = `openpencil-cloud-garage-e2e-${process.pid}`
-const compose = ['docker', 'compose', '--project-name', projectName, '-f', 'compose.garage.yml']
+const compose = composeCommand(projectName, 'compose.garage.yml')
 const environment = {
   ...Bun.env,
   S3_COMPAT_PROVIDER: 'Garage',
@@ -15,14 +17,7 @@ const environment = {
 }
 
 async function run(command: string[], cwd = deployDirectory): Promise<void> {
-  const process = Bun.spawn(command, {
-    cwd,
-    env: environment,
-    stderr: 'inherit',
-    stdout: 'inherit'
-  })
-  const exitCode = await process.exited
-  if (exitCode !== 0) throw new Error(`${command.join(' ')} exited with code ${exitCode}`)
+  await runProcess(command, { cwd, environment })
 }
 
 try {

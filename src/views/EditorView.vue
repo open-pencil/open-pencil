@@ -152,10 +152,10 @@ onMounted(async () => {
   activeDocumentCleanup.value = onActiveDocumentOpened((openedStore) => {
     if (openedStore === getActiveStore()) void connectCloudDocument()
   })
-  const mcp = await spawnMCPIfNeeded()
+  const mcp = 'test' in params ? null : await spawnMCPIfNeeded()
   mcpCleanup.value = mcp?.disconnect ?? null
   const tauri = isTauri()
-  if (import.meta.env.DEV || (tauri && mcp)) {
+  if (!('test' in params) && (import.meta.env.DEV || (tauri && mcp))) {
     automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
   }
 
