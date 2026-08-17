@@ -14,7 +14,7 @@ const DEFAULT_THEME: AppTheme = 'dark'
 
 const theme = useLocalStorage<AppTheme>(THEME_STORAGE_KEY, DEFAULT_THEME)
 const prefersDark = usePreferredDark()
-const resolvedTheme = computed<'dark' | 'light'>(() => {
+export const resolvedAppTheme = computed<'dark' | 'light'>(() => {
   if (theme.value === 'auto') return prefersDark.value ? 'dark' : 'light'
   return theme.value
 })
@@ -47,16 +47,16 @@ function applyTheme(value: 'dark' | 'light', setting: AppTheme): void {
 }
 
 export function useAppTheme() {
-  watch([resolvedTheme, theme], ([value, setting]) => applyTheme(value, setting), {
+  watch([resolvedAppTheme, theme], ([value, setting]) => applyTheme(value, setting), {
     immediate: true
   })
 
   // Editors may mount after the theme was applied; push the canvas (ruler)
   // theme whenever the active editor changes so rulers always match.
   const activeStoreRef = useActiveEditorStoreRef()
-  watch([activeStoreRef, resolvedTheme], () => updateCanvasTheme(), { flush: 'post' })
+  watch([activeStoreRef, resolvedAppTheme], () => updateCanvasTheme(), { flush: 'post' })
 
-  const isLight = computed(() => resolvedTheme.value === 'light')
+  const isLight = computed(() => resolvedAppTheme.value === 'light')
 
   function setTheme(value: AppTheme): void {
     theme.value = value
@@ -66,7 +66,7 @@ export function useAppTheme() {
     theme.value = isLight.value ? 'dark' : 'light'
   }
 
-  return { theme, resolvedTheme, isLight, setTheme, toggleTheme }
+  return { theme, resolvedTheme: resolvedAppTheme, isLight, setTheme, toggleTheme }
 }
 
-applyTheme(resolvedTheme.value, theme.value)
+applyTheme(resolvedAppTheme.value, theme.value)

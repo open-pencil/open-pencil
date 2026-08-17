@@ -1,11 +1,33 @@
-import { copyGeometryPaths, scaleGeometryPaths } from './copy'
+import {
+  copyDerivedGlyphs,
+  copyGeometryPaths,
+  copyStroke,
+  copyStrokes,
+  scaleGeometryPaths
+} from './copy'
 import type { Rect } from './primitives'
-import type { ConstraintType, SceneNode, VectorNetwork } from './types'
+import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
 import { cloneVectorNetwork } from './vector-network'
 
+/**
+ * Drag-start state a live resize re-scales from. Path text needs more than the
+ * layout rect: its OUTSIDE stroke silhouettes and glyph outlines are baked
+ * geometry that must scale with the node, and textPathBox is the layout box the
+ * glyphs were reflowed against.
+ */
 export type ResizeSnapshot = Pick<
   SceneNode,
-  'x' | 'y' | 'width' | 'height' | 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'
+  | 'x'
+  | 'y'
+  | 'width'
+  | 'height'
+  | 'vectorNetwork'
+  | 'fillGeometry'
+  | 'strokeGeometry'
+  | 'derivedTextGlyphs'
+  | 'strokes'
+  | 'textPathData'
+  | 'textPathBox'
 >
 
 interface ResizeGraph {
@@ -104,6 +126,109 @@ export function scaleVectorNetworkForResize(
   }
 }
 
+/** Snapshot one node's resize-relevant state (rect + geometry that must scale with it). */
+export function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
+  return {
+    x: node.x,
+    y: node.y,
+    width: node.width,
+    height: node.height,
+    vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
+    fillGeometry: copyGeometryPaths(node.fillGeometry),
+    strokeGeometry: copyGeometryPaths(node.strokeGeometry),
+    derivedTextGlyphs: copyDerivedGlyphs(node.derivedTextGlyphs),
+    strokes: copyStrokes(node.strokes),
+    textPathData: node.textPathData ? structuredClone(node.textPathData) : null,
+    textPathBox: node.textPathBox ? { ...node.textPathBox } : null
+  }
+}
+
+function scaleDerivedGlyphs(
+  glyphs: DerivedTextGlyph[] | null,
+  sx: number,
+  sy: number
+): DerivedTextGlyph[] | null {
+  if (!glyphs?.length) return glyphs
+  return glyphs.map((g) => ({
+    ...g,
+    x: g.x * sx,
+    y: g.y * sy,
+    scaleX: (g.scaleX ?? 1) * sx,
+    scaleY: (g.scaleY ?? 1) * sy,
+    commandsBlob: new Uint8Array(g.commandsBlob)
+  }))
+}
+
+function scaleStrokes(strokes: Stroke[], sx: number, sy: number): Stroke[] {
+  if (strokes.length === 0) return strokes
+  // Weight is a scalar; average scale is the usual 2D → 1D compromise.
+  const weightScale = (Math.abs(sx) + Math.abs(sy)) / 2
+  return strokes.map((s) => ({ ...copyStroke(s), weight: s.weight * weightScale }))
+}
+
+/**
+ * All geometry that must track a width/height change. Historically only
+ * vectorNetwork + fillGeometry were updated — path-text strokeGeometry and
+ * glyphs stayed at the pre-resize size, so shrinking a sticker made the white
+ * OUTSIDE outlines look massively thick (DomeSticker resize bug).
+ */
+export function scaledGeometryChanges(
+  orig: Pick<
+    ResizeSnapshot,
+    | 'vectorNetwork'
+    | 'fillGeometry'
+    | 'strokeGeometry'
+    | 'derivedTextGlyphs'
+    | 'strokes'
+    | 'textPathData'
+    | 'textPathBox'
+  >,
+  origWidth: number,
+  origHeight: number,
+  width: number,
+  height: number
+): Partial<SceneNode> {
+  if (origWidth <= 0 || origHeight <= 0) return {}
+  const sx = width / origWidth
+  const sy = height / origHeight
+  if (sx === 1 && sy === 1) return {}
+
+  const changes: Partial<SceneNode> = {}
+  const resizedVN = scaleVectorNetworkForResize(
+    orig.vectorNetwork,
+    origWidth,
+    origHeight,
+    width,
+    height
+  )
+  if (resizedVN) changes.vectorNetwork = resizedVN
+
+  if (orig.fillGeometry.length > 0) {
+    changes.fillGeometry = scaleGeometryPaths(orig.fillGeometry, sx, sy)
+  }
+  if (orig.strokeGeometry.length > 0) {
+    changes.strokeGeometry = scaleGeometryPaths(orig.strokeGeometry, sx, sy)
+  }
+  if (orig.derivedTextGlyphs?.length) {
+    changes.derivedTextGlyphs = scaleDerivedGlyphs(orig.derivedTextGlyphs, sx, sy)
+    // Keep the layout/selection box in sync with the scaled glyphs. reflow
+    // overrides this when it applies; this covers the fallback where reflow
+    // returns null (no path data) so the box doesn't carry a stale size.
+    if (orig.textPathBox) {
+      changes.textPathBox = {
+        x: orig.textPathBox.x * sx,
+        y: orig.textPathBox.y * sy,
+        width: orig.textPathBox.width * sx,
+        height: orig.textPathBox.height * sy
+      }
+    }
+  }
+  if (orig.strokes.length > 0) {
+    changes.strokes = scaleStrokes(orig.strokes, sx, sy)
+  }
+  return changes
+}
+
 export function collectResizeDescendants(
   graph: ResizeGraph,
   rootId: string
@@ -118,15 +243,7 @@ export function collectResizeDescendants(
     for (const childId of parent.childIds) {
       const child = graph.getNode(childId)
       if (!child) continue
-      snapshots.set(childId, {
-        x: child.x,
-        y: child.y,
-        width: child.width,
-        height: child.height,
-        vectorNetwork: child.vectorNetwork ? cloneVectorNetwork(child.vectorNetwork) : null,
-        fillGeometry: copyGeometryPaths(child.fillGeometry),
-        strokeGeometry: copyGeometryPaths(child.strokeGeometry)
-      })
+      snapshots.set(childId, createResizeSnapshot(child))
       collect(childId)
     }
   }
@@ -170,30 +287,9 @@ export function computeConstrainedResizeChanges(
             child.horizontalConstraint,
             child.verticalConstraint
           )
-      const childChanges: Partial<SceneNode> = { ...rect }
-      const vectorNetwork = scaleVectorNetworkForResize(
-        original.vectorNetwork,
-        original.width,
-        original.height,
-        rect.width,
-        rect.height
-      )
-      if (vectorNetwork) childChanges.vectorNetwork = vectorNetwork
-      if (original.width > 0 && original.height > 0) {
-        const scaleX = rect.width / original.width
-        const scaleY = rect.height / original.height
-        if (scaleX !== 1 || scaleY !== 1) {
-          if (original.fillGeometry.length > 0) {
-            childChanges.fillGeometry = scaleGeometryPaths(original.fillGeometry, scaleX, scaleY)
-          }
-          if (original.strokeGeometry.length > 0) {
-            childChanges.strokeGeometry = scaleGeometryPaths(
-              original.strokeGeometry,
-              scaleX,
-              scaleY
-            )
-          }
-        }
+      const childChanges: Partial<SceneNode> = {
+        ...rect,
+        ...scaledGeometryChanges(original, original.width, original.height, rect.width, rect.height)
       }
       changes.set(childId, childChanges)
       // The final pass sees layout containers after Yoga has resolved HUG/FILL sizing.

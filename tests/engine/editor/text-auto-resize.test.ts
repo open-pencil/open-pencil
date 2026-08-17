@@ -51,6 +51,51 @@ describe('editor text auto-resize updates', () => {
     expect(getNodeOrThrow(editor.graph, text.id).height).toBe(48)
   })
 
+  test('direct edits drop stale path glyphs without paragraph auto-resize', () => {
+    // A mutation outside the font-gated canvas edit session cannot reflow the
+    // glyphs. It must clear stale outlines/path identity without applying
+    // paragraph auto-resize to the imported path-text box.
+    setTextMeasurer((node) => ({ width: node.width, height: node.lineHeight ?? 20 }))
+
+    const editor = createEditor()
+    const glyphs = [
+      { commandsBlob: new Uint8Array([1, 0, 0, 0, 0]), x: 0, y: 0, fontSize: 80 },
+      { commandsBlob: new Uint8Array([1, 0, 0, 0, 0]), x: 40, y: 5, fontSize: 80 }
+    ]
+    const text = editor.graph.createNode('TEXT', editor.state.currentPageId, {
+      text: 'ab',
+      textAutoResize: 'HEIGHT',
+      width: 200,
+      height: 200,
+      fontFamily: 'NoSuchFont',
+      fontSize: 80,
+      textPathData: {
+        network: {
+          vertices: [
+            { x: 0, y: 100 },
+            { x: 200, y: 100 }
+          ],
+          segments: [
+            { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+          ],
+          regions: []
+        },
+        normalizedSize: { x: 200, y: 200 },
+        tValue: 0,
+        forward: true
+      },
+      textPathBox: { x: 0, y: 0, width: 200, height: 200 },
+      derivedTextGlyphs: glyphs
+    })
+
+    editor.updateNode(text.id, { text: 'abc' })
+
+    const updated = getNodeOrThrow(editor.graph, text.id)
+    expect(updated.derivedTextGlyphs).toBeNull()
+    expect(updated.textPathData).toBeNull()
+    expect(updated.height).toBe(200)
+  })
+
   test('font size changes resize width-and-height text', () => {
     setTextMeasurer((node) => ({ width: node.fontSize * 4, height: node.fontSize * 2 }))
 

@@ -46,8 +46,8 @@ function applyTextProp(
     props.height = source.height
     props.fills = copyFills(source.fills)
     props.styleRuns = copyStyleRuns(source.styleRuns)
-    props.figmaDerivedTextGlyphs = source.figmaDerivedTextGlyphs
-      ? structuredClone(source.figmaDerivedTextGlyphs)
+    props.derivedTextGlyphs = source.derivedTextGlyphs
+      ? structuredClone(source.derivedTextGlyphs)
       : undefined
   }
   applyPatchAndMark(ctx, childId, { targetId: childId, source: 'component-prop', props }, modified)

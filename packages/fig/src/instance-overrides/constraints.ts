@@ -122,7 +122,7 @@ function pinnedPositionUpdates(
   const verticalPinned = child.verticalConstraint === 'MAX' || child.verticalConstraint === 'CENTER'
   if (
     horizontalPinned &&
-    child.figmaDerivedLayout?.x === undefined &&
+    child.derivedLayout?.x === undefined &&
     !isFieldProtected(ctx.protectedFields, child.id, 'x') &&
     child.x !== resized.x
   ) {
@@ -130,7 +130,7 @@ function pinnedPositionUpdates(
   }
   if (
     verticalPinned &&
-    child.figmaDerivedLayout?.y === undefined &&
+    child.derivedLayout?.y === undefined &&
     !isFieldProtected(ctx.protectedFields, child.id, 'y') &&
     child.y !== resized.y
   ) {
@@ -147,7 +147,7 @@ function stretchedChildSizeUpdates(
   const updates: Partial<SceneNode> = {}
   if (
     child.horizontalConstraint === 'STRETCH' &&
-    child.figmaDerivedLayout?.width === undefined &&
+    child.derivedLayout?.width === undefined &&
     !isFieldProtected(ctx.protectedFields, child.id, 'width') &&
     child.width !== resized.width
   ) {
@@ -155,7 +155,7 @@ function stretchedChildSizeUpdates(
   }
   if (
     child.verticalConstraint === 'STRETCH' &&
-    child.figmaDerivedLayout?.height === undefined &&
+    child.derivedLayout?.height === undefined &&
     !isFieldProtected(ctx.protectedFields, child.id, 'height') &&
     child.height !== resized.height
   ) {

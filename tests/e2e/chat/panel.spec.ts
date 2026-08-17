@@ -13,6 +13,12 @@ test.describe.configure({ mode: 'serial' })
 test.beforeAll(async ({ browser }) => {
   page = await browser.newPage()
   await page.goto('/')
+  await page.evaluate(async () => {
+    const themeModulePath = '/src/app/shell/theme.ts'
+    const themeModule = await import(themeModulePath)
+    themeModule.useAppTheme().setTheme('dark')
+  })
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark')
   canvas = new CanvasHelper(page)
   await canvas.waitForInit()
 
@@ -43,6 +49,7 @@ async function injectMockTransport(page: Page) {
         const msgId = `mock-msg-${++msgCounter}`
         const lowerText = text.toLowerCase()
         const wantsTool = lowerText.includes('frame') || lowerText.includes('rectangle')
+        const wantsCode = lowerText.includes('code block')
 
         if (lowerText.includes('missing agent')) {
           throw new Error(
@@ -89,9 +96,10 @@ async function injectMockTransport(page: Page) {
               })
             }
 
-            const words = wantsTool
-              ? ['Created', 'a', 'frame', 'called', '"Card".']
-              : `I'll help you with: "${text}". Here's a mock response.`.split(' ')
+            let words: string[]
+            if (wantsTool) words = ['Created', 'a', 'frame', 'called', '"Card".']
+            else if (wantsCode) words = ['```typescript\nconst greeting = "Hello"\n```']
+            else words = `I'll help you with: "${text}". Here's a mock response.`.split(' ')
 
             controller.enqueue({ type: 'text-start', id: 'text-1' })
             for (const word of words) {
@@ -119,7 +127,7 @@ function designTab() {
 }
 
 function chatInput() {
-  return page.locator('textarea[placeholder="Describe a change…"]')
+  return page.getByRole('textbox', { name: 'Describe a change' })
 }
 
 function apiKeyInput() {
@@ -251,6 +259,28 @@ test('assistant responds', async () => {
   } else {
     await expect(page.getByText('mock response', { exact: false })).toBeVisible({ timeout: 5000 })
   }
+})
+
+test('assistant code blocks follow the active theme with readable contrast', async () => {
+  await chatInput().fill('Show a code block')
+  await chatInput().press('Enter')
+
+  const code = page.getByTestId('chat-message-assistant').last().locator('.shiki').first()
+  await expect(code).toBeVisible()
+  await expect(page.locator('.chat-markdown').last()).toHaveClass(/dark/)
+  await expect(code).toHaveCSS('background-color', 'rgb(30, 30, 30)')
+  await expect(code.locator('span').filter({ hasText: 'const' }).first()).not.toHaveCSS(
+    'color',
+    'rgb(240, 240, 240)'
+  )
+  await page.evaluate(async () => {
+    const themeModulePath = '/src/app/shell/theme.ts'
+    const themeModule = await import(themeModulePath)
+    themeModule.useAppTheme().setTheme('light')
+  })
+  await page.waitForFunction(() => document.documentElement.dataset.theme === 'light')
+  await expect(page.locator('.chat-markdown').last()).toHaveClass(/light/)
+  await expect(code).toHaveCSS('background-color', 'rgb(255, 255, 255)')
 })
 
 test('model selector is visible and clickable', async () => {

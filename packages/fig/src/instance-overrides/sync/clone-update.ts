@@ -8,7 +8,7 @@ export function cloneInstanceUpdate(
   return {
     ...copyInstanceComponentProps(source),
     componentId,
-    figmaDerivedLayout: source.figmaDerivedLayout ? { ...source.figmaDerivedLayout } : null,
+    derivedLayout: source.derivedLayout ? { ...source.derivedLayout } : null,
     ...extra
   }
 }

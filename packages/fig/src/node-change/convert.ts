@@ -11,10 +11,12 @@ import { convertFigmaDerivedTextGlyphs } from './derived-text-glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
 import { convertEffects, convertFills, convertStrokes } from './paint'
+import { expandPathTextLayoutBox } from './path/text-layout'
 import {
   extractBoundVariables,
   extractExportSettings,
   extractLibrarySource,
+  extractTextPathBox,
   extractPluginData,
   extractPluginRelaunchData,
   getOpenPencilPluginValue,
@@ -30,6 +32,7 @@ import {
   resolveVectorNetwork,
   resolveVectorStyleOverrideFills
 } from './vector-geometry'
+import { decodeVectorNetworkBlob, type StyleOverride } from './vector-network'
 
 export { convertEffects, convertFills, convertStrokes, setVariableColorResolver } from './paint'
 export { importStyleRuns } from './style-runs'
@@ -61,7 +64,8 @@ import type {
   ComponentPropertyType,
   SymbolLink,
   VariantPropSpec,
-  VariableModeMap
+  VariableModeMap,
+  Vector
 } from '@open-pencil/scene-graph'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
@@ -108,7 +112,9 @@ const NODE_TYPE_MAP: Record<string, NodeType | 'DOCUMENT' | 'VARIABLE'> = {
   INSTANCE: 'INSTANCE',
   SYMBOL: 'COMPONENT',
   CONNECTOR: 'CONNECTOR',
-  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT'
+  SHAPE_WITH_TEXT: 'SHAPE_WITH_TEXT',
+  // Map to TEXT while retaining a format-neutral text path for rendering/editing.
+  TEXT_PATH: 'TEXT'
 }
 
 function mapNodeType(type?: string): NodeType | 'DOCUMENT' | 'VARIABLE' {
@@ -314,8 +320,8 @@ type TextProps = Pick<
   | 'fontFeatures'
   | 'textTruncation'
   | 'textDirection'
-  | 'figmaDerivedLayout'
-  | 'figmaDerivedTextGlyphs'
+  | 'derivedLayout'
+  | 'derivedTextGlyphs'
 >
 
 function convertTextDecorationProps(
@@ -367,13 +373,13 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
       (getOpenPencilPluginValue(nc, TEXT_DIRECTION_PLUGIN_KEY) as
         | SceneNode['textDirection']
         | null) || 'AUTO',
-    figmaDerivedLayout: nc.derivedTextData?.layoutSize
+    derivedLayout: nc.derivedTextData?.layoutSize
       ? {
           width: nc.derivedTextData.layoutSize.x,
           height: nc.derivedTextData.layoutSize.y
         }
       : null,
-    figmaDerivedTextGlyphs: convertFigmaDerivedTextGlyphs(nc.derivedTextData, blobs)
+    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(nc.derivedTextData, blobs)
   }
 }
 
@@ -394,7 +400,7 @@ function visibleContainerDerivedLayout(
   layoutMode: SceneNode['layoutMode'],
   primaryAxisSizing: SceneNode['primaryAxisSizing'],
   counterAxisSizing: SceneNode['counterAxisSizing']
-): SceneNode['figmaDerivedLayout'] | undefined {
+): SceneNode['derivedLayout'] | undefined {
   const hasHugAxis = primaryAxisSizing === 'HUG' || counterAxisSizing === 'HUG'
   const hasVisiblePaint =
     (nc.fillPaints?.some((paint) => paint.visible !== false) ?? false) ||
@@ -443,11 +449,11 @@ function convertLayoutProps(
   | 'strokesIncludedInLayout'
   | 'layoutDirection'
 > &
-  Partial<Pick<SceneNode, 'figmaDerivedLayout'>> {
+  Partial<Pick<SceneNode, 'derivedLayout'>> {
   const layoutMode = mapStackMode(nc.stackMode)
   const primaryAxisSizing = mapStackSizing(nc.stackPrimarySizing)
   const counterAxisSizing = mapStackSizing(nc.stackCounterSizing)
-  const figmaDerivedLayout = visibleContainerDerivedLayout(
+  const derivedLayout = visibleContainerDerivedLayout(
     nc,
     layoutMode,
     primaryAxisSizing,
@@ -475,7 +481,7 @@ function convertLayoutProps(
       (getOpenPencilPluginValue(nc, LAYOUT_DIRECTION_PLUGIN_KEY) as
         | SceneNode['layoutDirection']
         | null) || 'AUTO',
-    ...(figmaDerivedLayout ? { figmaDerivedLayout } : {})
+    ...(derivedLayout ? { derivedLayout } : {})
   }
 }
 
@@ -505,6 +511,39 @@ function sharedStyleType(value: string | undefined): SharedStyleType | null {
 
 function convertLayoutGrids(value: unknown): LayoutGrid[] {
   return Array.isArray(value) ? structuredClone(value as LayoutGrid[]) : []
+}
+
+function convertTextPathData(nc: NodeChange, blobs: Uint8Array[]): SceneNode['textPathData'] {
+  if (nc.type !== 'TEXT_PATH') return null
+  const vectorData = nc.vectorData as
+    | {
+        vectorNetworkBlob?: number
+        normalizedSize?: Vector
+        styleOverrideTable?: StyleOverride[]
+      }
+    | undefined
+  const blobIndex = vectorData?.vectorNetworkBlob
+  const normalizedSize = vectorData?.normalizedSize
+  if (
+    typeof blobIndex !== 'number' ||
+    !normalizedSize ||
+    normalizedSize.x <= 0 ||
+    normalizedSize.y <= 0
+  ) {
+    return null
+  }
+  const blob = blobs[blobIndex]
+  const textPathStart = nc.textPathStart as { tValue?: number; forward?: boolean } | undefined
+  try {
+    return {
+      network: decodeVectorNetworkBlob(blob, vectorData.styleOverrideTable),
+      normalizedSize: { x: normalizedSize.x, y: normalizedSize.y },
+      tValue: textPathStart?.tValue ?? 0,
+      forward: textPathStart?.forward ?? true
+    }
+  } catch {
+    return null
+  }
 }
 
 function convertVectorAndStrokeProps(nc: NodeChange, blobs: Uint8Array[]) {
@@ -578,8 +617,9 @@ export function nodeChangeToProps(
   const nodeType = resolveNodeType(nc)
 
   const vectorAndStrokeProps = convertVectorAndStrokeProps(nc, blobs)
+  const textPathData = convertTextPathData(nc, blobs)
 
-  return {
+  const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
     nodeType,
     name: nc.name ?? nodeType,
     source: extractSourceMetadata(nc, blobs),
@@ -635,6 +675,24 @@ export function nodeChangeToProps(
     componentPropertyValues: extractComponentPropertyValues(nc),
     ...extractComponentMetadata(nc)
   }
+
+  // See path/text-layout.ts — expand the layout box before node creation so
+  // clipsContent parents don't shave overflowing path lettering at first paint.
+  expandPathTextLayoutBox(props, textPathData)
+  // A saved OpenPencil doc carries the true textPathBox (reflow may have
+  // scaled it); the expand-time reconstruction is only right for pristine
+  // Figma exports. Plugin box is in pre-expansion local coords — expand's
+  // shift is textPathBox.x/y by construction, so re-home it.
+  const pluginBox = extractTextPathBox(nc)
+  if (pluginBox && props.textPathBox) {
+    props.textPathBox = {
+      x: pluginBox.x + props.textPathBox.x,
+      y: pluginBox.y + props.textPathBox.y,
+      width: pluginBox.width,
+      height: pluginBox.height
+    }
+  }
+  return props
 }
 
 const COMPONENT_PROP_TYPE_MAP: Record<string, ComponentPropertyType> = {

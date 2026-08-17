@@ -41,7 +41,7 @@ describe('effective generated FIG text layout', () => {
       counterAxisSizing: 'HUG',
       paddingLeft: 8,
       componentId: 'text-wrapper',
-      figmaDerivedLayout: { width: 350, height: 40 }
+      derivedLayout: { width: 350, height: 40 }
     })
     const generatedText = graph.createNode('TEXT', textWrapper.id, {
       width: 342,
@@ -49,7 +49,7 @@ describe('effective generated FIG text layout', () => {
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
       componentId: source.id,
-      figmaDerivedLayout: { width: 342, height: 20 }
+      derivedLayout: { width: 342, height: 20 }
     })
     setTextMeasurer(() => ({ width: 336, height: 20 }))
 
@@ -58,11 +58,11 @@ describe('effective generated FIG text layout', () => {
     expect(graph.getNode(generatedText.id)).toMatchObject({
       width: 336,
       height: 20,
-      figmaDerivedLayout: { width: 336, height: 20 }
+      derivedLayout: { width: 336, height: 20 }
     })
     expect(graph.getNode(textWrapper.id)).toMatchObject({
       width: 344,
-      figmaDerivedLayout: { width: 344, height: 40 }
+      derivedLayout: { width: 344, height: 40 }
     })
     expect(graph.getNode(checkbox.id)).toMatchObject({ width: 360, height: 40 })
     expect(graph.getNode(source.id)).toMatchObject({ width: 342, height: 20 })
@@ -86,7 +86,7 @@ describe('effective generated FIG text layout', () => {
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
       componentId: source.id,
-      figmaDerivedLayout: { width: 100, height: 20 }
+      derivedLayout: { width: 100, height: 20 }
     })
     setTextMeasurer(() => ({ width: 80, height: 20 }))
 
@@ -109,7 +109,7 @@ describe('effective generated FIG text layout', () => {
       paddingRight: 10,
       counterAxisAlign: 'STRETCH',
       componentId: 'parent',
-      figmaDerivedLayout: { width: 120, height: 80 }
+      derivedLayout: { width: 120, height: 80 }
     })
     graph.createNode('TEXT', parent.id, {
       width: 100,
@@ -117,27 +117,27 @@ describe('effective generated FIG text layout', () => {
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
       componentId: source.id,
-      figmaDerivedLayout: { width: 100, height: 20 }
+      derivedLayout: { width: 100, height: 20 }
     })
     const inheritedStretch = graph.createNode('RECTANGLE', parent.id, {
       width: 100,
       height: 10,
       layoutAlignSelf: 'AUTO',
-      figmaDerivedLayout: { width: 100, height: 10 }
+      derivedLayout: { width: 100, height: 10 }
     })
     const hiddenStretch = graph.createNode('RECTANGLE', parent.id, {
       width: 100,
       height: 10,
       visible: false,
       layoutAlignSelf: 'AUTO',
-      figmaDerivedLayout: { width: 100, height: 10 }
+      derivedLayout: { width: 100, height: 10 }
     })
     const absoluteStretch = graph.createNode('RECTANGLE', parent.id, {
       width: 100,
       height: 10,
       layoutPositioning: 'ABSOLUTE',
       layoutAlignSelf: 'AUTO',
-      figmaDerivedLayout: { width: 100, height: 10 }
+      derivedLayout: { width: 100, height: 10 }
     })
     setTextMeasurer(() => ({ width: 80, height: 20 }))
 
@@ -162,7 +162,7 @@ describe('effective generated FIG text layout', () => {
       paddingLeft: 16,
       paddingRight: 16,
       componentId: 'input',
-      figmaDerivedLayout: { width: 108, height: 40 }
+      derivedLayout: { width: 108, height: 40 }
     })
     const generatedText = graph.createNode('TEXT', input.id, {
       width: 76,
@@ -170,7 +170,7 @@ describe('effective generated FIG text layout', () => {
       text: source.text,
       textAutoResize: 'WIDTH_AND_HEIGHT',
       componentId: source.id,
-      figmaDerivedLayout: { width: 76, height: 20 }
+      derivedLayout: { width: 76, height: 20 }
     })
     setTextMeasurer(() => ({ width: 74, height: 20 }))
 
@@ -180,7 +180,7 @@ describe('effective generated FIG text layout', () => {
     expect(graph.getNode(input.id)).toMatchObject({
       width: 108,
       height: 40,
-      figmaDerivedLayout: { width: 108, height: 40 }
+      derivedLayout: { width: 108, height: 40 }
     })
   })
 
@@ -198,7 +198,7 @@ describe('effective generated FIG text layout', () => {
       paddingLeft: 24,
       paddingRight: 24,
       componentId: 'card-header',
-      figmaDerivedLayout: { width: 381, height: 102 }
+      derivedLayout: { width: 381, height: 102 }
     })
     const generatedText = graph.createNode('TEXT', cardHeader.id, {
       width: 333,
@@ -207,7 +207,7 @@ describe('effective generated FIG text layout', () => {
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
       componentId: source.id,
-      figmaDerivedLayout: { width: 333, height: 30 }
+      derivedLayout: { width: 333, height: 30 }
     })
     setTextMeasurer(() => ({ width: 329, height: 37 }))
 
@@ -217,7 +217,7 @@ describe('effective generated FIG text layout', () => {
     expect(graph.getNode(cardHeader.id)).toMatchObject({
       width: 377,
       height: 102,
-      figmaDerivedLayout: { width: 377, height: 102 }
+      derivedLayout: { width: 377, height: 102 }
     })
   })
 
@@ -232,7 +232,7 @@ describe('effective generated FIG text layout', () => {
       text: 'Email',
       textAutoResize: 'HEIGHT',
       componentId: source.id,
-      figmaDerivedLayout: { width: 280, height: 14 }
+      derivedLayout: { width: 280, height: 14 }
     })
     const generatedText = graph.createNode('TEXT', page.id, {
       width: 302,
@@ -240,7 +240,7 @@ describe('effective generated FIG text layout', () => {
       text: 'Name',
       textAutoResize: 'WIDTH_AND_HEIGHT',
       componentId: fixedIntermediate.id,
-      figmaDerivedLayout: { width: 302, height: 14 }
+      derivedLayout: { width: 302, height: 14 }
     })
     setTextMeasurer(() => ({ width: 36, height: 17 }))
 
@@ -263,7 +263,7 @@ describe('effective generated FIG text layout', () => {
       paddingLeft: 24,
       paddingRight: 24,
       componentId: 'parent',
-      figmaDerivedLayout: { width: 381, height: 68 }
+      derivedLayout: { width: 381, height: 68 }
     })
     const overrideText = graph.createNode('TEXT', parent.id, {
       width: 333,
@@ -272,7 +272,7 @@ describe('effective generated FIG text layout', () => {
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
       componentId: source.id,
-      figmaDerivedLayout: { width: 333, height: 20 }
+      derivedLayout: { width: 333, height: 20 }
     })
     setTextMeasurer(() => ({ width: 329, height: 20 }))
 

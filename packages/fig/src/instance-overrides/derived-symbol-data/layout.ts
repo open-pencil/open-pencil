@@ -79,8 +79,8 @@ function buildDsdTextUpdates(
       weight: d.strokeWeight as number
     }))
   }
-  const figmaDerivedTextGlyphs = convertFigmaDerivedTextGlyphs(d.derivedTextData, blobs)
-  if (figmaDerivedTextGlyphs.length > 0) updates.figmaDerivedTextGlyphs = figmaDerivedTextGlyphs
+  const derivedTextGlyphs = convertFigmaDerivedTextGlyphs(d.derivedTextData, blobs)
+  if (derivedTextGlyphs.length > 0) updates.derivedTextGlyphs = derivedTextGlyphs
   return updates
 }
 
@@ -91,13 +91,13 @@ export function buildDsdLayoutUpdates(
   target: SceneNode
 ): { updates: Partial<SceneNode>; hasSize: boolean } {
   const updates: Partial<SceneNode> = buildDsdTextUpdates(d, ctx.blobs, target)
-  const figmaDerivedLayout: NonNullable<SceneNode['figmaDerivedLayout']> = {}
+  const derivedLayout: NonNullable<SceneNode['derivedLayout']> = {}
 
   if (d.size) {
     updates.width = d.size.x
     updates.height = d.size.y
-    figmaDerivedLayout.width = d.size.x
-    figmaDerivedLayout.height = d.size.y
+    derivedLayout.width = d.size.x
+    derivedLayout.height = d.size.y
   }
   if (d.transform) {
     const transformed = convertFigmaTransformProps({
@@ -109,8 +109,8 @@ export function buildDsdLayoutUpdates(
     updates.rotation = transformed.rotation
     updates.flipX = transformed.flipX
     updates.flipY = transformed.flipY
-    figmaDerivedLayout.x = transformed.x
-    figmaDerivedLayout.y = transformed.y
+    derivedLayout.x = transformed.x
+    derivedLayout.y = transformed.y
   } else if (d.size) {
     const position =
       preserveTransformedPositionAfterResize(target, d.size.x, d.size.y) ??
@@ -118,11 +118,11 @@ export function buildDsdLayoutUpdates(
     if (position) {
       updates.x = position.x
       updates.y = position.y
-      figmaDerivedLayout.x = position.x
-      figmaDerivedLayout.y = position.y
+      derivedLayout.x = position.x
+      derivedLayout.y = position.y
     }
   }
-  if (Object.keys(figmaDerivedLayout).length > 0) updates.figmaDerivedLayout = figmaDerivedLayout
+  if (Object.keys(derivedLayout).length > 0) updates.derivedLayout = derivedLayout
   Object.assign(updates, resolveDsdGeometry(d, target, ctx.blobs))
   return { updates, hasSize: d.size !== undefined }
 }

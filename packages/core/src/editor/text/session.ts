@@ -2,7 +2,7 @@ import type { Paragraph } from 'canvaskit-wasm'
 import { isEqual } from 'es-toolkit/predicate'
 
 import type { SceneNode, StyleRun } from '@open-pencil/scene-graph'
-import { copyStyleRuns } from '@open-pencil/scene-graph/copy'
+import { copyDerivedGlyphs, copyGeometryPaths, copyStyleRuns } from '@open-pencil/scene-graph/copy'
 
 export type TextEditSizeSnapshot = Partial<Pick<SceneNode, 'width' | 'height'>>
 
@@ -15,6 +15,10 @@ export type TextEditSnapshot = {
 export type TextEditSession = {
   nodeId: string
   before: TextEditSnapshot
+  beforePathText: Pick<
+    SceneNode,
+    'derivedTextGlyphs' | 'strokeGeometry' | 'textPathData' | 'textPathBox'
+  > | null
 }
 
 export function createTextEditSession(node: SceneNode): TextEditSession {
@@ -24,7 +28,15 @@ export function createTextEditSession(node: SceneNode): TextEditSession {
       text: node.text,
       styleRuns: copyStyleRuns(node.styleRuns),
       size: { width: node.width, height: node.height }
-    }
+    },
+    beforePathText: node.textPathData
+      ? {
+          derivedTextGlyphs: copyDerivedGlyphs(node.derivedTextGlyphs),
+          strokeGeometry: copyGeometryPaths(node.strokeGeometry),
+          textPathData: structuredClone(node.textPathData),
+          textPathBox: node.textPathBox ? { ...node.textPathBox } : null
+        }
+      : null
   }
 }
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { Markdown } from 'vue-stream-markdown'
@@ -9,12 +10,14 @@ import {
   imageAttachmentsForMessage,
   visibleUserMessageText
 } from '@/app/ai/attachment/image/presentation'
+import { resolvedAppTheme } from '@/app/shell/theme'
 import ImageAttachment from '@/components/chat/attachment/image/ImageAttachment.vue'
 
 import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
 
 const { message } = defineProps<{ message: UIMessage }>()
 const { dialogs } = useI18n()
+const isDark = computed(() => resolvedAppTheme.value === 'dark')
 const imageAttachments = imageAttachmentsForMessage(message.id)
 
 type ToolPart = Extract<UIMessagePart<UIDataTypes, UITools>, { toolCallId: string }>
@@ -52,7 +55,10 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
     v-test-id="`chat-message-${message.role}`"
     :class="message.role === 'user' ? 'flex justify-end' : ''"
   >
-    <div class="min-w-0 space-y-2" :class="message.role === 'user' ? 'max-w-[85%]' : ''">
+    <div
+      class="min-w-0 space-y-2 select-text"
+      :class="message.role === 'user' ? 'max-w-[85%]' : ''"
+    >
       <template v-if="message.role === 'assistant'">
         <template v-for="(part, i) in message.parts" :key="partKey(part, i)">
           <!-- Tool call -->
@@ -114,7 +120,12 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
             data-test-id="chat-text-bubble"
             class="rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
           >
-            <Markdown :content="part.text" :mermaid="false" class="chat-markdown" />
+            <Markdown
+              :content="part.text"
+              :is-dark="isDark"
+              :mermaid="false"
+              class="chat-markdown [&_[data-stream-markdown=code]]:!bg-input"
+            />
           </div>
         </template>
       </template>

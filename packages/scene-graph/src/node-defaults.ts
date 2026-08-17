@@ -38,7 +38,7 @@ export function createDefaultNode(
     height: 100,
     rotation: 0,
     source: createDefaultSourceMetadata(),
-    figmaDerivedLayout: null,
+    derivedLayout: null,
     fills:
       type === 'TEXT' ? [{ type: 'SOLID' as const, color: BLACK, opacity: 1, visible: true }] : [],
     strokes: [],
@@ -165,7 +165,9 @@ export function createDefaultNode(
     flipX: false,
     flipY: false,
     textPicture: null,
-    figmaDerivedTextGlyphs: null,
+    derivedTextGlyphs: null,
+    textPathData: null,
+    textPathBox: null,
     ...overrides
   }
 }
