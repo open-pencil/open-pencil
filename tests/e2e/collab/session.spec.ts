@@ -9,6 +9,7 @@ type TestRelay = {
   url: string
   pause: () => void
   resume: () => void
+  queuedCount: () => number
   close: () => Promise<void>
 }
 
@@ -49,8 +50,9 @@ async function startRelay(): Promise<TestRelay> {
       for (const peer of state.room) if (peer.readyState === peer.OPEN) peer.send(leave)
     })
   })
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     server.once('listening', () => resolve())
+    server.once('error', reject)
   })
   const address = server.address()
   if (typeof address === 'string' || address === null) throw new Error('Test relay unavailable')
@@ -67,6 +69,7 @@ async function startRelay(): Promise<TestRelay> {
         }
       }
     },
+    queuedCount: () => queuedMessages.length,
     close: async () => {
       for (const room of rooms.values()) for (const socket of room) socket.terminate()
       await new Promise<void>((resolve, reject) => {
@@ -184,6 +187,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       if (!store) throw new Error('OpenPencil store not initialized')
       store.updateNode(id, { name: 'Host partition edit' })
     }, nodeId)
+    await expect.poll(() => relay.queuedCount()).toBeGreaterThan(0)
     relay.resume()
     for (const peer of [host, guest]) {
       await expect

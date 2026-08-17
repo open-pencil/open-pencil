@@ -45,7 +45,9 @@ function parseMessage(value: unknown): TestTransportMessage | null {
 }
 
 function relayURL(roomId: string): URL {
-  if (!IS_BROWSER) throw new Error('Test collaboration transport requires a browser')
+  if (!IS_BROWSER) {
+    throw new Error('Test collaboration transport requires a browser')
+  }
   const configured = new URLSearchParams(window.location.search).get('collabRelay')
   if (!configured) throw new Error('Test collaboration transport requires collabRelay')
   const url = new URL(configured)
@@ -54,7 +56,12 @@ function relayURL(roomId: string): URL {
 }
 
 export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
-  if (!IS_BROWSER || typeof WebSocket === 'undefined' || typeof crypto.randomUUID !== 'function') {
+  if (
+    !IS_BROWSER ||
+    typeof WebSocket === 'undefined' ||
+    typeof crypto === 'undefined' ||
+    typeof crypto.randomUUID !== 'function'
+  ) {
     throw new Error('Test collaboration transport requires browser WebSocket and crypto APIs')
   }
   const peerId = crypto.randomUUID()
