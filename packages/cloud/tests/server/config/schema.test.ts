@@ -63,6 +63,31 @@ describe('Cloud server configuration', () => {
     })
   })
 
+  test('rejects malformed environment coercion instead of applying defaults', () => {
+    const environment = {
+      OPENPENCIL_CLOUD_URL: baseConfig.publicURL,
+      DATABASE_URL: baseConfig.databaseURL,
+      BETTER_AUTH_SECRET: baseConfig.authSecret,
+      S3_ENDPOINT: baseConfig.s3Endpoint,
+      S3_REGION: baseConfig.s3Region,
+      S3_BUCKET: baseConfig.s3Bucket,
+      S3_ACCESS_KEY_ID: baseConfig.s3AccessKeyId,
+      S3_SECRET_ACCESS_KEY: baseConfig.s3SecretAccessKey
+    }
+    expect(() =>
+      cloudServerConfigFromEnvironment({
+        ...environment,
+        OPENPENCIL_CLOUD_CLEANUP_ENABLED: 'yes'
+      })
+    ).toThrow()
+    expect(() =>
+      cloudServerConfigFromEnvironment({
+        ...environment,
+        OPENPENCIL_CLOUD_CLEANUP_BATCH_SIZE: '12.5'
+      })
+    ).toThrow()
+  })
+
   test('rejects short auth secrets', () => {
     expect(() => parseCloudServerConfig({ ...baseConfig, authSecret: 'short' })).toThrow()
   })

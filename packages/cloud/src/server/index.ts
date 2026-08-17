@@ -8,9 +8,11 @@ export {
 } from './auth'
 export {
   createCloudAPIRouter,
+  createPublicCloudAPIRouter,
   type CloudAPI,
   type CloudAPIEnvironment,
-  type CloudAPIServices
+  type CloudAPIServices,
+  type PublicCloudAPI
 } from './api'
 export { createCloudApp, type CloudApp, type CloudServices } from './app'
 export {

@@ -4,27 +4,24 @@ import {
   parseCloudDiscovery,
   type CloudDiscovery
 } from '#cloud/contract'
-import { createCloudAPIRouter, type CloudAPIEnvironment } from '#cloud/server/api'
+import {
+  createCloudAPIRouter,
+  createPublicCloudAPIRouter,
+  type CloudAPIEnvironment
+} from '#cloud/server/api'
 import {
   configuredSocialProviders,
   createCloudSessionResolver,
   type CloudAuth,
   type CloudSessionResolver
 } from '#cloud/server/auth'
-import {
-  createCollaborationTicketService,
-  createPublicCollaborationRoutes
-} from '#cloud/server/collaboration'
+import { createCollaborationTicketService } from '#cloud/server/collaboration'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import type { InvitationDelivery } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
-import {
-  createDocumentSharingService,
-  createPublicDocumentRoutes,
-  createPublicSharingRoutes
-} from '#cloud/server/sharing'
+import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
@@ -90,7 +87,20 @@ export function createCloudApp(services: CloudServices) {
     services.config.authSecret
   )
 
-  const cloudAPI = createCloudAPIRouter({ collaboration, documents, sharing, workspaces })
+  const cloudAPI = createCloudAPIRouter({
+    collaboration,
+    documents,
+    sharing,
+    workspaces,
+    resolveSession
+  })
+  const publicCloudAPI = createPublicCloudAPIRouter({
+    collaboration,
+    documents,
+    sharing,
+    workspaces,
+    resolveSession
+  })
 
   return new Hono<CloudEnvironment>()
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
@@ -123,9 +133,7 @@ export function createCloudApp(services: CloudServices) {
       }
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
-    .route('/api', createPublicSharingRoutes(sharing))
-    .route('/api', createPublicDocumentRoutes(sharing, documents))
-    .route('/api', createPublicCollaborationRoutes(collaboration, resolveSession))
+    .route('/api', publicCloudAPI)
     .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
     .use('/api/*', async (context, next) => {
       const actor = await resolveSession(context.req.raw)

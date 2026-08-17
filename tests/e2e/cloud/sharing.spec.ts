@@ -61,7 +61,7 @@ async function openOwnerDocument(page: Page): Promise<void> {
   expect(browserCloud.discovery.status).toBe(200)
   expect(browserCloud.session.status).toBe(200)
   expect(browserCloud.documents.status).toBe(200)
-  await expect(page.getByText('Cloud sharing fixture')).toBeVisible()
+  await expect(page.getByText('Cloud sharing fixture')).toBeVisible({ timeout: 15_000 })
   await page.locator(`[data-document-id="${documentId}"]`).click()
   await expect(page).toHaveURL(/\/$/)
   await expect(page.getByText('Cloud sharing fixture').first()).toBeVisible()

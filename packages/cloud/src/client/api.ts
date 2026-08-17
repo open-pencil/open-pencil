@@ -40,7 +40,7 @@ import {
   type WorkspaceList,
   type WorkspaceUsage
 } from '#cloud/contract'
-import type { CloudAPI } from '#cloud/server/api'
+import type { CloudAPI, PublicCloudAPI } from '#cloud/server/api'
 import { hc } from 'hono/client'
 import * as v from 'valibot'
 
@@ -152,6 +152,10 @@ async function responseBody(response: Response): Promise<unknown> {
 
 export function createCloudAPIClient(baseURL: string, options: CloudRequestOptions = {}) {
   const client = hc<CloudAPI>(apiURL(baseURL), {
+    fetch: options.fetch,
+    init: { credentials: 'include', signal: options.signal }
+  })
+  const publicClient = hc<PublicCloudAPI>(apiURL(baseURL), {
     fetch: options.fetch,
     init: { credentials: 'include', signal: options.signal }
   })
@@ -357,28 +361,16 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     ): Promise<InvitationContinuation> {
       return v.parse(
         invitationContinuationSchema,
-        await responseBody(
-          await (options.fetch ?? globalThis.fetch)(
-            `${apiURL(baseURL).replace(/\/$/, '')}/invitations/continuations`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              signal: options.signal,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(input)
-            }
-          )
-        )
+        await responseBody(await publicClient.invitations.continuations.$post({ json: input }))
       )
     },
     async consumeInvitationContinuation(id: string): Promise<CreateInvitationContinuationInput> {
       return v.parse(
         createInvitationContinuationSchema,
         await responseBody(
-          await (options.fetch ?? globalThis.fetch)(
-            `${apiURL(baseURL).replace(/\/$/, '')}/invitations/continuations/${encodeURIComponent(id)}/consume`,
-            { method: 'POST', credentials: 'include', signal: options.signal }
-          )
+          await publicClient.invitations.continuations[':continuationId'].consume.$post({
+            param: { continuationId: id }
+          })
         )
       )
     },
@@ -389,16 +381,10 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = v.parse(
         invitationPreviewResponseSchema,
         await responseBody(
-          await (options.fetch ?? globalThis.fetch)(
-            `${apiURL(baseURL).replace(/\/$/, '')}/invitations/${encodeURIComponent(invitationId)}/preview`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              signal: options.signal,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(input)
-            }
-          )
+          await publicClient.invitations[':invitationId'].preview.$post({
+            param: { invitationId },
+            json: input
+          })
         )
       )
       return response.invitation
@@ -429,16 +415,10 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = v.parse(
         resolvedShareResponseSchema,
         await responseBody(
-          await (options.fetch ?? globalThis.fetch)(
-            `${apiURL(baseURL).replace(/\/$/, '')}/shares/${encodeURIComponent(shareId)}/resolve`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              signal: options.signal,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(input)
-            }
-          )
+          await publicClient.shares[':shareId'].resolve.$post({
+            param: { shareId },
+            json: input
+          })
         )
       )
       return response.resolution
@@ -447,16 +427,10 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return v.parse(
         sharedDocumentResponseSchema,
         await responseBody(
-          await (options.fetch ?? globalThis.fetch)(
-            `${apiURL(baseURL).replace(/\/$/, '')}/shares/${encodeURIComponent(shareId)}/document`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              signal: options.signal,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(input)
-            }
-          )
+          await publicClient.shares[':shareId'].document.$post({
+            param: { shareId },
+            json: input
+          })
         )
       )
     },
@@ -467,16 +441,10 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       const response = v.parse(
         collaborationTicketResponseSchema,
         await responseBody(
-          await (options.fetch ?? globalThis.fetch)(
-            `${apiURL(baseURL).replace(/\/$/, '')}/shares/${encodeURIComponent(shareId)}/collaboration-ticket`,
-            {
-              method: 'POST',
-              credentials: 'include',
-              signal: options.signal,
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(input)
-            }
-          )
+          await publicClient.shares[':shareId']['collaboration-ticket'].$post({
+            param: { shareId },
+            json: input
+          })
         )
       )
       return response.ticket
