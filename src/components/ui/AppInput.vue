@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 
+import type { ControlSize } from '@/theme/control'
 import theme from '@/theme/input'
 
 interface AppInputProps {
@@ -16,7 +17,7 @@ interface AppInputProps {
   max?: number
   step?: number
   tone?: 'default' | 'panel'
-  size?: 'sm' | 'md'
+  size?: ControlSize
   state?: 'idle' | 'mixed' | 'bound' | 'invalid'
 }
 
@@ -43,6 +44,9 @@ const emit = defineEmits<{
   change: []
   enter: [event: KeyboardEvent]
   focus: [event: FocusEvent]
+  paste: [event: ClipboardEvent]
+  copy: [event: ClipboardEvent]
+  cut: [event: ClipboardEvent]
 }>()
 </script>
 
@@ -63,5 +67,8 @@ const emit = defineEmits<{
     @change="emit('change')"
     @keydown.enter="emit('enter', $event)"
     @focus="emit('focus', $event)"
+    @paste="emit('paste', $event)"
+    @copy="emit('copy', $event)"
+    @cut="emit('cut', $event)"
   />
 </template>

@@ -1,9 +1,17 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { isTextUIPart, isToolUIPart, getToolName } from 'ai'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { Markdown } from 'vue-stream-markdown'
 import { useI18n, vTestId } from '@open-pencil/vue'
 import 'vue-stream-markdown/index.css'
+
+import {
+  imageAttachmentsForMessage,
+  visibleUserMessageText
+} from '@/app/ai/attachment/image/presentation'
+import { resolvedAppTheme } from '@/app/shell/theme'
+import ImageAttachment from '@/components/chat/attachment/image/ImageAttachment.vue'
 
 import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
 
@@ -13,6 +21,8 @@ const emit = defineEmits<{
   removePart: [partKey: string]
 }>()
 const { dialogs } = useI18n()
+const isDark = computed(() => resolvedAppTheme.value === 'dark')
+const imageAttachments = imageAttachmentsForMessage(message.id)
 
 type ToolPart = Extract<UIMessagePart<UIDataTypes, UITools>, { toolCallId: string }>
 type ToolImage = { url: string; mimeType: string; byteLength?: number }
@@ -92,7 +102,10 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
     >
       <icon-lucide-x class="size-3" />
     </button>
-    <div class="min-w-0 space-y-1.5" :class="message.role === 'user' ? 'max-w-[85%]' : ''">
+    <div
+      class="min-w-0 space-y-2 select-text"
+      :class="message.role === 'user' ? 'max-w-[85%]' : ''"
+    >
       <template v-if="message.role === 'assistant'">
         <template v-for="(part, i) in message.parts" :key="partKey(part, i)">
           <!-- Tool call -->
@@ -140,7 +153,7 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
                     toolState(part) === 'pending'
                       ? dialogs.toolRunning
                       : toolState(part) === 'done'
-                        ? dialogs.done
+                        ? dialogs.toolFinished
                         : dialogs.toolError
                   }}
                 </span>
@@ -187,24 +200,40 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
             data-test-id="chat-text-bubble"
             class="rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
           >
-            <Markdown :content="part.text" :mermaid="false" class="chat-markdown" />
+            <Markdown
+              :content="part.text"
+              :is-dark="isDark"
+              :mermaid="false"
+              class="chat-markdown [&_[data-stream-markdown=code]]:!bg-input"
+            />
           </div>
         </template>
       </template>
 
       <!-- User message -->
-      <div
-        v-else-if="message.role === 'user'"
-        data-test-id="chat-text-bubble"
-        class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-white"
-      >
-        {{
-          message.parts
-            .filter(isTextUIPart)
-            .map((p) => p.text)
-            .join('')
-        }}
-      </div>
+      <template v-else-if="message.role === 'user'">
+        <div v-if="imageAttachments.length" class="flex flex-wrap justify-end gap-1.5">
+          <ImageAttachment
+            v-for="attachment in imageAttachments"
+            :key="attachment.id"
+            :attachment="attachment"
+          />
+        </div>
+        <div
+          data-test-id="chat-text-bubble"
+          class="rounded-xl rounded-br-md bg-accent px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap text-white"
+        >
+          {{
+            visibleUserMessageText(
+              message.id,
+              message.parts
+                .filter(isTextUIPart)
+                .map((p) => p.text)
+                .join('')
+            )
+          }}
+        </div>
+      </template>
     </div>
   </div>
 </template>

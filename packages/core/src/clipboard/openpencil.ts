@@ -1,7 +1,7 @@
 import { deflateSync, inflateSync } from 'fflate'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { decodeBase64, encodeBase64 } from '#core/bytes'
 
@@ -43,7 +43,7 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
   return null
 }
 
-function restoreTextPictures(nodes: JsonObject[]): void {
+function restoreTextPictures(nodes: JSONObject[]): void {
   for (const node of nodes) {
     if (typeof node.textPicture === 'string') {
       node.textPicture = decodeBase64(node.textPicture)
@@ -95,7 +95,7 @@ function collectNodeTree(
   nodes: SceneNode[],
   graph: SceneGraph,
   textPictureBuilder?: TextPictureBuilder
-): JsonObject[] {
+): JSONObject[] {
   return nodes.map((node) => {
     const children = graph.getChildren(node.id)
     const serialized: Record<string, unknown> = { ...node }

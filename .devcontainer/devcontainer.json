@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.base.schema.json",
+  "name": "OpenPencil",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/open-pencil,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace/open-pencil",
+  "remoteUser": "bun",
+  "updateRemoteUserUID": true,
+  "mounts": [
+    "source=open-pencil-root-modules-${devcontainerId},target=/workspace/open-pencil/node_modules,type=volume",
+    "source=open-pencil-scene-graph-modules-${devcontainerId},target=/workspace/open-pencil/packages/scene-graph/node_modules,type=volume",
+    "source=open-pencil-pen-modules-${devcontainerId},target=/workspace/open-pencil/packages/pen/node_modules,type=volume",
+    "source=open-pencil-kiwi-modules-${devcontainerId},target=/workspace/open-pencil/packages/kiwi/node_modules,type=volume",
+    "source=open-pencil-fig-modules-${devcontainerId},target=/workspace/open-pencil/packages/fig/node_modules,type=volume",
+    "source=open-pencil-core-modules-${devcontainerId},target=/workspace/open-pencil/packages/core/node_modules,type=volume",
+    "source=open-pencil-dom-css-modules-${devcontainerId},target=/workspace/open-pencil/packages/dom-css/node_modules,type=volume",
+    "source=open-pencil-vue-modules-${devcontainerId},target=/workspace/open-pencil/packages/vue/node_modules,type=volume",
+    "source=open-pencil-cli-modules-${devcontainerId},target=/workspace/open-pencil/packages/cli/node_modules,type=volume",
+    "source=open-pencil-mcp-modules-${devcontainerId},target=/workspace/open-pencil/packages/mcp/node_modules,type=volume",
+    "source=open-pencil-docs-modules-${devcontainerId},target=/workspace/open-pencil/packages/docs/node_modules,type=volume",
+    "source=open-pencil-docs-tool-modules-${devcontainerId},target=/workspace/open-pencil/tools/docs/node_modules,type=volume"
+  ],
+  "postCreateCommand": "if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then git lfs pull; fi && bun install --frozen-lockfile",
+  "containerEnv": {
+    "TAURI_DEV_HOST": "0.0.0.0"
+  },
+  "forwardPorts": [1420],
+  "portsAttributes": {
+    "1420": {
+      "label": "OpenPencil web editor",
+      "onAutoForward": "notify"
+    }
+  }
+}

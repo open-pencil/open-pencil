@@ -44,8 +44,8 @@ async function clearUnsplashKey(): Promise<void> {
     :saved="hasExistingPexelsKey"
     kind="pexels"
     :placeholder="hasExistingPexelsKey ? dialogs.keySavedReplace : dialogs.stockPhotoToolOptional"
-    key-url="https://www.pexels.com/api/"
-    :key-url-label="dialogs.getPexelsAPIKey"
+    key-u-r-l="https://www.pexels.com/api/"
+    :key-u-r-l-label="dialogs.getPexelsAPIKey"
     @clear="clearPexelsKey"
     @change="savePexelsKey"
   />
@@ -58,8 +58,8 @@ async function clearUnsplashKey(): Promise<void> {
     :placeholder="
       hasExistingUnsplashKey ? dialogs.keySavedReplace : dialogs.pexelsAlternativeOptional
     "
-    key-url="https://unsplash.com/oauth/applications"
-    :key-url-label="dialogs.getUnsplashAccessKey"
+    key-u-r-l="https://unsplash.com/oauth/applications"
+    :key-u-r-l-label="dialogs.getUnsplashAccessKey"
     @clear="clearUnsplashKey"
     @change="saveUnsplashKey"
   />

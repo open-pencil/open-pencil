@@ -2,7 +2,7 @@ import { readText, writeHtml, writeText } from '@tauri-apps/plugin-clipboard-man
 
 import { isTauri } from '@/app/tauri/env'
 
-export async function writeTauriClipboardHtml(html: string, plainText: string) {
+export async function writeTauriClipboardHTML(html: string, plainText: string) {
   if (!isTauri()) return false
   await writeHtml(html, plainText)
   return true

@@ -1,9 +1,10 @@
-import type { Editor } from '@open-pencil/core/editor'
+import type { Editor, EditorState } from '@open-pencil/core/editor'
 
 import type { CanvasRenderLayer } from './types'
 
 type RenderLoopOptions = {
   layer?: CanvasRenderLayer
+  getRenderState?: () => EditorState
 }
 
 type EditorRenderScheduler = {
@@ -55,48 +56,58 @@ export function createCanvasRenderLoop(
   renderNow: () => void,
   options: RenderLoopOptions = {}
 ) {
+  const getRenderState = options.getRenderState ?? (() => editor.state)
   const scheduler = getRenderScheduler(editor)
   let dirty = true
   let frameScheduled = false
   let lastRenderVersion = -1
+  let lastSceneVersion = -1
   let lastSelectedIds: Set<string> | null = null
 
   function renderFrame() {
     frameScheduled = false
-    if (editor.state.loading) {
-      scheduleRender()
+    const state = getRenderState()
+    if (state.loading) {
+      dirty = true
+      scheduleFrame()
       return
     }
 
-    const versionChanged = editor.state.renderVersion !== lastRenderVersion
-    const selectionChanged = editor.state.selectedIds !== lastSelectedIds
-    if (dirty || versionChanged || selectionChanged) {
+    const versionChanged = state.renderVersion !== lastRenderVersion
+    const sceneChanged = state.sceneVersion !== lastSceneVersion
+    const selectionChanged = state.selectedIds !== lastSelectedIds
+    if (dirty || versionChanged || sceneChanged || selectionChanged) {
       dirty = false
       renderNow()
     }
   }
 
-  const scheduleRender = () => {
-    dirty = true
+  const scheduleFrame = () => {
     if (frameScheduled) return
     frameScheduled = true
     scheduler.schedule(renderFrame)
   }
 
+  const scheduleDirtyFrame = () => {
+    dirty = true
+    scheduleFrame()
+  }
+
   const unsubscribe = [
-    editor.onEditorEvent('render:requested', scheduleRender),
-    editor.onEditorEvent('viewport:changed', scheduleRender)
+    editor.onEditorEvent('render:requested', scheduleDirtyFrame),
+    editor.onEditorEvent('viewport:changed', scheduleFrame),
+    editor.onEditorEvent('repaint:requested', scheduleDirtyFrame)
   ]
 
-  unsubscribe.push(editor.onEditorEvent('repaint:requested', scheduleRender))
-
   if (shouldScheduleForSelection(options.layer)) {
-    unsubscribe.push(editor.onEditorEvent('selection:changed', scheduleRender))
+    unsubscribe.push(editor.onEditorEvent('selection:changed', scheduleFrame))
   }
 
   function markRendered() {
-    lastRenderVersion = editor.state.renderVersion
-    lastSelectedIds = editor.state.selectedIds
+    const state = getRenderState()
+    lastRenderVersion = state.renderVersion
+    lastSceneVersion = state.sceneVersion
+    lastSelectedIds = state.selectedIds
   }
 
   function pause() {
@@ -110,6 +121,9 @@ export function createCanvasRenderLoop(
   return {
     pause,
     markRendered,
-    markDirty: scheduleRender
+    markDirty() {
+      dirty = true
+      scheduleFrame()
+    }
   }
 }

@@ -39,10 +39,10 @@ interface ParsedGradient {
 }
 
 /** Minimal structural view of the parsed XML nodes we read (DOM-compatible). */
-interface SvgQueryable {
-  getElementsByTagName(name: string): ArrayLike<SvgElementLike>
+interface SVGQueryable {
+  getElementsByTagName(name: string): ArrayLike<SVGElementLike>
 }
-interface SvgElementLike extends SvgQueryable {
+interface SVGElementLike extends SVGQueryable {
   getAttribute(name: string): string | null
 }
 
@@ -55,7 +55,7 @@ function coord(value: string | null, fallback: number): number {
   return Number.isFinite(n) ? n : fallback
 }
 
-function readStops(gradient: SvgElementLike): RawStop[] {
+function readStops(gradient: SVGElementLike): RawStop[] {
   const stops: RawStop[] = []
   const stopEls = Array.from(gradient.getElementsByTagName('stop'))
   for (const [i, stop] of stopEls.entries()) {
@@ -78,7 +78,7 @@ function readStops(gradient: SvgElementLike): RawStop[] {
  */
 export function parseSVGGradients(svg: string): Map<string, ParsedGradient> {
   const map = new Map<string, ParsedGradient>()
-  const doc: SvgQueryable | null = parseSVGDocument(svg)
+  const doc: SVGQueryable | null = parseSVGDocument(svg)
   if (!doc) return map
 
   for (const kind of ['linear', 'radial'] as const) {

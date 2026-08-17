@@ -20,7 +20,7 @@ mockIPC((cmd, args) => {
   if (payload.thumbnailPng.length === 0) throw new Error('thumbnailPng is empty')
   if (payload.images.length !== 0) throw new Error('images should be empty')
   JSON.parse(payload.metaJson)
-  return [7, 8, 9]
+  return new Uint8Array([7, 8, 9]).buffer
 })
 
 const [{ exportFigFile }, { SceneGraph }] = await Promise.all([

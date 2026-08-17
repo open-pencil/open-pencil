@@ -1,5 +1,6 @@
 import { generateText } from 'ai'
 
+import { isInsufficientCreditError, providerErrorStatus } from '@/app/ai/chat/failure'
 import { createLanguageModel, resolveLanguageModelID, type ModelConfig } from '@/app/ai/chat/model'
 import { providerRequiresAPIKey } from '@/app/ai/models'
 import { isTauri } from '@/app/tauri/env'
@@ -14,6 +15,7 @@ export type ProviderConnectionTestFailureReason =
   | 'missing-model'
   | 'invalid-base-url'
   | 'auth'
+  | 'insufficient-credit'
   | 'model-not-found'
   | 'api-type'
   | 'browser-network'
@@ -39,37 +41,6 @@ function validateConfig(config: ModelConfig): ProviderConnectionTestFailureReaso
   }
   if (!resolveLanguageModelID(config).trim()) return 'missing-model'
   return null
-}
-
-type ProviderErrorShape = {
-  statusCode?: unknown
-  status?: unknown
-  responseStatusCode?: unknown
-  responseStatus?: unknown
-  code?: unknown
-  response?: { status?: unknown }
-}
-
-function isProviderErrorShape(error: unknown): error is ProviderErrorShape {
-  return typeof error === 'object' && error !== null
-}
-
-function statusNumber(value: unknown): number | null {
-  if (typeof value === 'number') return value
-  if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value)
-  return null
-}
-
-function errorStatus(error: unknown): number | null {
-  if (!isProviderErrorShape(error)) return null
-  return (
-    statusNumber(error.statusCode) ??
-    statusNumber(error.status) ??
-    statusNumber(error.responseStatusCode) ??
-    statusNumber(error.responseStatus) ??
-    statusNumber(error.code) ??
-    statusNumber(error.response?.status)
-  )
 }
 
 function errorText(error: unknown): string {
@@ -116,8 +87,9 @@ function classifyMessage(text: string): ProviderConnectionTestFailureReason | nu
 }
 
 function classifyError(error: unknown): ProviderConnectionTestFailureReason {
+  if (isInsufficientCreditError(error)) return 'insufficient-credit'
   const text = errorText(error).toLowerCase()
-  return classifyStatus(errorStatus(error), text) ?? classifyMessage(text) ?? 'unknown'
+  return classifyStatus(providerErrorStatus(error), text) ?? classifyMessage(text) ?? 'unknown'
 }
 
 export async function testProviderConnection(

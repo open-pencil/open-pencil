@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { inputNumberValue } from '@open-pencil/vue'
+import { inputNumberValue, useI18n } from '@open-pencil/vue'
 import { colorToCSS } from '@open-pencil/core/color'
 
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 
 const ctx = useColorPickerPanelContext()
+const { panels } = useI18n()
 </script>
 
 <template>
@@ -39,7 +40,7 @@ const ctx = useColorPickerPanelContext()
   </div>
 
   <StandardColorSlider
-    label="Saturation"
+    :label="panels.saturation"
     :model-value="ctx.rekaColor"
     channel="saturation"
     color-space="hsb"
@@ -55,7 +56,7 @@ const ctx = useColorPickerPanelContext()
   />
 
   <StandardColorSlider
-    label="Brightness"
+    :label="panels.brightness"
     :model-value="ctx.rekaColor"
     channel="brightness"
     color-space="hsb"

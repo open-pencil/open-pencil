@@ -13,7 +13,7 @@ import {
   connectMockBrowser,
   openWs,
   readNextResponse,
-  readWsJson,
+  readWsJSON,
   socketRequest,
   tcpRequest,
   waitForBrowserRegistration,
@@ -233,7 +233,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       await waitForBrowserRegistration(httpPort)
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
 
-      const register = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      const register = await readWsJSON<{ type: string; token?: string | null }>(clientWs)
       expect(register.type).toBe('register')
       expect(register.token).toBeNull()
 
@@ -282,7 +282,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
 
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, 'bridge-test-token')
 
-      const register = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      const register = await readWsJSON<{ type: string; token?: string | null }>(clientWs)
       expect(register.type).toBe('register')
 
       clientWs.send(
@@ -331,11 +331,11 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const graph = new SceneGraph()
 
-      const initialRegister = await readWsJson<{ type: string; token?: string | null }>(clientWs)
+      const initialRegister = await readWsJSON<{ type: string; token?: string | null }>(clientWs)
       expect(initialRegister.type).toBe('register')
       expect(initialRegister.token).toBeNull()
 
-      const broadcastPromise = readWsJson<{ type: string; token?: string | null }>(clientWs, 3_000)
+      const broadcastPromise = readWsJSON<{ type: string; token?: string | null }>(clientWs, 3_000)
       browser = await connectMockBrowser(httpPort, graph, authToken)
       const broadcastRegister = await broadcastPromise
       expect(broadcastRegister.type).toBe('register')
@@ -368,7 +368,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJson<{ type: string; token?: string | null }>(ws)
+      const initReg = await readWsJSON<{ type: string; token?: string | null }>(ws)
       expect(initReg.type).toBe('register')
 
       const requestPromise = (async () => {
@@ -460,7 +460,7 @@ describe('MCP WebSocket stdio bridge routing', () => {
       clientWs = await openWs(`ws://127.0.0.1:${httpPort}`, authToken)
       const ws = clientWs
 
-      const initReg = await readWsJson<{ type: string; token?: string | null }>(ws)
+      const initReg = await readWsJSON<{ type: string; token?: string | null }>(ws)
       expect(initReg.type).toBe('register')
       expect(initReg.token).toBeNull()
 

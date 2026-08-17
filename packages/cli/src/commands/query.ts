@@ -4,7 +4,7 @@ import type { QueryNodeResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { printNodeResults, printError } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: {
@@ -27,7 +27,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const results = await loadRpcData<QueryNodeResult[] | { error: string }>(
+    const results = await loadRPCData<QueryNodeResult[] | { error: string }>(
       args.file,
       'query',
       {

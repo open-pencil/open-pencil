@@ -72,8 +72,8 @@ onMounted(() => void refreshStatus())
       :saved="keyStatus === 'configured'"
       kind="api"
       :placeholder="keyStatus === 'configured' ? dialogs.keySavedReplace : provider.keyPlaceholder"
-      :key-url="provider.keyURL"
-      :key-url-label="dialogs.getAPIKeyGeneric"
+      :key-u-r-l="provider.keyURL"
+      :key-u-r-l-label="dialogs.getAPIKeyGeneric"
       @change="saveCredential"
       @clear="clearCredential"
     />

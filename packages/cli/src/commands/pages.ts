@@ -4,7 +4,7 @@ import type { PageItem } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { bold, fmtList, entity } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'List pages in a document' },
@@ -18,7 +18,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const pages = await loadRpcData<PageItem[]>(args.file, 'pages', undefined, args)
+    const pages = await loadRPCData<PageItem[]>(args.file, 'pages', undefined, args)
 
     if (args.json) {
       console.log(JSON.stringify(pages, null, 2))

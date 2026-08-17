@@ -141,6 +141,37 @@ describe('buildFigmaClipboardHTML', () => {
     expect(html).toContain('figmeta')
   })
 
+  it('preserves source metadata while importing instance overrides', async () => {
+    const source = new SceneGraph()
+    const sourcePage = source.getPages()[0]
+    const component = source.createNode('COMPONENT', sourcePage.id, { name: 'Button' })
+    source.createNode('TEXT', component.id, { name: 'Label', text: 'Effective label' })
+    const instance = source.createNode('INSTANCE', sourcePage.id, {
+      name: 'Button instance',
+      componentId: component.id
+    })
+    source.populateInstanceChildren(instance.id, component.id)
+
+    const html = await buildFigmaClipboardHTML([component, instance], source)
+    const parsed = await parseFigmaClipboard(expectDefined(html, 'Figma clipboard html'))
+    const clipboard = expectDefined(parsed, 'Figma clipboard')
+    const target = new SceneGraph()
+    const targetPage = target.getPages()[0]
+    importClipboardNodes(clipboard.nodes, target, targetPage.id)
+    const importedInstance = [...target.getAllNodes()].find(
+      (node) => node.type === 'INSTANCE' && node.name === 'Button instance'
+    )
+    const importedLabel = importedInstance
+      ? [...target.getAllNodes()].find(
+          (node) => node.type === 'TEXT' && node.parentId === importedInstance.id
+        )
+      : undefined
+
+    expect(importedInstance).toBeDefined()
+    expect(importedLabel?.text).toBe('Effective label')
+    expect(importedLabel?.source.editedFields).toEqual([])
+  })
+
   it('roundtrips: encode then decode back', async () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

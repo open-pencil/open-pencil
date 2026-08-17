@@ -111,8 +111,8 @@ describe('plugin data', () => {
 
     // Shared plugin data is stored in pluginData with key format "namespace/key".
     // Verify via the FigmaAPI proxy which reads through pluginData.
-    const parsedApi = new FigmaAPI(parsed)
-    const parsedProxy = parsedApi.getNodeById(parsedFrame?.id ?? '')
+    const parsedAPI = new FigmaAPI(parsed)
+    const parsedProxy = parsedAPI.getNodeById(parsedFrame?.id ?? '')
     expect(parsedProxy).toBeDefined()
     expect(parsedProxy?.getSharedPluginData('tokens', 'accent')).toBe('{"ref":"brand/500"}')
     expect(parsedProxy?.getSharedPluginDataKeys('tokens')).toEqual(['accent'])
@@ -326,8 +326,8 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     expect(accentEntries).toHaveLength(1)
     expect(accentEntries[0].value).toBe('v2')
 
-    const parsedApi = new FigmaAPI(parsed)
-    const parsedProxy = expectDefined(parsedApi.getNodeById(parsedFrame.id), 'parsed frame proxy')
+    const parsedAPI = new FigmaAPI(parsed)
+    const parsedProxy = expectDefined(parsedAPI.getNodeById(parsedFrame.id), 'parsed frame proxy')
     expect(parsedProxy.getSharedPluginData('tokens', 'accent')).toBe('v2')
   })
 
@@ -360,8 +360,8 @@ describe('FigmaNodeProxy plugin data split-brain regression', () => {
     // No tokens/accent entry should survive
     expect(parsedFrame.pluginData.some((e) => e.key === 'tokens/accent')).toBe(false)
 
-    const parsedApi = new FigmaAPI(parsed)
-    const parsedProxy = expectDefined(parsedApi.getNodeById(parsedFrame.id), 'parsed frame proxy')
+    const parsedAPI = new FigmaAPI(parsed)
+    const parsedProxy = expectDefined(parsedAPI.getNodeById(parsedFrame.id), 'parsed frame proxy')
     expect(parsedProxy.getSharedPluginData('tokens', 'accent')).toBe('')
   })
 })

@@ -60,8 +60,15 @@ Die Schriftauswahl im Typografie-Bereich bietet Suchfilter, Schriftvorschau und 
 ## Schriftquellen
 
 - **Standardschrift** — Inter wird automatisch geladen
-- **Desktop** — Systemschriften werden automatisch erkannt
-- **Browser** — Systemschriften werden in Chrome und Edge unterstützt
+- **Desktop** — Systemschriften sowie aktivierte Kataloge von Google Fonts, Fontsource, Bunny Fonts und Fontshare
+- **Browser** — Systemschriften werden in Chrome und Edge unterstützt; Online-Schriftkataloge benötigen die Desktop-App
+- **Heruntergeladene Schriften** — die Desktop-App speichert heruntergeladene Schriftschnitte zur erneuten Verwendung auf demselben Gerät
+
+## Fehlende Schriften und Ersetzungen
+
+Wenn eine angeforderte Familie oder ein Schriftschnitt nicht geladen werden kann, zeigt OpenPencil oberhalb des Editors eine Warnung an, statt die Ersatzdarstellung stillschweigend als originalgetreu zu behandeln.
+
+Klappe die Warnung auf, um alle betroffenen Schriftschnitte und ihre aktiven Ersetzungen zu sehen. Mit **Ebenen auswählen** findest du die betroffenen Textknoten; mit **Schriften erneut laden** kannst du nach Änderungen an Netzwerkzugriff, lokaler Schriftberechtigung oder Anbietereinstellungen einen neuen Versuch starten. Ein Schriftschnitt kann aus einem anderen geladenen Schnitt derselben Familie synthetisiert werden; eine fehlende Familie verwendet Inter als Ersatz, wenn verfügbar.
 
 ## Tipps
 

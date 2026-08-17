@@ -17,8 +17,7 @@ function preservesImportedHugCrossSize(
   return graph
     .getChildren(frame.id)
     .some(
-      (child) =>
-        child.layoutAlignSelf === 'STRETCH' && child.figmaDerivedLayout?.[axis] !== undefined
+      (child) => child.layoutAlignSelf === 'STRETCH' && child.derivedLayout?.[axis] !== undefined
     )
 }
 
@@ -36,7 +35,7 @@ function applyFrameSize(graph: SceneGraph, frame: SceneNode, yogaNode: YogaNode)
   const computedH = yogaNode.getComputedHeight()
   const updates: Partial<SceneNode> = {}
 
-  const derived = frame.figmaDerivedLayout
+  const derived = frame.derivedLayout
   if (frame.primaryAxisSizing === 'HUG') {
     if (frame.layoutMode === 'HORIZONTAL') updates.width = derived?.width ?? computedW
     else updates.height = derived?.height ?? computedH
@@ -69,11 +68,11 @@ function computedChildPosition(
   if (preservesImportedGeometry) return child[axis]
   const computed = axis === 'x' ? yogaChild.getComputedLeft() : yogaChild.getComputedTop()
   if (child.type === 'INSTANCE') return computed
-  return child.figmaDerivedLayout?.[axis] ?? computed
+  return child.derivedLayout?.[axis] ?? computed
 }
 
 function preservesStaleImportedTextSize(child: SceneNode, axis: 'width' | 'height'): boolean {
-  const derivedSize = child.figmaDerivedLayout?.[axis]
+  const derivedSize = child.derivedLayout?.[axis]
   return (
     child.type === 'TEXT' &&
     child.source.format === 'fig' &&
@@ -95,7 +94,7 @@ function computedChildSize(
   if (child.type === 'TEXT' && child.source.format === 'fig') {
     return computed > 0 ? computed : child[axis]
   }
-  return child.figmaDerivedLayout?.[axis] ?? computed
+  return child.derivedLayout?.[axis] ?? computed
 }
 
 function updateChildFromYoga(graph: SceneGraph, child: SceneNode, yogaChild: YogaNode): void {

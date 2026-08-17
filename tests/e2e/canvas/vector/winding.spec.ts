@@ -2,6 +2,61 @@ import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
+test('mixed vector regions keep open stroke segments', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.graph.createNode('VECTOR', store.state.currentPageId, {
+      name: 'Mixed region and open segment',
+      x: 160,
+      y: 110,
+      width: 300,
+      height: 160,
+      fills: [
+        {
+          type: 'SOLID',
+          color: { r: 0.23, g: 0.51, b: 0.96, a: 1 },
+          visible: true,
+          opacity: 1
+        }
+      ],
+      strokes: [
+        {
+          color: { r: 0.95, g: 0.25, b: 0.15, a: 1 },
+          weight: 8,
+          opacity: 1,
+          visible: true,
+          align: 'CENTER'
+        }
+      ],
+      vectorNetwork: {
+        vertices: [
+          { x: 0, y: 0 },
+          { x: 120, y: 0 },
+          { x: 120, y: 120 },
+          { x: 0, y: 120 },
+          { x: 170, y: 60 },
+          { x: 300, y: 60 }
+        ],
+        segments: [
+          { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 1, end: 2, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 2, end: 3, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 3, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } },
+          { start: 4, end: 5, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+        ],
+        regions: [{ windingRule: 'NONZERO', loops: [[0, 1, 2, 3]] }]
+      }
+    })
+    store.clearSelection()
+    store.requestRender()
+  })
+  await editor.canvas.waitForRender()
+  editor.canvas.assertNoErrors()
+  const buffer = await editor.canvas.canvas.screenshot()
+  expect(buffer).toMatchSnapshot('mixed-region-open-segment.png')
+})
+
 test('even-odd vector geometry preserves holes', async () => {
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()

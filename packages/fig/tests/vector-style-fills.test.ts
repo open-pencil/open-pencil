@@ -72,6 +72,38 @@ describe('vector geometry style fills', () => {
     expect(geometry.vectorNetwork?.vertices[1]?.y).toBe(0)
   })
 
+  test('scales derived vector networks around their geometry origin', () => {
+    const graph = new SceneGraph()
+    const target = graph.createNode('VECTOR', graph.getPages()[0].id, {
+      width: 10,
+      height: 10,
+      vectorNetwork: {
+        vertices: [
+          { x: 5, y: 7 },
+          { x: 15, y: 17 }
+        ],
+        segments: [
+          {
+            start: 0,
+            end: 1,
+            tangentStart: { x: 1, y: 2 },
+            tangentEnd: { x: 3, y: 4 }
+          }
+        ],
+        regions: []
+      }
+    })
+
+    const geometry = resolveDsdGeometry({ size: { x: 20, y: 30 } }, target, [])
+
+    expect(geometry.vectorNetwork?.vertices).toEqual([
+      { x: 5, y: 7 },
+      { x: 25, y: 37 }
+    ])
+    expect(geometry.vectorNetwork?.segments[0]?.tangentStart).toEqual({ x: 2, y: 6 })
+    expect(geometry.vectorNetwork?.segments[0]?.tangentEnd).toEqual({ x: 6, y: 12 })
+  })
+
   test('resolves per-path paints without retaining transport style IDs', () => {
     const orange: Paint = {
       type: 'SOLID',

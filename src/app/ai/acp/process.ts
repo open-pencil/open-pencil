@@ -6,7 +6,7 @@ export type TauriChild = {
   kill(): Promise<void>
 }
 
-type AcpProcessOptions = {
+type ACPProcessOptions = {
   command: string
   args: string[]
   logId: string
@@ -14,13 +14,13 @@ type AcpProcessOptions = {
   onUnexpectedClose: () => void
 }
 
-export async function spawnAcpProcess({
+export async function spawnACPProcess({
   command: commandName,
   args,
   logId,
   destroying,
   onUnexpectedClose
-}: AcpProcessOptions) {
+}: ACPProcessOptions) {
   const { Command } = await import('@tauri-apps/plugin-shell')
   const resolved = resolvePlatformCommand(commandName, args)
   const command = Command.create(resolved.command, resolved.args, {

@@ -3,8 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { documentIdFromFigKey } from '@/app/integrations/storage/namespace'
 import {
   parseListObjectsV2Page,
-  parseListObjectsV2Xml,
-  parseS3ErrorXml
+  parseListObjectsV2XML,
+  parseS3ErrorXML
 } from '@/app/integrations/storage/s3/xml'
 
 describe('parseListObjectsV2Xml', () => {
@@ -28,7 +28,7 @@ describe('parseListObjectsV2Xml', () => {
   </Contents>
 </ListBucketResult>`
 
-    const listed = parseListObjectsV2Xml(xml)
+    const listed = parseListObjectsV2XML(xml)
     expect(listed).toHaveLength(3)
     expect(listed[0]?.key).toBe('open_pencil_storage/canvases/a1.fig')
     expect(listed[0]?.lastModified).toBe('2026-01-02T03:04:05.000Z')
@@ -50,7 +50,7 @@ describe('parseListObjectsV2Xml', () => {
 
   test('parses S3 error XML without interpreting markup-like text', () => {
     expect(
-      parseS3ErrorXml(
+      parseS3ErrorXML(
         `<Error><Code>AccessDenied</Code><Message>Key contains &lt;Code&gt;fake&lt;/Code&gt;</Message></Error>`,
         403
       )

@@ -4,7 +4,7 @@ import type { InfoResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { bold, fmtHistogram, fmtSummary, kv } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Show document info (pages, node counts, fonts)' },
@@ -18,7 +18,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<InfoResult>(args.file, 'info', undefined, args)
+    const data = await loadRPCData<InfoResult>(args.file, 'info', undefined, args)
 
     if (args.json) {
       console.log(JSON.stringify(data, null, 2))

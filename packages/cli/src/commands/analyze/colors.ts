@@ -4,7 +4,7 @@ import type { AnalyzeColorsResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { bold, fmtHistogram, fmtList, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Analyze color palette usage' },
@@ -25,7 +25,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<AnalyzeColorsResult>(
+    const data = await loadRPCData<AnalyzeColorsResult>(
       args.file,
       'analyze_colors',
       {

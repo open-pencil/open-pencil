@@ -4,7 +4,7 @@ import { createServer, type Server } from 'node:http'
 
 import { WebSocket, WebSocketServer } from 'ws'
 
-import { createBrowserRpcBridge } from '#mcp/browser-rpc'
+import { createBrowserRPCBridge } from '#mcp/browser-rpc'
 
 const AUTH_TOKEN = 'test-bridge-token'
 const RPC_BODY = { command: 'get_current_page' }
@@ -85,7 +85,7 @@ async function setupWsPair(): Promise<{
 async function registerBrowser(
   serverWs: WebSocket,
   clientWs: WebSocket,
-  bridge: ReturnType<typeof createBrowserRpcBridge>
+  bridge: ReturnType<typeof createBrowserRPCBridge>
 ): Promise<void> {
   // Wire message + close handlers the same way server.ts does
   serverWs.on('message', (raw: Buffer) => {
@@ -142,7 +142,7 @@ describe('BrowserRpcBridge reconnection', () => {
     const pairB = await setupWsPair()
     track(pairB)
 
-    const bridge = createBrowserRpcBridge({
+    const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,
       onConnectionChange: () => undefined
     })
@@ -153,7 +153,7 @@ describe('BrowserRpcBridge reconnection', () => {
     // Send an RPC — goes to old browser (no response, sits in pending map).
     // Attach .catch() immediately to prevent unhandled rejection when
     // rejectAllPending fires during registerBrowser below.
-    const rpcPromise = bridge.sendRpc(RPC_BODY)
+    const rpcPromise = bridge.sendRPC(RPC_BODY)
 
     // A new browser reconnects on a different WS connection.
     // This triggers rejectAllPending() inside registerBrowser.
@@ -170,7 +170,7 @@ describe('BrowserRpcBridge reconnection', () => {
     const pair = await setupWsPair()
     track(pair)
 
-    const bridge = createBrowserRpcBridge({
+    const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,
       onConnectionChange: () => undefined
     })
@@ -186,9 +186,9 @@ describe('BrowserRpcBridge reconnection', () => {
       setTimeout(resolve, 200)
     })
 
-    // sendRpc enters waitForConnection() because browserWs is null.
+    // sendRPC enters waitForConnection() because browserWs is null.
     // The waiter should survive handleClose and stay pending.
-    const rpcPromise = bridge.sendRpc(RPC_BODY)
+    const rpcPromise = bridge.sendRPC(RPC_BODY)
     // Consume the eventual rejection (after APP_WAIT_TIMEOUT) to prevent
     // an unhandled rejection after the test ends — handleClose intentionally
     // does NOT reject connectionWaiters, so the promise will reject on timeout.
@@ -217,7 +217,7 @@ describe('BrowserRpcBridge reconnection', () => {
     const pairA = await setupWsPair()
     track(pairA)
 
-    const bridge = createBrowserRpcBridge({
+    const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,
       onConnectionChange: () => undefined
     })
@@ -232,8 +232,8 @@ describe('BrowserRpcBridge reconnection', () => {
       setTimeout(resolve, 200)
     })
 
-    // sendRpc enters waitForConnection
-    const rpcPromise = bridge.sendRpc(RPC_BODY)
+    // sendRPC enters waitForConnection
+    const rpcPromise = bridge.sendRPC(RPC_BODY)
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 50)
     })
@@ -257,7 +257,7 @@ describe('BrowserRpcBridge reconnection', () => {
     //   { type: 'response', id, ok: true, ...responsePayload(result) }
     // where responsePayload spreads result fields directly (not under a
     // "result" key). handleBrowserResponse then strips type/id via
-    // stripEnvelope, so sendRpc resolves with { ok: true, ...result }.
+    // stripEnvelope, so sendRPC resolves with { ok: true, ...result }.
     clientWsB.on('message', (raw: Buffer) => {
       const msg = JSON.parse(raw.toString())
       if (msg.type === 'request') {
@@ -282,14 +282,14 @@ describe('BrowserRpcBridge reconnection', () => {
     expect(result).toEqual({ ok: true, connected: true })
   }, 5_000)
 
-  test('sendRpc rejects after timeout when browser never connects', async () => {
-    const bridge = createBrowserRpcBridge({
+  test('sendRPC rejects after timeout when browser never connects', async () => {
+    const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,
       onConnectionChange: () => undefined
     })
 
-    // No browser registered — sendRpc rejects with APP_NOT_CONNECTED.
-    await expect(bridge.sendRpc(RPC_BODY)).rejects.toThrow('OpenPencil app is not connected')
+    // No browser registered — sendRPC rejects with APP_NOT_CONNECTED.
+    await expect(bridge.sendRPC(RPC_BODY)).rejects.toThrow('OpenPencil app is not connected')
   }, 12_000)
 
   test('response from non-browser WebSocket is ignored (ws guard)', async () => {
@@ -300,7 +300,7 @@ describe('BrowserRpcBridge reconnection', () => {
     const clientPair = await setupWsPair()
     track(clientPair)
 
-    const bridge = createBrowserRpcBridge({
+    const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,
       onConnectionChange: () => undefined
     })
@@ -336,7 +336,7 @@ describe('BrowserRpcBridge reconnection', () => {
     })
 
     // Send an RPC — it goes to the real browser.
-    const rpcPromise = bridge.sendRpc(RPC_BODY)
+    const rpcPromise = bridge.sendRPC(RPC_BODY)
 
     const capturedId = await capturedIdPromise
 
@@ -374,7 +374,7 @@ describe('BrowserRpcBridge reconnection', () => {
     const attackerPair = await setupWsPair()
     track(attackerPair)
 
-    const bridge = createBrowserRpcBridge({
+    const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,
       onConnectionChange: () => undefined
     })
@@ -408,7 +408,7 @@ describe('BrowserRpcBridge reconnection', () => {
     })
 
     // Send an RPC — it goes to the real browser.
-    const rpcPromise = bridge.sendRpc(RPC_BODY)
+    const rpcPromise = bridge.sendRPC(RPC_BODY)
 
     const capturedId = await capturedIdPromise
     expect(capturedId).toBeTruthy()

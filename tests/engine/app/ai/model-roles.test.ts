@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
+import { buildReasoningProviderOptions } from '@/app/ai/chat/reasoning'
 import {
   aiModelSettings,
   createAIModelRuntime,
@@ -240,6 +241,24 @@ describe('AI model profiles and role assignments', () => {
       vision: null,
       audio: 'model-fast'
     })
+  })
+
+  test('persists provider-specific reasoning effort', () => {
+    const draft = createModelProfileDraft('model-fast')
+    draft.reasoningEffort = 'none'
+    expect(saveModelProfileDraft(draft).reasoningEffort).toBe('none')
+    expect(createModelProfileDraft('model-fast').reasoningEffort).toBe('none')
+  })
+
+  test('maps reasoning effort to supported provider options', () => {
+    expect(buildReasoningProviderOptions('openai-compatible', 'none')).toEqual({
+      openai: { reasoningEffort: 'none' }
+    })
+    expect(buildReasoningProviderOptions('openrouter', 'high')).toEqual({
+      openrouter: { reasoning: { effort: 'high' } }
+    })
+    expect(buildReasoningProviderOptions('google', 'high')).toBeUndefined()
+    expect(buildReasoningProviderOptions('openai', '')).toBeUndefined()
   })
 
   test('repairs assignments when removing a model', () => {

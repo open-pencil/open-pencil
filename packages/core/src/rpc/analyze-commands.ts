@@ -11,7 +11,7 @@ import {
   type AnalyzeOverlapsResult
 } from '#core/tools/analyze/overlaps'
 
-import type { RpcCommand } from './types'
+import type { RPCCommand } from './types'
 
 export type { AnalyzeOverlapsArgs, AnalyzeOverlapsResult } from '#core/tools/analyze/overlaps'
 
@@ -114,7 +114,7 @@ export interface AnalyzeColorsResult {
   clusters: ColorCluster[]
 }
 
-export const analyzeColorsCommand: RpcCommand<AnalyzeColorsArgs, AnalyzeColorsResult> = {
+export const analyzeColorsCommand: RPCCommand<AnalyzeColorsArgs, AnalyzeColorsResult> = {
   name: 'analyze_colors',
   execute: (graph, args) => {
     const { colors, totalNodes } = collectColors(graph)
@@ -145,7 +145,7 @@ export interface AnalyzeTypographyResult {
   totalTextNodes: number
 }
 
-export const analyzeTypographyCommand: RpcCommand<AnalyzeTypographyArgs, AnalyzeTypographyResult> =
+export const analyzeTypographyCommand: RPCCommand<AnalyzeTypographyArgs, AnalyzeTypographyResult> =
   {
     name: 'analyze_typography',
     execute: (graph) => {
@@ -189,7 +189,7 @@ export interface AnalyzeSpacingResult {
   totalNodes: number
 }
 
-export const analyzeSpacingCommand: RpcCommand<void, AnalyzeSpacingResult> = {
+export const analyzeSpacingCommand: RPCCommand<void, AnalyzeSpacingResult> = {
   name: 'analyze_spacing',
   execute: (graph) => {
     const gapMap = new Map<number, number>()
@@ -266,7 +266,7 @@ function buildSignature(graph: SceneGraph, node: SceneNode): string {
   return `${node.type}:${w}x${h}|${childPart}`
 }
 
-export const analyzeClustersCommand: RpcCommand<AnalyzeClustersArgs, AnalyzeClustersResult> = {
+export const analyzeClustersCommand: RPCCommand<AnalyzeClustersArgs, AnalyzeClustersResult> = {
   name: 'analyze_clusters',
   execute: (graph, args) => {
     const minSize = args.minSize ?? 30
@@ -308,7 +308,7 @@ export const analyzeClustersCommand: RpcCommand<AnalyzeClustersArgs, AnalyzeClus
 
 // ── analyze overlaps ──
 
-export const analyzeOverlapsCommand: RpcCommand<AnalyzeOverlapsArgs, AnalyzeOverlapsResult> = {
+export const analyzeOverlapsCommand: RPCCommand<AnalyzeOverlapsArgs, AnalyzeOverlapsResult> = {
   name: 'analyze_overlaps',
   execute: (graph, args) => computeOverlaps(graph, args)
 }

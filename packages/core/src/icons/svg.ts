@@ -1,12 +1,34 @@
 import { iconToSVG } from '@iconify/utils'
-import type { Element, Node } from '@xmldom/xmldom'
+import {
+  DOMImplementation,
+  type Document as XMLDocument,
+  type Element,
+  type Node
+} from '@xmldom/xmldom'
 import svgpath from 'svgpath'
 
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { parseSVGFragment } from '#core/io/formats/svg/document'
 
-import type { IconData, IconifyIconEntry, IconPathInfo } from './types'
+import type { IconData, IconifyIconEntry, IconPathInfo, SVGClipPathRegion } from './types'
+
+interface SVGElementInput {
+  type: string
+  props: Readonly<Record<string, unknown>>
+  children: readonly (SVGElementInput | string)[]
+}
+
+const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+const JSX_ATTRIBUTE_NAMES: Readonly<Record<string, string>> = {
+  className: 'class',
+  fillRule: 'fill-rule',
+  strokeLinecap: 'stroke-linecap',
+  strokeLinejoin: 'stroke-linejoin',
+  strokeWidth: 'stroke-width',
+  xlinkHref: 'xlink:href'
+}
 
 interface PresentationAttributes {
   fill: string
@@ -163,6 +185,7 @@ function appendShapePath(
   element: Element,
   presentation: PresentationAttributes,
   transform: string | null,
+  clipPaths: SVGClipPathRegion[],
   result: IconPathInfo[]
 ): void {
   if (!SHAPE_NAMES.has(tagName)) return
@@ -177,7 +200,8 @@ function appendShapePath(
     strokeCap: presentation.strokeCap,
     strokeJoin: presentation.strokeJoin,
     fillRule: presentation.fillRule === 'evenodd' ? 'EVENODD' : 'NONZERO',
-    transform
+    transform,
+    clipPaths: clipPaths.length > 0 ? clipPaths : undefined
   })
 }
 
@@ -187,7 +211,8 @@ function collectUsePaths(
   transform: string | null,
   result: IconPathInfo[],
   elementsById: ReadonlyMap<string, Element>,
-  useStack: ReadonlySet<Element>
+  useStack: ReadonlySet<Element>,
+  clipPaths: SVGClipPathRegion[]
 ): boolean {
   const tagName = element.localName || element.tagName
   if (tagName !== 'use') return false
@@ -205,10 +230,40 @@ function collectUsePaths(
       result,
       elementsById,
       new Set([...useStack, target]),
-      true
+      true,
+      clipPaths
     )
   }
   return true
+}
+
+function collectClipPath(
+  value: string | null,
+  parentTransform: string | null,
+  elementsById: ReadonlyMap<string, Element>
+): SVGClipPathRegion | null {
+  const match = value?.trim().match(/^url\(\s*['"]?#([^'")\s]+)['"]?\s*\)$/)
+  const target = match ? elementsById.get(match[1]) : null
+  if (!target || (target.localName || target.tagName) !== 'clipPath') return null
+
+  const units =
+    target.getAttribute('clipPathUnits') === 'objectBoundingBox'
+      ? 'objectBoundingBox'
+      : 'userSpaceOnUse'
+  const paths: IconPathInfo[] = []
+  collectPaths(
+    target,
+    { ...DEFAULT_PRESENTATION, fill: '#000000' },
+    units === 'objectBoundingBox' ? null : parentTransform,
+    paths,
+    elementsById,
+    new Set([target]),
+    true
+  )
+  return {
+    paths: paths.map(({ d, fillRule, transform }) => ({ d, fillRule, transform })),
+    units
+  }
 }
 
 function collectPaths(
@@ -218,26 +273,54 @@ function collectPaths(
   result: IconPathInfo[],
   elementsById: ReadonlyMap<string, Element>,
   useStack: ReadonlySet<Element> = new Set(),
-  referenced = false
+  referenced = false,
+  inheritedClipPaths: SVGClipPathRegion[] = []
 ): void {
   const tagName = element.localName || element.tagName
   if (NON_RENDERED_CONTAINERS.has(tagName) && !referenced) return
 
   const presentation = presentationFor(element, inherited)
   const transform = combinedTransform(parentTransform, element)
-  if (collectUsePaths(element, presentation, transform, result, elementsById, useStack)) return
-  appendShapePath(tagName, element, presentation, transform, result)
+  const ownClipPath = collectClipPath(element.getAttribute('clip-path'), transform, elementsById)
+  const clipPaths = ownClipPath ? [...inheritedClipPaths, ownClipPath] : inheritedClipPaths
+  if (collectUsePaths(element, presentation, transform, result, elementsById, useStack, clipPaths))
+    return
+  appendShapePath(tagName, element, presentation, transform, clipPaths, result)
 
   for (const child of Array.from(element.childNodes)) {
     if (isElement(child)) {
-      collectPaths(child, presentation, transform, result, elementsById, useStack, referenced)
+      collectPaths(
+        child,
+        presentation,
+        transform,
+        result,
+        elementsById,
+        useStack,
+        referenced,
+        clipPaths
+      )
     }
   }
 }
 
-export function extractPaths(svgBody: string): IconPathInfo[] {
-  const root = parseSVGFragment(svgBody)?.documentElement
-  if (!root) return []
+function appendSVGElement(svgDocument: XMLDocument, parent: Element, input: SVGElementInput): void {
+  if (!/^[A-Za-z][\w:.-]*$/.test(input.type)) return
+  const element = svgDocument.createElementNS(SVG_NAMESPACE, input.type)
+  for (const [propName, value] of Object.entries(input.props)) {
+    if (typeof value !== 'string' && typeof value !== 'number') continue
+    const attributeName = JSX_ATTRIBUTE_NAMES[propName] ?? propName
+    element.setAttribute(attributeName, String(value))
+  }
+  if (input.type === 'path' && !element.hasAttribute('d') && typeof input.props.body === 'string') {
+    element.setAttribute('d', input.props.body)
+  }
+  for (const child of input.children) {
+    if (typeof child !== 'string') appendSVGElement(svgDocument, element, child)
+  }
+  parent.appendChild(element)
+}
+
+function collectDocumentPaths(root: Element): IconPathInfo[] {
   const elementsById = new Map<string, Element>()
   for (const element of Array.from(root.getElementsByTagName('*'))) {
     const id = element.getAttribute('id')
@@ -246,6 +329,22 @@ export function extractPaths(svgBody: string): IconPathInfo[] {
   const result: IconPathInfo[] = []
   collectPaths(root, DEFAULT_PRESENTATION, null, result, elementsById)
   return result
+}
+
+export function extractPathsFromElements(
+  elements: readonly SVGElementInput[],
+  rootProps: Readonly<Record<string, unknown>> = {}
+): IconPathInfo[] {
+  const svgDocument = new DOMImplementation().createDocument(SVG_NAMESPACE, 'svg')
+  const root = svgDocument.documentElement
+  if (!root) return []
+  appendSVGElement(svgDocument, root, { type: 'svg', props: rootProps, children: elements })
+  return collectDocumentPaths(root)
+}
+
+export function extractPaths(svgBody: string): IconPathInfo[] {
+  const root = parseSVGFragment(svgBody)?.documentElement
+  return root ? collectDocumentPaths(root) : []
 }
 
 export function buildIconData(
@@ -276,6 +375,25 @@ export function buildIconData(
   }
 }
 
+function transformStrokeScale(transform: string | null | undefined): number {
+  if (!transform || transform === 'none') return 1
+
+  const points: Vector[] = []
+  svgpath('M0 0 L1 0 M0 0 L0 1')
+    .transform(transform)
+    .abs()
+    .iterate((segment) => {
+      if (segment[0] === 'M' || segment[0] === 'L') {
+        points.push({ x: segment[1], y: segment[2] })
+      }
+    })
+  if (points.length < 4) return 1
+
+  const xScale = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y)
+  const yScale = Math.hypot(points[3].x - points[2].x, points[3].y - points[2].y)
+  return Math.min(xScale, yScale)
+}
+
 /** Scale extracted SVG path info into IconData paths (shared by buildIconData and design-jsx <svg>). */
 export function scalePathInfos(
   pathInfos: IconPathInfo[],
@@ -283,15 +401,18 @@ export function scalePathInfos(
   scaleY: number
 ): IconData['paths'] {
   return pathInfos.map((path) => {
-    const scaledD =
-      scaleX === 1 && scaleY === 1
-        ? path.d
-        : svgpath(path.d).scale(scaleX, scaleY).round(2).toString()
+    let transformedPath = svgpath(path.d)
+    if (path.transform && path.transform !== 'none') {
+      transformedPath = transformedPath.transform(path.transform)
+    }
+    if (scaleX !== 1 || scaleY !== 1) transformedPath = transformedPath.scale(scaleX, scaleY)
+    const scaledD = transformedPath.round(2).toString()
     return {
       vectorNetwork: parseSVGPath(scaledD, path.fillRule),
       fill: normalizeSVGPaint(path.fill),
       stroke: normalizeSVGPaint(path.stroke),
-      strokeWidth: path.strokeWidth * Math.min(scaleX, scaleY),
+      strokeWidth:
+        path.strokeWidth * transformStrokeScale(path.transform) * Math.min(scaleX, scaleY),
       strokeCap: path.strokeCap,
       strokeJoin: path.strokeJoin
     }

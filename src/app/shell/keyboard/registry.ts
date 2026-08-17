@@ -116,7 +116,7 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     {
       id: 'export-selection-png',
       keys: appMenuTinykeysShortcut('export-selection') ?? '$mod+Shift+KeyE',
-      run: ({ actions }) => actions.exportSelectionPng()
+      run: ({ actions }) => actions.exportSelectionPNG()
     },
     {
       id: 'save-as',

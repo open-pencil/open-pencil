@@ -10,6 +10,7 @@ export interface ComponentPropertyOption {
   value: string
   label: string
   missing?: boolean
+  disabled?: boolean
 }
 
 export interface ComponentPropertyControl {

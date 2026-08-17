@@ -11,7 +11,7 @@ function resolveLayoutDirection(parent: SceneNode, editor: Editor): 'LTR' | 'RTL
   return resolveNodeLayoutDirection(parent, inheritedDirection)
 }
 
-function isRtlRow(parent: SceneNode, isRow: boolean, editor: Editor) {
+function isRTLRow(parent: SceneNode, isRow: boolean, editor: Editor) {
   return isRow && resolveLayoutDirection(parent, editor) === 'RTL'
 }
 
@@ -23,7 +23,7 @@ export function computeIndicatorPosition(
   isRow: boolean,
   editor: Editor
 ): number {
-  const rtlRow = isRtlRow(parent, isRow, editor)
+  const rtlRow = isRTLRow(parent, isRow, editor)
 
   if (children.length === 0) {
     if (isRow) {
@@ -99,7 +99,7 @@ export function computeAutoLayoutIndicatorForFrame(
 
   const parentAbs = editor.graph.getAbsolutePosition(parent.id)
   const isRow = parent.layoutMode === 'HORIZONTAL'
-  const rtlRow = isRtlRow(parent, isRow, editor)
+  const rtlRow = isRTLRow(parent, isRow, editor)
 
   let insertIndex = children.length
   for (let i = 0; i < children.length; i++) {

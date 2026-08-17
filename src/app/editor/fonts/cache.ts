@@ -2,10 +2,10 @@ import type { DownloadedFontCache } from '@open-pencil/core/text'
 
 import {
   readCacheBytes,
-  readCacheJson,
+  readCacheJSON,
   removeCachePrefix,
   writeCacheBytes,
-  writeCacheJson
+  writeCacheJSON
 } from '@/app/cache'
 
 type FontCacheEntry = {
@@ -53,13 +53,13 @@ function hexDigest(data: ArrayBuffer) {
 }
 
 async function readManifest(): Promise<FontCacheManifest> {
-  const manifest = await readCacheJson<Partial<FontCacheManifest>>(MANIFEST_PATH)
+  const manifest = await readCacheJSON<Partial<FontCacheManifest>>(MANIFEST_PATH)
   if (manifest?.version !== 1 || !manifest.entries) return EMPTY_MANIFEST
   return { version: 1, entries: manifest.entries }
 }
 
 async function writeManifest(manifest: FontCacheManifest) {
-  await writeCacheJson(MANIFEST_PATH, manifest)
+  await writeCacheJSON(MANIFEST_PATH, manifest)
 }
 
 export async function downloadedFontCacheSummary(): Promise<DownloadedFontCacheSummary> {

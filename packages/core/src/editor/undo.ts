@@ -1,10 +1,11 @@
 import { pick } from 'es-toolkit/object'
 
-import { cloneVectorNetwork, type SceneNode } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
+import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import { createResizeSnapshot, type ResizeSnapshot } from '@open-pencil/scene-graph/resize'
 import type { UndoEntry } from '@open-pencil/scene-graph/undo'
 
+import { assertNodeEditable } from './capabilities'
 import { restoreSubtree, snapshotSubtree } from './clipboard/subtree-history'
 import { collectNodePositions, pushPositionUndo } from './history/position'
 import {
@@ -15,33 +16,30 @@ import {
 import { textAutoResizeChanges } from './text/auto-resize'
 import type { EditorContext } from './types'
 
-type ResizeSnapshot = Pick<
-  SceneNode,
-  'x' | 'y' | 'width' | 'height' | 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'
->
 type ResizeOriginal = Rect &
-  Partial<Pick<SceneNode, 'vectorNetwork' | 'fillGeometry' | 'strokeGeometry'>>
-
-function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
-  return {
-    x: node.x,
-    y: node.y,
-    width: node.width,
-    height: node.height,
-    vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
-    fillGeometry: copyGeometryPaths(node.fillGeometry),
-    strokeGeometry: copyGeometryPaths(node.strokeGeometry)
-  }
-}
+  Partial<
+    Pick<
+      SceneNode,
+      | 'vectorNetwork'
+      | 'fillGeometry'
+      | 'strokeGeometry'
+      | 'derivedTextGlyphs'
+      | 'strokes'
+      | 'textPathData'
+      | 'textPathBox'
+    >
+  >
 
 export function createUndoActions(ctx: EditorContext) {
   function commitMove(originals: Map<string, Vector>) {
+    for (const id of originals.keys()) assertNodeEditable(ctx.graph, id)
     pushPositionUndo(ctx, 'Move', originals, collectNodePositions(ctx, originals.keys()))
   }
 
   function commitMoveWithReparent(
     originals: Map<string, { x: number; y: number; parentId: string }>
   ) {
+    for (const id of originals.keys()) assertNodeEditable(ctx.graph, id)
     const finals = new Map<string, { x: number; y: number; parentId: string }>()
     for (const [id] of originals) {
       const n = ctx.graph.getNode(id)
@@ -99,21 +97,33 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitResize(nodeId: string, original: ResizeOriginal) {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
-    const includesGeometry =
-      'vectorNetwork' in original || 'fillGeometry' in original || 'strokeGeometry' in original
-    const final: ResizeOriginal = includesGeometry
+    // Snapshot full geometry when the inverse payload carries any of it
+    // (vector/path-text resize); plain rect-only resize stays lightweight.
+    const hasGeometry =
+      'vectorNetwork' in original ||
+      'fillGeometry' in original ||
+      'strokeGeometry' in original ||
+      'derivedTextGlyphs' in original ||
+      'strokes' in original ||
+      'textPathData' in original ||
+      'textPathBox' in original
+    const final: ResizeOriginal = hasGeometry
       ? createResizeSnapshot(node)
       : { x: node.x, y: node.y, width: node.width, height: node.height }
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
-        ctx.graph.updateNode(nodeId, final)
+        assertNodeEditable(ctx.graph, nodeId)
+        // Geometric replay — keep the raw Figma payload (see commitResizePreview).
+        ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, final))
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, original)
+        assertNodeEditable(ctx.graph, nodeId)
+        ctx.graph.preserveSourceMetadataDuring(() => ctx.graph.updateNode(nodeId, original))
         ctx.runLayoutForNode(nodeId)
       }
     })
@@ -124,6 +134,8 @@ export function createUndoActions(ctx: EditorContext) {
     origRect: Rect,
     origChildren: Map<string, ResizeSnapshot>
   ) {
+    assertNodeEditable(ctx.graph, nodeId)
+    for (const childId of origChildren.keys()) assertNodeEditable(ctx.graph, childId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const finalRect = { x: node.x, y: node.y, width: node.width, height: node.height }
@@ -135,19 +147,29 @@ export function createUndoActions(ctx: EditorContext) {
     ctx.undo.push({
       label: 'Resize',
       forward: () => {
-        ctx.graph.updateNode(nodeId, finalRect)
-        for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
+        assertNodeEditable(ctx.graph, nodeId)
+        for (const childId of finalChildren.keys()) assertNodeEditable(ctx.graph, childId)
+        // Geometric replay — keep the raw Figma payload (see commitResizePreview).
+        ctx.graph.preserveSourceMetadataDuring(() => {
+          ctx.graph.updateNode(nodeId, finalRect)
+          for (const [childId, final] of finalChildren) ctx.graph.updateNode(childId, final)
+        })
         ctx.runLayoutForNode(nodeId)
       },
       inverse: () => {
-        ctx.graph.updateNode(nodeId, origRect)
-        for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
+        assertNodeEditable(ctx.graph, nodeId)
+        for (const childId of origChildren.keys()) assertNodeEditable(ctx.graph, childId)
+        ctx.graph.preserveSourceMetadataDuring(() => {
+          ctx.graph.updateNode(nodeId, origRect)
+          for (const [childId, orig] of origChildren) ctx.graph.updateNode(childId, orig)
+        })
         ctx.runLayoutForNode(nodeId)
       }
     })
   }
 
   function commitRotation(nodeId: string, origRotation: number) {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const finalRotation = node.rotation
@@ -163,6 +185,7 @@ export function createUndoActions(ctx: EditorContext) {
   }
 
   function commitNodeUpdate(nodeId: string, previous: Partial<SceneNode>, label = 'Update') {
+    assertNodeEditable(ctx.graph, nodeId)
     const node = ctx.graph.getNode(nodeId)
     if (!node) return
     const restoredPrevious = { ...previous, ...textAutoResizeChanges(node, previous) }

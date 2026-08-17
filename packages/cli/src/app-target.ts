@@ -1,4 +1,4 @@
-export type AppTargetCliArgs = {
+export type AppTargetCLIArgs = {
   'document-id'?: string
   'page-id'?: string
 }
@@ -16,7 +16,7 @@ export const appTargetOptions = {
   }
 } as const
 
-export function appTargetRpcArgs(args: AppTargetCliArgs): {
+export function appTargetRPCArgs(args: AppTargetCLIArgs): {
   document_id?: string
   page_id?: string
 } {

@@ -5,7 +5,7 @@ import type { TreeNodeResult, TreeResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { fmtTree, printError, entity, formatType } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 function toAgentfmtTree(node: TreeNodeResult, maxDepth: number, depth = 0): TreeNode {
   const treeNode: TreeNode = {
@@ -31,7 +31,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<TreeResult | { error: string }>(
+    const data = await loadRPCData<TreeResult | { error: string }>(
       args.file,
       'tree',
       {

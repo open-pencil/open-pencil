@@ -1,7 +1,5 @@
 import type { Editor } from '@open-pencil/core/editor'
-import { cloneVectorNetwork } from '@open-pencil/scene-graph'
-import { copyGeometryPaths } from '@open-pencil/scene-graph/copy'
-import { collectResizeDescendants } from '@open-pencil/scene-graph/resize'
+import { collectResizeDescendants, createResizeSnapshot } from '@open-pencil/scene-graph/resize'
 
 import { getHitHandleByMatrix } from '#vue/shared/input/geometry'
 import type { DragResize } from '#vue/shared/input/types'
@@ -12,6 +10,7 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
     if (!node || node.locked) continue
     const handleResult = getHitHandleByMatrix(cx, cy, node, editor.graph, editor.renderer?.zoom)
     if (handleResult) {
+      const snap = createResizeSnapshot(node)
       return {
         type: 'resize',
         handle: handleResult.handle,
@@ -19,9 +18,13 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
         startY: cy,
         origRect: { x: node.x, y: node.y, width: node.width, height: node.height },
         nodeId: id,
-        origVectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
-        origFillGeometry: copyGeometryPaths(node.fillGeometry),
-        origStrokeGeometry: copyGeometryPaths(node.strokeGeometry),
+        origVectorNetwork: snap.vectorNetwork,
+        origFillGeometry: snap.fillGeometry,
+        origStrokeGeometry: snap.strokeGeometry,
+        origDerivedTextGlyphs: snap.derivedTextGlyphs,
+        origStrokes: snap.strokes,
+        origTextPathData: snap.textPathData,
+        origTextPathBox: snap.textPathBox,
         origChildren: collectResizeDescendants(editor.graph, id)
       }
     }

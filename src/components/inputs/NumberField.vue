@@ -38,13 +38,14 @@ export interface NumberFieldSlots {
 <script setup lang="ts">
 import { computed, normalizeClass, useAttrs } from 'vue'
 import { tv } from 'tailwind-variants'
-import { NumberFieldRoot, NumberFieldInput, NumberFieldValue } from '@open-pencil/vue'
+import { NumberFieldRoot, NumberFieldInput, NumberFieldValue, useI18n } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import theme from '@/theme/number-field'
 
 const attrs = useAttrs()
 const slots = defineSlots<NumberFieldSlots>()
 const store = useEditorStore()
+const { panels } = useI18n()
 
 const {
   modelValue,
@@ -86,7 +87,7 @@ defineOptions({ inheritAttrs: false })
     :max="max"
     :step="step"
     :sensitivity="sensitivity"
-    :placeholder="placeholder"
+    :placeholder="placeholder ?? panels.mixed"
     :aria-label="accessibleLabel"
     :disabled="disabled"
     :bound="bound"

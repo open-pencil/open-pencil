@@ -2,24 +2,24 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-interface RootPackageJson {
+interface RootPackageJSON {
   workspaces?: string[]
 }
 
-interface WorkspacePackageJson {
+interface WorkspacePackageJSON {
   private?: boolean
 }
 
 const rootDir = fileURLToPath(new URL('../../..', import.meta.url))
 
-function readJson<T>(path: string): T {
+function readJSON<T>(path: string): T {
   return JSON.parse(readFileSync(path, 'utf8')) as T
 }
 
-const rootPackage = readJson<RootPackageJson>(join(rootDir, 'package.json'))
+const rootPackage = readJSON<RootPackageJSON>(join(rootDir, 'package.json'))
 
 export const publicPackageDirs = (rootPackage.workspaces ?? []).filter((workspaceDir) => {
-  const workspacePackage = readJson<WorkspacePackageJson>(
+  const workspacePackage = readJSON<WorkspacePackageJSON>(
     join(rootDir, workspaceDir, 'package.json')
   )
   return workspacePackage.private !== true

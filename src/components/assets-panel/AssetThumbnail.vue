@@ -17,7 +17,7 @@ const isGridThumbnail = computed(() => size === ASSET_GRID_THUMBNAIL_SIZE)
 const thumbnail = useTemplateRef<HTMLElement>('thumbnail')
 const isVisible = useElementVisibility(thumbnail)
 const previewBlob = shallowRef<Blob | null>(null)
-const previewUrl = useObjectUrl(previewBlob)
+const previewURL = useObjectUrl(previewBlob)
 let requestId = 0
 
 async function updatePreview() {
@@ -63,8 +63,8 @@ watch(
     ]"
   >
     <img
-      v-if="previewUrl"
-      :src="previewUrl"
+      v-if="previewURL"
+      :src="previewURL"
       :alt="alt"
       class="max-h-full max-w-full object-contain"
       draggable="false"

@@ -25,6 +25,12 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
+  function setMeasurementMode(mode: typeof ctx.state.measurementMode) {
+    if (ctx.state.measurementMode === mode) return
+    ctx.state.measurementMode = mode
+    ctx.requestRepaint()
+  }
+
   function setDropTarget(id: string | null) {
     if (ctx.state.dropTargetId === id) return
     ctx.state.dropTargetId = id
@@ -56,6 +62,7 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     setSnapGuides,
     setRotationPreview,
     setHoveredNode,
+    setMeasurementMode,
     setDropTarget,
     setLayoutInsertIndicator,
     setAutoLayoutHover

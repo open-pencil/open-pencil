@@ -1,0 +1,45 @@
+# Legacy documentation routes
+/guide/getting-started /getting-started 301
+/guide/features /overview/features 301
+/guide/architecture /development/architecture 301
+/guide/tech-stack /development/tech-stack 301
+/guide/comparison /overview/comparison 301
+/guide/figma-comparison /reference/figma-compatibility 301
+
+# Localized legacy documentation routes
+/de/guide/getting-started /de/getting-started 301
+/de/guide/features /de/overview/features 301
+/de/guide/architecture /development/architecture 301
+/de/guide/tech-stack /development/tech-stack 301
+/de/guide/comparison /de/overview/comparison 301
+/de/guide/figma-comparison /de/reference/figma-compatibility 301
+/es/guide/getting-started /es/getting-started 301
+/es/guide/features /es/overview/features 301
+/es/guide/architecture /development/architecture 301
+/es/guide/tech-stack /development/tech-stack 301
+/es/guide/comparison /es/overview/comparison 301
+/es/guide/figma-comparison /es/reference/figma-compatibility 301
+/fr/guide/getting-started /fr/getting-started 301
+/fr/guide/features /fr/overview/features 301
+/fr/guide/architecture /development/architecture 301
+/fr/guide/tech-stack /development/tech-stack 301
+/fr/guide/comparison /fr/overview/comparison 301
+/fr/guide/figma-comparison /fr/reference/figma-compatibility 301
+/it/guide/getting-started /it/getting-started 301
+/it/guide/features /it/overview/features 301
+/it/guide/architecture /development/architecture 301
+/it/guide/tech-stack /development/tech-stack 301
+/it/guide/comparison /it/overview/comparison 301
+/it/guide/figma-comparison /it/reference/figma-compatibility 301
+/pl/guide/getting-started /pl/getting-started 301
+/pl/guide/features /pl/overview/features 301
+/pl/guide/architecture /development/architecture 301
+/pl/guide/tech-stack /development/tech-stack 301
+/pl/guide/comparison /pl/overview/comparison 301
+/pl/guide/figma-comparison /pl/reference/figma-compatibility 301
+/ru/guide/getting-started /ru/getting-started 301
+/ru/guide/features /ru/overview/features 301
+/ru/guide/architecture /development/architecture 301
+/ru/guide/tech-stack /development/tech-stack 301
+/ru/guide/comparison /ru/overview/comparison 301
+/ru/guide/figma-comparison /ru/reference/figma-compatibility 301

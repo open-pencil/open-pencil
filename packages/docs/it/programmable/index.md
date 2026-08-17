@@ -12,7 +12,7 @@ L'interfaccia dell'editor e le interfacce di automazione utilizzano lo stesso mo
 
 ## Chat IA
 
-L'assistente integrato ha accesso a 87 strumenti che coprono l'intera superficie dell'editor. Descrivi ciò che vuoi in linguaggio naturale — "aggiungi un'ombra esterna di 16px a tutti i pulsanti", "crea un componente card con variante dark mode", "esporta ogni frame di questa pagina a 2×".
+L'assistente integrato ha accesso a oltre 90 strumenti che coprono l'intera superficie dell'editor. Descrivi ciò che vuoi in linguaggio naturale — "aggiungi un'ombra esterna di 16px a tutti i pulsanti", "crea un componente card con variante dark mode", "esporta ogni frame di questa pagina a 2×".
 
 [Chat IA →](./ai-chat)
 
@@ -42,7 +42,7 @@ La CLI si connette anche all'app desktop in esecuzione tramite RPC, così puoi s
 
 Connetti Claude Code, Cursor, Windsurf o qualsiasi client compatibile con MCP a OpenPencil. Il server espone 90 strumenti per leggere, creare e modificare design — gli stessi strumenti che usa la chat IA integrata. Funziona tramite stdio o HTTP con supporto alle sessioni.
 
-[Server MCP →](./mcp-server)
+[Server MCP →](/programmable/mcp-server)
 
 ## Perché Open?
 

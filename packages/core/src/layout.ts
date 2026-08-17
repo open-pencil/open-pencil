@@ -268,10 +268,10 @@ function derivedMainAxisFitsParent(
     .filter((candidate) => candidate.visible && candidate.layoutPositioning !== 'ABSOLUTE')
   if (children.length === 0) return false
 
-  const sizes = children.map((candidate) => candidate.figmaDerivedLayout?.[axis])
+  const sizes = children.map((candidate) => candidate.derivedLayout?.[axis])
   return (
     sizesFitParent(parent, children.length, sizes, axis) &&
-    child.figmaDerivedLayout?.[axis] !== undefined
+    child.derivedLayout?.[axis] !== undefined
   )
 }
 
@@ -279,14 +279,12 @@ function usesAuthoritativeGeneratedStretch(parent: SceneNode, child: SceneNode):
   if (
     child.layoutAlignSelf !== 'STRETCH' ||
     parent.source.format === 'fig' ||
-    !parent.figmaDerivedLayout
+    !parent.derivedLayout
   ) {
     return false
   }
   const derivedCrossSize =
-    parent.layoutMode === 'HORIZONTAL'
-      ? parent.figmaDerivedLayout.height
-      : parent.figmaDerivedLayout.width
+    parent.layoutMode === 'HORIZONTAL' ? parent.derivedLayout.height : parent.derivedLayout.width
   const parentCrossSize = parent.layoutMode === 'HORIZONTAL' ? parent.height : parent.width
   return derivedCrossSize !== undefined && Math.abs(derivedCrossSize - parentCrossSize) < 0.001
 }
@@ -306,7 +304,7 @@ function configureAutoLayoutChildSizing(
   const stretchesAuthoritativeCrossAxis = usesAuthoritativeGeneratedStretch(parent, child)
 
   if (isParentRow) {
-    if (fixedDerivedMainAxis) yogaChild.setWidth(child.figmaDerivedLayout?.width ?? child.width)
+    if (fixedDerivedMainAxis) yogaChild.setWidth(child.derivedLayout?.width ?? child.width)
     else setMainAxisSizing(yogaChild, 'width', widthSizing, child.width, child.layoutGrow)
     if (!stretchesAuthoritativeCrossAxis) {
       setCrossAxisSizing(yogaChild, 'height', heightSizing, child.height)
@@ -317,7 +315,7 @@ function configureAutoLayoutChildSizing(
   if (!stretchesAuthoritativeCrossAxis) {
     setCrossAxisSizing(yogaChild, 'width', widthSizing, child.width)
   }
-  if (fixedDerivedMainAxis) yogaChild.setHeight(child.figmaDerivedLayout?.height ?? child.height)
+  if (fixedDerivedMainAxis) yogaChild.setHeight(child.derivedLayout?.height ?? child.height)
   else setMainAxisSizing(yogaChild, 'height', heightSizing, child.height, child.layoutGrow)
 }
 
@@ -339,7 +337,7 @@ function configureChildAsAutoLayout(
   if (selfAlign != null) yogaChild.setAlignSelf(selfAlign)
 
   if (usesDetachedDerivedLayout(child)) {
-    const derived = child.figmaDerivedLayout
+    const derived = child.derivedLayout
     if (widthSizing === 'HUG') yogaChild.setWidth(derived?.width ?? child.width)
     if (heightSizing === 'HUG') yogaChild.setHeight(derived?.height ?? child.height)
     applyMinMaxConstraints(yogaChild, child)
@@ -372,18 +370,14 @@ function derivedGrowingLeafFitsParent(
   child: SceneNode,
   axis: 'width' | 'height'
 ): boolean {
-  if (
-    child.type !== 'TEXT' ||
-    child.layoutGrow <= 0 ||
-    child.figmaDerivedLayout?.[axis] === undefined
-  ) {
+  if (child.type !== 'TEXT' || child.layoutGrow <= 0 || child.derivedLayout?.[axis] === undefined) {
     return false
   }
   const children = graph
     .getChildren(parent.id)
     .filter((candidate) => candidate.visible && candidate.layoutPositioning !== 'ABSOLUTE')
   const sizes = children.map((candidate) => {
-    if (candidate.layoutGrow > 0) return candidate.figmaDerivedLayout?.[axis]
+    if (candidate.layoutGrow > 0) return candidate.derivedLayout?.[axis]
     return axis === 'width' ? candidate.width : candidate.height
   })
   return sizesFitParent(parent, children.length, sizes, axis)
@@ -413,7 +407,7 @@ function configureTextLeafWithoutMeasurer(
 
   const isRow = parent.layoutMode === 'HORIZONTAL'
   const measurementWidth = fixedDerivedMainAxis
-    ? (child.figmaDerivedLayout?.width ?? child.width)
+    ? (child.derivedLayout?.width ?? child.width)
     : child.width
   const stretches =
     child.layoutAlignSelf === 'STRETCH' ||
@@ -444,8 +438,8 @@ function configureChildAsLeaf(
     : derivedGrowingLeafFitsParent(graph, parent, child, 'height')
 
   if (fixedDerivedMainAxis) {
-    if (isRow) yogaChild.setWidth(child.figmaDerivedLayout?.width ?? child.width)
-    else yogaChild.setHeight(child.figmaDerivedLayout?.height ?? child.height)
+    if (isRow) yogaChild.setWidth(child.derivedLayout?.width ?? child.width)
+    else yogaChild.setHeight(child.derivedLayout?.height ?? child.height)
   }
 
   if (needsMeasureFunc) {
@@ -479,7 +473,7 @@ function configureTextLeaf(
   const UNCONSTRAINED_KEY = -1
 
   if (autoResize === 'WIDTH_AND_HEIGHT') {
-    const importedSize = child.figmaDerivedLayout
+    const importedSize = child.derivedLayout
     if (importedSize?.width !== undefined && importedSize.height !== undefined) {
       yogaChild.setWidth(child.width)
       yogaChild.setHeight(child.height)
@@ -504,7 +498,7 @@ function configureTextLeaf(
     // Let Yoga stretch fill-width text instead of fixing its stored width.
     const fillsWidth = !isRow && stretchesCross
     const fixedWidth = fixedDerivedMainAxis
-      ? (child.figmaDerivedLayout?.width ?? child.width)
+      ? (child.derivedLayout?.width ?? child.width)
       : child.width
     if (child.layoutGrow <= 0 && !fillsWidth) {
       yogaChild.setWidth(fixedWidth)

@@ -1,4 +1,5 @@
-import { openIdb, reqToPromise, txDone } from '@/app/storage/idb-util'
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+
 import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
@@ -6,159 +7,135 @@ import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local
 const DB_NAME = 'open-pencil-cloud-local'
 const DB_VERSION = 1
 
-const STORE_META = 'meta'
-const STORE_FIG = 'fig'
-const STORE_THUMB = 'thumb'
+type StoredBinary = ArrayBuffer | Uint8Array | Blob
 
-function openDb(): Promise<IDBDatabase> {
-  return openIdb(DB_NAME, DB_VERSION, (db) => {
-    if (!db.objectStoreNames.contains(STORE_META)) {
-      db.createObjectStore(STORE_META, { keyPath: 'id' })
-    }
-    if (!db.objectStoreNames.contains(STORE_FIG)) {
-      db.createObjectStore(STORE_FIG)
-    }
-    if (!db.objectStoreNames.contains(STORE_THUMB)) {
-      db.createObjectStore(STORE_THUMB)
+interface LocalCanvasDatabase extends DBSchema {
+  meta: {
+    key: string
+    value: LocalCanvasMeta
+  }
+  fig: {
+    key: string
+    value: StoredBinary
+  }
+  thumb: {
+    key: string
+    value: StoredBinary
+  }
+}
+
+/** Stored rows may use older ArrayBuffer/Blob representations. */
+async function storedBinaryToBytes(row: StoredBinary | undefined): Promise<Uint8Array | null> {
+  if (!row) return null
+  if (row instanceof ArrayBuffer) return new Uint8Array(row)
+  if (row instanceof Uint8Array) return Uint8Array.from(row)
+  return new Uint8Array(await row.arrayBuffer())
+}
+
+function openDatabase(): Promise<IDBPDatabase<LocalCanvasDatabase>> {
+  return openDB<LocalCanvasDatabase>(DB_NAME, DB_VERSION, {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('meta')) {
+        database.createObjectStore('meta', { keyPath: 'id' })
+      }
+      if (!database.objectStoreNames.contains('fig')) database.createObjectStore('fig')
+      if (!database.objectStoreNames.contains('thumb')) database.createObjectStore('thumb')
     }
   })
 }
 
-/** Stored rows may be ArrayBuffer, typed array, or Blob depending on writer/browser. */
-async function rowToBytes(row: unknown): Promise<Uint8Array | null> {
-  if (row == null) return null
-  if (row instanceof ArrayBuffer) return new Uint8Array(row)
-  if (row instanceof Uint8Array) return new Uint8Array(row)
-  if (row instanceof Blob) return new Uint8Array(await row.arrayBuffer())
-  return null
-}
-
-function bytesToBuffer(bytes: Uint8Array) {
-  return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-}
-
-async function readMetaRow(store: IDBObjectStore, id: string): Promise<LocalCanvasMeta | null> {
-  return ((await reqToPromise(store.get(id))) as LocalCanvasMeta | undefined) ?? null
-}
-
 /** IndexedDB-backed local canvas store (meta + fig/thumb blobs). */
 export function createIdbLocalCanvasStore(): LocalCanvasStore {
-  let dbPromise: Promise<IDBDatabase> | null = null
+  const database = openDatabase()
 
-  function db() {
-    if (!dbPromise) dbPromise = openDb()
-    return dbPromise
-  }
-
-  async function readBlob(storeName: string, id: string): Promise<Uint8Array | null> {
-    const database = await db()
-    const tx = database.transaction(storeName, 'readonly')
-    const row = await reqToPromise(tx.objectStore(storeName).get(id))
-    await txDone(tx)
-    return rowToBytes(row)
+  async function readBinary(storeName: 'fig' | 'thumb', id: string): Promise<Uint8Array | null> {
+    return storedBinaryToBytes(await (await database).get(storeName, id))
   }
 
   return {
     async listMetas(includeTombstones = false) {
-      const database = await db()
-      const tx = database.transaction(STORE_META, 'readonly')
-      const all = (await reqToPromise(tx.objectStore(STORE_META).getAll())) as LocalCanvasMeta[]
-      await txDone(tx)
-      return sortAndFilterMetas(all, includeTombstones)
+      return sortAndFilterMetas(await (await database).getAll('meta'), includeTombstones)
     },
 
     async getMeta(id: string) {
-      const database = await db()
-      const tx = database.transaction(STORE_META, 'readonly')
-      const row = (await reqToPromise(tx.objectStore(STORE_META).get(id))) as
-        | LocalCanvasMeta
-        | undefined
-      await txDone(tx)
-      return row ?? null
+      return (await (await database).get('meta', id)) ?? null
     },
 
     async readFig(id: string) {
-      return readBlob(STORE_FIG, id)
+      return readBinary('fig', id)
     },
 
     async readThumb(id: string) {
-      return readBlob(STORE_THUMB, id)
+      return readBinary('thumb', id)
     },
 
     async writeCanvas(input: LocalCanvasWriteInput) {
-      const database = await db()
-      const tx = database.transaction([STORE_META, STORE_FIG, STORE_THUMB], 'readwrite')
-      const figStore = tx.objectStore(STORE_FIG)
-      const thumbStore = tx.objectStore(STORE_THUMB)
-      const metaStore = tx.objectStore(STORE_META)
-      const existing = await readMetaRow(metaStore, input.id)
+      const transaction = (await database).transaction(['meta', 'fig', 'thumb'], 'readwrite')
+      const figStore = transaction.objectStore('fig')
+      const thumbStore = transaction.objectStore('thumb')
+      const metaStore = transaction.objectStore('meta')
+      const existing = (await metaStore.get(input.id)) ?? null
 
       let hasThumb = existing?.hasThumb ?? false
-      figStore.put(bytesToBuffer(input.figBytes), input.id)
+      await figStore.put(Uint8Array.from(input.figBytes), input.id)
 
       if (input.thumbBytes != null) {
         if (input.thumbBytes.byteLength > 0) {
-          thumbStore.put(bytesToBuffer(input.thumbBytes), input.id)
+          await thumbStore.put(Uint8Array.from(input.thumbBytes), input.id)
           hasThumb = true
         } else {
-          thumbStore.delete(input.id)
+          await thumbStore.delete(input.id)
           hasThumb = false
         }
       }
 
       const meta = buildWriteMeta(input, existing, hasThumb)
-      metaStore.put(meta)
-      await txDone(tx)
+      await metaStore.put(meta)
+      await transaction.done
       return meta
     },
 
     async upsertIndexMeta(input) {
-      const database = await db()
-      const tx = database.transaction(STORE_META, 'readwrite')
-      const store = tx.objectStore(STORE_META)
-      const existing = await readMetaRow(store, input.id)
+      const transaction = (await database).transaction('meta', 'readwrite')
+      const store = transaction.objectStore('meta')
+      const existing = (await store.get(input.id)) ?? null
       const meta = buildIndexMeta(input, existing)
-      store.put(meta)
-      await txDone(tx)
+      await store.put(meta)
+      await transaction.done
       return meta
     },
 
     async writeThumb(id: string, thumbBytes: Uint8Array) {
-      const database = await db()
-      const tx = database.transaction([STORE_META, STORE_THUMB], 'readwrite')
-      const metaStore = tx.objectStore(STORE_META)
-      const existing = await readMetaRow(metaStore, id)
+      const transaction = (await database).transaction(['meta', 'thumb'], 'readwrite')
+      const metaStore = transaction.objectStore('meta')
+      const existing = await metaStore.get(id)
       if (!existing) {
-        await txDone(tx)
+        await transaction.done
         return null
       }
-      tx.objectStore(STORE_THUMB).put(bytesToBuffer(thumbBytes), id)
+      await transaction.objectStore('thumb').put(Uint8Array.from(thumbBytes), id)
       // Thumb freshness is tracked by its own outbox job — never demote the
       // document's syncStatus here (it orphaned rows as 'pending' forever).
-      const meta: LocalCanvasMeta = {
-        ...existing,
-        hasThumb: true
-      }
-      metaStore.put(meta)
-      await txDone(tx)
+      const meta: LocalCanvasMeta = { ...existing, hasThumb: true }
+      await metaStore.put(meta)
+      await transaction.done
       return meta
     },
 
     async updateMeta(id: string, patch: Partial<LocalCanvasMeta>, options) {
-      const database = await db()
-      const tx = database.transaction(STORE_META, 'readwrite')
-      const store = tx.objectStore(STORE_META)
-      const existing = await readMetaRow(store, id)
+      const transaction = (await database).transaction('meta', 'readwrite')
+      const store = transaction.objectStore('meta')
+      const existing = await store.get(id)
       if (
         !existing ||
         (options?.expectedRevision != null && existing.revision !== options.expectedRevision)
       ) {
-        await txDone(tx)
+        await transaction.done
         return null
       }
       const next = { ...existing, ...patch, id: existing.id }
-      store.put(next)
-      await txDone(tx)
+      await store.put(next)
+      await transaction.done
       return next
     },
 
@@ -171,37 +148,38 @@ export function createIdbLocalCanvasStore(): LocalCanvasStore {
     },
 
     async clearFig(id: string) {
-      const database = await db()
-      const tx = database.transaction([STORE_META, STORE_FIG], 'readwrite')
-      const metaStore = tx.objectStore(STORE_META)
-      const existing = await readMetaRow(metaStore, id)
+      const transaction = (await database).transaction(['meta', 'fig'], 'readwrite')
+      const metaStore = transaction.objectStore('meta')
+      const existing = await metaStore.get(id)
       if (!existing) {
-        await txDone(tx)
+        await transaction.done
         return null
       }
-      tx.objectStore(STORE_FIG).delete(id)
+      await transaction.objectStore('fig').delete(id)
       const meta: LocalCanvasMeta = { ...existing, hasFig: false, figSize: 0 }
-      metaStore.put(meta)
-      await txDone(tx)
+      await metaStore.put(meta)
+      await transaction.done
       return meta
     },
 
     async remove(id: string) {
-      const database = await db()
-      const tx = database.transaction([STORE_META, STORE_FIG, STORE_THUMB], 'readwrite')
-      tx.objectStore(STORE_META).delete(id)
-      tx.objectStore(STORE_FIG).delete(id)
-      tx.objectStore(STORE_THUMB).delete(id)
-      await txDone(tx)
+      const transaction = (await database).transaction(['meta', 'fig', 'thumb'], 'readwrite')
+      await Promise.all([
+        transaction.objectStore('meta').delete(id),
+        transaction.objectStore('fig').delete(id),
+        transaction.objectStore('thumb').delete(id)
+      ])
+      await transaction.done
     },
 
     async clearAll() {
-      const database = await db()
-      const tx = database.transaction([STORE_META, STORE_FIG, STORE_THUMB], 'readwrite')
-      tx.objectStore(STORE_META).clear()
-      tx.objectStore(STORE_FIG).clear()
-      tx.objectStore(STORE_THUMB).clear()
-      await txDone(tx)
+      const transaction = (await database).transaction(['meta', 'fig', 'thumb'], 'readwrite')
+      await Promise.all([
+        transaction.objectStore('meta').clear(),
+        transaction.objectStore('fig').clear(),
+        transaction.objectStore('thumb').clear()
+      ])
+      await transaction.done
     }
   }
 }

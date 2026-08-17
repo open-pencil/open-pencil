@@ -20,7 +20,7 @@ That is why the automation surface matters. The app, the CLI, the AI tools, the 
 
 ## AI Chat
 
-The built-in assistant has access to 87 tools that cover the full surface of the editor. Describe what you want in natural language — "add a 16px drop shadow to all buttons", "create a card component with dark mode variant", "export every frame on this page at 2×".
+The built-in assistant has access to 90+ tools that cover the full surface of the editor. Describe what you want in natural language — "add a 16px drop shadow to all buttons", "create a card component with dark mode variant", "export every frame on this page at 2×".
 
 [AI Chat →](./ai-chat)
 

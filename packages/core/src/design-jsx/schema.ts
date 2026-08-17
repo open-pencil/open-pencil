@@ -1,0 +1,165 @@
+export type DesignJSXElementDefinition = {
+  name: string
+  runtimeType: string
+  description: string
+}
+
+export type DesignJSXNamedDefinition = {
+  name: string
+  description: string
+}
+
+export type DesignJSXPropertyDefinition = DesignJSXNamedDefinition
+export type DesignJSXHelperDefinition = DesignJSXNamedDefinition
+
+export const DESIGN_JSX_ELEMENTS: DesignJSXElementDefinition[] = [
+  { name: 'Frame', runtimeType: 'frame', description: 'A frame or auto-layout container.' },
+  { name: 'Text', runtimeType: 'text', description: 'A text layer.' },
+  { name: 'Rectangle', runtimeType: 'rectangle', description: 'A rectangle layer.' },
+  { name: 'Ellipse', runtimeType: 'ellipse', description: 'An ellipse layer.' },
+  { name: 'Line', runtimeType: 'line', description: 'A line layer.' },
+  { name: 'Star', runtimeType: 'star', description: 'A star layer.' },
+  { name: 'Polygon', runtimeType: 'polygon', description: 'A polygon layer.' },
+  { name: 'Vector', runtimeType: 'vector', description: 'A vector layer.' },
+  { name: 'Group', runtimeType: 'group', description: 'A group of layers.' },
+  { name: 'Section', runtimeType: 'section', description: 'A canvas section.' },
+  { name: 'Component', runtimeType: 'component', description: 'A reusable component.' },
+  { name: 'ComponentSet', runtimeType: 'component-set', description: 'A component variant set.' },
+  { name: 'Instance', runtimeType: 'instance', description: 'An instance of a component.' },
+  { name: 'View', runtimeType: 'frame', description: 'An alias for Frame.' },
+  { name: 'Rect', runtimeType: 'rectangle', description: 'An alias for Rectangle.' },
+  { name: 'Icon', runtimeType: 'icon', description: 'An Iconify icon.' }
+]
+
+export const DESIGN_JSX_SUPPORTED_PROPERTY_NAMES = [
+  'name',
+  'key',
+  'flex',
+  'flow',
+  'dir',
+  'gap',
+  'wrap',
+  'rowGap',
+  'columnGap',
+  'justify',
+  'justifyContent',
+  'items',
+  'align',
+  'alignItems',
+  'grow',
+  'w',
+  'h',
+  'width',
+  'height',
+  'minW',
+  'maxW',
+  'minH',
+  'maxH',
+  'x',
+  'y',
+  'top',
+  'left',
+  'position',
+  'p',
+  'padding',
+  'px',
+  'py',
+  'pt',
+  'pr',
+  'pb',
+  'pl',
+  'bg',
+  'fill',
+  'fills',
+  'background',
+  'backgroundColor',
+  'stroke',
+  'border',
+  'borderColor',
+  'strokeWidth',
+  'borderWidth',
+  'strokeAlign',
+  'strokeDash',
+  'rounded',
+  'borderRadius',
+  'roundedTL',
+  'roundedTR',
+  'roundedBL',
+  'roundedBR',
+  'cornerRadius',
+  'cornerSmoothing',
+  'opacity',
+  'blendMode',
+  'rotate',
+  'rotation',
+  'overflow',
+  'shadow',
+  'blur',
+  'effects',
+  'size',
+  'fontSize',
+  'font',
+  'fontFamily',
+  'weight',
+  'fontWeight',
+  'color',
+  'text',
+  'characters',
+  'content',
+  'value',
+  'title',
+  'textAlign',
+  'textAlignHorizontal',
+  'textHorizontalAlignment',
+  'textAlignVertical',
+  'textVerticalAlignment',
+  'textAutoResize',
+  'lineHeight',
+  'letterSpacing',
+  'textDecoration',
+  'textCase',
+  'maxLines',
+  'truncate',
+  'grid',
+  'columns',
+  'rows',
+  'colStart',
+  'rowStart',
+  'col',
+  'row',
+  'colSpan',
+  'rowSpan',
+  'points',
+  'pointCount',
+  'innerRadius',
+  'label',
+  'style',
+  'bind',
+  'component',
+  'componentId',
+  'of'
+] as const
+
+export const DESIGN_JSX_SUPPORTED_PROPERTIES = new Set<string>(DESIGN_JSX_SUPPORTED_PROPERTY_NAMES)
+
+export const DESIGN_JSX_PROPERTIES: DesignJSXPropertyDefinition[] =
+  DESIGN_JSX_SUPPORTED_PROPERTY_NAMES.map((name) => ({
+    name,
+    description: `OpenPencil ${name} property.`
+  }))
+
+export const DESIGN_JSX_HELPERS: DesignJSXHelperDefinition[] = [
+  'solid',
+  'gradient',
+  'linearGradient',
+  'radialGradient',
+  'angularGradient',
+  'diamondGradient',
+  'dropShadow',
+  'innerShadow',
+  'layerBlur',
+  'backgroundBlur',
+  'foregroundBlur',
+  'designVar',
+  'defineVars'
+].map((name) => ({ name, description: `OpenPencil ${name} helper.` }))

@@ -95,6 +95,7 @@ function parseProfile(value: unknown, connectionIds: Set<string>): AIModelProfil
     maxOutputTokens: normalizedMaxOutputTokens(value.maxOutputTokens),
     contextWindowTokens: normalizedContextWindowTokens(value.contextWindowTokens),
     textInput: typeof value.textInput === 'boolean' ? value.textInput : undefined,
+    reasoningEffort: stringValue(value.reasoningEffort).trim() || undefined,
     capabilities: [...new Set(capabilities)]
   }
 }
@@ -312,6 +313,7 @@ function draftForProfile(
     maxOutputTokens: profile.maxOutputTokens,
     contextWindowTokens: profile.contextWindowTokens,
     textInput: profile.textInput,
+    reasoningEffort: profile.reasoningEffort ?? '',
     capabilities: [...profile.capabilities]
   }
 }
@@ -331,6 +333,7 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
     contextWindowTokens: undefined,
     textInput: undefined,
+    reasoningEffort: '',
     capabilities: ['tools']
   }
 }
@@ -341,6 +344,23 @@ export function createModelProfileDraft(profileId?: string): AIModelProfileDraft
   if (profile && profileConnection) return draftForProfile(profile, profileConnection)
   const designConnection = resolveAIModelRole('design')?.connection ?? null
   return newProfileDraft(designConnection ?? aiModelSettings.value.connections[0])
+}
+
+function repairAssignmentsForProfile(
+  profile: AIModelProfile,
+  apiType: AIModelConnection['customAPIType']
+): void {
+  const assignments = aiModelSettings.value.assignments
+  if (assignments.vision === profile.id && !profile.capabilities.includes('vision')) {
+    assignments.vision = null
+  }
+  if (assignments.audio === profile.id && !profile.capabilities.includes('audio')) {
+    assignments.audio = null
+  }
+  if (apiType !== 'transcription') return
+  for (const role of ['review', 'fast', 'vision'] as const) {
+    if (assignments[role] === profile.id) assignments[role] = null
+  }
 }
 
 export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfile {
@@ -366,30 +386,13 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
     contextWindowTokens: normalizedContextWindowTokens(draft.contextWindowTokens),
     textInput: draft.textInput,
+    reasoningEffort: draft.reasoningEffort.trim() || undefined,
     capabilities: [...new Set(draft.capabilities)]
   }
   const index = aiModelSettings.value.models.findIndex((model) => model.id === profile.id)
   if (index === -1) aiModelSettings.value.models.push(profile)
   else aiModelSettings.value.models[index] = profile
-  if (
-    aiModelSettings.value.assignments.vision === profile.id &&
-    !profile.capabilities.includes('vision')
-  ) {
-    aiModelSettings.value.assignments.vision = null
-  }
-  if (
-    aiModelSettings.value.assignments.audio === profile.id &&
-    !profile.capabilities.includes('audio')
-  ) {
-    aiModelSettings.value.assignments.audio = null
-  }
-  if (connection.customAPIType === 'transcription') {
-    for (const role of ['review', 'fast', 'vision'] as const) {
-      if (aiModelSettings.value.assignments[role] === profile.id) {
-        aiModelSettings.value.assignments[role] = null
-      }
-    }
-  }
+  repairAssignmentsForProfile(profile, connection.customAPIType)
   return profile
 }
 

@@ -2104,6 +2104,85 @@ const noImportTypeAnnotations = {
   }
 }
 
+const noMixedCaseAcronymIdentifiers = {
+  meta: {
+    docs: {
+      description: 'Require canonical uppercase casing for acronyms in first-party identifiers'
+    }
+  },
+  create(context) {
+    const canonicalAcronym = /(?:Acp|Ai|Api|Cli|Cors|Css|Html|Ime|Json|Jsx|Mcp|Pdf|Png|Rgb|Rpc|Rtl|Svg|Ui|Url|Uri|Xml)/g
+    const ignoredImports = new Set([
+      '@agentclientprotocol/sdk',
+      '@tauri-apps/plugin-clipboard-manager',
+      '@tauri-apps/plugin-opener',
+      '@vueuse/core',
+      'culori',
+      'reka-ui'
+    ])
+    const upstreamIdentifiers = new Set([
+      'convertToHsb',
+      'convertToHsl',
+      'convertToRgb',
+      'formatCss',
+      'formatRgb',
+      'McpServer',
+      'ndJsonStream',
+      'openUrl',
+      'useObjectUrl',
+      'useUrlSearchParams',
+      'writeHtml'
+    ])
+
+    return {
+      Identifier(node) {
+        if (upstreamIdentifiers.has(node.name)) return
+        const mixedCaseAcronym = [...node.name.matchAll(canonicalAcronym)].find((match) => {
+          const end = (match.index ?? 0) + match[0].length
+          return end === node.name.length || /[A-Z0-9_$]/.test(node.name[end] ?? '')
+        })
+        if (!mixedCaseAcronym) return
+        const parent = node.parent
+        if (
+          (parent?.type === 'Property' || parent?.type === 'TSPropertySignature') &&
+          parent.key === node &&
+          !parent.computed &&
+          parent.value !== node
+        ) {
+          return
+        }
+        if (
+          parent?.type === 'MemberExpression' &&
+          parent.property === node &&
+          !parent.computed &&
+          parent.object.type !== 'ThisExpression'
+        ) {
+          return
+        }
+        if (
+          parent?.type === 'ImportSpecifier' &&
+          parent.imported === node &&
+          parent.parent?.source?.type === 'Literal' &&
+          ignoredImports.has(parent.parent.source.value)
+        ) {
+          return
+        }
+        if (parent?.type === 'ImportSpecifier' && parent.imported === node) return
+        if (
+          parent?.type === 'ImportDefaultSpecifier' ||
+          parent?.type === 'ImportNamespaceSpecifier'
+        ) {
+          return
+        }
+        context.report({
+          node,
+          message: `Use canonical uppercase acronym casing in "${node.name}".`
+        })
+      }
+    }
+  }
+}
+
 const noFlatKiwiModules = createProgramFilenameRule({
   description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
   check(file) {
@@ -2184,6 +2263,7 @@ const plugin = {
     'no-component-root-sibling-folder': noComponentRootSiblingFolder,
     'no-useless-pass-through-wrappers': noUselessPassThroughWrappers,
     'no-function-alias-imports': noFunctionAliasImports,
+    'no-mixed-case-acronym-identifiers': noMixedCaseAcronymIdentifiers,
     'no-flat-kiwi-modules': noFlatKiwiModules,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
     'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles

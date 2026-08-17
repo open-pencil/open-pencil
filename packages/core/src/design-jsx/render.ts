@@ -2,6 +2,7 @@ import { transform } from 'sucrase'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { DESIGN_JSX_SUPPORTED_PROPERTIES } from '#core/design-jsx/schema'
 import type { RenderOptions as RenderJSXOptions } from '#core/design-jsx/types'
 
 import { backgroundBlur, dropShadow, foregroundBlur, innerShadow, layerBlur } from './effects'
@@ -21,116 +22,9 @@ import { isTreeNode, resolveToTree, type TreeNode } from './tree'
  * Build a component function from a JSX string using sucrase.
  * Works in both Node/Bun and the browser (no native bindings).
  */
-const SUPPORTED_PROPS = new Set([
-  'name',
-  'key',
-  'flex',
-  'flow',
-  'dir',
-  'gap',
-  'wrap',
-  'rowGap',
-  'columnGap',
-  'justify',
-  'justifyContent',
-  'items',
-  'align',
-  'alignItems',
-  'grow',
-  'w',
-  'h',
-  'width',
-  'height',
-  'minW',
-  'maxW',
-  'minH',
-  'maxH',
-  'x',
-  'y',
-  'top',
-  'left',
-  'position',
-  'p',
-  'padding',
-  'px',
-  'py',
-  'pt',
-  'pr',
-  'pb',
-  'pl',
-  'bg',
-  'fill',
-  'fills',
-  'background',
-  'backgroundColor',
-  'stroke',
-  'border',
-  'borderColor',
-  'strokeWidth',
-  'borderWidth',
-  'strokeAlign',
-  'strokeDash',
-  'rounded',
-  'borderRadius',
-  'roundedTL',
-  'roundedTR',
-  'roundedBL',
-  'roundedBR',
-  'cornerRadius',
-  'cornerSmoothing',
-  'opacity',
-  'blendMode',
-  'rotate',
-  'rotation',
-  'overflow',
-  'shadow',
-  'blur',
-  'effects',
-  'size',
-  'fontSize',
-  'font',
-  'fontFamily',
-  'weight',
-  'fontWeight',
-  'color',
-  'text',
-  'characters',
-  'content',
-  'value',
-  'title',
-  'textAlign',
-  'textAlignHorizontal',
-  'textHorizontalAlignment',
-  'textAlignVertical',
-  'textVerticalAlignment',
-  'textAutoResize',
-  'lineHeight',
-  'letterSpacing',
-  'textDecoration',
-  'textCase',
-  'maxLines',
-  'truncate',
-  'grid',
-  'columns',
-  'rows',
-  'colStart',
-  'rowStart',
-  'col',
-  'row',
-  'colSpan',
-  'rowSpan',
-  'points',
-  'pointCount',
-  'innerRadius',
-  'label',
-  'style',
-  'bind',
-  'component',
-  'componentId',
-  'of'
-])
+const SUPPORTED_PROPS = DESIGN_JSX_SUPPORTED_PROPERTIES
 
-function stripHtmlComments(jsxString: string): string {
+function stripHTMLComments(jsxString: string): string {
   return jsxString.replace(/<!--[\s\S]*?-->/g, '')
 }
 
@@ -159,7 +53,7 @@ function collectUnsupportedPropWarnings(tree: TreeNode, warnings: string[]): voi
 }
 
 export function buildComponent(jsxString: string): React.ComponentType {
-  const trimmed = stripHtmlComments(jsxString).trim()
+  const trimmed = stripHTMLComments(jsxString).trim()
 
   const aliases = `
     const __h = React.createElement

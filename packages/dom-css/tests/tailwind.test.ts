@@ -18,6 +18,17 @@ describe('@open-pencil/dom-css Tailwind', () => {
     expect(css).toContain('.rounded-xl')
   })
 
+  it('combines caller CSS with generated Tailwind utilities', async () => {
+    const css = await compileTailwindCSS(['w-60', 'p-6'], {
+      css: '.card { color: red; }'
+    })
+
+    expect(css).toContain('.card')
+    expect(css).toContain('color: red')
+    expect(css).toContain('.w-60')
+    expect(css).toContain('.p-6')
+  })
+
   it('feeds Tailwind generated CSS through headless style computation', async () => {
     const runtime = createHeadlessCSSRuntime()
     const classes = [...tailwindCardClasses]

@@ -112,7 +112,7 @@ export function dynamicClassDiagnostics(sourceRel: string, content: string) {
   return diagnostics
 }
 
-function containsUiHookCall(node: unknown, visited = new Set<ExpressionNode>()): boolean {
+function containsUIHookCall(node: unknown, visited = new Set<ExpressionNode>()): boolean {
   if (!isExpressionNode(node) || visited.has(node)) return false
   visited.add(node)
   if (
@@ -127,8 +127,8 @@ function containsUiHookCall(node: unknown, visited = new Set<ExpressionNode>()):
   return Object.entries(node).some(([key, value]) => {
     if (key === 'loc' || key === 'start' || key === 'end') return false
     return Array.isArray(value)
-      ? value.some((child) => containsUiHookCall(child, visited))
-      : containsUiHookCall(value, visited)
+      ? value.some((child) => containsUIHookCall(child, visited))
+      : containsUIHookCall(value, visited)
   })
 }
 
@@ -145,7 +145,7 @@ export function vueTemplateGuardrailDiagnostics(sourceRel: string, content: stri
         column: node.loc?.start?.column
       })
     }
-    if (node.type === VUE_DIRECTIVE_NODE && containsUiHookCall(node.exp?.ast)) {
+    if (node.type === VUE_DIRECTIVE_NODE && containsUIHookCall(node.exp?.ast)) {
       diagnostics.push({
         message: 'Resolve use*UI() hooks once in script setup, not inside template expressions.',
         line: node.loc?.start?.line,
@@ -156,7 +156,7 @@ export function vueTemplateGuardrailDiagnostics(sourceRel: string, content: stri
   return diagnostics
 }
 
-export const noVueTemplateUiHooksOrSvg = createTextRule(
+export const noVueTemplateUIHooksOrSVG = createTextRule(
   'open-pencil/no-vue-template-ui-hooks-or-svg',
   vueTemplateGuardrailDiagnostics
 )

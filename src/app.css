@@ -50,6 +50,8 @@
   --color-warning-action: #fcd34d;
   --color-success: #4ade80;
   --color-error: #f87171;
+  --color-error-bg: rgb(248 113 113 / 0.1);
+  --color-error-border: rgb(248 113 113 / 0.4);
   --color-success-bg: #16a34a;
   --color-success-bg-hover: #15803d;
   --color-code-tag: #7dd3fc;
@@ -87,6 +89,8 @@ html[data-theme='light'] {
   --color-warning-action: #78350f;
   --color-success: #15803d;
   --color-error: #b91c1c;
+  --color-error-bg: rgb(185 28 28 / 0.08);
+  --color-error-border: rgb(185 28 28 / 0.28);
   --color-success-bg: #16a34a;
   --color-success-bg-hover: #15803d;
   --color-code-tag: #0369a1;
@@ -121,32 +125,6 @@ body {
   background: var(--color-canvas);
   user-select: none;
   -webkit-user-select: none;
-}
-
-.code-highlight .token.tag {
-  color: var(--color-code-tag);
-}
-
-.code-highlight .token.attr-name {
-  color: var(--color-code-attribute);
-}
-
-.code-highlight .token.attr-value,
-.code-highlight .token.string {
-  color: var(--color-code-string);
-}
-
-.code-highlight .token.number,
-.code-highlight .token.boolean {
-  color: var(--color-code-number);
-}
-
-.code-highlight .token.punctuation {
-  color: var(--color-code-punctuation);
-}
-
-.code-highlight .token.keyword {
-  color: var(--color-code-attribute);
 }
 
 input[type='number'] {

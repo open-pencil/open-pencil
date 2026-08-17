@@ -37,5 +37,12 @@ Otwórz selektor czcionek w sekcji Typografia panelu właściwości. Dostępne f
 ## Źródła czcionek
 
 - **Czcionka domyślna** — Inter jest ładowany automatycznie
-- **Aplikacja desktopowa** — dostępne wszystkie czcionki systemowe
-- **Przeglądarka** — czcionki systemowe dostępne w Chrome i Edge
+- **Aplikacja desktopowa** — czcionki systemowe oraz włączone katalogi Google Fonts, Fontsource, Bunny Fonts i Fontshare
+- **Przeglądarka** — czcionki systemowe są dostępne w Chrome i Edge; katalogi online wymagają aplikacji desktopowej
+- **Pobrane czcionki** — aplikacja desktopowa zapisuje pobrane kroje w pamięci podręcznej do ponownego użycia na tym samym urządzeniu
+
+## Brakujące czcionki i zamienniki
+
+Gdy żądana rodzina lub krój nie może zostać załadowany, OpenPencil wyświetla ostrzeżenie nad edytorem zamiast po cichu uznawać renderowanie zastępcze za zgodne z projektem.
+
+Rozwiń ostrzeżenie, aby zobaczyć każdy dotknięty krój i aktywny zamiennik. Użyj **Wybierz warstwy**, aby znaleźć dotknięte węzły tekstowe, lub **Ponów ładowanie czcionek** po zmianie dostępu do sieci, uprawnień do lokalnych czcionek albo ustawień dostawców. Krój może być syntetyzowany z innego załadowanego kroju tej samej rodziny; brakująca rodzina używa Inter jako zamiennika, gdy jest dostępny.

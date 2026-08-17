@@ -34,21 +34,21 @@ function handleAlign(
         <div class="flex gap-0.5">
           <IconButton
             :label="panels.alignLeft"
-            size="md"
+            size="xs"
             @click="handleAlign(actions.align, 'horizontal', 'min')"
           >
             <icon-lucide-align-start-vertical class="size-3.5" />
           </IconButton>
           <IconButton
             :label="panels.alignCenterHorizontally"
-            size="md"
+            size="xs"
             @click="handleAlign(actions.align, 'horizontal', 'center')"
           >
             <icon-lucide-align-center-vertical class="size-3.5" />
           </IconButton>
           <IconButton
             :label="panels.alignRight"
-            size="md"
+            size="xs"
             @click="handleAlign(actions.align, 'horizontal', 'max')"
           >
             <icon-lucide-align-end-vertical class="size-3.5" />
@@ -57,21 +57,21 @@ function handleAlign(
         <div class="flex gap-0.5">
           <IconButton
             :label="panels.alignTop"
-            size="md"
+            size="xs"
             @click="handleAlign(actions.align, 'vertical', 'min')"
           >
             <icon-lucide-align-start-horizontal class="size-3.5" />
           </IconButton>
           <IconButton
             :label="panels.alignCenterVertically"
-            size="md"
+            size="xs"
             @click="handleAlign(actions.align, 'vertical', 'center')"
           >
             <icon-lucide-align-center-horizontal class="size-3.5" />
           </IconButton>
           <IconButton
             :label="panels.alignBottom"
-            size="md"
+            size="xs"
             @click="handleAlign(actions.align, 'vertical', 'max')"
           >
             <icon-lucide-align-end-horizontal class="size-3.5" />
@@ -145,13 +145,13 @@ function handleAlign(
           </NumberField>
         </Tip>
         <div class="flex h-6 items-center justify-end gap-0.5">
-          <IconButton :label="panels.flipHorizontal" size="md" @click="actions.flip('horizontal')">
+          <IconButton :label="panels.flipHorizontal" size="xs" @click="actions.flip('horizontal')">
             <icon-lucide-flip-horizontal-2 class="size-3.5" />
           </IconButton>
-          <IconButton :label="panels.flipVertical" size="md" @click="actions.flip('vertical')">
+          <IconButton :label="panels.flipVertical" size="xs" @click="actions.flip('vertical')">
             <icon-lucide-flip-vertical-2 class="size-3.5" />
           </IconButton>
-          <IconButton :label="panels.rotate90" size="md" @click="actions.rotate(90)">
+          <IconButton :label="panels.rotate90" size="xs" @click="actions.rotate(90)">
             <icon-lucide-rotate-cw-square class="size-3.5" />
           </IconButton>
         </div>

@@ -238,8 +238,8 @@ describe('flattenSelected', () => {
 
   test('flattens mixed Latin and CJK text with loaded fallback outlines', async () => {
     await loadInterRegular()
-    const hasCjkFallback = await loadNotoSansSC()
-    if (!hasCjkFallback) return
+    const hasCJKFallback = await loadNotoSansSC()
+    if (!hasCJKFallback) return
     const { editor, surface } = await createEditorWithRenderer()
     const pageId = editor.state.currentPageId
     const text = editor.graph.createNode('TEXT', pageId, {

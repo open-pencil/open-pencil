@@ -30,15 +30,24 @@ export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path
 
   if (regions.length > 0) {
     const paths: Path[] = []
+    const regionSegmentIndexes = new Set<number>()
     for (const region of regions) {
       const regionPath = new ck.Path()
       for (const loop of region.loops) {
+        for (const segmentIndex of loop) regionSegmentIndexes.add(segmentIndex)
         addLoopToPath(regionPath, loop, segments, vertices)
       }
       regionPath.setFillType(
         region.windingRule === 'EVENODD' ? ck.FillType.EvenOdd : ck.FillType.Winding
       )
       paths.push(regionPath)
+    }
+
+    const openSegments = segments.filter((_, index) => !regionSegmentIndexes.has(index))
+    if (openSegments.length > 0) {
+      const openPath = new ck.Path()
+      addOpenSegmentsToPath(openPath, openSegments, vertices)
+      paths.push(openPath)
     }
     return paths
   }

@@ -2,7 +2,7 @@ import type { UIMessage } from 'ai'
 import { computed, ref, watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { setPexelsApiKey, setUnsplashAccessKey } from '@open-pencil/core/tools'
+import { setPexelsAPIKey, setUnsplashAccessKey } from '@open-pencil/core/tools'
 
 import {
   designCustomAPIType,
@@ -136,7 +136,7 @@ async function refreshMediaCredentials(): Promise<void> {
   ])
   pexelsKeyStatus.value = pexelsStatus
   unsplashKeyStatus.value = unsplashStatus
-  setPexelsApiKey(
+  setPexelsAPIKey(
     pexelsStatus === 'configured'
       ? await appCredentialServices.resolver.resolve(PEXELS_CREDENTIAL)
       : null
@@ -174,7 +174,7 @@ export async function setPexelsKey(key: string): Promise<void> {
   if (value) await appCredentialServices.manager.set(PEXELS_CREDENTIAL, value)
   else await appCredentialServices.manager.clear(PEXELS_CREDENTIAL)
   pexelsKeyStatus.value = await refreshStatus(PEXELS_CREDENTIAL)
-  setPexelsApiKey(value || null)
+  setPexelsAPIKey(value || null)
 }
 
 export async function setUnsplashKey(key: string): Promise<void> {

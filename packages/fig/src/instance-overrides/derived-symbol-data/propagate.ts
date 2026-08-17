@@ -6,16 +6,16 @@ import type { OverrideContext } from '../types'
 import { overrideCandidates } from '../utils'
 
 function buildSizeOverriddenCloneUpdates(source: SceneNode, clone: SceneNode): Partial<SceneNode> {
-  if (clone.type !== 'INSTANCE' || !source.figmaDerivedLayout) return {}
-  const sourceLayout = source.figmaDerivedLayout
+  if (clone.type !== 'INSTANCE' || !source.derivedLayout) return {}
+  const sourceLayout = source.derivedLayout
   return {
     ...(sourceLayout.x === undefined ? {} : { x: sourceLayout.x }),
     ...(sourceLayout.y === undefined ? {} : { y: sourceLayout.y }),
-    figmaDerivedLayout: {
+    derivedLayout: {
       ...sourceLayout,
-      ...clone.figmaDerivedLayout,
-      x: sourceLayout.x ?? clone.figmaDerivedLayout?.x,
-      y: sourceLayout.y ?? clone.figmaDerivedLayout?.y
+      ...clone.derivedLayout,
+      x: sourceLayout.x ?? clone.derivedLayout?.x,
+      y: sourceLayout.y ?? clone.derivedLayout?.y
     }
   }
 }
@@ -39,11 +39,11 @@ function buildCloneUpdates(
     if (source.strokeGeometry !== clone.strokeGeometry)
       updates.strokeGeometry = copyGeometryPaths(source.strokeGeometry)
   }
-  if (source.text === clone.text && source.figmaDerivedTextGlyphs) {
-    updates.figmaDerivedTextGlyphs = structuredClone(source.figmaDerivedTextGlyphs)
+  if (source.text === clone.text && source.derivedTextGlyphs) {
+    updates.derivedTextGlyphs = structuredClone(source.derivedTextGlyphs)
   }
-  if (source.text === clone.text && source.figmaDerivedLayout) {
-    updates.figmaDerivedLayout = { ...source.figmaDerivedLayout }
+  if (source.text === clone.text && source.derivedLayout) {
+    updates.derivedLayout = { ...source.derivedLayout }
   }
   return updates
 }
@@ -72,8 +72,8 @@ function restoreScaledInstanceLeafBounds(
     ) {
       continue
     }
-    const width = child.figmaDerivedLayout?.width
-    const height = child.figmaDerivedLayout?.height
+    const width = child.derivedLayout?.width
+    const height = child.derivedLayout?.height
     const restoresDerivedBounds = width !== undefined && height !== undefined
     const restoresImageBounds =
       !restoresDerivedBounds &&
@@ -108,14 +108,14 @@ function thinCloneCrossPosition(
     !clone.componentId ||
     !clone.name.endsWith('Divider') ||
     !clone.parentId ||
-    clone.figmaDerivedLayout?.x !== undefined ||
-    clone.figmaDerivedLayout?.y !== undefined
+    clone.derivedLayout?.x !== undefined ||
+    clone.derivedLayout?.y !== undefined
   ) {
     return null
   }
   const parent = graph.getNode(clone.parentId)
   const source = graph.getNode(clone.componentId)
-  const sourceLayout = source?.figmaDerivedLayout
+  const sourceLayout = source?.derivedLayout
   if (!parent || !source || sourceLayout?.x === undefined || sourceLayout.y === undefined)
     return null
   if (clone.width !== source.width || clone.height !== source.height) return null
@@ -130,8 +130,8 @@ function restoreThinCloneCrossPositions(ctx: OverrideContext): void {
     const crossPosition = thinCloneCrossPosition(ctx.graph, clone)
     if (!crossPosition) continue
     ctx.graph.updateNode(clone.id, {
-      figmaDerivedLayout: {
-        ...clone.figmaDerivedLayout,
+      derivedLayout: {
+        ...clone.derivedLayout,
         [crossPosition.axis]: crossPosition.position
       }
     })
@@ -142,7 +142,7 @@ export function applyGeneratedFreeformStretch(ctx: OverrideContext): void {
   for (const node of overrideCandidates(ctx.graph, ctx.activeNodeIds)) {
     if (
       node.source.format === 'fig' ||
-      !node.figmaDerivedLayout ||
+      !node.derivedLayout ||
       !node.parentId ||
       node.layoutPositioning === 'ABSOLUTE'
     ) {
@@ -153,24 +153,24 @@ export function applyGeneratedFreeformStretch(ctx: OverrideContext): void {
       !parent ||
       parent.source.format === 'fig' ||
       parent.layoutMode !== 'NONE' ||
-      !parent.figmaDerivedLayout
+      !parent.derivedLayout
     ) {
       continue
     }
     const updates: Partial<SceneNode> = {}
     if (
       node.horizontalConstraint === 'STRETCH' &&
-      node.figmaDerivedLayout.width !== undefined &&
-      node.figmaDerivedLayout.width === parent.figmaDerivedLayout.width
+      node.derivedLayout.width !== undefined &&
+      node.derivedLayout.width === parent.derivedLayout.width
     ) {
-      updates.width = node.figmaDerivedLayout.width
+      updates.width = node.derivedLayout.width
     }
     if (
       node.verticalConstraint === 'STRETCH' &&
-      node.figmaDerivedLayout.height !== undefined &&
-      node.figmaDerivedLayout.height === parent.figmaDerivedLayout.height
+      node.derivedLayout.height !== undefined &&
+      node.derivedLayout.height === parent.derivedLayout.height
     ) {
-      updates.height = node.figmaDerivedLayout.height
+      updates.height = node.derivedLayout.height
     }
     if (Object.keys(updates).length > 0) ctx.graph.updateNode(node.id, updates)
   }

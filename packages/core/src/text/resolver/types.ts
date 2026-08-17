@@ -1,5 +1,12 @@
 export type FontResolutionState = 'idle' | 'loading' | 'loaded' | 'failed' | 'exhausted'
 
+export type FontResolutionEvent = 'started' | 'settled' | 'reset'
+
+export type FontResolutionListener = (
+  event: FontResolutionEvent,
+  snapshot: FontResolutionSnapshot
+) => void
+
 export type FontCandidateSource = 'registered' | 'local' | 'cache' | 'remote' | 'fallback'
 
 export interface FontResolutionCandidate {

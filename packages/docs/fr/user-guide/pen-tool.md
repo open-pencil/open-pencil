@@ -1,6 +1,6 @@
 ---
 title: Outil plume
-description: Tracés vectoriels avec courbes de Bézier in OpenPencil.
+description: Tracés vectoriels avec courbes de Bézier dans OpenPencil.
 ---
 # Outil plume
 
@@ -8,20 +8,20 @@ description: Tracés vectoriels avec courbes de Bézier in OpenPencil.
 **P**
 
 ## Placer des points
-- **Click** — corner point
-- **Click + drag** — curve point with Bézier tangent handles
-  - **Hold <kbd>Space</kbd>** while dragging to move the point itself
+- **Clic** — place un point d’angle
+- **Clic + glisser** — place un point de courbe avec des poignées tangentes de Bézier
+  - **Maintenir <kbd>Space</kbd>** pendant le glissement pour déplacer le point lui-même
 
 ## Fermer un tracé
-Click the first point to close into a loop.
+Cliquez sur le premier point pour fermer le tracé en boucle.
 
 ## Tracés ouverts
-<kbd>Escape</kbd> to commit as open path.
+Appuyez sur <kbd>Escape</kbd> pour valider un tracé ouvert.
 
 ## Réseaux vectoriels
 Les tracés dans OpenPencil utilisent des réseaux vectoriels — un modèle plus flexible que les listes de points simples, qui prend en charge les tracés ramifiés et les topologies complexes. C'est le même modèle que Figma, les tracés sont donc parfaitement conservés dans les fichiers .fig.
 
 | Action | Mac | Windows / Linux |
 |--------|-----|-----------------|
-| Pen tool | <kbd>P</kbd> | <kbd>P</kbd> |
-| Commit | <kbd>Escape</kbd> | Escape |
+| Outil plume | <kbd>P</kbd> | <kbd>P</kbd> |
+| Valider | <kbd>Escape</kbd> | Escape |

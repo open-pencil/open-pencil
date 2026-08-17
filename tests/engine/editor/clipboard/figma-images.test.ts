@@ -10,7 +10,7 @@ import { expectDefined } from '#tests/helpers/assert'
 const IMAGE_HASH_A = '1111111111111111111111111111111111111111'
 const IMAGE_HASH_B = '2222222222222222222222222222222222222222'
 
-async function imageClipboardHtml(hashes: string[]) {
+async function imageClipboardHTML(hashes: string[]) {
   const source = createEditor()
   const frame = source.graph.createNode('FRAME', source.state.currentPageId, {
     name: 'Images',
@@ -44,7 +44,7 @@ describe('Figma clipboard images', () => {
   })
 
   test('finalizes structural paste before image resolution completes', async () => {
-    const html = await imageClipboardHtml([IMAGE_HASH_A])
+    const html = await imageClipboardHTML([IMAGE_HASH_A])
     let startResolution: (() => void) | undefined
     const resolutionStarted = new Promise<void>((resolve) => {
       startResolution = resolve
@@ -72,7 +72,7 @@ describe('Figma clipboard images', () => {
   })
 
   test('resolves and stores missing images before completing paste', async () => {
-    const html = await imageClipboardHtml([IMAGE_HASH_A, IMAGE_HASH_A])
+    const html = await imageClipboardHTML([IMAGE_HASH_A, IMAGE_HASH_A])
     const imageBytes = new Uint8Array([1, 2, 3])
     const calls: Array<{ fileKey: string; hashes: string[] }> = []
     const resolutions: ClipboardImageResolution[] = []
@@ -94,7 +94,7 @@ describe('Figma clipboard images', () => {
   })
 
   test('reports images that cannot be fetched without a resolver', async () => {
-    const html = await imageClipboardHtml([IMAGE_HASH_A])
+    const html = await imageClipboardHTML([IMAGE_HASH_A])
     const resolutions: ClipboardImageResolution[] = []
     const editor = createEditor()
     editor.onEditorEvent('clipboard:images-missing', (resolution) => {
@@ -107,7 +107,7 @@ describe('Figma clipboard images', () => {
   })
 
   test('stores partial results and reports remaining images', async () => {
-    const html = await imageClipboardHtml([IMAGE_HASH_A, IMAGE_HASH_B])
+    const html = await imageClipboardHTML([IMAGE_HASH_A, IMAGE_HASH_B])
     const editor = createEditor({
       resolveFigmaClipboardImages: async () => new Map([[IMAGE_HASH_A, new Uint8Array([4, 5, 6])]])
     })

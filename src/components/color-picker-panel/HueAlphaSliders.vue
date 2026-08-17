@@ -1,16 +1,18 @@
 <script setup lang="ts">
+import { useI18n } from '@open-pencil/vue'
 import { colorToCSS } from '@open-pencil/core/color'
 
 import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
 
 const ctx = useColorPickerPanelContext()
+const { panels } = useI18n()
 </script>
 
 <template>
   <template v-if="ctx.fieldFormat !== 'okhcl'">
     <StandardColorSlider
-      label="Hue"
+      :label="panels.hue"
       :model-value="ctx.rekaColor"
       channel="hue"
       color-space="hsl"
@@ -24,7 +26,7 @@ const ctx = useColorPickerPanelContext()
     />
 
     <StandardColorSlider
-      label="Alpha"
+      :label="panels.alpha"
       :model-value="ctx.rekaColor"
       channel="alpha"
       color-space="rgb"

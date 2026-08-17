@@ -1,87 +1,38 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useI18n } from '@open-pencil/vue'
+import { useDocumentWorkspace, useI18n } from '@open-pencil/vue'
 
-import {
-  activeStorageProviderID,
-  createActiveStorageAdapter,
-  storageCredentialStatuses,
-  storagePreferencesComplete,
-  storageProviderRegistry,
-  type StorageDocument
-} from '@/app/integrations/storage'
+import { activeStorageProviderID, type StorageDocument } from '@/app/integrations/storage'
 import { openSettingsDialog, settingsDialogOpen } from '@/app/settings/dialog'
-import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { createCanvasId } from '@/app/storage/id'
-import { reconcileStorageDocuments } from '@/app/storage/reconcile'
+import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
-import { getLocalCanvasStore } from '@/app/storage/local-store'
+import Tip from '@/components/ui/Tip.vue'
 import { activeTab, createTab, openStorageDocumentInNewTab } from '@/app/tabs'
 
 const { dialogs } = useI18n()
 const router = useRouter()
-const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
-const documents = ref<StorageDocument[]>([])
-const credentialStatuses = ref<Record<string, CredentialStatus>>({})
-const configured = computed(
-  () =>
-    storagePreferencesComplete(provider.value.id) &&
-    provider.value.credentialFields.every(
-      (field) => !field.required || credentialStatuses.value[field.id] === 'configured'
-    )
-)
-const loading = ref(false)
-const error = ref<string | null>(null)
-
-async function paintLocalDocuments(): Promise<void> {
-  const local = (await getLocalCanvasStore().listMetas()).filter(
-    (metadata) => metadata.providerId === activeStorageProviderID.value
-  )
-  documents.value = local.map((metadata) => ({
-    id: metadata.id,
-    name: metadata.name,
-    updatedAt: metadata.updatedAt,
-    metadataAuthoritative: true
-  }))
-}
-
-async function refresh(): Promise<void> {
-  loading.value = true
-  error.value = null
-  await paintLocalDocuments()
-  try {
-    credentialStatuses.value = await storageCredentialStatuses(provider.value.id)
-    if (!configured.value) {
-      error.value = dialogs.value.storageNotConfigured
-      return
-    }
-    const remote = await createActiveStorageAdapter().listDocuments()
-    const localStore = getLocalCanvasStore()
-    const local = (await localStore.listMetas(true)).filter(
-      (metadata) => metadata.providerId === activeStorageProviderID.value
-    )
-    const reconciliation = reconcileStorageDocuments(local, remote)
-    documents.value = reconciliation.documents
-
-    for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
-    for (const document of reconciliation.remoteDocumentsToSeed) {
-      await localStore.upsertIndexMeta({
-        id: document.id,
-        providerId: activeStorageProviderID.value,
-        name: document.name,
-        updatedAt: document.updatedAt,
-        syncStatus: 'synced',
-        lastSyncedAt: document.updatedAt,
-        lastSyncError: null
-      })
-    }
-  } catch (reason) {
-    error.value = reason instanceof Error ? reason.message : String(reason)
-  } finally {
-    loading.value = false
-  }
-}
+const configured = ref(false)
+const workspace = useDocumentWorkspace({
+  source: createStorageWorkspaceSource((snapshot) => {
+    configured.value = snapshot.configured
+  }),
+  refreshInterval: 60_000,
+  previewConcurrency: 6
+})
+const documents = workspace.documents
+const loading = workspace.loading
+const errorMessage = computed(() => {
+  const reason = workspace.error.value
+  if (reason == null) return null
+  return reason instanceof Error ? reason.message : String(reason)
+})
+const refresh = workspace.refresh
+const invalidate = workspace.invalidate
+const clearPreviews = workspace.clearPreviews
+const previewURL = workspace.previewURL
+const vWorkspacePreview = workspace.previewDirective
 
 async function openDocument(document: StorageDocument): Promise<void> {
   await router.push('/')
@@ -106,14 +57,13 @@ async function createDocument(): Promise<void> {
   await store.saveFigFile()
 }
 
-watch(activeStorageProviderID, () => void refresh())
-
-watch(settingsDialogOpen, (open, wasOpen) => {
-  if (wasOpen && !open) void refresh()
+watch(activeStorageProviderID, () => {
+  clearPreviews()
+  void invalidate()
 })
 
-onMounted(() => {
-  void refresh()
+watch(settingsDialogOpen, (open, wasOpen) => {
+  if (wasOpen && !open) void invalidate()
 })
 </script>
 
@@ -124,7 +74,18 @@ onMounted(() => {
         <h1 class="text-sm font-semibold">{{ dialogs.storageWorkspace }}</h1>
         <p class="text-[10px] text-muted">{{ activeStorageProviderID }}</p>
       </div>
-      <div class="ml-auto flex gap-2">
+      <div class="ml-auto flex items-center gap-2">
+        <Tip v-if="configured" :label="dialogs.refresh">
+          <button
+            type="button"
+            class="flex size-7 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface disabled:opacity-50"
+            :aria-label="dialogs.refresh"
+            :disabled="loading"
+            @click="refresh"
+          >
+            <icon-lucide-refresh-cw class="size-3.5" :class="{ 'animate-spin': loading }" />
+          </button>
+        </Tip>
         <button
           type="button"
           class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
@@ -145,20 +106,9 @@ onMounted(() => {
     </header>
 
     <section class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col p-6">
-      <div class="mb-4 flex shrink-0 items-center justify-between">
-        <p v-if="error && configured" class="text-xs text-danger" role="alert">
-          {{ error }}
-        </p>
-        <span v-else />
-        <button
-          v-if="configured"
-          type="button"
-          class="rounded px-2 py-1 text-xs text-muted hover:bg-hover hover:text-surface"
-          @click="refresh"
-        >
-          {{ dialogs.refresh }}
-        </button>
-      </div>
+      <p v-if="errorMessage && configured" class="mb-4 shrink-0 text-xs text-danger" role="alert">
+        {{ errorMessage }}
+      </p>
 
       <div
         v-if="documents.length"
@@ -172,7 +122,18 @@ onMounted(() => {
           :data-document-id="document.id"
           @click="openDocument(document)"
         >
-          <div class="aspect-[4/3] bg-panel-field" />
+          <div
+            v-workspace-preview="document.id"
+            class="flex aspect-[4/3] items-center justify-center bg-panel-field"
+          >
+            <img
+              v-if="previewURL(document.id)"
+              :src="previewURL(document.id) ?? undefined"
+              alt=""
+              class="size-full object-cover"
+            />
+            <icon-lucide-file-image v-else class="size-6 text-muted/50" />
+          </div>
           <div class="border-t border-border p-3">
             <p class="truncate text-xs font-medium">{{ document.name }}</p>
             <p class="mt-1 text-[10px] text-muted">

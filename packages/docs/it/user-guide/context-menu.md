@@ -1,10 +1,10 @@
 ---
 title: Menu contestuale
-description: Azioni del menu contestuale con click destro in OpenPencil.
+description: Azioni del menu contestuale con clic destro in OpenPencil.
 ---
 # Menu contestuale
 
-Click destro sul canvas per aprire il menu contestuale. Click destro su un nodo lo seleziona prima.
+Fai clic con il pulsante destro sul canvas per aprire il menu contestuale. Se lo fai su un nodo, il nodo viene selezionato prima.
 
 ## Copia come
 

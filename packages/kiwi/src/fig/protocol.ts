@@ -226,7 +226,7 @@ export const PROTOCOL_VERSION = 151
 /**
  * Build WebSocket URL for Figma multiplayer
  */
-export function buildMultiplayerUrl(fileKey: string, trackingId?: string): string {
+export function buildMultiplayerURL(fileKey: string, trackingId?: string): string {
   const params = new URLSearchParams({
     role: 'editor',
     version: String(PROTOCOL_VERSION),

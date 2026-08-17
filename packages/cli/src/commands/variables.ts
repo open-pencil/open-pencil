@@ -4,7 +4,7 @@ import type { VariablesResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { bold, entity, fmtList, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'List design variables and collections' },
@@ -20,7 +20,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<VariablesResult>(
+    const data = await loadRPCData<VariablesResult>(
       args.file,
       'variables',
       {

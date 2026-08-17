@@ -5,7 +5,10 @@
  * reflect the input pixel size. Scale path data from the SVG coordinate space
  * (viewBox, else width/height) into the target node bounds before parsing.
  */
+import svgpath from 'svgpath'
+
 import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
+import { mergeVectorNetworks } from '@open-pencil/scene-graph'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import type { Rect, Size } from '@open-pencil/scene-graph/primitives'
@@ -59,6 +62,7 @@ export interface VectorizedPath {
   vectorNetwork: VectorNetwork
   fills: Fill[]
   strokes: Stroke[]
+  clipNetworks?: VectorNetwork[]
 }
 
 export interface SVGVectorizeResult {
@@ -89,12 +93,14 @@ export function svgToVectorPaths(
   const strokeScale = Math.min(viewport.scaleX, viewport.scaleY)
 
   const vectorized: VectorizedPath[] = []
+  const clipCache = new WeakMap<NonNullable<IconPathInfo['clipPaths']>, VectorNetwork[]>()
   for (const path of paths) {
     const fillRule: WindingRule = path.fillRule
     const transform = path.transform ?? null
     const pathData = applySVGTransformToPath(path.d, transform)
     const scaledD = mapSVGPathToViewport(pathData, viewport)
     const network = parseSVGPath(scaledD, fillRule)
+    const pathBounds = computeAccurateBounds(network)
     const gradientFill =
       gradients.size > 0
         ? resolveGradientFill(
@@ -105,10 +111,36 @@ export function svgToVectorPaths(
             computeAccurateBounds(network)
           )
         : null
+    let clipNetworks: VectorNetwork[] | undefined
+    if (path.clipPaths) {
+      const hasObjectBoundingBoxClip = path.clipPaths.some(
+        ({ units }) => units === 'objectBoundingBox'
+      )
+      clipNetworks = hasObjectBoundingBoxClip ? undefined : clipCache.get(path.clipPaths)
+      if (!clipNetworks) {
+        clipNetworks = path.clipPaths.map((clipRegion) =>
+          mergeVectorNetworks(
+            clipRegion.paths.map((clipPath) => {
+              let clipData = applySVGTransformToPath(clipPath.d, clipPath.transform ?? null)
+              if (clipRegion.units === 'objectBoundingBox') {
+                clipData = svgpath(clipData)
+                  .scale(pathBounds.width, pathBounds.height)
+                  .translate(pathBounds.x, pathBounds.y)
+                  .toString()
+                return parseSVGPath(clipData, clipPath.fillRule)
+              }
+              return parseSVGPath(mapSVGPathToViewport(clipData, viewport), clipPath.fillRule)
+            })
+          )
+        )
+        if (!hasObjectBoundingBoxClip) clipCache.set(path.clipPaths, clipNetworks)
+      }
+    }
     vectorized.push({
       vectorNetwork: network,
       fills: gradientFill ? [gradientFill] : resolveFill(path, defaultColor),
-      strokes: resolveStrokes(path, defaultColor, strokeScale)
+      strokes: resolveStrokes(path, defaultColor, strokeScale),
+      clipNetworks
     })
   }
 

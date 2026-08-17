@@ -5,7 +5,7 @@ import { defineCommand } from 'citty'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
-import { appTargetOptions, appTargetRpcArgs } from '#cli/app-target'
+import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
 import { printError } from '#cli/format'
 import { loadDocument, populateWholeDocument } from '#cli/headless'
 
@@ -62,7 +62,7 @@ export default defineCommand({
     }
 
     if (isAppMode(args.file)) {
-      const result = await rpc('eval', { code, ...appTargetRpcArgs(args) })
+      const result = await rpc('eval', { code, ...appTargetRPCArgs(args) })
       if (!args.quiet && result !== undefined && result !== null) {
         printResult(result, !!args.json)
       }

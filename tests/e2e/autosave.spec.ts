@@ -67,8 +67,9 @@ test('autosave triggers after scene changes with a file handle', async () => {
   expect(writeHappened).toBe(true)
 })
 
-test('no autosave without file handle', async ({ browser }) => {
+test('no autosave without file handle', async ({ browser, baseURL }) => {
   const context = await browser.newContext({
+    baseURL,
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 2
   })

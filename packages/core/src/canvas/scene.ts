@@ -29,7 +29,11 @@ import {
   getStrokeCapEntity,
   getStrokeJoinEntity
 } from './strokes'
-import { drawFigmaDerivedText } from './text/derived'
+import {
+  drawDerivedText,
+  drawReflowedPathTextSilhouettes,
+  isReflowedPathText
+} from './text/derived'
 import { textNodeToOutlinePath } from './text/outlines'
 
 function drawVisibleFills(
@@ -45,6 +49,14 @@ function hasNodeTransform(node: SceneNode): boolean {
   return node.rotation !== 0 || node.flipX || node.flipY
 }
 
+function hasOverflowPathTextPaint(node: SceneNode): boolean {
+  return (
+    node.textPathData != null &&
+    ((node.derivedTextGlyphs?.length ?? 0) > 0 ||
+      (Array.isArray(node.strokeGeometry) && node.strokeGeometry.length > 0))
+  )
+}
+
 function isCulled(
   r: SkiaRenderer,
   graph: SceneGraph,
@@ -57,7 +69,7 @@ function isCulled(
     node.childIds.length === 0 ||
     ((node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') &&
       node.clipsContent)
-  if (!canCull) return false
+  if (!canCull || hasOverflowPathTextPaint(node)) return false
 
   const vp = r.worldViewport
   if (hasTransformedAncestor) {
@@ -576,8 +588,9 @@ function drawNodeStroke(
     return
   }
   if (stroke.align !== 'INSIDE') {
-    if (node.type === 'VECTOR') drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
-    else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
+    if (node.type === 'VECTOR' || node.type === 'TEXT') {
+      drawVectorStrokeGeometry(r, canvas, sg, sc, stroke.opacity)
+    } else drawRegularStroke(r, canvas, node, rect, hasRadius, stroke, sc)
     return
   }
 
@@ -597,25 +610,26 @@ function drawNodeStroke(
   canvas.restore()
 }
 
-export function renderShapeUncached(
+function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    node.textPathData !== null &&
+    (node.derivedTextGlyphs?.length ?? 0) > 0 &&
+    node.strokeGeometry.length > 0
+  )
+}
+
+function paintNodeStrokes(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
-  graph: SceneGraph
+  graph: SceneGraph,
+  rect: Float32Array,
+  hasRadius: boolean,
+  sg: Path[] | null,
+  vectorPaths: Path[] | null,
+  vectorStroke: Path[] | null
 ): void {
-  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
-  const hasRadius = nodeHasRadius(node)
-
-  const shadowChild = getShadowShapeChild(node, graph)
-  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
-
-  if (!drawVectorMultiStyleFills(r, canvas, node, graph)) {
-    drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
-  }
-
-  const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
-  const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
-  const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
   forVisibleStrokes(r, node, graph, (stroke, color) => {
     if (
       stroke.dashPattern &&
@@ -630,6 +644,42 @@ export function renderShapeUncached(
     }
     drawNodeStroke(r, canvas, node, rect, hasRadius, stroke, color, sg, vectorPaths, vectorStroke)
   })
+}
+
+export function renderShapeUncached(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  node: SceneNode,
+  graph: SceneGraph
+): void {
+  const rect = r.ck.LTRBRect(0, 0, node.width, node.height)
+  const hasRadius = nodeHasRadius(node)
+
+  const shadowChild = getShadowShapeChild(node, graph)
+  r.renderEffects(canvas, node, rect, hasRadius, 'behind', shadowChild)
+
+  const sg = node.strokeGeometry.length > 0 ? r.getStrokeGeometry(node) : null
+  const vectorPaths = node.type === 'VECTOR' ? r.getVectorPaths(node) : null
+  const vectorStroke = node.type === 'VECTOR' ? vectorStrokePaths(r, node) : null
+  const pathTextStrokeFirst = isPathTextWithStrokeGeometry(node)
+  const reflowedPathText = isReflowedPathText(node)
+
+  if (pathTextStrokeFirst) {
+    paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
+  }
+  if (reflowedPathText) {
+    forVisibleStrokes(r, node, graph, (stroke, color) =>
+      drawReflowedPathTextSilhouettes(r, canvas, node, stroke, color)
+    )
+  }
+
+  if (!drawVectorMultiStyleFills(r, canvas, node, graph)) {
+    drawVisibleFills(r, node, graph, (fill) => r.drawNodeFill(canvas, node, rect, hasRadius, fill))
+  }
+
+  if (!pathTextStrokeFirst && !reflowedPathText) {
+    paintNodeStrokes(r, canvas, node, graph, rect, hasRadius, sg, vectorPaths, vectorStroke)
+  }
   r.renderEffects(canvas, node, rect, hasRadius, 'front', shadowChild)
 }
 
@@ -697,13 +747,19 @@ function drawGradientText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boo
   }
 }
 
+function shouldClipTextToLayoutBox(node: SceneNode): boolean {
+  return (
+    !hasOverflowPathTextPaint(node) &&
+    (node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE')
+  )
+}
+
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   const text = node.text
   if (!text) return
 
   canvas.save()
-  const shouldClipText = node.textAutoResize === 'NONE' || node.textAutoResize === 'TRUNCATE'
-  if (shouldClipText) {
+  if (shouldClipTextToLayoutBox(node)) {
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }
 
@@ -719,7 +775,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
           return
         }
       }
-      if (drawFigmaDerivedText(r, canvas, node)) {
+      if (drawDerivedText(r, canvas, node)) {
         canvas.restore()
         return
       }

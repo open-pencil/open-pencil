@@ -2,7 +2,7 @@ import type { SceneGraph, Variable } from '@open-pencil/scene-graph'
 
 import { colorToHex } from '#core/color'
 
-import type { RpcCommand } from './types'
+import type { RPCCommand } from './types'
 
 // ── variables ──
 
@@ -43,7 +43,7 @@ export interface VariablesResult {
   totalCollections: number
 }
 
-export const variablesCommand: RpcCommand<VariablesArgs, VariablesResult> = {
+export const variablesCommand: RPCCommand<VariablesArgs, VariablesResult> = {
   name: 'variables',
   execute: (graph, args) => {
     const typeFilter = args.type?.toUpperCase()

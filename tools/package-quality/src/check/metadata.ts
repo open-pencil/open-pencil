@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { publicPackageDirs } from '../packages'
 
-interface PackageJson {
+interface PackageJSON {
   name: string
   version: string
   main?: string
@@ -16,11 +16,15 @@ interface PackageJson {
 
 const errors: string[] = []
 
-function readPackageJson(packageDir: string): PackageJson {
+function isDeclarationPath(value: string): boolean {
+  return /\.d\.[cm]?ts$/.test(value)
+}
+
+function readPackageJSON(packageDir: string): PackageJSON {
   return JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf8'))
 }
 
-const rootPackage = readPackageJson('.')
+const rootPackage = readPackageJSON('.')
 const expectedVersion = rootPackage.version
 
 function checkRuntimePath(packageName: string, field: string, value: string): void {
@@ -48,21 +52,51 @@ function checkIncludedRuntimePath(
   }
 }
 
-function walkExports(packageName: string, value: unknown, path: string[] = []): void {
+function checkIncludedTypePath(
+  packageName: string,
+  field: string,
+  value: string,
+  files: string[]
+): void {
+  if (!isDeclarationPath(value)) {
+    errors.push(`${packageName}: ${field} must point to a declaration file (${value})`)
+  }
+  if (value.startsWith('./src/')) {
+    errors.push(`${packageName}: ${field} must not point to source files (${value})`)
+  }
+  const normalized = value.replace(/^\.\//, '')
+  const topLevelDir = normalized.split('/')[0]
+  if (topLevelDir && !files.includes(topLevelDir)) {
+    errors.push(
+      `${packageName}: ${field} points to ${value}, but files does not include ${topLevelDir}`
+    )
+  }
+}
+
+function walkExports(
+  packageName: string,
+  value: unknown,
+  files: string[],
+  path: string[] = []
+): void {
   if (typeof value === 'string') {
     const key = path.at(-1)
-    if (key !== 'types' && key !== 'bun')
+    if (key === 'bun') return
+    if (key === 'types') {
+      checkIncludedTypePath(packageName, `exports.${path.join('.')}`, value, files)
+    } else {
       checkRuntimePath(packageName, `exports.${path.join('.')}`, value)
+    }
     return
   }
   if (!value || typeof value !== 'object') return
   for (const [key, child] of Object.entries(value)) {
-    walkExports(packageName, child, [...path, key])
+    walkExports(packageName, child, files, [...path, key])
   }
 }
 
 for (const packageDir of publicPackageDirs) {
-  const pkg = readPackageJson(packageDir)
+  const pkg = readPackageJSON(packageDir)
 
   if (pkg.version !== expectedVersion) {
     errors.push(`${pkg.name}: version ${pkg.version} must match root version ${expectedVersion}`)
@@ -73,6 +107,7 @@ for (const packageDir of publicPackageDirs) {
   }
 
   if (pkg.main) checkRuntimePath(pkg.name, 'main', pkg.main)
+  if (pkg.types) checkIncludedTypePath(pkg.name, 'types', pkg.types, pkg.files ?? [])
 
   if (typeof pkg.bin === 'string') {
     checkIncludedRuntimePath(pkg.name, 'bin', pkg.bin, pkg.files ?? [])
@@ -82,7 +117,7 @@ for (const packageDir of publicPackageDirs) {
     }
   }
 
-  walkExports(pkg.name, pkg.exports)
+  walkExports(pkg.name, pkg.exports, pkg.files ?? [])
 
   if (
     pkg.publishConfig &&

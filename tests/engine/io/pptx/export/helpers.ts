@@ -38,11 +38,11 @@ export function makeSlideFrame(graph: SceneGraph, name: string) {
   })
 }
 
-export function unzipPptx(data: Uint8Array): Record<string, Uint8Array> {
+export function unzipPPTX(data: Uint8Array): Record<string, Uint8Array> {
   return unzipSync(data)
 }
 
-export function slideXml(files: Record<string, Uint8Array>, index: number): string {
+export function slideXML(files: Record<string, Uint8Array>, index: number): string {
   const entry = files[`ppt/slides/slide${index}.xml`]
   expect(entry).toBeDefined()
   return new TextDecoder().decode(entry)

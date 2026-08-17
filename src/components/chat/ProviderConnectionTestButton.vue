@@ -32,6 +32,8 @@ const resultMessage = computed(() => {
       return dialogs.value.connectionTestInvalidBaseURL
     case 'auth':
       return dialogs.value.connectionTestAuthFailed
+    case 'insufficient-credit':
+      return dialogs.value.connectionTestInsufficientCredit
     case 'model-not-found':
       return dialogs.value.connectionTestModelNotFound
     case 'api-type':

@@ -10,6 +10,7 @@ import {
 import { createSaveActions } from '@/app/document/io/save'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
+import { createDocumentRecovery } from '@/app/document/recovery'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 
 type DocumentSourceState = EditorState & {
@@ -50,6 +51,16 @@ export function createDocumentSourceActions({
     return exportFigFile(editor.graph, undefined, getRenderer() ?? undefined, state.currentPageId)
   }
 
+  function buildRecoveryFigFile() {
+    return exportFigFile(editor.graph, undefined, undefined, state.currentPageId)
+  }
+
+  const recovery = createDocumentRecovery({
+    state,
+    buildFigFile: buildRecoveryFigFile,
+    hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding()
+  })
+
   const { saveFigFile, saveFigFileAs, writeFile } = createSaveActions({
     state,
     buildFigFile,
@@ -66,15 +77,18 @@ export function createDocumentSourceActions({
     setLastWriteTime,
     startWatchingFile: () => {
       void startWatchingFile()
-    }
+    },
+    onWriteSuccess: (version) => recovery.markProtectedVersion(version),
+    onDownloadSuccess: (version) => recovery.markProtectedVersion(version)
   })
 
-  const { disposeAutosave } = createAutosave({
+  const autosave = createAutosave({
     state,
     getSavedVersion,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding(),
-    saveCurrentDocument: async () => {
-      await writeFile(await buildFigFile())
+    saveCurrentDocument: async (version) => {
+      const data = await buildFigFile()
+      await writeFile(data, version)
     }
   })
 
@@ -92,6 +106,7 @@ export function createDocumentSourceActions({
     setDownloadName(figDownloadName(fileName, sourceFormat))
     setSourceIdentity({ handle: handle ?? null, path: path ?? null })
     setSavedVersion(state.sceneVersion)
+    void recovery.markProtectedVersion(state.sceneVersion)
     if (isFig && (handle || path)) {
       void startWatchingFile()
     }
@@ -107,6 +122,7 @@ export function createDocumentSourceActions({
     state.documentName = documentName
     state.autosaveEnabled = true
     setSavedVersion(state.sceneVersion)
+    void recovery.markProtectedVersion(state.sceneVersion)
   }
 
   function setPlannedFilePath(path: string) {
@@ -125,7 +141,8 @@ export function createDocumentSourceActions({
 
   function disposeDocumentIO() {
     stopWatchingFile()
-    disposeAutosave()
+    autosave.disposeAutosave()
+    recovery.disposeRecovery()
   }
 
   return {
@@ -136,6 +153,11 @@ export function createDocumentSourceActions({
     disposeDocumentIO,
     saveFigFile,
     saveFigFileAs,
-    getStorageBinding
+    getStorageBinding,
+    getRecoveryId: () => recovery.getRecoveryId(),
+    adoptRecoverySnapshot: (id: string, version: number) =>
+      recovery.adoptRecoverySnapshot(id, version),
+    persistRecoveryNow: () => recovery.persistNow(),
+    discardRecovery: () => recovery.discardRecovery()
   }
 }

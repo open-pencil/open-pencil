@@ -10,7 +10,7 @@ const collab = useCollabPanelContext()
   <div class="mb-3 text-xs font-medium text-surface">{{ collab.dialogs.roomLink }}</div>
   <div class="mb-3 flex items-center gap-1.5">
     <AppInput
-      :model-value="collab.shareUrl"
+      :model-value="collab.shareURL"
       readonly
       data-test-id="collab-room-link"
       class="min-w-0 flex-1"

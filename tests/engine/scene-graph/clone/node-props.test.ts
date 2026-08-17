@@ -55,7 +55,7 @@ describe('cloneNodeProps deep-copies vectorNetwork', () => {
   })
 })
 
-describe('cloneNodeProps deep-copies textPicture and figmaDerivedTextGlyphs', () => {
+describe('cloneNodeProps deep-copies textPicture and derivedTextGlyphs', () => {
   test('cloned textPicture is not the same reference as original', () => {
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
@@ -76,14 +76,14 @@ describe('cloneNodeProps deep-copies textPicture and figmaDerivedTextGlyphs', ()
     }
   })
 
-  test('cloned figmaDerivedTextGlyphs is not the same reference as original', () => {
+  test('cloned derivedTextGlyphs is not the same reference as original', () => {
     const graph = new SceneGraph()
     const node = graph.createNode('TEXT', pageId(graph), {
       name: 'Text',
       text: 'Hi',
       fontSize: 14,
       fontFamily: 'Inter',
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         { commandsBlob: new Uint8Array([10, 20]), x: 0, y: 0, fontSize: 14 },
         { commandsBlob: new Uint8Array([30, 40]), x: 10, y: 0, fontSize: 14 }
       ]
@@ -92,14 +92,14 @@ describe('cloneNodeProps deep-copies textPicture and figmaDerivedTextGlyphs', ()
     const clone = graph.cloneTree(node.id, pageId(graph))
     const clonedNode = graph.getNode(clone.id)
 
-    expect(clonedNode.figmaDerivedTextGlyphs).not.toBe(original.figmaDerivedTextGlyphs)
-    if (original.figmaDerivedTextGlyphs && clonedNode.figmaDerivedTextGlyphs) {
-      expect(clonedNode.figmaDerivedTextGlyphs[0]).not.toBe(original.figmaDerivedTextGlyphs[0])
-      expect(clonedNode.figmaDerivedTextGlyphs[0].commandsBlob).not.toBe(
-        original.figmaDerivedTextGlyphs[0].commandsBlob
+    expect(clonedNode.derivedTextGlyphs).not.toBe(original.derivedTextGlyphs)
+    if (original.derivedTextGlyphs && clonedNode.derivedTextGlyphs) {
+      expect(clonedNode.derivedTextGlyphs[0]).not.toBe(original.derivedTextGlyphs[0])
+      expect(clonedNode.derivedTextGlyphs[0].commandsBlob).not.toBe(
+        original.derivedTextGlyphs[0].commandsBlob
       )
-      clonedNode.figmaDerivedTextGlyphs[0].commandsBlob[0] = 99
-      expect(original.figmaDerivedTextGlyphs[0].commandsBlob[0]).toBe(10)
+      clonedNode.derivedTextGlyphs[0].commandsBlob[0] = 99
+      expect(original.derivedTextGlyphs[0].commandsBlob[0]).toBe(10)
     }
   })
 })
@@ -226,7 +226,7 @@ describe('cloneNodeProps coverage guard', () => {
         }
       },
       textPicture: new Uint8Array([1, 2, 3]),
-      figmaDerivedTextGlyphs: [{ commandsBlob: new Uint8Array([4, 5]), x: 0, y: 0, fontSize: 12 }],
+      derivedTextGlyphs: [{ commandsBlob: new Uint8Array([4, 5]), x: 0, y: 0, fontSize: 12 }],
       gridPosition: { column: 1, row: 1, columnSpan: 1, rowSpan: 1 }
     })
 

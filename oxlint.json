@@ -210,6 +210,7 @@
     "open-pencil/prefer-vueuse-timeouts": "error",
     "open-pencil/vue-component-file-pascal-case": "error",
     "open-pencil/component-namespace-casing": "error",
+    "open-pencil/no-mixed-case-acronym-identifiers": "error",
     "open-pencil/non-component-source-directories-kebab-case": "error",
     "open-pencil/no-component-root-sibling-folder": "error",
     "open-pencil/no-flat-kiwi-modules": "error",

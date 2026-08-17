@@ -258,11 +258,11 @@ async function diffImages(expectedPath: string, actualPath: string): Promise<Dif
     const bg = matteColor
     for (let pixel = 0; pixel < total; pixel++) {
       const offset = pixel * 4
-      const expectedRgb = compositeRgb(expectedPixels, offset, bg)
-      const actualRgb = compositeRgb(actualPixels, offset, bg)
-      const dr = Math.abs(expectedRgb[0] - actualRgb[0])
-      const dg = Math.abs(expectedRgb[1] - actualRgb[1])
-      const db = Math.abs(expectedRgb[2] - actualRgb[2])
+      const expectedRGB = compositeRGB(expectedPixels, offset, bg)
+      const actualRGB = compositeRGB(actualPixels, offset, bg)
+      const dr = Math.abs(expectedRGB[0] - actualRGB[0])
+      const dg = Math.abs(expectedRGB[1] - actualRGB[1])
+      const db = Math.abs(expectedRGB[2] - actualRGB[2])
       const max = Math.max(dr, dg, db)
       sum += dr + dg + db
       if (max > 5) above5++
@@ -314,7 +314,7 @@ function colorBytes(input: string): readonly [number, number, number] {
   return [color.r * 255, color.g * 255, color.b * 255]
 }
 
-function compositeRgb(
+function compositeRGB(
   pixels: Uint8Array,
   offset: number,
   bg: readonly [number, number, number]

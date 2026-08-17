@@ -1,3 +1,5 @@
+import { extractFigThumbnailFromReader } from '@open-pencil/fig'
+
 import { isTauri } from '@/app/tauri/env'
 
 import {
@@ -16,8 +18,18 @@ import type {
   StorageDocumentMetadata,
   StorageProviderRuntime
 } from '../types'
-import { S3HttpError, deleteObject, getObject, headObject, listObjects, putObject } from './client'
-import { CloudCorsError, formatBrowserCorsHelpMessage, isLikelyCorsOrNetworkError } from './cors'
+import {
+  S3HttpError,
+  deleteObject,
+  getObject,
+  getObjectValue,
+  getObjectRange,
+  headObject,
+  headObjectSize,
+  listObjects,
+  putObject
+} from './client'
+import { CloudCORSError, formatBrowserCORSHelpMessage, isLikelyCORSOrNetworkError } from './cors'
 import type { S3CompatibleConfig, S3ConnectionResult } from './types'
 
 const ENDPOINT_FIELD = 'endpoint'
@@ -71,8 +83,8 @@ function parseMetadata(
   }
 }
 
-function connectionErrorMessage(error: unknown, isCors: boolean): string {
-  if (isCors) return formatBrowserCorsHelpMessage()
+function connectionErrorMessage(error: unknown, isCORS: boolean): string {
+  if (isCORS) return formatBrowserCORSHelpMessage()
   return error instanceof Error ? error.message : String(error)
 }
 
@@ -100,13 +112,13 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         await ensureNamespace(config)
         await listObjects(config, STORAGE_DOCUMENTS_PREFIX)
       } catch (error) {
-        const isCors =
-          error instanceof CloudCorsError || (!isTauri() && isLikelyCorsOrNetworkError(error))
+        const isCORS =
+          error instanceof CloudCORSError || (!isTauri() && isLikelyCORSOrNetworkError(error))
         return {
           ok: false,
-          message: connectionErrorMessage(error, isCors),
+          message: connectionErrorMessage(error, isCORS),
           corsApplied: false,
-          isCorsFailure: isCors,
+          isCORSFailure: isCORS,
           corsError: null
         }
       }
@@ -115,7 +127,7 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
         ok: true,
         message: 'Connected. Storage namespace is ready.',
         corsApplied: false,
-        isCorsFailure: false,
+        isCORSFailure: false,
         corsError: null
       }
     },
@@ -244,7 +256,41 @@ export function createS3StorageAdapter(runtime: StorageProviderRuntime): S3Stora
 
     async getThumbnail(id) {
       const config = await resolveConfig(runtime)
-      return getObject(config, documentThumbnailKey(id))
+      const figKey = documentFigKey(id)
+      const size = await headObjectSize(config, figKey)
+      if (size == null) return null
+      return extractFigThumbnailFromReader({
+        size,
+        async read(start: number, endExclusive: number) {
+          return (await getObjectRange(config, figKey, start, endExclusive)) ?? new Uint8Array()
+        }
+      })
+    },
+
+    libraryObjects: {
+      async getObject(key) {
+        return getObject(await resolveConfig(runtime), key)
+      },
+      async getObjectValue(key) {
+        return getObjectValue(await resolveConfig(runtime), key)
+      },
+      async putObject(key, bytes, contentType, options) {
+        try {
+          await putObject(await resolveConfig(runtime), key, bytes, contentType, undefined, options)
+        } catch (error) {
+          if (error instanceof S3HttpError && (error.status === 409 || error.status === 412)) {
+            throw new Error('Library revision conflict: latest revision has changed')
+          }
+          throw error
+        }
+      },
+      async listObjects(prefix) {
+        return (await listObjects(await resolveConfig(runtime), prefix)).map((object) => ({
+          key: object.key,
+          size: object.size,
+          etag: null
+        }))
+      }
     }
   }
 }

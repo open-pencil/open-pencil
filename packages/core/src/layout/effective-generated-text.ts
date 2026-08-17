@@ -18,7 +18,7 @@ function axisSizing(node: SceneNode, axis: LayoutAxis): SceneNode['primaryAxisSi
 function canResizeIntrinsicAxis(node: SceneNode, axis: LayoutAxis): boolean {
   return (
     axisSizing(node, axis) === 'HUG' ||
-    (node.source.format === 'fig' && node.figmaDerivedLayout?.[axis] === undefined)
+    (node.source.format === 'fig' && node.derivedLayout?.[axis] === undefined)
   )
 }
 
@@ -53,9 +53,9 @@ function canShapeGeneratedText(graph: SceneGraph, node: SceneNode): boolean {
     node.type !== 'TEXT' ||
     node.source.format === 'fig' ||
     !node.componentId ||
-    !node.figmaDerivedLayout ||
-    node.figmaDerivedLayout.width !== node.width ||
-    node.figmaDerivedLayout.height !== node.height
+    !node.derivedLayout ||
+    node.derivedLayout.width !== node.width ||
+    node.derivedLayout.height !== node.height
   ) {
     return false
   }
@@ -162,8 +162,8 @@ function stretchChildrenToEffectiveWidth(
       continue
     }
     const updates: Partial<SceneNode> = { width: nextContentWidth }
-    if (child.figmaDerivedLayout) {
-      updates.figmaDerivedLayout = { ...child.figmaDerivedLayout, width: nextContentWidth }
+    if (child.derivedLayout) {
+      updates.derivedLayout = { ...child.derivedLayout, width: nextContentWidth }
     }
     graph.updateNode(child.id, updates)
     currentSizes.set(child.id, { width: nextContentWidth, height: child.height })
@@ -206,7 +206,7 @@ function updateGeneratedTextWidths(
 
     graph.updateNode(node.id, {
       width: measured.width,
-      figmaDerivedLayout: { ...node.figmaDerivedLayout, width: measured.width }
+      derivedLayout: { ...node.derivedLayout, width: measured.width }
     })
     currentSizes.set(node.id, { width: measured.width, height: node.height })
     affected.add(node.id)
@@ -249,9 +249,9 @@ function propagateIntrinsicSizes(
     }
     if (Object.keys(updates).length === 0) continue
 
-    if (node.figmaDerivedLayout) {
-      updates.figmaDerivedLayout = {
-        ...node.figmaDerivedLayout,
+    if (node.derivedLayout) {
+      updates.derivedLayout = {
+        ...node.derivedLayout,
         ...(updates.width === undefined ? {} : { width: nextWidth }),
         ...(updates.height === undefined ? {} : { height: nextHeight })
       }

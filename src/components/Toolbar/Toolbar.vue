@@ -54,7 +54,7 @@ const toolShortcuts: Record<Tool, string> = {
 }
 
 const flyoutMenuCls = useMenuUI({ content: 'min-w-32' })
-const toolbarUi = { flyoutContent: flyoutMenuCls.content }
+const toolbarUI = { flyoutContent: flyoutMenuCls.content }
 const { editActions, arrangeActions } = useToolbarActions({ store, getCommand, menu })
 
 const { mobileCategory, slideDirection, hasPrev, hasNext, goPrev, goNext } = useToolbarState()
@@ -75,7 +75,7 @@ function onActionTap(item: ToolbarActionItem) {
       :tool-icons="toolIcons"
       :tool-labels="toolLabels"
       :tool-shortcuts="toolShortcuts"
-      :ui="toolbarUi"
+      :ui="toolbarUI"
       @set-tool="actions.setTool"
     />
 
@@ -87,7 +87,7 @@ function onActionTap(item: ToolbarActionItem) {
       :tool-icons="toolIcons"
       :tool-labels="toolLabels"
       :tool-shortcuts="toolShortcuts"
-      :ui="toolbarUi"
+      :ui="toolbarUI"
       :mobile-category="mobileCategory"
       :slide-direction="slideDirection"
       :has-prev="hasPrev"

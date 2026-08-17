@@ -24,11 +24,11 @@ import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview } from './preview'
 import { styleDetachmentChanges } from './shared-styles'
 import { markSourceFieldsEdited } from './source-metadata'
-import { GLYPH_AFFECTING_KEYS, TEXT_PICTURE_KEYS } from './text-picture'
+import { GLYPH_AFFECTING_KEYS, invalidateTextCaches, TEXT_PICTURE_KEYS } from './text-picture'
 import * as Variables from './variables'
 import { normalizeVectorNetwork } from './vector-network'
 
-export type { GUID, Color, Vector, Size } from './primitives'
+export type { GUID, Color, Size, Vector } from './primitives'
 export * from './types'
 
 import type { Emitter } from 'nanoevents'
@@ -37,6 +37,7 @@ import { getAbsolutePosition } from './coordinate'
 import type { Color, Rect, Vector } from './primitives'
 import type {
   DocumentColorSpace,
+  EnabledLibraryBinding,
   NodeType,
   SceneGraphEventHandlers,
   SceneGraphEvents,
@@ -74,6 +75,7 @@ export class SceneGraph {
   /** Deflated kiwi schema bytes from the original .fig file, preserved for roundtrip fidelity. */
   figSchemaDeflated: Uint8Array | null = null
   documentColorSpace: DocumentColorSpace = 'display-p3'
+  enabledLibraries = new Map<string, EnabledLibraryBinding>()
   readonly emitter: Emitter<SceneGraphEvents> = createNanoEvents()
   private absPosCache = new Map<string, Vector>()
   private previewMutationDepth = 0
@@ -422,12 +424,7 @@ export class SceneGraph {
         set.add(id)
       }
     }
-    if (node.type === 'TEXT') {
-      const textChanged = Object.keys(changes).some((k) => TEXT_PICTURE_KEYS.has(k))
-      if (node.textPicture && textChanged) node.textPicture = null
-      const glyphChanged = Object.keys(changes).some((k) => GLYPH_AFFECTING_KEYS.has(k))
-      if (node.figmaDerivedTextGlyphs && glyphChanged) node.figmaDerivedTextGlyphs = null
-    }
+    if (node.type === 'TEXT') invalidateTextCaches(node, changes)
     if (this.sourceMetadataPreservationDepth === 0) {
       markSourceFieldsEdited(node, Object.keys(changes))
     }
@@ -479,7 +476,7 @@ export class SceneGraph {
 
     const oldParent = node.parentId ? this.nodes.get(node.parentId) : undefined
     const newParent = this.nodes.get(parentId)
-    if (!newParent) return
+    if (!newParent || this.isDescendant(parentId, nodeId)) return
 
     // Remove from old parent
     if (oldParent) {
@@ -496,6 +493,7 @@ export class SceneGraph {
     }
 
     node.parentId = parentId
+    this.absPosCache.clear()
     idx = Math.min(idx, newParent.childIds.length)
     newParent.childIds.splice(idx, 0, nodeId)
 

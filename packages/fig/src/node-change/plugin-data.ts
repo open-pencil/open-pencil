@@ -8,6 +8,7 @@ import {
   type PluginRelaunchDataEntry,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
 import { resolveVariableConsumptionEntry } from './variable-bindings'
@@ -18,6 +19,9 @@ export const LAYOUT_DIRECTION_PLUGIN_KEY = 'layoutDirection'
 export const NODE_TYPE_PLUGIN_KEY = 'nodeType'
 export const BOUND_VARIABLES_PLUGIN_KEY = 'boundVariables'
 export const EXPORT_SETTINGS_PLUGIN_KEY = 'exportSettings'
+export const TEXT_PATH_BOX_PLUGIN_KEY = 'textPathBox'
+export const LIBRARY_SOURCE_PLUGIN_KEY = 'librarySource'
+export const ENABLED_LIBRARIES_PLUGIN_KEY = 'enabledLibraries'
 
 const NATIVE_EXPORT_FORMATS: Record<string, ExportFormatId> = {
   PNG: 'png',
@@ -49,6 +53,43 @@ export function applyExportSettingsPluginData(
     return
   }
   upsertPluginData(node, EXPORT_SETTINGS_PLUGIN_KEY, JSON.stringify(node.exportSettings))
+}
+
+/**
+ * textPathBox is OpenPencil-only state (the node-local rect the TEXT_PATH
+ * layout path maps onto, after import-time box expansion and resize scaling).
+ * The Kiwi schema has no home for it, and reconstructing it from an expanded,
+ * resized node is ambiguous — persist it as plugin data so save/reopen keeps
+ * reflow anchored correctly.
+ */
+export function applyTextPathBoxPluginData(node: {
+  textPathBox: Rect | null
+  pluginData: PluginDataEntry[]
+}): void {
+  if (!node.textPathBox) return
+  upsertPluginData(node, TEXT_PATH_BOX_PLUGIN_KEY, JSON.stringify(node.textPathBox))
+}
+
+export function extractTextPathBox(nc: NodeChange): Rect | null {
+  const value = getOpenPencilPluginValue(nc, TEXT_PATH_BOX_PLUGIN_KEY)
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value) as Partial<Rect> | null
+    if (!parsed || typeof parsed !== 'object') return null
+    const { x, y, width, height } = parsed
+    if (
+      typeof x !== 'number' ||
+      typeof y !== 'number' ||
+      typeof width !== 'number' ||
+      typeof height !== 'number'
+    ) {
+      return null
+    }
+    if (!Number.isFinite(x + y + width + height) || width <= 0 || height <= 0) return null
+    return { x, y, width, height }
+  } catch {
+    return null
+  }
 }
 
 function hasOpenPencilExportSettingsPluginData(pluginData: PluginDataEntry[]): boolean {
@@ -165,6 +206,49 @@ export function extractPluginData(nc: NodeChange): PluginDataEntry[] {
     key: entry.key,
     value: entry.value
   }))
+}
+
+export function extractLibrarySource(nc: NodeChange): SceneNode['librarySource'] {
+  const value = getOpenPencilPluginValue(nc, LIBRARY_SOURCE_PLUGIN_KEY)
+  if (!value) return null
+  try {
+    const parsed = JSON.parse(value) as unknown
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null
+    const source = parsed as {
+      identity?: { libraryId?: unknown; assetKey?: unknown; revisionId?: unknown }
+      sourceNodeId?: unknown
+      readOnly?: unknown
+    }
+    if (
+      typeof source.identity?.libraryId !== 'string' ||
+      typeof source.identity.assetKey !== 'string' ||
+      typeof source.identity.revisionId !== 'string'
+    ) {
+      return null
+    }
+    return {
+      identity: {
+        libraryId: source.identity.libraryId,
+        assetKey: source.identity.assetKey,
+        revisionId: source.identity.revisionId
+      },
+      sourceNodeId: typeof source.sourceNodeId === 'string' ? source.sourceNodeId : null,
+      readOnly: source.readOnly === true
+    }
+  } catch {
+    return null
+  }
+}
+
+export function applyLibrarySourcePluginData(node: SceneNode): void {
+  if (node.librarySource) {
+    upsertPluginData(node, LIBRARY_SOURCE_PLUGIN_KEY, JSON.stringify(node.librarySource))
+  } else {
+    node.pluginData = node.pluginData.filter(
+      (entry) =>
+        !(entry.pluginId === OPEN_PENCIL_PLUGIN_ID && entry.key === LIBRARY_SOURCE_PLUGIN_KEY)
+    )
+  }
 }
 
 export function getOpenPencilPluginValue(nc: NodeChange, key: string): string | null {

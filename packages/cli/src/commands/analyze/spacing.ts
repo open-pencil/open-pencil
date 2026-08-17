@@ -4,7 +4,7 @@ import type { AnalyzeSpacingResult } from '@open-pencil/core/rpc'
 
 import { appTargetOptions } from '#cli/app-target'
 import { bold, kv, fmtHistogram, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 export default defineCommand({
   meta: { description: 'Analyze spacing values (gap, padding)' },
@@ -19,7 +19,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<AnalyzeSpacingResult>(
+    const data = await loadRPCData<AnalyzeSpacingResult>(
       args.file,
       'analyze_spacing',
       undefined,

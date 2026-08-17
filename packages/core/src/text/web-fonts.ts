@@ -89,6 +89,11 @@ function isArrayBuffer(value: ArrayBuffer | null): value is ArrayBuffer {
   return value !== null
 }
 
+export interface ResolvedWebFont {
+  buffers: ArrayBuffer[]
+  provider: WebFontProviderId
+}
+
 export class WebFontResolver {
   private enabled = new Set<WebFontProviderId>(
     WEB_FONT_PROVIDER_IDS.filter((provider) => DEFAULT_WEB_FONT_PROVIDER_SETTINGS[provider])
@@ -135,18 +140,22 @@ export class WebFontResolver {
     return promise
   }
 
-  async fetchFont(families: string[], style: string, characters = ''): Promise<ArrayBuffer[]> {
+  async fetchFont(
+    families: string[],
+    style: string,
+    characters = ''
+  ): Promise<ResolvedWebFont | null> {
     const providers = this.enabledProviders()
-    if (providers.length === 0 || (IS_BROWSER && !this.remoteFetch)) return []
+    if (providers.length === 0 || (IS_BROWSER && !this.remoteFetch)) return null
 
     for (const family of families) {
       for (const provider of providers) {
         const buffers = await this.fetchFromProvider(family, style, provider, characters)
-        if (buffers.length > 0) return buffers
+        if (buffers.length > 0) return { buffers, provider }
       }
     }
 
-    return []
+    return null
   }
 
   private async withFetchProxy<T>(operation: () => Promise<T>): Promise<T> {

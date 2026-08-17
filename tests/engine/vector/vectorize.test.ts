@@ -15,7 +15,7 @@ let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 const VECTORIZE_FIXTURES = testPath('fixtures/vectorize')
 
-async function loadFixturePng(name: string): Promise<Uint8Array> {
+async function loadFixturePNG(name: string): Promise<Uint8Array> {
   const buf = await Bun.file(`${VECTORIZE_FIXTURES}/${name}`).arrayBuffer()
   return new Uint8Array(buf)
 }
@@ -38,7 +38,7 @@ function countTransparentPixels(
   return transparent
 }
 
-function createPng(width: number, height: number, alpha = 255): Uint8Array {
+function createPNG(width: number, height: number, alpha = 255): Uint8Array {
   const pixels = ck.Malloc(Uint8Array, width * height * 4)
   for (let i = 0; i < width * height; i++) {
     const offset = i * 4
@@ -74,7 +74,7 @@ beforeAll(async () => {
 
 describe('preprocessForVectorize', () => {
   test('leaves images at or above 256px short side unchanged', () => {
-    const bytes = createPng(400, 300)
+    const bytes = createPNG(400, 300)
     const result = preprocessForVectorize(bytes, () => ck)
     expect(result).not.toBeNull()
     expect(result?.width).toBe(400)
@@ -84,14 +84,14 @@ describe('preprocessForVectorize', () => {
   })
 
   test('upscales images below 256px short side', () => {
-    const bytes = createPng(100, 200)
+    const bytes = createPNG(100, 200)
     const result = preprocessForVectorize(bytes, () => ck)
     expect(result).not.toBeNull()
     expect(Math.min(result?.width ?? 0, result?.height ?? 0)).toBeGreaterThanOrEqual(256)
   })
 
   test('preserves alpha channel', () => {
-    const bytes = createPng(128, 128, 0)
+    const bytes = createPNG(128, 128, 0)
     const result = preprocessForVectorize(bytes, () => ck)
     const processed = expectDefined(result, 'preprocess result')
     const decoded = expectDefined(ck.MakeImageFromEncoded(processed.pngBytes), 'decoded png')
@@ -102,7 +102,7 @@ describe('preprocessForVectorize', () => {
 
 describe('preprocessForVectorize fixtures', () => {
   test('python_logo.png upscales short side below 256px', async () => {
-    const bytes = await loadFixturePng('python_logo.png')
+    const bytes = await loadFixturePNG('python_logo.png')
     const source = expectDefined(ck.MakeImageFromEncoded(bytes), 'source png')
     expect(source.width()).toBe(580)
     expect(source.height()).toBe(164)
@@ -118,7 +118,7 @@ describe('preprocessForVectorize fixtures', () => {
   })
 
   test('euro_shield.png keeps dimensions and alpha', async () => {
-    const bytes = await loadFixturePng('euro_shield.png')
+    const bytes = await loadFixturePNG('euro_shield.png')
     const result = preprocessForVectorize(bytes, () => ck)
     const processed = expectDefined(result, 'preprocess result')
     expect(processed.width).toBe(577)
@@ -130,7 +130,7 @@ describe('preprocessForVectorize fixtures', () => {
   })
 
   test('pilot_avatar.png keeps dimensions without upscale', async () => {
-    const bytes = await loadFixturePng('pilot_avatar.png')
+    const bytes = await loadFixturePNG('pilot_avatar.png')
     const result = preprocessForVectorize(bytes, () => ck)
     const processed = expectDefined(result, 'preprocess result')
     expect(processed.width).toBe(412)
@@ -143,7 +143,7 @@ describe('preprocessForVectorize fixtures', () => {
   })
 
   test('sander_test_01.png preprocesses opaque illustration', async () => {
-    const bytes = await loadFixturePng('sander_test_01.png')
+    const bytes = await loadFixturePNG('sander_test_01.png')
     const source = expectDefined(ck.MakeImageFromEncoded(bytes), 'source png')
     expect(source.width()).toBe(417)
     expect(source.height()).toBe(391)

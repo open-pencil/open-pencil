@@ -34,7 +34,7 @@ describe('imported auto-layout bounds', () => {
           align: 'OUTSIDE'
         }
       ],
-      figmaDerivedLayout: { x: 0, y: 0, width: 280, height: 44 }
+      derivedLayout: { x: 0, y: 0, width: 280, height: 44 }
     })
     const wrapper = graph.createNode('FRAME', frame.id, {
       x: 2,
@@ -73,7 +73,7 @@ describe('imported auto-layout bounds', () => {
           align: 'OUTSIDE'
         }
       ],
-      figmaDerivedLayout: { x: 0, y: 0, width: 276, height: 40 }
+      derivedLayout: { x: 0, y: 0, width: 276, height: 40 }
     })
     graph.createNode('TEXT', field.id, {
       x: 12,
@@ -132,7 +132,7 @@ describe('imported auto-layout bounds', () => {
           align: 'CENTER'
         }
       ],
-      figmaDerivedLayout: { x: 0, y: 0, width: 200, height: 1 }
+      derivedLayout: { x: 0, y: 0, width: 200, height: 1 }
     })
     const following = graph.createNode('RECTANGLE', column.id, { width: 200, height: 20 })
 
@@ -157,14 +157,14 @@ describe('imported auto-layout bounds', () => {
       height: 14,
       layoutMode: 'HORIZONTAL',
       layoutGrow: 1,
-      figmaDerivedLayout: { width: 136, height: 14 }
+      derivedLayout: { width: 136, height: 14 }
     })
     const second = graph.createNode('INSTANCE', row.id, {
       width: 136,
       height: 40,
       layoutMode: 'HORIZONTAL',
       layoutGrow: 1,
-      figmaDerivedLayout: { width: 136, height: 40 }
+      derivedLayout: { width: 136, height: 40 }
     })
     graph.createNode('RECTANGLE', first.id, { width: 200, height: 14 })
 
@@ -191,14 +191,14 @@ describe('imported auto-layout bounds', () => {
       height: 40,
       layoutMode: 'HORIZONTAL',
       layoutGrow: 1,
-      figmaDerivedLayout: { width: 136, height: 40 }
+      derivedLayout: { width: 136, height: 40 }
     })
     const second = graph.createNode('INSTANCE', row.id, {
       width: 152,
       height: 40,
       layoutMode: 'HORIZONTAL',
       layoutGrow: 1,
-      figmaDerivedLayout: { width: 152, height: 40 }
+      derivedLayout: { width: 152, height: 40 }
     })
 
     computeAllLayouts(graph)
@@ -223,14 +223,14 @@ describe('imported auto-layout bounds', () => {
       height: 14,
       layoutMode: 'HORIZONTAL',
       layoutGrow: 1,
-      figmaDerivedLayout: { width: 136, height: 14 }
+      derivedLayout: { width: 136, height: 14 }
     })
     const second = graph.createNode('INSTANCE', row.id, {
       width: 136,
       height: 40,
       layoutMode: 'HORIZONTAL',
       layoutGrow: 1,
-      figmaDerivedLayout: { width: 136, height: 40 }
+      derivedLayout: { width: 136, height: 40 }
     })
 
     computeAllLayouts(graph)
@@ -248,7 +248,7 @@ describe('imported auto-layout bounds', () => {
       layoutMode: 'VERTICAL',
       primaryAxisSizing: 'FIXED',
       counterAxisSizing: 'FIXED',
-      figmaDerivedLayout: { width: 302, height: 60 }
+      derivedLayout: { width: 302, height: 60 }
     })
     const label = graph.createNode('INSTANCE', column.id, {
       width: 280,
@@ -311,7 +311,7 @@ describe('imported auto-layout bounds', () => {
       height: 14,
       text: 'Label',
       textAutoResize: 'WIDTH_AND_HEIGHT',
-      figmaDerivedLayout: { x: 0, y: 0, width: 37, height: 14 }
+      derivedLayout: { x: 0, y: 0, width: 37, height: 14 }
     })
 
     computeAllLayouts(graph)
@@ -341,7 +341,7 @@ describe('imported auto-layout bounds', () => {
       text: 'Models',
       textAutoResize: 'HEIGHT',
       layoutGrow: 1,
-      figmaDerivedLayout: { width: 160, height: 20 }
+      derivedLayout: { width: 160, height: 20 }
     })
     const chevron = graph.createNode('INSTANCE', row.id, { width: 16, height: 16 })
 
@@ -367,7 +367,7 @@ describe('imported auto-layout bounds', () => {
       width: 424,
       height: 40,
       layoutAlignSelf: 'STRETCH',
-      figmaDerivedLayout: { width: 424, height: 40 }
+      derivedLayout: { width: 424, height: 40 }
     })
     graph.updateNode(text.id, {
       source: { ...text.source, format: 'fig', id: '1:3' }
@@ -399,7 +399,7 @@ describe('imported auto-layout bounds', () => {
       text: 'Bar Chart',
       textAutoResize: 'HEIGHT',
       layoutAlignSelf: 'STRETCH',
-      figmaDerivedLayout: { width: 333, height: 30 }
+      derivedLayout: { width: 333, height: 30 }
     })
 
     computeAllLayouts(graph)
@@ -489,7 +489,7 @@ describe('imported auto-layout bounds', () => {
       y: 0,
       width: 40,
       height: 20,
-      figmaDerivedLayout: { x: 0, y: 0, width: 40, height: 20 }
+      derivedLayout: { x: 0, y: 0, width: 40, height: 20 }
     })
 
     computeAllLayouts(graph)

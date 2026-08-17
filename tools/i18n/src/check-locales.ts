@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 import {
   LOCALE_DIR_NAMES,
   TRANSLATED_LOCALES,
@@ -20,8 +20,8 @@ function localeFileName(namespace: string) {
   return LOCALE_FILE_NAMES[namespace] ?? namespace
 }
 
-function readJsonObject(path: string): JsonObject {
-  return JSON.parse(readFileSync(path, 'utf-8')) as JsonObject
+function readJSONObject(path: string): JSONObject {
+  return JSON.parse(readFileSync(path, 'utf-8')) as JSONObject
 }
 
 function report(message: string) {
@@ -105,7 +105,7 @@ for (const [locale, dir] of expectedLocaleDirs) {
     const expected = expectedKeys.get(namespace)
     if (!expected) continue
 
-    const data = readJsonObject(path)
+    const data = readJSONObject(path)
     for (const key of expected) {
       if (!(key in data)) missing.push(`${namespace}.${key}`)
     }
@@ -114,10 +114,10 @@ for (const [locale, dir] of expectedLocaleDirs) {
     }
   }
 
-  const extraNonJsonFiles = files.filter(
+  const extraNonJSONFiles = files.filter(
     (file) => file !== REQUIRED_INDEX_FILE && !file.endsWith('.json')
   )
-  for (const file of extraNonJsonFiles) extra.push(file)
+  for (const file of extraNonJSONFiles) extra.push(file)
 
   if (missing.length > 0 || extra.length > 0) {
     hasErrors = true

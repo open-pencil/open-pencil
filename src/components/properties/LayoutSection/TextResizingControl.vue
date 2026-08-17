@@ -48,10 +48,12 @@ function setMode(value: TextResizeMode) {
       @change="setMode($event as TextResizeMode)"
     >
       <template #option="{ option }">
-        <Tip :label="option.label" class="flex items-center justify-center">
-          <icon-lucide-move-horizontal v-if="option.value === 'AUTO_WIDTH'" class="size-3.5" />
-          <icon-lucide-wrap-text v-else-if="option.value === 'AUTO_HEIGHT'" class="size-3.5" />
-          <icon-lucide-lock v-else class="size-3.5" />
+        <Tip :label="option.label">
+          <span class="flex items-center justify-center">
+            <icon-lucide-move-horizontal v-if="option.value === 'AUTO_WIDTH'" class="size-3.5" />
+            <icon-lucide-wrap-text v-else-if="option.value === 'AUTO_HEIGHT'" class="size-3.5" />
+            <icon-lucide-lock v-else class="size-3.5" />
+          </span>
         </Tip>
       </template>
     </SegmentedControl>

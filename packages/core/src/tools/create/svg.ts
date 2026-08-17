@@ -1,7 +1,7 @@
 import { createSVGNodes } from '#core/io/formats/svg'
 import { defineTool } from '#core/tools/schema'
 
-export const importSvg = defineTool({
+export const importSVG = defineTool({
   name: 'import_svg',
   mutates: true,
   description:

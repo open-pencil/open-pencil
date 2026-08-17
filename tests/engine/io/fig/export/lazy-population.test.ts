@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
-import { setLazyFigImportContext } from '@open-pencil/core/kiwi/fig/lazy-import'
+import {
+  getLazyFigImportContext,
+  setLazyFigImportContext
+} from '@open-pencil/core/kiwi/fig/lazy-import'
+import { cloneSceneGraphForFigExport } from '@open-pencil/core/kiwi/fig/parse/transfer'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 function lazyExportGraph() {
@@ -39,6 +43,27 @@ function createEditedInstance(
 }
 
 describe('FIG population export lifecycle', () => {
+  test('isolates mutable graph state while sharing immutable binary resources', () => {
+    const { graph } = lazyExportGraph()
+    const image = new Uint8Array([1, 2, 3])
+    graph.images.set('image', image)
+    const context = getLazyFigImportContext(graph)
+    expect(context).toBeDefined()
+
+    const clone = cloneSceneGraphForFigExport(graph)
+    const cloneContext = getLazyFigImportContext(clone)
+    const firstPage = graph.getPages()[0]
+    clone.getNode(firstPage.id)?.childIds.push('export-only')
+    cloneContext?.populatedRootIds.add('export-only')
+
+    expect(graph.getNode(firstPage.id)?.childIds).not.toContain('export-only')
+    expect(context?.populatedRootIds).not.toContain('export-only')
+    expect(clone.images.get('image')).toBe(image)
+    expect(cloneContext?.changeMap).toBe(context?.changeMap)
+    expect(cloneContext?.guidToNodeId).toBe(context?.guidToNodeId)
+    expect(cloneContext?.blobs).toBe(context?.blobs)
+  })
+
   test('exports all remaining lazy pages after a partial visit', async () => {
     await initCodec()
     const { graph, instance } = lazyExportGraph()

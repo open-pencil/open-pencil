@@ -1,4 +1,4 @@
-import { GLYPH_AFFECTING_KEYS, TEXT_PICTURE_KEYS } from './text-picture'
+import { invalidateTextCaches } from './text-picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
 
@@ -14,6 +14,8 @@ const LAYOUT_AFFECTING_KEYS = new Set<string>([
   'width',
   'height',
   'rotation',
+  'flipX',
+  'flipY',
   'parentId',
   'childIds',
   'layoutMode',
@@ -58,12 +60,7 @@ export function updateNodePreview(
   }
   const affectsLayout = Object.keys(changes).some((key) => LAYOUT_AFFECTING_KEYS.has(key))
   if (affectsLayout) graph.clearAbsPosCache()
-  if (node.type === 'TEXT') {
-    const textChanged = Object.keys(changes).some((key) => TEXT_PICTURE_KEYS.has(key))
-    if (node.textPicture && textChanged) node.textPicture = null
-    const glyphChanged = Object.keys(changes).some((key) => GLYPH_AFFECTING_KEYS.has(key))
-    if (node.figmaDerivedTextGlyphs && glyphChanged) node.figmaDerivedTextGlyphs = null
-  }
+  if (node.type === 'TEXT') invalidateTextCaches(node, changes)
   const normalizedChanges = changes.vectorNetwork
     ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
     : changes

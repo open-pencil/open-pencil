@@ -4,8 +4,12 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-test('configured storage lists and opens a remote document', async ({ page }) => {
+test('configured storage lists previews through ranges before opening the document', async ({
+  page
+}) => {
   const fixture = readFileSync('tests/fixtures/gold-preview.fig')
+  let fullDocumentGets = 0
+  let rangeGets = 0
   await page.route('https://s3.example.com/**', async (route) => {
     const url = new URL(route.request().url())
     if (url.searchParams.get('list-type') === '2') {
@@ -29,7 +33,47 @@ test('configured storage lists and opens a remote document', async ({ page }) =>
       })
       return
     }
+    if (url.pathname.endsWith('/remote-1.fig') && route.request().headers().range) {
+      const range = route.request().headers().range
+      const explicit = range?.match(/^bytes=(\d+)-(\d+)$/)
+      const suffix = range?.match(/^bytes=-(\d+)$/)
+      let start: number
+      let end: number
+      if (explicit) {
+        start = Number(explicit[1])
+        end = Math.min(Number(explicit[2]), fixture.byteLength - 1)
+      } else if (suffix) {
+        const length = Math.min(Number(suffix[1]), fixture.byteLength)
+        start = fixture.byteLength - length
+        end = fixture.byteLength - 1
+      } else {
+        await route.fulfill({ status: 416 })
+        return
+      }
+      if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start) {
+        await route.fulfill({ status: 416 })
+        return
+      }
+      await route.fulfill({
+        status: 206,
+        headers: {
+          'Content-Range': `bytes ${start}-${end}/${fixture.byteLength}`
+        },
+        contentType: 'application/octet-stream',
+        body: fixture.subarray(start, end + 1)
+      })
+      rangeGets++
+      return
+    }
+    if (url.pathname.endsWith('/remote-1.fig') && route.request().method() === 'HEAD') {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Length': String(fixture.byteLength) }
+      })
+      return
+    }
     if (url.pathname.endsWith('/remote-1.fig')) {
+      fullDocumentGets++
       await route.fulfill({ contentType: 'application/octet-stream', body: fixture })
       return
     }
@@ -54,11 +98,17 @@ test('configured storage lists and opens a remote document', async ({ page }) =>
   await page.getByTestId('settings-storage-open-workspace').click()
   await expect(page.getByTestId('storage-workspace')).toBeVisible()
   await expect(page.getByText('Remote design')).toBeVisible()
+  const preview = page.locator('[data-document-id="remote-1"] img')
+  await expect(preview).toBeVisible()
+  await expect(preview).toHaveAttribute('src', /^blob:/)
+  expect(rangeGets).toBe(3)
+  expect(fullDocumentGets).toBe(0)
 
   await page.locator('[data-document-id="remote-1"]').click()
   await expect(page).toHaveURL(/\/$/)
   await canvas.waitForInit()
   await expect(page.getByText('Remote design').first()).toBeVisible()
+  expect(fullDocumentGets).toBe(1)
 })
 
 test('storage workspace directs unconfigured users to Settings', async ({ page }) => {

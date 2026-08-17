@@ -10,6 +10,6 @@ export type S3ConnectionResult = {
   ok: boolean
   message: string
   corsApplied: boolean
-  isCorsFailure: boolean
+  isCORSFailure: boolean
   corsError: string | null
 }

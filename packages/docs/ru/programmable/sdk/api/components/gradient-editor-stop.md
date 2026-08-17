@@ -7,7 +7,7 @@ description: Headless-примитив слота для одной строки
 
 `GradientEditorStop` — headless-примитив для рендеринга и редактирования одной точки градиента.
 
-## Props
+## Свойства
 
 <SdkPropsTable
   :rows="[
@@ -17,7 +17,7 @@ description: Headless-примитив слота для одной строки
   ]"
 />
 
-## Events
+## События
 
 <SdkEventsTable
   :rows="[
@@ -29,7 +29,7 @@ description: Headless-примитив слота для одной строки
   ]"
 />
 
-## Slots
+## Слоты
 
 <SdkSlotsTable
   :rows="[

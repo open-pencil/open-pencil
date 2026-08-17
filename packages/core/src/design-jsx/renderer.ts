@@ -10,7 +10,7 @@ import { parseColor } from '#core/color'
 import type { RenderOptions } from '#core/design-jsx/types'
 import { fetchIcons } from '#core/icons'
 import { createIconFromPaths } from '#core/icons/render'
-import { extractPaths, scalePathInfos } from '#core/icons/svg'
+import { extractPaths, extractPathsFromElements, scalePathInfos } from '#core/icons/svg'
 import type { IconData } from '#core/icons/types'
 import { computeAllLayouts } from '#core/layout'
 import { randomHex } from '#core/random'
@@ -245,7 +245,7 @@ async function renderIconNode(
  * pipeline as iconify icons: the body may be passed as string children or a
  * `body`/`children` string prop, and is parsed with extractPaths + parseSVGPath.
  */
-async function renderSvgNode(
+async function renderSVGNode(
   graph: SceneGraph,
   tree: TreeNode,
   parentId: string
@@ -264,35 +264,15 @@ async function renderSvgNode(
     (typeof props.body === 'string' && props.body) ||
     tree.children.filter((c): c is string => typeof c === 'string').join('')
 
-  // Children may arrive as parsed <path>/<circle>/etc. elements (mini-react
-  // lowercases tags) rather than raw markup. Rebuild path info from either
-  // source: raw SVG markup, or element children carrying a `d` attribute.
+  // Children may arrive as parsed SVG elements (mini-react lowercases tags)
+  // rather than raw markup. Route both representations through the shared SVG
+  // shape conversion so path and primitive children have identical behavior.
   let pathInfos = body.trim() ? extractPaths(body) : []
   if (pathInfos.length === 0) {
-    pathInfos = tree.children
-      .filter(isTreeNode)
-      .map((child) => {
-        const d = (child.props.d ?? child.props.body) as string | undefined
-        if (!d) return null
-        return {
-          d,
-          fill: (child.props.fill as string | undefined) ?? 'currentColor',
-          stroke: (child.props.stroke as string | undefined) ?? null,
-          strokeWidth: Number(child.props['stroke-width'] ?? child.props.strokeWidth ?? 1),
-          strokeCap: (child.props['stroke-linecap'] as string | undefined) ?? 'butt',
-          strokeJoin: (child.props['stroke-linejoin'] as string | undefined) ?? 'miter',
-          fillRule:
-            (child.props['fill-rule'] as string | undefined) === 'evenodd'
-              ? ('EVENODD' as const)
-              : ('NONZERO' as const)
-        }
-      })
-      .filter((p): p is NonNullable<typeof p> => p !== null)
+    pathInfos = extractPathsFromElements(tree.children.filter(isTreeNode), props)
   }
   if (pathInfos.length === 0) {
-    throw new Error(
-      '<svg> requires SVG markup as children, a body prop, or <path d="..."> children'
-    )
+    throw new Error('<svg> requires SVG markup, a body prop, or supported SVG shape children')
   }
 
   const vb = parseViewBox(props.viewBox as string | undefined)
@@ -490,7 +470,7 @@ function applyInstanceOverrides(
 
 async function renderNode(graph: SceneGraph, tree: TreeNode, parentId: string): Promise<SceneNode> {
   if (tree.type === 'icon') return renderIconNode(graph, tree, parentId)
-  if (tree.type === 'svg') return renderSvgNode(graph, tree, parentId)
+  if (tree.type === 'svg') return renderSVGNode(graph, tree, parentId)
   if (tree.type === 'instance') return renderInstanceNode(graph, tree, parentId)
 
   const nodeType = TYPE_MAP[tree.type]

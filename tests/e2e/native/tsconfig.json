@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node", "vite/client", "@wdio/globals/types", "@wdio/mocha-framework"],
+    "baseUrl": "../../..",
+    "paths": {
+      "#tests/*": ["tests/*"]
+    }
+  },
+  "include": [
+    "./**/*.ts",
+    "../../helpers/tauri/native-global.d.ts",
+    "../../helpers/tauri/editor-snapshot.ts",
+    "../../helpers/tauri/event-recorder.ts"
+  ]
+}

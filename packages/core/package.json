@@ -85,6 +85,12 @@
       "import": "./dist/rpc/index.js",
       "default": "./dist/rpc/index.js"
     },
+    "./library": {
+      "bun": "./src/library/index.ts",
+      "types": "./dist/library/index.d.ts",
+      "import": "./dist/library/index.js",
+      "default": "./dist/library/index.js"
+    },
     "./lint": {
       "types": "./dist/lint/index.d.ts",
       "import": "./dist/lint/index.js",
@@ -191,6 +197,7 @@
     "opentype.js": "^2.0.0",
     "pptxgenjs": "^4.0.1",
     "sucrase": "^3.35.1",
+    "svg-path-properties": "^2.0.2",
     "svg2pdf.js": "^2.7.0",
     "svgpath": "^2.6.0",
     "twirlwind": "^0.3.0",

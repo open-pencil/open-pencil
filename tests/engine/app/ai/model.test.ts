@@ -114,9 +114,16 @@ describe('normalizeOpenRouterModel', () => {
       normalizeOpenRouterModel({
         id: 'meta-llama/llama-3.3-70b-instruct',
         name: 'Llama 3.3 70B Instruct',
-        supported_parameters: ['tools']
+        supported_parameters: ['tools'],
+        architecture: { input_modalities: ['text', 'image'] },
+        top_provider: { max_completion_tokens: 32_768 }
       })
-    ).toEqual({ id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B Instruct' })
+    ).toEqual({
+      id: 'meta-llama/llama-3.3-70b-instruct',
+      name: 'Llama 3.3 70B Instruct',
+      capabilities: ['tools', 'vision'],
+      recommendedMaxOutputTokens: 32_768
+    })
   })
 
   test('skips OpenRouter models without tool support', () => {

@@ -27,7 +27,8 @@ interface NormalizedVectorGeometry {
   bounds: Rect
 }
 
-type VectorChildPaints = Pick<SceneNode, 'fillGeometry' | 'fills' | 'strokes'>
+type VectorChildPaints = Pick<SceneNode, 'fillGeometry' | 'fills' | 'strokes'> &
+  Partial<Pick<SceneNode, 'isMask' | 'maskType'>>
 
 function shouldTightenToContent(
   node: Pick<SceneNode, 'width' | 'height' | 'rotation'>,
@@ -206,6 +207,64 @@ export function createVectorFrameChildren(
   }
 }
 
+function createClipFrame(
+  graph: SceneGraph,
+  frameId: string,
+  placement: VectorFramePlacement,
+  index: number
+): SceneNode {
+  return graph.createNode('FRAME', frameId, {
+    name: `clip ${index + 1}`,
+    x: 0,
+    y: 0,
+    width: placement.width,
+    height: placement.height,
+    fills: []
+  })
+}
+
+function createClipMaskChild(
+  graph: SceneGraph,
+  frameId: string,
+  clipNetwork: VectorNetwork,
+  placement: VectorFramePlacement,
+  index: number
+): void {
+  const network = offsetVectorNetwork(clipNetwork, placement.offsetX, placement.offsetY)
+  const normalized = normalizeVectorToNodeBounds(network)
+  if (!normalized) return
+  createNormalizedVectorChild(graph, frameId, normalized, index, {
+    fillGeometry: [],
+    fills: [
+      {
+        type: 'SOLID',
+        color: { r: 1, g: 1, b: 1, a: 1 },
+        opacity: 1,
+        visible: true
+      }
+    ],
+    strokes: [],
+    isMask: true,
+    maskType: 'VECTOR'
+  })
+}
+
+function createClipFrames(
+  graph: SceneGraph,
+  frameId: string,
+  clipNetworks: VectorNetwork[],
+  placement: VectorFramePlacement,
+  index: number
+): string {
+  let targetFrameId = frameId
+  for (const clipNetwork of clipNetworks) {
+    const clipFrame = createClipFrame(graph, targetFrameId, placement, index)
+    createClipMaskChild(graph, clipFrame.id, clipNetwork, placement, index)
+    targetFrameId = clipFrame.id
+  }
+  return targetFrameId
+}
+
 function isFlattenableVectorPath(path: VectorizedPath): boolean {
   return path.fills.length > 0 && path.strokes.length === 0 && path.vectorNetwork.regions.length > 0
 }
@@ -218,28 +277,42 @@ export function createFlattenedVectorFrameChildren(
   placement: VectorFramePlacement
 ): void {
   let run: { path: VectorizedPath; index: number }[] = []
+  let runClipNetworks: VectorNetwork[] | undefined
   const flush = () => {
+    if (run.length === 0) return
+    const targetFrameId = runClipNetworks
+      ? createClipFrames(graph, frameId, runClipNetworks, placement, run[0].index)
+      : frameId
     if (run.length > 1) {
       createFlattenedVectorChild(
         graph,
-        frameId,
+        targetFrameId,
         run.map(({ path }) => path),
         placement,
         run[0].index
       )
     } else if (run[0]) {
-      createVectorChild(graph, frameId, run[0].path, placement, run[0].index)
+      createVectorChild(graph, targetFrameId, run[0].path, placement, run[0].index)
     }
     run = []
+    runClipNetworks = undefined
   }
 
   for (const [index, path] of vectorized.paths.entries()) {
+    const clipNetworks = path.clipNetworks
     if (isFlattenableVectorPath(path)) {
+      if (run.length > 0 && runClipNetworks !== clipNetworks) flush()
+      runClipNetworks = clipNetworks
       run.push({ path, index })
       continue
     }
     flush()
-    createVectorChild(graph, frameId, path, placement, index)
+    if (clipNetworks) {
+      const targetFrameId = createClipFrames(graph, frameId, clipNetworks, placement, index)
+      createVectorChild(graph, targetFrameId, path, placement, index)
+    } else {
+      createVectorChild(graph, frameId, path, placement, index)
+    }
   }
   flush()
 }

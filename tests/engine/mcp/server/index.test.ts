@@ -236,7 +236,7 @@ describe('MCP server', () => {
 // ---------------------------------------------------------------------------
 
 describe('MCP server with mcpRoot', () => {
-  async function withMcpRootServer(
+  async function withMCPRootServer(
     mcpRoot: string | null,
     fn: (client: Client, browser: MockBrowser, graph: SceneGraph) => Promise<void>
   ) {
@@ -278,7 +278,7 @@ describe('MCP server with mcpRoot', () => {
   }
 
   test('registers open_file and new_document tools when mcpRoot is set', async () => {
-    await withMcpRootServer(TEST_MCP_ROOT, async (client) => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client) => {
       const { tools } = await client.listTools()
       const names = tools.map((t) => t.name)
       expect(names).toContain('open_file')
@@ -287,7 +287,7 @@ describe('MCP server with mcpRoot', () => {
   })
 
   test('save_file accepts an explicit path inside mcpRoot', async () => {
-    await withMcpRootServer(TEST_MCP_ROOT, async (client, browser) => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       await mkdir(join(TEST_MCP_ROOT, 'unicode'), { recursive: true })
       const savePath = join(TEST_MCP_ROOT, 'unicode', 'пример.fig')
       const result = await client.callTool({
@@ -307,7 +307,7 @@ describe('MCP server with mcpRoot', () => {
   })
 
   test('save_file rejects paths outside mcpRoot', async () => {
-    await withMcpRootServer(TEST_MCP_ROOT, async (client, browser) => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
       const result = await client.callTool({
         name: 'save_file',
         arguments: { path: join(join(TEST_MCP_ROOT, '..'), 'outside.fig') }
@@ -319,7 +319,7 @@ describe('MCP server with mcpRoot', () => {
   })
 
   test('does not register open_file when mcpRoot is null', async () => {
-    await withMcpRootServer(null, async (client) => {
+    await withMCPRootServer(null, async (client) => {
       const { tools } = await client.listTools()
       const names = tools.map((t) => t.name)
       expect(names).not.toContain('open_file')

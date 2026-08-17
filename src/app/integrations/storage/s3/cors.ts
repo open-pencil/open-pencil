@@ -7,7 +7,7 @@ export const CLOUD_CORS_STATIC_ORIGINS = [
   WEB_APP_ORIGIN,
   // Wildcards: any openpencil.dev subdomain (staging, demo, …), Cloudflare
   // Pages PR previews, and any local dev port. S3/B2 allow one '*' per origin.
-  // collectCloudCorsOrigins() also appends the current origin, so strict
+  // collectCloudCORSOrigins() also appends the current origin, so strict
   // providers still get an exact match for wherever the app is running when
   // CORS is applied.
   'https://*.openpencil.dev',
@@ -16,7 +16,7 @@ export const CLOUD_CORS_STATIC_ORIGINS = [
   'http://127.0.0.1:*'
 ] as const
 
-export function collectCloudCorsOrigins(extra?: string | null): string[] {
+export function collectCloudCORSOrigins(extra?: string | null): string[] {
   const set = new Set<string>(CLOUD_CORS_STATIC_ORIGINS)
   if (extra?.trim()) set.add(extra.trim().replace(/\/+$/, ''))
   if (IS_BROWSER && window.location.origin) {
@@ -25,7 +25,7 @@ export function collectCloudCorsOrigins(extra?: string | null): string[] {
   return [...set].filter(Boolean).sort()
 }
 
-function escapeXml(value: string): string {
+function escapeXML(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -35,9 +35,9 @@ function escapeXml(value: string): string {
 }
 
 /** S3 PutBucketCors XML body (AWS + B2 S3-compatible). */
-export function buildCorsConfigurationXml(origins: string[]): string {
+export function buildCORSConfigurationXML(origins: string[]): string {
   const originTags = origins
-    .map((origin) => `    <AllowedOrigin>${escapeXml(origin)}</AllowedOrigin>`)
+    .map((origin) => `    <AllowedOrigin>${escapeXML(origin)}</AllowedOrigin>`)
     .join('\n')
   return `<?xml version="1.0" encoding="UTF-8"?>
 <CORSConfiguration>
@@ -60,7 +60,7 @@ ${originTags}
 }
 
 /** AWS console / CLI JSON CORS document (copy-paste friendly). */
-export function buildCorsConfigurationJson(origins: string[]): string {
+export function buildCORSConfigurationJSON(origins: string[]): string {
   return JSON.stringify(
     [
       {
@@ -76,18 +76,18 @@ export function buildCorsConfigurationJson(origins: string[]): string {
   )
 }
 
-export class CloudCorsError extends Error {
+export class CloudCORSError extends Error {
   readonly kind = 'cors' as const
 
   constructor(message: string) {
     super(message)
-    this.name = 'CloudCorsError'
+    this.name = 'CloudCORSError'
   }
 }
 
 /** Best-effort detection of browser CORS / network blocks (preflight failures). */
-export function isLikelyCorsOrNetworkError(error: unknown): boolean {
-  if (error instanceof CloudCorsError) return true
+export function isLikelyCORSOrNetworkError(error: unknown): boolean {
+  if (error instanceof CloudCORSError) return true
   if (error instanceof TypeError) return true
   if (!(error instanceof Error)) return false
   const msg = error.message.toLowerCase()
@@ -102,9 +102,11 @@ export function isLikelyCorsOrNetworkError(error: unknown): boolean {
   )
 }
 
-export function formatBrowserCorsHelpMessage(): string {
+export function formatBrowserCORSHelpMessage(): string {
+  const origin = IS_BROWSER ? window.location.origin : WEB_APP_ORIGIN
   return (
-    'CORS issue: the browser blocked access to your bucket. ' +
-    'Click “Copy CORS JSON”, paste it into your bucket CORS settings, wait about a minute, then try again.'
+    `The browser could not reach this bucket from ${origin}. ` +
+    'Your bucket may not allow requests from this site, or the endpoint may be unavailable. ' +
+    'Add this site to the bucket’s allowed CORS origins, then try again.'
   )
 }

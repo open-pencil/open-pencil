@@ -7,6 +7,7 @@ import { IS_TAURI } from '@open-pencil/core/constants'
 import { useAIChat } from '@/app/ai/chat/use'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen, settingsDialogSection } from '@/app/settings/dialog'
+import MCPConnectionsSection from '@/components/settings/mcp/MCPConnectionsSection.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import MCPSettingsPanel from '@/components/settings/mcp/MCPSettingsPanel.vue'
 import PerformanceSettingsPanel from '@/components/settings/performance/PerformanceSettingsPanel.vue'
@@ -72,22 +73,22 @@ const navigationClass =
         <button
           type="button"
           :class="navigationClass"
-          :data-state="settingsDialogSection === 'mcp' ? 'active' : 'inactive'"
-          data-test-id="settings-section-mcp"
-          @click="settingsDialogSection = 'mcp'"
-        >
-          <icon-lucide-server class="size-3.5" />
-          {{ dialogs.settingsMCP }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
           :data-state="settingsDialogSection === 'ai' ? 'active' : 'inactive'"
           data-test-id="settings-section-ai"
           @click="settingsDialogSection = 'ai'"
         >
           <icon-lucide-sparkles class="size-3.5" />
           {{ dialogs.settingsAIAndAgents }}
+        </button>
+        <button
+          type="button"
+          :class="navigationClass"
+          :data-state="settingsDialogSection === 'mcp' ? 'active' : 'inactive'"
+          data-test-id="settings-section-mcp"
+          @click="settingsDialogSection = 'mcp'"
+        >
+          <icon-lucide-plug class="size-3.5" />
+          {{ dialogs.settingsMCP }}
         </button>
         <button
           type="button"
@@ -121,6 +122,15 @@ const navigationClass =
         </section>
 
         <section
+          v-else-if="settingsDialogSection === 'mcp'"
+          class="flex flex-col"
+          data-test-id="settings-mcp-panel"
+        >
+          <MCPSettingsPanel />
+          <MCPConnectionsSection />
+        </section>
+
+        <section
           v-else-if="settingsDialogSection === 'media'"
           class="flex flex-col gap-2.5"
           data-test-id="settings-media-panel"
@@ -130,7 +140,6 @@ const navigationClass =
           <VectorizeSettingsSection />
         </section>
 
-        <MCPSettingsPanel v-else-if="settingsDialogSection === 'mcp'" />
         <PerformanceSettingsPanel v-else-if="settingsDialogSection === 'performance'" />
         <StorageSettingsPanel v-else />
       </div>

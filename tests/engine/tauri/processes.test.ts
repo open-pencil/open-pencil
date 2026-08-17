@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test, vi } from 'bun:test'
 
 import { ref } from 'vue'
 
-import { spawnAcpProcess } from '@/app/ai/acp/process'
+import { spawnACPProcess } from '@/app/ai/acp/process'
 import { checkForAppUpdate } from '@/app/shell/updater'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
@@ -32,7 +32,7 @@ describe('Tauri process helpers', () => {
       return null
     })
 
-    const process = await spawnAcpProcess({
+    const process = await spawnACPProcess({
       command: 'agent-cli',
       args: ['--stdio'],
       logId: 'test',
@@ -74,7 +74,7 @@ describe('Tauri process helpers', () => {
       return null
     })
 
-    const process = await spawnAcpProcess({
+    const process = await spawnACPProcess({
       command: 'agent-cli',
       args: ['--stdio'],
       logId: 'test',
@@ -95,7 +95,7 @@ describe('Tauri process helpers', () => {
       return null
     })
 
-    const process = await spawnAcpProcess({
+    const process = await spawnACPProcess({
       command: 'agent-cli',
       args: [],
       logId: 'test',

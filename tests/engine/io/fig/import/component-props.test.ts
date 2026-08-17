@@ -97,6 +97,9 @@ describe('Figma component property import', () => {
       (node) => node.name === 'Menu item instance'
     )
     expect(instance?.componentPropertyAssignments).toEqual({ '3:1': 'Profile Item' })
+    if (!component || !instance) throw new Error('Expected imported component and instance')
+    expect(graph.getInstances(component.id).map((node) => node.id)).toContain(instance.id)
+    expect(graph.instanceIndex.get('1:1')?.has(instance.id)).toBeFalsy()
 
     const unpopulated = importNodeChanges(nodeChanges, [], undefined, { populate: 'none' })
     const unpopulatedInstance = Array.from(unpopulated.getAllNodes()).find(

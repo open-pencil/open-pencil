@@ -14,6 +14,8 @@ import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../sou
 import { bytesToHex } from './bytes'
 import {
   applyExportSettingsPluginData,
+  applyLibrarySourcePluginData,
+  applyTextPathBoxPluginData,
   mergePluginData,
   NODE_TYPE_PLUGIN_KEY,
   serializePluginRelaunchData,
@@ -385,6 +387,37 @@ function serializeTextOverrides(
   return result
 }
 
+function overridePathKey(payload: KiwiSymbolOverridePayload): string | null {
+  const guids = payload.guidPath?.guids
+  return guids?.length
+    ? guids.map(({ sessionID, localID }) => `${sessionID}:${localID}`).join('/')
+    : null
+}
+
+function mergeTextOverrides(
+  symbolOverrides: KiwiSymbolOverridePayload[],
+  textOverrides: KiwiSymbolOverridePayload[]
+): void {
+  for (const textOverride of textOverrides) {
+    const pathKey = overridePathKey(textOverride)
+    let existingIndex = -1
+    if (pathKey) {
+      for (let index = symbolOverrides.length - 1; index >= 0; index--) {
+        if (overridePathKey(symbolOverrides[index]) !== pathKey) continue
+        existingIndex = index
+        break
+      }
+    }
+    if (existingIndex < 0) symbolOverrides.push(textOverride)
+    else {
+      symbolOverrides[existingIndex] = {
+        ...symbolOverrides[existingIndex],
+        textData: textOverride.textData
+      }
+    }
+  }
+}
+
 /**
  * Fields that are ALWAYS set by explicit serialization and must NOT be
  * overwritten by rawNodeFields (which may contain stale Figma defaults).
@@ -404,7 +437,6 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
   'derivedSymbolData',
   'derivedSymbolDataLayoutVersion',
   'sourceLibraryKey',
-  // Normalized constraints are authoritative, including when an edit clears them.
   'minSize',
   'maxSize',
   // Variable consumption maps: explicit serialization always sets these when
@@ -414,12 +446,66 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
   'parameterConsumptionMap'
 ])
 
+/**
+ * Resize reflowed this path-text node (glyphs regenerated, strokeGeometry
+ * cleared). The raw strokeGeometry silhouettes are still at the pre-resize
+ * size, so exporting them would paint stale full-size outlines.
+ */
+function isReflowedStrokedPathText(node: SceneNode): boolean {
+  if (node.type !== 'TEXT' || node.textPathData === null) return false
+  if ((node.derivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
+  if (node.strokeGeometry.length !== 0) return false
+  // Only when the node has stroke paint but its baked silhouettes were
+  // cleared by reflow (see resize.ts). Fill-only path text (no stroke paint,
+  // so strokeGeometry is always empty) is untouched and keeps its raw
+  // derivedTextData verbatim.
+  //
+  // This must key off live node.strokes, not rawNodeFields.strokeGeometry:
+  // clearResizedRawGeometry (resize.ts) deletes that raw field on every
+  // resize commit, so it's already gone by the time a reflowed node reaches
+  // export and can never be used to detect reflow here.
+  return node.strokes.length > 0
+}
+
+/**
+ * An imported path-text node that was edited after import — moving/rotating
+ * clears rawTransform (see clearEditedSourceMetadata), so the transform + size
+ * are recomputed from the node's post-expand box (exportNodeTransform /
+ * exportNodeSize). But the raw derivedTextData + baked silhouettes are still the
+ * PRE-expand (un-shifted) payload — exporting them against the shifted box
+ * re-triggers the import expand on reimport and drifts the node. Rebuild
+ * derivedTextData from the live (shifted) glyphs and re-derive silhouettes,
+ * exactly like the reflow path. rawTransform === null is the "edited" signal;
+ * pristine nodes keep rawTransform and their raw payload verbatim.
+ */
+function isEditedPathText(node: SceneNode): boolean {
+  return (
+    node.type === 'TEXT' &&
+    node.textPathData !== null &&
+    // "Edited" = the raw transform no longer backs the node. Editing does not
+    // clear source.fig.rawTransform directly; effectiveFigmaSourcePayload
+    // derives it from source.editedFields, so ask that, not the raw field.
+    effectiveFigmaSourcePayload(node).rawTransform === null &&
+    (node.derivedTextGlyphs?.length ?? 0) > 0
+  )
+}
+
 function applyRawFigmaNodeFields(
   context: SceneNodeToKiwiContext,
   node: SceneNode,
   nc: KiwiNodeChange
 ): void {
-  const materialized = materializeFigmaPayload(effectiveFigmaRawNodeFields(node), context.blobs, {
+  let rawFields = effectiveFigmaRawNodeFields(node)
+  if (isReflowedStrokedPathText(node) || isEditedPathText(node)) {
+    // Strip before materializing so the stale blobs never enter the file:
+    // silhouettes are re-derived from glyphs by Figma/reimport, and
+    // derivedTextData was rebuilt from the reflowed glyphs by
+    // serializeTextProps (raw would clobber the new positions).
+    rawFields = { ...rawFields }
+    delete rawFields.strokeGeometry
+    delete rawFields.derivedTextData
+  }
+  const materialized = materializeFigmaPayload(rawFields, context.blobs, {
     blobIndexByHex: context.blobIndexByHex,
     includePaintVariables: true,
     includeVariableMaps: true
@@ -503,7 +589,7 @@ function applyInstancePayload(
         }) as KiwiSymbolOverridePayload[])
       )
     }
-    symbolOverrides.push(...serializeTextOverrides(context, node, localIdCounter))
+    mergeTextOverrides(symbolOverrides, serializeTextOverrides(context, node, localIdCounter))
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (node.source.fig.uniformScaleFactor != null) {
       symbolData.uniformScaleFactor = node.source.fig.uniformScaleFactor
@@ -659,8 +745,16 @@ function applyComponentMetadata(
 }
 
 function exportNodeSize(node: SceneNode): Vector {
-  const rawSize = effectiveFigmaSourcePayload(node).rawSize
-  return rawSize ? { ...rawSize } : { x: node.width, y: node.height }
+  // rawSize and rawTransform are a matched pair describing the ORIGINAL Figma
+  // box. Once the transform no longer backs the node, exportNodeTransform
+  // recomputes it from node dims via computeExportTransform; pairing that with
+  // an un-expanded rawSize disagrees about the box (for rotation, a different
+  // centre) and the node drifts on reimport. Use rawSize only while the
+  // transform still backs it.
+  const payload = effectiveFigmaSourcePayload(node)
+  return payload.rawSize && payload.rawTransform
+    ? { ...payload.rawSize }
+    : { x: node.width, y: node.height }
 }
 
 function exportNodeTransform(context: SceneNodeToKiwiContext, node: SceneNode): Matrix {
@@ -791,6 +885,17 @@ function applyNodeVisualProps(
   if (!node.autoRename) nc.autoRename = false
 }
 
+/**
+ * Import maps TEXT_PATH → TEXT. Re-emit Kiwi type 41 only while path fidelity
+ * remains (materialized path data + baked glyphs). After an edit that cannot
+ * reflow glyphs, invalidation clears the path data so export falls back to TEXT.
+ */
+function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): string {
+  const isPathText =
+    node.textPathData !== null && node.type === 'TEXT' && (node.derivedTextGlyphs?.length ?? 0) > 0
+  return isPathText ? 'TEXT_PATH' : context.mapToFigmaType(node.type)
+}
+
 export function sceneNodeToKiwiWithContext(
   node: SceneNode,
   parentGuid: GUID,
@@ -805,13 +910,15 @@ export function sceneNodeToKiwiWithContext(
 
   const strokePaints = createStrokePaints(context, node)
 
+  const exportType = exportKiwiNodeType(node, context)
+
   const nc: KiwiNodeChange = {
     guid,
     parentIndex: {
       guid: parentGuid,
       position: node.source.orderKey ?? context.fractionalPosition(childIndex)
     },
-    type: context.mapToFigmaType(node.type),
+    type: exportType,
     name: node.name,
     visible: node.visible,
     opacity: node.opacity,
@@ -854,6 +961,8 @@ export function sceneNodeToKiwiWithContext(
   if (variableModeBySetMap) nc.variableModeBySetMap = variableModeBySetMap
 
   applyExportSettingsPluginData(node)
+  applyLibrarySourcePluginData(node)
+  applyTextPathBoxPluginData(node)
   const pluginData = mergePluginData(node.pluginData)
   if (pluginData.length > 0) nc.pluginData = pluginData
   if (node.pluginRelaunchData.length > 0) {

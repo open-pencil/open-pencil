@@ -20,7 +20,7 @@ export type StorageDocumentMetadata = {
 
 export type StorageDocument = StorageDocumentMetadata & {
   id: string
-  thumbnailUrl?: string | null
+  thumbnailURL?: string | null
   metadataAuthoritative?: boolean
 }
 
@@ -33,6 +33,34 @@ export type StorageUsage = {
 export type StorageConnectionResult = {
   ok: boolean
   message: string
+}
+
+export interface LibraryObjectSummary {
+  key: string
+  size: number | null
+  etag: string | null
+}
+
+export interface LibraryObjectValue {
+  bytes: Uint8Array | null
+  etag: string | null
+}
+
+export interface LibraryObjectWriteOptions {
+  ifMatch?: string
+  ifNoneMatch?: '*'
+}
+
+export interface LibraryObjectStore {
+  getObject(key: string): Promise<Uint8Array | null>
+  getObjectValue?(key: string): Promise<LibraryObjectValue>
+  putObject(
+    key: string,
+    bytes: Uint8Array,
+    contentType: string,
+    options?: LibraryObjectWriteOptions
+  ): Promise<void>
+  listObjects(prefix: string): Promise<LibraryObjectSummary[]>
 }
 
 export interface StorageAdapter {
@@ -53,6 +81,7 @@ export interface StorageAdapter {
   getUsage(): Promise<StorageUsage>
   getThumbnail?(id: string): Promise<Uint8Array | null>
   putThumbnail?(id: string, bytes: Uint8Array): Promise<void>
+  libraryObjects?: LibraryObjectStore
 }
 
 export type StoragePreferenceField = {

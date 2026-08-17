@@ -4,7 +4,12 @@ import * as v from 'valibot'
 import { shallowReactive } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import { CORE_TOOLS, toolsToAI } from '@open-pencil/core/tools'
+import {
+  CORE_TOOLS,
+  EXTENDED_TOOLS,
+  registerComponentCatalog,
+  toolsToAI
+} from '@open-pencil/core/tools'
 import type { StepBudget, ToolLogEntry } from '@open-pencil/core/tools'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
@@ -12,6 +17,7 @@ import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
+import { useLibraryService } from '@/app/libraries'
 
 export const MAX_AGENT_STEPS = 50
 
@@ -86,9 +92,25 @@ export function clearToolLogEntries(store?: EditorStore): void {
 export function createAITools(store: EditorStore) {
   let beforeSnapshot: Map<string, SceneNode> | null = null
   const runState = getRunState(store)
+  const libraryService = useLibraryService()
+  libraryService.bindEditor(store)
+  registerComponentCatalog(store.graph, libraryService)
 
   return toolsToAI(
-    CORE_TOOLS,
+    [
+      ...CORE_TOOLS,
+      ...EXTENDED_TOOLS.filter((def) =>
+        [
+          'export_image',
+          'get_components',
+          'get_page_tree',
+          'insert_library_component',
+          'list_libraries',
+          'list_pages',
+          'switch_page'
+        ].includes(def.name)
+      )
+    ],
     {
       getFigma: () => makeFigmaFromStore(store),
       onBeforeExecute: (def) => {

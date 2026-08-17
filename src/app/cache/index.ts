@@ -105,17 +105,17 @@ export async function removeCachePrefix(prefix: string): Promise<void> {
   }
 }
 
-type JsonCacheEnvelope<T> = {
+type JSONCacheEnvelope<T> = {
   updatedAt: number
   value: T
 }
 
-export async function readCacheJson<T>(key: string, maxAgeMs?: number): Promise<T | null> {
+export async function readCacheJSON<T>(key: string, maxAgeMs?: number): Promise<T | null> {
   const raw = await readCacheText(key)
   if (!raw) return null
 
   try {
-    const envelope = JSON.parse(raw) as Partial<JsonCacheEnvelope<T>>
+    const envelope = JSON.parse(raw) as Partial<JSONCacheEnvelope<T>>
     if (typeof envelope.updatedAt !== 'number' || !('value' in envelope)) return null
     if (maxAgeMs !== undefined && Date.now() - envelope.updatedAt > maxAgeMs) return null
     return envelope.value as T
@@ -124,6 +124,6 @@ export async function readCacheJson<T>(key: string, maxAgeMs?: number): Promise<
   }
 }
 
-export async function writeCacheJson(key: string, value: unknown): Promise<void> {
+export async function writeCacheJSON(key: string, value: unknown): Promise<void> {
   await writeCacheText(key, JSON.stringify({ updatedAt: Date.now(), value }))
 }

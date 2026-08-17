@@ -1,16 +1,16 @@
 import { describe, expect, test } from 'bun:test'
 
 import {
-  buildCorsConfigurationJson,
-  buildCorsConfigurationXml,
-  collectCloudCorsOrigins,
-  isLikelyCorsOrNetworkError
+  buildCORSConfigurationJSON,
+  buildCORSConfigurationXML,
+  collectCloudCORSOrigins,
+  isLikelyCORSOrNetworkError
 } from '@/app/integrations/storage/s3/cors'
 import { WEB_APP_ORIGIN } from '@/constants'
 
 describe('cloud S3 CORS helpers', () => {
   test('builds XML with required methods and wildcard headers', () => {
-    const xml = buildCorsConfigurationXml(['https://app.openpencil.dev', 'http://localhost:1420'])
+    const xml = buildCORSConfigurationXML(['https://app.openpencil.dev', 'http://localhost:1420'])
     expect(xml).toContain('<AllowedOrigin>https://app.openpencil.dev</AllowedOrigin>')
     expect(xml).toContain('<AllowedOrigin>http://localhost:1420</AllowedOrigin>')
     expect(xml).toContain('<AllowedMethod>GET</AllowedMethod>')
@@ -22,12 +22,12 @@ describe('cloud S3 CORS helpers', () => {
   })
 
   test('escapes XML special characters in origins', () => {
-    const xml = buildCorsConfigurationXml(['https://example.com/a&b'])
+    const xml = buildCORSConfigurationXML(['https://example.com/a&b'])
     expect(xml).toContain('https://example.com/a&amp;b')
   })
 
   test('builds AWS console JSON', () => {
-    const json = JSON.parse(buildCorsConfigurationJson(['https://app.openpencil.dev'])) as Array<{
+    const json = JSON.parse(buildCORSConfigurationJSON(['https://app.openpencil.dev'])) as Array<{
       AllowedOrigins: string[]
       AllowedMethods: string[]
       AllowedHeaders: string[]
@@ -41,7 +41,7 @@ describe('cloud S3 CORS helpers', () => {
   })
 
   test('collects static web and localhost origins', () => {
-    const origins = collectCloudCorsOrigins()
+    const origins = collectCloudCORSOrigins()
     expect(origins).toContain(WEB_APP_ORIGIN)
     expect(origins).toContain('https://*.openpencil.dev')
     expect(origins).toContain('https://*.openpencil-app.pages.dev')
@@ -50,8 +50,8 @@ describe('cloud S3 CORS helpers', () => {
   })
 
   test('detects typical browser CORS/network failures', () => {
-    expect(isLikelyCorsOrNetworkError(new TypeError('Failed to fetch'))).toBe(true)
-    expect(isLikelyCorsOrNetworkError(new Error('blocked by CORS policy'))).toBe(true)
-    expect(isLikelyCorsOrNetworkError(new Error('Access key invalid'))).toBe(false)
+    expect(isLikelyCORSOrNetworkError(new TypeError('Failed to fetch'))).toBe(true)
+    expect(isLikelyCORSOrNetworkError(new Error('blocked by CORS policy'))).toBe(true)
+    expect(isLikelyCORSOrNetworkError(new Error('Access key invalid'))).toBe(false)
   })
 })

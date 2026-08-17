@@ -46,6 +46,11 @@ fn set_recent_files(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), Str
     install_app_menu(&app, &paths).map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+fn mcp_executable_available() -> bool {
+    which::which("openpencil-mcp-http").is_ok()
+}
+
 fn file_association_path(path: PathBuf) -> Option<PathBuf> {
     let path = path.canonicalize().ok()?;
     if !path.is_file() {
@@ -117,7 +122,15 @@ pub fn run() {
 
     let mut builder = tauri::Builder::default();
 
-    #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
+    #[cfg(feature = "native-test")]
+    {
+        builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+    }
+
+    #[cfg(all(
+        any(target_os = "macos", windows, target_os = "linux"),
+        not(feature = "native-test")
+    ))]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, cwd| {
             queue_open_paths(app, open_paths_from_args(args, Path::new(&cwd)));
@@ -133,6 +146,7 @@ pub fn run() {
             credential_status,
             credential_store_availability,
             credential_write,
+            mcp_executable_available,
             list_system_fonts,
             load_system_font,
             proxy_http_request,

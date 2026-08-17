@@ -1,10 +1,10 @@
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { VerifierContext } from '../helpers'
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as JsonObject)
+    ? (value as JSONObject)
     : undefined
 }
 
@@ -47,8 +47,8 @@ function verifySingleFontMetadata(
   i: number,
   ctx: VerifierContext
 ): void {
-  const amKey = am.key as JsonObject | undefined
-  const bmKey = bm.key as JsonObject | undefined
+  const amKey = am.key as JSONObject | undefined
+  const bmKey = bm.key as JSONObject | undefined
   if (amKey?.family !== bmKey?.family) {
     ctx.errors.push({
       path: ctx.path,
@@ -81,7 +81,7 @@ function verifySingleFontMetadata(
   verifyFontDigest(am.fontDigest, bm.fontDigest, i, ctx)
 }
 
-function verifyFontMetadata(aMeta: JsonObject[], bMeta: JsonObject[], ctx: VerifierContext): void {
+function verifyFontMetadata(aMeta: JSONObject[], bMeta: JSONObject[], ctx: VerifierContext): void {
   for (let i = 0; i < aMeta.length; i++) {
     verifySingleFontMetadata(aMeta[i], bMeta[i], i, ctx)
   }
@@ -138,8 +138,8 @@ export function verifyDerivedTextData(ctx: VerifierContext): boolean {
     })
   }
 
-  const aMeta = (aVal.fontMetaData as JsonObject[]) ?? []
-  const bMeta = (bVal.fontMetaData as JsonObject[]) ?? []
+  const aMeta = (aVal.fontMetaData as JSONObject[]) ?? []
+  const bMeta = (bVal.fontMetaData as JSONObject[]) ?? []
   if (aMeta.length !== bMeta.length) {
     ctx.errors.push({
       path: ctx.path,
@@ -206,8 +206,8 @@ function verifySingleComponentPropDef(
 }
 
 export function verifyComponentPropDefs(a: unknown, b: unknown): boolean {
-  const aDefs = a as JsonObject[] | undefined
-  const bDefs = b as JsonObject[] | undefined
+  const aDefs = a as JSONObject[] | undefined
+  const bDefs = b as JSONObject[] | undefined
   if (!aDefs && !bDefs) return true
   if (!aDefs || !bDefs) return false
   if (aDefs.length !== bDefs.length) return false

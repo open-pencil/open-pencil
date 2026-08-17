@@ -34,12 +34,12 @@ describe('app cache', () => {
 
   test('expires JSON values by max age', async () => {
     installLocalStorage()
-    const { readCacheJson, writeCacheJson } = await import('@/app/cache')
+    const { readCacheJSON, writeCacheJSON } = await import('@/app/cache')
 
-    await writeCacheJson('json/key', { ok: true })
+    await writeCacheJSON('json/key', { ok: true })
 
-    await expect(readCacheJson('json/key', 60_000)).resolves.toEqual({ ok: true })
-    await expect(readCacheJson('json/key', -1)).resolves.toBeNull()
+    await expect(readCacheJSON('json/key', 60_000)).resolves.toEqual({ ok: true })
+    await expect(readCacheJSON('json/key', -1)).resolves.toBeNull()
   })
 
   test('removes a web cache prefix', async () => {

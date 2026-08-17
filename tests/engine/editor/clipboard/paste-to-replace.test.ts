@@ -4,7 +4,7 @@ import { buildOpenPencilClipboardHTML } from '@open-pencil/core/clipboard'
 import { createEditor } from '@open-pencil/core/editor'
 import type { Editor } from '@open-pencil/core/editor'
 
-function copiedRectangleHtml(name = 'Pasted') {
+function copiedRectangleHTML(name = 'Pasted') {
   const source = createEditor()
   const sourcePageId = source.state.currentPageId
   const pasted = source.graph.createNode('RECTANGLE', sourcePageId, {
@@ -17,7 +17,7 @@ function copiedRectangleHtml(name = 'Pasted') {
   return buildOpenPencilClipboardHTML([pasted], source.graph)
 }
 
-function copiedFrameHtml() {
+function copiedFrameHTML() {
   const source = createEditor()
   const sourcePageId = source.state.currentPageId
   const frame = source.graph.createNode('FRAME', sourcePageId, {
@@ -49,7 +49,7 @@ function createTarget(editor: Editor, parentId = editor.state.currentPageId) {
 
 describe('paste to replace', () => {
   test('replaces selected nodes with pasted OpenPencil nodes', async () => {
-    const html = copiedRectangleHtml()
+    const html = copiedRectangleHTML()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const target = createTarget(editor)
@@ -67,7 +67,7 @@ describe('paste to replace', () => {
   })
 
   test('undo and redo preserve replaced and pasted subtrees', async () => {
-    const html = copiedRectangleHtml()
+    const html = copiedRectangleHTML()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const target = createTarget(editor)
@@ -90,7 +90,7 @@ describe('paste to replace', () => {
   })
 
   test('falls back to regular paste when all selected targets are locked', async () => {
-    const html = copiedRectangleHtml()
+    const html = copiedRectangleHTML()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const target = editor.graph.createNode('ELLIPSE', pageId, {
@@ -112,7 +112,7 @@ describe('paste to replace', () => {
   })
 
   test('replaces only top-level selected targets', async () => {
-    const html = copiedRectangleHtml()
+    const html = copiedRectangleHTML()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const parent = editor.graph.createNode('FRAME', pageId, {
@@ -140,7 +140,7 @@ describe('paste to replace', () => {
   })
 
   test('replaces targets inside a frame and preserves parent order through undo and redo', async () => {
-    const html = copiedRectangleHtml()
+    const html = copiedRectangleHTML()
     const editor = createEditor()
     const pageId = editor.state.currentPageId
     const frame = editor.graph.createNode('FRAME', pageId, {
@@ -169,7 +169,7 @@ describe('paste to replace', () => {
   })
 
   test('preserves pasted child subtrees', async () => {
-    const html = copiedFrameHtml()
+    const html = copiedFrameHTML()
     const editor = createEditor()
     const target = createTarget(editor)
 

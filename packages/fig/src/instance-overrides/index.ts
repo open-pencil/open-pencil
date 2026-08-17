@@ -24,7 +24,7 @@ import {
   hasSameCopySource,
   markCopySource
 } from '@open-pencil/scene-graph/copy'
-import type { JsonObject } from '@open-pencil/scene-graph/primitives'
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { applyComponentProperties } from './component-props'
 import { applyConstraintScaling } from './constraints'
@@ -62,7 +62,7 @@ function buildKiwiPropertyNodes(
 ): Set<string> {
   const result = new Set<string>()
   for (const [nodeId, change] of changedNodeEntries(changeMap, guidToNodeId)) {
-    const nc = change as JsonObject
+    const nc = change as JSONObject
     const node = graph.getNode(nodeId)
     if (!node?.componentId) continue
     const comp = graph.getNode(node.componentId)
@@ -166,8 +166,8 @@ function propagateResolvedChildPlacementClones(
 }
 
 function sameDerivedGlyphSource(
-  source: SceneNode['figmaDerivedTextGlyphs'],
-  target: SceneNode['figmaDerivedTextGlyphs']
+  source: SceneNode['derivedTextGlyphs'],
+  target: SceneNode['derivedTextGlyphs']
 ): boolean {
   if (source === target) return true
   if (!source || !target) return false
@@ -200,7 +200,7 @@ function propagateResolvedTextClones(graph: SceneGraph, activeNodeIds?: Set<stri
       source.height === node.height &&
       isEqual(source.fills, node.fills) &&
       isEqual(source.styleRuns, node.styleRuns) &&
-      sameDerivedGlyphSource(source.figmaDerivedTextGlyphs, node.figmaDerivedTextGlyphs)
+      sameDerivedGlyphSource(source.derivedTextGlyphs, node.derivedTextGlyphs)
     ) {
       continue
     }
@@ -209,11 +209,8 @@ function propagateResolvedTextClones(graph: SceneGraph, activeNodeIds?: Set<stri
       height: source.height,
       fills: copyFills(source.fills),
       styleRuns: copyStyleRuns(source.styleRuns),
-      figmaDerivedTextGlyphs: source.figmaDerivedTextGlyphs
-        ? markCopySource(
-            source.figmaDerivedTextGlyphs,
-            structuredClone(source.figmaDerivedTextGlyphs)
-          )
+      derivedTextGlyphs: source.derivedTextGlyphs
+        ? markCopySource(source.derivedTextGlyphs, structuredClone(source.derivedTextGlyphs))
         : undefined
     })
   }

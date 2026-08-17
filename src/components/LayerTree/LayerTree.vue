@@ -186,7 +186,14 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
                   "
                 >
                   <LayerTreeItem
-                    v-slot="{ node, isSelected, padLeft, actions }"
+                    v-slot="{
+                      node,
+                      isSelected,
+                      padLeft,
+                      actions,
+                      instruction,
+                      instructionTargetId
+                    }"
                     :node="toLayerNode(item.value)"
                     :level="item.level"
                     :has-children="item.hasChildren"
@@ -210,7 +217,13 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
                       :pad-left="padLeft"
                       :expanded="isExpanded"
                       :actions="actions"
-                      :chrome="chrome(scope)"
+                      :chrome="
+                        chrome({
+                          ...scope,
+                          instruction,
+                          instructionTargetId
+                        })
+                      "
                       @rename-start="rename.start"
                     />
                   </LayerTreeItem>

@@ -5,9 +5,10 @@ import { inferS3Region } from '@/app/integrations/storage/s3/region'
 import type { S3CompatibleConfig } from '@/app/integrations/storage/s3/types'
 import {
   parseListObjectsV2Page,
-  parseS3ErrorXml,
+  parseS3ErrorXML,
   type ListedObject
 } from '@/app/integrations/storage/s3/xml'
+import type { LibraryObjectWriteOptions } from '@/app/integrations/storage/types'
 
 export function resolveS3Region(config: S3CompatibleConfig): string {
   const explicit = config.region?.trim()
@@ -35,7 +36,7 @@ export function normalizeEndpoint(endpoint: string): string {
 }
 
 /** Path-style object URL: {endpoint}/{bucket}/{key} — works with B2, MinIO, R2, AWS. */
-export function objectUrl(config: S3CompatibleConfig, key: string): string {
+export function objectURL(config: S3CompatibleConfig, key: string): string {
   const base = normalizeEndpoint(config.endpoint)
   const encodedKey = key
     .split('/')
@@ -55,7 +56,7 @@ export function createAwsClient(config: S3CompatibleConfig): AwsClient {
 
 async function readErrorBody(res: Response): Promise<{ message: string; code: string | null }> {
   const text = await res.text().catch(() => '')
-  return parseS3ErrorXml(text, res.status)
+  return parseS3ErrorXML(text, res.status)
 }
 
 /**
@@ -146,10 +147,10 @@ export async function s3Request(
     }
   } catch (error) {
     // Re-export as a typed error so UI can detect CORS/network blocks.
-    const { CloudCorsError, isLikelyCorsOrNetworkError, formatBrowserCorsHelpMessage } =
+    const { CloudCORSError, isLikelyCORSOrNetworkError, formatBrowserCORSHelpMessage } =
       await import('@/app/integrations/storage/s3/cors')
-    if (isLikelyCorsOrNetworkError(error)) {
-      throw new CloudCorsError(formatBrowserCorsHelpMessage())
+    if (isLikelyCORSOrNetworkError(error)) {
+      throw new CloudCORSError(formatBrowserCORSHelpMessage())
     }
     throw error
   }
@@ -159,9 +160,44 @@ export async function s3Request(
 }
 
 export async function headObject(config: S3CompatibleConfig, key: string): Promise<boolean> {
-  const res = await s3Request(config, objectUrl(config, key), { method: 'HEAD' })
+  const res = await s3Request(config, objectURL(config, key), { method: 'HEAD' })
   if (res.status === 404) return false
   return true
+}
+
+export async function headObjectSize(
+  config: S3CompatibleConfig,
+  key: string
+): Promise<number | null> {
+  const res = await s3Request(config, objectURL(config, key), { method: 'HEAD' })
+  if (res.status === 404) return null
+  const sizeHeader = res.headers.get('content-length')
+  if (sizeHeader == null) return null
+  const size = Number(sizeHeader)
+  return Number.isSafeInteger(size) && size >= 0 ? size : null
+}
+
+export async function getObjectRange(
+  config: S3CompatibleConfig,
+  key: string,
+  start: number,
+  endExclusive: number
+): Promise<Uint8Array | null> {
+  if (
+    !Number.isSafeInteger(start) ||
+    start < 0 ||
+    !Number.isSafeInteger(endExclusive) ||
+    endExclusive <= start
+  ) {
+    throw new Error('Invalid S3 byte range')
+  }
+  const res = await s3Request(config, objectURL(config, key), {
+    method: 'GET',
+    headers: { Range: `bytes=${start}-${endExclusive - 1}` }
+  })
+  if (res.status === 404) return null
+  if (res.status !== 206) throw new Error('Storage provider did not honor the thumbnail byte range')
+  return new Uint8Array(await res.arrayBuffer())
 }
 
 export async function putObject(
@@ -169,7 +205,8 @@ export async function putObject(
   key: string,
   body: Uint8Array | string,
   contentType: string,
-  onUploadProgress?: (progress: UploadProgress) => void
+  onUploadProgress?: (progress: UploadProgress) => void,
+  options?: LibraryObjectWriteOptions
 ): Promise<void> {
   const bytes = typeof body === 'string' ? new TextEncoder().encode(body) : body
   // Exact ArrayBuffer so fetch/UA can set Content-Length (required by B2 for large PUTs).
@@ -179,11 +216,13 @@ export async function putObject(
   ) as ArrayBuffer
   const res = await s3Request(
     config,
-    objectUrl(config, key),
+    objectURL(config, key),
     {
       method: 'PUT',
       headers: {
-        'Content-Type': contentType
+        'Content-Type': contentType,
+        ...(options?.ifMatch ? { 'If-Match': options.ifMatch } : {}),
+        ...(options?.ifNoneMatch ? { 'If-None-Match': options.ifNoneMatch } : {})
       },
       body: payload
     },
@@ -194,6 +233,18 @@ export async function putObject(
   }
 }
 
+export async function getObjectValue(
+  config: S3CompatibleConfig,
+  key: string
+): Promise<{ bytes: Uint8Array | null; etag: string | null }> {
+  const res = await s3Request(config, objectURL(config, key), { method: 'GET' })
+  if (res.status === 404) return { bytes: null, etag: null }
+  return {
+    bytes: new Uint8Array(await res.arrayBuffer()),
+    etag: res.headers.get('etag')
+  }
+}
+
 export type DownloadProgress = { receivedBytes: number; totalBytes: number | null }
 
 export async function getObject(
@@ -201,7 +252,7 @@ export async function getObject(
   key: string,
   onProgress?: (progress: DownloadProgress) => void
 ): Promise<Uint8Array | null> {
-  const res = await s3Request(config, objectUrl(config, key), { method: 'GET' })
+  const res = await s3Request(config, objectURL(config, key), { method: 'GET' })
   if (res.status === 404) return null
   if (!onProgress || !res.body) {
     return new Uint8Array(await res.arrayBuffer())
@@ -230,7 +281,7 @@ export async function getObject(
 }
 
 export async function deleteObject(config: S3CompatibleConfig, key: string): Promise<void> {
-  const res = await s3Request(config, objectUrl(config, key), { method: 'DELETE' })
+  const res = await s3Request(config, objectURL(config, key), { method: 'DELETE' })
   if (!res.ok && res.status !== 404) {
     throw new S3HttpError(res.status, `Failed to delete ${key}`)
   }

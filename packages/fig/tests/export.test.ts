@@ -51,6 +51,52 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     expect(serialize(definitions)).toEqual(serialize())
   })
 
+  test('merges edited text into an existing override path', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id)
+    const sourceText = graph.createNode('TEXT', component.id, {
+      overrideKey: '2:20',
+      text: 'Default'
+    })
+    const instance = graph.createInstance(component.id, page.id)
+    expect(instance).toBeDefined()
+    const targetText = graph.getChildren(instance?.id ?? '')[0]
+    expect(targetText).toBeDefined()
+    const originalOverride = {
+      guidPath: { guids: [{ sessionID: 2, localID: 20 }] },
+      textData: { characters: 'Stale' },
+      opacity: 0.5
+    }
+    graph.updateNode(instance?.id ?? '', {
+      overrides: { [`${targetText?.id}:text`]: 'Edited' },
+      source: {
+        ...instance?.source,
+        fig: {
+          ...instance?.source.fig,
+          symbolOverrides: [originalOverride]
+        }
+      }
+    })
+
+    const [change] = sceneNodeToKiwi(
+      graph.getNode(instance?.id ?? '') ?? instance,
+      { sessionID: 1, localID: 1 },
+      0,
+      { value: 2 },
+      graph,
+      []
+    )
+
+    expect(sourceText.overrideKey).toBe('2:20')
+    expect(change.symbolData?.symbolOverrides).toEqual([
+      {
+        ...originalOverride,
+        textData: { characters: 'Edited' }
+      }
+    ])
+  })
+
   test('injects runtime glyph outlines into derived text data', () => {
     const graph = new SceneGraph()
     const text = graph.createNode('TEXT', graph.getPages()[0].id, {

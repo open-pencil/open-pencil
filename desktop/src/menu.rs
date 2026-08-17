@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::path::Path;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, Submenu, SubmenuBuilder};
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use tauri::menu::PredefinedMenuItem;
 
 #[derive(Deserialize)]
@@ -48,12 +48,38 @@ fn build_submenu<R: tauri::Runtime>(
             continue;
         }
 
+        // Ordinary menu accelerators emit a frontend command without preserving the
+        // WebView's focused editing control. Native edit items let WebKit/WebView2
+        // route copy, cut, and paste to inputs or dispatch canvas clipboard events.
+        // Keep Linux on the frontend path: muda's native edit items require optional
+        // X11 automation and are explicitly unsupported on Wayland.
+        #[cfg(any(target_os = "macos", target_os = "windows"))]
+        if let Some(id) = entry.id.as_deref() {
+            let native_edit_item = match id {
+                "copy" => Some(PredefinedMenuItem::copy(app, Some(label))?),
+                "cut" => Some(PredefinedMenuItem::cut(app, Some(label))?),
+                "paste" => Some(PredefinedMenuItem::paste(app, Some(label))?),
+                _ => None,
+            };
+            if let Some(item) = native_edit_item {
+                builder = builder.item(&item);
+                continue;
+            }
+        }
+
         let mut item = MenuItemBuilder::new(label);
         if let Some(id) = &entry.id {
             item = item.id(id);
         }
-        if let Some(accelerator) = &entry.accelerator {
-            item = item.accelerator(accelerator);
+        // On Linux, muda's predefined edit commands depend on optional X11
+        // automation and do not work on Wayland. Leave these accelerators to the
+        // WebView instead, which preserves native input and canvas paste events.
+        let webview_handles_accelerator = cfg!(target_os = "linux")
+            && matches!(entry.id.as_deref(), Some("copy" | "cut" | "paste"));
+        if !webview_handles_accelerator {
+            if let Some(accelerator) = &entry.accelerator {
+                item = item.accelerator(accelerator);
+            }
         }
         builder = builder.item(&item.build(app)?);
     }

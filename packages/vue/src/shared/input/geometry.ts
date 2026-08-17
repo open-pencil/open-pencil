@@ -1,12 +1,13 @@
 import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
+import { fitTextPathBoxToGlyphs, getTextPathData, sampleTextPath } from '@open-pencil/core/text'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/scene-graph/coordinate'
 import { degToRad } from '@open-pencil/scene-graph/geometry'
-import type { Vector } from '@open-pencil/scene-graph/primitives'
+import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import resizeCursorSvg from '#vue/shared/assets/resize-cursor.svg?raw'
-import rotateCursorSvg from '#vue/shared/assets/rotate-cursor.svg?raw'
+import resizeCursorSVG from '#vue/shared/assets/resize-cursor.svg?raw'
+import rotateCursorSVG from '#vue/shared/assets/rotate-cursor.svg?raw'
 import type { CornerPosition, HandlePosition } from '#vue/shared/input/types'
 
 export function getPointerCoords(e: MouseEvent, canvas: HTMLCanvasElement | null, editor: Editor) {
@@ -163,6 +164,24 @@ function getCursorAngleFromHandle(handle: HandlePosition, rotation: number): num
   return (angle + 360) % 360
 }
 
+/**
+ * Node-local box the selection handles are drawn on. For imported text-on-path
+ * the overlay draws its bounds/handles on the glyph-fitted path box (see
+ * drawTextPathSelection), not node bounds — mirror that exact decision so the
+ * hit-test lands on the visible handles instead of ~25px inside them. Returns
+ * undefined (→ full node bounds) for every other node and for the same
+ * fallbacks the overlay takes (no path data / unsamplable path).
+ */
+function selectionHandleRect(node: SceneNode): Rect | undefined {
+  if (node.textPathData === null || !node.textPathBox) return undefined
+  const data = getTextPathData(node)
+  const box =
+    (data && fitTextPathBoxToGlyphs(data, node.textPathBox, node.derivedTextGlyphs)) ??
+    node.textPathBox
+  if (!data || !sampleTextPath(data, box)) return undefined
+  return box
+}
+
 export function getHitHandleByMatrix(
   cx: number,
   cy: number,
@@ -173,7 +192,7 @@ export function getHitHandleByMatrix(
   handle: HandlePosition
   rotation: number
 } | null {
-  const handles = getWorldHandles(node, graph)
+  const handles = getWorldHandles(node, graph, selectionHandleRect(node))
 
   const CORNER_R = HANDLE_HIT_RADIUS / zoom
 
@@ -203,7 +222,7 @@ export function hitTestTopRotationHandleByMatrix(
   graph: SceneGraph,
   zoom: number = 1
 ): boolean {
-  const handles = getWorldHandles(node, graph)
+  const handles = getWorldHandles(node, graph, selectionHandleRect(node))
   const rotation = getAbsoluteRotation(node, graph)
   const topMidX = (handles.nw.x + handles.ne.x) / 2
   const topMidY = (handles.nw.y + handles.ne.y) / 2
@@ -226,7 +245,7 @@ export function hitTestCornerRotationByMatrix(
   graph: SceneGraph,
   zoom: number = 1
 ): CornerPosition | null {
-  const handles = getWorldHandles(node, graph)
+  const handles = getWorldHandles(node, graph, selectionHandleRect(node))
 
   const HANDLE_R = HANDLE_HIT_RADIUS / zoom
   const ROTATE_R = CORNER_ROTATE_ZONE / zoom
@@ -274,9 +293,9 @@ export function buildRotationCursor(angleDeg: number): string {
   if (cached) return cached
   let svg: string
   if (key === 0) {
-    svg = rotateCursorSvg
+    svg = rotateCursorSVG
   } else {
-    svg = rotateCursorSvg
+    svg = rotateCursorSVG
       .replace(
         '<path',
         `<g transform='translate(1002 2110) rotate(${key}) translate(-1002 -2110)'><path`
@@ -295,7 +314,7 @@ export function cornerRotationCursor(corner: CornerPosition, nodeRotation = 0): 
 export function buildResizeCursor(angleDeg: number): string {
   const normalized = ((Math.round(angleDeg) % 360) + 360) % 360
 
-  const svg = resizeCursorSvg
+  const svg = resizeCursorSVG
     .replace(
       '<path',
       `<g transform='translate(512 512) rotate(${normalized}) translate(-512 -512)'><path`

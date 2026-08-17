@@ -2,7 +2,7 @@ import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { queryByXPath } from '#core/xpath'
 
-import type { RpcCommand } from './types'
+import type { RPCCommand } from './types'
 
 /** Walk descendants. Callback returns `false` to stop traversal. */
 function walkNodes(graph: SceneGraph, rootId: string, fn: (node: SceneNode) => boolean): boolean {
@@ -48,7 +48,7 @@ export interface InfoResult {
   pageCounts: Record<string, number>
 }
 
-export const infoCommand: RpcCommand<void, InfoResult> = {
+export const infoCommand: RPCCommand<void, InfoResult> = {
   name: 'info',
   execute: (graph) => {
     const pages = graph.getPages()
@@ -84,7 +84,7 @@ export interface PageItem {
   nodes: number
 }
 
-export const pagesCommand: RpcCommand<void, PageItem[]> = {
+export const pagesCommand: RPCCommand<void, PageItem[]> = {
   name: 'pages',
   execute: (graph) => {
     return graph.getPages().map((p) => ({ id: p.id, name: p.name, nodes: countNodes(graph, p.id) }))
@@ -136,7 +136,7 @@ export interface TreeResult {
   children: TreeNodeResult[]
 }
 
-export const treeCommand: RpcCommand<TreeArgs, TreeResult | { error: string }> = {
+export const treeCommand: RPCCommand<TreeArgs, TreeResult | { error: string }> = {
   name: 'tree',
   execute: (graph, args) => {
     const pages = graph.getPages()
@@ -173,7 +173,7 @@ export interface FindNodeResult {
   height: number
 }
 
-export const findCommand: RpcCommand<FindArgs, FindNodeResult[]> = {
+export const findCommand: RPCCommand<FindArgs, FindNodeResult[]> = {
   name: 'find',
   execute: (graph, args) => {
     const pages = graph.getPages()
@@ -232,7 +232,7 @@ export interface QueryNodeResult {
   height: number
 }
 
-export const queryCommand: RpcCommand<QueryArgs, QueryNodeResult[] | { error: string }> = {
+export const queryCommand: RPCCommand<QueryArgs, QueryNodeResult[] | { error: string }> = {
   name: 'query',
   execute: async (graph, args) => {
     try {
@@ -290,7 +290,7 @@ export interface NodeResult {
   boundVariables: Record<string, string>
 }
 
-export const nodeCommand: RpcCommand<NodeArgs, NodeResult | { error: string }> = {
+export const nodeCommand: RPCCommand<NodeArgs, NodeResult | { error: string }> = {
   name: 'node',
   execute: (graph, args) => {
     const node = graph.getNode(args.id)

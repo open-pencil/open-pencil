@@ -33,9 +33,9 @@ function doRequest(
   forceTcp = false
 ): Promise<{ status: number; data: unknown }> {
   return new Promise((resolve, reject) => {
-    const bodyJson = body ? JSON.stringify(body) : undefined
+    const bodyJSON = body ? JSON.stringify(body) : undefined
     const headers: Record<string, string> = {
-      ...(bodyJson ? { 'Content-Type': 'application/json' } : {}),
+      ...(bodyJSON ? { 'Content-Type': 'application/json' } : {}),
       ...(info.authToken ? { Authorization: `Bearer ${info.authToken}` } : {})
     }
 
@@ -74,12 +74,12 @@ function doRequest(
       clearTimeout(timer)
       reject(err)
     })
-    if (bodyJson) req.write(bodyJson)
+    if (bodyJSON) req.write(bodyJSON)
     req.end()
   })
 }
 
-async function doRpc<T>(
+async function doRPC<T>(
   info: DiscoveryInfo,
   command: string,
   args: unknown,
@@ -124,7 +124,7 @@ function isSocketConnectionError(error: unknown): boolean {
 
 async function rpcWithFallback<T>(info: DiscoveryInfo, command: string, args: unknown): Promise<T> {
   try {
-    return await doRpc<T>(info, command, args)
+    return await doRPC<T>(info, command, args)
   } catch (error) {
     if (
       !platformHasUnixSockets() ||
@@ -134,7 +134,7 @@ async function rpcWithFallback<T>(info: DiscoveryInfo, command: string, args: un
     ) {
       throw error
     }
-    return doRpc<T>(info, command, args, true)
+    return doRPC<T>(info, command, args, true)
   }
 }
 

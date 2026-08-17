@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
+import { tv } from 'tailwind-variants'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
@@ -8,9 +9,10 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { useViewportKind, formatShortcut, useI18n } from '@open-pencil/vue'
 import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
-import { openFileFromPath, useMenu } from '@/app/shell/menu/use'
+import { openFileFromPath, useEditorMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
+import { exposeCollaborationActions } from '@/app/browser-bridge'
 import { isTauri } from '@/app/tauri/env'
 import { forgetDevOpenFilePath, readDevOpenFilePath } from '@/app/tauri/dev-file-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
@@ -20,6 +22,8 @@ import { createTab, activeTab, getActiveStore, tabCount } from '@/app/tabs'
 
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
+import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
+import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
 import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
@@ -29,6 +33,7 @@ import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
+import splitterTheme from '@/theme/splitter'
 
 const route = useRoute()
 const params = useUrlSearchParams('history')
@@ -41,7 +46,7 @@ const { dialogs } = useI18n()
 const { isMobile } = useViewportKind()
 const showUILabel = computed(() => {
   const shortcut = formatShortcut(appMenuShortcut('toggle-ui'))
-  return shortcut ? `${dialogs.value.showUI} (${shortcut})` : dialogs.value.showUI
+  return dialogs.value.showUI({ shortcut: shortcut ?? '' })
 })
 
 if (createdInitialTab && route.meta.demo && !('test' in params)) {
@@ -50,10 +55,11 @@ if (createdInitialTab && route.meta.demo && !('test' in params)) {
 
 useHead({ title: route.meta.demo ? 'Demo' : undefined })
 useKeyboard()
-useMenu()
+useEditorMenu()
 
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
+exposeCollaborationActions(collab)
 
 useEventListener(
   document,
@@ -66,6 +72,7 @@ useEventListener(
 
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 const initialEditorLayout = loadEditorLayout()
+const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
 
 type PendingOpenFile = {
   path: string
@@ -120,6 +127,7 @@ onUnmounted(() => {
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
     <SafariBanner />
+    <FontStatusBanner />
     <RenameSelectionDialog />
     <TabBar />
 
@@ -142,18 +150,18 @@ onUnmounted(() => {
       </SplitterPanel>
       <SplitterResizeHandle
         data-test-id="left-splitter-handle"
-        class="group relative z-10 -mx-1 w-2 cursor-col-resize"
+        :class="horizontalSplitterStyles.handle()"
       >
-        <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
+        <div :class="horizontalSplitterStyles.divider()" />
       </SplitterResizeHandle>
       <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
         <div class="relative flex min-w-0 flex-1">
-          <EditorCanvas />
+          <CanvasSplitRoot />
           <Toolbar />
         </div>
       </SplitterPanel>
-      <SplitterResizeHandle class="group relative z-10 -mx-1 w-2 cursor-col-resize">
-        <div class="pointer-events-none absolute inset-y-0 left-1/2 w-px -translate-x-1/2" />
+      <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
+        <div :class="horizontalSplitterStyles.divider()" />
       </SplitterResizeHandle>
       <SplitterPanel
         id="properties"

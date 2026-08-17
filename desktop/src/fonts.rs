@@ -112,8 +112,13 @@ fn load_system_font_blocking(family: String, style: String) -> Result<Vec<u8>, S
 }
 
 #[tauri::command]
-pub async fn load_system_font(family: String, style: String) -> Result<Vec<u8>, String> {
-    tauri::async_runtime::spawn_blocking(move || load_system_font_blocking(family, style))
-        .await
-        .map_err(|e| format!("Font load task failed: {e}"))?
+pub async fn load_system_font(
+    family: String,
+    style: String,
+) -> Result<tauri::ipc::Response, String> {
+    let data =
+        tauri::async_runtime::spawn_blocking(move || load_system_font_blocking(family, style))
+            .await
+            .map_err(|e| format!("Font load task failed: {e}"))??;
+    Ok(tauri::ipc::Response::new(data))
 }

@@ -5,7 +5,7 @@ import { calcClusterConfidence } from '@open-pencil/core/tools'
 
 import { appTargetOptions } from '#cli/app-target'
 import { bold, fmtList, fmtSummary } from '#cli/format'
-import { loadRpcData } from '#cli/rpc-data'
+import { loadRPCData } from '#cli/rpc-data'
 
 function formatSignature(sig: string): string {
   const [typeSize, children] = sig.split('|')
@@ -39,7 +39,7 @@ export default defineCommand({
     json: { type: 'boolean', description: 'Output as JSON' }
   },
   async run({ args }) {
-    const data = await loadRpcData<AnalyzeClustersResult>(
+    const data = await loadRPCData<AnalyzeClustersResult>(
       args.file,
       'analyze_clusters',
       {

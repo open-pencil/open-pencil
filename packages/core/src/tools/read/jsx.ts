@@ -5,7 +5,7 @@ import { defineTool } from '#core/tools/schema'
 
 const MAX_JSX_LENGTH = 12_000
 
-export const getJsx = defineTool({
+export const getJSX = defineTool({
   name: 'get_jsx',
   description:
     'Get JSX representation of a node and its children. Compact round-trip format — same syntax as the render tool.',
@@ -33,7 +33,7 @@ export const getJsx = defineTool({
   }
 })
 
-export const diffJsx = defineTool({
+export const diffJSX = defineTool({
   name: 'diff_jsx',
   description:
     'Structural diff between two nodes in JSX format. Shows added/removed children, changed props.',
@@ -47,16 +47,16 @@ export const diffJsx = defineTool({
     const toNode = figma.getNodeById(to)
     if (!toNode) return { error: `Node "${to}" not found` }
 
-    const fromJsx = sceneNodeToJSX(from, figma.graph)
-    const toJsx = sceneNodeToJSX(to, figma.graph)
+    const fromJSX = sceneNodeToJSX(from, figma.graph)
+    const toJSX = sceneNodeToJSX(to, figma.graph)
 
-    if (fromJsx === toJsx) return { diff: null, message: 'No differences' }
+    if (fromJSX === toJSX) return { diff: null, message: 'No differences' }
 
     const patch = createTwoFilesPatch(
       fromNode.name,
       toNode.name,
-      fromJsx,
-      toJsx,
+      fromJSX,
+      toJSX,
       'source',
       'target',
       { context: 3 }

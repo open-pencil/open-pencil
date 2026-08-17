@@ -1,6 +1,6 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import type { ProtectionMap } from '../patches'
+import { isFieldProtected, type ProtectionMap } from '../patches'
 import { buildClonesMap, syncChildrenDeep } from './clones'
 import { syncNodeProps } from './fields'
 import { indexCloneSubtree, remapRepopulatedChildSources, snapshotChildSources } from './sources'
@@ -129,6 +129,15 @@ export function propagateOverridesTransitively(
       if (!node) continue
 
       if (skip.has(cloneId)) {
+        // A directly overridden clone may still inherit effective text from an
+        // overridden source. Respect its own text override when present.
+        if (
+          source.type === 'TEXT' &&
+          node.type === 'TEXT' &&
+          !isFieldProtected(protections, node.id, 'text')
+        ) {
+          graph.updateNode(node.id, { text: source.text })
+        }
         syncQueue.push(cloneId)
         continue
       }

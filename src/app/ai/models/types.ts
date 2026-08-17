@@ -26,6 +26,7 @@ export type AIModelProfile = {
   maxOutputTokens: number
   contextWindowTokens?: number
   textInput?: boolean
+  reasoningEffort?: string
   capabilities: AIModelCapability[]
 }
 
@@ -56,6 +57,7 @@ export type AIModelProfileDraft = {
   maxOutputTokens: number
   contextWindowTokens?: number
   textInput?: boolean
+  reasoningEffort: string
   capabilities: AIModelCapability[]
 }
 

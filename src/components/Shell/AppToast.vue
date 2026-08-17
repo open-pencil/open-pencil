@@ -65,6 +65,7 @@ function toastClass(tone: ToastVariant) {
     </ToastRoot>
 
     <ToastViewport
+      :label="`${dialogs.notifications} (F8)`"
       class="fixed top-2 left-1/2 z-[9999] flex -translate-x-1/2 flex-col items-center gap-1.5"
     />
   </ToastProvider>

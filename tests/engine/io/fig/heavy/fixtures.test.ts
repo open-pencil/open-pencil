@@ -12,13 +12,13 @@ heavy('parse heavy .fig files', () => {
   let material3: SceneGraph
   let nuxtui: SceneGraph
   let material3Nodes: SceneNode[]
-  let nuxtUiNodes: SceneNode[]
+  let nuxtUINodes: SceneNode[]
 
   beforeAll(async () => {
     material3 = await parseFixture('material3.fig', { populate: 'none' })
     nuxtui = await parseFixture('nuxtui.fig', { populate: 'none' })
     material3Nodes = collectAllNodes(material3)
-    nuxtUiNodes = collectAllNodes(nuxtui)
+    nuxtUINodes = collectAllNodes(nuxtui)
   })
 
   test('material3.fig parses with pages and nodes', () => {
@@ -30,7 +30,7 @@ heavy('parse heavy .fig files', () => {
   test('nuxtui.fig parses with pages and nodes', () => {
     expect(nuxtui).toBeInstanceOf(SceneGraph)
     expect(nuxtui.getPages().length).toBeGreaterThan(0)
-    expect(nuxtUiNodes.length).toBeGreaterThan(0)
+    expect(nuxtUINodes.length).toBeGreaterThan(0)
   })
 
   test('material3: contains COMPONENT nodes', () => {
@@ -43,7 +43,7 @@ heavy('parse heavy .fig files', () => {
   })
 
   test('nuxtui: no unmapped node types', () => {
-    const invalid = nuxtUiNodes.filter((n) => !VALID_NODE_TYPES.has(n.type))
+    const invalid = nuxtUINodes.filter((n) => !VALID_NODE_TYPES.has(n.type))
     expect(invalid.map((n) => `${n.name}: ${n.type}`)).toEqual([])
   })
 
@@ -66,7 +66,7 @@ heavy('parse heavy .fig files', () => {
   })
 
   test('nuxtui: fills have valid colors', () => {
-    for (const n of nuxtUiNodes) {
+    for (const n of nuxtUINodes) {
       for (const fill of n.fills) {
         if (fill.type === 'SOLID') {
           expect(fill.color.r).toBeGreaterThanOrEqual(0)

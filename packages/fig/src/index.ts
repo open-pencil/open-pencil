@@ -7,6 +7,11 @@ export {
   type WriteFigArchiveInput
 } from './archive'
 export {
+  extractFigThumbnailFromReader,
+  type FigRangeReader,
+  type FigThumbnailLimits
+} from './thumbnail'
+export {
   effectiveFigmaRawNodeFields,
   effectiveFigmaSourcePayload,
   readEffectiveFigmaRawField,
