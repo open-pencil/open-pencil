@@ -1,8 +1,8 @@
-import { resolve } from 'node:path'
-
+import { cloudDeployPath, cloudPackagePath } from '#cloud-test/helpers/paths'
 import { composeCommand, runProcess } from '#cloud-test/helpers/process'
 
-const deployDirectory = resolve(import.meta.dir, '../../deploy')
+const deployDirectory = cloudDeployPath()
+const objectStoreTest = cloudPackagePath('tests/e2e/object-store.ts')
 const projectName = `openpencil-cloud-garage-e2e-${process.pid}`
 const compose = composeCommand(projectName, 'compose.garage.yml')
 const environment = {
@@ -22,7 +22,7 @@ async function run(command: string[], cwd = deployDirectory): Promise<void> {
 
 try {
   await run([...compose, 'up', '-d', '--wait'])
-  await run(['bun', resolve(import.meta.dir, 'object-store.ts')], import.meta.dir)
+  await run(['bun', objectStoreTest], cloudPackagePath('tests/e2e'))
 } finally {
   await run([...compose, 'down', '--volumes'])
 }

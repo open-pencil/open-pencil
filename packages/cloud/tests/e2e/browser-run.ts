@@ -1,9 +1,8 @@
-import { resolve } from 'node:path'
-
+import { cloudDeployPath, repositoryPath } from '#cloud-test/helpers/paths'
 import { composeCommand, runProcess } from '#cloud-test/helpers/process'
 
-const deployDirectory = resolve(import.meta.dir, '../../deploy')
-const repositoryDirectory = resolve(import.meta.dir, '../../../..')
+const deployDirectory = cloudDeployPath()
+const repositoryDirectory = repositoryPath()
 const projectName = `openpencil-cloud-browser-e2e-${process.pid}`
 const compose = composeCommand(projectName, 'compose.yml')
 let cloud: ReturnType<typeof Bun.spawn> | null = null

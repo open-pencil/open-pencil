@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+
+import { repositoryPath } from '#cloud-test/helpers/paths'
 
 import { createNodeCloudDatabase, createS3ObjectStore } from '@open-pencil/cloud/runtime/node'
 import {
@@ -45,7 +46,7 @@ const documentId = crypto.randomUUID()
 const revisionId = crypto.randomUUID()
 const objectId = crypto.randomUUID()
 const objectKey = `browser-e2e/${documentId}/${revisionId}.fig`
-const fixturePath = resolve(import.meta.dir, '../../../../tests/fixtures/gold-preview.fig')
+const fixturePath = repositoryPath('tests/fixtures/gold-preview.fig')
 const fixture = new Uint8Array(await readFile(fixturePath))
 const fixtureChecksum = checksum(fixture)
 
