@@ -24,16 +24,34 @@ function editorState(editor: TextEditor) {
 }
 
 function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical']) {
+  const hitTestYs: number[] = []
   const rects = [{ rect: [4, 2, 14, 12] }] as RectWithDirection[]
+  const lineMetrics = {
+    endExcludingWhitespaces: 5,
+    height: 10,
+    left: 3,
+    startIndex: 0
+  }
   const paragraph = {
     delete: () => undefined,
-    getGlyphPositionAtCoordinate: (_x: number, y: number) => ({ pos: Math.round(y) }),
+    getGlyphPositionAtCoordinate: (_x: number, y: number) => {
+      hitTestYs.push(y)
+      return { pos: Math.round(y) }
+    },
     getHeight: () => 20,
-    getLineMetrics: () => [{ height: 10, left: 3 }],
+    getLineMetrics: () => [lineMetrics],
+    getLineMetricsAt: () => lineMetrics,
+    getLineNumberAt: () => 0,
     getRectsForRange: () => rects
   } as Pick<
     Paragraph,
-    'delete' | 'getGlyphPositionAtCoordinate' | 'getHeight' | 'getLineMetrics' | 'getRectsForRange'
+    | 'delete'
+    | 'getGlyphPositionAtCoordinate'
+    | 'getHeight'
+    | 'getLineMetrics'
+    | 'getLineMetricsAt'
+    | 'getLineNumberAt'
+    | 'getRectsForRange'
   > as Paragraph
   const renderer = {
     buildParagraph: () => paragraph,
@@ -47,7 +65,7 @@ function createParagraphEditor(textAlignVertical: SceneNode['textAlignVertical']
     textAlignVertical
   })
   editor.start(node)
-  return { editor, paragraph }
+  return { editor, hitTestYs }
 }
 
 describe('TextEditor', () => {
@@ -148,7 +166,7 @@ describe('TextEditor', () => {
       ['CENTER', 40],
       ['BOTTOM', 80]
     ] as const) {
-      const { editor } = createParagraphEditor(alignment)
+      const { editor, hitTestYs } = createParagraphEditor(alignment)
       editorState(editor).selectionAnchor = 0
       editorState(editor).cursor = 5
 
@@ -157,7 +175,25 @@ describe('TextEditor', () => {
       expect(editor.getCaretRect()).toEqual({ x: 14, y0: 2 + offset, y1: 12 + offset })
 
       editor.setCursorAt(4, offset + 3)
+      expect(hitTestYs.at(-1)).toBe(3)
       expect(editorState(editor).cursor).toBe(3)
+
+      editor.selectWordAt(4, offset + 2)
+      expect(hitTestYs.at(-1)).toBe(2)
+      expect(editor.getSelectionRange()).toEqual([0, 5])
+
+      editor.selectLineAt(4, offset + 4)
+      expect(hitTestYs.at(-1)).toBe(4)
+      expect(editor.getSelectionRange()).toEqual([0, 5])
+
+      editorState(editor).selectionAnchor = null
+      editorState(editor).cursor = 1
+      editor.moveUp()
+      expect(hitTestYs.at(-1)).toBe(-3)
+
+      editorState(editor).cursor = 1
+      editor.moveDown()
+      expect(hitTestYs.at(-1)).toBe(17)
     }
   })
 
