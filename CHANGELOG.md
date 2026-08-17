@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added a Performance settings section for monitoring and controlling development FIG page population workers, including their memory tradeoffs.
+
 ## 0.14.0 - 2026-08-07
 
 ### Breaking changes

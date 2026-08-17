@@ -174,6 +174,19 @@ export const dialogMessageDefaults = {
   back: 'Back',
   settingsMedia: 'Media',
   settingsMCP: 'MCP & automation',
+  settingsPerformance: 'Performance',
+  performanceDescription: 'Control experimental runtime features and resource usage.',
+  figPopulationWorkers: 'FIG page population workers',
+  figPopulationWorkersDescription:
+    'Populate lazy FIG pages outside the UI thread to keep the editor responsive.',
+  activeWorkers: 'Active workers',
+  workerNodeLimit: 'Current node limit',
+  workerMemoryWarning: 'Workers trade memory for responsiveness',
+  workerMemoryWarningDescription:
+    'Workers can make large FIG files feel smoother, but may use much more RAM by retaining another document representation.',
+  workerReopenNotice:
+    'Turning this off stops existing workers immediately. After turning it back on, reopen documents to create new workers.',
+  developmentOnly: 'Development only',
   mcpDescription: 'Monitor and restart the local MCP server used by agents and automation.',
   mcpStatus: 'Status',
   mcpPort: 'Port',

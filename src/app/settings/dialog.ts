@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-export type SettingsSection = 'ai' | 'media' | 'mcp' | 'storage'
+export type SettingsSection = 'ai' | 'media' | 'mcp' | 'performance' | 'storage'
 
 export const settingsDialogOpen = ref(false)
 export const settingsDialogSection = ref<SettingsSection>('ai')

@@ -17,6 +17,15 @@ type WorkerResult = PopulationResult | { type: 'population-error'; error: string
 const MAX_FIG_POPULATION_WORKER_NODES = 200_000
 const FIG_POPULATION_WORKER_TIMEOUT_MS = 30_000
 const populationWorkers = new WeakMap<SceneGraph, FigPopulationWorker>()
+const activePopulationWorkers = new Set<FigPopulationWorker>()
+let populationWorkersEnabled = true
+
+export interface FigPopulationWorkerStatus {
+  available: boolean
+  enabled: boolean
+  activeCount: number
+  maxGraphNodes: number
+}
 
 export interface FigPopulationWorkerTelemetry {
   event: 'registered' | 'populate' | 'fallback' | 'stale' | 'terminated'
@@ -34,6 +43,10 @@ function emitTelemetry(detail: FigPopulationWorkerTelemetry): void {
 }
 
 export function registerFigPopulationWorker(graph: SceneGraph, worker: Worker): void {
+  if (!isDevelopmentBuild(import.meta.env) || !populationWorkersEnabled) {
+    worker.terminate()
+    return
+  }
   if (graph.nodes.size > MAX_FIG_POPULATION_WORKER_NODES) {
     emitTelemetry({ event: 'fallback', reason: 'oversized' })
     worker.terminate()
@@ -41,6 +54,7 @@ export function registerFigPopulationWorker(graph: SceneGraph, worker: Worker): 
   }
   const client = createPopulationWorkerClient(graph, worker)
   populationWorkers.set(graph, client)
+  activePopulationWorkers.add(client)
   emitTelemetry({ event: 'registered' })
 }
 
@@ -51,9 +65,26 @@ function isDevelopmentBuild(env?: { DEV?: boolean }): boolean {
 export function canUseFigPopulationWorker(graph: SceneGraph): boolean {
   return (
     isDevelopmentBuild(import.meta.env) &&
+    populationWorkersEnabled &&
     populationWorkers.has(graph) &&
     getLazyFigImportContext(graph) !== undefined
   )
+}
+
+export function getFigPopulationWorkerStatus(): FigPopulationWorkerStatus {
+  const available = isDevelopmentBuild(import.meta.env)
+  return {
+    available,
+    enabled: available && populationWorkersEnabled,
+    activeCount: activePopulationWorkers.size,
+    maxGraphNodes: MAX_FIG_POPULATION_WORKER_NODES
+  }
+}
+
+export function setFigPopulationWorkersEnabled(enabled: boolean): void {
+  populationWorkersEnabled = enabled
+  if (enabled) return
+  for (const worker of activePopulationWorkers) worker.terminate()
 }
 
 export interface FigPopulationWorker {
@@ -105,6 +136,30 @@ function createPopulationWorkerClient(graph: SceneGraph, worker: Worker): FigPop
     releaseSubscription()
     worker.terminate()
     populationWorkers.delete(graph)
+    activePopulationWorkers.delete(client)
+  }
+  const client: FigPopulationWorker = {
+    populate(pageId) {
+      if (stale) return Promise.resolve(null)
+      const requestId = randomHex()
+      const baseRevision = revision
+      return new Promise((resolve) => {
+        const timeout = setTimeout(() => fail(), FIG_POPULATION_WORKER_TIMEOUT_MS)
+        pending.set(requestId, {
+          resolve,
+          revision: baseRevision,
+          startedAt: performance.now(),
+          timeout
+        })
+        worker.postMessage({ type: 'populate', requestId, baseRevision, pageId }, [])
+      })
+    },
+    terminate() {
+      if (disposed) return
+      disposed = true
+      emitTelemetry({ event: 'terminated' })
+      fail(false)
+    }
   }
   unbind = graph.onNodeEvents({
     created: invalidate,
@@ -148,27 +203,5 @@ function createPopulationWorkerClient(graph: SceneGraph, worker: Worker): FigPop
     })
   }
   worker.onerror = () => fail()
-  return {
-    populate(pageId) {
-      if (stale) return Promise.resolve(null)
-      const requestId = randomHex()
-      const baseRevision = revision
-      return new Promise((resolve) => {
-        const timeout = setTimeout(() => fail(), FIG_POPULATION_WORKER_TIMEOUT_MS)
-        pending.set(requestId, {
-          resolve,
-          revision: baseRevision,
-          startedAt: performance.now(),
-          timeout
-        })
-        worker.postMessage({ type: 'populate', requestId, baseRevision, pageId }, [])
-      })
-    },
-    terminate() {
-      if (disposed) return
-      disposed = true
-      emitTelemetry({ event: 'terminated' })
-      fail(false)
-    }
-  }
+  return client
 }

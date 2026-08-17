@@ -9,6 +9,7 @@ import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen, settingsDialogSection } from '@/app/settings/dialog'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import MCPSettingsPanel from '@/components/settings/mcp/MCPSettingsPanel.vue'
+import PerformanceSettingsPanel from '@/components/settings/performance/PerformanceSettingsPanel.vue'
 import StockPhotoKeysSection from '@/components/settings/provider/StockPhotoKeysSection.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import VectorizeSettingsSection from '@/components/settings/vectorize/VectorizeSettingsSection.vue'
@@ -58,6 +59,16 @@ const navigationClass =
 
     <div class="flex min-h-0 flex-1">
       <nav class="w-40 shrink-0 border-r border-border p-2" :aria-label="dialogs.settings">
+        <button
+          type="button"
+          :class="navigationClass"
+          :data-state="settingsDialogSection === 'performance' ? 'active' : 'inactive'"
+          data-test-id="settings-section-performance"
+          @click="settingsDialogSection = 'performance'"
+        >
+          <icon-lucide-gauge class="size-3.5" />
+          {{ dialogs.settingsPerformance }}
+        </button>
         <button
           type="button"
           :class="navigationClass"
@@ -120,6 +131,7 @@ const navigationClass =
         </section>
 
         <MCPSettingsPanel v-else-if="settingsDialogSection === 'mcp'" />
+        <PerformanceSettingsPanel v-else-if="settingsDialogSection === 'performance'" />
         <StorageSettingsPanel v-else />
       </div>
     </div>
