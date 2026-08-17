@@ -453,7 +453,7 @@ const RAW_FIELDS_OVERRIDE_BLOCKLIST = new Set([
  */
 function isReflowedStrokedPathText(node: SceneNode): boolean {
   if (node.type !== 'TEXT' || node.textPathData === null) return false
-  if ((node.figmaDerivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
+  if ((node.derivedTextGlyphs?.length ?? 0) === 0 || node.textPathBox === null) return false
   if (node.strokeGeometry.length !== 0) return false
   // Only when the node has stroke paint but its baked silhouettes were
   // cleared by reflow (see resize.ts). Fill-only path text (no stroke paint,
@@ -486,7 +486,7 @@ function isEditedPathText(node: SceneNode): boolean {
     // clear source.fig.rawTransform directly; effectiveFigmaSourcePayload
     // derives it from source.editedFields, so ask that, not the raw field.
     effectiveFigmaSourcePayload(node).rawTransform === null &&
-    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+    (node.derivedTextGlyphs?.length ?? 0) > 0
   )
 }
 
@@ -892,9 +892,7 @@ function applyNodeVisualProps(
  */
 function exportKiwiNodeType(node: SceneNode, context: SceneNodeToKiwiContext): string {
   const isPathText =
-    node.textPathData !== null &&
-    node.type === 'TEXT' &&
-    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0
+    node.textPathData !== null && node.type === 'TEXT' && (node.derivedTextGlyphs?.length ?? 0) > 0
   return isPathText ? 'TEXT_PATH' : context.mapToFigmaType(node.type)
 }
 

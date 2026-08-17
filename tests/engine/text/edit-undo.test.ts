@@ -3,7 +3,7 @@ import { describe, test, expect } from 'bun:test'
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
-import type { FigmaDerivedTextGlyph, StyleRun } from '@open-pencil/core'
+import type { DerivedTextGlyph, StyleRun } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
 
@@ -73,7 +73,7 @@ async function setupPathText() {
   fontManager.markLoaded('Inter', 'Regular', font)
 
   const setupResult = setup()
-  const glyphs: FigmaDerivedTextGlyph[] = [
+  const glyphs: DerivedTextGlyph[] = [
     { commandsBlob: new Uint8Array([0]), x: 20, y: 20, fontSize: 20, rotation: 0 },
     { commandsBlob: new Uint8Array([0]), x: 40, y: 20, fontSize: 20, rotation: 0 }
   ]
@@ -90,7 +90,7 @@ async function setupPathText() {
       forward: true
     },
     textPathBox: { x: 0, y: 0, width: 200, height: 40 },
-    figmaDerivedTextGlyphs: glyphs
+    derivedTextGlyphs: glyphs
   })
   return setupResult
 }
@@ -150,7 +150,7 @@ describe('text edit undo', () => {
     if (!setupResult) return
     const { graph, undo, textEditor, textNode, actions } = setupResult
     const originalGlyphs = structuredClone(
-      expectDefined(getNodeOrThrow(graph, textNode.id).figmaDerivedTextGlyphs)
+      expectDefined(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs)
     )
 
     actions.startTextEditing(textNode.id)
@@ -159,18 +159,18 @@ describe('text edit undo', () => {
       text: expectDefined(textEditor.state, 'text editor state').text
     })
 
-    const liveGlyphs = expectDefined(getNodeOrThrow(graph, textNode.id).figmaDerivedTextGlyphs)
+    const liveGlyphs = expectDefined(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs)
     expect(liveGlyphs).toHaveLength(3)
     expect(liveGlyphs).not.toEqual(originalGlyphs)
 
     actions.commitTextEdit()
     undo.undo()
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('AB')
-    expect(getNodeOrThrow(graph, textNode.id).figmaDerivedTextGlyphs).toEqual(originalGlyphs)
+    expect(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs).toEqual(originalGlyphs)
 
     undo.redo()
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('ABC')
-    expect(getNodeOrThrow(graph, textNode.id).figmaDerivedTextGlyphs).toEqual(liveGlyphs)
+    expect(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs).toEqual(liveGlyphs)
   })
 
   test('restores path identity when undoing an edit to empty text', async () => {
@@ -291,12 +291,12 @@ describe('text edit undo', () => {
   test('commitTextEdit preserves Figma derived glyphs when text unchanged', () => {
     const { graph, actions, textNode } = setup()
     const glyphs = [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 14 }]
-    graph.updateNode(textNode.id, { figmaDerivedTextGlyphs: glyphs })
+    graph.updateNode(textNode.id, { derivedTextGlyphs: glyphs })
 
     actions.startTextEditing(textNode.id)
     actions.commitTextEdit()
 
-    expect(getNodeOrThrow(graph, textNode.id).figmaDerivedTextGlyphs).toBe(glyphs)
+    expect(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs).toBe(glyphs)
   })
 
   test('undo restores original text even when graph was synced mid-edit', () => {

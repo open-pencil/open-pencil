@@ -34,7 +34,7 @@ describe('path-text reflow — real fixture (optional local)', () => {
     )
     const data = expectDefined(getTextPathData(node), 'text path data')
     const box = expectDefined(node.textPathBox, 'textPathBox')
-    const glyphs = expectDefined(node.figmaDerivedTextGlyphs, 'imported glyphs')
+    const glyphs = expectDefined(node.derivedTextGlyphs, 'imported glyphs')
     expect(glyphs.length).toBeGreaterThan(0)
 
     const layout = expectDefined(calibratePathTextLayout(glyphs, data, box), 'layout')
@@ -86,7 +86,7 @@ describe('path-text reflow — real fixture (optional local)', () => {
   // and sits ~30px off (the visible offset bug this fit corrects).
   function maxGlyphToPath(
     path: { xs: Float64Array; ys: Float64Array },
-    glyphs: SceneNode['figmaDerivedTextGlyphs'] & object
+    glyphs: SceneNode['derivedTextGlyphs'] & object
   ) {
     let max = 0
     for (const g of glyphs) {
@@ -108,7 +108,7 @@ describe('path-text reflow — real fixture (optional local)', () => {
     )
     const data = expectDefined(getTextPathData(node), 'text path data')
     const box = expectDefined(node.textPathBox, 'textPathBox')
-    const glyphs = expectDefined(node.figmaDerivedTextGlyphs, 'imported glyphs')
+    const glyphs = expectDefined(node.derivedTextGlyphs, 'imported glyphs')
 
     // Raw textPathBox path is materially off the glyphs (the bug).
     const rawPath = expectDefined(sampleTextPath(data, box), 'raw path')

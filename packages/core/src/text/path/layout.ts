@@ -1,4 +1,4 @@
-import type { FigmaDerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { nearestArcPoint, pointAtArc, sampleTextPath, type PathPoint } from './sampling'
@@ -37,7 +37,7 @@ function baseRotation(p: PathPoint, forward: boolean): number {
  * Reflowing with these on the same box reproduces the input exactly.
  */
 export function calibratePathTextLayout(
-  glyphs: FigmaDerivedTextGlyph[],
+  glyphs: DerivedTextGlyph[],
   data: TextPathData,
   box: Rect
 ): PathTextLayout | null {
@@ -88,7 +88,7 @@ export function layoutPathTextFromAdvances(
   anchor: number,
   offset: number,
   glyphSources: Array<{ commandsBlob: Uint8Array; fontSize: number; advance: number }>
-): FigmaDerivedTextGlyph[] | null {
+): DerivedTextGlyph[] | null {
   const path = sampleTextPath(data, box)
   if (!path) return null
   const dir = data.forward ? 1 : -1
@@ -107,11 +107,11 @@ export function layoutPathTextFromAdvances(
 }
 
 export function reflowPathTextGlyphs(
-  glyphs: FigmaDerivedTextGlyph[],
+  glyphs: DerivedTextGlyph[],
   data: TextPathData,
   layout: PathTextLayout,
   box: Rect
-): FigmaDerivedTextGlyph[] | null {
+): DerivedTextGlyph[] | null {
   if (glyphs.length !== layout.deltas.length) return null
   const path = sampleTextPath(data, box)
   if (!path) return null

@@ -26,7 +26,7 @@ describe('TEXT_PATH reflow export hygiene (optional local)', () => {
     )
     const data = expectDefined(getTextPathData(node), 'text path data')
     const box = expectDefined(node.textPathBox, 'textPathBox')
-    const origGlyphs = expectDefined(node.figmaDerivedTextGlyphs, 'imported glyphs')
+    const origGlyphs = expectDefined(node.derivedTextGlyphs, 'imported glyphs')
     const layout = expectDefined(calibratePathTextLayout(origGlyphs, data, box), 'layout')
     const halfBox = {
       x: box.x * 0.5,
@@ -50,7 +50,7 @@ describe('TEXT_PATH reflow export hygiene (optional local)', () => {
       graph.updateNode(node.id, {
         strokeGeometry: [],
         textPathBox: halfBox,
-        figmaDerivedTextGlyphs: reflowed
+        derivedTextGlyphs: reflowed
       })
     })
     const updated = expectDefined(graph.getNode(node.id), 'updated node')

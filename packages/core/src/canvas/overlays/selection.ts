@@ -215,7 +215,7 @@ function drawTextPathSelection(
   const box =
     (data &&
       node.textPathBox &&
-      fitTextPathBoxToGlyphs(data, node.textPathBox, node.figmaDerivedTextGlyphs)) ??
+      fitTextPathBoxToGlyphs(data, node.textPathBox, node.derivedTextGlyphs)) ??
     node.textPathBox
   // Eligibility gated data/box, but sampleTextPath can still fail (bad vertex /
   // zero length) — any null falls back to the standard rectangle, no throw.
@@ -228,7 +228,7 @@ function drawTextPathSelection(
   withNodeBounds(r, canvas, node, rotation, graph, () => {
     // Figma-style selection band: a filled ribbon that hugs the lettering along
     // the path (replaces the flat, path-blind text-edit selection rects).
-    const bandPoly = pathTextSelectionBand(data, box, node.figmaDerivedTextGlyphs, sampled)
+    const bandPoly = pathTextSelectionBand(data, box, node.derivedTextGlyphs, sampled)
     if (bandPoly && bandPoly.length >= 6) {
       const band = new r.ck.Path()
       band.moveTo(bandPoly[0], bandPoly[1])

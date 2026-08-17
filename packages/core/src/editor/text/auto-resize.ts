@@ -42,9 +42,9 @@ function hasTextAutoWidthChange(changes: Partial<SceneNode>): boolean {
 export function textAutoResizeChanges(
   node: SceneNode | undefined,
   changes: Partial<SceneNode>
-): Partial<Pick<SceneNode, 'width' | 'height' | 'figmaDerivedLayout' | 'figmaDerivedTextGlyphs'>> {
+): Partial<Pick<SceneNode, 'width' | 'height' | 'derivedLayout' | 'derivedTextGlyphs'>> {
   if (node?.type !== 'TEXT' || !hasTextAutoResizeChange(changes)) return {}
-  // Path text is laid out along its path (figmaDerivedTextGlyphs on textPathBox),
+  // Path text is laid out along its path (derivedTextGlyphs on textPathBox),
   // not by paragraph auto-resize. Running the measurement here would null the
   // derived glyphs — destroying the on-path lettering — whenever an imported
   // TEXT_PATH carries textAutoResize HEIGHT/WIDTH_AND_HEIGHT and a keystroke
@@ -59,11 +59,8 @@ export function textAutoResizeChanges(
   const maxWidth = mode === 'HEIGHT' ? next.width : undefined
   const measured = getTextMeasurer()?.(next, maxWidth) ?? estimateTextSize(next, maxWidth)
   const resized: Partial<
-    Pick<SceneNode, 'width' | 'height' | 'figmaDerivedLayout' | 'figmaDerivedTextGlyphs'>
-  > = {
-    figmaDerivedLayout: null,
-    figmaDerivedTextGlyphs: null
-  }
+    Pick<SceneNode, 'width' | 'height' | 'derivedLayout' | 'derivedTextGlyphs'>
+  > = { derivedLayout: null, derivedTextGlyphs: null }
 
   if (mode === 'WIDTH_AND_HEIGHT' && hasTextAutoWidthChange(changes) && measured.width > 0)
     resized.width = measured.width

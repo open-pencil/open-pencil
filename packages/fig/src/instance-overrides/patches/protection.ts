@@ -15,7 +15,7 @@ export type ProtectedField =
   | 'y'
   | 'width'
   | 'height'
-  | 'figmaDerivedLayout'
+  | 'derivedLayout'
   | 'fontSize'
   | 'lineHeight'
   | 'letterSpacing'
@@ -40,7 +40,7 @@ const PROP_TO_PROTECTED_FIELD: Partial<Record<keyof SceneNode, ProtectedField>> 
   y: 'y',
   width: 'width',
   height: 'height',
-  figmaDerivedLayout: 'figmaDerivedLayout',
+  derivedLayout: 'derivedLayout',
   fontSize: 'fontSize',
   lineHeight: 'lineHeight',
   letterSpacing: 'letterSpacing',

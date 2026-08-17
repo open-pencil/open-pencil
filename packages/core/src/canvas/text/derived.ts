@@ -3,13 +3,14 @@ import type { Canvas, Paint, Path } from 'canvaskit-wasm'
 import type {
   Color,
   Fill,
-  FigmaDerivedTextGlyph,
+  DerivedTextGlyph,
   SceneNode,
   Stroke,
   StyleRun,
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
 
+import { encodeBase64 } from '#core/bytes'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { geometryBlobToPath } from '#core/vector'
 
@@ -25,11 +26,11 @@ interface DecorationSpan extends DecorationRange {
   fills: Fill[]
 }
 
-export function snapFigmaDerivedGlyphBaseline(y: number): number {
+export function snapDerivedGlyphBaseline(y: number): number {
   return Math.round(y)
 }
 
-export function shouldUseHardFigmaDerivedGlyphCoverage(
+export function shouldUseHardDerivedGlyphCoverage(
   node: Pick<SceneNode, 'fontSize' | 'fontWeight'>
 ): boolean {
   return node.fontSize === 20 && node.fontWeight === 400
@@ -45,7 +46,7 @@ export function derivedUnderlineRect(node: Pick<SceneNode, 'width'>, baselineY: 
 }
 
 function styleRunX(node: SceneNode, index: number): number {
-  const glyph = node.figmaDerivedTextGlyphs?.[index]
+  const glyph = node.derivedTextGlyphs?.[index]
   if (glyph) return glyph.x
   if (index >= node.text.length) return node.width
   if (node.text.length === 0) return 0
@@ -224,10 +225,8 @@ function drawDerivedDecorations(
  * Path-text glyphs carry non-zero Figma `Glyph.rotation` (radians). Used to
  * disable axis-aligned assumptions (baseline snap, underline decorations).
  */
-export function hasRotatedFigmaDerivedGlyphs(
-  node: Pick<SceneNode, 'figmaDerivedTextGlyphs'>
-): boolean {
-  return node.figmaDerivedTextGlyphs?.some((glyph) => (glyph.rotation ?? 0) !== 0) === true
+export function hasRotatedDerivedGlyphs(node: Pick<SceneNode, 'derivedTextGlyphs'>): boolean {
+  return node.derivedTextGlyphs?.some((glyph) => (glyph.rotation ?? 0) !== 0) === true
 }
 
 /**
@@ -238,19 +237,11 @@ export function hasRotatedFigmaDerivedGlyphs(
 export function isReflowedPathText(node: SceneNode): boolean {
   return (
     node.type === 'TEXT' &&
-    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
+    (node.derivedTextGlyphs?.length ?? 0) > 0 &&
     node.textPathBox !== null &&
     node.strokeGeometry.length === 0 &&
     node.textPathData !== null
   )
-}
-
-function djb2(bytes: Uint8Array): number {
-  let hash = 5381
-  for (const byte of bytes) {
-    hash = ((hash * 33) ^ byte) >>> 0
-  }
-  return hash
 }
 
 interface GlyphSilhouette {
@@ -273,12 +264,12 @@ interface GlyphSilhouette {
  */
 function getGlyphSilhouette(
   r: SkiaRenderer,
-  glyph: FigmaDerivedTextGlyph,
+  glyph: DerivedTextGlyph,
   stroke: Stroke
 ): GlyphSilhouette {
   const blob = glyph.commandsBlob
   const relativeWeight = stroke.weight / glyph.fontSize
-  const key = `${djb2(blob)}:${blob.length}:${relativeWeight.toFixed(5)}`
+  const key = `${encodeBase64(blob)}:${relativeWeight.toFixed(5)}`
   const cached = r.glyphSilhouetteCache.get(key)
   if (cached) return { path: cached, cached: true }
 
@@ -313,9 +304,9 @@ function getGlyphSilhouette(
 /**
  * Push a glyph's on-path transform: baseline → non-uniform scale → rotate →
  * font-units→px (Y-flipped). The fill and silhouette passes share it so they
- * stay registered; see drawFigmaDerivedText for the order rationale.
+ * stay registered; see drawDerivedText for the order rationale.
  */
-function applyGlyphEmTransform(canvas: Canvas, glyph: FigmaDerivedTextGlyph, glyphY: number): void {
+function applyGlyphEmTransform(canvas: Canvas, glyph: DerivedTextGlyph, glyphY: number): void {
   canvas.translate(glyph.x, glyphY)
   const scaleX = glyph.scaleX ?? 1
   const scaleY = glyph.scaleY ?? 1
@@ -327,7 +318,7 @@ function applyGlyphEmTransform(canvas: Canvas, glyph: FigmaDerivedTextGlyph, gly
 
 /**
  * Paint per-glyph stroke silhouettes under a reflowed path-text node.
- * Transform chain mirrors drawFigmaDerivedText exactly so silhouettes and
+ * Transform chain mirrors drawDerivedText exactly so silhouettes and
  * fills stay registered.
  */
 export function drawReflowedPathTextSilhouettes(
@@ -337,10 +328,10 @@ export function drawReflowedPathTextSilhouettes(
   stroke: Stroke,
   color: Color
 ): void {
-  const glyphs = node.figmaDerivedTextGlyphs
+  const glyphs = node.derivedTextGlyphs
   if (!glyphs?.length || stroke.weight <= 0) return
 
-  const snapBaselines = !hasRotatedFigmaDerivedGlyphs(node)
+  const snapBaselines = !hasRotatedDerivedGlyphs(node)
   const paint = new r.ck.Paint()
   paint.setAntiAlias(true)
   paint.setStyle(r.ck.PaintStyle.Fill)
@@ -354,7 +345,7 @@ export function drawReflowedPathTextSilhouettes(
       applyGlyphEmTransform(
         canvas,
         glyph,
-        snapBaselines ? snapFigmaDerivedGlyphBaseline(glyph.y) : glyph.y
+        snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
       )
       canvas.drawPath(silhouette.path, paint)
       canvas.restore()
@@ -379,20 +370,20 @@ export function drawReflowedPathTextSilhouettes(
  *                            black fills vs white strokeGeometry
  *   4. scale(fontSize,-fs) — font units → px; Y flip (font space is up-positive)
  */
-export function drawFigmaDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
-  if (!node.figmaDerivedTextGlyphs?.length) return false
+export function drawDerivedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode): boolean {
+  if (!node.derivedTextGlyphs?.length) return false
 
   // Pixel-snap is for horizontal Figma baselines only — on a curve it stair-steps
   // letter positions and breaks registration with strokeGeometry.
-  const snapBaselines = !hasRotatedFigmaDerivedGlyphs(node)
+  const snapBaselines = !hasRotatedDerivedGlyphs(node)
   let underlineBaselineY = 0
-  for (const glyph of node.figmaDerivedTextGlyphs) {
-    const glyphY = snapBaselines ? snapFigmaDerivedGlyphBaseline(glyph.y) : glyph.y
+  for (const glyph of node.derivedTextGlyphs) {
+    const glyphY = snapBaselines ? snapDerivedGlyphBaseline(glyph.y) : glyph.y
     underlineBaselineY = Math.max(underlineBaselineY, glyphY)
     const path = geometryBlobToPath(r.ck, glyph.commandsBlob, 'NONZERO')
     canvas.save()
     applyGlyphEmTransform(canvas, glyph, glyphY)
-    const shouldUseHardCoverage = shouldUseHardFigmaDerivedGlyphCoverage(node)
+    const shouldUseHardCoverage = shouldUseHardDerivedGlyphCoverage(node)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(false)
     canvas.drawPath(path, r.fillPaint)
     if (shouldUseHardCoverage) r.fillPaint.setAntiAlias(true)

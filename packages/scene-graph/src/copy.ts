@@ -12,7 +12,7 @@ import type {
   ArcData,
   ComponentPropertyDefinition,
   Effect,
-  FigmaDerivedTextGlyph,
+  DerivedTextGlyph,
   Fill,
   GeometryPath,
   GradientStop,
@@ -205,9 +205,7 @@ function copyPropertyDefs(
 }
 
 /** Deep-copy path-text glyphs (fresh commandsBlob buffers). */
-export function copyDerivedGlyphs(
-  glyphs: FigmaDerivedTextGlyph[] | null
-): FigmaDerivedTextGlyph[] | null {
+export function copyDerivedGlyphs(glyphs: DerivedTextGlyph[] | null): DerivedTextGlyph[] | null {
   return glyphs ? glyphs.map((g) => ({ ...g, commandsBlob: new Uint8Array(g.commandsBlob) })) : null
 }
 
@@ -278,15 +276,12 @@ export function cloneNodeProps(
     pluginRelaunchData: copySpread(src.pluginRelaunchData),
     exportSettings: copySpread(src.exportSettings),
     componentPropertyValues: { ...src.componentPropertyValues },
-    figmaDerivedLayout: src.figmaDerivedLayout ? { ...src.figmaDerivedLayout } : null,
+    derivedLayout: src.derivedLayout ? { ...src.derivedLayout } : null,
     arcData: src.arcData ? copyArcData(src.arcData) : null,
     vectorNetwork: src.vectorNetwork ? cloneVectorNetwork(src.vectorNetwork) : null,
     textPicture: src.textPicture ? new Uint8Array(src.textPicture) : null,
-    figmaDerivedTextGlyphs: src.figmaDerivedTextGlyphs
-      ? markCopySource(
-          src.figmaDerivedTextGlyphs,
-          copyDerivedGlyphs(src.figmaDerivedTextGlyphs) ?? []
-        )
+    derivedTextGlyphs: src.derivedTextGlyphs
+      ? markCopySource(src.derivedTextGlyphs, copyDerivedGlyphs(src.derivedTextGlyphs) ?? [])
       : null,
     textPathData: src.textPathData ? structuredClone(src.textPathData) : null,
     textPathBox: src.textPathBox ? { ...src.textPathBox } : null,

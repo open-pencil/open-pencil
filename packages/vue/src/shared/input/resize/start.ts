@@ -21,7 +21,7 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
         origVectorNetwork: snap.vectorNetwork,
         origFillGeometry: snap.fillGeometry,
         origStrokeGeometry: snap.strokeGeometry,
-        origFigmaDerivedTextGlyphs: snap.figmaDerivedTextGlyphs,
+        origDerivedTextGlyphs: snap.derivedTextGlyphs,
         origStrokes: snap.strokes,
         origTextPathData: snap.textPathData,
         origTextPathBox: snap.textPathBox,

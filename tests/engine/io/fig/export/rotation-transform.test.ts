@@ -79,9 +79,9 @@ const describeWithFixture = readFigFixture(CIRCLE_TEXT) ? describe : describe.sk
 
 function glyphWorld(graph: SceneGraph) {
   const node = [...graph.getAllNodes()].find((n) => n.name === 'ArnoCoenen.art')
-  if (!node?.figmaDerivedTextGlyphs) throw new Error('path-text node not found')
+  if (!node?.derivedTextGlyphs) throw new Error('path-text node not found')
   const m = getWorldMatrix(node, graph)
-  return node.figmaDerivedTextGlyphs.map((g) => Matrix.mapPoints(m, [g.x, g.y]))
+  return node.derivedTextGlyphs.map((g) => Matrix.mapPoints(m, [g.x, g.y]))
 }
 
 async function assertEditKeepsGlyphs(edit: (node: SceneNode) => Partial<SceneNode>) {

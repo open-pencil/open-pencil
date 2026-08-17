@@ -21,7 +21,7 @@ import type { DragResize } from '#vue/shared/input/types'
  * Resize path-text glyphs without baking anisotropic scale into fontSize.
  * commandsBlob stays in font units; paint multiplies by fontSize then scaleX/Y.
  * Accumulating scaleX/Y (not fontSize *= avg) keeps non-uniform stretch correct
- * under rotation — see drawFigmaDerivedText transform order.
+ * under rotation — see drawDerivedText transform order.
  */
 /**
  * Figma resize semantics for imported text-on-path: constant font size,
@@ -32,13 +32,13 @@ import type { DragResize } from '#vue/shared/input/types'
  * per glyph — and stroke weight stays constant like the font size.
  */
 function reflowedPathTextChanges(
-  orig: Pick<ResizeSnapshot, 'textPathData' | 'textPathBox' | 'figmaDerivedTextGlyphs' | 'strokes'>,
+  orig: Pick<ResizeSnapshot, 'textPathData' | 'textPathBox' | 'derivedTextGlyphs' | 'strokes'>,
   sx: number,
   sy: number
 ): Partial<SceneNode> | null {
-  if (!orig.textPathData || !orig.textPathBox || !orig.figmaDerivedTextGlyphs?.length) return null
+  if (!orig.textPathData || !orig.textPathBox || !orig.derivedTextGlyphs?.length) return null
   const data = orig.textPathData
-  const layout = calibratePathTextLayout(orig.figmaDerivedTextGlyphs, data, orig.textPathBox)
+  const layout = calibratePathTextLayout(orig.derivedTextGlyphs, data, orig.textPathBox)
   if (!layout) return null
   const box = {
     x: orig.textPathBox.x * sx,
@@ -46,10 +46,10 @@ function reflowedPathTextChanges(
     width: orig.textPathBox.width * sx,
     height: orig.textPathBox.height * sy
   }
-  const glyphs = reflowPathTextGlyphs(orig.figmaDerivedTextGlyphs, data, layout, box)
+  const glyphs = reflowPathTextGlyphs(orig.derivedTextGlyphs, data, layout, box)
   if (!glyphs) return null
   return {
-    figmaDerivedTextGlyphs: glyphs,
+    derivedTextGlyphs: glyphs,
     textPathBox: box,
     strokeGeometry: [],
     strokes: copyStrokes(orig.strokes)
@@ -67,7 +67,7 @@ function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean
         vectorNetwork: d.origVectorNetwork,
         fillGeometry: d.origFillGeometry,
         strokeGeometry: d.origStrokeGeometry,
-        figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs,
+        derivedTextGlyphs: d.origDerivedTextGlyphs,
         strokes: d.origStrokes,
         textPathData: d.origTextPathData,
         textPathBox: d.origTextPathBox
@@ -131,7 +131,7 @@ export function applyResize(
       {
         textPathData: d.origTextPathData,
         textPathBox: d.origTextPathBox,
-        figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs,
+        derivedTextGlyphs: d.origDerivedTextGlyphs,
         strokes: d.origStrokes
       },
       newRect.width / d.origRect.width,
@@ -174,8 +174,8 @@ function snapshotResizeFinal(node: SceneNode): Partial<SceneNode> {
   if (node.strokeGeometry.length > 0 || node.textPathBox) {
     final.strokeGeometry = copyGeometryPaths(node.strokeGeometry)
   }
-  if (node.figmaDerivedTextGlyphs?.length) {
-    final.figmaDerivedTextGlyphs = copyDerivedGlyphs(node.figmaDerivedTextGlyphs)
+  if (node.derivedTextGlyphs?.length) {
+    final.derivedTextGlyphs = copyDerivedGlyphs(node.derivedTextGlyphs)
   }
   if (node.textPathBox) final.textPathBox = { ...node.textPathBox }
   if (node.textPathData) final.textPathData = structuredClone(node.textPathData)
@@ -230,7 +230,7 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
         vectorNetwork: orig.vectorNetwork,
         fillGeometry: orig.fillGeometry,
         strokeGeometry: orig.strokeGeometry,
-        figmaDerivedTextGlyphs: orig.figmaDerivedTextGlyphs,
+        derivedTextGlyphs: orig.derivedTextGlyphs,
         strokes: orig.strokes,
         textPathData: orig.textPathData,
         textPathBox: orig.textPathBox
@@ -261,9 +261,7 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
       ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {}),
       ...(d.origFillGeometry.length > 0 ? { fillGeometry: d.origFillGeometry } : {}),
       ...(d.origStrokeGeometry.length > 0 ? { strokeGeometry: d.origStrokeGeometry } : {}),
-      ...(d.origFigmaDerivedTextGlyphs?.length
-        ? { figmaDerivedTextGlyphs: d.origFigmaDerivedTextGlyphs }
-        : {}),
+      ...(d.origDerivedTextGlyphs?.length ? { derivedTextGlyphs: d.origDerivedTextGlyphs } : {}),
       ...(d.origStrokes.length > 0 ? { strokes: d.origStrokes } : {}),
       ...(d.origTextPathData ? { textPathData: d.origTextPathData } : {}),
       ...(d.origTextPathBox ? { textPathBox: d.origTextPathBox } : {})

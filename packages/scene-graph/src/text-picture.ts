@@ -48,8 +48,8 @@ export function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode
   // A successful path-text edit supplies reflowed glyphs in `changes`. Every
   // other mutation path must drop stale baked glyphs and path identity rather
   // than pair new text/style with old visible outlines.
-  if (node.figmaDerivedTextGlyphs && glyphsInvalidated && !changes.figmaDerivedTextGlyphs) {
-    node.figmaDerivedTextGlyphs = null
+  if (node.derivedTextGlyphs && glyphsInvalidated && !changes.derivedTextGlyphs) {
+    node.derivedTextGlyphs = null
     node.textPathData = null
   }
 }

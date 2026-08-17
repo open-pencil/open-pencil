@@ -23,7 +23,7 @@ type ResizeOriginal = Rect &
       | 'vectorNetwork'
       | 'fillGeometry'
       | 'strokeGeometry'
-      | 'figmaDerivedTextGlyphs'
+      | 'derivedTextGlyphs'
       | 'strokes'
       | 'textPathData'
       | 'textPathBox'
@@ -106,7 +106,7 @@ export function createUndoActions(ctx: EditorContext) {
       'vectorNetwork' in original ||
       'fillGeometry' in original ||
       'strokeGeometry' in original ||
-      'figmaDerivedTextGlyphs' in original ||
+      'derivedTextGlyphs' in original ||
       'strokes' in original ||
       'textPathData' in original ||
       'textPathBox' in original

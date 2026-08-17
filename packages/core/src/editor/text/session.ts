@@ -17,7 +17,7 @@ export type TextEditSession = {
   before: TextEditSnapshot
   beforePathText: Pick<
     SceneNode,
-    'figmaDerivedTextGlyphs' | 'strokeGeometry' | 'textPathData' | 'textPathBox'
+    'derivedTextGlyphs' | 'strokeGeometry' | 'textPathData' | 'textPathBox'
   > | null
 }
 
@@ -31,7 +31,7 @@ export function createTextEditSession(node: SceneNode): TextEditSession {
     },
     beforePathText: node.textPathData
       ? {
-          figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
+          derivedTextGlyphs: copyDerivedGlyphs(node.derivedTextGlyphs),
           strokeGeometry: copyGeometryPaths(node.strokeGeometry),
           textPathData: structuredClone(node.textPathData),
           textPathBox: node.textPathBox ? { ...node.textPathBox } : null

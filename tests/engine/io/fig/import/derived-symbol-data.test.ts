@@ -17,8 +17,8 @@ describe('fig import derived symbol data', () => {
     const graph = new SceneGraph()
     const source = graph.createNode('TEXT', pageId(graph), {
       text: 'Account',
-      figmaDerivedTextGlyphs: [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 14 }],
-      figmaDerivedLayout: { width: 56, height: 20 }
+      derivedTextGlyphs: [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 14 }],
+      derivedLayout: { width: 56, height: 20 }
     })
     const clone = graph.createNode('TEXT', pageId(graph), {
       text: 'Account',
@@ -32,8 +32,8 @@ describe('fig import derived symbol data', () => {
 
     propagateDsdChanges(ctx, new Set([source.id]), new Set())
 
-    expect(clone.figmaDerivedTextGlyphs).toEqual(source.figmaDerivedTextGlyphs)
-    expect(clone.figmaDerivedLayout).toEqual(source.figmaDerivedLayout)
+    expect(clone.derivedTextGlyphs).toEqual(source.derivedTextGlyphs)
+    expect(clone.derivedLayout).toEqual(source.derivedLayout)
   })
 
   test('inherits derived positions when a clone has an explicit derived size', () => {
@@ -43,7 +43,7 @@ describe('fig import derived symbol data', () => {
       y: 0,
       width: 136,
       height: 40,
-      figmaDerivedLayout: { x: 152, y: 0, width: 136, height: 40 }
+      derivedLayout: { x: 152, y: 0, width: 136, height: 40 }
     })
     const clone = graph.createNode('INSTANCE', pageId(graph), {
       x: 136,
@@ -51,7 +51,7 @@ describe('fig import derived symbol data', () => {
       width: 144,
       height: 48,
       componentId: source.id,
-      figmaDerivedLayout: { x: 136, y: 4, width: 144, height: 48 }
+      derivedLayout: { x: 136, y: 4, width: 144, height: 48 }
     })
     const ctx = {
       graph,
@@ -64,7 +64,7 @@ describe('fig import derived symbol data', () => {
     expect(graph.getNode(clone.id)).toMatchObject({
       x: 152,
       y: 0,
-      figmaDerivedLayout: {
+      derivedLayout: {
         x: 152,
         y: 0,
         width: 144,
@@ -79,13 +79,13 @@ describe('fig import derived symbol data', () => {
       width: 232,
       height: 24,
       layoutMode: 'NONE',
-      figmaDerivedLayout: { width: 232, height: 24 }
+      derivedLayout: { width: 232, height: 24 }
     })
     const text = graph.createNode('TEXT', parent.id, {
       width: 256,
       height: 20,
       horizontalConstraint: 'STRETCH',
-      figmaDerivedLayout: { width: 232, height: 20 }
+      derivedLayout: { width: 232, height: 20 }
     })
     const ctx = {
       graph,
@@ -103,14 +103,14 @@ describe('fig import derived symbol data', () => {
       width: 232,
       height: 24,
       layoutMode: 'NONE',
-      figmaDerivedLayout: { width: 232 }
+      derivedLayout: { width: 232 }
     })
     const child = graph.createNode('FRAME', parent.id, {
       width: 100,
       height: 20,
       horizontalConstraint: 'STRETCH',
       verticalConstraint: 'STRETCH',
-      figmaDerivedLayout: { height: 20 }
+      derivedLayout: { height: 20 }
     })
     const ctx = { graph, activeNodeIds: new Set([parent.id, child.id]) } as OverrideContext
 
@@ -210,7 +210,7 @@ describe('fig import derived symbol data', () => {
       target
     )
 
-    expect(updates.figmaDerivedTextGlyphs).toEqual([
+    expect(updates.derivedTextGlyphs).toEqual([
       {
         commandsBlob: glyphBlob,
         x: 4,

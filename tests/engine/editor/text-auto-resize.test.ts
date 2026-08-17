@@ -85,13 +85,13 @@ describe('editor text auto-resize updates', () => {
         forward: true
       },
       textPathBox: { x: 0, y: 0, width: 200, height: 200 },
-      figmaDerivedTextGlyphs: glyphs
+      derivedTextGlyphs: glyphs
     })
 
     editor.updateNode(text.id, { text: 'abc' })
 
     const updated = getNodeOrThrow(editor.graph, text.id)
-    expect(updated.figmaDerivedTextGlyphs).toBeNull()
+    expect(updated.derivedTextGlyphs).toBeNull()
     expect(updated.textPathData).toBeNull()
     expect(updated.height).toBe(200)
   })

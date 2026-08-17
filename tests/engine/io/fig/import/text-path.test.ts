@@ -111,8 +111,8 @@ describe('TEXT_PATH real fixture (optional local)', () => {
     expect(pathText.type).not.toBe('RECTANGLE')
     expect(pathText.text).toContain('ArnoCoenen')
     expect(pathText.textPathData).not.toBeNull()
-    expect(pathText.figmaDerivedTextGlyphs?.length).toBeGreaterThan(0)
-    expect(pathText.figmaDerivedTextGlyphs?.some((g) => (g.rotation ?? 0) !== 0)).toBe(true)
+    expect(pathText.derivedTextGlyphs?.length).toBeGreaterThan(0)
+    expect(pathText.derivedTextGlyphs?.some((g) => (g.rotation ?? 0) !== 0)).toBe(true)
     expect(pathText.strokeGeometry.length).toBeGreaterThan(0)
 
     // Multi-color logo sibling must remain a VECTOR (not covered by type fallback)
@@ -165,7 +165,7 @@ describe('TEXT_PATH resize export', () => {
         tValue: 0,
         forward: true
       },
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         {
           commandsBlob: unitSquareBlob(),
           x: 10,
@@ -224,7 +224,7 @@ describe('TEXT_PATH raw payload round-trip (synthetic)', () => {
         tValue: 0.3,
         forward: false
       },
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         { commandsBlob: unitSquareBlob(), x: 10, y: 20, fontSize: 40, rotation: 0 }
       ]
     })
@@ -269,7 +269,7 @@ describe('TEXT_PATH edit invalidation', () => {
         tValue: 0,
         forward: true
       },
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         {
           commandsBlob: emptyBlob(),
           x: 0,
@@ -283,7 +283,7 @@ describe('TEXT_PATH edit invalidation', () => {
     graph.updateNode(node.id, { text: 'Edited' })
 
     const updated = expectDefined(graph.getNode(node.id))
-    expect(updated.figmaDerivedTextGlyphs).toBeNull()
+    expect(updated.derivedTextGlyphs).toBeNull()
     expect(updated.textPathData).toBeNull()
     expect(updated.textPathBox).not.toBeNull()
   })

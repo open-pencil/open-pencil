@@ -37,7 +37,7 @@ describe('text measurement', () => {
       width: 56,
       height: 20,
       textAutoResize: 'WIDTH_AND_HEIGHT',
-      figmaDerivedLayout: { width: 56, height: 20 }
+      derivedLayout: { width: 56, height: 20 }
     })
 
     setTextMeasurer(() => ({ width: 56, height: 40 }))
@@ -62,7 +62,7 @@ describe('text measurement', () => {
       width: 424,
       height: 40,
       textAutoResize: 'HEIGHT',
-      figmaDerivedLayout: { width: 424, height: 120 },
+      derivedLayout: { width: 424, height: 120 },
       source: {
         format: 'fig',
         id: '1:2',

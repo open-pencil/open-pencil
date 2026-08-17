@@ -4,7 +4,7 @@ import { reactive } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { FigmaDerivedTextGlyph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import { copyGeometryPaths, copyStrokes } from '@open-pencil/scene-graph/copy'
 
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
@@ -66,7 +66,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       width: 200,
       height: 200
     })
-    const glyphs: FigmaDerivedTextGlyph[] = [
+    const glyphs: DerivedTextGlyph[] = [
       {
         commandsBlob: squareBlob(1),
         x: 100,
@@ -84,7 +84,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       fills: [BLACK],
       strokes: [WHITE_STROKE],
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareBlob(200) }],
-      figmaDerivedTextGlyphs: glyphs
+      derivedTextGlyphs: glyphs
     })
 
     const editor = {
@@ -101,7 +101,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       vectorNetwork: null,
       fillGeometry: [],
       strokeGeometry: copyGeometryPaths(text.strokeGeometry),
-      figmaDerivedTextGlyphs: glyphs.map((g) => ({
+      derivedTextGlyphs: glyphs.map((g) => ({
         ...g,
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
@@ -120,7 +120,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origVectorNetwork: null,
       origFillGeometry: [],
       origStrokeGeometry: [],
-      origFigmaDerivedTextGlyphs: null,
+      origDerivedTextGlyphs: null,
       origStrokes: [],
       origTextPathData: null,
       origTextPathBox: null,
@@ -139,7 +139,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
     const sg = expectDefined(resized.strokeGeometry[0])
     expect(readBlobX(sg.commandsBlob, 1)).toBeCloseTo(100, 3)
 
-    const g0 = expectDefined(resized.figmaDerivedTextGlyphs?.[0])
+    const g0 = expectDefined(resized.derivedTextGlyphs?.[0])
     expect(g0.x).toBeCloseTo(50, 3)
     expect(g0.y).toBeCloseTo(25, 3)
     // fontSize stays; non-uniform/uniform scale is carried on scaleX/Y
@@ -167,7 +167,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       fills: [BLACK],
       strokes: [WHITE_STROKE],
       strokeGeometry: [{ windingRule: 'NONZERO', commandsBlob: squareBlob(200) }],
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         { commandsBlob: squareBlob(1), x: 100, y: 50, fontSize: 80, rotation: -1.5 }
       ]
     })
@@ -189,7 +189,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       vectorNetwork: null,
       fillGeometry: [],
       strokeGeometry: copyGeometryPaths(text.strokeGeometry),
-      figmaDerivedTextGlyphs: expectDefined(text.figmaDerivedTextGlyphs).map((g) => ({
+      derivedTextGlyphs: expectDefined(text.derivedTextGlyphs).map((g) => ({
         ...g,
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
@@ -207,7 +207,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
       origVectorNetwork: null,
       origFillGeometry: [],
       origStrokeGeometry: [],
-      origFigmaDerivedTextGlyphs: null,
+      origDerivedTextGlyphs: null,
       origStrokes: [],
       origTextPathData: null,
       origTextPathBox: null,
@@ -228,7 +228,7 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
   test('width/height resize does not drop derived glyphs', () => {
     const graph = new SceneGraph()
     const page = expectDefined(graph.getPages()[0])
-    const glyphs: FigmaDerivedTextGlyph[] = [
+    const glyphs: DerivedTextGlyph[] = [
       { commandsBlob: squareBlob(1), x: 10, y: 20, fontSize: 40, rotation: -1 }
     ]
     const text = graph.createNode('TEXT', page.id, {
@@ -241,14 +241,14 @@ describe('resize scales path-text stroke geometry and glyphs', () => {
         tValue: 0,
         forward: true
       },
-      figmaDerivedTextGlyphs: glyphs
+      derivedTextGlyphs: glyphs
     })
 
     graph.updateNodePreview(text.id, { width: 50, height: 80 })
 
     const updated = expectDefined(graph.getNode(text.id))
-    expect(updated.figmaDerivedTextGlyphs).not.toBeNull()
-    expect(updated.figmaDerivedTextGlyphs).toHaveLength(1)
+    expect(updated.derivedTextGlyphs).not.toBeNull()
+    expect(updated.derivedTextGlyphs).toHaveLength(1)
     expect(updated.textPathData).not.toBeNull()
   })
 })

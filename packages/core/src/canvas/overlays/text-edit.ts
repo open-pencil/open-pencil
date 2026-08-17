@@ -69,7 +69,7 @@ function drawPathTextCaret(
   editor: TextEditor
 ): void {
   if (!editor.caretVisible || editor.hasSelection()) return
-  const glyphs = node.figmaDerivedTextGlyphs
+  const glyphs = node.derivedTextGlyphs
   const idx = editor.caretIndex
   if (!glyphs?.length || idx == null) return
   const g = glyphs[Math.min(Math.max(idx, 0), glyphs.length - 1)]

@@ -166,8 +166,8 @@ function propagateResolvedChildPlacementClones(
 }
 
 function sameDerivedGlyphSource(
-  source: SceneNode['figmaDerivedTextGlyphs'],
-  target: SceneNode['figmaDerivedTextGlyphs']
+  source: SceneNode['derivedTextGlyphs'],
+  target: SceneNode['derivedTextGlyphs']
 ): boolean {
   if (source === target) return true
   if (!source || !target) return false
@@ -200,7 +200,7 @@ function propagateResolvedTextClones(graph: SceneGraph, activeNodeIds?: Set<stri
       source.height === node.height &&
       isEqual(source.fills, node.fills) &&
       isEqual(source.styleRuns, node.styleRuns) &&
-      sameDerivedGlyphSource(source.figmaDerivedTextGlyphs, node.figmaDerivedTextGlyphs)
+      sameDerivedGlyphSource(source.derivedTextGlyphs, node.derivedTextGlyphs)
     ) {
       continue
     }
@@ -209,11 +209,8 @@ function propagateResolvedTextClones(graph: SceneGraph, activeNodeIds?: Set<stri
       height: source.height,
       fills: copyFills(source.fills),
       styleRuns: copyStyleRuns(source.styleRuns),
-      figmaDerivedTextGlyphs: source.figmaDerivedTextGlyphs
-        ? markCopySource(
-            source.figmaDerivedTextGlyphs,
-            structuredClone(source.figmaDerivedTextGlyphs)
-          )
+      derivedTextGlyphs: source.derivedTextGlyphs
+        ? markCopySource(source.derivedTextGlyphs, structuredClone(source.derivedTextGlyphs))
         : undefined
     })
   }

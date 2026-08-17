@@ -6,13 +6,7 @@ import {
   scaleGeometryPaths
 } from './copy'
 import type { Rect } from './primitives'
-import type {
-  ConstraintType,
-  FigmaDerivedTextGlyph,
-  SceneNode,
-  Stroke,
-  VectorNetwork
-} from './types'
+import type { ConstraintType, DerivedTextGlyph, SceneNode, Stroke, VectorNetwork } from './types'
 import { cloneVectorNetwork } from './vector-network'
 
 /**
@@ -30,7 +24,7 @@ export type ResizeSnapshot = Pick<
   | 'vectorNetwork'
   | 'fillGeometry'
   | 'strokeGeometry'
-  | 'figmaDerivedTextGlyphs'
+  | 'derivedTextGlyphs'
   | 'strokes'
   | 'textPathData'
   | 'textPathBox'
@@ -142,7 +136,7 @@ export function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
     vectorNetwork: node.vectorNetwork ? cloneVectorNetwork(node.vectorNetwork) : null,
     fillGeometry: copyGeometryPaths(node.fillGeometry),
     strokeGeometry: copyGeometryPaths(node.strokeGeometry),
-    figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
+    derivedTextGlyphs: copyDerivedGlyphs(node.derivedTextGlyphs),
     strokes: copyStrokes(node.strokes),
     textPathData: node.textPathData ? structuredClone(node.textPathData) : null,
     textPathBox: node.textPathBox ? { ...node.textPathBox } : null
@@ -150,10 +144,10 @@ export function createResizeSnapshot(node: SceneNode): ResizeSnapshot {
 }
 
 function scaleDerivedGlyphs(
-  glyphs: FigmaDerivedTextGlyph[] | null,
+  glyphs: DerivedTextGlyph[] | null,
   sx: number,
   sy: number
-): FigmaDerivedTextGlyph[] | null {
+): DerivedTextGlyph[] | null {
   if (!glyphs?.length) return glyphs
   return glyphs.map((g) => ({
     ...g,
@@ -184,7 +178,7 @@ export function scaledGeometryChanges(
     | 'vectorNetwork'
     | 'fillGeometry'
     | 'strokeGeometry'
-    | 'figmaDerivedTextGlyphs'
+    | 'derivedTextGlyphs'
     | 'strokes'
     | 'textPathData'
     | 'textPathBox'
@@ -215,8 +209,8 @@ export function scaledGeometryChanges(
   if (orig.strokeGeometry.length > 0) {
     changes.strokeGeometry = scaleGeometryPaths(orig.strokeGeometry, sx, sy)
   }
-  if (orig.figmaDerivedTextGlyphs?.length) {
-    changes.figmaDerivedTextGlyphs = scaleDerivedGlyphs(orig.figmaDerivedTextGlyphs, sx, sy)
+  if (orig.derivedTextGlyphs?.length) {
+    changes.derivedTextGlyphs = scaleDerivedGlyphs(orig.derivedTextGlyphs, sx, sy)
     // Keep the layout/selection box in sync with the scaled glyphs. reflow
     // overrides this when it applies; this covers the fallback where reflow
     // returns null (no path data) so the box doesn't carry a stale size.

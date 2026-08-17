@@ -13,8 +13,8 @@ const VOLATILE_NODE_FIELDS = new Set([
   'overrides',
   'componentPropertyAssignments',
   'textPicture',
-  'figmaDerivedTextGlyphs',
-  'figmaDerivedLayout',
+  'derivedTextGlyphs',
+  'derivedLayout',
   'librarySource',
   'pluginData'
 ])

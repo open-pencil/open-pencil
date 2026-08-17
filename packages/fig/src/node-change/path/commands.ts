@@ -83,7 +83,7 @@ export function encodePathCommandsBlob(commands: OutlineCommand[], scale = 1): U
  * Glyph schema has no scaleX/scaleY, so exporting them any other way loses
  * the scale on reload — positions and strokeGeometry persist scaled while
  * glyph shapes revert, garbling path text (DomeSticker save/reopen bug).
- * Paint order is T·S·R(-theta)·F (see drawFigmaDerivedText); rewriting points as
+ * Paint order is T·S·R(-theta)·F (see drawDerivedText); rewriting points as
  * p' = F^-1·R(theta)·S·R(-theta)·F·p lets the same world transform hold without S.
  */
 export function bakeGlyphScale(

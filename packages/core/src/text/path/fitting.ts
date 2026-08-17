@@ -1,4 +1,4 @@
-import type { FigmaDerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { sampleTextPath } from './sampling'
@@ -24,7 +24,7 @@ const fittedBoxCache = new WeakMap<object, { box0: Rect; result: Rect | null }>(
 export function fitTextPathBoxToGlyphs(
   data: TextPathData,
   box0: Rect,
-  glyphs: readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y'>[] | null | undefined
+  glyphs: readonly Pick<DerivedTextGlyph, 'x' | 'y'>[] | null | undefined
 ): Rect | null {
   if (!glyphs?.length) return null
   // The selection overlay calls this every repaint (pan/zoom) with the node's
@@ -41,7 +41,7 @@ export function fitTextPathBoxToGlyphs(
 function computeFittedBox(
   data: TextPathData,
   box0: Rect,
-  glyphs: readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y'>[]
+  glyphs: readonly Pick<DerivedTextGlyph, 'x' | 'y'>[]
 ): Rect | null {
   const bw = box0.width
   const bh = box0.height

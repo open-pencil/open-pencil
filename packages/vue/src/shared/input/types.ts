@@ -1,6 +1,6 @@
 import type { Tool } from '@open-pencil/core/editor'
 import type {
-  FigmaDerivedTextGlyph,
+  DerivedTextGlyph,
   GeometryPath,
   NodeType,
   Stroke,
@@ -56,7 +56,7 @@ export interface DragResize {
   origFillGeometry: GeometryPath[]
   /** Path-text OUTSIDE outlines / vector stroke blobs — must scale with the node. */
   origStrokeGeometry: GeometryPath[]
-  origFigmaDerivedTextGlyphs: FigmaDerivedTextGlyph[] | null
+  origDerivedTextGlyphs: DerivedTextGlyph[] | null
   origStrokes: Stroke[]
   origTextPathData: TextPathData | null
   origTextPathBox: Rect | null

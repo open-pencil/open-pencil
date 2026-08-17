@@ -20,13 +20,13 @@ import {
 export function pathTextEditChanges(
   node: SceneNode | undefined,
   changes: Partial<SceneNode>
-): Partial<Pick<SceneNode, 'figmaDerivedTextGlyphs' | 'strokeGeometry'>> {
+): Partial<Pick<SceneNode, 'derivedTextGlyphs' | 'strokeGeometry'>> {
   if (node?.type !== 'TEXT') return {}
   if (typeof changes.text !== 'string') return {}
   if (changes.text.trim().length === 0) {
-    return node.textPathBox ? { figmaDerivedTextGlyphs: null, strokeGeometry: [] } : {}
+    return node.textPathBox ? { derivedTextGlyphs: null, strokeGeometry: [] } : {}
   }
-  if (!node.textPathBox || !node.figmaDerivedTextGlyphs?.length) return {}
+  if (!node.textPathBox || !node.derivedTextGlyphs?.length) return {}
   const data = getTextPathData(node)
   if (!data) return {}
 
@@ -46,7 +46,7 @@ export function pathTextEditChanges(
   )
   if (!metrics) return {}
 
-  const layout = calibratePathTextLayout(node.figmaDerivedTextGlyphs, data, node.textPathBox)
+  const layout = calibratePathTextLayout(node.derivedTextGlyphs, data, node.textPathBox)
   if (!layout) return {}
   const offset = layout.offsets.reduce((sum, o) => sum + o, 0) / layout.offsets.length
 
@@ -67,5 +67,5 @@ export function pathTextEditChanges(
   )
   // Baked silhouettes belong to the OLD string — clear them so the renderer
   // rebuilds per-glyph silhouettes for the new lettering.
-  return glyphs ? { figmaDerivedTextGlyphs: glyphs, strokeGeometry: [] } : {}
+  return glyphs ? { derivedTextGlyphs: glyphs, strokeGeometry: [] } : {}
 }

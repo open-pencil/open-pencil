@@ -48,7 +48,7 @@ describe('fig-import: text properties', () => {
       [glyphBlob]
     )
     const n = graph.getChildren(graph.getPages()[0].id)[0]
-    expect(n.figmaDerivedTextGlyphs).toEqual([
+    expect(n.derivedTextGlyphs).toEqual([
       {
         commandsBlob: glyphBlob,
         x: 2,
@@ -61,10 +61,10 @@ describe('fig-import: text properties', () => {
     ])
 
     graph.updateNode(n.id, { opacity: 0.5 })
-    expect(graph.getNode(n.id)?.figmaDerivedTextGlyphs).toHaveLength(1)
+    expect(graph.getNode(n.id)?.derivedTextGlyphs).toHaveLength(1)
 
     graph.updateNode(n.id, { text: 'B' })
-    expect(graph.getNode(n.id)?.figmaDerivedTextGlyphs).toBeNull()
+    expect(graph.getNode(n.id)?.derivedTextGlyphs).toBeNull()
   })
 
   test('uses derived line metrics for imported Figma text rendering', () => {

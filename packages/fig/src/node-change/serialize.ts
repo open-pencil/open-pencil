@@ -96,7 +96,7 @@ function buildDerivedTextData(
   const lineHeight = node.lineHeight ?? Math.ceil(node.fontSize * 1.2)
   const glyphAdvance = node.text.length > 0 ? node.width / Math.max(node.text.length, 1) : 0
 
-  const derivedGlyphs = node.figmaDerivedTextGlyphs ?? []
+  const derivedGlyphs = node.derivedTextGlyphs ?? []
   const glyphs =
     derivedGlyphs.length > 0
       ? derivedGlyphs.map((glyph, index) => ({

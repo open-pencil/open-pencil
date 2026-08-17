@@ -291,7 +291,7 @@ describe('@open-pencil/fig instance interpretation', () => {
       y: 13.5,
       width: 112,
       height: 1,
-      figmaDerivedLayout: { x: 0, y: 13.5, width: 112, height: 1 }
+      derivedLayout: { x: 0, y: 13.5, width: 112, height: 1 }
     })
     const dividerInstance = graph.createNode('INSTANCE', pageId, {
       componentId: dividerComponent.id,
@@ -307,7 +307,7 @@ describe('@open-pencil/fig instance interpretation', () => {
     expect(avatarLeaf).toMatchObject({ width: 14, height: 14 })
     const divider = graph.getChildren(dividerInstance.id)[0]
     expect(divider.componentId).toBe(dividerSource.id)
-    expect(divider.figmaDerivedLayout).toMatchObject({ x: 0, y: 13.5 })
+    expect(divider.derivedLayout).toMatchObject({ x: 0, y: 13.5 })
   })
 
   test('leaves unrelated scaled vector and multi-child instance geometry unchanged', () => {

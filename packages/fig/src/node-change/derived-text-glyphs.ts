@@ -1,5 +1,5 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-import type { FigmaDerivedTextGlyph } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph } from '@open-pencil/scene-graph'
 
 /**
  * Resolve Figma derivedTextData.glyphs into scene glyphs.
@@ -9,7 +9,7 @@ import type { FigmaDerivedTextGlyph } from '@open-pencil/scene-graph'
 export function convertFigmaDerivedTextGlyphs(
   derivedTextData: NodeChange['derivedTextData'],
   blobs: Uint8Array[]
-): FigmaDerivedTextGlyph[] {
+): DerivedTextGlyph[] {
   return (derivedTextData?.glyphs ?? [])
     .map((glyph) => {
       if (glyph.commandsBlob === undefined) return null

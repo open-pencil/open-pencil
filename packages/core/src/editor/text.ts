@@ -30,7 +30,7 @@ function isPathTextEditable(node: SceneNode): boolean {
 
 type PathTextEditSnapshot = Pick<
   SceneNode,
-  'figmaDerivedTextGlyphs' | 'strokeGeometry' | 'textPathData' | 'textPathBox'
+  'derivedTextGlyphs' | 'strokeGeometry' | 'textPathData' | 'textPathBox'
 >
 
 function snapshotPathText(
@@ -39,7 +39,7 @@ function snapshotPathText(
 ): PathTextEditSnapshot | null {
   if (!node || (!includeClearedPathState && !node.textPathData)) return null
   return {
-    figmaDerivedTextGlyphs: copyDerivedGlyphs(node.figmaDerivedTextGlyphs),
+    derivedTextGlyphs: copyDerivedGlyphs(node.derivedTextGlyphs),
     strokeGeometry: copyGeometryPaths(node.strokeGeometry),
     textPathData: node.textPathData ? structuredClone(node.textPathData) : null,
     textPathBox: node.textPathBox ? { ...node.textPathBox } : null

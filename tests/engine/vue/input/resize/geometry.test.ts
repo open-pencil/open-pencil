@@ -74,7 +74,7 @@ function dragFor(node: SceneNode, origChildren: DragResize['origChildren'] = nul
     origVectorNetwork: geometry.network,
     origFillGeometry: geometry.fills,
     origStrokeGeometry: geometry.strokes,
-    origFigmaDerivedTextGlyphs: null,
+    origDerivedTextGlyphs: null,
     origStrokes: [],
     origTextPathBox: null,
     origChildren

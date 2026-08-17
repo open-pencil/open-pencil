@@ -1,4 +1,4 @@
-import type { FigmaDerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
+import type { DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { pointAtArc, sampleTextPath, type SampledPath } from './sampling'
@@ -86,10 +86,7 @@ function nearestGlyphUp(
 export function pathTextSelectionBand(
   data: TextPathData,
   box: Rect,
-  glyphs:
-    | readonly Pick<FigmaDerivedTextGlyph, 'x' | 'y' | 'fontSize' | 'rotation'>[]
-    | null
-    | undefined,
+  glyphs: readonly Pick<DerivedTextGlyph, 'x' | 'y' | 'fontSize' | 'rotation'>[] | null | undefined,
   // Callers that already sampled this data/box (the selection overlay) pass it
   // in to avoid re-sampling the curve every repaint.
   presampled?: SampledPath | null

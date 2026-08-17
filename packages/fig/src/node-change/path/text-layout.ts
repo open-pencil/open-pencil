@@ -1,5 +1,5 @@
 import type {
-  FigmaDerivedTextGlyph,
+  DerivedTextGlyph,
   GeometryPath,
   SceneNode,
   TextPathData
@@ -42,7 +42,7 @@ function measurePathTextOverflow(
   let maxY = geom ? geom.y + geom.height : height
 
   // Baselines only — pad with fontSize so ascent/side-bearings are covered.
-  for (const g of (props.figmaDerivedTextGlyphs as FigmaDerivedTextGlyph[] | null) ?? []) {
+  for (const g of (props.derivedTextGlyphs as DerivedTextGlyph[] | null) ?? []) {
     const pad = g.fontSize || 0
     minX = Math.min(minX, g.x - pad * 0.25)
     minY = Math.min(minY, g.y - pad)
@@ -67,8 +67,8 @@ function shiftPathTextGeometry(props: Partial<SceneNode>, dx: number, dy: number
   if (props.fillGeometry && props.fillGeometry.length > 0) {
     props.fillGeometry = translateGeometryPaths(props.fillGeometry, dx, dy)
   }
-  if (props.figmaDerivedTextGlyphs?.length) {
-    props.figmaDerivedTextGlyphs = props.figmaDerivedTextGlyphs.map((g) => ({
+  if (props.derivedTextGlyphs?.length) {
+    props.derivedTextGlyphs = props.derivedTextGlyphs.map((g) => ({
       ...g,
       x: g.x + dx,
       y: g.y + dy

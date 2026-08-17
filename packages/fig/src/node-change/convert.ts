@@ -320,8 +320,8 @@ type TextProps = Pick<
   | 'fontFeatures'
   | 'textTruncation'
   | 'textDirection'
-  | 'figmaDerivedLayout'
-  | 'figmaDerivedTextGlyphs'
+  | 'derivedLayout'
+  | 'derivedTextGlyphs'
 >
 
 function convertTextDecorationProps(
@@ -373,13 +373,13 @@ function convertTextProps(nc: NodeChange, blobs: Uint8Array[]): TextProps {
       (getOpenPencilPluginValue(nc, TEXT_DIRECTION_PLUGIN_KEY) as
         | SceneNode['textDirection']
         | null) || 'AUTO',
-    figmaDerivedLayout: nc.derivedTextData?.layoutSize
+    derivedLayout: nc.derivedTextData?.layoutSize
       ? {
           width: nc.derivedTextData.layoutSize.x,
           height: nc.derivedTextData.layoutSize.y
         }
       : null,
-    figmaDerivedTextGlyphs: convertFigmaDerivedTextGlyphs(nc.derivedTextData, blobs)
+    derivedTextGlyphs: convertFigmaDerivedTextGlyphs(nc.derivedTextData, blobs)
   }
 }
 
@@ -400,7 +400,7 @@ function visibleContainerDerivedLayout(
   layoutMode: SceneNode['layoutMode'],
   primaryAxisSizing: SceneNode['primaryAxisSizing'],
   counterAxisSizing: SceneNode['counterAxisSizing']
-): SceneNode['figmaDerivedLayout'] | undefined {
+): SceneNode['derivedLayout'] | undefined {
   const hasHugAxis = primaryAxisSizing === 'HUG' || counterAxisSizing === 'HUG'
   const hasVisiblePaint =
     (nc.fillPaints?.some((paint) => paint.visible !== false) ?? false) ||
@@ -449,11 +449,11 @@ function convertLayoutProps(
   | 'strokesIncludedInLayout'
   | 'layoutDirection'
 > &
-  Partial<Pick<SceneNode, 'figmaDerivedLayout'>> {
+  Partial<Pick<SceneNode, 'derivedLayout'>> {
   const layoutMode = mapStackMode(nc.stackMode)
   const primaryAxisSizing = mapStackSizing(nc.stackPrimarySizing)
   const counterAxisSizing = mapStackSizing(nc.stackCounterSizing)
-  const figmaDerivedLayout = visibleContainerDerivedLayout(
+  const derivedLayout = visibleContainerDerivedLayout(
     nc,
     layoutMode,
     primaryAxisSizing,
@@ -481,7 +481,7 @@ function convertLayoutProps(
       (getOpenPencilPluginValue(nc, LAYOUT_DIRECTION_PLUGIN_KEY) as
         | SceneNode['layoutDirection']
         | null) || 'AUTO',
-    ...(figmaDerivedLayout ? { figmaDerivedLayout } : {})
+    ...(derivedLayout ? { derivedLayout } : {})
   }
 }
 

@@ -30,7 +30,7 @@ import {
   getStrokeJoinEntity
 } from './strokes'
 import {
-  drawFigmaDerivedText,
+  drawDerivedText,
   drawReflowedPathTextSilhouettes,
   isReflowedPathText
 } from './text/derived'
@@ -52,7 +52,7 @@ function hasNodeTransform(node: SceneNode): boolean {
 function hasOverflowPathTextPaint(node: SceneNode): boolean {
   return (
     node.textPathData != null &&
-    ((node.figmaDerivedTextGlyphs?.length ?? 0) > 0 ||
+    ((node.derivedTextGlyphs?.length ?? 0) > 0 ||
       (Array.isArray(node.strokeGeometry) && node.strokeGeometry.length > 0))
   )
 }
@@ -614,7 +614,7 @@ function isPathTextWithStrokeGeometry(node: SceneNode): boolean {
   return (
     node.type === 'TEXT' &&
     node.textPathData !== null &&
-    (node.figmaDerivedTextGlyphs?.length ?? 0) > 0 &&
+    (node.derivedTextGlyphs?.length ?? 0) > 0 &&
     node.strokeGeometry.length > 0
   )
 }
@@ -775,7 +775,7 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
           return
         }
       }
-      if (drawFigmaDerivedText(r, canvas, node)) {
+      if (drawDerivedText(r, canvas, node)) {
         canvas.restore()
         return
       }

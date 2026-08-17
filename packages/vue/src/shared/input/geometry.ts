@@ -176,7 +176,7 @@ function selectionHandleRect(node: SceneNode): Rect | undefined {
   if (node.textPathData === null || !node.textPathBox) return undefined
   const data = getTextPathData(node)
   const box =
-    (data && fitTextPathBoxToGlyphs(data, node.textPathBox, node.figmaDerivedTextGlyphs)) ??
+    (data && fitTextPathBoxToGlyphs(data, node.textPathBox, node.derivedTextGlyphs)) ??
     node.textPathBox
   if (!data || !sampleTextPath(data, box)) return undefined
   return box

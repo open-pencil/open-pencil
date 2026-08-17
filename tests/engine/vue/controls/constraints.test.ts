@@ -29,7 +29,7 @@ function original(node: {
     vectorNetwork: node.vectorNetwork,
     fillGeometry: [],
     strokeGeometry: [],
-    figmaDerivedTextGlyphs: null,
+    derivedTextGlyphs: null,
     strokes: [],
     textPathBox: null
   }
@@ -71,7 +71,7 @@ describe('constraint resize geometry', () => {
     vectorNetwork: null,
     fillGeometry: [],
     strokeGeometry: [],
-    figmaDerivedTextGlyphs: null,
+    derivedTextGlyphs: null,
     strokes: [],
     textPathBox: null
   }
@@ -126,7 +126,7 @@ describe('constraint resize geometry', () => {
       origVectorNetwork: null,
       origFillGeometry: [],
       origStrokeGeometry: [],
-      origFigmaDerivedTextGlyphs: null,
+      origDerivedTextGlyphs: null,
       origStrokes: [],
       origTextPathBox: null,
       origChildren: new Map([
@@ -174,7 +174,7 @@ describe('constraint resize geometry', () => {
       origVectorNetwork: null,
       origFillGeometry: [],
       origStrokeGeometry: [],
-      origFigmaDerivedTextGlyphs: null,
+      origDerivedTextGlyphs: null,
       origStrokes: [],
       origTextPathBox: null,
       origChildren: collectResizeDescendants(graph, root.id)

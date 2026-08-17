@@ -6,9 +6,9 @@ import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas/renderer'
 import {
   derivedUnderlineRect,
-  hasRotatedFigmaDerivedGlyphs,
-  shouldUseHardFigmaDerivedGlyphCoverage,
-  snapFigmaDerivedGlyphBaseline
+  hasRotatedDerivedGlyphs,
+  shouldUseHardDerivedGlyphCoverage,
+  snapDerivedGlyphBaseline
 } from '#core/canvas/text/derived'
 import { renderNodesToImage } from '#core/io/formats/raster/render'
 
@@ -46,15 +46,15 @@ function squareCommandsBlob(): Uint8Array {
 
 describe('derived text rendering', () => {
   test('snaps Figma glyph baselines to device pixels', () => {
-    expect(snapFigmaDerivedGlyphBaseline(47.45454406738281)).toBe(47)
-    expect(snapFigmaDerivedGlyphBaseline(15.090909004211426)).toBe(15)
-    expect(snapFigmaDerivedGlyphBaseline(17.81818199157715)).toBe(18)
+    expect(snapDerivedGlyphBaseline(47.45454406738281)).toBe(47)
+    expect(snapDerivedGlyphBaseline(15.090909004211426)).toBe(15)
+    expect(snapDerivedGlyphBaseline(17.81818199157715)).toBe(18)
   })
 
   test('uses hard source coverage only for regular 20px derived glyphs', () => {
-    expect(shouldUseHardFigmaDerivedGlyphCoverage({ fontSize: 20, fontWeight: 400 })).toBeTrue()
-    expect(shouldUseHardFigmaDerivedGlyphCoverage({ fontSize: 20, fontWeight: 600 })).toBeFalse()
-    expect(shouldUseHardFigmaDerivedGlyphCoverage({ fontSize: 14, fontWeight: 500 })).toBeFalse()
+    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 20, fontWeight: 400 })).toBeTrue()
+    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 20, fontWeight: 600 })).toBeFalse()
+    expect(shouldUseHardDerivedGlyphCoverage({ fontSize: 14, fontWeight: 500 })).toBeFalse()
   })
 
   test('places derived underlines at Figma-like subpixel coverage bounds', () => {
@@ -82,7 +82,7 @@ describe('derived text rendering', () => {
           visible: true
         }
       ],
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         {
           commandsBlob: squareCommandsBlob(),
           x: 2,
@@ -140,7 +140,7 @@ describe('derived text rendering', () => {
           visible: true
         }
       ],
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         {
           commandsBlob: squareCommandsBlob(),
           x: 2,
@@ -206,7 +206,7 @@ describe('derived text rendering', () => {
           visible: true
         }
       ],
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         {
           commandsBlob: squareCommandsBlob(),
           x: 2,
@@ -301,7 +301,7 @@ describe('derived text rendering', () => {
           visible: true
         }
       ],
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         {
           commandsBlob: squareCommandsBlob(),
           x: 2,
@@ -356,17 +356,17 @@ describe('derived text rendering', () => {
 })
 
 describe('rotated derived glyphs (text-on-path)', () => {
-  test('hasRotatedFigmaDerivedGlyphs detects non-zero rotation', () => {
+  test('hasRotatedDerivedGlyphs detects non-zero rotation', () => {
     expect(
-      hasRotatedFigmaDerivedGlyphs({
-        figmaDerivedTextGlyphs: [
+      hasRotatedDerivedGlyphs({
+        derivedTextGlyphs: [
           { commandsBlob: squareCommandsBlob(), x: 0, y: 0, fontSize: 12, rotation: 0 }
         ]
       })
     ).toBe(false)
     expect(
-      hasRotatedFigmaDerivedGlyphs({
-        figmaDerivedTextGlyphs: [
+      hasRotatedDerivedGlyphs({
+        derivedTextGlyphs: [
           { commandsBlob: squareCommandsBlob(), x: 0, y: 0, fontSize: 12, rotation: -1.5 }
         ]
       })
@@ -389,7 +389,7 @@ describe('rotated derived glyphs (text-on-path)', () => {
           visible: true
         }
       ],
-      figmaDerivedTextGlyphs: [
+      derivedTextGlyphs: [
         {
           commandsBlob: squareCommandsBlob(),
           x: 50,

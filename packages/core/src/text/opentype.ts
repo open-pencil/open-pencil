@@ -29,6 +29,14 @@ interface OutlineFont {
   tables: { os2?: { sTypoLineGap?: number } }
   charToGlyphIndex(char: string): number
   charToGlyph(char: string): OutlineGlyph
+  forEachGlyph(
+    text: string,
+    x: number,
+    y: number,
+    fontSize: number,
+    options: undefined,
+    callback: (glyph: OutlineGlyph, x: number) => void
+  ): number
 }
 
 export interface GlyphOutlineProbe {
@@ -145,15 +153,32 @@ export function getGlyphOutlineMetricsSync(
   const font = getParsedFont(family, style)
   if (!font) return null
 
-  const glyphs = glyphsForCodePoints(font, text)
-  let x = 0
-  return glyphs.map((glyph) => {
-    const commands = glyph.getPath(0, 0, fontSize).commands
-    const advance = glyphAdvanceWidth(font, glyph, fontSize)
-    const metrics = { commands, x, advance }
-    x += advance
-    return metrics
-  })
+  try {
+    const positioned: Array<{ glyph: OutlineGlyph; x: number }> = []
+    const endX = font.forEachGlyph(text, 0, 0, fontSize, undefined, (glyph, x) => {
+      positioned.push({ glyph, x })
+    })
+    return positioned.map(({ glyph, x }, index) => ({
+      commands: glyph.getPath(0, 0, fontSize).commands,
+      x,
+      // opentype.js applies substitutions, ligatures, GPOS kerning, and default
+      // render features in forEachGlyph. Derive each shaped advance from those
+      // positions rather than reconstructing it from raw code points.
+      advance: (positioned[index + 1]?.x ?? endX) - x
+    }))
+  } catch {
+    // Some fonts use OpenType lookup formats that opentype.js cannot shape yet.
+    // Preserve outline editing with the dependency's basic glyph/advance APIs.
+    const glyphs = glyphsForCodePoints(font, text)
+    let x = 0
+    return glyphs.map((glyph) => {
+      const commands = glyph.getPath(0, 0, fontSize).commands
+      const advance = glyphAdvanceWidth(font, glyph, fontSize)
+      const metrics = { commands, x, advance }
+      x += advance
+      return metrics
+    })
+  }
 }
 
 export async function probeGlyphOutlineCommands(

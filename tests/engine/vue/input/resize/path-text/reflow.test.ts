@@ -122,7 +122,7 @@ describe('group resize reflows path text instead of squashing it', () => {
       ]),
       'seed glyphs'
     )
-    text.figmaDerivedTextGlyphs = seeds.map((g) => ({
+    text.derivedTextGlyphs = seeds.map((g) => ({
       ...g,
       commandsBlob: new Uint8Array(g.commandsBlob)
     }))
@@ -144,7 +144,7 @@ describe('group resize reflows path text instead of squashing it', () => {
       vectorNetwork: null,
       fillGeometry: [],
       strokeGeometry: copyGeometryPaths(text.strokeGeometry),
-      figmaDerivedTextGlyphs: seeds.map((g) => ({
+      derivedTextGlyphs: seeds.map((g) => ({
         ...g,
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
@@ -163,7 +163,7 @@ describe('group resize reflows path text instead of squashing it', () => {
       origVectorNetwork: null,
       origFillGeometry: [],
       origStrokeGeometry: [],
-      origFigmaDerivedTextGlyphs: null,
+      origDerivedTextGlyphs: null,
       origStrokes: [],
       origTextPathData: null,
       origTextPathBox: null,
@@ -188,7 +188,7 @@ describe('group resize reflows path text instead of squashing it', () => {
     // Reflow cleared the baked silhouettes — the renderer rebuilds per glyph.
     expect(committed.strokeGeometry).toEqual([])
 
-    const glyphs = expectDefined(committed.figmaDerivedTextGlyphs, 'committed glyphs')
+    const glyphs = expectDefined(committed.derivedTextGlyphs, 'committed glyphs')
     expect(glyphs).toHaveLength(3)
     for (const g of glyphs) {
       expect(g.scaleX).toBeUndefined()
@@ -240,7 +240,7 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
       ]),
       'seed glyphs'
     )
-    text.figmaDerivedTextGlyphs = seeds.map((g) => ({
+    text.derivedTextGlyphs = seeds.map((g) => ({
       ...g,
       commandsBlob: new Uint8Array(g.commandsBlob)
     }))
@@ -264,7 +264,7 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
       origVectorNetwork: null,
       origFillGeometry: [],
       origStrokeGeometry: copyGeometryPaths(text.strokeGeometry),
-      origFigmaDerivedTextGlyphs: seeds.map((g) => ({
+      origDerivedTextGlyphs: seeds.map((g) => ({
         ...g,
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
@@ -289,7 +289,7 @@ describe('direct (non-group) resize reflows path text instead of squashing it', 
     // Reflow cleared the baked silhouettes — the renderer rebuilds per glyph.
     expect(committed.strokeGeometry).toEqual([])
 
-    const glyphs = expectDefined(committed.figmaDerivedTextGlyphs, 'committed glyphs')
+    const glyphs = expectDefined(committed.derivedTextGlyphs, 'committed glyphs')
     expect(glyphs).toHaveLength(3)
     for (const g of glyphs) {
       expect(g.scaleX).toBeUndefined()
@@ -350,7 +350,7 @@ describe('resize + export integration: real commit path clears stale raw payload
       ]),
       'seed glyphs'
     )
-    text.figmaDerivedTextGlyphs = seeds.map((g) => ({
+    text.derivedTextGlyphs = seeds.map((g) => ({
       ...g,
       commandsBlob: new Uint8Array(g.commandsBlob)
     }))
@@ -391,7 +391,7 @@ describe('resize + export integration: real commit path clears stale raw payload
       origVectorNetwork: null,
       origFillGeometry: [],
       origStrokeGeometry: copyGeometryPaths(text.strokeGeometry),
-      origFigmaDerivedTextGlyphs: seeds.map((g) => ({
+      origDerivedTextGlyphs: seeds.map((g) => ({
         ...g,
         commandsBlob: new Uint8Array(g.commandsBlob)
       })),
@@ -406,7 +406,7 @@ describe('resize + export integration: real commit path clears stale raw payload
     commitResizePreview(drag, editor)
 
     const committed = expectDefined(graph.getNode(text.id), 'committed text node')
-    const committedGlyphs = expectDefined(committed.figmaDerivedTextGlyphs, 'committed glyphs')
+    const committedGlyphs = expectDefined(committed.derivedTextGlyphs, 'committed glyphs')
     // Sanity: the real resize path actually reflowed (moved) the glyphs.
     expect(committedGlyphs.some((g, i) => Math.hypot(g.x - seeds[i].x, g.y - seeds[i].y) > 1)).toBe(
       true
