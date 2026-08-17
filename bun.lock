@@ -185,6 +185,7 @@
         "opentype.js": "^2.0.0",
         "pptxgenjs": "^4.0.1",
         "sucrase": "^3.35.1",
+        "svg-path-properties": "^2.0.2",
         "svg2pdf.js": "^2.7.0",
         "svgpath": "^2.6.0",
         "twirlwind": "^0.3.0",
@@ -3380,6 +3381,8 @@
     "supports-hyperlinks": ["supports-hyperlinks@3.2.0", "", { "dependencies": { "has-flag": "^4.0.0", "supports-color": "^7.0.0" } }, "sha512-zFObLMyZeEwzAoKCyu1B91U79K2t7ApXuQfo8OuxwXLDgcKxuwM+YvcbIhm6QWqz7mHUH1TVytR1PwVVjEuMig=="],
 
     "supports-preserve-symlinks-flag": ["supports-preserve-symlinks-flag@1.0.0", "", {}, "sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w=="],
+
+    "svg-path-properties": ["svg-path-properties@2.0.2", "", {}, "sha512-NsSMBNZmod9Gr22gxa8FOiZUIzrI8o65veuCyppoNftNfpKjP5qoouA3ZyioOsQ2a4O8cRV8rHmG9LZF2HhXvw=="],
 
     "svg-pathdata": ["svg-pathdata@6.0.3", "", {}, "sha512-qsjeeq5YjBZ5eMdFuUa4ZosMLxgr5RZ+F+Y1OrDhuOCEInRMA3x74XdBtggJcj9kOeInz0WE+LgCPDkZFlBYJw=="],
 

@@ -255,10 +255,15 @@ function drawTextPathSelection(
     dash.delete()
     drawBoundsHandles(r, canvas, box.x, box.y, box.x + box.width, box.y + box.height)
 
-    // The path curve itself (node-local sampled polyline).
+    // The path curve itself, sampled from the headless path metrics only for drawing.
     const path = new r.ck.Path()
-    path.moveTo(sampled.xs[0], sampled.ys[0])
-    for (let i = 1; i < sampled.xs.length; i++) path.lineTo(sampled.xs[i], sampled.ys[i])
+    const overlaySteps = Math.max(64, Math.min(1024, Math.ceil(sampled.length)))
+    const first = pointAtArc(sampled, 0)
+    path.moveTo(first.x, first.y)
+    for (let index = 1; index <= overlaySteps; index++) {
+      const point = pointAtArc(sampled, (sampled.length * index) / overlaySteps)
+      path.lineTo(point.x, point.y)
+    }
     if (sampled.closed) path.close()
     canvas.drawPath(path, r.selectionPaint)
     path.delete()

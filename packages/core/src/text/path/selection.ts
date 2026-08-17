@@ -1,7 +1,7 @@
 import type { DerivedTextGlyph, TextPathData } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
-import { pointAtArc, sampleTextPath, type SampledPath } from './sampling'
+import { nearestArcPoint, pointAtArc, sampleTextPath, type SampledPath } from './sampling'
 
 /**
  * A closed ribbon polygon (node-local, flat `[x0,y0,x1,y1,...]`) that hugs the
@@ -19,21 +19,6 @@ interface BandGlyph {
   s: number
   ux: number
   uy: number
-}
-
-/** Arc length of the sampled point nearest (px, py). */
-function nearestSampleArc(sampled: SampledPath, px: number, py: number): number {
-  const { xs, ys, cum } = sampled
-  let best = Infinity
-  let bi = 0
-  for (let i = 0; i < xs.length; i++) {
-    const d = (xs[i] - px) ** 2 + (ys[i] - py) ** 2
-    if (d < best) {
-      best = d
-      bi = i
-    }
-  }
-  return cum[bi]
 }
 
 /**
@@ -103,7 +88,7 @@ export function pathTextSelectionBand(
   let fontSize = 0
   for (const g of glyphs) {
     const rot = g.rotation ?? 0
-    gs.push({ s: nearestSampleArc(sampled, g.x, g.y), ux: -Math.sin(rot), uy: -Math.cos(rot) })
+    gs.push({ s: nearestArcPoint(sampled, g.x, g.y).s, ux: -Math.sin(rot), uy: -Math.cos(rot) })
     fontSize = Math.max(fontSize, g.fontSize || 0)
   }
   if (!(fontSize > 0)) return null

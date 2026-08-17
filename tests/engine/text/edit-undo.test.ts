@@ -164,13 +164,16 @@ describe('text edit undo', () => {
     expect(liveGlyphs).not.toEqual(originalGlyphs)
 
     actions.commitTextEdit()
+    const committedGlyphs = structuredClone(
+      expectDefined(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs)
+    )
     undo.undo()
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('AB')
     expect(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs).toEqual(originalGlyphs)
 
     undo.redo()
     expect(getNodeOrThrow(graph, textNode.id).text).toBe('ABC')
-    expect(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs).toEqual(liveGlyphs)
+    expect(getNodeOrThrow(graph, textNode.id).derivedTextGlyphs).toEqual(committedGlyphs)
   })
 
   test('restores path identity when undoing an edit to empty text', async () => {
@@ -288,7 +291,7 @@ describe('text edit undo', () => {
     expect(undo.canUndo).toBe(false)
   })
 
-  test('commitTextEdit preserves Figma derived glyphs when text unchanged', () => {
+  test('commitTextEdit preserves derived glyphs when text unchanged', () => {
     const { graph, actions, textNode } = setup()
     const glyphs = [{ commandsBlob: new Uint8Array([0]), x: 0, y: 10, fontSize: 14 }]
     graph.updateNode(textNode.id, { derivedTextGlyphs: glyphs })
