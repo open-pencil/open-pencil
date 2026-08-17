@@ -41,6 +41,10 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
     publicURL: environment.OPENPENCIL_CLOUD_URL,
     appURL: environment.OPENPENCIL_CLOUD_APP_URL,
     collaborationURL: environment.OPENPENCIL_CLOUD_COLLABORATION_URL,
+    collaborationPort: v.parse(
+      integerEnvironmentSchema,
+      environment.OPENPENCIL_CLOUD_COLLABORATION_PORT
+    ),
     databaseURL: environment.DATABASE_URL,
     authSecret: environment.BETTER_AUTH_SECRET,
     trustedOrigins:

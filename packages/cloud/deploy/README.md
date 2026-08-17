@@ -75,7 +75,8 @@ Nodemailer.
 
 ### Cloud collaboration relay
 
-Set `OPENPENCIL_CLOUD_COLLABORATION_URL` to a dedicated Hocuspocus WebSocket endpoint to issue
+Set `OPENPENCIL_CLOUD_COLLABORATION_URL` to a dedicated Hocuspocus WebSocket endpoint and
+`OPENPENCIL_CLOUD_COLLABORATION_PORT` to the local listener port to issue
 Cloud collaboration tickets with server-enforced write permissions. The relay validates the signed
 Cloud ticket, binds it to the document epoch room, marks viewers read-only, supports active token
 refresh through Hocuspocus, and stamps awareness with server-verified document/permission metadata.

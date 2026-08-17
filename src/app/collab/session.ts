@@ -1,3 +1,4 @@
+import type { HocuspocusProvider } from '@hocuspocus/provider'
 import { useTimeoutFn } from '@vueuse/core'
 import type { Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
@@ -7,6 +8,7 @@ import * as Y from 'yjs'
 
 import { randomIndex } from '@open-pencil/core/random'
 
+import { createCloudYjsProvider } from '@/app/collab/cloud-provider'
 import { connectCollabRoom } from '@/app/collab/room'
 import type { CollabRoomTransport } from '@/app/collab/transport'
 import {
@@ -25,6 +27,7 @@ export type CollabRuntime = {
   ynodes: Y.Map<Y.Map<unknown>> | null
   yimages: Y.Map<Uint8Array> | null
   room: CollabRoomTransport | null
+  cloudProvider: HocuspocusProvider | null
   persistence: IndexeddbPersistence | null
   connectedStore: EditorStore | null
   suppressGraphSync: boolean
@@ -67,6 +70,7 @@ type CollabConnectionActionsOptions = {
 type CollabSessionResources = {
   store: EditorStore
   room: CollabRoomTransport | null
+  cloudProvider: HocuspocusProvider | null
   awareness: awarenessProtocol.Awareness | null
   persistence: IndexeddbPersistence | null
   ydoc: Y.Doc | null
@@ -83,6 +87,7 @@ export function createCollabRuntime(): CollabRuntime {
     ynodes: null,
     yimages: null,
     room: null,
+    cloudProvider: null,
     persistence: null,
     connectedStore: null,
     suppressGraphSync: false,
@@ -162,6 +167,7 @@ export function createCollabConnectionActions({
     disposeCollabSessionResources({
       store,
       room: runtime.room,
+      cloudProvider: runtime.cloudProvider,
       awareness: runtime.awareness,
       persistence: runtime.persistence,
       ydoc: runtime.ydoc,
@@ -205,7 +211,7 @@ export function connectCollabSession({
   applyYjsToGraph,
   syncNodeToYjs
 }: ConnectCollabSessionOptions) {
-  if (runtime.room) disconnect()
+  if (runtime.room || runtime.cloudProvider) disconnect()
 
   runtime.connectedStore = store
   state.value.roomId = roomId
@@ -249,19 +255,33 @@ export function connectCollabSession({
     applyYjsToGraph
   })
 
-  const roomConnection = connectCollabRoom({
-    roomId,
-    roomPassword,
-    canSendUpdates: store.canMutate,
-    ydoc: runtime.ydoc,
-    awareness: runtime.awareness,
-    setConnected: () => {
-      state.value.connected = true
-    },
-    updatePeersList
-  })
-  runtime.room = roomConnection.room
-  state.value.connected = true
+  const ticket = cloud ? requireActiveCollaborationTicket(cloud.ticket) : null
+  const cloudProvider = ticket
+    ? createCloudYjsProvider({
+        ticket,
+        document: runtime.ydoc,
+        awareness: runtime.awareness,
+        onStatus: (connected) => {
+          state.value.connected = connected
+        }
+      })
+    : null
+  runtime.cloudProvider = cloudProvider
+  const roomConnection = cloudProvider
+    ? null
+    : connectCollabRoom({
+        roomId,
+        roomPassword,
+        canSendUpdates: store.canMutate,
+        ydoc: runtime.ydoc,
+        awareness: runtime.awareness,
+        setConnected: () => {
+          state.value.connected = true
+        },
+        updatePeersList
+      })
+  runtime.room = roomConnection?.room ?? null
+  state.value.connected = !cloudProvider
   broadcastAwareness()
 
   runtime.stopZoomWatch = watchAwarenessZoom(store, () => runtime.awareness)
@@ -338,6 +358,10 @@ export function scheduleCollaborationTicketRefresh({
           reconnect(nextCredentials)
           return
         }
+        if (runtime.cloudProvider && refreshed.provider === 'hocuspocus') {
+          runtime.cloudProvider.configuration.token = refreshed.token
+          await runtime.cloudProvider.sendToken()
+        }
         state.value.localName = refreshed.principal.name
         state.value.identity = {
           source: 'cloud',
@@ -373,6 +397,7 @@ export function resetCollabRuntime(runtime: CollabRuntime) {
   runtime.stopZoomWatch = null
   runtime.stopTicketRefresh = null
   runtime.room = null
+  runtime.cloudProvider = null
   runtime.awareness = null
   runtime.persistence = null
   runtime.ydoc = null
@@ -398,6 +423,7 @@ export function disposeCollabSessionResources(resources: CollabSessionResources)
   resources.unbindGraphEvents?.()
   resources.stopZoomWatch?.()
   resources.stopTicketRefresh?.()
+  resources.cloudProvider?.destroy()
   void resources.room?.leave()
   resources.awareness?.destroy()
   if (resources.persistence) {

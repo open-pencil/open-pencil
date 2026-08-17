@@ -9,6 +9,7 @@ import {
 } from '#cloud/server'
 
 import { createS3ObjectStore } from '../s3/objects'
+import { createCloudCollaborationRelay } from './collaboration'
 import { createNodeCloudDatabase } from './database'
 
 export type NodeCloudServerOptions = {
@@ -44,6 +45,10 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     auth,
     objects
   })
+  const collaboration = config.collaborationURL
+    ? createCloudCollaborationRelay({ authSecret: config.authSecret })
+    : undefined
+  if (collaboration) await collaboration.listen(config.collaborationPort)
   const server = Bun.serve({
     fetch: app.fetch,
     hostname: '0.0.0.0',
@@ -53,8 +58,10 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     app,
     database,
     server,
+    collaboration,
     async stop() {
       await server.stop()
+      await collaboration?.destroy()
       await cleanup?.stop()
       await database.destroy()
     }

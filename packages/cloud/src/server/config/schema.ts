@@ -16,6 +16,10 @@ const rawCloudServerConfigSchema = v.object({
   publicURL: httpURLSchema,
   appURL: v.optional(httpURLSchema),
   collaborationURL: v.optional(httpURLSchema),
+  collaborationPort: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(65_535)),
+    1234
+  ),
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),
   trustedOrigins: v.optional(v.array(httpURLSchema), []),
