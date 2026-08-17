@@ -70,7 +70,7 @@ async function createPeer(browser: Browser, name: string, relayURL: string): Pro
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
   const page = await context.newPage()
   await page.goto(`/?test&collabTransport=test&collabRelay=${encodeURIComponent(relayURL)}`)
-  await page.evaluate((localName) => window.openPencil?.collab?.setLocalName(localName), name)
+  await page.evaluate((localName) => window.openPencil?.test?.collab?.setLocalName(localName), name)
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()
   canvas.errors.length = 0
@@ -83,7 +83,7 @@ function collaborationErrors(peer: Peer): string[] {
 
 async function connect(peer: Peer) {
   await peer.page.evaluate((roomId) => {
-    const collab = window.openPencil?.collab
+    const collab = window.openPencil?.test?.collab
     if (!collab) throw new Error('Collaboration bridge unavailable')
     collab.connect(roomId)
   }, ROOM_ID)
@@ -94,17 +94,19 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
 }) => {
   test.setTimeout(120_000)
   const relay = await startRelay()
-  const host = await createPeer(browser, 'Host', relay.url)
-  const guest = await createPeer(browser, 'Guest', relay.url)
-
+  let host: Peer | null = null
+  let guest: Peer | null = null
   try {
+    host = await createPeer(browser, 'Host', relay.url)
+    guest = await createPeer(browser, 'Guest', relay.url)
+
     await connect(host)
     await connect(guest)
     await expect
-      .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+      .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
       .toBe(1)
     await expect
-      .poll(() => guest.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+      .poll(() => guest.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
       .toBe(1)
 
     const nodeId = await host.page.evaluate(() => {
@@ -132,7 +134,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       if (!store) throw new Error('OpenPencil store not initialized')
       store.updateNode(id, { name: 'Edited by Guest', x: 320 })
       store.select([id])
-      window.openPencil?.collab?.updateSelection([id])
+      window.openPencil?.test?.collab?.updateSelection([id])
     }, nodeId)
 
     await expect
@@ -141,13 +143,13 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       )
       .toBe('Edited by Guest')
     await expect
-      .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerSelections()[0]))
+      .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerSelections()[0]))
       .toEqual([nodeId])
 
     await guest.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
-      window.openPencil?.collab?.updateCursor(420, 260, store.state.currentPageId)
+      window.openPencil?.test?.collab?.updateCursor(420, 260, store.state.currentPageId)
     })
     await expect
       .poll(() =>
@@ -156,8 +158,9 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       .toBe(1)
 
     await guest.context.close()
+    guest = null
     await expect
-      .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+      .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
       .toBe(0)
     await expect
       .poll(() =>
@@ -182,7 +185,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
         )
         .toBe('Edited while offline')
       await expect
-        .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+        .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerCount()))
         .toBe(1)
       expect(collaborationErrors(reconnectingGuest)).toEqual([])
     } finally {
@@ -191,7 +194,8 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
 
     expect(collaborationErrors(host)).toEqual([])
   } finally {
-    await host.context.close()
+    await guest?.context.close()
+    await host?.context.close()
     await relay.close()
   }
 })

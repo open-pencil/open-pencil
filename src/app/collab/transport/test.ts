@@ -1,5 +1,7 @@
 import type { CollabAction, CollabActionReceiver, CollabRoomTransport } from './types'
 
+const MAX_TEST_MESSAGE_BYTES = 8 * 1024 * 1024
+
 type TestTransportMessage =
   | { type: 'hello'; senderId: string; targetId?: string }
   | { type: 'welcome'; senderId: string; targetId?: string }
@@ -11,6 +13,34 @@ type TestTransportMessage =
       namespace: string
       data: number[]
     }
+
+function parseMessage(value: unknown): TestTransportMessage | null {
+  if (typeof value !== 'string' || value.length > MAX_TEST_MESSAGE_BYTES) return null
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(value)
+  } catch {
+    return null
+  }
+  if (!parsed || typeof parsed !== 'object' || !('type' in parsed) || !('senderId' in parsed)) {
+    return null
+  }
+  const message = parsed as Partial<TestTransportMessage>
+  if (typeof message.senderId !== 'string') return null
+  if (message.targetId !== undefined && typeof message.targetId !== 'string') return null
+  if (message.type === 'hello' || message.type === 'welcome' || message.type === 'leave') {
+    return message as TestTransportMessage
+  }
+  if (
+    message.type !== 'action' ||
+    typeof message.namespace !== 'string' ||
+    !Array.isArray(message.data) ||
+    !message.data.every((byte) => Number.isInteger(byte) && byte >= 0 && byte <= 255)
+  ) {
+    return null
+  }
+  return message as TestTransportMessage
+}
 
 function relayURL(roomId: string): URL {
   const configured = new URLSearchParams(window.location.search).get('collabRelay')
@@ -46,8 +76,8 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
     post({ type: 'hello', senderId: peerId })
   })
   socket.addEventListener('message', (event: MessageEvent<string>) => {
-    const message = JSON.parse(event.data) as TestTransportMessage
-    if (message.senderId === peerId) return
+    const message = parseMessage(event.data)
+    if (!message || message.senderId === peerId) return
     if (message.targetId && message.targetId !== peerId) return
     if (message.type === 'hello') {
       addPeer(message.senderId)
@@ -78,7 +108,12 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
             data: Array.from(data)
           })
         },
-        (handler) => receivers.set(namespace, handler)
+        (handler) => {
+          if (receivers.has(namespace)) {
+            throw new Error(`Collaboration action ${namespace} is already registered`)
+          }
+          receivers.set(namespace, handler)
+        }
       ]
     },
     onPeerJoin(handler) {

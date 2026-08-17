@@ -55,7 +55,7 @@ useEditorMenu()
 
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
-if (import.meta.env.DEV) exposeCollaborationActions(collab)
+exposeCollaborationActions(collab)
 
 useEventListener(
   document,

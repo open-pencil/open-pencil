@@ -7,12 +7,6 @@ export interface OpenPencilTestHooks {
   writeCount?: () => number
   mockHandle?: FileSystemFileHandle
   savedOpen?: Window['open']
-}
-
-export interface OpenPencilWindowAPI {
-  getStore?: () => EditorStore
-  setChatTransport?: (factory: () => ChatTransport<UIMessage>) => void
-  openFile?: (path: string) => Promise<void>
   collab?: Pick<
     CollabReturn,
     'connect' | 'disconnect' | 'updateCursor' | 'updateSelection' | 'setLocalName'
@@ -20,6 +14,12 @@ export interface OpenPencilWindowAPI {
     peerCount: () => number
     peerSelections: () => Array<string[] | undefined>
   }
+}
+
+export interface OpenPencilWindowAPI {
+  getStore?: () => EditorStore
+  setChatTransport?: (factory: () => ChatTransport<UIMessage>) => void
+  openFile?: (path: string) => Promise<void>
   test?: OpenPencilTestHooks
 }
 
@@ -46,7 +46,9 @@ export function setOpenPencilStore(store: EditorStore) {
 }
 
 export function exposeCollaborationActions(collab: CollabReturn) {
-  windowAPI().collab = {
+  if (!import.meta.env.DEV || !new URLSearchParams(window.location.search).has('test')) return
+  const testHooks = (windowAPI().test ??= {})
+  testHooks.collab = {
     connect: collab.connect,
     disconnect: collab.disconnect,
     updateCursor: collab.updateCursor,

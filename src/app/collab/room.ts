@@ -1,3 +1,4 @@
+import * as decoding from 'lib0/decoding'
 import * as awarenessProtocol from 'y-protocols/awareness'
 import * as Y from 'yjs'
 
@@ -19,6 +20,22 @@ export type CollabRoomConnection = {
   sendSyncStep1: (data: Uint8Array, peerId?: string) => void
 }
 
+function awarenessClientIds(data: Uint8Array): number[] {
+  try {
+    const decoder = decoding.createDecoder(data)
+    const count = decoding.readVarUint(decoder)
+    const clients: number[] = []
+    for (let index = 0; index < count; index++) {
+      clients.push(decoding.readVarUint(decoder))
+      decoding.readVarUint(decoder)
+      decoding.readVarString(decoder)
+    }
+    return clients
+  } catch {
+    return []
+  }
+}
+
 export function connectCollabRoom({
   roomId,
   ydoc,
@@ -33,11 +50,14 @@ export function connectCollabRoom({
   const [sendSyncStep1, getSyncStep1] = room.makeAction('sync-step1')
   const [sendSyncReply, getSyncReply] = room.makeAction('sync-reply')
 
+  const awarenessClientsByPeer = new Map<string, Set<number>>()
+
   getUpdate((data) => {
     Y.applyUpdate(ydoc, data, 'remote')
   })
 
-  getAwareness((data) => {
+  getAwareness((data, peerId) => {
+    awarenessClientsByPeer.set(peerId, new Set(awarenessClientIds(data)))
     awarenessProtocol.applyAwarenessUpdate(awareness, data, null)
   })
 
@@ -70,10 +90,9 @@ export function connectCollabRoom({
     sendAwareness(awarenessProtocol.encodeAwarenessUpdate(awareness, [awareness.clientID]), peerId)
   })
 
-  room.onPeerLeave(() => {
-    const remoteClients = [...awareness.getStates().keys()].filter(
-      (id) => id !== awareness.clientID
-    )
+  room.onPeerLeave((peerId) => {
+    const remoteClients = [...(awarenessClientsByPeer.get(peerId) ?? [])]
+    awarenessClientsByPeer.delete(peerId)
     awarenessProtocol.removeAwarenessStates(awareness, remoteClients, 'peer-left')
     updatePeersList()
   })
