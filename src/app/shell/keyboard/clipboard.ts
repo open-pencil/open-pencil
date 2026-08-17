@@ -7,7 +7,7 @@ import {
   copySelectionToTauriClipboard,
   pasteFromTauriClipboard
 } from '@/app/editor/clipboard/system'
-import { isEditing } from '@/app/shell/keyboard/focus'
+import { hasDocumentTextSelection, isEditing } from '@/app/shell/keyboard/focus'
 import { isTauri } from '@/app/tauri/env'
 
 function cursorPosition(store: EditorStore) {
@@ -17,7 +17,7 @@ function cursorPosition(store: EditorStore) {
 
 export function bindEditorClipboard(store: EditorStore) {
   useEventListener(window, 'copy', (e: ClipboardEvent) => {
-    if (isEditing(e)) return
+    if (isEditing(e) || hasDocumentTextSelection()) return
     e.preventDefault()
     if (isTauri()) {
       void copySelectionToTauriClipboard(store)
