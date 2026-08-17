@@ -127,7 +127,7 @@
     "valibot": "^1.2.0",
     "vue": "^3.5.29",
     "vue-router": "^5.0.3",
-    "vue-stream-markdown": "^0.6.5",
+    "vue-stream-markdown": "1.0.4",
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.29",
