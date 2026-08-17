@@ -19,6 +19,8 @@ export type CollaborationPrincipal = v.InferOutput<typeof collaborationPrincipal
 
 export const collaborationTicketSchema = v.object({
   token: v.string(),
+  provider: v.optional(v.picklist(['trystero', 'hocuspocus'])),
+  serverURL: v.optional(v.pipe(v.string(), v.url())),
   documentId: v.pipe(v.string(), v.uuid()),
   roomId: v.string(),
   roomKey: v.pipe(v.string(), v.minLength(43), v.maxLength(128)),
@@ -26,6 +28,6 @@ export const collaborationTicketSchema = v.object({
   permission: documentPermissionSchema,
   roomEpoch: v.pipe(v.number(), v.integer(), v.minValue(0)),
   expiresAt: v.string(),
-  serverEnforcedWrites: v.literal(false)
+  serverEnforcedWrites: v.boolean()
 })
 export type CollaborationTicket = v.InferOutput<typeof collaborationTicketSchema>

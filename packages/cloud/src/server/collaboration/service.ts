@@ -38,7 +38,8 @@ async function signedTicket(
   documentId: string,
   principal: CollaborationPrincipal,
   permission: DocumentPermission,
-  roomEpoch: number
+  roomEpoch: number,
+  collaborationURL?: string
 ): Promise<CollaborationTicket> {
   const issuedAt = Math.floor(Date.now() / 1000)
   const expiresAtSeconds = issuedAt + TICKET_LIFETIME_SECONDS
@@ -50,7 +51,7 @@ async function signedTicket(
     principal,
     permission,
     roomEpoch,
-    serverEnforcedWrites: false as const
+    serverEnforcedWrites: Boolean(collaborationURL)
   }
   const token = await new SignJWT(claims)
     .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
@@ -60,6 +61,8 @@ async function signedTicket(
     .sign(new TextEncoder().encode(authSecret))
   return {
     token,
+    provider: collaborationURL ? ('hocuspocus' as const) : ('trystero' as const),
+    ...(collaborationURL ? { serverURL: collaborationURL } : {}),
     ...claims,
     roomKey,
     expiresAt: new Date(expiresAtSeconds * 1000).toISOString()
@@ -69,7 +72,8 @@ async function signedTicket(
 export function createCollaborationTicketService(
   database: Kysely<CloudDatabase>,
   sharing: DocumentSharingService,
-  authSecret: string
+  authSecret: string,
+  collaborationURL?: string
 ) {
   return {
     async issueUserTicket(actor: CloudActor, documentId: string): Promise<CollaborationTicket> {
@@ -87,7 +91,8 @@ export function createCollaborationTicketService(
         documentId,
         { kind: 'user', userId: actor.userId, name: actor.name, email: actor.email },
         access.permission,
-        document.collaborationEpoch
+        document.collaborationEpoch,
+        collaborationURL
       )
     },
 
@@ -109,7 +114,8 @@ export function createCollaborationTicketService(
         resolved.documentId,
         resolved.principal,
         resolved.permission,
-        document.collaborationEpoch
+        document.collaborationEpoch,
+        collaborationURL
       )
     }
   }

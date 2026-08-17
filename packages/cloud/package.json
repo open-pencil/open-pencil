@@ -68,6 +68,8 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1110.0",
     "@aws-sdk/s3-request-presigner": "^3.1110.0",
+    "@hocuspocus/provider": "^4.6.0",
+    "@hocuspocus/server": "^4.6.0",
     "@noble/hashes": "^2.3.0",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",
@@ -77,7 +79,8 @@
     "kysely": "^0.29.5",
     "nanoid": "^6.0.1",
     "nodemailer": "^9.0.5",
-    "valibot": "^1.2.0"
+    "valibot": "^1.2.0",
+    "yjs": "^13.6.32"
   },
   "optionalDependencies": {
     "pg": "^8.23.0"

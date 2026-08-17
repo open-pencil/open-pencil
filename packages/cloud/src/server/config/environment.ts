@@ -40,6 +40,7 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
     deployment: environment.OPENPENCIL_CLOUD_DEPLOYMENT ?? 'self-hosted',
     publicURL: environment.OPENPENCIL_CLOUD_URL,
     appURL: environment.OPENPENCIL_CLOUD_APP_URL,
+    collaborationURL: environment.OPENPENCIL_CLOUD_COLLABORATION_URL,
     databaseURL: environment.DATABASE_URL,
     authSecret: environment.BETTER_AUTH_SECRET,
     trustedOrigins:

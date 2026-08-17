@@ -1,4 +1,9 @@
 export {
+  authorizeCollaborationRelay,
+  collaborationProviderOptions,
+  type CollaborationRelayAuthorization
+} from './relay'
+export {
   createCollaborationRoutes,
   createPublicCollaborationRoutes,
   type CollaborationRouteEnvironment

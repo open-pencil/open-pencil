@@ -31,9 +31,12 @@ export {
   type UploadCleanupService
 } from './cleanup'
 export {
+  authorizeCollaborationRelay,
+  collaborationProviderOptions,
   createCollaborationRoutes,
   createCollaborationTicketService,
   createPublicCollaborationRoutes,
+  type CollaborationRelayAuthorization,
   type CollaborationRouteEnvironment,
   type CollaborationTicketService
 } from './collaboration'

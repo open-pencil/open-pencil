@@ -1,4 +1,9 @@
 export { createNodeCloudApplication, type NodeCloudApplicationOptions } from './application'
+export {
+  createCloudCollaborationRelay,
+  type CloudCollaborationContext,
+  type CloudCollaborationRelayOptions
+} from './collaboration'
 export { createNodeCloudDatabase, type NodeCloudDatabaseOptions } from './database'
 export {
   createNodemailerInvitationDelivery,

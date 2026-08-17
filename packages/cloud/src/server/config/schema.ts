@@ -15,6 +15,7 @@ const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
   appURL: v.optional(httpURLSchema),
+  collaborationURL: v.optional(httpURLSchema),
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),
   trustedOrigins: v.optional(v.array(httpURLSchema), []),

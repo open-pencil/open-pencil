@@ -11,7 +11,7 @@ export type CollaborationIdentity = {
   source: CollaborationIdentitySource
   principal: CollaborationPrincipal | null
   permission: DocumentPermission | null
-  serverEnforcedWrites: false
+  serverEnforcedWrites: boolean
 }
 
 export type CloudCollaborationCredentials = {
