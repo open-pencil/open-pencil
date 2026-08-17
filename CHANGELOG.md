@@ -57,6 +57,7 @@
 
 ### Fixed
 
+- Let desktop users select and copy AI chat text without replacing it with the selected canvas layers. (#538)
 - Restore visible above, below, and child drop feedback while dragging layers in the Layers panel.
 - Place editor-created instances beside nested source components in world space, including transformed source and destination parents.
 - Harden collaboration node synchronization against malformed remote source metadata and geometry while excluding derived text-renderer caches.
