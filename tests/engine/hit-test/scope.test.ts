@@ -288,6 +288,55 @@ describe('hitTest — frame with children', () => {
     const hitOutside = graph.hitTest(160, 130, frame.id)
     expect(hitOutside).toBeNull()
   })
+
+  test('cached absolute positions refresh after preview flips and reparenting', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const left = graph.createNode('FRAME', page, { x: 100, y: 100, width: 200, height: 100 })
+    const right = graph.createNode('FRAME', page, { x: 400, y: 100, width: 200, height: 100 })
+    const child = graph.createNode('RECTANGLE', left.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40
+    })
+
+    expect(graph.hitTest(130, 130, left.id)?.id).toBe(child.id)
+    graph.updateNodePreview(left.id, { flipX: true })
+    expect(graph.hitTest(270, 130, left.id)?.id).toBe(child.id)
+    expect(graph.hitTest(130, 130, left.id)).toBeNull()
+
+    graph.updateNode(left.id, { flipX: false })
+    expect(graph.getAbsolutePosition(child.id)).toEqual({ x: 120, y: 120 })
+    graph.reorderChild(child.id, right.id, 0)
+    expect(graph.getAbsolutePosition(child.id)).toEqual({ x: 420, y: 120 })
+    expect(graph.hitTest(430, 130, right.id)?.id).toBe(child.id)
+
+    graph.reorderChild(right.id, child.id, 0)
+    expect(right.parentId).toBe(page)
+    expect(child.parentId).toBe(right.id)
+  })
+
+  test('unrotated child inside a flipped ancestor uses transformed hit testing', () => {
+    const graph = new SceneGraph()
+    const page = pageId(graph)
+    const frame = graph.createNode('FRAME', page, {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 100,
+      flipX: true
+    })
+    const child = graph.createNode('RECTANGLE', frame.id, {
+      x: 20,
+      y: 20,
+      width: 40,
+      height: 40
+    })
+
+    expect(graph.hitTest(250, 140, frame.id)?.id).toBe(child.id)
+    expect(graph.hitTest(130, 140, frame.id)).toBeNull()
+  })
 })
 
 describe('hitTest — opaque containers (COMPONENT/INSTANCE)', () => {

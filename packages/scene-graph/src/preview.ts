@@ -14,6 +14,8 @@ const LAYOUT_AFFECTING_KEYS = new Set<string>([
   'width',
   'height',
   'rotation',
+  'flipX',
+  'flipY',
   'parentId',
   'childIds',
   'layoutMode',
