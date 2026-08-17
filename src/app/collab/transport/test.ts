@@ -1,3 +1,5 @@
+import { IS_BROWSER } from '@/constants'
+
 import type { CollabAction, CollabActionReceiver, CollabRoomTransport } from './types'
 
 const MAX_TEST_MESSAGE_BYTES = 8 * 1024 * 1024
@@ -43,6 +45,7 @@ function parseMessage(value: unknown): TestTransportMessage | null {
 }
 
 function relayURL(roomId: string): URL {
+  if (!IS_BROWSER) throw new Error('Test collaboration transport requires a browser')
   const configured = new URLSearchParams(window.location.search).get('collabRelay')
   if (!configured) throw new Error('Test collaboration transport requires collabRelay')
   const url = new URL(configured)
@@ -51,6 +54,9 @@ function relayURL(roomId: string): URL {
 }
 
 export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
+  if (!IS_BROWSER || typeof WebSocket === 'undefined' || typeof crypto.randomUUID !== 'function') {
+    throw new Error('Test collaboration transport requires browser WebSocket and crypto APIs')
+  }
   const peerId = crypto.randomUUID()
   const socket = new WebSocket(relayURL(roomId))
   const peers = new Set<string>()
@@ -74,6 +80,9 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
   socket.addEventListener('open', () => {
     for (const message of pending.splice(0)) socket.send(JSON.stringify(message))
     post({ type: 'hello', senderId: peerId })
+  })
+  socket.addEventListener('error', () => {
+    console.error('Test collaboration relay connection failed', socket.url)
   })
   socket.addEventListener('message', (event: MessageEvent<string>) => {
     const message = parseMessage(event.data)
@@ -126,10 +135,18 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
     async leave() {
       if (left) return
       left = true
-      post({ type: 'leave', senderId: peerId })
-      socket.close()
       peers.clear()
       receivers.clear()
+      const leaveMessage = JSON.stringify({ type: 'leave', senderId: peerId })
+      if (socket.readyState === WebSocket.CONNECTING) {
+        await new Promise<void>((resolve) => {
+          socket.addEventListener('open', () => resolve(), { once: true })
+          socket.addEventListener('error', () => resolve(), { once: true })
+          socket.addEventListener('close', () => resolve(), { once: true })
+        })
+      }
+      if (socket.readyState === WebSocket.OPEN) socket.send(leaveMessage)
+      socket.close()
     }
   }
 }

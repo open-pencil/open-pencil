@@ -38,6 +38,8 @@ export const joinTrysteroCollabRoom: JoinCollabRoom = (roomId) => {
     },
     onPeerJoin: (handler) => room.onPeerJoin(handler),
     onPeerLeave: (handler) => room.onPeerLeave(handler),
-    leave: () => room.leave()
+    leave: async () => {
+      await room.leave()
+    }
   }
 }

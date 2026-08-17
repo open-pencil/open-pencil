@@ -2,6 +2,7 @@ import type { ChatTransport, UIMessage } from 'ai'
 
 import type { CollabReturn } from '@/app/collab/context'
 import type { EditorStore } from '@/app/editor/session/create'
+import { IS_BROWSER } from '@/constants'
 
 export interface OpenPencilTestHooks {
   writeCount?: () => number
@@ -46,7 +47,8 @@ export function setOpenPencilStore(store: EditorStore) {
 }
 
 export function exposeCollaborationActions(collab: CollabReturn) {
-  if (!import.meta.env.DEV || !new URLSearchParams(window.location.search).has('test')) return
+  if (!IS_BROWSER || !import.meta.env.DEV) return
+  if (!new URLSearchParams(window.location.search).has('test')) return
   const testHooks = (windowAPI().test ??= {})
   testHooks.collab = {
     connect: collab.connect,

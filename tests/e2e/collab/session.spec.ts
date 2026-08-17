@@ -7,12 +7,16 @@ const ROOM_ID = 'e2e-collaboration-room'
 
 type TestRelay = {
   url: string
+  pause: () => void
+  resume: () => void
   close: () => Promise<void>
 }
 
 async function startRelay(): Promise<TestRelay> {
   const rooms = new Map<string, Set<WebSocket>>()
   const sockets = new Map<WebSocket, { room: Set<WebSocket>; peerId: string | null }>()
+  const queuedMessages: Array<{ sender: WebSocket; room: Set<WebSocket>; text: string }> = []
+  let paused = false
   const server = new WebSocketServer({ host: '127.0.0.1', port: 0 })
   server.on('connection', (socket, request) => {
     const roomId = new URL(request.url ?? '/', 'ws://127.0.0.1').searchParams.get('roomId') ?? ''
@@ -28,6 +32,10 @@ async function startRelay(): Promise<TestRelay> {
       const message = JSON.parse(text) as { senderId?: string }
       const state = sockets.get(socket)
       if (state && message.senderId) state.peerId = message.senderId
+      if (paused) {
+        queuedMessages.push({ sender: socket, room, text })
+        return
+      }
       for (const peer of room) {
         if (peer !== socket && peer.readyState === peer.OPEN) peer.send(text)
       }
@@ -48,6 +56,17 @@ async function startRelay(): Promise<TestRelay> {
   if (typeof address === 'string' || address === null) throw new Error('Test relay unavailable')
   return {
     url: `ws://127.0.0.1:${address.port}`,
+    pause: () => {
+      paused = true
+    },
+    resume: () => {
+      paused = false
+      for (const message of queuedMessages.splice(0)) {
+        for (const peer of message.room) {
+          if (peer !== message.sender && peer.readyState === peer.OPEN) peer.send(message.text)
+        }
+      }
+    },
     close: async () => {
       for (const room of rooms.values()) for (const socket of room) socket.terminate()
       await new Promise<void>((resolve, reject) => {
@@ -68,13 +87,21 @@ type Peer = {
 
 async function createPeer(browser: Browser, name: string, relayURL: string): Promise<Peer> {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
-  const page = await context.newPage()
-  await page.goto(`/?test&collabTransport=test&collabRelay=${encodeURIComponent(relayURL)}`)
-  await page.evaluate((localName) => window.openPencil?.test?.collab?.setLocalName(localName), name)
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-  canvas.errors.length = 0
-  return { context, page, canvas }
+  try {
+    const page = await context.newPage()
+    await page.goto(`/?test&collabTransport=test&collabRelay=${encodeURIComponent(relayURL)}`)
+    await page.evaluate(
+      (localName) => window.openPencil?.test?.collab?.setLocalName(localName),
+      name
+    )
+    const canvas = new CanvasHelper(page)
+    await canvas.waitForInit()
+    canvas.errors.length = 0
+    return { context, page, canvas }
+  } catch (error) {
+    await context.close()
+    throw error
+  }
 }
 
 function collaborationErrors(peer: Peer): string[] {
@@ -146,6 +173,29 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       .poll(() => host.page.evaluate(() => window.openPencil?.test?.collab?.peerSelections()[0]))
       .toEqual([nodeId])
 
+    relay.pause()
+    await guest.page.evaluate((id) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.updateNode(id, { y: 280 })
+    }, nodeId)
+    await host.page.evaluate((id) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.updateNode(id, { name: 'Host partition edit' })
+    }, nodeId)
+    relay.resume()
+    for (const peer of [host, guest]) {
+      await expect
+        .poll(() =>
+          peer.page.evaluate((id) => {
+            const node = window.openPencil?.getStore?.().graph.getNode(id)
+            return node ? { name: node.name, y: node.y } : null
+          }, nodeId)
+        )
+        .toEqual({ name: 'Host partition edit', y: 280 })
+    }
+
     await guest.page.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('OpenPencil store not initialized')
@@ -157,6 +207,7 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
       )
       .toBe(1)
 
+    expect(collaborationErrors(guest)).toEqual([])
     await guest.context.close()
     guest = null
     await expect
@@ -194,8 +245,14 @@ test('two browser peers synchronize editing, awareness, departure, and reconnect
 
     expect(collaborationErrors(host)).toEqual([])
   } finally {
-    await guest?.context.close()
-    await host?.context.close()
-    await relay.close()
+    try {
+      await guest?.context.close()
+    } finally {
+      try {
+        await host?.context.close()
+      } finally {
+        await relay.close()
+      }
+    }
   }
 })

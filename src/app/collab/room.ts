@@ -58,7 +58,7 @@ export function connectCollabRoom({
 
   getAwareness((data, peerId) => {
     awarenessClientsByPeer.set(peerId, new Set(awarenessClientIds(data)))
-    awarenessProtocol.applyAwarenessUpdate(awareness, data, null)
+    awarenessProtocol.applyAwarenessUpdate(awareness, data, 'remote')
   })
 
   getSyncStep1((stateVector, peerId) => {
@@ -77,7 +77,11 @@ export function connectCollabRoom({
 
   awareness.on(
     'update',
-    ({ added, updated, removed }: { added: number[]; updated: number[]; removed: number[] }) => {
+    (
+      { added, updated, removed }: { added: number[]; updated: number[]; removed: number[] },
+      origin: unknown
+    ) => {
+      if (origin === 'remote' || origin === 'peer-left') return
       const changedClients = [...added, ...updated, ...removed]
       const encodedUpdate = awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients)
       sendAwareness(encodedUpdate)
