@@ -1,3 +1,4 @@
+import { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES } from '#cloud/server/config/limits'
 import * as v from 'valibot'
 
 const checksumSchema = v.pipe(v.string(), v.regex(/^[A-Za-z0-9+/]{43}=$/))
@@ -66,7 +67,12 @@ export type CreateDocumentInput = v.InferOutput<typeof createDocumentSchema>
 
 export const createUploadSchema = v.object({
   baseRevisionId: v.nullable(v.pipe(v.string(), v.uuid())),
-  byteSize: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(500 * 1024 * 1024)),
+  byteSize: v.pipe(
+    v.number(),
+    v.integer(),
+    v.minValue(1),
+    v.maxValue(CLOUD_PROTOCOL_MAX_UPLOAD_BYTES)
+  ),
   checksum: checksumSchema,
   contentType: v.literal('application/octet-stream')
 })

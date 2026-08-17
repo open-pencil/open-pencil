@@ -1,5 +1,11 @@
 import * as v from 'valibot'
 
+import {
+  CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
+  CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM,
+  CLOUD_PROTOCOL_MAX_UPLOAD_BYTES
+} from './limits'
+
 const httpURLSchema = v.pipe(
   v.string(),
   v.url(),
@@ -19,6 +25,27 @@ const rawCloudServerConfigSchema = v.object({
   collaborationPort: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(65_535)),
     1234
+  ),
+  technicalLimits: v.optional(
+    v.object({
+      maximumUploadBytes: v.optional(
+        v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(CLOUD_PROTOCOL_MAX_UPLOAD_BYTES)),
+        CLOUD_PROTOCOL_MAX_UPLOAD_BYTES
+      ),
+      maximumCollaborationMessageBytes: v.optional(
+        v.pipe(v.number(), v.integer(), v.minValue(1024)),
+        CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES
+      ),
+      maximumConnectionsPerRoom: v.optional(
+        v.pipe(v.number(), v.integer(), v.minValue(1)),
+        CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
+      )
+    }),
+    {
+      maximumUploadBytes: CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
+      maximumCollaborationMessageBytes: CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
+      maximumConnectionsPerRoom: CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
+    }
   ),
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),

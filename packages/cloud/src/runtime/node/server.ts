@@ -1,5 +1,6 @@
 import {
   cloudServerConfigFromEnvironment,
+  loadCloudServerConfig,
   createCloudApp,
   createCloudAuth,
   createCollaborationStateStore,
@@ -20,7 +21,8 @@ export type NodeCloudServerOptions = {
 
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
-  const config = cloudServerConfigFromEnvironment(environment)
+  const config =
+    (await loadCloudServerConfig(environment)) ?? cloudServerConfigFromEnvironment(environment)
   const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
   const auth = createCloudAuth(config, database)
   await migrateCloudDatabase(database, auth)

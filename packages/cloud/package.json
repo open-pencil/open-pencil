@@ -71,6 +71,7 @@
     "@hocuspocus/provider": "^4.6.0",
     "@hocuspocus/server": "^4.6.0",
     "@noble/hashes": "^2.3.0",
+    "@openfeature/server-sdk": "^1.23.0",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",
     "better-auth": "^1.6.28",
@@ -79,6 +80,7 @@
     "kysely": "^0.29.5",
     "nanoid": "^6.0.1",
     "nodemailer": "^9.0.5",
+    "smol-toml": "^1.8.0",
     "valibot": "^1.2.0",
     "yjs": "^13.6.32"
   },

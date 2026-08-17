@@ -47,9 +47,15 @@ export {
 export {
   CloudConfigError,
   cloudServerConfigFromEnvironment,
+  loadCloudServerConfig,
+  parseCloudDeploymentTOML,
   parseCloudServerConfig,
+  CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
+  CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM,
+  CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
   type CloudEnvironment,
-  type CloudServerConfig
+  type CloudServerConfig,
+  type CloudTechnicalLimits
 } from './config'
 export {
   createCloudDatabase,
@@ -119,6 +125,12 @@ export {
   type ResolvedSharePrincipal,
   type SharingRouteEnvironment
 } from './sharing'
+export {
+  CLOUD_FEATURE_KEYS,
+  CloudPolicy,
+  createDefaultCloudPolicy,
+  type CloudPolicyContext
+} from './policy'
 export {
   createWorkspaceRoutes,
   createWorkspaceService,

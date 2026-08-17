@@ -1,0 +1,35 @@
+schema_version = 1
+
+[deployment]
+mode = "self-hosted"
+public_url = "http://localhost:8787"
+app_url = "http://localhost:5173"
+trusted_origins = ["http://localhost:5173"]
+
+[database.url]
+from_env = "DATABASE_URL"
+
+[authentication.secret]
+from_env = "BETTER_AUTH_SECRET"
+
+[object_storage]
+endpoint = "http://localhost:8333"
+region = "us-east-1"
+bucket = "openpencil"
+force_path_style = true
+checksum_verification = "metadata"
+
+[object_storage.access_key_id]
+from_env = "S3_ACCESS_KEY_ID"
+
+[object_storage.secret_access_key]
+from_env = "S3_SECRET_ACCESS_KEY"
+
+[collaboration]
+public_url = "ws://localhost:1234"
+port = 1234
+
+[technical_limits]
+maximum_upload_bytes = 1073741824
+maximum_collaboration_message_bytes = 1048576
+maximum_connections_per_room = 1000

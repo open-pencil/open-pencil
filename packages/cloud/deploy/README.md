@@ -15,6 +15,11 @@ docker compose ps
 curl --fail http://localhost:8787/ready
 ```
 
+The Node runtime prefers the versioned TOML file referenced by `OPENPENCIL_CLOUD_CONFIG` and falls
+back to the legacy environment mapping when no path is configured. Start from
+[`openpencil-cloud.example.toml`](./openpencil-cloud.example.toml). TOML contains infrastructure and
+technical ceilings; production secrets are resolved through `from_env` references.
+
 The Cloud API is available at `http://localhost:8787`. PostgreSQL and SeaweedFS are also published on ports `54329`, `8333`, and `9333` for local inspection and smoke tests.
 
 The Cloud container runs database migrations before accepting requests. Named volumes preserve PostgreSQL and SeaweedFS data across restarts.
