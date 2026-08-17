@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add deterministic two-browser collaboration coverage for bidirectional edits, awareness, departure cleanup, and reconnect convergence without public network dependencies. (#530)
+
 - Add tested pane-registry and recursive split-tree models for independently viewed same-document canvases, capped at four visible panes.
 - Add explicit shared/view editor-state ownership and canvas render-state hooks as a foundation for independent same-document canvas panes.
 

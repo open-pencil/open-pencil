@@ -1,0 +1,197 @@
+import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
+import { WebSocketServer, type WebSocket } from 'ws'
+
+import { CanvasHelper } from '#tests/helpers/canvas'
+
+const ROOM_ID = 'e2e-collaboration-room'
+
+type TestRelay = {
+  url: string
+  close: () => Promise<void>
+}
+
+async function startRelay(): Promise<TestRelay> {
+  const rooms = new Map<string, Set<WebSocket>>()
+  const sockets = new Map<WebSocket, { room: Set<WebSocket>; peerId: string | null }>()
+  const server = new WebSocketServer({ host: '127.0.0.1', port: 0 })
+  server.on('connection', (socket, request) => {
+    const roomId = new URL(request.url ?? '/', 'ws://127.0.0.1').searchParams.get('roomId') ?? ''
+    let room = rooms.get(roomId)
+    if (!room) {
+      room = new Set()
+      rooms.set(roomId, room)
+    }
+    room.add(socket)
+    sockets.set(socket, { room, peerId: null })
+    socket.on('message', (data) => {
+      const text = data.toString()
+      const message = JSON.parse(text) as { senderId?: string }
+      const state = sockets.get(socket)
+      if (state && message.senderId) state.peerId = message.senderId
+      for (const peer of room) {
+        if (peer !== socket && peer.readyState === peer.OPEN) peer.send(text)
+      }
+    })
+    socket.on('close', () => {
+      const state = sockets.get(socket)
+      room?.delete(socket)
+      sockets.delete(socket)
+      if (!state?.peerId) return
+      const leave = JSON.stringify({ type: 'leave', senderId: state.peerId })
+      for (const peer of state.room) if (peer.readyState === peer.OPEN) peer.send(leave)
+    })
+  })
+  await new Promise<void>((resolve) => {
+    server.once('listening', () => resolve())
+  })
+  const address = server.address()
+  if (typeof address === 'string' || address === null) throw new Error('Test relay unavailable')
+  return {
+    url: `ws://127.0.0.1:${address.port}`,
+    close: async () => {
+      for (const room of rooms.values()) for (const socket of room) socket.terminate()
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => {
+          if (error) reject(error)
+          else resolve()
+        })
+      })
+    }
+  }
+}
+
+type Peer = {
+  context: BrowserContext
+  page: Page
+  canvas: CanvasHelper
+}
+
+async function createPeer(browser: Browser, name: string, relayURL: string): Promise<Peer> {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+  const page = await context.newPage()
+  await page.goto(`/?test&collabTransport=test&collabRelay=${encodeURIComponent(relayURL)}`)
+  await page.evaluate((localName) => window.openPencil?.collab?.setLocalName(localName), name)
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  canvas.errors.length = 0
+  return { context, page, canvas }
+}
+
+function collaborationErrors(peer: Peer): string[] {
+  return peer.canvas.errors.filter((error) => !error.includes('127.0.0.1:7600'))
+}
+
+async function connect(peer: Peer) {
+  await peer.page.evaluate((roomId) => {
+    const collab = window.openPencil?.collab
+    if (!collab) throw new Error('Collaboration bridge unavailable')
+    collab.connect(roomId)
+  }, ROOM_ID)
+}
+
+test('two browser peers synchronize editing, awareness, departure, and reconnect', async ({
+  browser
+}) => {
+  test.setTimeout(120_000)
+  const relay = await startRelay()
+  const host = await createPeer(browser, 'Host', relay.url)
+  const guest = await createPeer(browser, 'Guest', relay.url)
+
+  try {
+    await connect(host)
+    await connect(guest)
+    await expect
+      .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+      .toBe(1)
+    await expect
+      .poll(() => guest.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+      .toBe(1)
+
+    const nodeId = await host.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      const node = store.graph.createNode('RECTANGLE', store.state.currentPageId, {
+        name: 'Shared rectangle',
+        x: 160,
+        y: 140,
+        width: 120,
+        height: 80
+      })
+      store.requestRender()
+      return node.id
+    })
+
+    await expect
+      .poll(() =>
+        guest.page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.name, nodeId)
+      )
+      .toBe('Shared rectangle')
+
+    await guest.page.evaluate((id) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      store.updateNode(id, { name: 'Edited by Guest', x: 320 })
+      store.select([id])
+      window.openPencil?.collab?.updateSelection([id])
+    }, nodeId)
+
+    await expect
+      .poll(() =>
+        host.page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.name, nodeId)
+      )
+      .toBe('Edited by Guest')
+    await expect
+      .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerSelections()[0]))
+      .toEqual([nodeId])
+
+    await guest.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      window.openPencil?.collab?.updateCursor(420, 260, store.state.currentPageId)
+    })
+    await expect
+      .poll(() =>
+        host.page.evaluate(() => window.openPencil?.getStore?.().state.remoteCursors.length)
+      )
+      .toBe(1)
+
+    await guest.context.close()
+    await expect
+      .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+      .toBe(0)
+    await expect
+      .poll(() =>
+        host.page.evaluate(() => window.openPencil?.getStore?.().state.remoteCursors.length)
+      )
+      .toBe(0)
+
+    const reconnectingGuest = await createPeer(browser, 'Guest', relay.url)
+    try {
+      await host.page.evaluate((id) => {
+        const store = window.openPencil?.getStore?.()
+        if (!store) throw new Error('OpenPencil store not initialized')
+        store.updateNode(id, { name: 'Edited while offline', y: 260 })
+      }, nodeId)
+      await connect(reconnectingGuest)
+      await expect
+        .poll(() =>
+          reconnectingGuest.page.evaluate(
+            (id) => window.openPencil?.getStore?.().graph.getNode(id)?.name,
+            nodeId
+          )
+        )
+        .toBe('Edited while offline')
+      await expect
+        .poll(() => host.page.evaluate(() => window.openPencil?.collab?.peerCount()))
+        .toBe(1)
+      expect(collaborationErrors(reconnectingGuest)).toEqual([])
+    } finally {
+      await reconnectingGuest.context.close()
+    }
+
+    expect(collaborationErrors(host)).toEqual([])
+  } finally {
+    await host.context.close()
+    await relay.close()
+  }
+})

@@ -1,4 +1,3 @@
-import type { Room } from 'trystero'
 import type { Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
@@ -8,6 +7,7 @@ import * as Y from 'yjs'
 import { randomIndex } from '@open-pencil/core/random'
 
 import { connectCollabRoom } from '@/app/collab/room'
+import type { CollabRoomTransport } from '@/app/collab/transport'
 import type { CollabState } from '@/app/collab/types'
 import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
@@ -18,7 +18,7 @@ export type CollabRuntime = {
   awareness: awarenessProtocol.Awareness | null
   ynodes: Y.Map<Y.Map<unknown>> | null
   yimages: Y.Map<Uint8Array> | null
-  room: Room | null
+  room: CollabRoomTransport | null
   persistence: IndexeddbPersistence | null
   connectedStore: EditorStore | null
   suppressGraphSync: boolean
@@ -54,7 +54,7 @@ type CollabConnectionActionsOptions = {
 
 type CollabSessionResources = {
   store: EditorStore
-  room: Room | null
+  room: CollabRoomTransport | null
   awareness: awarenessProtocol.Awareness | null
   persistence: IndexeddbPersistence | null
   ydoc: Y.Doc | null
