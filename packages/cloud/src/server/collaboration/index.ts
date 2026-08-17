@@ -1,4 +1,10 @@
 export {
+  collaborationRoomIdentity,
+  createCollaborationStateStore,
+  type CollaborationRoomIdentity,
+  type CollaborationStateStore
+} from './persistence'
+export {
   authorizeCollaborationRelay,
   collaborationProviderOptions,
   type CollaborationRelayAuthorization

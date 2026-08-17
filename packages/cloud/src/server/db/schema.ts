@@ -119,6 +119,15 @@ export interface AuthUserTable {
   updatedAt: TimestampColumn
 }
 
+export interface DocumentCollaborationStateTable {
+  documentId: string
+  roomEpoch: number
+  state: Uint8Array
+  version: Generated<number>
+  createdAt: TimestampColumn
+  updatedAt: TimestampColumn
+}
+
 export interface InvitationContinuationTable {
   id: string
   invitationId: string
@@ -138,6 +147,7 @@ export interface CloudDatabase {
   documentShare: DocumentShareTable
   documentGrant: DocumentGrantTable
   documentInvitation: DocumentInvitationTable
+  documentCollaborationState: DocumentCollaborationStateTable
   invitationContinuation: InvitationContinuationTable
   upload: UploadTable
 }

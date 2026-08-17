@@ -33,11 +33,15 @@ export {
 export {
   authorizeCollaborationRelay,
   collaborationProviderOptions,
+  collaborationRoomIdentity,
   createCollaborationRoutes,
+  createCollaborationStateStore,
   createCollaborationTicketService,
   createPublicCollaborationRoutes,
   type CollaborationRelayAuthorization,
+  type CollaborationRoomIdentity,
   type CollaborationRouteEnvironment,
+  type CollaborationStateStore,
   type CollaborationTicketService
 } from './collaboration'
 export {

@@ -9,6 +9,7 @@ import * as documentCleanupClaims from './migrations/003_document_cleanup_claims
 import * as documentSharing from './migrations/004_document_sharing'
 import * as documentCollaborationEpoch from './migrations/005_document_collaboration_epoch'
 import * as invitationContinuation from './migrations/006_invitation_continuation'
+import * as collaborationState from './migrations/007_collaboration_state'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
@@ -17,7 +18,8 @@ const migrations: Record<string, Migration> = {
   '003_document_cleanup_claims': documentCleanupClaims,
   '004_document_sharing': documentSharing,
   '005_document_collaboration_epoch': documentCollaborationEpoch,
-  '006_invitation_continuation': invitationContinuation
+  '006_invitation_continuation': invitationContinuation,
+  '007_collaboration_state': collaborationState
 }
 
 class CloudMigrationProvider implements MigrationProvider {

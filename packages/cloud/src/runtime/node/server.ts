@@ -2,6 +2,7 @@ import {
   cloudServerConfigFromEnvironment,
   createCloudApp,
   createCloudAuth,
+  createCollaborationStateStore,
   createDocumentCleanupService,
   createUploadCleanupService,
   migrateCloudDatabase,
@@ -46,7 +47,10 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     objects
   })
   const collaboration = config.collaborationURL
-    ? createCloudCollaborationRelay({ authSecret: config.authSecret })
+    ? createCloudCollaborationRelay({
+        authSecret: config.authSecret,
+        stateStore: createCollaborationStateStore(database)
+      })
     : undefined
   if (collaboration) await collaboration.listen(config.collaborationPort)
   const server = Bun.serve({

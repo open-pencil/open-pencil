@@ -1,3 +1,4 @@
+import type { CollaborationStateStore } from '#cloud/server/collaboration'
 import { authorizeCollaborationRelay } from '#cloud/server/collaboration'
 import { Server } from '@hocuspocus/server'
 
@@ -5,12 +6,19 @@ export type CloudCollaborationContext = Awaited<ReturnType<typeof authorizeColla
 
 export type CloudCollaborationRelayOptions = {
   authSecret: string
+  stateStore?: CollaborationStateStore
 }
 
 export function createCloudCollaborationRelay(options: CloudCollaborationRelayOptions) {
   return new Server<CloudCollaborationContext>({
     name: 'OpenPencil Cloud collaboration',
     quiet: true,
+    async onLoadDocument({ documentName }) {
+      return options.stateStore?.load(documentName) ?? null
+    },
+    async onStoreDocument({ documentName, document }) {
+      await options.stateStore?.store(documentName, document)
+    },
     async onAuthenticate({ token, documentName, connectionConfig }) {
       const authorization = await authorizeCollaborationRelay(
         token,
