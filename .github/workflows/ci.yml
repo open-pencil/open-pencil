@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -117,6 +118,9 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: ghcr.io/open-pencil/native-contracts-ci@sha256:3bf83c822ac8fceaf8440de35f3c4131b386bcfbd65e3904df7188b9dc0e7d8f
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
