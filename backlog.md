@@ -1,6 +1,53 @@
-# Ideas Backlog
+# Contribution Backlog
 
-This file collects possible future contributions. Items here are ideas, not committed roadmap work.
+This file records planned, intentionally narrow contributions as well as future ideas. Each pull
+request should be cut from the current `master` in a clean checkout and should avoid carrying
+unrelated WIP changes.
+
+## Planned pull requests
+
+### 1. AI chat improvements
+
+**Status:** Next candidate, after the currently open PRs are merged.
+
+Bring only the self-contained chat improvements from the WIP branch. Keep this separate from local
+MCP lifecycle UI, i18n, performance work, and `.fig` rendering changes so it has a focused review
+surface and minimal conflicts.
+
+### 2. Local MCP server controls
+
+**Status:** Follow-up after the chat PR.
+
+Add a dedicated settings surface for the local MCP server:
+
+- Show whether it is running and the active port.
+- Provide start, stop, and restart controls where the runtime supports them.
+- Keep server lifecycle and status handling isolated from general chat changes.
+
+### 3. Brazilian Portuguese localization
+
+**Status:** Follow-up after the preceding PRs.
+
+Ship the Portuguese translations as an i18n-only PR. Avoid bundling feature behavior changes with
+the locale files.
+
+### 4. Further performance improvements
+
+**Status:** After the focused feature PRs.
+
+Continue the performance work in its own PR, including the worker-related controls and any
+measurable loading or memory improvements. Establish the exact scope from the remaining WIP diff
+when it is time to cut the branch.
+
+### 5. `.fig` rendering compatibility fixes
+
+**Status:** After a broader validation pass.
+
+Validate roughly 50 additional pages across a varied set of `.fig` files, catalog remaining broken
+component/rendering cases, and submit one rendering-only PR with the verified fixes and targeted
+regression tests.
+
+## Future ideas
 
 ## Voice input with a configurable Whisper API
 
