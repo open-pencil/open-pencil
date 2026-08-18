@@ -91,7 +91,7 @@ async function openCloudShare() {
   const guestName = collab.state.value.localName.trim() || shared.resolution.principal.name
   const ticketRequest = () =>
     loadCloudSharedCollaborationTicket(server, shareId, secret, guestName, cloudGuestId.value)
-  collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
+  await collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
   await loadedStore.fitCurrentPageToViewport()
 }
 
@@ -103,7 +103,7 @@ async function connectCloudDocument() {
     return
   }
   const ticketRequest = () => getCloudCollaborationTicket(store)
-  collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
+  await collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
 }
 
 useEventListener(

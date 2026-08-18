@@ -10,6 +10,7 @@ export default defineConfig({
     server: './src/server/index.ts'
   },
   platform: 'neutral',
+  external: [/^node:/],
   format: ['esm'],
   dts: true,
   sourcemap: true,

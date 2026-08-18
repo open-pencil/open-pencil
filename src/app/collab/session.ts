@@ -128,7 +128,7 @@ export function createCollabConnectionActions({
   onCloudTicketError
 }: CollabConnectionActionsOptions) {
   function connect(roomId: string) {
-    connectCollabSession({
+    void connectCollabSession({
       roomId,
       onCloudTicketError,
       runtime,
@@ -143,9 +143,9 @@ export function createCollabConnectionActions({
     })
   }
 
-  function connectCloud(credentials: CloudCollaborationCredentials) {
+  async function connectCloud(credentials: CloudCollaborationCredentials) {
     const ticket = requireActiveCollaborationTicket(credentials.ticket)
-    connectCollabSession({
+    await connectCollabSession({
       roomId: ticket.roomId,
       roomPassword: ticket.roomKey,
       cloud: credentials,
@@ -196,7 +196,7 @@ export function watchAwarenessZoom(store: EditorStore, getAwareness: () => Aware
   })
 }
 
-export function connectCollabSession({
+export async function connectCollabSession({
   roomId,
   roomPassword,
   cloud,
@@ -257,7 +257,7 @@ export function connectCollabSession({
 
   const ticket = cloud ? requireActiveCollaborationTicket(cloud.ticket) : null
   const cloudProvider = ticket
-    ? createCloudYjsProvider({
+    ? await createCloudYjsProvider({
         ticket,
         document: runtime.ydoc,
         awareness: runtime.awareness,
@@ -332,7 +332,7 @@ type CollaborationTicketRefreshOptions = {
   runtime: CollabRuntime
   state: Ref<CollabState>
   store: EditorStore
-  reconnect: (credentials: CloudCollaborationCredentials) => void
+  reconnect: (credentials: CloudCollaborationCredentials) => Promise<void>
   disconnect: () => void
   broadcastAwareness: () => void
   onError: (error: unknown) => void
@@ -355,7 +355,7 @@ export function scheduleCollaborationTicketRefresh({
         const refreshed = requireActiveCollaborationTicket(await credentials.refresh())
         const nextCredentials = { ...credentials, ticket: refreshed }
         if (!sameCollaborationRoom(current, refreshed)) {
-          reconnect(nextCredentials)
+          await reconnect(nextCredentials)
           return
         }
         if (runtime.cloudProvider && refreshed.provider === 'hocuspocus') {

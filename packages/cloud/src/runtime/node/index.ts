@@ -4,6 +4,7 @@ export {
   type CloudCollaborationContext,
   type CloudCollaborationRelayOptions
 } from './collaboration'
+export { loadNodeCloudServerConfig } from './config'
 export { createNodeCloudDatabase, type NodeCloudDatabaseOptions } from './database'
 export {
   createNodemailerInvitationDelivery,

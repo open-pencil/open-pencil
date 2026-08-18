@@ -1,4 +1,4 @@
-import { HocuspocusProvider, WebSocketStatus } from '@hocuspocus/provider'
+import type { HocuspocusProvider } from '@hocuspocus/provider'
 import type { Awareness } from 'y-protocols/awareness'
 import type * as Y from 'yjs'
 
@@ -12,10 +12,11 @@ export type CloudYjsProviderOptions = {
   onSynced?: () => void
 }
 
-export function createCloudYjsProvider(
+export async function createCloudYjsProvider(
   options: CloudYjsProviderOptions
-): HocuspocusProvider | null {
+): Promise<HocuspocusProvider | null> {
   if (options.ticket.provider !== 'hocuspocus' || !options.ticket.serverURL) return null
+  const { HocuspocusProvider, WebSocketStatus } = await import('@hocuspocus/provider')
   return new HocuspocusProvider({
     url: options.ticket.serverURL,
     name: options.ticket.roomId,

@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises'
-
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
@@ -74,12 +72,4 @@ export function parseCloudDeploymentTOML(
         }
       : undefined
   })
-}
-
-export async function loadCloudServerConfig(
-  environment: CloudEnvironment
-): Promise<CloudServerConfig | null> {
-  const path = environment.OPENPENCIL_CLOUD_CONFIG
-  if (!path) return null
-  return parseCloudDeploymentTOML(await readFile(path, 'utf8'), environment)
 }

@@ -4,7 +4,10 @@ export {
   createCloudSessionResolver,
   type CloudActor,
   type CloudAuth,
-  type CloudSessionResolver
+  type CloudSessionResolver,
+  workspaceAccessControl,
+  workspaceRoles,
+  workspaceStatements
 } from './auth'
 export {
   createCloudAPIRouter,
@@ -47,7 +50,6 @@ export {
 export {
   CloudConfigError,
   cloudServerConfigFromEnvironment,
-  loadCloudServerConfig,
   parseCloudDeploymentTOML,
   parseCloudServerConfig,
   CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
@@ -129,7 +131,10 @@ export {
   CLOUD_FEATURE_KEYS,
   CloudPolicy,
   createDefaultCloudPolicy,
-  type CloudPolicyContext
+  StaticEntitlementSource,
+  type CloudPolicyContext,
+  type EntitlementSource,
+  type EntitlementSubject
 } from './policy'
 export {
   createWorkspaceRoutes,

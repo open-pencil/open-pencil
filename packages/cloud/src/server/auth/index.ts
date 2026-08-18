@@ -85,6 +85,7 @@ export function createCloudAuth(config: CloudServerConfig, database: Kysely<Clou
   })
 }
 
+export { workspaceAccessControl, workspaceRoles, workspaceStatements } from './workspace-access'
 export { createCloudSessionResolver, type CloudActor, type CloudSessionResolver } from './session'
 
 export type CloudAuth = ReturnType<typeof createCloudAuth>

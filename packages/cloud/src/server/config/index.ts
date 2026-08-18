@@ -1,4 +1,4 @@
-export { loadCloudServerConfig, parseCloudDeploymentTOML } from './deployment'
+export { parseCloudDeploymentTOML } from './deployment'
 export { cloudServerConfigFromEnvironment, type CloudEnvironment } from './environment'
 export {
   CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
