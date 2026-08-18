@@ -1,3 +1,4 @@
+import { staticEntitlementsTOMLSchema } from '#cloud/server/policy/static'
 import { parse as parseTOML } from 'smol-toml'
 import * as v from 'valibot'
 
@@ -29,30 +30,7 @@ const deploymentConfigSchema = v.object({
   ),
   entitlements: v.optional(
     v.variant('source', [
-      v.object({
-        source: v.literal('static'),
-        documents: v.optional(
-          v.object({
-            maximum_file_bytes: v.optional(v.number()),
-            revision_history: v.optional(v.boolean())
-          })
-        ),
-        storage: v.optional(v.object({ maximum_bytes: v.optional(v.number()) })),
-        sharing: v.optional(
-          v.object({
-            capability_links: v.optional(v.boolean()),
-            anonymous_view: v.optional(v.boolean()),
-            anonymous_edit: v.optional(v.boolean()),
-            guest_presence: v.optional(v.boolean())
-          })
-        ),
-        collaboration: v.optional(
-          v.object({
-            enabled: v.optional(v.boolean()),
-            maximum_participants: v.optional(v.number())
-          })
-        )
-      }),
+      v.object({ source: v.literal('static'), ...staticEntitlementsTOMLSchema.entries }),
       v.object({ source: v.literal('database') })
     ])
   ),

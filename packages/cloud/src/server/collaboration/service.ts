@@ -83,6 +83,24 @@ export function createCollaborationTicketService(
     async issueUserTicket(actor: CloudActor, documentId: string): Promise<CollaborationTicket> {
       const access = await resolveDocumentAccess(database, actor.userId, documentId)
       if (!access) throw new DocumentNotFoundError()
+      if (policy) {
+        const workspace = await database
+          .selectFrom('document')
+          .select('workspaceId')
+          .where('id', '=', documentId)
+          .executeTakeFirstOrThrow()
+        if (
+          !(await policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, {
+            targetingKey: workspace.workspaceId,
+            actorId: actor.userId,
+            workspaceId: workspace.workspaceId,
+            documentId,
+            deploymentMode
+          }))
+        ) {
+          throw new DocumentNotFoundError()
+        }
+      }
       const document = await database
         .selectFrom('document')
         .select('collaborationEpoch')
@@ -106,7 +124,7 @@ export function createCollaborationTicketService(
       actor?: CloudActor
     ): Promise<CollaborationTicket> {
       const resolved = await sharing.resolveShare(shareId, input, actor)
-      if (!actor && policy) {
+      if (policy) {
         const workspace = await database
           .selectFrom('document')
           .select('workspaceId')
@@ -114,11 +132,15 @@ export function createCollaborationTicketService(
           .executeTakeFirstOrThrow()
         const context = {
           targetingKey: workspace.workspaceId,
+          ...(actor ? { actorId: actor.userId } : {}),
           workspaceId: workspace.workspaceId,
           documentId: resolved.documentId,
           deploymentMode
         }
-        if (!(await policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context))) {
+        if (!(await policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context))) {
+          throw new DocumentNotFoundError()
+        }
+        if (!actor && !(await policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context))) {
           throw new DocumentNotFoundError()
         }
       }

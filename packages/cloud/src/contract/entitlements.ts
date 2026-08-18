@@ -11,7 +11,8 @@ export const workspaceEntitlementsSchema = v.object({
   }),
   limits: v.object({
     maximumFileBytes: v.pipe(v.number(), v.integer(), v.minValue(1)),
-    maximumStorageBytes: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1)))
+    maximumStorageBytes: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1))),
+    maximumParticipants: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1)))
   }),
   usage: v.object({
     committedStorageBytes: v.pipe(v.number(), v.integer(), v.minValue(0)),

@@ -33,6 +33,51 @@ export const staticEntitlementsSchema = v.object({
 
 export type StaticEntitlements = v.InferOutput<typeof staticEntitlementsSchema>
 
+export const staticEntitlementsTOMLSchema = v.object({
+  documents: v.optional(
+    v.object({
+      maximum_file_bytes: v.optional(positiveInteger),
+      revision_history: v.optional(v.boolean())
+    })
+  ),
+  storage: v.optional(v.object({ maximum_bytes: v.optional(positiveInteger) })),
+  sharing: v.optional(
+    v.object({
+      capability_links: v.optional(v.boolean()),
+      anonymous_view: v.optional(v.boolean()),
+      anonymous_edit: v.optional(v.boolean()),
+      guest_presence: v.optional(v.boolean())
+    })
+  ),
+  collaboration: v.optional(
+    v.object({
+      enabled: v.optional(v.boolean()),
+      maximum_participants: v.optional(positiveInteger)
+    })
+  )
+})
+
+export function parseStaticEntitlementsTOML(input: unknown): StaticEntitlements {
+  const value = v.parse(staticEntitlementsTOMLSchema, input)
+  return v.parse(staticEntitlementsSchema, {
+    documents: {
+      maximumFileBytes: value.documents?.maximum_file_bytes,
+      revisionHistory: value.documents?.revision_history
+    },
+    storage: { maximumBytes: value.storage?.maximum_bytes },
+    sharing: {
+      capabilityLinks: value.sharing?.capability_links,
+      anonymousView: value.sharing?.anonymous_view,
+      anonymousEdit: value.sharing?.anonymous_edit,
+      guestPresence: value.sharing?.guest_presence
+    },
+    collaboration: {
+      enabled: value.collaboration?.enabled,
+      maximumParticipants: value.collaboration?.maximum_participants
+    }
+  })
+}
+
 export function staticEntitlementValues(input: unknown): Record<string, boolean | number> {
   const entitlements = v.parse(staticEntitlementsSchema, input)
   const values: Record<string, boolean | number | undefined> = {

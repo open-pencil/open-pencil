@@ -32,6 +32,7 @@ export function createEntitlementService(
         revisionHistory,
         maximumFileBytes,
         maximumStorage,
+        maximumParticipants,
         usage
       ] = await Promise.all([
         policy.boolean(CLOUD_FEATURE_KEYS.capabilityLinks, false, context),
@@ -41,7 +42,8 @@ export function createEntitlementService(
         policy.boolean(CLOUD_FEATURE_KEYS.collaboration, false, context),
         policy.boolean(CLOUD_FEATURE_KEYS.revisionHistory, false, context),
         policy.number(CLOUD_FEATURE_KEYS.maximumFileBytes, technicalMaximumFileBytes, context),
-        policy.number('cloud.storage.maximum-bytes', Number.MAX_SAFE_INTEGER, context),
+        policy.number(CLOUD_FEATURE_KEYS.maximumStorageBytes, Number.MAX_SAFE_INTEGER, context),
+        policy.number(CLOUD_FEATURE_KEYS.maximumParticipants, Number.MAX_SAFE_INTEGER, context),
         quota.snapshot(workspaceId)
       ])
       return {
@@ -55,7 +57,9 @@ export function createEntitlementService(
         },
         limits: {
           maximumFileBytes: Math.min(technicalMaximumFileBytes, maximumFileBytes),
-          maximumStorageBytes: maximumStorage === Number.MAX_SAFE_INTEGER ? null : maximumStorage
+          maximumStorageBytes: maximumStorage === Number.MAX_SAFE_INTEGER ? null : maximumStorage,
+          maximumParticipants:
+            maximumParticipants === Number.MAX_SAFE_INTEGER ? null : maximumParticipants
         },
         usage: {
           committedStorageBytes: usage.committedBytes,

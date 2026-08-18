@@ -96,6 +96,15 @@ const features = computed(() =>
             }}
           </dd>
         </div>
+        <div
+          v-if="entitlements.limits.maximumParticipants !== null"
+          class="flex items-center justify-between gap-3 text-[10px]"
+        >
+          <dt class="text-muted">Maximum collaborators</dt>
+          <dd class="tabular-nums text-surface">
+            {{ entitlements.limits.maximumParticipants }}
+          </dd>
+        </div>
       </dl>
 
       <div class="mt-3 space-y-1.5 border-t border-border pt-3">

@@ -136,6 +136,7 @@ export {
   createDefaultCloudPolicy,
   createEntitlementService,
   StaticEntitlementSource,
+  parseStaticEntitlementsTOML,
   staticEntitlementValues,
   staticEntitlementsSchema,
   type CloudPolicyContext,
