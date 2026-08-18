@@ -1,8 +1,5 @@
 import type { CloudDiscovery } from '#cloud/contract'
-
-export type CloudSocialSignInResponse = {
-  url?: unknown
-}
+import { createAuthClient } from 'better-auth/client'
 
 export type CloudSocialProvider = CloudDiscovery['authentication']['socialProviders'][number]
 
@@ -10,6 +7,13 @@ function returnURL(): string {
   const url = new URL(globalThis.location.href)
   url.hash = ''
   return url.href
+}
+
+function authClient(discovery: CloudDiscovery) {
+  return createAuthClient({
+    baseURL: discovery.authURL,
+    fetchOptions: { credentials: 'include' }
+  })
 }
 
 export async function signInToCloud(
@@ -20,31 +24,20 @@ export async function signInToCloud(
   if (!discovery.authentication.socialProviders.includes(provider)) {
     throw new Error(`Cloud sign-in provider is unavailable: ${provider}`)
   }
-  const response = await fetch(`${discovery.authURL}/sign-in/social`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      provider,
-      callbackURL,
-      errorCallbackURL: callbackURL,
-      disableRedirect: true
-    })
+  const result = await authClient(discovery).signIn.social({
+    provider,
+    callbackURL,
+    errorCallbackURL: callbackURL,
+    disableRedirect: true
   })
-  if (!response.ok) throw new Error(`Cloud sign-in failed with HTTP ${response.status}`)
-  const body = (await response.json()) as CloudSocialSignInResponse
-  if (typeof body.url !== 'string') throw new Error('Cloud sign-in response did not include a URL')
-  globalThis.location.assign(body.url)
+  if (result.error) throw new Error(result.error.message ?? 'Cloud sign-in failed')
+  if (typeof result.data.url !== 'string') {
+    throw new TypeError('Cloud sign-in response did not include a URL')
+  }
+  globalThis.location.assign(result.data.url)
 }
 
 export async function signOutFromCloud(discovery: CloudDiscovery): Promise<void> {
-  const response = await fetch(`${discovery.authURL}/sign-out`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { Accept: 'application/json' }
-  })
-  if (!response.ok) throw new Error(`Cloud sign-out failed with HTTP ${response.status}`)
+  const result = await authClient(discovery).signOut()
+  if (result.error) throw new Error(result.error.message ?? 'Cloud sign-out failed')
 }
