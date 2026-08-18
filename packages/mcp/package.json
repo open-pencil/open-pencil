@@ -56,16 +56,16 @@
     "provenance": true
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.11",
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@hono/node-server": "^1.19.17",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@open-pencil/core": "workspace:*",
-    "hono": "^4.12.5",
-    "package-manager-detector": "^1.6.0",
-    "ws": "^8.19.0",
-    "zod": "^4.3.6"
+    "hono": "^4.13.2",
+    "package-manager-detector": "^1.8.0",
+    "ws": "^8.21.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^25.3.2",
+    "@types/node": "^25.9.5",
     "@types/ws": "^8.18.1"
   }
 }

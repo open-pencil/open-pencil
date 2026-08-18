@@ -12,6 +12,7 @@ import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useEditorMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
 import { connectAutomation } from '@/app/automation/bridge/server'
+import { exposeCollaborationActions } from '@/app/browser-bridge'
 import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
@@ -54,6 +55,7 @@ useEditorMenu()
 
 const collab = useCollab(getActiveStore)
 provide(COLLAB_KEY, collab)
+exposeCollaborationActions(collab)
 
 useEventListener(
   document,
