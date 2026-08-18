@@ -10,7 +10,7 @@ const config: StorybookConfig = {
   addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-themes'],
   framework: {
     name: '@storybook/vue3-vite',
-    options: {}
+    options: { docgen: false }
   },
   viteFinal(config) {
     const excludedPluginPrefixes = [
