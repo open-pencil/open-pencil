@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} n’a pas pu vectoriser cette image : {error}",
   "operationFailed": "Échec de l’opération : {error}",
   "storageConnected": "Connexion établie. L’espace de stockage est prêt.",
-  "storageConnectionFailed": "Impossible de se connecter au stockage : {error}"
+  "storageConnectionFailed": "Impossible de se connecter au stockage : {error}",
+  "nodeID": "ID de nœud",
+  "nodeIDs": "ID de nœuds",
+  "xPath": "XPath",
+  "xPaths": "XPaths"
 }

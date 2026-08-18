@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} 无法矢量化此图像：{error}",
   "operationFailed": "操作失败：{error}",
   "storageConnected": "已连接。存储命名空间已就绪。",
-  "storageConnectionFailed": "无法连接到存储：{error}"
+  "storageConnectionFailed": "无法连接到存储：{error}",
+  "nodeID": "节点 ID",
+  "nodeIDs": "节点 ID",
+  "xPath": "XPath",
+  "xPaths": "XPath"
 }

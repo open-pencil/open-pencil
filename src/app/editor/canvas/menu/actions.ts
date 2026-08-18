@@ -45,7 +45,11 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
   async function copyNodeId() {
     const nodeIds = ids()
     if (nodeIds.length === 0) return
-    await clipboardWrite(nodeIds.join(', '), `node ID${nodeIds.length > 1 ? 's' : ''}`)
+    const messages = notificationMessages.get()
+    await clipboardWrite(
+      nodeIds.join(', '),
+      nodeIds.length > 1 ? messages.nodeIDs : messages.nodeID
+    )
   }
 
   async function copyXPath() {
@@ -55,7 +59,8 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
       .map((id) => nodeToXPath(store.graph, id))
       .filter((xpath): xpath is string => xpath !== null)
     if (xpaths.length === 0) return
-    await clipboardWrite(xpaths.join('\n'), `XPath${xpaths.length > 1 ? 's' : ''}`)
+    const messages = notificationMessages.get()
+    await clipboardWrite(xpaths.join('\n'), xpaths.length > 1 ? messages.xPaths : messages.xPath)
   }
 
   async function copyAsPNG() {

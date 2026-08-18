@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} non ha potuto vettorializzare questa immagine: {error}",
   "operationFailed": "Operazione non riuscita: {error}",
   "storageConnected": "Connessione riuscita. Lo spazio di archiviazione è pronto.",
-  "storageConnectionFailed": "Impossibile connettersi all’archiviazione: {error}"
+  "storageConnectionFailed": "Impossibile connettersi all’archiviazione: {error}",
+  "nodeID": "ID nodo",
+  "nodeIDs": "ID nodi",
+  "xPath": "XPath",
+  "xPaths": "XPath"
 }

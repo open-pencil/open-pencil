@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
+import { localeSetting } from '@open-pencil/vue'
+
 import { openDesignFileBatch } from '@/app/shell/menu/files'
 import { toast } from '@/app/shell/ui'
 
 afterEach(() => {
   toast.toasts.value = []
+  localeSetting.set(undefined)
 })
 
 describe('openDesignFileBatch', () => {
@@ -21,6 +24,7 @@ describe('openDesignFileBatch', () => {
   })
 
   test('reports one failed file and continues opening later selections', async () => {
+    localeSetting.set('en')
     const opened: string[] = []
     const openItem = mock(async (name: string) => {
       opened.push(name)

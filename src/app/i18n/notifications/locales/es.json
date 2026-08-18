@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} no pudo vectorizar esta imagen: {error}",
   "operationFailed": "La operación falló: {error}",
   "storageConnected": "Conectado. El espacio de almacenamiento está listo.",
-  "storageConnectionFailed": "No se pudo conectar al almacenamiento: {error}"
+  "storageConnectionFailed": "No se pudo conectar al almacenamiento: {error}",
+  "nodeID": "ID de nodo",
+  "nodeIDs": "ID de nodos",
+  "xPath": "XPath",
+  "xPaths": "XPaths"
 }

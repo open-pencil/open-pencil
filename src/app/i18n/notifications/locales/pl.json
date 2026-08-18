@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} nie mógł zwektoryzować tego obrazu: {error}",
   "operationFailed": "Operacja nie powiodła się: {error}",
   "storageConnected": "Połączono. Przestrzeń przechowywania jest gotowa.",
-  "storageConnectionFailed": "Nie udało się połączyć z magazynem: {error}"
+  "storageConnectionFailed": "Nie udało się połączyć z magazynem: {error}",
+  "nodeID": "ID węzła",
+  "nodeIDs": "ID węzłów",
+  "xPath": "XPath",
+  "xPaths": "XPath"
 }

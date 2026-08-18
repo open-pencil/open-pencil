@@ -29,8 +29,9 @@ export function canVectorizeImageNode(store: EditorStore): boolean {
 }
 
 function vectorizeErrorMessage(error: unknown): string {
-  if (error instanceof TypeError) return error.message || 'Network request failed'
-  const message = error instanceof Error ? error.message : 'Vectorization failed'
+  let message = 'Vectorization failed'
+  if (error instanceof TypeError) message = error.message || 'Network request failed'
+  else if (error instanceof Error) message = error.message
   return message.length <= ERROR_MAX_LENGTH ? message : `${message.slice(0, ERROR_MAX_LENGTH)}…`
 }
 

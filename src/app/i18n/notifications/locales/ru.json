@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} не смог векторизовать это изображение: {error}",
   "operationFailed": "Не удалось выполнить операцию: {error}",
   "storageConnected": "Подключено. Пространство хранилища готово.",
-  "storageConnectionFailed": "Не удалось подключиться к хранилищу: {error}"
+  "storageConnectionFailed": "Не удалось подключиться к хранилищу: {error}",
+  "nodeID": "ID узла",
+  "nodeIDs": "ID узлов",
+  "xPath": "XPath",
+  "xPaths": "XPath"
 }

@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} でこの画像をベクター化できませんでした: {error}",
   "operationFailed": "操作に失敗しました: {error}",
   "storageConnected": "接続しました。ストレージ名前空間を使用できます。",
-  "storageConnectionFailed": "ストレージに接続できませんでした: {error}"
+  "storageConnectionFailed": "ストレージに接続できませんでした: {error}",
+  "nodeID": "ノード ID",
+  "nodeIDs": "ノード ID",
+  "xPath": "XPath",
+  "xPaths": "XPath"
 }

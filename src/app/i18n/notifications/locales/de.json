@@ -17,5 +17,9 @@
   "vectorizeFailed": "{provider} konnte dieses Bild nicht vektorisieren: {error}",
   "operationFailed": "Vorgang fehlgeschlagen: {error}",
   "storageConnected": "Verbunden. Der Speicher-Namensraum ist bereit.",
-  "storageConnectionFailed": "Verbindung zum Speicher fehlgeschlagen: {error}"
+  "storageConnectionFailed": "Verbindung zum Speicher fehlgeschlagen: {error}",
+  "nodeID": "Knoten-ID",
+  "nodeIDs": "Knoten-IDs",
+  "xPath": "XPath",
+  "xPaths": "XPaths"
 }
