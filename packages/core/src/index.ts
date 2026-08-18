@@ -1,5 +1,5 @@
-import codegenPrompt from './tools/prompts/codegen.md'
-import jsxReference from './tools/prompts/jsx-reference.md'
+import codegenPrompt from './tools/prompts/codegen.md?raw'
+import jsxReference from './tools/prompts/jsx-reference.md?raw'
 
 export { randomHex, randomInt, randomIndex } from './random'
 

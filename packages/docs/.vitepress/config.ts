@@ -6,9 +6,9 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
 
-import { docsLocales } from './locales'
-import { rootThemeConfig } from './root-theme'
-import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo'
+import { docsLocales } from './locales.ts'
+import { rootThemeConfig } from './root-theme.ts'
+import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url))
 const fastBuild = process.env.OPENPENCIL_DOCS_FAST_BUILD === '1'

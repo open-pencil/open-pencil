@@ -1,4 +1,4 @@
-import type { ProgrammableLabels, SidebarLabels } from './labels'
+import type { ProgrammableLabels, SidebarLabels } from './labels.ts'
 import type { DefaultTheme } from 'vitepress'
 
 export const guideSidebar = (prefix: string, labels: SidebarLabels): DefaultTheme.SidebarItem[] => [
