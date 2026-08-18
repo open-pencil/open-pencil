@@ -11,5 +11,6 @@ RUN apt-get update \
         librsvg2-dev \
         libwebkit2gtk-4.1-dev \
         pkg-config \
+        unzip \
         xz-utils \
     && rm -rf /var/lib/apt/lists/*
