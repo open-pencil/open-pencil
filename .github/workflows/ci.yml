@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   source-quality:
+    name: Code quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -25,22 +26,23 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Build packages
+      - name: Generate package declarations
         run: bun run build:packages
 
-      - name: Format check
+      - name: Verify formatting
         run: bun run format:check
 
-      - name: Lint source
+      - name: Lint TypeScript and Vue
         run: bun run lint
 
-      - name: Typecheck TypeScript and Vue
+      - name: Typecheck application and SDKs
         run: bun run typecheck
 
-      - name: Architecture and type-shape checks
+      - name: Enforce architecture and type-shape boundaries
         run: bun run check:arch && bun run test:type-shapes
 
   package-quality:
+    name: Package integrity
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -49,13 +51,20 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Build packages
+      - name: Build publishable packages
         run: bun run build:packages
 
-      - name: Package, dependency, and monorepo checks
-        run: bun run check:packages && bun run check:deps && bun run check:monorepo
+      - name: Validate package exports
+        run: bun run check:packages
+
+      - name: Detect unused dependencies and files
+        run: bun run check:deps
+
+      - name: Validate workspace dependency policy
+        run: bun run check:monorepo
 
   repository-quality:
+    name: Repository hygiene
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -64,16 +73,26 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Repository integrity and security checks
-        run: |
-          bun run check:i18n
-          bun run check:docs
-          bun run check:audit
-          bun run check:secrets
-          bun run test:tools
-          bun run test:dupes
+      - name: Validate translations
+        run: bun run check:i18n
+
+      - name: Validate documentation links and structure
+        run: bun run check:docs
+
+      - name: Audit critical dependency vulnerabilities
+        run: bun run check:audit
+
+      - name: Scan for committed secrets
+        run: bun run check:secrets
+
+      - name: Test repository tooling
+        run: bun run test:tools
+
+      - name: Detect duplicated product code
+        run: bun run test:dupes
 
   storybook:
+    name: Component workshop
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -82,13 +101,14 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Build packages
+      - name: Build component dependencies
         run: bun run build:packages
 
-      - name: Build Storybook
+      - name: Build static Storybook
         run: bun run build-storybook
 
   native-test-contracts:
+    name: Native app contracts
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -102,17 +122,17 @@ jobs:
           workspaces: desktop -> target
           key: native-test
 
-      - name: Install Tauri dependencies
+      - name: Install Linux WebView dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
 
       - uses: ./.github/actions/setup-bun
 
-      - name: Typecheck native tests
+      - name: Typecheck native interaction tests
         run: bun run check:native-test
 
-      - name: Check test-only Tauri feature
+      - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test
 
   unit-tests:
@@ -121,7 +141,7 @@ jobs:
       fail-fast: true
       matrix:
         group: [app, dom, editor, fig, render, scene, vue]
-    name: Unit tests (${{ matrix.group }})
+    name: Engine tests — ${{ matrix.group }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -131,10 +151,10 @@ jobs:
         with:
           lfs: 'true'
 
-      - name: Build Core package
+      - name: Build shared Core test dependency
         run: bun --filter @open-pencil/core build
 
-      - name: Run quick unit test shard
+      - name: Run ${{ matrix.group }} engine tests
         shell: bash
         run: |
           mapfile -t test_files < <(bun tools/unit-tests/src/list.ts "${{ matrix.group }}")
