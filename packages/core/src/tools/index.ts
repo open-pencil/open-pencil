@@ -1,4 +1,4 @@
-import codegenPrompt from './prompts/codegen.md'
+import codegenPrompt from './prompts/codegen.md?raw'
 
 export { getComponentCatalog, registerComponentCatalog } from './component-catalog'
 export type {

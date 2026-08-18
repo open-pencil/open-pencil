@@ -152,7 +152,10 @@ describe('Tauri updater helper', () => {
           rawJson: '{}'
         }
       }
-      if (cmd === 'plugin:dialog|confirm') return true
+      if (cmd === 'plugin:dialog|message') {
+        const options = args as { buttons?: string }
+        if (options.buttons === 'OkCancel') return 'Ok'
+      }
       if (cmd === 'plugin:updater|download_and_install') {
         const onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent
         onEvent.onmessage({ event: 'Started', data: { contentLength: 10 } })
@@ -165,14 +168,15 @@ describe('Tauri updater helper', () => {
 
     expect(calls.map((call) => call.cmd)).toEqual([
       'plugin:updater|check',
-      'plugin:dialog|confirm',
+      'plugin:dialog|message',
       'plugin:updater|download_and_install',
       'plugin:dialog|message',
       'plugin:process|restart'
     ])
     expect(calls[1]?.args).toMatchObject({
       title: 'Update available',
-      kind: 'info'
+      kind: 'info',
+      buttons: 'OkCancel'
     })
     expect(calls[2]?.args).toMatchObject({ rid: 9 })
   })
