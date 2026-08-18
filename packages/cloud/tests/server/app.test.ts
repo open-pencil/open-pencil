@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { createCloudTestDatabase } from '#cloud-test/helpers/database'
 import {
   DummyDriver,
   Kysely,
@@ -19,8 +20,6 @@ import {
   parseCloudServerConfig,
   type CloudDatabase
 } from '@open-pencil/cloud/server'
-
-import { createCloudTestDatabase } from '../helpers/database'
 
 function dummyPostgresDialect(): Dialect {
   return {

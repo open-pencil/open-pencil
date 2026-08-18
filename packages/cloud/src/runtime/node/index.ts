@@ -12,5 +12,5 @@ export {
   type NodemailerInvitationDeliveryOptions,
   type SMTPInvitationDeliveryOptions
 } from './email'
-export { createS3ObjectStore } from '../s3/objects'
+export { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 export { startNodeCloudServer, type NodeCloudServerOptions } from './server'

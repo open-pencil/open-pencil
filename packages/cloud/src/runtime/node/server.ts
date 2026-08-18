@@ -1,3 +1,4 @@
+import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cloudServerConfigFromEnvironment,
   createCloudApp,
@@ -15,7 +16,6 @@ import {
   startCleanupWorker
 } from '#cloud/server'
 
-import { createS3ObjectStore } from '../s3/objects'
 import { createCloudCollaborationRelay } from './collaboration'
 import { loadNodeCloudServerConfig } from './config'
 import { createNodeCloudDatabase } from './database'

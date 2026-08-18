@@ -1,10 +1,10 @@
+import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cloudServerConfigFromEnvironment,
   createDocumentCleanupService,
   createUploadCleanupService
 } from '#cloud/server'
 
-import { createS3ObjectStore } from '../s3/objects'
 import { createNodeCloudDatabase } from './database'
 
 const config = cloudServerConfigFromEnvironment(process.env)
