@@ -21,6 +21,7 @@ import { credentialRef } from '@/app/settings/credentials/reference'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { toast } from '@/app/shell/ui'
 import { resumeStorageSync } from '@/app/storage/sync'
+import CloudEntitlementsSummary from '@/components/settings/storage/CloudEntitlementsSummary.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 
@@ -234,6 +235,13 @@ onMounted(() => void refreshStatuses())
           v-model="cloudWorkspace"
           label="Cloud workspace"
           :options="cloudSettings.workspaceOptions.value"
+        />
+        <CloudEntitlementsSummary
+          v-if="cloudWorkspace"
+          :entitlements="cloudSettings.entitlements.value"
+          :loading="cloudSettings.entitlementsLoading.value"
+          :error="cloudSettings.entitlementsError.value"
+          @retry="cloudSettings.refreshEntitlements"
         />
       </template>
     </div>
