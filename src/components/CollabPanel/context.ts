@@ -6,6 +6,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@open-pencil/vue'
 
 import { DEFAULT_COLLAB_STATE, useCollabInjected } from '@/app/collab/use'
+import { useNotificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { getShareURL } from '@/constants'
 
@@ -14,7 +15,8 @@ function createCollabPanelContext() {
   const router = useRouter()
   const collab = useCollabInjected()
   const { copy, copied } = useClipboard({ copiedDuring: 2000 })
-  const { dialogs, notifications } = useI18n()
+  const { dialogs } = useI18n()
+  const notifications = useNotificationMessages()
 
   const joinInput = ref('')
   const nameDraft = ref(collab?.state.value.localName ?? '')

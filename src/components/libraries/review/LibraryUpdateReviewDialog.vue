@@ -3,7 +3,9 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@open-pencil/core/library'
-import { notificationMessages, useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue'
+
+import { notificationMessages } from '@/app/i18n/notifications'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { closeLibraryReview, libraryReviewRequest, useLibraryService } from '@/app/libraries'

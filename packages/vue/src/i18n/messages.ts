@@ -1,7 +1,6 @@
 import { commandMessageDefaults } from '#vue/i18n/messages/commands'
 import { dialogMessageDefaults } from '#vue/i18n/messages/dialogs'
 import { menuMessageDefaults } from '#vue/i18n/messages/menu'
-import { notificationMessageDefaults } from '#vue/i18n/messages/notifications'
 import { pageMessageDefaults } from '#vue/i18n/messages/pages'
 import { panelMessageDefaults } from '#vue/i18n/messages/panels'
 import { toolMessageDefaults } from '#vue/i18n/messages/tools'
@@ -16,7 +15,6 @@ export {
   variableTypeMessageDefaults
 } from '#vue/i18n/messages/variable-types'
 export { pageMessages, pageMessageDefaults } from '#vue/i18n/messages/pages'
-export { notificationMessages, notificationMessageDefaults } from '#vue/i18n/messages/notifications'
 export { dialogMessages, dialogMessageDefaults } from '#vue/i18n/messages/dialogs'
 
 export const messageDefaults = {
@@ -26,6 +24,5 @@ export const messageDefaults = {
   panels: panelMessageDefaults,
   variableTypes: variableTypeMessageDefaults,
   pages: pageMessageDefaults,
-  notifications: notificationMessageDefaults,
   dialogs: dialogMessageDefaults
 } as const

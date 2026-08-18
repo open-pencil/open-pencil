@@ -1,9 +1,9 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
 import { browserHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
-import { notificationMessages } from '@open-pencil/vue'
 
 import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
 type OpenDOMDocumentState = EditorState & {

@@ -1,8 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 
-import { notificationMessages } from '@open-pencil/vue'
-
 import type { EditorStore } from '@/app/editor/session'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
 import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
 import {

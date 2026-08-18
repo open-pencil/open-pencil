@@ -2,9 +2,9 @@ import { ref, watch, type Ref } from 'vue'
 
 import { libraryAssetKeyForComponent } from '@open-pencil/core/library'
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { notificationMessages } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/session'
+import { notificationMessages } from '@/app/i18n/notifications'
 import type { LibraryService } from '@/app/libraries'
 import { toast } from '@/app/shell/ui'
 

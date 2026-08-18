@@ -3,6 +3,8 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@open-pencil/vue'
 
+import { useNotificationMessages } from '@/app/i18n/notifications'
+
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
@@ -20,7 +22,8 @@ import { toast } from '@/app/shell/ui'
 import { resumeStorageSync } from '@/app/storage/sync'
 import AppInput from '@/components/ui/AppInput.vue'
 
-const { dialogs, notifications } = useI18n()
+const { dialogs } = useI18n()
+const notifications = useNotificationMessages()
 const router = useRouter()
 const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
 const preferenceDrafts = ref<Record<string, string>>({

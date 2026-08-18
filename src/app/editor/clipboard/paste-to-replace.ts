@@ -1,6 +1,5 @@
-import { notificationMessages } from '@open-pencil/vue'
-
 import type { EditorStore } from '@/app/editor/active-store'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { readTauriClipboardText } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'

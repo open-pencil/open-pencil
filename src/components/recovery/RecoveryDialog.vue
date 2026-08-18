@@ -4,13 +4,15 @@ import { useRoute } from 'vue-router'
 import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
+import { useNotificationMessages } from '@/app/i18n/notifications'
 import { discardRecoverySnapshot, listRecoverySnapshots, restoreRecoverySnapshot } from '@/app/tabs'
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import { toast } from '@/app/shell/ui'
 import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 
-const { dialogs, notifications } = useI18n()
+const { dialogs } = useI18n()
+const notifications = useNotificationMessages()
 const route = useRoute()
 const snapshots = ref<RecoverySnapshotMeta[]>([])
 const busyId = ref<string | null>(null)

@@ -2,12 +2,12 @@ import { useClipboard } from '@vueuse/core'
 import type { Ref } from 'vue'
 
 import { nodeToXPath } from '@open-pencil/core/xpath'
-import { notificationMessages } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { writeTauriClipboardText } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
