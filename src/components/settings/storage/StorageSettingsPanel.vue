@@ -20,7 +20,7 @@ import { toast } from '@/app/shell/ui'
 import { resumeStorageSync } from '@/app/storage/sync'
 import AppInput from '@/components/ui/AppInput.vue'
 
-const { dialogs } = useI18n()
+const { dialogs, notifications } = useI18n()
 const router = useRouter()
 const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
 const preferenceDrafts = ref<Record<string, string>>({
@@ -90,10 +90,14 @@ async function testConnection(): Promise<void> {
     }
     await resumeStorageSync()
     const connection = await createActiveStorageAdapter(provider.value.id).testConnection()
-    if (connection.ok) toast.info(connection.message)
-    else toast.error(connection.message)
+    if (connection.ok) toast.info(notifications.value.storageConnected)
+    else toast.error(notifications.value.storageConnectionFailed({ error: connection.message }))
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : String(error))
+    toast.error(
+      notifications.value.storageConnectionFailed({
+        error: error instanceof Error ? error.message : String(error)
+      })
+    )
   } finally {
     busy.value = false
   }

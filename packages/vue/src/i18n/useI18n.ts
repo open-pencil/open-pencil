@@ -11,6 +11,7 @@ import {
   panelMessages,
   variableTypeMessages,
   pageMessages,
+  notificationMessages,
   dialogMessages
 } from '#vue/i18n/messages'
 
@@ -60,6 +61,10 @@ export function usePageMessages() {
   return useI18nNamespace(pageMessages)
 }
 
+export function useNotificationMessages() {
+  return useI18nNamespace(notificationMessages)
+}
+
 export function useDialogMessages() {
   return useI18nNamespace(dialogMessages)
 }
@@ -72,6 +77,7 @@ export function useI18n() {
     panels: usePanelMessages(),
     variableTypes: useVariableTypeMessages(),
     pages: usePageMessages(),
+    notifications: useNotificationMessages(),
     dialogs: useDialogMessages(),
     locale: useStore(locale) as Ref<Locale>,
     availableLocales: AVAILABLE_LOCALES,

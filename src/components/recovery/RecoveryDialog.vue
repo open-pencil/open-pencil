@@ -10,7 +10,7 @@ import { formatStorageBytes } from '@/app/storage/format-bytes'
 import { toast } from '@/app/shell/ui'
 import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 
-const { dialogs } = useI18n()
+const { dialogs, notifications } = useI18n()
 const route = useRoute()
 const snapshots = ref<RecoverySnapshotMeta[]>([])
 const busyId = ref<string | null>(null)
@@ -30,7 +30,11 @@ async function restore(snapshot: RecoverySnapshotMeta): Promise<void> {
     snapshots.value = snapshots.value.filter((candidate) => candidate.id !== snapshot.id)
     if (snapshots.value.length === 0) open.value = false
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : dialogs.value.recoveryFailed)
+    toast.error(
+      notifications.value.operationFailed({
+        error: error instanceof Error ? error.message : dialogs.value.recoveryFailed
+      })
+    )
   } finally {
     busyId.value = null
   }

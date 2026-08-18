@@ -3,7 +3,7 @@ import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@open-pencil/core/library'
-import { useI18n } from '@open-pencil/vue'
+import { notificationMessages, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { closeLibraryReview, libraryReviewRequest, useLibraryService } from '@/app/libraries'
@@ -31,6 +31,10 @@ interface ReviewOrigin {
 let origin: ReviewOrigin | null = null
 let accepted = false
 let requestId = 0
+const operationFailed = (cause: unknown) =>
+  notificationMessages.get().operationFailed({
+    error: cause instanceof Error ? cause.message : String(cause)
+  })
 const open = computed({
   get: () => libraryReviewRequest.value !== null,
   set: (value) => {
@@ -77,7 +81,7 @@ async function loadPreview() {
       await focusCurrentInstance()
     }
   } catch (cause) {
-    toast.error(cause instanceof Error ? cause.message : String(cause))
+    toast.error(operationFailed(cause))
   } finally {
     if (currentRequest === requestId) loading.value = false
   }
@@ -104,7 +108,7 @@ async function updateInstance() {
     accepted = true
     closeLibraryReview()
   } catch (cause) {
-    toast.error(cause instanceof Error ? cause.message : String(cause))
+    toast.error(operationFailed(cause))
   } finally {
     applying.value = false
   }
@@ -125,7 +129,7 @@ async function updateAll() {
     accepted = true
     closeLibraryReview()
   } catch (cause) {
-    toast.error(cause instanceof Error ? cause.message : String(cause))
+    toast.error(operationFailed(cause))
     applying.value = false
   }
 }

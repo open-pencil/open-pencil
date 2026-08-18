@@ -34,7 +34,7 @@ describe('openDesignFileBatch', () => {
     expect(opened).toEqual(['first.fig', 'broken.fig', 'last.pen'])
     expect(toast.toasts.value).toHaveLength(1)
     expect(toast.toasts.value[0]).toMatchObject({
-      message: 'Failed to open broken.fig: Invalid FIG container',
+      message: 'Could not open “broken.fig”: Invalid FIG container',
       variant: 'error'
     })
   })

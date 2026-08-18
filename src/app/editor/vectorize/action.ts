@@ -1,5 +1,6 @@
 import { preprocessForVectorize, svgToVectorPaths } from '@open-pencil/core/vector'
 import type { Fill, SceneNode } from '@open-pencil/scene-graph'
+import { notificationMessages } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -27,10 +28,8 @@ export function canVectorizeImageNode(store: EditorStore): boolean {
   return Boolean(node && imageFill(node))
 }
 
-function vectorizeErrorMessage(error: unknown, providerName: string): string {
-  if (error instanceof TypeError) {
-    return `${providerName} could not be reached. Check your connection and try again.`
-  }
+function vectorizeErrorMessage(error: unknown): string {
+  if (error instanceof TypeError) return error.message || 'Network request failed'
   const message = error instanceof Error ? error.message : 'Vectorization failed'
   return message.length <= ERROR_MAX_LENGTH ? message : `${message.slice(0, ERROR_MAX_LENGTH)}…`
 }
@@ -46,18 +45,20 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
   try {
     const apiKey = await resolveVectorizeCredential(provider.id)
     if (!apiKey) {
-      toast.error(`Add a ${provider.name} API key in Settings → Media.`)
+      toast.error(
+        notificationMessages.get().vectorizeCredentialRequired({ provider: provider.name })
+      )
       openSettingsDialog('media')
       return
     }
 
     const imageBytes = store.graph.images.get(fill.imageHash)
     if (!imageBytes) {
-      toast.error('Image data is missing for this layer')
+      toast.error(notificationMessages.get().vectorizeImageMissing)
       return
     }
 
-    toast.info('Vectorizing image…')
+    toast.info(notificationMessages.get().vectorizingImage)
     const preprocessed = preprocessForVectorize(imageBytes, () => store.renderer?.ck ?? null)
     if (!preprocessed) throw new Error('Could not prepare this image for vectorization')
 
@@ -75,13 +76,17 @@ export async function vectorizeImageNode(store: EditorStore, nodeId: string): Pr
 
     const frameId = store.replaceNodeWithVectorFrame(currentNode.id, vectorized)
     if (!frameId) throw new Error('Could not replace this image with vector layers')
-    toast.info('Image converted to vectors')
+    toast.info(notificationMessages.get().imageConvertedToVectors)
   } catch (error) {
     if (error instanceof VectorizeAuthError) {
-      toast.error(`${error.message}. Update it in Settings → Media.`)
+      toast.error(notificationMessages.get().vectorizeCredentialFailed({ error: error.message }))
       openSettingsDialog('media')
     } else {
-      toast.error(vectorizeErrorMessage(error, provider.name))
+      toast.error(
+        notificationMessages
+          .get()
+          .vectorizeFailed({ provider: provider.name, error: vectorizeErrorMessage(error) })
+      )
     }
   } finally {
     activeStores.delete(store)

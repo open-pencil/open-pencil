@@ -7,6 +7,7 @@ export {
   usePanelMessages,
   useVariableTypeMessages,
   usePageMessages,
+  useNotificationMessages,
   useDialogMessages
 } from '#vue/i18n/useI18n'
 export { i18n } from '#vue/i18n/create'
@@ -27,6 +28,7 @@ export {
   panelMessages,
   variableTypeMessages,
   pageMessages,
+  notificationMessages,
   dialogMessages,
   messageDefaults
 } from '#vue/i18n/messages'

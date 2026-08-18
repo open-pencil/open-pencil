@@ -46,6 +46,7 @@
 
 ### Changed
 
+- Localize file, clipboard, collaboration, chat, vectorization, storage, recovery, and component-library notifications in every supported language.
 - Pan horizontally with Shift+wheel while preserving native horizontal trackpad movement.
 - Move MCP connections into their own Settings destination instead of presenting them as part of model configuration.
 

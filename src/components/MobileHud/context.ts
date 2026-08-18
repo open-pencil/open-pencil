@@ -25,7 +25,7 @@ function createMobileHudContext() {
   const collab = useCollabInjected()
   const store = useEditorStore()
   const { copy } = useClipboard()
-  const { dialogs } = useI18n()
+  const { dialogs, notifications } = useI18n()
   const { getCommand } = useEditorCommands()
 
   const collabState = computed(() => collab?.state.value ?? DEFAULT_COLLAB_STATE)
@@ -60,7 +60,7 @@ function createMobileHudContext() {
     const roomId = collab.shareCurrentDoc()
     void router.push(`/share/${roomId}`)
     void copy(getShareURL(roomId))
-    toast.info('Link copied to clipboard')
+    toast.info(notifications.value.linkCopied)
   }
 
   function disconnect() {

@@ -2,6 +2,7 @@ import { useClipboard } from '@vueuse/core'
 import type { Ref } from 'vue'
 
 import { nodeToXPath } from '@open-pencil/core/xpath'
+import { notificationMessages } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
@@ -26,7 +27,7 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
 
   function execCommand(cmd: 'copy' | 'cut' | 'paste') {
     void executeClipboardCommand(store, cmd).then((ok) => {
-      if (!ok) toast.error('Clipboard access is blocked in this browser context')
+      if (!ok) toast.error(notificationMessages.get().clipboardAccessBlocked)
       return undefined
     })
   }
@@ -38,7 +39,7 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     } else {
       await copy(text)
     }
-    toast.info(`Copied as ${label}`)
+    toast.info(notificationMessages.get().copiedAs({ format: label }))
   }
 
   async function copyNodeId() {
@@ -59,14 +60,14 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
 
   async function copyAsPNG() {
     if (typeof ClipboardItem === 'undefined') {
-      toast.error('PNG clipboard export is not available in this browser')
+      toast.error(notificationMessages.get().pngClipboardUnavailable)
       return
     }
     const data = await store.renderExportImage(ids(), 2, 'PNG')
     if (!data) return
     const blob = new Blob([toArrayBuffer(data)], { type: 'image/png' })
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-    toast.info('Copied as PNG')
+    toast.info(notificationMessages.get().copiedAs({ format: 'PNG' }))
   }
 
   return {

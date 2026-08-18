@@ -1,6 +1,7 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
 import { readFigFile } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
+import { notificationMessages } from '@open-pencil/vue'
 
 import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -54,7 +55,12 @@ export function createOpenActions({
       editor.requestRender()
     } catch (e) {
       console.error('Failed to open .fig file:', e)
-      toast.error(`Failed to open file: ${e instanceof Error ? e.message : String(e)}`)
+      toast.error(
+        notificationMessages.get().openFileFailed({
+          name: file.name,
+          error: e instanceof Error ? e.message : String(e)
+        })
+      )
     } finally {
       state.loading = false
     }

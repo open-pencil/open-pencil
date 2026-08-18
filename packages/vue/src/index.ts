@@ -378,6 +378,7 @@ export {
   usePanelMessages,
   useVariableTypeMessages,
   usePageMessages,
+  useNotificationMessages,
   useDialogMessages,
   i18n
 } from '#vue/i18n'
@@ -398,6 +399,7 @@ export {
   panelMessages,
   variableTypeMessages,
   pageMessages,
+  notificationMessages,
   dialogMessages,
   messageDefaults
 } from '#vue/i18n'

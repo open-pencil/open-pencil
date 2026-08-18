@@ -14,7 +14,7 @@ function createCollabPanelContext() {
   const router = useRouter()
   const collab = useCollabInjected()
   const { copy, copied } = useClipboard({ copiedDuring: 2000 })
-  const { dialogs } = useI18n()
+  const { dialogs, notifications } = useI18n()
 
   const joinInput = ref('')
   const nameDraft = ref(collab?.state.value.localName ?? '')
@@ -42,7 +42,7 @@ function createCollabPanelContext() {
   function copyLink() {
     if (!shareURL.value) return
     void copy(shareURL.value)
-    toast.info('Link copied to clipboard')
+    toast.info(notifications.value.linkCopied)
   }
 
   function share() {
@@ -51,7 +51,7 @@ function createCollabPanelContext() {
     const roomId = collab.shareCurrentDoc()
     void router.push(`/share/${roomId}`)
     void copy(getShareURL(roomId))
-    toast.info('Link copied to clipboard')
+    toast.info(notifications.value.linkCopied)
     popoverOpen.value = false
   }
 
