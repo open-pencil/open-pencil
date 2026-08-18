@@ -48,7 +48,8 @@ export function createDocumentSourceActions({
   getRenderer
 }: DocumentSourceOptions) {
   function buildFigFile() {
-    return exportFigFile(editor.graph, undefined, getRenderer() ?? undefined, state.currentPageId)
+    const renderer = getRenderer()
+    return exportFigFile(editor.graph, renderer?.ck, renderer ?? undefined)
   }
 
   function buildRecoveryFigFile() {

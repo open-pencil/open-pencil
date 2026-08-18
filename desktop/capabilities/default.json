@@ -19,6 +19,13 @@
       "allow": [{ "path": "**" }]
     },
     {
+      "identifier": "fs:allow-open",
+      "allow": [{ "path": "**" }]
+    },
+    "fs:allow-read",
+    "fs:allow-seek",
+    "fs:allow-fstat",
+    {
       "identifier": "fs:allow-write-file",
       "allow": [{ "path": "**" }]
     },

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Open to a recent-files home screen with embedded `.fig` previews and grid or list layouts.
 - Add a Performance settings section for monitoring and controlling development FIG page population workers, including their memory tradeoffs.
 - Add deterministic two-browser collaboration coverage for bidirectional edits, awareness, departure cleanup, partitioned-peer convergence, and reconnect synchronization without public network dependencies. (#530)
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
@@ -46,11 +47,13 @@
 
 ### Changed
 
+- Open new tabs on Recent Files so users can choose a document before creating a blank canvas.
 - Pan horizontally with Shift+wheel while preserving native horizontal trackpad movement.
 - Move MCP connections into their own Settings destination instead of presenting them as part of model configuration.
 
 ### Performance
 
+- Show the FIG page list from a lightweight Kiwi scan before materializing the full document, making large files feel responsive sooner.
 - Use cached axis-aligned world positions for hit testing untransformed layer chains and add representative 500/2,000-node interaction profiles. (#527)
 - Coalesce writable-document autosaves that overlap an active `.fig` export while preserving a trailing save for newer edits. (#528)
 - Defer JSX generation and syntax highlighting until the Code panel is active, keeping large canvas selections responsive. (#500)
@@ -59,6 +62,8 @@
 
 ### Fixed
 
+- Generate and cache 512×512 recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.
+- Export MCP selections from the explicitly targeted page instead of falling back to the page currently active in the editor UI.
 - Keep text-editing carets, hit testing, and selection highlights aligned with vertically centered or bottom-aligned text. (#539)
 - Match AI chat code-block syntax colors and backgrounds to the active light or dark theme. (#537)
 - Let desktop users select and copy AI chat text without replacing it with the selected canvas layers. (#538)

@@ -6,7 +6,14 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
-import { createTab, getActiveStore, openFileInNewTab, tabCount } from '@/app/tabs'
+import {
+  createTab,
+  getActiveStore,
+  getTabsSnapshot,
+  openFileInNewTab,
+  showRecentFiles,
+  tabCount
+} from '@/app/tabs'
 import { fileIdentitiesMatch, findTabByFileIdentity } from '@/app/tabs/open/identity'
 
 function setupGlobals() {
@@ -113,6 +120,17 @@ describe('openFileInNewTab deduplication', () => {
 
   test('canonicalizes browser URLs before using them as file identity', () => {
     expect(resolveBrowserFileURL('/design.fig#selection').href).toBe('http://localhost/design.fig')
+  })
+
+  test('keeps one permanent Recent Files tab', () => {
+    const initialCount = tabCount()
+    const initialHomeCount = getTabsSnapshot().filter((tab) => tab.showHome).length
+
+    showRecentFiles()
+    showRecentFiles()
+
+    expect(tabCount()).toBe(initialCount + (initialHomeCount === 0 ? 1 : 0))
+    expect(getTabsSnapshot().filter((tab) => tab.showHome)).toHaveLength(1)
   })
 
   test('activates the existing tab when the same path is opened again', async () => {

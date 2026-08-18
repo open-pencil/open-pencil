@@ -1,5 +1,6 @@
-import { unzipSync, zipSync, type Zippable } from 'fflate'
+import { unzipSync, zipSync, type Unzipped, type Zippable } from 'fflate'
 
+import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { buildFigKiwi } from '@open-pencil/kiwi/fig/container'
 import { decodeFigKiwiCanvas } from '@open-pencil/kiwi/fig/parse'
@@ -46,17 +47,34 @@ function findCanvasData(entries: Partial<Record<string, Uint8Array>>): Uint8Arra
   return largest
 }
 
+function isCanonicalCanvasEntry(name: string): boolean {
+  return name === 'canvas.fig' || name === 'canvas'
+}
+
 /** Parse a complete zipped `.fig` file into its Figma protocol payload and binary resources. */
-export function parseFigBuffer(buffer: ArrayBuffer): FigParseResult {
-  const archive = unzipSync(new Uint8Array(buffer))
-  const canvasData = findCanvasData(archive)
-  if (!canvasData) {
-    throw new Error(
-      `No canvas data found in .fig file. Entries: ${Object.keys(archive).join(', ')}`
-    )
+export function parseFigBuffer(
+  buffer: ArrayBuffer,
+  onPages?: (pages: FigPageManifestEntry[]) => void
+): FigParseResult {
+  const bytes = new Uint8Array(buffer)
+  const canvasArchive = unzipSync(bytes, { filter: ({ name }) => isCanonicalCanvasEntry(name) })
+  let canvasData = findCanvasData(canvasArchive)
+  let archive: Unzipped
+  let decoded: ReturnType<typeof decodeFigKiwiCanvas>
+  if (canvasData) {
+    decoded = decodeFigKiwiCanvas(canvasData, onPages)
+    archive = unzipSync(bytes, { filter: ({ name }) => !isCanonicalCanvasEntry(name) })
+  } else {
+    archive = unzipSync(bytes)
+    canvasData = findCanvasData(archive)
+    if (!canvasData) {
+      throw new Error(
+        `No canvas data found in .fig file. Entries: ${Object.keys(archive).join(', ')}`
+      )
+    }
+    decoded = decodeFigKiwiCanvas(canvasData, onPages)
   }
 
-  const decoded = decodeFigKiwiCanvas(canvasData)
   const metaBytes = archive['meta.json']
   const images = Object.entries(archive)
     .filter(([name]) => name.startsWith('images/') && name !== 'images/')

@@ -14,6 +14,7 @@ import { decodeBase64 } from '#core/bytes'
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'
+import { findFigThumbnailPageId } from '#core/io/formats/fig/thumbnail-page'
 import { renderThumbnail } from '#core/io/formats/raster'
 import { populateAllLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import {
@@ -80,8 +81,8 @@ function collectImageEntries(graph: SceneGraph): Array<{ name: string; data: Uin
   return entries
 }
 
-const THUMBNAIL_WIDTH = 400
-const THUMBNAIL_HEIGHT = 225
+const THUMBNAIL_WIDTH = 512
+const THUMBNAIL_HEIGHT = 512
 
 async function renderFigThumbnail(
   graph: SceneGraph,
@@ -534,7 +535,7 @@ export async function exportFigFile(
 
   const kiwiData = compiled.encodeMessage(msg)
 
-  const currentPageId = pageId ?? pages[0]?.id
+  const currentPageId = pageId ?? findFigThumbnailPageId(pages)
   const thumbnailPNG = await renderFigThumbnail(
     graph,
     currentPageId,

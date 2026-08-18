@@ -341,13 +341,13 @@ export function renderThumbnail(
   const contentH = bounds.maxY - bounds.minY
   if (contentW <= 0 || contentH <= 0) return null
 
-  const scale = Math.min(width / contentW, height / contentH, 2)
+  const scale = Math.min(width / contentW, height / contentH)
+  const pixelW = Math.max(1, Math.round(contentW * scale))
+  const pixelH = Math.max(1, Math.round(contentH * scale))
 
-  return renderToSurface(ck, renderer, graph, pageId, width, height, 'PNG', 100, (canvas) => {
+  return renderToSurface(ck, renderer, graph, pageId, pixelW, pixelH, 'PNG', 100, (canvas) => {
     canvas.clear(ck.Color4f(renderer.pageColor.r, renderer.pageColor.g, renderer.pageColor.b, 1))
-    const offsetX = (width - contentW * scale) / 2 - bounds.minX * scale
-    const offsetY = (height - contentH * scale) / 2 - bounds.minY * scale
-    canvas.translate(offsetX, offsetY)
+    canvas.translate(-bounds.minX * scale, -bounds.minY * scale)
     canvas.scale(scale, scale)
   })
 }
