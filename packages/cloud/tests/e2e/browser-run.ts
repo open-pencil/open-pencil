@@ -5,7 +5,13 @@ const deployDirectory = cloudDeployPath()
 const repositoryDirectory = repositoryPath()
 const projectName = `openpencil-cloud-browser-e2e-${process.pid}`
 const compose = composeCommand(projectName, 'compose.yml')
+const relayEnvironment = {
+  ...Bun.env,
+  BETTER_AUTH_SECRET: 'browser-e2e-secret-at-least-32-characters',
+  OPENPENCIL_CLOUD_COLLABORATION_PORT: '12345'
+}
 let cloud: ReturnType<typeof Bun.spawn> | null = null
+let relay: ReturnType<typeof Bun.spawn> | null = null
 let playwrightExitCode = 1
 
 async function run(command: string[], cwd = deployDirectory): Promise<void> {
@@ -56,6 +62,15 @@ try {
     stdout: 'pipe',
     stderr: 'inherit'
   })
+  relay = Bun.spawn(
+    ['node', '--experimental-strip-types', 'packages/cloud/tests/e2e/relay-server.ts'],
+    {
+      cwd: repositoryDirectory,
+      env: relayEnvironment,
+      stdout: 'inherit',
+      stderr: 'inherit'
+    }
+  )
   const fixture = await waitForCloud(cloud)
   const playwright = Bun.spawn(
     ['bunx', 'playwright', 'test', 'tests/e2e/cloud/sharing.spec.ts', '--project=openpencil'],
@@ -74,7 +89,9 @@ try {
   )
   playwrightExitCode = await playwright.exited
 } finally {
+  relay?.kill('SIGTERM')
   cloud?.kill('SIGTERM')
+  if (relay) await relay.exited
   if (cloud) await cloud.exited
   await run([...compose, 'down', '--volumes'])
 }

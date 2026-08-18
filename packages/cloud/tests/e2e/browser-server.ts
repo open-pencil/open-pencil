@@ -8,7 +8,8 @@ import {
   createCloudApp,
   createCloudAuth,
   migrateCloudDatabase,
-  parseCloudServerConfig
+  parseCloudServerConfig,
+  StaticEntitlementSource
 } from '@open-pencil/cloud/server'
 
 import { cloudE2EActors, createCloudE2ESessionResolver } from './session'
@@ -18,6 +19,7 @@ const appOrigin = process.env.OPENPENCIL_APP_ORIGIN ?? 'http://localhost:1420'
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   publicURL: `http://localhost:${port}`,
+  collaborationURL: `ws://localhost:${Number(process.env.OPENPENCIL_CLOUD_COLLABORATION_PORT ?? 12345)}`,
   trustedOrigins: [appOrigin],
   databaseURL:
     process.env.DATABASE_URL ??
@@ -132,6 +134,14 @@ const app = createCloudApp({
   database,
   auth,
   objects,
+  entitlementSource: new StaticEntitlementSource({
+    'cloud.sharing.capability-links': true,
+    'cloud.sharing.anonymous-view': true,
+    'cloud.sharing.anonymous-edit': true,
+    'cloud.sharing.guest-presence': true,
+    'cloud.collaboration.enabled': true,
+    'cloud.collaboration.maximum-participants': 10
+  }),
   resolveSession: createCloudE2ESessionResolver()
 })
 const server = Bun.serve({ hostname: '127.0.0.1', port, fetch: app.fetch })

@@ -23,6 +23,8 @@ export async function createCloudYjsProvider(
     token: options.ticket.token,
     document: options.document,
     awareness: options.awareness,
+    onAuthenticationFailed() {},
+    onClose() {},
     onStatus({ status }) {
       options.onStatus?.(status === WebSocketStatus.Connected)
     },

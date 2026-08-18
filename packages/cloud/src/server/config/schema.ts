@@ -16,13 +16,22 @@ const httpURLSchema = v.pipe(
   }, 'URL must use HTTP or HTTPS')
 )
 
+const websocketURLSchema = v.pipe(
+  v.string(),
+  v.url(),
+  v.check((value) => {
+    const protocol = new URL(value).protocol
+    return protocol === 'ws:' || protocol === 'wss:'
+  }, 'URL must use WS or WSS')
+)
+
 const optionalTextSchema = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)))
 
 const rawCloudServerConfigSchema = v.object({
   deployment: v.picklist(['official', 'self-hosted']),
   publicURL: httpURLSchema,
   appURL: v.optional(httpURLSchema),
-  collaborationURL: v.optional(httpURLSchema),
+  collaborationURL: v.optional(websocketURLSchema),
   collaborationPort: v.optional(
     v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(65_535)),
     1234

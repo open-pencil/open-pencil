@@ -5,6 +5,12 @@ import * as v from 'valibot'
 import type { CloudEnvironment } from './environment'
 import { parseCloudServerConfig, type CloudServerConfig } from './schema'
 
+const websocketURLSchema = v.pipe(
+  v.string(),
+  v.url(),
+  v.check((value) => ['ws:', 'wss:'].includes(new URL(value).protocol), 'Expected WS or WSS URL')
+)
+
 const secretReferenceSchema = v.object({ from_env: v.pipe(v.string(), v.trim(), v.minLength(1)) })
 const deploymentConfigSchema = v.object({
   schema_version: v.literal(1),
@@ -26,7 +32,7 @@ const deploymentConfigSchema = v.object({
     checksum_verification: v.optional(v.picklist(['native', 'metadata']), 'native')
   }),
   collaboration: v.optional(
-    v.object({ public_url: v.pipe(v.string(), v.url()), port: v.optional(v.number(), 1234) })
+    v.object({ public_url: websocketURLSchema, port: v.optional(v.number(), 1234) })
   ),
   entitlements: v.optional(
     v.variant('source', [
