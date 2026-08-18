@@ -25,6 +25,8 @@ import {
   createDefaultCloudPolicy,
   createEntitlementService,
   EntitlementOpenFeatureProvider,
+  StaticEntitlementSource,
+  staticEntitlementValues,
   type CloudPolicy,
   type EntitlementSource
 } from '#cloud/server/policy'
@@ -83,10 +85,15 @@ export function createCloudApp(services: CloudServices) {
     maxAge: 600
   })
   const workspaces = createWorkspaceService(services.database)
+  const entitlementSource =
+    services.entitlementSource ??
+    (services.config.staticEntitlements
+      ? new StaticEntitlementSource(staticEntitlementValues(services.config.staticEntitlements))
+      : null)
   const policy =
     services.policy ??
-    (services.entitlementSource
-      ? createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(services.entitlementSource))
+    (entitlementSource
+      ? createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(entitlementSource))
       : createDefaultCloudPolicy())
   const documents = createDocumentService(services.database, services.objects, {
     policy,

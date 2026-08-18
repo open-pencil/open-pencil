@@ -27,6 +27,35 @@ const deploymentConfigSchema = v.object({
   collaboration: v.optional(
     v.object({ public_url: v.pipe(v.string(), v.url()), port: v.optional(v.number(), 1234) })
   ),
+  entitlements: v.optional(
+    v.variant('source', [
+      v.object({
+        source: v.literal('static'),
+        documents: v.optional(
+          v.object({
+            maximum_file_bytes: v.optional(v.number()),
+            revision_history: v.optional(v.boolean())
+          })
+        ),
+        storage: v.optional(v.object({ maximum_bytes: v.optional(v.number()) })),
+        sharing: v.optional(
+          v.object({
+            capability_links: v.optional(v.boolean()),
+            anonymous_view: v.optional(v.boolean()),
+            anonymous_edit: v.optional(v.boolean()),
+            guest_presence: v.optional(v.boolean())
+          })
+        ),
+        collaboration: v.optional(
+          v.object({
+            enabled: v.optional(v.boolean()),
+            maximum_participants: v.optional(v.number())
+          })
+        )
+      }),
+      v.object({ source: v.literal('database') })
+    ])
+  ),
   technical_limits: v.optional(
     v.object({
       maximum_upload_bytes: v.optional(v.number()),
@@ -63,6 +92,26 @@ export function parseCloudDeploymentTOML(
     s3ChecksumVerification: config.object_storage.checksum_verification,
     collaborationURL: config.collaboration?.public_url,
     collaborationPort: config.collaboration?.port,
+    staticEntitlements:
+      config.entitlements?.source === 'static'
+        ? {
+            documents: {
+              maximumFileBytes: config.entitlements.documents?.maximum_file_bytes,
+              revisionHistory: config.entitlements.documents?.revision_history
+            },
+            storage: { maximumBytes: config.entitlements.storage?.maximum_bytes },
+            sharing: {
+              capabilityLinks: config.entitlements.sharing?.capability_links,
+              anonymousView: config.entitlements.sharing?.anonymous_view,
+              anonymousEdit: config.entitlements.sharing?.anonymous_edit,
+              guestPresence: config.entitlements.sharing?.guest_presence
+            },
+            collaboration: {
+              enabled: config.entitlements.collaboration?.enabled,
+              maximumParticipants: config.entitlements.collaboration?.maximum_participants
+            }
+          }
+        : undefined,
     technicalLimits: config.technical_limits
       ? {
           maximumUploadBytes: config.technical_limits.maximum_upload_bytes,

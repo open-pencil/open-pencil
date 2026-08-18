@@ -1,3 +1,4 @@
+import { staticEntitlementsSchema } from '#cloud/server/policy/static'
 import * as v from 'valibot'
 
 import {
@@ -47,6 +48,7 @@ const rawCloudServerConfigSchema = v.object({
       maximumConnectionsPerRoom: CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
     }
   ),
+  staticEntitlements: v.optional(staticEntitlementsSchema),
   databaseURL: v.pipe(v.string(), v.url()),
   authSecret: v.pipe(v.string(), v.minLength(32)),
   trustedOrigins: v.optional(v.array(httpURLSchema), []),

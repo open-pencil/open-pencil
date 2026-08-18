@@ -6,7 +6,9 @@ export const CLOUD_FEATURE_KEYS = {
   collaboration: 'cloud.collaboration.enabled',
   serverEnforcedWrites: 'cloud.collaboration.server-enforced-writes',
   revisionHistory: 'cloud.documents.revision-history',
-  maximumFileBytes: 'cloud.documents.maximum-file-bytes'
+  maximumFileBytes: 'cloud.documents.maximum-file-bytes',
+  maximumStorageBytes: 'cloud.storage.maximum-bytes',
+  maximumParticipants: 'cloud.collaboration.maximum-participants'
 } as const
 
 export type CloudPolicyContext = {

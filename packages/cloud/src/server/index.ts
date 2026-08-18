@@ -134,10 +134,13 @@ export {
   createDefaultCloudPolicy,
   createEntitlementService,
   StaticEntitlementSource,
+  staticEntitlementValues,
+  staticEntitlementsSchema,
   type CloudPolicyContext,
   type EntitlementSource,
   type EntitlementService,
-  type EntitlementSubject
+  type EntitlementSubject,
+  type StaticEntitlements
 } from './policy'
 export {
   createStorageQuotaService,

@@ -5,5 +5,10 @@ export {
 } from './entitlements'
 export { CLOUD_FEATURE_KEYS, type CloudPolicyContext } from './keys'
 export { EntitlementOpenFeatureProvider } from './provider'
+export {
+  staticEntitlementValues,
+  staticEntitlementsSchema,
+  type StaticEntitlements
+} from './static'
 export { CloudPolicy, createDefaultCloudPolicy } from './policy'
 export { createEntitlementService, type EntitlementService } from './service'

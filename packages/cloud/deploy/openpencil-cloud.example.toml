@@ -29,6 +29,26 @@ from_env = "S3_SECRET_ACCESS_KEY"
 public_url = "ws://localhost:1234"
 port = 1234
 
+[entitlements]
+source = "static"
+
+[entitlements.documents]
+maximum_file_bytes = 1_073_741_824
+revision_history = true
+
+[entitlements.storage]
+maximum_bytes = 1_099_511_627_776
+
+[entitlements.sharing]
+capability_links = true
+anonymous_view = true
+anonymous_edit = true
+guest_presence = true
+
+[entitlements.collaboration]
+enabled = true
+maximum_participants = 100
+
 [technical_limits]
 maximum_upload_bytes = 1073741824
 maximum_collaboration_message_bytes = 1048576
