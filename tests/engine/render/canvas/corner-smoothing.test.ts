@@ -23,14 +23,15 @@ function createRenderer() {
     delete: ReturnType<typeof mock>
   }> = []
 
-  class MockPath {
-    addRect = mock(() => undefined)
-    moveTo = mock(() => undefined)
-    lineTo = mock(() => undefined)
-    cubicTo = mock(() => undefined)
-    arcToRotated = mock(() => undefined)
-    close = mock(() => undefined)
+  class MockPathBuilder {
+    addRect = mock(() => this)
+    moveTo = mock(() => this)
+    lineTo = mock(() => this)
+    cubicTo = mock(() => this)
+    arcToRotated = mock(() => this)
+    close = mock(() => this)
     delete = mock(() => undefined)
+    detachAndDelete = mock(() => ({ delete: mock(() => undefined) }))
 
     constructor() {
       paths.push(this)
@@ -39,7 +40,7 @@ function createRenderer() {
 
   const renderer = {
     ck: {
-      Path: MockPath,
+      PathBuilder: MockPathBuilder,
       LTRBRect: mock((l, t, r, b) => new Float32Array([l, t, r, b]))
     },
     fillPaint: {}

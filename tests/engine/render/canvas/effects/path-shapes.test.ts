@@ -39,12 +39,14 @@ describe('path shape shadows', () => {
     expect(canvas.drawRect).not.toHaveBeenCalled()
   })
 
-  test('drop shadow spread copies imported geometry instead of mutating cache paths', () => {
+  test('drop shadow spread combines and deletes a detached stroked ring', () => {
     const r = createMockRenderer()
     const canvas = createMockCanvas()
     const cachedPath = new r.ck.Path()
-    const spreadPath = new r.ck.Path()
-    cachedPath.copy = mock(() => spreadPath)
+    const ringPath = new r.ck.Path()
+    const combinedPath = new r.ck.Path()
+    cachedPath.makeStroked = mock(() => ringPath)
+    r.ck.Path.MakeFromOp = mock(() => combinedPath)
     r.getFillGeometry = mock(() => [cachedPath])
 
     const node: Partial<SceneNode> = {
@@ -67,10 +69,11 @@ describe('path shape shadows', () => {
 
     renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
 
-    expect(cachedPath.copy).toHaveBeenCalled()
-    expect(cachedPath.op).not.toHaveBeenCalled()
-    expect(spreadPath.op).toHaveBeenCalledWith(expect.anything(), r.ck.PathOp.Union)
-    expect(spreadPath.delete).toHaveBeenCalled()
+    const makeFromOp = r.ck.Path.MakeFromOp as ReturnType<typeof mock>
+    expect(makeFromOp).toHaveBeenCalledWith(cachedPath, ringPath, r.ck.PathOp.Union)
+    expect(ringPath.delete).toHaveBeenCalledTimes(1)
+    expect(combinedPath.delete).toHaveBeenCalledTimes(1)
+    expect(cachedPath.delete).not.toHaveBeenCalled()
   })
 
   test('inner shadow for a polygon clips and cuts out with polygon paths', () => {

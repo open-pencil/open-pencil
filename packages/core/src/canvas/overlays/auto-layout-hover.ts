@@ -84,7 +84,7 @@ function drawStripedRect(
   r.auxFill.setColor(canvasColor(r, fill))
   canvas.drawRect(rect, r.auxFill)
 
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   const left = rect[0]
   const top = rect[1]
   const right = rect[2]
@@ -98,9 +98,10 @@ function drawStripedRect(
   r.auxStroke.setPathEffect(null)
   canvas.save()
   canvas.clipRect(rect, r.ck.ClipOp.Intersect, true)
-  canvas.drawPath(path, r.auxStroke)
+  const immutablePath = path.detachAndDelete()
+  canvas.drawPath(immutablePath, r.auxStroke)
   canvas.restore()
-  path.delete()
+  immutablePath.delete()
 }
 
 function drawValuePill(r: SkiaRenderer, canvas: Canvas, text: string, x: number, y: number) {

@@ -21,10 +21,10 @@ describe('Tauri file actions', () => {
           multiple: true
         }
       })
-      return ['/tmp/design.fig', '/tmp/other.pen']
+      return ['/tmp/design.fig', '/tmp/design.pen']
     })
 
-    await expect(chooseTauriOpenPaths()).resolves.toEqual(['/tmp/design.fig', '/tmp/other.pen'])
+    await expect(chooseTauriOpenPaths()).resolves.toEqual(['/tmp/design.fig', '/tmp/design.pen'])
   })
 
   test('reads a Tauri design file into a File object', async () => {

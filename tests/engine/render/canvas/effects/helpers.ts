@@ -8,26 +8,34 @@ export function mockCalls(fn: ReturnType<typeof mock>): unknown[][] {
 }
 
 export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaRenderer {
+  class MockPath {
+    delete = mock(() => undefined)
+    copy = mock(() => new MockPath())
+    makeCombined = mock(() => new MockPath())
+    makeStroked = mock(() => new MockPath())
+  }
+
   return {
     ck: {
       Color4f: mock((r, g, b, a) => new Float32Array([r, g, b, a])),
       LTRBRect: mock((l, t, r, b) => new Float32Array([l, t, r, b])),
       RRectXY: mock(() => new Float32Array(12)),
       ClipOp: { Intersect: 0 },
-      Path: class {
-        addOval = mock(() => undefined)
-        addRect = mock(() => undefined)
-        addRRect = mock(() => undefined)
-        addPath = mock(() => undefined)
-        op = mock(() => true)
-        transform = mock(() => undefined)
+      Path: Object.assign(MockPath, {
+        MakeFromOp: mock(() => new MockPath())
+      }),
+      PathBuilder: class {
+        addOval = mock(() => this)
+        addRect = mock(() => this)
+        addRRect = mock(() => this)
+        addPath = mock(() => this)
+        transform = mock(() => this)
         delete = mock(() => undefined)
-        copy = mock(() => this)
-        stroke = mock(() => this)
-        moveTo = mock(() => undefined)
-        lineTo = mock(() => undefined)
-        cubicTo = mock(() => undefined)
-        close = mock(() => undefined)
+        moveTo = mock(() => this)
+        lineTo = mock(() => this)
+        cubicTo = mock(() => this)
+        close = mock(() => this)
+        detachAndDelete = mock(() => new MockPath())
       },
       PathOp: { Difference: 0, Union: 1 },
       StrokeCap: { Butt: 0, Round: 1, Square: 2 },

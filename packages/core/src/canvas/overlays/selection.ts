@@ -230,17 +230,18 @@ function drawTextPathSelection(
     // the path (replaces the flat, path-blind text-edit selection rects).
     const bandPoly = pathTextSelectionBand(data, box, node.derivedTextGlyphs, sampled)
     if (bandPoly && bandPoly.length >= 6) {
-      const band = new r.ck.Path()
+      const band = new r.ck.PathBuilder()
       band.moveTo(bandPoly[0], bandPoly[1])
       for (let i = 2; i < bandPoly.length; i += 2) band.lineTo(bandPoly[i], bandPoly[i + 1])
       band.close()
+      const immutableBand = band.detachAndDelete()
       r.auxFill.setColor(r.selColor(0.16))
-      canvas.drawPath(band, r.auxFill)
+      canvas.drawPath(immutableBand, r.auxFill)
       r.auxStroke.setStrokeWidth(1 / r.zoom)
       r.auxStroke.setColor(r.selColor())
       r.auxStroke.setPathEffect(null)
-      canvas.drawPath(band, r.auxStroke)
-      band.delete()
+      canvas.drawPath(immutableBand, r.auxStroke)
+      immutableBand.delete()
     }
 
     // Faint dashed bounds + resize/rotate handles from the fitted path box.
@@ -256,7 +257,7 @@ function drawTextPathSelection(
     drawBoundsHandles(r, canvas, box.x, box.y, box.x + box.width, box.y + box.height)
 
     // The path curve itself, sampled from the headless path metrics only for drawing.
-    const path = new r.ck.Path()
+    const path = new r.ck.PathBuilder()
     const overlaySteps = Math.max(64, Math.min(1024, Math.ceil(sampled.length)))
     const first = pointAtArc(sampled, 0)
     path.moveTo(first.x, first.y)
@@ -265,8 +266,9 @@ function drawTextPathSelection(
       path.lineTo(point.x, point.y)
     }
     if (sampled.closed) path.close()
-    canvas.drawPath(path, r.selectionPaint)
-    path.delete()
+    const immutablePath = path.detachAndDelete()
+    canvas.drawPath(immutablePath, r.selectionPaint)
+    immutablePath.delete()
 
     // Center crosshair at the fitted path box center (screen-constant size).
     const cx = box.x + box.width / 2
@@ -367,14 +369,16 @@ export function drawParentFrameOutlines(
       parent.height
     ])
 
-    const path = new r.ck.Path()
+    const path = new r.ck.PathBuilder()
     path.moveTo(pts[0], pts[1])
     path.lineTo(pts[2], pts[3])
     path.lineTo(pts[4], pts[5])
     path.lineTo(pts[6], pts[7])
     path.close()
 
-    canvas.drawPath(path, r.parentOutlinePaint)
+    const immutablePath = path.detachAndDelete()
+    canvas.drawPath(immutablePath, r.parentOutlinePaint)
+    immutablePath.delete()
   }
 }
 

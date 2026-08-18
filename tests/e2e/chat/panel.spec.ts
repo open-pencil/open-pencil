@@ -331,6 +331,16 @@ test('keeps a queued message when chat initialization fails', async () => {
   await expect(page.getByText(/I'll help you with: "Keep this queued message"/)).toBeVisible()
 })
 
+test('completed Markdown responses release streaming parser history', async () => {
+  await chatInput().fill('Show a code block')
+  await chatInput().press('Enter')
+
+  const markdown = page.locator('.chat-markdown').last()
+  await expect(markdown).toBeVisible()
+  await expect(markdown).toHaveAttribute('data-chat-markdown-mode', 'static')
+  await expect(markdown.locator('.shiki').first()).toBeVisible()
+})
+
 test('assistant code blocks follow the active theme with readable contrast', async () => {
   await chatInput().fill('Show a code block')
   await chatInput().press('Enter')

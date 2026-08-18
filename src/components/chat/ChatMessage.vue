@@ -15,13 +15,18 @@ import ImageAttachment from '@/components/chat/attachment/image/ImageAttachment.
 
 import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
 
-const { message, removable = true } = defineProps<{ message: UIMessage; removable?: boolean }>()
+const { message, removable = true, streaming = false } = defineProps<{
+  message: UIMessage
+  removable?: boolean
+  streaming?: boolean
+}>()
 const emit = defineEmits<{
   removeMessage: []
   removePart: [partKey: string]
 }>()
 const { dialogs } = useI18n()
 const isDark = computed(() => resolvedAppTheme.value === 'dark')
+const markdownMode = computed(() => (streaming ? 'streaming' : 'static'))
 const imageAttachments = imageAttachmentsForMessage(message.id)
 
 type ToolPart = Extract<UIMessagePart<UIDataTypes, UITools>, { toolCallId: string }>
@@ -201,9 +206,12 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
             class="rounded-xl rounded-tl-md bg-hover px-3 py-2 text-xs leading-relaxed text-surface"
           >
             <Markdown
+              :key="markdownMode"
               :content="part.text"
               :is-dark="isDark"
               :mermaid="false"
+              :mode="markdownMode"
+              :data-chat-markdown-mode="markdownMode"
               class="chat-markdown [&_[data-stream-markdown=code]]:!bg-input"
             />
           </div>

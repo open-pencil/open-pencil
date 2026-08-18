@@ -168,8 +168,9 @@ describe('boolean operation paths', () => {
 
   test('uses imported fill geometry when child paths cannot produce a boolean path', async () => {
     const r = await createRenderer()
-    const importedPath = new r.ck.Path()
-    importedPath.addRect(r.ck.LTRBRect(5, 6, 25, 36))
+    const importedPathBuilder = new r.ck.PathBuilder()
+    importedPathBuilder.addRect(r.ck.LTRBRect(5, 6, 25, 36))
+    const importedPath = importedPathBuilder.detachAndDelete()
     r.getFillGeometry = () => [importedPath]
     const node = {
       id: 'boolean',

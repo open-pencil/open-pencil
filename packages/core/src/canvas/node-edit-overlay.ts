@@ -415,17 +415,18 @@ function drawHandleDiamond(
   strokePaint: Paint
 ): void {
   const s = PEN_HANDLE_RADIUS
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   path.moveTo(x, y - s)
   path.lineTo(x + s, y)
   path.lineTo(x, y + s)
   path.lineTo(x - s, y)
   path.close()
 
+  const immutablePath = path.detachAndDelete()
   // Draw stroke first (outset) then fill on top
-  canvas.drawPath(path, strokePaint)
-  canvas.drawPath(path, fillPaint)
-  path.delete()
+  canvas.drawPath(immutablePath, strokePaint)
+  canvas.drawPath(immutablePath, fillPaint)
+  immutablePath.delete()
 }
 
 // ---------------------------------------------------------------------------

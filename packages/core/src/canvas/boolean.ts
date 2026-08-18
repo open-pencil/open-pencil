@@ -1,4 +1,4 @@
-import type { Canvas, Path, PathOp } from 'canvaskit-wasm'
+import type { Canvas, Path, PathBuilder, PathOp } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
@@ -63,12 +63,13 @@ export function canMakeBooleanSourceNode(node: SceneNode, graph: SceneGraph): bo
 }
 
 function lineStrokePath(r: SkiaRenderer, node: SceneNode): Path | null {
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   path.moveTo(0, 0)
   path.lineTo(node.width, node.height)
   const stroke = node.strokes.find((item) => item.visible)
-  const outline = path.stroke({ width: stroke?.weight ?? 1 })
-  if (outline !== path) path.delete()
+  const source = path.detachAndDelete()
+  const outline = source.makeStroked({ width: stroke?.weight ?? 1 })
+  source.delete()
   return outline
 }
 
@@ -89,12 +90,13 @@ export function nodeHasVisibleStroke(node: SceneNode): boolean {
   return node.strokes.some((stroke) => stroke.visible && stroke.weight > 0)
 }
 
-function addVisibleStrokeOutlines(target: Path, source: Path, node: SceneNode): void {
+function addVisibleStrokeOutlines(target: PathBuilder, source: Path, node: SceneNode): void {
   for (const stroke of node.strokes) {
     if (!stroke.visible || stroke.weight <= 0) continue
-    const outline = source.stroke({ width: stroke.weight })
+    const outline = source.makeStroked({ width: stroke.weight })
     if (!outline) continue
     target.addPath(outline)
+    outline.delete()
   }
 }
 
@@ -111,7 +113,7 @@ function appendVisibleChildPaths(
   r: SkiaRenderer,
   graph: SceneGraph,
   parent: SceneNode,
-  target: Path,
+  target: PathBuilder,
   makeChildPath: (child: SceneNode) => Path | null,
   failOnMissing: boolean
 ): boolean | null {
@@ -124,8 +126,7 @@ function appendVisibleChildPaths(
       if (failOnMissing) return null
       continue
     }
-    childPath.transform(nodePathTransform(r, child))
-    target.addPath(childPath)
+    target.addPath(childPath, nodePathTransform(r, child))
     childPath.delete()
     hasPath = true
   }
@@ -133,7 +134,7 @@ function appendVisibleChildPaths(
 }
 
 function containerSourcePath(r: SkiaRenderer, node: SceneNode, graph: SceneGraph): Path | null {
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   let hasPath = false
 
   if (nodeHasVisibleFill(node) || nodeHasVisibleStroke(node)) {
@@ -164,7 +165,7 @@ function containerSourcePath(r: SkiaRenderer, node: SceneNode, graph: SceneGraph
     path.delete()
     return null
   }
-  return path
+  return path.detachAndDelete()
 }
 
 export function makeBooleanSourcePath(
@@ -179,8 +180,12 @@ export function makeBooleanSourcePath(
 
   const path = baseShapePath(r, node)
   if (!path) return null
-  if (nodeHasVisibleStroke(node)) addVisibleStrokeOutlines(path, path, node)
-  return path
+  if (!nodeHasVisibleStroke(node)) return path
+  const combined = new r.ck.PathBuilder()
+  combined.addPath(path)
+  addVisibleStrokeOutlines(combined, path, node)
+  path.delete()
+  return combined.detachAndDelete()
 }
 
 export function hasVisibleStrokeSourceNode(node: SceneNode, graph: SceneGraph): boolean {
@@ -199,7 +204,7 @@ export function makeStrokeOutlinePath(
 ): Path | null {
   if (!canMakeBooleanSourcePath(node)) return null
   if (canContainFlattenableChildren(node)) {
-    const path = new r.ck.Path()
+    const path = new r.ck.PathBuilder()
     let hasPath = false
     if (nodeHasVisibleStroke(node)) {
       const ownPath = baseShapePath(r, node)
@@ -218,7 +223,7 @@ export function makeStrokeOutlinePath(
         (child) => makeStrokeOutlinePath(r, child, graph),
         false
       ) ?? false
-    if (hasPath) return path
+    if (hasPath) return path.detachAndDelete()
     path.delete()
     return null
   }
@@ -230,16 +235,19 @@ export function makeStrokeOutlinePath(
       : baseShapePath(r, node)
   if (!path) return null
   if (node.type === 'LINE') return path
-  const outline = new r.ck.Path()
+  const outline = new r.ck.PathBuilder()
   addVisibleStrokeOutlines(outline, path, node)
-  return outline
+  path.delete()
+  return outline.detachAndDelete()
 }
 
 function transformedShapePath(r: SkiaRenderer, child: SceneNode, graph: SceneGraph): Path | null {
   const path = makeBooleanSourcePath(r, child, graph)
   if (!path) return null
-  path.transform(nodePathTransform(r, child))
-  return path
+  const transformed = new r.ck.PathBuilder()
+  transformed.addPath(path, nodePathTransform(r, child))
+  path.delete()
+  return transformed.detachAndDelete()
 }
 
 function operationForNode(r: SkiaRenderer, node: SceneNode): PathOp {
@@ -251,9 +259,9 @@ function makeImportedFillGeometryPath(r: SkiaRenderer, node: SceneNode): Path | 
   if (typeof r.getFillGeometry !== 'function') return null
   const fillGeometry = r.getFillGeometry(node)
   if (!fillGeometry) return null
-  const result = new r.ck.Path()
+  const result = new r.ck.PathBuilder()
   for (const path of fillGeometry) result.addPath(path)
-  return result
+  return result.detachAndDelete()
 }
 
 export function makeBooleanOperationPath(
@@ -271,17 +279,18 @@ export function makeBooleanOperationPath(
 
   if (childPaths.length === 0) return makeImportedFillGeometryPath(r, node)
 
-  const result = childPaths[0]
+  let result = childPaths[0]
   const operation = operationForNode(r, node)
   for (let index = 1; index < childPaths.length; index++) {
     const path = childPaths[index]
-    const didApply = result.op(path, operation)
+    const combined = r.ck.Path.MakeFromOp(result, path, operation)
+    result.delete()
     path.delete()
-    if (!didApply) {
-      result.delete()
+    if (!combined) {
       for (const remaining of childPaths.slice(index + 1)) remaining.delete()
       return makeImportedFillGeometryPath(r, node)
     }
+    result = combined
   }
   return result
 }

@@ -41,9 +41,41 @@ function createCanvasKit() {
     }
   }
 
+  class MockPathBuilder {
+    operations: string[] = []
+    fillType: number | null = null
+
+    moveTo(x: number, y: number): void {
+      this.operations.push(`M${x},${y}`)
+    }
+
+    lineTo(x: number, y: number): void {
+      this.operations.push(`L${x},${y}`)
+    }
+
+    cubicTo(x1: number, y1: number, x2: number, y2: number, x3: number, y3: number): void {
+      this.operations.push(`C${x1},${y1},${x2},${y2},${x3},${y3}`)
+    }
+
+    close(): void {
+      this.operations.push('Z')
+    }
+
+    setFillType(value: number): void {
+      this.fillType = value
+    }
+
+    detachAndDelete(): MockPath {
+      const path = new MockPath()
+      path.operations = [...this.operations]
+      path.fillType = this.fillType
+      return path
+    }
+  }
+
   return {
     ck: {
-      Path: MockPath,
+      PathBuilder: MockPathBuilder,
       FillType: { Winding: 0, EvenOdd: 1 }
     } as CanvasKit,
     paths

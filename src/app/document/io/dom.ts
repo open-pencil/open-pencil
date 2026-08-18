@@ -3,6 +3,7 @@ import { browserHTMLToSceneGraph } from '@open-pencil/dom-css/browser'
 
 import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
 type OpenDOMDocumentState = EditorState & {
@@ -33,6 +34,10 @@ type DOMTextImportOptions = {
   documentName?: string
 }
 
+function errorDetail(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function documentNameFor(file: File): string {
   return file.name.replace(/\.(html?|xhtml)$/i, '')
 }
@@ -60,10 +65,10 @@ export function createDOMOpenActions({
       state.loading = true
       const pageName = await applyDOMText(html, options)
       setDocumentSource(`${pageName}.html`, 'html')
-      toast.info('Imported DOM/CSS document')
+      toast.info(notificationMessages.get().importedDOMCSS)
     } catch (e) {
       console.error('Failed to import DOM/CSS:', e)
-      toast.error(`Failed to import DOM/CSS: ${e instanceof Error ? e.message : String(e)}`)
+      toast.error(notificationMessages.get().importDOMCSSFailed({ error: errorDetail(e) }))
       throw e
     } finally {
       state.loading = false
@@ -81,7 +86,7 @@ export function createDOMOpenActions({
       setDocumentSource(file.name, 'html', options.handle, options.path)
     } catch (e) {
       console.error('Failed to open DOM/CSS file:', e)
-      toast.error(`Failed to open DOM/CSS file: ${e instanceof Error ? e.message : String(e)}`)
+      toast.error(notificationMessages.get().openDOMCSSFailed({ error: errorDetail(e) }))
     } finally {
       state.loading = false
     }

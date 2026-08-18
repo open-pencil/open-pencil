@@ -488,18 +488,19 @@ export function makeArcPath(r: SkiaRenderer, node: SceneNode) {
   const endDeg = arc.endingAngle * (180 / Math.PI)
   const sweepDeg = endDeg - startDeg
 
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   const oval = r.ck.LTRBRect(0, 0, node.width, node.height)
 
   if (arc.innerRadius > 0) {
     path.addArc(oval, startDeg, sweepDeg)
     const innerOval = r.ck.LTRBRect(cx - innerRx, cy - innerRy, cx + innerRx, cy + innerRy)
-    const innerPath = new r.ck.Path()
+    const innerPath = new r.ck.PathBuilder()
     innerPath.addArc(innerOval, startDeg + sweepDeg, -sweepDeg)
-    path.addPath(innerPath)
+    const immutableInnerPath = innerPath.detachAndDelete()
+    path.addPath(immutableInnerPath)
+    immutableInnerPath.delete()
     path.close()
-    innerPath.delete()
-    return path
+    return path.detachAndDelete()
   }
 
   const isFullCircle = Math.abs(sweepDeg) >= 359.99
@@ -510,7 +511,7 @@ export function makeArcPath(r: SkiaRenderer, node: SceneNode) {
     path.addArc(oval, startDeg, sweepDeg)
     path.close()
   }
-  return path
+  return path.detachAndDelete()
 }
 
 export function drawArc(r: SkiaRenderer, canvas: Canvas, node: SceneNode, paint: Paint): void {
