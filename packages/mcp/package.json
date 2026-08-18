@@ -2,7 +2,20 @@
   "name": "@open-pencil/mcp",
   "version": "0.14.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/mcp"
+  },
+  "bin": {
+    "openpencil-mcp": "./dist/stdio.mjs",
+    "openpencil-mcp-http": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
+  "main": "./dist/server.mjs",
   "imports": {
     "#mcp/*": {
       "types": "./src/*.ts",
@@ -10,7 +23,6 @@
       "default": "./dist/*.mjs"
     }
   },
-  "main": "./dist/server.mjs",
   "exports": {
     ".": {
       "types": "./dist/server.d.mts",
@@ -33,27 +45,21 @@
       "bun": "./src/transport/discovery.ts",
       "import": "./dist/discovery.mjs",
       "default": "./dist/discovery.mjs"
+    },
+    "./tools": {
+      "types": "./dist/tools.d.mts",
+      "bun": "./src/tool/catalog.ts",
+      "import": "./dist/tools.mjs",
+      "default": "./dist/tools.mjs"
     }
-  },
-  "bin": {
-    "openpencil-mcp": "./dist/stdio.mjs",
-    "openpencil-mcp-http": "./dist/index.mjs"
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "bunx tsdown --config tsdown.config.ts",
-    "prepublishOnly": "bun run build"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
-    "directory": "packages/mcp"
   },
   "publishConfig": {
     "access": "public",
     "provenance": true
+  },
+  "scripts": {
+    "build": "bunx tsdown --config tsdown.config.ts",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.17",

@@ -4,6 +4,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 import { MCP_VERSION, registerTools } from '#mcp/server'
 import { createStdioRPCBridge } from '#mcp/stdio/bridge'
+import { parseDisabledTools } from '#mcp/tool/catalog'
+import { readDiscoveryFile } from '#mcp/transport/discovery'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
@@ -20,12 +22,17 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for RPC auth\n` +
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools\n` +
       `                               (default: cwd when run standalone, home directory when app-spawned)\n` +
-      `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n`
+      `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n` +
+      `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit; defaults to the app setting\n`
   )
   process.exit(0)
 }
 
 const enableEval = process.env.OPENPENCIL_MCP_EVAL === '1'
+const disabledTools =
+  process.env.OPENPENCIL_MCP_DISABLED_TOOLS === undefined
+    ? ((await readDiscoveryFile())?.disabledTools ?? [])
+    : parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS)
 const mcpRoot = process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd()
 // Auth token: undefined → auto-discover from discovery file, empty string →
 // disable auth, whitespace-only → reject (same fail-fast as index.ts to catch
@@ -64,7 +71,7 @@ const bridge = createStdioRPCBridge({
 })
 
 const mcpServer = new McpServer({ name: 'open-pencil', version: MCP_VERSION })
-registerTools(mcpServer, { enableEval, mcpRoot, sendRPC: bridge.sendRPC })
+registerTools(mcpServer, { disabledTools, enableEval, mcpRoot, sendRPC: bridge.sendRPC })
 
 const transport = new StdioServerTransport()
 mcpServer.connect(transport).catch((err) => {

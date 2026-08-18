@@ -8,6 +8,8 @@ import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
+import { disabledMCPToolsCSV } from './preferences'
+
 export interface AutomationHealth {
   status: 'ok' | 'no_app'
   version?: string
@@ -285,7 +287,8 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
       OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
       OPENPENCIL_MCP_TCP: '1',
       OPENPENCIL_MCP_ROOT: mcpRoot,
-      OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS)
+      OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
+      OPENPENCIL_MCP_DISABLED_TOOLS: disabledMCPToolsCSV()
     }
   })
 

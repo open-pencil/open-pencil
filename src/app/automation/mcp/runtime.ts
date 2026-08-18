@@ -14,6 +14,7 @@ export const mcpRuntime = reactive({
   status: 'idle' as MCPRuntimeStatus,
   port: AUTOMATION_HTTP_PORT,
   version: null as string | null,
+  authRequired: false,
   error: null as string | null,
   checking: false
 })
@@ -28,6 +29,7 @@ export async function refreshMCPRuntime(): Promise<void> {
   try {
     const health = await readAutomationHealth()
     mcpRuntime.version = health?.version ?? null
+    mcpRuntime.authRequired = health?.authRequired ?? false
     if (health) {
       mcpRuntime.status = 'running'
       mcpRuntime.error = null
@@ -50,6 +52,7 @@ async function start(): Promise<void> {
     const health = await readAutomationHealth()
     if (!health) throw new Error('MCP server did not become healthy')
     mcpRuntime.version = health.version ?? null
+    mcpRuntime.authRequired = health.authRequired ?? false
     mcpRuntime.status = 'running'
   } catch (error) {
     mcpRuntime.status = 'error'
@@ -73,6 +76,7 @@ export async function stopMCPRuntime(): Promise<void> {
   server = null
   mcpRuntime.status = 'stopped'
   mcpRuntime.version = null
+  mcpRuntime.authRequired = false
 }
 
 export async function restartMCPRuntime(): Promise<void> {

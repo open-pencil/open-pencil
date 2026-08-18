@@ -21,6 +21,7 @@ export interface DiscoveryInfo {
   authToken: string | null
   version: string
   startedAt: string
+  disabledTools?: string[]
 }
 
 /**
@@ -90,7 +91,8 @@ export async function readDiscoveryFile(): Promise<DiscoveryInfo | null> {
 }
 
 function validateDiscoveryFields(obj: { [key: string]: unknown }): DiscoveryInfo | null {
-  const { pid, version, httpPort, authRequired, startedAt, socketPath, authToken } = obj
+  const { pid, version, httpPort, authRequired, startedAt, socketPath, authToken, disabledTools } =
+    obj
   if (typeof pid !== 'number' || !Number.isInteger(pid) || pid <= 0) return null
   if (typeof version !== 'string') return null
   if (typeof httpPort !== 'number' || !Number.isInteger(httpPort)) return null
@@ -100,7 +102,22 @@ function validateDiscoveryFields(obj: { [key: string]: unknown }): DiscoveryInfo
   if (typeof socketPath !== 'string' && socketPath !== null) return null
   if (socketPath === '') return null
   if (authToken !== null && typeof authToken !== 'string') return null
-  return { pid, version, httpPort, authRequired, startedAt, socketPath, authToken }
+  if (
+    disabledTools !== undefined &&
+    (!Array.isArray(disabledTools) || disabledTools.some((name) => typeof name !== 'string'))
+  ) {
+    return null
+  }
+  return {
+    pid,
+    version,
+    httpPort,
+    authRequired,
+    startedAt,
+    socketPath,
+    authToken,
+    disabledTools: disabledTools ?? []
+  }
 }
 
 /**

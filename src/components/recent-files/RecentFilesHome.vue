@@ -12,11 +12,16 @@ import {
   type RecentFile
 } from '@/app/shell/menu/recent-files'
 import { openFileDialog, openFileFromPath } from '@/app/shell/menu/use'
+import { activeStorageProviderID, type StorageDocument } from '@/app/integrations/storage'
+import { openSettingsDialog } from '@/app/settings/dialog'
+import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
+import { openStorageDocumentInNewTab } from '@/app/tabs'
 
 const emit = defineEmits<{ 'new-document': [] }>()
 const { dialogs, menu, panels, locale } = useI18n()
-const view = useLocalStorage<'grid' | 'list'>('open-pencil:recent-files-view', 'grid')
+const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const openError = ref<string | null>(null)
+const storageConfigured = ref(false)
 
 const workspace = useDocumentWorkspace<RecentFile>({
   source: {
@@ -35,7 +40,22 @@ const previewURL = workspace.previewURL
 const vWorkspacePreview = workspace.previewDirective
 const hasRecentFiles = computed(() => documents.value.length > 0)
 
+const storageWorkspace = useDocumentWorkspace<StorageDocument>({
+  source: createStorageWorkspaceSource((snapshot) => {
+    storageConfigured.value = snapshot.configured
+  }),
+  refreshInterval: 60_000,
+  previewConcurrency: 6
+})
+const storageDocuments = storageWorkspace.documents
+const storagePreviewURL = storageWorkspace.previewURL
+const vStoragePreview = storageWorkspace.previewDirective
+
 watch(recentFiles, () => void workspace.invalidate())
+
+async function refreshHome(): Promise<void> {
+  await Promise.all([workspace.refresh(), storageWorkspace.refresh()])
+}
 
 async function openRecent(document: RecentFile): Promise<void> {
   openError.value = null
@@ -45,6 +65,10 @@ async function openRecent(document: RecentFile): Promise<void> {
     forgetRecentFile(document.path)
     openError.value = error instanceof Error ? error.message : String(error)
   }
+}
+
+async function openStorageDocument(document: StorageDocument): Promise<void> {
+  await openStorageDocumentInNewTab(document)
 }
 
 function formattedDate(updatedAt: string): string {
@@ -62,6 +86,22 @@ function formattedDate(updatedAt: string): string {
         <span class="text-sm font-semibold">OpenPencil</span>
       </div>
       <div class="ml-auto flex items-center gap-2">
+        <button
+          type="button"
+          class="flex size-7 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
+          :aria-label="dialogs.refresh"
+          @click="refreshHome"
+        >
+          <icon-lucide-refresh-cw class="size-3.5" />
+        </button>
+        <button
+          type="button"
+          class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
+          @click="openSettingsDialog('storage')"
+        >
+          <icon-lucide-settings-2 class="mr-1.5 inline size-3.5" />
+          {{ dialogs.settings }}
+        </button>
         <button
           type="button"
           class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover hover:text-surface"
@@ -89,8 +129,9 @@ function formattedDate(updatedAt: string): string {
           <h1 class="text-xl font-semibold">{{ dialogs.recentFiles }}</h1>
           <p class="mt-1 text-xs text-muted">{{ dialogs.recentFilesDescription }}</p>
         </div>
-        <div v-if="hasRecentFiles" class="ml-auto flex rounded border border-border p-0.5">
+        <div class="ml-auto flex rounded border border-border p-0.5">
           <button
+            v-if="hasRecentFiles"
             type="button"
             class="flex size-7 items-center justify-center rounded-sm text-muted hover:text-surface"
             :aria-label="dialogs.clear"
@@ -175,7 +216,10 @@ function formattedDate(updatedAt: string): string {
         </button>
       </div>
 
-      <div v-else class="flex flex-1 flex-col items-center justify-center pb-20 text-center">
+      <div
+        v-else-if="!storageConfigured"
+        class="flex flex-1 flex-col items-center justify-center pb-20 text-center"
+      >
         <div class="mb-4 flex size-12 items-center justify-center rounded-xl bg-panel-field">
           <icon-lucide-files class="size-5 text-muted" />
         </div>
@@ -189,6 +233,70 @@ function formattedDate(updatedAt: string): string {
           {{ menu.open }}
         </button>
       </div>
+
+      <section v-if="storageConfigured" class="mt-10">
+        <div class="mb-6 flex items-center">
+          <div>
+            <h2 class="text-xl font-semibold">{{ dialogs.storageWorkspace }}</h2>
+            <p class="mt-1 text-xs text-muted">{{ activeStorageProviderID }}</p>
+          </div>
+        </div>
+        <div
+          v-if="storageDocuments.length && view === 'grid'"
+          class="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-5"
+        >
+          <button
+            v-for="document in storageDocuments"
+            :key="document.id"
+            type="button"
+            class="group overflow-hidden rounded-lg border border-border bg-panel text-left transition-colors hover:border-panel-focus hover:bg-hover"
+            @click="openStorageDocument(document)"
+          >
+            <div
+              v-storage-preview="document.id"
+              class="flex aspect-video items-center justify-center overflow-hidden bg-panel-field"
+            >
+              <img
+                v-if="storagePreviewURL(document.id)"
+                :src="storagePreviewURL(document.id) ?? undefined"
+                alt=""
+                class="size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]"
+              />
+              <icon-lucide-file-image v-else class="size-8 text-muted/40" />
+            </div>
+            <div class="border-t border-border p-3">
+              <p class="truncate text-xs font-medium">{{ document.name }}</p>
+              <p class="mt-1 truncate text-[10px] text-muted">
+                {{ formattedDate(document.updatedAt) }}
+              </p>
+            </div>
+          </button>
+        </div>
+        <div
+          v-else-if="storageDocuments.length"
+          class="overflow-hidden rounded-lg border border-border"
+        >
+          <button
+            v-for="document in storageDocuments"
+            :key="document.id"
+            type="button"
+            class="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-hover"
+            @click="openStorageDocument(document)"
+          >
+            <icon-lucide-file-image class="size-4 shrink-0 text-accent" />
+            <span class="min-w-0 flex-1 truncate text-xs font-medium">{{ document.name }}</span>
+            <span class="shrink-0 text-[10px] text-muted">{{
+              formattedDate(document.updatedAt)
+            }}</span>
+          </button>
+        </div>
+        <div
+          v-else
+          class="rounded-lg border border-border border-dashed px-4 py-8 text-center text-xs text-muted"
+        >
+          {{ dialogs.emptyStorageWorkspace }}
+        </div>
+      </section>
     </section>
   </main>
 </template>

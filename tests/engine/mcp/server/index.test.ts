@@ -9,6 +9,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer } from '#mcp/server'
+import { MCP_TOOL_CATALOG } from '#mcp/tool/catalog'
 
 import {
   connectMockBrowser,
@@ -32,7 +33,7 @@ function testSocketPath(): string | null {
   return join(SOCKET_DIR, `mcp-test-${process.pid}-${++testCounter}.sock`)
 }
 
-async function createTestClient() {
+async function createTestClient(disabledTools: string[] = []) {
   if (isUnix) await mkdir(SOCKET_DIR, { recursive: true })
   const authToken = 'test-client-token'
   const handle = await startServer({
@@ -40,6 +41,7 @@ async function createTestClient() {
     withTcp: true,
     socketPath: testSocketPath(),
     authToken,
+    disabledTools,
     enableEval: false,
     mcpRoot: null
   })
@@ -134,13 +136,26 @@ describe('MCP server', () => {
 
   test('lists all registered tools', async () => {
     const { tools } = await client.listTools()
-    const names = tools.map((t) => t.name)
-    expect(names).toContain('create_shape')
-    expect(names).toContain('set_fill')
+    const expectedNames = MCP_TOOL_CATALOG.filter((tool) => tool.requirement === 'always')
+      .map((tool) => tool.name)
+      .sort()
+    expect(tools.map((tool) => tool.name).sort()).toEqual(expectedNames)
+  })
+
+  test('omits tools disabled in the generic registration filter', async () => {
+    if (cleanup) await cleanup()
+    cleanup = null
+
+    const ctx = await createTestClient(['create_shape', 'list_documents'])
+    client = ctx.client
+    graph = ctx.graph
+    cleanup = ctx.close
+
+    const { tools } = await client.listTools()
+    const names = tools.map((tool) => tool.name)
+    expect(names).not.toContain('create_shape')
+    expect(names).not.toContain('list_documents')
     expect(names).toContain('get_page_tree')
-    expect(names).toContain('render')
-    expect(names).toContain('get_codegen_prompt')
-    expect(tools.length).toBeGreaterThan(30)
   })
 
   test('tools have descriptions and input schemas', async () => {
