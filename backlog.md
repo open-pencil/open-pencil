@@ -4,6 +4,20 @@ This file records planned, intentionally narrow contributions as well as future 
 request should be cut from the current `master` in a clean checkout and should avoid carrying
 unrelated WIP changes.
 
+## Working-copy strategy
+
+Keep two separate local repositories:
+
+- **WIP repository** (`open-pencil`): the long-lived `victorwads/local-ai-improves` branch holds the
+  combined, exploratory work. It is a safe place to integrate upstream changes, resolve broad
+  conflicts once, and preserve unfinished ideas without making it reviewable as one pull request.
+- **PR repository** (`open-pencil-pr-fast-pages-recent`): a clean clone used only to create focused
+  branches from the current upstream `master`. For each contribution, bring across only the required
+  files or commits from WIP, validate it independently, then open its PR from this checkout.
+
+Do not turn the WIP branch itself into a PR. After a focused PR merges, bring the resulting upstream
+changes back into WIP through the normal `master` merge so the two histories converge naturally.
+
 ## Planned pull requests
 
 ### 1. AI chat improvements
