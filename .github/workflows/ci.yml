@@ -20,6 +20,9 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
+      - name: Build packages
+        run: bun run build:packages
+
       - name: Format check
         run: bun run format:check
 
