@@ -41,6 +41,30 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
     }
   }
 
+  async function commit(executor: StorageDatabase, uploadId: string): Promise<void> {
+    const reservation = await executor
+      .selectFrom('uploadStorageReservation')
+      .select(['id', 'workspaceId', 'bytes', 'committedAt', 'releasedAt'])
+      .where('uploadId', '=', uploadId)
+      .forUpdate()
+      .executeTakeFirst()
+    if (!reservation || reservation.committedAt || reservation.releasedAt) return
+    await executor
+      .updateTable('workspaceStorageUsage')
+      .set({
+        committedBytes: (expression) =>
+          expression('committedBytes', '+', Number(reservation.bytes)),
+        updatedAt: new Date()
+      })
+      .where('workspaceId', '=', reservation.workspaceId)
+      .execute()
+    await executor
+      .updateTable('uploadStorageReservation')
+      .set({ committedAt: new Date() })
+      .where('id', '=', reservation.id)
+      .execute()
+  }
+
   return {
     snapshot: (workspaceId: string) => snapshot(database, workspaceId),
 
@@ -87,29 +111,11 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
     },
 
     async commit(uploadId: string): Promise<void> {
-      await database.transaction().execute(async (transaction) => {
-        const reservation = await transaction
-          .selectFrom('uploadStorageReservation')
-          .select(['id', 'workspaceId', 'bytes', 'committedAt', 'releasedAt'])
-          .where('uploadId', '=', uploadId)
-          .forUpdate()
-          .executeTakeFirst()
-        if (!reservation || reservation.committedAt || reservation.releasedAt) return
-        await transaction
-          .updateTable('workspaceStorageUsage')
-          .set({
-            committedBytes: (expression) =>
-              expression('committedBytes', '+', Number(reservation.bytes)),
-            updatedAt: new Date()
-          })
-          .where('workspaceId', '=', reservation.workspaceId)
-          .execute()
-        await transaction
-          .updateTable('uploadStorageReservation')
-          .set({ committedAt: new Date() })
-          .where('id', '=', reservation.id)
-          .execute()
-      })
+      await database.transaction().execute((transaction) => commit(transaction, uploadId))
+    },
+
+    commitInTransaction(transaction: Transaction<CloudDatabase>, uploadId: string): Promise<void> {
+      return commit(transaction, uploadId)
     },
 
     async release(uploadId: string): Promise<void> {

@@ -1,3 +1,4 @@
+export { createStorageReconciliationService, type StorageReconciliation } from './reconcile'
 export {
   createStorageQuotaService,
   StorageQuotaExceededError,

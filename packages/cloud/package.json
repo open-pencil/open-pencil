@@ -63,6 +63,7 @@
     "test:e2e:garage": "bun tests/e2e/garage.ts",
     "migrate": "bun src/runtime/node/migrate.ts",
     "cleanup": "bun src/runtime/node/cleanup.ts",
+    "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

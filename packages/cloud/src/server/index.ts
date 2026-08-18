@@ -141,9 +141,11 @@ export {
 } from './policy'
 export {
   createStorageQuotaService,
+  createStorageReconciliationService,
   StorageQuotaExceededError,
   type StorageQuotaService,
-  type StorageQuotaSnapshot
+  type StorageQuotaSnapshot,
+  type StorageReconciliation
 } from './quota'
 export {
   createWorkspaceRoutes,

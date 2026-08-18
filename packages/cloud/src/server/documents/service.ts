@@ -370,8 +370,8 @@ export function createDocumentService(
           .set({ status: 'committed' })
           .where('id', '=', uploadId)
           .execute()
+        await quota.commitInTransaction(transaction, uploadId)
       })
-      await quota.commit(uploadId)
       const document = await findDocument(database, userId, upload.documentId)
       if (!document) throw new DocumentNotFoundError()
       return document
