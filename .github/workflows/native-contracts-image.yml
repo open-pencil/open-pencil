@@ -3,7 +3,7 @@ name: Build native contracts CI image
 on:
   workflow_dispatch:
   push:
-    branches: [master, ci-parallel-quality]
+    branches: [master]
     paths:
       - 'tools/ci-images/native-contracts/Dockerfile'
       - '.github/workflows/native-contracts-image.yml'
