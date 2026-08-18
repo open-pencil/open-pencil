@@ -8,6 +8,8 @@ import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents'
 import { resolveDocumentAccess } from '#cloud/server/documents/access'
+import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
+import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import { SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
@@ -73,7 +75,9 @@ export function createCollaborationTicketService(
   database: Kysely<CloudDatabase>,
   sharing: DocumentSharingService,
   authSecret: string,
-  collaborationURL?: string
+  collaborationURL?: string,
+  policy?: CloudPolicy,
+  deploymentMode: 'official' | 'self-hosted' = 'self-hosted'
 ) {
   return {
     async issueUserTicket(actor: CloudActor, documentId: string): Promise<CollaborationTicket> {
@@ -102,6 +106,22 @@ export function createCollaborationTicketService(
       actor?: CloudActor
     ): Promise<CollaborationTicket> {
       const resolved = await sharing.resolveShare(shareId, input, actor)
+      if (!actor && policy) {
+        const workspace = await database
+          .selectFrom('document')
+          .select('workspaceId')
+          .where('id', '=', resolved.documentId)
+          .executeTakeFirstOrThrow()
+        const context = {
+          targetingKey: workspace.workspaceId,
+          workspaceId: workspace.workspaceId,
+          documentId: resolved.documentId,
+          deploymentMode
+        }
+        if (!(await policy.boolean(CLOUD_FEATURE_KEYS.guestPresence, false, context))) {
+          throw new DocumentNotFoundError()
+        }
+      }
       const document = await database
         .selectFrom('document')
         .select('collaborationEpoch')

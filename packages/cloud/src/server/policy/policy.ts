@@ -3,7 +3,8 @@ import {
   OpenFeature,
   TypedInMemoryProvider,
   type Client,
-  type EvaluationContext
+  type EvaluationContext,
+  type Provider
 } from '@openfeature/server-sdk'
 
 import { CLOUD_FEATURE_KEYS, type CloudPolicyContext } from './keys'
@@ -74,8 +75,8 @@ export class CloudPolicy {
   }
 }
 
-export function createDefaultCloudPolicy(): CloudPolicy {
+export function createDefaultCloudPolicy(provider?: Provider): CloudPolicy {
   const domain = `openpencil-cloud-${crypto.randomUUID()}`
-  OpenFeature.setProvider(domain, new TypedInMemoryProvider(DEFAULT_FLAGS))
+  OpenFeature.setProvider(domain, provider ?? new TypedInMemoryProvider(DEFAULT_FLAGS))
   return new CloudPolicy(OpenFeature.getClient(domain))
 }

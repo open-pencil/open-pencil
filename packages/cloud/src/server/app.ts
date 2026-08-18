@@ -21,7 +21,13 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import type { InvitationDelivery } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
-import { createDefaultCloudPolicy, createEntitlementService } from '#cloud/server/policy'
+import {
+  createDefaultCloudPolicy,
+  createEntitlementService,
+  EntitlementOpenFeatureProvider,
+  type CloudPolicy,
+  type EntitlementSource
+} from '#cloud/server/policy'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
@@ -35,6 +41,8 @@ export type CloudServices = {
   objects: ObjectStore
   resolveSession?: CloudSessionResolver
   invitationDelivery?: InvitationDelivery
+  entitlementSource?: EntitlementSource
+  policy?: CloudPolicy
 }
 
 type CloudEnvironment = CloudAPIEnvironment
@@ -75,7 +83,11 @@ export function createCloudApp(services: CloudServices) {
     maxAge: 600
   })
   const workspaces = createWorkspaceService(services.database)
-  const policy = createDefaultCloudPolicy()
+  const policy =
+    services.policy ??
+    (services.entitlementSource
+      ? createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(services.entitlementSource))
+      : createDefaultCloudPolicy())
   const documents = createDocumentService(services.database, services.objects, {
     policy,
     technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes
@@ -97,7 +109,9 @@ export function createCloudApp(services: CloudServices) {
     services.database,
     sharing,
     services.config.authSecret,
-    services.config.collaborationURL
+    services.config.collaborationURL,
+    policy,
+    services.config.deployment
   )
 
   const cloudAPI = createCloudAPIRouter({
