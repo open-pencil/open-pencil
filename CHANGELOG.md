@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Upgrade direct model chat providers and transports to AI SDK 7 while retaining the local ACP execution path.
+
 ### Added
 
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
