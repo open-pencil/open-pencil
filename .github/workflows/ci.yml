@@ -13,20 +13,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality:
+  source-quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-bun
-        with:
-          lfs: 'true'
 
       - name: Format check
         run: bun run format:check
 
-      - name: Lint, typecheck, architecture, package, and tooling checks
-        run: bun run check
+      - name: Lint source
+        run: bun run lint
+
+      - name: Typecheck TypeScript and Vue
+        run: bun run typecheck
+
+      - name: Architecture and type-shape checks
+        run: bun run check:arch && bun run test:type-shapes
+
+  package-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Build packages
+        run: bun run build:packages
+
+      - name: Package, dependency, and monorepo checks
+        run: bun run check:packages && bun run check:deps && bun run check:monorepo
+
+  repository-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Repository integrity and security checks
+        run: |
+          bun run check:i18n
+          bun run check:docs
+          bun run check:audit
+          bun run check:secrets
+          bun run test:tools
+          bun run test:dupes
+
+  storybook:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Build packages
+        run: bun run build:packages
 
       - name: Build Storybook
         run: bun run build-storybook
@@ -70,8 +113,8 @@ jobs:
         with:
           lfs: 'true'
 
-      - name: Build packages
-        run: bun run build:packages
+      - name: Build Core package
+        run: bun --filter @open-pencil/core build
 
       - name: Run quick unit test shard
         shell: bash
