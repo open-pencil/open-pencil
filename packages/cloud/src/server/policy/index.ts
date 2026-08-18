@@ -1,3 +1,4 @@
+export { createWorkspaceEntitlementRepository, DatabaseEntitlementSource } from './database'
 export {
   StaticEntitlementSource,
   type EntitlementSource,

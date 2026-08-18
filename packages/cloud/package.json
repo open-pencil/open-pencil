@@ -64,6 +64,7 @@
     "migrate": "bun src/runtime/node/migrate.ts",
     "cleanup": "bun src/runtime/node/cleanup.ts",
     "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
+    "entitlements": "bun src/runtime/node/entitlements.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {

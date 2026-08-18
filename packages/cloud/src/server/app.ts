@@ -24,6 +24,7 @@ import type { ObjectStore } from '#cloud/server/objects'
 import {
   createDefaultCloudPolicy,
   createEntitlementService,
+  DatabaseEntitlementSource,
   EntitlementOpenFeatureProvider,
   StaticEntitlementSource,
   staticEntitlementValues,
@@ -89,12 +90,10 @@ export function createCloudApp(services: CloudServices) {
     services.entitlementSource ??
     (services.config.staticEntitlements
       ? new StaticEntitlementSource(staticEntitlementValues(services.config.staticEntitlements))
-      : null)
+      : new DatabaseEntitlementSource(services.database))
   const policy =
     services.policy ??
-    (entitlementSource
-      ? createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(entitlementSource))
-      : createDefaultCloudPolicy())
+    createDefaultCloudPolicy(new EntitlementOpenFeatureProvider(entitlementSource))
   const documents = createDocumentService(services.database, services.objects, {
     policy,
     technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes

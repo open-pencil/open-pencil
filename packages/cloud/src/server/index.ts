@@ -130,6 +130,8 @@ export {
 export {
   CLOUD_FEATURE_KEYS,
   CloudPolicy,
+  createWorkspaceEntitlementRepository,
+  DatabaseEntitlementSource,
   EntitlementOpenFeatureProvider,
   createDefaultCloudPolicy,
   createEntitlementService,

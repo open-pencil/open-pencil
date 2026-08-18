@@ -11,6 +11,7 @@ import * as documentCollaborationEpoch from './migrations/005_document_collabora
 import * as invitationContinuation from './migrations/006_invitation_continuation'
 import * as collaborationState from './migrations/007_collaboration_state'
 import * as storageReservations from './migrations/008_storage_reservations'
+import * as workspaceEntitlements from './migrations/009_workspace_entitlements'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
@@ -21,7 +22,8 @@ const migrations: Record<string, Migration> = {
   '005_document_collaboration_epoch': documentCollaborationEpoch,
   '006_invitation_continuation': invitationContinuation,
   '007_collaboration_state': collaborationState,
-  '008_storage_reservations': storageReservations
+  '008_storage_reservations': storageReservations,
+  '009_workspace_entitlements': workspaceEntitlements
 }
 
 class CloudMigrationProvider implements MigrationProvider {

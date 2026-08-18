@@ -137,6 +137,14 @@ export interface InvitationContinuationTable {
   createdAt: TimestampColumn
 }
 
+export interface WorkspaceEntitlementTable {
+  workspaceId: string
+  values: unknown
+  source: string
+  revision: Generated<number>
+  updatedAt: TimestampColumn
+}
+
 export interface WorkspaceStorageUsageTable {
   workspaceId: string
   committedBytes: number
@@ -166,6 +174,7 @@ export interface CloudDatabase {
   documentInvitation: DocumentInvitationTable
   documentCollaborationState: DocumentCollaborationStateTable
   invitationContinuation: InvitationContinuationTable
+  workspaceEntitlement: WorkspaceEntitlementTable
   workspaceStorageUsage: WorkspaceStorageUsageTable
   uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
