@@ -18,7 +18,7 @@ function buildSegmentsPath(
   toScreen: ToScreenFn
 ): InstanceType<typeof r.ck.Path> {
   const { vertices, segments } = penState
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   for (const seg of segments) {
     const s = toScreen(vertices[seg.start].x, vertices[seg.start].y)
     const e = toScreen(vertices[seg.end].x, vertices[seg.end].y)
@@ -43,7 +43,7 @@ function buildSegmentsPath(
       path.cubicTo(cp1.x, cp1.y, cp2.x, cp2.y, e.x, e.y)
     }
   }
-  return path
+  return path.detachAndDelete()
 }
 
 /** Build a Path for the preview line from last vertex to cursor */
@@ -56,7 +56,7 @@ function buildCursorPath(
   if (vertices.length === 0) return null
 
   if (penState.pendingClose && vertices.length > 2) {
-    const path = new r.ck.Path()
+    const path = new r.ck.PathBuilder()
     const last = toScreen(vertices[vertices.length - 1].x, vertices[vertices.length - 1].y)
     const first = toScreen(vertices[0].x, vertices[0].y)
     path.moveTo(last.x, last.y)
@@ -67,12 +67,12 @@ function buildCursorPath(
     } else {
       path.lineTo(first.x, first.y)
     }
-    return path
+    return path.detachAndDelete()
   }
 
   if (cursorX == null || cursorY == null) return null
 
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   const last = toScreen(vertices[vertices.length - 1].x, vertices[vertices.length - 1].y)
   const cursor = toScreen(cursorX, cursorY)
   path.moveTo(last.x, last.y)
@@ -85,7 +85,7 @@ function buildCursorPath(
   } else {
     path.lineTo(cursor.x, cursor.y)
   }
-  return path
+  return path.detachAndDelete()
 }
 
 function drawPenPaths(
@@ -234,19 +234,20 @@ export function drawRemoteCursors(
           0,
           node.height
         ])
-        const box = new r.ck.Path()
+        const box = new r.ck.PathBuilder()
         box.moveTo(c[0] * r.zoom + r.panX, c[1] * r.zoom + r.panY)
         for (let i = 2; i < c.length; i += 2) {
           box.lineTo(c[i] * r.zoom + r.panX, c[i + 1] * r.zoom + r.panY)
         }
         box.close()
-        canvas.drawPath(box, r.auxStroke)
-        box.delete()
+        const immutableBox = box.detachAndDelete()
+        canvas.drawPath(immutableBox, r.auxStroke)
+        immutableBox.delete()
       }
     }
 
     const S = CURSOR_SIZE
-    const path = new r.ck.Path()
+    const path = new r.ck.PathBuilder()
     path.moveTo(screenX, screenY)
     path.lineTo(screenX, screenY + S * 1.35)
     path.lineTo(screenX + S * 0.38, screenY + S * 1.0)
@@ -256,14 +257,15 @@ export function drawRemoteCursors(
     path.lineTo(screenX + S * 1.0, screenY + S * 0.82)
     path.close()
 
+    const immutablePath = path.detachAndDelete()
     r.auxStroke.setColor(r.ck.Color4f(1, 1, 1, 1))
     r.auxStroke.setStrokeWidth(2)
     r.auxStroke.setPathEffect(null)
-    canvas.drawPath(path, r.auxStroke)
+    canvas.drawPath(immutablePath, r.auxStroke)
 
     r.auxFill.setColor(r.ck.Color4f(cr, g, b, 1))
-    canvas.drawPath(path, r.auxFill)
-    path.delete()
+    canvas.drawPath(immutablePath, r.auxFill)
+    immutablePath.delete()
 
     if (cursor.name) {
       const font = r.labelFont

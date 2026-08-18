@@ -1,4 +1,4 @@
-import type { Path } from 'canvaskit-wasm'
+import type { Path, PathBuilder } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
@@ -7,7 +7,7 @@ import type { OutlineCommand } from '#core/text/opentype'
 import { textNodeToOutlineLayout } from '#core/text/outlines'
 
 function appendOutlineCommand(
-  path: Path,
+  path: PathBuilder,
   command: OutlineCommand,
   xOffset: number,
   yOffset: number
@@ -47,9 +47,9 @@ export function textNodeToOutlinePath(r: SkiaRenderer, node: SceneNode): Path | 
   const layout = textNodeToOutlineLayout(node)
   if (!layout) return null
 
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   for (const glyph of layout.glyphs) {
     for (const command of glyph.commands) appendOutlineCommand(path, command, glyph.x, glyph.y)
   }
-  return path
+  return path.detachAndDelete()
 }

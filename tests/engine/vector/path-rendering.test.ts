@@ -41,9 +41,15 @@ function createCanvasKit() {
     }
   }
 
+  class MockPathBuilder extends MockPath {
+    detachAndDelete(): MockPath {
+      return this
+    }
+  }
+
   return {
     ck: {
-      Path: MockPath,
+      PathBuilder: MockPathBuilder,
       FillType: { Winding: 0, EvenOdd: 1 }
     } as CanvasKit,
     paths

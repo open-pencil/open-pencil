@@ -32,7 +32,7 @@
   },
   "peerDependencies": {
     "@open-pencil/core": "workspace:*",
-    "canvaskit-wasm": ">=0.39.0",
+    "canvaskit-wasm": ">=0.41.1",
     "vue": "^3.4.0"
   },
   "peerDependenciesMeta": {

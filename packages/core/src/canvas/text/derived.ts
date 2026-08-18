@@ -183,14 +183,15 @@ function drawWavyDecoration(
 ): void {
   const amplitude = Math.max(0.5, span.thickness * 0.5)
   const wavelength = Math.max(6, span.thickness * 5)
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   path.moveTo(span.x1, y)
   for (let x = span.x1; x <= span.x2; x += 2) {
     path.lineTo(x, y + Math.sin(((x - span.x1) / wavelength) * Math.PI * 2) * amplitude)
   }
   path.lineTo(span.x2, y)
-  canvas.drawPath(path, paint)
-  path.delete()
+  const immutablePath = path.detachAndDelete()
+  canvas.drawPath(immutablePath, paint)
+  immutablePath.delete()
 }
 
 function derivedDecorationY(node: SceneNode, span: DecorationSpan, baselineY: number): number {
@@ -278,27 +279,29 @@ function getGlyphSilhouette(
   // Round join/cap: miter spikes on glyph cusps (e.g. 'A' apex) shoot far
   // outside the letterform. Width doubles because half the band is swallowed
   // by the union with the glyph body (OUTSIDE-stroke look).
-  const stroked = outline.stroke({
+  const stroked = outline.makeStroked({
     width: relativeWeight * 2,
     join: r.ck.StrokeJoin.Round,
     cap: r.ck.StrokeCap.Round
   })
-  // stroke()/op() mutate `outline` in place; both report failure, not a new path.
-  const merged = stroked?.op(base, r.ck.PathOp.Union)
+  const merged = stroked ? r.ck.Path.MakeFromOp(stroked, base, r.ck.PathOp.Union) : null
   if (!merged) {
     // Degenerate outline — draw the bare glyph, uncached so callers free it.
     outline.delete()
+    stroked?.delete()
     return { path: base, cached: false }
   }
   base.delete()
+  stroked?.delete()
+  outline.delete()
   // ponytail: crude bound — a live stroke-weight drag mints a key per tick;
   // wholesale clear beats an LRU here since rebuild is cheap.
   if (r.glyphSilhouetteCache.size >= 512) {
     for (const path of r.glyphSilhouetteCache.values()) path.delete()
     r.glyphSilhouetteCache.clear()
   }
-  r.glyphSilhouetteCache.set(key, outline)
-  return { path: outline, cached: true }
+  r.glyphSilhouetteCache.set(key, merged)
+  return { path: merged, cached: true }
 }
 
 /**

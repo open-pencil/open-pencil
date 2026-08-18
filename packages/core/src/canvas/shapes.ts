@@ -1,4 +1,4 @@
-import type { Canvas, Path } from 'canvaskit-wasm'
+import type { Canvas, Path, PathBuilder } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { polygonVertices } from '@open-pencil/scene-graph/geometry'
@@ -170,7 +170,7 @@ function smoothCornerPathParams(corner: SmoothCorner, smoothing: number): Smooth
 }
 
 function drawTopRightSmoothCorner(
-  path: Path,
+  path: PathBuilder,
   corner: SmoothCornerPathParams,
   x: number,
   y: number
@@ -207,7 +207,7 @@ function drawTopRightSmoothCorner(
 }
 
 function drawBottomRightSmoothCorner(
-  path: Path,
+  path: PathBuilder,
   corner: SmoothCornerPathParams,
   x: number,
   y: number
@@ -244,7 +244,7 @@ function drawBottomRightSmoothCorner(
 }
 
 function drawBottomLeftSmoothCorner(
-  path: Path,
+  path: PathBuilder,
   corner: SmoothCornerPathParams,
   x: number,
   y: number
@@ -280,7 +280,12 @@ function drawBottomLeftSmoothCorner(
   )
 }
 
-function drawTopLeftSmoothCorner(path: Path, corner: SmoothCornerPathParams, x: number, y: number) {
+function drawTopLeftSmoothCorner(
+  path: PathBuilder,
+  corner: SmoothCornerPathParams,
+  x: number,
+  y: number
+) {
   if (corner.radius === 0) {
     path.lineTo(x, y - corner.p)
     return
@@ -319,7 +324,7 @@ export function makeSmoothRRectPath(
   offsetX = 0,
   offsetY = 0
 ): Path {
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   const left = offsetX - spread
   const top = offsetY - spread
   const right = offsetX + node.width + spread
@@ -328,7 +333,7 @@ export function makeSmoothRRectPath(
   const height = bottom - top
   if (width <= 0 || height <= 0) {
     path.addRect(r.ck.LTRBRect(left, top, Math.max(left, right), Math.max(top, bottom)))
-    return path
+    return path.detachAndDelete()
   }
 
   const smoothing = Math.max(0, Math.min(node.cornerSmoothing, 1))
@@ -345,7 +350,7 @@ export function makeSmoothRRectPath(
     bottomLeftCorner.radius === 0
   ) {
     path.addRect(r.ck.LTRBRect(left, top, right, bottom))
-    return path
+    return path.detachAndDelete()
   }
 
   path.moveTo(right - topRightCorner.p, top)
@@ -357,7 +362,7 @@ export function makeSmoothRRectPath(
   path.lineTo(left, top + topLeftCorner.p)
   drawTopLeftSmoothCorner(path, topLeftCorner, left, top + topLeftCorner.p)
   path.close()
-  return path
+  return path.detachAndDelete()
 }
 
 export function makeNodeShapePath(
@@ -366,7 +371,7 @@ export function makeNodeShapePath(
   rect: Float32Array,
   hasRadius: boolean
 ): Path {
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   switch (node.type) {
     case 'ELLIPSE':
       path.addOval(rect)
@@ -396,17 +401,17 @@ export function makeNodeShapePath(
         path.addRect(rect)
       }
   }
-  return path
+  return path.detachAndDelete()
 }
 
 export function makePolygonPath(r: SkiaRenderer, node: SceneNode): Path {
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   polygonVertices(node).forEach((point, index) => {
     if (index === 0) path.moveTo(point.x, point.y)
     else path.lineTo(point.x, point.y)
   })
   path.close()
-  return path
+  return path.detachAndDelete()
 }
 
 export function makeRRect(r: SkiaRenderer, node: SceneNode): Float32Array {
@@ -500,10 +505,11 @@ export function clipNodeShape(
   hasRadius: boolean
 ): void {
   if (node.type === 'ELLIPSE') {
-    const clipPath = new r.ck.Path()
+    const clipPath = new r.ck.PathBuilder()
     clipPath.addOval(rect)
-    canvas.clipPath(clipPath, r.ck.ClipOp.Intersect, true)
-    clipPath.delete()
+    const immutableClipPath = clipPath.detachAndDelete()
+    canvas.clipPath(immutableClipPath, r.ck.ClipOp.Intersect, true)
+    immutableClipPath.delete()
   } else if (nodeHasSmoothCorners(node)) {
     const clipPath = makeSmoothRRectPath(r, node)
     canvas.clipPath(clipPath, r.ck.ClipOp.Intersect, true)

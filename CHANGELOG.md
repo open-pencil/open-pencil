@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Upgrade CanvasKit to 0.41 and migrate renderer geometry to immutable paths built through `PathBuilder`.
+
 ### Added
 
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.

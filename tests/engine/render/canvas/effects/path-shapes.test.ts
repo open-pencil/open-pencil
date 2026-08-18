@@ -67,10 +67,9 @@ describe('path shape shadows', () => {
 
     renderEffects(r, canvas as Canvas, node as SceneNode, new Float32Array(4), false, 'behind')
 
-    expect(cachedPath.copy).toHaveBeenCalled()
-    expect(cachedPath.op).not.toHaveBeenCalled()
-    expect(spreadPath.op).toHaveBeenCalledWith(expect.anything(), r.ck.PathOp.Union)
-    expect(spreadPath.delete).toHaveBeenCalled()
+    const makeFromOp = r.ck.Path.MakeFromOp as ReturnType<typeof mock>
+    expect(makeFromOp).toHaveBeenCalledWith(cachedPath, expect.anything(), r.ck.PathOp.Union)
+    expect(spreadPath.delete).not.toHaveBeenCalled()
   })
 
   test('inner shadow for a polygon clips and cuts out with polygon paths', () => {

@@ -105,7 +105,7 @@
     "@xmldom/xmldom": "^0.9.10",
     "ai": "^6.0.174",
     "aws4fetch": "^1.0.20",
-    "canvaskit-wasm": "^0.40.0",
+    "canvaskit-wasm": "^0.41.1",
     "culori": "^4.0.2",
     "dedent": "^1.7.1",
     "es-toolkit": "^1.46.1",

@@ -461,7 +461,7 @@ function vectorStrokePaths(r: SkiaRenderer, node: SceneNode): Path[] | null {
     const start = node.vectorNetwork.vertices[segment.start]
     const end = node.vectorNetwork.vertices[segment.end]
 
-    const path = new r.ck.Path()
+    const path = new r.ck.PathBuilder()
     path.moveTo(start.x, start.y)
     const isStraight =
       Math.abs(segment.tangentStart.x) < 0.001 &&
@@ -480,7 +480,7 @@ function vectorStrokePaths(r: SkiaRenderer, node: SceneNode): Path[] | null {
         end.y
       )
     }
-    paths.push(path)
+    paths.push(path.detachAndDelete())
   }
 
   if (paths.length === 0) return null
@@ -527,7 +527,7 @@ function drawVectorPathStrokes(
   if (!outlines) {
     outlines = []
     for (const vp of vectorPaths) {
-      const outline = vp.copy().stroke(strokeOpts)
+      const outline = vp.makeStroked(strokeOpts)
       if (outline) outlines.push(outline)
     }
     if (outlineCacheKey) r.vectorStrokeOutlineCache.set(outlineCacheKey, outlines)

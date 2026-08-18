@@ -141,15 +141,17 @@ function effectLayerBounds(
   )
 }
 
-function applySpreadToPath(r: SkiaRenderer, path: Path, spread: number): boolean {
-  if (spread === 0) return true
-  const ring = path.copy()
-  try {
-    if (!ring.stroke({ width: Math.abs(spread) * 2, join: r.ck.StrokeJoin.Round })) return false
-    return path.op(ring, spread > 0 ? r.ck.PathOp.Union : r.ck.PathOp.Difference)
-  } finally {
-    ring.delete()
-  }
+function pathWithSpread(r: SkiaRenderer, path: Path, spread: number): Path | null {
+  if (spread === 0) return path.copy()
+  const ring = path.makeStroked({ width: Math.abs(spread) * 2, join: r.ck.StrokeJoin.Round })
+  if (!ring) return null
+  const result = r.ck.Path.MakeFromOp(
+    path,
+    ring,
+    spread > 0 ? r.ck.PathOp.Union : r.ck.PathOp.Difference
+  )
+  ring.delete()
+  return result
 }
 
 function drawPathShape(
@@ -160,11 +162,13 @@ function drawPathShape(
   spread = 0
 ): void {
   const path = makeNodeShapePath(r, node, r.ltrb(0, 0, node.width, node.height), hasRadius)
+  const spreadPath = pathWithSpread(r, path, spread)
+  path.delete()
+  if (!spreadPath) return
   try {
-    applySpreadToPath(r, path, spread)
-    canvas.drawPath(path, r.auxFill)
+    canvas.drawPath(spreadPath, r.auxFill)
   } finally {
-    path.delete()
+    spreadPath.delete()
   }
 }
 
@@ -173,12 +177,12 @@ function drawShadowGeometryPath(r: SkiaRenderer, canvas: Canvas, path: Path, spr
     canvas.drawPath(path, r.auxFill)
     return
   }
-  const copy = path.copy()
+  const spreadPath = pathWithSpread(r, path, spread)
+  if (!spreadPath) return
   try {
-    applySpreadToPath(r, copy, spread)
-    canvas.drawPath(copy, r.auxFill)
+    canvas.drawPath(spreadPath, r.auxFill)
   } finally {
-    copy.delete()
+    spreadPath.delete()
   }
 }
 
@@ -420,9 +424,10 @@ function drawShapeInnerShadow(
     if (shadowShapeChild) drawChildTransform(canvas, shadowShapeChild)
 
     if (shapeNode.type === 'ELLIPSE') {
-      const path = new r.ck.Path()
+      const builder = new r.ck.PathBuilder()
+      builder.addOval(shapeRect)
+      const path = builder.detachAndDelete()
       try {
-        path.addOval(shapeRect)
         canvas.clipPath(path, r.ck.ClipOp.Intersect, true)
       } finally {
         path.delete()
@@ -454,66 +459,55 @@ function drawShapeInnerShadow(
       Math.max(shapeNode.width + expand, shapeNode.width + expand + localOffsetX + spreadPadding),
       Math.max(shapeNode.height + expand, shapeNode.height + expand + localOffsetY + spreadPadding)
     )
-    const bigPath = new r.ck.Path()
-    try {
-      bigPath.addRect(big)
-      if (shapeNode.type === 'ELLIPSE') {
-        const innerPath = new r.ck.Path()
-        try {
-          const offsetRect = r.ck.LTRBRect(
-            localOffsetX + sp,
-            localOffsetY + sp,
-            shapeNode.width + localOffsetX - sp,
-            shapeNode.height + localOffsetY - sp
-          )
-          innerPath.addOval(offsetRect)
-          bigPath.op(innerPath, r.ck.PathOp.Difference)
-        } finally {
-          innerPath.delete()
-        }
-      } else if (isPathShape(shapeNode)) {
-        const innerPath = makeNodeShapePath(r, shapeNode, shapeRect, shapeHasRadius)
-        try {
-          innerPath.transform(r.ck.Matrix.translated(localOffsetX, localOffsetY))
-          applySpreadToPath(r, innerPath, -sp)
-          bigPath.op(innerPath, r.ck.PathOp.Difference)
-        } finally {
-          innerPath.delete()
-        }
-      } else if (nodeHasSmoothCorners(shapeNode)) {
-        const innerPath = makeSmoothRRectPath(r, shapeNode, -sp, localOffsetX, localOffsetY)
-        try {
-          bigPath.op(innerPath, r.ck.PathOp.Difference)
-        } finally {
-          innerPath.delete()
-        }
-      } else if (shapeHasRadius) {
-        const innerPath = new r.ck.Path()
-        try {
-          innerPath.addRRect(r.makeRRectWithOffset(shapeNode, localOffsetX, localOffsetY, sp))
-          bigPath.op(innerPath, r.ck.PathOp.Difference)
-        } finally {
-          innerPath.delete()
-        }
-      } else {
-        const innerPath = new r.ck.Path()
-        try {
-          innerPath.addRect(
-            r.ck.LTRBRect(
-              localOffsetX + sp,
-              localOffsetY + sp,
-              shapeNode.width + localOffsetX - sp,
-              shapeNode.height + localOffsetY - sp
-            )
-          )
-          bigPath.op(innerPath, r.ck.PathOp.Difference)
-        } finally {
-          innerPath.delete()
-        }
-      }
-      canvas.drawPath(bigPath, r.auxFill)
-    } finally {
-      bigPath.delete()
+    const bigPathBuilder = new r.ck.PathBuilder()
+    bigPathBuilder.addRect(big)
+    const bigPath = bigPathBuilder.detachAndDelete()
+    let innerPath: Path | null = null
+    if (shapeNode.type === 'ELLIPSE') {
+      const builder = new r.ck.PathBuilder()
+      const offsetRect = r.ck.LTRBRect(
+        localOffsetX + sp,
+        localOffsetY + sp,
+        shapeNode.width + localOffsetX - sp,
+        shapeNode.height + localOffsetY - sp
+      )
+      builder.addOval(offsetRect)
+      innerPath = builder.detachAndDelete()
+    } else if (isPathShape(shapeNode)) {
+      const sourcePath = makeNodeShapePath(r, shapeNode, shapeRect, shapeHasRadius)
+      const transformedBuilder = new r.ck.PathBuilder()
+      transformedBuilder.addPath(sourcePath, r.ck.Matrix.translated(localOffsetX, localOffsetY))
+      sourcePath.delete()
+      const transformed = transformedBuilder.detachAndDelete()
+      innerPath = pathWithSpread(r, transformed, -sp)
+      transformed.delete()
+    } else if (nodeHasSmoothCorners(shapeNode)) {
+      innerPath = makeSmoothRRectPath(r, shapeNode, -sp, localOffsetX, localOffsetY)
+    } else if (shapeHasRadius) {
+      const builder = new r.ck.PathBuilder()
+      builder.addRRect(r.makeRRectWithOffset(shapeNode, localOffsetX, localOffsetY, sp))
+      innerPath = builder.detachAndDelete()
+    } else {
+      const builder = new r.ck.PathBuilder()
+      builder.addRect(
+        r.ck.LTRBRect(
+          localOffsetX + sp,
+          localOffsetY + sp,
+          shapeNode.width + localOffsetX - sp,
+          shapeNode.height + localOffsetY - sp
+        )
+      )
+      innerPath = builder.detachAndDelete()
+    }
+
+    const shadowPath = innerPath
+      ? r.ck.Path.MakeFromOp(bigPath, innerPath, r.ck.PathOp.Difference)
+      : null
+    innerPath?.delete()
+    bigPath.delete()
+    if (shadowPath) {
+      canvas.drawPath(shadowPath, r.auxFill)
+      shadowPath.delete()
     }
   } finally {
     canvas.restore()

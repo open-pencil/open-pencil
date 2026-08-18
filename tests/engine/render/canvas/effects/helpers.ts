@@ -14,20 +14,30 @@ export function createMockRenderer(overrides: Partial<SkiaRenderer> = {}): SkiaR
       LTRBRect: mock((l, t, r, b) => new Float32Array([l, t, r, b])),
       RRectXY: mock(() => new Float32Array(12)),
       ClipOp: { Intersect: 0 },
-      Path: class {
-        addOval = mock(() => undefined)
-        addRect = mock(() => undefined)
-        addRRect = mock(() => undefined)
-        addPath = mock(() => undefined)
-        op = mock(() => true)
-        transform = mock(() => undefined)
+      Path: Object.assign(
+        class {
+          delete = mock(() => undefined)
+          copy = mock(() => this)
+          makeCombined = mock(() => this)
+          makeStroked = mock(() => this)
+        },
+        { MakeFromOp: mock((one) => one) }
+      ),
+      PathBuilder: class {
+        addOval = mock(() => this)
+        addRect = mock(() => this)
+        addRRect = mock(() => this)
+        addPath = mock(() => this)
+        transform = mock(() => this)
         delete = mock(() => undefined)
+        moveTo = mock(() => this)
+        lineTo = mock(() => this)
+        cubicTo = mock(() => this)
+        close = mock(() => this)
+        makeCombined = mock(() => this)
+        makeStroked = mock(() => this)
         copy = mock(() => this)
-        stroke = mock(() => this)
-        moveTo = mock(() => undefined)
-        lineTo = mock(() => undefined)
-        cubicTo = mock(() => undefined)
-        close = mock(() => undefined)
+        detachAndDelete = mock(() => this)
       },
       PathOp: { Difference: 0, Union: 1 },
       StrokeCap: { Butt: 0, Round: 1, Square: 2 },

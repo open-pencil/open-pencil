@@ -138,7 +138,7 @@ export function drawComponentLabels(r: SkiaRenderer, canvas: Canvas, graph: Scen
     if (node.type === 'COMPONENT_SET') {
       const s = iconR * 0.45
       const gap = iconR * 0.2
-      const path = new r.ck.Path()
+      const path = new r.ck.PathBuilder()
       for (const [dx, dy] of [
         [-1, -1],
         [1, -1],
@@ -153,17 +153,19 @@ export function drawComponentLabels(r: SkiaRenderer, canvas: Canvas, graph: Scen
         path.lineTo(cx - s, cy)
         path.close()
       }
-      canvas.drawPath(path, r.auxFill)
-      path.delete()
+      const immutablePath = path.detachAndDelete()
+      canvas.drawPath(immutablePath, r.auxFill)
+      immutablePath.delete()
     } else {
-      const path = new r.ck.Path()
+      const path = new r.ck.PathBuilder()
       path.moveTo(iconCx, iconCy - iconR)
       path.lineTo(iconCx + iconR, iconCy)
       path.lineTo(iconCx, iconCy + iconR)
       path.lineTo(iconCx - iconR, iconCy)
       path.close()
-      canvas.drawPath(path, r.auxFill)
-      path.delete()
+      const immutablePath = path.detachAndDelete()
+      canvas.drawPath(immutablePath, r.auxFill)
+      immutablePath.delete()
     }
 
     canvas.drawText(displayText, labelX + iconS + COMPONENT_LABEL_ICON_GAP, labelY, r.auxFill, font)

@@ -173,17 +173,17 @@ function buildCenterlineFromCrescent(
   const arcParams = fitCircleArc(midpoints)
   if (arcParams) {
     const { cx, cy, r, startAngleDeg, sweepDeg } = arcParams
-    const path = new ck.Path()
+    const path = new ck.PathBuilder()
     path.addArc(ck.LTRBRect(cx - r, cy - r, cx + r, cy + r), startAngleDeg, sweepDeg)
-    return path
+    return path.detachAndDelete()
   }
 
-  const path = new ck.Path()
+  const path = new ck.PathBuilder()
   path.moveTo(midpoints[0].x, midpoints[0].y)
   for (let i = 1; i < midpoints.length; i++) {
     path.lineTo(midpoints[i].x, midpoints[i].y)
   }
-  return path
+  return path.detachAndDelete()
 }
 
 export function vectorNetworkToCenterlinePath(ck: CanvasKit, network: VectorNetwork): Path {
@@ -195,7 +195,7 @@ export function vectorNetworkToCenterlinePath(ck: CanvasKit, network: VectorNetw
     if (result) return result
   }
 
-  const path = new ck.Path()
+  const path = new ck.PathBuilder()
   addOpenSegmentsToPath(path, segments, vertices)
-  return path
+  return path.detachAndDelete()
 }

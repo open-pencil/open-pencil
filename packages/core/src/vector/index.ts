@@ -32,7 +32,7 @@ export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path
     const paths: Path[] = []
     const regionSegmentIndexes = new Set<number>()
     for (const region of regions) {
-      const regionPath = new ck.Path()
+      const regionPath = new ck.PathBuilder()
       for (const loop of region.loops) {
         for (const segmentIndex of loop) regionSegmentIndexes.add(segmentIndex)
         addLoopToPath(regionPath, loop, segments, vertices)
@@ -40,21 +40,21 @@ export function vectorNetworkToPath(ck: CanvasKit, network: VectorNetwork): Path
       regionPath.setFillType(
         region.windingRule === 'EVENODD' ? ck.FillType.EvenOdd : ck.FillType.Winding
       )
-      paths.push(regionPath)
+      paths.push(regionPath.detachAndDelete())
     }
 
     const openSegments = segments.filter((_, index) => !regionSegmentIndexes.has(index))
     if (openSegments.length > 0) {
-      const openPath = new ck.Path()
+      const openPath = new ck.PathBuilder()
       addOpenSegmentsToPath(openPath, openSegments, vertices)
-      paths.push(openPath)
+      paths.push(openPath.detachAndDelete())
     }
     return paths
   }
 
-  const path = new ck.Path()
+  const path = new ck.PathBuilder()
   addOpenSegmentsToPath(path, segments, vertices)
-  return [path]
+  return [path.detachAndDelete()]
 }
 
 const CMD_CLOSE = 0
@@ -68,8 +68,8 @@ export function geometryBlobToPath(
   blob: Uint8Array,
   windingRule: WindingRule
 ): Path {
-  const path = new ck.Path()
-  if (!(blob.buffer instanceof ArrayBuffer)) return path
+  const path = new ck.PathBuilder()
+  if (!(blob.buffer instanceof ArrayBuffer)) return path.detachAndDelete()
   const dv = new DataView(blob.buffer, blob.byteOffset, blob.byteLength)
   let o = 0
 
@@ -114,10 +114,10 @@ export function geometryBlobToPath(
         break
       }
       default:
-        return path
+        return path.detachAndDelete()
     }
   }
 
   path.setFillType(windingRule === 'EVENODD' ? ck.FillType.EvenOdd : ck.FillType.Winding)
-  return path
+  return path.detachAndDelete()
 }

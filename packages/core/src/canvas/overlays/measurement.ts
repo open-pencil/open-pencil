@@ -194,14 +194,15 @@ function drawTargetOutline(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, t
     0,
     target.height
   ])
-  const path = new r.ck.Path()
+  const path = new r.ck.PathBuilder()
   path.moveTo(points[0], points[1])
   path.lineTo(points[2], points[3])
   path.lineTo(points[4], points[5])
   path.lineTo(points[6], points[7])
   path.close()
-  canvas.drawPath(path, r.auxStroke)
-  path.delete()
+  const immutablePath = path.detachAndDelete()
+  canvas.drawPath(immutablePath, r.auxStroke)
+  immutablePath.delete()
 }
 
 export function drawMeasurements(

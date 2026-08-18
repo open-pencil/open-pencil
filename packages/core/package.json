@@ -181,7 +181,7 @@
     "@tauri-apps/api": "^2",
     "@xmldom/xmldom": "^0.9.10",
     "acorn": "^8.16.0",
-    "canvaskit-wasm": "^0.40.0",
+    "canvaskit-wasm": "^0.41.1",
     "culori": "^4.0.2",
     "destr": "^2.0.5",
     "diff": "^8.0.3",

@@ -57,13 +57,14 @@ function createMockRenderer(overrides: Partial<Record<string, unknown>> = {}) {
     },
     ck: {
       MakePicture: mock(() => createMockPicture()),
-      Path: class {
-        moveTo = mock(() => undefined)
-        lineTo = mock(() => undefined)
-        cubicTo = mock(() => undefined)
-        quadTo = mock(() => undefined)
-        close = mock(() => undefined)
+      PathBuilder: class {
+        moveTo = mock(() => this)
+        lineTo = mock(() => this)
+        cubicTo = mock(() => this)
+        quadTo = mock(() => this)
+        close = mock(() => this)
         delete = mock(() => undefined)
+        detachAndDelete = mock(() => ({ delete: mock(() => undefined) }))
       },
       LTRBRect: mock((...args: number[]) => args),
       Color4f: mock((...args: number[]) => new Float32Array(args)),
