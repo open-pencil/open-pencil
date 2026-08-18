@@ -46,10 +46,10 @@ import {
   listFonts,
   listLibraries,
   listPages,
+  switchPage,
   pageBounds,
   queryNodes,
-  selectNodes,
-  switchPage
+  selectNodes
 } from './read'
 import type { ToolDef } from './schema'
 import {
@@ -105,12 +105,12 @@ import {
  */
 export const EXTENDED_TOOLS: ToolDef[] = [
   // Read (advanced)
-  getPageTree,
   getCurrentPage,
-  listPages,
   selectNodes,
   queryNodes,
   getComponents,
+  listPages,
+  getPageTree,
   listLibraries,
   insertLibraryComponent,
   switchPage,

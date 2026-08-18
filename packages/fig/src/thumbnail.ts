@@ -49,6 +49,12 @@ function hasPNGSignature(bytes: Uint8Array): boolean {
   return PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)
 }
 
+function hasUsablePNGDimensions(bytes: Uint8Array): boolean {
+  if (bytes.byteLength < 24 || !hasPNGSignature(bytes)) return false
+  const data = view(bytes)
+  return data.getUint32(16) > 1 && data.getUint32(20) > 1
+}
+
 function findThumbnailEntry(
   central: Uint8Array,
   maxCompressed: number,
@@ -97,7 +103,7 @@ async function readEntryPayload(
   if (dataStart + entry.compressedSize > reader.size) return null
   const compressed = await reader.read(dataStart, dataStart + entry.compressedSize)
   if (entry.method === 0) {
-    return compressed.byteLength === entry.outputSize && hasPNGSignature(compressed)
+    return compressed.byteLength === entry.outputSize && hasUsablePNGDimensions(compressed)
       ? compressed
       : null
   }
@@ -109,7 +115,7 @@ async function readEntryPayload(
       return null
     }
   })()
-  return output?.byteLength === entry.outputSize && hasPNGSignature(output) ? output : null
+  return output?.byteLength === entry.outputSize && hasUsablePNGDimensions(output) ? output : null
 }
 
 /**

@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenPencil MCP"
+  short_description: "Navigate and design with OpenPencil MCP"
+  default_prompt: "Use $open-pencil-mcp to inspect this document visually and follow OpenPencil's canonical design-agent workflow."

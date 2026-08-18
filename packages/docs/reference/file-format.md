@@ -35,7 +35,7 @@ SceneGraph → NodeChange[] → Kiwi encode → compress (Zstd/deflate)
   → write .fig file
 ```
 
-Export uses <kbd>⌘</kbd><kbd>S</kbd> (Save) and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> (Save As) with native OS dialogs on the desktop app. The exported file includes a `thumbnail.png` required by Figma for file preview.
+Export uses <kbd>⌘</kbd><kbd>S</kbd> (Save) and <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> (Save As) with native OS dialogs on the desktop app. The exported file includes a `thumbnail.png` required by Figma for file preview. OpenPencil uses the first page named exactly `Cover` (case-insensitive), then the first page whose name contains `Cover`. The desktop app also caches this Cover after opening a file so Recent Files can prefer the generated preview without modifying the source `.fig`.
 
 Compression uses Zstd via Tauri Rust command on desktop, with deflate fallback in the browser.
 

@@ -37,6 +37,9 @@ export function createOpenAICompatibleAdapter(
       const modelID = config.customModelID.trim() || config.modelID
       if (options.mode === 'chat') return provider.chat(modelID)
       if (options.mode === 'configurable') {
+        if (config.customAPIType === 'transcription') {
+          throw new Error('Transcription profiles cannot be used as language models')
+        }
         return config.customAPIType === 'responses'
           ? provider.responses(modelID)
           : provider.chat(modelID)

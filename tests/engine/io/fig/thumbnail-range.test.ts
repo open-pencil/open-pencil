@@ -41,6 +41,17 @@ describe('fig ranged thumbnail extraction', () => {
     expect(await extractFigThumbnailFromReader(memoryReader(bytes, []))).toBeNull()
   })
 
+  test('rejects the 1x1 no-cover placeholder', async () => {
+    const png = new Uint8Array(24)
+    png.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+    const dimensions = new DataView(png.buffer)
+    dimensions.setUint32(16, 1)
+    dimensions.setUint32(20, 1)
+
+    const bytes = zipSync({ 'thumbnail.png': png }, { level: 0 })
+    expect(await extractFigThumbnailFromReader(memoryReader(bytes, []))).toBeNull()
+  })
+
   test('returns null when deflated thumbnail data is corrupt', async () => {
     const png = new Uint8Array([
       0x89,

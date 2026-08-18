@@ -56,7 +56,7 @@ export const exportPDF = defineTool({
 export const exportImage = defineTool({
   name: 'export_image',
   description:
-    'Export nodes as a raster image (PNG, JPG, or WEBP). Returns base64-encoded image data. Use to visually verify designs.',
+    'Render nodes as a PNG, JPG, or WEBP image for multimodal inspection. Prefer this after listing root frames and before deep describe calls: images communicate existing designs with far fewer tokens than node-by-node JSON. Returns base64 image data that compatible hosts expose as image content.',
   params: {
     ids: {
       type: 'string[]',

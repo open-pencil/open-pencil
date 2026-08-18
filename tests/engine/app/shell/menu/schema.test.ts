@@ -66,6 +66,15 @@ describe('APP_MENU_SCHEMA', () => {
     )
   })
 
+  test('exposes recent files through the native File menu', () => {
+    const fileMenu = APP_MENU_SCHEMA.find((group) => group.label === 'File')
+    const entries = fileMenu ? actionItems(fileMenu.items) : []
+
+    expect(entries).toContainEqual(
+      expect.objectContaining({ id: 'open-recent', label: 'Open Recent', target: 'native' })
+    )
+  })
+
   test('keeps move-to-page destination selection in the browser menu', () => {
     const objectMenu = APP_MENU_SCHEMA.find((group) => group.label === 'Object')
     const entries = objectMenu ? actionItems(objectMenu.items) : []

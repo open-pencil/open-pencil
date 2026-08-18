@@ -4,6 +4,7 @@ import { TooltipProvider } from 'reka-ui'
 import { computed, onBeforeUnmount, ref } from 'vue'
 
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
+import ChatContextUsage from '@/components/chat/ChatContextUsage.vue'
 import ProviderModelSelect from '@/components/chat/ProviderModelSelect.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import InputGroup from '@/components/ui/InputGroup.vue'
@@ -145,7 +146,7 @@ function handleSubmit(e: Event) {
   <TooltipProvider>
     <div class="shrink-0 border-t border-border p-2.5">
       <form @submit="handleSubmit" @paste.stop="handlePaste">
-        <InputGroup :disabled="isStreaming">
+        <InputGroup :disabled="disabled">
           <template v-if="images.length" #attachment>
             <div class="flex flex-wrap gap-1.5">
               <div
@@ -178,7 +179,7 @@ function handleSubmit(e: Event) {
             v-model="input"
             data-test-id="chat-input"
             :placeholder="dialogs.describeChange"
-            :disabled="isStreaming"
+            :disabled="disabled"
             rows="2"
             aria-label="Describe a change"
             class="block min-h-12 w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-xs leading-relaxed text-surface outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-60"
@@ -230,6 +231,7 @@ function handleSubmit(e: Event) {
           </template>
 
           <template #actions>
+            <ChatContextUsage />
             <IconButton
               :label="dialogs.providerSettings"
               size="sm"
@@ -239,7 +241,7 @@ function handleSubmit(e: Event) {
               <icon-lucide-settings class="size-3.5" />
             </IconButton>
             <IconButton
-              v-if="isStreaming"
+              v-if="isStreaming && !input.trim()"
               :label="dialogs.stopGenerating"
               size="sm"
               data-test-id="chat-stop-button"
@@ -250,7 +252,7 @@ function handleSubmit(e: Event) {
             </IconButton>
             <IconButton
               v-else
-              :label="dialogs.sendMessage"
+              :label="isStreaming ? dialogs.queueMessage : dialogs.sendMessage"
               size="sm"
               type="submit"
               data-test-id="chat-send-button"

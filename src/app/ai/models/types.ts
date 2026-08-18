@@ -1,7 +1,7 @@
 import type { AIProviderID } from '@open-pencil/core/constants'
 
-export const AI_MODEL_ROLES = ['design', 'review', 'fast', 'vision'] as const
-export const AI_MODEL_CAPABILITIES = ['tools', 'vision'] as const
+export const AI_MODEL_ROLES = ['design', 'review', 'fast', 'vision', 'audio'] as const
+export const AI_MODEL_CAPABILITIES = ['tools', 'vision', 'audio'] as const
 
 export type AIModelRole = (typeof AI_MODEL_ROLES)[number]
 export type AIModelProfileId = `model-${string}`
@@ -13,7 +13,7 @@ export type AIModelConnection = {
   id: string
   providerID: AIProviderID
   customBaseURL: string
-  customAPIType: 'completions' | 'responses'
+  customAPIType: 'completions' | 'responses' | 'transcription'
   credentialProfileId: string
 }
 
@@ -24,6 +24,8 @@ export type AIModelProfile = {
   modelID: string
   customModelID: string
   maxOutputTokens: number
+  contextWindowTokens?: number
+  textInput?: boolean
   reasoningEffort?: string
   capabilities: AIModelCapability[]
 }
@@ -33,6 +35,7 @@ export type AIModelAssignments = {
   review: AIModelRoleAssignment
   fast: AIModelRoleAssignment
   vision: AIModelRoleAssignment
+  audio: AIModelRoleAssignment
 }
 
 export type AIModelSettings = {
@@ -50,8 +53,10 @@ export type AIModelProfileDraft = {
   modelID: string
   customModelID: string
   customBaseURL: string
-  customAPIType: 'completions' | 'responses'
+  customAPIType: 'completions' | 'responses' | 'transcription'
   maxOutputTokens: number
+  contextWindowTokens?: number
+  textInput?: boolean
   reasoningEffort: string
   capabilities: AIModelCapability[]
 }

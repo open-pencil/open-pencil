@@ -8,6 +8,7 @@
 
 ### Added
 
+- Open to a unified home with recent and configured storage documents, including grid or list layouts.
 - Open multiple selected design files in separate tabs.
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
@@ -47,6 +48,7 @@
 
 ### Performance
 
+- Show the FIG page list from a lightweight Kiwi scan before materializing the full document, making large files feel responsive sooner.
 - Avoid redundant collaboration writes when synchronized node fields have not changed.
 - Release obsolete streamed Markdown parser history after each AI response completes, preventing chat memory from multiplying with every streamed chunk. (#544)
 - Open large documents faster by using cached world positions while finding layers under the pointer. (#527)
@@ -57,6 +59,7 @@
 
 ### Fixed
 
+- Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.
 - Keep text-editing carets, hit testing, and selection highlights aligned with vertically centered or bottom-aligned text. (#539)
 - Match AI chat code-block syntax colors and backgrounds to the active light or dark theme. (#537)
 - Let desktop users select and copy AI chat text without replacing it with the selected canvas layers. (#538)

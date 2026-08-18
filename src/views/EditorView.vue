@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, provide, ref } from 'vue'
+import { computed, onMounted, onUnmounted, provide, ref } from 'vue'
 import { tv } from 'tailwind-variants'
 import { useEventListener, useUrlSearchParams } from '@vueuse/core'
 import { useRoute } from 'vue-router'
@@ -11,10 +11,10 @@ import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useEditorMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
-import { connectAutomation } from '@/app/automation/bridge/server'
+import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
-import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 import { isTauri } from '@/app/tauri/env'
+import { forgetDevOpenFilePath, readDevOpenFilePath } from '@/app/tauri/dev-file-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
 import { useEditorStore } from '@/app/editor/active-store'
@@ -29,6 +29,7 @@ import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
+import RecentFilesHome from '@/components/recent-files/RecentFilesHome.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
 import Tip from '@/components/ui/Tip.vue'
@@ -40,10 +41,17 @@ const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
 
 const createdInitialTab = tabCount() === 0
-const firstTab = createdInitialTab ? createTab() : (activeTab.value ?? createTab())
+const showInitialHome = route.path === '/' && !('test' in params) && !route.meta.demo
+const firstTab = createdInitialTab
+  ? createTab(undefined, undefined, { showHome: showInitialHome })
+  : (activeTab.value ?? createTab())
 const store = useEditorStore()
 const { dialogs } = useI18n()
 const { isMobile } = useViewportKind()
+const showUILabel = computed(() => {
+  const shortcut = formatShortcut(appMenuShortcut('toggle-ui'))
+  return dialogs.value.showUI({ shortcut: shortcut ?? '' })
+})
 
 if (createdInitialTab && route.meta.demo && !('test' in params)) {
   void createDemoShapes(firstTab.store)
@@ -66,21 +74,32 @@ useEventListener(
   { passive: false }
 )
 
-const automationCleanup = ref<(() => void) | null>(null)
-const mcpCleanup = ref<(() => void) | null>(null)
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 const initialEditorLayout = loadEditorLayout()
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
+const showingHome = computed(() => activeTab.value?.showHome === true)
 
 type PendingOpenFile = {
   path: string
 }
 
-async function openPendingAssociatedFiles() {
+async function openPendingAssociatedFiles(): Promise<boolean> {
   const { invoke } = await import('@tauri-apps/api/core')
   const files = await invoke<PendingOpenFile[]>('take_pending_open')
   for (const file of files) {
     await openFileFromPath(file.path)
+  }
+  return files.length > 0
+}
+
+async function restoreDevOpenFile() {
+  const path = readDevOpenFilePath()
+  if (!path) return
+  try {
+    await openFileFromPath(path)
+  } catch (error) {
+    forgetDevOpenFilePath()
+    console.warn('[Dev file restore]', error)
   }
 }
 
@@ -90,16 +109,12 @@ async function bindAssociatedFileOpen() {
   fileAssociationCleanup.value = await listen('open-associated-files', () => {
     void openPendingAssociatedFiles().catch((e) => console.error('[Open With]', e))
   })
-  await openPendingAssociatedFiles()
+  const openedAssociatedFile = await openPendingAssociatedFiles()
+  if (!openedAssociatedFile) await restoreDevOpenFile()
 }
 
 onMounted(async () => {
-  const mcp = await spawnMCPIfNeeded()
-  mcpCleanup.value = mcp?.disconnect ?? null
-  const tauri = isTauri()
-  if (import.meta.env.DEV || (tauri && mcp)) {
-    automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
-  }
+  await startMCPRuntime(getActiveStore)
 
   try {
     await bindAssociatedFileOpen()
@@ -109,8 +124,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  mcpCleanup.value?.()
-  automationCleanup.value?.()
+  void stopMCPRuntime()
   fileAssociationCleanup.value?.()
 })
 </script>
@@ -121,107 +135,111 @@ onUnmounted(() => {
     <FontStatusBanner />
     <RenameSelectionDialog />
     <TabBar />
+    <RecentFilesHome v-if="showingHome" @new-document="createTab" />
 
-    <!-- Desktop layout -->
-    <SplitterGroup
-      v-if="!isMobile && showChrome && store.state.showUI"
-      :key="activeTab?.id"
-      direction="horizontal"
-      class="flex-1 overflow-hidden"
-      @layout="saveEditorLayout"
-    >
-      <SplitterPanel
-        id="layers"
-        :default-size="initialEditorLayout[0]"
-        :min-size="10"
-        :max-size="30"
-        class="flex"
+    <template v-else>
+      <!-- Desktop layout -->
+      <SplitterGroup
+        v-if="!isMobile && showChrome && store.state.showUI"
+        :key="activeTab?.id"
+        direction="horizontal"
+        class="flex-1 overflow-hidden"
+        @layout="saveEditorLayout"
       >
-        <LayersPanel />
-      </SplitterPanel>
-      <SplitterResizeHandle
-        data-test-id="left-splitter-handle"
-        :class="horizontalSplitterStyles.handle()"
+        <SplitterPanel
+          id="layers"
+          :default-size="initialEditorLayout[0]"
+          :min-size="10"
+          :max-size="30"
+          class="flex"
+        >
+          <LayersPanel />
+        </SplitterPanel>
+        <SplitterResizeHandle
+          data-test-id="left-splitter-handle"
+          :class="horizontalSplitterStyles.handle()"
+        >
+          <div :class="horizontalSplitterStyles.divider()" />
+        </SplitterResizeHandle>
+        <SplitterPanel
+          id="canvas"
+          :default-size="initialEditorLayout[1]"
+          :min-size="30"
+          class="flex"
+        >
+          <div class="relative flex min-w-0 flex-1">
+            <CanvasSplitRoot />
+            <Toolbar />
+          </div>
+        </SplitterPanel>
+        <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
+          <div :class="horizontalSplitterStyles.divider()" />
+        </SplitterResizeHandle>
+        <SplitterPanel
+          id="properties"
+          :default-size="initialEditorLayout[2]"
+          :min-size="10"
+          :max-size="30"
+          class="flex flex-col"
+        >
+          <div
+            class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
+          >
+            <CollabPanel />
+          </div>
+          <PropertiesPanel />
+        </SplitterPanel>
+      </SplitterGroup>
+
+      <!-- Mobile layout -->
+      <div
+        v-else-if="isMobile && showChrome && store.state.showUI"
+        :key="'mobile-' + activeTab?.id"
+        class="flex flex-1 overflow-hidden"
       >
-        <div :class="horizontalSplitterStyles.divider()" />
-      </SplitterResizeHandle>
-      <SplitterPanel id="canvas" :default-size="initialEditorLayout[1]" :min-size="30" class="flex">
         <div class="relative flex min-w-0 flex-1">
-          <CanvasSplitRoot />
+          <EditorCanvas />
+          <MobileHud />
           <Toolbar />
         </div>
-      </SplitterPanel>
-      <SplitterResizeHandle :class="horizontalSplitterStyles.handle()">
-        <div :class="horizontalSplitterStyles.divider()" />
-      </SplitterResizeHandle>
-      <SplitterPanel
-        id="properties"
-        :default-size="initialEditorLayout[2]"
-        :min-size="10"
-        :max-size="30"
-        class="flex flex-col"
+        <MobileDrawer />
+      </div>
+
+      <!-- Collapsed UI (showUI=false) -->
+      <div
+        v-else-if="showChrome"
+        :key="'collapsed-' + activeTab?.id"
+        class="flex flex-1 overflow-hidden"
       >
-        <div
-          class="flex shrink-0 items-center justify-between border-b border-border px-1.5 py-1.5"
-        >
-          <CollabPanel />
-        </div>
-        <PropertiesPanel />
-      </SplitterPanel>
-    </SplitterGroup>
-
-    <!-- Mobile layout -->
-    <div
-      v-else-if="isMobile && showChrome && store.state.showUI"
-      :key="'mobile-' + activeTab?.id"
-      class="flex flex-1 overflow-hidden"
-    >
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
-        <MobileHud />
-        <Toolbar />
-      </div>
-      <MobileDrawer />
-    </div>
-
-    <!-- Collapsed UI (showUI=false) -->
-    <div
-      v-else-if="showChrome"
-      :key="'collapsed-' + activeTab?.id"
-      class="flex flex-1 overflow-hidden"
-    >
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
-        <div
-          v-if="!isMobile"
-          class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
-        >
-          <img src="/favicon-32.png" class="size-4" alt="OpenPencil" />
-          <span data-test-id="editor-document-name" class="text-xs text-surface">{{
-            store.state.documentName
-          }}</span>
-          <Tip
-            :label="
-              dialogs.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })
-            "
+        <div class="relative flex min-w-0 flex-1">
+          <EditorCanvas />
+          <div
+            v-if="!isMobile"
+            class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
           >
-            <button
-              data-test-id="editor-show-ui"
-              class="ml-1 flex size-6 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
-              @click="store.state.showUI = true"
-            >
-              <icon-lucide-sidebar class="size-3.5" />
-            </button>
-          </Tip>
+            <img src="/favicon-32.png" class="size-4" alt="OpenPencil" />
+            <span data-test-id="editor-document-name" class="text-xs text-surface">{{
+              store.state.documentName
+            }}</span>
+            <Tip :label="showUILabel">
+              <button
+                data-test-id="editor-show-ui"
+                class="ml-1 flex size-6 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
+                @click="store.state.showUI = true"
+              >
+                <icon-lucide-sidebar class="size-3.5" />
+              </button>
+            </Tip>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Bare canvas (no chrome, e.g. ?no-chrome) -->
-    <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
-      <div class="relative flex min-w-0 flex-1">
-        <EditorCanvas />
+      <!-- Bare canvas (no chrome, e.g. ?no-chrome) -->
+      <div v-else :key="'bare-' + activeTab?.id" class="flex flex-1 overflow-hidden">
+        <div class="relative flex min-w-0 flex-1">
+          <EditorCanvas />
+        </div>
       </div>
-    </div>
+    </template>
   </div>
 </template>

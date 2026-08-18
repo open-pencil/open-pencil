@@ -28,6 +28,92 @@ describe('find_nodes', () => {
     const result = tool.execute(figma, { type: 'RECTANGLE' }) as ToolResult
     expect(result.count).toBe(2)
   })
+
+  test('paginates results and returns hierarchy context', () => {
+    const { figma } = setupToolTest()
+    const frame = figma.createFrame()
+    frame.name = 'Checkout'
+    for (let index = 0; index < 4; index++) {
+      const child = figma.createRectangle()
+      child.name = `Card ${index}`
+      frame.appendChild(child)
+    }
+
+    const tool = getTool('find_nodes')
+    const first = tool.execute(figma, { type: 'RECTANGLE', depth: 2, limit: 2 }) as ToolResult
+    expect(first.total).toBe(4)
+    expect(first.returned).toBe(2)
+    expect(first.has_more).toBe(true)
+    expect(first.next_offset).toBe(2)
+    expect(first.nodes[0]).toMatchObject({
+      parent_id: frame.id,
+      depth: 2,
+      path: [figma.currentPage.name, 'Checkout', 'Card 0']
+    })
+
+    const second = tool.execute(figma, {
+      type: 'RECTANGLE',
+      depth: 2,
+      limit: 2,
+      offset: 2
+    }) as ToolResult
+    expect(second.nodes.map((node) => node.name)).toEqual(['Card 2', 'Card 3'])
+    expect(second.has_more).toBe(false)
+  })
+
+  test('scopes searches by page, root, and depth', () => {
+    const { figma } = setupToolTest()
+    const currentFrame = figma.createFrame()
+    currentFrame.name = 'Current flow'
+    const nestedFrame = figma.createFrame()
+    nestedFrame.name = 'Nested flow'
+    currentFrame.appendChild(nestedFrame)
+
+    const otherPage = figma.createPage()
+    otherPage.name = 'Other page'
+    figma.currentPage = otherPage
+    const otherFrame = figma.createFrame()
+    otherFrame.name = 'Other flow'
+
+    const tool = getTool('find_nodes')
+    const topLevel = tool.execute(figma, {
+      page: 'Page 1',
+      type: 'FRAME',
+      depth: 1
+    }) as ToolResult
+    expect(topLevel.nodes.map((node) => node.name)).toEqual(['Current flow'])
+    expect(topLevel.page).toMatchObject({ name: 'Page 1', current: false })
+
+    const rooted = tool.execute(figma, {
+      page: 'Page 1',
+      root_id: currentFrame.id,
+      type: 'FRAME',
+      depth: 1
+    }) as ToolResult
+    expect(rooted.nodes.map((node) => node.name)).toEqual(['Nested flow'])
+  })
+
+  test('defaults to direct children and reports expandable child counts', () => {
+    const { figma } = setupToolTest()
+    const frame = figma.createFrame()
+    frame.name = 'Screen'
+    const nested = figma.createFrame()
+    nested.name = 'Content'
+    frame.appendChild(nested)
+    const text = figma.createText()
+    text.name = 'Title'
+    nested.appendChild(text)
+
+    const tool = getTool('find_nodes')
+    const topLevel = tool.execute(figma, {}) as ToolResult
+    expect(topLevel.depth).toBe(1)
+    expect(topLevel.nodes).toHaveLength(1)
+    expect(topLevel.nodes[0]).toMatchObject({ name: 'Screen', child_count: 1 })
+
+    const children = tool.execute(figma, { root_id: frame.id }) as ToolResult
+    expect(children.nodes).toHaveLength(1)
+    expect(children.nodes[0]).toMatchObject({ name: 'Content', child_count: 1, depth: 1 })
+  })
 })
 
 describe('query_nodes', () => {
@@ -157,12 +243,41 @@ describe('get_node', () => {
   })
 })
 
+describe('get_page_tree', () => {
+  test('lists only root frames when depth and node type are constrained', () => {
+    const { figma } = setupToolTest()
+    const rootFrame = figma.createFrame()
+    rootFrame.name = 'Root frame'
+    const nestedFrame = figma.createFrame()
+    nestedFrame.name = 'Nested frame'
+    rootFrame.appendChild(nestedFrame)
+    figma.createRectangle().name = 'Root rectangle'
+
+    const tool = getTool('get_page_tree')
+    const result = tool.execute(figma, {
+      depth: 1,
+      node_types: ['FRAME']
+    }) as ToolResult
+
+    expect(result.children).toEqual([
+      {
+        id: rootFrame.id,
+        type: 'FRAME',
+        name: 'Root frame',
+        w: rootFrame.width,
+        h: rootFrame.height
+      }
+    ])
+  })
+})
+
 describe('page tools', () => {
   test('list_pages returns pages', () => {
     const { figma } = setupToolTest()
     const tool = getTool('list_pages')
     const result = tool.execute(figma, {}) as ToolResult
     expect(result.pages.length).toBeGreaterThanOrEqual(1)
+    expect(result.current).toEqual({ id: figma.currentPage.id, name: figma.currentPage.name })
   })
 
   test('switch_page changes page', () => {
@@ -174,6 +289,18 @@ describe('page tools', () => {
     tool.execute(figma, { page: 'Page 2' })
 
     expect(figma.currentPage.name).toBe('Page 2')
+  })
+
+  test('switch_page rejects IDs that do not belong to pages', () => {
+    const { figma } = setupToolTest()
+    const rectangle = figma.createRectangle()
+    const originalPageId = figma.currentPage.id
+
+    const tool = getTool('switch_page')
+    const result = tool.execute(figma, { page: rectangle.id }) as ToolResult
+
+    expect(result.error).toContain('not found')
+    expect(figma.currentPage.id).toBe(originalPageId)
   })
 
   test('switch_page persists across separate FigmaAPI instances (RPC simulation)', () => {

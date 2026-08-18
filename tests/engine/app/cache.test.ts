@@ -56,4 +56,20 @@ describe('app cache', () => {
     await expect(readCacheText('openrouter/other')).resolves.toBeNull()
     await expect(readCacheText('fonts/manifest')).resolves.toBe('fonts')
   })
+
+  test('removes web cache entries sharing a file-name prefix', async () => {
+    installLocalStorage()
+    const { readCacheText, removeCacheEntriesWithPrefix, writeCacheText } =
+      await import('@/app/cache')
+
+    await writeCacheText('recent-file-thumbnail-v2-one.png', 'one')
+    await writeCacheText('recent-file-thumbnail-v2-two.png', 'two')
+    await writeCacheText('font-cache/v1/manifest', 'fonts')
+
+    await removeCacheEntriesWithPrefix('recent-file-thumbnail-v2-')
+
+    await expect(readCacheText('recent-file-thumbnail-v2-one.png')).resolves.toBeNull()
+    await expect(readCacheText('recent-file-thumbnail-v2-two.png')).resolves.toBeNull()
+    await expect(readCacheText('font-cache/v1/manifest')).resolves.toBe('fonts')
+  })
 })

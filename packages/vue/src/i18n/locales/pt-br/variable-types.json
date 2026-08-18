@@ -1,0 +1,10 @@
+{
+  "color": "Cor",
+  "colorHint": "Valores de pintura",
+  "number": "Número",
+  "numberHint": "Tamanhos, espaçamento, opacidade",
+  "text": "Texto",
+  "textHint": "Texto e etiquetas",
+  "boolean": "Booleano",
+  "booleanHint": "Verdadeiro ou falso"
+}
