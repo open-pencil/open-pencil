@@ -3,9 +3,15 @@ import {
   createCloudApp,
   createCloudAuth,
   createCollaborationStateStore,
+  createDefaultCloudPolicy,
+  DatabaseEntitlementSource,
+  EntitlementOpenFeatureProvider,
+  StaticEntitlementSource,
+  staticEntitlementValues,
   createDocumentCleanupService,
   createUploadCleanupService,
   migrateCloudDatabase,
+  CLOUD_FEATURE_KEYS,
   startCleanupWorker
 } from '#cloud/server'
 
@@ -48,10 +54,35 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     auth,
     objects
   })
+  const relayEntitlementSource = config.staticEntitlements
+    ? new StaticEntitlementSource(staticEntitlementValues(config.staticEntitlements))
+    : new DatabaseEntitlementSource(database)
+  const collaborationPolicy = createDefaultCloudPolicy(
+    new EntitlementOpenFeatureProvider(relayEntitlementSource)
+  )
   const collaboration = config.collaborationURL
     ? createCloudCollaborationRelay({
         authSecret: config.authSecret,
-        stateStore: createCollaborationStateStore(database)
+        stateStore: createCollaborationStateStore(database),
+        async maximumParticipants(documentId) {
+          const document = await database
+            .selectFrom('document')
+            .select('workspaceId')
+            .where('id', '=', documentId)
+            .executeTakeFirst()
+          if (!document) return 0
+          const value = await collaborationPolicy.number(
+            CLOUD_FEATURE_KEYS.maximumParticipants,
+            Number.MAX_SAFE_INTEGER,
+            {
+              targetingKey: document.workspaceId,
+              workspaceId: document.workspaceId,
+              documentId,
+              deploymentMode: config.deployment
+            }
+          )
+          return value === Number.MAX_SAFE_INTEGER ? null : value
+        }
       })
     : undefined
   if (collaboration) await collaboration.listen(config.collaborationPort)
