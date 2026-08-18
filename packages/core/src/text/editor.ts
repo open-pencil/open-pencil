@@ -34,6 +34,20 @@ export class TextEditor {
     this.ck = ck
   }
 
+  private paragraphVerticalOffset(): number {
+    const s = this._state
+    const node = this.paragraphNode
+    if (!s?.paragraph || !node) return 0
+    const available = Math.max(0, node.height - s.paragraph.getHeight())
+    if (node.textAlignVertical === 'CENTER') return available / 2
+    if (node.textAlignVertical === 'BOTTOM') return available
+    return 0
+  }
+
+  private paragraphY(y: number): number {
+    return y - this.paragraphVerticalOffset()
+  }
+
   private prepareMove(extend: boolean): TextEditorState | null {
     const s = this._state
     if (!s) return null
@@ -170,7 +184,7 @@ export class TextEditor {
   setCursorAt(x: number, y: number, extend = false): void {
     const s = this._state
     if (!s?.paragraph) return
-    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, y).pos
+    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
     if (extend) {
       if (s.selectionAnchor === null) s.selectionAnchor = s.cursor
     } else {
@@ -193,14 +207,14 @@ export class TextEditor {
   selectWordAt(x: number, y: number): void {
     const s = this._state
     if (!s?.paragraph) return
-    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, y).pos
+    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
     this.selectWord(pos)
   }
 
   selectLineAt(x: number, y: number): void {
     const s = this._state
     if (!s?.paragraph) return
-    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, y).pos
+    const pos = s.paragraph.getGlyphPositionAtCoordinate(x, this.paragraphY(y)).pos
     this.selectLine(pos)
   }
 
@@ -256,7 +270,7 @@ export class TextEditor {
     if (!caret) return
     const fontSize = s.paragraph.getLineMetrics()[0]?.height ?? 14
     const y = edge === 'up' ? caret.y0 - fontSize / 2 : caret.y1 + fontSize / 2
-    s.cursor = s.paragraph.getGlyphPositionAtCoordinate(caret.x, y).pos
+    s.cursor = s.paragraph.getGlyphPositionAtCoordinate(caret.x, this.paragraphY(y)).pos
   }
 
   moveUp(extend = false): void {
@@ -338,7 +352,8 @@ export class TextEditor {
       const metrics = s.paragraph.getLineMetrics()
       if (metrics.length === 0) return null
       const line = metrics[0]
-      return { x: line.left, y0: 0, y1: line.height }
+      const offsetY = this.paragraphVerticalOffset()
+      return { x: line.left, y0: offsetY, y1: offsetY + line.height }
     }
 
     let lo: number
@@ -366,10 +381,11 @@ export class TextEditor {
     )
     if (rects.length === 0) return null
     const [left, top, right, bottom] = rects[0].rect
+    const offsetY = this.paragraphVerticalOffset()
     return {
       x: useRight ? right : left,
-      y0: top,
-      y1: bottom
+      y0: top + offsetY,
+      y1: bottom + offsetY
     }
   }
 
@@ -385,9 +401,10 @@ export class TextEditor {
       this.ck.RectHeightStyle.Max,
       this.ck.RectWidthStyle.Tight
     )
+    const offsetY = this.paragraphVerticalOffset()
     return rects.map((r) => {
       const [left, top, right, bottom] = r.rect
-      return { x: left, y: top, width: right - left, height: bottom - top }
+      return { x: left, y: top + offsetY, width: right - left, height: bottom - top }
     })
   }
 }

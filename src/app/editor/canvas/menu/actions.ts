@@ -7,6 +7,7 @@ import type { EditorStore } from '@/app/editor/active-store'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
 import { executeClipboardCommand } from '@/app/editor/clipboard/system'
 import { canVectorizeImageNode, vectorizeImageNode } from '@/app/editor/vectorize'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { writeTauriClipboardText } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
@@ -26,7 +27,7 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
 
   function execCommand(cmd: 'copy' | 'cut' | 'paste') {
     void executeClipboardCommand(store, cmd).then((ok) => {
-      if (!ok) toast.error('Clipboard access is blocked in this browser context')
+      if (!ok) toast.error(notificationMessages.get().clipboardAccessBlocked)
       return undefined
     })
   }
@@ -38,13 +39,17 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
     } else {
       await copy(text)
     }
-    toast.info(`Copied as ${label}`)
+    toast.info(notificationMessages.get().copiedAs({ format: label }))
   }
 
   async function copyNodeId() {
     const nodeIds = ids()
     if (nodeIds.length === 0) return
-    await clipboardWrite(nodeIds.join(', '), `node ID${nodeIds.length > 1 ? 's' : ''}`)
+    const messages = notificationMessages.get()
+    await clipboardWrite(
+      nodeIds.join(', '),
+      nodeIds.length > 1 ? messages.nodeIDs : messages.nodeID
+    )
   }
 
   async function copyXPath() {
@@ -54,19 +59,20 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
       .map((id) => nodeToXPath(store.graph, id))
       .filter((xpath): xpath is string => xpath !== null)
     if (xpaths.length === 0) return
-    await clipboardWrite(xpaths.join('\n'), `XPath${xpaths.length > 1 ? 's' : ''}`)
+    const messages = notificationMessages.get()
+    await clipboardWrite(xpaths.join('\n'), xpaths.length > 1 ? messages.xPaths : messages.xPath)
   }
 
   async function copyAsPNG() {
     if (typeof ClipboardItem === 'undefined') {
-      toast.error('PNG clipboard export is not available in this browser')
+      toast.error(notificationMessages.get().pngClipboardUnavailable)
       return
     }
     const data = await store.renderExportImage(ids(), 2, 'PNG')
     if (!data) return
     const blob = new Blob([toArrayBuffer(data)], { type: 'image/png' })
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-    toast.info('Copied as PNG')
+    toast.info(notificationMessages.get().copiedAs({ format: 'PNG' }))
   }
 
   return {

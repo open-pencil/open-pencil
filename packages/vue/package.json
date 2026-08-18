@@ -32,8 +32,8 @@
   },
   "peerDependencies": {
     "@open-pencil/core": "workspace:*",
-    "canvaskit-wasm": ">=0.39.0",
-    "vue": "^3.4.0"
+    "canvaskit-wasm": "^0.40.0",
+    "vue": "^3.5.41"
   },
   "peerDependenciesMeta": {
     "canvaskit-wasm": {
@@ -41,19 +41,19 @@
     }
   },
   "dependencies": {
-    "@atlaskit/pragmatic-drag-and-drop": "^1.7.9",
-    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.1.0",
-    "@nanostores/i18n": "^1.2.2",
+    "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
+    "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",
+    "@nanostores/i18n": "^1.3.3",
     "@nanostores/vue": "^1.1.0",
     "@open-pencil/scene-graph": "workspace:*",
     "@tanstack/vue-table": "^8.21.3",
-    "@vueuse/core": "^14.2.1",
-    "nanostores": "^1.2.0",
-    "reka-ui": "^2.9.0"
+    "@vueuse/core": "^14.4.0",
+    "nanostores": "^1.5.0",
+    "reka-ui": "^2.10.3"
   },
   "devDependencies": {
-    "tsdown": "^0.22.3",
-    "unplugin-raw": "^0.6.4",
-    "unplugin-vue": "^7.1.1"
+    "tsdown": "^0.22.14",
+    "unplugin-raw": "^0.7.0",
+    "unplugin-vue": "^7.2.0"
   }
 }

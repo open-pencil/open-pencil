@@ -1,12 +1,12 @@
-import { EN, EN_PROG } from './labels'
-import { sdkSidebar } from './sdk-sidebar'
+import { EN, EN_PROG } from './labels.ts'
+import { sdkSidebar } from './sdk-sidebar.ts'
 import {
   developmentSidebar,
   guideSidebar,
   programmableSidebar,
   referenceSidebar,
   userGuideSidebar,
-} from './sidebars'
+} from './sidebars.ts'
 
 import type { DefaultTheme } from 'vitepress'
 
