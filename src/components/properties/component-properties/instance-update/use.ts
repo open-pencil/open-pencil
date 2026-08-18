@@ -4,6 +4,7 @@ import { libraryAssetKeyForComponent } from '@open-pencil/core/library'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { EditorStore } from '@/app/editor/session'
+import { notificationMessages } from '@/app/i18n/notifications'
 import type { LibraryService } from '@/app/libraries'
 import { toast } from '@/app/shell/ui'
 
@@ -42,7 +43,11 @@ export function useInstanceUpdate(
       await service.applyInstanceUpdate(editor, instance.id)
       available.value = false
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : String(cause))
+      toast.error(
+        notificationMessages.get().operationFailed({
+          error: cause instanceof Error ? cause.message : String(cause)
+        })
+      )
     } finally {
       updating.value = false
     }

@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, mock, test } from 'bun:test'
 
+import { localeSetting } from '@open-pencil/vue'
+
 import { openDesignFileBatch } from '@/app/shell/menu/files'
 import { toast } from '@/app/shell/ui'
 
 afterEach(() => {
   toast.toasts.value = []
+  localeSetting.set(undefined)
 })
 
 describe('openDesignFileBatch', () => {
@@ -21,6 +24,7 @@ describe('openDesignFileBatch', () => {
   })
 
   test('reports one failed file and continues opening later selections', async () => {
+    localeSetting.set('en')
     const opened: string[] = []
     const openItem = mock(async (name: string) => {
       opened.push(name)
@@ -34,7 +38,7 @@ describe('openDesignFileBatch', () => {
     expect(opened).toEqual(['first.fig', 'broken.fig', 'last.pen'])
     expect(toast.toasts.value).toHaveLength(1)
     expect(toast.toasts.value[0]).toMatchObject({
-      message: 'Failed to open broken.fig: Invalid FIG container',
+      message: 'Could not open “broken.fig”: Invalid FIG container',
       variant: 'error'
     })
   })

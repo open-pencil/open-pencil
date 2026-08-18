@@ -33,6 +33,8 @@ import { useAIChat } from '@/app/ai/chat/use'
 import { toast } from '@/app/shell/ui'
 import { useI18n } from '@open-pencil/vue'
 
+import { useNotificationMessages } from '@/app/i18n/notifications'
+
 import type { Chat } from '@ai-sdk/vue'
 import type { UIMessage } from 'ai'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
@@ -42,6 +44,7 @@ const IS_DEV = import.meta.env.DEV
 const { isConfigured, ensureChat, resetChat, chatFailure, clearChatFailure } = useAIChat()
 const { copy } = useClipboard()
 const { dialogs } = useI18n()
+const notifications = useNotificationMessages()
 
 const chat = ref<Chat<UIMessage> | null>(null)
 const isPreparingImages = ref(false)
@@ -53,7 +56,11 @@ void ensureChat()
     return undefined
   })
   .catch((error: unknown) => {
-    toast.error(error instanceof Error ? error.message : 'Failed to initialize chat')
+    toast.error(
+      notifications.value.chatInitializationFailed({
+        error: error instanceof Error ? error.message : String(error)
+      })
+    )
   })
 const messagesEnd = ref<HTMLDivElement>()
 const debugCopied = refAutoReset(false, 1500)

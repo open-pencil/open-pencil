@@ -6,6 +6,7 @@ import { yieldToUI } from '@/app/document/io/browser'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { readReloadSource } from '@/app/document/io/reload-source'
 import { captureReloadState, restoreReloadState } from '@/app/document/io/reload-state'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 
 type OpenDocumentState = EditorState & {
@@ -54,7 +55,12 @@ export function createOpenActions({
       editor.requestRender()
     } catch (e) {
       console.error('Failed to open .fig file:', e)
-      toast.error(`Failed to open file: ${e instanceof Error ? e.message : String(e)}`)
+      toast.error(
+        notificationMessages.get().openFileFailed({
+          name: file.name,
+          error: e instanceof Error ? e.message : String(e)
+        })
+      )
     } finally {
       state.loading = false
     }
