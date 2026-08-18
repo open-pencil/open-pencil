@@ -21,6 +21,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import type { InvitationDelivery } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
+import { createDefaultCloudPolicy } from '#cloud/server/policy'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
@@ -74,7 +75,11 @@ export function createCloudApp(services: CloudServices) {
     maxAge: 600
   })
   const workspaces = createWorkspaceService(services.database)
-  const documents = createDocumentService(services.database, services.objects)
+  const policy = createDefaultCloudPolicy()
+  const documents = createDocumentService(services.database, services.objects, {
+    policy,
+    technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes
+  })
   const sharing = createDocumentSharingService(services.database, {
     delivery: services.invitationDelivery,
     continuationSecret: services.config.authSecret,

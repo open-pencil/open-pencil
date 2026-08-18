@@ -7,6 +7,7 @@ import {
   DocumentNotFoundError,
   UploadInvalidError
 } from '#cloud/server/documents/service'
+import { StorageQuotaExceededError } from '#cloud/server/quota'
 import { validatedJSON } from '#cloud/server/validation'
 import { Hono, type Context } from 'hono'
 
@@ -25,6 +26,9 @@ function domainError(context: Context, error: unknown): Response | null {
   }
   if (error instanceof DocumentConflictError) {
     return context.json({ error: { code: 'revision_conflict' as const } }, 409)
+  }
+  if (error instanceof StorageQuotaExceededError) {
+    return context.json({ error: { code: 'storage_quota_exceeded' as const } }, 409)
   }
   if (error instanceof UploadInvalidError) {
     return context.json({ error: { code: 'invalid_upload' as const } }, 422)

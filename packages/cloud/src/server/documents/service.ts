@@ -17,6 +17,8 @@ import {
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
 import type { ObjectStore } from '#cloud/server/objects'
+import { CLOUD_FEATURE_KEYS, type CloudPolicy } from '#cloud/server/policy'
+import { createStorageQuotaService } from '#cloud/server/quota'
 import type { Kysely } from 'kysely'
 
 const DOWNLOAD_LIFETIME_MS = 5 * 60 * 1000
@@ -36,8 +38,18 @@ export class UploadInvalidError extends Error {
   override readonly name = 'UploadInvalidError'
 }
 
-export function createDocumentService(database: Kysely<CloudDatabase>, objects: ObjectStore) {
+export type DocumentServiceOptions = {
+  policy?: CloudPolicy
+  technicalMaximumUploadBytes?: number
+}
+
+export function createDocumentService(
+  database: Kysely<CloudDatabase>,
+  objects: ObjectStore,
+  options: DocumentServiceOptions = {}
+) {
   const cleanup = createUploadCleanupService(database, objects)
+  const quota = createStorageQuotaService(database)
 
   async function createDownload(documentId: string): Promise<DocumentDownload> {
     const row = await getDocumentSummaryRow(database, documentId)
@@ -168,6 +180,31 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
       const document = await findDocument(database, userId, documentId)
       if (!document) throw new DocumentNotFoundError()
       if (document.currentRevisionId !== input.baseRevisionId) throw new DocumentConflictError()
+      const policyContext = {
+        targetingKey: document.workspaceId,
+        actorId: userId,
+        workspaceId: document.workspaceId,
+        documentId,
+        deploymentMode: 'self-hosted' as const
+      }
+      const technicalMaximum = options.technicalMaximumUploadBytes ?? Number.MAX_SAFE_INTEGER
+      const entitlementMaximum = options.policy
+        ? await options.policy.number(
+            CLOUD_FEATURE_KEYS.maximumFileBytes,
+            technicalMaximum,
+            policyContext
+          )
+        : technicalMaximum
+      if (input.byteSize > Math.min(technicalMaximum, entitlementMaximum)) {
+        throw new UploadInvalidError()
+      }
+      const maximumStorageBytes = options.policy
+        ? await options.policy.number(
+            'cloud.storage.maximum-bytes',
+            Number.MAX_SAFE_INTEGER,
+            policyContext
+          )
+        : Number.MAX_SAFE_INTEGER
       const uploadId = crypto.randomUUID()
       const objectKey = `documents/${document.workspaceId}/${documentId}/uploads/${uploadId}.fig`
       const expiresAt = new Date(Date.now() + UPLOAD_LIFETIME_MS)
@@ -187,6 +224,13 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
           expiresAt
         })
         .execute()
+      await quota.reserve({
+        workspaceId: document.workspaceId,
+        uploadId,
+        bytes: input.byteSize,
+        expiresAt,
+        maximumBytes: maximumStorageBytes === Number.MAX_SAFE_INTEGER ? null : maximumStorageBytes
+      })
       const objectUpload = await objects.createUpload({
         key: objectKey,
         byteSize: input.byteSize,
@@ -315,6 +359,7 @@ export function createDocumentService(database: Kysely<CloudDatabase>, objects: 
           .where('id', '=', uploadId)
           .execute()
       })
+      await quota.commit(uploadId)
       const document = await findDocument(database, userId, upload.documentId)
       if (!document) throw new DocumentNotFoundError()
       return document

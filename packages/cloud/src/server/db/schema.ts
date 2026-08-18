@@ -137,6 +137,23 @@ export interface InvitationContinuationTable {
   createdAt: TimestampColumn
 }
 
+export interface WorkspaceStorageUsageTable {
+  workspaceId: string
+  committedBytes: number
+  updatedAt: TimestampColumn
+}
+
+export interface UploadStorageReservationTable {
+  id: string
+  workspaceId: string
+  uploadId: string
+  bytes: number
+  expiresAt: TimestampColumn
+  committedAt: TimestampColumn | null
+  releasedAt: TimestampColumn | null
+  createdAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   user: AuthUserTable
   workspace: WorkspaceTable
@@ -149,6 +166,8 @@ export interface CloudDatabase {
   documentInvitation: DocumentInvitationTable
   documentCollaborationState: DocumentCollaborationStateTable
   invitationContinuation: InvitationContinuationTable
+  workspaceStorageUsage: WorkspaceStorageUsageTable
+  uploadStorageReservation: UploadStorageReservationTable
   upload: UploadTable
 }
 

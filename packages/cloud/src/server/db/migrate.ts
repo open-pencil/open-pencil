@@ -10,6 +10,7 @@ import * as documentSharing from './migrations/004_document_sharing'
 import * as documentCollaborationEpoch from './migrations/005_document_collaboration_epoch'
 import * as invitationContinuation from './migrations/006_invitation_continuation'
 import * as collaborationState from './migrations/007_collaboration_state'
+import * as storageReservations from './migrations/008_storage_reservations'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
@@ -19,7 +20,8 @@ const migrations: Record<string, Migration> = {
   '004_document_sharing': documentSharing,
   '005_document_collaboration_epoch': documentCollaborationEpoch,
   '006_invitation_continuation': invitationContinuation,
-  '007_collaboration_state': collaborationState
+  '007_collaboration_state': collaborationState,
+  '008_storage_reservations': storageReservations
 }
 
 class CloudMigrationProvider implements MigrationProvider {

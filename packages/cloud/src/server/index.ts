@@ -137,6 +137,12 @@ export {
   type EntitlementSubject
 } from './policy'
 export {
+  createStorageQuotaService,
+  StorageQuotaExceededError,
+  type StorageQuotaService,
+  type StorageQuotaSnapshot
+} from './quota'
+export {
   createWorkspaceRoutes,
   createWorkspaceService,
   WorkspaceSlugConflictError,
