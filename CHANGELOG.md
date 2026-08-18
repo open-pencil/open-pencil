@@ -2,11 +2,6 @@
 
 ## Unreleased
 
-### Changed
-
-- Upgrade direct model chat providers and transports to AI SDK 7 while retaining the local ACP execution path.
-- Upgrade direct model chat providers and transports to AI SDK 7 while retaining the local ACP execution path.
-
 ### Added
 
 - Open multiple selected design files in separate tabs.
@@ -41,6 +36,7 @@
 
 ### Changed
 
+- Upgrade direct model chat providers and transports to AI SDK 7 while retaining the local ACP execution path.
 - Localize file, clipboard, collaboration, chat, vectorization, storage, recovery, and component-library notifications in every supported language.
 - Move MCP connections into their own Settings destination instead of presenting them as part of model configuration.
 - Pan horizontally with Shift+wheel while preserving native horizontal trackpad movement.
