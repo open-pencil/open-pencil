@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 
 import type { EditorStore } from '@/app/editor/session'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { createActiveStorageAdapter, storagePreferencesComplete } from '@/app/integrations/storage'
 import { activeStorageProviderID } from '@/app/integrations/storage/preferences'
 import {
@@ -12,6 +13,10 @@ import {
 import type { LibraryAssetUpdateGroup } from '@/app/libraries/update-groups'
 import { scopeLibraryUpdateGroups } from '@/app/libraries/update-groups'
 import { toast } from '@/app/shell/ui'
+
+function errorDetail(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause)
+}
 
 export function useLibraryManager(
   open: Ref<boolean>,
@@ -37,7 +42,7 @@ export function useLibraryManager(
       if (request === requestId) updateGroups.value = groups
     } catch (cause) {
       if (request === requestId) {
-        toast.error(cause instanceof Error ? cause.message : String(cause))
+        toast.error(notificationMessages.get().operationFailed({ error: errorDetail(cause) }))
       }
     } finally {
       if (request === requestId) loading.value = false
@@ -48,7 +53,7 @@ export function useLibraryManager(
     try {
       await operation()
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : String(cause))
+      toast.error(notificationMessages.get().operationFailed({ error: errorDetail(cause) }))
     }
   }
 

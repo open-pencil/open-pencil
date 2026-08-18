@@ -11,8 +11,8 @@ import {
   PL_PROG,
   RU,
   RU_PROG,
-} from './labels'
-import { localeThemeConfig } from './locale-theme'
+} from './labels.ts'
+import { localeThemeConfig } from './locale-theme.ts'
 
 export const docsLocales = {
   root: {

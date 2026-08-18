@@ -1,4 +1,5 @@
 import type { EditorStore } from '@/app/editor/active-store'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { readTauriClipboardText } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
@@ -26,12 +27,12 @@ export async function pasteClipboardToReplace(store: EditorStore) {
   try {
     const html = await readClipboardHTML()
     if (!html) {
-      toast.error('Clipboard does not contain design data')
+      toast.error(notificationMessages.get().clipboardMissingDesignData)
       return
     }
     await store.pasteFromHTML(html, undefined, { replaceSelection: true })
   } catch (error) {
     console.warn('Paste to replace failed', error)
-    toast.error('Clipboard access is blocked in this browser context')
+    toast.error(notificationMessages.get().clipboardAccessBlocked)
   }
 }
