@@ -16,8 +16,10 @@ import type {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentNotFoundError } from '#cloud/server/documents/service'
+import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/service'
 import type { InvitationDelivery } from '#cloud/server/invitations'
+import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
+import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely, UpdateObject } from 'kysely'
 import { sql } from 'kysely'
 import { nanoid } from 'nanoid'
@@ -58,6 +60,8 @@ export type DocumentSharingServiceOptions = {
   delivery?: InvitationDelivery
   publicURL?: string
   appURL?: string
+  policy?: CloudPolicy
+  deploymentMode?: 'official' | 'self-hosted'
 }
 
 export function createDocumentSharingService(
@@ -175,6 +179,31 @@ export function createDocumentSharingService(
       input: CreateDocumentShareInput
     ): Promise<DocumentShareCapability> {
       await requireSharingAccess(database, userId, documentId)
+      const policyDocument = await database
+        .selectFrom('document')
+        .select('workspaceId')
+        .where('id', '=', documentId)
+        .executeTakeFirstOrThrow()
+      const policyContext = {
+        targetingKey: policyDocument.workspaceId,
+        actorId: userId,
+        workspaceId: policyDocument.workspaceId,
+        documentId,
+        deploymentMode: options.deploymentMode ?? ('self-hosted' as const)
+      }
+      if (
+        options.policy &&
+        !(await options.policy.boolean(CLOUD_FEATURE_KEYS.capabilityLinks, false, policyContext))
+      ) {
+        throw new DocumentForbiddenError()
+      }
+      if (
+        input.permission === 'edit' &&
+        options.policy &&
+        !(await options.policy.boolean(CLOUD_FEATURE_KEYS.anonymousEdit, false, policyContext))
+      ) {
+        throw new DocumentForbiddenError()
+      }
       const id = crypto.randomUUID()
       const secret = nanoid(SHARE_SECRET_SIZE)
       const row = await database.transaction().execute(async (transaction) => {
@@ -297,6 +326,26 @@ export function createDocumentSharingService(
         (row.expiresAt && new Date(row.expiresAt).getTime() <= Date.now())
       ) {
         throw new DocumentShareInvalidError()
+      }
+      if (!actor && options.policy) {
+        const policyDocument = await database
+          .selectFrom('document')
+          .select('workspaceId')
+          .where('id', '=', row.documentId)
+          .executeTakeFirstOrThrow()
+        const context = {
+          targetingKey: policyDocument.workspaceId,
+          workspaceId: policyDocument.workspaceId,
+          documentId: row.documentId,
+          deploymentMode: options.deploymentMode ?? ('self-hosted' as const)
+        }
+        const featureKey =
+          row.permission === 'edit'
+            ? CLOUD_FEATURE_KEYS.anonymousEdit
+            : CLOUD_FEATURE_KEYS.anonymousView
+        if (!(await options.policy.boolean(featureKey, false, context))) {
+          throw new DocumentShareInvalidError()
+        }
       }
       await database
         .updateTable('documentShare')

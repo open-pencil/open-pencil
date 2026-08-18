@@ -21,7 +21,7 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import type { InvitationDelivery } from '#cloud/server/invitations'
 import type { ObjectStore } from '#cloud/server/objects'
-import { createDefaultCloudPolicy } from '#cloud/server/policy'
+import { createDefaultCloudPolicy, createEntitlementService } from '#cloud/server/policy'
 import { createDocumentSharingService } from '#cloud/server/sharing'
 import { createWorkspaceService } from '#cloud/server/workspaces'
 import { Hono } from 'hono'
@@ -80,11 +80,18 @@ export function createCloudApp(services: CloudServices) {
     policy,
     technicalMaximumUploadBytes: services.config.technicalLimits.maximumUploadBytes
   })
+  const entitlements = createEntitlementService(
+    services.database,
+    policy,
+    services.config.technicalLimits.maximumUploadBytes
+  )
   const sharing = createDocumentSharingService(services.database, {
     delivery: services.invitationDelivery,
     continuationSecret: services.config.authSecret,
     publicURL: services.config.publicURL,
-    appURL: services.config.appURL ?? services.config.publicURL
+    appURL: services.config.appURL ?? services.config.publicURL,
+    policy,
+    deploymentMode: services.config.deployment
   })
   const collaboration = createCollaborationTicketService(
     services.database,
@@ -96,6 +103,7 @@ export function createCloudApp(services: CloudServices) {
   const cloudAPI = createCloudAPIRouter({
     collaboration,
     documents,
+    entitlements,
     sharing,
     workspaces,
     resolveSession
@@ -103,6 +111,7 @@ export function createCloudApp(services: CloudServices) {
   const publicCloudAPI = createPublicCloudAPIRouter({
     collaboration,
     documents,
+    entitlements,
     sharing,
     workspaces,
     resolveSession

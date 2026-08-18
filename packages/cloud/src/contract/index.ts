@@ -4,6 +4,7 @@ export {
   type CollaborationPrincipal,
   type CollaborationTicket
 } from './collaboration'
+export { workspaceEntitlementsSchema, type WorkspaceEntitlements } from './entitlements'
 export {
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,

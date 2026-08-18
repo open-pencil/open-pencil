@@ -130,10 +130,13 @@ export {
 export {
   CLOUD_FEATURE_KEYS,
   CloudPolicy,
+  EntitlementOpenFeatureProvider,
   createDefaultCloudPolicy,
+  createEntitlementService,
   StaticEntitlementSource,
   type CloudPolicyContext,
   type EntitlementSource,
+  type EntitlementService,
   type EntitlementSubject
 } from './policy'
 export {

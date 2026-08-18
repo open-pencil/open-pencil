@@ -17,7 +17,8 @@ import {
 import { documentSummary, getDocumentSummaryRow } from '#cloud/server/documents/summary'
 import type { CreateDocumentUploadResult } from '#cloud/server/documents/types'
 import type { ObjectStore } from '#cloud/server/objects'
-import { CLOUD_FEATURE_KEYS, type CloudPolicy } from '#cloud/server/policy'
+import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
+import type { CloudPolicy } from '#cloud/server/policy/policy'
 import { createStorageQuotaService } from '#cloud/server/quota'
 import type { Kysely } from 'kysely'
 

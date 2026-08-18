@@ -7,6 +7,7 @@ import {
 } from '#cloud/server/collaboration'
 import type { DocumentService } from '#cloud/server/documents'
 import { createDocumentRoutes } from '#cloud/server/documents'
+import type { EntitlementService } from '#cloud/server/policy'
 import type { DocumentSharingService } from '#cloud/server/sharing'
 import {
   createDocumentSharingRoutes,
@@ -22,6 +23,7 @@ export type CloudAPIServices = {
   documents: DocumentService
   sharing: DocumentSharingService
   resolveSession?: CloudSessionResolver
+  entitlements?: EntitlementService
   workspaces: WorkspaceService
 }
 
@@ -35,6 +37,16 @@ export function createPublicCloudAPIRouter(services: CloudAPIServices) {
 export function createCloudAPIRouter(services: CloudAPIServices) {
   return new Hono<CloudAPIEnvironment>()
     .route('/public', createPublicCloudAPIRouter(services))
+    .get('/workspaces/:workspaceId/entitlements', async (context) => {
+      if (!services.entitlements)
+        return context.json({ error: { code: 'not_found' as const } }, 404)
+      return context.json({
+        entitlements: await services.entitlements.workspace(
+          context.get('actor').userId,
+          context.req.param('workspaceId')
+        )
+      })
+    })
     .get('/session', (context) => context.json({ user: context.get('actor') }))
     .route('/', createCollaborationRoutes(services.collaboration))
     .route('/', createDocumentRoutes(services.documents))

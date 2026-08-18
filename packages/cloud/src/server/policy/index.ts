@@ -4,4 +4,6 @@ export {
   type EntitlementSubject
 } from './entitlements'
 export { CLOUD_FEATURE_KEYS, type CloudPolicyContext } from './keys'
+export { EntitlementOpenFeatureProvider } from './provider'
 export { CloudPolicy, createDefaultCloudPolicy } from './policy'
+export { createEntitlementService, type EntitlementService } from './service'

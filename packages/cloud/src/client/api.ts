@@ -13,6 +13,7 @@ import {
   invitationContinuationSchema,
   invitationPreviewSchema,
   resolvedDocumentShareSchema,
+  workspaceEntitlementsSchema,
   workspaceListSchema,
   workspaceUsageSchema,
   type AcceptDocumentInvitationInput,
@@ -37,6 +38,7 @@ import {
   type PutDocumentGrantInput,
   type ResolveDocumentShareInput,
   type UpdateDocumentShareInput,
+  type WorkspaceEntitlements,
   type WorkspaceList,
   type WorkspaceUsage
 } from '#cloud/contract'
@@ -71,6 +73,7 @@ const sharedDocumentResponseSchema = v.object({
   document: documentDownloadSchema
 })
 const userLookupResponseSchema = v.object({ user: v.nullable(cloudUserProfileSchema) })
+const entitlementResponseSchema = v.object({ entitlements: workspaceEntitlementsSchema })
 const uploadResponseSchema = v.object({
   id: v.pipe(v.string(), v.uuid()),
   upload: v.variant('kind', [
@@ -194,6 +197,15 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     },
     async listWorkspaces(): Promise<WorkspaceList> {
       return v.parse(workspaceListSchema, await responseBody(await client.workspaces.$get()))
+    },
+    async getWorkspaceEntitlements(workspaceId: string): Promise<WorkspaceEntitlements> {
+      const response = v.parse(
+        entitlementResponseSchema,
+        await responseBody(
+          await client.workspaces[':workspaceId'].entitlements.$get({ param: { workspaceId } })
+        )
+      )
+      return response.entitlements
     },
     async getUsage(workspaceId: string): Promise<WorkspaceUsage> {
       const response = v.parse(
