@@ -8,13 +8,15 @@ import { IS_BROWSER } from '@/constants'
 
 const fileDialog = useFileDialog({
   accept: '.fig,.pen,.html,.htm,.xhtml',
-  multiple: false,
+  multiple: true,
   reset: true
 })
 
 fileDialog.onChange((files) => {
-  const file = files?.[0]
-  if (file) void openFileInNewTab(file)
+  if (!files) return
+  void (async () => {
+    for (const file of files) await openFileInNewTab(file)
+  })()
 })
 
 if (IS_BROWSER && 'window' in globalThis) {
@@ -34,13 +36,14 @@ export async function readTauriDesignFile(path: string): Promise<File> {
   return new File([bytes], path.split('/').pop() ?? 'file.fig')
 }
 
-export async function chooseTauriOpenPath(): Promise<string | null> {
+export async function chooseTauriOpenPaths(): Promise<string[]> {
   const { open } = await import('@tauri-apps/plugin-dialog')
-  const path = await open({
+  const paths = await open({
     filters: [{ name: 'Design file', extensions: ['fig', 'pen', 'html', 'htm', 'xhtml'] }],
-    multiple: false
+    multiple: true
   })
-  return typeof path === 'string' ? path : null
+  if (!paths) return []
+  return typeof paths === 'string' ? [paths] : paths
 }
 
 export async function openFileFromPath(path: string) {
@@ -51,15 +54,15 @@ export async function openFileFromPath(path: string) {
 
 export async function openFileDialog() {
   if (isTauri()) {
-    const path = await chooseTauriOpenPath()
-    if (!path) return
-    await openFileFromPath(path)
+    const paths = await chooseTauriOpenPaths()
+    for (const path of paths) await openFileFromPath(path)
     return
   }
 
   if (window.showOpenFilePicker) {
     try {
-      const [handle] = await window.showOpenFilePicker({
+      const handles = await window.showOpenFilePicker({
+        multiple: true,
         types: [
           {
             description: 'Design file',
@@ -73,8 +76,10 @@ export async function openFileDialog() {
           }
         ]
       })
-      const file = await handle.getFile()
-      await openFileInNewTab(file, handle)
+      for (const handle of handles) {
+        const file = await handle.getFile()
+        await openFileInNewTab(file, handle)
+      }
       return
     } catch (e) {
       if ((e as Error).name === 'AbortError') return
