@@ -231,13 +231,24 @@ export function createDocumentService(
         expiresAt,
         maximumBytes: maximumStorageBytes === Number.MAX_SAFE_INTEGER ? null : maximumStorageBytes
       })
-      const objectUpload = await objects.createUpload({
-        key: objectKey,
-        byteSize: input.byteSize,
-        checksum: input.checksum,
-        contentType: input.contentType,
-        expiresAt
-      })
+      let objectUpload
+      try {
+        objectUpload = await objects.createUpload({
+          key: objectKey,
+          byteSize: input.byteSize,
+          checksum: input.checksum,
+          contentType: input.contentType,
+          expiresAt
+        })
+      } catch (error) {
+        await quota.release(uploadId)
+        await database
+          .updateTable('upload')
+          .set({ status: 'abandoned' })
+          .where('id', '=', uploadId)
+          .execute()
+        throw error
+      }
       if (objectUpload.kind === 'multipart') {
         await database
           .updateTable('upload')

@@ -1,5 +1,6 @@
 import type { CloudDatabase } from '#cloud/server/db'
 import type { ObjectStore } from '#cloud/server/objects'
+import { createStorageQuotaService } from '#cloud/server/quota'
 import type { Kysely } from 'kysely'
 
 export type UploadCleanupOptions = {
@@ -28,6 +29,7 @@ export function createUploadCleanupService(
   database: Kysely<CloudDatabase>,
   objects: ObjectStore
 ): UploadCleanupService {
+  const quota = createStorageQuotaService(database)
   return {
     async cleanupExpiredUploads(options) {
       const now = options.now ?? new Date()
@@ -76,7 +78,10 @@ export function createUploadCleanupService(
             .where('status', '=', 'cleaning')
             .where('cleanupClaimId', '=', claimId)
             .executeTakeFirst()
-          if (Number(result.numUpdatedRows) > 0) cleaned++
+          if (Number(result.numUpdatedRows) > 0) {
+            await quota.release(upload.id)
+            cleaned++
+          }
         } catch {
           failed++
           await database

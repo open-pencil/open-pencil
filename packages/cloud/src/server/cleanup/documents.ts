@@ -23,6 +23,7 @@ export type DocumentCleanupService = {
 
 type ClaimedDocument = {
   id: string
+  workspaceId: string
   deletedAt: Date
 }
 
@@ -93,7 +94,7 @@ async function claimDocuments(
   return database.transaction().execute(async (transaction) => {
     const candidates = await transaction
       .selectFrom('document')
-      .select(['id', 'deletedAt'])
+      .select(['id', 'workspaceId', 'deletedAt'])
       .where('deletedAt', 'is not', null)
       .where('deletedAt', '<=', retentionBefore)
       .where((expression) =>
@@ -207,6 +208,16 @@ async function removeDocumentMetadata(
         objectsDeleted++
         bytesReclaimed += object.byteSize
       }
+    }
+    if (bytesReclaimed > 0) {
+      await transaction
+        .updateTable('workspaceStorageUsage')
+        .set({
+          committedBytes: (expression) => expression('committedBytes', '-', bytesReclaimed),
+          updatedAt: new Date()
+        })
+        .where('workspaceId', '=', document.workspaceId)
+        .execute()
     }
     await transaction.deleteFrom('document').where('id', '=', document.id).execute()
     return { objectsDeleted, bytesReclaimed }
