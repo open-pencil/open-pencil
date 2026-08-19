@@ -84,13 +84,13 @@ describe('document sharing service', () => {
         original.share.id
       )
       expect(rotated.secret).not.toBe(original.secret)
-      expect(rotated.share.roomEpoch).toBe(1)
+      expect(rotated.share.roomEpoch).toBe(0)
       await expect(
         context.sharing.resolveShare(original.share.id, { secret: original.secret })
       ).rejects.toBeInstanceOf(DocumentShareInvalidError)
       expect(
         await context.sharing.resolveShare(original.share.id, { secret: rotated.secret })
-      ).toMatchObject({ permission: 'edit', roomEpoch: 1 })
+      ).toMatchObject({ permission: 'edit', roomEpoch: 0 })
 
       await context.sharing.revokeShare('owner', context.documentId, original.share.id)
       await expect(

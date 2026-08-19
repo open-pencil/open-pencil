@@ -258,10 +258,10 @@ export function createDocumentSharingService(
       const row = await database.transaction().execute(async (transaction) => {
         await requireSharingAccess(transaction, userId, documentId)
         const document = await transaction
-          .updateTable('document')
-          .set({ collaborationEpoch: (expression) => expression('collaborationEpoch', '+', 1) })
+          .selectFrom('document')
+          .select('collaborationEpoch')
           .where('id', '=', documentId)
-          .returning('collaborationEpoch')
+          .forUpdate()
           .executeTakeFirstOrThrow()
         const updated = await transaction
           .updateTable('documentShare')

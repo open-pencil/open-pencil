@@ -143,15 +143,15 @@ async function bindAssociatedFileOpen() {
 }
 
 onMounted(async () => {
+  activeDocumentCleanup.value = onActiveDocumentOpened((openedStore) => {
+    if (openedStore === getActiveStore()) void connectCloudDocument()
+  })
   try {
     await openCloudShare()
     await connectCloudDocument()
   } catch (error) {
     console.error('[Cloud share]', error)
   }
-  activeDocumentCleanup.value = onActiveDocumentOpened((openedStore) => {
-    if (openedStore === getActiveStore()) void connectCloudDocument()
-  })
   const mcp = 'test' in params ? null : await spawnMCPIfNeeded()
   mcpCleanup.value = mcp?.disconnect ?? null
   const tauri = isTauri()
@@ -171,6 +171,7 @@ onUnmounted(() => {
   automationCleanup.value?.()
   fileAssociationCleanup.value?.()
   activeDocumentCleanup.value?.()
+  collab.disconnect()
 })
 </script>
 

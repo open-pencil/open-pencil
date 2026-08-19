@@ -28,7 +28,7 @@ services:
       S3_FORCE_PATH_STYLE: "true"
       S3_CHECKSUM_VERIFICATION: ${S3_CHECKSUM_VERIFICATION:-metadata}
     ports:
-      - "8787:8787"
+      - "${OPENPENCIL_CLOUD_PORT:-8787}:8787"
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8787/ready"]
       interval: 5s
@@ -42,7 +42,7 @@ services:
       POSTGRES_USER: openpencil
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openpencil-development-password}
     ports:
-      - "54329:5432"
+      - "${POSTGRES_PORT:-54329}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U openpencil -d openpencil"]
       interval: 2s
@@ -60,8 +60,8 @@ services:
       - -s3.port=8333
       - -s3.config=/etc/seaweedfs/s3.json
     ports:
-      - "8333:8333"
-      - "9333:9333"
+      - "${SEAWEEDFS_S3_PORT:-8333}:8333"
+      - "${SEAWEEDFS_MASTER_PORT:-9333}:9333"
     volumes:
       - cloud-seaweedfs:/data
       - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro

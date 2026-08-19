@@ -16,15 +16,18 @@ export async function createCloudYjsProvider(
   options: CloudYjsProviderOptions
 ): Promise<HocuspocusProvider | null> {
   if (options.ticket.provider !== 'hocuspocus' || !options.ticket.serverURL) return null
-  const { HocuspocusProvider, WebSocketStatus } = await import('@hocuspocus/provider')
-  return new HocuspocusProvider({
+  const { HocuspocusProvider, HocuspocusProviderWebsocket, WebSocketStatus } =
+    await import('@hocuspocus/provider')
+  const websocketProvider = new HocuspocusProviderWebsocket({
     url: options.ticket.serverURL,
+    autoConnect: false
+  })
+  const provider = new HocuspocusProvider({
+    websocketProvider,
     name: options.ticket.roomId,
     token: options.ticket.token,
     document: options.document,
     awareness: options.awareness,
-    onAuthenticationFailed() {},
-    onClose() {},
     onStatus({ status }) {
       options.onStatus?.(status === WebSocketStatus.Connected)
     },
@@ -32,4 +35,7 @@ export async function createCloudYjsProvider(
       options.onSynced?.()
     }
   })
+  provider.attach()
+  void websocketProvider.connect()
+  return provider
 }

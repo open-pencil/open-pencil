@@ -39,7 +39,7 @@
 - Show outdated linked library instances by asset and update the current page or all pages in one undoable action. (#239)
 - Add a reproducible Dev Container for web, package, CLI, and non-browser test development.
 - Add a reference OpenPencil Cloud Compose deployment with PostgreSQL and SeaweedFS, plus Garage, Vercel Node, and Cloudflare Workers deployment profiles, including automatic migrations, readiness checks, persistent storage, full revision-flow integration coverage, retention-aware garbage collection, resilient concurrent multipart uploads, a deployment-independent typed API router, and durable per-server connection state.
-- Share Cloud documents through expiring view or edit links and direct invitations, with authenticated or stable guest collaboration identities, private epoch-scoped P2P rooms, ticket refresh, and enforced editor view mode.
+- Share Cloud documents through expiring view or edit links and direct invitations, with authenticated or stable guest identities, relay-backed Yjs collaboration, PostgreSQL live-state persistence, ticket refresh, and server-enforced viewer permissions.
 - Add local crash recovery for unsaved and pathless documents, including MCP-created documents. (#487)
 - Add isolated visual inspection that sends bounded selection renders to the configured Vision model and returns text findings without retaining image data in Design chat history. (#232, #471)
 - Add image attachments to AI chat with bounded analysis, immediate transcript thumbnails, hover previews, and click-to-view images. (#232)
@@ -66,7 +66,7 @@
 ### Fixed
 
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
-
+- Preserve Cloud document owner permissions while attaching collaboration and isolate Cloud browser tests from running development services.
 - Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.
 - Preserve app-created component properties and instance-swap targets across `.fig` save and reload cycles. (#548)
 - Reconnect desktop automation to an already-running MCP server by allowing access to its discovery file. (#546)

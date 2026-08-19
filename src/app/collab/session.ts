@@ -37,7 +37,13 @@ export type CollabRuntime = {
   stopTicketRefresh: (() => void) | null
 }
 
-type ConnectCollabSessionOptions = {
+type CollabSyncActions = {
+  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
+  syncNodeToYjs: (nodeId: string) => void
+  syncAllNodesToYjs: () => void
+}
+
+type ConnectCollabSessionOptions = CollabSyncActions & {
   roomId: string
   roomPassword?: string
   cloud?: CloudCollaborationCredentials
@@ -49,19 +55,15 @@ type ConnectCollabSessionOptions = {
   updatePeersList: () => void
   tickFollow: () => void
   broadcastAwareness: () => void
-  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncNodeToYjs: (nodeId: string) => void
 }
 
-type CollabConnectionActionsOptions = {
+type CollabConnectionActionsOptions = CollabSyncActions & {
   runtime: CollabRuntime
   state: Ref<CollabState>
   getStore: () => EditorStore
   updatePeersList: () => void
   tickFollow: () => void
   broadcastAwareness: () => void
-  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncNodeToYjs: (nodeId: string) => void
   resetFollow: () => void
   getLocalName: () => string
   onCloudTicketError: (error: unknown) => void
@@ -123,6 +125,7 @@ export function createCollabConnectionActions({
   broadcastAwareness,
   applyYjsToGraph,
   syncNodeToYjs,
+  syncAllNodesToYjs,
   resetFollow,
   getLocalName,
   onCloudTicketError
@@ -139,7 +142,8 @@ export function createCollabConnectionActions({
       tickFollow,
       broadcastAwareness,
       applyYjsToGraph,
-      syncNodeToYjs
+      syncNodeToYjs,
+      syncAllNodesToYjs
     })
   }
 
@@ -158,7 +162,8 @@ export function createCollabConnectionActions({
       tickFollow,
       broadcastAwareness,
       applyYjsToGraph,
-      syncNodeToYjs
+      syncNodeToYjs,
+      syncAllNodesToYjs
     })
   }
 
@@ -209,7 +214,8 @@ export async function connectCollabSession({
   tickFollow,
   broadcastAwareness,
   applyYjsToGraph,
-  syncNodeToYjs
+  syncNodeToYjs,
+  syncAllNodesToYjs
 }: ConnectCollabSessionOptions) {
   if (runtime.room || runtime.cloudProvider) disconnect()
 
@@ -224,7 +230,7 @@ export async function connectCollabSession({
       permission: ticket.permission,
       serverEnforcedWrites: ticket.serverEnforcedWrites
     }
-    store.setAccessMode(ticket.permission)
+    if (store.state.accessMode !== 'owner') store.setAccessMode(ticket.permission)
   } else {
     state.value.identity = {
       source: 'local',
@@ -237,7 +243,7 @@ export async function connectCollabSession({
   runtime.awareness = new awarenessProtocol.Awareness(runtime.ydoc)
   runtime.ynodes = runtime.ydoc.getMap('nodes')
   runtime.yimages = runtime.ydoc.getMap('images')
-  runtime.persistence = new IndexeddbPersistence(`op-room-${roomId}`, runtime.ydoc)
+  runtime.persistence = cloud ? null : new IndexeddbPersistence(`op-room-${roomId}`, runtime.ydoc)
 
   runtime.awareness.on('change', () => {
     updatePeersList()
@@ -261,6 +267,9 @@ export async function connectCollabSession({
         ticket,
         document: runtime.ydoc,
         awareness: runtime.awareness,
+        onSynced: () => {
+          if (runtime.ynodes?.size === 0 && store.canMutate()) syncAllNodesToYjs()
+        },
         onStatus: (connected) => {
           state.value.connected = connected
         }
@@ -305,7 +314,8 @@ export async function connectCollabSession({
           tickFollow,
           broadcastAwareness,
           applyYjsToGraph,
-          syncNodeToYjs
+          syncNodeToYjs,
+          syncAllNodesToYjs
         }),
       disconnect,
       broadcastAwareness,

@@ -5,10 +5,26 @@ const deployDirectory = cloudDeployPath()
 const repositoryDirectory = repositoryPath()
 const projectName = `openpencil-cloud-browser-e2e-${process.pid}`
 const compose = composeCommand(projectName, 'compose.yml')
-const relayEnvironment = {
+const appPort = 14_000 + (process.pid % 1_000)
+const cloudPort = 15_000 + (process.pid % 1_000)
+const relayPort = 16_000 + (process.pid % 1_000)
+const postgresPort = 17_000 + (process.pid % 1_000)
+const seaweedS3Port = 18_000 + (process.pid % 1_000)
+const seaweedMasterPort = 19_000 + (process.pid % 1_000)
+const appOrigin = `http://127.0.0.1:${appPort}`
+const serviceEnvironment = {
   ...Bun.env,
+  OPENPENCIL_CLOUD_PORT: String(cloudPort),
+  POSTGRES_PORT: String(postgresPort),
+  SEAWEEDFS_S3_PORT: String(seaweedS3Port),
+  SEAWEEDFS_MASTER_PORT: String(seaweedMasterPort),
+  DATABASE_URL: `postgresql://openpencil:openpencil-development-password@127.0.0.1:${postgresPort}/openpencil`,
+  S3_ENDPOINT: `http://127.0.0.1:${seaweedS3Port}`
+}
+const relayEnvironment = {
+  ...serviceEnvironment,
   BETTER_AUTH_SECRET: 'browser-e2e-secret-at-least-32-characters',
-  OPENPENCIL_CLOUD_COLLABORATION_PORT: '12345'
+  OPENPENCIL_CLOUD_COLLABORATION_PORT: String(relayPort)
 }
 let cloud: ReturnType<typeof Bun.spawn> | null = null
 let relay: ReturnType<typeof Bun.spawn> | null = null
@@ -17,7 +33,7 @@ let playwrightExitCode = 1
 async function run(command: string[], cwd = deployDirectory): Promise<void> {
   await runProcess(command, {
     cwd,
-    environment: { ...Bun.env, S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil' }
+    environment: { ...serviceEnvironment, S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil' }
   })
 }
 
@@ -27,29 +43,40 @@ type CloudBrowserE2EFixture = {
   documentId: string
 }
 
-async function waitForCloud(
-  process: ReturnType<typeof Bun.spawn>
-): Promise<CloudBrowserE2EFixture> {
+async function waitForReadyLine(
+  process: ReturnType<typeof Bun.spawn>,
+  marker: string,
+  processName: string
+): Promise<string> {
   const stdout = process.stdout
   if (!(stdout instanceof ReadableStream)) {
-    throw new Error('Cloud browser E2E server stdout is unavailable')
+    throw new Error(`${processName} stdout is unavailable`)
   }
   const reader = stdout.getReader()
   const decoder = new TextDecoder()
   let output = ''
   while (true) {
     const result = await reader.read()
-    if (result.done) throw new Error('Cloud browser E2E server exited before becoming ready')
+    if (result.done) throw new Error(`${processName} exited before becoming ready`)
     output += decoder.decode(result.value, { stream: true })
-    const newline = output.indexOf('\n')
-    if (newline === -1) continue
-    const line = output.slice(0, newline)
-    output = output.slice(newline + 1)
-    console.log(line)
-    if (line.startsWith('OPENPENCIL_CLOUD_E2E_READY ')) {
-      return JSON.parse(line.slice('OPENPENCIL_CLOUD_E2E_READY '.length)) as CloudBrowserE2EFixture
+    const lines = output.split('\n')
+    output = lines.pop() ?? ''
+    for (const line of lines) {
+      console.log(line)
+      if (line.startsWith(marker)) return line.slice(marker.length)
     }
   }
+}
+
+async function waitForCloud(
+  process: ReturnType<typeof Bun.spawn>
+): Promise<CloudBrowserE2EFixture> {
+  const payload = await waitForReadyLine(
+    process,
+    'OPENPENCIL_CLOUD_E2E_READY ',
+    'Cloud browser E2E server'
+  )
+  return JSON.parse(payload) as CloudBrowserE2EFixture
 }
 
 try {
@@ -58,7 +85,13 @@ try {
   await run(['bun', 'run', '--filter', '@open-pencil/cloud', 'build'], repositoryDirectory)
   cloud = Bun.spawn(['bun', 'packages/cloud/tests/e2e/browser-server.ts'], {
     cwd: repositoryDirectory,
-    env: { ...Bun.env, S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil' },
+    env: {
+      ...serviceEnvironment,
+      S3_BUCKET: Bun.env.S3_BUCKET ?? 'openpencil',
+      OPENPENCIL_APP_ORIGIN: appOrigin,
+      OPENPENCIL_CLOUD_E2E_PORT: String(cloudPort),
+      OPENPENCIL_CLOUD_COLLABORATION_PORT: String(relayPort)
+    },
     stdout: 'pipe',
     stderr: 'inherit'
   })
@@ -67,21 +100,27 @@ try {
     {
       cwd: repositoryDirectory,
       env: relayEnvironment,
-      stdout: 'inherit',
+      stdout: 'pipe',
       stderr: 'inherit'
     }
   )
-  const fixture = await waitForCloud(cloud)
+  const [fixture] = await Promise.all([
+    waitForCloud(cloud),
+    waitForReadyLine(relay, 'OPENPENCIL_CLOUD_RELAY_READY', 'Cloud collaboration relay')
+  ])
   const playwright = Bun.spawn(
     ['bunx', 'playwright', 'test', 'tests/e2e/cloud/sharing.spec.ts', '--project=openpencil'],
     {
       cwd: repositoryDirectory,
       env: {
-        ...Bun.env,
+        ...serviceEnvironment,
         OPENPENCIL_CLOUD_E2E: '1',
         OPENPENCIL_CLOUD_E2E_URL: fixture.serverURL,
         OPENPENCIL_CLOUD_E2E_WORKSPACE_ID: fixture.workspaceId,
-        OPENPENCIL_CLOUD_E2E_DOCUMENT_ID: fixture.documentId
+        OPENPENCIL_CLOUD_E2E_DOCUMENT_ID: fixture.documentId,
+        OPENPENCIL_CLOUD_E2E_COLLABORATION_URL: `ws://127.0.0.1:${relayPort}`,
+        OPENPENCIL_E2E_APP_PORT: String(appPort),
+        PLAYWRIGHT_BASE_URL: appOrigin
       },
       stdout: 'inherit',
       stderr: 'inherit'

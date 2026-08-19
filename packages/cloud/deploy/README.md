@@ -84,9 +84,15 @@ Set `OPENPENCIL_CLOUD_COLLABORATION_URL` to a dedicated Hocuspocus WebSocket end
 `OPENPENCIL_CLOUD_COLLABORATION_PORT` to the local listener port to issue
 Cloud collaboration tickets with server-enforced write permissions. The relay validates the signed
 Cloud ticket, binds it to the document epoch room, marks viewers read-only, supports active token
-refresh through Hocuspocus, and stamps awareness with server-verified document/permission metadata.
+refresh through Hocuspocus, stamps awareness with server-verified document/permission metadata, and
+persists binary Yjs state through the official Hocuspocus database extension. Cloud relay sessions use
+PostgreSQL rather than browser IndexedDB for room persistence.
 Without this setting, Cloud documents retain the temporary Trystero path and advertise that writes
 are not server-enforced.
+
+Compose host ports can be overridden with `OPENPENCIL_CLOUD_PORT`, `POSTGRES_PORT`,
+`SEAWEEDFS_S3_PORT`, and `SEAWEEDFS_MASTER_PORT`. This is useful for parallel deployments and CI; the
+container ports remain unchanged.
 
 ## Stop
 

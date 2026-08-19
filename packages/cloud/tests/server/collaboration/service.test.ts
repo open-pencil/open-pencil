@@ -88,8 +88,8 @@ describe('collaboration tickets', () => {
       })
       expect(ticket).toMatchObject({
         permission: 'edit',
-        roomEpoch: 1,
-        roomId: `cloud:${context.documentId}:1`,
+        roomEpoch: 0,
+        roomId: `cloud:${context.documentId}:0`,
         principal: {
           kind: 'guest',
           guestId: 'stable-guest-identity',
@@ -102,28 +102,28 @@ describe('collaboration tickets', () => {
         context.documentId
       )
       expect(ownerTicket).toMatchObject({
-        roomEpoch: 1,
-        roomId: `cloud:${context.documentId}:1`,
+        roomEpoch: 0,
+        roomId: `cloud:${context.documentId}:0`,
         principal: { kind: 'user', userId: 'owner' }
       })
       const secondCapability = await context.sharing.createShare('owner', context.documentId, {
         permission: 'view'
       })
-      expect(secondCapability.share.roomEpoch).toBe(1)
+      expect(secondCapability.share.roomEpoch).toBe(0)
       const secondTicket = await context.tickets.issueShareTicket(secondCapability.share.id, {
         secret: secondCapability.secret,
         guestName: 'Guest viewer',
         guestId: 'stable-guest-viewer'
       })
-      expect(secondTicket).toMatchObject({ roomEpoch: 1, roomId: `cloud:${context.documentId}:1` })
+      expect(secondTicket).toMatchObject({ roomEpoch: 0, roomId: `cloud:${context.documentId}:0` })
       await context.sharing.revokeShare('owner', context.documentId, secondCapability.share.id)
       const afterRevocation = await context.tickets.issueUserTicket(
         { userId: 'owner', name: 'Owner', email: 'owner@example.com' },
         context.documentId
       )
       expect(afterRevocation).toMatchObject({
-        roomEpoch: 2,
-        roomId: `cloud:${context.documentId}:2`
+        roomEpoch: 1,
+        roomId: `cloud:${context.documentId}:1`
       })
     } finally {
       await context.runtime.close()

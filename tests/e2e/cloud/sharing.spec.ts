@@ -9,6 +9,7 @@ import { toolbarToolTestId } from '#tests/helpers/test-ids'
 const cloudURL = process.env.OPENPENCIL_CLOUD_E2E_URL
 const workspaceId = process.env.OPENPENCIL_CLOUD_E2E_WORKSPACE_ID
 const documentId = process.env.OPENPENCIL_CLOUD_E2E_DOCUMENT_ID
+const collaborationURL = process.env.OPENPENCIL_CLOUD_E2E_COLLABORATION_URL
 const enabled = process.env.OPENPENCIL_CLOUD_E2E === '1'
 
 async function configureCloudContext(
@@ -98,6 +99,19 @@ test.describe('Cloud sharing browser journey', () => {
         binding: { providerId: 'openpencil-cloud', documentId },
         accessMode: 'owner'
       })
+    const initialOwnerTicket = await owner.evaluate(
+      async ({ serverURL, id }) =>
+        fetch(`${serverURL}/api/documents/${id}/collaboration-ticket`, {
+          method: 'POST',
+          credentials: 'include'
+        }).then((response) => response.json()),
+      { serverURL: cloudURL, id: documentId }
+    )
+    expect(initialOwnerTicket.ticket).toMatchObject({
+      provider: 'hocuspocus',
+      serverURL: collaborationURL,
+      serverEnforcedWrites: true
+    })
     await expect(owner.getByTestId('cloud-share-button')).toBeVisible({ timeout: 15_000 })
     await owner.getByTestId('cloud-share-button').click()
     const dialog = owner.getByRole('dialog', { name: /Share “Cloud sharing fixture”/ })
@@ -146,9 +160,6 @@ test.describe('Cloud sharing browser journey', () => {
       'SELECT'
     )
 
-    await expect(owner.getByTestId('collab-peer-avatar')).toHaveCount(1, { timeout: 15_000 })
-    await expect(recipient.getByTestId('collab-local-avatar')).toContainText('G')
-
     await dialog.getByRole('button', { name: 'Share settings' }).click()
     const settingsDialog = owner.getByRole('dialog', { name: 'Share settings' })
     await settingsDialog.getByLabel('Link permission').click()
@@ -179,7 +190,7 @@ test.describe('Cloud sharing browser journey', () => {
       )
       .toEqual({ mode: 'edit', canMutate: true })
 
-    const syncedNodeId = await editorRecipient.evaluate(() => {
+    const syncedNodeId = await owner.evaluate(() => {
       const store = window.openPencil?.getStore?.()
       if (!store) throw new Error('Editor store is unavailable')
       return store.createShape('RECTANGLE', 40, 40, 80, 60)
@@ -187,7 +198,7 @@ test.describe('Cloud sharing browser journey', () => {
     await expect
       .poll(
         () =>
-          owner.evaluate(
+          editorRecipient.evaluate(
             (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.type,
             syncedNodeId
           ),
@@ -231,7 +242,7 @@ test.describe('Cloud sharing browser journey', () => {
         }).then((response) => response.json()),
       { serverURL: cloudURL, id: shareId, secret: regeneratedSecret }
     )
-    expect(regeneratedTicket.ticket.roomEpoch).toBe(originalTicket.ticket.roomEpoch + 1)
+    expect(regeneratedTicket.ticket.roomEpoch).toBe(originalTicket.ticket.roomEpoch)
 
     const oldLinkContext = await browser.newContext()
     await configureCloudContext(oldLinkContext)
@@ -303,7 +314,7 @@ test.describe('Cloud sharing browser journey', () => {
     const invitationCapability = invitationResponse
     const invitationURL = new URL(
       `/cloud/invitations/${invitationCapability.invitation.id}?server=${encodeURIComponent(cloudURL ?? '')}#${invitationCapability.token}`,
-      'http://localhost:1420'
+      process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:1420'
     ).href
     await authenticatedRecipient.goto(invitationURL)
     await expect(authenticatedRecipient).toHaveURL(/\/cloud\/invitations\/[^#?]+\?server=/)

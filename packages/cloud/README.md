@@ -89,17 +89,19 @@ serverEnforcedWrites: false
 ```
 
 Cloud deployments can configure a Hocuspocus WebSocket relay. Hocuspocus provides authentication,
-readonly connections, token synchronization, awareness, persistence hooks, reconnection, and Yjs
-protocol handling. The relay validates signed epoch-scoped tickets, marks viewers read-only, and
-stamps awareness with server-verified metadata. Relay-backed tickets advertise:
+readonly connections, token synchronization, awareness, reconnection, and Yjs protocol handling. The
+relay validates signed epoch-scoped tickets, marks viewers read-only, and stamps awareness with
+server-verified metadata. Relay-backed tickets advertise:
 
 ```ts
 serverEnforcedWrites: true
 ```
 
-Live Yjs state is stored in PostgreSQL by document and collaboration epoch. It remains separate from
-immutable `.fig` revisions and object storage. Epoch changes isolate future sessions after capability
-rotation or revocation.
+Live Yjs state is stored in PostgreSQL by document and collaboration epoch through Hocuspocus's
+official database extension. Cloud sessions do not add browser IndexedDB room persistence; PostgreSQL
+is authoritative for relay state. Local and direct-S3 sessions may still use IndexedDB alongside
+Trystero. Live state remains separate from immutable `.fig` revisions and object storage. Capability
+secret rotation preserves the active epoch, while revocation advances it to isolate future sessions.
 
 ## Configuration ownership
 

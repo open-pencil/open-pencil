@@ -18,8 +18,9 @@ const port = Number(process.env.OPENPENCIL_CLOUD_E2E_PORT ?? 8787)
 const appOrigin = process.env.OPENPENCIL_APP_ORIGIN ?? 'http://localhost:1420'
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
-  publicURL: `http://localhost:${port}`,
-  collaborationURL: `ws://localhost:${Number(process.env.OPENPENCIL_CLOUD_COLLABORATION_PORT ?? 12345)}`,
+  publicURL: `http://127.0.0.1:${port}`,
+  appURL: appOrigin,
+  collaborationURL: `ws://127.0.0.1:${Number(process.env.OPENPENCIL_CLOUD_COLLABORATION_PORT ?? 12345)}`,
   trustedOrigins: [appOrigin],
   databaseURL:
     process.env.DATABASE_URL ??
@@ -48,7 +49,7 @@ const documentId = crypto.randomUUID()
 const revisionId = crypto.randomUUID()
 const objectId = crypto.randomUUID()
 const objectKey = `browser-e2e/${documentId}/${revisionId}.fig`
-const fixturePath = repositoryPath('tests/fixtures/gold-preview.fig')
+const fixturePath = repositoryPath('tests/fixtures/cloud-collaboration.fig')
 const fixture = new Uint8Array(await readFile(fixturePath))
 const fixtureChecksum = checksum(fixture)
 

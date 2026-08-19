@@ -28,9 +28,8 @@ export function createCollaborationStateStore(database: Kysely<CloudDatabase>) {
       return row ? new Uint8Array(row.state) : null
     },
 
-    async store(roomId: string, document: Y.Doc): Promise<void> {
+    async storeState(roomId: string, state: Uint8Array): Promise<void> {
       const room = collaborationRoomIdentity(roomId)
-      const state = Y.encodeStateAsUpdate(document)
       await database
         .insertInto('documentCollaborationState')
         .values({
@@ -47,6 +46,10 @@ export function createCollaborationStateStore(database: Kysely<CloudDatabase>) {
           })
         )
         .execute()
+    },
+
+    async store(roomId: string, document: Y.Doc): Promise<void> {
+      await this.storeState(roomId, Y.encodeStateAsUpdate(document))
     }
   }
 }

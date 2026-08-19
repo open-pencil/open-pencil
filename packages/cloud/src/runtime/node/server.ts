@@ -64,6 +64,7 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     ? createCloudCollaborationRelay({
         authSecret: config.authSecret,
         stateStore: createCollaborationStateStore(database),
+        maximumMessageBytes: config.technicalLimits.maximumCollaborationMessageBytes,
         async maximumParticipants(documentId) {
           const document = await database
             .selectFrom('document')

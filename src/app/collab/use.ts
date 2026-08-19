@@ -56,6 +56,7 @@ export function useCollab(storeOrGetter: EditorStore | (() => EditorStore)) {
     broadcastAwareness,
     applyYjsToGraph,
     syncNodeToYjs,
+    syncAllNodesToYjs,
     resetFollow,
     getLocalName: () => storedName.value,
     onCloudTicketError: (error) => {

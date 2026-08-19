@@ -15,6 +15,7 @@ async function ticket(permission: 'view' | 'edit', roomEpoch = 2) {
   return new SignJWT({
     documentId,
     roomId,
+    principal: { kind: 'guest', guestId: 'relay-test-guest', name: 'Relay Guest' },
     permission,
     roomEpoch,
     serverEnforcedWrites: true
@@ -33,14 +34,12 @@ describe('Cloud collaboration relay', () => {
       documentId,
       roomId,
       permission: 'view',
+      principal: { kind: 'guest', guestId: 'relay-test-guest', name: 'Relay Guest' },
       readOnly: true
     })
     expect(
       await authorizeCollaborationRelay(await ticket('edit'), roomId, authSecret)
-    ).toMatchObject({
-      permission: 'edit',
-      readOnly: false
-    })
+    ).toMatchObject({ permission: 'edit', readOnly: false })
   })
 
   test('rejects tickets for another room', async () => {
