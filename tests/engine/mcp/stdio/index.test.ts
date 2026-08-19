@@ -143,6 +143,7 @@ describe('MCP stdio transport', () => {
         withTcp: true,
         socketPath: SOCKET_PATH,
         authToken: AUTH_TOKEN,
+        disabledTools: ['rename_node'],
         enableEval: false,
         mcpRoot: null
       })
@@ -201,6 +202,7 @@ describe('MCP stdio transport', () => {
     expect(names).toContain('save_file')
     expect(names).toContain('list_documents')
     expect(names).toContain('get_codegen_prompt')
+    expect(names).not.toContain('rename_node')
     const createShape = expectDefined(
       tools.find((tool) => tool.name === 'create_shape'),
       'create_shape tool'

@@ -66,6 +66,8 @@ export interface ServerOptions {
   /** Whether to also listen on TCP (in addition to the socket). API default is `false`; the CLI passes `true` by default (derived from PORT, default 7600). */
   withTcp?: boolean
   enableEval?: boolean
+  /** Tool names omitted from every MCP session. */
+  disabledTools?: Iterable<string>
   mcpRoot?: string | null
   /** Auth token for /mcp and /rpc endpoints. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. */
   authToken?: string | null
@@ -276,6 +278,7 @@ function wireConnectionHandling(
 function buildServerContext(options: ServerOptions) {
   const httpPort = options.httpPort ?? 7600
   const enableEval = options.enableEval ?? false
+  const disabledTools = [...new Set(options.disabledTools)]
   const mcpRoot = options.mcpRoot ?? null
   // Auto-generated so all transports require auth by default. Override via OPENPENCIL_MCP_AUTH_TOKEN or authToken option.
   // Pass authToken: null explicitly to disable auth entirely.
@@ -299,7 +302,7 @@ function buildServerContext(options: ServerOptions) {
   const mcpSessions = createMCPSessionManager({
     serverVersion: MCP_VERSION,
     registerTools: (mcpServer: McpServer) =>
-      registerTools(mcpServer, { enableEval, mcpRoot, sendRPC: sendToBrowser })
+      registerTools(mcpServer, { disabledTools, enableEval, mcpRoot, sendRPC: sendToBrowser })
   })
   const browserRPC = createBrowserRPCBridge({
     authToken,
@@ -310,7 +313,17 @@ function buildServerContext(options: ServerOptions) {
   const app = createHonoApp({ authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser })
   const wss = new WebSocketServer({ noServer: true })
 
-  return { httpPort, withTcp, mcpSessions, browserRPC, sendToBrowser, app, wss, authToken }
+  return {
+    httpPort,
+    withTcp,
+    mcpSessions,
+    browserRPC,
+    sendToBrowser,
+    app,
+    wss,
+    authToken,
+    disabledTools
+  }
 }
 
 /**
@@ -429,6 +442,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
       actualHttpPort,
       ctx.authToken,
       MCP_VERSION,
+      ctx.disabledTools,
       state
     )
   } catch (err) {

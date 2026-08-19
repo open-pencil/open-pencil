@@ -33,6 +33,12 @@
       "bun": "./src/transport/discovery.ts",
       "import": "./dist/discovery.mjs",
       "default": "./dist/discovery.mjs"
+    },
+    "./tools": {
+      "types": "./dist/tools.d.mts",
+      "bun": "./src/tool/catalog.ts",
+      "import": "./dist/tools.mjs",
+      "default": "./dist/tools.mjs"
     }
   },
   "bin": {

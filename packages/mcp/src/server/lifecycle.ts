@@ -166,7 +166,8 @@ export async function writeDiscovery(
   resolvedSocketPath: string | null,
   actualHttpPort: number,
   authToken: string | null,
-  version: string
+  version: string,
+  disabledTools: string[]
 ): Promise<string> {
   const startedAt = new Date().toISOString()
   await writeDiscoveryFile({
@@ -176,7 +177,8 @@ export async function writeDiscovery(
     authRequired: authToken !== null,
     authToken,
     version,
-    startedAt
+    startedAt,
+    disabledTools
   })
   return startedAt
 }
@@ -367,10 +369,17 @@ export async function tryWriteDiscovery(
   actualHttpPort: number,
   authToken: string | null,
   version: string,
+  disabledTools: string[],
   state: ListenerState
 ): Promise<string> {
   try {
-    return await writeDiscovery(resolvedSocketPath, actualHttpPort, authToken, version)
+    return await writeDiscovery(
+      resolvedSocketPath,
+      actualHttpPort,
+      authToken,
+      version,
+      disabledTools
+    )
   } catch (err) {
     // If discovery file write fails after both listeners are up, tear down
     // both listeners so we never advertise a running server that clients

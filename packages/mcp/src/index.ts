@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { startServer } from '#mcp/server'
+import { parseDisabledTools } from '#mcp/tool/catalog'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
@@ -18,6 +19,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_AUTH_TOKEN    Bearer token for MCP and RPC auth\n` +
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: current working directory)\n` +
       `  OPENPENCIL_MCP_EVAL          Set to 1 to enable the eval tool\n` +
+      `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit\n` +
       `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origin\n` +
       `  OPENPENCIL_MCP_APP_TIMEOUT_MS  If set, close the server and remove its discovery\n` +
       `                               file after no app is attached for this many ms. The\n` +
@@ -70,6 +72,7 @@ const handle = await startServer({
   withTcp,
   socketPath: process.env.OPENPENCIL_MCP_SOCKET?.trim() || null,
   enableEval: process.env.OPENPENCIL_MCP_EVAL === '1',
+  disabledTools: parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS),
   mcpRoot: process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd(),
   // Auth token: undefined → auto-generate, empty string → disable auth,
   // non-empty → use trimmed value. Whitespace-only is rejected to prevent a

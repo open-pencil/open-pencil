@@ -11,9 +11,8 @@ import { useKeyboard } from '@/app/shell/keyboard/use'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { openFileFromPath, useEditorMenu } from '@/app/shell/menu/use'
 import { useCollab, COLLAB_KEY } from '@/app/collab/use'
-import { connectAutomation } from '@/app/automation/bridge/server'
+import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { exposeCollaborationActions } from '@/app/browser-bridge'
-import { spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
 import { isTauri } from '@/app/tauri/env'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { createDemoShapes } from '@/app/demo/document'
@@ -66,8 +65,6 @@ useEventListener(
   { passive: false }
 )
 
-const automationCleanup = ref<(() => void) | null>(null)
-const mcpCleanup = ref<(() => void) | null>(null)
 const fileAssociationCleanup = ref<(() => void) | null>(null)
 const initialEditorLayout = loadEditorLayout()
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
@@ -94,12 +91,7 @@ async function bindAssociatedFileOpen() {
 }
 
 onMounted(async () => {
-  const mcp = await spawnMCPIfNeeded()
-  mcpCleanup.value = mcp?.disconnect ?? null
-  const tauri = isTauri()
-  if (import.meta.env.DEV || (tauri && mcp)) {
-    automationCleanup.value = connectAutomation(getActiveStore, mcp?.authToken ?? null).disconnect
-  }
+  await startMCPRuntime(getActiveStore)
 
   try {
     await bindAssociatedFileOpen()
@@ -109,8 +101,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  mcpCleanup.value?.()
-  automationCleanup.value?.()
+  void stopMCPRuntime()
   fileAssociationCleanup.value?.()
 })
 </script>
