@@ -9,6 +9,7 @@ import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
+import { DEV_MCP_RESTART_PATH, type DevMCPConfiguration } from './dev-control'
 import { disabledMCPToolsCSV, mcpAuthenticationEnabled, mcpRootDirectory } from './preferences'
 
 export interface AutomationHealth {
@@ -259,13 +260,35 @@ async function readExistingServerHandle(): Promise<AutomationServerHandle | null
   return { disconnect: noop, authToken: token, managed: false }
 }
 
+async function configureDevMCP(): Promise<AutomationServerHandle> {
+  if (!DEV_AUTOMATION_AUTH_TOKEN) throw new Error('MCP development control token is unavailable')
+  const configuration: DevMCPConfiguration = {
+    authenticationEnabled: mcpAuthenticationEnabled.value,
+    rootDirectory: mcpRootDirectory.value,
+    disabledTools: disabledMCPToolsCSV()
+  }
+  const response = await fetch(DEV_MCP_RESTART_PATH, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${DEV_AUTOMATION_AUTH_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(configuration)
+  })
+  if (!response.ok) {
+    throw new Error(`Failed to configure development MCP server (${response.status})`)
+  }
+  const health = await pollHealth(10, 250)
+  if (!health) throw new Error('Development MCP server did not become healthy')
+  const authToken = configuration.authenticationEnabled ? DEV_AUTOMATION_AUTH_TOKEN : null
+  runtimeAutomationAuthToken = authToken
+  return { disconnect: noop, authToken, managed: true }
+}
+
 async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   runtimeAutomationStartupError = null
-  if (import.meta.env.DEV || !isTauri()) {
-    return DEV_AUTOMATION_AUTH_TOKEN
-      ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN, managed: false }
-      : null
-  }
+  if (import.meta.env.DEV) return configureDevMCP()
+  if (!isTauri()) return null
 
   const existing = await readExistingServerHandle()
   if (existing) {
