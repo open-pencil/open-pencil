@@ -24,6 +24,12 @@ import { cloudConnectionService } from './service'
 const PROVIDER_ID = 'openpencil-cloud'
 const SERVER_URL_FIELD = 'server-url'
 
+export type CloudDeviceAuthState =
+  | { status: 'idle' }
+  | { status: 'waiting'; userCode: string; verificationURL: string; expiresAt: number }
+  | { status: 'authorized' }
+  | { status: 'denied' | 'expired' | 'error'; message: string }
+
 function createCloudStorageSettings() {
   const { profiles, activeProfileId } = useCloudConnectionProfiles()
   const activeProfile = computed(() => activeCloudConnectionProfile())
@@ -34,6 +40,8 @@ function createCloudStorageSettings() {
       : initialProfile.serverURL
   )
   const state = ref<CloudConnectionSnapshot | null>(null)
+  const deviceAuthByConnection = ref<Record<string, CloudDeviceAuthState>>({})
+  const deviceAuthControllers = new Map<string, AbortController>()
   const entitlements = shallowRef<WorkspaceEntitlements | null>(null)
   const entitlementsLoading = ref(false)
   const entitlementsError = ref<string | null>(null)
@@ -78,6 +86,64 @@ function createCloudStorageSettings() {
     state.value = active ? cloudConnectionService.get(active.serverURL) : null
   }
 
+  function setDeviceAuth(connectionId: string, value: CloudDeviceAuthState) {
+    deviceAuthByConnection.value = { ...deviceAuthByConnection.value, [connectionId]: value }
+  }
+
+  function cancelDeviceAuth(connectionId: string) {
+    deviceAuthControllers
+      .get(connectionId)
+      ?.abort(new DOMException('Authorization cancelled', 'AbortError'))
+    deviceAuthControllers.delete(connectionId)
+    setDeviceAuth(connectionId, { status: 'idle' })
+  }
+
+  async function startDesktopDeviceAuth(
+    discovery: NonNullable<CloudConnectionSnapshot['discovery']>,
+    profile: NonNullable<ReturnType<typeof activeCloudConnectionProfile>>
+  ) {
+    cancelDeviceAuth(profile.id)
+    const controller = new AbortController()
+    deviceAuthControllers.set(profile.id, controller)
+    const { openUrl } = await import('@tauri-apps/plugin-opener')
+    const { pollCloudDeviceToken, requestCloudDeviceAuthorization } =
+      await import('@open-pencil/cloud/client')
+    try {
+      const authorization = await requestCloudDeviceAuthorization(discovery, profile.id)
+      setDeviceAuth(profile.id, {
+        status: 'waiting',
+        userCode: authorization.user_code,
+        verificationURL: authorization.verification_uri_complete,
+        expiresAt: Date.now() + authorization.expires_in * 1000
+      })
+      await openUrl(authorization.verification_uri_complete)
+      const token = await pollCloudDeviceToken(discovery, profile.id, authorization, {
+        signal: controller.signal
+      })
+      controller.signal.throwIfAborted()
+      await appCredentialServices.manager.set(
+        credentialRef('openpencil-cloud', 'session', profile.id),
+        token.access_token
+      )
+      setDeviceAuth(profile.id, { status: 'authorized' })
+      state.value = await cloudConnectionService.refresh(profile.serverURL)
+      await refreshEntitlements()
+    } catch (error) {
+      if (controller.signal.aborted) return
+      const message = error instanceof Error ? error.message : String(error)
+      const lowered = message.toLowerCase()
+      const status = lowered.includes('expired')
+        ? 'expired'
+        : lowered.includes('denied')
+          ? 'denied'
+          : 'error'
+      setDeviceAuth(profile.id, { status, message })
+    } finally {
+      if (deviceAuthControllers.get(profile.id) === controller)
+        deviceAuthControllers.delete(profile.id)
+    }
+  }
+
   async function refreshEntitlements(): Promise<void> {
     const connection = state.value ? cloudConnectionService.get(state.value.serverURL) : null
     const workspaceId = state.value?.selectedWorkspaceId
@@ -111,18 +177,7 @@ function createCloudStorageSettings() {
     const profile = activeCloudConnectionProfile()
     if (!discovery || !profile) throw new Error('Connect to an OpenPencil Cloud server first')
     if (IS_TAURI) {
-      const { openUrl } = await import('@tauri-apps/plugin-opener')
-      const { pollCloudDeviceToken, requestCloudDeviceAuthorization } =
-        await import('@open-pencil/cloud/client')
-      const authorization = await requestCloudDeviceAuthorization(discovery, profile.id)
-      await openUrl(authorization.verification_uri_complete)
-      const token = await pollCloudDeviceToken(discovery, profile.id, authorization)
-      await appCredentialServices.manager.set(
-        credentialRef('openpencil-cloud', 'session', profile.id),
-        token.access_token
-      )
-      state.value = await cloudConnectionService.refresh(profile.serverURL)
-      await refreshEntitlements()
+      await startDesktopDeviceAuth(discovery, profile)
       return
     }
     const { signInToCloud } = await import('@open-pencil/cloud/client')
@@ -134,6 +189,7 @@ function createCloudStorageSettings() {
     const profile = activeCloudConnectionProfile()
     if (!discovery) return
     if (profile) {
+      cancelDeviceAuth(profile.id)
       await appCredentialServices.manager.clear(
         credentialRef('openpencil-cloud', 'session', profile.id)
       )
@@ -152,6 +208,9 @@ function createCloudStorageSettings() {
   }
 
   return {
+    deviceAuthByConnection,
+    cancelDeviceAuth,
+    startDesktopDeviceAuth,
     profiles,
     activeProfileId,
     activeProfile,

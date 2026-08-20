@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { IS_TAURI } from '@open-pencil/core/constants'
 
 import {
   cloudConnectionWorkSummary,
@@ -28,6 +29,10 @@ const selectedConnection = computed({
   get: () => cloud.activeProfileId.value ?? '',
   set: (id: string) => void cloud.selectConnection(id)
 })
+const deviceAuth = computed(() => {
+  const id = cloud.activeProfile.value?.id
+  return id ? (cloud.deviceAuthByConnection.value[id] ?? { status: 'idle' as const }) : null
+})
 const selectedWorkspace = computed({
   get: () => cloud.activeProfile.value?.selectedWorkspaceId ?? '',
   set: (id: string) => void cloud.selectWorkspace(id)
@@ -35,6 +40,13 @@ const selectedWorkspace = computed({
 const primary = useButtonUI({ tone: 'accent', size: 'sm' })
 const secondary = useButtonUI({ tone: 'ghost', size: 'sm', bordered: true })
 const quiet = useButtonUI({ tone: 'ghost', size: 'sm' })
+
+async function reopenDeviceBrowser(url: string) {
+  if (IS_TAURI) {
+    const { openUrl } = await import('@tauri-apps/plugin-opener')
+    await openUrl(url)
+  } else globalThis.open(url, '_blank')
+}
 
 async function connectOfficial() {
   try {
@@ -134,6 +146,36 @@ async function openWorkspace() {
           Sign in with {{ provider }}
         </button>
       </div>
+
+      <div
+        v-if="deviceAuth?.status === 'waiting'"
+        class="mt-3 rounded border border-border bg-hover/40 p-2 text-[10px] text-muted"
+      >
+        <p>Complete sign-in in your browser.</p>
+        <p class="mt-1 font-mono text-xs text-surface">{{ deviceAuth.userCode }}</p>
+        <div class="mt-2 flex gap-2">
+          <button
+            type="button"
+            :class="quiet.base"
+            @click="cloud.cancelDeviceAuth(cloud.activeProfile.value.id)"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            :class="secondary.base"
+            @click="reopenDeviceBrowser(deviceAuth.verificationURL)"
+          >
+            Open browser again
+          </button>
+        </div>
+      </div>
+      <p
+        v-else-if="deviceAuth && ['denied', 'expired', 'error'].includes(deviceAuth.status)"
+        class="mt-3 text-[10px] text-danger"
+      >
+        {{ 'message' in deviceAuth ? deviceAuth.message : '' }}
+      </p>
 
       <AppSelect
         v-if="cloud.workspaceOptions.value.length"
