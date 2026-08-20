@@ -8,8 +8,7 @@
       "outputs": ["dist/**"]
     },
     "check": {
-      "dependsOn": ["^check"],
-      "outputs": ["dist/**"]
+      "dependsOn": ["^check"]
     }
   }
 }
