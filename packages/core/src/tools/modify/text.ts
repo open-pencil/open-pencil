@@ -8,6 +8,7 @@ import { defineTool, nodeNotFound } from '#core/tools/schema'
 export const setText = defineTool({
   name: 'set_text',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set text content of a text node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -24,6 +25,7 @@ export const setText = defineTool({
 export const setFont = defineTool({
   name: 'set_font',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set font properties of a text node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -49,6 +51,7 @@ export const setFont = defineTool({
 export const setFontRange = defineTool({
   name: 'set_font_range',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set font properties for a text range.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -84,6 +87,7 @@ export const setFontRange = defineTool({
 export const setTextResize = defineTool({
   name: 'set_text_resize',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set text auto-resize mode.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -105,6 +109,7 @@ export const setTextResize = defineTool({
 export const setTextProperties = defineTool({
   name: 'set_text_properties',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Set text layout properties: alignment, auto-resize, text case, decoration, truncation.',
   params: {

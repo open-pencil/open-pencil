@@ -11,6 +11,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 
 export type ParamType = 'string' | 'number' | 'boolean' | 'color' | 'string[]'
+export type DocumentAccess = 'inspect' | 'modify'
 
 export interface ParamDef {
   type: ParamType
@@ -25,6 +26,7 @@ export interface ParamDef {
 export interface ToolDef {
   name: string
   description: string
+  documentAccess: DocumentAccess
   mutates?: boolean
   params: Record<string, ParamDef>
   execute: (figma: FigmaAPI, args: Record<string, unknown>) => unknown
@@ -51,6 +53,7 @@ type ResolvedParams<P extends Record<string, ParamDef>> = {
 export function defineTool<P extends Record<string, ParamDef>>(def: {
   name: string
   description: string
+  documentAccess: DocumentAccess
   mutates?: boolean
   params: P
   execute: (figma: FigmaAPI, args: ResolvedParams<P>) => unknown

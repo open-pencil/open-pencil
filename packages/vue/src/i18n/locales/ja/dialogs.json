@@ -115,6 +115,8 @@
   "deleteMCPConnectionDescription": "このMCP接続と保存されたBearerトークンを削除しますか？",
   "noMCPConnections": "外部MCP接続は設定されていません。",
   "mcpTools": "利用可能なツール",
+  "mcpInspectionTools": "検査ツール",
+  "mcpModificationTools": "変更ツール",
   "mcpToolsEnabled": "{total} 件中 {enabled} 件が有効",
   "mcpEnableAllTools": "すべて有効にする",
   "mcpSearchTools": "MCPツールを検索",

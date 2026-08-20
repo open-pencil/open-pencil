@@ -113,7 +113,7 @@ Security defaults:
 - File operations are limited to `OPENPENCIL_MCP_ROOT` (defaults to the current working directory) and reject symlink escapes.
 - CORS is disabled by default; set `OPENPENCIL_MCP_CORS_ORIGIN` to allow one origin.
 
-The desktop app lists the registered tools under **Settings → MCP & automation**. Disable any tools there and restart the local MCP server to apply the change to both Streamable HTTP and newly started stdio clients. For standalone servers, set `OPENPENCIL_MCP_DISABLED_TOOLS` to a comma-separated list of tool names.
+The desktop app lists the registered tools under **Settings → MCP & automation**. Disable individual tools or all inspection/modification tools, then restart the local MCP server to apply the change to both Streamable HTTP and newly started stdio clients. Inspection tools can navigate and export without changing document content; modification tools can edit the design. For standalone servers, set `OPENPENCIL_MCP_DISABLED_TOOLS` to a comma-separated list of tool names.
 
 The Streamable HTTP endpoint is `http://127.0.0.1:7600/mcp`, not the server origin without `/mcp`. The app shows this complete URL and can copy either the endpoint or an authenticated `mcp.json` entry. The local server uses a static bearer token rather than an OAuth authorization flow. For clients without a static-token field, paste the copied entry into `mcp.json`; adding only the URL through an OAuth-oriented connection dialog will fail because OpenPencil does not expose OAuth discovery or authorization endpoints.
 

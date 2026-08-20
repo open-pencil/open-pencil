@@ -4,6 +4,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const listPages = defineTool({
   name: 'list_pages',
+  documentAccess: 'inspect',
   description:
     'Mandatory first tool call. Compactly returns the current page and all document pages. Call before every other tool; use returned IDs instead of guessing.',
   params: {},
@@ -19,6 +20,7 @@ export const listPages = defineTool({
 export const switchPage = defineTool({
   name: 'switch_page',
   mutates: true,
+  documentAccess: 'inspect',
   description: 'Switch to a different page by name or ID.',
   params: {
     page: { type: 'string', description: 'Page name or ID', required: true }
@@ -34,6 +36,7 @@ export const switchPage = defineTool({
 
 export const getCurrentPage = defineTool({
   name: 'get_current_page',
+  documentAccess: 'inspect',
   description: 'Get the current page name and ID.',
   params: {},
   execute: (figma) => {
@@ -43,6 +46,7 @@ export const getCurrentPage = defineTool({
 
 export const pageBounds = defineTool({
   name: 'page_bounds',
+  documentAccess: 'inspect',
   description: 'Get bounding box of all objects on the current page.',
   params: {},
   execute: (figma) => {

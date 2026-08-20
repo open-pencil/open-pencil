@@ -92,6 +92,7 @@ function applyBatchProps(node: FigmaNodeProxy, props: Record<string, unknown>): 
 export const batchUpdate = defineTool({
   name: 'batch_update',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Execute multiple modifications in one call. Each operation is {id, props} where props can include: spacing, padding, padding_horizontal, padding_vertical, counter_align, sizing_horizontal, sizing_vertical, grow, name, visible, corner_radius, auto_resize (for text), direction. Runs all updates with one layout recompute.',
   params: {

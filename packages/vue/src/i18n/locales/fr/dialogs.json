@@ -115,6 +115,8 @@
   "deleteMCPConnectionDescription": "Supprimer cette connexion MCP et son jeton Bearer enregistré ?",
   "noMCPConnections": "Aucune connexion MCP externe configurée.",
   "mcpTools": "Outils disponibles",
+  "mcpInspectionTools": "Outils d’inspection",
+  "mcpModificationTools": "Outils de modification",
   "mcpToolsEnabled": "{enabled} sur {total} activés",
   "mcpEnableAllTools": "Tout activer",
   "mcpSearchTools": "Rechercher des outils MCP",

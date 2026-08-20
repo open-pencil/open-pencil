@@ -3,6 +3,7 @@ import { defineTool, nodeNotFound, nodeSummary } from '#core/tools/schema'
 export const deleteNode = defineTool({
   name: 'delete_node',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Delete a node by ID.',
   params: {
     id: { type: 'string', description: 'Node ID to delete', required: true }
@@ -18,6 +19,7 @@ export const deleteNode = defineTool({
 export const cloneNode = defineTool({
   name: 'clone_node',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Clone (duplicate) a node.',
   params: {
     id: { type: 'string', description: 'Node ID to clone', required: true }
@@ -33,6 +35,7 @@ export const cloneNode = defineTool({
 export const renameNode = defineTool({
   name: 'rename_node',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Rename a node in the layers panel.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -48,6 +51,7 @@ export const renameNode = defineTool({
 
 export const nodeBounds = defineTool({
   name: 'node_bounds',
+  documentAccess: 'inspect',
   description: 'Get absolute bounding box of a node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true }
@@ -62,6 +66,7 @@ export const nodeBounds = defineTool({
 export const nodeMove = defineTool({
   name: 'node_move',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Move a node to new coordinates.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -80,6 +85,7 @@ export const nodeMove = defineTool({
 export const nodeResize = defineTool({
   name: 'node_resize',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Resize a node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },

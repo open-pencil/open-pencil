@@ -115,6 +115,8 @@
   "deleteMCPConnectionDescription": "Diese MCP-Verbindung und ihr gespeichertes Bearer-Token löschen?",
   "noMCPConnections": "Keine externen MCP-Verbindungen konfiguriert.",
   "mcpTools": "Verfügbare Tools",
+  "mcpInspectionTools": "Inspektionswerkzeuge",
+  "mcpModificationTools": "Änderungswerkzeuge",
   "mcpToolsEnabled": "{enabled} von {total} aktiviert",
   "mcpEnableAllTools": "Alle aktivieren",
   "mcpSearchTools": "MCP-Tools durchsuchen",

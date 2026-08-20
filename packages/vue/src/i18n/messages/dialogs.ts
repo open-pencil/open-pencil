@@ -266,6 +266,8 @@ export const dialogMessageDefaults = {
   mcpBearerTokenAuth: 'Bearer token required',
   mcpNoAuthentication: 'None',
   mcpTools: 'Available tools',
+  mcpInspectionTools: 'Inspection tools',
+  mcpModificationTools: 'Modification tools',
   mcpToolsEnabled: params('{enabled} of {total} enabled'),
   mcpEnableAllTools: 'Enable all',
   mcpSearchTools: 'Search MCP tools',

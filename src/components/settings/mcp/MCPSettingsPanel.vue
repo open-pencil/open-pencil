@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 import {
   configurableMCPTools,
   disabledMCPTools,
+  setMCPToolCategoryEnabled,
   setMCPToolEnabled
 } from '@/app/automation/mcp/preferences'
 import { mcpRuntime, refreshMCPRuntime, restartMCPRuntime } from '@/app/automation/mcp/runtime'
@@ -20,6 +21,16 @@ const { copy: copyEndpoint, copied: endpointCopied } = useClipboard({ copiedDuri
 const { copy: copyToken, copied: tokenCopied } = useClipboard({ copiedDuring: 2000 })
 const { copy: copyConfig, copied: configCopied } = useClipboard({ copiedDuring: 2000 })
 const disabledToolNames = computed(() => new Set(disabledMCPTools.value))
+function categoryStatus(documentAccess: 'inspect' | 'modify') {
+  const tools = configurableMCPTools.filter((tool) => tool.documentAccess === documentAccess)
+  const enabled = tools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
+  return {
+    enabled: enabled > 0,
+    state: enabled > 0 && enabled < tools.length ? ('mixed' as const) : ('idle' as const)
+  }
+}
+const inspectionToolsStatus = computed(() => categoryStatus('inspect'))
+const modificationToolsStatus = computed(() => categoryStatus('modify'))
 const enabledToolCount = computed(
   () => configurableMCPTools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
 )
@@ -202,9 +213,32 @@ async function copyAccessToken(): Promise<void> {
           type="search"
           :placeholder="dialogs.search"
           :aria-label="dialogs.mcpSearchTools"
-          class="w-full rounded border border-border bg-surface px-2.5 py-1.5 text-[11px] text-surface outline-none placeholder:text-muted focus:border-accent"
+          class="w-full rounded border border-border bg-input px-2.5 py-1.5 text-[11px] text-surface outline-none placeholder:text-muted focus:border-accent"
           data-test-id="settings-mcp-tool-search"
         />
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 border-b border-border p-2.5">
+        <div class="flex items-center justify-between gap-2 rounded bg-input px-2.5 py-2">
+          <span class="text-[10px] text-surface">{{ dialogs.mcpInspectionTools }}</span>
+          <AppSwitch
+            :model-value="inspectionToolsStatus.enabled"
+            :state="inspectionToolsStatus.state"
+            :label="dialogs.mcpInspectionTools"
+            data-test-id="settings-mcp-inspection-tools"
+            @update:model-value="setMCPToolCategoryEnabled('inspect', $event)"
+          />
+        </div>
+        <div class="flex items-center justify-between gap-2 rounded bg-input px-2.5 py-2">
+          <span class="text-[10px] text-surface">{{ dialogs.mcpModificationTools }}</span>
+          <AppSwitch
+            :model-value="modificationToolsStatus.enabled"
+            :state="modificationToolsStatus.state"
+            :label="dialogs.mcpModificationTools"
+            data-test-id="settings-mcp-modification-tools"
+            @update:model-value="setMCPToolCategoryEnabled('modify', $event)"
+          />
+        </div>
       </div>
 
       <ul class="max-h-72 divide-y divide-border overflow-y-auto">

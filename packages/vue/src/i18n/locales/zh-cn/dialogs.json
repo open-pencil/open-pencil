@@ -115,6 +115,8 @@
   "deleteMCPConnectionDescription": "删除此 MCP 连接及其保存的 Bearer 令牌？",
   "noMCPConnections": "尚未配置外部 MCP 连接。",
   "mcpTools": "可用工具",
+  "mcpInspectionTools": "检查工具",
+  "mcpModificationTools": "修改工具",
   "mcpToolsEnabled": "已启用 {enabled}/{total}",
   "mcpEnableAllTools": "全部启用",
   "mcpSearchTools": "搜索 MCP 工具",

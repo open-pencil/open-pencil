@@ -153,6 +153,8 @@
   "mcpBearerTokenAuth": "Bearer token obrigatório",
   "mcpNoAuthentication": "Nenhuma",
   "mcpTools": "Tools disponíveis",
+  "mcpInspectionTools": "Tools de inspeção",
+  "mcpModificationTools": "Tools de modificação",
   "mcpToolsEnabled": "{enabled} de {total} ativas",
   "mcpEnableAllTools": "Ativar todas",
   "mcpSearchTools": "Pesquisar tools MCP",

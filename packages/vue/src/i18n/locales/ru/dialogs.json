@@ -115,6 +115,8 @@
   "deleteMCPConnectionDescription": "Удалить это подключение MCP и сохранённый Bearer-токен?",
   "noMCPConnections": "Внешние подключения MCP не настроены.",
   "mcpTools": "Доступные инструменты",
+  "mcpInspectionTools": "Инструменты проверки",
+  "mcpModificationTools": "Инструменты изменения",
   "mcpToolsEnabled": "Включено {enabled} из {total}",
   "mcpEnableAllTools": "Включить все",
   "mcpSearchTools": "Поиск инструментов MCP",

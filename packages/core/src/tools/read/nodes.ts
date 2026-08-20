@@ -40,6 +40,7 @@ function nodeToTreeEntry(
 
 export const getPageTree = defineTool({
   name: 'get_page_tree',
+  documentAccess: 'inspect',
   description:
     'Get a lightweight hierarchy for the current page. For document discovery, call with depth=1 and node_types=["FRAME"] to list only root frames, then use export_image on relevant frame IDs before deeper inspection. Use root_id or node_types to keep responses small; use get_node only for precise properties.',
   params: {
@@ -80,6 +81,7 @@ export const getPageTree = defineTool({
 
 export const getNode = defineTool({
   name: 'get_node',
+  documentAccess: 'inspect',
   description:
     'Get detailed properties of a node by an ID returned by another tool. Never guess IDs or use 0:0, which is the document root. Use depth to limit child recursion (0 = node only, 1 = direct children, etc). Default: unlimited.',
   params: {
@@ -98,6 +100,7 @@ export const getNode = defineTool({
 
 export const findNodes = defineTool({
   name: 'find_nodes',
+  documentAccess: 'inspect',
   description:
     'Find nodes on a page or inside a root node, with pagination and hierarchy context. Depth defaults to 1, returning only direct children; use a result ID as root_id to progressively explore its children. Prefer type=FRAME to discover top-level screens and flows. Common types: FRAME, SECTION, COMPONENT, COMPONENT_SET, INSTANCE, GROUP, TEXT, RECTANGLE. If type is omitted, all node types match. Results are in document order and include parent_id, depth, path, and direct child_count.',
   params: {

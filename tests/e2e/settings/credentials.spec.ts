@@ -74,6 +74,47 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
   await expect(section).toContainText('No external MCP connections configured')
 })
 
+test('MCP automation settings filter and persist tool availability', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-mcp').click()
+
+  const search = page.getByTestId('settings-mcp-tool-search')
+  await search.fill('create_shape')
+  await expect(search).toHaveValue('create_shape')
+  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toBeVisible()
+  await expect(page.getByTestId('settings-mcp-tool-get_page_tree')).toBeHidden()
+
+  await search.fill('')
+  const modificationTools = page.getByTestId('settings-mcp-modification-tools')
+  await modificationTools.click()
+  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toHaveAttribute(
+    'data-state',
+    'unchecked'
+  )
+  await expect(page.getByTestId('settings-mcp-tool-get_page_tree')).toHaveAttribute(
+    'data-state',
+    'checked'
+  )
+  await modificationTools.click()
+
+  await search.fill('create_shape')
+  await page.getByTestId('settings-mcp-tool-create_shape').click()
+  await page.reload()
+  await canvas.waitForInit()
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-mcp').click()
+  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toHaveAttribute(
+    'data-state',
+    'unchecked'
+  )
+
+  await page.getByRole('button', { name: 'Enable all' }).click()
+})
+
 test('model library keeps reusable profiles and role assignments', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)
