@@ -38,6 +38,26 @@ describe('Cloud server configuration', () => {
     )
   })
 
+  test('requires Cloudflare R2 S3 compatibility settings', () => {
+    const r2 = {
+      ...baseConfig,
+      s3Endpoint: 'https://account-id.r2.cloudflarestorage.com',
+      s3Region: 'auto',
+      s3ForcePathStyle: false,
+      s3ChecksumVerification: 'metadata' as const
+    }
+    expect(parseCloudServerConfig(r2)).toMatchObject(r2)
+    expect(() => parseCloudServerConfig({ ...r2, s3Region: 'us-east-1' })).toThrow(
+      'Cloudflare R2 S3 region must be auto'
+    )
+    expect(() => parseCloudServerConfig({ ...r2, s3ForcePathStyle: true })).toThrow(
+      'Cloudflare R2 S3 endpoint must disable path-style requests'
+    )
+    expect(() => parseCloudServerConfig({ ...r2, s3ChecksumVerification: 'native' })).toThrow(
+      'Cloudflare R2 checksum verification must use metadata'
+    )
+  })
+
   test('loads deployment configuration from environment variables', () => {
     const config = cloudServerConfigFromEnvironment({
       OPENPENCIL_CLOUD_URL: baseConfig.publicURL,

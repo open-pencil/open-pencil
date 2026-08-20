@@ -39,7 +39,11 @@ To develop it further, use the portable app assembly with:
 - A Cron Trigger that invokes the cleanup services through `ctx.waitUntil()`.
 - Node/CI migration tooling using the origin PostgreSQL connection string.
 
-The Worker request path must not run migrations or start timers. A production Worker profile requires
-account-specific secret bindings, Hyperdrive identifiers, and either an R2-native `ObjectStore`
-adapter or S3 credentials. `deploy/cloudflare/wrangler.jsonc` intentionally contains placeholders and
-must not be presented or deployed as a complete reference environment.
+The Worker request path must not run migrations or start timers. For R2, configure its official
+S3-compatible endpoint (`https://<ACCOUNT_ID>.r2.cloudflarestorage.com`), region `auto`, path style
+`false`, metadata checksum verification, and bucket-scoped read/write API credentials as Worker
+secrets. The existing AWS SDK object store then produces standard SigV4 presigned GET, PUT, and
+multipart URLs. Configure R2 bucket CORS to allow the editor origins and the `Content-Type`,
+`x-amz-meta-openpencil-sha256`, and checksum headers used by uploads. Run PostgreSQL migrations from
+Node/CI. Invitation email still requires an injected Worker-compatible delivery adapter before
+production use.

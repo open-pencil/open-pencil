@@ -142,5 +142,17 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   if (config.s3KmsKeyId && config.s3ServerSideEncryption !== 'aws:kms') {
     throw new CloudConfigError('S3 KMS key ID requires aws:kms server-side encryption')
   }
+  const endpointHost = new URL(config.s3Endpoint).hostname
+  if (endpointHost.endsWith('.r2.cloudflarestorage.com')) {
+    if (config.s3Region !== 'auto') {
+      throw new CloudConfigError('Cloudflare R2 S3 region must be auto')
+    }
+    if (config.s3ForcePathStyle) {
+      throw new CloudConfigError('Cloudflare R2 S3 endpoint must disable path-style requests')
+    }
+    if (config.s3ChecksumVerification !== 'metadata') {
+      throw new CloudConfigError('Cloudflare R2 checksum verification must use metadata')
+    }
+  }
   return config
 }
