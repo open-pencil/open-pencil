@@ -4,12 +4,14 @@ import { IS_BROWSER } from '@open-pencil/core/constants'
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
+  createStorageAdapter,
   storageCredentialStatuses,
   storagePreferencesComplete,
   storageProviderRegistry,
   type StorageAdapter,
   type StorageProviderID
 } from '@/app/integrations/storage'
+import { listCloudConnectionProfiles } from '@/app/integrations/storage/cloud/profiles'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store'
@@ -118,6 +120,25 @@ async function putCanvasJob(
   emitStorageWorkspaceEvent({ providerId: providerID, documentId: job.canvasId, kind: 'synced' })
 }
 
+function adapterForMeta(
+  providerID: StorageProviderID,
+  meta: LocalCanvasMeta | null
+): StorageAdapter {
+  if (providerID !== 'openpencil-cloud' || !meta?.connectionId) {
+    return createActiveStorageAdapter(providerID)
+  }
+  const profile = listCloudConnectionProfiles().find(
+    (candidate) => candidate.id === meta.connectionId
+  )
+  if (!profile) throw new StorageSyncBlockedError('Cloud connection is unavailable')
+  const workspaceId = meta.workspaceId ?? profile.selectedWorkspaceId
+  if (!workspaceId) throw new StorageSyncBlockedError('Cloud workspace is unavailable')
+  return createStorageAdapter(providerID, {
+    'server-url': profile.serverURL,
+    'workspace-id': workspaceId
+  })
+}
+
 async function runJob(job: OutboxJob): Promise<void> {
   const store = getLocalCanvasStore()
   const meta = await store.getMeta(job.canvasId)
@@ -133,7 +154,7 @@ async function runJob(job: OutboxJob): Promise<void> {
   if (missingCredential) {
     throw new StorageSyncBlockedError('Storage credentials are unavailable')
   }
-  const adapter = createActiveStorageAdapter(providerID)
+  const adapter = adapterForMeta(providerID, meta)
 
   if (job.type === 'deleteCanvas') {
     await adapter.deleteDocument(job.canvasId)
