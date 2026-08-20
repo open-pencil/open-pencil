@@ -229,6 +229,9 @@ export const dialogMessageDefaults = {
   mcpPort: 'Port',
   mcpAddress: 'Address',
   mcpVersion: 'Version',
+  mcpAuthentication: 'Require authentication',
+  mcpAuthenticationDescription:
+    'Protect the localhost MCP endpoint with a bearer token. Disable only on a trusted machine. Restart the server to apply changes.',
   mcpRootDirectory: 'MCP root directory',
   mcpRootDirectoryDefault: 'User home directory (default)',
   mcpChooseRootDirectory: 'Choose folder',

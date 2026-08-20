@@ -82,6 +82,16 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
 
+  const authentication = page.getByTestId('settings-mcp-authentication')
+  await expect(authentication).toHaveAttribute('data-state', 'checked')
+  await authentication.click()
+  await page.reload()
+  await canvas.waitForInit()
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-section-mcp').click()
+  await expect(authentication).toHaveAttribute('data-state', 'unchecked')
+  await authentication.click()
+
   const search = page.getByTestId('settings-mcp-tool-search')
   await search.fill('create_shape')
   await expect(search).toHaveValue('create_shape')

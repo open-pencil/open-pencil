@@ -5,6 +5,7 @@ import { useI18n } from '@open-pencil/vue'
 import {
   configurableMCPTools,
   disabledMCPTools,
+  mcpAuthenticationEnabled,
   mcpRootDirectory,
   setMCPToolCategoryEnabled,
   setMCPToolEnabled
@@ -93,6 +94,22 @@ function enableAllTools(): void {
           <dd class="font-mono text-surface">{{ mcpRuntime.version }}</dd>
         </template>
       </dl>
+
+      <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-medium text-surface">{{ dialogs.mcpAuthentication }}</p>
+            <p class="mt-0.5 text-[10px] leading-relaxed text-muted">
+              {{ dialogs.mcpAuthenticationDescription }}
+            </p>
+          </div>
+          <AppSwitch
+            v-model="mcpAuthenticationEnabled"
+            :label="dialogs.mcpAuthentication"
+            data-test-id="settings-mcp-authentication"
+          />
+        </div>
+      </div>
 
       <div class="mt-3 border-t border-border pt-3">
         <div class="flex items-center justify-between gap-3">
