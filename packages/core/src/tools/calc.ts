@@ -20,6 +20,7 @@ function evalExpr(
 
 export const calc = defineTool({
   name: 'calc',
+  documentAccess: 'inspect',
   description:
     'Arithmetic calculator. ALWAYS use instead of mental math. ' +
     'Pass one expression or a JSON array of expressions — all evaluated in one call. ' +

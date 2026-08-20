@@ -3,6 +3,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const listLibraries = defineTool({
   name: 'list_libraries',
+  documentAccess: 'inspect',
   description: 'List available published component libraries.',
   params: {},
   execute: async (figma) => {
@@ -14,6 +15,7 @@ export const listLibraries = defineTool({
 
 export const insertLibraryComponent = defineTool({
   name: 'insert_library_component',
+  documentAccess: 'modify',
   description:
     'Insert a reusable component from an enabled library by stable library and asset identity.',
   mutates: true,

@@ -4,6 +4,7 @@ import { defineTool, nodeSummary } from '#core/tools/schema'
 export const createShape = defineTool({
   name: 'create_shape',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Create a shape on the canvas. Use FRAME for containers/cards, RECTANGLE for solid blocks, ELLIPSE for circles, TEXT for labels, LINE for rules and dividers, STAR for starbursts and badges, POLYGON for triangles and regular polygons, and SECTION for page sections. Use create_vector with an SVG path for arbitrary shapes.',
   params: {
@@ -46,6 +47,7 @@ export const createShape = defineTool({
 export const createPage = defineTool({
   name: 'create_page',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Create a new page.',
   params: {
     name: { type: 'string', description: 'Page name', required: true }
@@ -60,6 +62,7 @@ export const createPage = defineTool({
 export const createSlice = defineTool({
   name: 'create_slice',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Create a slice (export region) on the canvas.',
   params: {
     x: { type: 'number', description: 'X position', required: true },

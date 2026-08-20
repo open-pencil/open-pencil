@@ -230,6 +230,8 @@ export const dialogMessageDefaults = {
   mcpAddress: 'Address',
   mcpVersion: 'Version',
   mcpTools: 'Available tools',
+  mcpInspectionTools: 'Inspection tools',
+  mcpModificationTools: 'Modification tools',
   mcpToolsEnabled: params('{enabled} of {total} enabled'),
   mcpEnableAllTools: 'Enable all',
   mcpSearchTools: 'Search MCP tools',

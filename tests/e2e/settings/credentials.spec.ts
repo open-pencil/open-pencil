@@ -88,6 +88,20 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await expect(page.getByTestId('settings-mcp-tool-create_shape')).toBeVisible()
   await expect(page.getByTestId('settings-mcp-tool-get_page_tree')).toBeHidden()
 
+  await search.fill('')
+  const modificationTools = page.getByTestId('settings-mcp-modification-tools')
+  await modificationTools.click()
+  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toHaveAttribute(
+    'data-state',
+    'unchecked'
+  )
+  await expect(page.getByTestId('settings-mcp-tool-get_page_tree')).toHaveAttribute(
+    'data-state',
+    'checked'
+  )
+  await modificationTools.click()
+
+  await search.fill('create_shape')
   await page.getByTestId('settings-mcp-tool-create_shape').click()
   await page.reload()
   await canvas.waitForInit()

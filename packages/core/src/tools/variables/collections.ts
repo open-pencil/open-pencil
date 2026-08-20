@@ -2,6 +2,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const listCollections = defineTool({
   name: 'list_collections',
+  documentAccess: 'inspect',
   description: 'List all variable collections.',
   params: {},
   execute: (figma) => {
@@ -12,6 +13,7 @@ export const listCollections = defineTool({
 
 export const getCollection = defineTool({
   name: 'get_collection',
+  documentAccess: 'inspect',
   description: 'Get a variable collection by ID.',
   params: {
     id: { type: 'string', description: 'Collection ID', required: true }
@@ -29,6 +31,7 @@ export const getCollection = defineTool({
 export const createCollection = defineTool({
   name: 'create_collection',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Create a new variable collection.',
   params: {
     name: { type: 'string', description: 'Collection name', required: true }
@@ -41,6 +44,7 @@ export const createCollection = defineTool({
 export const deleteCollection = defineTool({
   name: 'delete_collection',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Delete a variable collection and all its variables.',
   params: {
     id: { type: 'string', description: 'Collection ID', required: true }

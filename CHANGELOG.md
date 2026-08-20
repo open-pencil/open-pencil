@@ -4,7 +4,7 @@
 
 ### Added
 
-- Monitor and restart the local MCP server and choose which tools it exposes from Settings.
+- Monitor and restart the local MCP server and choose individual, inspection, or modification tools it exposes from Settings.
 - Add deterministic two-browser collaboration coverage for bidirectional edits, awareness, departure cleanup, partitioned-peer convergence, and reconnect synchronization without public network dependencies. (#530)
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
 

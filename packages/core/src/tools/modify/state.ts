@@ -3,6 +3,7 @@ import { defineTool } from '#core/tools/schema'
 export const setVisible = defineTool({
   name: 'set_visible',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set visibility of a node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -19,6 +20,7 @@ export const setVisible = defineTool({
 export const setBlend = defineTool({
   name: 'set_blend',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set blend mode of a node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -57,6 +59,7 @@ export const setBlend = defineTool({
 export const setLocked = defineTool({
   name: 'set_locked',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set locked state of a node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -73,6 +76,7 @@ export const setLocked = defineTool({
 export const setStrokeAlign = defineTool({
   name: 'set_stroke_align',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set stroke alignment of a node.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },

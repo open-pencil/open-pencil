@@ -136,10 +136,23 @@ describe('MCP server', () => {
 
   test('lists all registered tools', async () => {
     const { tools } = await client.listTools()
-    const expectedNames = MCP_TOOL_CATALOG.filter((tool) => tool.requirement === 'always')
+    const expectedNames = MCP_TOOL_CATALOG.filter((tool) => tool.availability === 'default')
       .map((tool) => tool.name)
       .sort()
     expect(tools.map((tool) => tool.name).sort()).toEqual(expectedNames)
+  })
+
+  test('classifies document access independently from runtime state mutation', () => {
+    const accessByName = new Map(
+      MCP_TOOL_CATALOG.map((tool) => [tool.name, tool.documentAccess] as const)
+    )
+    expect(accessByName.get('get_page_tree')).toBe('inspect')
+    expect(accessByName.get('switch_page')).toBe('inspect')
+    expect(accessByName.get('viewport_set')).toBe('inspect')
+    expect(accessByName.get('export_image')).toBe('inspect')
+    expect(accessByName.get('update_node')).toBe('modify')
+    expect(accessByName.get('new_document')).toBe('modify')
+    expect(accessByName.get('eval')).toBe('modify')
   })
 
   test('omits tools disabled in the generic registration filter', async () => {

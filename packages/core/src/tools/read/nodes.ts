@@ -40,6 +40,7 @@ function nodeToTreeEntry(
 
 export const getPageTree = defineTool({
   name: 'get_page_tree',
+  documentAccess: 'inspect',
   description:
     'Get the node tree of the current page. Returns lightweight hierarchy: id, type, name, size. Use depth, root_id, or node_types to keep large pages small. Use get_node for full properties of a specific node.',
   params: {
@@ -78,6 +79,7 @@ export const getPageTree = defineTool({
 
 export const getNode = defineTool({
   name: 'get_node',
+  documentAccess: 'inspect',
   description:
     'Get detailed properties of a node by ID. Use depth to limit child recursion (0 = node only, 1 = direct children, etc). Default: unlimited.',
   params: {
@@ -96,6 +98,7 @@ export const getNode = defineTool({
 
 export const findNodes = defineTool({
   name: 'find_nodes',
+  documentAccess: 'inspect',
   description: 'Find nodes by name pattern and/or type.',
   params: {
     name: { type: 'string', description: 'Name substring to match (case-insensitive)' },
