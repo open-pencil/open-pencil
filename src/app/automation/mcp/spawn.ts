@@ -3,6 +3,7 @@ import { promiseTimeout } from '@vueuse/core'
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
+import type { MCPToolCatalogEntry } from '@open-pencil/mcp/tools'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
@@ -16,6 +17,7 @@ export interface AutomationHealth {
   installCommand?: string
   authRequired?: boolean
   discoveryPath?: string
+  tools?: MCPToolCatalogEntry[]
 }
 
 export interface AutomationServerHandle {

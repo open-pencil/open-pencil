@@ -8,7 +8,7 @@ import { ALL_TOOLS, CODEGEN_PROMPT } from '@open-pencil/core/tools'
 
 import type { RPCJSONObject } from '#mcp/json'
 import { MAX_RESULT_BYTES, fail, ok, resultTooLargeMessage } from '#mcp/result'
-import { MCP_ONLY_TOOLS } from '#mcp/tool/catalog'
+import type { MCPToolAvailability, MCPToolCatalogEntry } from '#mcp/tool/catalog'
 import { resolveSafePath, writeToolOutput } from '#mcp/tool/output'
 import { paramToZod } from '#mcp/tool/schema'
 
@@ -40,18 +40,31 @@ export interface RegisterToolsOptions {
   sendRPC: RPCSender
 }
 
-export function registerTools(mcpServer: McpServer, options: RegisterToolsOptions) {
+type CatalogToolOptions = {
+  description: string
+  documentAccess: MCPToolCatalogEntry['documentAccess']
+  availability?: MCPToolAvailability
+} & Record<string, unknown>
+
+export function registerTools(
+  mcpServer: McpServer | null,
+  options: RegisterToolsOptions
+): MCPToolCatalogEntry[] {
   const { enableEval, sendRPC } = options
-  const { getCodegenPrompt, listDocuments, newDocument, openFile, saveFile } = MCP_ONLY_TOOLS
   const disabledTools = new Set(options.disabledTools)
   const resolvedRoot = options.mcpRoot ? resolve(options.mcpRoot) : null
-  const registerTool = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
-  const register = (name: string, ...args: unknown[]) => {
-    if (!disabledTools.has(name)) registerTool(name, ...args)
+  const catalog: MCPToolCatalogEntry[] = []
+  const register = (name: string, toolOptions: CatalogToolOptions, ...args: unknown[]) => {
+    const { documentAccess, availability = 'default', ...sdkOptions } = toolOptions
+    catalog.push({ name, description: toolOptions.description, documentAccess, availability })
+    if (!mcpServer || disabledTools.has(name)) return
+    if (availability === 'eval' && !enableEval) return
+    if (availability === 'filesystem' && !resolvedRoot) return
+    const registerTool = mcpServer.registerTool.bind(mcpServer) as (...a: unknown[]) => void
+    registerTool(name, sdkOptions, ...args)
   }
 
   for (const def of ALL_TOOLS) {
-    if (!enableEval && def.name === 'eval') continue
     const shape: Record<string, z.ZodType> = {}
     for (const [key, param] of Object.entries(def.params)) {
       shape[key] = paramToZod(param)
@@ -60,6 +73,8 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
       def.name,
       {
         description: def.description,
+        documentAccess: def.documentAccess,
+        availability: def.name === 'eval' ? 'eval' : 'default',
         inputSchema: z.object({ ...shape, ...automationTargetSchema })
       },
       async (args: Record<string, unknown>) => {
@@ -110,9 +125,11 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
 
   register(
-    listDocuments.name,
+    'list_documents',
     {
-      description: listDocuments.description,
+      description:
+        'List open OpenPencil documents/tabs with their IDs, file paths, current pages, and pages.',
+      documentAccess: 'inspect',
       inputSchema: z.object({})
     },
     async () => {
@@ -128,11 +145,12 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   )
 
   register(
-    saveFile.name,
+    'save_file',
     {
       description: resolvedRoot
-        ? `${saveFile.description} If path is provided, it must be inside ${resolvedRoot}.`
-        : `${saveFile.description} Uses the existing file path if available, otherwise prompts for a location.`,
+        ? `Save the current document to disk. If path is provided, it must be inside ${resolvedRoot}.`
+        : 'Save the current document to disk. Uses the existing file path if available, otherwise prompts for a location.',
+      documentAccess: 'inspect',
       inputSchema: resolvedRoot
         ? z.object({
             path: z
@@ -170,9 +188,11 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
 
   if (resolvedRoot) {
     register(
-      openFile.name,
+      'open_file',
       {
-        description: `${openFile.description} Path must be inside ${resolvedRoot}.`,
+        description: `Open a .fig or .pen file from disk into a new tab. Path must be inside ${resolvedRoot}.`,
+        documentAccess: 'inspect',
+        availability: 'filesystem',
         inputSchema: z.object({
           path: z
             .string()
@@ -199,9 +219,11 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     )
 
     register(
-      newDocument.name,
+      'new_document',
       {
-        description: `${newDocument.description} Optionally set a save path inside ${resolvedRoot}.`,
+        description: `Create a new empty document. Optionally set a save path inside ${resolvedRoot}.`,
+        documentAccess: 'modify',
+        availability: 'filesystem',
         inputSchema: z.object({
           path: z
             .string()
@@ -231,11 +253,15 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
 
   register(
-    getCodegenPrompt.name,
+    'get_codegen_prompt',
     {
-      description: getCodegenPrompt.description,
+      description:
+        'Get design-to-code generation guidelines. Call before generating frontend code.',
+      documentAccess: 'inspect',
       inputSchema: z.object({})
     },
     async () => ok({ prompt: CODEGEN_PROMPT })
   )
+
+  return catalog
 }

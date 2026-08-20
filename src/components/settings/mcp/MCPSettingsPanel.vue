@@ -17,7 +17,7 @@ const { dialogs } = useI18n()
 const toolSearch = ref('')
 const disabledToolNames = computed(() => new Set(disabledMCPTools.value))
 function categoryStatus(documentAccess: 'inspect' | 'modify') {
-  const tools = configurableMCPTools.filter((tool) => tool.documentAccess === documentAccess)
+  const tools = configurableMCPTools.value.filter((tool) => tool.documentAccess === documentAccess)
   const enabled = tools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
   return {
     enabled: enabled > 0,
@@ -27,12 +27,12 @@ function categoryStatus(documentAccess: 'inspect' | 'modify') {
 const inspectionToolsStatus = computed(() => categoryStatus('inspect'))
 const modificationToolsStatus = computed(() => categoryStatus('modify'))
 const enabledToolCount = computed(
-  () => configurableMCPTools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
+  () => configurableMCPTools.value.filter((tool) => !disabledToolNames.value.has(tool.name)).length
 )
 const visibleTools = computed(() => {
   const query = toolSearch.value.trim().toLowerCase()
-  if (!query) return configurableMCPTools
-  return configurableMCPTools.filter(
+  if (!query) return configurableMCPTools.value
+  return configurableMCPTools.value.filter(
     (tool) =>
       tool.name.toLowerCase().includes(query) || tool.description.toLowerCase().includes(query)
   )

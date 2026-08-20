@@ -9,11 +9,13 @@ import {
   computeAllLayouts,
   executeRPCCommand
 } from '@open-pencil/core'
+import type { MCPToolCatalogEntry } from '@open-pencil/mcp/tools'
 
 export interface HealthResponse {
   status: string
   version: string
   authRequired: boolean
+  tools: MCPToolCatalogEntry[]
   discoveryPath?: string
 }
 

@@ -6,6 +6,7 @@ import { connectAutomation } from '@/app/automation/bridge/server'
 import type { EditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 
+import { setMCPToolCatalog } from './preferences'
 import { readAutomationHealth, spawnMCPIfNeeded, type AutomationServerHandle } from './spawn'
 
 export type MCPRuntimeStatus = 'idle' | 'starting' | 'running' | 'stopped' | 'error'
@@ -28,6 +29,7 @@ export async function refreshMCPRuntime(): Promise<void> {
   try {
     const health = await readAutomationHealth()
     mcpRuntime.version = health?.version ?? null
+    setMCPToolCatalog(health?.tools ?? [])
     if (health) {
       mcpRuntime.status = 'running'
       mcpRuntime.error = null
@@ -50,6 +52,7 @@ async function start(): Promise<void> {
     const health = await readAutomationHealth()
     if (!health) throw new Error('MCP server did not become healthy')
     mcpRuntime.version = health.version ?? null
+    setMCPToolCatalog(health.tools ?? [])
     mcpRuntime.status = 'running'
   } catch (error) {
     mcpRuntime.status = 'error'
@@ -73,6 +76,7 @@ export async function stopMCPRuntime(): Promise<void> {
   server = null
   mcpRuntime.status = 'stopped'
   mcpRuntime.version = null
+  setMCPToolCatalog([])
 }
 
 export async function restartMCPRuntime(): Promise<void> {
