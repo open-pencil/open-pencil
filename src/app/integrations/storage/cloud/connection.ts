@@ -53,6 +53,7 @@ export function normalizeCloudServerURL(input: string): string {
 export function createCloudConnectionService(options: CloudConnectionServiceOptions) {
   const connections = new Map<string, CloudConnection>()
   const pending = new Map<string, Promise<CloudConnection>>()
+  const generations = new Map<string, number>()
   const listeners = new Set<(connection: CloudConnectionSnapshot) => void>()
 
   function snapshot(connection: CloudConnection): CloudConnectionSnapshot {
@@ -80,13 +81,14 @@ export function createCloudConnectionService(options: CloudConnectionServiceOpti
     }
   }
 
-  async function refresh(serverURL: string): Promise<CloudConnection> {
+  async function refresh(serverURL: string, generation: number): Promise<CloudConnection> {
     const normalized = normalizeCloudServerURL(serverURL)
+    const isCurrent = () => generations.get(normalized) === generation
     const existing = connections.get(normalized) ?? initial(normalized)
-    existing.status = 'discovering'
-    existing.error = null
-    connections.set(normalized, existing)
-    publish(existing)
+    if (isCurrent()) {
+      connections.set(normalized, { ...existing, status: 'discovering', error: null })
+      publish(connections.get(normalized) ?? existing)
+    }
     try {
       const discovery =
         existing.discovery ?? (await discoverCloud(normalized, { fetch: options.fetch }))
@@ -105,14 +107,20 @@ export function createCloudConnectionService(options: CloudConnectionServiceOpti
         lastConnectedAt: new Date().toISOString(),
         error: null
       }
+      if (!isCurrent()) return connection
       connections.set(normalized, connection)
       options.writeSelectedWorkspace(normalized, selectedWorkspaceId)
       publish(connection)
       return connection
     } catch (error) {
-      existing.status = connectionFailureStatus(error)
-      existing.error = error instanceof Error ? error.message : String(error)
-      publish(existing)
+      if (!isCurrent()) throw error
+      const failed = {
+        ...existing,
+        status: connectionFailureStatus(error),
+        error: error instanceof Error ? error.message : String(error)
+      } satisfies CloudConnection
+      connections.set(normalized, failed)
+      publish(failed)
       throw error
     }
   }
@@ -125,9 +133,11 @@ export function createCloudConnectionService(options: CloudConnectionServiceOpti
     if (active && !force) return active
     if (force) {
       const existing = connections.get(normalized)
-      if (existing) existing.discovery = null
+      if (existing) connections.set(normalized, { ...existing, discovery: null })
     }
-    const request = refresh(normalized).finally(() => {
+    const generation = (generations.get(normalized) ?? 0) + 1
+    generations.set(normalized, generation)
+    const request = refresh(normalized, generation).finally(() => {
       if (pending.get(normalized) === request) pending.delete(normalized)
     })
     pending.set(normalized, request)
@@ -145,6 +155,7 @@ export function createCloudConnectionService(options: CloudConnectionServiceOpti
     disconnect(serverURL: string): void {
       const normalized = normalizeCloudServerURL(serverURL)
       pending.delete(normalized)
+      generations.set(normalized, (generations.get(normalized) ?? 0) + 1)
       connections.delete(normalized)
     },
     selectWorkspace(serverURL: string, workspaceId: string | null): void {
@@ -154,9 +165,10 @@ export function createCloudConnectionService(options: CloudConnectionServiceOpti
       const selected = connection.workspaces.some((workspace) => workspace.id === workspaceId)
         ? workspaceId
         : null
-      connection.selectedWorkspaceId = selected
+      const updated = { ...connection, selectedWorkspaceId: selected }
+      connections.set(normalized, updated)
       options.writeSelectedWorkspace(normalized, selected)
-      publish(connection)
+      publish(updated)
     },
     subscribe(listener: (connection: CloudConnectionSnapshot) => void): () => void {
       listeners.add(listener)

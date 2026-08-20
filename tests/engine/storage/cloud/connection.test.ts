@@ -47,6 +47,14 @@ function fetchMock() {
   }
 }
 
+function deferred<T>() {
+  let resolve: (value: T) => void = () => undefined
+  const promise = new Promise<T>((next) => {
+    resolve = next
+  })
+  return { promise, resolve }
+}
+
 describe('Cloud connection service', () => {
   test('normalizes server identities', () => {
     expect(normalizeCloudServerURL(' https://cloud.example.com///?ignored=true#hash ')).toBe(
@@ -75,6 +83,54 @@ describe('Cloud connection service', () => {
 
     await service.refresh('https://cloud.example.com')
     expect(remote.calls()).toBe(6)
+  })
+
+  test('ignores stale forced refreshes and disconnected requests', async () => {
+    const firstSession = deferred<Response>()
+    let sessionCalls = 0
+    const service = createCloudConnectionService({
+      async fetch(input) {
+        const url = String(input)
+        if (url.includes('.well-known')) return Response.json(discovery())
+        if (url.endsWith('/session')) {
+          sessionCalls++
+          if (sessionCalls === 1) return firstSession.promise
+          return Response.json({
+            user: { userId: 'fresh', email: 'fresh@example.com', name: 'Fresh' }
+          })
+        }
+        return Response.json({ workspaces: [] })
+      },
+      readSelectedWorkspace: () => null,
+      writeSelectedWorkspace: () => undefined
+    })
+    const stale = service.connect('https://cloud.example.com')
+    const fresh = await service.refresh('https://cloud.example.com')
+    expect(fresh.status).toBe('connected')
+    firstSession.resolve(
+      Response.json({ user: { userId: 'stale', email: 'stale@example.com', name: 'Stale' } })
+    )
+    await stale
+    expect(service.get('https://cloud.example.com')?.session?.user.userId).toBe('fresh')
+
+    const disconnectedSession = deferred<Response>()
+    const disconnected = createCloudConnectionService({
+      async fetch(input) {
+        const url = String(input)
+        if (url.includes('.well-known')) return Response.json(discovery())
+        if (url.endsWith('/session')) return disconnectedSession.promise
+        return Response.json({ workspaces: [] })
+      },
+      readSelectedWorkspace: () => null,
+      writeSelectedWorkspace: () => undefined
+    })
+    const request = disconnected.connect('https://cloud.example.com')
+    disconnected.disconnect('https://cloud.example.com')
+    disconnectedSession.resolve(
+      Response.json({ user: { userId: 'done', email: 'done@example.com', name: 'Done' } })
+    )
+    await request
+    expect(disconnected.get('https://cloud.example.com')).toBeNull()
   })
 
   test('clears a workspace selection that is no longer authorized', async () => {
