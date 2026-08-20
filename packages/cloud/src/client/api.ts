@@ -107,9 +107,12 @@ export type CloudErrorResponse = {
   }
 }
 
+export type CloudClientDiagnostic = (message: string, error: unknown) => void
+
 export type CloudRequestOptions = {
   fetch?: CloudFetch
   signal?: AbortSignal
+  onDiagnostic?: CloudClientDiagnostic
 }
 
 export type CloudUpload = v.InferOutput<typeof uploadResponseSchema>
@@ -137,20 +140,31 @@ function apiURL(baseURL: string): string {
   return url.href
 }
 
-async function responseBody(response: Response): Promise<unknown> {
+async function responseBody(
+  response: Response,
+  onDiagnostic?: CloudClientDiagnostic
+): Promise<unknown> {
   if (response.ok) return response.status === 204 ? null : response.json()
   let code: string | undefined
   try {
     const body = (await response.json()) as CloudErrorResponse
     if (typeof body.error?.code === 'string') code = body.error.code
   } catch (error) {
-    console.warn('[Cloud] API error response was not JSON:', error)
+    onDiagnostic?.('Cloud API error response was not JSON', error)
   }
   throw new CloudAPIError(
     `OpenPencil Cloud request failed with HTTP ${response.status}`,
     response.status,
     code
   )
+}
+
+async function parseResponse<TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
+  request: Promise<Response>,
+  schema: TSchema,
+  onDiagnostic?: CloudClientDiagnostic
+): Promise<v.InferOutput<TSchema>> {
+  return v.parse(schema, await responseBody(await request, onDiagnostic))
 }
 
 export function createCloudAPIClient(baseURL: string, options: CloudRequestOptions = {}) {
@@ -167,20 +181,19 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     async getSession(): Promise<CloudSession | null> {
       const response = await client.session.$get()
       if (response.status === 401) return null
-      return v.parse(cloudSessionSchema, await responseBody(response))
+      return v.parse(cloudSessionSchema, await responseBody(response, options.onDiagnostic))
     },
     async lookupUser(
       documentId: string,
       input: LookupCloudUserInput
     ): Promise<CloudUserProfile | null> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].users.lookup.$post({
+          param: { documentId },
+          json: input
+        }),
         userLookupResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].users.lookup.$post({
-            param: { documentId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.user
     },
@@ -196,7 +209,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.user
     },
     async listWorkspaces(): Promise<WorkspaceList> {
-      return v.parse(workspaceListSchema, await responseBody(await client.workspaces.$get()))
+      return parseResponse(client.workspaces.$get(), workspaceListSchema, options.onDiagnostic)
     },
     async getWorkspaceEntitlements(workspaceId: string): Promise<WorkspaceEntitlements> {
       const response = v.parse(
