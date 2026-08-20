@@ -4,6 +4,7 @@ import * as figModule from '@open-pencil/core/io/formats/fig'
 import * as layoutModule from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { listAutomationDocuments } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import {
@@ -131,6 +132,24 @@ describe('openFileInNewTab deduplication', () => {
 
     expect(tabCount()).toBe(initialCount + (initialHomeCount === 0 ? 1 : 0))
     expect(getTabsSnapshot().filter((tab) => tab.showHome)).toHaveLength(1)
+  })
+
+  test('omits the Recent Files tab from MCP documents', () => {
+    const documentStore = getActiveStore()
+    const documentTab = getTabsSnapshot().find((tab) => tab.store === documentStore)
+    expect(documentTab?.showHome).toBe(false)
+    expect(documentStore.state.documentName).toBe('Untitled')
+
+    showRecentFiles()
+    const homeStore = getActiveStore()
+    const documents = listAutomationDocuments(homeStore)
+
+    expect(documents.some((document) => document.id === documentTab?.id)).toBe(true)
+    expect(documents.some((document) => document.name === 'Untitled')).toBe(true)
+    expect(documents.some((document) => document.active)).toBe(false)
+    for (const homeTab of getTabsSnapshot().filter((tab) => tab.showHome)) {
+      expect(documents.some((document) => document.id === homeTab.id)).toBe(false)
+    }
   })
 
   test('activates the existing tab when the same path is opened again', async () => {
