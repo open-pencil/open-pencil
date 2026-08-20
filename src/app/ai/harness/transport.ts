@@ -188,6 +188,17 @@ export class HarnessChatTransport implements ChatTransport<UIMessage> {
 
   private async ensureProcess(): Promise<HarnessProcess> {
     if (this.process) return this.process
+    const { queryHarnessCompanion, HARNESS_INSTALL_COMMAND } = await import('./process')
+    const status = await queryHarnessCompanion()
+    if (status.state === 'missing') {
+      throw new Error(`Harness companion is not installed. Run: ${HARNESS_INSTALL_COMMAND}`)
+    }
+    if (status.state === 'incompatible') {
+      throw new Error(
+        `Harness companion v${status.version} is incompatible with this OpenPencil version`
+      )
+    }
+    if (status.state === 'unavailable') throw new Error(status.error)
     this.destroyed = false
     const environment = this.environment
     const process = await spawnHarnessProcess({

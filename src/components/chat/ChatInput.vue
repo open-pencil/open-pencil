@@ -80,9 +80,10 @@ const isAgentProvider = computed(
   () => providerID.value.startsWith('acp:') || providerID.value === 'harness:pi'
 )
 const agentName = computed(() => {
-  if (providerID.value === 'harness:pi') return 'Pi'
+  if (providerID.value === 'harness:pi') return 'Pi · Harness'
   const agentId = providerID.value.replace('acp:', '')
-  return ACP_AGENTS.find((a) => a.id === agentId)?.name ?? agentId
+  const name = ACP_AGENTS.find((a) => a.id === agentId)?.name ?? agentId
+  return `${name} · ACP`
 })
 const isCustomProvider = computed(
   () => providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'

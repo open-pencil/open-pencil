@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
-import { spawnHarnessProcess } from '@/app/ai/harness/process'
+import {
+  HARNESS_COMPANION_VERSION,
+  queryHarnessCompanion,
+  spawnHarnessProcess
+} from '@/app/ai/harness/process'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
@@ -50,6 +54,30 @@ describe('Harness sidecar process', () => {
     expect(
       JSON.stringify(calls.find((call) => call.cmd === 'plugin:shell|stdin_write'))
     ).not.toContain('secret')
+  })
+
+  test('reports installed, missing, and incompatible companions', async () => {
+    let mode: 'installed' | 'missing' | 'incompatible' = 'installed'
+    await mockTauriIPC((cmd, args) => {
+      if (cmd !== 'plugin:shell|execute') return null
+      const program = (args as { program: string }).program
+      if (mode === 'missing') throw new Error('program not found')
+      expect(program).toBe('openpencil-harness')
+      return {
+        code: 0,
+        signal: null,
+        stdout: mode === 'installed' ? HARNESS_COMPANION_VERSION : '99.0.0',
+        stderr: ''
+      }
+    })
+    expect(await queryHarnessCompanion()).toEqual({
+      state: 'installed',
+      version: HARNESS_COMPANION_VERSION
+    })
+    mode = 'incompatible'
+    expect(await queryHarnessCompanion()).toEqual({ state: 'incompatible', version: '99.0.0' })
+    mode = 'missing'
+    expect(await queryHarnessCompanion()).toEqual({ state: 'missing' })
   })
 
   test('routes the npm launcher through cmd on Windows', async () => {

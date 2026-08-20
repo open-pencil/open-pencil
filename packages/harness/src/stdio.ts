@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -9,6 +10,14 @@ import type { HarnessRequest, HarnessSidecarMessage } from '#harness/protocol'
 import { parseHarnessRequest } from '#harness/protocol'
 import { HarnessSessionService } from '#harness/service'
 import { FileResumeStateStore } from '#harness/session-store'
+
+const packageJSON = JSON.parse(
+  await readFile(new URL('../package.json', import.meta.url), 'utf8')
+) as { version: string }
+if (process.argv.includes('--version')) {
+  process.stdout.write(`${packageJSON.version}\n`)
+  process.exit(0)
+}
 
 const stateRoot =
   process.env.OPENPENCIL_HARNESS_STATE_DIR ?? join(homedir(), '.open-pencil', 'harness-sessions')

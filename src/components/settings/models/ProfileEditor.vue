@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import {
   AlertDialogAction,
   AlertDialogCancel,
@@ -14,6 +14,12 @@ import { useI18n } from '@open-pencil/vue'
 import { ACP_AGENTS, AI_PROVIDERS, type AIProviderID } from '@open-pencil/core/constants'
 
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
+import {
+  HARNESS_INSTALL_COMMAND,
+  harnessCompanionChecking,
+  harnessCompanionStatus,
+  refreshHarnessCompanionStatus
+} from '@/app/ai/harness/status'
 import { resolveModelsDevModel } from '@/app/ai/models/catalog'
 import {
   testProviderConnection,
@@ -66,6 +72,7 @@ const providerDef = computed(
 )
 const isACP = computed(() => draft.providerID.startsWith('acp:'))
 const isHarness = computed(() => draft.providerID === 'harness:pi')
+const companionReady = computed(() => harnessCompanionStatus.value.state === 'installed')
 const supportsReasoningEffort = computed(() =>
   ['openai', 'openai-compatible', 'openrouter'].includes(draft.providerID)
 )
@@ -109,6 +116,7 @@ const visionEnabled = capabilityModel('vision')
 const canSave = computed(
   () =>
     Boolean(draft.name.trim()) &&
+    (!isHarness.value || companionReady.value) &&
     (isACP.value ||
       (customModelSelected.value
         ? Boolean(draft.customModelID.trim())
@@ -278,6 +286,9 @@ watch(
 )
 void refreshCatalogModel()
 void refreshKeyStatus()
+onMounted(() => {
+  if (isHarness.value) void refreshHarnessCompanionStatus()
+})
 </script>
 
 <template>
@@ -322,6 +333,62 @@ void refreshKeyStatus()
           @update:model-value="updateProvider"
         />
       </ProviderSettingsField>
+
+      <div class="rounded border border-border bg-panel-field p-2.5 text-[10px] text-muted">
+        <p class="font-medium text-surface">
+          {{
+            isACP
+              ? dialogs.localACPAgents
+              : isHarness
+                ? dialogs.harnessProviders
+                : dialogs.directModelProviders
+          }}
+        </p>
+        <p>
+          {{
+            isACP
+              ? dialogs.acpGuidance
+              : isHarness
+                ? dialogs.harnessGuidance
+                : dialogs.directModelGuidance
+          }}
+        </p>
+      </div>
+
+      <div
+        v-if="isHarness"
+        class="rounded border border-border bg-panel-field p-2.5 text-[10px] text-muted"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <p class="font-medium text-surface">{{ dialogs.harnessCompanion }}</p>
+            <p v-if="harnessCompanionStatus.state === 'installed'">
+              {{ dialogs.harnessCompanionInstalled({ version: harnessCompanionStatus.version }) }}
+            </p>
+            <p v-else-if="harnessCompanionStatus.state === 'incompatible'">
+              {{
+                dialogs.harnessCompanionIncompatible({ version: harnessCompanionStatus.version })
+              }}
+            </p>
+            <p v-else-if="harnessCompanionStatus.state === 'missing'">
+              {{ dialogs.harnessCompanionMissing({ command: HARNESS_INSTALL_COMMAND }) }}
+            </p>
+            <p v-else>{{ harnessCompanionStatus.error }}</p>
+          </div>
+          <button
+            type="button"
+            class="rounded bg-panel px-2 py-1 text-[10px] text-surface hover:bg-hover disabled:opacity-50"
+            :disabled="harnessCompanionChecking"
+            @click="refreshHarnessCompanionStatus"
+          >
+            {{
+              harnessCompanionChecking
+                ? dialogs.harnessCompanionChecking
+                : dialogs.harnessCompanionCheck
+            }}
+          </button>
+        </div>
+      </div>
 
       <template v-if="!isACP">
         <div class="flex items-center gap-2 pt-1">

@@ -2,6 +2,8 @@
 import { promiseTimeout } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 
+import { useI18n } from '@open-pencil/vue'
+
 import AppGroupedSelect from '@/components/ui/AppGroupedSelect.vue'
 import {
   ACP_AGENTS,
@@ -47,6 +49,7 @@ interface ProviderSelectProps {
 }
 
 const { allowAgents = true, ui } = defineProps<ProviderSelectProps>()
+const { dialogs } = useI18n()
 
 if (IS_TAURI) {
   onMounted(() => {
@@ -75,7 +78,7 @@ const groups = computed(() => {
 
   if (acpAgents.value.length) {
     result.push({
-      label: 'Your agents',
+      label: dialogs.value.localACPAgents,
       items: acpAgents.value.map((agent) => ({
         value: `acp:${agent.id}`,
         label: agent.name
@@ -83,9 +86,17 @@ const groups = computed(() => {
     })
   }
 
+  const harnessProviders = AI_PROVIDERS.filter((provider) => provider.id.startsWith('harness:'))
+  if (harnessProviders.length) {
+    result.push({
+      label: dialogs.value.harnessProviders,
+      items: harnessProviders.map((provider) => ({ value: provider.id, label: provider.name }))
+    })
+  }
+
   result.push({
-    label: acpAgents.value.length ? 'Providers' : undefined,
-    items: [...AI_PROVIDERS]
+    label: dialogs.value.directModelProviders,
+    items: AI_PROVIDERS.filter((provider) => !provider.id.startsWith('harness:'))
       .sort((left, right) => left.name.localeCompare(right.name))
       .map((provider) => ({
         value: provider.id,
