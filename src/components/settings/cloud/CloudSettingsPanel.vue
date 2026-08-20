@@ -5,14 +5,14 @@ import { useRouter } from 'vue-router'
 import { useCloudStorageSettings } from '@/app/integrations/storage/cloud/settings'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
+import ConnectCloudInstanceDialog from '@/components/settings/cloud/connect-instance/ConnectCloudInstanceDialog.vue'
 import CloudEntitlementsSummary from '@/components/settings/storage/CloudEntitlementsSummary.vue'
-import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { useButtonUI } from '@/components/ui/button'
 
 const router = useRouter()
 const cloud = useCloudStorageSettings()
-const selfHostedURL = ref('')
+const connectDialogOpen = ref(false)
 const connectionOptions = computed(() =>
   cloud.profiles.value.map((profile) => ({ value: profile.id, label: profile.label }))
 )
@@ -36,10 +36,9 @@ async function connectOfficial() {
   }
 }
 
-async function connectSelfHosted() {
+async function connectSelfHosted(serverURL: string) {
   try {
-    await cloud.addConnection('self-hosted', selfHostedURL.value)
-    selfHostedURL.value = ''
+    await cloud.addConnection('self-hosted', serverURL)
   } catch (error) {
     toast.error(error instanceof Error ? error.message : String(error))
   }
@@ -60,29 +59,10 @@ async function openWorkspace() {
       </p>
     </div>
 
-    <div class="grid gap-2 sm:grid-cols-2">
-      <button type="button" :class="primary.base" @click="connectOfficial">
-        Connect OpenPencil Cloud
+    <div>
+      <button type="button" :class="primary.base" @click="connectDialogOpen = true">
+        Connect instance
       </button>
-      <div class="flex gap-2">
-        <AppInput
-          v-model="selfHostedURL"
-          class="min-w-0 flex-1"
-          placeholder="https://pencil.example.com"
-          aria-label="Self-hosted server URL"
-          size="sm"
-          tone="panel"
-          @enter="connectSelfHosted"
-        />
-        <button
-          type="button"
-          :class="secondary.base"
-          :disabled="!selfHostedURL.trim()"
-          @click="connectSelfHosted"
-        >
-          Connect
-        </button>
-      </div>
     </div>
 
     <AppSelect
@@ -160,5 +140,10 @@ async function openWorkspace() {
         </button>
       </div>
     </article>
+    <ConnectCloudInstanceDialog
+      v-model:open="connectDialogOpen"
+      @connect-official="connectOfficial"
+      @connect-self-hosted="connectSelfHosted"
+    />
   </section>
 </template>
