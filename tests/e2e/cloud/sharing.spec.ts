@@ -398,7 +398,7 @@ test.describe('Cloud sharing browser journey', () => {
     expect(authenticatedRecipient.url()).not.toContain('#')
     await expect(authenticatedRecipient.getByText('Cloud sharing fixture')).toBeVisible()
     await authenticatedRecipient.getByRole('button', { name: 'Accept invitation' }).click()
-    await expect(authenticatedRecipient).toHaveURL(/\/storage$/)
+    await expect(authenticatedRecipient).toHaveURL(/\/$/)
     expect(
       await authenticatedRecipient.evaluate(
         async ({ serverURL, invitationId, token }) =>
