@@ -5,7 +5,7 @@ import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka
 
 import { isCloudDocument } from '@/app/collab/cloud-sharing'
 import { useEditorStore } from '@/app/editor/active-store'
-import CloudShareDialog from '@/components/CollabPanel/CloudShareDialog.vue'
+import CloudShareDialog from '@/components/collab/cloud-share-dialog/CloudShareDialog.vue'
 import ConnectedRoom from '@/components/CollabPanel/ConnectedRoom.vue'
 import JoinRoomPrompt from '@/components/CollabPanel/JoinRoomPrompt.vue'
 import ShareOrJoinRoom from '@/components/CollabPanel/ShareOrJoinRoom.vue'
