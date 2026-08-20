@@ -21,7 +21,10 @@ async function readClipboardHTML() {
     return memory && isDesignClipboardHTML(memory) ? memory : null
   }
 
-  if (typeof navigator !== 'undefined' && typeof navigator.clipboard.read === 'function') {
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof (navigator as Partial<Navigator>).clipboard?.read === 'function'
+  ) {
     try {
       const items = await navigator.clipboard.read()
       for (const item of items) {

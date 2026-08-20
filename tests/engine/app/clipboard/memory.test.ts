@@ -7,7 +7,10 @@ import {
   setInMemoryClipboardHTML
 } from '@/app/editor/clipboard/memory'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
-import { executeClipboardCommand } from '@/app/editor/clipboard/system'
+import {
+  copySelectionToBrowserClipboard,
+  executeClipboardCommand
+} from '@/app/editor/clipboard/system'
 import { createEditorStore } from '@/app/editor/session/create'
 import { toast } from '@/app/shell/ui'
 
@@ -30,6 +33,23 @@ describe('in-memory clipboard', () => {
     clearInMemoryClipboardHTML()
     expect(hasInMemoryClipboardHTML()).toBe(false)
     expect(getInMemoryClipboardHTML()).toBe('')
+  })
+
+  test('copySelectionToBrowserClipboard succeeds when navigator.clipboard.write is unavailable', async () => {
+    const store = createEditorStore()
+    const pageId = store.state.currentPageId
+    const rect = store.graph.createNode('RECTANGLE', pageId, {
+      name: 'Copy Target',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50
+    })
+    store.select([rect.id])
+
+    const success = await copySelectionToBrowserClipboard(store)
+    expect(success).toBe(true)
+    expect(hasInMemoryClipboardHTML()).toBe(true)
   })
 
   test('pasteToReplace uses in-memory clipboard when system clipboard is unavailable', async () => {

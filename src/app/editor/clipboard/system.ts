@@ -1,10 +1,7 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import {
-  getInMemoryClipboardHTML,
-  setInMemoryClipboardHTML
-} from '@/app/editor/clipboard/memory'
+import { getInMemoryClipboardHTML, setInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
 import { readTauriClipboardText, writeTauriClipboardHTML } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
 
@@ -106,7 +103,11 @@ export async function copySelectionToBrowserClipboard(store: EditorStore): Promi
     if (html) setInMemoryClipboardHTML(html)
     if (!html && !plainText) return false
 
-    if (typeof ClipboardItem !== 'undefined' && typeof navigator !== 'undefined') {
+    if (
+      typeof ClipboardItem !== 'undefined' &&
+      typeof navigator !== 'undefined' &&
+      typeof (navigator as Partial<Navigator>).clipboard?.write === 'function'
+    ) {
       try {
         const itemData: Record<string, Blob> = {}
         if (html) itemData['text/html'] = new Blob([html], { type: 'text/html' })
@@ -158,7 +159,10 @@ export async function pasteFromBrowserClipboard(
   store: EditorStore,
   cursorPos?: Vector
 ): Promise<boolean> {
-  if (typeof navigator !== 'undefined' && typeof navigator.clipboard.read === 'function') {
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof (navigator as Partial<Navigator>).clipboard?.read === 'function'
+  ) {
     try {
       const items = await navigator.clipboard.read()
       for (const item of items) {
