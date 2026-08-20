@@ -3,9 +3,13 @@ import { describe, expect, test } from 'bun:test'
 import { createCloudTestDatabase } from '#cloud-test/helpers/database'
 
 import {
+  CLOUD_FEATURE_KEYS,
+  createDefaultCloudPolicy,
   createDocumentSharingService,
   DocumentForbiddenError,
-  DocumentShareInvalidError
+  DocumentShareInvalidError,
+  EntitlementOpenFeatureProvider,
+  StaticEntitlementSource
 } from '@open-pencil/cloud/server'
 
 async function seed() {
@@ -28,6 +32,17 @@ async function seed() {
     .values({ id: documentId, workspaceId, name: 'Homepage', createdBy: 'owner' })
     .execute()
   return { runtime, documentId, sharing: createDocumentSharingService(runtime.database) }
+}
+
+function sharingWithPolicy(
+  context: Awaited<ReturnType<typeof seed>>,
+  values: Record<string, boolean>,
+  deploymentMode: 'official' | 'self-hosted' = 'self-hosted'
+) {
+  const policy = createDefaultCloudPolicy(
+    new EntitlementOpenFeatureProvider(new StaticEntitlementSource(values))
+  )
+  return createDocumentSharingService(context.runtime.database, { policy, deploymentMode })
 }
 
 describe('document sharing service', () => {
@@ -96,6 +111,47 @@ describe('document sharing service', () => {
       await expect(
         context.sharing.resolveShare(original.share.id, { secret: rotated.secret })
       ).rejects.toBeInstanceOf(DocumentShareInvalidError)
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('enforces capability policy on share updates', async () => {
+    const context = await seed()
+    try {
+      const enabled = await sharingWithPolicy(context, {
+        [CLOUD_FEATURE_KEYS.capabilityLinks]: true,
+        [CLOUD_FEATURE_KEYS.anonymousEdit]: false
+      })
+      const capability = await enabled.createShare('owner', context.documentId, {
+        permission: 'view'
+      })
+      await expect(
+        enabled.updateShare('owner', context.documentId, capability.share.id, {
+          permission: 'edit'
+        })
+      ).rejects.toBeInstanceOf(DocumentForbiddenError)
+      expect(
+        await enabled.updateShare('owner', context.documentId, capability.share.id, {
+          permission: 'view'
+        })
+      ).toMatchObject({ permission: 'view' })
+
+      for (const deploymentMode of ['official', 'self-hosted'] as const) {
+        const disabled = await sharingWithPolicy(
+          context,
+          {
+            [CLOUD_FEATURE_KEYS.capabilityLinks]: false,
+            [CLOUD_FEATURE_KEYS.anonymousEdit]: true
+          },
+          deploymentMode
+        )
+        await expect(
+          disabled.updateShare('owner', context.documentId, capability.share.id, {
+            permission: 'view'
+          })
+        ).rejects.toBeInstanceOf(DocumentForbiddenError)
+      }
     } finally {
       await context.runtime.close()
     }

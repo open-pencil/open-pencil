@@ -16,7 +16,7 @@ import type {
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
-import { DocumentForbiddenError, DocumentNotFoundError } from '#cloud/server/documents/service'
+import { DocumentNotFoundError } from '#cloud/server/documents/service'
 import type { InvitationDelivery } from '#cloud/server/invitations'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
@@ -34,6 +34,7 @@ import {
 import { dateString, grantContract, invitationContract, shareContract } from './contracts'
 import { capabilityHashMatches, hashCapability } from './crypto'
 import { DocumentShareInvalidError, InvitationDeliveryError } from './errors'
+import { createSharingPolicy } from './policy'
 
 const SHARE_SECRET_SIZE = 32
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
@@ -68,6 +69,8 @@ export function createDocumentSharingService(
   database: Kysely<CloudDatabase>,
   options: DocumentSharingServiceOptions = {}
 ) {
+  const sharingPolicy = createSharingPolicy(database, options)
+
   async function updateActiveShare(
     userId: string,
     documentId: string,
@@ -179,31 +182,11 @@ export function createDocumentSharingService(
       input: CreateDocumentShareInput
     ): Promise<DocumentShareCapability> {
       await requireSharingAccess(database, userId, documentId)
-      const policyDocument = await database
-        .selectFrom('document')
-        .select('workspaceId')
-        .where('id', '=', documentId)
-        .executeTakeFirstOrThrow()
-      const policyContext = {
-        targetingKey: policyDocument.workspaceId,
+      await sharingPolicy.requireCapabilityLink({
         actorId: userId,
-        workspaceId: policyDocument.workspaceId,
         documentId,
-        deploymentMode: options.deploymentMode ?? ('self-hosted' as const)
-      }
-      if (
-        options.policy &&
-        !(await options.policy.boolean(CLOUD_FEATURE_KEYS.capabilityLinks, false, policyContext))
-      ) {
-        throw new DocumentForbiddenError()
-      }
-      if (
-        input.permission === 'edit' &&
-        options.policy &&
-        !(await options.policy.boolean(CLOUD_FEATURE_KEYS.anonymousEdit, false, policyContext))
-      ) {
-        throw new DocumentForbiddenError()
-      }
+        permission: input.permission
+      })
       const id = crypto.randomUUID()
       const secret = nanoid(SHARE_SECRET_SIZE)
       const row = await database.transaction().execute(async (transaction) => {
@@ -239,6 +222,17 @@ export function createDocumentSharingService(
       shareId: string,
       input: UpdateDocumentShareInput
     ): Promise<DocumentShare> {
+      const permission = input.permission
+        ? input.permission
+        : await database
+            .selectFrom('documentShare')
+            .select('permission')
+            .where('id', '=', shareId)
+            .where('documentId', '=', documentId)
+            .where('revokedAt', 'is', null)
+            .executeTakeFirstOrThrow()
+            .then((share) => share.permission)
+      await sharingPolicy.requireCapabilityLink({ actorId: userId, documentId, permission })
       const row = await updateActiveShare(userId, documentId, shareId, {
         ...(input.permission ? { permission: input.permission } : {}),
         ...(input.expiresAt !== undefined
