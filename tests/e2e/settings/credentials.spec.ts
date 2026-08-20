@@ -123,6 +123,10 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   )
 
   await page.getByRole('button', { name: 'Enable all' }).click()
+  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toHaveAttribute(
+    'data-state',
+    'checked'
+  )
 })
 
 test('model library keeps reusable profiles and role assignments', async ({ page }) => {

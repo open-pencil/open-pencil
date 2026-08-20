@@ -23,6 +23,7 @@ export interface AutomationHealth {
 export interface AutomationServerHandle {
   disconnect: () => void | Promise<void>
   authToken: string | null
+  managed: boolean
 }
 
 const DEV_AUTOMATION_AUTH_TOKEN =
@@ -239,32 +240,36 @@ export async function getAutomationAuthToken(): Promise<string | null> {
   return runtimeAutomationAuthToken
 }
 
+async function readExistingServerHandle(): Promise<AutomationServerHandle | null> {
+  const expectedDiscoveryPath = await computeExpectedDiscoveryPath()
+  if (!(await discoveryFileExists(expectedDiscoveryPath))) return null
+
+  const health = await readAutomationHealth()
+  if (!health) return null
+  assertCompatibleMCPVersion(health)
+  const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
+  const token = await readDiscoveryToken(discoveryPath)
+  if (health.authRequired && !token) {
+    throw new Error(
+      'MCP server requires authentication but the discovery token could not be read. ' +
+        'Ensure the discovery file is accessible and contains an auth token.'
+    )
+  }
+  runtimeAutomationAuthToken = token
+  return { disconnect: noop, authToken: token, managed: false }
+}
+
 async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   runtimeAutomationStartupError = null
   if (import.meta.env.DEV || !isTauri()) {
     return DEV_AUTOMATION_AUTH_TOKEN
-      ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN }
+      ? { disconnect: noop, authToken: DEV_AUTOMATION_AUTH_TOKEN, managed: false }
       : null
   }
 
-  const expectedDiscoveryPath = await computeExpectedDiscoveryPath()
-  const hasDiscovery = await discoveryFileExists(expectedDiscoveryPath)
-  const existing = hasDiscovery ? await readAutomationHealth() : null
+  const existing = await readExistingServerHandle()
   if (existing) {
-    assertCompatibleMCPVersion(existing)
-    const discoveryPath = await resolveDiscoveryPath(existing.discoveryPath)
-    const token = await readDiscoveryToken(discoveryPath)
-    if (existing.authRequired && !token) {
-      throw new Error(
-        'MCP server requires authentication but the discovery token could not be read. ' +
-          'Ensure the discovery file is accessible and contains an auth token.'
-      )
-    }
-    runtimeAutomationAuthToken = token
-    return {
-      disconnect: noop,
-      authToken: runtimeAutomationAuthToken
-    }
+    return existing
   }
 
   const { invoke } = await import('@tauri-apps/api/core')
@@ -346,7 +351,8 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
             runtimeAutomationAuthToken = null
           }
         },
-        authToken: token
+        authToken: token,
+        managed: true
       }
     } catch (err) {
       await child.kill().catch(() => undefined)

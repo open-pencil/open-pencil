@@ -313,7 +313,11 @@ async function copyAccessToken(): Promise<void> {
       </ul>
 
       <p class="border-t border-border px-3 py-2 text-[10px] text-muted">
-        {{ dialogs.mcpToolsRestartNotice }}
+        {{
+          mcpRuntime.externallyManaged
+            ? dialogs.mcpExternalRestartNotice
+            : dialogs.mcpToolsRestartNotice
+        }}
       </p>
     </div>
 
@@ -321,11 +325,17 @@ async function copyAccessToken(): Promise<void> {
       <button
         type="button"
         class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-50"
-        :disabled="mcpRuntime.status === 'starting'"
+        :disabled="mcpRuntime.status === 'starting' || mcpRuntime.externallyManaged"
         data-test-id="settings-mcp-restart"
         @click="restart"
       >
-        {{ mcpRuntime.status === 'starting' ? dialogs.mcpStarting : dialogs.mcpRestart }}
+        {{
+          mcpRuntime.status === 'starting'
+            ? dialogs.mcpStarting
+            : mcpRuntime.externallyManaged
+              ? dialogs.mcpExternallyManaged
+              : dialogs.mcpRestart
+        }}
       </button>
     </div>
   </section>

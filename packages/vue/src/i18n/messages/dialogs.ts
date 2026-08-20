@@ -281,7 +281,10 @@ export const dialogMessageDefaults = {
   mcpSearchTools: 'Search MCP tools',
   mcpToolsRestartNotice:
     'Restart the MCP server, then reconnect stdio clients, to apply tool availability changes.',
+  mcpExternalRestartNotice:
+    'This server is managed by another process. Restart that process to apply changes.',
   mcpRestart: 'Restart MCP server',
+  mcpExternallyManaged: 'Managed externally',
   mcpStarting: 'Starting…',
   mcpStatus_idle: 'Not initialized',
   mcpStatus_starting: 'Starting',
