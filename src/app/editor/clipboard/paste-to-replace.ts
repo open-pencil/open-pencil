@@ -1,4 +1,5 @@
 import type { EditorStore } from '@/app/editor/active-store'
+import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { readTauriClipboardText } from '@/app/tauri/clipboard'
@@ -10,17 +11,31 @@ function isDesignClipboardHTML(text: string) {
 
 async function readClipboardHTML() {
   if (isTauri()) {
-    const text = await readTauriClipboardText()
-    return text && isDesignClipboardHTML(text) ? text : null
+    try {
+      const text = await readTauriClipboardText()
+      if (text && isDesignClipboardHTML(text)) return text
+    } catch (error) {
+      console.warn('Tauri clipboard read failed', error)
+    }
+    const memory = getInMemoryClipboardHTML()
+    return memory && isDesignClipboardHTML(memory) ? memory : null
   }
 
-  if (typeof navigator.clipboard.read !== 'function') return null
-  const items = await navigator.clipboard.read()
-  for (const item of items) {
-    if (!item.types.includes('text/html')) continue
-    return (await item.getType('text/html')).text()
+  if (typeof navigator !== 'undefined' && typeof navigator.clipboard.read === 'function') {
+    try {
+      const items = await navigator.clipboard.read()
+      for (const item of items) {
+        if (!item.types.includes('text/html')) continue
+        const text = await (await item.getType('text/html')).text()
+        if (text && isDesignClipboardHTML(text)) return text
+      }
+    } catch (error) {
+      console.warn('System clipboard read failed', error)
+    }
   }
-  return null
+
+  const memory = getInMemoryClipboardHTML()
+  return memory && isDesignClipboardHTML(memory) ? memory : null
 }
 
 export async function pasteClipboardToReplace(store: EditorStore) {
