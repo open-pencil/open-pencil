@@ -8,7 +8,7 @@
 
 ### Added
 
-- Include recent files in MCP document discovery and choose individual, inspection, or modification tools registered from Settings, with the selection shared by HTTP and stdio clients after restart.
+- Include recent files in MCP document discovery and configure its root directory or choose individual, inspection, or modification tools from Settings, with changes applied after restart.
 - Show and copy the complete Streamable HTTP MCP endpoint, local access token, and authenticated client configuration from Settings.
 - Open to a unified home with recent and configured storage documents, including grid or list layouts.
 - Open multiple selected design files in separate tabs.

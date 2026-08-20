@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 import {
   configurableMCPTools,
   disabledMCPTools,
+  mcpRootDirectory,
   setMCPToolCategoryEnabled,
   setMCPToolEnabled
 } from '@/app/automation/mcp/preferences'
@@ -49,6 +50,12 @@ onMounted(() => {
 
 function restart() {
   void restartMCPRuntime()
+}
+
+async function chooseRootDirectory(): Promise<void> {
+  const { open } = await import('@tauri-apps/plugin-dialog')
+  const directory = await open({ directory: true, multiple: false })
+  if (typeof directory === 'string') mcpRootDirectory.value = directory
 }
 
 function isToolEnabled(name: string): boolean {
@@ -143,6 +150,38 @@ async function copyAccessToken(): Promise<void> {
           <dd class="font-mono text-surface">{{ mcpRuntime.version }}</dd>
         </template>
       </dl>
+
+      <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="text-[10px] font-medium text-surface">{{ dialogs.mcpRootDirectory }}</p>
+            <p class="mt-0.5 truncate font-mono text-[10px] text-muted">
+              {{ mcpRootDirectory || dialogs.mcpRootDirectoryDefault }}
+            </p>
+          </div>
+          <div class="flex shrink-0 gap-1.5">
+            <button
+              v-if="mcpRootDirectory"
+              type="button"
+              class="rounded border border-border px-2 py-1 text-[10px] text-muted hover:bg-hover hover:text-surface"
+              @click="mcpRootDirectory = ''"
+            >
+              {{ dialogs.mcpUseDefaultRoot }}
+            </button>
+            <button
+              type="button"
+              class="rounded border border-border px-2 py-1 text-[10px] text-surface hover:bg-hover"
+              data-test-id="settings-mcp-root-directory"
+              @click="chooseRootDirectory"
+            >
+              {{ dialogs.mcpChooseRootDirectory }}
+            </button>
+          </div>
+        </div>
+        <p class="mt-1.5 text-[10px] leading-relaxed text-muted">
+          {{ dialogs.mcpRootDirectoryDescription }}
+        </p>
+      </div>
 
       <div class="mt-3 border-t border-border pt-3">
         <div class="flex items-start justify-between gap-3">
