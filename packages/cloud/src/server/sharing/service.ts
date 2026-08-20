@@ -1,3 +1,6 @@
+// Service composition intentionally remains colocated while capability, grant, and invitation
+// transactional boundaries are extracted independently.
+/* eslint-disable max-lines */
 import type {
   AcceptDocumentInvitationInput,
   CloudUserProfile,

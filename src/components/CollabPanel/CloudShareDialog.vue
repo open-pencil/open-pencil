@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useClipboard } from '@vueuse/core'
 
 import type {
@@ -208,7 +208,13 @@ async function removeInvitation(invitation: DocumentInvitation) {
   invitations.value = invitations.value.filter((item) => item.id !== invitation.id)
 }
 
-onMounted(refresh)
+watch(
+  open,
+  (isOpen) => {
+    if (isOpen) void refresh()
+  },
+  { immediate: false }
+)
 </script>
 
 <template>
