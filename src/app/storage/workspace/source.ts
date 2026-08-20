@@ -78,7 +78,7 @@ export function createStorageWorkspaceSource(
           id: canvasId,
           documentId: document.id,
           providerId: providerID,
-          ...(cloudIdentity ?? {}),
+          ...cloudIdentity,
           name: document.name,
           updatedAt: document.updatedAt,
           syncStatus: 'synced',

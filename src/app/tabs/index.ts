@@ -19,7 +19,8 @@ import type { EditorStore } from '@/app/editor/session'
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
-  type StorageDocument
+  type StorageDocument,
+  type StorageDocumentBinding
 } from '@/app/integrations/storage'
 import { activeCloudConnectionProfile } from '@/app/integrations/storage/cloud/profiles'
 import {
@@ -275,67 +276,83 @@ function findStorageTab(
   })
 }
 
-export async function openStorageDocumentInNewTab(document: StorageDocument): Promise<void> {
-  const providerId = activeStorageProviderID.value
-  const cloudProfile = providerId === 'openpencil-cloud' ? activeCloudConnectionProfile() : null
-  const cloudIdentity =
-    providerId === 'openpencil-cloud' && cloudProfile?.selectedWorkspaceId
-      ? {
-          providerId: 'openpencil-cloud' as const,
-          connectionId: cloudProfile.id,
-          workspaceId: cloudProfile.selectedWorkspaceId,
-          documentId: document.id
-        }
-      : null
-  if (providerId === 'openpencil-cloud' && !cloudIdentity) {
-    throw new Error('OpenPencil Cloud connection and workspace are required')
-  }
-  let canvasId: string
-  if (providerId === 'openpencil-cloud') {
-    if (!cloudIdentity) throw new Error('OpenPencil Cloud identity is required')
-    canvasId = storageCanvasId({
+type StorageOpenIdentity = {
+  providerId: string
+  canvasId: string
+  binding: StorageDocumentBinding
+}
+
+function storageOpenIdentity(providerId: string, documentId: string): StorageOpenIdentity {
+  if (providerId !== 'openpencil-cloud') {
+    return {
       providerId,
-      connectionId: cloudIdentity.connectionId,
-      documentId: document.id
-    })
-  } else {
-    canvasId = storageCanvasId({ providerId, documentId: document.id })
+      canvasId: storageCanvasId({ providerId, documentId }),
+      binding: { providerId, documentId }
+    }
   }
-  const existing = findStorageTab(providerId, document.id, cloudProfile?.id)
+  const profile = activeCloudConnectionProfile()
+  if (!profile?.selectedWorkspaceId)
+    throw new Error('OpenPencil Cloud connection and workspace are required')
+  const binding = {
+    providerId: 'openpencil-cloud' as const,
+    connectionId: profile.id,
+    workspaceId: profile.selectedWorkspaceId,
+    documentId
+  }
+  return {
+    providerId,
+    canvasId: storageCanvasId({
+      providerId: 'openpencil-cloud',
+      connectionId: profile.id,
+      documentId
+    }),
+    binding
+  }
+}
+
+async function storageDocumentBytes(
+  identity: StorageOpenIdentity,
+  document: StorageDocument
+): Promise<Uint8Array> {
+  const local = getLocalCanvasStore()
+  const metadata = await local.getMeta(identity.canvasId)
+  const localBytes = metadata?.hasFig ? await local.readFig(identity.canvasId) : null
+  const localIsAuthoritative =
+    metadata?.syncStatus !== 'synced' ||
+    !document.metadataAuthoritative ||
+    metadata.updatedAt >= document.updatedAt
+  if (localBytes && localIsAuthoritative) return localBytes
+  const bytes = await createActiveStorageAdapter(identity.providerId).getDocument(document.id)
+  await seedStorageCanvasFromRemote({
+    providerId: identity.providerId,
+    documentId: document.id,
+    ...(identity.binding.providerId === 'openpencil-cloud'
+      ? { connectionId: identity.binding.connectionId, workspaceId: identity.binding.workspaceId }
+      : {}),
+    canvasId: identity.canvasId,
+    name: document.name,
+    updatedAt: document.updatedAt,
+    figBytes: bytes,
+    remoteRevisionId: document.remoteRevisionId
+  })
+  return bytes
+}
+
+export async function openStorageDocumentInNewTab(document: StorageDocument): Promise<void> {
+  const identity = storageOpenIdentity(activeStorageProviderID.value, document.id)
+  const connectionId =
+    identity.binding.providerId === 'openpencil-cloud' ? identity.binding.connectionId : undefined
+  const existing = findStorageTab(identity.providerId, document.id, connectionId)
   if (existing) {
     switchTab(existing.id)
-    rememberRecentStorageDocument(providerId, document.id, document.name)
+    rememberRecentStorageDocument(identity.providerId, document.id, document.name)
     return
   }
-
   const { store, created } = reusableTabStore()
   store.state.documentName = document.name
   store.state.loading = true
   try {
-    const local = getLocalCanvasStore()
-    const localMetadata = await local.getMeta(canvasId)
-    const localBytes = localMetadata?.hasFig ? await local.readFig(canvasId) : null
-    const localIsAuthoritative =
-      localMetadata?.syncStatus !== 'synced' ||
-      !document.metadataAuthoritative ||
-      localMetadata.updatedAt >= document.updatedAt
-    let bytes = localBytes && localIsAuthoritative ? localBytes : null
-
-    if (!bytes) {
-      bytes = await createActiveStorageAdapter(providerId).getDocument(document.id)
-      await seedStorageCanvasFromRemote({
-        providerId,
-        connectionId: cloudProfile?.id,
-        workspaceId: cloudProfile?.selectedWorkspaceId ?? undefined,
-        canvasId,
-        documentId: document.id,
-        name: document.name,
-        updatedAt: document.updatedAt,
-        figBytes: bytes,
-        remoteRevisionId: document.remoteRevisionId
-      })
-    }
-
+    const bytes = await storageDocumentBytes(identity, document)
     const fileBytes = new Uint8Array(bytes.byteLength)
     fileBytes.set(bytes)
     const file = new File([fileBytes.buffer], `${document.name}.fig`, {
@@ -343,18 +360,13 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     })
     const imported = await readFigForTab(file, store)
     await showImportedGraph(store, imported, async () => {
-      store.setStorageDocumentSource(
-        cloudIdentity ?? { providerId, documentId: document.id },
-        document.name
-      )
-      if (providerId === 'openpencil-cloud') {
+      store.setStorageDocumentSource(identity.binding, document.name)
+      if (identity.providerId === 'openpencil-cloud') {
         const access = await getCloudDocumentAccess(store)
         store.setAccessMode(access.sources.includes('owner') ? 'owner' : access.permission)
-      } else {
-        store.setAccessMode('owner')
-      }
+      } else store.setAccessMode('owner')
     })
-    rememberRecentStorageDocument(providerId, document.id, document.name)
+    rememberRecentStorageDocument(identity.providerId, document.id, document.name)
   } catch (error) {
     if (created) {
       const tab = getTabForStore(store)
