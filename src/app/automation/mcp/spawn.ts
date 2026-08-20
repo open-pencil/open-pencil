@@ -3,12 +3,13 @@ import { promiseTimeout } from '@vueuse/core'
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 import { randomHex } from '@open-pencil/core/random'
 import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
+import type { MCPToolCatalogEntry } from '@open-pencil/mcp/tools'
 
 import { decodeTauriStderr } from '@/app/shell/ui'
 import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
-import { disabledMCPToolsCSV, mcpRootDirectory } from './preferences'
+import { disabledMCPToolsCSV, mcpAuthenticationEnabled, mcpRootDirectory } from './preferences'
 
 export interface AutomationHealth {
   status: 'ok' | 'no_app'
@@ -16,6 +17,7 @@ export interface AutomationHealth {
   installCommand?: string
   authRequired?: boolean
   discoveryPath?: string
+  tools?: MCPToolCatalogEntry[]
 }
 
 export interface AutomationServerHandle {
@@ -269,7 +271,7 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   const executableAvailable = await invoke<boolean>('mcp_executable_available')
   if (!executableAvailable) return rememberStartupError(missingMCPError())
 
-  const authToken = randomHex(32)
+  const authToken = mcpAuthenticationEnabled.value ? randomHex(32) : null
   // Cache only after MCP startup is confirmed healthy.
 
   const { Command } = await import('@tauri-apps/plugin-shell')
@@ -281,7 +283,7 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   const command = Command.create(resolved.command, resolved.args, {
     env: {
       PORT: String(AUTOMATION_HTTP_PORT),
-      OPENPENCIL_MCP_AUTH_TOKEN: authToken,
+      OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
       OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
       OPENPENCIL_MCP_TCP: '1',
       OPENPENCIL_MCP_ROOT: mcpRoot,
@@ -331,7 +333,7 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
       assertCompatibleMCPVersion(health)
       const discoveryPath = await resolveDiscoveryPath(health.discoveryPath)
       const discovered = await readDiscoveryToken(discoveryPath)
-      const token = discovered ?? authToken
+      const token = health.authRequired ? (discovered ?? authToken) : null
       spawnedToken = token
       runtimeAutomationAuthToken = token
       runtimeAutomationStartupError = null

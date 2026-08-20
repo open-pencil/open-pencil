@@ -9,7 +9,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer } from '#mcp/server'
-import { MCP_TOOL_CATALOG } from '#mcp/tool/catalog'
+import { registerTools } from '#mcp/tool/registration'
 
 import {
   connectMockBrowser,
@@ -136,16 +136,25 @@ describe('MCP server', () => {
 
   test('lists all registered tools', async () => {
     const { tools } = await client.listTools()
-    const expectedNames = MCP_TOOL_CATALOG.filter((tool) => tool.availability === 'default')
+    const catalog = registerTools(null, {
+      enableEval: false,
+      mcpRoot: null,
+      sendRPC: async () => ({})
+    })
+    const expectedNames = catalog
+      .filter((tool) => tool.availability === 'default')
       .map((tool) => tool.name)
       .sort()
     expect(tools.map((tool) => tool.name).sort()).toEqual(expectedNames)
   })
 
   test('classifies document access independently from runtime state mutation', () => {
-    const accessByName = new Map(
-      MCP_TOOL_CATALOG.map((tool) => [tool.name, tool.documentAccess] as const)
-    )
+    const catalog = registerTools(null, {
+      enableEval: true,
+      mcpRoot: TEST_MCP_ROOT,
+      sendRPC: async () => ({})
+    })
+    const accessByName = new Map(catalog.map((tool) => [tool.name, tool.documentAccess] as const))
     expect(accessByName.get('get_page_tree')).toBe('inspect')
     expect(accessByName.get('switch_page')).toBe('inspect')
     expect(accessByName.get('viewport_set')).toBe('inspect')
@@ -169,6 +178,12 @@ describe('MCP server', () => {
     expect(names).not.toContain('create_shape')
     expect(names).not.toContain('list_documents')
     expect(names).toContain('get_page_tree')
+
+    const healthResponse = await fetch(`http://127.0.0.1:${ctx.handle.httpPort}/health`)
+    const health = (await healthResponse.json()) as HealthResponse
+    const catalogNames = health.tools.map((tool) => tool.name)
+    expect(catalogNames).toContain('create_shape')
+    expect(catalogNames).toContain('list_documents')
   })
 
   test('tools have descriptions and input schemas', async () => {

@@ -14,6 +14,7 @@ import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/ht
 import type { RPCJSONObject } from '#mcp/json'
 import { preprocessRPC } from '#mcp/jsx-preprocess'
 import { createMCPSessionManager } from '#mcp/server/sessions'
+import type { MCPToolCatalogEntry } from '#mcp/tool/catalog'
 import { registerTools } from '#mcp/tool/registration'
 
 import packageJSON from '../package.json' with { type: 'json' }
@@ -105,8 +106,9 @@ function createHonoApp(options: {
   browserRPC: ReturnType<typeof createBrowserRPCBridge>
   mcpSessions: ReturnType<typeof createMCPSessionManager>
   sendToBrowser: (msg: RPCJSONObject) => Promise<unknown>
+  toolCatalog: MCPToolCatalogEntry[]
 }): Hono {
-  const { authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser } = options
+  const { authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser, toolCatalog } = options
 
   const app = new Hono()
 
@@ -127,7 +129,8 @@ function createHonoApp(options: {
       status: browserRPC.isConnected() ? 'ok' : 'no_app',
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
-      authRequired: authToken !== null
+      authRequired: authToken !== null,
+      tools: toolCatalog
     })
   )
 
@@ -309,8 +312,21 @@ function buildServerContext(options: ServerOptions) {
     onConnectionChange: mcpSessions.notifyToolsChanged
   })
   const sendToBrowser = browserRPC.sendRPC
+  const toolCatalog = registerTools(null, {
+    disabledTools,
+    enableEval,
+    mcpRoot,
+    sendRPC: sendToBrowser
+  })
 
-  const app = createHonoApp({ authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser })
+  const app = createHonoApp({
+    authToken,
+    corsOrigin,
+    browserRPC,
+    mcpSessions,
+    sendToBrowser,
+    toolCatalog
+  })
   const wss = new WebSocketServer({ noServer: true })
 
   return {

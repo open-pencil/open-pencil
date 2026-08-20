@@ -8,10 +8,11 @@
 
 ### Added
 
-- Include recent files in MCP document discovery and configure its root directory or choose individual, inspection, or modification tools from Settings, with changes applied after restart.
+- Include recent files in MCP document discovery and configure its root directory, authentication, or individual, inspection, and modification tools from Settings, with changes applied after restart.
 - Show and copy the complete Streamable HTTP MCP endpoint, local access token, and authenticated client configuration from Settings.
 - Open to a unified home with recent and configured storage documents, including grid or list layouts.
 - Open multiple selected design files in separate tabs.
+- Add deterministic two-browser collaboration coverage for bidirectional edits, awareness, departure cleanup, partitioned-peer convergence, and reconnect synchronization without public network dependencies. (#530)
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
 - Add a single CodeMirror editor for live Design JSX and HTML/CSS canvas previews, with Tailwind JSX viewing, completion, diagnostics, line numbers, bounded execution, and session-level undo. (#130)

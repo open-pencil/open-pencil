@@ -6,6 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 import {
   configurableMCPTools,
   disabledMCPTools,
+  mcpAuthenticationEnabled,
   mcpRootDirectory,
   setMCPToolCategoryEnabled,
   setMCPToolEnabled
@@ -23,7 +24,7 @@ const { copy: copyToken, copied: tokenCopied } = useClipboard({ copiedDuring: 20
 const { copy: copyConfig, copied: configCopied } = useClipboard({ copiedDuring: 2000 })
 const disabledToolNames = computed(() => new Set(disabledMCPTools.value))
 function categoryStatus(documentAccess: 'inspect' | 'modify') {
-  const tools = configurableMCPTools.filter((tool) => tool.documentAccess === documentAccess)
+  const tools = configurableMCPTools.value.filter((tool) => tool.documentAccess === documentAccess)
   const enabled = tools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
   return {
     enabled: enabled > 0,
@@ -33,12 +34,12 @@ function categoryStatus(documentAccess: 'inspect' | 'modify') {
 const inspectionToolsStatus = computed(() => categoryStatus('inspect'))
 const modificationToolsStatus = computed(() => categoryStatus('modify'))
 const enabledToolCount = computed(
-  () => configurableMCPTools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
+  () => configurableMCPTools.value.filter((tool) => !disabledToolNames.value.has(tool.name)).length
 )
 const visibleTools = computed(() => {
   const query = toolSearch.value.trim().toLowerCase()
-  if (!query) return configurableMCPTools
-  return configurableMCPTools.filter(
+  if (!query) return configurableMCPTools.value
+  return configurableMCPTools.value.filter(
     (tool) =>
       tool.name.toLowerCase().includes(query) || tool.description.toLowerCase().includes(query)
   )
@@ -150,6 +151,22 @@ async function copyAccessToken(): Promise<void> {
           <dd class="font-mono text-surface">{{ mcpRuntime.version }}</dd>
         </template>
       </dl>
+
+      <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-medium text-surface">{{ dialogs.mcpAuthentication }}</p>
+            <p class="mt-0.5 text-[10px] leading-relaxed text-muted">
+              {{ dialogs.mcpAuthenticationDescription }}
+            </p>
+          </div>
+          <AppSwitch
+            v-model="mcpAuthenticationEnabled"
+            :label="dialogs.mcpAuthentication"
+            data-test-id="settings-mcp-authentication"
+          />
+        </div>
+      </div>
 
       <div class="mt-3 border-t border-border pt-3">
         <div class="flex items-center justify-between gap-3">

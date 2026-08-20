@@ -1,14 +1,21 @@
 import { useLocalStorage } from '@vueuse/core'
+import { ref } from 'vue'
 
-import { MCP_TOOL_CATALOG, type MCPToolCatalogEntry } from '@open-pencil/mcp/tools'
+import type { MCPToolCatalogEntry } from '@open-pencil/mcp/tools'
 
 const DISABLED_TOOLS_STORAGE_KEY = 'open-pencil:mcp:disabled-tools'
 const ROOT_DIRECTORY_STORAGE_KEY = 'open-pencil:mcp:root-directory'
+const AUTHENTICATION_ENABLED_STORAGE_KEY = 'open-pencil:mcp:authentication-enabled'
 
-export const configurableMCPTools = MCP_TOOL_CATALOG.filter((tool) => tool.availability !== 'eval')
+export const configurableMCPTools = ref<MCPToolCatalogEntry[]>([])
 
 export const disabledMCPTools = useLocalStorage<string[]>(DISABLED_TOOLS_STORAGE_KEY, [])
 export const mcpRootDirectory = useLocalStorage(ROOT_DIRECTORY_STORAGE_KEY, '')
+export const mcpAuthenticationEnabled = useLocalStorage(AUTHENTICATION_ENABLED_STORAGE_KEY, true)
+
+export function setMCPToolCatalog(tools: MCPToolCatalogEntry[]): void {
+  configurableMCPTools.value = tools.filter((tool) => tool.availability !== 'eval')
+}
 
 export function setMCPToolEnabled(name: string, enabled: boolean): void {
   const disabled = new Set(disabledMCPTools.value)
@@ -22,7 +29,7 @@ export function setMCPToolCategoryEnabled(
   enabled: boolean
 ): void {
   const disabled = new Set(disabledMCPTools.value)
-  for (const tool of configurableMCPTools) {
+  for (const tool of configurableMCPTools.value) {
     if (tool.documentAccess !== documentAccess) continue
     if (enabled) disabled.delete(tool.name)
     else disabled.add(tool.name)

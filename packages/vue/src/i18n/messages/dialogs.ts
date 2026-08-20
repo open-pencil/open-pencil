@@ -262,9 +262,11 @@ export const dialogMessageDefaults = {
   mcpCopyClientConfig: 'Copy client config',
   mcpClientConfigDescription:
     'For clients without static-token fields, copy this entry into mcp.json. When authentication is enabled, it includes the local access token; keep it private.',
-  mcpAuthentication: 'Authentication',
   mcpBearerTokenAuth: 'Bearer token required',
   mcpNoAuthentication: 'None',
+  mcpAuthentication: 'Require authentication',
+  mcpAuthenticationDescription:
+    'Protect the localhost MCP endpoint with a bearer token. Disable only on a trusted machine. Restart the server to apply changes.',
   mcpRootDirectory: 'MCP root directory',
   mcpRootDirectoryDefault: 'User home directory (default)',
   mcpChooseRootDirectory: 'Choose folder',
