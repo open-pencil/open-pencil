@@ -32,6 +32,7 @@ async function insertExpiredUploads(count: number) {
     contentType: 'application/octet-stream',
     multipartUploadId: null,
     status: 'pending' as const,
+    finalizationStartedAt: null,
     createdBy: 'alice',
     expiresAt: new Date(Date.now() - 60_000)
   }))
@@ -60,6 +61,33 @@ describe('upload cleanup', () => {
           .where('status', '=', 'pending')
           .executeTakeFirstOrThrow()
       ).toEqual({ count: 1 })
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
+  test('reclaims stale finalization leases', async () => {
+    const context = await insertExpiredUploads(1)
+    const objects = createMemoryObjectStore()
+    try {
+      await context.runtime.database
+        .updateTable('upload')
+        .set({
+          status: 'finalizing',
+          finalizationStartedAt: new Date(Date.now() - 120_000),
+          expiresAt: new Date(Date.now() + 60_000)
+        })
+        .execute()
+      const cleanup = createUploadCleanupService(context.runtime.database, objects.store)
+      expect(
+        await cleanup.cleanupExpiredUploads({ batchSize: 1, leaseDurationMs: 60_000 })
+      ).toEqual({ claimed: 1, cleaned: 1, failed: 0 })
+      expect(
+        await context.runtime.database
+          .selectFrom('upload')
+          .select('status')
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: 'abandoned' })
     } finally {
       await context.runtime.close()
     }

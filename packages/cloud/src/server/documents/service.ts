@@ -222,6 +222,7 @@ export function createDocumentService(
             contentType: input.contentType,
             multipartUploadId: null,
             status: 'pending',
+            finalizationStartedAt: null,
             createdBy: userId,
             expiresAt
           })
@@ -299,7 +300,7 @@ export function createDocumentService(
       }
       const claimed = await database
         .updateTable('upload')
-        .set({ status: 'finalizing' })
+        .set({ status: 'finalizing', finalizationStartedAt: new Date() })
         .where('id', '=', uploadId)
         .where('status', '=', 'pending')
         .returning('id')
@@ -380,7 +381,7 @@ export function createDocumentService(
             .execute()
           await transaction
             .updateTable('upload')
-            .set({ status: 'committed' })
+            .set({ status: 'committed', finalizationStartedAt: null })
             .where('id', '=', uploadId)
             .execute()
           await quota.commitInTransaction(transaction, uploadId)
@@ -388,7 +389,7 @@ export function createDocumentService(
       } catch (error) {
         await database
           .updateTable('upload')
-          .set({ status: 'pending' })
+          .set({ status: 'pending', finalizationStartedAt: null })
           .where('id', '=', uploadId)
           .where('status', '=', 'finalizing')
           .execute()

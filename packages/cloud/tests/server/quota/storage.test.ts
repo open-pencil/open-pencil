@@ -34,6 +34,7 @@ async function seed() {
         contentType: 'application/octet-stream',
         multipartUploadId: null,
         status: 'pending',
+        finalizationStartedAt: null,
         createdBy: 'u',
         expiresAt: new Date(Date.now() + 60_000)
       })
@@ -66,6 +67,7 @@ describe('storage quota reservations', () => {
               contentType: 'application/octet-stream',
               multipartUploadId: null,
               status: 'pending',
+              finalizationStartedAt: null,
               createdBy: 'u',
               expiresAt: new Date(Date.now() + 60_000)
             })

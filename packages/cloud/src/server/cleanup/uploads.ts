@@ -46,6 +46,10 @@ export function createUploadCleanupService(
                 expression('expiresAt', '<=', now)
               ]),
               expression.and([
+                expression('status', '=', 'finalizing'),
+                expression('finalizationStartedAt', '<=', staleBefore)
+              ]),
+              expression.and([
                 expression('status', '=', 'cleaning'),
                 expression('cleanupClaimedAt', '<=', staleBefore)
               ])
@@ -60,7 +64,12 @@ export function createUploadCleanupService(
         const ids = candidates.map((upload) => upload.id)
         await transaction
           .updateTable('upload')
-          .set({ status: 'cleaning', cleanupClaimId: claimId, cleanupClaimedAt: now })
+          .set({
+            status: 'cleaning',
+            finalizationStartedAt: null,
+            cleanupClaimId: claimId,
+            cleanupClaimedAt: now
+          })
           .where('id', 'in', ids)
           .execute()
         return candidates
@@ -73,7 +82,12 @@ export function createUploadCleanupService(
           await removeUploadObject(objects, upload)
           const result = await database
             .updateTable('upload')
-            .set({ status: 'abandoned', cleanupClaimId: null, cleanupClaimedAt: null })
+            .set({
+              status: 'abandoned',
+              finalizationStartedAt: null,
+              cleanupClaimId: null,
+              cleanupClaimedAt: null
+            })
             .where('id', '=', upload.id)
             .where('status', '=', 'cleaning')
             .where('cleanupClaimId', '=', claimId)
@@ -86,7 +100,12 @@ export function createUploadCleanupService(
           failed++
           await database
             .updateTable('upload')
-            .set({ status: 'pending', cleanupClaimId: null, cleanupClaimedAt: null })
+            .set({
+              status: 'pending',
+              finalizationStartedAt: null,
+              cleanupClaimId: null,
+              cleanupClaimedAt: null
+            })
             .where('id', '=', upload.id)
             .where('status', '=', 'cleaning')
             .where('cleanupClaimId', '=', claimId)

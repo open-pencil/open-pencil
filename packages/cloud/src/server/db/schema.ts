@@ -102,6 +102,7 @@ export interface UploadTable {
   contentType: string
   multipartUploadId: string | null
   status: UploadStatus
+  finalizationStartedAt: TimestampColumn | null
   cleanupClaimId: Generated<string | null>
   cleanupClaimedAt: TimestampColumn | null
   createdBy: string
