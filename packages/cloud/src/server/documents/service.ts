@@ -294,86 +294,106 @@ export function createDocumentService(
         if (!document) throw new DocumentNotFoundError()
         return document
       }
-      if (input.multipart) {
-        if (
-          !objects.capabilities.multipartUpload ||
-          input.multipart.uploadId !== upload.multipartUploadId
-        ) {
-          throw new UploadInvalidError()
-        }
-        await objects.completeUpload({
-          key: upload.objectKey,
-          uploadId: input.multipart.uploadId,
-          parts: input.multipart.parts
-        })
-      }
       if (upload.status !== 'pending' || new Date(upload.expiresAt).getTime() <= Date.now()) {
         throw new UploadInvalidError()
       }
-      const stored = await objects.head(upload.objectKey)
-      if (
-        !stored ||
-        stored.checksum !== input.checksum ||
-        stored.checksum !== upload.checksum ||
-        stored.byteSize !== Number(upload.byteSize) ||
-        stored.contentType !== upload.contentType
-      ) {
-        throw new UploadInvalidError()
-      }
+      const claimed = await database
+        .updateTable('upload')
+        .set({ status: 'finalizing' })
+        .where('id', '=', uploadId)
+        .where('status', '=', 'pending')
+        .returning('id')
+        .executeTakeFirst()
+      if (!claimed) throw new UploadInvalidError()
+      try {
+        if (input.multipart) {
+          if (
+            !objects.capabilities.multipartUpload ||
+            input.multipart.uploadId !== upload.multipartUploadId
+          ) {
+            throw new UploadInvalidError()
+          }
+          await objects.completeUpload({
+            key: upload.objectKey,
+            uploadId: input.multipart.uploadId,
+            parts: input.multipart.parts
+          })
+        }
+        const stored = await objects.head(upload.objectKey)
+        if (
+          !stored ||
+          stored.checksum !== input.checksum ||
+          stored.checksum !== upload.checksum ||
+          stored.byteSize !== Number(upload.byteSize) ||
+          stored.contentType !== upload.contentType
+        ) {
+          throw new UploadInvalidError()
+        }
 
-      const revisionId = crypto.randomUUID()
-      const storageObjectId = crypto.randomUUID()
-      await database.transaction().execute(async (transaction) => {
-        const lockedUpload = await transaction
-          .selectFrom('upload')
-          .select('status')
-          .where('id', '=', uploadId)
-          .forUpdate()
-          .executeTakeFirstOrThrow()
-        if (lockedUpload.status === 'committed') return
-        if (lockedUpload.status !== 'pending') throw new UploadInvalidError()
-        const document = await transaction
-          .selectFrom('document')
-          .select(['currentRevisionId'])
-          .where('id', '=', upload.documentId)
-          .forUpdate()
-          .executeTakeFirstOrThrow()
-        if (document.currentRevisionId !== upload.baseRevisionId) throw new DocumentConflictError()
-        await transaction
-          .insertInto('storageObject')
-          .values({
-            id: storageObjectId,
-            objectKey: upload.objectKey,
-            checksum: stored.checksum,
-            byteSize: stored.byteSize,
-            contentType: stored.contentType
-          })
-          .execute()
-        await transaction
-          .insertInto('documentRevision')
-          .values({
-            id: revisionId,
-            documentId: upload.documentId,
-            parentRevisionId: upload.baseRevisionId,
-            storageObjectId,
-            createdBy: userId
-          })
-          .execute()
-        await transaction
-          .updateTable('document')
-          .set({
-            currentRevisionId: revisionId,
-            version: (expression) => expression('version', '+', 1)
-          })
-          .where('id', '=', upload.documentId)
-          .execute()
-        await transaction
+        const revisionId = crypto.randomUUID()
+        const storageObjectId = crypto.randomUUID()
+        await database.transaction().execute(async (transaction) => {
+          const lockedUpload = await transaction
+            .selectFrom('upload')
+            .select('status')
+            .where('id', '=', uploadId)
+            .forUpdate()
+            .executeTakeFirstOrThrow()
+          if (lockedUpload.status === 'committed') return
+          if (lockedUpload.status !== 'finalizing') throw new UploadInvalidError()
+          const document = await transaction
+            .selectFrom('document')
+            .select(['currentRevisionId'])
+            .where('id', '=', upload.documentId)
+            .forUpdate()
+            .executeTakeFirstOrThrow()
+          if (document.currentRevisionId !== upload.baseRevisionId) {
+            throw new DocumentConflictError()
+          }
+          await transaction
+            .insertInto('storageObject')
+            .values({
+              id: storageObjectId,
+              objectKey: upload.objectKey,
+              checksum: stored.checksum,
+              byteSize: stored.byteSize,
+              contentType: stored.contentType
+            })
+            .execute()
+          await transaction
+            .insertInto('documentRevision')
+            .values({
+              id: revisionId,
+              documentId: upload.documentId,
+              parentRevisionId: upload.baseRevisionId,
+              storageObjectId,
+              createdBy: userId
+            })
+            .execute()
+          await transaction
+            .updateTable('document')
+            .set({
+              currentRevisionId: revisionId,
+              version: (expression) => expression('version', '+', 1)
+            })
+            .where('id', '=', upload.documentId)
+            .execute()
+          await transaction
+            .updateTable('upload')
+            .set({ status: 'committed' })
+            .where('id', '=', uploadId)
+            .execute()
+          await quota.commitInTransaction(transaction, uploadId)
+        })
+      } catch (error) {
+        await database
           .updateTable('upload')
-          .set({ status: 'committed' })
+          .set({ status: 'pending' })
           .where('id', '=', uploadId)
+          .where('status', '=', 'finalizing')
           .execute()
-        await quota.commitInTransaction(transaction, uploadId)
-      })
+        throw error
+      }
       const document = await findDocument(database, userId, upload.documentId)
       if (!document) throw new DocumentNotFoundError()
       return document

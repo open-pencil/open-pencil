@@ -12,6 +12,7 @@ import * as invitationContinuation from './migrations/006_invitation_continuatio
 import * as collaborationState from './migrations/007_collaboration_state'
 import * as storageReservations from './migrations/008_storage_reservations'
 import * as workspaceEntitlements from './migrations/009_workspace_entitlements'
+import * as uploadFinalization from './migrations/010_upload_finalization'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
@@ -23,7 +24,8 @@ const migrations: Record<string, Migration> = {
   '006_invitation_continuation': invitationContinuation,
   '007_collaboration_state': collaborationState,
   '008_storage_reservations': storageReservations,
-  '009_workspace_entitlements': workspaceEntitlements
+  '009_workspace_entitlements': workspaceEntitlements,
+  '010_upload_finalization': uploadFinalization
 }
 
 class CloudMigrationProvider implements MigrationProvider {

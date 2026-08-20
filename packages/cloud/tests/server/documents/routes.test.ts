@@ -248,6 +248,13 @@ describe('Cloud document routes', () => {
       })
       expect(commit.status).toBe(422)
       expect(await commit.json()).toEqual({ error: { code: 'invalid_upload' } })
+      expect(
+        await context.runtime.database
+          .selectFrom('upload')
+          .select('status')
+          .where('id', '=', upload.id)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: 'pending' })
     } finally {
       await context.runtime.close()
     }

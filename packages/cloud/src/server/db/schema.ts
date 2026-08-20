@@ -3,7 +3,7 @@ import type { ColumnType, Generated, Insertable, Selectable, Updateable } from '
 
 export type TimestampColumn = ColumnType<Date, Date | string | undefined, Date | string | null>
 
-export type UploadStatus = 'pending' | 'cleaning' | 'committed' | 'abandoned'
+export type UploadStatus = 'pending' | 'finalizing' | 'cleaning' | 'committed' | 'abandoned'
 
 export interface DocumentShareTable {
   id: string
