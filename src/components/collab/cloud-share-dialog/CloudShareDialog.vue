@@ -62,16 +62,19 @@ const {
 </script>
 
 <template>
-  <AppDialogRoot v-model:open="open" size="md" aria-label="Share document">
-    <AppDialogHeader :heading="`Share “${store.state.documentName}”`" close-label="Close" />
+  <AppDialogRoot v-model:open="open" size="md" :aria-label="dialogs.cloudShareDocumentAria">
+    <AppDialogHeader
+      :heading="dialogs.cloudShareDocument({ name: store.state.documentName })"
+      :close-label="dialogs.close"
+    />
     <AppDialogBody>
       <div class="flex gap-2">
         <AppInput
           v-model="inviteEmail"
           class="min-w-0 flex-1"
           type="text"
-          placeholder="Email address"
-          aria-label="Email address"
+          :placeholder="dialogs.cloudEmailAddress"
+          :aria-label="dialogs.cloudEmailAddress"
           :disabled="!canManage || loading"
           @enter="invite"
         />
@@ -79,7 +82,7 @@ const {
           v-model="invitePermission"
           class="w-24"
           :options="permissionOptions"
-          label="Invitation permission"
+          :label="dialogs.cloudInvitationPermission"
           :disabled="!canManage || loading"
         />
         <button
@@ -88,12 +91,12 @@ const {
           :disabled="!inviteEmail.trim() || !canManage || loading"
           @click="invite"
         >
-          Invite
+          {{ dialogs.cloudInvite }}
         </button>
       </div>
 
       <section class="mt-5">
-        <h3 class="mb-2 text-xs font-medium text-surface">Who has access</h3>
+        <h3 class="mb-2 text-xs font-medium text-surface">{{ dialogs.cloudWhoHasAccess }}</h3>
         <div class="space-y-1">
           <div class="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-hover">
             <span
@@ -102,11 +105,13 @@ const {
               <icon-lucide-building-2 class="size-3.5" />
             </span>
             <div class="min-w-0 flex-1">
-              <div class="truncate text-[11px] text-surface">Workspace members</div>
-              <div class="text-[9px] text-muted">Inherited access</div>
+              <div class="truncate text-[11px] text-surface">
+                {{ dialogs.cloudWorkspaceMembers }}
+              </div>
+              <div class="text-[9px] text-muted">{{ dialogs.cloudInheritedAccess }}</div>
             </div>
             <span class="text-[10px] text-muted">{{
-              access?.permission === 'edit' ? 'Can edit' : 'Can view'
+              access?.permission === 'edit' ? dialogs.cloudCanEdit : dialogs.cloudCanView
             }}</span>
           </div>
 
@@ -132,14 +137,14 @@ const {
               :model-value="grant.permission"
               class="w-24"
               :options="permissionOptions"
-              label="Person permission"
+              :label="dialogs.cloudPersonPermission"
               :disabled="!canManage"
               @update:model-value="changeGrant(grant, $event as DocumentPermission)"
             />
             <button
               type="button"
               class="text-muted hover:text-danger"
-              aria-label="Remove access"
+              :aria-label="dialogs.cloudRemoveAccess"
               @click="removeGrant(grant)"
             >
               <icon-lucide-x class="size-3.5" />
@@ -157,16 +162,16 @@ const {
             <div class="min-w-0 flex-1">
               <div class="truncate text-[11px] text-surface">{{ invitation.email }}</div>
               <div class="text-[9px] text-muted">
-                {{ invitation.acceptedAt ? 'Accepted' : 'Invitation pending' }}
+                {{ invitation.acceptedAt ? dialogs.cloudAccepted : dialogs.cloudInvitationPending }}
               </div>
             </div>
             <span class="text-[10px] text-muted">{{
-              invitation.permission === 'edit' ? 'Can edit' : 'Can view'
+              invitation.permission === 'edit' ? dialogs.cloudCanEdit : dialogs.cloudCanView
             }}</span>
             <button
               type="button"
               class="text-muted hover:text-danger"
-              aria-label="Revoke invitation"
+              :aria-label="dialogs.cloudRevokeInvitation"
               @click="removeInvitation(invitation)"
             >
               <icon-lucide-x class="size-3.5" />
@@ -176,22 +181,22 @@ const {
       </section>
 
       <section class="mt-4 border-t border-border pt-4">
-        <h3 class="mb-2 text-xs font-medium text-surface">General access</h3>
+        <h3 class="mb-2 text-xs font-medium text-surface">{{ dialogs.cloudGeneralAccess }}</h3>
         <div class="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-hover">
           <span class="flex size-7 items-center justify-center rounded-full bg-hover text-muted"
             ><icon-lucide-link class="size-3.5"
           /></span>
           <div class="min-w-0 flex-1">
             <div class="text-[11px] text-surface">
-              {{ activeShare ? 'Anyone with the link' : 'Restricted' }}
+              {{ activeShare ? dialogs.cloudAnyoneWithLink : dialogs.cloudRestricted }}
             </div>
             <div class="text-[9px] text-muted">
               {{
                 activeShare
                   ? activeShare.permission === 'edit'
-                    ? 'Can edit'
-                    : 'Can view'
-                  : 'Only workspace members and invited people'
+                    ? dialogs.cloudCanEdit
+                    : dialogs.cloudCanView
+                  : dialogs.cloudOnlyMembersAndInvited
               }}
             </div>
           </div>
@@ -201,14 +206,14 @@ const {
             :disabled="!canManage"
             @click="settingsOpen = true"
           >
-            Share settings
+            {{ dialogs.cloudShareSettings }}
           </button>
         </div>
         <p
           v-if="oneTimeLink"
           class="mt-2 rounded border border-border bg-canvas px-2 py-1.5 text-[10px] text-muted"
         >
-          This link is shown once. Copy it now or regenerate it later.
+          {{ dialogs.cloudOneTimeLink }}
         </p>
       </section>
     </AppDialogBody>
@@ -220,7 +225,7 @@ const {
         :disabled="!canManage"
         @click="disableLink"
       >
-        Disable link
+        {{ dialogs.cloudDisableLink }}
       </button>
       <button
         v-if="activeShare"
@@ -229,7 +234,7 @@ const {
         :disabled="!canManage || loading"
         @click="rotateLink"
       >
-        Regenerate link
+        {{ dialogs.cloudRegenerateLink }}
       </button>
       <button
         v-else
@@ -238,39 +243,50 @@ const {
         :disabled="!canManage || loading"
         @click="createLink"
       >
-        Create and copy link
+        {{ dialogs.cloudCreateAndCopyLink }}
       </button>
     </AppDialogFooter>
   </AppDialogRoot>
 
-  <AppDialogRoot v-model:open="settingsOpen" size="sm" aria-label="Share settings">
-    <AppDialogHeader heading="Share settings" close-label="Close" />
+  <AppDialogRoot v-model:open="settingsOpen" size="sm" :aria-label="dialogs.cloudShareSettings">
+    <AppDialogHeader :heading="dialogs.cloudShareSettings" :close-label="dialogs.close" />
     <AppDialogBody class="space-y-5">
       <section>
-        <h3 class="mb-2 text-xs font-medium text-surface">Who has access</h3>
+        <h3 class="mb-2 text-xs font-medium text-surface">{{ dialogs.cloudWhoHasAccess }}</h3>
         <div class="rounded border border-border bg-panel-field px-3 py-2 text-[11px] text-surface">
-          {{ activeShare ? 'Anyone with the link' : 'Only invited people' }}
+          {{ activeShare ? dialogs.cloudAnyoneWithLink : dialogs.cloudOnlyInvited }}
         </div>
       </section>
       <section>
-        <h3 class="mb-2 text-xs font-medium text-surface">What they can do</h3>
-        <AppSelect v-model="linkPermission" :options="permissionOptions" label="Link permission" />
+        <h3 class="mb-2 text-xs font-medium text-surface">{{ dialogs.cloudWhatTheyCanDo }}</h3>
+        <AppSelect
+          v-model="linkPermission"
+          :options="permissionOptions"
+          :label="dialogs.cloudLinkPermission"
+        />
       </section>
       <section>
-        <h3 class="mb-2 text-xs font-medium text-surface">Link expiration</h3>
-        <AppSelect v-model="expiration" :options="expirationOptions" label="Link expiration" />
+        <h3 class="mb-2 text-xs font-medium text-surface">{{ dialogs.cloudLinkExpiration }}</h3>
+        <AppSelect
+          v-model="expiration"
+          :options="expirationOptions"
+          :label="dialogs.cloudLinkExpiration"
+        />
       </section>
       <section class="border-t border-border pt-4">
-        <h3 class="text-xs font-medium text-surface">Advanced</h3>
+        <h3 class="text-xs font-medium text-surface">{{ dialogs.cloudAdvanced }}</h3>
         <p class="mt-1 text-[10px] leading-relaxed text-muted">
-          Viewers can inspect and export the locally loaded document. Strong server-enforced live
-          write restrictions require a trusted collaboration relay.
+          {{ dialogs.cloudRelayDescription }}
         </p>
       </section>
     </AppDialogBody>
     <AppDialogFooter>
-      <button type="button" :class="quietButton.base" @click="settingsOpen = false">Cancel</button>
-      <button type="button" :class="primaryButton.base" @click="saveSettings">Save</button>
+      <button type="button" :class="quietButton.base" @click="settingsOpen = false">
+        {{ dialogs.cancel }}
+      </button>
+      <button type="button" :class="primaryButton.base" @click="saveSettings">
+        {{ dialogs.cloudSave }}
+      </button>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>
