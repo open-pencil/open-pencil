@@ -7,6 +7,7 @@ import { IS_TAURI } from '@open-pencil/core/constants'
 import { useAIChat } from '@/app/ai/chat/use'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen, settingsDialogSection } from '@/app/settings/dialog'
+import CloudSettingsPanel from '@/components/settings/cloud/CloudSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
 import MCPConnectionsSection from '@/components/settings/mcp/MCPConnectionsSection.vue'
 import MCPSettingsPanel from '@/components/settings/mcp/MCPSettingsPanel.vue'
@@ -103,6 +104,16 @@ const navigationClass =
         <button
           type="button"
           :class="navigationClass"
+          :data-state="settingsDialogSection === 'cloud' ? 'active' : 'inactive'"
+          data-test-id="settings-section-cloud"
+          @click="settingsDialogSection = 'cloud'"
+        >
+          <icon-lucide-cloud class="size-3.5" />
+          Cloud
+        </button>
+        <button
+          type="button"
+          :class="navigationClass"
           :data-state="settingsDialogSection === 'storage' ? 'active' : 'inactive'"
           data-test-id="settings-section-storage"
           @click="settingsDialogSection = 'storage'"
@@ -142,6 +153,7 @@ const navigationClass =
           <VectorizeSettingsSection />
         </section>
 
+        <CloudSettingsPanel v-else-if="settingsDialogSection === 'cloud'" />
         <StorageSettingsPanel v-else />
       </div>
     </div>
