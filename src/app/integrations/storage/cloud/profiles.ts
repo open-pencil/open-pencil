@@ -1,4 +1,5 @@
 import { useLocalStorage } from '@vueuse/core'
+import { base64url } from 'jose'
 
 import { writeStoragePreference } from '../preferences'
 import { normalizeCloudServerURL } from './connection'
@@ -19,14 +20,9 @@ export type CloudConnectionProfile = {
 const profiles = useLocalStorage<CloudConnectionProfile[]>('open-pencil:cloud:connections', [])
 const activeProfileId = useLocalStorage<string | null>('open-pencil:cloud:active-connection', null)
 
-function stableProfileId(serverURL: string): string {
-  const bytes = new TextEncoder().encode(serverURL)
-  let hash = 2_166_136_261
-  for (const byte of bytes) {
-    hash ^= byte
-    hash = Math.imul(hash, 16_777_619)
-  }
-  return `cloud-${(hash >>> 0).toString(16).padStart(8, '0')}`
+async function stableProfileId(serverURL: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(serverURL))
+  return `cloud-${base64url.encode(new Uint8Array(digest))}`
 }
 
 function defaultLabel(kind: CloudConnectionKind, serverURL: string): string {
@@ -46,11 +42,11 @@ export function activeCloudConnectionProfile(): CloudConnectionProfile | null {
   return profiles.value.find((profile) => profile.id === activeProfileId.value) ?? null
 }
 
-export function connectCloudProfile(input: {
+export async function connectCloudProfile(input: {
   kind: CloudConnectionKind
   serverURL?: string
   label?: string
-}): CloudConnectionProfile {
+}): Promise<CloudConnectionProfile> {
   const serverURL = normalizeCloudServerURL(
     input.kind === 'official' ? OFFICIAL_OPENPENCIL_CLOUD_URL : (input.serverURL ?? '')
   )
@@ -60,7 +56,7 @@ export function connectCloudProfile(input: {
     return existing
   }
   const profile: CloudConnectionProfile = {
-    id: stableProfileId(serverURL),
+    id: await stableProfileId(serverURL),
     kind: input.kind,
     label: input.label?.trim() || defaultLabel(input.kind, serverURL),
     serverURL,

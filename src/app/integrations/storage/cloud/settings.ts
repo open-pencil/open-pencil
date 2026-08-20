@@ -52,7 +52,7 @@ function createCloudStorageSettings() {
   )
 
   async function addConnection(kind: CloudConnectionKind, customURL?: string): Promise<void> {
-    const profile = connectCloudProfile({ kind, serverURL: customURL })
+    const profile = await connectCloudProfile({ kind, serverURL: customURL })
     serverURL.value = profile.serverURL
     await connect()
   }
