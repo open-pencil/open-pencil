@@ -10,6 +10,7 @@ const cloudURL = process.env.OPENPENCIL_CLOUD_E2E_URL
 const workspaceId = process.env.OPENPENCIL_CLOUD_E2E_WORKSPACE_ID
 const documentId = process.env.OPENPENCIL_CLOUD_E2E_DOCUMENT_ID
 const collaborationURL = process.env.OPENPENCIL_CLOUD_E2E_COLLABORATION_URL
+const relayControlURL = process.env.OPENPENCIL_CLOUD_E2E_RELAY_CONTROL_URL
 const enabled = process.env.OPENPENCIL_CLOUD_E2E === '1'
 
 async function configureCloudContext(
@@ -226,6 +227,31 @@ test.describe('Cloud sharing browser journey', () => {
         { timeout: 15_000 }
       )
       .toBe('RECTANGLE')
+
+    if (!relayControlURL) throw new Error('Cloud relay control URL is unavailable')
+    const restartResponse = await fetch(`${relayControlURL}/restart`, { method: 'POST' })
+    expect(restartResponse.ok).toBe(true)
+    await expect
+      .poll(
+        () => editorRecipient.evaluate(() => window.openPencil?.getStore?.().state.accessMode),
+        { timeout: 30_000 }
+      )
+      .toBe('edit')
+    const restoredContext = await browser.newContext()
+    await configureCloudContext(restoredContext)
+    const restoredRecipient = await restoredContext.newPage()
+    await restoredRecipient.goto(shareURL)
+    await expect
+      .poll(
+        () =>
+          restoredRecipient.evaluate(
+            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.type,
+            syncedNodeId
+          ),
+        { timeout: 30_000 }
+      )
+      .toBe('RECTANGLE')
+    await restoredContext.close()
 
     const shareId = new URL(shareURL).pathname.split('/').at(-1)
     if (!shareId) throw new Error('Share URL does not contain a share ID')

@@ -11,6 +11,7 @@ const relayPort = 16_000 + (process.pid % 1_000)
 const postgresPort = 17_000 + (process.pid % 1_000)
 const seaweedS3Port = 18_000 + (process.pid % 1_000)
 const seaweedMasterPort = 19_000 + (process.pid % 1_000)
+const relayControlPort = 23_000 + (process.pid % 1_000)
 const appOrigin = `http://127.0.0.1:${appPort}`
 const serviceEnvironment = {
   ...Bun.env,
@@ -28,6 +29,7 @@ const relayEnvironment = {
 }
 let cloud: ReturnType<typeof Bun.spawn> | null = null
 let relay: ReturnType<typeof Bun.spawn> | null = null
+let relayControl: ReturnType<typeof Bun.serve> | null = null
 let playwrightExitCode = 1
 
 async function run(command: string[], cwd = deployDirectory): Promise<void> {
@@ -79,6 +81,26 @@ async function waitForCloud(
   return JSON.parse(payload) as CloudBrowserE2EFixture
 }
 
+async function startRelay(): Promise<ReturnType<typeof Bun.spawn>> {
+  const process = Bun.spawn(
+    ['node', '--experimental-strip-types', 'packages/cloud/tests/e2e/relay-server.ts'],
+    {
+      cwd: repositoryDirectory,
+      env: relayEnvironment,
+      stdout: 'pipe',
+      stderr: 'inherit'
+    }
+  )
+  await waitForReadyLine(process, 'OPENPENCIL_CLOUD_RELAY_READY', 'Cloud collaboration relay')
+  return process
+}
+
+async function restartRelay(): Promise<void> {
+  relay?.kill('SIGTERM')
+  if (relay) await relay.exited
+  relay = await startRelay()
+}
+
 try {
   await run([...compose, 'up', '-d', '--wait', 'postgres', 'seaweedfs'])
   await run([...compose, 'run', '--rm', 'seaweedfs-init'])
@@ -95,19 +117,20 @@ try {
     stdout: 'pipe',
     stderr: 'inherit'
   })
-  relay = Bun.spawn(
-    ['node', '--experimental-strip-types', 'packages/cloud/tests/e2e/relay-server.ts'],
-    {
-      cwd: repositoryDirectory,
-      env: relayEnvironment,
-      stdout: 'pipe',
-      stderr: 'inherit'
+  const fixturePromise = waitForCloud(cloud)
+  relay = await startRelay()
+  const fixture = await fixturePromise
+  relayControl = Bun.serve({
+    hostname: '127.0.0.1',
+    port: relayControlPort,
+    async fetch(request) {
+      if (request.method !== 'POST' || new URL(request.url).pathname !== '/restart') {
+        return new Response('Not found', { status: 404 })
+      }
+      await restartRelay()
+      return Response.json({ restarted: true })
     }
-  )
-  const [fixture] = await Promise.all([
-    waitForCloud(cloud),
-    waitForReadyLine(relay, 'OPENPENCIL_CLOUD_RELAY_READY', 'Cloud collaboration relay')
-  ])
+  })
   const playwright = Bun.spawn(
     ['bunx', 'playwright', 'test', 'tests/e2e/cloud/sharing.spec.ts', '--project=openpencil'],
     {
@@ -119,6 +142,7 @@ try {
         OPENPENCIL_CLOUD_E2E_WORKSPACE_ID: fixture.workspaceId,
         OPENPENCIL_CLOUD_E2E_DOCUMENT_ID: fixture.documentId,
         OPENPENCIL_CLOUD_E2E_COLLABORATION_URL: `ws://127.0.0.1:${relayPort}`,
+        OPENPENCIL_CLOUD_E2E_RELAY_CONTROL_URL: `http://127.0.0.1:${relayControlPort}`,
         OPENPENCIL_E2E_APP_PORT: String(appPort),
         PLAYWRIGHT_BASE_URL: appOrigin
       },
@@ -128,6 +152,7 @@ try {
   )
   playwrightExitCode = await playwright.exited
 } finally {
+  relayControl?.stop(true)
   relay?.kill('SIGTERM')
   cloud?.kill('SIGTERM')
   if (relay) await relay.exited
