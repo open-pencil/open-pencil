@@ -198,13 +198,12 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.user
     },
     async getUserProfile(documentId: string, userId: string): Promise<CloudUserProfile | null> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].users[':userId'].$get({
+          param: { documentId, userId }
+        }),
         userLookupResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].users[':userId'].$get({
-            param: { documentId, userId }
-          })
-        )
+        options.onDiagnostic
       )
       return response.user
     },
@@ -212,33 +211,30 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return parseResponse(client.workspaces.$get(), workspaceListSchema, options.onDiagnostic)
     },
     async getWorkspaceEntitlements(workspaceId: string): Promise<WorkspaceEntitlements> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.workspaces[':workspaceId'].entitlements.$get({ param: { workspaceId } }),
         entitlementResponseSchema,
-        await responseBody(
-          await client.workspaces[':workspaceId'].entitlements.$get({ param: { workspaceId } })
-        )
+        options.onDiagnostic
       )
       return response.entitlements
     },
     async getUsage(workspaceId: string): Promise<WorkspaceUsage> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.workspaces[':workspaceId'].usage.$get({
+          param: { workspaceId }
+        }),
         usageResponseSchema,
-        await responseBody(
-          await client.workspaces[':workspaceId'].usage.$get({
-            param: { workspaceId }
-          })
-        )
+        options.onDiagnostic
       )
       return response.usage
     },
     async listDocuments(workspaceId: string): Promise<DocumentSummary[]> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.workspaces[':workspaceId'].documents.$get({
+          param: { workspaceId }
+        }),
         documentsResponseSchema,
-        await responseBody(
-          await client.workspaces[':workspaceId'].documents.$get({
-            param: { workspaceId }
-          })
-        )
+        options.onDiagnostic
       )
       return response.documents
     },
@@ -246,54 +242,54 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       workspaceId: string,
       input: CreateDocumentInput
     ): Promise<DocumentSummary> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.workspaces[':workspaceId'].documents.$post({
+          param: { workspaceId },
+          json: input
+        }),
         documentResponseSchema,
-        await responseBody(
-          await client.workspaces[':workspaceId'].documents.$post({
-            param: { workspaceId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.document
     },
     async deleteDocument(documentId: string): Promise<void> {
-      await responseBody(await client.documents[':documentId'].$delete({ param: { documentId } }))
+      await responseBody(
+        await client.documents[':documentId'].$delete({ param: { documentId } }),
+        options.onDiagnostic
+      )
     },
     async getDocument(documentId: string): Promise<DocumentDownload> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].$get({ param: { documentId } }),
         downloadResponseSchema,
-        await responseBody(await client.documents[':documentId'].$get({ param: { documentId } }))
+        options.onDiagnostic
       )
       return response.document
     },
     async getDocumentAccess(documentId: string): Promise<DocumentAccess> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].access.$get({ param: { documentId } }),
         accessResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].access.$get({ param: { documentId } })
-        )
+        options.onDiagnostic
       )
       return response.access
     },
     async listDocumentShares(documentId: string): Promise<DocumentShare[]> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].shares.$get({ param: { documentId } }),
         sharesResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].shares.$get({ param: { documentId } })
-        )
+        options.onDiagnostic
       )
       return response.shares
     },
     async createDocumentShare(documentId: string, input: CreateDocumentShareInput) {
-      return v.parse(
+      return await parseResponse(
+        client.documents[':documentId'].shares.$post({
+          param: { documentId },
+          json: input
+        }),
         shareCapabilityResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].shares.$post({
-            param: { documentId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
     },
     async updateDocumentShare(
@@ -301,40 +297,38 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       shareId: string,
       input: UpdateDocumentShareInput
     ): Promise<DocumentShare> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].shares[':shareId'].$patch({
+          param: { documentId, shareId },
+          json: input
+        }),
         shareResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].shares[':shareId'].$patch({
-            param: { documentId, shareId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.share
     },
     async rotateDocumentShare(documentId: string, shareId: string) {
-      return v.parse(
+      return await parseResponse(
+        client.documents[':documentId'].shares[':shareId'].rotate.$post({
+          param: { documentId, shareId }
+        }),
         shareCapabilityResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].shares[':shareId'].rotate.$post({
-            param: { documentId, shareId }
-          })
-        )
+        options.onDiagnostic
       )
     },
     async revokeDocumentShare(documentId: string, shareId: string): Promise<void> {
       await responseBody(
         await client.documents[':documentId'].shares[':shareId'].$delete({
           param: { documentId, shareId }
-        })
+        }),
+        options.onDiagnostic
       )
     },
     async listDocumentGrants(documentId: string): Promise<DocumentGrant[]> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].grants.$get({ param: { documentId } }),
         grantsResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].grants.$get({ param: { documentId } })
-        )
+        options.onDiagnostic
       )
       return response.grants
     },
@@ -343,14 +337,13 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       userId: string,
       input: PutDocumentGrantInput
     ): Promise<DocumentGrant> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].grants[':userId'].$put({
+          param: { documentId, userId },
+          json: input
+        }),
         grantResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].grants[':userId'].$put({
-            param: { documentId, userId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.grant
     },
@@ -358,59 +351,57 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       await responseBody(
         await client.documents[':documentId'].grants[':userId'].$delete({
           param: { documentId, userId }
-        })
+        }),
+        options.onDiagnostic
       )
     },
     async listDocumentInvitations(documentId: string): Promise<DocumentInvitation[]> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId'].invitations.$get({ param: { documentId } }),
         invitationsResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].invitations.$get({ param: { documentId } })
-        )
+        options.onDiagnostic
       )
       return response.invitations
     },
     async createDocumentInvitation(documentId: string, input: CreateDocumentInvitationInput) {
-      return v.parse(
+      return await parseResponse(
+        client.documents[':documentId'].invitations.$post({
+          param: { documentId },
+          json: input
+        }),
         invitationCapabilityResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].invitations.$post({
-            param: { documentId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
     },
     async createInvitationContinuation(
       input: CreateInvitationContinuationInput
     ): Promise<InvitationContinuation> {
-      return v.parse(
+      return await parseResponse(
+        publicClient.invitations.continuations.$post({ json: input }),
         invitationContinuationSchema,
-        await responseBody(await publicClient.invitations.continuations.$post({ json: input }))
+        options.onDiagnostic
       )
     },
     async consumeInvitationContinuation(id: string): Promise<CreateInvitationContinuationInput> {
-      return v.parse(
+      return await parseResponse(
+        publicClient.invitations.continuations[':continuationId'].consume.$post({
+          param: { continuationId: id }
+        }),
         createInvitationContinuationSchema,
-        await responseBody(
-          await publicClient.invitations.continuations[':continuationId'].consume.$post({
-            param: { continuationId: id }
-          })
-        )
+        options.onDiagnostic
       )
     },
     async previewDocumentInvitation(
       invitationId: string,
       input: AcceptDocumentInvitationInput
     ): Promise<InvitationPreview> {
-      const response = v.parse(
+      const response = await parseResponse(
+        publicClient.invitations[':invitationId'].preview.$post({
+          param: { invitationId },
+          json: input
+        }),
         invitationPreviewResponseSchema,
-        await responseBody(
-          await publicClient.invitations[':invitationId'].preview.$post({
-            param: { invitationId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.invitation
     },
@@ -418,14 +409,13 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       invitationId: string,
       input: AcceptDocumentInvitationInput
     ): Promise<DocumentGrant> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.invitations[':invitationId'].accept.$post({
+          param: { invitationId },
+          json: input
+        }),
         grantResponseSchema,
-        await responseBody(
-          await client.invitations[':invitationId'].accept.$post({
-            param: { invitationId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.grant
     },
@@ -433,78 +423,73 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       await responseBody(
         await client.documents[':documentId'].invitations[':invitationId'].$delete({
           param: { documentId, invitationId }
-        })
+        }),
+        options.onDiagnostic
       )
     },
     async resolveDocumentShare(shareId: string, input: ResolveDocumentShareInput) {
-      const response = v.parse(
+      const response = await parseResponse(
+        publicClient.shares[':shareId'].resolve.$post({
+          param: { shareId },
+          json: input
+        }),
         resolvedShareResponseSchema,
-        await responseBody(
-          await publicClient.shares[':shareId'].resolve.$post({
-            param: { shareId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.resolution
     },
     async getSharedDocument(shareId: string, input: ResolveDocumentShareInput) {
-      return v.parse(
+      return await parseResponse(
+        publicClient.shares[':shareId'].document.$post({
+          param: { shareId },
+          json: input
+        }),
         sharedDocumentResponseSchema,
-        await responseBody(
-          await publicClient.shares[':shareId'].document.$post({
-            param: { shareId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
     },
     async getSharedCollaborationTicket(
       shareId: string,
       input: ResolveDocumentShareInput
     ): Promise<CollaborationTicket> {
-      const response = v.parse(
+      const response = await parseResponse(
+        publicClient.shares[':shareId']['collaboration-ticket'].$post({
+          param: { shareId },
+          json: input
+        }),
         collaborationTicketResponseSchema,
-        await responseBody(
-          await publicClient.shares[':shareId']['collaboration-ticket'].$post({
-            param: { shareId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.ticket
     },
     async getCollaborationTicket(documentId: string): Promise<CollaborationTicket> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.documents[':documentId']['collaboration-ticket'].$post({
+          param: { documentId }
+        }),
         collaborationTicketResponseSchema,
-        await responseBody(
-          await client.documents[':documentId']['collaboration-ticket'].$post({
-            param: { documentId }
-          })
-        )
+        options.onDiagnostic
       )
       return response.ticket
     },
     async createUpload(documentId: string, input: CreateUploadInput): Promise<CloudUpload> {
-      return v.parse(
+      return await parseResponse(
+        client.documents[':documentId'].uploads.$post({
+          param: { documentId },
+          json: input
+        }),
         uploadResponseSchema,
-        await responseBody(
-          await client.documents[':documentId'].uploads.$post({
-            param: { documentId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
     },
     async commitUpload(uploadId: string, input: CommitUploadInput): Promise<DocumentSummary> {
-      const response = v.parse(
+      const response = await parseResponse(
+        client.uploads[':uploadId'].commit.$post({
+          param: { uploadId },
+          json: input
+        }),
         documentResponseSchema,
-        await responseBody(
-          await client.uploads[':uploadId'].commit.$post({
-            param: { uploadId },
-            json: input
-          })
-        )
+        options.onDiagnostic
       )
       return response.document
     }
