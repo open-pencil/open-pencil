@@ -209,28 +209,30 @@ export function createDocumentService(
       const uploadId = crypto.randomUUID()
       const objectKey = `documents/${document.workspaceId}/${documentId}/uploads/${uploadId}.fig`
       const expiresAt = new Date(Date.now() + UPLOAD_LIFETIME_MS)
-      await database
-        .insertInto('upload')
-        .values({
-          id: uploadId,
-          documentId,
-          baseRevisionId: input.baseRevisionId,
-          objectKey,
-          checksum: input.checksum,
-          byteSize: input.byteSize,
-          contentType: input.contentType,
-          multipartUploadId: null,
-          status: 'pending',
-          createdBy: userId,
-          expiresAt
+      await database.transaction().execute(async (transaction) => {
+        await transaction
+          .insertInto('upload')
+          .values({
+            id: uploadId,
+            documentId,
+            baseRevisionId: input.baseRevisionId,
+            objectKey,
+            checksum: input.checksum,
+            byteSize: input.byteSize,
+            contentType: input.contentType,
+            multipartUploadId: null,
+            status: 'pending',
+            createdBy: userId,
+            expiresAt
+          })
+          .execute()
+        await quota.reserveInTransaction(transaction, {
+          workspaceId: document.workspaceId,
+          uploadId,
+          bytes: input.byteSize,
+          expiresAt,
+          maximumBytes: maximumStorageBytes === Number.MAX_SAFE_INTEGER ? null : maximumStorageBytes
         })
-        .execute()
-      await quota.reserve({
-        workspaceId: document.workspaceId,
-        uploadId,
-        bytes: input.byteSize,
-        expiresAt,
-        maximumBytes: maximumStorageBytes === Number.MAX_SAFE_INTEGER ? null : maximumStorageBytes
       })
       let objectUpload
       try {

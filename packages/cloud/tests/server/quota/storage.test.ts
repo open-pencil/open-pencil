@@ -43,6 +43,54 @@ async function seed() {
 }
 
 describe('storage quota reservations', () => {
+  test('rolls back an owning upload insert when reservation fails', async () => {
+    const context = await seed()
+    try {
+      const quota = createStorageQuotaService(context.runtime.database)
+      const uploadId = crypto.randomUUID()
+      await expect(
+        context.runtime.database.transaction().execute(async (transaction) => {
+          await transaction
+            .insertInto('upload')
+            .values({
+              id: uploadId,
+              documentId: await transaction
+                .selectFrom('document')
+                .select('id')
+                .executeTakeFirstOrThrow()
+                .then((document) => document.id),
+              baseRevisionId: null,
+              objectKey: `uploads/${uploadId}`,
+              checksum: 'checksum',
+              byteSize: 60,
+              contentType: 'application/octet-stream',
+              multipartUploadId: null,
+              status: 'pending',
+              createdBy: 'u',
+              expiresAt: new Date(Date.now() + 60_000)
+            })
+            .execute()
+          await quota.reserveInTransaction(transaction, {
+            workspaceId: context.workspaceId,
+            uploadId,
+            bytes: 60,
+            expiresAt: new Date(Date.now() + 60_000),
+            maximumBytes: 0
+          })
+        })
+      ).rejects.toBeInstanceOf(StorageQuotaExceededError)
+      expect(
+        await context.runtime.database
+          .selectFrom('upload')
+          .select('id')
+          .where('id', '=', uploadId)
+          .executeTakeFirst()
+      ).toBeUndefined()
+    } finally {
+      await context.runtime.close()
+    }
+  })
+
   test('atomically accounts for reserved and committed storage', async () => {
     const context = await seed()
     try {

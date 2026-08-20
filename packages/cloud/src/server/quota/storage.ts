@@ -41,6 +41,49 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
     }
   }
 
+  async function reserve(
+    executor: StorageDatabase,
+    input: {
+      workspaceId: string
+      uploadId: string
+      bytes: number
+      expiresAt: Date
+      maximumBytes: number | null
+    }
+  ): Promise<void> {
+    await executor
+      .insertInto('workspaceStorageUsage')
+      .values({ workspaceId: input.workspaceId, committedBytes: 0 })
+      .onConflict((conflict) => conflict.column('workspaceId').doNothing())
+      .execute()
+    await executor
+      .selectFrom('workspaceStorageUsage')
+      .select('workspaceId')
+      .where('workspaceId', '=', input.workspaceId)
+      .forUpdate()
+      .executeTakeFirstOrThrow()
+    const usage = await snapshot(executor, input.workspaceId)
+    if (
+      input.maximumBytes !== null &&
+      usage.committedBytes + usage.reservedBytes + input.bytes > input.maximumBytes
+    ) {
+      throw new StorageQuotaExceededError('Workspace storage quota exceeded')
+    }
+    await executor
+      .insertInto('uploadStorageReservation')
+      .values({
+        id: crypto.randomUUID(),
+        workspaceId: input.workspaceId,
+        uploadId: input.uploadId,
+        bytes: input.bytes,
+        expiresAt: input.expiresAt,
+        committedAt: null,
+        releasedAt: null
+      })
+      .onConflict((conflict) => conflict.column('uploadId').doNothing())
+      .execute()
+  }
+
   async function commit(executor: StorageDatabase, uploadId: string): Promise<void> {
     const reservation = await executor
       .selectFrom('uploadStorageReservation')
@@ -75,39 +118,20 @@ export function createStorageQuotaService(database: Kysely<CloudDatabase>) {
       expiresAt: Date
       maximumBytes: number | null
     }): Promise<void> {
-      await database.transaction().execute(async (transaction) => {
-        await transaction
-          .insertInto('workspaceStorageUsage')
-          .values({ workspaceId: input.workspaceId, committedBytes: 0 })
-          .onConflict((conflict) => conflict.column('workspaceId').doNothing())
-          .execute()
-        await transaction
-          .selectFrom('workspaceStorageUsage')
-          .select('workspaceId')
-          .where('workspaceId', '=', input.workspaceId)
-          .forUpdate()
-          .executeTakeFirstOrThrow()
-        const usage = await snapshot(transaction, input.workspaceId)
-        if (
-          input.maximumBytes !== null &&
-          usage.committedBytes + usage.reservedBytes + input.bytes > input.maximumBytes
-        ) {
-          throw new StorageQuotaExceededError('Workspace storage quota exceeded')
-        }
-        await transaction
-          .insertInto('uploadStorageReservation')
-          .values({
-            id: crypto.randomUUID(),
-            workspaceId: input.workspaceId,
-            uploadId: input.uploadId,
-            bytes: input.bytes,
-            expiresAt: input.expiresAt,
-            committedAt: null,
-            releasedAt: null
-          })
-          .onConflict((conflict) => conflict.column('uploadId').doNothing())
-          .execute()
-      })
+      await database.transaction().execute((transaction) => reserve(transaction, input))
+    },
+
+    reserveInTransaction(
+      transaction: Transaction<CloudDatabase>,
+      input: {
+        workspaceId: string
+        uploadId: string
+        bytes: number
+        expiresAt: Date
+        maximumBytes: number | null
+      }
+    ): Promise<void> {
+      return reserve(transaction, input)
     },
 
     async commit(uploadId: string): Promise<void> {
