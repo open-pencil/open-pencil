@@ -45,7 +45,6 @@ type CollabSyncActions = {
 
 type ConnectCollabSessionOptions = CollabSyncActions & {
   roomId: string
-  roomPassword?: string
   cloud?: CloudCollaborationCredentials
   onCloudTicketError: (error: unknown) => void
   runtime: CollabRuntime
@@ -151,7 +150,6 @@ export function createCollabConnectionActions({
     const ticket = requireActiveCollaborationTicket(credentials.ticket)
     await connectCollabSession({
       roomId: ticket.roomId,
-      roomPassword: ticket.roomKey,
       cloud: credentials,
       onCloudTicketError,
       runtime,
@@ -203,7 +201,6 @@ export function watchAwarenessZoom(store: EditorStore, getAwareness: () => Aware
 
 export async function connectCollabSession({
   roomId,
-  roomPassword,
   cloud,
   onCloudTicketError,
   runtime,
@@ -280,7 +277,6 @@ export async function connectCollabSession({
     ? null
     : connectCollabRoom({
         roomId,
-        roomPassword,
         canSendUpdates: store.canMutate,
         ydoc: runtime.ydoc,
         awareness: runtime.awareness,
@@ -303,7 +299,6 @@ export async function connectCollabSession({
       reconnect: (credentials) =>
         connectCollabSession({
           roomId: credentials.ticket.roomId,
-          roomPassword: credentials.ticket.roomKey,
           cloud: credentials,
           onCloudTicketError,
           runtime,

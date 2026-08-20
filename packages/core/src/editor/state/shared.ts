@@ -3,6 +3,7 @@ import type { EditorSharedState } from '#core/editor/types'
 
 export function createDefaultEditorSharedState(): EditorSharedState {
   return {
+    accessMode: 'owner',
     activeTool: 'SELECT',
     snappingPreferences: { ...DEFAULT_SNAPPING_PREFERENCES },
     remoteCursors: [],
