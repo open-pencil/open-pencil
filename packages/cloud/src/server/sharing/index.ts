@@ -1,4 +1,10 @@
 export {
+  createCapabilityService,
+  type CapabilityService,
+  type CapabilityServiceOptions
+} from './capabilities/service'
+
+export {
   capabilityHashMatches,
   decryptContinuationToken,
   encryptContinuationToken,
