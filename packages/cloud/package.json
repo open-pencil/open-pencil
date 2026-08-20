@@ -78,13 +78,13 @@
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",
     "better-auth": "^1.6.28",
-    "hono": "^4.12.5",
+    "hono": "^4.13.2",
     "jose": "^6.2.8",
     "kysely": "^0.29.5",
     "nanoid": "^6.0.1",
     "nodemailer": "^9.0.5",
     "smol-toml": "^1.8.0",
-    "valibot": "^1.2.0",
+    "valibot": "^1.4.2",
     "yjs": "^13.6.32"
   },
   "optionalDependencies": {
@@ -96,7 +96,7 @@
     "@types/nodemailer": "^8.0.1",
     "@types/pg": "^8.21.0",
     "kysely-pglite-dialect": "1.3.1",
-    "tsdown": "^0.22.3",
+    "tsdown": "^0.22.14",
     "typescript": "~5.8.3"
   }
 }
