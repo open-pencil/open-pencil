@@ -1,15 +1,15 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "stream",
-  "concurrency": "1",
+  "concurrency": "50%",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "cache": false
+      "outputs": ["dist/**"]
     },
     "check": {
       "dependsOn": ["^check"],
-      "cache": false
+      "outputs": ["dist/**"]
     }
   }
 }
