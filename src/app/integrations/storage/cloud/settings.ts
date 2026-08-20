@@ -1,4 +1,5 @@
-import { computed, onScopeDispose, ref, shallowRef } from 'vue'
+import { createGlobalState } from '@vueuse/core'
+import { computed, ref, shallowRef } from 'vue'
 
 import type { CloudSocialProvider } from '@open-pencil/cloud/client'
 import type { WorkspaceEntitlements } from '@open-pencil/cloud/contract'
@@ -19,7 +20,7 @@ import { cloudConnectionService } from './service'
 const PROVIDER_ID = 'openpencil-cloud'
 const SERVER_URL_FIELD = 'server-url'
 
-export function useCloudStorageSettings() {
+function createCloudStorageSettings() {
   const { profiles, activeProfileId } = useCloudConnectionProfiles()
   const activeProfile = computed(() => activeCloudConnectionProfile())
   const initialProfile = activeCloudConnectionProfile()
@@ -33,7 +34,7 @@ export function useCloudStorageSettings() {
   const entitlementsLoading = ref(false)
   const entitlementsError = ref<string | null>(null)
   const isLoading = computed(() => state.value?.status === 'discovering')
-  const unsubscribe = cloudConnectionService.subscribe((connection) => {
+  cloudConnectionService.subscribe((connection) => {
     let currentURL: string
     try {
       currentURL = normalizeCloudServerURL(serverURL.value)
@@ -42,7 +43,6 @@ export function useCloudStorageSettings() {
     }
     if (connection.serverURL === currentURL) state.value = connection
   })
-  onScopeDispose(unsubscribe)
 
   const workspaceOptions = computed(() =>
     (state.value?.workspaces ?? []).map((workspace) => ({
@@ -146,3 +146,5 @@ export function useCloudStorageSettings() {
     refreshEntitlements
   }
 }
+
+export const useCloudStorageSettings = createGlobalState(createCloudStorageSettings)

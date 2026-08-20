@@ -72,12 +72,13 @@ async function openOwnerDocument(page: Page): Promise<void> {
     element.click()
   }, documentId)
   await expect
-    .poll(
-      () => page.evaluate(() => window.openPencil?.getStore?.().state.documentName),
-      { timeout: 15_000 }
-    )
+    .poll(() => page.evaluate(() => window.openPencil?.getStore?.().state.documentName), {
+      timeout: 15_000
+    })
     .toBe('Cloud sharing fixture')
-  await expect(page.getByRole('button', { name: 'Share', exact: true })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('button', { name: 'Share', exact: true })).toBeVisible({
+    timeout: 15_000
+  })
 }
 
 test.describe('Cloud sharing browser journey', () => {
@@ -185,7 +186,11 @@ test.describe('Cloud sharing browser journey', () => {
     })
     await expect
       .poll(
-        () => recipient.evaluate(() => window.openPencil?.getStore?.().graph.getNode(viewerSyncedNodeId)?.name),
+        () =>
+          recipient.evaluate(
+            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.name,
+            viewerSyncedNodeId
+          ),
         { timeout: 15_000 }
       )
       .toBe('Viewer relay check')
