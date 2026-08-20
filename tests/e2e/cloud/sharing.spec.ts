@@ -160,6 +160,27 @@ test.describe('Cloud sharing browser journey', () => {
       'SELECT'
     )
 
+    const viewerSyncedNodeId = await owner.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('Editor store is unavailable')
+      return store.createShape('RECTANGLE', 20, 20, 40, 30, undefined, 'Viewer relay check')
+    })
+    await expect
+      .poll(
+        () =>
+          recipient.evaluate(
+            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.name,
+            viewerSyncedNodeId
+          ),
+        { timeout: 15_000 }
+      )
+      .toBe('Viewer relay check')
+    await expect(
+      recipient.evaluate(() =>
+        window.openPencil?.getStore?.().createShape('RECTANGLE', 0, 0, 10, 10)
+      )
+    ).rejects.toThrow('Document is read-only')
+
     await dialog.getByRole('button', { name: 'Share settings' }).click()
     const settingsDialog = owner.getByRole('dialog', { name: 'Share settings' })
     await settingsDialog.getByLabel('Link permission').click()

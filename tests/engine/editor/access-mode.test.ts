@@ -10,6 +10,15 @@ describe('editor access mode', () => {
     editor.dispose()
   })
 
+  test('rejects shape creation in view mode without mutating the graph', () => {
+    const editor = createEditor()
+    const initialSize = editor.graph.nodes.size
+    editor.setAccessMode('view')
+    expect(() => editor.createShape('RECTANGLE', 0, 0, 10, 10)).toThrow('Document is read-only')
+    expect(editor.graph.nodes.size).toBe(initialSize)
+    editor.dispose()
+  })
+
   test('limits view-only sessions to navigation and selection tools', () => {
     const editor = createEditor()
     editor.setAccessMode('view')
