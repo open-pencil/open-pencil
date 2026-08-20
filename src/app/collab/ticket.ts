@@ -29,6 +29,23 @@ export function collaborationTicketRefreshDelay(
   )
 }
 
+function samePrincipal(
+  first: CollaborationTicket['principal'],
+  second: CollaborationTicket['principal']
+): boolean {
+  if (first.kind !== second.kind) return false
+  if (first.kind === 'guest' && second.kind === 'guest') {
+    return first.guestId === second.guestId && first.name === second.name
+  }
+  return (
+    first.kind === 'user' &&
+    second.kind === 'user' &&
+    first.userId === second.userId &&
+    first.name === second.name &&
+    first.email === second.email
+  )
+}
+
 export function sameCollaborationRoom(
   current: CollaborationTicket,
   refreshed: CollaborationTicket
@@ -39,6 +56,6 @@ export function sameCollaborationRoom(
     current.roomKey === refreshed.roomKey &&
     current.roomEpoch === refreshed.roomEpoch &&
     current.permission === refreshed.permission &&
-    JSON.stringify(current.principal) === JSON.stringify(refreshed.principal)
+    samePrincipal(current.principal, refreshed.principal)
   )
 }

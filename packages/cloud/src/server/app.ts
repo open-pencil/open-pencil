@@ -111,14 +111,14 @@ export function createCloudApp(services: CloudServices) {
     policy,
     deploymentMode: services.config.deployment
   })
-  const collaboration = createCollaborationTicketService(
-    services.database,
+  const collaboration = createCollaborationTicketService({
+    database: services.database,
     sharing,
-    services.config.authSecret,
-    services.config.collaborationURL,
+    authSecret: services.config.authSecret,
+    collaborationURL: services.config.collaborationURL,
     policy,
-    services.config.deployment
-  )
+    deploymentMode: services.config.deployment
+  })
 
   const cloudAPI = createCloudAPIRouter({
     collaboration,

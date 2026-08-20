@@ -11,6 +11,7 @@ import { resolveDocumentAccess } from '#cloud/server/documents/access'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { DocumentSharingService } from '#cloud/server/sharing'
+import { base64url } from 'jose'
 import { SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
 
@@ -29,10 +30,7 @@ async function derivedRoomKey(authSecret: string, documentId: string, roomEpoch:
     key,
     256
   )
-  const bytes = new Uint8Array(bits)
-  let binary = ''
-  for (const byte of bytes) binary += String.fromCharCode(byte)
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, '')
+  return base64url.encode(new Uint8Array(bits))
 }
 
 async function signedTicket(
@@ -71,14 +69,23 @@ async function signedTicket(
   }
 }
 
-export function createCollaborationTicketService(
-  database: Kysely<CloudDatabase>,
-  sharing: DocumentSharingService,
-  authSecret: string,
-  collaborationURL?: string,
-  policy?: CloudPolicy,
-  deploymentMode: 'official' | 'self-hosted' = 'self-hosted'
-) {
+export type CollaborationTicketServiceOptions = {
+  database: Kysely<CloudDatabase>
+  sharing: DocumentSharingService
+  authSecret: string
+  collaborationURL?: string
+  policy?: CloudPolicy
+  deploymentMode?: 'official' | 'self-hosted'
+}
+
+export function createCollaborationTicketService({
+  database,
+  sharing,
+  authSecret,
+  collaborationURL,
+  policy,
+  deploymentMode = 'self-hosted'
+}: CollaborationTicketServiceOptions) {
   return {
     async issueUserTicket(actor: CloudActor, documentId: string): Promise<CollaborationTicket> {
       const access = await resolveDocumentAccess(database, actor.userId, documentId)
