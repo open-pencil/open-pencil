@@ -24,14 +24,14 @@ bun --filter @open-pencil/cloud cleanup
 
 The cleanup command uses the same bounded, multi-worker-safe claims as the long-running Node worker.
 
-## Cloudflare Workers reference adapter
+## Cloudflare Workers adapter skeleton
 
-The Worker assembly uses Hyperdrive for PostgreSQL and an R2 `DOCUMENTS` binding for object storage.
-It signs short-lived same-origin upload and download URLs with the Cloud auth secret, stores SHA-256
-checksums in R2 custom metadata, and currently advertises single-upload support only. Multipart uploads
-remain disabled for this adapter.
+The checked-in Worker assembly is an adapter skeleton, not a deploy-ready R2 reference profile. It
+currently supports Hyperdrive plus an S3-compatible object store configured through secret string
+bindings. It does not yet consume an `R2Bucket` binding or provide a Worker invitation-delivery
+binding.
 
-Use the portable app assembly with:
+To develop it further, use the portable app assembly with:
 
 - A Hyperdrive connection string and the Worker-compatible `pg` driver through an injected Kysely dialect.
 - An injected S3-compatible object store, commonly Cloudflare R2's S3 endpoint.
@@ -39,7 +39,7 @@ Use the portable app assembly with:
 - A Cron Trigger that invokes the cleanup services through `ctx.waitUntil()`.
 - Node/CI migration tooling using the origin PostgreSQL connection string.
 
-The Worker request path does not run migrations or start timers. Configure account-specific
-Hyperdrive and R2 IDs, set `BETTER_AUTH_SECRET` and application URL/trusted-origin secrets, and run
-migrations from Node/CI. Invitation email still requires an injected Worker-compatible delivery
-adapter before enabling invitation delivery in production.
+The Worker request path must not run migrations or start timers. A production Worker profile requires
+account-specific secret bindings, Hyperdrive identifiers, and either an R2-native `ObjectStore`
+adapter or S3 credentials. `deploy/cloudflare/wrangler.jsonc` intentionally contains placeholders and
+must not be presented or deployed as a complete reference environment.
