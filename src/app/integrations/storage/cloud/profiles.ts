@@ -19,6 +19,16 @@ export type CloudConnectionProfile = {
 const profiles = useLocalStorage<CloudConnectionProfile[]>('open-pencil:cloud:connections', [])
 const activeProfileId = useLocalStorage<string | null>('open-pencil:cloud:active-connection', null)
 
+function stableProfileId(serverURL: string): string {
+  const bytes = new TextEncoder().encode(serverURL)
+  let hash = 2_166_136_261
+  for (const byte of bytes) {
+    hash ^= byte
+    hash = Math.imul(hash, 16_777_619)
+  }
+  return `cloud-${(hash >>> 0).toString(16).padStart(8, '0')}`
+}
+
 function defaultLabel(kind: CloudConnectionKind, serverURL: string): string {
   return kind === 'official' ? 'OpenPencil Cloud' : new URL(serverURL).hostname
 }
@@ -50,7 +60,7 @@ export function connectCloudProfile(input: {
     return existing
   }
   const profile: CloudConnectionProfile = {
-    id: crypto.randomUUID(),
+    id: stableProfileId(serverURL),
     kind: input.kind,
     label: input.label?.trim() || defaultLabel(input.kind, serverURL),
     serverURL,
@@ -78,9 +88,8 @@ export function updateCloudConnectionWorkspace(id: string, workspaceId: string |
 }
 
 export function disconnectCloudProfile(id: string): void {
-  profiles.value = profiles.value.filter((profile) => profile.id !== id)
   if (activeProfileId.value !== id) return
-  activeProfileId.value = profiles.value[0]?.id ?? null
+  activeProfileId.value = profiles.value.find((profile) => profile.id !== id)?.id ?? null
   const next = activeCloudConnectionProfile()
   if (next) activatePreferences(next)
   else {

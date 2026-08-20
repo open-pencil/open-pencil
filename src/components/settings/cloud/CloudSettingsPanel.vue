@@ -2,17 +2,25 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import {
+  cloudConnectionWorkSummary,
+  hasPendingCloudConnectionWork,
+  type CloudConnectionWorkSummary
+} from '@/app/integrations/storage/cloud/pending-work'
 import { useCloudStorageSettings } from '@/app/integrations/storage/cloud/settings'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
 import ConnectCloudInstanceDialog from '@/components/settings/cloud/connect-instance/ConnectCloudInstanceDialog.vue'
 import CloudEntitlementsSummary from '@/components/settings/storage/CloudEntitlementsSummary.vue'
+import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { useButtonUI } from '@/components/ui/button'
 
 const router = useRouter()
 const cloud = useCloudStorageSettings()
 const connectDialogOpen = ref(false)
+const disconnectOpen = ref(false)
+const disconnectSummary = ref<CloudConnectionWorkSummary | null>(null)
 const connectionOptions = computed(() =>
   cloud.profiles.value.map((profile) => ({ value: profile.id, label: profile.label }))
 )
@@ -42,6 +50,20 @@ async function connectSelfHosted(serverURL: string) {
   } catch (error) {
     toast.error(error instanceof Error ? error.message : String(error))
   }
+}
+
+async function requestDisconnect() {
+  const profile = cloud.activeProfile.value
+  if (!profile) return
+  disconnectSummary.value = await cloudConnectionWorkSummary(profile.id)
+  disconnectOpen.value = true
+}
+
+function confirmDisconnect() {
+  const profile = cloud.activeProfile.value
+  if (!profile) return
+  cloud.disconnectConnection(profile.id)
+  disconnectOpen.value = false
 }
 
 async function openWorkspace() {
@@ -131,15 +153,35 @@ async function openWorkspace() {
 
       <div class="mt-3 flex justify-between border-t border-border pt-3">
         <button type="button" :class="quiet.base" @click="openWorkspace">Open workspace</button>
-        <button
-          type="button"
-          class="text-[10px] text-danger"
-          @click="cloud.disconnectConnection(cloud.activeProfile.value.id)"
-        >
+        <button type="button" class="text-[10px] text-danger" @click="requestDisconnect">
           Disconnect instance
         </button>
       </div>
     </article>
+    <AppAlertDialogRoot :open="disconnectOpen" size="sm" @update:open="disconnectOpen = $event">
+      <AppDialogBody class="space-y-2">
+        <h3 class="text-sm font-semibold text-surface">Disconnect instance?</h3>
+        <p class="text-xs text-muted">
+          <template v-if="disconnectSummary && hasPendingCloudConnectionWork(disconnectSummary)">
+            {{
+              disconnectSummary.pendingDocuments +
+              disconnectSummary.conflictingDocuments +
+              disconnectSummary.failedDocuments
+            }}
+            documents have unsynchronized local work and {{ disconnectSummary.queuedJobs }} queued
+            jobs. Synchronization will pause until this instance is reconnected.
+          </template>
+          <template v-else>You can reconnect to this instance later.</template>
+        </p>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <button type="button" :class="quiet.base" @click="disconnectOpen = false">Cancel</button>
+        <button type="button" :class="secondary.base" @click="openWorkspace">Open workspace</button>
+        <button type="button" class="text-xs text-danger" @click="confirmDisconnect">
+          Disconnect anyway
+        </button>
+      </AppDialogFooter>
+    </AppAlertDialogRoot>
     <ConnectCloudInstanceDialog
       v-model:open="connectDialogOpen"
       @connect-official="connectOfficial"
