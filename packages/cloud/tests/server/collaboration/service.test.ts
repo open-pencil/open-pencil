@@ -34,7 +34,11 @@ async function seed() {
     runtime,
     documentId,
     sharing,
-    tickets: createCollaborationTicketService(runtime.database, sharing, authSecret)
+    tickets: createCollaborationTicketService({
+      database: runtime.database,
+      sharing,
+      authSecret
+    })
   }
 }
 
