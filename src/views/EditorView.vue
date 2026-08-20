@@ -97,12 +97,13 @@ async function openCloudShare() {
 
 async function connectCloudDocument() {
   if (route.name === 'cloud-share') return
-  const binding = store.getStorageBinding()
+  const binding = getActiveStore().getStorageBinding()
   if (binding?.providerId !== 'openpencil-cloud') {
     if (collab.state.value.identity.source === 'cloud') collab.disconnect()
     return
   }
-  const ticketRequest = () => getCloudCollaborationTicket(store)
+  const activeStore = getActiveStore()
+  const ticketRequest = () => getCloudCollaborationTicket(activeStore)
   await collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
 }
 

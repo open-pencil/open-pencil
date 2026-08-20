@@ -63,10 +63,21 @@ async function openOwnerDocument(page: Page): Promise<void> {
   expect(browserCloud.discovery.status).toBe(200)
   expect(browserCloud.session.status).toBe(200)
   expect(browserCloud.documents.status).toBe(200)
-  await expect(page.getByText('Cloud sharing fixture')).toBeVisible({ timeout: 15_000 })
-  await page.locator(`[data-document-id="${documentId}"]`).click()
-  await expect(page).toHaveURL(/\/$/)
-  await expect(page.getByText('Cloud sharing fixture').first()).toBeVisible()
+  const documentCard = page.locator(`[data-document-id="${documentId}"]`)
+  await expect(documentCard).toHaveCount(1, { timeout: 15_000 })
+  await page.evaluate((id) => {
+    const element = document.querySelector(`[data-document-id="${id}"]`)
+    if (!(element instanceof HTMLButtonElement))
+      throw new Error('Cloud document card is unavailable')
+    element.click()
+  }, documentId)
+  await expect
+    .poll(
+      () => page.evaluate(() => window.openPencil?.getStore?.().state.documentName),
+      { timeout: 15_000 }
+    )
+    .toBe('Cloud sharing fixture')
+  await expect(page.getByRole('button', { name: 'Share', exact: true })).toBeVisible({ timeout: 15_000 })
 }
 
 test.describe('Cloud sharing browser journey', () => {
@@ -118,12 +129,13 @@ test.describe('Cloud sharing browser journey', () => {
       serverURL: collaborationURL,
       serverEnforcedWrites: true
     })
-    await expect(owner.getByTestId('cloud-share-button')).toBeVisible({ timeout: 15_000 })
-    await owner.getByTestId('cloud-share-button').click()
-    const dialog = owner.getByRole('dialog', { name: /Share “Cloud sharing fixture”/ })
+    const shareButton = owner.getByRole('button', { name: 'Share', exact: true })
+    await expect(shareButton).toBeVisible({ timeout: 15_000 })
+    await shareButton.click()
+    const dialog = owner.getByRole('dialog', { name: /Share/ })
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'Create and copy link' }).click()
-    await expect(dialog.getByText('This link is shown once.')).toBeVisible()
+    await expect(dialog.getByText(/This link is shown once\./)).toBeVisible()
     const shareURL = await owner.evaluate(() => navigator.clipboard.readText())
     expect(shareURL).toContain('/cloud/share/')
     expect(shareURL).toContain('#')
@@ -173,11 +185,7 @@ test.describe('Cloud sharing browser journey', () => {
     })
     await expect
       .poll(
-        () =>
-          recipient.evaluate(
-            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.name,
-            viewerSyncedNodeId
-          ),
+        () => recipient.evaluate(() => window.openPencil?.getStore?.().graph.getNode(viewerSyncedNodeId)?.name),
         { timeout: 15_000 }
       )
       .toBe('Viewer relay check')

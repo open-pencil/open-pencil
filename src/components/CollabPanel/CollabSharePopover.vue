@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 
 import { isCloudDocument } from '@/app/collab/cloud-sharing'
-import { useEditorStore } from '@/app/editor/active-store'
+import { useActiveEditorStoreRef } from '@/app/editor/active-store'
 import CloudShareDialog from '@/components/collab/cloud-share-dialog/CloudShareDialog.vue'
 import ConnectedRoom from '@/components/CollabPanel/ConnectedRoom.vue'
 import JoinRoomPrompt from '@/components/CollabPanel/JoinRoomPrompt.vue'
@@ -14,11 +14,12 @@ import { usePopoverUI } from '@/components/ui/popover'
 import collaborationTheme from '@/theme/collaboration'
 
 const collab = useCollabPanelContext()
-const store = useEditorStore()
+const activeStore = useActiveEditorStoreRef()
 const cloudDialogOpen = ref(false)
-const cloudDocument = computed(
-  () => collab.state.identity.source === 'cloud' || isCloudDocument(store)
-)
+const cloudDocument = computed(() => {
+  const store = activeStore.value
+  return collab.state.identity.source === 'cloud' || (store ? isCloudDocument(store) : false)
+})
 const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
 const connection = computed(() => {
   if (collab.state.connected) return 'connected'

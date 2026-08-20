@@ -31,6 +31,7 @@ import {
 import { storageCanvasId } from '@/app/storage/id'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
+import { emitActiveDocumentOpened } from '@/app/tabs/events'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
 
@@ -361,12 +362,14 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     const imported = await readFigForTab(file, store)
     await showImportedGraph(store, imported, async () => {
       store.setStorageDocumentSource(identity.binding, document.name)
+      setActiveEditorStore(store)
       if (identity.providerId === 'openpencil-cloud') {
         const access = await getCloudDocumentAccess(store)
         store.setAccessMode(access.sources.includes('owner') ? 'owner' : access.permission)
       } else store.setAccessMode('owner')
     })
     rememberRecentStorageDocument(identity.providerId, document.id, document.name)
+    emitActiveDocumentOpened(store)
   } catch (error) {
     if (created) {
       const tab = getTabForStore(store)
