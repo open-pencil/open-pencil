@@ -10,12 +10,12 @@ import { randomIndex } from '@open-pencil/core/random'
 
 import { createCloudYjsProvider } from '@/app/collab/cloud-provider'
 import { connectCollabRoom } from '@/app/collab/room'
-import type { CollabRoomTransport } from '@/app/collab/transport'
 import {
   collaborationTicketRefreshDelay,
   requireActiveCollaborationTicket,
   sameCollaborationRoom
 } from '@/app/collab/ticket'
+import type { CollabRoomTransport } from '@/app/collab/transport'
 import type { CloudCollaborationCredentials, CollabState } from '@/app/collab/types'
 import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
