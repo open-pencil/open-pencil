@@ -6,6 +6,8 @@ export type StorageFieldID = string
 export type StorageDocumentBinding = {
   providerId: StorageProviderID
   documentId: string
+  connectionId?: string
+  workspaceId?: string
 }
 
 export type StorageTransferProgress = {

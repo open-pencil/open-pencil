@@ -18,6 +18,7 @@ export type { S3StorageAdapter } from './s3/adapter'
 export type { S3CompatibleConfig, S3ConnectionResult } from './s3/types'
 export {
   createActiveStorageAdapter,
+  createStorageAdapter,
   storageCredentialRefs,
   storageCredentialStatuses
 } from './runtime'

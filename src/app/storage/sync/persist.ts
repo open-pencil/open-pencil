@@ -14,6 +14,8 @@ export type StoragePersistenceDependencies = {
 
 export type PersistStorageCanvasOptions = {
   providerId: StorageProviderID
+  connectionId?: string
+  workspaceId?: string
   canvasId: string
   name: string
   figBytes: Uint8Array
@@ -37,6 +39,8 @@ export async function persistStorageCanvasLocally(
   const metadata = await runtime.store.writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
+    connectionId: options.connectionId,
+    workspaceId: options.workspaceId,
     name: options.name,
     figBytes: options.figBytes,
     thumbBytes: thumbnailBytes,
@@ -53,6 +57,8 @@ export async function persistStorageCanvasLocally(
 
 export type SeedStorageCanvasOptions = {
   providerId: StorageProviderID
+  connectionId?: string
+  workspaceId?: string
   canvasId: string
   name: string
   updatedAt: string
@@ -68,6 +74,8 @@ export async function seedStorageCanvasFromRemote(
   await getLocalCanvasStore().writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
+    connectionId: options.connectionId,
+    workspaceId: options.workspaceId,
     name: options.name,
     updatedAt: options.updatedAt,
     figBytes: options.figBytes,

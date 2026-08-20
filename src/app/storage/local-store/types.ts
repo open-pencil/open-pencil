@@ -6,6 +6,8 @@ export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
 export type LocalCanvasMeta = {
   id: string
   providerId: StorageProviderID
+  connectionId?: string
+  workspaceId?: string
   name: string
   updatedAt: string
   /** Monotonic local revision; increments on each local write. */
@@ -38,6 +40,8 @@ export type LocalCanvasIndexInput = Omit<
 export type LocalCanvasWriteInput = {
   id: string
   providerId: StorageProviderID
+  connectionId?: string
+  workspaceId?: string
   name: string
   updatedAt?: string
   figBytes: Uint8Array

@@ -45,11 +45,18 @@ describe('saved document identity', () => {
   test('tracks storage binding alongside local source identity', () => {
     const source = createDocumentSourceState()
     source.setSourceIdentity({ handle: null, path: '/tmp/local.fig' })
-    source.setStorageBinding({ providerId: 's3-compatible', documentId: 'remote-1' })
+    source.setStorageBinding({
+      providerId: 'openpencil-cloud',
+      connectionId: 'connection-1',
+      workspaceId: 'workspace-1',
+      documentId: 'remote-1'
+    })
 
     expect(source.getSourceIdentity()).toEqual({ handle: null, path: '/tmp/local.fig' })
     expect(source.getStorageBinding()).toEqual({
-      providerId: 's3-compatible',
+      providerId: 'openpencil-cloud',
+      connectionId: 'connection-1',
+      workspaceId: 'workspace-1',
       documentId: 'remote-1'
     })
   })

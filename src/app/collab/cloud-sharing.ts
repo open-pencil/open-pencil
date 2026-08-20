@@ -10,6 +10,7 @@ import type {
 
 import type { EditorStore } from '@/app/editor/session'
 import { cloudConnectionService, readStoragePreferences } from '@/app/integrations/storage'
+import { listCloudConnectionProfiles } from '@/app/integrations/storage/cloud/profiles'
 
 const PROVIDER_ID = 'openpencil-cloud'
 const SERVER_URL_FIELD = 'server-url'
@@ -27,8 +28,11 @@ function cloudBinding(store: EditorStore) {
 async function cloudClient(store: EditorStore) {
   const binding = cloudBinding(store)
   if (!binding) throw new Error('This document is not stored in OpenPencil Cloud')
+  const profile = binding.connectionId
+    ? listCloudConnectionProfiles().find((candidate) => candidate.id === binding.connectionId)
+    : null
   const source = readStoragePreferences(PROVIDER_ID)
-  const serverURL = source[SERVER_URL_FIELD]
+  const serverURL = profile?.serverURL ?? source[SERVER_URL_FIELD]
   if (!serverURL) throw new Error('OpenPencil Cloud server is not configured')
   const connection = await cloudConnectionService.connect(serverURL)
   if (!connection.client) throw new Error('OpenPencil Cloud is not connected')
