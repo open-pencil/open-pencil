@@ -9,10 +9,13 @@ function returnURL(): string {
   return url.href
 }
 
-function authClient(discovery: CloudDiscovery) {
+function authClient(discovery: CloudDiscovery, accessToken?: string) {
   return createAuthClient({
     baseURL: discovery.authURL,
-    fetchOptions: { credentials: 'include' }
+    fetchOptions: {
+      credentials: 'include',
+      ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {})
+    }
   })
 }
 

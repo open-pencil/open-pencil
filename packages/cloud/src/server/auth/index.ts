@@ -1,6 +1,7 @@
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { betterAuth, type BetterAuthOptions } from 'better-auth'
+import { bearer, deviceAuthorization } from 'better-auth/plugins'
 import { importPKCS8, SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
 
@@ -76,6 +77,13 @@ export function createCloudAuth(config: CloudServerConfig, database: Kysely<Clou
         generateId: 'uuid'
       }
     },
+    plugins: [
+      bearer({ requireSignature: true }),
+      deviceAuthorization({
+        verificationUri: `${config.appURL ?? config.publicURL}/cloud/device`,
+        validateClient: (clientId) => clientId.startsWith('openpencil-desktop:')
+      })
+    ],
     socialProviders: socialProviders(config),
     trustedOrigins: [
       config.publicURL,

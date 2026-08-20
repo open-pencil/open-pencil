@@ -112,6 +112,7 @@ export type CloudClientDiagnostic = (message: string, error: unknown) => void
 export type CloudRequestOptions = {
   fetch?: CloudFetch
   signal?: AbortSignal
+  accessToken?: string
   onDiagnostic?: CloudClientDiagnostic
 }
 
@@ -168,13 +169,16 @@ async function parseResponse<TSchema extends v.BaseSchema<unknown, unknown, v.Ba
 }
 
 export function createCloudAPIClient(baseURL: string, options: CloudRequestOptions = {}) {
+  const headers = options.accessToken
+    ? { Authorization: `Bearer ${options.accessToken}` }
+    : undefined
   const client = hc<CloudAPI>(apiURL(baseURL), {
     fetch: options.fetch,
-    init: { credentials: 'include', signal: options.signal }
+    init: { credentials: 'include', signal: options.signal, headers }
   })
   const publicClient = hc<PublicCloudAPI>(apiURL(baseURL), {
     fetch: options.fetch,
-    init: { credentials: 'include', signal: options.signal }
+    init: { credentials: 'include', signal: options.signal, headers }
   })
 
   return {

@@ -8,6 +8,12 @@ export {
 } from './api'
 export { signInToCloud, signOutFromCloud, type CloudSocialProvider } from './auth'
 export {
+  pollCloudDeviceToken,
+  requestCloudDeviceAuthorization,
+  type CloudDeviceAuthorization,
+  type CloudDeviceToken
+} from './device-authorization'
+export {
   CloudClientError,
   discoverCloud,
   type CloudFetch,
