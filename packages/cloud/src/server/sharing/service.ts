@@ -6,8 +6,7 @@ import type {
   DocumentGrant,
   DocumentInvitation,
   InvitationPreview,
-  LookupCloudUserInput,
-  PutDocumentGrantInput
+  LookupCloudUserInput
 } from '#cloud/contract'
 import type { CloudActor } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
@@ -34,6 +33,7 @@ import {
 import { dateString, grantContract, invitationContract } from './contracts'
 import { hashCapability } from './crypto'
 import { DocumentShareInvalidError, InvitationDeliveryError } from './errors'
+import { createGrantService } from './grants/service'
 const INVITATION_SECRET_SIZE = 32
 const INVITATION_LIFETIME_MS = 7 * 24 * 60 * 60_000
 
@@ -53,6 +53,7 @@ export function createDocumentSharingService(
   options: DocumentSharingServiceOptions = {}
 ) {
   const capabilities = createCapabilityService(database, options)
+  const grants = createGrantService(database)
 
   async function previewInvitation(
     invitationId: string,
@@ -130,67 +131,7 @@ export function createDocumentSharingService(
 
     ...capabilities,
 
-    async listGrants(userId: string, documentId: string): Promise<DocumentGrant[]> {
-      await requireSharingAccess(database, userId, documentId)
-      const rows = await database
-        .selectFrom('documentGrant')
-        .select(['id', 'documentId', 'userId', 'permission', 'createdBy', 'createdAt', 'updatedAt'])
-        .where('documentId', '=', documentId)
-        .where('revokedAt', 'is', null)
-        .orderBy('createdAt')
-        .execute()
-      return rows.map(grantContract)
-    },
-
-    async putGrant(
-      userId: string,
-      documentId: string,
-      targetUserId: string,
-      input: PutDocumentGrantInput
-    ): Promise<DocumentGrant> {
-      await requireSharingAccess(database, userId, documentId)
-      const row = await database
-        .insertInto('documentGrant')
-        .values({
-          id: crypto.randomUUID(),
-          documentId,
-          userId: targetUserId,
-          permission: input.permission,
-          createdBy: userId,
-          revokedAt: null
-        })
-        .onConflict((conflict) =>
-          conflict.columns(['documentId', 'userId']).doUpdateSet({
-            permission: input.permission,
-            createdBy: userId,
-            revokedAt: null,
-            updatedAt: new Date()
-          })
-        )
-        .returning([
-          'id',
-          'documentId',
-          'userId',
-          'permission',
-          'createdBy',
-          'createdAt',
-          'updatedAt'
-        ])
-        .executeTakeFirstOrThrow()
-      return grantContract(row)
-    },
-
-    async revokeGrant(userId: string, documentId: string, targetUserId: string): Promise<void> {
-      await requireSharingAccess(database, userId, documentId)
-      const result = await database
-        .updateTable('documentGrant')
-        .set({ revokedAt: new Date(), updatedAt: new Date() })
-        .where('documentId', '=', documentId)
-        .where('userId', '=', targetUserId)
-        .where('revokedAt', 'is', null)
-        .executeTakeFirst()
-      if (Number(result.numUpdatedRows) === 0) throw new DocumentNotFoundError()
-    },
+    ...grants,
 
     async listInvitations(userId: string, documentId: string): Promise<DocumentInvitation[]> {
       await requireSharingAccess(database, userId, documentId)

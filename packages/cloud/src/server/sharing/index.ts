@@ -11,6 +11,8 @@ export {
   hashCapability
 } from './crypto'
 export { DocumentShareInvalidError, InvitationDeliveryError } from './errors'
+export { createGrantService, type GrantService } from './grants/service'
+
 export { createPublicDocumentRoutes } from './document-routes'
 export {
   createDocumentSharingRoutes,
