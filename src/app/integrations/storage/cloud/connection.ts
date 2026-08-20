@@ -33,6 +33,7 @@ export type CloudConnection = CloudConnectionSnapshot & {
 
 export type CloudConnectionServiceOptions = {
   fetch: CloudFetch
+  readAccessToken?(serverURL: string): Promise<string | null>
   readSelectedWorkspace(serverURL: string): string | null
   writeSelectedWorkspace(serverURL: string, workspaceId: string | null): void
 }
@@ -92,7 +93,11 @@ export function createCloudConnectionService(options: CloudConnectionServiceOpti
     try {
       const discovery =
         existing.discovery ?? (await discoverCloud(normalized, { fetch: options.fetch }))
-      const client = createCloudAPIClient(discovery.apiURL, { fetch: options.fetch })
+      const accessToken = await options.readAccessToken?.(normalized)
+      const client = createCloudAPIClient(discovery.apiURL, {
+        fetch: options.fetch,
+        accessToken: accessToken ?? undefined
+      })
       const session = await client.getSession()
       const workspaces = session ? (await client.listWorkspaces()).workspaces : []
       const selectedWorkspaceId = selectWorkspace(existing.selectedWorkspaceId, workspaces)

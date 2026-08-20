@@ -3,6 +3,10 @@ import { computed, ref, shallowRef } from 'vue'
 
 import type { CloudSocialProvider } from '@open-pencil/cloud/client'
 import type { WorkspaceEntitlements } from '@open-pencil/cloud/contract'
+import { IS_TAURI } from '@open-pencil/core/constants'
+
+import { appCredentialServices } from '@/app/settings/credentials/app'
+import { credentialRef } from '@/app/settings/credentials/reference'
 
 import { readStoragePreferences, writeStoragePreference } from '../preferences'
 import { normalizeCloudServerURL, type CloudConnectionSnapshot } from './connection'
@@ -104,14 +108,36 @@ function createCloudStorageSettings() {
 
   async function signIn(provider: CloudSocialProvider): Promise<void> {
     const discovery = state.value?.discovery
-    if (!discovery) throw new Error('Connect to an OpenPencil Cloud server first')
+    const profile = activeCloudConnectionProfile()
+    if (!discovery || !profile) throw new Error('Connect to an OpenPencil Cloud server first')
+    if (IS_TAURI) {
+      const { openUrl } = await import('@tauri-apps/plugin-opener')
+      const { pollCloudDeviceToken, requestCloudDeviceAuthorization } =
+        await import('@open-pencil/cloud/client')
+      const authorization = await requestCloudDeviceAuthorization(discovery, profile.id)
+      await openUrl(authorization.verification_uri_complete)
+      const token = await pollCloudDeviceToken(discovery, profile.id, authorization)
+      await appCredentialServices.manager.set(
+        credentialRef('openpencil-cloud', 'session', profile.id),
+        token.access_token
+      )
+      state.value = await cloudConnectionService.refresh(profile.serverURL)
+      await refreshEntitlements()
+      return
+    }
     const { signInToCloud } = await import('@open-pencil/cloud/client')
     await signInToCloud(discovery, provider)
   }
 
   async function signOut(): Promise<void> {
     const discovery = state.value?.discovery
+    const profile = activeCloudConnectionProfile()
     if (!discovery) return
+    if (profile) {
+      await appCredentialServices.manager.clear(
+        credentialRef('openpencil-cloud', 'session', profile.id)
+      )
+    }
     const { signOutFromCloud } = await import('@open-pencil/cloud/client')
     await signOutFromCloud(discovery)
     state.value = await cloudConnectionService.refresh(serverURL.value)
