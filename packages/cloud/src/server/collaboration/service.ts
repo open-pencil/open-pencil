@@ -11,8 +11,7 @@ import { resolveDocumentAccess } from '#cloud/server/documents/access'
 import { CLOUD_FEATURE_KEYS } from '#cloud/server/policy/keys'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { DocumentSharingService } from '#cloud/server/sharing'
-import { base64url } from 'jose'
-import { SignJWT } from 'jose'
+import { base64url, SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
 
 const TICKET_LIFETIME_SECONDS = 5 * 60
