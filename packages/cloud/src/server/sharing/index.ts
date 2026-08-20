@@ -15,6 +15,12 @@ export { createGrantService, type GrantService } from './grants/service'
 
 export { createPublicDocumentRoutes } from './document-routes'
 export {
+  createInvitationService,
+  type InvitationService,
+  type InvitationServiceOptions
+} from './invitations/service'
+
+export {
   createDocumentSharingRoutes,
   createPublicSharingRoutes,
   type SharingRouteEnvironment
