@@ -1,4 +1,15 @@
-import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
+export {
+  createCloudflareR2ObjectStore,
+  type CloudflareR2Bucket,
+  type CloudflareR2Object,
+  type CloudflareR2ObjectBody,
+  type CloudflareR2ObjectStore
+} from './objects'
+
+import {
+  createCloudflareR2ObjectStore,
+  type CloudflareR2Bucket
+} from '#cloud/runtime/cloudflare/objects'
 import {
   cloudServerConfigFromEnvironment,
   createCloudApp,
@@ -17,6 +28,7 @@ export type CloudflareHyperdrive = {
 
 export type CloudflareCloudEnvironment = {
   HYPERDRIVE: CloudflareHyperdrive
+  DOCUMENTS?: CloudflareR2Bucket
   OPENPENCIL_CLOUD_DEPLOYMENT?: string
   OPENPENCIL_CLOUD_URL?: string
   OPENPENCIL_CLOUD_APP_URL?: string
@@ -29,7 +41,7 @@ export type CloudflareCloudEnvironment = {
   S3_SECRET_ACCESS_KEY?: string
   S3_FORCE_PATH_STYLE?: string
   S3_CHECKSUM_VERIFICATION?: string
-  [key: string]: string | CloudflareHyperdrive | undefined
+  [key: string]: string | CloudflareHyperdrive | CloudflareR2Bucket | undefined
 }
 
 function stringEnvironment(environment: CloudflareCloudEnvironment): CloudEnvironment {
@@ -47,16 +59,24 @@ export function createCloudflareCloudRuntime(environment: CloudflareCloudEnviron
       pool: new Pool({ connectionString: environment.HYPERDRIVE.connectionString, max: 5 })
     })
   })
-  const objects = createS3ObjectStore(config)
+  const objects = environment.DOCUMENTS
+    ? createCloudflareR2ObjectStore({
+        bucket: environment.DOCUMENTS,
+        publicURL: config.publicURL,
+        signingSecret: config.authSecret
+      })
+    : null
+  if (!objects) throw new Error('Cloudflare DOCUMENTS R2 binding is required')
   const auth = createCloudAuth(config, database)
   return {
-    app: createCloudApp({ config, database, auth, objects }),
+    app: createCloudApp({ config, database, auth, objects: objects.store }),
     database,
     cleanup: {
-      documents: createDocumentCleanupService(database, objects),
-      uploads: createUploadCleanupService(database, objects)
+      documents: createDocumentCleanupService(database, objects.store),
+      uploads: createUploadCleanupService(database, objects.store)
     },
-    config
+    config,
+    objects
   }
 }
 
@@ -72,7 +92,8 @@ export function createCloudflareWorker() {
       context: CloudflareExecutionContext
     ): Promise<Response> {
       const runtime = createCloudflareCloudRuntime(environment)
-      const response = await runtime.app.fetch(request)
+      const objectResponse = await runtime.objects.handleRequest(request)
+      const response = objectResponse ?? (await runtime.app.fetch(request))
       context.waitUntil(runtime.database.destroy())
       return response
     },
