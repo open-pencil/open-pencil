@@ -97,7 +97,12 @@ test.describe('Cloud sharing browser journey', () => {
         { timeout: 15_000 }
       )
       .toEqual({
-        binding: { providerId: 'openpencil-cloud', documentId },
+        binding: {
+          providerId: 'openpencil-cloud',
+          connectionId: 'cloud-browser-e2e',
+          workspaceId,
+          documentId
+        },
         accessMode: 'owner'
       })
     const initialOwnerTicket = await owner.evaluate(
