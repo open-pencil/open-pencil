@@ -105,6 +105,7 @@ export async function copySelectionToBrowserClipboard(store: EditorStore): Promi
 
     if (
       typeof ClipboardItem !== 'undefined' &&
+      typeof Blob !== 'undefined' &&
       typeof navigator !== 'undefined' &&
       typeof (navigator as Partial<Navigator>).clipboard?.write === 'function'
     ) {

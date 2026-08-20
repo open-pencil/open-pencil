@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 
+import type { Vector } from '@open-pencil/scene-graph/primitives'
+
 import {
   clearInMemoryClipboardHTML,
   getInMemoryClipboardHTML,
@@ -168,6 +170,74 @@ describe('in-memory clipboard', () => {
     // Verify replace succeeded without toast errors
     expect(toast.toasts.value).toHaveLength(0)
     expect(store.graph.getNode(replaceTarget.id)).toBeUndefined()
+  })
+
+  test('executeClipboardCommand cut deletes selection and returns true when copy succeeds', async () => {
+    const store = createEditorStore()
+    const pageId = store.state.currentPageId
+    const rect = store.graph.createNode('RECTANGLE', pageId, {
+      name: 'Cut Target',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50
+    })
+    store.select([rect.id])
+
+    const originalDocument = globalThis.document
+    try {
+      let listener: ((e: unknown) => void) | null = null
+      globalThis.document = {
+        addEventListener: (_type: string, fn: (e: unknown) => void) => {
+          listener = fn
+        },
+        removeEventListener: (_type: string, _fn: (e: unknown) => void) => {
+          listener = null
+        },
+        execCommand: (cmd: string) => {
+          if (cmd === 'copy' && listener) {
+            listener({
+              clipboardData: { setData: noop },
+              preventDefault: noop
+            })
+            return true
+          }
+          return false
+        }
+      } as Document
+
+      const cutOk = await executeClipboardCommand(store, 'cut')
+      expect(cutOk).toBe(true)
+      expect(store.graph.getNode(rect.id)).toBeUndefined()
+    } finally {
+      globalThis.document = originalDocument
+    }
+  })
+
+  test('executeClipboardCommand paste forwards cursorPos to store.pasteFromHTML', async () => {
+    const store = createEditorStore()
+    const pageId = store.state.currentPageId
+    const rect = store.graph.createNode('RECTANGLE', pageId, {
+      name: 'Source',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50
+    })
+    store.select([rect.id])
+    await executeClipboardCommand(store, 'copy')
+
+    let receivedCursorPos: Vector | undefined
+    const originalPaste = store.pasteFromHTML.bind(store)
+    store.pasteFromHTML = async (html, cursorPos, options) => {
+      receivedCursorPos = cursorPos
+      return originalPaste(html, cursorPos, options)
+    }
+
+    const cursorPos: Vector = { x: 150, y: 250 }
+    const pasteOk = await executeClipboardCommand(store, 'paste', cursorPos)
+    expect(pasteOk).toBe(true)
+    expect(receivedCursorPos).toEqual(cursorPos)
   })
 
   test('executeClipboardCommand paste falls back to memory clipboard', async () => {
