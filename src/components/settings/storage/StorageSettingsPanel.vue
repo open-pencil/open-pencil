@@ -41,11 +41,19 @@ const credentialStatuses = ref<Record<string, CredentialStatus>>({})
 const busy = ref(false)
 const cloudSettings = useCloudStorageSettings()
 const isCloudProvider = computed(() => provider.value.id === 'openpencil-cloud')
+const cloudConnectionOptions = computed(() =>
+  cloudSettings.profiles.value.map((profile) => ({ value: profile.id, label: profile.label }))
+)
+const cloudConnection = computed({
+  get: () => cloudSettings.activeProfileId.value ?? '',
+  set: (value: string) => void cloudSettings.selectConnection(value)
+})
+const selfHostedURL = ref('')
 const cloudWorkspace = computed({
   get: () => preferenceDrafts.value['workspace-id'] ?? '',
   set: (value: string) => {
     preferenceDrafts.value['workspace-id'] = value
-    cloudSettings.selectWorkspace(value)
+    void cloudSettings.selectWorkspace(value)
   }
 })
 const configured = computed(
@@ -100,6 +108,25 @@ async function clearCredential(field: string): Promise<void> {
 async function openWorkspace(): Promise<void> {
   settingsDialogOpen.value = false
   await router.push('/storage')
+}
+
+async function connectOfficialCloud(): Promise<void> {
+  try {
+    await cloudSettings.addConnection('official')
+    preferenceDrafts.value = { ...readStoragePreferences(provider.value.id) }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function connectSelfHostedCloud(): Promise<void> {
+  try {
+    await cloudSettings.addConnection('self-hosted', selfHostedURL.value)
+    selfHostedURL.value = ''
+    preferenceDrafts.value = { ...readStoragePreferences(provider.value.id) }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error))
+  }
 }
 
 async function connectCloud(): Promise<void> {
@@ -194,6 +221,60 @@ onMounted(() => void refreshStatuses())
     </label>
 
     <div v-if="isCloudProvider" class="flex flex-col gap-2 rounded border border-border p-2">
+      <div class="text-[10px] font-medium text-surface">Cloud connections</div>
+      <AppSelect
+        v-if="cloudConnectionOptions.length"
+        v-model="cloudConnection"
+        label="Connected instance"
+        :options="cloudConnectionOptions"
+      />
+      <button
+        type="button"
+        class="rounded bg-accent px-2 py-1.5 text-[10px] text-white hover:bg-accent/90"
+        :disabled="cloudSettings.isLoading.value"
+        @click="connectOfficialCloud"
+      >
+        Connect OpenPencil Cloud
+      </button>
+      <div class="flex gap-2">
+        <AppInput
+          v-model="selfHostedURL"
+          class="min-w-0 flex-1"
+          placeholder="https://pencil.example.com"
+          aria-label="Self-hosted server URL"
+          size="sm"
+          tone="panel"
+          @enter="connectSelfHostedCloud"
+        />
+        <button
+          type="button"
+          class="rounded bg-hover px-2 py-1.5 text-[10px] text-surface hover:bg-active"
+          :disabled="!selfHostedURL.trim() || cloudSettings.isLoading.value"
+          @click="connectSelfHostedCloud"
+        >
+          Connect instance
+        </button>
+      </div>
+      <div
+        v-if="cloudSettings.activeProfile.value"
+        class="flex items-center justify-between gap-2 rounded bg-hover/50 px-2 py-1.5"
+      >
+        <div class="min-w-0">
+          <div class="truncate text-[10px] text-surface">
+            {{ cloudSettings.activeProfile.value.label }}
+          </div>
+          <div class="truncate text-[9px] text-muted">
+            {{ cloudSettings.activeProfile.value.serverURL }}
+          </div>
+        </div>
+        <button
+          type="button"
+          class="text-[10px] text-danger"
+          @click="cloudSettings.disconnectConnection(cloudSettings.activeProfile.value.id)"
+        >
+          Disconnect
+        </button>
+      </div>
       <button
         type="button"
         class="rounded bg-hover px-2 py-1.5 text-[10px] text-surface hover:bg-active"

@@ -5,14 +5,28 @@ import type { WorkspaceEntitlements } from '@open-pencil/cloud/contract'
 
 import { readStoragePreferences, writeStoragePreference } from '../preferences'
 import { normalizeCloudServerURL, type CloudConnectionSnapshot } from './connection'
+import {
+  activeCloudConnectionProfile,
+  connectCloudProfile,
+  disconnectCloudProfile,
+  selectCloudConnectionProfile,
+  updateCloudConnectionWorkspace,
+  useCloudConnectionProfiles,
+  type CloudConnectionKind
+} from './profiles'
 import { cloudConnectionService } from './service'
 
 const PROVIDER_ID = 'openpencil-cloud'
 const SERVER_URL_FIELD = 'server-url'
-const WORKSPACE_ID_FIELD = 'workspace-id'
 
 export function useCloudStorageSettings() {
-  const serverURL = ref(readStoragePreferences(PROVIDER_ID)[SERVER_URL_FIELD] ?? '')
+  const { profiles, activeProfileId } = useCloudConnectionProfiles()
+  const activeProfile = computed(() => activeCloudConnectionProfile())
+  const serverURL = ref(
+    activeCloudConnectionProfile()?.serverURL ??
+      readStoragePreferences(PROVIDER_ID)[SERVER_URL_FIELD] ??
+      ''
+  )
   const state = ref<CloudConnectionSnapshot | null>(null)
   const entitlements = shallowRef<WorkspaceEntitlements | null>(null)
   const entitlementsLoading = ref(false)
@@ -35,6 +49,29 @@ export function useCloudStorageSettings() {
       label: workspace.name
     }))
   )
+
+  async function addConnection(kind: CloudConnectionKind, customURL?: string): Promise<void> {
+    const profile = connectCloudProfile({ kind, serverURL: customURL })
+    serverURL.value = profile.serverURL
+    await connect()
+  }
+
+  async function selectConnection(id: string): Promise<void> {
+    const profile = selectCloudConnectionProfile(id)
+    serverURL.value = profile.serverURL
+    state.value = cloudConnectionService.get(profile.serverURL)
+    if (!state.value) await connect()
+    else await refreshEntitlements()
+  }
+
+  function disconnectConnection(id: string): void {
+    const profile = profiles.value.find((candidate) => candidate.id === id)
+    if (profile) cloudConnectionService.disconnect(profile.serverURL)
+    disconnectCloudProfile(id)
+    const active = activeCloudConnectionProfile()
+    serverURL.value = active?.serverURL ?? ''
+    state.value = active ? cloudConnectionService.get(active.serverURL) : null
+  }
 
   async function refreshEntitlements(): Promise<void> {
     const connection = state.value ? cloudConnectionService.get(state.value.serverURL) : null
@@ -82,11 +119,15 @@ export function useCloudStorageSettings() {
 
   async function selectWorkspace(workspaceId: string): Promise<void> {
     cloudConnectionService.selectWorkspace(serverURL.value, workspaceId)
-    writeStoragePreference(PROVIDER_ID, WORKSPACE_ID_FIELD, workspaceId)
+    const active = activeCloudConnectionProfile()
+    if (active) updateCloudConnectionWorkspace(active.id, workspaceId)
     await refreshEntitlements()
   }
 
   return {
+    profiles,
+    activeProfileId,
+    activeProfile,
     serverURL,
     state,
     isLoading,
@@ -94,6 +135,9 @@ export function useCloudStorageSettings() {
     entitlements,
     entitlementsLoading,
     entitlementsError,
+    addConnection,
+    selectConnection,
+    disconnectConnection,
     connect,
     signIn,
     signOut,
