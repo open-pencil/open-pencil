@@ -22,10 +22,11 @@ const SERVER_URL_FIELD = 'server-url'
 export function useCloudStorageSettings() {
   const { profiles, activeProfileId } = useCloudConnectionProfiles()
   const activeProfile = computed(() => activeCloudConnectionProfile())
+  const initialProfile = activeCloudConnectionProfile()
   const serverURL = ref(
-    activeCloudConnectionProfile()?.serverURL ??
-      readStoragePreferences(PROVIDER_ID)[SERVER_URL_FIELD] ??
-      ''
+    initialProfile === null
+      ? (readStoragePreferences(PROVIDER_ID)[SERVER_URL_FIELD] ?? '')
+      : initialProfile.serverURL
   )
   const state = ref<CloudConnectionSnapshot | null>(null)
   const entitlements = shallowRef<WorkspaceEntitlements | null>(null)
