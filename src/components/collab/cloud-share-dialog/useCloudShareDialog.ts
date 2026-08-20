@@ -131,8 +131,8 @@ export function useCloudShareDialog(open: Ref<boolean>, store: EditorStore) {
   }
 
   async function rotateLink() {
-    const share = activeShare.value
-    if (!share) return
+    const share = shares.value.at(0)
+    if (share == null) return
     loading.value = true
     try {
       const result = await rotateCloudShare(store, share.id)
@@ -148,8 +148,8 @@ export function useCloudShareDialog(open: Ref<boolean>, store: EditorStore) {
   }
 
   async function disableLink() {
-    const share = activeShare.value
-    if (!share) return
+    const share = shares.value.at(0)
+    if (share == null) return
     try {
       await revokeCloudShare(store, share.id)
       shares.value = shares.value.filter((item) => item.id !== share.id)
@@ -161,8 +161,8 @@ export function useCloudShareDialog(open: Ref<boolean>, store: EditorStore) {
   }
 
   async function saveSettings() {
-    const share = activeShare.value
-    if (!share) await createLink()
+    const share = shares.value.at(0)
+    if (share == null) await createLink()
     else {
       try {
         const updated = await updateCloudShare(store, share.id, {

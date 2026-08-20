@@ -283,7 +283,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.shares
     },
     async createDocumentShare(documentId: string, input: CreateDocumentShareInput) {
-      return await parseResponse(
+      return parseResponse(
         client.documents[':documentId'].shares.$post({
           param: { documentId },
           json: input
@@ -308,7 +308,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.share
     },
     async rotateDocumentShare(documentId: string, shareId: string) {
-      return await parseResponse(
+      return parseResponse(
         client.documents[':documentId'].shares[':shareId'].rotate.$post({
           param: { documentId, shareId }
         }),
@@ -364,7 +364,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.invitations
     },
     async createDocumentInvitation(documentId: string, input: CreateDocumentInvitationInput) {
-      return await parseResponse(
+      return parseResponse(
         client.documents[':documentId'].invitations.$post({
           param: { documentId },
           json: input
@@ -376,14 +376,14 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
     async createInvitationContinuation(
       input: CreateInvitationContinuationInput
     ): Promise<InvitationContinuation> {
-      return await parseResponse(
+      return parseResponse(
         publicClient.invitations.continuations.$post({ json: input }),
         invitationContinuationSchema,
         options.onDiagnostic
       )
     },
     async consumeInvitationContinuation(id: string): Promise<CreateInvitationContinuationInput> {
-      return await parseResponse(
+      return parseResponse(
         publicClient.invitations.continuations[':continuationId'].consume.$post({
           param: { continuationId: id }
         }),
@@ -439,7 +439,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.resolution
     },
     async getSharedDocument(shareId: string, input: ResolveDocumentShareInput) {
-      return await parseResponse(
+      return parseResponse(
         publicClient.shares[':shareId'].document.$post({
           param: { shareId },
           json: input
@@ -473,7 +473,7 @@ export function createCloudAPIClient(baseURL: string, options: CloudRequestOptio
       return response.ticket
     },
     async createUpload(documentId: string, input: CreateUploadInput): Promise<CloudUpload> {
-      return await parseResponse(
+      return parseResponse(
         client.documents[':documentId'].uploads.$post({
           param: { documentId },
           json: input
