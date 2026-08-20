@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { DocumentPermission } from '@open-pencil/cloud/contract'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { useButtonUI } from '@/components/ui/button'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import { expirationOptions, permissionOptions, useCloudShareDialog } from './useCloudShareDialog'
+import {
+  expirationOptionValues,
+  permissionOptionValues,
+  useCloudShareDialog
+} from './useCloudShareDialog'
 import {
   AppDialogBody,
   AppDialogFooter,
@@ -12,8 +18,24 @@ import {
   AppDialogRoot
 } from '@/components/ui/dialog'
 
+import { useI18n } from '@open-pencil/vue'
+
 const open = defineModel<boolean>('open', { default: false })
 const store = useEditorStore()
+const { dialogs } = useI18n()
+const permissionOptions = computed(() => [
+  { label: dialogs.value.cloudCanView, value: permissionOptionValues[0] },
+  { label: dialogs.value.cloudCanEdit, value: permissionOptionValues[1] }
+])
+const expirationOptions = computed(() => [
+  { label: dialogs.value.cloudNever, value: expirationOptionValues[0] },
+  { label: dialogs.value.cloudOneDay, value: expirationOptionValues[1] },
+  { label: dialogs.value.cloudSevenDays, value: expirationOptionValues[2] },
+  { label: dialogs.value.cloudThirtyDays, value: expirationOptionValues[3] }
+])
+const primaryButton = useButtonUI({ tone: 'accent', size: 'sm' })
+const secondaryButton = useButtonUI({ tone: 'ghost', size: 'sm', bordered: true })
+const quietButton = useButtonUI({ tone: 'ghost', size: 'sm' })
 const {
   access,
   grants,
@@ -62,7 +84,7 @@ const {
         />
         <button
           type="button"
-          class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+          :class="primaryButton.base"
           :disabled="!inviteEmail.trim() || !canManage || loading"
           @click="invite"
         >
@@ -175,7 +197,7 @@ const {
           </div>
           <button
             type="button"
-            class="rounded px-2 py-1 text-[10px] text-muted hover:bg-hover hover:text-surface"
+            :class="quietButton.base"
             :disabled="!canManage"
             @click="settingsOpen = true"
           >
@@ -203,7 +225,7 @@ const {
       <button
         v-if="activeShare"
         type="button"
-        class="rounded border border-border px-3 py-1.5 text-[11px] text-surface hover:bg-hover"
+        :class="secondaryButton.base"
         :disabled="!canManage || loading"
         @click="rotateLink"
       >
@@ -212,7 +234,7 @@ const {
       <button
         v-else
         type="button"
-        class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
+        :class="primaryButton.base"
         :disabled="!canManage || loading"
         @click="createLink"
       >
@@ -247,20 +269,8 @@ const {
       </section>
     </AppDialogBody>
     <AppDialogFooter>
-      <button
-        type="button"
-        class="rounded px-3 py-1.5 text-[11px] text-muted hover:bg-hover"
-        @click="settingsOpen = false"
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
-        @click="saveSettings"
-      >
-        Save
-      </button>
+      <button type="button" :class="quietButton.base" @click="settingsOpen = false">Cancel</button>
+      <button type="button" :class="primaryButton.base" @click="saveSettings">Save</button>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>

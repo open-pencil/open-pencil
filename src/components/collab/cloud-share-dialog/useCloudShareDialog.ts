@@ -24,16 +24,8 @@ import {
 import type { EditorStore } from '@/app/editor/session'
 import { toast } from '@/app/shell/ui'
 
-export const permissionOptions = [
-  { label: 'Can view', value: 'view' },
-  { label: 'Can edit', value: 'edit' }
-]
-export const expirationOptions = [
-  { label: 'Never', value: 'never' },
-  { label: '1 day', value: '1' },
-  { label: '7 days', value: '7' },
-  { label: '30 days', value: '30' }
-]
+export const permissionOptionValues = ['view', 'edit'] as const
+export const expirationOptionValues = ['never', '1', '7', '30'] as const
 
 export function useCloudShareDialog(open: Ref<boolean>, store: EditorStore) {
   const { copy } = useClipboard({ copiedDuring: 2000 })
