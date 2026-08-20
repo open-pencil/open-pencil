@@ -38,10 +38,10 @@
       "default": "./dist/runtime-cloudflare.js"
     },
     "./runtime/node": {
-      "types": "./dist/runtime-node.d.ts",
+      "types": "./dist/runtime-node.d.mts",
       "bun": "./src/runtime/node/index.ts",
-      "import": "./dist/runtime-node.js",
-      "default": "./dist/runtime-node.js"
+      "import": "./dist/runtime-node.mjs",
+      "default": "./dist/runtime-node.mjs"
     },
     "./server": {
       "types": "./dist/server.d.ts",

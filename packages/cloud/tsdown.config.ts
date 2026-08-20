@@ -1,26 +1,53 @@
 import { defineConfig } from 'tsdown'
 
-export default defineConfig({
-  entry: {
-    contract: './src/contract/index.ts',
-    client: './src/client/index.ts',
-    email: './src/email/index.ts',
-    'runtime-cloudflare': './src/runtime/cloudflare/index.ts',
-    'runtime-node': './src/runtime/node/index.ts',
-    server: './src/server/index.ts'
-  },
-  platform: 'neutral',
-  external: [/^node:/],
-  format: ['esm'],
+const shared = {
+  format: ['esm'] as const,
   dts: true,
   sourcemap: true,
   hash: false,
-  clean: true,
   outDir: './dist',
-  treeshake: {
-    moduleSideEffects: false
+  treeshake: { moduleSideEffects: false },
+  outputOptions: { minifyInternalExports: false },
+  deps: { neverBundle: [/^node:/], skipNodeModulesBundle: true }
+}
+
+export default defineConfig([
+  {
+    ...shared,
+    name: 'neutral',
+    entry: {
+      contract: './src/contract/index.ts',
+      server: './src/server/index.ts'
+    },
+    platform: 'neutral',
+    clean: true
   },
-  outputOptions: {
-    minifyInternalExports: false
+  {
+    ...shared,
+    name: 'browser',
+    entry: { client: './src/client/index.ts' },
+    platform: 'browser',
+    clean: false
+  },
+  {
+    ...shared,
+    name: 'email',
+    entry: { email: './src/email/index.ts' },
+    platform: 'neutral',
+    clean: false
+  },
+  {
+    ...shared,
+    name: 'node',
+    entry: { 'runtime-node': './src/runtime/node/index.ts' },
+    platform: 'node',
+    clean: false
+  },
+  {
+    ...shared,
+    name: 'cloudflare',
+    entry: { 'runtime-cloudflare': './src/runtime/cloudflare/index.ts' },
+    platform: 'browser',
+    clean: false
   }
-})
+])
