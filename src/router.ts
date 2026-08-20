@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+import CloudDeviceAuthorizationView from './views/CloudDeviceAuthorizationView.vue'
 import CloudInvitationView from './views/CloudInvitationView.vue'
 import EditorView from './views/EditorView.vue'
 import WorkspaceView from './views/WorkspaceView.vue'
@@ -11,6 +12,11 @@ const router = createRouter({
     { path: '/storage', redirect: '/' },
     { path: '/demo', component: WorkspaceView, meta: { demo: true } },
     { path: '/share/:roomId', component: WorkspaceView },
+    {
+      path: '/cloud/device',
+      name: 'cloud-device',
+      component: CloudDeviceAuthorizationView
+    },
     {
       path: '/cloud/invitations/:invitationId',
       name: 'cloud-invitation',

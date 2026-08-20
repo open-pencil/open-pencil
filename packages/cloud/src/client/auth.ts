@@ -1,5 +1,6 @@
 import type { CloudDiscovery } from '#cloud/contract'
 import { createAuthClient } from 'better-auth/client'
+import { deviceAuthorizationClient } from 'better-auth/client/plugins'
 
 export type CloudSocialProvider = CloudDiscovery['authentication']['socialProviders'][number]
 
@@ -12,11 +13,16 @@ function returnURL(): string {
 function authClient(discovery: CloudDiscovery, accessToken?: string) {
   return createAuthClient({
     baseURL: discovery.authURL,
+    plugins: [deviceAuthorizationClient()],
     fetchOptions: {
       credentials: 'include',
       ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {})
     }
   })
+}
+
+export function createCloudAuthClient(discovery: CloudDiscovery, accessToken?: string) {
+  return authClient(discovery, accessToken)
 }
 
 export async function signInToCloud(
