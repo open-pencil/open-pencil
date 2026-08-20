@@ -119,7 +119,10 @@ export async function copySelectionToBrowserClipboard(store: EditorStore): Promi
       }
     }
 
-    if (typeof document !== 'undefined') {
+    if (
+      typeof document !== 'undefined' &&
+      typeof (document as Partial<Document>).execCommand === 'function'
+    ) {
       let listener: ((event: ClipboardEvent) => void) | null = null
       try {
         const copyState = { payloadCopied: false }
