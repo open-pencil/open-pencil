@@ -70,12 +70,13 @@ export function startCleanupWorker(
 
 function waitForInterval(milliseconds: number, signal: AbortSignal): Promise<void> {
   if (signal.aborted) return Promise.resolve()
-  return Promise.race([
-    new Promise<void>((resolve) => {
-      setTimeout(resolve, milliseconds)
-    }),
-    new Promise<void>((resolve) => {
-      signal.addEventListener('abort', () => resolve(), { once: true })
-    })
-  ])
+  return new Promise((resolve) => {
+    const finish = () => {
+      clearTimeout(timer)
+      signal.removeEventListener('abort', finish)
+      resolve()
+    }
+    const timer = setTimeout(finish, milliseconds)
+    signal.addEventListener('abort', finish, { once: true })
+  })
 }
