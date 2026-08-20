@@ -308,6 +308,16 @@ test.describe('Cloud sharing browser journey', () => {
     await expect(regeneratedRecipient.getByText('Cloud sharing fixture').first()).toBeVisible({
       timeout: 15_000
     })
+    await expect
+      .poll(
+        () =>
+          regeneratedRecipient.evaluate(
+            (nodeId) => window.openPencil?.getStore?.().graph.getNode(nodeId)?.type,
+            syncedNodeId
+          ),
+        { timeout: 15_000 }
+      )
+      .toBe('RECTANGLE')
 
     await dialog.getByRole('button', { name: 'Disable link' }).click()
     await expect(dialog.getByText('Restricted', { exact: true })).toBeVisible()
@@ -321,15 +331,17 @@ test.describe('Cloud sharing browser journey', () => {
       { serverURL: cloudURL, id: shareId, secret: regeneratedSecret }
     )
     expect(revokedResolutionStatus).toBe(404)
-    const ownerTicketStatus = await owner.evaluate(
+    const ownerTicket = await owner.evaluate(
       async ({ serverURL, id }) =>
         fetch(`${serverURL}/api/documents/${id}/collaboration-ticket`, {
           method: 'POST',
           credentials: 'include'
-        }).then((response) => response.status),
+        }).then((response) => response.json()),
       { serverURL: cloudURL, id: documentId }
     )
-    expect(ownerTicketStatus).toBe(200)
+    expect(ownerTicket.ticket.roomEpoch).toBe(regeneratedTicket.ticket.roomEpoch + 1)
+    expect(ownerTicket.ticket.roomId).not.toBe(regeneratedTicket.ticket.roomId)
+    expect(ownerTicket.ticket).toBeTruthy()
     const revokedContext = await browser.newContext()
     await configureCloudContext(revokedContext)
     const revokedRecipient = await revokedContext.newPage()
