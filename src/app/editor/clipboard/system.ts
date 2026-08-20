@@ -120,14 +120,30 @@ export async function copySelectionToBrowserClipboard(store: EditorStore): Promi
     }
 
     if (typeof document !== 'undefined') {
+      let listener: ((event: ClipboardEvent) => void) | null = null
       try {
-        document.execCommand('copy')
+        const copyState = { payloadCopied: false }
+        listener = (event: ClipboardEvent) => {
+          if (event.clipboardData) {
+            if (html) event.clipboardData.setData('text/html', html)
+            if (plainText) event.clipboardData.setData('text/plain', plainText)
+            event.preventDefault()
+            copyState.payloadCopied = true
+          }
+        }
+        document.addEventListener('copy', listener)
+        const success = document.execCommand('copy')
+        if (success && copyState.payloadCopied) return true
       } catch (error) {
         console.warn('execCommand copy fallback failed', error)
+      } finally {
+        if (listener) {
+          document.removeEventListener('copy', listener)
+        }
       }
     }
 
-    return true
+    return false
   } catch (error) {
     console.warn('Browser clipboard copy failed', error)
     return false

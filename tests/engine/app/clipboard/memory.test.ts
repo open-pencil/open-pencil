@@ -19,6 +19,8 @@ beforeEach(() => {
   toast.toasts.value = []
 })
 
+const noop = () => undefined
+
 describe('in-memory clipboard', () => {
   test('stores, retrieves, and clears clipboard HTML', () => {
     expect(hasInMemoryClipboardHTML()).toBe(false)
@@ -35,7 +37,7 @@ describe('in-memory clipboard', () => {
     expect(getInMemoryClipboardHTML()).toBe('')
   })
 
-  test('copySelectionToBrowserClipboard succeeds when navigator.clipboard.write is unavailable', async () => {
+  test('copySelectionToBrowserClipboard copies payload via execCommand fallback when modern clipboard is unavailable', async () => {
     const store = createEditorStore()
     const pageId = store.state.currentPageId
     const rect = store.graph.createNode('RECTANGLE', pageId, {
@@ -47,9 +49,90 @@ describe('in-memory clipboard', () => {
     })
     store.select([rect.id])
 
-    const success = await copySelectionToBrowserClipboard(store)
-    expect(success).toBe(true)
-    expect(hasInMemoryClipboardHTML()).toBe(true)
+    const capturedData: Record<string, string> = {}
+    let copyEventTriggered = false
+
+    const originalDocument = globalThis.document
+    try {
+      let listener: ((e: unknown) => void) | null = null
+      globalThis.document = {
+        addEventListener: (_type: string, fn: (e: unknown) => void) => {
+          listener = fn
+        },
+        removeEventListener: (_type: string, _fn: (e: unknown) => void) => {
+          listener = null
+        },
+        execCommand: (cmd: string) => {
+          if (cmd === 'copy' && listener) {
+            copyEventTriggered = true
+            const mockEvent = {
+              clipboardData: {
+                setData: (type: string, val: string) => {
+                  capturedData[type] = val
+                }
+              },
+              preventDefault: noop
+            }
+            listener(mockEvent)
+            return true
+          }
+          return false
+        }
+      } as Document
+
+      const success = await copySelectionToBrowserClipboard(store)
+      expect(success).toBe(true)
+      expect(copyEventTriggered).toBe(true)
+      expect(capturedData['text/html']).toBeDefined()
+      expect(capturedData['text/plain']).toBeDefined()
+      expect(hasInMemoryClipboardHTML()).toBe(true)
+    } finally {
+      globalThis.document = originalDocument
+    }
+  })
+
+  test('copySelectionToBrowserClipboard returns false when execCommand fails or is unavailable', async () => {
+    const store = createEditorStore()
+    const pageId = store.state.currentPageId
+    const rect = store.graph.createNode('RECTANGLE', pageId, {
+      name: 'Copy Target',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50
+    })
+    store.select([rect.id])
+
+    const originalDocument = globalThis.document
+    try {
+      globalThis.document = {
+        addEventListener: noop,
+        removeEventListener: noop,
+        execCommand: () => false
+      } as Document
+
+      const success = await copySelectionToBrowserClipboard(store)
+      expect(success).toBe(false)
+    } finally {
+      globalThis.document = originalDocument
+    }
+  })
+
+  test('executeClipboardCommand cut does not delete nodes when clipboard copy fails', async () => {
+    const store = createEditorStore()
+    const pageId = store.state.currentPageId
+    const rect = store.graph.createNode('RECTANGLE', pageId, {
+      name: 'Safe Rect',
+      x: 0,
+      y: 0,
+      width: 50,
+      height: 50
+    })
+    store.select([rect.id])
+
+    const cutOk = await executeClipboardCommand(store, 'cut')
+    expect(cutOk).toBe(false)
+    expect(store.graph.getNode(rect.id)).toBeDefined()
   })
 
   test('pasteToReplace uses in-memory clipboard when system clipboard is unavailable', async () => {
@@ -64,7 +147,7 @@ describe('in-memory clipboard', () => {
     })
     store.select([target.id])
 
-    // Copy target
+    // Copy target (populates in-memory clipboard)
     await executeClipboardCommand(store, 'copy')
 
     expect(hasInMemoryClipboardHTML()).toBe(true)
@@ -99,8 +182,7 @@ describe('in-memory clipboard', () => {
     })
     store.select([rect.id])
 
-    const copyOk = await executeClipboardCommand(store, 'copy')
-    expect(copyOk).toBe(true)
+    await executeClipboardCommand(store, 'copy')
     expect(hasInMemoryClipboardHTML()).toBe(true)
 
     const pasteOk = await executeClipboardCommand(store, 'paste')
