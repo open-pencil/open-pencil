@@ -27,6 +27,11 @@ const verifiedHostname = computed(() => {
 const primary = useButtonUI({ tone: 'accent', size: 'sm' })
 const secondary = useButtonUI({ tone: 'ghost', size: 'sm', bordered: true })
 
+function finishOfficial() {
+  emit('connectOfficial')
+  open.value = false
+}
+
 function finishSelfHosted() {
   emit('connectSelfHosted', flow.serverURL.value)
   open.value = false
@@ -45,10 +50,7 @@ watch(open, (isOpen) => {
         <button
           type="button"
           class="w-full rounded border border-border p-3 text-left hover:bg-hover"
-          @click="
-            emit('connectOfficial')
-            open = false
-          "
+          @click="finishOfficial"
         >
           <span class="block text-xs font-medium text-surface">OpenPencil Cloud</span>
           <span class="mt-1 block text-[10px] text-muted">Official hosted service</span>
