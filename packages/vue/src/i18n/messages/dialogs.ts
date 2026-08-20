@@ -229,6 +229,12 @@ export const dialogMessageDefaults = {
   mcpPort: 'Port',
   mcpAddress: 'Address',
   mcpVersion: 'Version',
+  mcpRootDirectory: 'MCP root directory',
+  mcpRootDirectoryDefault: 'User home directory (default)',
+  mcpChooseRootDirectory: 'Choose folder',
+  mcpUseDefaultRoot: 'Use default',
+  mcpRootDirectoryDescription:
+    'File tools are limited to this folder. Restart the MCP server to apply changes.',
   mcpTools: 'Available tools',
   mcpInspectionTools: 'Inspection tools',
   mcpModificationTools: 'Modification tools',

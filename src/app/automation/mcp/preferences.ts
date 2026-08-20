@@ -3,10 +3,12 @@ import { useLocalStorage } from '@vueuse/core'
 import { MCP_TOOL_CATALOG, type MCPToolCatalogEntry } from '@open-pencil/mcp/tools'
 
 const DISABLED_TOOLS_STORAGE_KEY = 'open-pencil:mcp:disabled-tools'
+const ROOT_DIRECTORY_STORAGE_KEY = 'open-pencil:mcp:root-directory'
 
 export const configurableMCPTools = MCP_TOOL_CATALOG.filter((tool) => tool.availability !== 'eval')
 
 export const disabledMCPTools = useLocalStorage<string[]>(DISABLED_TOOLS_STORAGE_KEY, [])
+export const mcpRootDirectory = useLocalStorage(ROOT_DIRECTORY_STORAGE_KEY, '')
 
 export function setMCPToolEnabled(name: string, enabled: boolean): void {
   const disabled = new Set(disabledMCPTools.value)
