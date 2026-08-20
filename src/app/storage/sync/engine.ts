@@ -125,15 +125,15 @@ function adapterForMeta(
   providerID: StorageProviderID,
   meta: LocalCanvasMeta | null
 ): StorageAdapter {
-  if (providerID !== 'openpencil-cloud' || !meta?.connectionId) {
-    return createActiveStorageAdapter(providerID)
+  if (providerID !== 'openpencil-cloud') return createActiveStorageAdapter(providerID)
+  if (!meta?.connectionId || !meta.workspaceId || !meta.documentId) {
+    throw new StorageSyncBlockedError('Cloud document identity is incomplete')
   }
   const profile = listCloudConnectionProfiles().find(
     (candidate) => candidate.id === meta.connectionId
   )
   if (!profile) throw new StorageSyncBlockedError('Cloud connection is unavailable')
-  const workspaceId = meta.workspaceId ?? profile.selectedWorkspaceId
-  if (!workspaceId) throw new StorageSyncBlockedError('Cloud workspace is unavailable')
+  const workspaceId = meta.workspaceId
   return createStorageAdapter(providerID, {
     'server-url': profile.serverURL,
     'workspace-id': workspaceId
@@ -157,7 +157,10 @@ async function runJob(job: OutboxJob): Promise<void> {
   }
   const adapter = adapterForMeta(providerID, meta)
 
-  const remoteId = remoteDocumentId(job.canvasId, meta ?? undefined)
+  const remoteId = remoteDocumentId(
+    job.canvasId,
+    meta ?? { providerId: providerID, documentId: job.canvasId }
+  )
 
   if (job.type === 'deleteCanvas') {
     await adapter.deleteDocument(remoteId)

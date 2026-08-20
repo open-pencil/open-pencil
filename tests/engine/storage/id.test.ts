@@ -20,11 +20,25 @@ describe('storage canvas identity', () => {
     ).not.toBe('openpencil-cloud:connection-a:document-1')
   })
 
-  test('preserves legacy and non-Cloud IDs', () => {
+  test('preserves non-Cloud IDs and rejects incomplete Cloud identities', () => {
     expect(storageCanvasId({ providerId: 's3-compatible', documentId: 'document-1' })).toBe(
       'document-1'
     )
-    expect(storageCanvasId({ providerId: 'openpencil-cloud', documentId: 'legacy' })).toBe('legacy')
-    expect(remoteDocumentId('local-key', { documentId: 'remote-id' })).toBe('remote-id')
+    expect(() =>
+      storageCanvasId({
+        providerId: 'openpencil-cloud',
+        connectionId: '',
+        documentId: 'invalid'
+      })
+    ).toThrow('Cloud connection ID is required')
+    expect(
+      remoteDocumentId('local-key', {
+        providerId: 'openpencil-cloud',
+        documentId: 'remote-id'
+      })
+    ).toBe('remote-id')
+    expect(() => remoteDocumentId('local-key', { providerId: 'openpencil-cloud' })).toThrow(
+      'Cloud document metadata is missing its remote document ID'
+    )
   })
 })

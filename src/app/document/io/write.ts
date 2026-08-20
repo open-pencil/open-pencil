@@ -46,8 +46,9 @@ export function createDocumentWriter({
       await persistStorageCanvasLocally({
         providerId: storage.providerId,
         documentId: storage.documentId,
-        connectionId: storage.connectionId,
-        workspaceId: storage.workspaceId,
+        ...(storage.providerId === 'openpencil-cloud'
+          ? { connectionId: storage.connectionId, workspaceId: storage.workspaceId }
+          : {}),
         canvasId: storage.documentId,
         name: state.documentName || 'Untitled',
         figBytes: data

@@ -59,21 +59,26 @@ export function createStorageWorkspaceSource(
       for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
       for (const document of reconciliation.remoteDocumentsToSeed) {
         const profile = providerID === 'openpencil-cloud' ? activeCloudConnectionProfile() : null
-        const canvasId = storageCanvasId({
-          providerId: providerID,
-          connectionId: profile?.id,
-          documentId: document.id
-        })
+        let canvasId: string
+        let cloudIdentity: { connectionId: string; workspaceId: string } | null = null
+        if (providerID === 'openpencil-cloud') {
+          if (!profile?.selectedWorkspaceId) {
+            throw new Error('OpenPencil Cloud connection and workspace are required')
+          }
+          cloudIdentity = { connectionId: profile.id, workspaceId: profile.selectedWorkspaceId }
+          canvasId = storageCanvasId({
+            providerId: providerID,
+            connectionId: profile.id,
+            documentId: document.id
+          })
+        } else {
+          canvasId = storageCanvasId({ providerId: providerID, documentId: document.id })
+        }
         await localStore.upsertIndexMeta({
           id: canvasId,
           documentId: document.id,
           providerId: providerID,
-          connectionId:
-            providerID === 'openpencil-cloud' ? activeCloudConnectionProfile()?.id : undefined,
-          workspaceId:
-            providerID === 'openpencil-cloud'
-              ? (activeCloudConnectionProfile()?.selectedWorkspaceId ?? undefined)
-              : undefined,
+          ...(cloudIdentity ?? {}),
           name: document.name,
           updatedAt: document.updatedAt,
           syncStatus: 'synced',

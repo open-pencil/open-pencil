@@ -1,14 +1,29 @@
 export function storageCanvasId(input: {
+  providerId: 'openpencil-cloud'
+  documentId: string
+  connectionId: string
+}): string
+export function storageCanvasId(input: { providerId: string; documentId: string }): string
+export function storageCanvasId(input: {
   providerId: string
   documentId: string
   connectionId?: string
 }): string {
-  if (input.providerId !== 'openpencil-cloud' || !input.connectionId) return input.documentId
-  return `${input.providerId}:${input.connectionId}:${input.documentId}`
+  if (input.providerId === 'openpencil-cloud') {
+    if (!input.connectionId) throw new Error('Cloud connection ID is required')
+    return `${input.providerId}:${input.connectionId}:${input.documentId}`
+  }
+  return input.documentId
 }
 
-export function remoteDocumentId(canvasId: string, metadata?: { documentId?: string }): string {
-  return metadata?.documentId ?? canvasId
+export function remoteDocumentId(
+  canvasId: string,
+  metadata: { providerId: string; documentId?: string }
+): string {
+  if (metadata.providerId === 'openpencil-cloud' && !metadata.documentId) {
+    throw new Error('Cloud document metadata is missing its remote document ID')
+  }
+  return metadata.documentId ?? canvasId
 }
 
 /** Random UUID without Math.random (project convention). */

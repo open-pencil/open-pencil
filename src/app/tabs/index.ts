@@ -268,22 +268,39 @@ function findStorageTab(
 ): Tab | undefined {
   return tabsRef.value.find((tab) => {
     const binding = tab.store.getStorageBinding()
-    return (
-      binding?.providerId === providerId &&
-      binding.documentId === documentId &&
-      binding.connectionId === connectionId
-    )
+    if (binding?.providerId !== providerId || binding.documentId !== documentId) return false
+    return providerId === 'openpencil-cloud'
+      ? binding.connectionId === connectionId
+      : connectionId === undefined
   })
 }
 
 export async function openStorageDocumentInNewTab(document: StorageDocument): Promise<void> {
   const providerId = activeStorageProviderID.value
   const cloudProfile = providerId === 'openpencil-cloud' ? activeCloudConnectionProfile() : null
-  const canvasId = storageCanvasId({
-    providerId,
-    connectionId: cloudProfile?.id,
-    documentId: document.id
-  })
+  const cloudIdentity =
+    providerId === 'openpencil-cloud' && cloudProfile?.selectedWorkspaceId
+      ? {
+          providerId: 'openpencil-cloud' as const,
+          connectionId: cloudProfile.id,
+          workspaceId: cloudProfile.selectedWorkspaceId,
+          documentId: document.id
+        }
+      : null
+  if (providerId === 'openpencil-cloud' && !cloudIdentity) {
+    throw new Error('OpenPencil Cloud connection and workspace are required')
+  }
+  let canvasId: string
+  if (providerId === 'openpencil-cloud') {
+    if (!cloudIdentity) throw new Error('OpenPencil Cloud identity is required')
+    canvasId = storageCanvasId({
+      providerId,
+      connectionId: cloudIdentity.connectionId,
+      documentId: document.id
+    })
+  } else {
+    canvasId = storageCanvasId({ providerId, documentId: document.id })
+  }
   const existing = findStorageTab(providerId, document.id, cloudProfile?.id)
   if (existing) {
     switchTab(existing.id)
@@ -327,16 +344,7 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
     const imported = await readFigForTab(file, store)
     await showImportedGraph(store, imported, async () => {
       store.setStorageDocumentSource(
-        {
-          providerId,
-          documentId: document.id,
-          ...(cloudProfile
-            ? {
-                connectionId: cloudProfile.id,
-                workspaceId: cloudProfile.selectedWorkspaceId ?? undefined
-              }
-            : {})
-        },
+        cloudIdentity ?? { providerId, documentId: document.id },
         document.name
       )
       if (providerId === 'openpencil-cloud') {

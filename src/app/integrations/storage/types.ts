@@ -1,14 +1,22 @@
 import type { CredentialResolver } from '@/app/settings/credentials/types'
 
 export type StorageProviderID = string
-export type StorageFieldID = string
 
-export type StorageDocumentBinding = {
-  providerId: StorageProviderID
-  documentId: string
-  connectionId?: string
-  workspaceId?: string
-}
+export type StorageDocumentBinding =
+  | {
+      providerId: 'openpencil-cloud'
+      connectionId: string
+      workspaceId: string
+      documentId: string
+    }
+  | {
+      providerId: string
+      connectionId?: never
+      workspaceId?: never
+      documentId: string
+    }
+
+export type StorageFieldID = string
 
 export type StorageTransferProgress = {
   transferredBytes: number
