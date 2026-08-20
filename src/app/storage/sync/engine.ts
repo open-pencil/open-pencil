@@ -13,6 +13,7 @@ import {
 } from '@/app/integrations/storage'
 import { listCloudConnectionProfiles } from '@/app/integrations/storage/cloud/profiles'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
+import { remoteDocumentId } from '@/app/storage/id'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import type { LocalCanvasMeta } from '@/app/storage/local-store'
 import { getOutbox } from '@/app/storage/sync/outbox'
@@ -156,8 +157,10 @@ async function runJob(job: OutboxJob): Promise<void> {
   }
   const adapter = adapterForMeta(providerID, meta)
 
+  const remoteId = remoteDocumentId(job.canvasId, meta ?? undefined)
+
   if (job.type === 'deleteCanvas') {
-    await adapter.deleteDocument(job.canvasId)
+    await adapter.deleteDocument(remoteId)
     // Keep the tombstoned row: reconcile purges it once the remote listing
     // confirms the object is gone. Removing it here opened a race where a
     // concurrent reconcile re-seeded the canvas from a stale remote listing.
@@ -171,7 +174,7 @@ async function runJob(job: OutboxJob): Promise<void> {
   }
 
   if (job.type === 'putCanvas') {
-    await putCanvasJob(job, providerID, meta, adapter)
+    await putCanvasJob({ ...job, canvasId: remoteId }, providerID, meta, adapter)
     return
   }
 
@@ -179,7 +182,7 @@ async function runJob(job: OutboxJob): Promise<void> {
   if (!adapter.putThumbnail) return
   const thumb = await store.readThumb(job.canvasId)
   if (!thumb) return
-  await adapter.putThumbnail(job.canvasId, thumb)
+  await adapter.putThumbnail(remoteId, thumb)
 }
 
 async function pumpOnce(): Promise<void> {

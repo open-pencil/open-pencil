@@ -6,6 +6,8 @@ export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
 export type LocalCanvasMeta = {
   id: string
   providerId: StorageProviderID
+  /** Remote provider document ID; defaults to id for legacy/non-Cloud rows. */
+  documentId?: string
   connectionId?: string
   workspaceId?: string
   name: string
@@ -40,6 +42,7 @@ export type LocalCanvasIndexInput = Omit<
 export type LocalCanvasWriteInput = {
   id: string
   providerId: StorageProviderID
+  documentId?: string
   connectionId?: string
   workspaceId?: string
   name: string

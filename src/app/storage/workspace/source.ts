@@ -7,6 +7,7 @@ import {
   storageProviderRegistry
 } from '@/app/integrations/storage'
 import { activeCloudConnectionProfile } from '@/app/integrations/storage/cloud/profiles'
+import { storageCanvasId } from '@/app/storage/id'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
@@ -57,8 +58,15 @@ export function createStorageWorkspaceSource(
       const reconciliation = reconcileStorageDocuments(local, remote)
       for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
       for (const document of reconciliation.remoteDocumentsToSeed) {
+        const profile = providerID === 'openpencil-cloud' ? activeCloudConnectionProfile() : null
+        const canvasId = storageCanvasId({
+          providerId: providerID,
+          connectionId: profile?.id,
+          documentId: document.id
+        })
         await localStore.upsertIndexMeta({
-          id: document.id,
+          id: canvasId,
+          documentId: document.id,
           providerId: providerID,
           connectionId:
             providerID === 'openpencil-cloud' ? activeCloudConnectionProfile()?.id : undefined,

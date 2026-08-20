@@ -45,6 +45,7 @@ export function createDocumentWriter({
       if (state.accessMode === 'view') return false
       await persistStorageCanvasLocally({
         providerId: storage.providerId,
+        documentId: storage.documentId,
         connectionId: storage.connectionId,
         workspaceId: storage.workspaceId,
         canvasId: storage.documentId,

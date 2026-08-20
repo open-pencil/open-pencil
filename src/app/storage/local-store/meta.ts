@@ -14,12 +14,16 @@ export function sortAndFilterMetas(
 }
 
 function sourceMeta(
-  input: Pick<LocalCanvasWriteInput, 'id' | 'providerId' | 'connectionId' | 'workspaceId' | 'name'>,
+  input: Pick<
+    LocalCanvasWriteInput,
+    'id' | 'providerId' | 'documentId' | 'connectionId' | 'workspaceId' | 'name'
+  >,
   existing: LocalCanvasMeta | null
 ) {
   return {
     id: input.id,
     providerId: input.providerId,
+    documentId: input.documentId ?? existing?.documentId,
     connectionId: input.connectionId ?? existing?.connectionId,
     workspaceId: input.workspaceId ?? existing?.workspaceId,
     name: input.name

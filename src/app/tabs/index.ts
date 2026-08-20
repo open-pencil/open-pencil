@@ -27,6 +27,7 @@ import {
   loadCachedRecentFileThumbnail,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
+import { storageCanvasId } from '@/app/storage/id'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
@@ -278,6 +279,11 @@ function findStorageTab(
 export async function openStorageDocumentInNewTab(document: StorageDocument): Promise<void> {
   const providerId = activeStorageProviderID.value
   const cloudProfile = providerId === 'openpencil-cloud' ? activeCloudConnectionProfile() : null
+  const canvasId = storageCanvasId({
+    providerId,
+    connectionId: cloudProfile?.id,
+    documentId: document.id
+  })
   const existing = findStorageTab(providerId, document.id, cloudProfile?.id)
   if (existing) {
     switchTab(existing.id)
@@ -290,8 +296,8 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
   store.state.loading = true
   try {
     const local = getLocalCanvasStore()
-    const localMetadata = await local.getMeta(document.id)
-    const localBytes = localMetadata?.hasFig ? await local.readFig(document.id) : null
+    const localMetadata = await local.getMeta(canvasId)
+    const localBytes = localMetadata?.hasFig ? await local.readFig(canvasId) : null
     const localIsAuthoritative =
       localMetadata?.syncStatus !== 'synced' ||
       !document.metadataAuthoritative ||
@@ -304,7 +310,8 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
         providerId,
         connectionId: cloudProfile?.id,
         workspaceId: cloudProfile?.selectedWorkspaceId ?? undefined,
-        canvasId: document.id,
+        canvasId,
+        documentId: document.id,
         name: document.name,
         updatedAt: document.updatedAt,
         figBytes: bytes,

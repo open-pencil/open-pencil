@@ -1,3 +1,16 @@
+export function storageCanvasId(input: {
+  providerId: string
+  documentId: string
+  connectionId?: string
+}): string {
+  if (input.providerId !== 'openpencil-cloud' || !input.connectionId) return input.documentId
+  return `${input.providerId}:${input.connectionId}:${input.documentId}`
+}
+
+export function remoteDocumentId(canvasId: string, metadata?: { documentId?: string }): string {
+  return metadata?.documentId ?? canvasId
+}
+
 /** Random UUID without Math.random (project convention). */
 export function createCanvasId(): string {
   const bytes = new Uint8Array(16)
