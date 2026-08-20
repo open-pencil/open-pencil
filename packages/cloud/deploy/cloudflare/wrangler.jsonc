@@ -1,10 +1,11 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "openpencil-cloud",
+  "name": "openpencil-cloud-adapter-skeleton",
   "main": "worker.ts",
   "compatibility_date": "2026-08-14",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Skeleton only: add secrets and an R2-native ObjectStore adapter before production deployment.
   "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "replace-with-hyperdrive-id" }],
   "triggers": { "crons": ["0 * * * *"] }
 }

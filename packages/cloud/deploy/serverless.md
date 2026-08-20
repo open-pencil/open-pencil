@@ -24,9 +24,14 @@ bun --filter @open-pencil/cloud cleanup
 
 The cleanup command uses the same bounded, multi-worker-safe claims as the long-running Node worker.
 
-## Cloudflare Workers
+## Cloudflare Workers adapter skeleton
 
-Cloudflare Workers should use the portable app assembly with:
+The checked-in Worker assembly is an adapter skeleton, not a deploy-ready R2 reference profile. It
+currently supports Hyperdrive plus an S3-compatible object store configured through secret string
+bindings. It does not yet consume an `R2Bucket` binding or provide a Worker invitation-delivery
+binding.
+
+To develop it further, use the portable app assembly with:
 
 - A Hyperdrive connection string and the Worker-compatible `pg` driver through an injected Kysely dialect.
 - An injected S3-compatible object store, commonly Cloudflare R2's S3 endpoint.
@@ -34,4 +39,7 @@ Cloudflare Workers should use the portable app assembly with:
 - A Cron Trigger that invokes the cleanup services through `ctx.waitUntil()`.
 - Node/CI migration tooling using the origin PostgreSQL connection string.
 
-The Worker request path must not run migrations or start timers. A production Worker profile also requires deployment-specific secret bindings, Hyperdrive and R2 identifiers, so this repository provides the runtime boundary rather than committing account-specific Wrangler IDs.
+The Worker request path must not run migrations or start timers. A production Worker profile requires
+account-specific secret bindings, Hyperdrive identifiers, and either an R2-native `ObjectStore`
+adapter or S3 credentials. `deploy/cloudflare/wrangler.jsonc` intentionally contains placeholders and
+must not be presented or deployed as a complete reference environment.

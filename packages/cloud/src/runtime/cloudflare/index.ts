@@ -15,12 +15,33 @@ export type CloudflareHyperdrive = {
   connectionString: string
 }
 
-export type CloudflareCloudEnvironment = CloudEnvironment & {
+export type CloudflareCloudEnvironment = {
   HYPERDRIVE: CloudflareHyperdrive
+  OPENPENCIL_CLOUD_DEPLOYMENT?: string
+  OPENPENCIL_CLOUD_URL?: string
+  OPENPENCIL_CLOUD_APP_URL?: string
+  OPENPENCIL_CLOUD_TRUSTED_ORIGINS?: string
+  BETTER_AUTH_SECRET?: string
+  S3_ENDPOINT?: string
+  S3_REGION?: string
+  S3_BUCKET?: string
+  S3_ACCESS_KEY_ID?: string
+  S3_SECRET_ACCESS_KEY?: string
+  S3_FORCE_PATH_STYLE?: string
+  S3_CHECKSUM_VERIFICATION?: string
+  [key: string]: string | CloudflareHyperdrive | undefined
+}
+
+function stringEnvironment(environment: CloudflareCloudEnvironment): CloudEnvironment {
+  return Object.fromEntries(
+    Object.entries(environment).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string'
+    )
+  )
 }
 
 export function createCloudflareCloudRuntime(environment: CloudflareCloudEnvironment) {
-  const config = cloudServerConfigFromEnvironment(environment)
+  const config = cloudServerConfigFromEnvironment(stringEnvironment(environment))
   const database = createCloudDatabase({
     dialect: new PostgresDialect({
       pool: new Pool({ connectionString: environment.HYPERDRIVE.connectionString, max: 5 })
