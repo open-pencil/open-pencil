@@ -41,7 +41,8 @@ import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 const IS_DEV = import.meta.env.DEV
 
-const { isConfigured, ensureChat, resetChat, chatFailure, clearChatFailure } = useAIChat()
+const { isConfigured, ensureChat, resetChat, chatFailure, clearChatFailure, providerID, modelID } =
+  useAIChat()
 const { copy } = useClipboard()
 const { dialogs } = useI18n()
 const notifications = useNotificationMessages()
@@ -225,7 +226,10 @@ function handleStop() {
 }
 
 async function handleCopyDebug() {
-  await copyChatLog(messages.value, chatFailure.value)
+  await copyChatLog(messages.value, chatFailure.value, {
+    providerID: providerID.value,
+    modelID: modelID.value
+  })
   debugCopied.value = true
 }
 
