@@ -12,7 +12,7 @@ import {
 import {
   configuredSocialProviders,
   createCloudSessionResolver,
-  type CloudAuth,
+  type CloudAuthAdapter,
   type CloudSessionResolver
 } from '#cloud/server/auth'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
@@ -40,7 +40,7 @@ import type { Kysely } from 'kysely'
 export type CloudServices = {
   config: CloudServerConfig
   database: Kysely<CloudDatabase>
-  auth: CloudAuth
+  auth: CloudAuthAdapter
   objects: ObjectStore
   resolveSession?: CloudSessionResolver
   invitationDelivery?: InvitationDelivery

@@ -1,5 +1,3 @@
-import type { CloudAuth } from '#cloud/server/auth'
-import { getMigrations } from 'better-auth/db/migration'
 import type { Kysely } from 'kysely'
 import { Migrator, type Migration, type MigrationProvider } from 'kysely/migration'
 
@@ -38,7 +36,7 @@ class CloudMigrationProvider implements MigrationProvider {
 
 export async function migrateCloudDatabase(
   database: Kysely<CloudDatabase>,
-  auth?: CloudAuth
+  runAuthMigrations?: () => Promise<void>
 ): Promise<void> {
   const migrator = new Migrator({
     db: database,
@@ -54,8 +52,5 @@ export async function migrateCloudDatabase(
       'OpenPencil Cloud database migration failed'
     )
   }
-  if (auth) {
-    const authMigrations = await getMigrations(auth.options)
-    await authMigrations.runMigrations()
-  }
+  await runAuthMigrations?.()
 }

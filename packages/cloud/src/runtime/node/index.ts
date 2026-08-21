@@ -1,3 +1,4 @@
+export { createMigratedNodeCloudDatabase } from './bootstrap'
 export { createNodeCloudApplication, type NodeCloudApplicationOptions } from './application'
 export {
   createCloudCollaborationRelay,

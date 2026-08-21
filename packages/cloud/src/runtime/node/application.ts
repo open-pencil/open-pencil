@@ -4,7 +4,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cloudServerConfigFromEnvironment,
   createCloudApp,
-  createCloudAuth,
+  createBetterAuthAdapter,
   type CloudApp,
   type CloudEnvironment,
   type CloudServerConfig,
@@ -27,7 +27,7 @@ export function createNodeCloudApplication(options: NodeCloudApplicationOptions 
   const database = createNodeCloudDatabase({
     connectionString: options.databaseURL ?? config.databaseURL
   })
-  const auth = createCloudAuth(config, database)
+  const auth = createBetterAuthAdapter(config, database)
   const objects = createS3ObjectStore(config)
   const invitationDelivery =
     config.smtpHost && config.smtpPort && config.emailFrom

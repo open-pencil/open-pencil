@@ -1,8 +1,6 @@
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
-  cloudServerConfigFromEnvironment,
   createCloudApp,
-  createCloudAuth,
   createCollaborationStateStore,
   createDefaultCloudPolicy,
   DatabaseEntitlementSource,
@@ -11,14 +9,12 @@ import {
   staticEntitlementValues,
   createDocumentCleanupService,
   createUploadCleanupService,
-  migrateCloudDatabase,
   CLOUD_FEATURE_KEYS,
   startCleanupWorker
 } from '#cloud/server'
 
+import { createMigratedNodeCloudDatabase } from './bootstrap'
 import { createCloudCollaborationRelay } from './collaboration'
-import { loadNodeCloudServerConfig } from './config'
-import { createNodeCloudDatabase } from './database'
 
 export type NodeCloudServerOptions = {
   environment?: Readonly<Record<string, string | undefined>>
@@ -27,11 +23,7 @@ export type NodeCloudServerOptions = {
 
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
-  const config =
-    (await loadNodeCloudServerConfig(environment)) ?? cloudServerConfigFromEnvironment(environment)
-  const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
-  const auth = createCloudAuth(config, database)
-  await migrateCloudDatabase(database, auth)
+  const { config, database, auth } = await createMigratedNodeCloudDatabase(environment)
   const objects = createS3ObjectStore(config)
   const cleanup = config.cleanupEnabled
     ? startCleanupWorker(

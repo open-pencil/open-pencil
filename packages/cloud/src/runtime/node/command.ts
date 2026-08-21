@@ -1,21 +1,11 @@
-import {
-  cloudServerConfigFromEnvironment,
-  createCloudAuth,
-  migrateCloudDatabase
-} from '#cloud/server'
-
-import { loadNodeCloudServerConfig } from './config'
-import { createNodeCloudDatabase } from './database'
+import { createMigratedNodeCloudDatabase } from './bootstrap'
 
 export async function withNodeCloudDatabase<T>(
-  operation: (database: ReturnType<typeof createNodeCloudDatabase>) => Promise<T>
+  operation: (
+    database: Awaited<ReturnType<typeof createMigratedNodeCloudDatabase>>['database']
+  ) => Promise<T>
 ): Promise<T> {
-  const environment = process.env
-  const config =
-    (await loadNodeCloudServerConfig(environment)) ?? cloudServerConfigFromEnvironment(environment)
-  const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
-  const auth = createCloudAuth(config, database)
-  await migrateCloudDatabase(database, auth)
+  const { database } = await createMigratedNodeCloudDatabase(process.env)
   try {
     return await operation(database)
   } finally {

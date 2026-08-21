@@ -1,9 +1,9 @@
 export {
   configuredSocialProviders,
-  createCloudAuth,
+  createBetterAuthAdapter,
   createCloudSessionResolver,
   type CloudActor,
-  type CloudAuth,
+  type CloudAuthAdapter,
   type CloudSessionResolver,
   workspaceAccessControl,
   workspaceRoles,

@@ -2,7 +2,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cloudServerConfigFromEnvironment,
   createCloudApp,
-  createCloudAuth,
+  createBetterAuthAdapter,
   createCloudDatabase,
   createDocumentCleanupService,
   createUploadCleanupService,
@@ -48,7 +48,7 @@ export function createCloudflareCloudRuntime(environment: CloudflareCloudEnviron
     })
   })
   const objects = createS3ObjectStore(config)
-  const auth = createCloudAuth(config, database)
+  const auth = createBetterAuthAdapter(config, database)
   return {
     app: createCloudApp({ config, database, auth, objects }),
     database,
