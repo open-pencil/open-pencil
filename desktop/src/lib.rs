@@ -4,10 +4,14 @@ mod fonts;
 mod http;
 mod menu;
 mod menu_events;
+#[cfg(feature = "native-test")]
+mod native_test;
 mod opener;
 #[cfg(target_os = "macos")]
 mod window;
 
+#[cfg(feature = "native-test")]
+use credentials::NativeTestCredentials;
 use credentials::{
     credential_read, credential_remove, credential_status, credential_store_availability,
     credential_write,
@@ -17,7 +21,12 @@ use fonts::{list_system_fonts, load_system_font};
 use http::proxy_http_request;
 use menu::{install_app_menu, native_menu_checked, set_native_menu_checked};
 use menu_events::handle_menu_event;
+#[cfg(feature = "native-test")]
+use native_test::{
+    native_test_credential_read, native_test_credential_remove, native_test_credential_write,
+};
 use opener::open_external_url;
+
 #[cfg(feature = "native-test")]
 use opener::{take_native_test_opened_urls, OpenedExternalUrls};
 use std::{
@@ -129,6 +138,9 @@ pub fn run() {
     #[cfg(feature = "native-test")]
     {
         builder = builder
+            .manage(NativeTestCredentials(Mutex::new(
+                std::collections::HashMap::new(),
+            )))
             .manage(OpenedExternalUrls(Mutex::new(Vec::new())))
             .plugin(tauri_plugin_wdio_webdriver::init());
     }
@@ -158,6 +170,12 @@ pub fn run() {
             load_system_font,
             proxy_http_request,
             set_recent_files,
+            #[cfg(feature = "native-test")]
+            native_test_credential_read,
+            #[cfg(feature = "native-test")]
+            native_test_credential_remove,
+            #[cfg(feature = "native-test")]
+            native_test_credential_write,
             native_menu_checked,
             set_native_menu_checked,
             take_pending_open,
