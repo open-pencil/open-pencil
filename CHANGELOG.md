@@ -63,6 +63,7 @@
 
 ### Fixed
 
+- Run `openpencil import` on Node so the npm-installed CLI no longer fails with `Bun is not defined`. (#575)
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
 
 - Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.
