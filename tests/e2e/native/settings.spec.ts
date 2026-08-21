@@ -33,24 +33,28 @@ describe('native preferences', () => {
       async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
       { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
     )
-    const initial = await browser.execute(async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
-      return invoke<boolean>('native_menu_checked', { id: 'snap-objects' })
-    })
+    const initial = await browser.tauri.execute(({ core }) =>
+      core.invoke('native_menu_checked', { id: 'snap-objects' })
+    )
     assert.equal(initial, true)
 
-    await browser.executeAsync((done) => {
-      const toggle = document.querySelector<HTMLElement>('[data-test-id="app-settings-trigger"]')
-      toggle?.click()
-      requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>('[data-test-id="settings-snap-objects"]')?.click()
-        setTimeout(done, 200)
-      })
-    })
-    const updated = await browser.execute(async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
-      return invoke<boolean>('native_menu_checked', { id: 'snap-objects' })
-    })
+    if (!(await settingsOpen())) {
+      await browser.keys([process.platform === 'darwin' ? 'Meta' : 'Control', ','])
+      await browser.waitUntil(settingsOpen)
+    }
+    const snapping = $('[data-test-id="settings-snap-objects"]')
+    await snapping.waitForExist()
+    await snapping.click()
+    await browser.waitUntil(
+      async () =>
+        (await browser.tauri.execute(({ core }) =>
+          core.invoke('native_menu_checked', { id: 'snap-objects' })
+        )) === false,
+      { timeoutMsg: 'Native snapping checkmark did not update' }
+    )
+    const updated = await browser.tauri.execute(({ core }) =>
+      core.invoke('native_menu_checked', { id: 'snap-objects' })
+    )
     assert.equal(updated, false)
   })
 })
