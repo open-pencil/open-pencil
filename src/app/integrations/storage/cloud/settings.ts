@@ -7,6 +7,7 @@ import { IS_TAURI } from '@open-pencil/core/constants'
 
 import { appCredentialServices } from '@/app/settings/credentials/app'
 import { credentialRef } from '@/app/settings/credentials/reference'
+import { openExternalURL } from '@/app/tauri/opener'
 
 import { readStoragePreferences, writeStoragePreference } from '../preferences'
 import { normalizeCloudServerURL, type CloudConnectionSnapshot } from './connection'
@@ -105,7 +106,6 @@ function createCloudStorageSettings() {
     cancelDeviceAuth(profile.id)
     const controller = new AbortController()
     deviceAuthControllers.set(profile.id, controller)
-    const { openUrl } = await import('@tauri-apps/plugin-opener')
     const { pollCloudDeviceToken, requestCloudDeviceAuthorization } =
       await import('@open-pencil/cloud/client')
     try {
@@ -116,7 +116,7 @@ function createCloudStorageSettings() {
         verificationURL: authorization.verification_uri_complete,
         expiresAt: Date.now() + authorization.expires_in * 1000
       })
-      await openUrl(authorization.verification_uri_complete)
+      await openExternalURL(authorization.verification_uri_complete)
       const token = await pollCloudDeviceToken(discovery, profile.id, authorization, {
         signal: controller.signal
       })

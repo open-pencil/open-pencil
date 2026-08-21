@@ -4,6 +4,7 @@ mod fonts;
 mod http;
 mod menu;
 mod menu_events;
+mod opener;
 #[cfg(target_os = "macos")]
 mod window;
 
@@ -16,6 +17,9 @@ use fonts::{list_system_fonts, load_system_font};
 use http::proxy_http_request;
 use menu::{install_app_menu, native_menu_checked, set_native_menu_checked};
 use menu_events::handle_menu_event;
+use opener::open_external_url;
+#[cfg(feature = "native-test")]
+use opener::{take_native_test_opened_urls, OpenedExternalUrls};
 use std::{
     path::{Path, PathBuf},
     sync::Mutex,
@@ -124,7 +128,9 @@ pub fn run() {
 
     #[cfg(feature = "native-test")]
     {
-        builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+        builder = builder
+            .manage(OpenedExternalUrls(Mutex::new(Vec::new())))
+            .plugin(tauri_plugin_wdio_webdriver::init());
     }
 
     #[cfg(all(
@@ -147,13 +153,16 @@ pub fn run() {
             credential_store_availability,
             credential_write,
             mcp_executable_available,
+            open_external_url,
             list_system_fonts,
             load_system_font,
             proxy_http_request,
             set_recent_files,
             native_menu_checked,
             set_native_menu_checked,
-            take_pending_open
+            take_pending_open,
+            #[cfg(feature = "native-test")]
+            take_native_test_opened_urls
         ])
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
