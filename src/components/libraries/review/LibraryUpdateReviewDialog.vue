@@ -16,7 +16,7 @@ import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui
 
 const editor = useEditorStore()
 const service = useLibraryService()
-const { panels, dialogs } = useI18n()
+const { panels, common } = useI18n()
 const preview = shallowRef<LibraryUpdatePreview | null>(null)
 const instanceIndex = ref(0)
 const mode = ref<'side-by-side' | 'overlay'>('side-by-side')
@@ -163,7 +163,7 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
     <AppDialogHeader
       :heading="panels.reviewLibraryUpdate"
       :description="panels.reviewLibraryUpdateDescription"
-      :close-label="dialogs.close"
+      :close-label="common.close"
     />
     <div
       v-if="request"

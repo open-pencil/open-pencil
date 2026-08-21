@@ -19,7 +19,7 @@ const { message, streaming = false } = defineProps<{
   message: UIMessage
   streaming?: boolean
 }>()
-const { dialogs } = useI18n()
+const { ai } = useI18n()
 const isDark = computed(() => resolvedAppTheme.value === 'dark')
 const markdownMode = computed(() => (streaming ? 'streaming' : 'static'))
 const imageAttachments = imageAttachmentsForMessage(message.id)
@@ -92,10 +92,10 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
                 <span class="text-[10px] text-muted">
                   {{
                     toolState(part) === 'pending'
-                      ? dialogs.toolRunning
+                      ? ai.toolRunning
                       : toolState(part) === 'done'
-                        ? dialogs.toolFinished
-                        : dialogs.toolError
+                        ? ai.toolFinished
+                        : ai.toolError
                   }}
                 </span>
                 <icon-lucide-chevron-down

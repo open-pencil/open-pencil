@@ -1,0 +1,13 @@
+{
+  "rename": "Переименовать",
+  "renameLayers": "Переименовать слои: {count}",
+  "renamePreview": "Предпросмотр",
+  "renameMatch": "Совпадение",
+  "renameTo": "Новое имя",
+  "renameCurrentName": "Текущее имя",
+  "renameNumberAscending": "Номер ↑",
+  "renameNumberDescending": "Номер ↓",
+  "renameStartAscendingFrom": "Начать по возрастанию с",
+  "renameStopDescendingAt": "Закончить по убыванию на",
+  "renameInvalidPattern": "Недопустимое регулярное выражение"
+}

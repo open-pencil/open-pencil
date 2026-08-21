@@ -32,7 +32,7 @@ export function useShellMenu() {
   })
 
   const { setTheme } = useAppTheme()
-  const { dialogs } = useI18n()
+  const { updates } = useI18n()
   const actions: Partial<Record<string, () => void>> = {
     'open-storage-workspace': () => {
       void import('@/router').then(({ default: router }) => openStorageWorkspace(router))
@@ -53,7 +53,7 @@ export function useShellMenu() {
     'theme-light': () => setTheme('light'),
     'theme-dark': () => setTheme('dark'),
     'theme-auto': () => setTheme('auto'),
-    'check-updates': () => void checkForAppUpdate({ messages: dialogs })
+    'check-updates': () => void checkForAppUpdate({ messages: updates })
   }
 
   useNativeMenuEvents((id) => actions[id]?.())

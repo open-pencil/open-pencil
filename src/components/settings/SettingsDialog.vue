@@ -17,7 +17,7 @@ import VectorizeSettingsSection from '@/components/settings/vectorize/VectorizeS
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
-const { dialogs } = useI18n()
+const { credentials, settings, common } = useI18n()
 const { browserCredentialsRemembered, setRememberCredentials } = useAIChat()
 function onOpenChange(open: boolean): void {
   settingsDialogOpen.value = open
@@ -33,11 +33,11 @@ const rememberCredentials = computed({
 const credentialBackendLabel = computed(() => {
   void browserCredentialsRemembered.value
   if (appCredentialServices.manager.backend === 'native')
-    return dialogs.value.credentialBackendNative
+    return credentials.value.credentialBackendNative
   if (appCredentialServices.manager.backend === 'browser') {
-    return dialogs.value.credentialBackendBrowser
+    return credentials.value.credentialBackendBrowser
   }
-  return dialogs.value.credentialBackendMemory
+  return credentials.value.credentialBackendMemory
 })
 
 const navigationClass =
@@ -53,13 +53,13 @@ const navigationClass =
     @update:open="onOpenChange"
   >
     <AppDialogHeader
-      :heading="dialogs.settings"
-      :description="dialogs.settingsDescription"
-      :close-label="dialogs.close"
+      :heading="settings.settings"
+      :description="settings.settingsDescription"
+      :close-label="common.close"
     />
 
     <div class="flex min-h-0 flex-1">
-      <nav class="w-40 shrink-0 border-r border-border p-2" :aria-label="dialogs.settings">
+      <nav class="w-40 shrink-0 border-r border-border p-2" :aria-label="settings.settings">
         <button
           type="button"
           :class="navigationClass"
@@ -68,7 +68,7 @@ const navigationClass =
           @click="settingsDialogSection = 'general'"
         >
           <icon-lucide-settings class="size-3.5" />
-          {{ dialogs.settingsGeneral }}
+          {{ settings.settingsGeneral }}
         </button>
         <button
           type="button"
@@ -78,7 +78,7 @@ const navigationClass =
           @click="settingsDialogSection = 'ai'"
         >
           <icon-lucide-sparkles class="size-3.5" />
-          {{ dialogs.settingsAIAndAgents }}
+          {{ settings.settingsAIAndAgents }}
         </button>
         <button
           type="button"
@@ -88,7 +88,7 @@ const navigationClass =
           @click="settingsDialogSection = 'mcp'"
         >
           <icon-lucide-plug class="size-3.5" />
-          {{ dialogs.settingsMCP }}
+          {{ settings.settingsMCP }}
         </button>
         <button
           type="button"
@@ -98,7 +98,7 @@ const navigationClass =
           @click="settingsDialogSection = 'media'"
         >
           <icon-lucide-image class="size-3.5" />
-          {{ dialogs.settingsMedia }}
+          {{ settings.settingsMedia }}
         </button>
         <button
           type="button"
@@ -108,7 +108,7 @@ const navigationClass =
           @click="settingsDialogSection = 'storage'"
         >
           <icon-lucide-cloud class="size-3.5" />
-          {{ dialogs.settingsStorage }}
+          {{ settings.settingsStorage }}
         </button>
       </nav>
 
@@ -137,7 +137,7 @@ const navigationClass =
           class="flex flex-col gap-2.5"
           data-test-id="settings-media-panel"
         >
-          <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsMedia }}</h3>
+          <h3 class="text-xs font-semibold text-surface">{{ settings.settingsMedia }}</h3>
           <StockPhotoKeysSection />
           <VectorizeSettingsSection />
         </section>
@@ -151,15 +151,15 @@ const navigationClass =
         <AppSwitch
           v-if="!IS_TAURI"
           v-model="rememberCredentials"
-          :label="dialogs.rememberCredentials"
+          :label="credentials.rememberCredentials"
           data-test-id="settings-remember-credentials"
         />
         <div>
           <p v-if="!IS_TAURI" class="text-[10px] text-surface">
-            {{ dialogs.rememberCredentials }}
+            {{ credentials.rememberCredentials }}
           </p>
           <p class="text-[10px] text-muted" data-test-id="settings-credential-backend">
-            {{ dialogs.credentialStorage({ backend: credentialBackendLabel }) }}
+            {{ credentials.credentialStorage({ backend: credentialBackendLabel }) }}
           </p>
         </div>
       </div>
@@ -169,7 +169,7 @@ const navigationClass =
           class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
           data-test-id="app-settings-done"
         >
-          {{ dialogs.done }}
+          {{ common.done }}
         </button>
       </DialogClose>
     </AppDialogFooter>

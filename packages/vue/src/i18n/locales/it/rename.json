@@ -1,0 +1,13 @@
+{
+  "rename": "Rinomina",
+  "renameLayers": "Rinomina {count} livelli",
+  "renamePreview": "Anteprima",
+  "renameMatch": "Corrispondenza",
+  "renameTo": "Rinomina in",
+  "renameCurrentName": "Nome attuale",
+  "renameNumberAscending": "Numero ↑",
+  "renameNumberDescending": "Numero ↓",
+  "renameStartAscendingFrom": "Inizia ordine crescente da",
+  "renameStopDescendingAt": "Termina ordine decrescente a",
+  "renameInvalidPattern": "Espressione regolare non valida"
+}

@@ -11,7 +11,7 @@ import {
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 
-const { dialogs } = useI18n()
+const { media, ai, credentials } = useI18n()
 const keyDraft = ref('')
 const keyStatus = ref<'configured' | 'missing' | 'unavailable' | 'locked'>('missing')
 const provider = computed(() =>
@@ -52,15 +52,15 @@ onMounted(() => void refreshStatus())
 <template>
   <section class="flex flex-col gap-2.5 border-t border-border pt-3" data-vectorize-settings>
     <div>
-      <h3 class="text-xs font-semibold text-surface">{{ dialogs.vectorization }}</h3>
-      <p class="mt-0.5 text-[10px] text-muted">{{ dialogs.vectorizationDescription }}</p>
+      <h3 class="text-xs font-semibold text-surface">{{ media.vectorization }}</h3>
+      <p class="mt-0.5 text-[10px] text-muted">{{ media.vectorizationDescription }}</p>
     </div>
 
     <label class="flex flex-col gap-1 text-[10px] text-muted">
-      {{ dialogs.vectorizeProvider }}
+      {{ media.vectorizeProvider }}
       <AppSelect
         v-model="vectorizeProviderID"
-        :label="dialogs.vectorizeProvider"
+        :label="media.vectorizeProvider"
         :options="providerOptions"
       />
     </label>
@@ -68,12 +68,14 @@ onMounted(() => void refreshStatus())
     <ProviderSettingsKeyField
       v-if="provider"
       v-model="keyDraft"
-      :label="dialogs.apiKey"
+      :label="ai.apiKey"
       :saved="keyStatus === 'configured'"
       kind="api"
-      :placeholder="keyStatus === 'configured' ? dialogs.keySavedReplace : provider.keyPlaceholder"
+      :placeholder="
+        keyStatus === 'configured' ? credentials.keySavedReplace : provider.keyPlaceholder
+      "
       :key-u-r-l="provider.keyURL"
-      :key-u-r-l-label="dialogs.getAPIKeyGeneric"
+      :key-u-r-l-label="credentials.getAPIKeyGeneric"
       @change="saveCredential"
       @clear="clearCredential"
     />

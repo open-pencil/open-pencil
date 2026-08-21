@@ -16,7 +16,7 @@ import {
 import { AppAlertDialogRoot } from '@/components/ui/dialog'
 
 const open = computed(() => currentPermission.value !== null)
-const { dialogs } = useI18n()
+const { ai } = useI18n()
 interface ToolCallInfo {
   title?: string
   rawInput?: unknown
@@ -26,7 +26,7 @@ const toolCall = computed(
   (): ToolCallInfo => (currentPermission.value?.request.toolCall as ToolCallInfo) ?? {}
 )
 
-const toolName = computed(() => toolCall.value.title ?? dialogs.value.unknownTool)
+const toolName = computed(() => toolCall.value.title ?? ai.value.unknownTool)
 
 const toolInput = computed(() => {
   const raw = toolCall.value.rawInput
@@ -60,11 +60,11 @@ function handleDismiss() {
     @escape-key-down="handleDismiss"
   >
     <AlertDialogTitle class="text-sm font-semibold text-surface">
-      {{ dialogs.permissionRequestTitle }}
+      {{ ai.permissionRequestTitle }}
     </AlertDialogTitle>
 
     <AlertDialogDescription class="mt-2 text-xs text-muted">
-      {{ dialogs.permissionRequest({ tool: toolName }) }}
+      {{ ai.permissionRequest({ tool: toolName }) }}
     </AlertDialogDescription>
 
     <pre

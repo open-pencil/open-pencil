@@ -1,0 +1,20 @@
+{
+  "settings": "Ajustes",
+  "settingsDescription": "Gestiona integraciones y preferencias de la aplicación.",
+  "settingsGeneral": "General",
+  "settingsEditing": "Edición",
+  "settingsSnappingDescription": "Controla la alineación al editar trazados y al mover o redimensionar capas.",
+  "snapToGeometry": "Ajustar a la geometría",
+  "snapToGeometryDescription": "Alinea los puntos vectoriales arrastrados con otros puntos del trazado.",
+  "snapToObjects": "Ajustar a objetos",
+  "snapToObjectsDescription": "Alinea puntos vectoriales y límites de capas con los bordes y centros de las capas cercanas.",
+  "snapToPixelGrid": "Ajustar a la cuadrícula de píxeles",
+  "snapToPixelGridDescription": "Alinea puntos vectoriales, capas movidas y bordes redimensionados con píxeles enteros.",
+  "snapTemporaryDisableHint": "Mantén pulsada la tecla Control mientras arrastras para desactivar temporalmente el ajuste.",
+  "settingsAIAndAgents": "IA y agentes",
+  "settingsMedia": "Multimedia",
+  "settingsMCP": "MCP & automation",
+  "settingsStorage": "Almacenamiento en la nube",
+  "mobilePanelNavigation": "Navegación del panel móvil",
+  "notifications": "Notificaciones"
+}

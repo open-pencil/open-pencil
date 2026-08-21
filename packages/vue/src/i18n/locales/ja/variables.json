@@ -1,0 +1,13 @@
+{
+  "createCollection": "コレクションを作成",
+  "renameCollection": "コレクションの名前を変更",
+  "deleteCollection": "コレクションを削除",
+  "localVariables": "ローカル変数",
+  "noVariableCollections": "変数コレクションがありません",
+  "modes": "モード",
+  "addMode": "モードを追加",
+  "renameMode": "モードの名前を変更",
+  "duplicateMode": "モードを複製",
+  "deleteMode": "モードを削除",
+  "setDefaultMode": "デフォルトに設定"
+}

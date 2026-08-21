@@ -33,7 +33,7 @@ function peerAvatarClass(following: boolean) {
         :class="styles.presenceContent()"
       >
         <div class="mb-2 text-[11px] tracking-wider text-muted uppercase">
-          {{ hud.dialogs.inThisRoom }}
+          {{ hud.messages.inThisRoom }}
         </div>
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-2">
@@ -46,7 +46,7 @@ function peerAvatarClass(following: boolean) {
             <span class="min-w-0 flex-1 truncate text-xs text-surface">
               {{ hud.collabState.localName || 'You' }}
             </span>
-            <span class="text-[10px] text-muted">{{ hud.dialogs.youSuffix }}</span>
+            <span class="text-[10px] text-muted">{{ hud.common.youSuffix }}</span>
           </div>
 
           <div
@@ -70,7 +70,7 @@ function peerAvatarClass(following: boolean) {
         </div>
 
         <button :class="styles.disconnect()" @click="hud.disconnect">
-          {{ hud.dialogs.disconnect }}
+          {{ hud.common.disconnect }}
         </button>
       </PopoverContent>
     </PopoverPortal>

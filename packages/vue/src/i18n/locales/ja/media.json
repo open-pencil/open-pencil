@@ -1,0 +1,11 @@
+{
+  "vectorization": "画像のベクター化",
+  "vectorizationDescription": "画像レイヤーを Recraft または fal.ai に送信し、編集可能なベクターを返します。プロバイダー料金が発生する場合があります。",
+  "vectorizeProvider": "ベクター化サービス",
+  "pexelsAPIKey": "PexelsのAPIキー (ストックフォト)",
+  "unsplashAccessKey": "Unsplashのアクセスキー",
+  "stockPhotoToolOptional": "任意 — stock_photoツール用",
+  "pexelsAlternativeOptional": "任意 — Pexelsの代替案",
+  "getPexelsAPIKey": "Pexelsの無料APIキーを取得 →",
+  "getUnsplashAccessKey": "Unsplashの無料アクセスキーを取得 →"
+}

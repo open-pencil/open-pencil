@@ -1,0 +1,20 @@
+{
+  "settings": "設定",
+  "settingsDescription": "連携サービスとアプリの設定を管理します。",
+  "settingsGeneral": "一般",
+  "settingsEditing": "編集",
+  "settingsSnappingDescription": "パス編集、レイヤーの移動、サイズ変更時の整列方法を設定します。",
+  "snapToGeometry": "ジオメトリにスナップ",
+  "snapToGeometryDescription": "ドラッグしたベクターポイントをパス内の他のポイントに揃えます。",
+  "snapToObjects": "オブジェクトにスナップ",
+  "snapToObjectsDescription": "ベクターポイントとレイヤー境界を近くのレイヤーの端や中心に揃えます。",
+  "snapToPixelGrid": "ピクセルグリッドにスナップ",
+  "snapToPixelGridDescription": "ベクターポイント、移動したレイヤー、サイズ変更した端を整数ピクセルに揃えます。",
+  "snapTemporaryDisableHint": "ドラッグ中にControlキーを押すと、スナップを一時的に無効にできます。",
+  "settingsAIAndAgents": "AIとエージェント",
+  "settingsMedia": "メディア",
+  "settingsMCP": "MCP & automation",
+  "settingsStorage": "クラウドストレージ",
+  "mobilePanelNavigation": "モバイルパネルのナビゲーション",
+  "notifications": "通知"
+}

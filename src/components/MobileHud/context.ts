@@ -26,7 +26,7 @@ function createMobileHudContext() {
   const collab = useCollabInjected()
   const store = useEditorStore()
   const { copy } = useClipboard()
-  const { dialogs } = useI18n()
+  const { common, collaboration } = useI18n()
   const notifications = useNotificationMessages()
   const { getCommand } = useEditorCommands()
 
@@ -77,7 +77,8 @@ function createMobileHudContext() {
 
   return {
     store,
-    dialogs,
+    common,
+    messages: collaboration,
     collabState,
     collabPeers,
     followingPeer,

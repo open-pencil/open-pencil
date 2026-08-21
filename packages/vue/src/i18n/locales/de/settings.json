@@ -1,0 +1,20 @@
+{
+  "settings": "Einstellungen",
+  "settingsDescription": "Integrationen und App-Einstellungen verwalten.",
+  "settingsGeneral": "Allgemein",
+  "settingsEditing": "Bearbeitung",
+  "settingsSnappingDescription": "Lege die Ausrichtung beim Bearbeiten von Pfaden sowie beim Verschieben und Skalieren von Ebenen fest.",
+  "snapToGeometry": "An Geometrie ausrichten",
+  "snapToGeometryDescription": "Gezogene Vektorpunkte an anderen Punkten im Pfad ausrichten.",
+  "snapToObjects": "An Objekten ausrichten",
+  "snapToObjectsDescription": "Vektorpunkte und Ebenengrenzen an Kanten und Mittelpunkten benachbarter Ebenen ausrichten.",
+  "snapToPixelGrid": "Am Pixelraster ausrichten",
+  "snapToPixelGridDescription": "Vektorpunkte, verschobene Ebenen und skalierte Kanten an ganzen Pixeln ausrichten.",
+  "snapTemporaryDisableHint": "Halte beim Ziehen die Strg-Taste gedrückt, um das Ausrichten vorübergehend zu deaktivieren.",
+  "settingsAIAndAgents": "KI und Agenten",
+  "settingsMedia": "Medien",
+  "settingsMCP": "MCP & automation",
+  "settingsStorage": "Cloud-Speicher",
+  "mobilePanelNavigation": "Navigation der mobilen Seitenleiste",
+  "notifications": "Benachrichtigungen"
+}

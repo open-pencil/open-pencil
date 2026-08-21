@@ -1,0 +1,19 @@
+{
+  "storageWorkspace": "Рабочая область хранилища",
+  "openStorageWorkspace": "Открыть область",
+  "newStoredDocument": "Новый документ",
+  "emptyStorageWorkspace": "Сохранённых документов пока нет.",
+  "loadingDocuments": "Загрузка документов…",
+  "storageNotConfigured": "Настройте хранилище перед использованием этой области.",
+  "storageProviderS3": "Хранилище S3",
+  "storageProviderR2": "Cloudflare R2",
+  "storageProviderAmazonS3": "Amazon S3",
+  "storageProviderBackblaze": "Backblaze B2",
+  "loadingStorageWorkspace": "Загрузка рабочей области хранилища…",
+  "copyStorageCors": "Скопировать JSON CORS",
+  "storageEndpoint": "Конечная точка",
+  "storageBucket": "Бакет",
+  "storageRegion": "Регион",
+  "storageAccessKeyID": "Идентификатор ключа доступа",
+  "storageSecretAccessKey": "Секретный ключ доступа"
+}

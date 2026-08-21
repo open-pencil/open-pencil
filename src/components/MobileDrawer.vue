@@ -25,7 +25,7 @@ type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'
 
 const store = useEditorStore()
-const { dialogs } = useI18n()
+const { settings } = useI18n()
 
 const headerRef = ref<HTMLElement | null>(null)
 
@@ -123,7 +123,7 @@ const drawerTransition = {
     <TabsRoot :model-value="getDrawerTab()" class="flex min-h-0 flex-1 flex-col">
       <nav
         ref="headerRef"
-        :aria-label="dialogs.mobilePanelNavigation"
+        :aria-label="settings.mobilePanelNavigation"
         class="flex shrink-0 flex-col"
       >
         <div class="flex w-full justify-center pt-2">

@@ -17,7 +17,7 @@ import type { AIModelProfileId } from '@/app/ai/models'
 import AppBadge from '@/components/ui/AppBadge.vue'
 import { useSelectUI } from '@/components/ui/select'
 
-const { dialogs } = useI18n()
+const { ai } = useI18n()
 
 // Only profiles that can drive the design agent — setModelRoleAssignment rejects the rest.
 const profiles = computed(designModelProfiles)
@@ -39,7 +39,7 @@ const selectCls = useSelectUI({
   <SelectRoot v-model="selectedProfileId">
     <SelectTrigger
       data-test-id="chat-profile-selector"
-      :aria-label="dialogs.selectDesignModel"
+      :aria-label="ai.selectDesignModel"
       :class="selectCls.trigger"
     >
       <icon-lucide-bot class="size-3" />
@@ -57,7 +57,7 @@ const selectCls = useSelectUI({
           >
             <SelectItemText class="min-w-0 flex-1 truncate">{{ profile.name }}</SelectItemText>
             <AppBadge v-if="profile.capabilities.includes('vision')">
-              {{ dialogs.modelCapabilityVisionShort }}
+              {{ ai.modelCapabilityVisionShort }}
             </AppBadge>
           </SelectItem>
         </SelectViewport>

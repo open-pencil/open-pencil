@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 
 const store = useEditorStore()
-const { dialogs } = useI18n()
+const { rename, common } = useI18n()
 const match = ref('')
 const replacement = ref('')
 const startNumber = ref(1)
@@ -31,7 +31,7 @@ const hasAscendingNumber = computed(() => /\$n+/.test(replacement.value))
 const hasDescendingNumber = computed(() => /\$N+/.test(replacement.value))
 const showStartNumber = computed(() => hasAscendingNumber.value || hasDescendingNumber.value)
 const title = computed(() =>
-  dialogs.value.renameLayers({ count: String(selectedNodes.value.length) })
+  rename.value.renameLayers({ count: String(selectedNodes.value.length) })
 )
 
 watch(
@@ -64,12 +64,12 @@ function submit() {
 
 <template>
   <AppDialogRoot v-model:open="store.state.renameSelectionOpen" size="sm">
-    <AppDialogHeader :heading="title" :close-label="dialogs.close" />
+    <AppDialogHeader :heading="title" :close-label="common.close" />
     <AppDialogBody>
       <div class="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4">
         <div class="min-w-0">
-          <div class="mb-1.5 text-xs text-muted">{{ dialogs.renamePreview }}</div>
-          <ul :aria-label="dialogs.renamePreview" class="max-h-36 space-y-1 overflow-auto text-xs">
+          <div class="mb-1.5 text-xs text-muted">{{ rename.renamePreview }}</div>
+          <ul :aria-label="rename.renamePreview" class="max-h-36 space-y-1 overflow-auto text-xs">
             <li v-for="node in selectedNodes" :key="node.id" class="truncate text-surface">
               {{ hasRenameInput ? (preview.names.get(node.id) ?? node.name) : node.name }}
             </li>
@@ -77,7 +77,7 @@ function submit() {
         </div>
         <div class="flex min-w-0 flex-col gap-2">
           <label class="flex flex-col gap-1 text-xs text-muted">
-            {{ dialogs.renameMatch }}
+            {{ rename.renameMatch }}
             <input
               ref="match-input"
               v-model="match"
@@ -86,7 +86,7 @@ function submit() {
             />
           </label>
           <label class="flex flex-col gap-1 text-xs text-muted">
-            {{ dialogs.renameTo }}
+            {{ rename.renameTo }}
             <input
               ref="replacement-input"
               v-model="replacement"
@@ -100,29 +100,29 @@ function submit() {
               class="cursor-pointer rounded border border-border px-1.5 py-1 text-[11px] text-surface hover:bg-hover"
               @click="insertToken('$&')"
             >
-              {{ dialogs.renameCurrentName }}
+              {{ rename.renameCurrentName }}
             </button>
             <button
               type="button"
               class="cursor-pointer rounded border border-border px-1.5 py-1 text-[11px] text-surface hover:bg-hover"
               @click="insertToken('$n')"
             >
-              {{ dialogs.renameNumberAscending }}
+              {{ rename.renameNumberAscending }}
             </button>
             <button
               type="button"
               class="cursor-pointer rounded border border-border px-1.5 py-1 text-[11px] text-surface hover:bg-hover"
               @click="insertToken('$N')"
             >
-              {{ dialogs.renameNumberDescending }}
+              {{ rename.renameNumberDescending }}
             </button>
           </div>
           <label v-if="showStartNumber" class="flex items-center gap-2 text-xs text-muted">
             <span class="flex-1">
               {{
                 hasDescendingNumber
-                  ? dialogs.renameStopDescendingAt
-                  : dialogs.renameStartAscendingFrom
+                  ? rename.renameStopDescendingAt
+                  : rename.renameStartAscendingFrom
               }}
             </span>
             <input
@@ -133,7 +133,7 @@ function submit() {
             />
           </label>
           <p v-if="preview.error" class="text-xs text-danger" role="alert">
-            {{ dialogs.renameInvalidPattern }}
+            {{ rename.renameInvalidPattern }}
           </p>
         </div>
       </div>
@@ -144,7 +144,7 @@ function submit() {
         class="h-8 cursor-pointer rounded px-3 text-xs font-medium text-surface hover:bg-hover"
         @click="store.state.renameSelectionOpen = false"
       >
-        {{ dialogs.cancel }}
+        {{ common.cancel }}
       </button>
       <button
         type="button"
@@ -152,7 +152,7 @@ function submit() {
         class="h-8 cursor-pointer rounded bg-accent px-3 text-xs font-medium text-white disabled:cursor-default disabled:opacity-40"
         @click="submit"
       >
-        {{ dialogs.rename }}
+        {{ rename.rename }}
       </button>
     </AppDialogFooter>
   </AppDialogRoot>

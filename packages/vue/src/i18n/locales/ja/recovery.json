@@ -1,0 +1,9 @@
+{
+  "recoverUnsavedWork": "未保存の作業を復元",
+  "recoverUnsavedWorkDescription": "OpenPencil が前回のセッションのドキュメントを見つけました。",
+  "recoveryFailed": "このドキュメントを復元できませんでした。",
+  "settingsRecovery": "復元",
+  "settingsRecoveryDescription": "未保存ドキュメントのローカル復元コピーを管理します。",
+  "preserveUnsavedWork": "未保存の作業を自動的に保持",
+  "preserveUnsavedWorkDescription": "予期しない終了後にドキュメントを復元できるよう、ローカルコピーを保存します。"
+}

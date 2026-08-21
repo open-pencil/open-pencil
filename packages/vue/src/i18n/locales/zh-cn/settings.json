@@ -1,0 +1,20 @@
+{
+  "settings": "设置",
+  "settingsDescription": "管理集成和应用偏好设置。",
+  "settingsGeneral": "通用",
+  "settingsEditing": "编辑",
+  "settingsSnappingDescription": "控制编辑路径以及移动或调整图层大小时的对齐方式。",
+  "snapToGeometry": "吸附到几何图形",
+  "snapToGeometryDescription": "将拖动的矢量点与路径中的其他点对齐。",
+  "snapToObjects": "吸附到对象",
+  "snapToObjectsDescription": "将矢量点和图层边界与附近图层的边缘和中心对齐。",
+  "snapToPixelGrid": "吸附到像素网格",
+  "snapToPixelGridDescription": "将矢量点、移动的图层和调整大小的边缘与整数像素对齐。",
+  "snapTemporaryDisableHint": "拖动时按住 Control 可暂时禁用吸附。",
+  "settingsAIAndAgents": "AI 和代理",
+  "settingsMedia": "媒体",
+  "settingsMCP": "MCP & automation",
+  "settingsStorage": "云存储",
+  "mobilePanelNavigation": "移动面板导航",
+  "notifications": "通知"
+}

@@ -15,7 +15,7 @@ function createCollabPanelContext() {
   const router = useRouter()
   const collab = useCollabInjected()
   const { copy, copied } = useClipboard({ copiedDuring: 2000 })
-  const { dialogs } = useI18n()
+  const { common, collaboration } = useI18n()
   const notifications = useNotificationMessages()
 
   const joinInput = ref('')
@@ -79,7 +79,8 @@ function createCollabPanelContext() {
   }
 
   return {
-    dialogs,
+    common,
+    messages: collaboration,
     copied,
     joinInput,
     nameDraft,

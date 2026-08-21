@@ -23,7 +23,7 @@ import splitterTheme from '@/theme/splitter'
 const params = useUrlSearchParams('history')
 const showChrome = !('no-chrome' in params)
 const store = useEditorStore()
-const { dialogs } = useI18n()
+const { common } = useI18n()
 const { isMobile } = useViewportKind()
 const initialEditorLayout = loadEditorLayout()
 const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
@@ -104,7 +104,7 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
           store.state.documentName
         }}</span>
         <Tip
-          :label="dialogs.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })"
+          :label="common.showUI({ shortcut: formatShortcut(appMenuShortcut('toggle-ui')) ?? '' })"
         >
           <button
             data-test-id="editor-show-ui"

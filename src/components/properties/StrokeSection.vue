@@ -43,7 +43,7 @@ const strokeCtx = useStrokeControls()
 const { advancedActive, cap, join, miterLimit } = strokeCtx
 const colorProvider = useColorBindingProvider()
 const okhcl = useOkHCL()
-const { panels, dialogs } = useI18n()
+const { panels, common } = useI18n()
 const expandedSides = ref(false)
 
 function strokePreview(stroke: Stroke, color: Color): Fill {
@@ -186,7 +186,7 @@ function onToggleSides(activeNode: SceneNode | null) {
             <template #binding>
               <VariableBindingPicker
                 :trigger-label="panels.applyVariable"
-                :search-placeholder="dialogs.search"
+                :search-placeholder="common.search"
                 :empty-label="panels.noVariablesFound"
                 :detach-label="panels.detachVariable"
                 :create-label="

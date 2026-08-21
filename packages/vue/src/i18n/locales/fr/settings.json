@@ -1,0 +1,20 @@
+{
+  "settings": "Paramètres",
+  "settingsDescription": "Gérez les intégrations et les préférences de l’application.",
+  "settingsGeneral": "Général",
+  "settingsEditing": "Édition",
+  "settingsSnappingDescription": "Contrôlez l’alignement lors de la modification des tracés et du déplacement ou redimensionnement des calques.",
+  "snapToGeometry": "Aligner sur la géométrie",
+  "snapToGeometryDescription": "Aligne les points vectoriels déplacés sur les autres points du tracé.",
+  "snapToObjects": "Aligner sur les objets",
+  "snapToObjectsDescription": "Aligne les points vectoriels et les limites des calques sur les bords et centres des calques voisins.",
+  "snapToPixelGrid": "Aligner sur la grille de pixels",
+  "snapToPixelGridDescription": "Aligne les points vectoriels, les calques déplacés et les bords redimensionnés sur des pixels entiers.",
+  "snapTemporaryDisableHint": "Maintenez la touche Contrôle pendant le déplacement pour désactiver temporairement l’alignement.",
+  "settingsAIAndAgents": "IA et agents",
+  "settingsMedia": "Médias",
+  "settingsMCP": "MCP & automation",
+  "settingsStorage": "Stockage cloud",
+  "mobilePanelNavigation": "Navigation du panneau mobile",
+  "notifications": "Notifications"
+}

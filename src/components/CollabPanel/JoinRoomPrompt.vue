@@ -6,17 +6,17 @@ const collab = useCollabPanelContext()
 </script>
 
 <template>
-  <div class="mb-1 text-xs font-medium text-surface">{{ collab.dialogs.joinCollaboration }}</div>
+  <div class="mb-1 text-xs font-medium text-surface">{{ collab.messages.joinCollaboration }}</div>
   <div class="mb-3 text-[11px] text-muted">
     Someone shared this file with you. Enter your name to join.
   </div>
 
   <div class="mb-3">
-    <label class="mb-1 block text-xs text-muted">{{ collab.dialogs.yourName }}</label>
+    <label class="mb-1 block text-xs text-muted">{{ collab.messages.yourName }}</label>
     <AppInput
       v-model="collab.nameDraft"
       data-test-id="collab-name-input"
-      :placeholder="collab.dialogs.enterYourName"
+      :placeholder="collab.messages.enterYourName"
       autofocus
       @enter="collab.join"
     />
