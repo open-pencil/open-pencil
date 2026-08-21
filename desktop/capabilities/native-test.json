@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "native-test",
+  "description": "WebdriverIO capability for native test builds",
+  "windows": ["main"],
+  "permissions": ["wdio:default"]
+}

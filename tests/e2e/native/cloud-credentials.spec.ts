@@ -19,25 +19,30 @@ const second: CredentialRef = {
 
 describe('native Cloud credentials', () => {
   it('stores and removes bearer sessions independently per instance', async () => {
-    const values = await browser.execute(
-      async ({ first, second }) => {
-        const { invoke } = await import('@tauri-apps/api/core')
-        await invoke('native_test_credential_write', { reference: first, value: 'first-token' })
-        await invoke('native_test_credential_write', { reference: second, value: 'second-token' })
-        const firstValue = await invoke<string | null>('native_test_credential_read', {
+    const values = await browser.tauri.execute(
+      async ({ core }, { first, second }) => {
+        await core.invoke('native_test_credential_write', {
+          reference: first,
+          value: 'first-token'
+        })
+        await core.invoke('native_test_credential_write', {
+          reference: second,
+          value: 'second-token'
+        })
+        const firstValue = await core.invoke('native_test_credential_read', {
           reference: first
         })
-        const secondValue = await invoke<string | null>('native_test_credential_read', {
+        const secondValue = await core.invoke('native_test_credential_read', {
           reference: second
         })
-        await invoke('native_test_credential_remove', { reference: first })
-        const removed = await invoke<string | null>('native_test_credential_read', {
+        await core.invoke('native_test_credential_remove', { reference: first })
+        const removed = await core.invoke('native_test_credential_read', {
           reference: first
         })
-        const retained = await invoke<string | null>('native_test_credential_read', {
+        const retained = await core.invoke('native_test_credential_read', {
           reference: second
         })
-        await invoke('native_test_credential_remove', { reference: second })
+        await core.invoke('native_test_credential_remove', { reference: second })
         return { firstValue, secondValue, removed, retained }
       },
       { first, second }

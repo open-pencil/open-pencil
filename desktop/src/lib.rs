@@ -142,6 +142,7 @@ pub fn run() {
                 std::collections::HashMap::new(),
             )))
             .manage(OpenedExternalUrls(Mutex::new(Vec::new())))
+            .plugin(tauri_plugin_wdio::init())
             .plugin(tauri_plugin_wdio_webdriver::init());
     }
 

@@ -113,6 +113,7 @@
         "@wdio/local-runner": "9.30.1",
         "@wdio/mocha-framework": "9.30.1",
         "@wdio/spec-reporter": "9.30.1",
+        "@wdio/tauri-plugin": "1.3.0",
         "@wdio/tauri-service": "1.3.0",
         "changelog-parser": "^4.1.0",
         "cloudflare-redirect-parser": "^1.0.0",
@@ -413,6 +414,7 @@
   },
   "overrides": {
     "@codemirror/view": "6.43.9",
+    "brace-expansion@2": "2.1.4",
     "protobufjs": "7.5.5",
     "websocket-driver": "0.7.5",
   },
@@ -1691,6 +1693,8 @@
 
     "@tauri-apps/plugin-fs": ["@tauri-apps/plugin-fs@2.5.1", "", { "dependencies": { "@tauri-apps/api": "^2.11.0" } }, "sha512-9Lz+Jopp6QyeEWhlpkMx4R/+P9HgR+AVAI4vOZhlT8Xaymtz8iVI/Ov984/XTqgJz/5gz5NretqPB/XEMS3NhQ=="],
 
+    "@tauri-apps/plugin-log": ["@tauri-apps/plugin-log@2.9.0", "", { "dependencies": { "@tauri-apps/api": "^2.11.0" } }, "sha512-Ql8okrnsguk0eDq1GvRfttFV5KaeW/7vcao6bdbkXCRJ1+2sWE15ZJvJVEKVANrOKy1mRngqC3IFIAP+wP5qSw=="],
+
     "@tauri-apps/plugin-opener": ["@tauri-apps/plugin-opener@2.5.4", "", { "dependencies": { "@tauri-apps/api": "^2.11.0" } }, "sha512-1HnPkb+AmgO29HBazm4uPLKB+r7zzcTBW1d0fyYp1uP+jwtpoiNDGKMMzz58SFp49nOIrxdE3aUJtT57lfO9CQ=="],
 
     "@tauri-apps/plugin-process": ["@tauri-apps/plugin-process@2.3.1", "", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-nCa4fGVaDL/B9ai03VyPOjfAHRHSBz5v6F/ObsB73r/dA3MHHhZtldaDMIc0V/pnUw9ehzr2iEG+XkSEyC0JJA=="],
@@ -2054,6 +2058,8 @@
     "@wdio/runner": ["@wdio/runner@9.30.1", "", { "dependencies": { "@types/node": "^20.11.28", "@wdio/config": "9.30.1", "@wdio/dot-reporter": "9.30.1", "@wdio/globals": "9.29.1", "@wdio/logger": "9.29.1", "@wdio/types": "9.30.1", "@wdio/utils": "9.30.1", "deepmerge-ts": "^7.0.3", "webdriver": "9.30.1", "webdriverio": "9.30.1" }, "peerDependencies": { "expect-webdriverio": "^5.6.5" } }, "sha512-mZIqnpUupSFUpw4TH+aMU7ecyi2dZuSwJ0vQHC7oYCL4gCOlUgZ8+JRe2ZGvQdp/9GfaUSr7H8/sB86znkggdw=="],
 
     "@wdio/spec-reporter": ["@wdio/spec-reporter@9.30.1", "", { "dependencies": { "@wdio/reporter": "9.30.1", "@wdio/types": "9.30.1", "chalk": "^5.1.2", "easy-table": "^1.2.0", "pretty-ms": "^9.0.0" } }, "sha512-En74iLuj8xjNanSPA05rTCii0qHZQe6Zpwi74vTGO6LtfGxvcNr1Z1zUj8xWwnoclnAne3DtmCAyXTezLX1pEA=="],
+
+    "@wdio/tauri-plugin": ["@wdio/tauri-plugin@1.3.0", "", { "dependencies": { "@tauri-apps/api": "2.11.1", "@tauri-apps/plugin-log": "2.9.0", "@wdio/native-spy": "1.2.0", "@wdio/native-utils": "2.6.0" } }, "sha512-dq0utb6Lj5bi3zzHkIIb4WTegpqVMc3D+mVsJCx7OzRPiFQfhYutmRIkNS/i3Cai41KqTf2eP5ZvlPO0LCKv0A=="],
 
     "@wdio/tauri-service": ["@wdio/tauri-service@1.3.0", "", { "dependencies": { "@wdio/globals": "9.29.1", "@wdio/logger": "9.29.1", "@wdio/native-core": "1.1.0", "@wdio/native-spy": "1.2.0", "@wdio/native-types": "2.5.0", "@wdio/native-utils": "2.6.0", "@wdio/spec-reporter": "9.29.1", "@wdio/types": "9.29.1", "debug": "^4.4.3", "get-port": "^7.1.0", "tslib": "^2.8.1", "webdriverio": "9.30.0" } }, "sha512-CzO7ddZo0gIdwVWDftUbHmDPC74M2ZDwWiucUe1M37/QCNy9y4QEdYbobD8yuL1c9n4dAO+NQzmvC3BUICjl0Q=="],
 

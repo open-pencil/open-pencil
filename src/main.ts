@@ -1,4 +1,6 @@
 import { createHead } from '@unhead/vue/client'
+if (import.meta.env.MODE === 'native-test') await import('@wdio/tauri-plugin')
+
 import { createApp } from 'vue'
 
 import './app.css'
