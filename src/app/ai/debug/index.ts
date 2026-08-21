@@ -2,8 +2,10 @@ import type { UIMessage } from 'ai'
 
 import { buildDebugLog } from '@open-pencil/core/tools'
 import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
+import type { AIProviderID } from '@open-pencil/core/constants'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
+import { supportsAnthropicCaching } from '@/app/ai/caching'
 import type { AIChatFailure } from '@/app/ai/chat/failure'
 import { getStepUsages, getToolLogEntries } from '@/app/ai/tools'
 
@@ -18,7 +20,12 @@ export function safeFailureDetail(detail: string): string {
     : `${redacted.slice(0, MAX_FAILURE_DETAIL_LENGTH)}…`
 }
 
-export function formatTokenUsage(): string {
+export type CacheProviderContext = {
+  providerID: AIProviderID
+  modelID: string
+}
+
+export function formatTokenUsage(providerContext?: CacheProviderContext): string {
   const steps = getStepUsages()
   if (steps.length === 0) return '  (no usage data — provider may not report it)'
 
@@ -47,13 +54,21 @@ export function formatTokenUsage(): string {
   const cacheHitRate = totalInput > 0 ? ((totalCacheRead / totalInput) * 100).toFixed(1) : '0.0'
   const savedTokens = totalCacheRead > 0 ? totalCacheRead - Math.round(totalCacheRead * 0.1) : 0
 
+  const cacheControlSent =
+    providerContext && supportsAnthropicCaching(providerContext.providerID, providerContext.modelID)
+  const noCacheReported = totalCacheRead === 0 && totalCacheWrite === 0
+  let cacheWarning = ''
+  if (noCacheReported) {
+    cacheWarning = cacheControlSent
+      ? '⚠ NO CACHE TOKENS REPORTED — cache_control was sent, so caching may not be working'
+      : 'No cache tokens reported by this provider (it may not report them)'
+  }
+
   lines.unshift(
     `Total: in=${totalInput} out=${totalOutput} cache_read=${totalCacheRead} cache_write=${totalCacheWrite}`,
     `Cache hit rate: ${cacheHitRate}% (saved ~${savedTokens} uncached input tokens, 90% cost reduction on cached)`,
     `Steps: ${steps.length}`,
-    totalCacheRead === 0 && totalCacheWrite === 0
-      ? '⚠ NO CACHING DETECTED — system prompt + tools are re-processed every step'
-      : ''
+    cacheWarning
   )
 
   return lines.filter(Boolean).join('\n')
@@ -217,7 +232,11 @@ function formatMessageStats(messages: UIMessage[]): string {
   return lines.join('\n')
 }
 
-export function serializeChatLog(messages: UIMessage[], failure?: AIChatFailure | null): string {
+export function serializeChatLog(
+  messages: UIMessage[],
+  failure?: AIChatFailure | null,
+  providerContext?: CacheProviderContext
+): string {
   const sections: string[] = []
 
   const toolLog = getToolLogEntries()
@@ -230,7 +249,7 @@ export function serializeChatLog(messages: UIMessage[], failure?: AIChatFailure 
   sections.push('')
 
   sections.push('=== TOKEN USAGE & CACHING ===')
-  sections.push(formatTokenUsage())
+  sections.push(formatTokenUsage(providerContext))
   sections.push('')
 
   sections.push('=== DIAGNOSTICS ===')
@@ -291,7 +310,11 @@ export function serializeChatLog(messages: UIMessage[], failure?: AIChatFailure 
   return sections.join('\n\n')
 }
 
-export function copyChatLog(messages: UIMessage[], failure?: AIChatFailure | null): Promise<void> {
-  const text = serializeChatLog(messages, failure)
+export function copyChatLog(
+  messages: UIMessage[],
+  failure?: AIChatFailure | null,
+  providerContext?: CacheProviderContext
+): Promise<void> {
+  const text = serializeChatLog(messages, failure, providerContext)
   return navigator.clipboard.writeText(text)
 }

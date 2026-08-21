@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
+import { ANTHROPIC_CACHE_CONTROL, supportsAnthropicCaching } from '@/app/ai/caching'
 import {
   classifyAIChatError,
   classifyAIChatFinish,
@@ -37,18 +38,6 @@ type ToolLoopTransportOptions = {
   effectiveModelID: string
   maxOutputTokens: number
   reasoningEffort: string
-}
-
-const ANTHROPIC_CACHE_CONTROL = {
-  anthropic: { cacheControl: { type: 'ephemeral' } }
-} as const
-
-function supportsAnthropicCaching(providerID: AIProviderID, modelID: string): boolean {
-  return (
-    providerID === 'anthropic' ||
-    providerID === 'anthropic-compatible' ||
-    (providerID === 'openrouter' && modelID.startsWith('anthropic/'))
-  )
 }
 
 function mergeProviderOptions(
