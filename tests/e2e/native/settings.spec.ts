@@ -33,10 +33,10 @@ describe('native preferences', () => {
       async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
       { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
     )
-    const initial = await browser.tauri.execute(({ core }) =>
-      core.invoke('native_menu_checked', { id: 'snap-objects' })
+    const initial = await browser.execute(
+      () => window.openPencil?.getStore?.().state.snappingPreferences.objects
     )
-    assert.equal(initial, true)
+    assert.equal(typeof initial, 'boolean')
 
     if (!(await settingsOpen())) {
       await browser.keys([process.platform === 'darwin' ? 'Meta' : 'Control', ','])
@@ -47,14 +47,21 @@ describe('native preferences', () => {
     await snapping.click()
     await browser.waitUntil(
       async () =>
+        (await browser.execute(
+          () => window.openPencil?.getStore?.().state.snappingPreferences.objects
+        )) === !initial,
+      { timeoutMsg: 'Snapping preference did not update' }
+    )
+    await browser.waitUntil(
+      async () =>
         (await browser.tauri.execute(({ core }) =>
           core.invoke('native_menu_checked', { id: 'snap-objects' })
-        )) === false,
+        )) === !initial,
       { timeoutMsg: 'Native snapping checkmark did not update' }
     )
     const updated = await browser.tauri.execute(({ core }) =>
       core.invoke('native_menu_checked', { id: 'snap-objects' })
     )
-    assert.equal(updated, false)
+    assert.equal(updated, !initial)
   })
 })

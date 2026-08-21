@@ -1,10 +1,10 @@
 import { strict as assert } from 'node:assert'
 
+import { openNativeEditorDocument } from '#tests/helpers/tauri/editor-ready'
 import {
   createNativeTextFixture,
   readNativeEditorSnapshot
 } from '#tests/helpers/tauri/editor-snapshot'
-import { openNativeEditorDocument } from '#tests/helpers/tauri/editor-ready'
 import { withNativeEventRecorder } from '#tests/helpers/tauri/event-recorder'
 
 describe('native text editing', () => {
