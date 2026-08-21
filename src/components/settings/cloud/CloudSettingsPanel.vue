@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { IS_TAURI } from '@open-pencil/core/constants'
 
 import {
   cloudConnectionWorkSummary,
   hasPendingCloudConnectionWork,
   type CloudConnectionWorkSummary
 } from '@/app/integrations/storage/cloud/pending-work'
+import { cloudConnectionPresentation } from '@/app/integrations/storage/cloud/presentation'
 import { useCloudStorageSettings } from '@/app/integrations/storage/cloud/settings'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
+import { openExternalURL } from '@/app/tauri/opener'
 import ConnectCloudInstanceDialog from '@/components/settings/cloud/connect-instance/ConnectCloudInstanceDialog.vue'
 import CloudEntitlementsSummary from '@/components/settings/storage/CloudEntitlementsSummary.vue'
 import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
+import AppBadge from '@/components/ui/AppBadge.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import { useButtonUI } from '@/components/ui/button'
 
@@ -33,6 +35,14 @@ const deviceAuth = computed(() => {
   const id = cloud.activeProfile.value?.id
   return id ? (cloud.deviceAuthByConnection.value[id] ?? { status: 'idle' as const }) : null
 })
+const presentation = computed(() =>
+  cloudConnectionPresentation(cloud.state.value?.status ?? 'disconnected')
+)
+const badgeUI = computed(() => {
+  if (presentation.value.tone === 'danger') return { base: 'bg-danger/10 text-danger' }
+  if (presentation.value.tone === 'muted') return { base: 'bg-hover text-muted' }
+  return undefined
+})
 const selectedWorkspace = computed({
   get: () => cloud.activeProfile.value?.selectedWorkspaceId ?? '',
   set: (id: string) => void cloud.selectWorkspace(id)
@@ -42,10 +52,32 @@ const secondary = useButtonUI({ tone: 'ghost', size: 'sm', bordered: true })
 const quiet = useButtonUI({ tone: 'ghost', size: 'sm' })
 
 async function reopenDeviceBrowser(url: string) {
-  if (IS_TAURI) {
-    const { openUrl } = await import('@tauri-apps/plugin-opener')
-    await openUrl(url)
-  } else globalThis.open(url, '_blank')
+  await openExternalURL(url)
+}
+
+async function runPrimaryAction() {
+  try {
+    switch (presentation.value.primaryAction) {
+      case 'open-workspace':
+        await openWorkspace()
+        break
+      case 'reauthenticate':
+        await cloud.reauthenticate()
+        break
+      case 'reconnect':
+      case 'retry':
+        await cloud.reconnect()
+        break
+      case 'sign-in': {
+        const provider = cloud.state.value?.discovery?.authentication.socialProviders[0]
+        if (!provider) throw new Error('This instance does not offer a sign-in provider')
+        await cloud.signIn(provider)
+        break
+      }
+    }
+  } catch (error) {
+    toast.error(error instanceof Error ? error.message : String(error))
+  }
 }
 
 async function connectOfficial() {
@@ -116,18 +148,20 @@ async function openWorkspace() {
             <h4 class="truncate text-xs font-medium text-surface">
               {{ cloud.activeProfile.value.label }}
             </h4>
-            <span class="rounded bg-hover px-1.5 py-0.5 text-[9px] text-muted">
+            <AppBadge :ui="{ base: 'bg-hover text-muted' }">
               {{ cloud.activeProfile.value.kind === 'official' ? 'Official' : 'Self-hosted' }}
-            </span>
+            </AppBadge>
           </div>
           <p class="mt-0.5 truncate text-[10px] text-muted">
             {{ cloud.activeProfile.value.serverURL }}
           </p>
         </div>
-        <span class="text-[10px] text-muted">{{
-          cloud.state.value?.status ?? 'Disconnected'
-        }}</span>
+        <AppBadge :ui="badgeUI">{{ presentation.label }}</AppBadge>
       </div>
+
+      <p v-if="presentation.description" class="mt-3 text-[10px] text-muted">
+        {{ presentation.description }}
+      </p>
 
       <div v-if="cloud.state.value?.session" class="mt-3 flex items-center justify-between gap-2">
         <span class="truncate text-[10px] text-muted">
@@ -194,7 +228,19 @@ async function openWorkspace() {
       />
 
       <div class="mt-3 flex justify-between border-t border-border pt-3">
-        <button type="button" :class="quiet.base" @click="openWorkspace">Open workspace</button>
+        <button type="button" :class="primary.base" @click="runPrimaryAction">
+          {{
+            presentation.primaryAction === 'open-workspace'
+              ? 'Open workspace'
+              : presentation.primaryAction === 'reauthenticate'
+                ? 'Reauthenticate'
+                : presentation.primaryAction === 'sign-in'
+                  ? 'Sign in'
+                  : presentation.primaryAction === 'reconnect'
+                    ? 'Reconnect'
+                    : 'Retry connection'
+          }}
+        </button>
         <button type="button" class="text-[10px] text-danger" @click="requestDisconnect">
           Disconnect instance
         </button>

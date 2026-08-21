@@ -182,6 +182,25 @@ function createCloudStorageSettings() {
     await signInToCloud(discovery, provider)
   }
 
+  async function reauthenticate(): Promise<void> {
+    const discovery = state.value?.discovery
+    const profile = activeCloudConnectionProfile()
+    if (!discovery || !profile) throw new Error('Connect to an OpenPencil Cloud server first')
+    cancelDeviceAuth(profile.id)
+    await appCredentialServices.manager.clear(
+      credentialRef('openpencil-cloud', 'session', profile.id)
+    )
+    const providers = discovery.authentication.socialProviders
+    if (providers.length === 0 && !IS_TAURI) {
+      throw new Error('This instance does not offer a browser sign-in provider')
+    }
+    await signIn(providers[0] ?? 'google')
+  }
+
+  async function reconnect(): Promise<void> {
+    await connect()
+  }
+
   async function signOut(): Promise<void> {
     const discovery = state.value?.discovery
     const profile = activeCloudConnectionProfile()
@@ -224,6 +243,8 @@ function createCloudStorageSettings() {
     disconnectConnection,
     connect,
     signIn,
+    reauthenticate,
+    reconnect,
     signOut,
     selectWorkspace,
     refreshEntitlements
