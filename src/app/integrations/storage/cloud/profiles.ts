@@ -1,7 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { base64url } from 'jose'
 
-import { writeStoragePreference } from '../preferences'
+import { writeStoragePreferenceUnchecked } from '../preference-store'
 import { normalizeCloudServerURL } from './connection'
 
 export const OFFICIAL_OPENPENCIL_CLOUD_URL = 'https://cloud.openpencil.dev'
@@ -30,8 +30,8 @@ function defaultLabel(kind: CloudConnectionKind, serverURL: string): string {
 }
 
 function activatePreferences(profile: CloudConnectionProfile): void {
-  writeStoragePreference(PROVIDER_ID, 'server-url', profile.serverURL)
-  writeStoragePreference(PROVIDER_ID, 'workspace-id', profile.selectedWorkspaceId ?? '')
+  writeStoragePreferenceUnchecked(PROVIDER_ID, 'server-url', profile.serverURL)
+  writeStoragePreferenceUnchecked(PROVIDER_ID, 'workspace-id', profile.selectedWorkspaceId ?? '')
 }
 
 export function listCloudConnectionProfiles(): readonly CloudConnectionProfile[] {
@@ -89,8 +89,8 @@ export function disconnectCloudProfile(id: string): void {
   const next = activeCloudConnectionProfile()
   if (next) activatePreferences(next)
   else {
-    writeStoragePreference(PROVIDER_ID, 'server-url', '')
-    writeStoragePreference(PROVIDER_ID, 'workspace-id', '')
+    writeStoragePreferenceUnchecked(PROVIDER_ID, 'server-url', '')
+    writeStoragePreferenceUnchecked(PROVIDER_ID, 'workspace-id', '')
   }
 }
 

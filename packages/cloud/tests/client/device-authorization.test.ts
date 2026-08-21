@@ -24,6 +24,8 @@ function authorization(expiresIn = 600): CloudDeviceAuthorization {
   }
 }
 
+const immediateSleep = async (): Promise<void> => undefined
+
 describe('Cloud device authorization client', () => {
   test('requests a connection-scoped device code', async () => {
     const originalFetch = globalThis.fetch
@@ -44,7 +46,7 @@ describe('Cloud device authorization client', () => {
   test('polls pending authorization until a bearer token is available', async () => {
     let calls = 0
     const token = await pollCloudDeviceToken(discovery, 'connection-id', authorization(), {
-      sleep: async () => {},
+      sleep: immediateSleep,
       async fetch() {
         calls++
         return calls === 1
@@ -66,7 +68,7 @@ describe('Cloud device authorization client', () => {
 
   test('maps denial without retrying', async () => {
     const error = pollCloudDeviceToken(discovery, 'connection-id', authorization(), {
-      sleep: async () => {},
+      sleep: immediateSleep,
       fetch: async () =>
         Response.json(
           { error: 'access_denied', error_description: 'Authorization denied' },

@@ -18,30 +18,10 @@ import {
 } from '@/app/storage/local-store'
 import { createMemoryOutbox, resetOutboxForTests } from '@/app/storage/sync/outbox'
 
-class MemoryStorage implements Storage {
-  #values = new Map<string, string>()
-  get length() {
-    return this.#values.size
-  }
-  clear() {
-    this.#values.clear()
-  }
-  getItem(key: string) {
-    return this.#values.get(key) ?? null
-  }
-  key(index: number) {
-    return [...this.#values.keys()][index] ?? null
-  }
-  removeItem(key: string) {
-    this.#values.delete(key)
-  }
-  setItem(key: string, value: string) {
-    this.#values.set(key, value)
-  }
-}
+import { installMemoryWebStorage } from '#tests/helpers/storage/memory-web-storage'
 
 beforeEach(() => {
-  Object.assign(globalThis, { localStorage: new MemoryStorage() })
+  installMemoryWebStorage()
   resetLocalCanvasStoreForTests(createMemoryLocalCanvasStore())
   resetOutboxForTests(createMemoryOutbox())
 })

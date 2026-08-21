@@ -1,17 +1,18 @@
 import { strict as assert } from 'node:assert'
 
-type CredentialRef = {
+type NativeCredentialReference = {
   integrationId: string
   profileId: string
-  field: string
+  field: 'session'
+  readonly __nativeCredentialReference?: unique symbol
 }
 
-const first: CredentialRef = {
+const first: NativeCredentialReference = {
   integrationId: 'openpencil-cloud',
   profileId: 'instance-first',
   field: 'session'
 }
-const second: CredentialRef = {
+const second: NativeCredentialReference = {
   integrationId: 'openpencil-cloud',
   profileId: 'instance-second',
   field: 'session'

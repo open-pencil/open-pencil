@@ -132,11 +132,9 @@ function createCloudStorageSettings() {
       if (controller.signal.aborted) return
       const message = error instanceof Error ? error.message : String(error)
       const lowered = message.toLowerCase()
-      const status = lowered.includes('expired')
-        ? 'expired'
-        : lowered.includes('denied')
-          ? 'denied'
-          : 'error'
+      let status: CloudDeviceAuthState['status'] = 'error'
+      if (lowered.includes('expired')) status = 'expired'
+      else if (lowered.includes('denied')) status = 'denied'
       setDeviceAuth(profile.id, { status, message })
     } finally {
       if (deviceAuthControllers.get(profile.id) === controller)

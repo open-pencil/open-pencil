@@ -29,7 +29,10 @@ export type CloudAuthClient = {
   }
 }
 
-function authClient(discovery: CloudDiscovery, accessToken?: string): CloudAuthClient {
+export function createCloudAuthClient(
+  discovery: CloudDiscovery,
+  accessToken?: string
+): CloudAuthClient {
   return createAuthClient({
     baseURL: discovery.authURL,
     plugins: [deviceAuthorizationClient()],
@@ -40,13 +43,6 @@ function authClient(discovery: CloudDiscovery, accessToken?: string): CloudAuthC
   }) as CloudAuthClient
 }
 
-export function createCloudAuthClient(
-  discovery: CloudDiscovery,
-  accessToken?: string
-): CloudAuthClient {
-  return authClient(discovery, accessToken)
-}
-
 export async function signInToCloud(
   discovery: CloudDiscovery,
   provider: CloudSocialProvider,
@@ -55,7 +51,7 @@ export async function signInToCloud(
   if (!discovery.authentication.socialProviders.includes(provider)) {
     throw new Error(`Cloud sign-in provider is unavailable: ${provider}`)
   }
-  const result = await authClient(discovery).signIn.social({
+  const result = await createCloudAuthClient(discovery).signIn.social({
     provider,
     callbackURL,
     errorCallbackURL: callbackURL,
@@ -69,6 +65,6 @@ export async function signInToCloud(
 }
 
 export async function signOutFromCloud(discovery: CloudDiscovery): Promise<void> {
-  const result = await authClient(discovery).signOut()
+  const result = await createCloudAuthClient(discovery).signOut()
   if (result.error) throw new Error(result.error.message ?? 'Cloud sign-out failed')
 }

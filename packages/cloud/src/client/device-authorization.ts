@@ -34,7 +34,11 @@ function abortableSleep(milliseconds: number, signal?: AbortSignal): Promise<voi
       'abort',
       () => {
         clearTimeout(timeout)
-        reject(signal.reason)
+        reject(
+          signal.reason instanceof Error
+            ? signal.reason
+            : new DOMException('Authorization cancelled', 'AbortError')
+        )
       },
       { once: true }
     )
@@ -86,7 +90,7 @@ export async function pollCloudDeviceToken(
       }),
       signal: options.signal
     })
-    const body = await response.json()
+    const body: unknown = await response.json()
     if (response.ok) return v.parse(deviceTokenSchema, body)
     const error = v.parse(deviceErrorSchema, body)
     if (error.error === 'authorization_pending') continue
