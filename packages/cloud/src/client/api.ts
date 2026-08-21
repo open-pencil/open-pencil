@@ -169,9 +169,10 @@ async function parseResponse<TSchema extends v.BaseSchema<unknown, unknown, v.Ba
 }
 
 export function createCloudAPIClient(baseURL: string, options: CloudRequestOptions = {}) {
-  const headers = options.accessToken
-    ? { Authorization: `Bearer ${options.accessToken}` }
-    : undefined
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.accessToken ? { Authorization: `Bearer ${options.accessToken}` } : {})
+  }
   const client = hc<CloudAPI>(apiURL(baseURL), {
     fetch: options.fetch,
     init: { credentials: 'include', signal: options.signal, headers }

@@ -70,7 +70,8 @@ async function uploadBytes(upload: CloudUpload['upload'], bytes: Uint8Array) {
 }
 
 function appFetch(app: CloudApp): CloudFetch {
-  return async (input, init) => app.fetch(new Request(input, init))
+  return async (input, init) =>
+    app.fetch(input instanceof Request ? input : new Request(input, init))
 }
 
 const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
@@ -92,7 +93,10 @@ try {
   }
   const workspaceBody = (await workspaceResponse.json()) as { workspace: { id: string } }
   const client = createCloudAPIClient('http://localhost:8787/api', { fetch: appFetch(app) })
-  const document = await client.createDocument(workspaceBody.workspace.id, { name: 'E2E.fig' })
+  const document = await client.createDocument(workspaceBody.workspace.id, {
+    id: crypto.randomUUID(),
+    name: 'E2E.fig'
+  })
 
   const firstBytes = new TextEncoder().encode('OpenPencil Cloud full-stack E2E revision one')
   const firstChecksum = checksum(firstBytes)
