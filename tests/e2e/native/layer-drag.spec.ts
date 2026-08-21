@@ -38,9 +38,11 @@ describe('native layer dragging', () => {
           y: targetGeometry.y + 2
         }
       )
-      await browser.pause(1_000)
+      const events = await recorder.waitFor(
+        (recorded) => recorded.some((event) => event.type === 'dragend'),
+        'Native drag sequence did not complete'
+      )
 
-      const events = await recorder.read()
       const order = await readNativeLayerOrder()
       assert.deepEqual(order, [ids.third, ids.first, ids.second])
       assert.ok(
