@@ -4,6 +4,7 @@ import {
   createNativeTextFixture,
   readNativeEditorSnapshot
 } from '#tests/helpers/tauri/editor-snapshot'
+import { openNativeEditorDocument } from '#tests/helpers/tauri/editor-ready'
 import { withNativeEventRecorder } from '#tests/helpers/tauri/event-recorder'
 
 describe('native text editing', () => {
@@ -12,6 +13,7 @@ describe('native text editing', () => {
       async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
       { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
     )
+    await openNativeEditorDocument()
     await createNativeTextFixture('Replace me')
     const textarea = await $('textarea[aria-hidden="true"]')
     await textarea.waitForExist()

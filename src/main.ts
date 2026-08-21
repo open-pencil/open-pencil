@@ -1,5 +1,11 @@
 import { createHead } from '@unhead/vue/client'
-if (import.meta.env.MODE === 'native-test') await import('@wdio/tauri-plugin')
+
+import { setRecoveryRuntimeOverride } from '@/app/document/recovery/preferences'
+
+if (import.meta.env.MODE === 'native-test') {
+  setRecoveryRuntimeOverride(false)
+  await import('@wdio/tauri-plugin')
+}
 
 import { createApp } from 'vue'
 
