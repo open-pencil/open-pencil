@@ -23,6 +23,10 @@ async function load() {
       error.value = result.error.error_description
       return
     }
+    if (!result.data) {
+      error.value = 'This device authorization is unavailable.'
+      return
+    }
     status.value =
       result.data.status === 'approved' || result.data.status === 'denied'
         ? result.data.status

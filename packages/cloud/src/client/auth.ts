@@ -10,7 +10,26 @@ function returnURL(): string {
   return url.href
 }
 
-function authClient(discovery: CloudDiscovery, accessToken?: string) {
+type DeviceActionResult = Promise<{
+  data?: { success: boolean }
+  error?: { error_description: string }
+}>
+
+export type CloudAuthClient = {
+  getSession: ReturnType<typeof createAuthClient>['getSession']
+  signIn: ReturnType<typeof createAuthClient>['signIn']
+  signOut: ReturnType<typeof createAuthClient>['signOut']
+  device: {
+    (input: { query: { user_code: string } }): Promise<{
+      data?: { user_code: string; status: string }
+      error?: { error_description: string }
+    }>
+    approve(input: { userCode: string }): DeviceActionResult
+    deny(input: { userCode: string }): DeviceActionResult
+  }
+}
+
+function authClient(discovery: CloudDiscovery, accessToken?: string): CloudAuthClient {
   return createAuthClient({
     baseURL: discovery.authURL,
     plugins: [deviceAuthorizationClient()],
@@ -18,10 +37,13 @@ function authClient(discovery: CloudDiscovery, accessToken?: string) {
       credentials: 'include',
       ...(accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {})
     }
-  })
+  }) as CloudAuthClient
 }
 
-export function createCloudAuthClient(discovery: CloudDiscovery, accessToken?: string) {
+export function createCloudAuthClient(
+  discovery: CloudDiscovery,
+  accessToken?: string
+): CloudAuthClient {
   return authClient(discovery, accessToken)
 }
 

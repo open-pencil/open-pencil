@@ -60,7 +60,10 @@ export function configuredSocialProviders(config: CloudServerConfig): Array<'app
   ]
 }
 
-export function createCloudAuth(config: CloudServerConfig, database: Kysely<CloudDatabase>) {
+export function createCloudAuth(
+  config: CloudServerConfig,
+  database: Kysely<CloudDatabase>
+): CloudAuth {
   return betterAuth({
     appName: 'OpenPencil Cloud',
     baseURL: config.publicURL,
@@ -90,10 +93,21 @@ export function createCloudAuth(config: CloudServerConfig, database: Kysely<Clou
       ...config.trustedOrigins,
       ...(config.appleClientId ? [APPLE_AUDIENCE] : [])
     ]
-  })
+  }) as CloudAuth
 }
 
 export { workspaceAccessControl, workspaceRoles, workspaceStatements } from './workspace-access'
-export { createCloudSessionResolver, type CloudActor, type CloudSessionResolver } from './session'
+// The concrete Better Auth plugin graph is intentionally kept internal; server consumers use this
+// structural surface so declaration output does not leak Better Auth's Zod implementation types.
+export interface CloudAuth {
+  api: {
+    getSession(input: { headers: Headers }): Promise<{
+      session: { token: string; expiresAt: Date }
+      user: { id: string; email: string; name: string }
+    } | null>
+  }
+  handler(request: Request): Promise<Response>
+  options: BetterAuthOptions
+}
 
-export type CloudAuth = ReturnType<typeof createCloudAuth>
+export { createCloudSessionResolver, type CloudActor, type CloudSessionResolver } from './session'

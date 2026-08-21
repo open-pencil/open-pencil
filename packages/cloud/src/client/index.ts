@@ -10,6 +10,7 @@ export {
   createCloudAuthClient,
   signInToCloud,
   signOutFromCloud,
+  type CloudAuthClient,
   type CloudSocialProvider
 } from './auth'
 export {
