@@ -9,7 +9,7 @@ import {
 import { createNodeCloudDatabase, createS3ObjectStore } from '@open-pencil/cloud/runtime/node'
 import {
   createCloudApp,
-  createCloudAuth,
+  createBetterAuthAdapter,
   createDocumentCleanupService,
   createUploadCleanupService,
   migrateCloudDatabase,
@@ -76,8 +76,8 @@ function appFetch(app: CloudApp): CloudFetch {
 const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
 const objects = createS3ObjectStore(config)
 try {
-  const auth = createCloudAuth(config, database)
-  await migrateCloudDatabase(database, auth)
+  const auth = createBetterAuthAdapter(config, database)
+  await migrateCloudDatabase(database, auth.migrate)
   const app = createCloudApp({ config, database, auth, objects, resolveSession: async () => actor })
   const ready = await app.request('/ready')
   if (!ready.ok) throw new Error(`Cloud readiness failed with HTTP ${ready.status}`)

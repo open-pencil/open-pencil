@@ -5,7 +5,7 @@ import { createMemoryObjectStore } from '#cloud-test/helpers/objects'
 
 import {
   createCloudApp,
-  createCloudAuth,
+  createBetterAuthAdapter,
   createDocumentService,
   parseCloudServerConfig,
   type CloudActor
@@ -36,7 +36,7 @@ async function testApp() {
   const app = createCloudApp({
     config,
     database: runtime.database,
-    auth: createCloudAuth(config, runtime.database),
+    auth: createBetterAuthAdapter(config, runtime.database),
     objects: objects.store,
     resolveSession: async () => actor
   })

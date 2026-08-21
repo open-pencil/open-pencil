@@ -6,7 +6,7 @@ import { repositoryPath } from '#cloud-test/helpers/paths'
 import { createNodeCloudDatabase, createS3ObjectStore } from '@open-pencil/cloud/runtime/node'
 import {
   createCloudApp,
-  createCloudAuth,
+  createBetterAuthAdapter,
   migrateCloudDatabase,
   parseCloudServerConfig,
   StaticEntitlementSource
@@ -41,8 +41,8 @@ function checksum(bytes: Uint8Array): string {
 
 const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
 const objects = createS3ObjectStore(config)
-const auth = createCloudAuth(config, database)
-await migrateCloudDatabase(database, auth)
+const auth = createBetterAuthAdapter(config, database)
+await migrateCloudDatabase(database, auth.migrate)
 
 const workspaceId = crypto.randomUUID()
 const documentId = crypto.randomUUID()

@@ -5,7 +5,7 @@ import { createMemoryObjectStore } from '#cloud-test/helpers/objects'
 
 import {
   createCloudApp,
-  createCloudAuth,
+  createBetterAuthAdapter,
   parseCloudServerConfig,
   type CloudActor
 } from '@open-pencil/cloud/server'
@@ -35,7 +35,7 @@ const bob: CloudActor = {
 
 async function testApp(actor: CloudActor | null) {
   const runtime = await createCloudTestDatabase()
-  const auth = createCloudAuth(config, runtime.database)
+  const auth = createBetterAuthAdapter(config, runtime.database)
   const objects = createMemoryObjectStore()
   return {
     runtime,
@@ -116,7 +116,7 @@ describe('Cloud workspace routes', () => {
       const bobApp = createCloudApp({
         config,
         database: runtime.database,
-        auth: createCloudAuth(config, runtime.database),
+        auth: createBetterAuthAdapter(config, runtime.database),
         objects: createMemoryObjectStore().store,
         resolveSession: async () => bob
       })

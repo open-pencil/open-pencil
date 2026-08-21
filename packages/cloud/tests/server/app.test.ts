@@ -16,7 +16,7 @@ import {
 import { CLOUD_PROTOCOL_VERSION } from '@open-pencil/cloud/contract'
 import {
   createCloudApp,
-  createCloudAuth,
+  createBetterAuthAdapter,
   parseCloudServerConfig,
   type CloudDatabase
 } from '@open-pencil/cloud/server'
@@ -78,7 +78,7 @@ function services() {
   return {
     config,
     database,
-    auth: createCloudAuth(config, database),
+    auth: createBetterAuthAdapter(config, database),
     objects: {
       capabilities: {
         nativeSHA256: true,

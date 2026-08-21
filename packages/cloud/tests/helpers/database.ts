@@ -2,7 +2,7 @@ import { PGlite } from '@electric-sql/pglite'
 import { PGliteDialect } from 'kysely-pglite-dialect'
 
 import {
-  createCloudAuth,
+  createBetterAuthAdapter,
   createCloudDatabase,
   migrateCloudDatabase,
   parseCloudServerConfig
@@ -30,8 +30,8 @@ export async function createCloudTestDatabase(): Promise<CloudTestDatabase> {
   const database = createCloudDatabase({
     dialect: new PGliteDialect(pglite)
   })
-  const auth = createCloudAuth(testConfig, database)
-  await migrateCloudDatabase(database, auth)
+  const auth = createBetterAuthAdapter(testConfig, database)
+  await migrateCloudDatabase(database, auth.migrate)
   return {
     database,
     async close() {

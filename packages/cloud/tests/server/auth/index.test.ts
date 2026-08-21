@@ -12,7 +12,7 @@ import {
 
 import {
   configuredSocialProviders,
-  createCloudAuth,
+  createBetterAuthAdapter,
   parseCloudServerConfig
 } from '@open-pencil/cloud/server'
 import type { CloudDatabase } from '@open-pencil/cloud/server'
@@ -46,7 +46,7 @@ describe('Cloud authentication', () => {
   test('keeps social providers optional for self-hosting', () => {
     const config = parseCloudServerConfig(baseConfig)
     expect(configuredSocialProviders(config)).toEqual([])
-    expect(createCloudAuth(config, database()).handler).toBeFunction()
+    expect(createBetterAuthAdapter(config, database()).handler).toBeFunction()
   })
 
   test('advertises only fully configured providers', () => {
