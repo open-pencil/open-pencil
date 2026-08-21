@@ -20,6 +20,27 @@ const deviceErrorSchema = v.object({ error: v.string(), error_description: v.opt
 export type CloudDeviceAuthorization = v.InferOutput<typeof deviceCodeSchema>
 export type CloudDeviceToken = v.InferOutput<typeof deviceTokenSchema>
 
+export type CloudDevicePollingOptions = {
+  signal?: AbortSignal
+  fetch?: typeof globalThis.fetch
+  now?: () => number
+  sleep?: (milliseconds: number, signal?: AbortSignal) => Promise<void>
+}
+
+function abortableSleep(milliseconds: number, signal?: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(resolve, milliseconds)
+    signal?.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timeout)
+        reject(signal.reason)
+      },
+      { once: true }
+    )
+  })
+}
+
 function authEndpoint(discovery: CloudDiscovery, path: string): string {
   return new URL(path, `${discovery.authURL.replace(/\/$/, '')}/`).href
 }
@@ -44,24 +65,17 @@ export async function pollCloudDeviceToken(
   discovery: CloudDiscovery,
   connectionId: string,
   authorization: CloudDeviceAuthorization,
-  options: { signal?: AbortSignal; fetch?: typeof globalThis.fetch } = {}
+  options: CloudDevicePollingOptions = {}
 ): Promise<CloudDeviceToken> {
   const request = options.fetch ?? globalThis.fetch
-  const expiresAt = Date.now() + authorization.expires_in * 1000
+  const now = options.now ?? Date.now
+  const sleep = options.sleep ?? abortableSleep
+  const expiresAt = now() + authorization.expires_in * 1000
   let interval = authorization.interval * 1000
-  while (Date.now() < expiresAt) {
+  while (now() < expiresAt) {
     options.signal?.throwIfAborted()
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(resolve, interval)
-      options.signal?.addEventListener(
-        'abort',
-        () => {
-          clearTimeout(timeout)
-          reject(options.signal?.reason)
-        },
-        { once: true }
-      )
-    })
+    await sleep(interval, options.signal)
+    if (now() >= expiresAt) break
     const response = await request(authEndpoint(discovery, 'device/token'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
