@@ -389,5 +389,22 @@
   "settingsRecovery": "復元",
   "settingsRecoveryDescription": "未保存ドキュメントのローカル復元コピーを管理します。",
   "preserveUnsavedWork": "未保存の作業を自動的に保持",
-  "preserveUnsavedWorkDescription": "予期しない終了後にドキュメントを復元できるよう、ローカルコピーを保存します。"
+  "preserveUnsavedWorkDescription": "予期しない終了後にドキュメントを復元できるよう、ローカルコピーを保存します。",
+  "cloudStatusConnected": "Connected",
+  "cloudStatusSignInRequired": "Sign in required",
+  "cloudStatusSignInRequiredDescription": "Sign in to access this instance and its workspaces.",
+  "cloudStatusReauthenticationRequired": "Reauthentication required",
+  "cloudStatusReauthenticationRequiredDescription": "Your saved session is no longer accepted.",
+  "cloudStatusConnecting": "Connecting…",
+  "cloudStatusOffline": "Offline",
+  "cloudStatusOfflineDescription": "This instance cannot currently be reached.",
+  "cloudStatusConnectionError": "Connection error",
+  "cloudStatusConnectionErrorDescription": "OpenPencil could not connect to this instance.",
+  "cloudStatusDisconnected": "Disconnected",
+  "cloudStatusDisconnectedDescription": "Synchronization is paused until this instance is reconnected.",
+  "cloudOpenWorkspace": "Open workspace",
+  "cloudReauthenticate": "Reauthenticate",
+  "cloudSignIn": "Sign in",
+  "cloudReconnect": "Reconnect",
+  "cloudRetryConnection": "Retry connection"
 }

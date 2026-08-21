@@ -389,5 +389,22 @@
   "settingsRecovery": "恢复",
   "settingsRecoveryDescription": "管理未保存文档的本地恢复副本。",
   "preserveUnsavedWork": "自动保留未保存的工作",
-  "preserveUnsavedWorkDescription": "存储本地恢复副本，以便在意外关闭后恢复文档。"
+  "preserveUnsavedWorkDescription": "存储本地恢复副本，以便在意外关闭后恢复文档。",
+  "cloudStatusConnected": "Connected",
+  "cloudStatusSignInRequired": "Sign in required",
+  "cloudStatusSignInRequiredDescription": "Sign in to access this instance and its workspaces.",
+  "cloudStatusReauthenticationRequired": "Reauthentication required",
+  "cloudStatusReauthenticationRequiredDescription": "Your saved session is no longer accepted.",
+  "cloudStatusConnecting": "Connecting…",
+  "cloudStatusOffline": "Offline",
+  "cloudStatusOfflineDescription": "This instance cannot currently be reached.",
+  "cloudStatusConnectionError": "Connection error",
+  "cloudStatusConnectionErrorDescription": "OpenPencil could not connect to this instance.",
+  "cloudStatusDisconnected": "Disconnected",
+  "cloudStatusDisconnectedDescription": "Synchronization is paused until this instance is reconnected.",
+  "cloudOpenWorkspace": "Open workspace",
+  "cloudReauthenticate": "Reauthenticate",
+  "cloudSignIn": "Sign in",
+  "cloudReconnect": "Reconnect",
+  "cloudRetryConnection": "Retry connection"
 }

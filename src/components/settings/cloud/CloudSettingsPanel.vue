@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+import { useI18n } from '@open-pencil/vue'
+
 import {
   cloudConnectionWorkSummary,
   hasPendingCloudConnectionWork,
@@ -20,6 +22,7 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 import { useButtonUI } from '@/components/ui/button'
 
 const router = useRouter()
+const { dialogs } = useI18n()
 const cloud = useCloudStorageSettings()
 const connectDialogOpen = ref(false)
 const disconnectOpen = ref(false)
@@ -38,6 +41,54 @@ const deviceAuth = computed(() => {
 const presentation = computed(() =>
   cloudConnectionPresentation(cloud.state.value?.status ?? 'disconnected')
 )
+const statusCopy = computed(() => {
+  switch (presentation.value.status) {
+    case 'connected':
+      return { label: dialogs.value.cloudStatusConnected, description: null }
+    case 'unauthenticated':
+      return {
+        label: dialogs.value.cloudStatusSignInRequired,
+        description: dialogs.value.cloudStatusSignInRequiredDescription
+      }
+    case 'authentication-required':
+      return {
+        label: dialogs.value.cloudStatusReauthenticationRequired,
+        description: dialogs.value.cloudStatusReauthenticationRequiredDescription
+      }
+    case 'discovering':
+      return { label: dialogs.value.cloudStatusConnecting, description: null }
+    case 'offline':
+      return {
+        label: dialogs.value.cloudStatusOffline,
+        description: dialogs.value.cloudStatusOfflineDescription
+      }
+    case 'error':
+      return {
+        label: dialogs.value.cloudStatusConnectionError,
+        description: dialogs.value.cloudStatusConnectionErrorDescription
+      }
+    case 'disconnected':
+      return {
+        label: dialogs.value.cloudStatusDisconnected,
+        description: dialogs.value.cloudStatusDisconnectedDescription
+      }
+  }
+  throw new Error('Unknown Cloud connection status')
+})
+const primaryActionLabel = computed(() => {
+  switch (presentation.value.primaryAction) {
+    case 'open-workspace':
+      return dialogs.value.cloudOpenWorkspace
+    case 'reauthenticate':
+      return dialogs.value.cloudReauthenticate
+    case 'sign-in':
+      return dialogs.value.cloudSignIn
+    case 'reconnect':
+      return dialogs.value.cloudReconnect
+    case 'retry':
+      return dialogs.value.cloudRetryConnection
+  }
+})
 const badgeUI = computed(() => {
   if (presentation.value.tone === 'danger') return { base: 'bg-danger/10 text-danger' }
   if (presentation.value.tone === 'muted') return { base: 'bg-hover text-muted' }
@@ -156,11 +207,11 @@ async function openWorkspace() {
             {{ cloud.activeProfile.value.serverURL }}
           </p>
         </div>
-        <AppBadge :ui="badgeUI">{{ presentation.label }}</AppBadge>
+        <AppBadge :ui="badgeUI">{{ statusCopy.label }}</AppBadge>
       </div>
 
-      <p v-if="presentation.description" class="mt-3 text-[10px] text-muted">
-        {{ presentation.description }}
+      <p v-if="statusCopy.description" class="mt-3 text-[10px] text-muted">
+        {{ statusCopy.description }}
       </p>
 
       <div v-if="cloud.state.value?.session" class="mt-3 flex items-center justify-between gap-2">
@@ -229,17 +280,7 @@ async function openWorkspace() {
 
       <div class="mt-3 flex justify-between border-t border-border pt-3">
         <button type="button" :class="primary.base" @click="runPrimaryAction">
-          {{
-            presentation.primaryAction === 'open-workspace'
-              ? 'Open workspace'
-              : presentation.primaryAction === 'reauthenticate'
-                ? 'Reauthenticate'
-                : presentation.primaryAction === 'sign-in'
-                  ? 'Sign in'
-                  : presentation.primaryAction === 'reconnect'
-                    ? 'Reconnect'
-                    : 'Retry connection'
-          }}
+          {{ primaryActionLabel }}
         </button>
         <button type="button" class="text-[10px] text-danger" @click="requestDisconnect">
           Disconnect instance

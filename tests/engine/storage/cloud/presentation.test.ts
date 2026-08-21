@@ -4,14 +4,14 @@ import { cloudConnectionPresentation } from '@/app/integrations/storage/cloud/pr
 
 describe('Cloud connection presentation', () => {
   test.each([
-    ['connected', 'Connected', 'open-workspace'],
-    ['unauthenticated', 'Sign in required', 'sign-in'],
-    ['authentication-required', 'Reauthentication required', 'reauthenticate'],
-    ['discovering', 'Connecting…', 'retry'],
-    ['offline', 'Offline', 'retry'],
-    ['error', 'Connection error', 'retry'],
-    ['disconnected', 'Disconnected', 'reconnect']
-  ] as const)('%s maps to an actionable status', (status, label, primaryAction) => {
-    expect(cloudConnectionPresentation(status)).toMatchObject({ label, primaryAction })
+    ['connected', 'open-workspace'],
+    ['unauthenticated', 'sign-in'],
+    ['authentication-required', 'reauthenticate'],
+    ['discovering', 'retry'],
+    ['offline', 'retry'],
+    ['error', 'retry'],
+    ['disconnected', 'reconnect']
+  ] as const)('%s maps to an actionable status', (status, primaryAction) => {
+    expect(cloudConnectionPresentation(status)).toMatchObject({ status, primaryAction })
   })
 })

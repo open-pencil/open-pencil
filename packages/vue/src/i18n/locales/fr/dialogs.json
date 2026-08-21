@@ -389,5 +389,22 @@
   "settingsRecovery": "Récupération",
   "settingsRecoveryDescription": "Gérez les copies locales de récupération des documents non enregistrés.",
   "preserveUnsavedWork": "Conserver automatiquement le travail non enregistré",
-  "preserveUnsavedWorkDescription": "Stockez des copies locales afin de restaurer les documents après un arrêt inattendu."
+  "preserveUnsavedWorkDescription": "Stockez des copies locales afin de restaurer les documents après un arrêt inattendu.",
+  "cloudStatusConnected": "Connected",
+  "cloudStatusSignInRequired": "Sign in required",
+  "cloudStatusSignInRequiredDescription": "Sign in to access this instance and its workspaces.",
+  "cloudStatusReauthenticationRequired": "Reauthentication required",
+  "cloudStatusReauthenticationRequiredDescription": "Your saved session is no longer accepted.",
+  "cloudStatusConnecting": "Connecting…",
+  "cloudStatusOffline": "Offline",
+  "cloudStatusOfflineDescription": "This instance cannot currently be reached.",
+  "cloudStatusConnectionError": "Connection error",
+  "cloudStatusConnectionErrorDescription": "OpenPencil could not connect to this instance.",
+  "cloudStatusDisconnected": "Disconnected",
+  "cloudStatusDisconnectedDescription": "Synchronization is paused until this instance is reconnected.",
+  "cloudOpenWorkspace": "Open workspace",
+  "cloudReauthenticate": "Reauthenticate",
+  "cloudSignIn": "Sign in",
+  "cloudReconnect": "Reconnect",
+  "cloudRetryConnection": "Retry connection"
 }
