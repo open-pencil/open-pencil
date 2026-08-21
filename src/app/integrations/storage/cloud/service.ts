@@ -20,6 +20,15 @@ export const cloudConnectionService = createCloudConnectionService({
       credentialRef('openpencil-cloud', 'session', profile.id)
     )
   },
+  async clearAccessToken(serverURL) {
+    const profile = listCloudConnectionProfiles().find(
+      (candidate) => candidate.serverURL === serverURL
+    )
+    if (!profile) return
+    await appCredentialServices.manager.clear(
+      credentialRef('openpencil-cloud', 'session', profile.id)
+    )
+  },
   readSelectedWorkspace(serverURL) {
     const preferences = readStoragePreferences(PROVIDER_ID)
     return preferences[SERVER_URL_FIELD] === serverURL

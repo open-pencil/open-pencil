@@ -133,6 +133,29 @@ describe('Cloud connection service', () => {
     expect(disconnected.get('https://cloud.example.com')).toBeNull()
   })
 
+  test('clears only a rejected bearer token', async () => {
+    const cleared: string[] = []
+    const service = createCloudConnectionService({
+      async fetch(input) {
+        const url = String(input)
+        if (url.includes('.well-known')) return Response.json(discovery())
+        if (url.endsWith('/session'))
+          return Response.json({ error: 'unauthorized' }, { status: 401 })
+        return Response.json({ workspaces: [] })
+      },
+      readAccessToken: async () => 'expired-token',
+      clearAccessToken: async (serverURL) => {
+        cleared.push(serverURL)
+      },
+      readSelectedWorkspace: () => null,
+      writeSelectedWorkspace: () => undefined
+    })
+    const connection = await service.connect('https://cloud.example.com')
+    expect(connection.status).toBe('authentication-required')
+    expect(connection.client).toBeNull()
+    expect(cleared).toEqual(['https://cloud.example.com'])
+  })
+
   test('clears a workspace selection that is no longer authorized', async () => {
     const remote = fetchMock()
     const writes: Array<string | null> = []

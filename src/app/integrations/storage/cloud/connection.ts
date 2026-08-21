@@ -10,6 +10,7 @@ import type { CloudDiscovery, CloudSession, WorkspaceSummary } from '@open-penci
 export type CloudConnectionStatus =
   | 'disconnected'
   | 'discovering'
+  | 'authentication-required'
   | 'unauthenticated'
   | 'connected'
   | 'offline'
@@ -34,6 +35,7 @@ export type CloudConnection = CloudConnectionSnapshot & {
 export type CloudConnectionServiceOptions = {
   fetch: CloudFetch
   readAccessToken?(serverURL: string): Promise<string | null>
+  clearAccessToken?(serverURL: string): Promise<void>
   readSelectedWorkspace(serverURL: string): string | null
   writeSelectedWorkspace(serverURL: string, workspaceId: string | null): void
 }
@@ -99,6 +101,25 @@ export function createCloudConnectionService(options: CloudConnectionServiceOpti
         accessToken: accessToken ?? undefined
       })
       const session = await client.getSession()
+      if (!session && accessToken) {
+        await options.clearAccessToken?.(normalized)
+        const connection: CloudConnection = {
+          ...existing,
+          discovery,
+          client: null,
+          session: null,
+          workspaces: [],
+          selectedWorkspaceId: existing.selectedWorkspaceId,
+          status: 'authentication-required',
+          lastConnectedAt: new Date().toISOString(),
+          error: null
+        }
+        if (isCurrent()) {
+          connections.set(normalized, connection)
+          publish(connection)
+        }
+        return connection
+      }
       const workspaces = session ? (await client.listWorkspaces()).workspaces : []
       const selectedWorkspaceId = selectWorkspace(existing.selectedWorkspaceId, workspaces)
       const connection: CloudConnection = {
