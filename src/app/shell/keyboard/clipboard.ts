@@ -3,6 +3,7 @@ import { useEventListener } from '@vueuse/core'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { getInMemoryClipboardHTML, setInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
 import {
   copySelectionToTauriClipboard,
   pasteFromTauriClipboard
@@ -23,7 +24,11 @@ export function bindEditorClipboard(store: EditorStore) {
       void copySelectionToTauriClipboard(store)
       return
     }
-    if (e.clipboardData) void store.writeCopyData(e.clipboardData)
+    if (e.clipboardData) {
+      void store.writeCopyData(e.clipboardData)
+      const html = e.clipboardData.getData('text/html')
+      if (html) setInMemoryClipboardHTML(html)
+    }
   })
 
   useEventListener(window, 'cut', (e: ClipboardEvent) => {
@@ -36,7 +41,11 @@ export function bindEditorClipboard(store: EditorStore) {
       })
       return
     }
-    if (e.clipboardData) void store.writeCopyData(e.clipboardData)
+    if (e.clipboardData) {
+      void store.writeCopyData(e.clipboardData)
+      const html = e.clipboardData.getData('text/html')
+      if (html) setInMemoryClipboardHTML(html)
+    }
     store.deleteSelected()
   })
 
@@ -60,6 +69,14 @@ export function bindEditorClipboard(store: EditorStore) {
       return
     }
 
-    if (isTauri()) void pasteFromTauriClipboard(store, cursorPos)
+    if (isTauri()) {
+      void pasteFromTauriClipboard(store, cursorPos)
+      return
+    }
+
+    const memoryHTML = getInMemoryClipboardHTML()
+    if (memoryHTML) {
+      void store.pasteFromHTML(memoryHTML, cursorPos)
+    }
   })
 }
