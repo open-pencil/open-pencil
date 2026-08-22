@@ -42,7 +42,22 @@ function hasErrorOutput(part: ToolPart): boolean {
   )
 }
 
+function mcpResultState(part: ToolPart): 'done' | 'error' | undefined {
+  if (
+    part.output === null ||
+    typeof part.output !== 'object' ||
+    !('content' in part.output) ||
+    !Array.isArray(part.output.content)
+  ) {
+    return undefined
+  }
+
+  return 'isError' in part.output && part.output.isError === true ? 'error' : 'done'
+}
+
 function toolState(part: ToolPart): 'pending' | 'done' | 'error' {
+  const mcpState = mcpResultState(part)
+  if (mcpState !== undefined) return mcpState
   if (part.state === 'output-error' || hasErrorOutput(part)) return 'error'
   if (part.state === 'output-available') return 'done'
   return 'pending'
