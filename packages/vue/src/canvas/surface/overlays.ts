@@ -1,5 +1,4 @@
 import type { SkiaRenderer } from '@open-pencil/core/canvas'
-import { IS_BROWSER } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 
 import { useViewportKind } from '#vue/editor/viewport-kind/use'
@@ -9,13 +8,11 @@ export type RulerVisibilityOptions = {
 }
 
 export function createRulerVisibility(options?: RulerVisibilityOptions) {
-  const params = IS_BROWSER ? new URLSearchParams(window.location.search) : new URLSearchParams()
-  const noRulersParam = params.has('no-rulers')
   const { isMobile } = useViewportKind()
 
   return function shouldShowRulers() {
     if (options?.showRulers === false) return false
-    return !noRulersParam && !isMobile.value
+    return !isMobile.value
   }
 }
 

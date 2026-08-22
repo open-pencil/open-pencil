@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "name": "synthetic-pinch-reversal",
+  "source": "synthetic",
+  "recordedAt": "2026-01-01T00:00:00.000Z",
+  "environment": {
+    "userAgent": "synthetic",
+    "platform": "MacIntel",
+    "devicePixelRatio": 2,
+    "viewportWidth": 1280,
+    "viewportHeight": 800,
+    "canvasWidth": 1280,
+    "canvasHeight": 800
+  },
+  "initialViewport": { "panX": 0, "panY": 0, "zoom": 1 },
+  "wheel": [
+    {
+      "timeMs": 0,
+      "deltaX": 0,
+      "deltaY": -1.2,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 8,
+      "deltaX": 0,
+      "deltaY": -2.4,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 17,
+      "deltaX": 0,
+      "deltaY": -3.8,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 26,
+      "deltaX": 0,
+      "deltaY": -4.1,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 35,
+      "deltaX": 0,
+      "deltaY": -2.2,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 58,
+      "deltaX": 0,
+      "deltaY": 1.1,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 67,
+      "deltaX": 0,
+      "deltaY": 2.7,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 76,
+      "deltaX": 0,
+      "deltaY": 3.2,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    },
+    {
+      "timeMs": 86,
+      "deltaX": 0,
+      "deltaY": 1.5,
+      "deltaMode": 0,
+      "ctrlKey": true,
+      "metaKey": false,
+      "shiftKey": false,
+      "clientX": 640,
+      "clientY": 400,
+      "cancelable": true
+    }
+  ],
+  "trace": []
+}

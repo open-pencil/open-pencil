@@ -50,6 +50,7 @@ function createRenderer() {
     imageFilterCache: new Map(),
     maskFilterCache: new Map(),
     nodePictureCache: new Map(),
+    effectRasterCache: new Map(),
     subtreePictureCache: new Map(),
     scenePicture: null,
     sceneBacking: null,

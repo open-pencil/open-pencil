@@ -23,6 +23,10 @@ export function defineEditorStoreAccessors(store: object, editor: Editor) {
       enumerable: true,
       get: () => editor.renderer
     },
+    canvasRenderers: {
+      enumerable: true,
+      get: () => editor.canvasRenderers
+    },
     textEditor: {
       enumerable: true,
       get: () => editor.textEditor

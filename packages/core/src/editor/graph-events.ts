@@ -57,6 +57,7 @@ function invalidateRenderersForChange(
   for (const renderer of renderers) {
     if (invalidation.geometryCache) renderer.invalidateVectorPath(id)
     if (invalidation.nodePicture) renderer.invalidateNodePicture(id)
+    renderer.tiledScene.invalidateNode(id)
   }
 }
 
@@ -76,6 +77,10 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
   }
 
   function onNodeStructureChanged(nodeId: string) {
+    for (const renderer of options.getRenderers()) {
+      renderer.invalidateNodePicture(nodeId)
+      renderer.tiledScene.invalidateStructure()
+    }
     options.scheduleComponentSync(nodeId)
     options.requestRender()
   }

@@ -27,6 +27,8 @@
     "build-storybook": "storybook build",
     "tauri": "tauri",
     "build:native-test": "bun run build:packages && bun tauri build --debug --no-bundle --features native-test --config desktop/tauri.native-test.conf.json",
+    "benchmark:navigation": "bun tools/navigation-benchmark/src/cli.ts run",
+    "benchmark:navigation:test": "bun test tools/navigation-benchmark/tests",
     "test:native": "bun run build:native-test && wdio run wdio.conf.ts",
     "lint": "bun run lint:structure && oxlint -c oxlint.json --type-aware --type-check src/ packages/scene-graph/src/ packages/core/src/ packages/vue/src/ packages/cli/src/ packages/mcp/src/ packages/harness/src/ packages/dom-css/src/ packages/pen/src/ packages/kiwi/src/ packages/fig/src/",
     "lint:structure": "oxlint -c oxlint.json vite.config.ts vite/ .storybook/ src/ packages/scene-graph/src/ packages/scene-graph/scripts/ packages/core/src/ packages/vue/src/ packages/cli/src/ packages/mcp/src/ packages/harness/src/ packages/harness/tests/ packages/dom-css/src/ packages/dom-css/tests/ packages/dom-css/scripts/ packages/pen/src/ packages/pen/scripts/ packages/kiwi/src/ packages/kiwi/tests/ packages/kiwi/scripts/ packages/fig/src/ packages/fig/tests/ packages/fig/scripts/ tests/ scripts/ tools/",

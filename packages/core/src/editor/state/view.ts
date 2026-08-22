@@ -23,6 +23,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     pageColor: { ...CANVAS_BG_COLOR },
     panY: 0,
     zoom: 1,
+    navigation: { phase: 'idle', generation: 0, lastInputAt: 0 },
     renderVersion: 0,
     enteredContainerId: null,
     nodeEditState: null,
@@ -43,6 +44,7 @@ export function copyEditorViewState(source: EditorViewState): EditorViewState {
     penState: structuredClone(source.penState),
     autoLayoutHover: structuredClone(source.autoLayoutHover),
     pageColor: { ...source.pageColor },
+    navigation: { ...source.navigation },
     nodeEditState: structuredClone(source.nodeEditState)
   }
 }

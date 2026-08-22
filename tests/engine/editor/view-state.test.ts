@@ -27,9 +27,11 @@ describe('editor state ownership', () => {
     copy.selectedIds.add('pane-only')
     copy.snapGuides.length = 0
     copy.pageColor.r = 0.5
+    copy.navigation.phase = 'zoom'
 
     expect(source.selectedIds).toEqual(new Set(['selected']))
     expect(source.snapGuides).toHaveLength(1)
     expect(source.pageColor.r).not.toBe(0.5)
+    expect(source.navigation.phase).toBe('idle')
   })
 })

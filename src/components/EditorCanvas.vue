@@ -23,6 +23,7 @@ import {
 } from '@open-pencil/vue'
 import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
+import { appRuntimeConfig } from '@/app/runtime/config'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
 import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
@@ -61,6 +62,7 @@ const { selectAtContextPoint } = createCanvasContextSelection(canvasRef, store)
 
 useCanvas(sceneCanvasRef, store, {
   layer: 'scene',
+  sceneRenderer: appRuntimeConfig.sceneRenderer,
   showRulers: false,
   getRenderState,
   onViewportResize
@@ -70,6 +72,7 @@ const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCan
   store,
   {
     layer: 'overlays',
+    showRulers: appRuntimeConfig.showRulers ? undefined : false,
     getRenderState,
     onViewportResize
   }

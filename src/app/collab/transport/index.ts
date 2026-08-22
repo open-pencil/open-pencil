@@ -1,12 +1,11 @@
-import { IS_BROWSER } from '@/constants'
+import { appRuntimeConfig } from '@/app/runtime/config'
 
 import { joinTestCollabRoom } from './test'
 import { joinTrysteroCollabRoom } from './trystero'
 import type { JoinCollabRoom } from './types'
 
 function usesTestTransport(): boolean {
-  if (!IS_BROWSER || !import.meta.env.DEV) return false
-  return new URLSearchParams(window.location.search).get('collabTransport') === 'test'
+  return import.meta.env.DEV && appRuntimeConfig.collaborationTransport === 'test'
 }
 
 export const joinCollabRoom: JoinCollabRoom = (roomId) =>

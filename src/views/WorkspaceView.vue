@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, provide, ref } from 'vue'
-import { useEventListener, useUrlSearchParams } from '@vueuse/core'
+import { useEventListener } from '@vueuse/core'
 import { useHead } from '@unhead/vue'
 import { useRoute } from 'vue-router'
 
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { appRuntimeConfig } from '@/app/runtime/config'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
 import { createDemoShapes } from '@/app/demo/document'
@@ -27,17 +28,16 @@ import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
 
 const route = useRoute()
-const params = useUrlSearchParams('history')
 const createdInitialTab = tabCount() === 0
 const shouldCreateHome =
   route.path === '/' &&
-  !('test' in params) &&
+  !appRuntimeConfig.test &&
   !route.meta.demo &&
-  (isTauri() || 'recent-files' in params)
+  (isTauri() || appRuntimeConfig.recentFiles)
 let firstTab = activeTab.value
 if (!firstTab) firstTab = shouldCreateHome ? createHomeTab() : createTab()
 
-if (createdInitialTab && route.meta.demo && !('test' in params)) {
+if (createdInitialTab && route.meta.demo && !appRuntimeConfig.test) {
   void createDemoShapes(firstTab.store)
 }
 

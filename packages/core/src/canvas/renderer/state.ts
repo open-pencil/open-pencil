@@ -1,5 +1,7 @@
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
+import { clearEffectRasterCache, deleteEffectRaster } from './effect-raster-cache'
+
 export function invalidateScenePicture(r: SkiaRenderer): void {
   r.scenePicture?.delete()
   r.scenePicture = null
@@ -25,10 +27,12 @@ export function invalidateAllPictures(r: SkiaRenderer): void {
   for (const pic of r.nodePictureCache.values()) pic?.delete()
   r.nodePictureCache.clear()
   r.nodePictureCacheGenerations.clear()
+  clearEffectRasterCache(r.effectRasterCache)
   clearSubtreePictureCache(r)
 }
 
 export function invalidateNodePicture(r: SkiaRenderer, nodeId: string): void {
+  deleteEffectRaster(r.effectRasterCache, nodeId)
   const pic = r.nodePictureCache.get(nodeId)
   if (pic) {
     pic.delete()

@@ -1,3 +1,4 @@
+import { appRuntimeConfig } from '@/app/runtime/config'
 import { IS_BROWSER } from '@/constants'
 
 import type { CollabAction, CollabActionReceiver, CollabRoomTransport } from './types'
@@ -48,7 +49,7 @@ function relayURL(roomId: string): URL {
   if (!IS_BROWSER) {
     throw new Error('Test collaboration transport requires a browser')
   }
-  const configured = new URLSearchParams(window.location.search).get('collabRelay')
+  const configured = appRuntimeConfig.collaborationRelayURL
   if (!configured) throw new Error('Test collaboration transport requires collabRelay')
   const url = new URL(configured)
   url.searchParams.set('roomId', roomId)

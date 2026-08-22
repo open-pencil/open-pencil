@@ -65,6 +65,8 @@ export function createCanvasSurfaceManager({
 
     const glCtx = canvas.getContext('webgl2') ?? null
     state.renderer = new SkiaRenderer(ck, surface, glCtx)
+    state.renderer.tracksSceneSettlement = options?.layer !== 'overlays'
+    state.renderer.tiledSceneEnabled = options?.sceneRenderer === 'tiled'
     editor.setCanvasKit(ck, state.renderer)
     canvas.dataset.ready = '1'
 
@@ -92,6 +94,9 @@ export function createCanvasSurfaceManager({
     )
     renderLoop.markRendered()
     clearSceneBackingRenderTimer()
+    if (options?.layer === 'scene' && state.renderer.tiledScenePending) {
+      renderLoop.markDirty()
+    }
     if (options?.layer === 'scene' && state.renderer.sceneBackingNeedsCrispRender) {
       const delay = Math.max(0, state.renderer.sceneBackingPreviewUntil - performance.now())
       sceneBackingRenderTimer = setTimeout(() => renderLoop.markDirty(), delay)

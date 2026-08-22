@@ -60,6 +60,8 @@ export interface PendingFontNode {
   keys: Set<string>
 }
 
+import type { EffectRasterCacheEntry } from './renderer/effect-raster-cache'
+import { TiledSceneController } from './renderer/tiles'
 import type { RenderOverlays, RulerTheme } from './renderer/types'
 
 export class SkiaRenderer {
@@ -100,6 +102,7 @@ export class SkiaRenderer {
   strokeGeometryCache = new Map<string, Path[]>()
   /** Path-text glyph silhouettes (stroke-and-union, font units) keyed by blob hash + relative weight. */
   glyphSilhouetteCache = new Map<string, Path>()
+  renderingSceneBacking = false
   scenePicture: SkPicture | null = null
   scenePictureVersion = -1
   scenePictureFontGeneration = -1
@@ -149,15 +152,23 @@ export class SkiaRenderer {
   sceneBackingAverageRecordMs = 40
   sceneBackingAverageViewportIntervalMs = 80
   sceneBackingLastViewportEventAt = 0
+  navigationPhase: EditorState['navigation']['phase'] = 'idle'
+  navigationGeneration = 0
+  tiledSceneEnabled = false
+  tracksSceneSettlement = true
+  tiledScenePending = false
+  tiledSceneCovered = false
   lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
   nodePictureCache = new Map<string, SkPicture | null>()
   nodePictureCacheGenerations = new Map<string, number>()
+  effectRasterCache = new Map<string, EffectRasterCacheEntry>()
   subtreePictureCache = new Map<string, SubtreePictureCacheEntry>()
   subtreePictureCachePageId: string | null = null
   subtreePictureCacheSceneVersion = -1
   subtreePictureCachePositionPreviewVersion = -1
   subtreePictureCacheFontGeneration = -1
   readonly labelCache = new LabelCache()
+  readonly tiledScene = new TiledSceneController()
   readonly profiler: RenderProfiler
 
   declare rulerBgPaint: Paint
@@ -183,6 +194,7 @@ export class SkiaRenderer {
   rulerTheme: RulerTheme | null = null
   pageId: string | null = null
 
+  boundEffectLayersToViewport = false
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }
   _nodeCount = 0
   _culledCount = 0
@@ -276,6 +288,12 @@ export class SkiaRenderer {
   ) => void
   declare drawSectionTitles: (canvas: Canvas, graph: SceneGraph) => void
   declare drawComponentLabels: (canvas: Canvas, graph: SceneGraph) => void
+  declare renderNodeSelf: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    nodeId: string,
+    overlays?: RenderOverlays
+  ) => void
   declare renderNode: (
     canvas: Canvas,
     graph: SceneGraph,

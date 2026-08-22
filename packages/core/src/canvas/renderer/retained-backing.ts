@@ -1,16 +1,17 @@
+/* eslint-disable max-lines -- retained backing allocation, coverage, and incremental construction share renderer state */
 import type { Canvas, Image as CKImage, Surface } from 'canvaskit-wasm'
 
-import { getWorldMatrix, TransformMatrix, type SceneGraph } from '@open-pencil/scene-graph'
+import { type SceneGraph } from '@open-pencil/scene-graph'
 import {
   computeDescendantVisualBounds,
-  effectOverflow,
-  strokeOverflow,
   unionVisualBounds,
   type VisualBounds
 } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { clearSubtreePictureCache } from '#core/canvas/renderer/state'
+import { worldNodeVisualBounds } from '#core/canvas/renderer/visual-bounds'
+import { emitNavigationTrace } from '#core/profiler'
 
 import type { RenderLayer } from './pipeline'
 
@@ -66,6 +67,13 @@ export function updateSceneBackingPreviewState(r: SkiaRenderer, layer: RenderLay
     r.sceneBackingLastViewportEventAt = timestamp
     r.sceneBackingPreviewUntil = timestamp + sceneBackingPreviewIdleMs(r)
     r.sceneBackingNeedsCrispRender = !!r.sceneBacking
+    emitNavigationTrace('backing:preview', {
+      previewUntil: r.sceneBackingPreviewUntil,
+      hasBacking: !!r.sceneBacking,
+      panX: r.panX,
+      panY: r.panY,
+      zoom: r.zoom
+    })
     r.lastSceneViewport = { panX: r.panX, panY: r.panY, zoom: r.zoom }
   }
 }
@@ -257,26 +265,7 @@ export function computeRetainedSubtreeBounds(
     const node = graph.getNode(nodeId)
     if (!node?.visible) continue
 
-    const stroke = strokeOverflow(node.strokes)
-    const effects = effectOverflow(node.effects)
-    const points = TransformMatrix.mapPoints(getWorldMatrix(node, graph), [
-      -stroke - effects.left,
-      -stroke - effects.top,
-      node.width + stroke + effects.right,
-      -stroke - effects.top,
-      node.width + stroke + effects.right,
-      node.height + stroke + effects.bottom,
-      -stroke - effects.left,
-      node.height + stroke + effects.bottom
-    ])
-    const xs = [points[0], points[2], points[4], points[6]]
-    const ys = [points[1], points[3], points[5], points[7]]
-    transformedBounds = unionVisualBounds(transformedBounds, {
-      minX: Math.min(...xs),
-      minY: Math.min(...ys),
-      maxX: Math.max(...xs),
-      maxY: Math.max(...ys)
-    })
+    transformedBounds = unionVisualBounds(transformedBounds, worldNodeVisualBounds(graph, node))
     pending.push(...node.childIds)
   }
 
@@ -350,9 +339,23 @@ function renderBackingChild(
   canvas.scale(r.dpr, r.dpr)
   canvas.translate(backing.panX, backing.panY)
   canvas.scale(r.zoom, r.zoom)
-  const picture = cachedSubtreePicture(r, graph, childId, sceneVersion)
-  if (picture) canvas.drawPicture(picture)
-  else r.renderNode(canvas, graph, childId, {})
+  const previousRenderingSceneBacking = r.renderingSceneBacking
+  const child = graph.getNode(childId)
+  const hasCacheableEffects = child?.effects.some(
+    (effect) => effect.visible && (effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW')
+  )
+  if (hasCacheableEffects) {
+    r.renderingSceneBacking = true
+    try {
+      r.renderNode(canvas, graph, childId, {})
+    } finally {
+      r.renderingSceneBacking = previousRenderingSceneBacking
+    }
+  } else {
+    const picture = cachedSubtreePicture(r, graph, childId, sceneVersion)
+    if (picture) canvas.drawPicture(picture)
+    else r.renderNode(canvas, graph, childId, {})
+  }
   canvas.restore()
   r.worldViewport = prevViewport
 }
@@ -434,6 +437,13 @@ function startSceneBackingBuild(r: SkiaRenderer, graph: SceneGraph, sceneVersion
     fontGeneration: r.fontGeneration,
     ...sceneBackingMetrics(backing)
   }
+  emitNavigationTrace('backing:build', {
+    phase: 'start',
+    childCount: r.sceneBackingBuild.childIds.length,
+    panX: backing.panX,
+    panY: backing.panY,
+    zoom: backing.zoom
+  })
 }
 
 function sceneBackingGeometryFromBuild(build: NonNullable<SkiaRenderer['sceneBackingBuild']>) {
@@ -475,6 +485,11 @@ function stepSceneBackingBuild(r: SkiaRenderer, sceneVersion: number): boolean {
   build.surface.delete()
   r.sceneBackingBuild = null
   installSceneBackingImage(r, image, build.sceneVersion, build.positionPreviewVersion, backing)
+  emitNavigationTrace('backing:crisp', {
+    buildMs: now() - build.startedAt,
+    childCount: build.childIds.length,
+    zoom: backing.zoom
+  })
   r.sceneBackingAverageRecordMs = smoothAverage(
     r.sceneBackingAverageRecordMs,
     clamp(now() - build.startedAt, 1, 1_000)
@@ -499,9 +514,15 @@ function recordSceneBacking(r: SkiaRenderer, graph: SceneGraph, sceneVersion: nu
   const image = surface.makeImageSnapshot()
   surface.delete()
   installSceneBackingImage(r, image, sceneVersion, graph.positionPreviewVersion, backing)
+  const recordMs = now() - startedAt
+  emitNavigationTrace('backing:crisp', {
+    buildMs: recordMs,
+    childCount: pageNode?.childIds.length ?? 0,
+    zoom: backing.zoom
+  })
   r.sceneBackingAverageRecordMs = smoothAverage(
     r.sceneBackingAverageRecordMs,
-    clamp(now() - startedAt, 1, 1_000)
+    clamp(recordMs, 1, 1_000)
   )
 }
 
@@ -512,6 +533,17 @@ export function renderSceneBacking(
   sceneVersion: number
 ): boolean {
   if (r.sceneBackingAllocationFailed) return false
+  const navigationActive =
+    r.navigationPhase === 'pan' ||
+    r.navigationPhase === 'zoom' ||
+    r.navigationPhase === 'momentum' ||
+    r.navigationPhase === 'settling'
+  if (navigationActive && r.sceneBacking) {
+    r.sceneBackingBuild?.surface.delete()
+    r.sceneBackingBuild = null
+    r.sceneBackingNeedsCrispRender = true
+    return drawSceneBacking(r, canvas, sceneVersion, true, graph.positionPreviewVersion)
+  }
   const positionPreviewVersion = graph.positionPreviewVersion
   const allowStaleZoom = now() < r.sceneBackingPreviewUntil
   const hasCoverage = backingCoverageContainsLiveViewport(
