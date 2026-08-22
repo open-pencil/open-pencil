@@ -12,7 +12,7 @@ import { formatStorageBytes } from '@/app/storage/format-bytes'
 import { toast } from '@/app/shell/ui'
 import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
 
-const { dialogs } = useI18n()
+const { recovery, common } = useI18n()
 const notifications = useNotificationMessages()
 const route = useRoute()
 const snapshots = ref<RecoverySnapshotMeta[]>([])
@@ -35,7 +35,7 @@ async function restore(snapshot: RecoverySnapshotMeta): Promise<void> {
   } catch (error) {
     toast.error(
       notifications.value.operationFailed({
-        error: error instanceof Error ? error.message : dialogs.value.recoveryFailed
+        error: error instanceof Error ? error.message : recovery.value.recoveryFailed
       })
     )
   } finally {
@@ -69,12 +69,12 @@ onMounted(async () => {
   <AppAlertDialogRoot v-model:open="open" size="md" data-test-id="recovery-dialog">
     <div class="border-b border-border px-4 py-3">
       <AlertDialogTitle class="text-sm font-semibold text-surface">
-        {{ dialogs.recoverUnsavedWork }}
+        {{ recovery.recoverUnsavedWork }}
       </AlertDialogTitle>
     </div>
     <AppDialogBody class="space-y-3">
       <AlertDialogDescription class="text-xs text-muted">
-        {{ dialogs.recoverUnsavedWorkDescription }}
+        {{ recovery.recoverUnsavedWorkDescription }}
       </AlertDialogDescription>
       <div class="max-h-72 space-y-2 overflow-y-auto">
         <div
@@ -95,7 +95,7 @@ onMounted(async () => {
             :disabled="busyId !== null"
             @click="discard(snapshot)"
           >
-            {{ dialogs.discard }}
+            {{ common.discard }}
           </button>
           <button
             type="button"
@@ -103,7 +103,7 @@ onMounted(async () => {
             :disabled="busyId !== null"
             @click="restore(snapshot)"
           >
-            {{ dialogs.restore }}
+            {{ common.restore }}
           </button>
         </div>
       </div>
@@ -111,7 +111,7 @@ onMounted(async () => {
     <AppDialogFooter>
       <AlertDialogCancel as-child>
         <button class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover">
-          {{ dialogs.close }}
+          {{ common.close }}
         </button>
       </AlertDialogCancel>
     </AppDialogFooter>

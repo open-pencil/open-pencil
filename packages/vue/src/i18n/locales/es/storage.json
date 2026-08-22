@@ -1,0 +1,19 @@
+{
+  "storageWorkspace": "Espacio de almacenamiento",
+  "openStorageWorkspace": "Abrir espacio",
+  "newStoredDocument": "Nuevo documento",
+  "emptyStorageWorkspace": "Aún no hay documentos guardados.",
+  "loadingDocuments": "Cargando documentos…",
+  "storageNotConfigured": "Configura el almacenamiento antes de usar este espacio.",
+  "storageProviderS3": "Almacenamiento S3",
+  "storageProviderR2": "Cloudflare R2",
+  "storageProviderAmazonS3": "Amazon S3",
+  "storageProviderBackblaze": "Backblaze B2",
+  "loadingStorageWorkspace": "Cargando espacio de almacenamiento…",
+  "copyStorageCors": "Copiar JSON de CORS",
+  "storageEndpoint": "Punto de conexión",
+  "storageBucket": "Bucket",
+  "storageRegion": "Región",
+  "storageAccessKeyID": "ID de clave de acceso",
+  "storageSecretAccessKey": "Clave de acceso secreta"
+}

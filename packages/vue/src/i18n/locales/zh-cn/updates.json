@@ -1,0 +1,11 @@
+{
+  "appUpToDate": "OpenPencil 已是最新版本",
+  "updateAvailableTitle": "更新 OpenPencil",
+  "updateAvailable": "OpenPencil {version} 可用。",
+  "updateInstallPrompt": "现在下载并安装吗？安装更新后应用将重新启动。",
+  "downloadingUpdate": "正在下载 OpenPencil {version}",
+  "updateInstalledTitle": "更新已安装",
+  "updateInstalled": "OpenPencil {version} 已安装{size}。正在重新启动。",
+  "updateUnavailable": "更新暂不可用。请先发布包含 latest.json 的已签名版本。",
+  "updateCheckFailed": "无法检查更新：{error}"
+}

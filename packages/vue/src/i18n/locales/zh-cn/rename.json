@@ -1,0 +1,13 @@
+{
+  "rename": "重命名",
+  "renameLayers": "重命名 {count} 个图层",
+  "renamePreview": "预览",
+  "renameMatch": "匹配",
+  "renameTo": "重命名为",
+  "renameCurrentName": "当前名称",
+  "renameNumberAscending": "编号 ↑",
+  "renameNumberDescending": "编号 ↓",
+  "renameStartAscendingFrom": "升序起始值",
+  "renameStopDescendingAt": "降序结束值",
+  "renameInvalidPattern": "正则表达式无效"
+}

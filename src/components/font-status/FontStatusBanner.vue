@@ -5,7 +5,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useDocumentFontStatus } from '@/app/editor/fonts/status'
 
-const { dialogs } = useI18n()
+const { fonts } = useI18n()
 const expanded = ref(false)
 const { status, retrying, retry, selectAffectedNodes } = useDocumentFontStatus()
 const issues = computed(() => status.value.issues)
@@ -27,8 +27,8 @@ const issues = computed(() => status.value.issues)
       >
         {{
           issues.length === 1
-            ? dialogs.fontIssueFound
-            : dialogs.fontIssuesFound({ count: issues.length })
+            ? fonts.fontIssueFound
+            : fonts.fontIssuesFound({ count: issues.length })
         }}
       </button>
       <button
@@ -37,7 +37,7 @@ const issues = computed(() => status.value.issues)
         class="shrink-0 rounded px-1.5 py-0.5 font-medium text-[var(--color-warning-action)] transition-colors hover:bg-amber-500/20"
         @click="selectAffectedNodes"
       >
-        {{ dialogs.selectAffectedLayers }}
+        {{ fonts.selectAffectedLayers }}
       </button>
       <button
         type="button"
@@ -46,11 +46,11 @@ const issues = computed(() => status.value.issues)
         :disabled="retrying"
         @click="retry"
       >
-        {{ retrying ? dialogs.retryingFonts : dialogs.retryFonts }}
+        {{ retrying ? fonts.retryingFonts : fonts.retryFonts }}
       </button>
       <button
         type="button"
-        :aria-label="expanded ? dialogs.collapseFontIssues : dialogs.expandFontIssues"
+        :aria-label="expanded ? fonts.collapseFontIssues : fonts.expandFontIssues"
         class="flex size-5 shrink-0 items-center justify-center rounded hover:bg-amber-500/20"
         @click="expanded = !expanded"
       >
@@ -69,13 +69,13 @@ const issues = computed(() => status.value.issues)
         <span class="min-w-0 flex-1 truncate">
           <strong>{{ issue.family }} {{ issue.style }}</strong>
           <template v-if="issue.substituteFamily"> → {{ issue.substituteFamily }} </template>
-          <template v-else>— {{ dialogs.noFontSubstitute }}</template>
+          <template v-else>— {{ fonts.noFontSubstitute }}</template>
         </span>
         <span class="shrink-0 text-[10px] opacity-75">
           {{
             issue.nodeIds.length === 1
-              ? dialogs.affectedLayer
-              : dialogs.affectedLayerCount({ count: issue.nodeIds.length })
+              ? fonts.affectedLayer
+              : fonts.affectedLayerCount({ count: issue.nodeIds.length })
           }}
         </span>
       </div>

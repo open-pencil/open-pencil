@@ -1,0 +1,9 @@
+{
+  "recoverUnsavedWork": "Odzyskaj niezapisaną pracę",
+  "recoverUnsavedWorkDescription": "OpenPencil znalazł dokumenty z poprzedniej sesji.",
+  "recoveryFailed": "Nie udało się przywrócić tego dokumentu.",
+  "settingsRecovery": "Odzyskiwanie",
+  "settingsRecoveryDescription": "Zarządzaj lokalnymi kopiami odzyskiwania niezapisanych dokumentów.",
+  "preserveUnsavedWork": "Automatycznie zachowuj niezapisaną pracę",
+  "preserveUnsavedWorkDescription": "Przechowuj lokalne kopie, aby odtworzyć dokumenty po nieoczekiwanym zamknięciu."
+}

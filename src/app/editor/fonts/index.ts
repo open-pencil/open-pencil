@@ -12,7 +12,7 @@ import {
   type WebFontProviderId
 } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { dialogMessages } from '@open-pencil/vue'
+import { fontsMessages } from '@open-pencil/vue'
 
 import {
   clearDownloadedFontCache as clearTauriDownloadedFontCache,
@@ -60,7 +60,7 @@ function showWebFontUnavailableToast(): void {
   if (webFontUnavailableToastShown || isTauri() || !onlineFontsEnabled.value) return
   if (!WEB_FONT_PROVIDER_IDS.some((provider) => fontProviderSettings.value[provider])) return
   webFontUnavailableToastShown = true
-  toast.warning(dialogMessages.get().webFontProvidersRequireDesktopApp)
+  toast.warning(fontsMessages.get().webFontProvidersRequireDesktopApp)
 }
 
 function configureTauriFontCache() {

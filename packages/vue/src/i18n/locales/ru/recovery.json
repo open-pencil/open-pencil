@@ -1,0 +1,9 @@
+{
+  "recoverUnsavedWork": "Восстановить несохранённую работу",
+  "recoverUnsavedWorkDescription": "OpenPencil обнаружил документы из предыдущего сеанса.",
+  "recoveryFailed": "Не удалось восстановить этот документ.",
+  "settingsRecovery": "Восстановление",
+  "settingsRecoveryDescription": "Управляйте локальными резервными копиями несохранённых документов.",
+  "preserveUnsavedWork": "Автоматически сохранять несохранённую работу",
+  "preserveUnsavedWorkDescription": "Храните локальные копии, чтобы восстановить документы после неожиданного завершения работы."
+}

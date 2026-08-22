@@ -26,7 +26,7 @@ import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
 import Tip from '@/components/ui/Tip.vue'
 
 const emit = defineEmits<{ 'new-document': [] }>()
-const { dialogs, panels, locale } = useI18n()
+const { panels, locale, storage, files, common, settings } = useI18n()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const query = ref('')
 const openError = ref<string | null>(null)
@@ -76,10 +76,10 @@ const storageDescription = computed(() => {
   if (endpoint) {
     try {
       const hostname = new URL(endpoint).hostname
-      if (hostname.endsWith('.r2.cloudflarestorage.com')) label = dialogs.value.storageProviderR2
-      else if (hostname.includes('amazonaws.com')) label = dialogs.value.storageProviderAmazonS3
-      else if (hostname.includes('backblazeb2.com')) label = dialogs.value.storageProviderBackblaze
-      else if (hostname) label = dialogs.value.storageProviderS3
+      if (hostname.endsWith('.r2.cloudflarestorage.com')) label = storage.value.storageProviderR2
+      else if (hostname.includes('amazonaws.com')) label = storage.value.storageProviderAmazonS3
+      else if (hostname.includes('backblazeb2.com')) label = storage.value.storageProviderBackblaze
+      else if (hostname) label = storage.value.storageProviderS3
     } catch {
       label = provider.label
     }
@@ -167,24 +167,24 @@ function formattedDate(updatedAt: string): string {
         v-if="noSearchMatches"
         class="rounded-lg border border-dashed border-border px-4 py-8 text-center text-xs text-muted"
       >
-        {{ dialogs.noMatchingFiles({ query: query.trim() }) }}
+        {{ files.noMatchingFiles({ query: query.trim() }) }}
       </p>
 
       <section v-if="!noSearchMatches">
         <div class="mb-3">
           <div class="flex items-start gap-3">
             <div class="min-w-0 flex-1">
-              <h1 class="text-base font-semibold">{{ dialogs.recentFiles }}</h1>
+              <h1 class="text-base font-semibold">{{ files.recentFiles }}</h1>
               <p class="mt-0.5 text-pretty text-xs text-muted">
-                {{ dialogs.recentFilesDescription }}
+                {{ files.recentFilesDescription }}
               </p>
             </div>
             <div class="ml-auto hidden shrink-0 items-center gap-1 sm:flex">
-              <Tip v-if="hasRecentFiles" :label="dialogs.clear">
+              <Tip v-if="hasRecentFiles" :label="common.clear">
                 <button
                   type="button"
                   class="flex size-10 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface sm:size-7"
-                  :aria-label="dialogs.clear"
+                  :aria-label="common.clear"
                   data-test-id="recent-files-clear"
                   @click="clearRecentFiles"
                 >
@@ -218,11 +218,11 @@ function formattedDate(updatedAt: string): string {
             </div>
           </div>
           <div class="mt-2 flex items-center justify-end gap-1 sm:hidden">
-            <Tip v-if="hasRecentFiles" :label="dialogs.clear">
+            <Tip v-if="hasRecentFiles" :label="common.clear">
               <button
                 type="button"
                 class="flex size-8 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
-                :aria-label="dialogs.clear"
+                :aria-label="common.clear"
                 data-test-id="recent-files-clear"
                 @click="clearRecentFiles"
               >
@@ -310,35 +310,35 @@ function formattedDate(updatedAt: string): string {
           v-else-if="!normalizedQuery"
           class="rounded-lg border border-dashed border-border px-4 py-4 text-center sm:py-6"
         >
-          <p class="text-xs font-medium">{{ dialogs.noRecentFiles }}</p>
-          <p class="mt-1 text-xs text-muted">{{ dialogs.noRecentFilesDescription }}</p>
+          <p class="text-xs font-medium">{{ files.noRecentFiles }}</p>
+          <p class="mt-1 text-xs text-muted">{{ files.noRecentFilesDescription }}</p>
         </div>
       </section>
 
       <section class="mt-7">
         <div class="mb-3 flex items-start gap-3">
           <div class="min-w-0">
-            <h2 class="text-base font-semibold">{{ dialogs.storageWorkspace }}</h2>
+            <h2 class="text-base font-semibold">{{ storage.storageWorkspace }}</h2>
             <p class="mt-0.5 truncate text-xs text-muted sm:whitespace-normal">
               {{ storageDescription }}
             </p>
           </div>
           <div class="ml-auto flex shrink-0 items-center gap-1">
-            <Tip :label="dialogs.refresh">
+            <Tip :label="common.refresh">
               <button
                 type="button"
                 class="flex size-10 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface sm:size-7"
-                :aria-label="dialogs.refresh"
+                :aria-label="common.refresh"
                 @click="storageWorkspace.refresh"
               >
                 <icon-lucide-refresh-cw class="size-3.5" />
               </button>
             </Tip>
-            <Tip :label="dialogs.settings">
+            <Tip :label="settings.settings">
               <button
                 type="button"
                 class="flex size-10 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface sm:size-7"
-                :aria-label="dialogs.settings"
+                :aria-label="settings.settings"
                 @click="openSettingsDialog('storage')"
               >
                 <icon-lucide-settings-2 class="size-3.5" />
@@ -350,7 +350,7 @@ function formattedDate(updatedAt: string): string {
         <div
           v-if="storageLoading && storageDocuments.length === 0"
           class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
-          :aria-label="dialogs.loadingStorageWorkspace"
+          :aria-label="storage.loadingStorageWorkspace"
         >
           <div v-for="index in 3" :key="index" class="min-w-0 animate-pulse">
             <div class="aspect-video rounded-lg border border-border bg-panel-field" />
@@ -370,7 +370,7 @@ function formattedDate(updatedAt: string): string {
             class="mt-3 rounded border border-border px-3 py-1.5 text-xs hover:bg-hover"
             @click="storageWorkspace.refresh"
           >
-            {{ dialogs.refresh }}
+            {{ common.refresh }}
           </button>
         </div>
 
@@ -432,13 +432,13 @@ function formattedDate(updatedAt: string): string {
           v-else-if="!storageConfigured"
           class="rounded-lg border border-dashed border-border px-4 py-4 text-center text-xs text-muted sm:py-6"
         >
-          <p>{{ dialogs.storageNotConfigured }}</p>
+          <p>{{ storage.storageNotConfigured }}</p>
           <button
             type="button"
             class="mt-3 rounded border border-border px-3 py-1.5 text-xs text-surface hover:bg-hover"
             @click="openSettingsDialog('storage')"
           >
-            {{ dialogs.settings }}
+            {{ settings.settings }}
           </button>
         </div>
 
@@ -446,7 +446,7 @@ function formattedDate(updatedAt: string): string {
           v-else-if="!normalizedQuery"
           class="rounded-lg border border-dashed border-border px-4 py-4 text-center text-xs text-muted sm:py-6"
         >
-          {{ dialogs.emptyStorageWorkspace }}
+          {{ storage.emptyStorageWorkspace }}
         </div>
       </section>
     </section>

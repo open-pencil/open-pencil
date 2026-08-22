@@ -1,0 +1,15 @@
+{
+  "codeSource": "Code来源",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Wird aktualisiert…",
+  "codeUpdatedLive": "Live aktualisiert",
+  "codePreviewFailed": "Vorschau fehlgeschlagen",
+  "codeGeneratedReadOnly": "Generiert, schreibgeschützt",
+  "codeReset": "Zurücksetzen",
+  "copyJSXReference": "JSX-Prop-Referenz in die Zwischenablage kopieren",
+  "jsxUpToDate": "Aktuell"
+}

@@ -39,7 +39,7 @@ import type { BindableValueActions } from '@open-pencil/vue'
 const fillCtx = useFillControls()
 const okhcl = useOkHCL()
 const colorProvider = useColorBindingProvider()
-const { panels, dialogs } = useI18n()
+const { panels, common } = useI18n()
 const blendModeOptions = useBlendModeOptions()
 
 function displayFill(fill: Fill, resolvedColor: Color | undefined): Fill {
@@ -141,7 +141,7 @@ function updateSolidColor(
               <template v-if="fill.type === 'SOLID'" #binding>
                 <VariableBindingPicker
                   :trigger-label="panels.applyVariable"
-                  :search-placeholder="dialogs.search"
+                  :search-placeholder="common.search"
                   :empty-label="panels.noVariablesFound"
                   :detach-label="panels.detachVariable"
                   :create-label="

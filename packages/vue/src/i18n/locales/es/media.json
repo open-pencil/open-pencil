@@ -1,0 +1,11 @@
+{
+  "vectorization": "Vectorización de imágenes",
+  "vectorizationDescription": "Envía capas de imagen a Recraft o fal.ai y devuelve vectores editables. Pueden aplicarse cargos del proveedor.",
+  "vectorizeProvider": "Servicio de vectorización",
+  "pexelsAPIKey": "Clave API de Pexels (fotos stock)",
+  "unsplashAccessKey": "Clave de acceso de Unsplash",
+  "stockPhotoToolOptional": "Opcional — para herramienta stock_photo",
+  "pexelsAlternativeOptional": "Opcional — alternativa a Pexels",
+  "getPexelsAPIKey": "Obtener clave API gratuita de Pexels →",
+  "getUnsplashAccessKey": "Obtener clave de acceso gratuita de Unsplash →"
+}

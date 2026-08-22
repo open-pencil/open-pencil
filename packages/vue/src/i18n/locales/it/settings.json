@@ -1,0 +1,20 @@
+{
+  "settings": "Impostazioni",
+  "settingsDescription": "Gestisci integrazioni e preferenze dell’app.",
+  "settingsGeneral": "Generali",
+  "settingsEditing": "Modifica",
+  "settingsSnappingDescription": "Controlla l’allineamento durante la modifica dei tracciati e lo spostamento o ridimensionamento dei livelli.",
+  "snapToGeometry": "Aggancia alla geometria",
+  "snapToGeometryDescription": "Allinea i punti vettoriali trascinati agli altri punti del tracciato.",
+  "snapToObjects": "Aggancia agli oggetti",
+  "snapToObjectsDescription": "Allinea punti vettoriali e limiti dei livelli ai bordi e ai centri dei livelli vicini.",
+  "snapToPixelGrid": "Aggancia alla griglia di pixel",
+  "snapToPixelGridDescription": "Allinea punti vettoriali, livelli spostati e bordi ridimensionati a pixel interi.",
+  "snapTemporaryDisableHint": "Tieni premuto Control durante il trascinamento per disattivare temporaneamente l’aggancio.",
+  "settingsAIAndAgents": "IA e agenti",
+  "settingsMedia": "Media",
+  "settingsMCP": "MCP e automazione",
+  "settingsStorage": "Archiviazione cloud",
+  "mobilePanelNavigation": "Navigazione pannello mobile",
+  "notifications": "Notifiche"
+}

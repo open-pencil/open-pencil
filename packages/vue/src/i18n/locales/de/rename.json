@@ -1,0 +1,13 @@
+{
+  "rename": "Umbenennen",
+  "renameLayers": "{count} Ebenen umbenennen",
+  "renamePreview": "Vorschau",
+  "renameMatch": "Übereinstimmung",
+  "renameTo": "Umbenennen in",
+  "renameCurrentName": "Aktueller Name",
+  "renameNumberAscending": "Nummer ↑",
+  "renameNumberDescending": "Nummer ↓",
+  "renameStartAscendingFrom": "Aufsteigend beginnen bei",
+  "renameStopDescendingAt": "Absteigend enden bei",
+  "renameInvalidPattern": "Ungültiger regulärer Ausdruck"
+}

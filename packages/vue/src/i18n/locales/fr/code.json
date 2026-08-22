@@ -1,0 +1,15 @@
+{
+  "codeSource": "Source du code",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Mise à jour…",
+  "codeUpdatedLive": "Mis à jour en direct",
+  "codePreviewFailed": "Échec de l’aperçu",
+  "codeGeneratedReadOnly": "Généré, lecture seule",
+  "codeReset": "Réinitialiser",
+  "copyJSXReference": "Copier la référence des props JSX dans le presse-papiers",
+  "jsxUpToDate": "À jour"
+}

@@ -7,11 +7,11 @@ const collab = useCollabPanelContext()
 
 <template>
   <div class="mb-3">
-    <label class="mb-1 block text-xs text-muted">{{ collab.dialogs.yourName }}</label>
+    <label class="mb-1 block text-xs text-muted">{{ collab.messages.yourName }}</label>
     <AppInput
       v-model="collab.nameDraft"
       data-test-id="collab-name-input"
-      :placeholder="collab.dialogs.enterYourName"
+      :placeholder="collab.messages.enterYourName"
       @enter="collab.share"
     />
   </div>
@@ -23,12 +23,12 @@ const collab = useCollabPanelContext()
     @click="collab.share"
   >
     <icon-lucide-share-2 class="size-3.5" />
-    {{ collab.dialogs.shareThisFile }}
+    {{ collab.messages.shareThisFile }}
   </button>
 
   <div class="mb-2 flex items-center gap-2">
     <div class="h-px flex-1 bg-border" />
-    <span class="text-[11px] text-muted">{{ collab.dialogs.orJoinRoom }}</span>
+    <span class="text-[11px] text-muted">{{ collab.messages.orJoinRoom }}</span>
     <div class="h-px flex-1 bg-border" />
   </div>
 
@@ -36,7 +36,7 @@ const collab = useCollabPanelContext()
     <AppInput
       v-model="collab.joinInput"
       data-test-id="collab-join-input"
-      :placeholder="collab.dialogs.pasteRoomLinkOrId"
+      :placeholder="collab.messages.pasteRoomLinkOrId"
       class="min-w-0 flex-1"
       @enter="collab.join"
     />

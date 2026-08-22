@@ -32,7 +32,7 @@ const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/C
 const { active = true } = defineProps<{ active?: boolean }>()
 const store = useEditorStore()
 const editorActive = computed(() => active)
-const { dialogs } = useI18n()
+const { code, common } = useI18n()
 const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 const { copy: copyReference, copied: copiedReference } = useClipboard({ copiedDuring: 2000 })
 const source = ref<CodeSource>('design-jsx')
@@ -61,16 +61,14 @@ const generatedJSX = useSceneComputed(() => {
 })
 
 const sourceOptions = computed(() => [
-  { value: 'design-jsx' as const, label: dialogs.value.codeSourceDesignJSX },
-  { value: 'tailwind-jsx' as const, label: dialogs.value.codeSourceTailwindJSX },
-  { value: 'html-css' as const, label: dialogs.value.codeSourceHTMLCSS }
+  { value: 'design-jsx' as const, label: code.value.codeSourceDesignJSX },
+  { value: 'tailwind-jsx' as const, label: code.value.codeSourceTailwindJSX },
+  { value: 'html-css' as const, label: code.value.codeSourceHTMLCSS }
 ])
 const readOnly = computed(() => source.value === 'tailwind-jsx')
 const dirty = computed(() => draft.value !== baseline.value)
 const editorLabel = computed(() =>
-  source.value === 'html-css'
-    ? dialogs.value.codeEditorHTMLCSSLabel
-    : dialogs.value.codeEditorDesignLabel
+  source.value === 'html-css' ? code.value.codeEditorHTMLCSSLabel : code.value.codeEditorDesignLabel
 )
 const statusTone = computed(() => {
   if (status.value === 'error') return 'error'
@@ -80,10 +78,10 @@ const statusTone = computed(() => {
 const statusStyles = computed(() => tv(statusTheme)({ tone: statusTone.value }))
 
 const statusText = computed(() => {
-  if (status.value === 'updating') return dialogs.value.codeUpdating
-  if (status.value === 'error') return dialogs.value.codePreviewFailed
-  if (dirty.value) return dialogs.value.codeUpdatedLive
-  return dialogs.value.jsxUpToDate
+  if (status.value === 'updating') return code.value.codeUpdating
+  if (status.value === 'error') return code.value.codePreviewFailed
+  if (dirty.value) return code.value.codeUpdatedLive
+  return code.value.jsxUpToDate
 })
 
 function beginDesignSession(): DesignJSXEditSession | null {
@@ -225,12 +223,12 @@ watch(
       <AppSelect
         :model-value="source"
         :options="sourceOptions"
-        :label="dialogs.codeSource"
+        :label="code.codeSource"
         data-test-id="code-panel-source"
         :ui="{ trigger: 'h-7 min-w-0 flex-1 text-[11px]' }"
         @update:model-value="changeSource"
       />
-      <Tip v-if="source !== 'html-css'" :label="dialogs.copyJSXReference">
+      <Tip v-if="source !== 'html-css'" :label="code.copyJSXReference">
         <AppTextButton
           data-test-id="code-panel-copy-ref"
           :ui="{ base: 'rounded p-1.5 text-[11px] hover:bg-hover' }"
@@ -270,7 +268,7 @@ watch(
         :data-tone="statusTone"
         :class="statusStyles.text()"
       >
-        {{ readOnly ? dialogs.codeGeneratedReadOnly : statusText }}
+        {{ readOnly ? code.codeGeneratedReadOnly : statusText }}
       </span>
       <div class="flex items-center gap-1">
         <AppTextButton
@@ -282,7 +280,7 @@ watch(
           @click="resetDraft"
         >
           <icon-lucide-rotate-ccw class="size-3" />
-          {{ dialogs.codeReset }}
+          {{ code.codeReset }}
         </AppTextButton>
         <AppTextButton
           data-test-id="code-panel-copy"
@@ -291,7 +289,7 @@ watch(
         >
           <icon-lucide-check v-if="copied" class="size-3 text-[var(--color-success)]" />
           <icon-lucide-copy v-else class="size-3" />
-          {{ copied ? dialogs.copied : dialogs.copy }}
+          {{ copied ? common.copied : common.copy }}
         </AppTextButton>
       </div>
     </footer>

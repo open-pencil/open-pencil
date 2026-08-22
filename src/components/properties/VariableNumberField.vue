@@ -39,7 +39,7 @@ const emit = defineEmits<{
   commit: [value: number, previous: number]
 }>()
 
-const { panels, dialogs } = useI18n()
+const { panels, common } = useI18n()
 const provider = useNumberBindingProvider()
 const attrs = useAttrs()
 const targets = computed<BindingTarget[]>(() => [{ nodeId, path: bindingPath }])
@@ -94,7 +94,7 @@ defineOptions({ inheritAttrs: false })
         <span :class="$slots['after-variable'] ? '' : 'pr-1'" class="flex items-center">
           <VariableBindingPicker
             :trigger-label="panels.applyVariable"
-            :search-placeholder="dialogs.search"
+            :search-placeholder="common.search"
             :empty-label="panels.noVariablesFound"
             :detach-label="panels.detachVariable"
             :create-label="

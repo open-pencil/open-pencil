@@ -1,0 +1,13 @@
+{
+  "createCollection": "创建集合",
+  "renameCollection": "重命名集合",
+  "deleteCollection": "删除集合",
+  "localVariables": "本地变量",
+  "noVariableCollections": "没有变量集合",
+  "modes": "模式",
+  "addMode": "添加模式",
+  "renameMode": "重命名模式",
+  "duplicateMode": "复制模式",
+  "deleteMode": "删除模式",
+  "setDefaultMode": "设为默认"
+}

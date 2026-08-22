@@ -1,0 +1,15 @@
+{
+  "codeSource": "Источник кода",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "Обновление…",
+  "codeUpdatedLive": "Обновлено в реальном времени",
+  "codePreviewFailed": "Ошибка предпросмотра",
+  "codeGeneratedReadOnly": "Сгенерировано, только чтение",
+  "codeReset": "Сбросить",
+  "copyJSXReference": "Скопировать справку по JSX-свойствам в буфер",
+  "jsxUpToDate": "Актуально"
+}

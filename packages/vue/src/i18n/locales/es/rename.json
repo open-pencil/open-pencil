@@ -1,0 +1,13 @@
+{
+  "rename": "Renombrar",
+  "renameLayers": "Renombrar {count} capas",
+  "renamePreview": "Vista previa",
+  "renameMatch": "Coincidencia",
+  "renameTo": "Renombrar como",
+  "renameCurrentName": "Nombre actual",
+  "renameNumberAscending": "Número ↑",
+  "renameNumberDescending": "Número ↓",
+  "renameStartAscendingFrom": "Comenzar ascendente desde",
+  "renameStopDescendingAt": "Terminar descendente en",
+  "renameInvalidPattern": "Expresión regular no válida"
+}

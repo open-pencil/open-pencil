@@ -1,0 +1,15 @@
+{
+  "codeSource": "コードソース",
+  "codeSourceDesignJSX": "Design JSX",
+  "codeSourceTailwindJSX": "Tailwind JSX",
+  "codeSourceHTMLCSS": "HTML/CSS",
+  "codeEditorDesignLabel": "Design JSX",
+  "codeEditorHTMLCSSLabel": "HTML and CSS",
+  "codeUpdating": "更新中…",
+  "codeUpdatedLive": "リアルタイム更新済み",
+  "codePreviewFailed": "プレビューに失敗しました",
+  "codeGeneratedReadOnly": "生成済み、読み取り専用",
+  "codeReset": "リセット",
+  "copyJSXReference": "JSXのprops参照をクリップボードにコピー",
+  "jsxUpToDate": "最新です"
+}

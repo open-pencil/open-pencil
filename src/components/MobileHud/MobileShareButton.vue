@@ -10,6 +10,6 @@ const hud = useMobileHudContext()
     @click="hud.share"
   >
     <icon-lucide-share-2 class="size-3.5 text-surface" />
-    <span class="text-xs text-surface">{{ hud.dialogs.share }}</span>
+    <span class="text-xs text-surface">{{ hud.common.share }}</span>
   </button>
 </template>

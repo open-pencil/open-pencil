@@ -1,0 +1,9 @@
+{
+  "recoverUnsavedWork": "Récupérer le travail non enregistré",
+  "recoverUnsavedWorkDescription": "OpenPencil a trouvé des documents d’une session précédente.",
+  "recoveryFailed": "Impossible de restaurer ce document.",
+  "settingsRecovery": "Récupération",
+  "settingsRecoveryDescription": "Gérez les copies locales de récupération des documents non enregistrés.",
+  "preserveUnsavedWork": "Conserver automatiquement le travail non enregistré",
+  "preserveUnsavedWorkDescription": "Stockez des copies locales afin de restaurer les documents après un arrêt inattendu."
+}
