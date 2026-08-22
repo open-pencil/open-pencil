@@ -1,7 +1,7 @@
 {
   "createCollection": "Crear colección",
-  "renameCollection": "Renombrar coleccion",
-  "deleteCollection": "Eliminar coleccion",
+  "renameCollection": "Renombrar colección",
+  "deleteCollection": "Eliminar colección",
   "localVariables": "Variables locales",
   "noVariableCollections": "No hay colecciones de variables",
   "modes": "Modos",

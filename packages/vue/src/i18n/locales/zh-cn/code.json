@@ -1,15 +1,15 @@
 {
-  "codeSource": "Code source",
+  "codeSource": "代码来源",
   "codeSourceDesignJSX": "Design JSX",
   "codeSourceTailwindJSX": "Tailwind JSX",
   "codeSourceHTMLCSS": "HTML/CSS",
   "codeEditorDesignLabel": "Design JSX",
   "codeEditorHTMLCSSLabel": "HTML and CSS",
-  "codeUpdating": "Updating…",
-  "codeUpdatedLive": "Updated live",
-  "codePreviewFailed": "Preview failed",
-  "codeGeneratedReadOnly": "Generated, read only",
-  "codeReset": "Reset",
+  "codeUpdating": "正在更新…",
+  "codeUpdatedLive": "已实时更新",
+  "codePreviewFailed": "预览失败",
+  "codeGeneratedReadOnly": "已生成，只读",
+  "codeReset": "重置",
   "copyJSXReference": "复制 JSX 属性参考到剪贴板",
-  "jsxUpToDate": "Up to date"
+  "jsxUpToDate": "已是最新"
 }

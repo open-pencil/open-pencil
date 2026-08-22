@@ -2,10 +2,10 @@
   "vectorization": "Векторизация изображений",
   "vectorizationDescription": "Отправляет слои изображений в Recraft или fal.ai и возвращает редактируемые векторы. Может взиматься плата провайдера.",
   "vectorizeProvider": "Сервис векторизации",
-  "pexelsAPIKey": "Pexels API Key (stock photos)",
-  "unsplashAccessKey": "Unsplash Access Key",
-  "stockPhotoToolOptional": "Optional — for stock_photo tool",
-  "pexelsAlternativeOptional": "Optional — alternative to Pexels",
-  "getPexelsAPIKey": "Get free Pexels API key →",
-  "getUnsplashAccessKey": "Get free Unsplash access key →"
+  "pexelsAPIKey": "API-ключ Pexels",
+  "unsplashAccessKey": "Ключ доступа Unsplash",
+  "stockPhotoToolOptional": "Необязательно — включает инструмент стоковых фото",
+  "pexelsAlternativeOptional": "Необязательно — альтернативный источник фото",
+  "getPexelsAPIKey": "Получить бесплатный API-ключ Pexels →",
+  "getUnsplashAccessKey": "Получить бесплатный ключ доступа Unsplash →"
 }

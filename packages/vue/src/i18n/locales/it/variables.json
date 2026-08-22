@@ -4,10 +4,10 @@
   "deleteCollection": "Elimina raccolta",
   "localVariables": "Variabili locali",
   "noVariableCollections": "Nessuna raccolta di variabili",
-  "modes": "Modalita",
-  "addMode": "Aggiungi modalita",
-  "renameMode": "Rinomina modalita",
-  "duplicateMode": "Duplica modalita",
-  "deleteMode": "Elimina modalita",
+  "modes": "Modalità",
+  "addMode": "Aggiungi modalità",
+  "renameMode": "Rinomina modalità",
+  "duplicateMode": "Duplica modalità",
+  "deleteMode": "Elimina modalità",
   "setDefaultMode": "Imposta come predefinita"
 }

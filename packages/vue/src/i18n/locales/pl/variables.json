@@ -1,13 +1,13 @@
 {
   "createCollection": "Utwórz kolekcję",
-  "renameCollection": "Zmien nazwe kolekcji",
-  "deleteCollection": "Usun kolekcje",
+  "renameCollection": "Zmień nazwę kolekcji",
+  "deleteCollection": "Usuń kolekcję",
   "localVariables": "Zmienne lokalne",
   "noVariableCollections": "Brak kolekcji zmiennych",
   "modes": "Tryby",
   "addMode": "Dodaj tryb",
-  "renameMode": "Zmien nazwe trybu",
+  "renameMode": "Zmień nazwę trybu",
   "duplicateMode": "Duplikuj tryb",
-  "deleteMode": "Usun tryb",
-  "setDefaultMode": "Ustaw jako domyslny"
+  "deleteMode": "Usuń tryb",
+  "setDefaultMode": "Ustaw jako domyślny"
 }
