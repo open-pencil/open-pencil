@@ -1,7 +1,25 @@
+import { hasLiveOverride } from '../live-overrides'
 import { applyOverridePatch } from '../patches'
 import { resolveOverrideTarget } from '../resolve'
 import type { OverrideContext } from '../types'
 import { patchFromSymbolOverride } from './patches'
+
+/**
+ * Strips fields from a stored-override patch that were since live-edited
+ * (recordInstanceOverride) — reapplying the stale stored value on every
+ * lazy-population pass would otherwise silently discard the edit.
+ */
+function dropLiveOverriddenFields(
+  ctx: OverrideContext,
+  targetId: string,
+  patch: ReturnType<typeof patchFromSymbolOverride>
+): void {
+  if (!patch?.props) return
+  const kept = Object.fromEntries(
+    Object.entries(patch.props).filter(([field]) => !hasLiveOverride(ctx.graph, targetId, field))
+  )
+  patch.props = Object.keys(kept).length > 0 ? (kept as typeof patch.props) : undefined
+}
 
 function isActiveInstance(ctx: OverrideContext, nodeId: string | undefined): nodeId is string {
   return nodeId !== undefined && (!ctx.activeNodeIds || ctx.activeNodeIds.has(nodeId))
@@ -51,6 +69,7 @@ export function applySymbolOverrides(ctx: OverrideContext, propertiesOnly = fals
 
       const patch = patchFromSymbolOverride(ctx, targetId, ov)
       if (!patch) continue
+      dropLiveOverriddenFields(ctx, targetId, patch)
       preserveInstanceRootBounds(nc.size !== undefined, nodeId, targetId, patch)
       if (propertiesOnly) patch.swapComponentId = undefined
       if (!patch.swapComponentId && !patch.props) continue
