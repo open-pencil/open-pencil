@@ -134,6 +134,7 @@ function createHonoApp(options: {
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
       authRequired: authToken !== null,
+      corsOrigin,
       ...(canInspectConfiguration ? { tools: toolDescriptors } : {})
     })
   })

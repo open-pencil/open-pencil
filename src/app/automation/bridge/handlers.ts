@@ -18,6 +18,7 @@ import {
 } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
+import { recentFiles } from '@/app/recent-files'
 
 type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
 
@@ -47,12 +48,19 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     args: unknown
   ): Promise<unknown> {
     if (command === 'list_documents') {
-      return { ok: true, result: { documents: listAutomationDocuments(store) } }
+      return {
+        ok: true,
+        result: {
+          documents: listAutomationDocuments(store),
+          recent_files: recentFiles.value
+        }
+      }
     }
 
     if (command === 'open_file' || command === 'new_document') {
       const handler = commandHandlers[command]
-      if (handler) return handler(resolveAutomationTarget(store, undefined), args)
+      if (handler)
+        return handler(resolveAutomationTarget(store, undefined, { allowHome: true }), args)
     }
 
     const rawArgs = isUnknownRecord(args) ? args : {}

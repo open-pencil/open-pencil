@@ -13,6 +13,7 @@ function parseVariableValue(type: VariableType, value: string): VariableValue {
 export const createVariable = defineTool({
   name: 'create_variable',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Create a new variable in a collection.',
   params: {
     name: { type: 'string', description: 'Variable name', required: true },
@@ -35,6 +36,7 @@ export const createVariable = defineTool({
 export const setVariable = defineTool({
   name: 'set_variable',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set the value of a variable for a specific mode.',
   params: {
     id: { type: 'string', description: 'Variable ID', required: true },
@@ -57,6 +59,7 @@ export const setVariable = defineTool({
 export const deleteVariable = defineTool({
   name: 'delete_variable',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Delete a variable.',
   params: {
     id: { type: 'string', description: 'Variable ID', required: true }

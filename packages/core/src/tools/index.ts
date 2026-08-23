@@ -14,10 +14,11 @@ export {
   nodeToResult,
   nodeSummary,
   requireNode,
-  NodeNotFoundError,
-  toolChangesDocument
+  requireNodes,
+  toolChangesDocument,
+  NodeNotFoundError
 } from './schema'
-export type { ToolDef, ParamDef, ParamType } from './schema'
+export type { DocumentAccess, ToolDef, ParamDef, ParamType } from './schema'
 export { toolsToAI, buildDebugLog } from './ai-adapter'
 export type { ToolLogEntry, ToolDebugLog, AIAdapterOptions, StepBudget } from './ai-adapter'
 export { calcClusterConfidence, wrapEvalCode } from './analyze'

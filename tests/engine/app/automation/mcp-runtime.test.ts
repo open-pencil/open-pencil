@@ -9,6 +9,7 @@ function descriptor(name = 'get_page_tree'): ToolDescriptor {
     name,
     description: name,
     effect: 'read',
+    documentAccess: 'inspect',
     availability: 'default',
     capabilities: ['document:read'],
     enabled: true

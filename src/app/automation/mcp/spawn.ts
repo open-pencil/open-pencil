@@ -21,6 +21,7 @@ export interface AutomationHealth {
   version?: string
   installCommand?: string
   authRequired?: boolean
+  corsOrigin?: string | null
   discoveryPath?: string
   tools?: ToolDescriptor[]
 }
@@ -172,6 +173,7 @@ interface AutomationHealthRecord {
   version?: unknown
   installCommand?: unknown
   authRequired?: unknown
+  corsOrigin?: unknown
   discoveryPath?: unknown
   tools?: unknown
 }
@@ -208,12 +210,16 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
   const version = optionalString(value.version)
   const installCommand = optionalString(value.installCommand)
   const authRequired = optionalBoolean(value.authRequired)
+  const corsOrigin = value.corsOrigin === null ? null : optionalString(value.corsOrigin)
   const discoveryPath = optionalString(value.discoveryPath)
   const tools = parseToolDescriptors(value.tools)
   if (
     version === null ||
     installCommand === null ||
     authRequired === null ||
+    (value.corsOrigin !== undefined &&
+      value.corsOrigin !== null &&
+      typeof value.corsOrigin !== 'string') ||
     discoveryPath === null ||
     tools === null
   ) {
@@ -224,6 +230,7 @@ function parseAutomationHealth(value: unknown): AutomationHealth | null {
     ...(version !== undefined ? { version } : {}),
     ...(installCommand !== undefined ? { installCommand } : {}),
     ...(authRequired !== undefined ? { authRequired } : {}),
+    ...(corsOrigin !== undefined ? { corsOrigin } : {}),
     ...(discoveryPath !== undefined ? { discoveryPath } : {}),
     ...(tools !== undefined ? { tools } : {})
   }

@@ -1,7 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { ref } from 'vue'
 
-import type { ToolDescriptor, ToolEffect } from '@open-pencil/mcp/tools'
+import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 
 const DISABLED_TOOLS_STORAGE_KEY = 'open-pencil:mcp:disabled-tools'
 const ROOT_DIRECTORY_STORAGE_KEY = 'open-pencil:mcp:root-directory'
@@ -24,10 +24,13 @@ export function setMCPToolEnabled(name: string, enabled: boolean): void {
   disabledMCPTools.value = [...disabled]
 }
 
-export function setMCPToolCategoryEnabled(effect: ToolEffect, enabled: boolean): void {
+export function setMCPToolCategoryEnabled(
+  documentAccess: ToolDescriptor['documentAccess'],
+  enabled: boolean
+): void {
   const disabled = new Set(disabledMCPTools.value)
   for (const tool of configurableMCPTools.value) {
-    if (tool.effect !== effect) continue
+    if (tool.documentAccess !== documentAccess) continue
     if (enabled) disabled.delete(tool.name)
     else disabled.add(tool.name)
   }

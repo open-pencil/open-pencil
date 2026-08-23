@@ -206,6 +206,14 @@ async function handleMockCommand(
           current_page_name: currentPage?.name ?? '',
           pages: pages.map((page) => ({ id: page.id, name: page.name }))
         }
+      ],
+      recent_files: [
+        {
+          id: '/designs/recent.fig',
+          path: '/designs/recent.fig',
+          name: 'recent.fig',
+          updatedAt: '2026-08-19T12:00:00.000Z'
+        }
       ]
     }
   }

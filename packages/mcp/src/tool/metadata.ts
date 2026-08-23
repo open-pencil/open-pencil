@@ -12,6 +12,7 @@ export interface ToolDescriptor {
   name: string
   description: string
   effect: ToolEffect
+  documentAccess: DocumentAccess
   availability: ToolAvailability
   capabilities: ToolCapability[]
   enabled: boolean
@@ -27,6 +28,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 const TOOL_EFFECTS: ReadonlySet<string> = new Set<ToolEffect>(['read', 'write'])
+const DOCUMENT_ACCESS: ReadonlySet<string> = new Set<DocumentAccess>(['inspect', 'modify'])
 const TOOL_AVAILABILITIES: ReadonlySet<string> = new Set<ToolAvailability>([
   'default',
   'eval',
@@ -43,10 +45,11 @@ const TOOL_CAPABILITIES: ReadonlySet<string> = new Set<ToolCapability>([
 
 export function parseToolDescriptor(value: unknown): ToolDescriptor | null {
   if (!isRecord(value)) return null
-  const { name, description, effect, availability, capabilities, enabled } = value
+  const { name, description, effect, documentAccess, availability, capabilities, enabled } = value
   if (typeof name !== 'string' || !name) return null
   if (typeof description !== 'string') return null
   if (typeof effect !== 'string' || !TOOL_EFFECTS.has(effect)) return null
+  if (typeof documentAccess !== 'string' || !DOCUMENT_ACCESS.has(documentAccess)) return null
   if (typeof availability !== 'string' || !TOOL_AVAILABILITIES.has(availability)) return null
   if (typeof enabled !== 'boolean') return null
   if (
@@ -61,8 +64,10 @@ export function parseToolDescriptor(value: unknown): ToolDescriptor | null {
     name,
     description,
     effect: effect as ToolEffect,
+    documentAccess: documentAccess as DocumentAccess,
     availability: availability as ToolAvailability,
     capabilities: capabilities as ToolCapability[],
     enabled
   }
 }
+import type { DocumentAccess } from '@open-pencil/core/tools'

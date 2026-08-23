@@ -24,6 +24,7 @@ function trackColor(colorMap: Map<string, ColorEntry>, color: Color, variableNam
 
 export const analyzeColors = defineTool({
   name: 'analyze_colors',
+  documentAccess: 'inspect',
   description:
     'Analyze color palette usage across the current page. Shows frequency, variable bindings, and optionally clusters similar colors.',
   params: {

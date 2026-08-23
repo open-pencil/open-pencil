@@ -2,6 +2,7 @@ import { generateText } from 'ai'
 
 import { isInsufficientCreditError, providerErrorStatus } from '@/app/ai/chat/failure'
 import { createLanguageModel, resolveLanguageModelID, type ModelConfig } from '@/app/ai/chat/model'
+import { providerRequiresAPIKey } from '@/app/ai/models'
 import { isTauri } from '@/app/tauri/env'
 
 export type ProviderConnectionTestResult =
@@ -26,7 +27,9 @@ function isCompatibleProvider(providerID: ModelConfig['providerID']): boolean {
 }
 
 function validateConfig(config: ModelConfig): ProviderConnectionTestFailureReason | null {
-  if (!config.apiKey.trim()) return 'missing-api-key'
+  if (providerRequiresAPIKey(config.providerID) && !config.apiKey.trim()) {
+    return 'missing-api-key'
+  }
   if (isCompatibleProvider(config.providerID)) {
     if (!config.customBaseURL.trim()) return 'missing-base-url'
     try {

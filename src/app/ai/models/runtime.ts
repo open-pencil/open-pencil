@@ -1,5 +1,7 @@
 import type { LanguageModel } from 'ai'
 
+import type { AIProviderID } from '@open-pencil/core/constants'
+
 import { createLanguageModel } from '@/app/ai/chat/model'
 import { modelConnection, resolveAIModelRole } from '@/app/ai/models/store'
 import type { AIModelConnection, AIModelRole, ResolvedAIModelRole } from '@/app/ai/models/types'
@@ -32,6 +34,10 @@ export function modelConnectionCredentialRef(connection: AIModelConnection): Cre
   return providerCredentialRef(connection.providerID, connection.credentialProfileId)
 }
 
+export function providerRequiresAPIKey(providerID: AIProviderID): boolean {
+  return providerID !== 'openai-compatible' && providerID !== 'anthropic-compatible'
+}
+
 export async function modelConnectionCredentialStatus(
   connectionId: string
 ): Promise<CredentialStatus> {
@@ -46,13 +52,30 @@ export async function setModelConnectionAPIKey(connectionId: string, value: stri
   const reference = modelConnectionCredentialRef(connection)
   const key = value.trim()
   if (key) await appCredentialServices.manager.set(reference, key)
-  else await appCredentialServices.manager.clear(reference)
+  else {
+    if (!providerRequiresAPIKey(connection.providerID)) {
+      try {
+        if ((await appCredentialServices.manager.status(reference)) !== 'configured') return
+      } catch {
+        return
+      }
+    }
+    await appCredentialServices.manager.clear(reference)
+  }
 }
 
 export async function resolveModelConnectionAPIKey(connectionId: string): Promise<string | null> {
   await initializeCredentialMigration()
   const connection = modelConnection(connectionId)
   if (!connection || connection.providerID.startsWith('acp:')) return null
+  if (!providerRequiresAPIKey(connection.providerID)) {
+    try {
+      const status = await modelConnectionCredentialStatus(connectionId)
+      if (status !== 'configured') return null
+    } catch {
+      return null
+    }
+  }
   return appCredentialServices.resolver.resolve(modelConnectionCredentialRef(connection))
 }
 
@@ -79,13 +102,15 @@ export async function createAIModelRuntime(role: AIModelRole): Promise<AIModelRu
   }
 
   const apiKey = await resolveModelConnectionAPIKey(resolved.connection.id)
-  if (!apiKey) throw new Error(`Credential is unavailable for the ${role} model role`)
+  if (!apiKey && providerRequiresAPIKey(resolved.connection.providerID)) {
+    throw new Error(`Credential is unavailable for the ${role} model role`)
+  }
   return {
     kind: 'direct',
     role: resolved,
     model: createLanguageModel({
       providerID: resolved.connection.providerID,
-      apiKey,
+      apiKey: apiKey ?? '',
       modelID: resolved.profile.modelID,
       customModelID: resolved.profile.customModelID,
       customBaseURL: resolved.connection.customBaseURL,

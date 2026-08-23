@@ -4,6 +4,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const getFontStatus = defineTool({
   name: 'get_font_status',
+  documentAccess: 'inspect',
   description:
     'Report whether fonts used on the current page are faithfully available. Returns requested ' +
     'faces, their loaded source, active substitutions, and affected nodes.',
@@ -13,6 +14,7 @@ export const getFontStatus = defineTool({
 
 export const listFonts = defineTool({
   name: 'list_fonts',
+  documentAccess: 'inspect',
   description: 'List fonts used in the current page.',
   params: {
     family: { type: 'string', description: 'Filter by family name (substring)' }
@@ -45,6 +47,7 @@ export const listFonts = defineTool({
 
 export const listAvailableFonts = defineTool({
   name: 'list_available_fonts',
+  documentAccess: 'inspect',
   description:
     'List font families the host can render (system fonts on desktop plus any bundled fonts). ' +
     'Use this to discover what fonts are available to set on a text node — distinct from list_fonts ' +

@@ -3,6 +3,7 @@ import { defineTool, nodeSummary, requireNodes } from '#core/tools/schema'
 export const reparentNode = defineTool({
   name: 'reparent_node',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Move a node into a different parent.',
   params: {
     id: { type: 'string', description: 'Node ID to move', required: true },
@@ -21,6 +22,7 @@ export const reparentNode = defineTool({
 export const groupNodes = defineTool({
   name: 'group_nodes',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Group selected nodes.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to group', required: true }
@@ -37,6 +39,7 @@ export const groupNodes = defineTool({
 export const ungroupNode = defineTool({
   name: 'ungroup_node',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Ungroup a group node.',
   params: {
     id: { type: 'string', description: 'Group node ID', required: true }
@@ -52,6 +55,7 @@ export const ungroupNode = defineTool({
 export const flattenNodes = defineTool({
   name: 'flatten_nodes',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Flatten nodes into a single vector.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to flatten', required: true }
@@ -65,6 +69,7 @@ export const flattenNodes = defineTool({
 export const nodeToComponent = defineTool({
   name: 'node_to_component',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Convert one or more frames/groups into components.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to convert', required: true }

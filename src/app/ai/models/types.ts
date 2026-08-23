@@ -29,6 +29,8 @@ export type AIModelProfile = {
   modelID: string
   customModelID: string
   maxOutputTokens: number
+  contextWindowTokens?: number
+  textInput?: boolean
   reasoningEffort?: string
   harnessThinkingLevel?: HarnessThinkingLevel
   harnessPermissionMode?: HarnessPermissionMode
@@ -59,6 +61,8 @@ export type AIModelProfileDraft = {
   customBaseURL: string
   customAPIType: 'completions' | 'responses'
   maxOutputTokens: number
+  contextWindowTokens?: number
+  textInput?: boolean
   reasoningEffort: string
   harnessThinkingLevel: HarnessThinkingLevel
   harnessPermissionMode: HarnessPermissionMode

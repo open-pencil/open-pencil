@@ -121,6 +121,7 @@ function createUnifiedDiff(
 
 export const diffCreate = defineTool({
   name: 'diff_create',
+  documentAccess: 'inspect',
   description:
     'Create a structural diff between two node trees. Compares properties (fills, strokes, effects, text, size, position) in unified diff format.',
   params: {
@@ -175,6 +176,7 @@ export const diffCreate = defineTool({
 
 export const diffShow = defineTool({
   name: 'diff_show',
+  documentAccess: 'inspect',
   description:
     'Preview what would change if properties were applied to a node. Shows a unified diff of current vs proposed state.',
   params: {

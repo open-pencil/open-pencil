@@ -2,6 +2,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const viewportGet = defineTool({
   name: 'viewport_get',
+  documentAccess: 'inspect',
   description: 'Get current viewport position and zoom level.',
   params: {},
   execute: (figma) => {
@@ -12,7 +13,7 @@ export const viewportGet = defineTool({
 export const viewportSet = defineTool({
   name: 'viewport_set',
   mutates: true,
-  changesDocument: false,
+  documentAccess: 'inspect',
   description: 'Set viewport position and zoom.',
   params: {
     x: { type: 'number', description: 'Center X', required: true },
@@ -28,7 +29,7 @@ export const viewportSet = defineTool({
 export const viewportZoomToFit = defineTool({
   name: 'viewport_zoom_to_fit',
   mutates: true,
-  changesDocument: false,
+  documentAccess: 'inspect',
   description: 'Zoom viewport to fit specified nodes.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to fit in view', required: true }

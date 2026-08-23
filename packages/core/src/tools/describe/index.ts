@@ -4,6 +4,7 @@ import { autoDepth, describeOneNode } from './tree'
 
 export const describe = defineTool({
   name: 'describe',
+  documentAccess: 'inspect',
   description:
     'Semantic description of one or more nodes. Pass `id` for a single node, or `ids` for multiple nodes in one call. Omit depth for auto — adapts to subtree size (small block → deeper, large page → shallower).',
   params: {

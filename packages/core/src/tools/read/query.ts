@@ -3,6 +3,7 @@ import { queryByXPath } from '#core/xpath'
 
 export const queryNodes = defineTool({
   name: 'query_nodes',
+  documentAccess: 'inspect',
   description: `Query nodes using XPath selectors. Node types are element names (FRAME, TEXT, RECTANGLE, ELLIPSE, etc.). Attributes: name, width, height, x, y, visible, opacity, cornerRadius, fontSize, fontFamily, fontWeight, layoutMode, itemSpacing, paddingTop/Right/Bottom/Left, strokeWeight, rotation, locked, blendMode, text, lineHeight, letterSpacing.
 
 Examples:

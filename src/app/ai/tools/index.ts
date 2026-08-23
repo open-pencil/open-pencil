@@ -1,6 +1,7 @@
 import { valibotSchema } from '@ai-sdk/valibot'
 import { tool } from 'ai'
 import * as v from 'valibot'
+import { shallowReactive } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import {
@@ -30,7 +31,7 @@ export interface StepUsage {
 
 class RunState {
   toolLog: ToolLogEntry[] = []
-  stepUsages: StepUsage[] = []
+  stepUsages = shallowReactive<StepUsage[]>([])
   currentSteps = 0
 
   recordStep(usage: StepUsage): void {
@@ -48,7 +49,7 @@ class RunState {
 
   clear(): void {
     this.toolLog = []
-    this.stepUsages = []
+    this.stepUsages.splice(0)
     this.currentSteps = 0
   }
 }
@@ -99,17 +100,31 @@ export function createAITools(store: EditorStore) {
     [
       ...CORE_TOOLS,
       ...EXTENDED_TOOLS.filter((def) =>
-        ['get_components', 'list_libraries', 'insert_library_component'].includes(def.name)
+        [
+          'export_image',
+          'get_components',
+          'get_page_tree',
+          'insert_library_component',
+          'list_libraries',
+          'list_pages',
+          'switch_page'
+        ].includes(def.name)
       )
     ],
     {
       getFigma: () => makeFigmaFromStore(store),
       onBeforeExecute: (def) => {
-        if (def.mutates) {
+        if (def.mutates && def.name !== 'switch_page') {
           beforeSnapshot = store.snapshotPage()
         }
       },
-      onAfterExecute: async (def) => {
+      onAfterExecute: async (def, figma) => {
+        if (def.name === 'switch_page') {
+          if (figma.currentPageId !== store.state.currentPageId) {
+            await store.switchPage(figma.currentPageId)
+          }
+          return
+        }
         if (def.mutates) {
           const pageId = store.state.currentPageId
           const pageNode = store.graph.getNode(pageId)
