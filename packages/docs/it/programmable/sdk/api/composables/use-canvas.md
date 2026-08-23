@@ -1,100 +1,16 @@
 ---
 title: useCanvas
-description: Collega il rendering basato su CanvasKit a un elemento canvas per un editor OpenPencil.
+description: Creare e mantenere la superficie CanvasKit dell’editor.
 ---
 
 # useCanvas
 
-`useCanvas()` connette un editor a un elemento `<canvas>` reale.
+`useCanvas(options)` collega un elemento `<canvas>` al motore di rendering. Carica CanvasKit, crea e ricrea la superficie, osserva le dimensioni, adatta la scala dei pixel, richiede ridisegni e libera le risorse.
 
-Gestisce:
+Usa `CanvasRoot` e `CanvasSurface` per la composizione normale, o questo composable per il controllo diretto.
 
-- l'inizializzazione di CanvasKit
-- la creazione della superficie
-- la pianificazione del rendering
-- la gestione del ridimensionamento
-- la visibilità opzionale dei righelli
-- il callback di disponibilità del renderer
+## Vedi anche
 
-## Utilizzo
-
-```ts
-import { ref } from 'vue'
-
-import { useCanvas, useEditor } from '@open-pencil/vue'
-
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const editor = useEditor()
-
-useCanvas(canvasRef, editor)
-```
-
-## Esempio base
-
-```vue
-<script setup lang="ts">
-import { ref } from 'vue'
-
-import { useCanvas, useEditor } from '@open-pencil/vue'
-
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const editor = useEditor()
-
-useCanvas(canvasRef, editor, {
-  showRulers: true,
-  onReady: () => {
-    console.log('Renderer ready')
-  },
-})
-</script>
-
-<template>
-  <canvas ref="canvasRef" class="size-full" />
-</template>
-```
-
-## Esempi pratici
-
-### Disabilita i righelli per un'anteprima integrata
-
-```ts
-useCanvas(canvasRef, editor, {
-  showRulers: false,
-})
-```
-
-### Mantieni il drawing buffer per gli screenshot
-
-```ts
-useCanvas(canvasRef, editor, {
-  preserveDrawingBuffer: true,
-})
-```
-
-## Note
-
-- `useCanvas()` è rivolto al renderer ed è in pratica solo browser
-- è responsabile della pipeline canvas in tempo reale, non dei flussi di file a livello di app
-- dovrebbe di solito essere abbinato a `useCanvasInput()` per la gestione delle interazioni
-
-## API correlate
-
-- [useEditor](./use-editor)
+- [CanvasRoot](../components/canvas-root)
+- [CanvasSurface](../components/canvas-surface)
 - [useCanvasInput](./use-canvas-input)
-- [useTextEdit](./use-text-edit)
-
-## Tipo
-
-```ts
-interface UseCanvasOptions {
-  showRulers?: boolean
-  preserveDrawingBuffer?: boolean
-  onReady?: () => void
-}
-
-function useCanvas(
-  canvasRef: Ref<HTMLCanvasElement | null>,
-  editor: Editor,
-  options?: UseCanvasOptions,
-): void
-```

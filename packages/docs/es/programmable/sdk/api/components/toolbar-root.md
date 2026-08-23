@@ -1,15 +1,14 @@
 ---
 title: ToolbarRoot
-description: Primitivo estructural headless para interfaces de barra de herramientas del editor.
+description: Componente sin estilos para herramientas y herramienta activa.
 ---
 
 # ToolbarRoot
 
-`ToolbarRoot` es el primitivo headless de barra de herramientas de `@open-pencil/vue`.
+`ToolbarRoot` proporciona las herramientas disponibles, la activa y la acción para cambiarla. La aplicación representa sus propios botones y define la disposición y los estilos de la barra.
 
-Úsalo cuando quieras la estructura y el contexto reutilizables de la barra de herramientas con tus propios botones, estilos y layout.
+## Véase también
 
-## APIs relacionadas
-
-- [useEditorCommands](../composables/use-editor-commands)
-- [useSelectionCapabilities](../composables/use-selection-capabilities)
+- [ToolbarItem](./toolbar-item)
+- [useToolbar](../advanced/use-toolbar)
+- [useToolbarState](../advanced/use-toolbar-state)

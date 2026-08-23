@@ -1,15 +1,15 @@
 ---
 title: useCanvasDrop
-description: Хелпер перетаскивания файлов изображений на поверхность холста.
+description: Drag and drop image files на canvas surface.
 ---
 
 # useCanvasDrop
 
-`useCanvasDrop(canvasRef, editor)` подключает обработку событий dragenter, dragover, dragleave и drop, чтобы файлы изображений, сброшенные на холст, размещались в сцене.
+`useCanvasDrop(canvasRef, editor)` подключает events `dragenter`, `dragover`, `dragleave` и `drop`. Image files, перенесённые на холст, добавляются в SceneGraph.
 
-Используйте при создании кастомных поверхностей холста, принимающих сброс изображений.
+Используйте composable в собственном canvas surface с поддержкой drop images.
 
-## Связанные API
+## См. также
 
 - [CanvasRoot](../components/canvas-root)
 - [CanvasSurface](../components/canvas-surface)

@@ -17,7 +17,8 @@ export function providerCredentialRef(
   if (providerId.startsWith('acp:')) {
     throw new Error('ACP agents do not use API-key credentials')
   }
-  return credentialRef(providerId, 'api-key', profileId)
+  const integrationId = providerId === 'harness:pi' ? 'harness-pi' : providerId
+  return credentialRef(integrationId, 'api-key', profileId)
 }
 
 export const PEXELS_CREDENTIAL = credentialRef('pexels', 'api-key')

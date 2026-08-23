@@ -1,36 +1,32 @@
 ---
 title: Menu contestuale
-description: Azioni del menu contestuale con clic destro in OpenPencil.
+description: Azioni per appunti, ordine, gruppi, componenti, visibilità e pagine.
 ---
+
 # Menu contestuale
 
-Fai clic con il pulsante destro sul canvas per aprire il menu contestuale. Se lo fai su un nodo, il nodo viene selezionato prima.
-
-## Copia come
-
-Il sottomenu **Copia come** offre questi formati:
-
-| Azione | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Copia come testo | — | — |
-| Copia come SVG | — | — |
-| Copia come PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Copia come JSX | — | — |
+Fai clic con il pulsante destro nell’area di lavoro. Se il puntatore è su un oggetto, OpenPencil lo seleziona prima; in un’area libera annulla la selezione.
 
 ## Appunti
-Copia (<kbd>⌘</kbd><kbd>C</kbd>), Taglia (<kbd>⌘</kbd><kbd>X</kbd>), Incolla (<kbd>⌘</kbd><kbd>V</kbd>), Duplica (<kbd>⌘</kbd><kbd>D</kbd>), Elimina (⌫)
 
-## Ordine Z
-**]** porta in primo piano · **[** manda in fondo
+**Copia come** può inserire la selezione negli appunti come testo, SVG, PNG o JSX con classi Tailwind. Sono disponibili anche taglia, copia, incolla, duplica ed elimina.
 
-## Raggruppamento
-Raggruppa (<kbd>⌘</kbd><kbd>G</kbd>), Separa (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd>), Aggiungi auto-layout (<kbd>⇧</kbd><kbd>A</kbd>)
+## Ordine e organizzazione
+
+Il menu permette di portare in primo piano, mandare sullo sfondo, avanzare o arretrare di un livello, raggruppare, separare e aggiungere la disposizione automatica.
 
 ## Componenti
-Crea componente (<kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>), Crea set componenti (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>), Crea istanza, Vai al componente principale, Separa istanza (<kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd>). Azioni in viola.
+
+Le azioni dei componenti appaiono in viola: crea componente, crea istanza, crea insieme, scollega istanza e vai al componente principale.
 
 ## Visibilità e blocco
-Nascondi/Mostra (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd>), Blocca/Sblocca (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd>)
 
-## Sposta in pagina
-Sottomenu con tutte le pagine tranne quella corrente.
+**Mostra/Nascondi** cambia la visibilità. **Blocca/Sblocca** impedisce o consente le modifiche.
+
+## Spostare in un’altra pagina
+
+**Sposta nella pagina** mostra le altre pagine e vi trasferisce la selezione conservandone la geometria.
+
+## Esportare
+
+**Esporta…** apre la finestra di esportazione per la selezione corrente.

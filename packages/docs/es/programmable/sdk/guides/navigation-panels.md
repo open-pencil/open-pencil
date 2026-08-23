@@ -1,20 +1,15 @@
 ---
-title: Paneles de Navegación
-description: Construye barras laterales de páginas y capas con PageListRoot, LayerTreeRoot y el estado de selección.
+title: Paneles de navegación
+description: Paneles laterales de páginas y capas con PageListRoot, LayerTreeRoot y estado de selección.
 ---
 
-# Paneles de Navegación
+# Paneles de navegación
 
-Las barras laterales de OpenPencil suelen combinar dos preocupaciones:
+Un panel lateral suele incluir una lista de páginas y el árbol de capas. El SDK de Vue ofrece componentes sin estilos para ambas áreas.
 
-- navegación de páginas
-- navegación de capas
+## Pages
 
-El SDK de Vue proporciona primitivos headless para ambas.
-
-## Navegación de páginas
-
-Usa `PageListRoot` o `usePageList()`.
+Usa `PageListRoot` o `usePageList()`:
 
 ```vue
 <PageListRoot v-slot="{ pages, currentPageId, switchPage, addPage }">
@@ -22,14 +17,14 @@ Usa `PageListRoot` o `usePageList()`.
     <button v-for="page in pages" :key="page.id" @click="switchPage(page.id)">
       {{ page.name }}
     </button>
-    <button @click="addPage()">Nueva página</button>
+    <button @click="addPage()">Nueva Page</button>
   </div>
 </PageListRoot>
 ```
 
-## Navegación de capas
+## Layers
 
-Usa `LayerTreeRoot` cuando quieras estructura de árbol gestionada por el SDK pero presentación propia de la app.
+Usa `LayerTreeRoot` si quieres que el SDK gestione Tree structure e Interactions y que la aplicación defina el Markup y los Styles:
 
 ```vue
 <LayerTreeRoot v-slot="{ items, selectedIds, select, toggleExpand, getKey, getChildren }">
@@ -44,15 +39,13 @@ Usa `LayerTreeRoot` cuando quieras estructura de árbol gestionada por el SDK pe
 </LayerTreeRoot>
 ```
 
-## Patrón práctico
+## Disposición habitual
 
-Un layout habitual es:
+- Pages en la parte superior del panel;
+- Layers debajo;
+- detalles y cambio de nombre directo dentro de los componentes de fila.
 
-- páginas en la parte superior de la barra lateral
-- capas debajo
-- detalles o controles de renombrado inline integrados en los componentes de fila
-
-## APIs relacionadas
+## Consulta también
 
 - [usePageList](../api/composables/use-page-list)
 - [PageListRoot](../api/components/page-list-root)

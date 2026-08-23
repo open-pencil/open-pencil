@@ -1,73 +1,25 @@
 ---
 title: useCanvasInput
-description: Conecta la entrada de puntero del canvas con el arrastre, la selección, el redimensionado, la rotación y el comportamiento de herramientas.
+description: Conectar puntero, arrastre, selección, tamaño, giro y herramientas con el lienzo.
 ---
 
 # useCanvasInput
 
-`useCanvasInput()` conecta las interacciones de puntero y ratón al canvas del editor.
+`useCanvasInput(options)` enlaza los eventos del elemento con el sistema de entrada del editor:
 
-Gestiona las siguientes interacciones:
+- movimiento, pulsación y liberación del puntero;
+- selección y marco de selección;
+- desplazamiento y zoom;
+- arrastre de objetos;
+- redimensionado y giro;
+- herramientas de forma, Pluma, Texto y Mano;
+- edición vectorial y de texto.
 
-- selección
-- arrastre
-- redimensionado
-- rotación
-- panorámica
-- flujos de pluma/dibujo
-- interacción de edición de texto
-- hit testing consciente del ámbito
+El composable convierte coordenadas de pantalla a coordenadas del lienzo y conserva la captura del puntero durante una interacción.
 
-## Uso
+Esta API de bajo nivel está pensada principalmente para componentes que contienen el lienzo de una interfaz propia.
 
-Este composable suele combinarse con `useCanvas()` y los helpers de hit test del renderer.
-
-```ts
-useCanvasInput(
-  canvasRef,
-  editor,
-  hitTestSectionTitle,
-  hitTestComponentLabel,
-  hitTestFrameTitle,
-)
-```
-
-## Ejemplo básico
-
-```ts
-const canvas = useCanvas(canvasRef, editor)
-
-useCanvasInput(
-  canvasRef,
-  editor,
-  canvas.hitTestSectionTitle,
-  canvas.hitTestComponentLabel,
-  canvas.hitTestFrameTitle,
-)
-```
-
-## Ejemplos prácticos
-
-### Seguir el movimiento del cursor en el espacio del canvas
-
-```ts
-useCanvasInput(
-  canvasRef,
-  editor,
-  hitTestSectionTitle,
-  hitTestComponentLabel,
-  hitTestFrameTitle,
-  (cx, cy) => {
-    console.log(cx, cy)
-  },
-)
-```
-
-## Notas
-
-Este composable es de más bajo nivel que la mayoría de la lógica de paneles. Es más adecuado para shells de editor y contenedores de canvas.
-
-## APIs relacionadas
+## Véase también
 
 - [useCanvas](./use-canvas)
-- [useEditor](./use-editor)
+- [useTextEdit](./use-text-edit)

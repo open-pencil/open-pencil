@@ -1,30 +1,15 @@
 ---
 title: useVariablesDialogState
-description: Gère l'état d'édition du dialogue de variables au-dessus de useVariables().
+description: État de renommage et de focus pour un dialogue de variables.
 ---
 
 # useVariablesDialogState
 
-`useVariablesDialogState()` s'appuie sur `useVariables()` et ajoute un état d'édition spécifique au dialogue pour le renommage des collections et la gestion du focus.
+`useVariablesDialogState()` ajoute à `useVariables()` l’état nécessaire pour renommer une collection et gérer le focus.
 
-Utilisez-le quand vous construisez un dialogue de variables personnalisé plutôt que d'utiliser uniquement le helper combiné `useVariablesEditor()`.
+Utilisez-le dans un dialogue propre lorsque l’intégration complète de `useVariablesEditor()` n’est pas nécessaire.
 
-## Utilisation
-
-```ts
-import { useVariablesDialogState } from '@open-pencil/vue'
-
-const variablesDialog = useVariablesDialogState()
-```
-
-## Ajoute à useVariables()
-
-- `editingCollectionId`
-- `setCollectionInputRef()`
-- `startRenameCollection()`
-- `commitRenameCollection()`
-
-## API associées
+## Voir aussi
 
 - [useVariables](./use-variables)
 - [useVariablesEditor](../composables/use-variables-editor)

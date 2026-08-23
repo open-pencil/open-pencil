@@ -1,16 +1,15 @@
 ---
 title: TypographyControlsRoot
-description: Bezstanowy prymityw korzenia dla kontrolek czcionki, wyrównania i formatowania.
+description: Komponent bez narzuconych stylów do obsługi fontu, wyrównania i formatowania tekstu.
 ---
 
 # TypographyControlsRoot
 
-`TypographyControlsRoot` udostępnia stan typografii i obsługę z `useTypography()` jako prymityw strukturalny.
+`TypographyControlsRoot` udostępnia w slocie stan i akcje z `useTypography()`.
 
-Użyj go, gdy chcesz niestandardowe kontrolki typografii z zachowaniem czcionki i formatowania zarządzanym przez SDK.
+Własne kontrolki mogą ponownie wykorzystać integrację SDK z edytorem.
 
-## Powiązane API
+## Zobacz także
 
 - [useTypography](../composables/use-typography)
-- [FontPickerRoot](./font-picker-root)
-- [Przewodnik po panelach właściwości](../../guides/property-panels)
+- [Panele właściwości](../../guides/property-panels)

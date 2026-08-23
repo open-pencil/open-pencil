@@ -1,64 +1,20 @@
 ---
 title: usePosition
-description: Position, Größe, Rotation, Ausrichtung und Spiegelung ausgewählter Knoten lesen und aktualisieren.
+description: Position, Größe, Drehung, Ausrichtung und Spiegelung der ausgewählten Objekte lesen und ändern.
 ---
 
 # usePosition
 
-`usePosition()` ist ein Steuerelemente-Composable für positions-bezogene UI.
-
-Es gibt Werte für ausgewählte Knoten zurück wie:
-
-- `x`
-- `y`
-- `width`
-- `height`
-- `rotation`
-
-sowie Aktionen wie:
-
-- ausrichten
-- spiegeln
-- rotieren
-- numerische Eigenschaften scrubben/aktualisieren
-
-## Verwendung
-
-```ts
-import { usePosition } from '@open-pencil/vue'
-
-const position = usePosition()
-```
-
-## Einfaches Beispiel
+`usePosition()` stellt `x`, `y`, `width`, `height` und `rotation` sowie Aktionen für Ausrichtung, Spiegelung, Drehung, Vorschau und Speichern numerischer Eigenschaften bereit.
 
 ```ts
 const { x, y, width, height, rotation, updateProp, commitProp } = usePosition()
-```
-
-## Praktische Beispiele
-
-### Ausgewählte Knoten ausrichten
-
-```ts
 position.align('horizontal', 'center')
-position.align('vertical', 'min')
-```
-
-### Auswahl spiegeln
-
-```ts
 position.flip('horizontal')
-position.flip('vertical')
-```
-
-### Auswahl rotieren
-
-```ts
 position.rotate(90)
 ```
 
-## Verwandte APIs
+## Siehe auch
 
 - [useLayout](./use-layout)
 - [useAppearance](./use-appearance)

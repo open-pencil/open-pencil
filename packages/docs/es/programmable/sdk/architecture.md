@@ -1,22 +1,22 @@
 ---
 title: Arquitectura del SDK
-description: Estructura de carpetas, límites de API pública y patrones de composición en @open-pencil/vue.
+description: Estructura del paquete, límites de la API pública y principios de diseño de @open-pencil/vue.
 ---
 
 # Arquitectura del SDK
 
-`@open-pencil/vue` es la capa orientada a Vue sobre `@open-pencil/core`.
+`@open-pencil/vue` conecta `@open-pencil/core` con Vue.
 
-No posee el modelo del editor en sí. Adapta el editor central en:
+El modelo del editor sigue perteneciendo al núcleo. Este paquete añade:
 
-- inyección de Vue
-- composables reactivos
-- primitivos estructurales headless
-- cableado de canvas e inputs
+- dependency injection mediante Vue;
+- composables reactivos;
+- componentes estructurales sin estilos;
+- conexión del lienzo y gestión de la entrada del usuario.
 
-## Estructura de carpetas
+## Estructura del paquete
 
-Este paquete está organizado por dominio.
+El código se organiza por áreas funcionales.
 
 ### Familias de componentes
 
@@ -28,18 +28,21 @@ Este paquete está organizado por dominio.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
+- `PropertySection/`
+- `SegmentedControl/`
 - `NumberField/`
 - `Toolbar/`
 
-Contienen primitivos estructurales/headless y helpers locales.
+Estos directorios contienen componentes estructurales sin estilos y funciones auxiliares específicas de cada área.
 
-### Controles
+### Controls
 
-`controls/` contiene composables de controles de paneles de propiedades y del editor:
+`controls/` contiene composables para los paneles de propiedades y los controles del editor:
 
 - `usePosition`
 - `useLayout`
 - `useAppearance`
+- `useColorModel`
 - `useTypography`
 - `useExport`
 - `useFillControls`
@@ -47,69 +50,72 @@ Contienen primitivos estructurales/headless y helpers locales.
 - `useEffectsControls`
 - `useNodeProps`
 - `usePropScrub`
+- `useEditorPropertyList`
 
 ### Variables
 
-`VariablesEditor/` contiene composables del dominio de variables y el cableado de estado.
+`VariablesEditor/` contiene composables y el código que conecta el estado del editor de variables con Vue.
 
 ### Selección
 
-`selection/` contiene el estado del editor derivado de la selección y sus capacidades.
+`selection/` contiene el estado calculado a partir de la selección y la información sobre las operaciones disponibles.
 
-### Contexto
+### Context
 
-`context/` contiene helpers de inyección del editor:
+`context/` contiene la clave y las funciones que proporcionan el editor mediante dependency injection de Vue:
 
 - `EDITOR_KEY`
 - `provideEditor`
 - `useEditor`
 
-### Interno
+### Internal
 
-`internal/` contiene utilidades transversales que no están pensadas como primitivos headless principales.
+`internal/` contiene funciones auxiliares compartidas. No forman parte de los componentes públicos principales del paquete.
 
-## Filosofía de la API pública
+## Principios de la API pública
 
-### Preferir composables
+### Composables para la lógica y el estado
 
-Si el problema es principalmente lógica de control, derivación de estado o acciones del editor, expón un composable.
+Si el código sirve principalmente para calcular o administrar el estado, o para ejecutar operaciones del editor, proporciónalo como composable.
 
-### Reservar los primitivos headless para estructura significativa
+### Componentes sin estilos solo cuando la estructura sea relevante
 
-Usa raíces de componentes cuando coordinan estructura, hijos, slots o contexto.
+Un componente raíz resulta útil cuando coordina la estructura, los elementos descendientes, los slots o el contexto.
 
 Ejemplos:
 
 - `PageListRoot`
 - `PropertyListRoot`
+- `PropertySectionRoot`
+- `SegmentedControlRoot`
 - `ToolbarRoot`
 
-### Evitar slots que vuelquen contexto de forma masiva
+### No pases todo el contexto por una única ranura
 
-Prefiere props de slot enfocados o uso directo de composables en lugar de grandes payloads `v-slot="ctx"`.
+Pasa a la ranura únicamente las propiedades necesarias o utiliza el composable directamente. Los componentes controlados, como `PropertyListRoot`, emiten eventos semánticos. La conexión con la selección y el historial de deshacer debe estar en un adaptador o composable de control, no en el propio componente.
 
-## Responsabilidad de la app vs el SDK
+## Responsabilidades de la aplicación y el SDK
 
-### El SDK es responsable de
+### SDK
 
-- integración con el editor
-- lógica headless reutilizable
-- estructura de UI reutilizable sin suposiciones de estilo
-- integración del renderizado del canvas
+- integración con el editor;
+- lógica reutilizable sin estilos;
+- estructura de interfaz reutilizable y sin requisitos de estilo;
+- integración con el renderizado del lienzo.
 
-### La app es responsable de
+### Aplicación
 
-- estilos
-- shells de layout
-- enrutamiento
-- flujos de archivos del producto
-- toasts, menús y UX específica de la app
+- estilos;
+- disposición general de las páginas;
+- routing;
+- apertura, guardado y otras operaciones con archivos;
+- notificaciones, menús y comportamiento específico de la aplicación.
 
-## Regla práctica
+## Regla general
 
-Si una pieza de lógica podría reutilizarse en una app diferente basada en OpenPencil sin llevar consigo los estilos de la app, probablemente pertenece a `@open-pencil/vue`.
+Si un fragmento de código puede utilizarse en otro editor basado en OpenPencil sin arrastrar los estilos de la aplicación, probablemente debe formar parte de `@open-pencil/vue`.
 
-## Páginas relacionadas
+## Véase también
 
 - [Primeros pasos con el SDK](./getting-started)
-- [Referencia de API](./api/)
+- [Referencia de la API](./api/)

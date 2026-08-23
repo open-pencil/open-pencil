@@ -1,15 +1,15 @@
 ---
 title: useFontPicker
-description: Przeszukiwalny stan selektora czcionek i pomocnik wyboru.
+description: Stan, wyszukiwanie i wybór rodziny czcionki we własnym selektorze.
 ---
 
 # useFontPicker
 
-`useFontPicker(options)` zarządza dostępnymi rodzinami czcionek, stanem wyszukiwania, stanem otwarcia i wyborem rodziny dla UI selektora czcionek.
+`useFontPicker(options)` zarządza rodzinami czcionek, zapytaniem wyszukiwania, stanem otwarcia i wybraną rodziną.
 
-Użyj go przy budowaniu niestandardowych UI wyboru czcionek wykraczających poza `FontPickerRoot`.
+Użyj composable, jeśli możliwości `FontPickerRoot` nie wystarczają i potrzebny jest własny interfejs wyboru czcionki.
 
-## Powiązane API
+## Zobacz też
 
 - [FontPickerRoot](../components/font-picker-root)
 - [useTypography](../composables/use-typography)

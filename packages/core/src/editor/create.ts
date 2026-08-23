@@ -24,6 +24,7 @@ import { createComponentSyncScheduler } from './component-sync'
 import { createComponentActions } from './components'
 import { createGraphEventSubscription } from './graph-events'
 import { createGraphReadActions } from './graph-reads'
+import { createGuideActions } from './guides'
 import { createLayoutRunner } from './layout-runner'
 import { createNodeActions } from './nodes'
 import { createPageActions } from './pages'
@@ -163,6 +164,7 @@ export function createEditor(options?: EditorOptions) {
   const viewport = createViewportActions(ctx)
   const selection = createSelectionActions(ctx)
   const pages = createPageActions(ctx, viewport.zoomToFit)
+  const guides = createGuideActions(ctx)
   const shapes = createShapeActions(ctx)
   const structure = createStructureActions(ctx)
   const components = createComponentActions(ctx)
@@ -206,6 +208,10 @@ export function createEditor(options?: EditorOptions) {
     setSelectedIds(new Set())
     state.hoveredNodeId = null
     state.measurementMode = 'off'
+    state.snapGuides = []
+    state.guides = { preview: null, hovered: null, selected: null, redline: null }
+    state.layoutInsertIndicator = null
+    state.dropTargetId = null
     pages.clearPageViewports()
     emitEditorEvent('graph:replaced', _graph)
     if (previousPageId !== state.currentPageId) {
@@ -248,6 +254,9 @@ export function createEditor(options?: EditorOptions) {
 
     // Pages
     ...pages,
+
+    // Canvas and frame guides
+    ...guides,
 
     // Shapes & tools
     ...shapes,

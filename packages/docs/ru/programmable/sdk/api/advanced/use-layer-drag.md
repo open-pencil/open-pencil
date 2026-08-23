@@ -1,15 +1,15 @@
 ---
 title: useLayerDrag
-description: Хелпер подключения drag-and-drop для изменения порядка строк дерева слоёв.
+description: Drag and drop для изменения порядка в дереве слоёв.
 ---
 
 # useLayerDrag
 
-`useLayerDrag(editor, indentPerLevel?)` подключает поведение pragmatic-drag-and-drop к строкам дерева слоёв и преобразует инструкции сброса в операции изменения порядка в редакторе.
+`useLayerDrag(editor, indentPerLevel?)` подключает pragmatic-drag-and-drop к строкам дерева и преобразует drop instructions в editor operations изменения порядка.
 
-Используйте при расширении или замене стандартного UI перетаскивания дерева слоёв.
+Используйте composable, если расширяете или заменяете стандартный drag UI дерева слоёв.
 
-## Связанные API
+## См. также
 
 - [LayerTreeRoot](../components/layer-tree-root)
 - [LayerTreeItem](../components/layer-tree-item)

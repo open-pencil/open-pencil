@@ -1,57 +1,35 @@
 ---
-title: Auto-layout
-description: Layout flex e griglia in OpenPencil — direzione, spaziatura, padding, allineamento, dimensionamento e track CSS Grid.
+title: Disposizione automatica
+description: Flexbox e CSS Grid con direzione, spaziatura, margini interni, allineamento e modalità di dimensionamento.
 ---
-# Auto-layout
 
-L'auto-layout posiziona i figli automaticamente all'interno di un frame. Supporta due modalità: **flex** (flusso orizzontale/verticale) e **griglia** (righe e colonne con dimensionamento dei track).
+# Disposizione automatica
 
-<kbd>⇧</kbd><kbd>A</kbd> per attivare/disattivare o avvolgere la selezione in un frame auto-layout.
+La disposizione automatica distribuisce gli oggetti figli all’interno di un frame. Supporta Flexbox orizzontale o verticale e Grid con righe, colonne e tracce configurabili.
 
-## Direzione
-- **Orizzontale** — da sinistra a destra
-- **Verticale** — dall'alto in basso
-- **A capo** — va a capo quando lo spazio finisce
+## Attivare
 
-## Spaziatura
-**Gap** tra figli adiacenti. **Padding** tra bordo del frame e figli (uniforme o per lato).
+- Seleziona un frame e premi <kbd>⇧</kbd><kbd>A</kbd>.
+- Seleziona più oggetti liberi e usa la stessa scorciatoia per racchiuderli in un nuovo frame.
+
+## Direzione e spaziatura
+
+Gli oggetti possono scorrere in orizzontale, verticale o andare a capo. La spaziatura regola la distanza tra gli oggetti; i margini interni quella dai bordi.
 
 ## Allineamento
-- **Asse principale (Justify):** inizio, centro, fine, spazio tra
-- **Asse trasversale (Align):** inizio, centro, fine, estendi
 
-## Dimensionamento figli
-- **Fisso** — larghezza/altezza esplicita
-- **Riempi** — si estende nello spazio disponibile
-- **Adatta** — si restringe al contenuto
+L’asse principale offre inizio, centro, fine e spazio tra gli elementi. L’asse trasversale offre inizio, centro, fine ed estensione.
 
-## Riordino per trascinamento
-Trascina un figlio per riordinarlo, con indicatore visuale di inserimento.
+## Dimensionamento
+
+- **Fisso:** larghezza o altezza esplicita.
+- **Riempi:** occupa lo spazio disponibile.
+- **Adatta:** adegua la dimensione al contenuto.
+
+La prima modifica reale di una dimensione rende fisso solo quell’asse. Portare il focus sul campo non cambia la modalità.
 
 ## CSS Grid
 
-Il layout a griglia organizza i figli in righe e colonne con dimensionamento esplicito dei track.
+Grid distribuisce gli oggetti in righe e colonne con dimensioni `fr`, `px` o `auto`. Le spaziature orizzontale e verticale sono indipendenti. Ogni oggetto può definire riga, colonna e numero di celle occupate.
 
-### Attivare la griglia
-
-Seleziona un frame con auto-layout attivo e clicca sull'icona griglia nella barra degli strumenti layout per passare da flex a griglia.
-
-### Dimensionamento dei track
-
-Definisci track di colonne e righe con tre modalità:
-
-- **fr** — unità frazionaria, divide lo spazio disponibile proporzionalmente
-- **px** — dimensione fissa in pixel
-- **auto** — si adatta al contenuto
-
-### Spaziatura della griglia
-
-Imposta gap orizzontali (colonne) e verticali (righe) separati tra le celle.
-
-### Posizionamento dei figli
-
-I figli vengono posizionati nelle celle della griglia automaticamente in ordine di riga. Puoi sovrascrivere il posizionamento con valori di inizio colonna/riga e span nelle proprietà layout del figlio.
-
-### Esportazione JSX e Tailwind
-
-I layout a griglia vengono esportati come JSX con classi Tailwind: `grid grid-cols-3`, `gap-x-4 gap-y-2`, `col-start-2 row-span-2`.
+Il risultato può essere esportato in JSX con classi Tailwind.

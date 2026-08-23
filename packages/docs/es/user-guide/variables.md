@@ -1,29 +1,45 @@
 ---
 title: Variables
-description: Variables de diseño, colecciones, modos y vinculaciones en OpenPencil.
+description: Crear variables, colecciones y modos, y vincularlas a propiedades de diseño.
 ---
+
 # Variables
 
-Tokens reutilizables — colores, espaciado — vinculables a nodos.
+Las variables almacenan valores reutilizables, como colores y espaciados. Una propiedad vinculada se actualiza cuando cambia la variable.
 
-## Apertura
-Pestaña Diseño → Variables → icono de configuración.
+## Abrir el editor
 
-## Colecciones
-Pestaña por colección. Doble clic para renombrar.
+Sin objetos seleccionados, la pestaña **Diseño** muestra las propiedades de la página. El icono de ajustes de la sección Variables abre el editor.
 
-## Modos
-Columnas en la tabla (ej. Claro/Oscuro). Cada variable tiene un valor por modo.
+## Colecciones y modos
 
-## Gestión
-- **Crear** — botón "+ Crear variable"
-- **Editar nombre/valor** — clic en la celda
-- **Buscar** — barra de búsqueda
+Una colección agrupa variables relacionadas. Cada colección puede tener modos, por ejemplo Claro y Oscuro, con un valor distinto por variable.
 
-## Vinculación a rellenos
-Selector de variable en el panel Relleno. Insignia morada con nombre de variable. Botón para desvincular.
+- Un clic cambia de colección.
+- Doble clic en el nombre permite renombrarla.
+- Los botones de la cabecera crean colecciones y modos.
 
-## Consejos
-- Colecciones para agrupar tokens relacionados
-- Modos para temas (Claro/Oscuro)
-- Soporte de alias entre colecciones
+## Editar variables
+
+La tabla contiene el nombre, el tipo y una columna por modo. Haz clic en una celda para editarla.
+
+Tipos admitidos:
+
+- color;
+- número;
+- texto;
+- booleano.
+
+Los colores se editan con un campo y un selector. Los números pueden representar dimensiones y espaciados.
+
+## Enlazar rellenos y contornos
+
+Abre el selector de variables desde el control de color y elige una variable compatible. El control muestra el enlace en lugar de copiar el valor. Cambiar el valor manualmente elimina el enlace solo en la primera modificación real, no al enfocar el campo.
+
+## Alias
+
+Una variable puede hacer referencia a otra. OpenPencil resuelve la cadena según el modo activo y detecta referencias circulares.
+
+## Importación y exportación
+
+Las variables se conservan al importar y exportar `.fig`. La CLI también puede listarlas y modificarlas mediante la API compatible con plugins de Figma.

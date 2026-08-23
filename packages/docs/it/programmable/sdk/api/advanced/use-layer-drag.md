@@ -1,15 +1,15 @@
 ---
 title: useLayerDrag
-description: Helper per il cablaggio drag-and-drop nel riordinamento dell'albero dei layer.
+description: Trascinamento per cambiare ordine e genitore dei livelli.
 ---
 
 # useLayerDrag
 
-`useLayerDrag(editor, indentPerLevel?)` cabla il comportamento pragmatic-drag-and-drop per le righe dell'albero dei layer e mappa le istruzioni di drop alle operazioni di riordinamento dell'editor.
+`useLayerDrag(editor, indentPerLevel?)` collega `pragmatic-drag-and-drop` alle righe dell’albero dei livelli e traduce le istruzioni di rilascio in cambi di ordine o genitore in SceneGraph.
 
-Usalo quando estendi o sostituisci la UI di trascinamento predefinita dell'albero dei layer.
+Usa il composable per creare un albero dei livelli personalizzato con trascinamento.
 
-## API correlate
+## Vedi anche
 
 - [LayerTreeRoot](../components/layer-tree-root)
 - [LayerTreeItem](../components/layer-tree-item)

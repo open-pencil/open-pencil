@@ -1,14 +1,14 @@
 ---
 title: LayerTreeRoot
-description: Bezstanowy prymityw strukturalny dla interfejsów drzewa warstw.
+description: Komponent bez narzuconego wyglądu udostępniający strukturę i działania drzewa warstw.
 ---
 
 # LayerTreeRoot
 
-`LayerTreeRoot` to prymityw SDK do renderowania drzewa warstw z znacznikami i stylowaniem należącymi do aplikacji.
+`LayerTreeRoot` przygotowuje elementy drzewa, zaznaczenie, rozwinięte gałęzie oraz działania nawigacji po strukturze dokumentu.
 
-Użyj go, gdy chcesz wielokrotnie używalną strukturę drzewa i okablowanie interakcji bez wbudowanej prezentacji.
+SDK zarządza danymi i zachowaniem, a aplikacja wyświetla własne wiersze i określa ich wygląd.
 
-## Powiązane API
+## Zobacz też
 
 - [useSelectionState](../composables/use-selection-state)

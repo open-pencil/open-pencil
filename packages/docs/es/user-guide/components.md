@@ -1,78 +1,40 @@
 ---
 title: Componentes
-description: Componentes reutilizables, instancias, overrides y sincronización en OpenPencil.
+description: Componentes reutilizables, instancias, conjuntos, sustituciones y bibliotecas.
 ---
+
 # Componentes
 
-Los componentes son elementos de diseño reutilizables. Edita el componente principal y todas sus instancias se actualizan automáticamente.
+Los componentes son objetos reutilizables. Los cambios del componente principal se propagan automáticamente a sus instancias.
 
-## Explorar componentes
+## Explorar e insertar
 
-Abre la pestaña **Assets** del panel izquierdo para explorar componentes locales y bibliotecas habilitadas. Busca por nombre, cambia entre cuadrícula y lista, e inserta un componente con un clic, <kbd>Enter</kbd> o arrastrándolo al lienzo. Las revisiones descargadas siguen disponibles sin conexión.
+La pestaña **Recursos** muestra componentes locales y bibliotecas habilitadas. Permite buscar y alternar entre cuadrícula y lista. Inserta un componente con un clic, <kbd>Enter</kbd> o arrastrándolo al lienzo. Las revisiones descargadas siguen disponibles sin conexión.
 
 ## Crear un componente
 
-Selecciona un marco o grupo y pulsa <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd>). La selección se convierte en un componente reutilizable.
+Selecciona un marco o grupo y pulsa <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>; en Windows y Linux, <kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>K</kbd>.
 
-Los componentes muestran una etiqueta morada con icono de diamante.
+## Crear una instancia
 
-## Conjuntos de componentes y variantes
+Selecciona el componente y elige **Crear instancia**, o insértalo desde Recursos. La instancia conserva un vínculo con el componente principal.
 
-Selecciona dos o más componentes y pulsa <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> (<kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd>) para combinarlos en un conjunto de componentes — un contenedor con borde morado punteado.
+## Sustituciones
 
-Las variantes admiten varias dimensiones, como `Tamaño=Pequeño`, `Estado=Hover` y `Tema=Oscuro`, sin exigir todas las combinaciones. La variante superior izquierda es la predeterminada y sirve como alternativa cuando una actualización ya no incluye una coincidencia exacta. El panel de propiedades permite añadir, renombrar, ordenar y eliminar dimensiones y valores; las combinaciones duplicadas se rechazan.
+Las propiedades modificadas en una instancia se guardan como sustituciones. Los cambios posteriores del componente principal siguen llegando, excepto en las propiedades sustituidas.
 
 ## Propiedades de componente
 
-Los componentes admiten propiedades de texto, visibilidad booleana e intercambio de instancia. Vincula una propiedad a un campo descendiente y edita su valor en una instancia sin desenlazarla. Las definiciones y asignaciones se conservan en archivos `.fig`.
+Se admiten texto, visibilidad booleana, intercambio de instancia y variantes. Las propiedades aparecen en el panel derecho al seleccionar una instancia.
 
-## Bibliotecas de componentes
+## Conjuntos y variantes
 
-Una biblioteca publica componentes como una revisión inmutable. Abre **Assets → Administrar bibliotecas → Publicar biblioteca**, define un ID estable y un nombre en la primera publicación, selecciona los cambios y publica. Los cambios no seleccionados quedan pendientes para una publicación posterior.
+Combina componentes con <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> o <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>K</kbd>. Cada dimensión de variante —por ejemplo, estado o tamaño— puede tener varios valores. OpenPencil admite combinaciones dispersas, impide duplicados y usa como predeterminada la variante situada arriba a la izquierda.
 
-Habilita bibliotecas desde **Administrar bibliotecas**. Sus recursos aparecen junto a los componentes locales. Las definiciones publicadas son de solo lectura en el documento consumidor, mientras que las instancias vinculadas y sus overrides siguen siendo editables.
+## Sincronización
 
-En **Actualizaciones**, compara la instancia actual y la nueva lado a lado. Puedes actualizar una instancia, todas las instancias de un recurso, la página actual o todas las páginas. Las propiedades compatibles se conservan y las variantes ausentes muestran la alternativa antes de aceptar. Las actualizaciones se pueden deshacer y rehacer.
+Los cambios del componente principal se muestran en una revisión antes de aplicarse. Las sustituciones de la instancia permanecen intactas. **Ir al componente principal** funciona también entre páginas, y **Separar instancia** convierte la instancia en un marco independiente.
 
-Las bibliotecas pueden usar el catálogo local o un proveedor de almacenamiento configurado. Las revisiones descargadas se guardan en caché. Los enlaces habilitados y las definiciones materializadas se guardan en `.fig`, por lo que el documento puede abrirse aunque la biblioteca remota no esté disponible.
+## Bibliotecas
 
-## Crear instancias
-
-Clic derecho → **Crear instancia**. La instancia aparece a la derecha del componente original.
-
-## Desenlazar una instancia
-
-Selecciona una instancia y pulsa <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> (<kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>B</kbd>). La instancia se convierte en un marco regular sin enlace al componente original.
-
-## Sincronización en vivo
-
-Editar un componente actualiza todas sus instancias automáticamente. Propiedades sincronizadas:
-
-- Ancho y alto
-- Rellenos, trazos y efectos
-- Opacidad y radios de esquinas
-- Propiedades de layout
-
-## Overrides
-
-Las instancias pueden sobreescribir propiedades específicas sin romper el enlace de sincronización. Cuando se sobreescribe una propiedad en una instancia, esa propiedad se omite durante la sincronización — las demás propiedades continúan actualizándose desde el componente principal.
-
-## Selección
-
-Clic selecciona el componente. **Doble clic** para entrar y seleccionar hijos.
-
-## Tratamiento visual
-
-| Elemento | Apariencia |
-|----------|------------|
-| Etiqueta de componente | Morada con icono de diamante, siempre visible |
-| Etiqueta de instancia | Morada con icono de diamante, siempre visible |
-| Borde de conjunto | Contorno morado punteado |
-
-## Atajos de teclado
-
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Crear componente | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd> |
-| Crear conjunto | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>K</kbd> |
-| Desenlazar instancia | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> | <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>B</kbd> |
+Publica componentes locales como biblioteca y habilita bibliotecas externas en Recursos. Las revisiones se almacenan localmente para trabajar sin conexión.

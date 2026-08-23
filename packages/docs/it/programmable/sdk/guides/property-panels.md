@@ -1,83 +1,37 @@
 ---
-title: Pannelli Proprietà
-description: Crea pannelli proprietà con composable di controllo e primitive di lista headless.
+title: Pannelli delle proprietà
+description: Creare pannelli delle proprietà con composable e componenti elenco senza stile.
 ---
 
-# Pannelli Proprietà
+# Pannelli delle proprietà
 
-I pannelli proprietà in `@open-pencil/vue` sono intenzionalmente progettati per essere composable-first.
+`@open-pencil/vue` fornisce soprattutto composable per leggere valori dalla selezione e applicare modifiche tramite l’editor.
 
-Se un pannello ha principalmente bisogno di valori derivati dalla selezione e azioni di aggiornamento, preferisci i composable.
-Se un pannello ha bisogno di struttura array/lista riutilizzabile, usa una primitiva headless come `PropertyListRoot`.
+Usa un composable quando il pannello deve calcolare valori e offrire azioni. Usa un componente strutturale come `PropertyListRoot` per elenchi controllati di riempimenti, contorni o effetti.
 
-## Composable di controllo comuni
+## Collegamenti alle variabili
 
-Per le sezioni proprietà standard, inizia con:
+I campi compatibili con variabili devono rispettare queste regole:
 
-- `usePosition()`
-- `useLayout()`
-- `useAppearance()`
-- `useTypography()`
-- `useExport()`
+- focus e apertura del selettore non rimuovono un collegamento esistente;
+- la separazione avviene solo alla prima modifica reale;
+- un’azione esplicita rimuove il collegamento;
+- separazione, modifica e aggiornamenti su selezioni multiple appartengono a una sola operazione di cronologia.
 
-Per pannelli in stile lista, usa:
+`NumberField` può mostrare il nome della variabile quando inattivo e il valore numerico risolto durante la modifica.
 
-- `useFillControls()`
-- `useStrokeControls()`
-- `useEffectsControls()`
+## Proprietà semplici
 
-## Esempio: pannello posizione
+`usePosition`, `useAppearance`, `useLayout` e `useTypography` forniscono valori misti e azioni adatte ai campi controllati.
 
-```vue
-<script setup lang="ts">
-import { usePosition } from '@open-pencil/vue'
+## Proprietà in elenco
 
-const { x, y, width, height, updateProp, commitProp } = usePosition()
-</script>
+`useFillControls`, `useStrokeControls` e `useEffectsControls` si combinano con `PropertyListRoot` e `PropertyListItem`. L’applicazione decide l’aspetto delle righe e dei selettori.
 
-<template>
-  <div class="grid grid-cols-2 gap-2">
-    <input :value="x" @input="updateProp('x', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="y" @input="updateProp('y', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="width" @input="updateProp('width', Number(($event.target as HTMLInputElement).value))" />
-    <input :value="height" @input="updateProp('height', Number(($event.target as HTMLInputElement).value))" />
-  </div>
-</template>
-```
-
-## Esempio: pannello riempimenti
-
-```vue
-<script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
-
-const fillControls = useFillControls()
-</script>
-
-<template>
-  <PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
-    <div v-for="(fill, index) in items" :key="index">
-      {{ fill.type }}
-      <button @click="remove(index)">Rimuovi</button>
-    </div>
-
-    <button @click="add(fillControls.defaultFill)">Aggiungi riempimento</button>
-  </PropertyListRoot>
-</template>
-```
-
-## Regola pratica
-
-- usa i composable per logica di controllo diretta
-- usa le primitive strutturali quando la parte difficile è la coordinazione ripetuta di lista/albero/slot
-
-## API correlate
+## Vedi anche
 
 - [usePosition](../api/composables/use-position)
-- [useLayout](../api/composables/use-layout)
 - [useAppearance](../api/composables/use-appearance)
+- [useLayout](../api/composables/use-layout)
 - [useTypography](../api/composables/use-typography)
-- [useFillControls](../api/composables/use-fill-controls)
-- [useStrokeControls](../api/composables/use-stroke-controls)
-- [useEffectsControls](../api/composables/use-effects-controls)
 - [PropertyListRoot](../api/components/property-list-root)

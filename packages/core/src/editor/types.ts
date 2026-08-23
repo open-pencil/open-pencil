@@ -7,12 +7,15 @@ import type {
   VectorSegment,
   VectorVertex
 } from '@open-pencil/scene-graph'
+import type { CanvasGuide } from '@open-pencil/scene-graph/guides'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 import type { UndoManager } from '@open-pencil/scene-graph/undo'
 
+import type { GuideOverlayState } from '#core/canvas/guides/types'
 import type { RulerTheme, SkiaRenderer } from '#core/canvas/renderer'
 import type { MeasurementMode, RenderOverlays } from '#core/canvas/renderer/types'
+import type { SnappingPreferences } from '#core/editor/preferences'
 import type { TextEditor } from '#core/text/editor'
 import type { FontResolutionEvent, FontResolutionSnapshot } from '#core/text/resolver'
 
@@ -31,6 +34,7 @@ export type Tool =
 
 export interface EditorSharedState {
   activeTool: Tool
+  snappingPreferences: SnappingPreferences
   remoteCursors: Array<{
     name: string
     color: Color
@@ -49,6 +53,7 @@ export interface EditorViewState {
   selectedIds: Set<string>
   marquee: Rect | null
   snapGuides: SnapGuide[]
+  guides: GuideOverlayState
   rotationPreview: { nodeId: string; angle: number } | null
   dropTargetId: string | null
   layoutInsertIndicator: {
@@ -112,6 +117,7 @@ export interface EditorEvents extends SceneGraphEvents {
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'tool:changed': (tool: Tool, previousTool: Tool) => void
   'page:changed': (pageId: string, previousPageId: string) => void
+  'guides:changed': (ownerId: string, guides: readonly CanvasGuide[]) => void
   'clipboard:images-missing': (resolution: ClipboardImageResolution) => void
   'font:resolution-changed': (event: FontResolutionEvent, snapshot: FontResolutionSnapshot) => void
   'viewport:changed': (

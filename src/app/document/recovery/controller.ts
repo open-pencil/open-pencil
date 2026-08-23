@@ -1,5 +1,5 @@
 import { watchDebounced } from '@vueuse/core'
-import type { WatchHandle } from 'vue'
+import { watch, type WatchHandle } from 'vue'
 
 import type { EditorState } from '@open-pencil/core/editor'
 
@@ -13,6 +13,7 @@ interface DocumentRecoveryOptions {
   state: RecoveryState
   buildFigFile: () => Promise<Uint8Array> | Uint8Array
   hasWritableSource: () => boolean
+  isEnabled?: () => boolean
   store?: RecoveryStore
   recoveryId?: string
 }
@@ -30,6 +31,7 @@ export function createDocumentRecovery({
   state,
   buildFigFile,
   hasWritableSource,
+  isEnabled = () => true,
   store = getRecoveryStore(),
   recoveryId = createCanvasId()
 }: DocumentRecoveryOptions): DocumentRecoveryController {
@@ -39,14 +41,15 @@ export function createDocumentRecovery({
   let requestedVersion = protectedVersion
   let lifecycleGeneration = 0
   let writing: Promise<void> | null = null
+  let cleanup: Promise<void> = Promise.resolve()
   let disposed = false
 
   async function runWrites(generation: number): Promise<void> {
-    if (disposed || generation !== lifecycleGeneration) return
+    if (disposed || generation !== lifecycleGeneration || !isEnabled()) return
     if (hasWritableSource() || requestedVersion === protectedVersion) return
     const version = requestedVersion
     const bytes = await buildFigFile()
-    if (generation !== lifecycleGeneration || hasWritableSource()) return
+    if (generation !== lifecycleGeneration || hasWritableSource() || !isEnabled()) return
     await store.write({
       id,
       documentName: state.documentName,
@@ -60,7 +63,8 @@ export function createDocumentRecovery({
   }
 
   async function persistNow(): Promise<void> {
-    if (disposed || hasWritableSource()) return
+    await cleanup
+    if (disposed || hasWritableSource() || !isEnabled()) return
     requestedVersion = state.sceneVersion
     if (requestedVersion === protectedVersion) return
     if (!writing) {
@@ -72,7 +76,7 @@ export function createDocumentRecovery({
     await writing
   }
 
-  const stop: WatchHandle = watchDebounced(
+  const stopVersionWatch: WatchHandle = watchDebounced(
     () => state.sceneVersion,
     () => {
       void persistNow().catch((error) => console.warn('[Recovery] Snapshot failed:', error))
@@ -80,9 +84,35 @@ export function createDocumentRecovery({
     { debounce: 3000, maxWait: 10000 }
   )
 
+  const stopEnabledWatch: WatchHandle = watch(
+    isEnabled,
+    (enabled) => {
+      if (enabled) {
+        protectedVersion = state.sceneVersion
+        requestedVersion = state.sceneVersion
+        return
+      }
+      lifecycleGeneration++
+      const cleanupGeneration = lifecycleGeneration
+      const snapshotId = id
+      requestedVersion = state.sceneVersion
+      protectedVersion = state.sceneVersion
+      const activeWrite = writing
+      cleanup = cleanup
+        .then(async () => {
+          await activeWrite
+          await store.remove(snapshotId)
+          if (cleanupGeneration === lifecycleGeneration) persistedVersion = null
+          return undefined
+        })
+        .catch((error) => console.warn('[Recovery] Failed to disable recovery:', error))
+    },
+    { flush: 'sync' }
+  )
+
   async function invalidateActiveWrite(): Promise<void> {
     lifecycleGeneration++
-    await writing
+    await Promise.all([writing, cleanup])
   }
 
   return {
@@ -117,7 +147,8 @@ export function createDocumentRecovery({
     disposeRecovery() {
       disposed = true
       lifecycleGeneration++
-      stop()
+      stopVersionWatch()
+      stopEnabledWatch()
     }
   }
 }

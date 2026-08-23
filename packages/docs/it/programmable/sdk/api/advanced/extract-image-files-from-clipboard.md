@@ -1,15 +1,15 @@
 ---
 title: extractImageFilesFromClipboard
-description: Utility per gli appunti per estrarre i file immagine accettati.
+description: Leggere file immagine supportati da un ClipboardEvent.
 ---
 
 # extractImageFilesFromClipboard
 
-`extractImageFilesFromClipboard(event)` filtra i file degli appunti fino ai tipi di immagine accettati usati dal flusso di drop del canvas.
+`extractImageFilesFromClipboard(event)` restituisce i file immagine presenti negli appunti e scarta i tipi non supportati.
 
-Usalo quando implementi flussi di lavoro per incollare immagini dagli appunti.
+Usa la funzione per implementare l’incolla di immagini.
 
-## API correlate
+## Vedi anche
 
 - [useCanvasDrop](./use-canvas-drop)
 - [useCanvas](../composables/use-canvas)

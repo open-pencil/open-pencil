@@ -27,6 +27,8 @@ export interface DragMove {
   startY: number
   currentX: number
   currentY: number
+  appliedDx: number
+  appliedDy: number
   startScreenX: number
   startScreenY: number
   dragStarted: boolean
@@ -61,6 +63,7 @@ export interface DragResize {
   origTextPathData: TextPathData | null
   origTextPathBox: Rect | null
   origChildren: Map<string, ResizeSnapshot> | null
+  appliedRect?: Rect
 }
 
 export interface DragMarquee {
@@ -125,6 +128,22 @@ export interface DragBendHandle {
   targetTangentField: 'tangentStart' | 'tangentEnd' | null
 }
 
+export interface DragGuide {
+  type: 'guide'
+  axis: 'x' | 'y'
+  ownerId: string
+  position: number
+  startScreenX: number
+  startScreenY: number
+  currentScreenX: number
+  currentScreenY: number
+  dragStarted: boolean
+  duplicate?: boolean
+  guideId?: string
+  originalOwnerId?: string
+  originalPosition?: number
+}
+
 export type DragState =
   | DragDraw
   | DragMove
@@ -137,6 +156,7 @@ export type DragState =
   | DragEditNode
   | DragEditHandle
   | DragBendHandle
+  | DragGuide
 
 export const TOOL_TO_NODE: Partial<Record<Tool, NodeType>> = {
   FRAME: 'FRAME',

@@ -1,98 +1,107 @@
 ---
-title: Przeglądanie plików
-description: Przeglądaj drzewa węzłów, szukaj po nazwie lub typie i sprawdzaj właściwości z terminala.
+title: Przeglądanie dokumentów
+description: Drzewo obiektów, wyszukiwanie według nazwy i typu oraz właściwości z terminala.
 ---
 
-# Przeglądanie plików
+# Przeglądanie dokumentów
 
-CLI pozwala eksplorować pliki `.fig` bez otwierania edytora. Każde polecenie działa również na żywej aplikacji — wystarczy pominąć argument pliku.
+CLI pozwala analizować dokumenty projektu bez uruchamiania edytora. Te same polecenia działają z otwartą aplikacją komputerową, jeśli nie podasz pliku.
 
 ::: tip Instalacja
 ```sh
 npm install -g @open-pencil/cli
-# lub
+# albo
+bun add -g @open-pencil/cli
+# albo
 brew install open-pencil/tap/open-pencil
 ```
 :::
 
-## Informacje o dokumencie
+## Informacje ogólne
 
-Szybki przegląd — liczba stron, łączna liczba węzłów, użyte czcionki, rozmiar pliku:
+Liczba stron i obiektów, używane czcionki oraz rozmiar pliku:
 
 ```sh
 openpencil info design.fig
 ```
 
-## Drzewo węzłów
-
-Wyświetl pełną hierarchię węzłów:
+## Drzewo obiektów
 
 ```sh
 openpencil tree design.fig
 ```
 
-```
-[0] [page] "Getting started" (0:46566)
-  [0] [section] "" (0:46567)
-    [0] [frame] "Body" (0:46568)
-      [0] [frame] "Introduction" (0:46569)
-        [0] [frame] "Introduction Card" (0:46570)
-          [0] [frame] "Guidance" (0:46571)
-```
+## Wyszukiwanie obiektów
 
-## Wyszukiwanie węzłów
-
-Szukaj po typie:
+Według typu:
 
 ```sh
 openpencil find design.fig --type TEXT
 ```
 
-Szukaj po nazwie:
+Według nazwy:
 
 ```sh
 openpencil find design.fig --name "Button"
 ```
 
-Obie flagi można łączyć, aby zawęzić wyniki.
+## Zapytania XPath
 
-## Szczegóły węzła
+Selektory XPath wyszukują obiekty według typu, atrybutów i położenia w drzewie:
 
-Sprawdź wszystkie właściwości konkretnego węzła po jego ID:
+```sh
+openpencil query design.fig "//FRAME"
+```
+
+```sh
+openpencil query design.fig "//TEXT"                    # Wszystkie obiekty tekstowe
+openpencil query design.fig "//COMPONENT"               # Wszystkie komponenty
+openpencil query design.fig "//INSTANCE"                # Wszystkie egzemplarze
+openpencil query design.fig "//FRAME[@width < 300]"     # Ramki węższe niż 300 px
+openpencil query design.fig "//*[@cornerRadius > 0]"    # Obiekty z zaokrąglonymi narożnikami
+openpencil query design.fig "//*[@visible = false]"     # Ukryte obiekty
+openpencil query design.fig "//SECTION//TEXT"            # Tekst wewnątrz sekcji
+```
+
+Nazwy dostępnych atrybutów, takie jak `fontSize`, `layoutMode` i `strokeWeight`, pozostają zgodne z API.
+
+## Właściwości obiektu
 
 ```sh
 openpencil node design.fig --id 1:23
 ```
 
-## Strony
-
-Wylistuj wszystkie strony w dokumencie:
+## Strony i zmienne
 
 ```sh
 openpencil pages design.fig
-```
-
-## Zmienne
-
-Wylistuj zmienne projektowe i ich kolekcje:
-
-```sh
 openpencil variables design.fig
 ```
 
-## Tryb żywej aplikacji
+## Praca z otwartą aplikacją
 
-Gdy aplikacja desktopowa jest uruchomiona, pomiń argument pliku — CLI łączy się przez RPC i operuje na żywym płótnie:
+Jeśli aplikacja komputerowa jest uruchomiona, nie podawaj ścieżki pliku. CLI połączy się przez RPC z otwartym dokumentem:
 
 ```sh
-openpencil tree              # przeglądaj żywy dokument
-openpencil eval -c "..."     # odpytuj edytor
+openpencil documents
+openpencil tree
+openpencil tree --document-id tab-123 --page-id 0:1
+openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
+```
+
+W procesach automatycznych najpierw wywołaj `openpencil documents --json`, a potem jawnie przekazuj `--document-id` i `--page-id`.
+
+## Kontrola jakości
+
+Sprawdzanie nazw, układu, struktury i dostępności:
+
+```sh
+openpencil lint design.fig
+openpencil lint design.pen --preset strict
+openpencil lint design.fig --rule color-contrast
+openpencil lint design.fig --list-rules
 ```
 
 ## Wyjście JSON
 
-Wszystkie polecenia obsługują `--json` dla wyjścia w formacie do odczytu maszynowego — przekieruj do `jq`, zasilaj skrypty CI lub przetwarzaj innymi narzędziami:
-
-```sh
-openpencil tree design.fig --json | jq '.[] | .name'
-```
+Wszystkie polecenia obsługują `--json`. Wynik można przekazać do `jq`, CI albo innego programu.

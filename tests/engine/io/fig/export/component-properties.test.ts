@@ -171,4 +171,47 @@ describe('Figma component property roundtrip', () => {
       '30:2': 'false'
     })
   })
+
+  test('exports edited imported assignments instead of stale raw values', async () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, {
+      name: 'Card',
+      componentPropertyDefinitions: [
+        { id: '30:1', name: 'Label', type: 'TEXT', defaultValue: 'Default' }
+      ]
+    })
+    component.source.id = '10:1'
+    const instance = graph.createInstance(component.id, page.id, {
+      name: 'Card instance',
+      componentPropertyAssignments: { '30:1': 'Original' }
+    })
+    if (!instance) throw new Error('Expected instance')
+    instance.source.id = '20:1'
+
+    const imported = importNodeChanges(
+      parseFigBuffer((await exportFigFile(graph)).buffer as ArrayBuffer).nodeChanges,
+      [],
+      undefined,
+      { populate: 'all' }
+    )
+    const importedInstance = [...imported.getAllNodes()].find(
+      (node) => node.name === 'Card instance'
+    )
+    if (!importedInstance) throw new Error('Expected imported instance')
+    imported.updateNode(importedInstance.id, {
+      componentPropertyAssignments: { '30:1': 'Edited' }
+    })
+
+    const reloaded = importNodeChanges(
+      parseFigBuffer((await exportFigFile(imported)).buffer as ArrayBuffer).nodeChanges,
+      [],
+      undefined,
+      { populate: 'all' }
+    )
+    const reloadedInstance = [...reloaded.getAllNodes()].find(
+      (node) => node.name === 'Card instance'
+    )
+    expect(reloadedInstance?.componentPropertyAssignments).toEqual({ '30:1': 'Edited' })
+  })
 })

@@ -1,68 +1,66 @@
 ---
-title: Auswahl & Bearbeitung
-description: Auswählen, Bewegen, Skalieren, Drehen, Duplizieren und Organisieren von Knoten in OpenPencil.
+title: Auswählen und Bearbeiten
+description: Objekte auswählen, verschieben, skalieren, drehen, duplizieren und anordnen.
 ---
 
-# Auswahl & Bearbeitung
+# Auswählen und Bearbeiten
 
-Wählen Sie Objekte aus, um sie zu bewegen, skalieren, drehen, duplizieren und auf dem Canvas zu organisieren.
+Ausgewählte Objekte können verschoben, skaliert, gedreht, dupliziert und in der Ebenenreihenfolge verändert werden.
 
-## Auswählen
+## Auswahl
 
-- **Klicken** auf einen Knoten zur Auswahl (hebt alle anderen auf)
-- <kbd>Shift</kbd> + Klicken zum Hinzufügen oder Entfernen aus der aktuellen Auswahl
-- **Auswahlrechteck ziehen** — auf leeren Canvas ziehen; alle schneidenden Knoten werden ausgewählt
-- <kbd>⌘</kbd><kbd>A</kbd> — alle Knoten auf der aktuellen Seite auswählen
-- **Auf leeren Canvas klicken** — alles abwählen
+- Ein Klick auf ein Objekt ersetzt die aktuelle Auswahl.
+- <kbd>Shift</kbd> + Klick fügt ein Objekt hinzu oder entfernt es.
+- Ziehen auf einer freien Fläche erstellt eine Rahmenauswahl; alle geschnittenen Objekte werden ausgewählt.
+- <kbd>⌘</kbd><kbd>A</kbd> wählt alle Objekte der aktuellen Seite.
+- Ein Klick auf eine freie Stelle hebt die Auswahl auf.
 
-## Bewegen
+## Verschieben
 
-- **Ziehen** eines ausgewählten Knotens zum Bewegen
-- **Pfeiltasten** — um 1 px verschieben
-- <kbd>Shift</kbd> + Pfeiltasten — um 10 px verschieben
+- Ausgewähltes Objekt ziehen.
+- Pfeiltasten verschieben um 1 px.
+- <kbd>Shift</kbd> + Pfeiltasten verschieben um 10 px.
 
-## Skalieren
+## Größe ändern
 
-Ausgewählte Knoten zeigen 8 Skalierungsgriffe (4 Ecken + 4 Kantenmittelpunkte). Ziehen Sie einen Griff zum Skalieren.
+Eine Auswahl zeigt acht Griffe: vier an den Ecken und vier in der Mitte der Kanten. Ziehen Sie einen Griff, um Breite und Höhe zu ändern.
 
-- <kbd>Shift</kbd> + Ziehen einer Ecke, um Proportionen beizubehalten
+Mit <kbd>Shift</kbd> beim Ziehen eines Eckgriffs bleiben die Proportionen erhalten.
 
 ## Drehen
 
-Fahren Sie knapp außerhalb eines Eckgriffs, um den Drehungscursor zu sehen. Ziehen zum Drehen.
-
-- <kbd>Shift</kbd> + Ziehen rastet auf 15°-Schritte ein
+Bewegen Sie den Mauszeiger knapp außerhalb eines Eckgriffs, bis der Drehcursor erscheint, und ziehen Sie anschließend. Mit <kbd>Shift</kbd> rastet die Drehung in Schritten von 15° ein.
 
 ## Duplizieren
 
-- <kbd>Alt</kbd> + Ziehen (<kbd>⌥</kbd> + Ziehen auf Mac) — ausgewählten Knoten duplizieren und Kopie verschieben
-- <kbd>⌘</kbd><kbd>D</kbd> — an Ort und Stelle duplizieren
+- <kbd>⌥</kbd> beziehungsweise <kbd>Alt</kbd> beim Ziehen erstellt eine Kopie und verschiebt sie.
+- <kbd>⌘</kbd><kbd>D</kbd> beziehungsweise <kbd>Strg</kbd><kbd>D</kbd> dupliziert an derselben Position.
 
 ## Löschen
 
-**Rücktaste** oder **Entf** drücken, um alle ausgewählten Knoten zu entfernen.
+Backspace oder Delete entfernt alle ausgewählten Objekte.
 
-## Z-Reihenfolge
+## Reihenfolge
 
-- **]** — nach vorne bringen
-- **[** — nach hinten senden
+- **]** bringt die Auswahl nach vorn.
+- **[** sendet sie nach hinten.
 
-## Sichtbarkeit & Sperre
+## Sichtbarkeit und Sperre
 
-- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> — Sichtbarkeit umschalten
-- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> — Sperre umschalten
+- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> schaltet die Sichtbarkeit um.
+- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> schaltet die Sperre um.
 
 ## Tastenkürzel
 
-| Aktion | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Alles auswählen | <kbd>⌘</kbd><kbd>A</kbd> | Strg + A |
-| Duplizieren | <kbd>⌘</kbd><kbd>D</kbd> | Strg + D |
-| Duplizieren + bewegen | <kbd>⌥</kbd> + Ziehen | <kbd>Alt</kbd> + <kbd>Ziehen</kbd> |
-| Löschen | <kbd>⌫</kbd> / Entf | Rücktaste / Entf |
-| 1 px verschieben | <kbd>Pfeiltasten</kbd> | Pfeiltasten |
-| 10 px verschieben | <kbd>⇧</kbd> + Pfeiltasten | <kbd>Shift</kbd> + <kbd>Pfeiltasten</kbd> |
-| Nach vorne | ] | ] |
+| Aktion | macOS | Windows / Linux |
+|--------|-------|-----------------|
+| Alles auswählen | <kbd>⌘</kbd><kbd>A</kbd> | <kbd>Strg</kbd><kbd>A</kbd> |
+| Duplizieren | <kbd>⌘</kbd><kbd>D</kbd> | <kbd>Strg</kbd><kbd>D</kbd> |
+| Duplizieren und verschieben | <kbd>⌥</kbd> + Ziehen | <kbd>Alt</kbd> + Ziehen |
+| Löschen | <kbd>⌫</kbd>/<kbd>Entf</kbd> | Backspace/<kbd>Entf</kbd> |
+| 1 px verschieben | Pfeiltasten | Pfeiltasten |
+| 10 px verschieben | <kbd>⇧</kbd> + Pfeiltasten | <kbd>Shift</kbd> + Pfeiltasten |
+| Nach vorn | ] | ] |
 | Nach hinten | [ | [ |
-| Sichtbarkeit | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> | <kbd>Shift</kbd> + <kbd>Strg</kbd> + H |
-| Sperre | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> | <kbd>Shift</kbd> + <kbd>Strg</kbd> + L |
+| Sichtbarkeit | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> | <kbd>Shift</kbd><kbd>Strg</kbd><kbd>H</kbd> |
+| Sperre | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> | <kbd>Shift</kbd><kbd>Strg</kbd><kbd>L</kbd> |

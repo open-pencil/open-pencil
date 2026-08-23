@@ -1,6 +1,8 @@
 use serde::Deserialize;
 use std::path::Path;
-use tauri::menu::{MenuBuilder, MenuItemBuilder, Submenu, SubmenuBuilder};
+use tauri::menu::{
+    CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, MenuItemKind, Submenu, SubmenuBuilder,
+};
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 use tauri::menu::PredefinedMenuItem;
@@ -18,6 +20,8 @@ struct MenuEntry {
     id: Option<String>,
     label: Option<String>,
     accelerator: Option<String>,
+    #[serde(default)]
+    checkbox: bool,
     #[serde(default)]
     sub: Vec<MenuEntry>,
 }
@@ -65,6 +69,18 @@ fn build_submenu<R: tauri::Runtime>(
                 builder = builder.item(&item);
                 continue;
             }
+        }
+
+        if entry.checkbox {
+            let mut item = CheckMenuItemBuilder::new(label).checked(true);
+            if let Some(id) = &entry.id {
+                item = item.id(id);
+            }
+            if let Some(accelerator) = &entry.accelerator {
+                item = item.accelerator(accelerator);
+            }
+            builder = builder.item(&item.build(app)?);
+            continue;
         }
 
         let mut item = MenuItemBuilder::new(label);
@@ -133,6 +149,58 @@ fn build_schema_menus<R: tauri::Runtime>(
         .iter()
         .map(|group| build_submenu(app, &group.label, &group.items, recent_files))
         .collect()
+}
+
+fn find_menu_item<R: tauri::Runtime>(
+    items: Vec<MenuItemKind<R>>,
+    id: &str,
+) -> Option<MenuItemKind<R>> {
+    for item in items {
+        if item.id().0 == id {
+            return Some(item);
+        }
+        if let MenuItemKind::Submenu(submenu) = &item {
+            if let Ok(children) = submenu.items() {
+                if let Some(found) = find_menu_item(children, id) {
+                    return Some(found);
+                }
+            }
+        }
+    }
+    None
+}
+
+#[tauri::command]
+pub fn native_menu_checked<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    id: String,
+) -> Result<bool, String> {
+    let menu = app
+        .menu()
+        .ok_or_else(|| "Application menu is unavailable".to_string())?;
+    let item = find_menu_item(menu.items().map_err(|error| error.to_string())?, &id)
+        .ok_or_else(|| format!("Menu item not found: {id}"))?;
+    match item {
+        MenuItemKind::Check(item) => item.is_checked().map_err(|error| error.to_string()),
+        _ => Err(format!("Menu item is not checkable: {id}")),
+    }
+}
+
+#[tauri::command]
+pub fn set_native_menu_checked<R: tauri::Runtime>(
+    app: tauri::AppHandle<R>,
+    id: String,
+    checked: bool,
+) -> Result<(), String> {
+    let menu = app
+        .menu()
+        .ok_or_else(|| "Application menu is unavailable".to_string())?;
+    let item = find_menu_item(menu.items().map_err(|error| error.to_string())?, &id)
+        .ok_or_else(|| format!("Menu item not found: {id}"))?;
+    match item {
+        MenuItemKind::Check(item) => item.set_checked(checked).map_err(|error| error.to_string()),
+        _ => Err(format!("Menu item is not checkable: {id}")),
+    }
 }
 
 pub fn install_app_menu<R: tauri::Runtime>(

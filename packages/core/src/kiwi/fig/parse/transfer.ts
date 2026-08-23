@@ -1,6 +1,6 @@
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { EnabledLibraryBinding } from '@open-pencil/scene-graph'
+import type { EnabledLibraryBinding, SceneNode } from '@open-pencil/scene-graph'
 
 import { getLazyFigImportContext, setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
@@ -112,10 +112,14 @@ export function cloneSceneGraphForFigExport(graph: SceneGraph): SceneGraph {
   return cloned
 }
 
+function normalizeNodeGuides(node: SceneNode): SceneNode {
+  return Array.isArray(node.guides) ? node : { ...node, guides: [] }
+}
+
 export function deserializeSceneGraph(data: SerializedSceneGraph): SceneGraph {
   const graph = new SceneGraph()
   graph.rootId = data.rootId
-  graph.nodes = new Map(data.nodes)
+  graph.nodes = new Map(data.nodes.map(([id, node]) => [id, normalizeNodeGuides(node)]))
   graph.images = new Map(data.images)
   graph.variables = new Map(data.variables)
   graph.variableCollections = new Map(data.variableCollections)

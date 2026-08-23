@@ -1,15 +1,15 @@
 ---
 title: useLayerDrag
-description: Pomocnik okablowania przeciągania i upuszczania dla zmiany kolejności drzewa warstw.
+description: Drag and drop do zmiany kolejności i parent warstw.
 ---
 
 # useLayerDrag
 
-`useLayerDrag(editor, indentPerLevel?)` okablowuje zachowanie pragmatic-drag-and-drop dla wierszy drzewa warstw i mapuje instrukcje upuszczenia na operacje zmiany kolejności edytora.
+`useLayerDrag(editor, indentPerLevel?)` podłącza `pragmatic-drag-and-drop` do rows drzewa warstw i zamienia drop instructions na operacje zmiany kolejności albo parent w SceneGraph.
 
-Użyj go przy rozszerzaniu lub zastępowaniu domyślnego UI przeciągania drzewa warstw.
+Użyj composable, jeśli tworzysz własne drzewo warstw z obsługą drag and drop.
 
-## Powiązane API
+## Zobacz też
 
 - [LayerTreeRoot](../components/layer-tree-root)
 - [LayerTreeItem](../components/layer-tree-item)

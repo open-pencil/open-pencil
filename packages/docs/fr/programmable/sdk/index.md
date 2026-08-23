@@ -1,60 +1,57 @@
 ---
 title: Vue SDK
-description: Créez des éditeurs propulsés par OpenPencil avec des composables Vue headless et des primitives.
+description: Créez des éditeurs basés sur OpenPencil avec des composants sans styles et des composables Vue.
 ---
 
 # Vue SDK
 
-`@open-pencil/vue` existe pour qu'OpenPencil puisse être bien plus qu'une application de design autonome.
+`@open-pencil/vue` permet d'utiliser OpenPencil autrement que comme une application de design autonome.
 
-L'objectif est de faire d'OpenPencil une boîte à outils intégrable dans d'autres produits, outils internes, et éditeurs spécialisés — pas seulement une interface par défaut.
+Vous pouvez intégrer OpenPencil à un autre produit, à un outil interne ou à un éditeur spécialisé, sans reprendre l'interface par défaut de l'application.
 
-L'application OpenPencil est une composition de cette boîte à outils. Le SDK est la façon dont vous en construisez une différente.
+L'application OpenPencil n'est qu'une des interfaces créées avec cette boîte à outils. Le SDK vous permet de construire la vôtre.
 
-Il vous offre :
+Le SDK fournit :
 
-- un contexte éditeur injecté
-- un rendu canvas via CanvasKit
-- des composables pour la sélection, les commandes, les menus, les panneaux de propriétés et les variables
-- des primitives structurelles headless comme `PageListRoot`, `PropertyListRoot` et `ToolbarRoot`
-- des primitives i18n intégrées pour les menus, panneaux, dialogues et sélecteurs de langue personnalisés
+- le contexte de l'éditeur au moyen de la dependency injection de Vue ;
+- le rendu de la zone de travail avec CanvasKit ;
+- des composables pour la sélection, les commandes, les menus, les panneaux de propriétés et les variables ;
+- des composants structurels sans styles tels que `PageListRoot`, `PropertyListRoot` et `ToolbarRoot` ;
+- la localisation des menus, panneaux et boîtes de dialogue, ainsi que des composants de sélection de la langue.
 
 ## Par où commencer
 
 <SdkCardGroup>
-  <SdkCard title="Démarrage rapide" to="/programmable/sdk/getting-started" description="Installez le package, créez une instance d'éditeur et montez les primitives essentielles." />
-  <SdkCard title="Architecture" to="/programmable/sdk/architecture" description="Comprenez comment composables, primitives et contexte éditeur s'articulent." />
-  <SdkCard title="Guides" to="/programmable/sdk/guides/custom-editor-shell" description="Créez des shells personnalisés, des panneaux de propriétés et des panneaux de navigation." />
-  <SdkCard title="Référence API" to="/programmable/sdk/api/" description="Parcourez les composants, composables et API avancées." />
+  <SdkCard title="Premiers pas" to="/programmable/sdk/getting-started" description="Installez le package, créez une instance de l'éditeur et connectez les composants principaux." />
+  <SdkCard title="Architecture" to="/programmable/sdk/architecture" description="Découvrez comment les composables, les composants et le contexte de l'éditeur s'articulent." />
+  <SdkCard title="Guides" to="/programmable/sdk/guides/custom-editor-shell" description="Créez une interface d'éditeur, des panneaux de propriétés et des panneaux de navigation sur mesure." />
+  <SdkCard title="Référence de l'API" to="/programmable/sdk/api/" description="Consultez les composants, les composables et les API de bas niveau." />
 </SdkCardGroup>
 
-## Pourquoi le SDK existe
+## À quoi sert le SDK
 
-Différents produits et équipes ont besoin de surfaces d'édition différentes.
+Chaque produit et chaque équipe a besoin d'une expérience d'édition différente.
 
-Parfois vous voulez un éditeur de design complet. Parfois vous voulez un canvas intégré dans une autre application. Parfois vous voulez un outil interne, un éditeur de templates, ou une surface d'édition assistée par IA construite autour d'un cas d'usage précis.
-
-Le SDK est la couche qui rend tout cela possible.
+Il peut s'agir d'un éditeur de design complet, d'une zone de travail intégrée à une autre application, d'un outil interne, d'un éditeur de modèles ou d'une interface spécialisée assistée par l'IA.
 
 ## Principes de conception
 
-- **Headless en priorité** : logique et structure, sans style applicatif
-- **Composables plutôt que wrappers** : utiliser des composables quand il n'y a pas de coordination structurelle significative
-- **API publique intentionnelle** : exports stables depuis `packages/vue/src/index.ts`
-- **Intégration framework** : intégration Vue au-dessus de `@open-pencil/core`
+- **Sans styles par conception :** le SDK fournit la logique et la structure sans imposer l’apparence de l’application.
+- **Un composable plutôt qu'un wrapper inutile :** si aucune structure d'interface ne doit être coordonnée, un composable suffit.
+- **Une API publique maîtrisée :** les fonctionnalités stables sont exportées depuis `packages/vue/src/index.ts`.
+- **Une intégration étroite avec Vue :** le SDK relie Vue aux fonctionnalités de `@open-pencil/core`.
 
-## Comment penser ce package
+## Deux niveaux d'API
 
-Le SDK possède deux couches principales :
+Le SDK se compose de deux niveaux principaux :
 
-1. **Composables** pour l'état et les actions de l'éditeur
-2. **Primitives** pour la structure UI significative
+1. Les **composables** fournissent l'état de l'éditeur et les opérations associées.
+2. Les **composants** définissent une structure d'interface pertinente.
 
-Si vous n'avez besoin que de l'état et des actions de l'éditeur, commencez par les composables.
-Si vous construisez des blocs UI d'éditeur réutilisables, commencez par les primitives.
+Si vous avez uniquement besoin de l'état et des opérations de l'éditeur, commencez par les composables. Si vous créez des éléments d'interface réutilisables, commencez par les composants.
 
-## Sections API
+## Sections de l'API
 
 - [Composants](/programmable/sdk/api/components/)
 - [Composables](/programmable/sdk/api/composables/)
-- [Avancé](/programmable/sdk/api/advanced/)
+- [API de bas niveau](/programmable/sdk/api/advanced/)

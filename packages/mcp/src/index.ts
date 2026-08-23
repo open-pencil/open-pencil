@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { startServer } from '#mcp/server'
-import { parseDisabledTools } from '#mcp/tool/catalog'
+import { readToolPolicyFromEnv } from '#mcp/tool/policy'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
@@ -67,12 +67,14 @@ if (rawAppTimeoutText) {
   }
 }
 
+const toolPolicy = readToolPolicyFromEnv()
+
 const handle = await startServer({
   httpPort: withTcp ? port : 0,
   withTcp,
   socketPath: process.env.OPENPENCIL_MCP_SOCKET?.trim() || null,
-  enableEval: process.env.OPENPENCIL_MCP_EVAL === '1',
-  disabledTools: parseDisabledTools(process.env.OPENPENCIL_MCP_DISABLED_TOOLS),
+  enableEval: toolPolicy.allowEval,
+  disabledTools: toolPolicy.disabledTools,
   mcpRoot: process.env.OPENPENCIL_MCP_ROOT?.trim() || process.cwd(),
   // Auth token: undefined → auto-generate, empty string → disable auth,
   // non-empty → use trimmed value. Whitespace-only is rejected to prevent a

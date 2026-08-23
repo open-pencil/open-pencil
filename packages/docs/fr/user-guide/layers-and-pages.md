@@ -1,26 +1,31 @@
 ---
 title: Calques et pages
-description: Gérer les calques, pages et le panneau des propriétés dans OpenPencil.
+description: Gérer l’arbre des calques, les pages et le panneau des propriétés.
 ---
+
 # Calques et pages
 
-## Panneau calques
-Arborescence hiérarchique à gauche. Déplier/replier, glisser pour réordonner, basculer la visibilité avec l'icône œil, double-clic pour renommer. La sélection se synchronise avec le canevas.
+Le panneau gauche affiche les calques et les pages, la zone de travail occupe le centre et les propriétés apparaissent à droite. Les panneaux latéraux sont redimensionnables.
 
-## Panneau pages
-- **Changer de page** — clic sur un onglet
-- **Ajouter** — bouton ajouter
-- **Supprimer** — supprimer la page courante
-- **Renommer** — double-clic sur le nom ; Entrée ou clic ailleurs pour valider, Échap pour annuler
+## Calques
 
-Chaque page a son propre état de viewport.
+Chaque objet apparaît dans l’arbre. Cadres, groupes et composants peuvent être dépliés pour afficher leurs enfants.
 
-## Panneau propriétés
-Trois onglets : **Design** (propriétés contextuelles), **Code** (JSX / Tailwind CSS v4), **IA** (chat <kbd>⌘</kbd><kbd>J</kbd>).
+- Faites glisser un calque pour modifier son ordre ou son conteneur.
+- Utilisez l’œil pour changer sa visibilité.
+- Utilisez le cadenas pour empêcher les modifications accidentelles.
+- Double-cliquez sur le nom pour le modifier ; confirmez avec <kbd>Enter</kbd> ou annulez avec <kbd>Escape</kbd>.
 
-Design : apparence, remplissage, contour, effets, typographie, mise en page, exportation.
+La sélection de l’arbre et celle de la zone de travail restent synchronisées. <kbd>Shift</kbd> permet de sélectionner plusieurs calques.
 
-## Disposition mobile
+## Pages
 
-Sur mobile, les panneaux latéraux sont remplacés par un tiroir inférieur glissable avec onglets : Calques, Propriétés, Design, Code.
+La liste permet de créer, ouvrir, renommer et supprimer des pages. Chacune conserve sa position et son niveau de zoom.
 
+Le menu contextuel déplace la sélection vers une autre page. Lors d’un changement de page, OpenPencil restaure sa vue et sa sélection.
+
+## Propriétés
+
+Le panneau droit affiche les contrôles adaptés à la sélection : position, taille, apparence, remplissages, contours, effets, typographie, disposition et exportation.
+
+Sans sélection, il affiche l’arrière-plan et les variables de la page actuelle.

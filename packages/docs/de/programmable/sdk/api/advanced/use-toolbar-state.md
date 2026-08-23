@@ -1,15 +1,15 @@
 ---
 title: useToolbarState
-description: Darstellungsorientierter Toolbar-Zustand-Hilfsmittel für mobiles Kategorie-Paging.
+description: Categories einer Toolbar auf kleinen Viewports seitenweise anzeigen.
 ---
 
 # useToolbarState
 
-`useToolbarState()` gibt mobilen Kategorie-Paging-Zustand und Hilfsmittel wie `goPrev()` und `goNext()` für responsive Toolbar-Shells zurück.
+`useToolbarState()` gibt den State der aktuellen Category sowie `goPrev()` und `goNext()` zurück. Damit kann auf kleinen Screens zwischen Groups von Tools gewechselt werden.
 
-Verwenden Sie es beim Erstellen von Toolbar-Layouts auf Basis von `ToolbarRoot`.
+Das composable eignet sich für eine responsive Toolbar auf Grundlage von `ToolbarRoot`.
 
-## Verwandte APIs
+## Siehe auch
 
 - [ToolbarRoot](../components/toolbar-root)
 - [ToolbarItem](../components/toolbar-item)

@@ -1,18 +1,17 @@
 ---
 title: Panele właściwości
-description: Buduj panele właściwości z kompozytami kontrolek i bezstanowymi prymitywami list.
+description: Tworzenie paneli właściwości za pomocą composables i komponentów bez narzuconego wyglądu.
 ---
 
 # Panele właściwości
 
-Panele właściwości w `@open-pencil/vue` są celowo oparte na kompozytach.
+Panele właściwości w `@open-pencil/vue` są budowane przede wszystkim za pomocą composables.
 
-Jeśli panel potrzebuje głównie wartości pochodnych od selekcji i akcji aktualizacji, preferuj kompozyty.
-Jeśli panel potrzebuje wielokrotnie używalnej struktury tablicowej/listowej, użyj bezstanowego prymitywu jak `PropertyListRoot`.
+Jeśli panel potrzebuje wartości obliczonych z zaznaczenia i działań do ich zmiany, użyj composable. Jeśli ważna jest wielokrotnego użytku struktura tablicy lub listy, wybierz komponent bez narzuconego wyglądu, na przykład `PropertyListRoot`.
 
-## Typowe kompozyty kontrolek
+## Główne composables
 
-Dla standardowych sekcji właściwości zacznij od:
+Do zwykłych sekcji panelu właściwości służą:
 
 - `usePosition()`
 - `useLayout()`
@@ -20,13 +19,25 @@ Dla standardowych sekcji właściwości zacznij od:
 - `useTypography()`
 - `useExport()`
 
-Dla paneli listowych użyj:
+Do właściwości przedstawianych jako listy:
 
 - `useFillControls()`
 - `useStrokeControls()`
 - `useEffectsControls()`
 
-## Przykład: panel pozycji
+## Pola powiązane ze zmiennymi
+
+Jeśli wartość pola można powiązać ze zmienną albo zewnętrznym tokenem projektu, umieść pole wewnątrz `BindableValueRoot`.
+
+- Gdy pole nie jest edytowane, pokazuj nazwę zmiennej. Obliczoną wartość można wyświetlić na przykład w dymku.
+- Uzyskanie fokusu i otwarcie wyboru zmiennej nie powinny usuwać powiązania.
+- Stosuj `detach-on-edit`, `readonly-when-bound` albo `edit-variable` dopiero po rzeczywistej zmianie wartości.
+- Osobne działanie usunięcia powiązania lepiej umieścić w oknie wyboru niż w łatwej do przypadkowego użycia ikonie obok pola.
+- Zmianę powiązania, jego usunięcie podczas edycji i zmianę wielu obiektów wykonuj w jednej operacji zbiorczej dostawcy.
+
+Aplikacja OpenPencil pokazuje nazwę zmiennej na fioletowym tle, gdy pole nie jest edytowane. Po rozpoczęciu edycji `NumberField` pokazuje obliczoną wartość liczbową. Własny interfejs może przedstawić ten sam stan inaczej.
+
+## Przykład: położenie i rozmiar
 
 ```vue
 <script setup lang="ts">
@@ -45,33 +56,45 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 </template>
 ```
 
-## Przykład: panel wypełnień
+## Przykład: lista zalew
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import {
+  PropertyListRoot,
+  useEditorPropertyList,
+  useFillControls
+} from '@open-pencil/vue'
 
 const fillControls = useFillControls()
+const fills = useEditorPropertyList('fills')
 </script>
 
 <template>
-  <PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
+  <PropertyListRoot
+    prop-key="fills"
+    :items="fills.items.value"
+    :mixed="fills.isMixed.value"
+    @add="fills.actions.add"
+    @remove="fills.actions.remove"
+    v-slot="{ items, actions }"
+  >
     <div v-for="(fill, index) in items" :key="index">
       {{ fill.type }}
-      <button @click="remove(index)">Usuń</button>
+      <button @click="actions.remove(index)">Usuń</button>
     </div>
 
-    <button @click="add(fillControls.defaultFill)">Dodaj wypełnienie</button>
+    <button @click="actions.add(fillControls.defaultFill)">Dodaj zalew</button>
   </PropertyListRoot>
 </template>
 ```
 
-## Zasada
+## Wybór API
 
-- używaj kompozytów dla bezpośredniej logiki kontrolek
-- używaj prymitywów strukturalnych, gdy powtarzalna koordynacja listy/drzewa/slotu jest trudną częścią
+- Używaj composables do stanu i działań.
+- Używaj komponentów strukturalnych bez narzuconego wyglądu, gdy główną trudnością jest koordynacja powtarzających się list, drzew albo slotów.
 
-## Powiązane API
+## Zobacz też
 
 - [usePosition](../api/composables/use-position)
 - [useLayout](../api/composables/use-layout)

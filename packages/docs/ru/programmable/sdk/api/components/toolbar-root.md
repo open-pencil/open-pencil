@@ -1,15 +1,13 @@
 ---
 title: ToolbarRoot
-description: Headless-структурный примитив для тулбара редактора.
+description: Компонент без встроенного оформления для панели инструментов редактора.
 ---
 
 # ToolbarRoot
 
-`ToolbarRoot` — headless-примитив тулбара из `@open-pencil/vue`.
+`ToolbarRoot` предоставляет список инструментов, активный инструмент и действие для его смены. Приложение отображает собственные кнопки и определяет компоновку и оформление панели.
 
-Используйте его, когда нужна переиспользуемая структура тулбара и контекст с собственными кнопками, стилями и макетом.
-
-## Связанные API
+## См. также
 
 - [useEditorCommands](../composables/use-editor-commands)
 - [useSelectionCapabilities](../composables/use-selection-capabilities)

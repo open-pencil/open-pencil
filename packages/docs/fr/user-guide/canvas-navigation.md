@@ -1,31 +1,28 @@
 ---
-title: Navigation sur le canevas
-description: Panoramique, zoom et outil main dans OpenPencil.
+title: Navigation dans la zone de travail
+description: Déplacer la vue, zoomer et utiliser l’outil Main.
 ---
 
-# Navigation sur le canevas
+# Navigation dans la zone de travail
 
-Le canevas est votre espace de travail infini.
+La zone de travail est illimitée. Le déplacement et le zoom permettent d’atteindre n’importe quelle partie du document.
 
-## Panoramique
+## Déplacer la vue
 
-- <kbd>Espace</kbd> + glisser — maintenez <kbd>Espace</kbd> et glissez
-- **Bouton central de la souris** — cliquez et glissez
-- **Trackpad à deux doigts** — glissez avec deux doigts
+- Maintenez <kbd>Space</kbd> et faites glisser la zone de travail.
+- Faites glisser avec le bouton central de la souris.
+- Faites glisser deux doigts sur le pavé tactile.
 
-## Outil main
+## Outil Main
 
-Appuyez sur <kbd>H</kbd> pour activer l'outil main. Changez d'outil (ex. **V**) pour désactiver.
+Appuyez sur <kbd>H</kbd>. Tant qu’il est actif, tout glissement déplace la vue sans maintenir <kbd>Space</kbd>. Appuyez sur <kbd>V</kbd> pour revenir à Sélection.
 
 ## Zoom
 
-- <kbd>Ctrl</kbd> + molette (ou <kbd>⌘</kbd> + molette sur Mac) — zoom avant/arrière
-- **Geste de pincement** — pincez sur le trackpad
+Le zoom est centré sur le pointeur. Utilisez <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + molette, le pincement ou les raccourcis.
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Panoramique | <kbd>Espace</kbd> + glisser | Espace + glisser |
-| Outil main | <kbd>H</kbd> | <kbd>H</kbd> |
-| Zoom avant | <kbd>⌘</kbd><kbd>+</kbd> | <kbd>Ctrl</kbd> + <kbd>+</kbd> |
-| Zoom arrière | <kbd>⌘</kbd><kbd>−</kbd> | <kbd>Ctrl</kbd> + <kbd>−</kbd> |
-| Zoom 100% | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Ctrl</kbd> + <kbd>0</kbd> |
+| Action | macOS | Windows / Linux |
+|--------|-------|-----------------|
+| 100 % | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Ctrl</kbd><kbd>0</kbd> |
+| Ajuster le document | <kbd>⌘</kbd><kbd>1</kbd> | <kbd>Ctrl</kbd><kbd>1</kbd> |
+| Zoomer sur la sélection | <kbd>⌘</kbd><kbd>2</kbd> | <kbd>Ctrl</kbd><kbd>2</kbd> |

@@ -1,226 +1,103 @@
-# Matrice de fonctionnalités Figma
+# Compatibilité avec Figma
 
-Comparaison fonctionnalité par fonctionnalité des capacités de Figma Design avec l'état d'implémentation actuel d'Open Pencil.
+Comparaison entre les fonctions de Figma Design et l’état actuel d’OpenPencil.
 
-::: tip Légende des statuts
-✅ Supporté — la fonctionnalité est complète · 🟡 Partiel — le comportement de base existe, certaines sous-fonctionnalités manquent · 🔲 Pas encore implémenté
+::: tip État
+✅ Pris en charge — fonctionne de bout en bout · 🟡 Partiel — le comportement principal existe, mais certaines fonctions manquent · 🔲 Non implémenté
 :::
 
-**Couverture :** 94 des 158 éléments Figma traités — 76 ✅ entièrement supportés, 18 🟡 partiels, 64 🔲 en attente. Dernière mise à jour : 2026-03-07.
+**Couverture :** 94 fonctions sur 158 examinées — 76 ✅ complètes, 18 🟡 partielles et 64 🔲 en attente. Mise à jour : 2026-03-07.
 
 ## Interface et navigation
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Barre d'outils de design | ✅ | Barre inférieure (style UI3) : Sélection, Frame, Section, Rectangle, Ellipse, Ligne, Texte, Main, Plume |
-| Panneau des calques (barre latérale gauche) | ✅ | Vue en arbre avec expansion/réduction, réordonnancement par glissement, toggle de visibilité ; largeur redimensionnable |
-| Panneau des pages | ✅ | Ajouter, supprimer, renommer des pages ; état viewport par page |
-| Panneau de propriétés (barre latérale droite) | ✅ | Sections : Apparence, Remplissage, Contour, Effets, Typographie, Layout, Position ; largeur redimensionnable |
-| Zoom et défilement | ✅ | <kbd>Ctrl</kbd> + scroll, pinch, <kbd>⌘</kbd><kbd>+</kbd> / <kbd>⌘</kbd><kbd>−</kbd> / <kbd>⌘</kbd><kbd>0</kbd>, espace+glisser, souris milieu, outil main (H) |
-| Règles du canevas | ✅ | Règles haut/gauche avec bandes de sélection et badges de coordonnées |
-| Couleur de fond du canevas | ✅ | Fond par page via le panneau de propriétés |
-| Guides du canevas | 🔲 | Figma supporte des guides glissables depuis les règles |
-| Menu d'actions / palette de commandes | 🔲 | Recherche d'actions rapides de Figma |
-| Menu contextuel | ✅ | Clic droit avec presse-papiers, ordre-z, groupement, composant, visibilité, verrouillage, déplacer-vers-page |
-| Raccourcis clavier | 🟡 | Raccourcis de base + composants + ordre-z + visibilité/verrouillage implémentés ; Échelle, Flèche, Crayon, retournement, formatage texte pas encore câblés |
-| Rechercher et remplacer | 🔲 | Recherche/remplacement de texte dans le document |
-| Vue des contours de calques | 🔲 | Vue filaire de tous les calques |
-| Miniatures personnalisées | 🔲 | Miniature générée à l'export, mais pas de sélecteur personnalisé |
-| Réglages de valeur de nudge | 🔲 | Défaut 1px/10px ; Figma permet des valeurs personnalisées |
-| Menu de l'app (mode navigateur) | ✅ | Menus Fichier, Édition, Affichage, Objet, Texte, Disposition ; Tauri utilise les menus natifs |
-| Outils IA | 🟡 | 90+ outils via Anthropic, OpenAI, Google AI, OpenRouter + serveur MCP ; pas d'images générées par IA ni de recherche IA encore |
+| Fonction | État | Notes |
+|----------|------|-------|
+| Barre d’outils | ✅ | Barre inférieure de style UI3 : Sélection, Cadre, Section, Rectangle, Ellipse, Ligne, Texte, Main et Plume |
+| Panneau Calques | ✅ | Arbre dépliable, réordonnancement par glissement, visibilité et largeur réglable |
+| Panneau Pages | ✅ | Créer, supprimer et renommer des pages ; état de vue indépendant |
+| Panneau Propriétés | ✅ | Apparence, remplissage, contour, effets, typographie, disposition et position |
+| Zoom et déplacement | ✅ | Molette, pincement, raccourcis, <kbd>Space</kbd> + glissement, bouton central et Main |
+| Règles | ✅ | Règles supérieure et gauche avec plage de sélection et coordonnées |
+| Arrière-plan | ✅ | Fond propre à chaque page |
+| Repères | 🔲 | Pas de repères à faire glisser depuis les règles |
+| Palette de commandes | 🔲 | Pas de recherche rapide d’actions |
+| Menu contextuel | ✅ | Presse-papiers, ordre, groupes, composants, visibilité, verrouillage et changement de page |
+| Raccourcis | 🟡 | Principaux raccourcis présents ; certaines fonctions manquent |
+| Rechercher et remplacer | 🔲 | Pas de recherche globale de texte |
+| Vue filaire | 🔲 | Pas de contours de tous les calques |
+| Miniature personnalisée | 🔲 | Générée à l’export, mais non configurable |
+| Pas de déplacement | 🔲 | 1 px et 10 px ; pas de valeurs personnalisées |
+| Menu de l’application | ✅ | Menus dans le navigateur et menus natifs Tauri |
+| Outils AI | 🟡 | 90 outils ; pas d’images générées ni de recherche AI |
 
 ## Calques et formes
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Outils de forme (Rectangle, Ellipse, Ligne, Polygone, Étoile) | ✅ | Tous les types de forme de base ; côtés du polygone et rayon intérieur de l'étoile configurables |
-| Frames | ✅ | Découpe du contenu, système de coordonnées indépendant |
-| Groupes | ✅ | <kbd>⌘</kbd><kbd>G</kbd> pour grouper, <kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd> pour dégrouper |
-| Sections | ✅ | Pilules de titre, auto-adoption des nœuds superposés, texte adaptatif à la luminance |
-| Outil arc (arcs, demi-cercles, anneaux) | ✅ | arcData avec angle début/fin et rayon intérieur |
-| Outil crayon (main levée) | 🔲 | Outil de dessin à main levée de Figma |
-| Masques | 🔲 | Masques de forme pour découper les calques |
-| Types de calques et hiérarchie | ✅ | 17 types de nœuds, Map plat + arbre parent-enfant |
-| Sélectionner des calques | ✅ | Clic, shift-clic, sélection par marquise |
-| Alignement et position | ✅ | Position, rotation, dimensions dans le panneau |
-| Copier et coller des objets | ✅ | Presse-papiers standard + format binaire Kiwi de Figma |
-| Mettre à l'échelle proportionnellement | 🟡 | Shift-redimensionner contraint les proportions ; pas d'outil Scale dédié (K) |
-| Verrouiller et déverrouiller des calques | ✅ | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> toggle le verrouillage |
-| Basculer la visibilité | ✅ | Icône œil dans le panneau + raccourci <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> |
-| Renommer des calques | ✅ | Double-clic renommage inline ; Entrée/Échap/clic pour valider |
-| Mettre au premier plan / Envoyer en arrière | ✅ | Raccourcis ] et [ ; aussi dans le menu contextuel |
-| Déplacer vers une page | ✅ | Déplacer les nœuds entre pages via menu contextuel |
-| Contraintes (redimensionnement réactif) | 🔲 | Épingler bords/centre pour le comportement de resize parent |
-| Sélection intelligente (distribuer/aligner) | 🔲 | Espacer et aligner uniformément |
-| Guides de layout (colonnes, lignes, grille) | 🔲 | Guides colonne/ligne/grille sur les frames |
-| Mesurer les distances entre calques | 🔲 | Alt-survol pour afficher les distances |
-| Éditer des objets en lot | ✅ | Panneau multi-sélection : valeurs partagées affichées normalement, valeurs différentes affichent « Mixed » |
-| Identifier les objets similaires | 🔲 | Trouver des calques similaires |
-| Copier/coller des propriétés | 🔲 | Copier remplissage/contour/effets entre calques |
-| Relations parent-enfant | ✅ | Hiérarchie complète avec parentIndex, re-parentage par glissement |
+Formes de base, cadres, groupes, sections, arcs, hiérarchie, sélection, alignement, copier-coller, verrouillage, visibilité, ordre, déplacement entre pages et édition multiple sont pris en charge. Crayon, masques, contraintes, sélection intelligente, grilles de disposition, mesure de distances et copie de propriétés restent absents ou partiels.
 
 ## Outils vectoriels
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Réseaux vectoriels | ✅ | Modèle compatible Figma, pas de chemins simples |
-| Outil plume | ✅ | Points d'angle, courbes de Bézier, chemins ouverts/fermés |
-| Éditer des calques vectoriels | 🟡 | Création fonctionne ; édition avancée de sommets limitée |
-| Opérations booléennes (Union, Soustraction, Intersection, Exclusion) | 🔲 | Combiner des formes avec des opérations booléennes |
-| Aplatir des calques | 🔲 | Fusionner les chemins vectoriels |
-| Convertir les contours en chemins | 🔲 | Commande Outline Stroke |
-| Convertir le texte en chemins | 🔲 | Aplatir le texte en contours vectoriels |
-| Outil shape builder | 🔲 | Outil booléen interactif |
-| Décalage de chemin | 🔲 | Inset/outset d'un chemin vectoriel |
-| Simplifier le chemin | 🔲 | Réduire le nombre de points vectoriels |
+Les réseaux vectoriels et l’outil Plume sont pris en charge. L’édition avancée des sommets reste partielle. Opérations booléennes, aplatissement, conversion des contours ou du texte, construction de formes, décalage et simplification ne sont pas encore disponibles.
 
 ## Texte et typographie
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Outil texte et édition en ligne | ✅ | Édition native sur canevas, textarea phantom, style runs (<kbd>⌘</kbd><kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd>, bouton S) |
-| Rendu de texte (Paragraph API) | ✅ | CanvasKit Paragraph pour le façonnage, les sauts de ligne, les métriques |
-| Chargement de polices (polices système) | ✅ | Inter par défaut, font-kit dans Tauri avec cache OnceLock, queryLocalFonts dans le navigateur |
-| Famille et graisse de police | ✅ | FontPicker avec défilement virtuel, recherche, aperçu CSS |
-| Taille de police et interligne | ✅ | Éditable dans la section typographie |
-| Alignement du texte | 🟡 | Alignement de base ; Figma a l'alignement vertical et les modes auto-largeur/hauteur |
-| Styles de texte | 🟡 | Gras/italique/souligné/barré par sélection ; pas de presets réutilisables encore |
-| Modes de redimensionnement du texte | 🔲 | Modes auto-largeur, auto-hauteur, taille-fixe de Figma |
-| Listes à puces et numérotées | 🔲 | Formatage de listes dans le texte |
-| Liens dans le texte | 🔲 | Hyperliens dans le contenu texte |
-| Emojis et symboles intelligents | 🔲 | Rendu d'émojis et caractères spéciaux |
-| Fonctionnalités OpenType | 🔲 | Ligatures, alternatives stylistiques, chiffres tabulaires |
-| Polices variables | 🔲 | Axes de police ajustables (graisse, largeur, inclinaison) |
-| Support texte CJK | 🔲 | Rendu du texte chinois, japonais, coréen |
-| Support texte RTL | 🔲 | Mise en page de texte de droite à gauche |
-| Polices d'icônes | 🔲 | Gestion spéciale des glyphes de polices d'icônes |
+Édition directe, rendu CanvasKit Paragraph, polices système, choix de famille, taille, interligne et alignement de base fonctionnent. Alignement vertical, dimensions automatiques, listes, liens, fonctions OpenType, polices variables et prise en charge complète CJK/RTL restent manquants ou partiels.
 
-## Couleur, dégradés et images
+## Couleurs, dégradés et images
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Sélecteur de couleur (HSV) | ✅ | Carré HSV, curseur de teinte, curseur alpha, entrée hex |
-| Remplissages solides | ✅ | Couleur hex avec opacité |
-| Dégradé linéaire | ✅ | Arrêts de dégradé, poignées de transformation |
-| Dégradé radial | ✅ | Rendu via shaders CanvasKit |
-| Dégradé angulaire | ✅ | Support dégradé sweep/conique |
-| Dégradé diamant | ✅ | Dégradé diamant à quatre points |
-| Remplissages d'image | ✅ | Décodés à partir de données blob avec modes d'échelle (fill, fit, crop, tile) |
-| Remplissages de motif | 🔲 | Remplissages d'image/motif répétitif |
-| Modes de fusion | 🔲 | Modes de fusion de calque et remplissage (multiply, screen, overlay, etc.) |
-| Ajouter des images et vidéos | 🟡 | Remplissages d'image rendus ; pas d'import drag-and-drop ni support vidéo |
-| Ajustement des propriétés d'image | 🔲 | Exposition, contraste, saturation, etc. |
-| Recadrer une image | 🔲 | Recadrage interactif d'images |
-| Outil pipette | 🔲 | Échantillonner des couleurs du canevas |
-| Édition de couleur en sélection mixte | 🔲 | Ajuster les couleurs dans une sélection hétérogène |
-| Modèles de couleur (RGB, HSL, HSB, Hex) | 🟡 | HSV + Hex dans le sélecteur ; pas de bascule mode HSL ou RGB |
+Couleurs unies, dégradés linéaire, radial, angulaire et diamant, ainsi que remplissages d’image sont pris en charge. Motifs, modes de fusion, vidéo, réglages d’image, recadrage interactif, pipette et édition commune des couleurs manquent encore.
 
 ## Effets et propriétés
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Ombre portée | ✅ | Décalage, rayon de flou, couleur via filtres CanvasKit |
-| Ombre intérieure | ✅ | Effet d'ombre inset |
-| Flou de calque | ✅ | Flou gaussien sur le calque |
-| Flou d'arrière-plan | ✅ | Flouter le contenu derrière le calque |
-| Flou de premier plan | ✅ | Flou au premier plan |
-| Épaisseur du contour | ✅ | Configurable dans le panneau de propriétés |
-| Extrémité du contour (round, square, arrow) | ✅ | `NONE`, `ROUND`, `SQUARE`, `ARROW_LINES`, `ARROW_EQUILATERAL` |
-| Jointure du contour (miter, bevel, round) | ✅ | Les trois types de jointure |
-| Motifs de tirets | ✅ | Motif de contour dash-on/dash-off |
-| Rayon de coin | ✅ | Rayon uniforme et par coin avec toggle indépendant |
-| Lissage de coin (style iOS) | 🔲 | Arrondi continu des coins de Figma |
-| Remplissages/contours multiples par calque | 🔲 | Figma permet d'empiler remplissages et contours |
+Ombres, flous, épaisseur de contour, extrémités, jointures, tirets, alignement du contour et rayons des angles sont pris en charge. Le lissage continu des angles et l’empilement de plusieurs remplissages ou contours ne le sont pas.
 
-## Auto Layout
+## Disposition automatique
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Flux horizontal et vertical | ✅ | Moteur flexbox Yoga WASM |
-| Basculer auto layout (<kbd>⇧</kbd><kbd>A</kbd>) | ✅ | Basculer sur un frame ou envelopper la sélection |
-| Gap (espacement entre enfants) | ✅ | Configurable dans le panneau de propriétés |
-| Padding (uniforme et par côté) | ✅ | Les quatre côtés indépendamment |
-| Justify content | ✅ | Start, center, end, space-between |
-| Align items | ✅ | Start, center, end, stretch |
-| Dimensionnement des enfants (fixe, remplir, ajuster) | ✅ | Modes de dimensionnement par enfant |
-| Wrap | ✅ | Flex wrap pour layout multi-ligne |
-| Flux auto layout en grille | ✅ | CSS Grid via fork Yoga — tracks colonnes/lignes, gaps, spans |
-| Flux combinés (imbriqués) | ✅ | Frames auto-layout imbriqués avec directions différentes |
-| Réordonnancer par glissement dans auto layout | ✅ | Indicateur visuel d'insertion |
-| Largeur/hauteur min et max | 🔲 | Figma supporte les contraintes min/max |
+Flexbox, Grid, direction, espacement, marges intérieures, alignement, modes de taille, retour à la ligne, dispositions imbriquées et réordonnancement par glissement sont pris en charge. Les dimensions minimales et maximales manquent.
 
 ## Composants et systèmes de design
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Créer des composants | ✅ | Création depuis cadre/groupe ; UI de texte, visibilité, échange d'instance et variantes |
-| Ensembles de composants | ✅ | Variantes multidimensionnelles clairsemées, validation des doublons et valeur par défaut en haut à gauche |
-| Instances de composants | ✅ | Navigation Assets, insertion, propriétés et surcharges modifiables, synchronisation et revue des mises à jour |
-| Variantes | ✅ | Création, changement sur les instances et repli en haut à gauche |
-| Propriétés de composant | ✅ | Texte, visibilité booléenne et échange d'instance |
-| Propagation des surcharges | ✅ | Changements du composant principal propagés ; surcharges préservées |
-| Variables (couleur, nombre, chaîne, booléen) | 🟡 | `COLOR` avec UI complète ; `FLOAT`/STRING/BOOLEAN définis sans UI d'édition |
-| Collections et modes de variables | 🟡 | Collections, modes, changement activeMode fonctionnent ; pas d'UI de thématisation |
-| Styles (couleur, texte, effet, layout) | 🔲 | Presets de style réutilisables nommés |
-| Bibliothèques (publier, partager, mettre à jour) | ✅ | Révisions locales/de stockage immuables, activation, publication sélective, revue des mises à jour, mode hors ligne et persistance `.fig` |
-| Détacher une instance | ✅ | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> convertit une instance en frame |
-| Aller au composant principal | ✅ | Naviguer vers le composant source, cross-page |
+Composants, ensembles, instances, variantes, propriétés, surcharges, variables et bibliothèques sont pris en charge. Les styles nommés manquent ; certains types de variables n’ont pas encore une interface complète.
 
 ## Prototypage
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Connexions de prototype | 🔲 | Pas encore pris en charge |
-| Déclencheurs (clic, survol, glisser, etc.) | 🔲 | Pas encore pris en charge |
-| Actions (naviguer, overlay, scroll, etc.) | 🔲 | Pas encore pris en charge |
-| Animations et transitions | 🔲 | Pas encore pris en charge |
-| Smart animate | 🔲 | Auto-animer les calques correspondants |
-| Overlays | 🔲 | Prototypage modal/popover |
-| Comportement de scroll et overflow | 🔲 | Frames scrollables dans les prototypes |
-| Flux de prototype | 🔲 | Points de départ nommés |
-| Variables dans les prototypes | 🔲 | Logique conditionnelle avec variables |
-| Easing et animations spring | 🔲 | Courbes d'animation personnalisées |
-| Présenter et jouer les prototypes | 🔲 | Visionneuse de prototype plein écran |
+Connexions, déclencheurs, actions, animations, superpositions, défilement, parcours, logique conditionnelle et mode de présentation ne sont pas encore disponibles.
 
-## Import et export
+## Importation et exportation
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Import de fichier .fig | ✅ | Codec Kiwi complet : 194 définitions, ~390 champs par `NodeChange` |
-| Export de fichier .fig | ✅ | Encodage Kiwi + compression Zstd + génération de miniature |
-| Enregistrer / Enregistrer sous | ✅ | <kbd>⌘</kbd><kbd>S</kbd> / <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> ; dialogues natifs (Tauri), File System Access API (Chrome/Edge), téléchargement (Safari) |
-| Presse-papiers Figma (coller) | ✅ | Décoder binaire Kiwi du presse-papiers Figma |
-| Presse-papiers Figma (copier) | ✅ | Encoder binaire Kiwi lisible par Figma |
-| Import de fichier Sketch | 🔲 | Analyse de fichiers .sketch |
-| Export image/SVG | 🟡 | PNG/JPG/WEBP avec sélecteur d'échelle et aperçu ; WEBP/SVG export ✅ ; PDF export 🔲 |
-| Historique des versions | 🔲 | Parcourir et restaurer les versions précédentes |
-| Copier des assets entre outils | 🟡 | Presse-papiers Figma fonctionne ; Copier comme texte/SVG/PNG/JSX |
+| Fonction | État | Notes |
+|----------|------|-------|
+| Importer `.fig` | ✅ | Codec Kiwi avec 194 définitions et environ 390 champs par `NodeChange` |
+| Exporter `.fig` | ✅ | Kiwi, Zstd et miniature ; composants conservés pour les allers-retours |
+| Enregistrer / Enregistrer sous | ✅ | Dialogues natifs, File System Access API et téléchargement de repli dans Safari |
+| Coller depuis Figma | ✅ | Décode le binaire Kiwi du presse-papiers |
+| Copier vers Figma | ✅ | Produit un binaire Kiwi lisible par Figma |
+| Importer Sketch | 🔲 | Pas d’analyseur `.sketch` |
+| Export image/SVG/PDF | 🟡 | PNG, JPG, WEBP et SVG ✅ ; PDF 🔲 |
+| Historique des versions | 🔲 | Pas de consultation ni restauration |
+| Ressources entre outils | ✅ | Presse-papiers Figma et copie en texte/SVG/PNG/JSX |
 
-## API de plugins et scripting
+## API de plugins et scripts
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Commande eval avec Figma Plugin API | ✅ | Exécution headless de JavaScript avec objet global figma compatible |
+| Fonction | État | Notes |
+|----------|------|-------|
+| `eval` avec Figma Plugin API | ✅ | JavaScript sans interface avec objet global `figma` compatible |
 
-## Collaboration et mode développeur
+## Collaboration et mode développement
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Commentaires (épingler, fils, résoudre) | 🔲 | Pas encore pris en charge |
-| Multijoueur en temps réel | ✅ | P2P via Trystero + Yjs CRDT, curseurs, mode suivi ; sans serveur |
-| Chat au curseur | 🔲 | Bulles de chat inline au curseur |
-| Branching et merging | 🔲 | Branches de version pour fichiers de design |
-| Mode développeur (inspecter) | 🟡 | Onglet Code montre JSX ; pas de propriétés CSS ni specs de handoff |
-| Code Connect | 🔲 | Lier composants de design au code |
-| Extraits de code | 🟡 | Export JSX avec coloration et copie ; pas d'extraits CSS/Swift/Kotlin |
-| Figma for VS Code | 🔲 | Intégration plugin éditeur |
-| Serveur MCP | ✅ | @open-pencil/mcp avec transports stdio + HTTP ; 90+ outils core + 3 gestion de fichiers = 90+ total |
-| Outils CLI | ✅ | CLI headless : info, tree, find, export, analyze, node, pages, variables, eval ; serveur MCP |
+| Fonction | État | Notes |
+|----------|------|-------|
+| Commentaires | 🔲 | Pas de repères, fils de discussion ni résolution |
+| Multijoueur | ✅ | P2P avec Trystero et Yjs CRDT, curseurs et suivi de vue ; sans serveur |
+| Chat de curseur | 🔲 | Pas de bulles dans la zone de travail |
+| Branches et fusions | 🔲 | Pas de branches de versions |
+| Mode développement | 🟡 | L’onglet Code affiche JSX ; pas de propriétés CSS ni spécifications de transmission |
+| Code Connect | 🔲 | Pas de liaison entre composants de design et code |
+| Extraits de code | 🟡 | JSX avec coloration et copie ; pas de Swift/Kotlin |
+| Tailwind CSS v4 | ✅ | HTML avec classes utilitaires depuis Code, la CLI ou l’API |
+| Figma pour VS Code | 🔲 | Pas d’intégration à l’extension de l’éditeur |
+| Serveur MCP | ✅ | `@open-pencil/mcp` avec stdio et HTTP ; 90 outils au total |
+| CLI | ✅ | `info`, `tree`, `find`, `export`, `analyze`, `node`, `pages`, `variables` et `eval` |
 
 ## Figma Draw
 
-| Fonctionnalité | Statut | Notes |
-|---------------|--------|-------|
-| Outils d'illustration | 🔲 | Outils de dessin spécialisés de Figma Draw |
-| Transformations de motif | 🔲 | Créer des motifs répétitifs avec des transformations |
+Les outils d’illustration spécialisés et les transformations de motifs ne sont pas encore disponibles.

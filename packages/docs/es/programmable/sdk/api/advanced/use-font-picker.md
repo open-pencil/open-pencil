@@ -1,15 +1,15 @@
 ---
 title: useFontPicker
-description: Estado y helper de selección para el selector de fuentes con búsqueda.
+description: Gestionar familias, búsqueda y selección en un selector de fuentes propio.
 ---
 
 # useFontPicker
 
-`useFontPicker(options)` gestiona las familias tipográficas disponibles, el estado de búsqueda, el estado de apertura y la selección de familia para las interfaces de selección de fuentes.
+`useFontPicker(options)` gestiona familias tipográficas, término de búsqueda, estado abierto y familia activa.
 
-Úsalo cuando construyas interfaces de selección de fuentes personalizadas más allá de `FontPickerRoot`.
+Úselo cuando `FontPickerRoot` no baste y necesite una interfaz totalmente propia.
 
-## APIs relacionadas
+## Véase también
 
 - [FontPickerRoot](../components/font-picker-root)
 - [useTypography](../composables/use-typography)

@@ -205,6 +205,31 @@ function drawTargetOutline(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph, t
   immutablePath.delete()
 }
 
+export function drawMeasurementSegment(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  segment: MeasurementSegment
+): void {
+  r.auxStroke.setStrokeWidth(1)
+  r.auxStroke.setColor(
+    r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1)
+  )
+  r.auxStroke.setPathEffect(null)
+  if (segment.axis === 'x') {
+    const x1 = segment.from * r.zoom + r.panX
+    const x2 = segment.to * r.zoom + r.panX
+    const y = segment.cross * r.zoom + r.panY
+    canvas.drawLine(x1, y, x2, y, r.auxStroke)
+    drawPill(r, canvas, String(Math.round(segment.value)), center(x1, x2 - x1), y)
+  } else {
+    const x = segment.cross * r.zoom + r.panX
+    const y1 = segment.from * r.zoom + r.panY
+    const y2 = segment.to * r.zoom + r.panY
+    canvas.drawLine(x, y1, x, y2, r.auxStroke)
+    drawPill(r, canvas, String(Math.round(segment.value)), x, center(y1, y2 - y1))
+  }
+}
+
 export function drawMeasurements(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -228,19 +253,5 @@ export function drawMeasurements(
   drawTargetOutline(r, canvas, graph, target)
   if (segments.length === 0) return
 
-  for (const segment of segments) {
-    if (segment.axis === 'x') {
-      const x1 = segment.from * r.zoom + r.panX
-      const x2 = segment.to * r.zoom + r.panX
-      const y = segment.cross * r.zoom + r.panY
-      canvas.drawLine(x1, y, x2, y, r.auxStroke)
-      drawPill(r, canvas, String(Math.round(segment.value)), center(x1, x2 - x1), y)
-    } else {
-      const x = segment.cross * r.zoom + r.panX
-      const y1 = segment.from * r.zoom + r.panY
-      const y2 = segment.to * r.zoom + r.panY
-      canvas.drawLine(x, y1, x, y2, r.auxStroke)
-      drawPill(r, canvas, String(Math.round(segment.value)), x, center(y1, y2 - y1))
-    }
-  }
+  for (const segment of segments) drawMeasurementSegment(r, canvas, segment)
 }

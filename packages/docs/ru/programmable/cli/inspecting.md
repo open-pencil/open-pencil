@@ -1,101 +1,90 @@
 ---
-title: Просмотр файлов
-description: Просматривайте деревья узлов, ищите по имени или типу и изучайте свойства из терминала.
+title: Просмотр документов
+description: Дерево объектов, поиск по имени и типу и просмотр свойств из терминала.
 ---
 
-# Просмотр файлов
+# Просмотр документов
 
-CLI позволяет исследовать дизайн-документы без открытия редактора. Каждая команда также работает с запущенным приложением — просто опустите аргумент файла.
+CLI позволяет изучать документы дизайна без запуска редактора. Те же команды работают с открытым настольным приложением, если не указывать файл.
 
 ::: tip Установка
 ```sh
 npm install -g @open-pencil/cli
 # или
+bun add -g @open-pencil/cli
+# или
 brew install open-pencil/tap/open-pencil
 ```
 :::
 
-## Информация о документе
+## Общие сведения
 
-Краткий обзор — количество страниц, общее число узлов, используемые шрифты, размер файла:
+Количество страниц и объектов, используемые шрифты и размер файла:
 
 ```sh
 openpencil info design.fig
 ```
 
-## Дерево узлов
-
-Вывод полной иерархии узлов:
+## Дерево объектов
 
 ```sh
 openpencil tree design.fig
 ```
 
-```
-[0] [page] "Getting started" (0:46566)
-  [0] [section] "" (0:46567)
-    [0] [frame] "Body" (0:46568)
-      [0] [frame] "Introduction" (0:46569)
-        [0] [frame] "Introduction Card" (0:46570)
-          [0] [frame] "Guidance" (0:46571)
-```
+## Поиск объектов
 
-## Поиск узлов
-
-Поиск по типу:
+По типу:
 
 ```sh
 openpencil find design.fig --type TEXT
 ```
 
-Поиск по имени:
+По имени:
 
 ```sh
 openpencil find design.fig --name "Button"
 ```
 
-Оба флага можно комбинировать для более точных результатов.
+Параметры можно использовать одновременно.
 
-## Запросы с XPath
+## Запросы XPath
 
-Используйте XPath-селекторы для поиска узлов по типу, атрибутам и структуре дерева:
+Селекторы XPath находят объекты по типу, атрибутам и положению в дереве:
 
 ```sh
 openpencil query design.fig "//FRAME"
 ```
 
-### Полезные шаблоны
-
-**По типу:**
+### По типу
 
 ```sh
-openpencil query design.fig "//TEXT"                    # Все текстовые узлы
+openpencil query design.fig "//TEXT"                    # Все текстовые объекты
 openpencil query design.fig "//COMPONENT"               # Все компоненты
 openpencil query design.fig "//INSTANCE"                # Все экземпляры
 ```
 
-**По атрибутам:**
+### По атрибутам
 
 ```sh
-openpencil query design.fig "//FRAME[@width < 300]"                # Фреймы шириной менее 300px
-openpencil query design.fig "//*[@cornerRadius > 0]"               # Скруглённые углы
-openpencil query design.fig "//*[@visible = false]"                # Скрытые узлы
-openpencil query design.fig "//TEXT[@fontSize >= 24]"              # Крупный текст
-openpencil query design.fig "//*[@opacity < 1]"                    # Полупрозрачные узлы
+openpencil query design.fig "//FRAME[@width < 300]"     # Фреймы уже 300 пикселей
+openpencil query design.fig "//*[@cornerRadius > 0]"    # Объекты со скруглёнными углами
+openpencil query design.fig "//*[@visible = false]"     # Скрытые объекты
+openpencil query design.fig "//TEXT[@fontSize >= 24]"   # Крупный текст
+openpencil query design.fig "//*[@opacity < 1]"         # Объекты с неполной прозрачностью
 ```
 
-**По имени и текстовому содержимому:**
+### По имени и содержимому
 
 ```sh
-openpencil query design.fig "//TEXT[contains(@name, 'Button')]"    # Имя содержит 'Button'
-openpencil query design.fig "//TEXT[contains(@text, 'Hello')]"     # Текст содержит 'Hello'
+openpencil query design.fig "//TEXT[contains(@name, 'Button')]"
+openpencil query design.fig "//TEXT[contains(@text, 'Hello')]"
 ```
 
-**По иерархии:**
+### По иерархии
 
 ```sh
 openpencil query design.fig "//SECTION//TEXT"            # Текст внутри секций
-openpencil query design.fig "//FRAME/TEXT"               # Прямые дочерние тексты фреймов
+openpencil query design.fig "//FRAME/TEXT"               # Непосредственные текстовые потомки фреймов
 openpencil query design.fig "//COMPONENT_SET//INSTANCE"  # Экземпляры внутри наборов компонентов
 ```
 
@@ -103,54 +92,35 @@ openpencil query design.fig "//COMPONENT_SET//INSTANCE"  # Экземпляры 
 
 `name`, `width`, `height`, `x`, `y`, `visible`, `opacity`, `cornerRadius`, `fontSize`, `fontFamily`, `fontWeight`, `layoutMode`, `itemSpacing`, `paddingTop`, `paddingRight`, `paddingBottom`, `paddingLeft`, `strokeWeight`, `rotation`, `locked`, `blendMode`, `text`, `lineHeight`, `letterSpacing`
 
-### Пример вывода
-
-```
-  Found 5 nodes
-
-[0] [frame] "Logo  92×32" (0:9)
-[1] [frame] "logo-short-6  31×32" (0:10)
-[2] [frame] "wrapper  128×73" (0:20)
-[3] [frame] "pen-drawing  148×52" (0:21)
-[4] [frame] "surprised-emoji  32×32" (0:26)
-```
-
-## Свойства узла
-
-Просмотр всех свойств конкретного узла по его ID:
+## Свойства объекта
 
 ```sh
 openpencil node design.fig --id 1:23
 ```
 
-## Страницы
-
-Список всех страниц в документе:
+## Страницы и переменные
 
 ```sh
 openpencil pages design.fig
-```
-
-## Переменные
-
-Список дизайн-переменных и их коллекций:
-
-```sh
 openpencil variables design.fig
 ```
 
-## Режим работы с приложением
+## Работа с открытым приложением
 
-Когда настольное приложение запущено, опустите аргумент файла — CLI подключится по RPC и будет работать с активным холстом:
+Если настольное приложение запущено, не указывайте путь к файлу. CLI подключится по RPC к открытому документу:
 
 ```sh
-openpencil tree              # просмотр текущего документа
-openpencil eval -c "..."     # запрос к редактору
+openpencil documents
+openpencil tree
+openpencil tree --document-id tab-123 --page-id 0:1
+openpencil eval --document-id tab-123 --page-id 0:1 -c "..."
 ```
 
-## Линтинг дизайна
+Для автоматизированных процессов сначала вызовите `openpencil documents --json`, а затем явно передавайте `--document-id` и `--page-id`, не полагаясь на видимую активную вкладку или страницу.
 
-Проверяйте документы на соответствие правилам именования, вёрстки, структуры и доступности:
+## Проверка качества
+
+Проверка имён, компоновки, структуры и доступности:
 
 ```sh
 openpencil lint design.fig
@@ -159,11 +129,11 @@ openpencil lint design.fig --rule color-contrast
 openpencil lint design.fig --list-rules
 ```
 
-Используйте `--json` для машиночитаемого вывода.
+Добавьте `--json`, если результат будет обрабатывать другая программа.
 
-## JSON-вывод
+## Вывод JSON
 
-Все команды поддерживают `--json` для машиночитаемого вывода — передавайте в `jq`, используйте в CI-скриптах или обрабатывайте другими инструментами:
+Все команды поддерживают `--json`. Результат можно передать `jq`, проверке CI или другой программе:
 
 ```sh
 openpencil tree design.fig --json | jq '.[] | .name'

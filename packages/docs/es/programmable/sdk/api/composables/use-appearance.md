@@ -1,56 +1,18 @@
 ---
 title: useAppearance
-description: Controla la visibilidad, la opacidad y el radio de las esquinas del estado de la selección actual.
+description: Leer y modificar opacidad, visibilidad y radios de esquina.
 ---
 
 # useAppearance
 
-`useAppearance()` es el composable de control orientado a la apariencia para los paneles de propiedades.
+`useAppearance()` proporciona valores y acciones para la apariencia de la selección:
 
-Expone el estado de UI derivado de la selección para:
+- opacidad;
+- visibilidad;
+- radio común o independiente por esquina;
+- valores mixtos.
 
-- visibilidad
-- opacidad
-- radio de esquina
-- radios de esquina independientes
+## Véase también
 
-## Uso
-
-```ts
-import { useAppearance } from '@open-pencil/vue'
-
-const appearance = useAppearance()
-```
-
-## Ejemplo básico
-
-```ts
-const {
-  visibilityState,
-  opacityPercent,
-  cornerRadiusValue,
-  toggleVisibility,
-  toggleIndependentCorners,
-} = useAppearance()
-```
-
-## Ejemplos prácticos
-
-### Alternar la visibilidad de la selección
-
-```ts
-appearance.toggleVisibility()
-```
-
-### Editar los radios por esquina
-
-```ts
-appearance.updateCornerProp('topLeftRadius', 12)
-appearance.commitCornerProp('topLeftRadius', 12, 8)
-```
-
-## APIs relacionadas
-
-- [Resumen de la API del SDK](../)
-- [useLayout](./use-layout)
-- [useTypography](./use-typography)
+- [AppearanceControlsRoot](../components/appearance-controls-root)
+- [useNodeProps](../advanced/use-node-props)

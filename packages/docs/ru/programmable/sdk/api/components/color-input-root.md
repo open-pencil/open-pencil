@@ -1,20 +1,18 @@
 ---
 title: ColorInputRoot
-description: Headless-хелпер для ввода цвета с разбором HEX и хелперами обновления.
+description: Разбор шестнадцатеричного цвета и обновление значения в собственном поле ввода.
 ---
 
 # ColorInputRoot
 
-`ColorInputRoot` — headless-хелпер для UI ввода цвета.
-
-Выводит hex-значение из цвета и предоставляет хелперы обновления для hex и полного значения цвета.
+`ColorInputRoot` преобразует текущее значение `Color` в шестнадцатеричную строку и предоставляет функции обновления из строки или полного объекта `Color`.
 
 ## Props
 
 <SdkPropsTable
   :rows="[
     { name: 'color', type: 'Color', description: 'Текущее значение цвета.', required: true },
-    { name: 'editable', type: 'boolean | undefined', description: 'Должен ли потребитель представить значение как редактируемое.' }
+    { name: 'editable', type: 'boolean | undefined', description: 'Следует ли показывать значение как доступное для редактирования.' }
   ]"
 />
 
@@ -22,7 +20,7 @@ description: Headless-хелпер для ввода цвета с разбор�
 
 <SdkEventsTable
   :rows="[
-    { name: 'update', payload: 'color: Color', description: 'Генерируется при изменении цвета.' }
+    { name: 'update', payload: 'color: Color', description: 'Вызывается после изменения цвета.' }
   ]"
 />
 
@@ -30,7 +28,7 @@ description: Headless-хелпер для ввода цвета с разбор�
 
 <SdkSlotsTable
   :rows="[
-    { name: 'default', props: '{ color: Color, editable: boolean, hex: string, updateFromHex: (value: string) => void, updateColor: (color: Color) => void }', description: 'Основной контракт рендеринга ввода цвета.' }
+    { name: 'default', props: '{ color: Color, editable: boolean, hex: string, updateFromHex: (value: string) => void, updateColor: (color: Color) => void }', description: 'Состояние и действия для отображения поля цвета.' }
   ]"
 />
 
@@ -42,6 +40,6 @@ description: Headless-хелпер для ввода цвета с разбор�
 </ColorInputRoot>
 ```
 
-## Связанные API
+## См. также
 
 - [ColorPickerRoot](./color-picker-root)

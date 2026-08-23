@@ -2,16 +2,16 @@
 
 ## Unreleased
 
-### Changed
-
-- Upgrade CanvasKit to 0.41 and migrate renderer geometry to immutable paths built through `PathBuilder`.
-
 ### Added
 
-- Include recent files in MCP document discovery and configure its root directory, authentication, or individual, inspection, and modification tools from Settings, with changes applied after restart.
-- Show and copy the complete Streamable HTTP MCP endpoint, local access token, and authenticated client configuration from Settings.
+- Duplicate guides with Option/Alt-drag, show active guide coordinates in rulers, measure ruler-created guides against selected frames and their contents, and remove guides from the context menu.
+- Create, select, move, transfer, and delete canvas and frame guides directly from rulers, with undoable edits and `.fig` round-trip fidelity.
 - Open to a unified home with recent and configured storage documents, including grid or list layouts.
+- Snap vector points, moved layers, and resized edges to nearby geometry, sibling layer bounds, canvas and frame layout guides, and whole-pixel coordinates with visible alignment guides, fractional-coordinate preservation when pixel snapping is off, and persistent geometry, object, and pixel-grid controls in General settings and the Preferences menu.
+- Run Pi through AI SDK HarnessAgent as a configurable desktop provider with multiple saved model profiles, secure credentials, existing MCP design tools, and per-profile thinking and permission settings.
 - Open multiple selected design files in separate tabs.
+- Let Figma API scripts and automation combine components into variant sets.
+- Monitor and restart the local MCP server, configure its root directory or authentication, and choose individual, read-only, or side-effecting tools it exposes from Settings.
 - Add deterministic two-browser collaboration coverage for bidirectional edits, awareness, departure cleanup, partitioned-peer convergence, and reconnect synchronization without public network dependencies. (#530)
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
@@ -44,6 +44,7 @@
 
 ### Changed
 
+- Upgrade CanvasKit to 0.41 and migrate renderer geometry to immutable paths built through `PathBuilder`.
 - Upgrade direct model chat providers and transports to AI SDK 7 while retaining the local ACP execution path.
 - Localize file, clipboard, collaboration, chat, vectorization, storage, recovery, and component-library notifications in every supported language.
 - Move MCP connections into their own Settings destination instead of presenting them as part of model configuration.
@@ -62,7 +63,11 @@
 
 ### Fixed
 
+- Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
+
 - Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.
+- Preserve app-created component properties and instance-swap targets across `.fig` save and reload cycles. (#548)
+- Reconnect desktop automation to an already-running MCP server by allowing access to its discovery file. (#546)
 - Keep text-editing carets, hit testing, and selection highlights aligned with vertically centered or bottom-aligned text. (#539)
 - Match AI chat code-block syntax colors and backgrounds to the active light or dark theme. (#537)
 - Let desktop users select and copy AI chat text without replacing it with the selected canvas layers. (#538)
@@ -531,6 +536,7 @@
 - Fix component property override resolution through clone chains.
 - Fix text/property overrides clobbered by second transitive sync.
 
+
 - Fix text rendering with wrong fonts on file open — all font weights (including default family) are now loaded before the first render.
 - Fix `weightToStyle` mapping: weight 400 now correctly maps to "Regular" instead of "Medium".
 - Fix detached ArrayBuffer crash when switching pages after saving — export worker now copies image buffers before transferring.
@@ -653,6 +659,7 @@
 - Centralize all color utilities in `packages/core/src/color.ts` — `colorToHex8`, `colorToCSSCompact`, `normalizeColor`, `colorDistance`; remove 5 duplicate implementations across the codebase.
 - Add `geometry.ts` with shared rotation math (`degToRad`, `radToDeg`, `rotatePoint`, `rotatedCorners`, `rotatedBBox`).
 - Extract `isArrayMixed()` helper for multi-selection property panels.
+
 
 - Add `motion-v` for declarative animations — used in mobile drawer (spring-animated height with pan gestures) and toolbar (layout-animated category switching with directional slide transitions).
 - Mobile drawer: replace `useSwipe` + manual rAF animation with `motion.div` `:animate` + `@pan`/`@panEnd`; always-on tab state (no more null `activeRibbonTab`); content stays rendered when closed.
@@ -804,14 +811,17 @@
 - Fix font picker dropdown truncating long font names.
 - Show explanation in font picker when Local Font Access API unavailable (Safari/Firefox).
 
+
 - Auto-populate GitHub Release notes from CHANGELOG.md via `ffurrer2/extract-release-notes@v2`.
 - Skip already-published npm versions on CI re-runs instead of failing.
 - Exclude non-app directories from Vite file watcher.
+
 
 - Extract shared color constants (`BLACK`, `TRANSPARENT`, `DEFAULT_SHADOW_COLOR`) — replaces 8 inline literals across core.
 - Extract shared `NodeContextMenuContent` component to avoid menu duplication.
 - Fix `@open-pencil/core` dep in MCP package: `workspace:*` for local dev (pnpm resolves at publish time).
 - Replace store thunks with a late-binding proxy.
+
 
 - Clipboard roundtrip tests: encode to Figma Kiwi binary → decode → verify.
 - 9 visual regression snapshot tests for effects rendering.
@@ -843,6 +853,7 @@
 
 - Import additional properties from Figma clipboard: `layoutAlignSelf`, `clipsContent`, `fontWeight`, `italic`, `letterSpacing`, `lineHeight`.
 - Convert `letterSpacing` PERCENT units to pixels based on font size.
+
 
 - 7 new clipboard import unit tests (14 total).
 
@@ -983,10 +994,12 @@ First public alpha. The editor is functional but not production-ready.
 - ScrubInput drag-to-change number controls.
 - Resizable side panels via reka-ui Splitter.
 
+
 - .fig file import via Kiwi binary codec (194 definitions, ~390 fields).
 - .fig file export with Kiwi encoding, Zstd compression, thumbnail generation.
 - Figma clipboard: copy/paste between OpenPencil and Figma.
 - Round-trip fidelity for supported node types.
+
 
 - Built-in AI chat in properties panel (⌘J).
 - Direct browser → OpenRouter communication, no backend.
@@ -995,9 +1008,11 @@ First public alpha. The editor is functional but not production-ready.
 - Streaming markdown responses (vue-stream-markdown).
 - Tool call timeline with collapsible details.
 
+
 - JSX export of selected nodes with Tailwind-like shorthand props.
 - Syntax highlighting via Prism.js.
 - Copy to clipboard.
+
 
 - `info` — document stats, node types, fonts.
 - `tree` — visual node tree.
@@ -1013,11 +1028,13 @@ First public alpha. The editor is functional but not production-ready.
 - `analyze clusters` — repeated patterns.
 - All commands support `--json`.
 
+
 - Scene graph with flat Map storage and parentIndex tree.
 - FigmaAPI with ~65% Figma plugin API compatibility.
 - JSX renderer (TreeNode builder functions with shorthand props).
 - Kiwi binary codec (encode/decode).
 - Vector network blob encoder/decoder.
+
 
 - Tauri v2 (~5 MB).
 - Native menu bar, save/open dialogs.
@@ -1025,9 +1042,11 @@ First public alpha. The editor is functional but not production-ready.
 - Zstd compression in Rust.
 - macOS and Windows builds via GitHub Actions.
 
+
 - Runs at [app.openpencil.dev](https://app.openpencil.dev).
 - No installation required.
 - File System Access API for save/open (Chrome/Edge), download fallback elsewhere.
+
 
 - [openpencil.dev](https://openpencil.dev) — VitePress site with user guide, reference, and development docs.
 - Deployed via Cloudflare Pages.

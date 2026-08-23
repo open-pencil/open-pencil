@@ -1,37 +1,21 @@
 ---
 title: useOkHCL
-description: Pracuj z modelami kolorów RGBA i OkHCL dla wypełnień i obrysów.
+description: Obsługa modeli kolorów RGBA i OkHCL dla zalewów oraz obwiedni.
 ---
 
 # useOkHCL
 
-`useOkHCL()` udostępnia pomocniki do odczytywania, włączania, wyłączania i aktualizowania wartości kolorów OkHCL na wypełnieniach i obrysach węzłów.
+`useOkHCL()` odczytuje i zmienia model koloru używany przez zalewy oraz obwiednie. Pozwala włączyć albo wyłączyć OkHCL i aktualizować jego wartości.
 
-Użyj go, gdy budujesz zaawansowane narzędzia kolorów, które muszą przełączać się między standardową edycją RGBA a percepcyjną edycją OkHCL.
-
-## Użycie
+Użyj composable w zaawansowanym selektorze koloru obsługującym zarówno RGBA, jak i percepcyjny model OkHCL.
 
 ```ts
-import { useOkHCL } from '@open-pencil/vue'
-
 const okhcl = useOkHCL()
 ```
 
-## Zwraca
+Zwracane API obejmuje odczyt modelu i koloru, włączanie, wyłączanie i aktualizację OkHCL oraz `modelOptions`.
 
-- `getFillColorModel()`
-- `getStrokeColorModel()`
-- `getFillOkHCLColor()`
-- `getStrokeOkHCLColor()`
-- `enableFillOkHCL()`
-- `disableFillOkHCL()`
-- `enableStrokeOkHCL()`
-- `disableStrokeOkHCL()`
-- `updateFillOkHCL()`
-- `updateStrokeOkHCL()`
-- `modelOptions`
-
-## Powiązane API
+## Zobacz też
 
 - [useFillControls](../composables/use-fill-controls)
 - [useStrokeControls](../composables/use-stroke-controls)

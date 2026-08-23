@@ -1,36 +1,30 @@
 ---
-title: Herramienta pluma
-description: Trazados vectoriales con curvas de Bézier en OpenPencil.
+title: Pluma
+description: Dibujar rutas vectoriales y curvas de Bézier con la herramienta Pluma.
 ---
-# Herramienta pluma
 
-La herramienta pluma crea trazados vectoriales usando un modelo de redes vectoriales, compatible con el formato .fig de Figma.
+# Pluma
 
-## Activación
+La herramienta Pluma crea rutas mediante el modelo de red vectorial compatible con Figma.
 
-Pulsa <kbd>P</kbd> para activar la herramienta pluma.
+Pulsa <kbd>P</kbd> para activarla.
 
-## Colocar puntos
+## Dibujar
 
-- **Clic** — punto de esquina (segmento recto)
-- **Clic + arrastrar** — punto de curva con manejadores de tangente Bézier — la dirección y longitud del arrastre controlan la forma de la curva
-  - **Mantener <kbd>Space</kbd>** mientras arrastras (sin soltar el botón del ratón) para mover el punto en sí
+- Un clic crea un punto de esquina y un segmento recto.
+- Haz clic y arrastra para crear un punto con tiradores de Bézier.
+- Mantén <kbd>Space</kbd> durante el arrastre para mover el punto antes de soltarlo.
 
-## Cerrar un trazado
+Cada punto amplía la ruta. Una línea de vista previa conecta el último punto con el puntero.
 
-Haz clic en el **primer punto** del trazado para cerrarlo en un bucle. Los trazados cerrados se pueden rellenar.
+## Cerrar o terminar
 
-## Trazados abiertos
+Haz clic en el primer punto para cerrar la ruta. Pulsa <kbd>Enter</kbd> para terminarla abierta o <kbd>Escape</kbd> para cancelar el dibujo actual.
 
-Pulsa <kbd>Escape</kbd> para confirmar el trazado actual como trazado abierto. Los trazados abiertos se renderizan solo como trazos — no se rellenan.
+## Continuar una ruta
 
-## Redes vectoriales
+Selecciona una ruta abierta y activa Pluma. Haz clic en uno de sus extremos para seguir dibujando desde él.
 
-Los trazados en OpenPencil usan redes vectoriales — un modelo más flexible que las listas simples de puntos que soporta trazados ramificados y topología compleja. Es el mismo modelo que usa Figma, así que los trazados se mantienen perfectamente al abrir y guardar archivos .fig.
+## Curvas
 
-## Atajos de teclado
-
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Herramienta pluma | <kbd>P</kbd> | <kbd>P</kbd> |
-| Confirmar trazado abierto | <kbd>Escape</kbd> | Escape |
+Al arrastrar un punto aparecen dos tiradores opuestos que generan una curva suave. Durante la [edición vectorial](./vector-edit) puedes moverlos juntos o separarlos.

@@ -15,6 +15,8 @@ import {
 } from '@open-pencil/scene-graph/resize'
 
 import { calculateResizeRect } from '#vue/shared/input/resize/rect'
+import { applyResizeSnap } from '#vue/shared/input/resize/snap'
+import { optionalEditorState } from '#vue/shared/input/snap'
 import type { DragResize } from '#vue/shared/input/types'
 
 /**
@@ -56,9 +58,25 @@ function reflowedPathTextChanges(
   }
 }
 
-function resizeChanges(d: DragResize, cx: number, cy: number, constrain: boolean) {
+function resizeChanges(
+  d: DragResize,
+  cx: number,
+  cy: number,
+  constrain: boolean,
+  editor: Editor,
+  disableSnapping: boolean
+) {
   const { origRect } = d
-  const newRect = calculateResizeRect(d.handle, origRect, cx - d.startX, cy - d.startY, constrain)
+  const calculatedRect = calculateResizeRect(
+    d.handle,
+    origRect,
+    cx - d.startX,
+    cy - d.startY,
+    constrain
+  )
+  const newRect = constrain
+    ? calculatedRect
+    : applyResizeSnap(d, calculatedRect, editor, disableSnapping)
 
   const changes: Partial<SceneNode> = {
     ...newRect,
@@ -118,14 +136,16 @@ export function applyResize(
   cx: number,
   cy: number,
   constrain: boolean,
-  editor: Editor
+  editor: Editor,
+  disableSnapping = false
 ) {
   // Drag state lives in Vue-reactive input state; nested arrays read through
   // it are reactive proxies. Writing those into the graph poisons it for
   // structuredClone consumers (export subgraph clone, undo snapshots) with
   // DataCloneError. Unwrap once — also keeps the drag hot path off proxies.
   const d = toRaw(dragState)
-  const { changes, newRect } = resizeChanges(d, cx, cy, constrain)
+  const { changes, newRect } = resizeChanges(d, cx, cy, constrain, editor, disableSnapping)
+  d.appliedRect = { ...newRect }
   if (d.origRect.width > 0 && d.origRect.height > 0) {
     const reflow = reflowedPathTextChanges(
       {
@@ -209,6 +229,7 @@ function clearResizedRawGeometry(editor: Editor, nodeId: string): void {
 export function commitResizePreview(dragState: DragResize, editor: Editor) {
   // See applyResize — reactive drag state must not leak into graph writes.
   const d = toRaw(dragState)
+  optionalEditorState(editor)?.snapGuides.splice(0)
   const node = editor.graph.getNode(d.nodeId)
   if (!node) return
   const finalChanges = snapshotResizeFinal(node)

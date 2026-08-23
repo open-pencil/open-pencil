@@ -7,6 +7,7 @@ import type { EditorCommandId } from '@open-pencil/vue'
 
 import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
+import { openSettingsDialog } from '@/app/settings/dialog'
 import { isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
@@ -22,6 +23,7 @@ type ShortcutDefinition = {
   keys: string | string[]
   run: ShortcutAction
   shouldPreventDefault?: (event: KeyboardEvent) => boolean
+  global?: boolean
 }
 
 function commandShortcut(
@@ -131,6 +133,12 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     },
     { id: 'toggle-ai', keys: '$mod+KeyJ', run: ({ actions }) => actions.toggleAI() },
     {
+      id: 'open-settings',
+      keys: appMenuTinykeysShortcut('settings') ?? '$mod+Comma',
+      run: () => openSettingsDialog(),
+      global: true
+    },
+    {
       id: 'close-tab',
       keys: appMenuTinykeysShortcut('close') ?? '$mod+KeyW',
       run: ({ closeActiveTab }) => closeActiveTab()
@@ -181,16 +189,17 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
   ]
 
   const bindings: KeyBindingMap = {}
+  const globalBindings: KeyBindingMap = {}
   bindToolShortcuts(bindings, runOptions(new KeyboardEvent('keydown')))
 
   for (const shortcut of shortcuts) {
-    bindShortcut(bindings, shortcut.keys, (event) => {
+    bindShortcut(shortcut.global ? globalBindings : bindings, shortcut.keys, (event) => {
       shortcut.run(runOptions(event))
       if (shortcut.shouldPreventDefault?.(event) ?? true) event.preventDefault()
     })
   }
 
-  const unsubscribe = tinykeys(
+  const unsubscribeEditor = tinykeys(
     window,
     Object.fromEntries(
       Object.entries(bindings).map(([keys, handler]) => [
@@ -204,5 +213,10 @@ export function registerKeyboardShortcuts(options: KeyboardShortcutOptions) {
     { capture: true }
   )
 
-  onScopeDispose(unsubscribe)
+  const unsubscribeGlobal = tinykeys(window, globalBindings, { capture: true })
+
+  onScopeDispose(() => {
+    unsubscribeEditor()
+    unsubscribeGlobal()
+  })
 }

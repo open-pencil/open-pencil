@@ -1,15 +1,15 @@
 ---
 title: usePropertyList
-description: Хелпер контекста примитива для потомков PropertyListRoot.
+description: Доступ к контексту PropertyListRoot из дочернего компонента.
 ---
 
 # usePropertyList
 
-`usePropertyList()` читает локальный контекст списка свойств, предоставляемый `PropertyListRoot`.
+`usePropertyList()` возвращает контекст ближайшего `PropertyListRoot`.
 
-Используйте внутри потомков, которым нужны текущие элементы, информация о смешанном состоянии или обработчики уровня строки для заливок, обводок или эффектов.
+Используйте composable в дочерних компонентах, которым нужны управляемые элементы, смешанное состояние или действия строк для заливок, обводок и эффектов. Сам composable не обращается к редактору.
 
-## Связанные API
+## См. также
 
 - [PropertyListRoot](../components/property-list-root)
 - [PropertyListItem](../components/property-list-item)

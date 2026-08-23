@@ -6,7 +6,7 @@ function extractImages(part: ToolResultPart): ImagePart[] {
   if (part.output.type !== 'content') return []
 
   return part.output.value.flatMap((item): ImagePart[] => {
-    if (item.type === 'image-data' || item.type === 'media') {
+    if (item.type === 'image-data') {
       return [{ type: 'image', image: item.data, mediaType: item.mediaType }]
     }
     if (item.type === 'image-url') {
@@ -34,7 +34,7 @@ export function moveToolImagesToUserMessages(messages: ModelMessage[]): ModelMes
         ...message,
         content: message.content.map((part) =>
           part.type === 'tool-result' && extractImages(part).length > 0
-            ? { ...part, output: { type: 'text', value: TOOL_IMAGE_MESSAGE } }
+            ? { ...part, output: { type: 'text' as const, value: TOOL_IMAGE_MESSAGE } }
             : part
         )
       },

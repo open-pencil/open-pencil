@@ -1,33 +1,29 @@
 ---
-title: Shell de Editor Personalizado
-description: Construye tu propio shell de editor con provideEditor, CanvasRoot, menús, paneles y barras de herramientas.
+title: Interfaz de edición propia
+description: Crear una interfaz con provideEditor, CanvasRoot, Menús, Paneles y Toolbars.
 ---
 
-# Shell de Editor Personalizado
+# Interfaz de edición propia
 
-Una app Vue típica de OpenPencil tiene tres capas:
+Una aplicación de OpenPencil basada en Vue suele tener tres capas:
 
-1. `@open-pencil/core` crea el editor
-2. `@open-pencil/vue` lo adapta en composables de Vue y primitivos headless
-3. tu app renderiza el shell, los estilos y la UX del producto
+1. `@open-pencil/core` crea el Editor;
+2. `@open-pencil/vue` lo conecta con composables y componentes sin estilos de Vue;
+3. la aplicación define disposición, estilos y comportamiento específico del producto.
 
-## Por qué esto importa
+## Casos de uso
 
-La app integrada de OpenPencil es solo un shell posible.
+La aplicación de OpenPencil es solo una interfaz posible. El SDK permite crear un editor integrado en otro producto, una herramienta interna para recursos, un editor de plantillas, una interfaz de anotación o un editor especializado con asistencia de AI.
 
-Puedes construir uno muy diferente para un flujo de trabajo enfocado: un editor integrado dentro de otro producto, una herramienta interna de recursos, un editor de plantillas, una interfaz de anotaciones, o una superficie de edición asistida por IA con controles personalizados.
+## Estructura recomendada
 
-Esa es la razón principal por la que existe el SDK.
+Una interfaz habitual:
 
-## Composición recomendada
-
-Un shell práctico a menudo tiene esta estructura:
-
-- proveedor en lo alto con `provideEditor()`
-- canvas en el centro
-- navegación de páginas/capas en un lateral
-- propiedades en el otro lateral
-- menús y barras de herramientas impulsados por composables
+- ejecuta `provideEditor()` en un nivel alto del árbol de componentes;
+- coloca el canvas en el centro;
+- muestra Pages y Layers en un panel lateral;
+- muestra las propiedades en el panel opuesto;
+- controla Menús y Toolbars mediante composables.
 
 ## Ejemplo
 
@@ -84,19 +80,19 @@ provideEditor(editor)
     </main>
 
     <aside class="border-l">
-      Panel de propiedades aquí
+      Panel de propiedades
     </aside>
   </div>
 </template>
 ```
 
-## Por qué esta división funciona
+## Responsabilidades
 
-- el SDK se encarga de la integración del editor y la lógica headless reutilizable
-- tu app se encarga del layout, los estilos y las acciones específicas del producto
-- los composables pueden impulsar menús y paneles sin componentes wrapper adicionales
+- El SDK se ocupa de la integración con el editor y de la lógica reutilizable sin estilos.
+- La aplicación controla la disposición, los estilos y sus propias acciones.
+- Los composables proporcionan los datos de menús y paneles sin obligar a crear componentes envolventes adicionales.
 
-## APIs relacionadas
+## Consulta también
 
 - [provideEditor](../api/composables/provide-editor)
 - [useCanvas](../api/composables/use-canvas)

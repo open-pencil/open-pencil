@@ -1,17 +1,17 @@
 ---
 title: Renderer JSX
-description: Twórz projekty za pomocą JSX — składni, którą LLM-y już znają z milionów komponentów React.
+description: Deklaratywne tworzenie projektu w JSX i eksport z powrotem do JSX lub HTML z Tailwind.
 ---
 
 # Renderer JSX
 
-OpenPencil używa JSX jako języka tworzenia projektów. LLM-y widziały miliony komponentów React — opisanie layoutu jako `<Frame><Text>` jest naturalne, bez potrzeby specjalnego trenowania. Każdy token ma znaczenie, gdy agent AI wykonuje dziesiątki operacji, a JSX jest najbardziej zwięzłą deklaratywną reprezentacją.
+OpenPencil używa JSX jako deklaratywnego języka tworzenia projektu. Nadaje się on do agentów AI, skryptów i powtarzalnego budowania interfejsów.
 
-JSX jest również porównywalny w diffach. Gdy AI modyfikuje projekt, zmiana jest diffem JSX — czytelnym, weryfikowalnym, kontrolowalnym wersyjnie.
+JSX służy też jako czytelna reprezentacja istniejącego projektu. Zmiany wyglądają jak zwykła różnica w kodzie, którą można sprawdzić i zachować w systemie kontroli wersji.
 
-## Tworzenie projektów
+## Tworzenie projektu
 
-Narzędzie `render` (dostępne w czacie AI, MCP i CLI eval) przyjmuje JSX:
+Narzędzie `render`, dostępne w czacie AI, MCP i `eval` CLI, przyjmuje JSX:
 
 ```jsx
 <Frame name="Card" w={320} h="hug" flex="col" gap={16} p={24} bg="#FFF" rounded={16}>
@@ -20,97 +20,41 @@ Narzędzie `render` (dostępne w czacie AI, MCP i CLI eval) przyjmuje JSX:
 </Frame>
 ```
 
-W serwerze MCP i czacie AI narzędzie `render` przyjmuje ciągi JSX bezpośrednio. W CLI użyj polecenia `export`, aby pójść w drugą stronę — [eksportowanie projektów jako JSX](./cli/exporting).
+W MCP i czacie AI przekaż narzędziu `render` ciąg JSX. Do konwersji w drugą stronę użyj polecenia `export`.
 
 ## Elementy
 
-Wszystkie typy węzłów są dostępne jako elementy JSX:
-
-| Element | Tworzy | Aliasy |
-|---------|--------|--------|
-| `<Frame>` | Ramka (kontener, obsługuje auto-layout) | `<View>` |
+| Element | Tworzy | Alias |
+|---------|--------|-------|
+| `<Frame>` | Ramkę z automatycznym układem | `<View>` |
 | `<Rectangle>` | Prostokąt | `<Rect>` |
-| `<Ellipse>` | Elipsa / koło | |
-| `<Text>` | Węzeł tekstowy (dzieci stają się treścią tekstu) | |
-| `<Line>` | Linia | |
-| `<Star>` | Gwiazda | |
+| `<Ellipse>` | Elipsę lub koło | |
+| `<Text>` | Obiekt tekstowy; elementy potomne stają się treścią | |
+| `<Line>` | Linię | |
+| `<Star>` | Gwiazdę | |
 | `<Polygon>` | Wielokąt | |
-| `<Vector>` | Ścieżka wektorowa | |
-| `<Group>` | Grupa | |
-| `<Section>` | Sekcja | |
+| `<Vector>` | Ścieżkę wektorową | |
+| `<Group>` | Grupę | |
+| `<Section>` | Sekcję | |
 
-## Właściwości stylów
+## Właściwości stylu
 
-Zwięzłe skrócone właściwości inspirowane nazewnictwem Tailwind.
+Nazwy właściwości pozostają zgodne z API JSX, natomiast ich znaczenie jest następujące:
 
-### Layout
-
-| Właściwość | Opis |
-|------------|------|
-| `flex` | `"row"` lub `"col"` — włącza auto-layout |
-| `gap` | Odstęp między dziećmi |
-| `wrap` | Zawijanie dzieci do następnej linii |
-| `rowGap` | Odstęp na osi poprzecznej przy zawijaniu |
-| `justify` | `"start"`, `"end"`, `"center"`, `"between"` |
-| `items` | `"start"`, `"end"`, `"center"`, `"stretch"` |
-| `p`, `px`, `py`, `pt`, `pr`, `pb`, `pl` | Padding |
-
-### Rozmiar i pozycja
-
-| Właściwość | Opis |
-|------------|------|
-| `w`, `h` | Szerokość/wysokość — liczba, `"fill"` lub `"hug"` |
-| `minW`, `maxW`, `minH`, `maxH` | Ograniczenia rozmiaru |
-| `x`, `y` | Pozycja |
-
-### Wygląd
-
-| Właściwość | Opis |
-|------------|------|
-| `bg` | Wypełnienie tła (kolor hex) |
-| `fill` | Alias dla `bg` |
-| `stroke` | Kolor obrysu |
-| `strokeWidth` | Szerokość obrysu (domyślnie: 1) |
-| `rounded` | Zaokrąglenie narożników (lub `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`) |
-| `cornerSmoothing` | Gładkie narożniki w stylu iOS (0–1) |
-| `opacity` | 0–1 |
-| `shadow` | Cień (np. `"0 4 8 #00000040"`) |
-| `blur` | Promień rozmycia warstwy |
-| `rotate` | Obrót w stopniach |
-| `blendMode` | Tryb mieszania |
-| `overflow` | `"hidden"` lub `"visible"` |
-
-### Typografia
-
-| Właściwość | Opis |
-|------------|------|
-| `size` / `fontSize` | Rozmiar czcionki |
-| `font` / `fontFamily` | Rodzina czcionki |
-| `weight` / `fontWeight` | `"bold"`, `"medium"`, `"normal"` lub liczba |
-| `color` | Kolor tekstu |
-| `textAlign` | `"left"`, `"center"`, `"right"`, `"justified"` |
+- `flex`, `gap`, `wrap`, `justify`, `items` i skróty `p*` sterują układem i odstępami;
+- `w`, `h`, `minW`, `maxW`, `x` i `y` sterują rozmiarem i położeniem;
+- `bg`, `stroke`, `rounded`, `opacity`, `shadow`, `blur` i `blendMode` sterują wyglądem;
+- `fontFamily`, `fontSize`, `fontWeight`, `color` i `textAlign` sterują typografią.
 
 ## Eksport do JSX
 
-Konwertuj istniejące projekty z powrotem do JSX:
-
 ```sh
-openpencil export design.fig -f jsx                   # format OpenPencil
-openpencil export design.fig -f jsx --style tailwind  # klasy Tailwind
+openpencil export design.fig -f jsx                   # Format OpenPencil
+openpencil export design.fig -f jsx --style tailwind  # Klasy Tailwind
 ```
 
-Pełen cykl działa: wyeksportuj projekt jako JSX, zmodyfikuj kod, wyrenderuj z powrotem.
+Wyeksportowany projekt można zmienić jak kod i ponownie wyrenderować.
 
-## Wizualne porównywanie
+## Porównanie zmian
 
-Ponieważ projekty są reprezentowalne jako JSX, zmiany stają się diffami kodu:
-
-```diff
- <Frame name="Card" w={320} flex="col" gap={16} p={24} bg="#FFF">
--  <Text size={18} weight="bold">Old Title</Text>
-+  <Text size={24} weight="bold" color="#1D1B20">New Title</Text>
-   <Text size={14} color="#666">Description</Text>
- </Frame>
-```
-
-Dzięki temu zmiany projektowe są weryfikowalne w pull requestach, śledzone w systemie kontroli wersji i audytowalne w CI.
+Różnica JSX może być sprawdzana w przeglądzie zmian i przechowywana w systemie kontroli wersji.

@@ -1,53 +1,36 @@
 ---
 title: Exportar
-description: Exportar imágenes (PNG, JPG, WEBP, SVG) y gestionar archivos .fig en OpenPencil.
+description: Exportar la selección como PNG, JPG, WEBP o SVG y guardar archivos `.fig`.
 ---
+
 # Exportar
 
 ## Exportación de imágenes
 
-Selecciona un nodo y usa la sección Export en el panel de propiedades.
+Selecciona un objeto y abre **Exportar** en el panel de propiedades. Cada ajuste define:
 
-### Configuración de exportación
+- formato: PNG, JPG, WEBP o SVG;
+- escala o anchura explícita;
+- sufijo del nombre;
+- calidad para JPG y WEBP.
 
-- **Escala** — 0,5×, 0,75×, 1×, 1,5×, 2×, 3× o 4× (oculta para SVG — los vectores son independientes de la resolución)
-- **Formato** — PNG (fondo transparente), JPG (fondo blanco), WEBP (fondo transparente), SVG (vector)
+Un objeto puede tener varios ajustes. La vista previa aparece sobre un fondo de tablero que permite comprobar la transparencia.
 
-### Métodos de exportación
-
-| Método | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Atajo de teclado | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>E</kbd> |
-| Menú contextual | Clic derecho <kbd>→</kbd> Exportar… | Clic derecho <kbd>→</kbd> Exportar… |
-| Panel de propiedades | Botón "Exportar" | Botón "Exportar" |
+También puedes abrir **Exportar…** desde el menú contextual.
 
 ## Copiar como
 
-El menú contextual **Copiar como** ofrece formatos adicionales:
+El menú contextual copia la selección al portapapeles como texto, SVG, PNG o JSX.
 
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Copiar como texto | — | — |
-| Copiar como SVG | — | — |
-| Copiar como PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Copiar como JSX | — | — |
+## Guardar documentos
 
-## Operaciones de archivo .fig
+**Guardar** actualiza el archivo actual. **Guardar como…** permite elegir una ubicación nueva. En Tauri se usan diálogos nativos; Chrome y Edge pueden usar File System Access API; otros navegadores descargan el archivo.
 
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Abrir | <kbd>⌘</kbd><kbd>O</kbd> | <kbd>Ctrl</kbd> + <kbd>O</kbd> |
-| Guardar | <kbd>⌘</kbd><kbd>S</kbd> | <kbd>Ctrl</kbd> + <kbd>S</kbd> |
-| Guardar como | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>S</kbd> |
+Los archivos `.fig` exportados incluyen datos Kiwi, compresión Zstandard y miniatura. Los componentes y conjuntos se conservan para poder volver a abrir el archivo en Figma.
 
-Los archivos guardados se comprimen e incluyen una imagen en miniatura para vista previa.
+## Elegir formato
 
-### Compatibilidad de ida y vuelta
-
-Los archivos exportados desde OpenPencil se pueden abrir en Figma, y viceversa. El formato .fig preserva todos los tipos de nodos, propiedades, rellenos, trazos, efectos, datos vectoriales y configuración de layout.
-
-## Consejos
-
-- Usa escala 2× o 3× para pantallas de alta resolución.
-- JPG siempre usa fondo blanco — usa PNG o WEBP si necesitas transparencia.
-- Usa SVG para edición vectorial posterior en editores de código o Illustrator.
+- PNG conserva transparencia y resulta apropiado para interfaces.
+- JPG reduce el tamaño de fotografías.
+- WEBP ofrece buena compresión para la web.
+- SVG mantiene vectores editables y es adecuado para iconos y código.

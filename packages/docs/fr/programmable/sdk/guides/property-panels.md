@@ -1,18 +1,17 @@
 ---
 title: Panneaux de propriétés
-description: Créez des panneaux de propriétés avec des composables de contrôle et des primitives de liste headless.
+description: Créer des panneaux de propriétés avec des composables et des composants sans apparence imposée.
 ---
 
 # Panneaux de propriétés
 
-Les panneaux de propriétés dans `@open-pencil/vue` sont intentionnellement axés sur les composables.
+`@open-pencil/vue` fournit principalement des composables pour les panneaux de propriétés.
 
-Si un panneau n'a besoin que de valeurs dérivées de la sélection et d'actions de mise à jour, préférez les composables.
-Si un panneau nécessite une structure de tableau/liste réutilisable, utilisez une primitive headless comme `PropertyListRoot`.
+Si un panneau utilise des valeurs calculées depuis la sélection et des actions pour les modifier, choisissez un composable. Pour une structure réutilisable de tableau ou de liste, utilisez un composant sans apparence imposée comme `PropertyListRoot`.
 
-## Composables de contrôle courants
+## Composables
 
-Pour les sections de propriétés standard, commencez par :
+Pour les sections courantes :
 
 - `usePosition()`
 - `useLayout()`
@@ -20,13 +19,25 @@ Pour les sections de propriétés standard, commencez par :
 - `useTypography()`
 - `useExport()`
 
-Pour les panneaux en forme de liste, utilisez :
+Pour les propriétés sous forme de listes :
 
 - `useFillControls()`
 - `useStrokeControls()`
 - `useEffectsControls()`
 
-## Exemple : panneau de position
+## Liaisons avec des variables
+
+Lorsqu’un champ peut être lié à une variable ou à un jeton de design externe, placez-le dans `BindableValueRoot`.
+
+- Hors édition, affichez le nom de la variable ; la valeur calculée peut apparaître dans une infobulle.
+- Le focus et l’ouverture du sélecteur de variable ne doivent pas supprimer une liaison existante.
+- N’appliquez `detach-on-edit`, `readonly-when-bound` ou `edit-variable` qu’après une modification réelle.
+- Une action explicite de suppression de la liaison est préférable dans le sélecteur à un bouton facile à déclencher par erreur près du champ.
+- Regroupez changement de liaison, détachement pendant l’édition et mises à jour de plusieurs objets dans une seule opération groupée du fournisseur.
+
+L’application OpenPencil affiche le nom de la variable en violet lorsque le champ est inactif. Au début de l’édition, `NumberField` affiche la valeur numérique calculée. Une interface personnalisée peut présenter le même état différemment.
+
+## Exemple : position et taille
 
 ```vue
 <script setup lang="ts">
@@ -45,33 +56,45 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 </template>
 ```
 
-## Exemple : panneau de remplissages
+## Exemple : remplissages
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import {
+  PropertyListRoot,
+  useEditorPropertyList,
+  useFillControls
+} from '@open-pencil/vue'
 
 const fillControls = useFillControls()
+const fills = useEditorPropertyList('fills')
 </script>
 
 <template>
-  <PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
+  <PropertyListRoot
+    prop-key="fills"
+    :items="fills.items.value"
+    :mixed="fills.isMixed.value"
+    @add="fills.actions.add"
+    @remove="fills.actions.remove"
+    v-slot="{ items, actions }"
+  >
     <div v-for="(fill, index) in items" :key="index">
       {{ fill.type }}
-      <button @click="remove(index)">Supprimer</button>
+      <button @click="actions.remove(index)">Supprimer</button>
     </div>
 
-    <button @click="add(fillControls.defaultFill)">Ajouter un remplissage</button>
+    <button @click="actions.add(fillControls.defaultFill)">Ajouter un remplissage</button>
   </PropertyListRoot>
 </template>
 ```
 
-## Règle pratique
+## Choisir l’API
 
-- utiliser les composables pour la logique de contrôle directe
-- utiliser les primitives structurelles quand la coordination de liste/arbre/slot répétée est la partie complexe
+- Composables pour l’état et les actions.
+- Composants structurels sans apparence imposée lorsque la coordination de listes, arbres ou slots répétitifs constitue l’essentiel du travail.
 
-## API associées
+## Voir aussi
 
 - [usePosition](../api/composables/use-position)
 - [useLayout](../api/composables/use-layout)

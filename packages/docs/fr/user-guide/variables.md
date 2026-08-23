@@ -1,29 +1,40 @@
 ---
 title: Variables
-description: Variables de design, collections, modes et liaisons dans OpenPencil.
+description: Créer des variables, collections et modes, puis les lier aux propriétés de design.
 ---
+
 # Variables
 
-Jetons réutilisables — couleurs, espacement — liables aux nœuds.
+Les variables stockent des valeurs réutilisables, comme des couleurs et des espacements. Une propriété liée est mise à jour lorsque la variable change.
 
-## Ouverture
-Onglet Design → Variables → icône paramètres.
+## Ouvrir l’éditeur
 
-## Collections
-Onglet par collection. Double-clic pour renommer.
+Lorsqu’aucun objet n’est sélectionné, l’onglet **Design** affiche les propriétés de la page. L’icône des réglages de la section Variables ouvre l’éditeur.
 
-## Modes
-Colonnes dans le tableau (ex. Clair/Sombre). Chaque variable a une valeur par mode.
+## Collections et modes
 
-## Gestion
-- **Créer** — bouton "+ Créer une variable"
-- **Modifier nom/valeur** — clic sur la cellule
-- **Rechercher** — barre de recherche
+Une collection regroupe des variables liées. Chaque collection peut avoir plusieurs modes, par exemple Clair et Sombre, avec une valeur différente par variable.
 
-## Liaison aux remplissages
-Sélecteur de variable dans le panneau Remplissage. Badge violet avec nom de variable. Bouton pour détacher.
+- Un clic change de collection.
+- Un double clic sur le nom permet de la renommer.
+- Les boutons d’en-tête créent collections et modes.
 
-## Conseils
-- Collections pour grouper les jetons liés
-- Modes pour les thèmes (Clair/Sombre)
-- Support d'alias entre collections
+## Modifier les variables
+
+Le tableau contient le nom, le type et une colonne par mode. Cliquez sur une cellule pour la modifier.
+
+Types pris en charge : couleur, nombre, texte et booléen. Les couleurs se modifient avec un champ et un sélecteur.
+
+## Lier remplissages et contours
+
+Ouvrez le sélecteur de variables depuis le contrôle de couleur et choisissez une variable compatible. Le contrôle affiche le lien au lieu de copier la valeur.
+
+Ouvrir ou sélectionner le champ ne modifie pas le lien. Seule la première modification réelle peut le supprimer ou modifier directement la variable, selon le contrôle.
+
+## Alias
+
+Une variable peut en référencer une autre. OpenPencil résout la chaîne selon le mode actif et détecte les cycles.
+
+## Importation et exportation
+
+Les variables sont conservées lors des importations et exportations `.fig`. La CLI peut aussi les lister et les modifier via l’API compatible avec les plugins Figma.

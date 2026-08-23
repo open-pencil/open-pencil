@@ -143,6 +143,36 @@ describe('AI model profiles and role assignments', () => {
     expect(modelSettingsSnapshot().connections).toHaveLength(2)
   })
 
+  test('stores multiple Harness provider profiles with independent model IDs', () => {
+    const first = createModelProfileDraft()
+    Object.assign(first, {
+      name: 'Pi Sonnet',
+      providerID: 'harness:pi',
+      modelID: '',
+      customModelID: 'anthropic/claude-sonnet-4.6',
+      harnessThinkingLevel: 'medium',
+      harnessPermissionMode: 'allow-edits'
+    })
+    const second = createModelProfileDraft()
+    Object.assign(second, {
+      name: 'Pi custom',
+      providerID: 'harness:pi',
+      modelID: '',
+      customModelID: 'custom/provider-model',
+      harnessThinkingLevel: 'high',
+      harnessPermissionMode: 'allow-reads'
+    })
+
+    const savedFirst = saveModelProfileDraft(first)
+    const savedSecond = saveModelProfileDraft(second)
+    expect(savedFirst.customModelID).toBe('anthropic/claude-sonnet-4.6')
+    expect(savedSecond.customModelID).toBe('custom/provider-model')
+    expect(savedFirst.harnessThinkingLevel).toBe('medium')
+    expect(savedSecond.harnessThinkingLevel).toBe('high')
+    expect(savedFirst.harnessPermissionMode).toBe('allow-edits')
+    expect(savedSecond.harnessPermissionMode).toBe('allow-reads')
+  })
+
   test('keeps ACP agents exclusive to the Design role', () => {
     const settings = modelSettingsSnapshot()
     settings.connections.push({

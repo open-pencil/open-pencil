@@ -268,7 +268,12 @@ export class SkiaRenderer {
     graph: SceneGraph,
     cursors?: RenderOverlays['remoteCursors']
   ) => void
-  declare drawRulers: (canvas: Canvas, graph: SceneGraph, selectedIds: Set<string>) => void
+  declare drawRulers: (
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>,
+    guides?: RenderOverlays['guides']
+  ) => void
   declare drawSectionTitles: (canvas: Canvas, graph: SceneGraph) => void
   declare drawComponentLabels: (canvas: Canvas, graph: SceneGraph) => void
   declare renderNode: (

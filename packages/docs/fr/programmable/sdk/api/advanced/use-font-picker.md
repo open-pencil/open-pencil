@@ -1,15 +1,15 @@
 ---
 title: useFontPicker
-description: État du sélecteur de police avec recherche et helper de sélection.
+description: Gérer familles, recherche et sélection dans un sélecteur de polices propre.
 ---
 
 # useFontPicker
 
-`useFontPicker(options)` gère les familles de polices disponibles, l'état de recherche, l'état ouvert et la sélection de famille pour les interfaces de sélection de polices.
+`useFontPicker(options)` gère les familles, le terme de recherche, l’état ouvert et la famille active.
 
-Utilisez-le pour construire des interfaces de sélection de polices personnalisées au-delà de `FontPickerRoot`.
+Utilisez-le lorsque `FontPickerRoot` ne suffit pas et qu’une interface entièrement propre est nécessaire.
 
-## API associées
+## Voir aussi
 
 - [FontPickerRoot](../components/font-picker-root)
 - [useTypography](../composables/use-typography)

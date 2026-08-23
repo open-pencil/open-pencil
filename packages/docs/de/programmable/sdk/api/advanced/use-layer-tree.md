@@ -1,15 +1,15 @@
 ---
 title: useLayerTree
-description: Primitiv-Kontext-Hilfsmittel für LayerTreeRoot-Nachkommen.
+description: Auf den von LayerTreeRoot bereitgestellten Kontext zugreifen.
 ---
 
 # useLayerTree
 
-`useLayerTree()` liest den lokalen Ebenenbaum-Kontext, der von `LayerTreeRoot` bereitgestellt wird.
+`useLayerTree()` gibt den Kontext des nächsten `LayerTreeRoot` zurück.
 
-Verwenden Sie es innerhalb benutzerdefinierter Ebenenbaum-Nachkommen, die Zugriff auf Baumelemente, Auswahlzustand, Erweiterungszustand oder Zeilen-Aktionen benötigen.
+Verwenden Sie das Composable in eigenen untergeordneten Komponenten, die Baumeinträge, Auswahl, aufgeklappte Zweige oder Zeilenaktionen benötigen.
 
-## Verwandte APIs
+## Siehe auch
 
 - [LayerTreeRoot](../components/layer-tree-root)
 - [LayerTreeItem](../components/layer-tree-item)

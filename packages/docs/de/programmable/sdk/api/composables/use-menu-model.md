@@ -1,13 +1,11 @@
 ---
 title: useMenuModel
-description: App- und Canvas-Menümodelle aus dem aktuellen Editor-Zustand erstellen.
+description: Menümodelle für Application und Canvas aus dem aktuellen Editor state erstellen.
 ---
 
 # useMenuModel
 
-`useMenuModel()` erstellt übergeordnete Menüstrukturen auf Basis von Editor-Befehlen und Auswahlzustand.
-
-Es ist nützlich, wenn Sie fertig renderbare Menügruppen anstatt manuell zusammengesetzter Befehle möchten.
+`useMenuModel()` erzeugt renderbereite Menüs aus Editor commands und der aktuellen Selection. Dadurch müssen einzelne Commands nicht für jedes Menü erneut zusammengesetzt werden.
 
 ## Verwendung
 
@@ -17,37 +15,35 @@ import { useMenuModel } from '@open-pencil/vue'
 const { appMenu, canvasMenu, selectionLabelMenu } = useMenuModel()
 ```
 
-## Einfaches Beispiel
+## Beispiel
 
 ```ts
 const { canvasMenu } = useMenuModel()
 ```
 
-Rendern Sie `canvasMenu.value` in Ihre Kontextmenü-Komponente.
+`canvasMenu.value` an einen eigenen Context-menu component übergeben.
 
-## Praktische Beispiele
-
-### App-artiges Hauptmenü
+## Application menu
 
 `appMenu` gruppiert Einträge in:
 
-- Bearbeiten
-- Ansicht
-- Objekt
-- Anordnen
+- Edit;
+- View;
+- Object;
+- Arrange.
 
-### Kontextmenü mit Seitenverschiebungen
+## Kontextmenü
 
-`canvasMenu` enthält dynamische Einträge wie „Auf Seite verschieben" basierend auf der aktuellen Auswahl und verfügbaren Seiten.
+`canvasMenu` enthält vom State abhängige Einträge, zum Beispiel Move to page mit den verfügbaren Pages.
 
-### Auswahlbeschriftungen
+## Labels für die Selection
 
-`selectionLabelMenu` gibt kontextsensitive Beschriftungen wie:
+`selectionLabelMenu` liefert die passende Variante:
 
-- `Ausblenden` / `Einblenden`
-- `Sperren` / `Entsperren`
+- Hide oder Show;
+- Lock oder Unlock.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useEditorCommands](./use-editor-commands)
 - [useSelectionState](./use-selection-state)

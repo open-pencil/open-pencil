@@ -1,15 +1,14 @@
 ---
 title: usePropScrub
-description: Helper de bas niveau pour les mises à jour de propriétés par glissement avec prise en charge de la validation.
+description: Prévisualiser et valider une propriété numérique pendant le glissement.
 ---
 
 # usePropScrub
 
-`usePropScrub(editor)` coordonne les mises à jour de propriétés en direct pendant le glissement et valide les changements avec prise en charge de l'annulation quand l'interaction se termine.
+`usePropScrub(editor)` actualise une propriété pendant le glissement et écrit la valeur finale dans l’historique à la fin de l’interaction.
 
-Utilisez-le pour construire des contrôles numériques qui modifient directement les propriétés des nœuds sélectionnés par glissement.
+Il convient aux champs numériques modifiés par glissement.
 
-## API associées
+## Voir aussi
 
-- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

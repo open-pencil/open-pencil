@@ -1,116 +1,60 @@
 ---
 title: Renderizador JSX
-description: Crea diseños con JSX — la sintaxis que los LLMs ya conocen de millones de componentes React.
+description: Crear diseños desde JSX y exportar selecciones como JSX con Tailwind.
 ---
 
 # Renderizador JSX
 
-OpenPencil usa JSX como su lenguaje de creación de diseños. Los LLMs han visto millones de componentes React — describir un layout como `<Frame><Text>` es natural, sin necesidad de entrenamiento especial. Cada token importa cuando un agente de IA realiza docenas de operaciones, y JSX es la representación declarativa más compacta.
-
-JSX también es diferenciable. Cuando una IA modifica un diseño, el cambio es un diff de JSX — legible, revisable, versionable.
-
-## Crear Diseños
-
-La herramienta `render` (disponible en el chat con IA, MCP y CLI eval) acepta JSX:
+OpenPencil puede convertir JSX declarativo en un árbol de diseño. El mismo sistema está disponible en el chat con AI, MCP y `eval`.
 
 ```jsx
-<Frame name="Card" w={320} h="hug" flex="col" gap={16} p={24} bg="#FFF" rounded={16}>
+<Frame flex="col" gap={16} p={24} w={320} bg="#ffffff" radius={16}>
   <Text size={18} weight="bold">Card Title</Text>
-  <Text size={14} color="#666">Description text</Text>
+  <Text color="#667085">Description</Text>
+  <Button>Continue</Button>
 </Frame>
 ```
 
-En el servidor MCP y el chat con IA, la herramienta `render` acepta cadenas JSX directamente. En el CLI, usa el comando `export` para ir en la dirección opuesta — [exportar diseños como JSX](./cli/exporting).
-
 ## Elementos
 
-Todos los tipos de nodos están disponibles como elementos JSX:
+| JSX | Resultado |
+|-----|-----------|
+| `<Frame>` | Marco, opcionalmente con disposición automática |
+| `<Text>` | Objeto de texto |
+| `<Rectangle>` | Rectángulo |
+| `<Ellipse>` | Elipse |
+| `<Image>` | Forma con relleno de imagen |
+| Componente registrado | Árbol reutilizable definido por la aplicación |
 
-| Elemento | Crea | Alias |
-|----------|------|-------|
-| `<Frame>` | Frame (contenedor, soporta auto-layout) | `<View>` |
-| `<Rectangle>` | Rectángulo | `<Rect>` |
-| `<Ellipse>` | Elipse / círculo | |
-| `<Text>` | Nodo de texto (los hijos se convierten en contenido de texto) | |
-| `<Line>` | Línea | |
-| `<Star>` | Estrella | |
-| `<Polygon>` | Polígono | |
-| `<Vector>` | Trazado vectorial | |
-| `<Group>` | Grupo | |
-| `<Section>` | Sección | |
+## Disposición
 
-## Props de Estilo
+- `flex="row"` o `flex="col"` activa la disposición automática.
+- `gap` establece la separación.
+- `p`, `px`, `py`, `pt`, `pr`, `pb` y `pl` establecen el relleno.
+- `align` y `justify` controlan la alineación.
+- `wrap` permite saltos de línea.
 
-Props abreviados compactos inspirados en la nomenclatura de Tailwind.
+## Tamaño y posición
 
-### Layout
+- `w` y `h` aceptan números, `"fill"` o `"hug"`.
+- `minW`, `maxW`, `minH` y `maxH` establecen límites.
+- `x` e `y` fijan la posición cuando el objeto no participa en el flujo.
 
-| Prop | Descripción |
-|------|-------------|
-| `flex` | `"row"` o `"col"` — activa auto-layout |
-| `gap` | Espacio entre hijos |
-| `wrap` | Ajustar hijos a la siguiente línea |
-| `rowGap` | Espaciado en el eje transversal al ajustar |
-| `justify` | `"start"`, `"end"`, `"center"`, `"between"` |
-| `items` | `"start"`, `"end"`, `"center"`, `"stretch"` |
-| `p`, `px`, `py`, `pt`, `pr`, `pb`, `pl` | Padding |
+## Apariencia
 
-### Tamaño y Posición
+- `bg` o `fill` define el relleno.
+- `color` define el color del texto.
+- `stroke`, `strokeWidth`, `opacity` y `radius` controlan contorno, opacidad y esquinas.
+- `shadow` añade una sombra.
 
-| Prop | Descripción |
-|------|-------------|
-| `w`, `h` | Ancho/alto — número, `"fill"` o `"hug"` |
-| `minW`, `maxW`, `minH`, `maxH` | Restricciones de tamaño |
-| `x`, `y` | Posición |
+## Tipografía
 
-### Apariencia
+`size`, `font`, `weight`, `lineHeight`, `letterSpacing` y `align` configuran el texto. Los nombres de propiedades se mantienen en inglés porque forman parte de la API JSX.
 
-| Prop | Descripción |
-|------|-------------|
-| `bg` | Relleno de fondo (color hexadecimal) |
-| `fill` | Alias de `bg` |
-| `stroke` | Color de borde |
-| `strokeWidth` | Ancho del borde (predeterminado: 1) |
-| `rounded` | Radio de esquina (o `roundedTL`, `roundedTR`, `roundedBL`, `roundedBR`) |
-| `cornerSmoothing` | Esquinas suaves estilo iOS (0–1) |
-| `opacity` | 0–1 |
-| `shadow` | Sombra proyectada (ej. `"0 4 8 #00000040"`) |
-| `blur` | Radio de desenfoque de capa |
-| `rotate` | Rotación en grados |
-| `blendMode` | Modo de fusión |
-| `overflow` | `"hidden"` o `"visible"` |
+## Eventos y metadatos
 
-### Tipografía
-
-| Prop | Descripción |
-|------|-------------|
-| `size` / `fontSize` | Tamaño de fuente |
-| `font` / `fontFamily` | Familia tipográfica |
-| `weight` / `fontWeight` | `"bold"`, `"medium"`, `"normal"` o número |
-| `color` | Color del texto |
-| `textAlign` | `"left"`, `"center"`, `"right"`, `"justified"` |
+Las propiedades desconocidas se conservan cuando el tipo de objeto las admite. Los eventos DOM no se ejecutan: el resultado es un documento de diseño, no una aplicación web.
 
 ## Exportar a JSX
 
-Convierte diseños existentes de vuelta a JSX:
-
-```sh
-openpencil export design.fig -f jsx                   # formato OpenPencil
-openpencil export design.fig -f jsx --style tailwind  # clases Tailwind
-```
-
-El viaje de ida y vuelta funciona: exporta un diseño como JSX, modifica el código, renderízalo de nuevo.
-
-## Diferencias Visuales
-
-Como los diseños son representables como JSX, los cambios se convierten en diffs de código:
-
-```diff
- <Frame name="Card" w={320} flex="col" gap={16} p={24} bg="#FFF">
--  <Text size={18} weight="bold">Old Title</Text>
-+  <Text size={24} weight="bold" color="#1D1B20">New Title</Text>
-   <Text size={14} color="#666">Description</Text>
- </Frame>
-```
-
-Esto hace que los cambios de diseño sean revisables en pull requests, rastreables en control de versiones y auditables en CI.
+El menú **Copiar como → JSX** convierte la selección en JSX y clases Tailwind. La salida intenta conservar jerarquía, disposición, tamaños, colores, tipografía y bordes, y sirve como punto de partida para implementar una interfaz.

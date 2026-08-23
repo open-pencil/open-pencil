@@ -1,15 +1,13 @@
 ---
 title: PropertyListItem
-description: Headless Element-Primitiv für eine einzelne Füllungs-, Kontur- oder Effekte-Zeile.
+description: Ein Eintrag einer Liste von Füllungen, Konturen oder Effekten.
 ---
 
 # PropertyListItem
 
-`PropertyListItem` gibt Aktualisierungs-, Patch-, Entfernen- und Sichtbarkeits-Handler für ein Array-Element innerhalb von `PropertyListRoot` zurück.
+`PropertyListItem` stellt Aktionen zum Ersetzen, teilweisen Aktualisieren, Entfernen und Ändern der Sichtbarkeit eines Eintrags bereit.
 
-Verwenden Sie es beim Erstellen benutzerdefinierter Listen-Zeilen-UIs für Füllungen, Konturen oder Effekte.
-
-## Verwandte APIs
+## Siehe auch
 
 - [PropertyListRoot](./property-list-root)
 - [usePropertyList](../advanced/use-property-list)

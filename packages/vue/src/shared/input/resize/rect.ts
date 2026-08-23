@@ -71,9 +71,9 @@ export function calculateResizeRect(
   }
 
   return {
-    x: Math.round(x),
-    y: Math.round(y),
-    width: Math.round(Math.max(1, width)),
-    height: Math.round(Math.max(1, height))
+    x,
+    y,
+    width: Math.max(1, width),
+    height: Math.max(1, height)
   }
 }

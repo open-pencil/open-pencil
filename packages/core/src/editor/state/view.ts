@@ -1,3 +1,4 @@
+import { createGuideOverlayState } from '#core/canvas/guides/types'
 import { CANVAS_BG_COLOR } from '#core/constants'
 import type { EditorState, EditorViewState } from '#core/editor/types'
 
@@ -7,6 +8,7 @@ export function createDefaultEditorViewState(pageId: string): EditorViewState {
     selectedIds: new Set<string>(),
     marquee: null,
     snapGuides: [],
+    guides: createGuideOverlayState(),
     rotationPreview: null,
     dropTargetId: null,
     layoutInsertIndicator: null,
@@ -35,6 +37,7 @@ export function copyEditorViewState(source: EditorViewState): EditorViewState {
     selectedIds: new Set(source.selectedIds),
     marquee: structuredClone(source.marquee),
     snapGuides: structuredClone(source.snapGuides),
+    guides: structuredClone(source.guides),
     rotationPreview: structuredClone(source.rotationPreview),
     layoutInsertIndicator: structuredClone(source.layoutInsertIndicator),
     penState: structuredClone(source.penState),

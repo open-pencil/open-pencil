@@ -1,15 +1,15 @@
 ---
 title: AppearanceControlsRoot
-description: Primitivo raíz headless para controles de opacidad, visibilidad y radio de esquina.
+description: Componente sin estilos para opacidad, visibilidad y radio de esquina.
 ---
 
 # AppearanceControlsRoot
 
-`AppearanceControlsRoot` expone el contrato de slot devuelto por `useAppearance()` como un primitivo estructural.
+`AppearanceControlsRoot` expone en su ranura la API de `useAppearance()`.
 
-Úsalo cuando quieras controles de apariencia reutilizables con presentación personalizada.
+Los campos propios pueden reutilizar el estado y las acciones del SDK sin adoptar una interfaz concreta.
 
-## APIs relacionadas
+## Véase también
 
 - [useAppearance](../composables/use-appearance)
-- [Guía de Paneles de Propiedades](../../guides/property-panels)
+- [Paneles de propiedades](../../guides/property-panels)

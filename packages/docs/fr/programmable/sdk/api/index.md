@@ -1,20 +1,20 @@
 ---
-title: Référence API
-description: Documentation de référence pour les composants, composables et API avancées de @open-pencil/vue.
+title: Référence de l’API
+description: Composants, composables et API avancées de @open-pencil/vue.
 ---
 
-# Référence API
+# Référence de l’API
 
-La référence du Vue SDK est organisée en trois sections.
+La référence du SDK Vue se divise en trois domaines.
 
 <SdkCardGroup>
-  <SdkCard title="Composants" to="/programmable/sdk/api/components/" description="Primitives structurelles headless comme CanvasRoot, ToolbarRoot, FontPickerRoot et NumberFieldRoot." />
-  <SdkCard title="Composables" to="/programmable/sdk/api/composables/" description="Composables orientés éditeur pour le contexte, le câblage canvas, la sélection, les commandes et les panneaux de propriétés." />
-  <SdkCard title="Avancé" to="/programmable/sdk/api/advanced/" description="Helpers de bas niveau, contextes de primitives et API spécialisées pour les intégrations avancées." />
+  <SdkCard title="Composants" to="/programmable/sdk/api/components/" description="Composants sans styles comme CanvasRoot, ToolbarRoot, FontPickerRoot et NumberField." />
+  <SdkCard title="Composables" to="/programmable/sdk/api/composables/" description="État et actions pour l’éditeur, la zone de travail, la sélection, les commandes et les propriétés." />
+  <SdkCard title="API avancées" to="/programmable/sdk/api/advanced/" description="Contextes de bas niveau et fonctions spécialisées pour les intégrations propres." />
 </SdkCardGroup>
 
-## Parcours suggéré
+## Par où commencer
 
-- Commencez par les **Composants** si vous construisez des primitives UI d'éditeur réutilisables.
-- Commencez par les **Composables** si vous câblez l'état et les actions de l'éditeur.
-- Utilisez **Avancé** uniquement quand vous avez besoin de helpers de bas niveau ou de contextes de primitives.
+- **Composants** pour les structures et contrôles réutilisables de l’interface.
+- **Composables** pour l’état et les actions de l’éditeur.
+- **API avancées** pour les intégrations qui nécessitent un accès direct à l’état ou au contexte de bas niveau.

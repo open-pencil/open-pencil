@@ -15,6 +15,7 @@ export default defineConfig({
     undo: './src/undo.ts',
     variables: './src/variables.ts',
     'variant-name': './src/variant-name.ts',
+    'variant-properties': './src/variant-properties.ts',
     'vector-network': './src/vector-network.ts',
     types: './src/types.ts',
     primitives: './src/primitives.ts',
@@ -22,6 +23,8 @@ export default defineConfig({
     coordinate: './src/coordinate.ts',
     matrix: './src/matrix.ts',
     geometry: './src/geometry.ts',
+    guides: './src/guides.ts',
+    'layout-guides': './src/layout-guides.ts',
     resize: './src/resize.ts',
     'parse-path': './src/parse-path.ts'
   },
@@ -49,7 +52,8 @@ export default defineConfig({
             const cleanId = id.split('?')[0]
             const parts = cleanId.split(/[\\/]/g)
             const srcIndex = parts.lastIndexOf('src')
-            const file = srcIndex >= 0 ? parts.slice(srcIndex + 1).join('/') : parts.at(-1) ?? 'chunk'
+            const file =
+              srcIndex >= 0 ? parts.slice(srcIndex + 1).join('/') : (parts.at(-1) ?? 'chunk')
             return `chunks/${file.replace(/\.(ts|tsx)$/, '')}`
           }
         }

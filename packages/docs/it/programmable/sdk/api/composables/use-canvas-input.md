@@ -1,73 +1,15 @@
 ---
 title: useCanvasInput
-description: Cabla l'input del puntatore canvas, il trascinamento, la selezione, il ridimensionamento, la rotazione e il comportamento degli strumenti.
+description: Collegare puntatore, trascinamento, selezione, dimensioni, rotazione e strumenti all’area di lavoro.
 ---
 
 # useCanvasInput
 
-`useCanvasInput()` connette le interazioni del puntatore e del mouse al canvas dell'editor.
+`useCanvasInput(options)` collega gli eventi al sistema di input dell’editor: puntatore, selezione, spostamento e zoom, trascinamento, ridimensionamento, rotazione, strumenti di forma, Penna, Testo e Mano, modifica vettoriale e testuale.
 
-Gestisce aspetti delle interazioni come:
+Converte le coordinate dello schermo in coordinate dell’area di lavoro e mantiene la cattura del puntatore durante l’interazione.
 
-- selezione
-- trascinamento
-- ridimensionamento
-- rotazione
-- panoramica
-- flussi penna/disegno
-- interazione per la modifica del testo
-- hit testing consapevole dello scope
-
-## Utilizzo
-
-Questo composable viene tipicamente abbinato a `useCanvas()` e agli helper di hit-test del renderer.
-
-```ts
-useCanvasInput(
-  canvasRef,
-  editor,
-  hitTestSectionTitle,
-  hitTestComponentLabel,
-  hitTestFrameTitle,
-)
-```
-
-## Esempio base
-
-```ts
-const canvas = useCanvas(canvasRef, editor)
-
-useCanvasInput(
-  canvasRef,
-  editor,
-  canvas.hitTestSectionTitle,
-  canvas.hitTestComponentLabel,
-  canvas.hitTestFrameTitle,
-)
-```
-
-## Esempi pratici
-
-### Traccia il movimento del cursore nello spazio canvas
-
-```ts
-useCanvasInput(
-  canvasRef,
-  editor,
-  hitTestSectionTitle,
-  hitTestComponentLabel,
-  hitTestFrameTitle,
-  (cx, cy) => {
-    console.log(cx, cy)
-  },
-)
-```
-
-## Note
-
-Questo composable è di livello inferiore rispetto alla maggior parte della logica dei pannelli. È più adatto per le shell dell'editor e i contenitori canvas.
-
-## API correlate
+## Vedi anche
 
 - [useCanvas](./use-canvas)
-- [useEditor](./use-editor)
+- [useTextEdit](./use-text-edit)

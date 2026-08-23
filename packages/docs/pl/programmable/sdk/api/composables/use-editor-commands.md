@@ -1,19 +1,19 @@
 ---
 title: useEditorCommands
-description: Buduj menu, akcje i UI napędzany poleceniami na bazie edytora.
+description: Tworzenie menu i innych elementów interfejsu na podstawie poleceń edytora.
 ---
 
 # useEditorCommands
 
-`useEditorCommands()` udostępnia warstwę zorientowaną na polecenia nad akcjami edytora.
+`useEditorCommands()` udostępnia wspólny interfejs do wykonywania poleceń edytora.
 
-Przydatny przy budowaniu:
+Przydaje się podczas tworzenia:
 
-- menu aplikacji
-- menu kontekstowych
-- pasków narzędzi
-- adapterów poleceń klawiaturowych
-- podmenu przenoszenia stron
+- menu aplikacji;
+- menu kontekstowych;
+- pasków narzędzi;
+- obsługi skrótów;
+- podmenu przenoszenia na stronę.
 
 ## Użycie
 
@@ -23,7 +23,7 @@ import { useEditorCommands } from '@open-pencil/vue'
 const { commands, menuItem, runCommand, moveSelectionToPage, otherPages } = useEditorCommands()
 ```
 
-## Podstawowy przykład
+## Przykład
 
 ```ts
 const { menuItem } = useEditorCommands()
@@ -36,16 +36,14 @@ const editMenu = [
 ]
 ```
 
-## Przykłady praktyczne
-
-### Uruchom polecenie bezpośrednio
+### Bezpośrednie wykonanie polecenia
 
 ```ts
 const { runCommand } = useEditorCommands()
 runCommand('selection.duplicate')
 ```
 
-### Zbuduj podmenu "przenieś na stronę"
+### Podmenu przenoszenia na stronę
 
 ```ts
 const { otherPages, moveSelectionToPage } = useEditorCommands()
@@ -56,7 +54,7 @@ const items = otherPages.value.map(page => ({
 }))
 ```
 
-## Powiązane API
+## Zobacz też
 
 - [useMenuModel](./use-menu-model)
 - [useSelectionState](./use-selection-state)

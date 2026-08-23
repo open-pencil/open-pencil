@@ -1,15 +1,21 @@
 ---
 title: LayoutControlsRoot
-description: Bezstanowy prymityw korzenia dla kontrolek auto-layoutu i rozmiaru.
+description: Komponent bez narzuconego wyglądu dla automatycznego układu i trybów rozmiaru.
 ---
+
+<script setup lang="ts">
+import { data } from '#docs-api/components/layout-controls-root.data'
+</script>
 
 # LayoutControlsRoot
 
-`LayoutControlsRoot` udostępnia kontrakt slotu zwracany przez `useLayout()` jako prymityw strukturalny.
+`LayoutControlsRoot` przekazuje przez slot API zwracane przez `useLayout()`.
 
-Użyj go, gdy chcesz wielokrotnie używalną powłokę kontrolek layoutu ze znacznikami należącymi do aplikacji.
+Aplikacja może wyrenderować własny panel automatycznego układu i rozmiarów, korzystając ze stanu i działań SDK.
 
-## Powiązane API
+<SdkComponentAPI :components="data.components" />
+
+## Zobacz też
 
 - [useLayout](../composables/use-layout)
-- [Przewodnik po panelach właściwości](../../guides/property-panels)
+- [Panele właściwości](../../guides/property-panels)

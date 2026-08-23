@@ -1,54 +1,35 @@
 ---
-title: Mise en page auto
-description: Layout flex et grille dans OpenPencil — direction, espacement, padding, alignement, dimensionnement et tracks CSS Grid.
+title: Disposition automatique
+description: Flexbox et CSS Grid avec direction, espacement, marges intérieures, alignement et modes de taille.
 ---
-# Mise en page auto
 
-La mise en page auto positionne automatiquement les enfants dans un cadre. Deux modes sont pris en charge : **flex** (flux horizontal/vertical) et **grille** (lignes et colonnes avec dimensionnement de pistes).
+# Disposition automatique
 
-<kbd>⇧</kbd><kbd>A</kbd> pour activer/désactiver ou envelopper la sélection.
+La disposition automatique répartit les objets enfants dans un cadre. Elle prend en charge Flexbox horizontal ou vertical et Grid avec lignes, colonnes et pistes configurables.
 
-## Direction
-- **Horizontale** — de gauche à droite
-- **Verticale** — de haut en bas
-- **Retour à la ligne** — retour quand l'espace manque
+## Activer
 
-## Espacement
-**Gap** entre enfants adjacents. **Padding** entre bord du cadre et enfants.
+- Sélectionnez un cadre et appuyez sur <kbd>⇧</kbd><kbd>A</kbd>.
+- Sélectionnez plusieurs objets libres et utilisez le même raccourci pour les placer dans un nouveau cadre.
+
+## Direction et espacement
+
+Les objets peuvent s’enchaîner horizontalement, verticalement ou revenir à la ligne. L’espacement règle la distance entre eux ; les marges intérieures règlent la distance aux bords du cadre.
 
 ## Alignement
-- **Axe principal (Justify) :** début, centre, fin, espace entre
-- **Axe transversal (Align) :** début, centre, fin, étirer
 
-## Dimensionnement enfants
-- **Fixe** — largeur/hauteur explicite
-- **Remplir** — s'étend dans l'espace disponible
-- **Ajuster** — se réduit au contenu
+L’axe principal propose début, centre, fin et espace entre les éléments. L’axe transversal propose début, centre, fin et étirement.
+
+## Taille
+
+- **Fixe :** largeur ou hauteur explicite.
+- **Remplir :** occupe l’espace disponible.
+- **Ajuster :** adapte la taille au contenu.
+
+La première modification réelle d’une dimension ne rend fixe que cet axe. Donner le focus au champ ne change pas le mode.
 
 ## CSS Grid
 
-Le layout en grille organise les enfants en lignes et colonnes avec un dimensionnement de pistes explicite.
+Grid répartit les objets en lignes et colonnes avec des tailles `fr`, `px` ou `auto`. Les espacements horizontal et vertical se règlent séparément. Chaque objet peut définir sa ligne, sa colonne et le nombre de cellules occupées.
 
-### Activer la grille
-
-Sélectionnez un cadre avec auto-layout activé et cliquez sur l'icône grille dans la barre d'outils layout pour passer de flex à grille.
-
-### Dimensionnement des pistes
-
-Définissez les pistes de colonnes et de lignes avec trois modes :
-
-- **fr** — unité fractionnaire, divise l'espace disponible proportionnellement
-- **px** — taille fixe en pixels
-- **auto** — s'adapte au contenu
-
-### Espacement de la grille
-
-Définissez des gaps horizontaux (colonnes) et verticaux (lignes) séparés entre les cellules.
-
-### Positionnement des enfants
-
-Les enfants sont placés dans les cellules de la grille automatiquement en ordre de ligne. Vous pouvez surcharger le placement avec des valeurs de début de colonne/ligne et d'étendue dans les propriétés layout de l'enfant.
-
-### Export JSX et Tailwind
-
-Les layouts en grille s'exportent en JSX avec des classes Tailwind : `grid grid-cols-3`, `gap-x-4 gap-y-2`, `col-start-2 row-span-2`.
+Le résultat peut être exporté en JSX avec des classes Tailwind.

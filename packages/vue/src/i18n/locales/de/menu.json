@@ -56,10 +56,15 @@
   "arrangeAlignMiddle": "Mittig ausrichten",
   "arrangeAlignBottom": "Unten ausrichten",
   "multiplayerCursors": "Multiplayer-Cursor",
+  "preferences": "Einstellungen",
+  "snapToGeometry": "An Geometrie ausrichten",
+  "snapToObjects": "An Objekten ausrichten",
+  "snapToPixelGrid": "Am Pixelraster ausrichten",
   "renameSelection": "Auswahl umbenennen…",
   "rulers": "Lineale",
   "settings": "Einstellungen…",
   "splitRight": "Nach rechts teilen",
   "splitDown": "Nach unten teilen",
-  "closeView": "Ansicht schließen"
+  "closeView": "Ansicht schließen",
+  "removeGuide": "Hilfslinie entfernen"
 }

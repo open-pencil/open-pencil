@@ -1,15 +1,15 @@
 ---
 layout: home
-title: OpenPencil — Open-Source Design-Editor
-description: Open-Source Figma-Alternative. Öffnet .fig-Dateien, integrierte KI, vollständig programmierbar.
+title: OpenPencil — Open-Source-Design-Editor
+description: Open-Source-Alternative zu Figma mit .fig-Unterstützung, integrierter KI und umfassender Automatisierung.
 
 hero:
   name: OpenPencil
-  text: Open-Source Design-Editor
-  tagline: Öffnet Figma-Dateien. Integrierte KI. Vollständig programmierbar. Für immer kostenlos.
+  text: Open-Source-Design-Editor
+  tagline: Öffnet Figma-Dateien. Integrierte KI. Vollständig programmierbar. Und ein Werkzeugkasten für eigene Editoren.
   actions:
     - theme: brand
-      text: Online testen
+      text: Online ausprobieren
       link: https://app.openpencil.dev/demo
     - theme: alt
       text: Herunterladen
@@ -20,21 +20,24 @@ hero:
 
 features:
   - icon: 📂
-    title: Figma-kompatibel
-    details: Öffnet .fig-Dateien nativ. Kopieren & Einfügen zwischen Figma und OpenPencil. Kiwi-Binär-Codec mit Round-Trip-Treue.
+    title: Mit Figma kompatibel
+    details: Öffnet .fig-Dateien direkt. Unterstützt Kopieren und Einfügen zwischen Figma und OpenPencil. Der Kiwi-Binärcodec erhält die Daten bei Import und Export.
   - icon: ⚡
     title: Programmierbar
-    details: Headless-CLI zum Inspizieren, Exportieren und Analysieren von .fig-Dateien. Figma Plugin API via eval. Tailwind CSS-Export. JSON-Ausgabe für CI.
+    details: CLI ohne grafische Oberfläche zum Untersuchen, Exportieren und Analysieren von .fig-Dateien. Figma Plugin API über eval, Tailwind-CSS-Export und JSON-Ausgabe für CI und Automatisierung.
+  - icon: 🧩
+    title: Mehr als nur eine App
+    details: Mit dem Vue SDK eigene Bearbeitungsoberflächen entwickeln, OpenPencil in andere Produkte einbetten oder spezialisierte Editoren auf demselben Kern aufbauen.
   - icon: 🤖
-    title: KI-nativ
-    details: Integrierter Chat mit 90 Werkzeugen — Formen erstellen, Stile setzen, Layout verwalten, Tokens analysieren. MCP-Server für Claude Code, Cursor, Windsurf.
+    title: Integrierte KI
+    details: Chat mit 90 Werkzeugen zum Erstellen von Formen, Ändern von Stilen, Verwalten von Anordnungen und Analysieren von Designtoken. MCP-Server für Claude Code, Cursor und Windsurf.
   - icon: 📖
     title: Open Source
-    details: MIT-Lizenz. Alles lesen und ändern — den Editor, die Engine, den Datei-Codec, die CLI.
+    details: MIT-Lizenz. Editor, Engine, Dateicodec und CLI lassen sich vollständig einsehen und verändern.
   - icon: 🖥️
-    title: Kostenlos & lokal
-    details: Kein Konto, kein Server, kein Internet nötig. ~7 MB Desktop-App via Homebrew oder die Web-App nutzen.
+    title: Kostenlos und lokal
+    details: Kein Konto, kein Server und keine Internetverbindung erforderlich. Desktop-App mit etwa 7 MB über Homebrew oder direkt als Web-App.
   - icon: 👥
-    title: Echtzeit-Kollaboration
-    details: P2P via WebRTC — kein Server. Link teilen, gemeinsam bearbeiten mit Live-Cursorn und Folgemodus.
+    title: Zusammenarbeit in Echtzeit
+    details: Direkte Verbindung über WebRTC ohne zentralen Server. Link teilen und gemeinsam mit Teilnehmerzeigern und Ansichtsverfolgung bearbeiten.
 ---

@@ -1,25 +1,20 @@
 ---
 title: useColorVariableBinding
-description: Pomocnik powiązania zmiennych dla edytorów kolorów wypełnień i obrysów.
+description: Powiązanie koloru zalewu lub obwiedni ze zmienną.
 ---
 
 # useColorVariableBinding
 
-`useColorVariableBinding(kind)` udostępnia pomocniki wyszukiwania, wiązania i odwiązania dla zmiennych kolorów używanych przez edytory wypełnień i obrysów.
+`useColorVariableBinding(kind)` udostępnia funkcje wyszukiwania, ustawiania i usuwania powiązania zmiennych kolorów w zalewach lub obwiedniach.
 
-Użyj go przy budowaniu UI kolorów, które muszą łączyć wypełnienia lub obrysy ze zmiennymi projektowymi.
-
-## Użycie
+Użyj composable w elementach sterujących kolorem obsługujących zmienne projektu.
 
 ```ts
-import { useColorVariableBinding } from '@open-pencil/vue'
-
 const fillBinding = useColorVariableBinding('fills')
 const strokeBinding = useColorVariableBinding('strokes')
 ```
 
-## Powiązane API
+## Zobacz też
 
 - [useFillControls](../composables/use-fill-controls)
 - [useStrokeControls](../composables/use-stroke-controls)
-- [FillRoot](/programmable/sdk/api/components/fill-root)

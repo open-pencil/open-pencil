@@ -1,98 +1,53 @@
 ---
-title: Inspecter des fichiers
-description: Parcourez les arborescences de nœuds, recherchez par nom ou type, et examinez les propriétés depuis le terminal.
+title: Examiner des fichiers avec la CLI
+description: Consulter pages, objets, hiérarchies, variables et formats des documents `.fig`.
 ---
 
-# Inspecter des fichiers
+# Examiner des fichiers avec la CLI
 
-Le CLI vous permet d'explorer des fichiers `.fig` sans ouvrir l'éditeur. Chaque commande fonctionne aussi sur l'application en cours d'exécution — il suffit d'omettre l'argument fichier.
-
-::: tip Installation
-```sh
-npm install -g @open-pencil/cli
-# ou
-brew install open-pencil/tap/open-pencil
-```
-:::
-
-## Informations sur le document
-
-Obtenez un aperçu rapide — nombre de pages, nombre total de nœuds, polices utilisées, taille du fichier :
+La CLI permet de comprendre la structure d’un fichier sans ouvrir l’éditeur.
 
 ```sh
-openpencil info design.fig
+bun open-pencil info design.fig
+bun open-pencil pages design.fig
+bun open-pencil tree design.fig
 ```
 
-## Arborescence des nœuds
+## Résumé
 
-Affichez la hiérarchie complète des nœuds :
+`info` affiche le format, la version, le nombre de pages et d’objets, la taille de la zone de travail, les polices, les variables et les principales métadonnées.
+
+## Pages et arbre
+
+`pages` énumère les pages. `tree` affiche la hiérarchie et peut limiter la profondeur, la page ou le nombre de résultats.
+
+## Rechercher des objets
+
+`find` recherche par nom, type ou autres critères.
 
 ```sh
-openpencil tree design.fig
+bun open-pencil find design.fig --name Button
+bun open-pencil find design.fig --type TEXT
 ```
 
-```
-[0] [page] "Getting started" (0:46566)
-  [0] [section] "" (0:46567)
-    [0] [frame] "Body" (0:46568)
-      [0] [frame] "Introduction" (0:46569)
-        [0] [frame] "Introduction Card" (0:46570)
-          [0] [frame] "Guidance" (0:46571)
-```
+## Afficher un objet
 
-## Trouver des nœuds
-
-Rechercher par type :
-
-```sh
-openpencil find design.fig --type TEXT
-```
-
-Rechercher par nom :
-
-```sh
-openpencil find design.fig --name "Button"
-```
-
-Les deux options peuvent être combinées pour affiner les résultats.
-
-## Détails d'un nœud
-
-Inspectez toutes les propriétés d'un nœud spécifique par son identifiant :
-
-```sh
-openpencil node design.fig --id 1:23
-```
-
-## Pages
-
-Listez toutes les pages du document :
-
-```sh
-openpencil pages design.fig
-```
+`node` affiche les propriétés de l’identifiant indiqué, notamment la géométrie, le style, les relations et les données propres à son type.
 
 ## Variables
 
-Listez les variables de design et leurs collections :
+`variables` énumère collections, modes, types et valeurs.
 
-```sh
-openpencil variables design.fig
-```
+## Formats
 
-## Mode application en direct
-
-Quand l'application de bureau est en cours d'exécution, omettez l'argument fichier — le CLI se connecte via RPC et opère sur le canevas en direct :
-
-```sh
-openpencil tree              # inspecter le document en direct
-openpencil eval -c "..."     # interroger l'éditeur
-```
+`formats` affiche les formats enregistrés et leurs capacités de lecture et d’écriture.
 
 ## Sortie JSON
 
-Toutes les commandes supportent `--json` pour une sortie lisible par machine — redirigez vers `jq`, alimentez des scripts CI, ou traitez avec d'autres outils :
+Les commandes de consultation acceptent `--json`, adapté à `jq`, la CI et aux programmes qui nécessitent une sortie stable et exploitable par une machine.
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+bun open-pencil pages design.fig --json | jq '.[].name'
 ```
+
+Utilisez `bun open-pencil --help` ou ajoutez `--help` à une sous-commande pour voir toutes les options.

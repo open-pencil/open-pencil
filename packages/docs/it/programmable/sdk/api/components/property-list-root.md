@@ -1,36 +1,15 @@
 ---
 title: PropertyListRoot
-description: Primitiva strutturale headless per UI di lista di riempimenti, tratti ed effetti.
+description: Elenco controllato per riempimenti, contorni, effetti e altre proprietà in forma di array.
 ---
 
 # PropertyListRoot
 
-`PropertyListRoot` è una primitiva strutturale headless per editor di proprietà basati su array.
+`PropertyListRoot` coordina proprietà memorizzate come array. Riceve elementi e stato misto tramite proprietà, emette modifiche e fornisce azioni per aggiungere, eliminare, sostituire, aggiornare e cambiare visibilità.
 
-È destinata a UI di proprietà come:
+Il collegamento con selezione e cronologia passa da `useEditorPropertyList()` o da un adattatore dell’applicazione.
 
-- riempimenti
-- tratti
-- effetti
+## Vedi anche
 
-Fornisce slot prop per:
-
-- gli elementi correnti
-- il rilevamento dello stato misto
-- operazioni di aggiunta/rimozione/aggiornamento/patch
-- attivazione/disattivazione della visibilità per elemento
-
-## Utilizzo
-
-```vue
-<PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
-  <div v-for="(fill, index) in items" :key="index">
-    <button @click="remove(index)">Rimuovi</button>
-  </div>
-  <button @click="add(defaultFill)">Aggiungi riempimento</button>
-</PropertyListRoot>
-```
-
-## API correlate
-
-- [Panoramica API SDK](../)
+- [PropertyListItem](./property-list-item)
+- [usePropertyList](../advanced/use-property-list)

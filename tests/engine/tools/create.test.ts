@@ -64,6 +64,26 @@ describe('create_shape', () => {
   })
 })
 
+describe('combine_as_variants', () => {
+  test('rejects components from different parents', () => {
+    const { figma } = setupToolTest()
+    const firstParent = figma.createFrame()
+    const secondParent = figma.createFrame()
+    const first = figma.createComponent()
+    const second = figma.createComponent()
+    firstParent.appendChild(first)
+    secondParent.appendChild(second)
+
+    const result = getTool('combine_as_variants').execute(figma, {
+      ids: [first.id, second.id]
+    }) as ToolResult
+
+    expect(result.error).toBe('combineAsVariants requires components to share a parent')
+    expect(first.parent?.id).toBe(firstParent.id)
+    expect(second.parent?.id).toBe(secondParent.id)
+  })
+})
+
 describe('render', () => {
   test('renders JSX string', async () => {
     const { figma } = setupToolTest()

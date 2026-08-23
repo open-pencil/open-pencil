@@ -1,62 +1,15 @@
 ---
 title: GradientEditorStop
-description: Bezstanowy prymityw slotu dla jednego wiersza punktu zatrzymania gradientu.
+description: Stan i działania pojedynczego punktu gradientu.
 ---
+
+<script setup lang="ts">
+import { data } from '#docs-api/components/gradient-editor-stop.data'
+</script>
 
 # GradientEditorStop
 
-`GradientEditorStop` to bezstanowy prymityw do renderowania i edycji jednego punktu zatrzymania gradientu.
-
-## Props
-
-<SdkPropsTable
-  :rows="[
-    { name: 'stop', type: 'GradientStop', description: 'Bieżąca wartość punktu zatrzymania.', required: true },
-    { name: 'index', type: 'number', description: 'Bieżący indeks punktu zatrzymania.', required: true },
-    { name: 'active', type: 'boolean', description: 'Czy ten punkt zatrzymania jest aktywny.', required: true }
-  ]"
-/>
-
-## Zdarzenia
-
-<SdkEventsTable
-  :rows="[
-    { name: 'select', payload: 'index: number', description: 'Emitowane gdy punkt zatrzymania jest zaznaczony.' },
-    { name: 'updatePosition', payload: 'index: number, position: number', description: 'Emitowane gdy pozycja punktu zatrzymania się zmienia.' },
-    { name: 'updateColor', payload: 'index: number, hex: string', description: 'Emitowane gdy kolor punktu zatrzymania się zmienia.' },
-    { name: 'updateOpacity', payload: 'index: number, opacity: number', description: 'Emitowane gdy przezroczystość punktu zatrzymania się zmienia.' },
-    { name: 'remove', payload: 'index: number', description: 'Emitowane gdy punkt zatrzymania jest usuwany.' }
-  ]"
-/>
-
-## Sloty
-
-<SdkSlotsTable
-  :rows="[
-    { name: 'default', props: 'stan punktu zatrzymania + obsługa aktualizacji', description: 'Pełny kontrakt renderowania punktu zatrzymania gradientu.' }
-  ]"
-/>
-
-### Właściwości slotu default
-
-```ts
-{
-  stop: GradientStop
-  index: number
-  active: boolean
-  positionPercent: number
-  opacityPercent: number
-  hex: string
-  css: string
-  select: () => void
-  updatePosition: (position: number) => void
-  updateColor: (hex: string) => void
-  updateOpacity: (opacity: number) => void
-  remove: () => void
-}
-```
-
-## Przykład
+`GradientEditorStop` udostępnia położenie, przezroczystość, kolor i stan aktywności punktu gradientu oraz działania aktualizacji i usuwania.
 
 ```vue
 <GradientEditorStop :stop="stop" :index="index" :active="active" v-slot="ctx">
@@ -64,7 +17,9 @@ description: Bezstanowy prymityw slotu dla jednego wiersza punktu zatrzymania gr
 </GradientEditorStop>
 ```
 
-## Powiązane API
+<SdkComponentAPI :components="data.components" />
+
+## Zobacz też
 
 - [GradientEditorRoot](./gradient-editor-root)
 - [GradientEditorBar](./gradient-editor-bar)

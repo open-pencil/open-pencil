@@ -1,6 +1,6 @@
 ---
 title: Начало работы с SDK
-description: Настройка @open-pencil/vue с createEditor, provideEditor и холстом.
+description: Подключение @open-pencil/vue, создание редактора и настройка холста.
 ---
 
 # Начало работы с SDK
@@ -11,20 +11,20 @@ description: Настройка @open-pencil/vue с createEditor, provideEditor 
 bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
 ```
 
-SDK находится в монорепозитории и также опубликован как `@open-pencil/vue`.
+SDK находится в монорепозитории OpenPencil и опубликован как пакет `@open-pencil/vue`.
 
 ```ts
 import { createEditor } from '@open-pencil/core/editor'
 import { provideEditor, useCanvas } from '@open-pencil/vue'
 ```
 
-## Концептуальная модель
+## Из чего состоит приложение
 
-Три уровня:
+В приложении на базе SDK можно выделить три уровня:
 
-1. `@open-pencil/core` — не зависящий от фреймворка движок редактора
-2. `@open-pencil/vue` — Vue-компосаблы и headless-примитивы
-3. ваше приложение — стили, маршрутизация, файловые потоки, UI под конкретный продукт
+1. `@open-pencil/core` — движок редактора, не зависящий от конкретного framework;
+2. `@open-pencil/vue` — компонуемые функции и компоненты без предустановленных стилей для Vue;
+3. ваше приложение — оформление, маршрутизация, работа с файлами и интерфейс продукта.
 
 ## Минимальная настройка
 
@@ -39,7 +39,7 @@ const editor = createEditor({
 })
 ```
 
-### 2. Передайте его в Vue
+### 2. Передайте редактор дочерним компонентам Vue
 
 ```vue
 <script setup lang="ts">
@@ -59,7 +59,7 @@ provideEditor(props.editor)
 </template>
 ```
 
-Это слой-провайдер для дерева редактора. В документации предпочтителен вызов `provideEditor()` напрямую — это актуальная поверхность API.
+`provideEditor()` делает экземпляр редактора доступным во всём расположенном ниже дереве компонентов. В документации используется прямой вызов этой функции, поскольку именно он входит в актуальный публичный API.
 
 ### 3. Подключите холст
 
@@ -80,9 +80,9 @@ useCanvas(canvasRef, editor)
 </template>
 ```
 
-## Использование компосаблов
+## Использование composables
 
-После того как редактор передан через провайдер, дочерние компоненты могут читать выделение и вызывать команды:
+После вызова `provideEditor()` дочерние компоненты могут получать сведения о выделении и выполнять команды редактора:
 
 ```ts
 import { useEditorCommands, useSelectionState } from '@open-pencil/vue'
@@ -91,7 +91,7 @@ const selection = useSelectionState()
 const commands = useEditorCommands()
 ```
 
-## Базовый пример
+## Простой пример
 
 ```vue
 <script setup lang="ts">
@@ -120,7 +120,7 @@ useCanvas(canvasRef, editor, {
 </template>
 ```
 
-## Следующие шаги
+## Что читать дальше
 
 - [Архитектура](./architecture)
 - [Справочник API](./api/)

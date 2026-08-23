@@ -1,70 +1,60 @@
 ---
-title: Scripter
-description: Exécutez du JavaScript avec l'API Figma Plugin — interrogez des nœuds, modifiez des designs en lot, créez des frames.
+title: Scripting
+description: Exécuter JavaScript avec une API compatible avec les plugins Figma pour interroger, modifier et générer des designs.
 ---
 
-# Scripter
+# Scripting
 
-`openpencil eval` vous donne accès à l'API complète Figma Plugin dans le terminal. Lisez des nœuds, modifiez des propriétés, créez des formes — puis écrivez les changements dans le fichier.
+`openpencil eval` exécute JavaScript sur un document et fournit un objet global `figma`. Cette commande convient aux modifications par lots, à l’inspection, aux données de test et à l’automatisation sans ouvrir l’interface de l’éditeur.
 
 ## Utilisation de base
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
+openpencil eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-L'option `-c` prend du JavaScript. Le global `figma` fonctionne comme l'API Figma Plugin.
+`-c` accepte JavaScript. Si le code ne commence pas par `return`, OpenPencil l’exécute dans une fonction asynchrone et renvoie le résultat éventuel.
 
-## Interroger des nœuds
+## Interroger des objets
 
 ```sh
 openpencil eval design.fig -c "
-  figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
-    .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
+  return figma.currentPage
+    .findAll((node) => node.type === 'FRAME')
+    .map((node) => ({ id: node.id, name: node.name }))
 "
 ```
 
-## Modifier et sauvegarder
+## Modifier et enregistrer
+
+`--write` ou `-w` remplace le fichier d’entrée. `--output` ou `-o` crée un autre fichier.
 
 ```sh
-openpencil eval design.fig -c "
-  figma.currentPage.children.forEach(n => n.opacity = 0.5)
-" -w
+openpencil eval design.fig -c "figma.currentPage.name = 'Updated'" -o updated.fig
 ```
 
-`-w` écrit les changements dans le fichier d'entrée. Utilisez `-o output.fig` pour écrire dans un fichier différent.
-
-## Lire depuis l'entrée standard
-
-Pour des scripts plus longs :
+## Lire le script depuis stdin
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin -w
+cat transform.js | openpencil eval design.fig --stdin --write
 ```
 
-## Mode application en direct
+## Document ouvert
 
-Omettez le fichier pour exécuter sur l'application de bureau en cours d'exécution :
+Omettez le chemin pour exécuter le script sur le document actif dans l’application de bureau.
 
-```sh
-openpencil eval -c "figma.currentPage.name"
-```
+## Sortie
 
-## API disponible
+Dans un environnement non interactif, `eval` utilise JSON par défaut. `--json` l’impose explicitement et `--quiet` ou `-q` masque la sortie lorsqu’un fichier seul est écrit.
 
-L'objet `figma` supporte :
+## API compatible
 
-- `figma.currentPage` — la page active
-- `figma.root` — la racine du document
-- `figma.createFrame()`, `figma.createRectangle()`, `figma.createEllipse()`, `figma.createText()`, etc.
-- `.findAll()`, `.findOne()` — rechercher dans les descendants
-- `.appendChild()`, `.insertChild()` — manipulation de l'arborescence
-- Tous les setters de propriétés : `.fills`, `.strokes`, `.effects`, `.opacity`, `.cornerRadius`, `.layoutMode`, `.itemSpacing`, etc.
+L’API suit le modèle de Figma Plugin API, mais agit sur SceneGraph et les formats OpenPencil. Elle couvre document, pages, création d’objets, opérations d’arbre, composants, variables et propriétés courantes.
 
-C'est la même API que celle utilisée par les plugins Figma, donc les connaissances et les extraits de code existants sont directement transférables.
+Les identifiants exacts comme `figma.currentPage`, `createFrame`, `appendChild`, `fills`, `fontSize`, `layoutMode` et `strokeWeight` restent inchangés.
 
-## Sortie JSON
+## Limites
 
-```sh
-openpencil eval design.fig -c "..." --json
-```
+Il n’existe pas encore d’équivalent complet pour `node.exportAsync()`, `node.setBoundVariable()`, `node.detachInstance()`, `figma.combineAsVariants()`, les styles de peinture/texte et toutes les opérations booléennes vectorielles.
+
+Selon le besoin, utilisez aussi la commande d’exportation, les outils du noyau ou les opérations directes de SceneGraph.

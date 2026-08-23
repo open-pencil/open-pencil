@@ -338,14 +338,20 @@ describe('Figma component property import', () => {
         id: '3:2',
         name: 'icon',
         type: 'INSTANCE_SWAP',
-        defaultValue: '4:1',
+        defaultValue: expect.any(String),
         preferredValues: ['icon/user-key']
       }
     ])
+    const defaultTarget = component?.componentPropertyDefinitions[0]?.defaultValue
+    expect(defaultTarget ? graph.getNode(defaultTarget)?.name : undefined).toBe('icon/mail')
     const sourceInstance = Array.from(graph.getAllNodes()).find(
       (node) => node.name === 'Menu item source'
     )
-    expect(sourceInstance?.componentPropertyAssignments).toEqual({ '3:2': '4:3' })
+    expect(sourceInstance?.componentPropertyAssignments).toEqual({
+      '3:2': expect.any(String)
+    })
+    const assignedTarget = sourceInstance?.componentPropertyAssignments['3:2']
+    expect(assignedTarget ? graph.getNode(assignedTarget)?.name : undefined).toBe('icon/user')
     const clone = Array.from(graph.getAllNodes()).find((node) => node.name === 'Menu item clone')
     const icon = clone?.childIds
       .map((id) => graph.getNode(id))

@@ -1,39 +1,19 @@
 ---
-title: APIs de Idioma
-description: Stores de idioma de bajo nivel y metadatos exportados por @open-pencil/vue.
+title: API de configuración regional
+description: Configurar idioma, mensajes personalizados y alternativas del SDK.
 ---
 
-# APIs de Idioma
+# API de configuración regional
 
-Además de `useI18n()`, el SDK de Vue exporta primitivos de idioma de más bajo nivel para integraciones avanzadas:
+Las API regionales permiten elegir el idioma del SDK y sustituir mensajes concretos.
 
-- `locale`
-- `localeSetting`
-- `setLocale()`
-- `AVAILABLE_LOCALES`
-- `LOCALE_LABELS`
+- `locale` contiene la configuración regional efectiva después de aplicar preferencias y alternativa.
+- `messages` contiene el catálogo resuelto.
+- `t(key, params?)` traduce una clave.
+- la configuración de la aplicación puede proporcionar catálogos parciales propios.
 
-Úsalos cuando quieras acceso directo al store, necesites integrar el estado del idioma con un shell de app más amplio, o necesites metadatos de idioma sin suscribirte al objeto de retorno completo de `useI18n()`.
+Los identificadores de claves y nombres de configuración permanecen en inglés porque forman parte de la API.
 
-## Uso
-
-```ts
-import {
-  locale,
-  localeSetting,
-  setLocale,
-  AVAILABLE_LOCALES,
-  LOCALE_LABELS,
-} from '@open-pencil/vue'
-```
-
-## Notas
-
-- `locale` es el store del idioma activo resuelto
-- `localeSetting` es el store de la preferencia persistida del usuario
-- `setLocale()` actualiza la preferencia y el idioma activo conjuntamente
-- `AVAILABLE_LOCALES` y `LOCALE_LABELS` son útiles para selectores personalizados
-
-## APIs relacionadas
+## Véase también
 
 - [useI18n](../composables/use-i18n)

@@ -1,13 +1,13 @@
 ---
 title: provideEditor
-description: Eine OpenPencil-Editor-Instanz über Injection einem Vue-Teilbaum bereitstellen.
+description: Eine OpenPencil-Editor-Instanz über Vue dependency injection bereitstellen.
 ---
 
 # provideEditor
 
-`provideEditor(editor)` macht einen OpenPencil-Editor für nachgelagerte Composables und headless Primitive über Vue-Injection verfügbar.
+`provideEditor(editor)` stellt den Editor für composables und headless components weiter unten im Vue component tree bereit.
 
-Dies ist die Grundlage für `useEditor()`.
+`useEditor()` basiert auf diesem Context.
 
 ## Verwendung
 
@@ -17,7 +17,7 @@ import { provideEditor } from '@open-pencil/vue'
 provideEditor(editor)
 ```
 
-## Einfaches Beispiel
+## Beispiel
 
 ```vue
 <script setup lang="ts">
@@ -39,8 +39,8 @@ provideEditor(props.editor)
 
 ## Hinweise
 
-Das aktuelle SDK verwendet `provideEditor()` und `useEditor()` direkt. Einige ältere Beispiele und Fehlermeldungen verweisen noch auf eine `OpenPencilProvider`-Komponente, aber das Injektionsmodell ist die eigentliche API-Oberfläche, die in Dokumentation und App-Code bevorzugt werden sollte.
+Das aktuelle SDK verwendet direkt `provideEditor()` und `useEditor()`. Ältere Beispiele und einzelne Fehlermeldungen erwähnen noch `OpenPencilProvider`; dieser Component gehört jedoch nicht zum aktuellen öffentlichen API.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useEditor](./use-editor)

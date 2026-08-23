@@ -1,25 +1,19 @@
 ---
 title: GradientEditorRoot
-description: Headless-корневой примитив для редактирования точек градиента.
+description: Состояние и действия для редактирования точек градиента.
 ---
 
 # GradientEditorRoot
 
-`GradientEditorRoot` — headless-корневой примитив для редактирования градиента.
+`GradientEditorRoot` управляет активной точкой, типом градиента, добавлением, удалением и изменением точек, цветом активной точки и фоном полосы градиента.
 
-Управляет:
-
-- состоянием активной точки
-- переключением подтипа
-- логикой добавления/удаления/обновления точек
-- редактированием цвета активной точки
-- производным фоном полосы
+Слот по умолчанию получает весь набор данных и действий, необходимый для собственного интерфейса редактора градиента.
 
 ## Props
 
 <SdkPropsTable
   :rows="[
-    { name: 'fill', type: 'Fill', description: 'Текущее значение заливки градиентом.', required: true }
+    { name: 'fill', type: 'Fill', description: 'Текущая градиентная заливка.', required: true }
   ]"
 />
 
@@ -27,39 +21,9 @@ description: Headless-корневой примитив для редактир�
 
 <SdkEventsTable
   :rows="[
-    { name: 'update', payload: 'fill: Fill', description: 'Генерируется при изменении заливки градиентом.' }
+    { name: 'update', payload: 'fill: Fill', description: 'Вызывается после изменения градиентной заливки.' }
   ]"
 />
-
-## Slots
-
-<SdkSlotsTable
-  :rows="[
-    { name: 'default', props: 'editor state + handlers', description: 'Полный контракт рендеринга редактора градиента.' }
-  ]"
-/>
-
-### Пропы слота default
-
-```ts
-{
-  stops: GradientStop[]
-  subtype: GradientSubtype
-  subtypes: Array<{ value: GradientSubtype; label: string }>
-  activeStopIndex: number
-  activeColor: Color
-  barBackground: string
-  setSubtype: (type: GradientSubtype) => void
-  selectStop: (index: number) => void
-  addStop: () => void
-  removeStop: (index: number) => void
-  updateStopPosition: (index: number, position: number) => void
-  updateStopColor: (index: number, hex: string) => void
-  updateStopOpacity: (index: number, opacity: number) => void
-  updateActiveColor: (color: Color) => void
-  dragStop: (index: number, position: number) => void
-}
-```
 
 ## Пример
 
@@ -69,7 +33,7 @@ description: Headless-корневой примитив для редактир�
 </GradientEditorRoot>
 ```
 
-## Связанные API
+## См. также
 
 - [GradientEditorBar](./gradient-editor-bar)
 - [GradientEditorStop](./gradient-editor-stop)

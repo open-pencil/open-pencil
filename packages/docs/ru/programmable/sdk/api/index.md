@@ -1,20 +1,20 @@
 ---
 title: Справочник API
-description: Справочная документация по компонентам, компосаблам и расширенным API @open-pencil/vue.
+description: Компоненты, composables и низкоуровневые API пакета @open-pencil/vue.
 ---
 
 # Справочник API
 
-Справочник Vue SDK разбит на три раздела.
+Справочник Vue SDK состоит из трёх разделов.
 
 <SdkCardGroup>
-  <SdkCard title="Компоненты" to="/programmable/sdk/api/components/" description="Headless-структурные примитивы: CanvasRoot, ToolbarRoot, FontPickerRoot, NumberFieldRoot и другие." />
-  <SdkCard title="Компосаблы" to="/programmable/sdk/api/composables/" description="Компосаблы для контекста редактора, подключения холста, выделения, команд и панелей свойств." />
-  <SdkCard title="Расширенные" to="/programmable/sdk/api/advanced/" description="Низкоуровневые хелперы, контексты примитивов и специализированные API для продвинутых интеграций." />
+  <SdkCard title="Компоненты" to="/programmable/sdk/api/components/" description="Структурные компоненты без предустановленных стилей: CanvasRoot, ToolbarRoot, FontPickerRoot, NumberFieldRoot и другие." />
+  <SdkCard title="Composables" to="/programmable/sdk/api/composables/" description="Composables для доступа к редактору, подключения холста, выделения, команд и панелей свойств." />
+  <SdkCard title="Низкоуровневые API" to="/programmable/sdk/api/advanced/" description="Вспомогательные функции, контексты компонентов и специализированные API для нестандартной интеграции." />
 </SdkCardGroup>
 
-## Рекомендуемый путь
+## С чего начать
 
-- Начните с **Компонентов**, если создаёте переиспользуемые примитивы UI редактора.
-- Начните с **Компосаблов**, если подключаете состояние и действия редактора.
-- Используйте **Расширенные** только когда нужны низкоуровневые хелперы или контексты примитивов.
+- Выберите **Components**, если создаёте переиспользуемые элементы интерфейса редактора.
+- Выберите **Composables**, если подключаете состояние редактора и действия над ним.
+- Обращайтесь к **Низкоуровневым API**, только если возможностей первых двух разделов недостаточно.

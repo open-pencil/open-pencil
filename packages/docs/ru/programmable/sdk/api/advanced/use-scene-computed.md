@@ -1,15 +1,15 @@
 ---
 title: useSceneComputed
-description: Удобная обёртка для производного состояния на основе сцены.
+description: Реактивное вычисляемое значение на основе данных SceneGraph.
 ---
 
 # useSceneComputed
 
-`useSceneComputed(fn)` — тонкая обёртка computed, используемая для явного обозначения производного состояния на основе сцены редактора в высокоуровневых компосаблах.
+`useSceneComputed(fn)` — небольшая обёртка над Vue `computed`, которая обозначает зависимость значения от данных SceneGraph редактора.
 
-Используйте его, когда нужно наглядное computed-состояние, явно зависящее от данных сцены редактора.
+Используйте её в других composables, вычисляющих значения по объектам документа.
 
-## Связанные API
+## См. также
 
 - [useSelectionState](../composables/use-selection-state)
 - [useSelectionCapabilities](../composables/use-selection-capabilities)

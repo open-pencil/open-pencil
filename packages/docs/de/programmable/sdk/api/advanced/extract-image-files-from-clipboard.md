@@ -1,15 +1,15 @@
 ---
 title: extractImageFilesFromClipboard
-description: Zwischenablage-Utility zum Extrahieren akzeptierter Bilddateien.
+description: Unterstützte Image files aus einem ClipboardEvent lesen.
 ---
 
 # extractImageFilesFromClipboard
 
-`extractImageFilesFromClipboard(event)` filtert Zwischenablagen-Dateien auf akzeptierte Bildtypen herunter, die vom Canvas-Drop-Flow verwendet werden.
+`extractImageFilesFromClipboard(event)` gibt die Image files im Clipboard zurück und verwirft nicht unterstützte File types.
 
-Verwenden Sie es, wenn Sie Einfügen-aus-Zwischenablage-Bild-Workflows implementieren.
+Die Function eignet sich zur Implementation von Paste für Images.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useCanvasDrop](./use-canvas-drop)
 - [useCanvas](../composables/use-canvas)

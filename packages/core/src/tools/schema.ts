@@ -26,7 +26,8 @@ export interface ParamDef {
 export interface ToolDef {
   name: string
   description: string
-  documentAccess: DocumentAccess
+  documentAccess?: DocumentAccess
+  changesDocument?: boolean
   mutates?: boolean
   params: Record<string, ParamDef>
   execute: (figma: FigmaAPI, args: Record<string, unknown>) => unknown
@@ -53,12 +54,17 @@ type ResolvedParams<P extends Record<string, ParamDef>> = {
 export function defineTool<P extends Record<string, ParamDef>>(def: {
   name: string
   description: string
-  documentAccess: DocumentAccess
+  documentAccess?: DocumentAccess
+  changesDocument?: boolean
   mutates?: boolean
   params: P
   execute: (figma: FigmaAPI, args: ResolvedParams<P>) => unknown
 }): ToolDef {
   return def as ToolDef
+}
+
+export function toolChangesDocument(def: ToolDef): boolean {
+  return def.changesDocument ?? (def.documentAccess === 'modify' || def.mutates === true)
 }
 
 export class NodeNotFoundError extends Error {
@@ -72,6 +78,14 @@ export function requireNode(figma: FigmaAPI, id: string): ReturnType<FigmaAPI['g
   const node = figma.getNodeById(id)
   if (!node) throw new NodeNotFoundError(id)
   return node
+}
+
+export function requireNodes(
+  figma: FigmaAPI,
+  ids: ReadonlyArray<string>
+): FigmaNodeProxy[] | null {
+  const nodes = ids.map((id) => figma.getNodeById(id))
+  return nodes.every((node): node is FigmaNodeProxy => node !== null) ? nodes : null
 }
 
 export function nodeNotFound(id: string): { error: string } {

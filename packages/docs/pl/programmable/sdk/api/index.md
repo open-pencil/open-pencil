@@ -1,20 +1,20 @@
 ---
 title: Dokumentacja API
-description: Dokumentacja referencyjna komponentów, kompozytów i zaawansowanych API @open-pencil/vue.
+description: Komponenty, composables i niskopoziomowe API pakietu @open-pencil/vue.
 ---
 
 # Dokumentacja API
 
-Dokumentacja Vue SDK jest zorganizowana w trzy sekcje.
+Dokumentacja Vue SDK składa się z trzech sekcji.
 
 <SdkCardGroup>
-  <SdkCard title="Komponenty" to="/programmable/sdk/api/components/" description="Bezstanowe prymitywy strukturalne jak CanvasRoot, ToolbarRoot, FontPickerRoot i NumberFieldRoot." />
-  <SdkCard title="Kompozyty" to="/programmable/sdk/api/composables/" description="Kompozyty zorientowane na edytor dla kontekstu, okablowania kanvasu, selekcji, poleceń i paneli właściwości." />
-  <SdkCard title="Zaawansowane" to="/programmable/sdk/api/advanced/" description="Pomocniki niższego poziomu, konteksty prymitywów i wyspecjalizowane API dla zaawansowanych integracji." />
+  <SdkCard title="Komponenty" to="/programmable/sdk/api/components/" description="Strukturalne komponenty bez narzuconego wyglądu, takie jak CanvasRoot, ToolbarRoot, FontPickerRoot i NumberFieldRoot." />
+  <SdkCard title="Composables" to="/programmable/sdk/api/composables/" description="Composables zapewniające dostęp do edytora, obszaru roboczego, zaznaczenia, poleceń i paneli właściwości." />
+  <SdkCard title="Niskopoziomowe API" to="/programmable/sdk/api/advanced/" description="Funkcje pomocnicze, konteksty komponentów i wyspecjalizowane API do niestandardowych integracji." />
 </SdkCardGroup>
 
-## Sugerowana ścieżka
+## Od czego zacząć
 
-- Zacznij od **Komponentów**, jeśli budujesz wielokrotnie używalne prymitywy UI edytora.
-- Zacznij od **Kompozytów**, jeśli okablowujesz stan edytora i akcje.
-- Używaj **Zaawansowanych** tylko wtedy, gdy potrzebujesz pomocników niższego poziomu lub kontekstów prymitywów.
+- Wybierz **Komponenty**, jeśli tworzysz elementy interfejsu edytora przeznaczone do ponownego użycia.
+- Wybierz **Composables**, jeśli podłączasz stan edytora i operacje na nim.
+- Sięgaj po **Niskopoziomowe API** tylko wtedy, gdy możliwości dwóch pierwszych sekcji nie wystarczają.

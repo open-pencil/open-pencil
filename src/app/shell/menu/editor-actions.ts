@@ -1,6 +1,7 @@
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { setSnappingPreference } from '@/app/settings/preferences/apply'
 
 type TextFormatUpdates = {
   fontWeight?: number
@@ -62,6 +63,12 @@ export function createSharedEditorMenuActions(
       store.state.showRemoteCursors = !store.state.showRemoteCursors
       store.requestRepaint()
     },
+    'snap-geometry': () =>
+      setSnappingPreference('geometry', !store.state.snappingPreferences.geometry),
+    'snap-objects': () =>
+      setSnappingPreference('objects', !store.state.snappingPreferences.objects),
+    'snap-pixel-grid': () =>
+      setSnappingPreference('pixelGrid', !store.state.snappingPreferences.pixelGrid),
     'toggle-ui': () => {
       store.state.showUI = !store.state.showUI
     },

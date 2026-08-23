@@ -2,6 +2,7 @@ import type { Canvas } from 'canvaskit-wasm'
 
 import { readEffectiveFigmaRawField } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { layoutGuideSections } from '@open-pencil/scene-graph/layout-guides'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { SELECTION_COLOR } from '#core/constants'
@@ -74,41 +75,20 @@ function gridGeometry(grid: RawLayoutGrid): GridGeometry | null {
   }
 }
 
-function gridSectionSize(nodeSize: number, grid: GridGeometry): number {
-  if (grid.alignment !== 'STRETCH') return grid.sectionSize
-  return (nodeSize - grid.offset * 2 - Math.max(0, grid.count - 1) * grid.gutterSize) / grid.count
-}
-
-function gridStart(nodeSize: number, grid: GridGeometry): number {
-  const sectionSize = gridSectionSize(nodeSize, grid)
-  const span = grid.count * sectionSize + Math.max(0, grid.count - 1) * grid.gutterSize
-  if (grid.alignment === 'CENTER') return (nodeSize - span) / 2 + grid.offset
-  if (grid.alignment === 'MAX') return nodeSize - span - grid.offset
-  return grid.offset
-}
-
 function drawColumnGrid(
   r: SkiaRenderer,
   canvas: Canvas,
   node: SceneNode,
   grid: GridGeometry
 ): void {
-  const sectionSize = gridSectionSize(node.width, grid)
-  if (sectionSize <= 0) return
-  const x0 = gridStart(node.width, grid)
-  for (let index = 0; index < grid.count; index++) {
-    const x = x0 + index * (sectionSize + grid.gutterSize)
-    canvas.drawRect(r.ck.LTRBRect(x, 0, x + sectionSize, node.height), r.auxFill)
+  for (const section of layoutGuideSections(node, grid)) {
+    canvas.drawRect(r.ck.LTRBRect(section.start, 0, section.end, node.height), r.auxFill)
   }
 }
 
 function drawRowGrid(r: SkiaRenderer, canvas: Canvas, node: SceneNode, grid: GridGeometry): void {
-  const sectionSize = gridSectionSize(node.height, grid)
-  if (sectionSize <= 0) return
-  const y0 = gridStart(node.height, grid)
-  for (let index = 0; index < grid.count; index++) {
-    const y = y0 + index * (sectionSize + grid.gutterSize)
-    canvas.drawRect(r.ck.LTRBRect(0, y, node.width, y + sectionSize), r.auxFill)
+  for (const section of layoutGuideSections(node, grid)) {
+    canvas.drawRect(r.ck.LTRBRect(0, section.start, node.width, section.end), r.auxFill)
   }
 }
 

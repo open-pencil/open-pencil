@@ -11,6 +11,7 @@ export type FigmaVectorNode = FigmaNodeProxy & VectorNode
 export type FigmaPolygonNode = FigmaNodeProxy & PolygonNode
 export type FigmaStarNode = FigmaNodeProxy & StarNode
 export type FigmaComponentNode = FigmaNodeProxy & ComponentNode
+export type FigmaComponentSetNode = FigmaNodeProxy & ComponentSetNode
 export type FigmaSectionNode = FigmaNodeProxy & SectionNode
 export type FigmaGroupNode = FigmaNodeProxy & GroupNode
 export type FigmaBooleanOperationNode = FigmaNodeProxy & BooleanOperationNode

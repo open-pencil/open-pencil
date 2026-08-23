@@ -131,7 +131,7 @@ const cursor = computed(() => toolCursor(store.state.activeTool, cursorOverride.
 
 <template>
   <ContextMenuRoot :modal="false">
-    <ContextMenuTrigger as-child @contextmenu="selectAtContextPoint">
+    <ContextMenuTrigger as-child @contextmenu.capture="selectAtContextPoint">
       <div
         data-test-id="canvas-area"
         :data-pane-id="paneId"

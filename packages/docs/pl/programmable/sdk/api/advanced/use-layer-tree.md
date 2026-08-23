@@ -1,15 +1,15 @@
 ---
 title: useLayerTree
-description: Pomocnik kontekstu prymitywu dla potomków LayerTreeRoot.
+description: Dostęp do kontekstu udostępnionego przez LayerTreeRoot.
 ---
 
 # useLayerTree
 
-`useLayerTree()` odczytuje lokalny kontekst drzewa warstw dostarczany przez `LayerTreeRoot`.
+`useLayerTree()` zwraca kontekst najbliższego `LayerTreeRoot`.
 
-Użyj go wewnątrz niestandardowych potomków drzewa warstw, które potrzebują dostępu do elementów drzewa, stanu selekcji, stanu rozwinięcia lub akcji wiersza.
+Użyj composable we własnych komponentach potomnych wymagających elementów drzewa, zaznaczenia, rozwiniętych gałęzi lub działań wierszy.
 
-## Powiązane API
+## Zobacz też
 
 - [LayerTreeRoot](../components/layer-tree-root)
 - [LayerTreeItem](../components/layer-tree-item)

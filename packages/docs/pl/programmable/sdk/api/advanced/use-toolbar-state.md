@@ -1,15 +1,15 @@
 ---
 title: useToolbarState
-description: Pomocnik stanu paska narzędzi zorientowany na prezentację dla stronicowania kategorii mobilnych.
+description: Pagination categories w toolbar na małych viewport.
 ---
 
 # useToolbarState
 
-`useToolbarState()` zwraca stan stronicowania kategorii mobilnych i pomocniki jak `goPrev()` i `goNext()` dla responsywnych powłok pasków narzędzi.
+`useToolbarState()` zwraca state bieżącej category oraz functions `goPrev()` i `goNext()` służące do przechodzenia między groups tools na małych ekranach.
 
-Użyj go przy budowaniu layoutów pasków narzędzi na bazie `ToolbarRoot`.
+Użyj composable podczas budowania responsive toolbar opartego na `ToolbarRoot`.
 
-## Powiązane API
+## Zobacz też
 
 - [ToolbarRoot](../components/toolbar-root)
 - [ToolbarItem](../components/toolbar-item)

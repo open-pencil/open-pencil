@@ -1,64 +1,22 @@
 ---
 title: useLayout
-description: Trabaja con auto-layout, tamaño, relleno, alineación y pistas de cuadrícula.
+description: Gestionar disposición automática, tamaño, relleno, alineación y pistas de Grid.
 ---
 
 # useLayout
 
-`useLayout()` es el composable de control principal para los paneles relacionados con el layout.
+`useLayout()` proporciona estado y acciones para paneles de disposición:
 
-Expone estado y acciones para:
+- modo y dirección;
+- separación y relleno;
+- alineación y distribución;
+- modos fijo, rellenar y ajustar;
+- salto de línea;
+- filas, columnas y pistas de Grid.
 
-- modo flex vs grid
-- tamaño de ancho/alto
-- relleno
-- alineación
-- edición de pistas de plantilla de cuadrícula
+Las acciones actualizan la selección mediante la integración del editor y participan en deshacer.
 
-## Uso
+## Véase también
 
-```ts
-import { useLayout } from '@open-pencil/vue'
-
-const layout = useLayout()
-```
-
-## Ejemplo básico
-
-```ts
-const {
-  isGrid,
-  isFlex,
-  widthSizing,
-  heightSizing,
-  setAxisSizing,
-  updateAxisSize,
-  commitAxisSize,
-} = useLayout()
-```
-
-## Ejemplos prácticos
-
-### Alternar entre relleno uniforme e individual
-
-```ts
-layout.toggleIndividualPadding()
-```
-
-### Actualizar pistas de cuadrícula
-
-```ts
-layout.updateGridTrack('gridTemplateColumns', 0, { sizing: 'FIXED', value: 240 })
-layout.addTrack('gridTemplateRows')
-```
-
-### Cambiar la alineación
-
-```ts
-layout.setAlignment('CENTER', 'MAX')
-```
-
-## APIs relacionadas
-
-- [usePosition](./use-position)
-- [useEditor](./use-editor)
+- [LayoutControlsRoot](../components/layout-controls-root)
+- [Disposición automática](/user-guide/auto-layout)

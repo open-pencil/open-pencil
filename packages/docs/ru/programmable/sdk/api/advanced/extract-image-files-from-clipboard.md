@@ -1,15 +1,15 @@
 ---
 title: extractImageFilesFromClipboard
-description: Утилита буфера обмена для извлечения принятых файлов изображений.
+description: Извлечение поддерживаемых image files из clipboard event.
 ---
 
 # extractImageFilesFromClipboard
 
-`extractImageFilesFromClipboard(event)` фильтрует файлы буфера обмена до принятых типов изображений, используемых в потоке сброса на холст.
+`extractImageFilesFromClipboard(event)` получает files из clipboard и оставляет только image types, поддерживаемые canvas drop flow.
 
-Используйте при реализации рабочих процессов вставки изображений из буфера обмена.
+Используйте function при вставке изображений из clipboard.
 
-## Связанные API
+## См. также
 
 - [useCanvasDrop](./use-canvas-drop)
 - [useCanvas](../composables/use-canvas)

@@ -14,7 +14,9 @@ import { MCP_CORS_HEADERS, MCP_CORS_METHODS, MCP_EXPOSED_HEADERS } from '#mcp/ht
 import type { RPCJSONObject } from '#mcp/json'
 import { preprocessRPC } from '#mcp/jsx-preprocess'
 import { createMCPSessionManager } from '#mcp/server/sessions'
-import type { MCPToolCatalogEntry } from '#mcp/tool/catalog'
+import { createToolDescriptors } from '#mcp/tool/manifest'
+import type { ToolDescriptor, ToolPolicy } from '#mcp/tool/metadata'
+import { applyToolPolicy } from '#mcp/tool/policy'
 import { registerTools } from '#mcp/tool/registration'
 
 import packageJSON from '../package.json' with { type: 'json' }
@@ -106,9 +108,9 @@ function createHonoApp(options: {
   browserRPC: ReturnType<typeof createBrowserRPCBridge>
   mcpSessions: ReturnType<typeof createMCPSessionManager>
   sendToBrowser: (msg: RPCJSONObject) => Promise<unknown>
-  toolCatalog: MCPToolCatalogEntry[]
+  toolDescriptors: ToolDescriptor[]
 }): Hono {
-  const { authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser, toolCatalog } = options
+  const { authToken, corsOrigin, browserRPC, mcpSessions, sendToBrowser, toolDescriptors } = options
 
   const app = new Hono()
 
@@ -124,15 +126,17 @@ function createHonoApp(options: {
     )
   }
 
-  app.get('/health', async (c) =>
-    c.json({
+  app.get('/health', async (c) => {
+    const provided = bearerToken(c.req.header('authorization'))
+    const canInspectConfiguration = authToken === null || isAuthorized(provided, authToken)
+    return c.json({
       status: browserRPC.isConnected() ? 'ok' : 'no_app',
       version: MCP_VERSION,
       installCommand: await mcpInstallCommand(),
       authRequired: authToken !== null,
-      tools: toolCatalog
+      ...(canInspectConfiguration ? { tools: toolDescriptors } : {})
     })
-  )
+  })
 
   app.use('/rpc', async (c, next) => {
     // When authToken is null (operator explicitly disabled auth), skip token check —
@@ -280,8 +284,10 @@ function wireConnectionHandling(
 
 function buildServerContext(options: ServerOptions) {
   const httpPort = options.httpPort ?? 7600
-  const enableEval = options.enableEval ?? false
-  const disabledTools = [...new Set(options.disabledTools)]
+  const toolPolicy: ToolPolicy = {
+    allowEval: options.enableEval ?? false,
+    disabledTools: [...new Set(options.disabledTools)]
+  }
   const mcpRoot = options.mcpRoot ?? null
   // Auto-generated so all transports require auth by default. Override via OPENPENCIL_MCP_AUTH_TOKEN or authToken option.
   // Pass authToken: null explicitly to disable auth entirely.
@@ -305,19 +311,14 @@ function buildServerContext(options: ServerOptions) {
   const mcpSessions = createMCPSessionManager({
     serverVersion: MCP_VERSION,
     registerTools: (mcpServer: McpServer) =>
-      registerTools(mcpServer, { disabledTools, enableEval, mcpRoot, sendRPC: sendToBrowser })
+      registerTools(mcpServer, { policy: toolPolicy, mcpRoot, sendRPC: sendToBrowser })
   })
   const browserRPC = createBrowserRPCBridge({
     authToken,
     onConnectionChange: mcpSessions.notifyToolsChanged
   })
   const sendToBrowser = browserRPC.sendRPC
-  const toolCatalog = registerTools(null, {
-    disabledTools,
-    enableEval,
-    mcpRoot,
-    sendRPC: sendToBrowser
-  })
+  const toolDescriptors = applyToolPolicy(createToolDescriptors(mcpRoot !== null), toolPolicy)
 
   const app = createHonoApp({
     authToken,
@@ -325,7 +326,7 @@ function buildServerContext(options: ServerOptions) {
     browserRPC,
     mcpSessions,
     sendToBrowser,
-    toolCatalog
+    toolDescriptors
   })
   const wss = new WebSocketServer({ noServer: true })
 
@@ -338,7 +339,7 @@ function buildServerContext(options: ServerOptions) {
     app,
     wss,
     authToken,
-    disabledTools
+    disabledTools: toolPolicy.disabledTools
   }
 }
 

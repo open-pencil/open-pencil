@@ -1,97 +1,49 @@
 ---
-title: Auto-Layout
-description: Flex- und Grid-Layout in OpenPencil — Richtung, Abstand, Polsterung, Ausrichtung, Kindgröße und CSS-Grid-Tracks.
+title: Automatische Anordnung
+description: Flexbox und CSS Grid mit Richtung, Abstand, Innenabstand, Ausrichtung und Größenmodi.
 ---
 
-# Auto-Layout
+# Automatische Anordnung
 
-Auto-Layout positioniert Kinder automatisch innerhalb eines Frames. Es unterstützt zwei Modi: **Flex** (horizontaler/vertikaler Fluss) und **Grid** (Zeilen und Spalten mit Track-Größen).
+Die automatische Anordnung verteilt untergeordnete Objekte innerhalb eines Rahmens. Verfügbar sind Flexbox mit horizontalem oder vertikalem Verlauf und Grid mit Zeilen, Spalten und einstellbaren Spuren.
 
-## Auto-Layout aktivieren
+## Aktivieren
 
-- Wählen Sie einen Frame und drücken Sie <kbd>⇧</kbd><kbd>A</kbd> (<kbd>Shift</kbd> + <kbd>A</kbd>), um Auto-Layout ein-/auszuschalten
-- Wählen Sie lose Knoten und drücken Sie <kbd>⇧</kbd><kbd>A</kbd>, um sie in einen neuen Auto-Layout-Frame zu wickeln
+- Rahmen auswählen und <kbd>⇧</kbd><kbd>A</kbd> drücken.
+- Mehrere freie Objekte auswählen und denselben Kurzbefehl verwenden, um sie in einen neuen Rahmen einzuschließen.
 
-Beim Umschließen werden Knoten nach visueller Position sortiert.
+OpenPencil sortiert die Objekte zunächst nach ihrer sichtbaren Position.
 
-## Layout-Richtung
+## Richtung
 
-- **Horizontal** — Kinder fließen von links nach rechts
-- **Vertikal** — Kinder fließen von oben nach unten
-- **Umbruch** — Kinder umbrechen bei Platzmangel
+- **Horizontal:** von links nach rechts.
+- **Vertikal:** von oben nach unten.
+- **Umbruch:** bei Platzmangel eine weitere Zeile oder Spalte.
 
 ## Abstände
 
-### Zwischenraum (Gap)
-
-Der Abstand zwischen benachbarten Kindern.
-
-### Polsterung (Padding)
-
-Der Abstand zwischen Frame-Rand und Kindern. Einheitlich oder pro Seite einstellbar.
+Der Abstand bestimmt den Raum zwischen benachbarten Objekten. Der Innenabstand bestimmt den Raum zwischen Rahmenrand und Inhalt und kann gemeinsam oder pro Seite eingestellt werden.
 
 ## Ausrichtung
 
-### Hauptachse (Justify)
+Entlang der Hauptachse sind Anfang, Mitte, Ende und gleichmäßige Verteilung verfügbar. Auf der Querachse stehen Anfang, Mitte, Ende und Strecken zur Verfügung.
 
-- **Start** — Kinder packen zum Anfang
-- **Mitte** — Kinder werden zentriert
-- **Ende** — Kinder packen zum Ende
-- **Zwischenraum** — gleicher Abstand zwischen Kindern
+## Größenmodi
 
-### Querachse (Align)
+- **Fest:** verwendet die eingestellte Breite oder Höhe.
+- **Füllen:** belegt den verfügbaren Raum.
+- **Inhalt:** richtet die Größe am Inhalt aus.
 
-- **Start** — Kinder am Anfang ausrichten
-- **Mitte** — Kinder zentrieren
-- **Ende** — Kinder am Ende ausrichten
-- **Dehnen** — Kinder füllen die Querachse
-
-## Kindgröße
-
-- **Fest** — verwendet die explizite Breite/Höhe des Kindes
-- **Füllen** — dehnt sich aus, um verfügbaren Platz zu füllen
-- **Anpassen** — schrumpft auf den Inhalt des Kindes
-
-## Ziehen zum Umordnen
-
-Innerhalb eines Auto-Layout-Frames können Sie ein Kind ziehen, um es unter Geschwistern umzuordnen.
-
-## Tastenkürzel
-
-| Aktion | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Auto-Layout umschalten | <kbd>⇧</kbd><kbd>A</kbd> | <kbd>Shift</kbd> + <kbd>A</kbd> |
+Die erste tatsächliche Änderung einer Breite oder Höhe schaltet nur diese Achse auf „Fest“. Der Fokus eines Feldes allein verändert den Modus nicht.
 
 ## CSS Grid
 
-Grid-Layout ordnet Kinder in Zeilen und Spalten mit expliziter Track-Größe an.
+Grid ordnet Objekte in Zeilen und Spalten mit festen, proportionalen oder inhaltsabhängigen Spurgrößen an. Zeilen- und Spaltenabstände können getrennt eingestellt werden. Startzeile, Startspalte und Zellenspanne lassen sich für jedes Objekt festlegen.
 
-### Grid aktivieren
+Grid wird als JSX mit Tailwind-Klassen exportiert, zum Beispiel `grid grid-cols-3`, `gap-x-4 gap-y-2` und `col-start-2 row-span-2`.
 
-Wählen Sie einen Frame mit aktiviertem Auto-Layout und klicken Sie auf das Grid-Symbol in der Layout-Werkzeugleiste, um von Flex zu Grid zu wechseln.
+## Hinweise
 
-### Track-Größen
-
-Definieren Sie Spalten- und Zeilen-Tracks mit drei Größenmodi:
-
-- **fr** — proportionale Einheit, teilt verfügbaren Platz proportional
-- **px** — feste Pixelgröße
-- **auto** — passt sich dem Inhalt an
-
-### Grid-Abstände
-
-Setzen Sie separate horizontale (Spalten-) und vertikale (Zeilen-) Abstände zwischen Zellen.
-
-### Kind-Positionierung
-
-Kinder werden automatisch in Grid-Zellen in Zeilenreihenfolge platziert. Sie können die Platzierung mit Spalten-/Zeilen-Start und Span-Werten in den Layout-Eigenschaften des Kindes überschreiben.
-
-### JSX- und Tailwind-Export
-
-Grid-Layouts werden als JSX mit Tailwind-Klassen exportiert: `grid grid-cols-3`, `gap-x-4 gap-y-2`, `col-start-2 row-span-2`.
-
-## Tipps
-
-- Verschachteln Sie Auto-Layout-Frames für komplexe responsive Layouts.
-- Verwenden Sie „Füllen", damit ein Kind den restlichen Platz einnimmt, wie `flex-grow: 1` in CSS.
-- Verwenden Sie Grid für Dashboard-Layouts, Galerien und Formulare — alles mit zweidimensionaler Struktur.
+- Verschachtelte Rahmen eignen sich für komplexe anpassungsfähige Anordnungen.
+- „Füllen“ entspricht in vielen Fällen `flex-grow: 1`.
+- Grid eignet sich für Übersichten, Galerien, Formulare und andere zweidimensionale Strukturen.

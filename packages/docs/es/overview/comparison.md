@@ -1,149 +1,123 @@
-# Open Pencil vs Penpot: Comparación de arquitectura y rendimiento
+# OpenPencil y Penpot: arquitectura y rendimiento
 
-¿Por qué comparar? OpenPencil existe porque las plataformas de diseño cerradas controlan lo que es posible. Entender las diferencias arquitectónicas muestra lo que una alternativa abierta y local-first puede hacer diferente.
+OpenPencil y Penpot son herramientas de diseño de código abierto con objetivos y arquitecturas distintos.
 
-::: info Renderer WASM de Penpot
-Penpot 2.x incluye un renderer Rust/Skia WASM (`render-wasm/v1`) activable vía flags del servidor o el parámetro URL `?wasm=true`. El renderer SVG antiguo sigue siendo el predeterminado. Esta página cubre ambos.
+::: info Renderizador WASM de Penpot
+Penpot 2.x incluye el renderizador Rust/Skia WASM `render-wasm/v1`, que se activa mediante opciones del servidor o `?wasm=true`. El renderizador SVG sigue siendo el predeterminado. La comparación tiene en cuenta ambas opciones.
 :::
 
-## 1. Escala y tamaño del código
+## 1. Tamaño del código
 
-| Métrica | Open Pencil | Penpot |
-|---------|-------------|--------|
-| LOC total | **~26.000** | **~299.000** |
-| Archivos fuente | ~143 | ~2.900 |
-| Lenguajes | TypeScript, Vue | Clojure, ClojureScript, Rust, JS, SQL, SCSS |
-| Motor de renderizado | ~3.200 LOC (TS, 10 Dateien) | 22.000 LOC (Rust/Skia WASM) |
-| Código UI | ~4.500 LOC | ~175.000 LOC (CLJS + SCSS) |
-| Backend | Ninguno (local-first) | 32.600 LOC + 151 archivos SQL |
-| Ratio LOC | **1×** | **~11×** |
+| Métrica | OpenPencil | Penpot |
+|---------|------------|--------|
+| Lines of code | **unas 26.000** | **unas 299.000** |
+| Archivos fuente | unos 143 | unos 2.900 |
+| Lenguajes | TypeScript, Vue | Clojure, ClojureScript, Rust, JavaScript, SQL, SCSS |
+| Renderizador | unas 3.200 líneas, TypeScript | 22.000 líneas, Rust/Skia WASM |
+| Interfaz | unas 4.500 líneas | unas 175.000 líneas, CLJS y SCSS |
+| Servidor | Ninguno, arquitectura local | 32.600 líneas y 151 archivos SQL |
+| Proporción | **1×** | **unas 11×** |
 
-Open Pencil es **~11× más pequeño** — y ese es el punto. No es una simplificación; es una arquitectura fundamentalmente diferente.
+OpenPencil es unas once veces más pequeño. La diferencia se debe sobre todo a la arquitectura, no únicamente al número de funciones.
 
 ## 2. Arquitectura
 
-### Open Pencil: cliente monolítico
+### OpenPencil: un solo proceso cliente
 
-```
+```text
 ┌─────────────────────────────────┐
-│         Tauri (shell nativo)    │
+│         Tauri native shell      │
 │  ┌───────────────────────────┐  │
 │  │  Vue 3 + TypeScript       │  │
-│  │  ┌─────────┐ ┌──────────┐│  │
-│  │  │  Editor  │ │  Kiwi    ││  │
-│  │  │  Store   │ │  Codec   ││  │
-│  │  └────┬─────┘ └──────────┘│  │
-│  │       │                    │  │
-│  │  ┌────▼────────────────┐  │  │
-│  │  │  Scene Graph (TS)    │  │  │
-│  │  │  Map<string, Node>   │  │  │
-│  │  └────┬────────────────┘  │  │
-│  │       │                    │  │
-│  │  ┌────▼────┐ ┌──────────┐│  │
-│  │  │  Skia   │ │  Yoga    ││  │
-│  │  │CanvasKit│ │  Layout  ││  │
-│  │  │  (WASM) │ │  (WASM)  ││  │
-│  │  └─────────┘ └──────────┘│  │
+│  │  Editor + Kiwi codec      │  │
+│  │  SceneGraph in TypeScript │  │
+│  │  CanvasKit + Yoga WASM    │  │
 │  └───────────────────────────┘  │
 └─────────────────────────────────┘
 ```
 
-**Todo en un proceso.** Sin servidor, sin base de datos, sin Docker. El grafo de escena es un `Map<string, SceneNode>` plano en TypeScript. El renderizado llama a Skia CanvasKit directamente desde TS. El layout es Yoga WASM llamado síncronamente.
+Editor, SceneGraph, códec de archivos y renderizador se ejecutan en el mismo proceso. No se necesita servidor, base de datos ni Docker. SceneGraph se almacena como `Map<string, SceneNode>`. TypeScript llama directamente a CanvasKit y Yoga WASM calcula la disposición de forma síncrona.
 
-### Penpot: cliente-servidor distribuido
+### Penpot: plataforma Client-Server
 
-```
+```text
 ┌───────────────────────────────────────────────────────┐
-│                    Docker Compose                      │
-│  ┌──────────────┐  ┌─────────────┐  ┌──────────────┐ │
-│  │   Frontend    │  │   Backend   │  │   Exporter   │ │
-│  │  ClojureScript│  │   Clojure   │  │  (Chromium)  │ │
-│  │  shadow-cljs  │  │   JVM       │  │              │ │
-│  │  ┌─────────┐ │  │  ┌────────┐ │  └──────────────┘ │
-│  │  │render-  │ │  │  │Postgres│ │                    │
-│  │  │wasm     │ │  │  │Valkey  │ │  ┌──────────────┐ │
-│  │  │(Rust→   │ │  │  │ MinIO  │ │  │   MCP        │ │
-│  │  │ Skia    │ │  │  └────────┘ │  │   Server     │ │
-│  │  │ WASM)   │ │  │             │  └──────────────┘ │
-│  │  └─────────┘ │  │             │                    │
-│  └──────────────┘  └─────────────┘                    │
+│                    Docker Compose                     │
+│  ClojureScript frontend │ Clojure/JVM backend        │
+│  Rust/Skia WASM         │ PostgreSQL, Valkey, MinIO  │
+│  Chromium exporter      │ MCP server                 │
 └───────────────────────────────────────────────────────┘
 ```
 
-**Mínimo 5+ servicios.** PostgreSQL para persistencia, Redis (Valkey) para pub/sub y caché, MinIO para almacenamiento de assets, un backend JVM, un exportador Node.js (Chromium headless), más el frontend ClojureScript.
+Un despliegue completo de Penpot incluye interfaz, servidor JVM, PostgreSQL, Valkey, MinIO y un exportador basado en Chromium sin interfaz. El entorno de desarrollo requiere Docker Compose, JVM, Node y las herramientas de Rust.
 
-### Veredicto: Arquitectura
+OpenPencil evita latencia de red, serialización entre servicios, coordinación de contenedores y consultas de base de datos en las operaciones habituales. Penpot está pensado como plataforma multiusuario alojada en un servidor; OpenPencil prioriza la edición local con baja latencia.
 
-La arquitectura de proceso único de Open Pencil elimina: latencia de red entre frontend y backend, overhead de serialización/deserialización en los límites de servicios, complejidad de orquestación de contenedores y overhead de consultas de base de datos.
+## 3. Proceso de renderizado
 
-## 3. Pipeline de renderizado
-
-### Open Pencil: TS → CanvasKit WASM (directo)
+### OpenPencil: TypeScript → CanvasKit WASM
 
 ```typescript
-// renderer.ts — llamadas directas a CanvasKit desde TypeScript
 renderSceneToCanvas(canvas, graph, pageId) {
   this.fillPaint.setColor(...)
   canvas.drawRRect(rrect, this.fillPaint)
 }
 ```
 
-- **1 cruce de límite:** TS → WASM (CanvasKit)
-- El grafo de escena vive en el heap JS — sin serialización para renderizar
-- 1.646 LOC de renderer total
+- Paso directo de TypeScript a WASM.
+- SceneGraph permanece en el JavaScript heap y no se serializa antes del Rendering.
+- El renderizador contiene unas 3.200 líneas distribuidas en módulos especializados.
 
-### Penpot: JS (compilado de CLJS) → Rust WASM → Skia
+### Penpot: ClojureScript → Rust WASM → Skia
 
+Con el renderizador WASM activado:
+
+```text
+ClojureScript → JavaScript
+  → descomposición y Binary packing en WASM linear memory
+  → Rust WASM mediante Emscripten C FFI
+  → skia-safe
+  → Skia/WebGL
 ```
-ClojureScript (compilado a JS)
-  → descomponer a primitivas + empaquetar en binario en memoria lineal WASM
-  → Rust WASM (vía Emscripten C FFI)
-  → skia-safe (bindings Rust de Skia)
-  → Skia (WebGL)
-```
 
-Cuando está deshabilitado (predeterminado), las formas se renderizan como un árbol DOM SVG. Cuando está habilitado, usa un sistema de renderizado basado en tiles con 11 superficies separadas y caché de hasta 1024 entradas.
+Sin WASM, cada Shape se renderiza como SVG DOM element mediante React/Reagent.
 
-### Veredicto: Renderizado
+En modo WASM, cada UUID se divide en cuatro `u32`, cada transformación en seis `f32`, los rellenos y contornos se codifican en binario y las propiedades básicas de una forma ocupan una estructura de 104 bytes. El renderizador usa caché de teselas, áreas de interés, once superficies y estado global mutable mediante `unsafe { STATE.as_mut() }`.
 
-| Aspecto | Open Pencil | Penpot |
-|---------|-------------|--------|
-| Límite JS→WASM | Directo (objetos TS) | Empaquetado binario (104 bytes por forma) |
-| Modelo de renderizado | Inmediato/redibujado completo | Caché por tiles |
-| Gestión de superficies | 1 superficie | 11 superficies |
-| Overhead de memoria | Bajo (sin caché de tiles) | Alto (1024 entradas caché) |
-| Complejidad de código | 1.646 LOC | 22.000 LOC |
-| Código inseguro | Ninguno | Estado global `unsafe` |
+El Tile system prepara zonas próximas al Viewport y almacena hasta 1.024 Textures. OpenPencil vuelve a renderizar toda la zona visible.
 
-## 4. Grafo de escena y modelo de datos
+| Aspecto | OpenPencil | Penpot |
+|---------|------------|--------|
+| JavaScript → WASM | Calls directos con objetos TypeScript | Structures codificadas en Binary |
+| Modelo | Render completo del Viewport visible | Tile cache |
+| Surfaces | 1 | 11 |
+| Caché adicional | Sin Tile cache | Hasta 1.024 Tiles |
+| Tamaño del renderizador | unas 3.200 líneas | 22.000 líneas |
+| Código no seguro | Ninguno | Estado global mediante `unsafe` |
 
-### Open Pencil
+El Path directo de CanvasKit necesita menos procesamiento intermedio en documentos pequeños y medianos. El Tile system de Penpot puede resultar ventajoso en documentos con más de 100.000 Shapes cuando solo se muestra una zona reducida.
+
+## 4. SceneGraph y modelo de datos
 
 ```typescript
-// Mapa plano, búsqueda O(1)
 nodes: Map<string, SceneNode>
-// 29 tipos de nodo del esquema Kiwi de Figma
-// ~390 campos por NodeChange (compatible con Figma)
 ```
 
-- Interfaces TypeScript con tipos estrictos
-- GUIDs coinciden con el formato `sessionID:localID` de Figma
-- Acceso directo a propiedades — sin capas de indirección
+OpenPencil ofrece:
 
-### Penpot
+- búsqueda por identificador en O(1);
+- 29 tipos de objeto del esquema Kiwi de Figma;
+- unos 390 campos en `NodeChange`;
+- tipos estrictos de TypeScript;
+- GUID con formato `sessionID:localID` de Figma.
 
-- Datos distribuidos en `common/` (49.600 LOC de .cljc)
-- Módulos de geometría separados para flex layout, grid layout, constraints, bounds, esquinas, efectos
-- Validación de esquema en runtime (Malli)
-- Los datos deben cruzar el límite CLJS→Rust para renderizado
+Penpot mantiene definiciones de tipos propias en Clojure/ClojureScript y Rust. Módulos distintos gestionan colores, componentes, contenedores, rellenos, Grid, modificadores, páginas y rutas. Malli valida esquemas en tiempo de ejecución y los datos de renderizado cruzan el límite CLJS → Rust.
 
-### Veredicto: Modelo de datos
+OpenPencil utiliza directamente el esquema Kiwi. Penpot debe mantener sincronizado su modelo entre varios lenguajes.
 
-Open Pencil reutiliza el esquema probado de Figma (194 definiciones Kiwi) directamente en TypeScript — cero traducción. Penpot mantiene su propio sistema de tipos a través de Clojure/ClojureScript/Rust, requiriendo sincronización manual entre los tres.
+## 5. Motor de disposición
 
-## 5. Motor de layout
-
-### Open Pencil: Yoga WASM (314 LOC)
+OpenPencil usa Yoga WASM de forma síncrona:
 
 ```typescript
 import Yoga from 'yoga-layout'
@@ -153,110 +127,86 @@ root.calculateLayout()
 applyYogaLayout(graph, frame, yogaRoot)
 ```
 
-314 líneas total. Síncrono, en proceso.
+Penpot mantiene implementaciones propias de Flex y Grid en ClojureScript y Rust WASM. Ambos motores deben producir el mismo resultado.
 
-### Penpot: Implementación dual
+OpenPencil utiliza Yoga, incluida una variante con Grid. Penpot mantiene varios miles de líneas de código propio de disposición en dos lenguajes.
 
-1. **ClojureScript** (common): `flex_layout/` (6 archivos), `grid_layout/` (5+ archivos)
-2. **Rust WASM**: `flex_layout.rs` (741 LOC), `grid_layout.rs` (843 LOC)
+## 6. Formatos y Figma
 
-Penpot mantiene **dos motores de layout independientes** que deben producir resultados idénticos.
+### OpenPencil
 
-### Veredicto: Layout
-
-Open Pencil delega en una librería probada (Yoga, usada por React Native en miles de millones de dispositivos) en 314 líneas. Penpot mantiene ~3.000+ LOC de código de layout personalizado duplicado.
-
-## 6. Formato de archivo y compatibilidad con Figma
-
-### Open Pencil
-
-- **Formato binario Kiwi nativo** — misma serialización que usa Figma internamente
-- Import directo de archivos `.fig` vía codec Kiwi extraído (2.178 LOC esquema + 551 LOC codec)
-- Soporte de pegado desde el portapapeles de Figma
-- Compatible con el protocolo multiplayer de Figma
+- Formato Binary Kiwi nativo de Figma.
+- Import directo de `.fig`.
+- Paste de Kiwi binary data desde Figma Clipboard.
+- Wire compatibility con Figma Multiplayer protocol.
 
 ### Penpot
 
-- **Archivo ZIP** (`.penpot`) con manifiestos JSON y assets binarios
-- Sin import nativo de `.fig`
-- Tres versiones de formato con sistema de migración
+- `.penpot` es un ZIP con JSON manifests, Document data, Binary assets y Thumbnails.
+- SVG renderer y Export predeterminados; WASM renderer opcional.
+- Sin Import nativo de `.fig`.
+- Varias Generations del formato con Migration system.
 
-### Veredicto: Formato de archivo
+OpenPencil lee `.fig` y Figma Clipboard directamente. Penpot necesita una vía de Import o Export separada.
 
-Open Pencil tiene una ventaja significativa — puede leer archivos Figma nativamente y pegar datos del portapapeles de Figma.
+## 7. Estado y deshacer
 
-## 7. Gestión de estado y deshacer
+OpenPencil usa comandos inversos. Las funciones de avance y retroceso guardan solo el estado necesario; los lotes agrupan varias operaciones.
 
-### Open Pencil
+Penpot usa Potok. `UpdateEvent` modifica el estado y `WatchEvent` ejecuta efectos secundarios mediante RxJS. Deshacer almacena vectores de cambios inversos, limita el historial a 50 entradas y agrupa cambios rápidos en transacciones.
 
-```typescript
-// 110 LOC — patrón de comando inverso
-class UndoManager {
-  apply(entry: UndoEntry) { entry.forward(); this.undoStack.push(entry) }
-  undo() { entry.inverse(); this.redoStack.push(entry) }
-}
-```
+Los cambios serializables encajan con la colaboración basada en servidor, pero aumentan la complejidad. El enfoque de OpenPencil es más directo para un editor de un solo proceso.
 
-110 líneas. Closures forward/inverse que capturan estado mínimo.
+## 8. Desarrollo
 
-### Penpot
+| Métrica | OpenPencil | Penpot |
+|---------|------------|--------|
+| Setup | `bun install && bun dev` | Docker Compose, JVM, Node y Rust |
+| HMR | Vite | shadow-cljs |
+| Types | Strict TypeScript | Malli runtime schemas |
+| Desktop | Tauri v2 | Browser |
+| Tecnologías principales | TypeScript y Vue | Clojure, ClojureScript, Rust y Docker |
 
-Gestión de estado usa Potok (librería tipo Redux para átomos ClojureScript). Undo almacena vectores de cambios inversos (máximo 50 entradas), con transacciones y auto-expiración tras 20 segundos.
+## 9. Rendimiento
 
-### Veredicto: Estado
+| Escenario | OpenPencil | Penpot |
+|-----------|------------|--------|
+| Arranque en frío | menos de 2 s con WASM | más de 10 s para servidor, cliente y WASM |
+| Operación habitual | Dentro de un proceso | Posible recorrido de red |
+| Fotograma | Llamada directa a Skia | CLJS → JS → WASM FFI → Skia |
+| Memoria base | unos 50 MB en la pestaña del navegador | JVM, base de datos, caché y navegador |
+| Sin conexión | Funcionamiento local completo | Requiere servidor |
+| 10.000 formas | Una pasada | Renderizador por teselas con once superficies |
 
-El enfoque de Open Pencil es más simple y con menos overhead.
+## 10. Ventajas de Penpot
 
-## 8. Experiencia de desarrollo
+1. **Colaboración mediante servidor:** cuentas, control de acceso y almacenamiento central a través de WebSockets.
+2. **Exportación PDF:** exportador independiente basado en Chromium.
+3. **Sistema de plugins:** ejecución aislada y API de plugins.
+4. **Variables de diseño:** compatibilidad integrada.
+5. **CSS Grid:** implementación propia; OpenPencil usa una variante de Yoga con Grid.
+6. **Alojamiento propio:** despliegue de una plataforma de equipo mediante Docker.
+7. **Madurez:** varios años de uso en producción.
 
-| Métrica | Open Pencil | Penpot |
-|---------|-------------|--------|
-| Setup de dev | `bun install && bun dev` | Docker Compose + JVM + Node + Rust toolchain |
-| Recarga en caliente | Vite HMR (~50ms) | shadow-cljs (segundos) |
-| Verificación de tipos | TypeScript (estricto) | Runtime (esquemas Malli) |
-| Tiempo de build | <5s (Vite) | Minutos (JVM startup + CLJS compile + Rust WASM) |
-| Barrera primera contribución | Baja (TS/Vue) | Alta (Clojure + Rust + Docker) |
-| Desktop | Tauri v2 (~5MB) | N/A (solo navegador) |
-| Pool de contratación | Masivo (devs TS/Vue) | Pequeño (ClojureScript + Rust) |
+## 11. Scripts y extensibilidad
 
-## 9. Características de rendimiento
+El comando [`eval`](/programmable/cli/scripting) proporciona una API compatible con plugins de Figma para scripts sin interfaz, operaciones por lotes y pruebas automatizadas. Además, el chat con AI, el servidor MCP y la CLI ofrecen 90 herramientas para leer, crear, modificar, estructurar, gestionar variables, editar rutas vectoriales, analizar, comparar, ejecutar operaciones booleanas y ordenar.
 
-| Escenario | Open Pencil | Penpot |
-|-----------|-------------|--------|
-| Arranque en frío | <2s (carga WASM) | 10s+ (servidor + cliente + WASM) |
-| Latencia de operación | <1ms (en proceso) | 10-50ms (round-trip red) |
-| Frame de render | Llamada Skia directa | CLJS→JS→WASM FFI→Skia |
-| Memoria base | ~50MB (pestaña navegador) | ~300MB+ (JVM + Postgres + Valkey + navegador) |
-| Capacidad offline | Completa (local-first) | Ninguna (depende del servidor) |
-| Render 10K formas | Una pasada, sin caché | Basado en tiles con 11 superficies |
-
-## 10. Lo que Penpot hace mejor
-
-1. **Colaboración servidor** — edición multiusuario centralizada con WebSockets, cuentas y control de acceso
-2. **Exportación PDF en servidor** — servicio de export Chromium headless para PDF (Open Pencil ya exporta SVG nativamente)
-3. **Sistema de plugins** — API completa con ejecución sandboxed
-4. **Tokens de diseño** — soporte nativo de design tokens
-5. **CSS Grid layout** — implementación propia (Open Pencil espera Yoga Grid)
-6. **Self-hosting** — despliegue Docker para equipos
-7. **Madurez** — años de uso en producción, probado a escala
-
-## 11. Scripting y extensibilidad
-
-OpenPencil incluye un [comando `eval`](/programmable/cli/scripting) que proporciona una API de Plugin compatible con Figma para scripting headless. Además, 90 herramientas AI disponibles vía chat integrado, servidor MCP (stdio + HTTP) y CLI. Penpot tiene sistema de plugins con ejecución sandboxed pero sin API de scripting headless ni integración MCP.
+Penpot ofrece plugins aislados, pero no una API equivalente para scripting sin interfaz ni integración MCP.
 
 ## Resumen
 
-| Dimensión | Ganador | Por qué |
-|-----------|---------|---------|
-| **Simplicidad arquitectónica** | Open Pencil | Un proceso vs 5+ servicios |
-| **Rendimiento de renderizado** | Open Pencil | CanvasKit directo vs SVG DOM (default) o WASM empaquetado |
-| **Mantenibilidad del código** | Open Pencil | ~26K LOC en 1 lenguaje vs 299K en 4+ |
-| **Compatibilidad Figma** | Open Pencil | Codec Kiwi nativo vs sin soporte .fig |
-| **Onboarding de desarrolladores** | Open Pencil | TS/Vue vs Clojure/Rust/Docker |
-| **Experiencia desktop** | Open Pencil | Tauri nativo vs solo navegador |
-| **Motor de layout** | Open Pencil | Yoga (probado) vs implementación dual personalizada |
-| **Colaboración** | Empate | Penpot: servidor con control de acceso; Open Pencil: P2P vía Trystero + Yjs, zero hosting |
-| **Self-hosting** | Penpot | Listo para Docker vs solo desktop |
-| **Madurez del ecosistema** | Penpot | Años de producción vs etapa temprana |
+| Área | Ventaja | Motivo |
+|------|---------|--------|
+| Simplicidad | OpenPencil | Un proceso en lugar de varios servicios |
+| Renderizado | OpenPencil | Ruta directa a CanvasKit |
+| Código | OpenPencil | Unas 26.000 frente a 299.000 líneas |
+| Compatibilidad con Figma | OpenPencil | Kiwi y `.fig` nativos |
+| Desarrollo | OpenPencil | TypeScript y Vue frente a Clojure, Rust y Docker |
+| Aplicación de escritorio | OpenPencil | Tauri nativo |
+| Disposición | OpenPencil | Yoga frente a dos implementaciones propias |
+| Colaboración | Ventajas distintas | Penpot: servidor y control de acceso; OpenPencil: P2P sin alojamiento |
+| Alojamiento propio | Penpot | Despliegue con Docker |
+| Madurez del ecosistema | Penpot | Años de uso en producción |
 
-Open Pencil es arquitectónicamente más ligero — un renderer CanvasKit de proceso único en ~26K LOC de TypeScript, compatible con Figma por diseño. Penpot es una plataforma full-stack con ~299K LOC. Ambos ofrecen colaboración en tiempo real (P2P vs servidor). Penpot tiene ecosistema de plugins y exportación PDF en servidor; Open Pencil tiene scripting headless compatible con Figma, **90 herramientas AI/MCP**, exportación SVG y app desktop nativa.
+OpenPencil es un editor compacto de un solo proceso con renderizador CanvasKit y compatibilidad nativa con `.fig`. Penpot es una plataforma cliente-servidor completa con Clojure, ClojureScript, Rust, bases de datos y servicios Docker. Ambos ofrecen colaboración con modelos diferentes. Penpot tiene un ecosistema de plugins y exportación PDF; OpenPencil ofrece scripting sin interfaz compatible con Figma, 90 herramientas AI/MCP, exportación SVG y una aplicación de escritorio.

@@ -1,4 +1,3 @@
-import type { UIMessage } from 'ai'
 import { computed, ref, watch } from 'vue'
 
 import { IS_TAURI } from '@open-pencil/core/constants'
@@ -13,8 +12,7 @@ import {
   designModelID,
   designProviderDefinition,
   designProviderID,
-  modelConnectionCredentialRef,
-  providerRequiresAPIKey
+  modelConnectionCredentialRef
 } from '@/app/ai/models'
 import { appCredentialServices, browserCredentialsRemembered } from '@/app/settings/credentials/app'
 import {
@@ -24,72 +22,6 @@ import {
 } from '@/app/settings/credentials/migration'
 import { setAppCredentialPersistence } from '@/app/settings/credentials/persistence'
 import type { CredentialRef, CredentialStatus } from '@/app/settings/credentials/types'
-
-const CHAT_STORAGE_KEY = 'open-pencil:ai-current-chat'
-
-export type PersistedChat = {
-  version: 1
-  messages: UIMessage[]
-  interrupted: boolean
-  updatedAt: number
-}
-
-type StoredUIMessage = {
-  id?: unknown
-  role?: unknown
-  parts?: unknown
-}
-
-function browserStorage(): Storage | null {
-  return typeof localStorage === 'undefined' ? null : localStorage
-}
-
-function isUIMessage(value: unknown): value is UIMessage {
-  if (!value || typeof value !== 'object') return false
-  const message = value as StoredUIMessage
-  return (
-    typeof message.id === 'string' &&
-    (message.role === 'user' || message.role === 'assistant' || message.role === 'system') &&
-    Array.isArray(message.parts)
-  )
-}
-
-export function readPersistedChat(target: Storage | null = browserStorage()): PersistedChat | null {
-  try {
-    const raw = target?.getItem(CHAT_STORAGE_KEY)
-    if (!raw) return null
-    const value = JSON.parse(raw) as Partial<PersistedChat>
-    if (value.version !== 1 || !Array.isArray(value.messages)) return null
-    if (!value.messages.every(isUIMessage)) return null
-    return {
-      version: 1,
-      messages: value.messages,
-      interrupted: value.interrupted === true,
-      updatedAt: typeof value.updatedAt === 'number' ? value.updatedAt : 0
-    }
-  } catch {
-    return null
-  }
-}
-
-export function writePersistedChat(
-  messages: UIMessage[],
-  interrupted: boolean,
-  target: Storage | null = browserStorage()
-): void {
-  try {
-    target?.setItem(
-      CHAT_STORAGE_KEY,
-      JSON.stringify({ version: 1, messages, interrupted, updatedAt: Date.now() })
-    )
-  } catch (error) {
-    console.warn('Failed to persist AI conversation', error)
-  }
-}
-
-export function clearPersistedChat(target: Storage | null = browserStorage()): void {
-  target?.removeItem(CHAT_STORAGE_KEY)
-}
 
 export const providerID = designProviderID
 export const modelID = designModelID
@@ -105,10 +37,13 @@ export const unsplashKeyStatus = ref<CredentialStatus>('missing')
 const credentialRevision = ref(0)
 
 export const isACPProvider = computed(() => providerID.value.startsWith('acp:'))
+export const isHarnessProvider = computed(() => providerID.value === 'harness:pi')
+export const isAgentProvider = computed(() => isACPProvider.value || isHarnessProvider.value)
 
 export const isConfigured = computed(() => {
   if (isACPProvider.value) return IS_TAURI
-  if (providerRequiresAPIKey(providerID.value) && apiKeyStatus.value !== 'configured') return false
+  if (isHarnessProvider.value) return IS_TAURI && apiKeyStatus.value === 'configured'
+  if (apiKeyStatus.value !== 'configured') return false
   const needsBaseURL =
     providerID.value === 'openai-compatible' || providerID.value === 'anthropic-compatible'
   return !needsBaseURL || Boolean(customBaseURL.value)

@@ -1,73 +1,25 @@
 ---
 title: useCanvasInput
-description: "Câble les interactions pointeur du canvas : glisser, sélectionner, redimensionner, rotation et comportement des outils."
+description: Relier pointeur, glissement, sélection, taille, rotation et outils à la zone de travail.
 ---
 
 # useCanvasInput
 
-`useCanvasInput()` connecte les interactions pointeur et souris au canvas de l'éditeur.
+`useCanvasInput(options)` relie les événements de l’élément au système de saisie de l’éditeur :
 
-Il gère les préoccupations d'interaction comme :
+- mouvement, pression et relâchement du pointeur ;
+- sélection et rectangle de sélection ;
+- déplacement de la vue et zoom ;
+- glissement des objets ;
+- redimensionnement et rotation ;
+- outils de formes, Plume, Texte et Main ;
+- édition vectorielle et textuelle.
 
-- la sélection
-- le glissement
-- le redimensionnement
-- la rotation
-- le panoramique
-- les flux de dessin au stylo
-- l'interaction de l'édition de texte
-- le test de collision sensible à la portée
+Le composable convertit les coordonnées d’écran en coordonnées de la zone de travail et conserve la capture du pointeur pendant une interaction.
 
-## Utilisation
+Cette API de bas niveau est principalement destinée aux composants qui contiennent la zone de travail d’une interface propre.
 
-Ce composable est généralement associé à `useCanvas()` et aux helpers de test de collision du renderer.
-
-```ts
-useCanvasInput(
-  canvasRef,
-  editor,
-  hitTestSectionTitle,
-  hitTestComponentLabel,
-  hitTestFrameTitle,
-)
-```
-
-## Exemple de base
-
-```ts
-const canvas = useCanvas(canvasRef, editor)
-
-useCanvasInput(
-  canvasRef,
-  editor,
-  canvas.hitTestSectionTitle,
-  canvas.hitTestComponentLabel,
-  canvas.hitTestFrameTitle,
-)
-```
-
-## Exemples pratiques
-
-### Suivre le mouvement du curseur dans l'espace canvas
-
-```ts
-useCanvasInput(
-  canvasRef,
-  editor,
-  hitTestSectionTitle,
-  hitTestComponentLabel,
-  hitTestFrameTitle,
-  (cx, cy) => {
-    console.log(cx, cy)
-  },
-)
-```
-
-## Notes
-
-Ce composable est plus bas niveau que la plupart des logiques de panneau. Il est mieux adapté aux shells d'éditeur et aux conteneurs canvas.
-
-## API associées
+## Voir aussi
 
 - [useCanvas](./use-canvas)
-- [useEditor](./use-editor)
+- [useTextEdit](./use-text-edit)

@@ -1,25 +1,31 @@
 ---
 title: Capas y páginas
-description: Gestionar capas, páginas y panel de propiedades en OpenPencil.
+description: Gestionar el árbol de capas, las páginas y el panel de propiedades.
 ---
+
 # Capas y páginas
 
-## Panel de capas
-Árbol jerárquico a la izquierda. Expandir/colapsar, arrastrar para reordenar, alternar visibilidad con el icono de ojo, doble clic para renombrar. La selección se sincroniza con el lienzo.
+El panel izquierdo muestra capas y páginas; el lienzo ocupa el centro y las propiedades aparecen a la derecha. Los paneles laterales se pueden redimensionar.
 
-## Panel de páginas
-- **Cambiar página** — clic en una pestaña
-- **Añadir** — botón añadir
-- **Eliminar** — eliminar página actual
-- **Renombrar** — doble clic en el nombre; <kbd>Enter</kbd> o clic fuera para confirmar, <kbd>Escape</kbd> para cancelar
+## Capas
 
-Cada página tiene su propio estado de viewport.
+Cada objeto aparece en el árbol. Marcos, grupos y componentes se pueden desplegar para mostrar sus elementos secundarios.
 
-## Panel de propiedades
-Tres pestañas: **Diseño** (propiedades contextuales), **Código** (JSX / Tailwind CSS v4), **IA** (chat <kbd>⌘</kbd><kbd>J</kbd>).
+- Arrastra una capa para cambiar su orden o su contenedor.
+- Usa el icono del ojo para cambiar la visibilidad.
+- Usa el candado para impedir cambios accidentales.
+- Haz doble clic en el nombre para cambiarlo; confirma con <kbd>Enter</kbd> o cancela con <kbd>Escape</kbd>.
 
-Diseño: apariencia, relleno, trazo, efectos, tipografía, layout, exportación.
+La selección del árbol y la del lienzo permanecen sincronizadas. <kbd>Shift</kbd> permite seleccionar varias capas.
 
-## Diseño móvil
+## Páginas
 
-En móvil y pantallas pequeñas, los paneles laterales se reemplazan por un cajón inferior deslizable con pestañas: Capas, Propiedades, Diseño, Código.
+La lista de páginas permite crear, cambiar, renombrar y eliminar páginas. Cada página conserva su propia posición y escala de vista.
+
+El menú contextual mueve la selección a otra página. Al cambiar de página, OpenPencil restaura su vista y selección.
+
+## Propiedades
+
+El panel derecho muestra los controles aplicables a la selección: posición, tamaño, apariencia, rellenos, contornos, efectos, tipografía, disposición y exportación.
+
+Sin selección, muestra el fondo y las variables de la página actual.

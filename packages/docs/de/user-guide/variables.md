@@ -1,47 +1,38 @@
 ---
 title: Variablen
-description: Design-Variablen, Sammlungen, Modi und Füllbindungen in OpenPencil.
+description: Designvariablen, Sammlungen, Modi und Farbbindungen in OpenPencil.
 ---
 
 # Variablen
 
-Variablen speichern wiederverwendbare Design-Token — Farben, Abstandswerte und andere Eigenschaften — die an Knoten gebunden werden können. Ändern Sie den Wert einer Variable und jeder Knoten, der sie verwendet, aktualisiert sich.
+Variablen speichern wiederverwendbare Designtoken wie Farben und Abstände. Objekteigenschaften können daran gebunden werden. Ändert sich ein Variablenwert, werden alle verbundenen Objekte aktualisiert.
 
-## Variablen-Dialog öffnen
+## Variablen öffnen
 
-Ohne ausgewählte Knoten zeigt der Design-Tab Seiteneigenschaften einschließlich eines Variablen-Bereichs. Klicken Sie auf das Einstellungen-Symbol, um den Variablen-Dialog zu öffnen.
+Wenn kein Objekt ausgewählt ist, zeigt der Bereich Design die Seiteneigenschaften. Das Einstellungssymbol im Bereich Variablen öffnet den Dialog.
 
-## Sammlungen
+## Sammlungen und Modi
 
-Variablen sind in Sammlungen organisiert. Jede Sammlung erscheint als Tab im Dialog.
+Variablen sind in Sammlungen organisiert. Jede Sammlung erscheint als Registerkarte und kann mehrere Modi wie Hell und Dunkel enthalten. Die Modi werden als Tabellenspalten dargestellt.
 
-- **Sammlung wechseln** — auf einen Tab klicken
-- **Sammlung umbenennen** — Doppelklick auf den Tab-Namen
+## Variablen bearbeiten
 
-## Modi
+- Variable erstellen;
+- Namen oder Wert durch Klick auf die Zelle ändern;
+- Liste über das Suchfeld filtern.
 
-Jede Sammlung kann mehrere Modi haben (z.B. Hell und Dunkel). Modi erscheinen als Spalten in der Variablentabelle.
+Farbwerte werden direkt in der Tabelle mit einem Farbfeld und einer Farbauswahl bearbeitet.
 
-## Variablen verwalten
+Die Typen `FLOAT`, `STRING` und `BOOLEAN` sind im Datenmodell vorhanden, besitzen aber noch keine vollständige Bearbeitungsoberfläche.
 
-- **Variable erstellen** — klicken Sie auf „+ Variable erstellen"
-- **Name bearbeiten** — klicken Sie auf die Namens-Zelle
-- **Wert bearbeiten** — klicken Sie auf eine Wert-Zelle
-- **Suchen** — tippen Sie in die Suchleiste zum Filtern
+## Bindungen für Füllungen und Konturen
 
-### Farbvariablen
+Die Variablenauswahl in den Bereichen Füllung und Kontur verbindet eine Farbvariable mit der jeweiligen Farbeigenschaft.
 
-Farbvariablen zeigen eine Inline-Farbeingabe mit Picker.
+Das Öffnen eines Feldes oder der Auswahl verändert die Bindung nicht. Erst eine tatsächliche Wertänderung kann sie abhängig vom verwendeten Steuerelement lösen oder die Variable selbst ändern.
 
-## Variablen an Füllungen binden
+## Hinweise
 
-Im Füllungsbereich verwenden Sie den Variablen-Picker, um eine Farbvariable an eine Knotenfüllung zu binden.
-
-- **Binden** — Farbvariable auswählen. Die Füllung zeigt ein lila Badge mit dem Variablennamen.
-- **Lösen** — auf den Lösen-Button im Badge klicken.
-
-## Tipps
-
-- Verwenden Sie Sammlungen, um verwandte Token zu gruppieren (z.B. „Primitives" für Rohfarben, „Semantic" für rollenbasierte Aliase).
-- Modi sind nützlich für Themenwechsel — definieren Sie Hell- und Dunkel-Werte in derselben Sammlung.
-- Variablen unterstützen Aliase — eine „Semantic"-Sammlung kann Werte aus einer „Primitives"-Sammlung referenzieren.
+- Sammlungen gruppieren zusammengehörige Token, etwa `Primitives` für Ausgangsfarben und `Semantic` für rollenbezogene Token.
+- Modi eignen sich für Themen wie Hell und Dunkel.
+- Aliase erlauben einer Variable, auf den Wert einer anderen Sammlung zu verweisen.

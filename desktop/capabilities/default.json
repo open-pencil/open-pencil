@@ -19,15 +19,26 @@
       "allow": [{ "path": "**" }]
     },
     {
-      "identifier": "fs:allow-open",
-      "allow": [{ "path": "**" }]
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
+        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
+        { "path": "$RUNTIME/openpencil/mcp.json" },
+        { "path": "$HOME/.openpencil/mcp.json" }
+      ]
     },
-    "fs:allow-read",
-    "fs:allow-seek",
-    "fs:allow-fstat",
     {
       "identifier": "fs:allow-write-file",
       "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        { "path": "$HOME/Library/Application Support/OpenPencil/mcp.json" },
+        { "path": "$LOCALDATA/OpenPencil/mcp.json" },
+        { "path": "$RUNTIME/openpencil/mcp.json" },
+        { "path": "$HOME/.openpencil/mcp.json" }
+      ]
     },
     {
       "identifier": "fs:allow-mkdir",
@@ -49,6 +60,7 @@
         { "name": "codex-acp", "cmd": "codex-acp", "args": true },
         { "name": "gemini", "cmd": "gemini", "args": true },
         { "name": "openpencil-mcp-http", "cmd": "openpencil-mcp-http", "args": true },
+        { "name": "openpencil-harness", "cmd": "openpencil-harness", "args": false },
         { "name": "cmd", "cmd": "cmd", "args": true }
       ]
     },

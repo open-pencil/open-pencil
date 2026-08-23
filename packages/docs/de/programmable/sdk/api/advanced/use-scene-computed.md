@@ -1,15 +1,15 @@
 ---
 title: useSceneComputed
-description: Komfort-Wrapper für szenenabgeleiteten berechneten Zustand.
+description: Reaktiver berechneter Wert auf Grundlage von SceneGraph-Daten.
 ---
 
 # useSceneComputed
 
-`useSceneComputed(fn)` ist ein dünner computed-Wrapper, der verwendet wird, um szenengestützten abgeleiteten Zustand in übergeordneten Composables explizit zu machen.
+`useSceneComputed(fn)` ist eine kleine Hülle um Vue `computed`, die eine Abhängigkeit von den SceneGraph-Daten des Editors kennzeichnet.
 
-Verwenden Sie es, wenn Sie absichtsenthüllenden berechneten Zustand möchten, der klar von Editor-Szene-Daten abhängt.
+Verwenden Sie sie in anderen Composables, die Werte aus Dokumentobjekten berechnen.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useSelectionState](../composables/use-selection-state)
 - [useSelectionCapabilities](../composables/use-selection-capabilities)

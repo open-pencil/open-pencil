@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 
 import { createDefaultEditorState } from '@open-pencil/core/editor'
 
@@ -23,18 +23,45 @@ function deferredWriteStore() {
   return { store, release: () => release?.() }
 }
 
-function setup(buildFigFile = async () => new Uint8Array([1, 2, 3])) {
+function deferredRemoveStore() {
+  const memory = createMemoryRecoveryStore()
+  let release: (() => void) | null = null
+  const store: RecoveryStore = {
+    ...memory,
+    async remove(id: string) {
+      await new Promise<void>((resolve) => {
+        release = resolve
+      })
+      await memory.remove(id)
+    }
+  }
+  return { store, release: () => release?.() }
+}
+
+function setup(
+  buildFigFile = async () => new Uint8Array([1, 2, 3]),
+  initialEnabled = true,
+  injectedStore?: RecoveryStore
+) {
   const state = reactive({ ...createDefaultEditorState('page-1'), documentName: 'Agent draft' })
-  const store = createMemoryRecoveryStore()
+  const store = injectedStore ?? createMemoryRecoveryStore()
   let writable = false
+  const enabled = ref(initialEnabled)
   const recovery = createDocumentRecovery({
     state,
     store,
     recoveryId: 'recovery-1',
     hasWritableSource: () => writable,
+    isEnabled: () => enabled.value,
     buildFigFile
   })
-  return { state, store, recovery, setWritable: (value: boolean) => (writable = value) }
+  return {
+    state,
+    store,
+    recovery,
+    setWritable: (value: boolean) => (writable = value),
+    setEnabled: (value: boolean) => (enabled.value = value)
+  }
 }
 
 describe('document recovery controller', () => {
@@ -46,6 +73,60 @@ describe('document recovery controller', () => {
     state.sceneVersion = 1
     await recovery.persistNow()
     expect((await store.read('recovery-1'))?.sceneVersion).toBe(1)
+    recovery.disposeRecovery()
+  })
+
+  test('does not serialize or persist while disabled', async () => {
+    let builds = 0
+    const { state, store, recovery } = setup(async () => {
+      builds++
+      return new Uint8Array([1])
+    }, false)
+    state.sceneVersion = 1
+    await recovery.persistNow()
+    expect(builds).toBe(0)
+    expect(await store.list()).toEqual([])
+    recovery.disposeRecovery()
+  })
+
+  test('removes the owned snapshot when disabled and resumes from the current version', async () => {
+    const { state, store, recovery, setEnabled } = setup()
+    state.sceneVersion = 1
+    await recovery.persistNow()
+    expect(await store.list()).toHaveLength(1)
+
+    setEnabled(false)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(await store.list()).toEqual([])
+
+    state.sceneVersion = 2
+    setEnabled(true)
+    await recovery.persistNow()
+    expect(await store.list()).toEqual([])
+
+    state.sceneVersion = 3
+    await recovery.persistNow()
+    expect((await store.read('recovery-1'))?.sceneVersion).toBe(3)
+    recovery.disposeRecovery()
+  })
+
+  test('waits for disable cleanup before writing after re-enable', async () => {
+    const deferred = deferredRemoveStore()
+    const { state, store, recovery, setEnabled } = setup(undefined, true, deferred.store)
+    state.sceneVersion = 1
+    await recovery.persistNow()
+
+    setEnabled(false)
+    setEnabled(true)
+    state.sceneVersion = 2
+    const nextWrite = recovery.persistNow()
+    await Promise.resolve()
+    expect((await store.read('recovery-1'))?.sceneVersion).toBe(1)
+
+    deferred.release()
+    await nextWrite
+    expect((await store.read('recovery-1'))?.sceneVersion).toBe(2)
     recovery.disposeRecovery()
   })
 

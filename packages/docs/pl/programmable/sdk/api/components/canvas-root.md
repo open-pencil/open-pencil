@@ -1,15 +1,13 @@
 ---
 title: CanvasRoot
-description: Bezstanowy prymityw kanvasu dla powierzchni renderowania OpenPencil.
+description: Komponent bez narzuconego wyglądu definiujący kontekst obszaru roboczego OpenPencil.
 ---
 
 # CanvasRoot
 
-`CanvasRoot` to strukturalny prymityw kanvasu w `@open-pencil/vue`.
+`CanvasRoot` udostępnia kontekst obszaru roboczego komponentom potomnym. SDK zarządza integracją z edytorem, a aplikacja określa układ i wygląd.
 
-Użyj go, gdy chcesz strukturę kanvasu i kontekst dostarczane przez SDK, ale layout i stylowanie należące do aplikacji.
-
-## Powiązane API
+## Zobacz też
 
 - [useCanvas](../composables/use-canvas)
 - [useCanvasInput](../composables/use-canvas-input)

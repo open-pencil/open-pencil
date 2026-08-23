@@ -1,15 +1,15 @@
 ---
 title: usePropertyList
-description: Pomocnik kontekstu prymitywu dla potomków PropertyListRoot.
+description: Dostęp do kontekstu udostępnionego przez PropertyListRoot.
 ---
 
 # usePropertyList
 
-`usePropertyList()` odczytuje lokalny kontekst listy właściwości dostarczany przez `PropertyListRoot`.
+`usePropertyList()` zwraca kontekst najbliższego `PropertyListRoot`.
 
-Użyj go wewnątrz potomków, które potrzebują bieżących elementów, informacji o stanie mieszanym lub obsługi na poziomie wiersza dla wypełnień, obrysów lub efektów.
+Użyj composable w komponentach potomnych wymagających elementów, mieszanego stanu lub działań dotyczących zalewów, obwiedni i efektów.
 
-## Powiązane API
+## Zobacz też
 
 - [PropertyListRoot](../components/property-list-root)
 - [PropertyListItem](../components/property-list-item)

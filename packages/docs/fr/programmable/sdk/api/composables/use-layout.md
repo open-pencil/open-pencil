@@ -1,64 +1,22 @@
 ---
 title: useLayout
-description: Travaillez avec l'auto-layout, le dimensionnement, les marges internes, l'alignement et les pistes de grille.
+description: Gérer disposition automatique, taille, marges intérieures, alignement et pistes Grid.
 ---
 
 # useLayout
 
-`useLayout()` est le composable de contrôle principal pour les panneaux liés au layout.
+`useLayout()` fournit l’état et les actions des panneaux de disposition :
 
-Il expose l'état et les actions pour :
+- mode et direction ;
+- espacement et marges intérieures ;
+- alignement et répartition ;
+- modes fixe, remplir et ajuster ;
+- retour à la ligne ;
+- lignes, colonnes et pistes Grid.
 
-- le mode flex ou grille
-- le dimensionnement largeur/hauteur
-- les marges internes
-- l'alignement
-- l'édition des pistes de template de grille
+Les actions modifient la sélection via l’intégration de l’éditeur et participent à l’annulation.
 
-## Utilisation
+## Voir aussi
 
-```ts
-import { useLayout } from '@open-pencil/vue'
-
-const layout = useLayout()
-```
-
-## Exemple de base
-
-```ts
-const {
-  isGrid,
-  isFlex,
-  widthSizing,
-  heightSizing,
-  setAxisSizing,
-  updateAxisSize,
-  commitAxisSize,
-} = useLayout()
-```
-
-## Exemples pratiques
-
-### Basculer entre les marges internes uniformes et individuelles
-
-```ts
-layout.toggleIndividualPadding()
-```
-
-### Mettre à jour les pistes de grille
-
-```ts
-layout.updateGridTrack('gridTemplateColumns', 0, { sizing: 'FIXED', value: 240 })
-layout.addTrack('gridTemplateRows')
-```
-
-### Changer l'alignement
-
-```ts
-layout.setAlignment('CENTER', 'MAX')
-```
-
-## API associées
-
-- [usePosition](./use-position)
-- [useEditor](./use-editor)
+- [LayoutControlsRoot](../components/layout-controls-root)
+- [Disposition automatique](/user-guide/auto-layout)

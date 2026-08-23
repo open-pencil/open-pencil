@@ -1,15 +1,15 @@
 ---
 title: extractImageFilesFromClipboard
-description: Narzędzie schowka do wyodrębniania akceptowanych plików obrazów.
+description: Pobieranie obsługiwanych plików graficznych z ClipboardEvent.
 ---
 
 # extractImageFilesFromClipboard
 
-`extractImageFilesFromClipboard(event)` filtruje pliki ze schowka do akceptowanych typów obrazów używanych przez przepływ upuszczania na kanwasie.
+`extractImageFilesFromClipboard(event)` zwraca pliki graficzne znajdujące się w danych clipboard i odrzuca nieobsługiwane file types.
 
-Użyj go przy implementowaniu przepływów wklejania obrazów ze schowka.
+Użyj function podczas implementowania Paste dla obrazów.
 
-## Powiązane API
+## Zobacz też
 
 - [useCanvasDrop](./use-canvas-drop)
 - [useCanvas](../composables/use-canvas)

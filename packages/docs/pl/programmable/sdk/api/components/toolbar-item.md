@@ -1,15 +1,16 @@
 ---
 title: ToolbarItem
-description: Bezstanowy prymityw elementu paska narzędzi dla jednego narzędzia edytora.
+description: Pojedyncze narzędzie w toolbar edytora.
 ---
 
 # ToolbarItem
 
-`ToolbarItem` udostępnia stan aktywności i zachowanie selekcji dla jednego narzędzia paska narzędzi.
+`ToolbarItem` udostępnia state aktywności i obsługuje wybór jednego narzędzia.
 
-Użyj go wewnątrz `ToolbarRoot`, gdy chcesz niestandardowe znaczniki przycisku, ale wspólne okablowanie wyboru narzędzia.
+Użyj go wewnątrz `ToolbarRoot`, jeśli potrzebujesz własnego button, ale chcesz zachować wspólną logikę wyboru tool.
 
-## Powiązane API
+
+## Zobacz też
 
 - [ToolbarRoot](./toolbar-root)
 - [useToolbar](../advanced/use-toolbar)

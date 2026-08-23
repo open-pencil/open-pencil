@@ -1,0 +1,75 @@
+import type { Ref } from 'vue'
+
+import type { Editor } from '@open-pencil/core/editor'
+
+import { startPenInput } from '#vue/canvas/pen/input'
+import { startShapeDraw, startTextDraw } from '#vue/shared/input/draw'
+import { startPanDrag } from '#vue/shared/input/pan'
+import { handleSelectDown } from '#vue/shared/input/select'
+import type { HitTestFns } from '#vue/shared/input/select'
+import type { DragState } from '#vue/shared/input/types'
+
+type ToolMouseDownOptions = {
+  event: MouseEvent
+  cx: number
+  cy: number
+  sx: number
+  sy: number
+  editor: Editor
+  hitFns: HitTestFns
+  cursorOverride: Ref<string | null>
+  setDrag: (d: DragState) => void
+  tryStartRotation: (cx: number, cy: number) => boolean
+  handleTextEditClick: (cx: number, cy: number, shiftKey: boolean) => boolean
+}
+
+export { startPanDrag }
+
+export function handleToolMouseDown({
+  event,
+  cx,
+  cy,
+  sx,
+  sy,
+  editor,
+  hitFns,
+  cursorOverride,
+  setDrag,
+  tryStartRotation,
+  handleTextEditClick
+}: ToolMouseDownOptions) {
+  const tool = editor.state.activeTool
+
+  if (event.button === 1 || tool === 'HAND') {
+    startPanDrag(event, setDrag, editor)
+    return
+  }
+
+  if (tool === 'SELECT') {
+    handleSelectDown(
+      event,
+      cx,
+      cy,
+      sx,
+      sy,
+      editor,
+      hitFns,
+      tryStartRotation,
+      handleTextEditClick,
+      setDrag
+    )
+    return
+  }
+
+  if (tool === 'PEN') {
+    startPenInput(event, cx, cy, editor, setDrag, cursorOverride)
+    return
+  }
+
+  if (tool === 'TEXT') {
+    startTextDraw(cx, cy, editor, setDrag)
+    return
+  }
+
+  startShapeDraw(cx, cy, editor, setDrag)
+}

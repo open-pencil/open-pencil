@@ -1,20 +1,18 @@
 ---
 title: useTypography
-description: Schriftfamilie, Schriftstärke, Größe, Ausrichtung und Formatierung für Textknoten lesen und aktualisieren.
+description: Font family, Style, Size, Alignment und Formatting von Text objects lesen und ändern.
 ---
 
 # useTypography
 
-`useTypography()` ist das Text-Eigenschafts-Steuerelemente-Composable für Textbearbeitungs-Panels.
+`useTypography()` stellt Text-Panels bereit:
 
-Es gibt zurück:
-
-- Schriftfamilie
-- Schriftstärke
-- Schriftgröße
-- Formatierungszustand
-- Status fehlender Schriftarten
-- Hilfsmittel zum Ändern von Familie, Stärke, Ausrichtung und Dekorationen
+- Font family;
+- Font style;
+- Font size;
+- aktives Formatting;
+- Informationen über fehlende Fonts;
+- Functions zum Ändern von Family, Style, Alignment und Decoration.
 
 ## Verwendung
 
@@ -24,7 +22,7 @@ import { useTypography } from '@open-pencil/vue'
 const typography = useTypography()
 ```
 
-## Einfaches Beispiel
+## Beispiel
 
 ```ts
 const {
@@ -38,9 +36,7 @@ const {
 } = useTypography()
 ```
 
-## Praktische Beispiele
-
-### Eine Schriftfamilie laden und wechseln
+### Font family laden und wählen
 
 ```ts
 const typography = useTypography({
@@ -50,7 +46,7 @@ const typography = useTypography({
 })
 ```
 
-### Formatierung umschalten
+### Formatting
 
 ```ts
 typography.toggleBold()
@@ -58,7 +54,7 @@ typography.toggleItalic()
 typography.toggleDecoration('UNDERLINE')
 ```
 
-## Verwandte APIs
+## Siehe auch
 
 - [useTextEdit](./use-text-edit)
 - [useSelectionState](./use-selection-state)

@@ -1,18 +1,17 @@
 ---
-title: Eigenschafts-Panels
-description: Eigenschafts-Panels mit Steuerelemente-Composables und headless Listen-Primitiven erstellen.
+title: Eigenschaften-Panels
+description: Eigenschaften-Panels mit Composables und Komponenten ohne vorgegebenes Erscheinungsbild entwickeln.
 ---
 
-# Eigenschafts-Panels
+# Eigenschaften-Panels
 
-Eigenschafts-Panels in `@open-pencil/vue` sind bewusst composable-first gestaltet.
+`@open-pencil/vue` stellt für Eigenschaften-Panels vor allem Composables bereit.
 
-Wenn ein Panel hauptsächlich auswahlabgeleitete Werte und Aktualisierungsaktionen benötigt, bevorzugen Sie Composables.
-Wenn ein Panel wiederverwendbare Array/Listen-Struktur benötigt, verwenden Sie ein headless Primitiv wie `PropertyListRoot`.
+Benötigt ein Panel aus der Auswahl berechnete Werte und Aktionen zur Aktualisierung, ist ein Composable die passende Grundlage. Für wiederverwendbare Listen- oder Tabellenstrukturen eignet sich eine Komponente ohne vorgegebenes Erscheinungsbild wie `PropertyListRoot`.
 
-## Häufige Steuerelemente-Composables
+## Composables
 
-Für Standard-Eigenschaftsbereiche beginnen Sie mit:
+Für gewöhnliche Eigenschaftsbereiche:
 
 - `usePosition()`
 - `useLayout()`
@@ -20,13 +19,25 @@ Für Standard-Eigenschaftsbereiche beginnen Sie mit:
 - `useTypography()`
 - `useExport()`
 
-Für listenbasierte Panels verwenden Sie:
+Für Eigenschaften in Listenform:
 
 - `useFillControls()`
 - `useStrokeControls()`
 - `useEffectsControls()`
 
-## Beispiel: Positions-Panel
+## Variablenbindungen
+
+Kann ein Feld an eine Variable oder ein externes Designtoken gebunden werden, sollte es in `BindableValueRoot` liegen.
+
+- Im nicht bearbeiteten Zustand den Namen der Variable anzeigen; der berechnete Wert kann beispielsweise in einem Hinweis erscheinen.
+- Der Fokus oder das Öffnen der Variablenauswahl darf eine bestehende Bindung nicht entfernen.
+- `detach-on-edit`, `readonly-when-bound` oder `edit-variable` erst bei einer tatsächlichen Änderung anwenden.
+- Eine ausdrückliche Aktion zum Entfernen der Bindung gehört besser in die Auswahl als in einen leicht versehentlich auslösbaren Button neben dem Feld.
+- Bindungswechsel, Lösen während der Bearbeitung und Änderungen an mehreren Objekten in einer gemeinsamen Anbieter-Operation zusammenfassen.
+
+Die OpenPencil-App zeigt den Variablennamen im Ruhezustand violett an. Sobald die Bearbeitung beginnt, zeigt `NumberField` den berechneten numerischen Wert. Eine eigene Oberfläche kann denselben Zustand anders darstellen.
+
+## Beispiel: Position und Größe
 
 ```vue
 <script setup lang="ts">
@@ -45,33 +56,45 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 </template>
 ```
 
-## Beispiel: Füllungen-Panel
+## Beispiel: Füllungen
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import {
+  PropertyListRoot,
+  useEditorPropertyList,
+  useFillControls
+} from '@open-pencil/vue'
 
 const fillControls = useFillControls()
+const fills = useEditorPropertyList('fills')
 </script>
 
 <template>
-  <PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
+  <PropertyListRoot
+    prop-key="fills"
+    :items="fills.items.value"
+    :mixed="fills.isMixed.value"
+    @add="fills.actions.add"
+    @remove="fills.actions.remove"
+    v-slot="{ items, actions }"
+  >
     <div v-for="(fill, index) in items" :key="index">
       {{ fill.type }}
-      <button @click="remove(index)">Entfernen</button>
+      <button @click="actions.remove(index)">Entfernen</button>
     </div>
 
-    <button @click="add(fillControls.defaultFill)">Füllung hinzufügen</button>
+    <button @click="actions.add(fillControls.defaultFill)">Füllung hinzufügen</button>
   </PropertyListRoot>
 </template>
 ```
 
-## Faustregel
+## Wahl der API
 
-- Composables für direkte Kontrolllogik verwenden
-- strukturelle Primitive verwenden, wenn wiederholte Listen/Baum/Slot-Koordination der schwierige Teil ist
+- Composables für Zustand und Aktionen verwenden.
+- Strukturkomponenten ohne vorgegebenes Erscheinungsbild einsetzen, wenn die Koordination wiederkehrender Listen, Bäume oder Slots im Mittelpunkt steht.
 
-## Verwandte APIs
+## Siehe auch
 
 - [usePosition](../api/composables/use-position)
 - [useLayout](../api/composables/use-layout)

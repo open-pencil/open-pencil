@@ -4,16 +4,17 @@ import { onScopeDispose, ref, type Ref } from 'vue'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
 import {
   handleBendHandleMove,
   handleNodeEditMouseUp,
   updateNodeEditHover
-} from '#vue/canvas/node-edit-input/use'
-import { handlePenDragMove, updatePenHover } from '#vue/canvas/pen-input/use'
+} from '#vue/canvas/node-edit/input'
+import { handlePenDragMove, updatePenHover } from '#vue/canvas/pen/input'
 import { createCanvasPointer } from '#vue/canvas/pointer/use'
 import { createTextEditInput } from '#vue/canvas/text-edit/input'
-import { handleToolMouseDown } from '#vue/canvas/tool-input/use'
-import { createCanvasTransformInput } from '#vue/canvas/transform-input/use'
+import { handleToolMouseDown } from '#vue/canvas/tools/input'
+import { createCanvasTransformInput } from '#vue/canvas/transform/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
 import { handleDrawMove, handleDrawUp } from '#vue/shared/input/draw'
@@ -119,6 +120,16 @@ export function useCanvasInput(
     drag.value = d
   }
 
+  const guideInput = createGuideInput({
+    canvasRef,
+    editor,
+    canvasToLocal,
+    setDrag,
+    setCursor: (cursor) => {
+      cursorOverride.value = cursor
+    }
+  })
+
   const { handleTextEditClick, onDblClick: onTextDblClick } = createTextEditInput({
     editor,
     getCoords,
@@ -213,6 +224,15 @@ export function useCanvasInput(
     if (!editor.state.editingTextId) canvasRef.value?.focus()
     editor.setHoveredNode(null)
     const { sx, sy, cx, cy } = getCoords(e)
+    if (e.button === 0 && guideInput.tryStartExisting(sx, sy, e.altKey)) {
+      e.preventDefault()
+      return
+    }
+    if (e.button === 0 && guideInput.tryStartFromRuler(sx, sy, cx, cy)) {
+      e.preventDefault()
+      return
+    }
+    editor.setSelectedGuide(null)
 
     const selectedIdsBeforeMouseDown = new Set(editor.state.selectedIds)
     const clickCount = recordClick(sx, sy)
@@ -232,6 +252,8 @@ export function useCanvasInput(
     })
   }
 
+  // Dispatching the full drag union is intentionally centralized here.
+  // eslint-disable-next-line complexity
   function onMouseMove(e: MouseEvent) {
     if (!isEnabled()) return
     pointerInside.value = true
@@ -252,14 +274,11 @@ export function useCanvasInput(
     }
 
     if (!drag.value && editor.state.activeTool === 'SELECT') {
-      const { cx, cy } = coords
-      cursorOverride.value = updateHoverCursor(
-        cx,
-        cy,
-        editor,
-        hitFns,
-        editor.state.measurementMode === 'deep'
-      )
+      const { sx, sy, cx, cy } = coords
+      const guideCursor = guideInput.updateHover(sx, sy)
+      cursorOverride.value =
+        guideCursor ??
+        updateHoverCursor(cx, cy, editor, hitFns, editor.state.measurementMode === 'deep')
       editor.setAutoLayoutHover(
         editor.state.measurementMode === 'off' ? resolveAutoLayoutHover(cx, cy, editor) : null
       )
@@ -275,12 +294,25 @@ export function useCanvasInput(
 
     const { sx, sy, cx, cy } = getCoords(e)
 
+    if (d.type === 'guide') {
+      const frameId = e.altKey && !d.guideId ? selectedTopLevelGuideFrameId(editor) : null
+      guideInput.handleMove(
+        d,
+        sx,
+        sy,
+        cx,
+        cy,
+        frameId ? { frameId, deep: e.metaKey || e.ctrlKey } : undefined
+      )
+      return
+    }
+
     if (d.type === 'rotate') {
       handleRotateMove(d, cx, cy, e.shiftKey)
       return
     }
     if (d.type === 'move') {
-      handleMoveMove(d, cx, cy, sx, sy, editor)
+      handleMoveMove(d, cx, cy, sx, sy, editor, e.ctrlKey)
       return
     }
     if (d.type === 'text-select') {
@@ -288,7 +320,7 @@ export function useCanvasInput(
       return
     }
     if (d.type === 'resize') {
-      applyResize(d, cx, cy, e.shiftKey, editor)
+      applyResize(d, cx, cy, e.shiftKey, editor, e.ctrlKey)
       return
     }
 
@@ -298,7 +330,7 @@ export function useCanvasInput(
     }
 
     if (d.type === 'edit-node' || d.type === 'edit-handle') {
-      handleNodeEditMove(d, cx, cy, editor, e.altKey, e.metaKey || e.ctrlKey, e.shiftKey)
+      handleNodeEditMove(d, cx, cy, editor, e.altKey, e.metaKey || e.ctrlKey, e.shiftKey, e.ctrlKey)
       return
     }
 
@@ -322,7 +354,9 @@ export function useCanvasInput(
 
     if (handleNodeEditMouseUp(drag, editor)) return
 
-    if (d.type === 'move') handleMoveUp(d, editor)
+    if (d.type === 'guide') {
+      guideInput.finish(d)
+    } else if (d.type === 'move') handleMoveUp(d, editor)
     else if (d.type === 'text-select') {
       drag.value = null
       return
@@ -353,28 +387,53 @@ export function useCanvasInput(
     refreshMeasurement()
   }
 
+  function clearTransientInteractionFeedback() {
+    editor.setSnapGuides([])
+    editor.setLayoutInsertIndicator(null)
+    editor.setDropTarget(null)
+    guideInput.clearHoverAndPreview()
+  }
+
+  function cancelPointerInteraction() {
+    drag.value = null
+    cursorOverride.value = null
+    clearTransientInteractionFeedback()
+  }
+
   useEventListener(canvasRef, 'dblclick', onDblClick)
   useEventListener(canvasRef, 'mousedown', onMouseDown)
   useEventListener(canvasRef, 'mousemove', onMouseMove)
   useEventListener(canvasRef, 'mouseup', onMouseUp)
-  useEventListener(window, 'keydown', (event) => updateModifier(event.code, true))
+  useEventListener(window, 'keydown', (event) => {
+    if (!guideInput.deleteSelected(event)) updateModifier(event.code, true)
+  })
   useEventListener(window, 'keyup', (event) => updateModifier(event.code, false))
-  useEventListener(window, 'blur', resetMeasurementModifiers)
+  useEventListener(window, 'blur', () => {
+    resetMeasurementModifiers()
+    cancelPointerInteraction()
+  })
   useEventListener(canvasRef, 'mouseleave', () => {
     pointerInside.value = false
     if (!isEnabled()) return
     editor.setMeasurementMode('off')
     if (!drag.value) {
       editor.setHoveredNode(null)
+      editor.setHoveredGuide(null)
     }
   })
-  useEventListener(window, 'mouseup', () => {
-    if (drag.value) onMouseUp()
-  })
+  useEventListener(
+    window,
+    'mouseup',
+    () => {
+      if (drag.value) onMouseUp()
+    },
+    { capture: true }
+  )
 
   const stopToolListener = editor.onEditorEvent('tool:changed', () => {
     if (!isEnabled()) return
     editor.setMeasurementMode('off')
+    cancelPointerInteraction()
   })
   onScopeDispose(stopToolListener)
 
@@ -391,6 +450,7 @@ export function useCanvasInput(
       drag.value = null
       cursorOverride.value = null
       pointerInside.value = false
+      clearTransientInteractionFeedback()
       resetMeasurementModifiers()
     }
   }

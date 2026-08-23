@@ -8,6 +8,8 @@ import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 
 import packageJson from './package.json'
+import { AUTOMATION_HTTP_PORT } from './packages/core/src/constants'
+import { devAutomationRoute } from './src/app/automation/bridge/portless-route'
 import { createOpenPencilAliases } from './vite/aliases'
 import { localAutomationToken, openPencilAutomationPlugin } from './vite/automation'
 import { copyCanvasKitAssetsPlugin } from './vite/canvaskit-assets'
@@ -16,6 +18,7 @@ import { rawMarkdownPlugin } from './vite/raw-markdown'
 import { createDevServerOptions } from './vite/server'
 
 const host = process.env.TAURI_DEV_HOST
+const automationRoute = devAutomationRoute(process.env.PORTLESS_URL, AUTOMATION_HTTP_PORT)
 
 export default defineConfig(async ({ command }) => ({
   resolve: {
@@ -23,7 +26,11 @@ export default defineConfig(async ({ command }) => ({
   },
   define: {
     __OPENPENCIL_APP_VERSION__: JSON.stringify(packageJson.version),
-    __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(localAutomationToken(command))
+    __OPENPENCIL_LOCAL_AUTOMATION_TOKEN__: JSON.stringify(localAutomationToken(command)),
+    __OPENPENCIL_LOCAL_AUTOMATION_URL__: JSON.stringify(automationRoute.browserURL),
+    __OPENPENCIL_LOCAL_AUTOMATION_HTTP_URL__: JSON.stringify(
+      automationRoute.browserURL.replace(/^ws/, 'http')
+    )
   },
   plugins: [
     rawMarkdownPlugin(),

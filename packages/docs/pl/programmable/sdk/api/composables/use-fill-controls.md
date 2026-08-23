@@ -1,13 +1,11 @@
 ---
 title: useFillControls
-description: Kompozyt panelu wypełnień z domyślnym zachowaniem wypełnienia.
+description: Domyślna wartość nowego fill w panelu właściwości.
 ---
 
 # useFillControls
 
-`useFillControls()` to kompozyt właściwości wypełnienia używany przez UI edycji wypełnień.
-
-Dodaje wielokrotnie używalną domyślną wartość wypełnienia.
+`useFillControls()` udostępnia panelowi fills wartość nowego fill używaną domyślnie.
 
 ## Użycie
 
@@ -17,20 +15,16 @@ import { useFillControls } from '@open-pencil/vue'
 const fills = useFillControls()
 ```
 
-## Co udostępnia
-
-Udostępnia:
+## Zwracana wartość
 
 - `defaultFill`
 
-## Przykłady praktyczne
-
-### Dodaj nowy wiersz wypełnienia
+### Dodanie fill
 
 ```ts
 propertyList.add(fills.defaultFill)
 ```
 
-## Powiązane API
+## Zobacz też
 
 - [PropertyListRoot](../components/property-list-root)

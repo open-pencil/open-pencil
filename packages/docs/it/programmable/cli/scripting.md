@@ -1,70 +1,50 @@
 ---
 title: Scripting
-description: Esegui JavaScript con la Figma Plugin API — interroga nodi, modifica design in batch, crea frame.
+description: Eseguire JavaScript con un’API compatibile con i plugin Figma per interrogare, modificare e generare design.
 ---
 
 # Scripting
 
-`openpencil eval` ti dà accesso alla Figma Plugin API completa dal terminale. Leggi nodi, modifica proprietà, crea forme — poi scrivi le modifiche nel file.
+`openpencil eval` esegue JavaScript su un documento e fornisce un oggetto globale `figma`. È utile per modifiche in serie, ispezione, dati di test e automazione senza aprire l’interfaccia dell’editor.
 
-## Utilizzo Base
-
-```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
-```
-
-Il flag `-c` accetta JavaScript. La variabile globale `figma` funziona come la Figma Plugin API.
-
-## Interrogazione dei Nodi
+## Uso di base
 
 ```sh
-openpencil eval design.fig -c "
-  figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
-    .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
-"
+openpencil eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-## Modifica e Salvataggio
+`-c` accetta JavaScript. Se il codice non inizia con `return`, OpenPencil lo esegue in una funzione asincrona e restituisce l’eventuale risultato.
+
+## Interrogare oggetti
 
 ```sh
-openpencil eval design.fig -c "
-  figma.currentPage.children.forEach(n => n.opacity = 0.5)
-" -w
+openpencil eval design.fig -c "return figma.currentPage.findAll((n) => n.type === 'FRAME')"
 ```
 
-`-w` scrive le modifiche nel file di input. Usa `-o output.fig` per scrivere in un file diverso.
+## Modificare e salvare
 
-## Lettura da Stdin
+`--write` o `-w` sovrascrive il file di input. `--output` o `-o` crea un altro file.
 
-Per script più lunghi:
+## Script da stdin
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin -w
+cat transform.js | openpencil eval design.fig --stdin --write
 ```
 
-## Modalità App in Esecuzione
+## Documento aperto
 
-Ometti il file per eseguire sull'app desktop in esecuzione:
+Ometti il percorso per eseguire lo script sul documento attivo nell’app desktop.
 
-```sh
-openpencil eval -c "figma.currentPage.name"
-```
+## Output
 
-## API Disponibili
+In un ambiente non interattivo, `eval` usa JSON per impostazione predefinita. `--json` lo forza e `--quiet` o `-q` nasconde l’output quando viene scritto solo un file.
 
-L'oggetto `figma` supporta:
+## API compatibile
 
-- `figma.currentPage` — la pagina attiva
-- `figma.root` — la radice del documento
-- `figma.createFrame()`, `figma.createRectangle()`, `figma.createEllipse()`, `figma.createText()`, ecc.
-- `.findAll()`, `.findOne()` — cerca tra i discendenti
-- `.appendChild()`, `.insertChild()` — manipolazione dell'albero
-- Tutti i setter di proprietà: `.fills`, `.strokes`, `.effects`, `.opacity`, `.cornerRadius`, `.layoutMode`, `.itemSpacing`, ecc.
+L’API segue il modello di Figma Plugin API, ma opera su SceneGraph e sui formati OpenPencil. Copre documento, pagine, creazione di oggetti, operazioni sull’albero, componenti, variabili e proprietà comuni.
 
-Questa è la stessa API utilizzata dai plugin Figma, quindi le conoscenze esistenti e gli snippet di codice si trasferiscono direttamente.
+Gli identificatori esatti come `figma.currentPage`, `createFrame`, `appendChild`, `fills`, `fontSize`, `layoutMode` e `strokeWeight` restano invariati.
 
-## Output JSON
+## Limiti
 
-```sh
-openpencil eval design.fig -c "..." --json
-```
+Non esistono ancora equivalenti completi per `node.exportAsync()`, `node.setBoundVariable()`, `node.detachInstance()`, `figma.combineAsVariants()`, gli stili e tutte le operazioni booleane vettoriali.

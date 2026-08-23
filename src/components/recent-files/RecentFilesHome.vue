@@ -9,8 +9,8 @@ import {
   forgetRecentFile,
   loadRecentFileThumbnail,
   recentFiles,
-  type RecentFile
-} from '@/app/shell/menu/recent-files'
+  type RecentLocalDocument
+} from '@/app/recent-files'
 import { openFileDialog, openFileFromPath } from '@/app/shell/menu/use'
 import { activeStorageProviderID, type StorageDocument } from '@/app/integrations/storage'
 import { openSettingsDialog } from '@/app/settings/dialog'
@@ -23,12 +23,21 @@ const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'gr
 const openError = ref<string | null>(null)
 const storageConfigured = ref(false)
 
-const workspace = useDocumentWorkspace<RecentFile>({
+const workspace = useDocumentWorkspace<RecentLocalDocument>({
   source: {
     async refresh() {
-      return recentFiles.value
+      return recentFiles.value.filter(
+        (document): document is RecentLocalDocument => document.kind === 'local'
+      )
     },
-    loadPreview: loadRecentFileThumbnail
+    loadPreview(documentId) {
+      const document = recentFiles.value.find(
+        (candidate) => candidate.id === documentId && candidate.kind === 'local'
+      )
+      return document?.kind === 'local'
+        ? loadRecentFileThumbnail(document.path)
+        : Promise.resolve(null)
+    }
   },
   refreshOnFocus: false,
   refreshOnReconnect: false,
@@ -57,7 +66,7 @@ async function refreshHome(): Promise<void> {
   await Promise.all([workspace.refresh(), storageWorkspace.refresh()])
 }
 
-async function openRecent(document: RecentFile): Promise<void> {
+async function openRecent(document: RecentLocalDocument): Promise<void> {
   openError.value = null
   try {
     await openFileFromPath(document.path)

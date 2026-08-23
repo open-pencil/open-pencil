@@ -1,27 +1,48 @@
 ---
 title: Dibujar formas
-description: Crear rectángulos, elipses, líneas, marcos y secciones en OpenPencil.
+description: Crear rectángulos, elipses, líneas, marcos, secciones, polígonos y estrellas.
 ---
+
 # Dibujar formas
 
-| Herramienta | Atajo | Descripción |
-|-------------|-------|-------------|
-| Rectángulo | <kbd>R</kbd> | Dibuja un rectángulo |
-| Elipse | <kbd>O</kbd> | Dibuja una elipse |
-| Línea | <kbd>L</kbd> | Dibuja una línea |
-| Marco | <kbd>F</kbd> | Dibuja un marco (contenedor) |
-| Sección | <kbd>S</kbd> | Dibuja una sección |
+La barra inferior contiene herramientas para crear formas, marcos y secciones. Selecciona una y arrastra sobre el lienzo.
 
-## Formas adicionales
-**Polígono** y **Estrella** en el menú desplegable de formas.
+## Herramientas
 
-## Dibujo restringido
-<kbd>Shift</kbd> al arrastrar: rectángulo → cuadrado, elipse → círculo, línea → 0°/45°/90°.
+| Herramienta | Tecla | Resultado |
+|-------------|-------|-----------|
+| Rectángulo | <kbd>R</kbd> | Rectángulo |
+| Elipse | <kbd>O</kbd> | Elipse |
+| Línea | <kbd>L</kbd> | Línea |
+| Marco | <kbd>F</kbd> | Contenedor de otros objetos |
+| Sección | <kbd>S</kbd> | Contenedor de nivel superior |
+
+Polígono y Estrella están disponibles en el menú de formas.
+
+## Mantener proporciones
+
+Con <kbd>Shift</kbd>, el rectángulo se convierte en cuadrado, la elipse en círculo y la línea se ajusta a 0°, 45° y 90°.
 
 ## Propiedades
-- **Relleno** — color sólido, gradiente (lineal, radial, angular, diamante), imagen
-- **Trazo** — ancho (uniforme o por lado: Arriba/Derecha/Abajo/Izquierda), color, alineación (Interior/Centro/Exterior), remate, unión, patrón de guiones
-- **Radio de esquinas** — uniforme o independiente por esquina
-- **Efectos** — sombra exterior, sombra interior, desenfoque de capa, desenfoque de fondo
 
-**Marcos** son contenedores con [auto-layout](./auto-layout). **Secciones** adoptan nodos superpuestos automáticamente.
+### Relleno
+
+Color sólido, degradado lineal, radial, angular o diamante, e imagen.
+
+### Contorno
+
+Grosor común o por lado, color, alineación interior/central/exterior, extremos, uniones y guiones.
+
+### Radio de esquina
+
+Puede ser común o independiente para rectángulos, marcos, componentes e instancias.
+
+### Efectos
+
+Sombra exterior e interior y desenfoque de capa, fondo o primer plano.
+
+## Marcos y secciones
+
+Un marco es un contenedor. Los objetos arrastrados dentro pasan a ser secundarios. El recorte está desactivado de forma predeterminada. Los marcos admiten [disposición automática](./auto-layout).
+
+Una sección es un contenedor de nivel superior que adopta los objetos superpuestos al dibujarla.

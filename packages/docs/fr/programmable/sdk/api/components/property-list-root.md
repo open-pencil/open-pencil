@@ -1,36 +1,21 @@
 ---
 title: PropertyListRoot
-description: Primitive structurelle headless pour les interfaces de liste de remplissages, contours et effets.
+description: Liste contrôlée pour remplissages, contours, effets et autres propriétés sous forme de tableau.
 ---
 
 # PropertyListRoot
 
-`PropertyListRoot` est une primitive structurelle headless pour les éditeurs de propriétés basés sur des tableaux.
+`PropertyListRoot` coordonne les propriétés stockées sous forme de tableaux, comme les remplissages, contours et effets.
 
-Elle est destinée aux interfaces de propriétés comme :
+Il reçoit les éléments et l’état mixte par ses propriétés, émet les changements et fournit dans son emplacement :
 
-- les remplissages
-- les contours
-- les effets
+- les éléments actuels ;
+- des actions pour ajouter, supprimer, remplacer et modifier partiellement ;
+- une action pour changer la visibilité d’un élément.
 
-Elle fournit des props de slot pour :
+La connexion à la sélection et à l’historique passe par `useEditorPropertyList()` ou un adaptateur de l’application.
 
-- les éléments courants
-- la détection d'état mixte
-- les opérations d'ajout/suppression/mise à jour/correctif
-- le basculement de visibilité par élément
+## Voir aussi
 
-## Utilisation
-
-```vue
-<PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
-  <div v-for="(fill, index) in items" :key="index">
-    <button @click="remove(index)">Supprimer</button>
-  </div>
-  <button @click="add(defaultFill)">Ajouter un remplissage</button>
-</PropertyListRoot>
-```
-
-## API associées
-
-- [Aperçu de l'API SDK](../)
+- [PropertyListItem](./property-list-item)
+- [usePropertyList](../advanced/use-property-list)

@@ -1,70 +1,111 @@
 ---
-title: Skryptowanie
-description: Wykonuj JavaScript z Figma Plugin API — odpytuj węzły, modyfikuj projekty wsadowo, twórz ramki.
+title: Skrypty
+description: Wykonywanie JavaScript przez API zgodne z Figma Plugin API do wyszukiwania, masowych zmian i tworzenia projektu.
 ---
 
-# Skryptowanie
+# Skrypty
 
-`openpencil eval` daje Ci pełne Figma Plugin API w terminalu. Odczytuj węzły, modyfikuj właściwości, twórz kształty — a następnie zapisz zmiany z powrotem do pliku.
+`openpencil eval` wykonuje JavaScript dla dokumentu OpenPencil i udostępnia globalny obiekt `figma` zgodny z Figma Plugin API. Polecenie nadaje się do zmian zbiorczych, sprawdzania dokumentów, przygotowywania danych testowych i automatyzacji bez interfejsu edytora.
 
-## Podstawowe użycie
+## Pierwsze wywołanie
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
+openpencil eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-Flaga `-c` przyjmuje JavaScript. Globalny obiekt `figma` działa jak Figma Plugin API.
+Opcja `-c` przyjmuje JavaScript. Jeśli kod nie zaczyna się od `return`, OpenPencil umieszcza go w funkcji asynchronicznej i zwraca jej wynik, jeśli istnieje.
 
-## Odpytywanie węzłów
+## Wyszukiwanie obiektów
 
 ```sh
 openpencil eval design.fig -c "
-  figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
-    .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
+  return figma.currentPage
+    .findAll((node) => node.type === 'FRAME' && node.name.includes('Button'))
+    .map((button) => ({ id: button.id, name: button.name }))
 "
 ```
 
-## Modyfikacja i zapis
+## Zmiana i zapis
+
+`--write` albo `-w` zapisuje zmiany w pliku wejściowym. `--output` albo `-o` tworzy nowy plik.
+
+## Skrypt ze standardowego wejścia
 
 ```sh
-openpencil eval design.fig -c "
-  figma.currentPage.children.forEach(n => n.opacity = 0.5)
-" -w
+cat transform.js | openpencil eval design.fig --stdin --write
 ```
 
-`-w` zapisuje zmiany z powrotem do pliku wejściowego. Użyj `-o output.fig`, aby zapisać do innego pliku.
+## Otwarta aplikacja
 
-## Odczyt ze stdin
+Nie podawaj pliku, aby wykonać skrypt dla bieżącego dokumentu w aplikacji komputerowej.
 
-Dla dłuższych skryptów:
+## Wyjście
 
-```sh
-cat transform.js | openpencil eval design.fig --stdin -w
-```
-
-## Tryb żywej aplikacji
-
-Pomiń plik, aby uruchomić na działającej aplikacji desktopowej:
-
-```sh
-openpencil eval -c "figma.currentPage.name"
-```
+Po przekierowaniu wyjścia domyślnie używany jest JSON. Opcja `--json` włącza go jawnie, a `--quiet` wyłącza wyjście.
 
 ## Dostępne API
 
-Obiekt `figma` obsługuje:
+API jest celowo zbliżone do Figma Plugin API, ale pracuje z SceneGraph i formatami plików OpenPencil.
 
-- `figma.currentPage` — aktywna strona
-- `figma.root` — korzeń dokumentu
-- `figma.createFrame()`, `figma.createRectangle()`, `figma.createEllipse()`, `figma.createText()` itp.
-- `.findAll()`, `.findOne()` — wyszukiwanie potomków
-- `.appendChild()`, `.insertChild()` — manipulacja drzewem
-- Wszystkie settery właściwości: `.fills`, `.strokes`, `.effects`, `.opacity`, `.cornerRadius`, `.layoutMode`, `.itemSpacing` itp.
+### Dokument i strony
 
-To jest to samo API, którego używają wtyczki Figma, więc istniejąca wiedza i fragmenty kodu można zastosować bezpośrednio.
+- `figma.root`
+- `figma.currentPage`
+- `figma.currentPage.selection`
+- `figma.getNodeById(id)`
+- `figma.createPage()`
 
-## Wyjście JSON
+### Tworzenie obiektów
 
-```sh
-openpencil eval design.fig -c "..." --json
-```
+- `figma.createFrame()`
+- `figma.createRectangle()`
+- `figma.createEllipse()`
+- `figma.createText()`
+- `figma.createLine()`
+- `figma.createPolygon()`
+- `figma.createStar()`
+- `figma.createVector()`
+- `figma.createComponent()`
+- `figma.createSection()`
+
+### Drzewo
+
+- `node.children`
+- `node.parent`
+- `node.appendChild(child)`
+- `node.insertChild(index, child)`
+- `node.clone()`
+- `node.remove()`
+- `node.findAll(callback?)`
+- `node.findOne(callback)`
+- `figma.group(nodes, parent)`
+- `figma.ungroup(node)`
+
+### Komponenty i zmienne
+
+Nazwy metod, takie jak `component.createInstance()`, `figma.getLocalVariables()` i `figma.bindVariable()`, pozostają zgodne z Figma Plugin API.
+
+### Właściwości
+
+Najczęściej używane właściwości można odczytywać i zapisywać przez pośrednika:
+
+- geometria: `x`, `y`, `width`, `height`, `rotation`, `resize(width, height)`;
+- wygląd: `fills`, `strokes`, `effects`, `opacity`, `visible`, `locked`, `blendMode`, `clipsContent`;
+- tekst: `characters`, `fontSize`, `fontName`, `fontWeight`, wyrównanie, interlinia, odstęp między znakami i funkcje zakresów stylów;
+- automatyczny układ: `layoutMode`, `primaryAxisAlignItems`, `counterAxisAlignItems`, `itemSpacing`, wypełnienie, rozmiary i położenie;
+- obwiednia: `strokeWeight`, `strokeAlign`, `dashPattern`.
+
+### Narzędzia pomocnicze
+
+- `figma.mixed`
+- `figma.createImage(data)`
+- `figma.loadFontAsync(fontName)` niczego nie wykonuje, ponieważ OpenPencil nie blokuje zmiany tekstu do czasu załadowania czcionki przez wtyczkę
+- `figma.listAvailableFontsAsync()` zwraca dostępne czcionki systemowe
+- `figma.notify(message)` zapisuje ostrzeżenie w trybie bez interfejsu
+- `figma.viewport`
+
+## Brak pełnej zgodności z Figmą
+
+Nie są jeszcze dostępne między innymi `node.exportAsync()`, `node.setBoundVariable()`, `node.detachInstance()`, `figma.combineAsVariants()` i API stylów Figmy.
+
+Zamiast nich używaj poleceń eksportu CLI, narzędzi głównego pakietu albo bezpośrednich funkcji pomocniczych SceneGraph.

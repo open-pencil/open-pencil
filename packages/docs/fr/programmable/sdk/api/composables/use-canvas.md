@@ -1,100 +1,25 @@
 ---
 title: useCanvas
-description: Attache le rendu CanvasKit à un élément canvas pour un éditeur OpenPencil.
+description: Créer et maintenir la surface CanvasKit de l’éditeur.
 ---
 
 # useCanvas
 
-`useCanvas()` connecte un éditeur à un vrai élément `<canvas>`.
+`useCanvas(options)` relie un élément `<canvas>` au moteur de rendu. Il se charge de :
 
-Il gère :
+- charger CanvasKit ;
+- créer et recréer la surface ;
+- observer les dimensions ;
+- ajuster l’échelle des pixels ;
+- demander les rafraîchissements ;
+- libérer les ressources au démontage.
 
-- l'initialisation de CanvasKit
-- la création de surface
-- la planification du rendu
-- la gestion du redimensionnement
-- la visibilité optionnelle des règles
-- le callback de disponibilité du renderer
+Les règles, la couleur de fond et le comportement d’un aperçu intégré sont configurables.
 
-## Utilisation
+Utilisez `CanvasRoot` et `CanvasSurface` pour la composition habituelle, ou ce composable pour contrôler directement l’élément.
 
-```ts
-import { ref } from 'vue'
+## Voir aussi
 
-import { useCanvas, useEditor } from '@open-pencil/vue'
-
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const editor = useEditor()
-
-useCanvas(canvasRef, editor)
-```
-
-## Exemple de base
-
-```vue
-<script setup lang="ts">
-import { ref } from 'vue'
-
-import { useCanvas, useEditor } from '@open-pencil/vue'
-
-const canvasRef = ref<HTMLCanvasElement | null>(null)
-const editor = useEditor()
-
-useCanvas(canvasRef, editor, {
-  showRulers: true,
-  onReady: () => {
-    console.log('Renderer prêt')
-  },
-})
-</script>
-
-<template>
-  <canvas ref="canvasRef" class="size-full" />
-</template>
-```
-
-## Exemples pratiques
-
-### Désactiver les règles pour un aperçu intégré
-
-```ts
-useCanvas(canvasRef, editor, {
-  showRulers: false,
-})
-```
-
-### Conserver le tampon de dessin pour les captures d'écran
-
-```ts
-useCanvas(canvasRef, editor, {
-  preserveDrawingBuffer: true,
-})
-```
-
-## Notes
-
-- `useCanvas()` est orienté renderer et pratiquement uniquement côté navigateur
-- il est responsable du pipeline canvas en direct, pas des flux de fichiers au niveau applicatif
-- il devrait généralement être associé à `useCanvasInput()` pour la gestion des interactions
-
-## API associées
-
-- [useEditor](./use-editor)
+- [CanvasRoot](../components/canvas-root)
+- [CanvasSurface](../components/canvas-surface)
 - [useCanvasInput](./use-canvas-input)
-- [useTextEdit](./use-text-edit)
-
-## Type
-
-```ts
-interface UseCanvasOptions {
-  showRulers?: boolean
-  preserveDrawingBuffer?: boolean
-  onReady?: () => void
-}
-
-function useCanvas(
-  canvasRef: Ref<HTMLCanvasElement | null>,
-  editor: Editor,
-  options?: UseCanvasOptions,
-): void
-```

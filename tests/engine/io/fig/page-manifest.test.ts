@@ -9,18 +9,18 @@ const fixturePath = resolve(import.meta.dir, '../../../fixtures/gold-preview.fig
 
 test('reports FIG pages before materializing NodeChange objects', () => {
   const bytes = readFileSync(fixturePath)
-  let parseCompleted = false
+  let callbackCount = 0
   let manifest: FigPageManifestEntry[] = []
 
   const parsed = parseFigBuffer(
     bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
     (pages) => {
-      expect(parseCompleted).toBe(false)
+      callbackCount++
       manifest = pages
     }
   )
-  parseCompleted = true
 
+  expect(callbackCount).toBe(1)
   expect(parsed.nodeChanges.length).toBeGreaterThan(0)
   expect(manifest).toEqual([
     {

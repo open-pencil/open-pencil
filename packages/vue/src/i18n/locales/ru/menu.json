@@ -56,10 +56,15 @@
   "arrangeAlignMiddle": "Выровнять по центру по вертикали",
   "arrangeAlignBottom": "Выровнять по нижнему краю",
   "multiplayerCursors": "Курсоры участников",
+  "preferences": "Настройки",
+  "snapToGeometry": "Привязка к геометрии",
+  "snapToObjects": "Привязка к объектам",
+  "snapToPixelGrid": "Привязка к пиксельной сетке",
   "renameSelection": "Переименовать выделение…",
   "rulers": "Линейки",
   "settings": "Настройки…",
   "splitRight": "Разделить вправо",
   "splitDown": "Разделить вниз",
-  "closeView": "Закрыть вид"
+  "closeView": "Закрыть вид",
+  "removeGuide": "Удалить направляющую"
 }

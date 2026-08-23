@@ -56,10 +56,15 @@
   "arrangeAlignMiddle": "Centrer verticalement",
   "arrangeAlignBottom": "Aligner en bas",
   "multiplayerCursors": "Curseurs multijoueurs",
+  "preferences": "Préférences",
+  "snapToGeometry": "Aligner sur la géométrie",
+  "snapToObjects": "Aligner sur les objets",
+  "snapToPixelGrid": "Aligner sur la grille de pixels",
   "renameSelection": "Renommer la sélection…",
   "rulers": "Règles",
   "settings": "Paramètres…",
   "splitRight": "Diviser à droite",
   "splitDown": "Diviser vers le bas",
-  "closeView": "Fermer la vue"
+  "closeView": "Fermer la vue",
+  "removeGuide": "Supprimer le repère"
 }

@@ -1,65 +1,46 @@
 ---
-title: Analyser des designs
-description: Auditez les couleurs, la typographie, l'espacement et les motifs récurrents dans les fichiers .fig.
+title: Analyser des documents avec la CLI
+description: Détecter couleurs, typographies, espacements et structures répétées.
 ---
 
-# Analyser des designs
+# Analyser des documents avec la CLI
 
-Les commandes `analyze` permettent d'auditer un système de design entier depuis le terminal — trouvez les incohérences, extrayez la vraie palette, repérez les composants qui attendent d'être extraits.
+Les sous-commandes `analyze` examinent le document complet et aident à repérer les incohérences ou les structures qui pourraient devenir des composants.
 
 ## Couleurs
 
 ```sh
-openpencil analyze colors design.fig
+bun open-pencil analyze colors design.fig
 ```
 
-Trouve chaque couleur dans le fichier, compte les utilisations et affiche un histogramme visuel :
-
-```
-#1d1b20  ██████████████████████████████ 17155×
-#49454f  ██████████████████████████████ 9814×
-#ffffff  ██████████████████████████████ 8620×
-#6750a4  ██████████████████████████████ 3967×
-```
+Regroupe les couleurs des remplissages et contours, compte leurs utilisations et révèle les teintes presque identiques.
 
 ## Typographie
 
 ```sh
-openpencil analyze typography design.fig
+bun open-pencil analyze typography design.fig
 ```
 
-Liste chaque combinaison de famille de polices, taille et graisse avec le nombre d'utilisations. Utile pour repérer les styles de texte ponctuels qui devraient être consolidés.
+Énumère les combinaisons de famille, taille et style avec leur fréquence afin d’identifier les styles isolés.
 
 ## Espacement
 
 ```sh
-openpencil analyze spacing design.fig
+bun open-pencil analyze spacing design.fig
 ```
 
-Audite les valeurs de gap et de padding à travers les frames avec auto-layout. Aide à identifier les incohérences d'échelle d'espacement — par exemple, un gap de `13px` isolé parmi des valeurs de `8/16/24`.
+Examine espacements et marges intérieures des cadres à disposition automatique. Une valeur `13px` au milieu d’une échelle `8/16/24` devient ainsi visible.
 
-## Motifs récurrents
+## Structures répétées
 
 ```sh
-openpencil analyze clusters design.fig
+bun open-pencil analyze clusters design.fig
 ```
 
-Trouve les motifs de nœuds répétés qui pourraient être extraits en composants :
-
-```
-3771× frame "container" (100% match)
-     size: 40×40, structure: Frame > [Frame]
-
-2982× instance "Checkboxes" (100% match)
-     size: 48×48, structure: Instance > [Frame]
-```
+Recherche des hiérarchies similaires susceptibles de devenir des composants et affiche leur correspondance, leur taille et leur structure.
 
 ## Sortie JSON
 
-Toutes les commandes d'analyse supportent `--json` pour une sortie lisible par machine :
+Ajoutez `--json` pour traiter les résultats en CI, produire des rapports ou appliquer vos propres règles.
 
-```sh
-openpencil analyze colors design.fig --json
-```
-
-Redirigez vers `jq`, alimentez des vérifications CI, ou utilisez dans des scripts qui contrôlent les budgets de tokens de design.
+Ces analyses ne modifient pas le fichier. Pour les transformations, utilisez [`eval`](./scripting).

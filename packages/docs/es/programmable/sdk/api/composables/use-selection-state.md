@@ -1,77 +1,22 @@
 ---
 title: useSelectionState
-description: Estado reactivo del editor derivado de la selección para el nodo actual, el recuento y el tipo de selección.
+description: Estado reactivo de la selección actual.
 ---
 
 # useSelectionState
 
-`useSelectionState()` expone el estado reactivo derivado de la selección del editor actual.
+`useSelectionState()` proporciona:
 
-Úsalo cuando necesites renderizar UI basándote en:
+- identificadores seleccionados;
+- objetos seleccionados;
+- objeto principal;
+- número de objetos;
+- indicadores de selección vacía, única o múltiple;
+- tipos presentes en la selección.
 
-- si hay algo seleccionado
-- cuántos nodos están seleccionados
-- el nodo seleccionado principal
-- si la selección actual es una instancia, componente o grupo
+Use este composable para representar interfaces que reaccionen a la selección sin observar repintados del lienzo.
 
-## Uso
-
-```ts
-import { useSelectionState } from '@open-pencil/vue'
-
-const selection = useSelectionState()
-```
-
-## Ejemplo básico
-
-```vue
-<script setup lang="ts">
-import { useSelectionState } from '@open-pencil/vue'
-
-const { hasSelection, selectedCount, isInstance } = useSelectionState()
-</script>
-
-<template>
-  <div class="text-xs text-muted">
-    <span v-if="!hasSelection">Sin selección</span>
-    <span v-else>
-      {{ selectedCount }} seleccionados
-      <span v-if="isInstance">· instancia</span>
-    </span>
-  </div>
-</template>
-```
-
-## Qué devuelve
-
-Los valores más útiles incluyen:
-
-- `selectedIds`
-- `hasSelection`
-- `selectedNode`
-- `selectedCount`
-- `selectedNodeType`
-- `isInstance`
-- `isComponent`
-- `isGroup`
-- `canCreateComponentSet`
-
-## Ejemplos prácticos
-
-### Mostrar acciones solo para instancias
-
-```ts
-const { isInstance } = useSelectionState()
-```
-
-### Habilitar la UI de creación de conjuntos de componentes
-
-```ts
-const { canCreateComponentSet } = useSelectionState()
-```
-
-## APIs relacionadas
+## Véase también
 
 - [useSelectionCapabilities](./use-selection-capabilities)
-- [useEditorCommands](./use-editor-commands)
-- [useEditor](./use-editor)
+- [useSceneComputed](../advanced/use-scene-computed)

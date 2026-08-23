@@ -53,6 +53,9 @@ describe('APP_MENU_SCHEMA', () => {
       'theme-light',
       'theme-dark',
       'theme-auto',
+      'snap-geometry',
+      'snap-objects',
+      'snap-pixel-grid',
       'settings'
     ])
   })

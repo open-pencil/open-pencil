@@ -1,26 +1,13 @@
 ---
 title: useCanvasInput
-description: Canvas-Zeigereingabe, Ziehen, Auswahl, Größenänderung, Rotation und Werkzeugverhalten verdrahten.
+description: Zeigereingabe, Ziehen, Auswahl, Größenänderung, Drehung und Werkzeuge mit der Arbeitsfläche verbinden.
 ---
 
 # useCanvasInput
 
-`useCanvasInput()` verbindet Zeiger- und Mausinteraktion mit dem Editor-Canvas.
+`useCanvasInput()` verbindet Zeiger- und Mausereignisse mit der Arbeitsfläche des Editors.
 
-Es behandelt Interaktionsbelange wie:
-
-- Auswahl
-- Ziehen
-- Größenänderung
-- Rotation
-- Schwenken
-- Stift-/Zeichenflows
-- Textbearbeitungsinteraktion
-- scope-bewusstes Hit-Testing
-
-## Verwendung
-
-Dieses Composable wird typischerweise mit `useCanvas()` und Hit-Test-Hilfsmitteln des Renderers kombiniert.
+Es behandelt Auswahl, Ziehen, Größenänderung, Drehung, Verschieben der Ansicht, Zeichnen mit dem Zeichenstift, Textbearbeitung und Trefferprüfung unter Berücksichtigung der Ansicht.
 
 ```ts
 useCanvasInput(
@@ -32,42 +19,7 @@ useCanvasInput(
 )
 ```
 
-## Einfaches Beispiel
-
-```ts
-const canvas = useCanvas(canvasRef, editor)
-
-useCanvasInput(
-  canvasRef,
-  editor,
-  canvas.hitTestSectionTitle,
-  canvas.hitTestComponentLabel,
-  canvas.hitTestFrameTitle,
-)
-```
-
-## Praktische Beispiele
-
-### Cursorbewegung im Canvas-Koordinatenraum verfolgen
-
-```ts
-useCanvasInput(
-  canvasRef,
-  editor,
-  hitTestSectionTitle,
-  hitTestComponentLabel,
-  hitTestFrameTitle,
-  (cx, cy) => {
-    console.log(cx, cy)
-  },
-)
-```
-
-## Hinweise
-
-Dieses Composable ist auf niedrigerem Level als die meiste Panel-Logik. Es eignet sich am besten für Editor-Shells und Canvas-Container.
-
-## Verwandte APIs
+## Siehe auch
 
 - [useCanvas](./use-canvas)
 - [useEditor](./use-editor)

@@ -1,15 +1,15 @@
 ---
 title: PropertyListItem
-description: Bezstanowy prymityw elementu dla jednego wiersza wypełnień, obrysów lub efektów.
+description: Pojedynczy element listy zalewów, obwiedni albo efektów.
 ---
 
 # PropertyListItem
 
-`PropertyListItem` udostępnia obsługę aktualizacji, łatania, usuwania i widoczności dla jednego elementu tablicy wewnątrz `PropertyListRoot`.
+`PropertyListItem` udostępnia działania zastępowania, częściowej aktualizacji, usuwania i zmiany widoczności jednego elementu wewnątrz `PropertyListRoot`.
 
-Użyj go przy budowaniu niestandardowych UI wierszy list dla wypełnień, obrysów lub efektów.
+Użyj go do zbudowania własnego wiersza zalewu, obwiedni albo efektu.
 
-## Powiązane API
+## Zobacz też
 
 - [PropertyListRoot](./property-list-root)
 - [usePropertyList](../advanced/use-property-list)

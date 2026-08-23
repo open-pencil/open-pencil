@@ -1,38 +1,38 @@
 ---
 title: Zusammenarbeit
-description: Echtzeit-Zusammenarbeit über P2P WebRTC — kein Server, kein Konto.
+description: Gemeinsame Bearbeitung in Echtzeit direkt über WebRTC, ohne zentralen Server.
 ---
 
 # Zusammenarbeit
 
-Bearbeite Designs gemeinsam in Echtzeit. Peers verbinden sich direkt — kein Server leitet deine Daten weiter, kein Konto erforderlich.
+Mehrere Personen können dasselbe Dokument gleichzeitig bearbeiten. Die Teilnehmer verbinden sich direkt über WebRTC; ein Konto ist nicht erforderlich.
 
-## Einen Raum teilen
+## Raum teilen
 
-1. Klicke auf den Teilen-Button in der oberen rechten Ecke
-2. Kopiere den generierten Link (`app.openpencil.dev/share/<room-id>`)
-3. Sende ihn an deine Mitarbeiter
+1. Schaltfläche „Teilen“ oben rechts öffnen.
+2. Den erzeugten Link `app.openpencil.dev/share/<room-id>` kopieren.
+3. Link an die anderen Teilnehmer senden.
 
-Jeder mit dem Link kann beitreten. Der Raum bleibt aktiv, solange mindestens ein Teilnehmer die Seite geöffnet hat.
+Jede Person mit dem Link kann beitreten. Der Raum bleibt erreichbar, solange mindestens ein Teilnehmer die Seite geöffnet hat.
 
-## Was synchronisiert wird
+## Synchronisierte Daten
 
-- **Dokumentänderungen** — jede Bearbeitung (Formen, Text, Eigenschaften, Layout) wird sofort synchronisiert
-- **Cursor** — sieh, wo jeder Mitarbeiter zeigt, mit Name und Farbe
-- **Auswahlen** — markierte Auswahlen sind für alle sichtbar
+- **Dokument:** Änderungen an Formen, Text, Eigenschaften und Anordnung;
+- **Zeiger:** Position, Name und Farbe jedes Teilnehmers;
+- **Auswahl:** ausgewählte Objekte der anderen Teilnehmer.
 
-## Folgemodus
+## Ansichtsverfolgung
 
-Klicke auf den Avatar eines Mitarbeiters in der oberen Leiste, um seinem Viewport zu folgen. Deine Zeichenfläche schwenkt und zoomt passend zu seiner Ansicht. Klicke erneut, um das Folgen zu beenden.
+Ein Klick auf einen Avatar folgt der Ansicht dieses Teilnehmers. Position und Zoom werden angepasst. Ein weiterer Klick beendet die Verfolgung.
 
-## So funktioniert es
+## Technische Grundlage
 
-Peers verbinden sich direkt über WebRTC — deine Designdaten gehen direkt von Browser zu Browser, nie über einen zentralen Server. Der Dokumentzustand verwendet einen CRDT (Conflict-free Replicated Data Type), sodass gleichzeitige Bearbeitungen automatisch ohne Konflikte zusammengeführt werden.
+WebRTC überträgt die Designdaten direkt zwischen den Teilnehmern. Ein zentraler Anwendungsserver leitet die Änderungen nicht weiter.
 
-Der Raum bleibt lokal bestehen — wenn du die Seite aktualisierst, trittst du mit dem gleichen Zustand wieder bei.
+Yjs synchronisiert den Dokumentzustand als CRDT und führt gleichzeitige Änderungen automatisch zusammen. IndexedDB speichert den lokalen Stand, sodass ein erneutes Öffnen desselben Raums ihn wiederherstellt.
 
-## Tipps
+## Hinweise
 
-- Funktioniert im Browser und in der Desktop-App
-- Raum-IDs sind kryptografisch zufällig — nur Personen mit dem Link können beitreten
-- Veraltete Cursor werden automatisch bereinigt, wenn jemand die Verbindung trennt
+- Zusammenarbeit funktioniert im Browser und in der Desktop-App.
+- Raumkennungen werden mit kryptografisch sicheren Zufallswerten erzeugt.
+- Zeiger und Anwesenheitseinträge getrennter Teilnehmer werden automatisch entfernt.

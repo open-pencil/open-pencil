@@ -1,49 +1,36 @@
 ---
-title: Exportation
-description: Exporter des images (PNG, JPG, WEBP, SVG) et gérer les fichiers .fig dans OpenPencil.
+title: Exporter
+description: Exporter la sélection en PNG, JPG, WEBP ou SVG et enregistrer des fichiers `.fig`.
 ---
-# Exportation
 
-## Exportation d'images
+# Exporter
 
-Sélectionnez un nœud et utilisez la section Export dans le panneau de propriétés.
+## Exportation d’images
 
-### Paramètres d'exportation
+Sélectionnez un objet et ouvrez **Exporter** dans le panneau des propriétés. Chaque réglage définit :
 
-- **Échelle** — 0,5×, 0,75×, 1×, 1,5×, 2×, 3× ou 4× (masquée pour SVG — les vecteurs sont indépendants de la résolution)
-- **Format** — PNG (fond transparent), JPG (fond blanc), WEBP (fond transparent), SVG (vecteur)
+- le format : PNG, JPG, WEBP ou SVG ;
+- l’échelle ou une largeur explicite ;
+- le suffixe du nom ;
+- la qualité pour JPG et WEBP.
 
-### Méthodes d'exportation
+Un objet peut avoir plusieurs réglages. L’aperçu apparaît sur un damier afin de vérifier la transparence.
 
-| Méthode | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Raccourci clavier | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>E</kbd> |
-| Menu contextuel | Clic droit <kbd>→</kbd> Exporter… | Clic droit <kbd>→</kbd> Exporter… |
-| Panneau propriétés | Bouton "Exporter" | Bouton "Exporter" |
+Vous pouvez aussi ouvrir **Exporter…** depuis le menu contextuel.
 
-## Copier en tant que
+## Copier comme
 
-Le menu contextuel **Copier en tant que** offre des formats supplémentaires :
+Le menu contextuel copie la sélection comme texte, SVG, PNG ou JSX.
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Copier en tant que texte | — | — |
-| Copier en tant que SVG | — | — |
-| Copier en tant que PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Copier en tant que JSX | — | — |
+## Enregistrer les documents
 
-## Opérations de fichier .fig
+**Enregistrer** met à jour le fichier actuel. **Enregistrer sous…** choisit un nouvel emplacement. Tauri utilise des dialogues natifs ; Chrome et Edge peuvent utiliser File System Access API ; les autres navigateurs téléchargent le fichier.
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Ouvrir | <kbd>⌘</kbd><kbd>O</kbd> | <kbd>Ctrl</kbd> + <kbd>O</kbd> |
-| Enregistrer | <kbd>⌘</kbd><kbd>S</kbd> | <kbd>Ctrl</kbd> + <kbd>S</kbd> |
-| Enregistrer sous | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>S</kbd> |
+Les fichiers `.fig` exportés contiennent les données Kiwi, la compression Zstandard et une miniature. Les composants et ensembles sont conservés pour pouvoir rouvrir le fichier dans Figma.
 
-Les fichiers sauvegardés sont compressés et incluent une miniature pour l'aperçu. Compatibilité aller-retour avec Figma.
+## Choisir un format
 
-## Conseils
-
-- Utilisez l'échelle 2× ou 3× pour les écrans haute résolution.
-- JPG utilise toujours un fond blanc — utilisez PNG ou WEBP pour la transparence.
-- Utilisez l'export SVG pour l'édition vectorielle dans des éditeurs de code ou Illustrator.
+- PNG conserve la transparence et convient aux interfaces.
+- JPG réduit la taille des photographies.
+- WEBP offre une bonne compression pour le Web.
+- SVG conserve les vecteurs modifiables et convient aux icônes et au code.

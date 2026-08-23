@@ -1,15 +1,15 @@
 ---
 title: usePropScrub
-description: Niedrigstufen-Hilfsmittel für Ziehen-zum-Scrubben-Eigenschaftsaktualisierungen mit Commit-Unterstützung.
+description: Vorschau und Speichern einer numerischen Eigenschaft während des Ziehens.
 ---
 
 # usePropScrub
 
-`usePropScrub(editor)` koordiniert Live-Eigenschaftsaktualisierungen während des Scrubbings und committet undo-bewusste Änderungen, wenn die Interaktion beendet ist.
+`usePropScrub(editor)` aktualisiert eine Eigenschaft während des Ziehens und schreibt nach Ende der Interaktion den Endwert in die Rückgängig-Historie.
 
-Verwenden Sie es beim Erstellen numerischer Steuerelemente, die ausgewählte Knoten-Eigenschaften direkt scrubben.
+Das Composable eignet sich für Zahlenfelder, die Eigenschaften ausgewählter Objekte durch Ziehen verändern.
 
-## Verwandte APIs
+## Siehe auch
 
 - [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

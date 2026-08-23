@@ -20,6 +20,7 @@ const editing = ref(false)
 const editingProfileId = ref<string>()
 const statusByConnection = ref<Record<string, CredentialStatus>>({})
 function providerName(providerID: string): string {
+  if (providerID === 'harness:pi') return 'Pi'
   if (providerID.startsWith('acp:')) {
     const agentID = providerID.slice('acp:'.length)
     return ACP_AGENTS.find((agent) => agent.id === agentID)?.name ?? providerID

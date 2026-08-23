@@ -1,33 +1,29 @@
 ---
-title: Shell Editor Personalizzata
-description: Crea la tua shell editor con provideEditor, CanvasRoot, menu, pannelli e toolbar.
+title: Interfaccia di editing personalizzata
+description: Creare un’interfaccia con provideEditor, CanvasRoot, menu, pannelli e barre degli strumenti.
 ---
 
-# Shell Editor Personalizzata
+# Interfaccia di editing personalizzata
 
-Una tipica app Vue con OpenPencil ha tre livelli:
+Un’applicazione OpenPencil con Vue comprende normalmente tre livelli:
 
-1. `@open-pencil/core` crea l'editor
-2. `@open-pencil/vue` lo adatta in composable Vue e primitive headless
-3. la tua app renderizza la shell, lo stile e la UX specifica del prodotto
+1. `@open-pencil/core` crea l’editor;
+2. `@open-pencil/vue` lo collega a composable e componenti Vue senza stile;
+3. l’applicazione definisce disposizione, stile e comportamento specifico del prodotto.
 
-## Perché questo è importante
+## Casi d’uso
 
-L'app OpenPencil integrata è solo una possibile shell.
+L’applicazione OpenPencil è solo una possibile interfaccia. Il SDK permette di creare un editor integrato in un altro prodotto, uno strumento interno per risorse, un editor di modelli, un’interfaccia di annotazione o un editor specializzato assistito dall’AI.
 
-Puoi costruirne una molto diversa per un flusso di lavoro specifico: un editor integrato in un altro prodotto, uno strumento asset interno, un editor di template, una UI per annotazioni, o una superficie di editing assistita dall'IA con controlli personalizzati.
+## Struttura consigliata
 
-Questo è il motivo principale per cui esiste l'SDK.
+Un’interfaccia tipica:
 
-## Composizione consigliata
-
-Una shell pratica spesso ha questa forma:
-
-- provider in cima con `provideEditor()`
-- canvas al centro
-- navigazione pagine/layer su un lato
-- proprietà sull'altro lato
-- menu e toolbar guidati da composable
+- esegue `provideEditor()` in alto nell’albero dei componenti;
+- posiziona il canvas al centro;
+- mostra pagine e livelli in un pannello laterale;
+- mostra le proprietà nel pannello opposto;
+- controlla menu e barre degli strumenti tramite composable.
 
 ## Esempio
 
@@ -40,7 +36,6 @@ import {
   CanvasSurface,
   ToolbarRoot,
   PageListRoot,
-  LayerTreeRoot,
 } from '@open-pencil/vue'
 
 const editor = createEditor({ width: 1440, height: 900 })
@@ -50,56 +45,22 @@ provideEditor(editor)
 <template>
   <div class="grid h-screen grid-cols-[240px_1fr_320px] grid-rows-[48px_1fr]">
     <ToolbarRoot v-slot="{ tools, activeTool, setTool }">
-      <header class="col-span-3 flex items-center gap-2 border-b px-3">
-        <button
-          v-for="tool in tools"
-          :key="tool.id"
-          :data-active="activeTool === tool.id"
-          @click="setTool(tool.id)"
-        >
+      <header class="col-span-3">
+        <button v-for="tool in tools" :key="tool.id" @click="setTool(tool.id)">
           {{ tool.label }}
         </button>
       </header>
     </ToolbarRoot>
 
-    <aside class="border-r">
-      <PageListRoot v-slot="{ pages, currentPageId, switchPage }">
-        <nav>
-          <button
-            v-for="page in pages"
-            :key="page.id"
-            :data-active="page.id === currentPageId"
-            @click="switchPage(page.id)"
-          >
-            {{ page.name }}
-          </button>
-        </nav>
-      </PageListRoot>
-    </aside>
-
-    <main>
-      <CanvasRoot>
-        <CanvasSurface class="size-full" />
-      </CanvasRoot>
-    </main>
-
-    <aside class="border-l">
-      Pannello proprietà qui
-    </aside>
+    <aside><PageListRoot /></aside>
+    <main><CanvasRoot><CanvasSurface class="size-full" /></CanvasRoot></main>
+    <aside>Pannello proprietà</aside>
   </div>
 </template>
 ```
 
-## Perché questa separazione funziona
+## Responsabilità
 
-- l'SDK possiede l'integrazione con l'editor e la logica headless riutilizzabile
-- la tua app possiede layout, stile e azioni specifiche del prodotto
-- i composable possono alimentare menu e pannelli senza componenti wrapper aggiuntivi
-
-## API correlate
-
-- [provideEditor](../api/composables/provide-editor)
-- [useCanvas](../api/composables/use-canvas)
-- [ToolbarRoot](../api/components/toolbar-root)
-- [PageListRoot](../api/components/page-list-root)
-- [LayerTreeRoot](../api/components/layer-tree-root)
+- Il SDK gestisce l’integrazione con l’editor e la logica riutilizzabile.
+- L’applicazione controlla disposizione, stile e azioni proprie.
+- I composable forniscono i dati di menu e pannelli senza imporre ulteriori componenti contenitore.

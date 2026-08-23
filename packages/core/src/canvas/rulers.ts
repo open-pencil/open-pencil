@@ -3,7 +3,10 @@ import type { Canvas, CanvasKit } from 'canvaskit-wasm'
 import type { SceneNode, SceneGraph } from '@open-pencil/scene-graph'
 import { computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
+import { getGuideScreenSegment } from '#core/canvas/guides/geometry'
+import type { GuideOverlayState, GuideSelection } from '#core/canvas/guides/types'
 import {
+  MEASUREMENT_COLOR,
   RULER_SIZE,
   RULER_BADGE_HEIGHT,
   RULER_BADGE_PADDING,
@@ -122,7 +125,8 @@ export function drawRulers(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
-  selectedIds: Set<string>
+  selectedIds: Set<string>,
+  guides?: GuideOverlayState
 ): void {
   const R = RULER_SIZE
   const vw = r.viewportWidth
@@ -193,6 +197,101 @@ export function drawRulers(
       0,
       selBounds.sy2,
       'vertical'
+    )
+  }
+
+  drawGuideRulerPositions(r, canvas, graph, font, guides)
+}
+
+function guideSelections(guides?: GuideOverlayState): GuideSelection[] {
+  if (guides?.preview) return []
+  const selections: GuideSelection[] = []
+  if (guides?.selected) selections.push(guides.selected)
+  if (
+    guides?.hovered &&
+    (guides.hovered.ownerId !== guides.selected?.ownerId ||
+      guides.hovered.guideId !== guides.selected.guideId)
+  ) {
+    selections.push(guides.hovered)
+  }
+  return selections
+}
+
+function drawGuideRulerLabel(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  font: InstanceType<CanvasKit['Font']>,
+  axis: 'x' | 'y',
+  position: number,
+  screenPosition: number
+): void {
+  const label = String(Math.round(position * 100) / 100)
+  r.auxFill.setColor(r.ck.Color4f(MEASUREMENT_COLOR.r, MEASUREMENT_COLOR.g, MEASUREMENT_COLOR.b, 1))
+  if (axis === 'x') {
+    const widths = font.getGlyphWidths(font.getGlyphIDs(label))
+    const textWidth = widths.reduce((sum, width) => sum + width, 0)
+    canvas.drawText(
+      label,
+      screenPosition - textWidth / 2,
+      RULER_SIZE * RULER_TEXT_BASELINE,
+      r.auxFill,
+      font
+    )
+  } else {
+    canvas.save()
+    canvas.translate(RULER_SIZE * RULER_TEXT_BASELINE, screenPosition)
+    canvas.rotate(-90, 0, 0)
+    canvas.drawText(label, 2, 3, r.auxFill, font)
+    canvas.restore()
+  }
+}
+
+function drawGuideRulerPositions(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  font: InstanceType<CanvasKit['Font']>,
+  guides?: GuideOverlayState
+): void {
+  if (guides?.preview) {
+    const owner = graph.getNode(guides.preview.ownerId)
+    if (!owner) return
+    const segment = getGuideScreenSegment(graph, owner, guides.preview, {
+      panX: r.panX,
+      panY: r.panY,
+      zoom: r.zoom,
+      width: r.viewportWidth,
+      height: r.viewportHeight
+    })
+    drawGuideRulerLabel(
+      r,
+      canvas,
+      font,
+      guides.preview.axis,
+      guides.preview.position,
+      guides.preview.axis === 'x' ? segment.x1 : segment.y1
+    )
+    return
+  }
+
+  for (const selection of guideSelections(guides)) {
+    const owner = graph.getNode(selection.ownerId)
+    const guide = owner?.guides.find((candidate) => candidate.id === selection.guideId)
+    if (!owner || !guide) continue
+    const segment = getGuideScreenSegment(graph, owner, guide, {
+      panX: r.panX,
+      panY: r.panY,
+      zoom: r.zoom,
+      width: r.viewportWidth,
+      height: r.viewportHeight
+    })
+    drawGuideRulerLabel(
+      r,
+      canvas,
+      font,
+      guide.axis,
+      guide.position,
+      guide.axis === 'x' ? segment.x1 : segment.y1
     )
   }
 }

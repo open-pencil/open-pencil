@@ -1,64 +1,23 @@
 ---
 title: useTypography
-description: Lit et met à jour la famille de polices, le poids, la taille, l'alignement et la mise en forme des nœuds texte.
+description: Lire et modifier police, taille, espacement et alignement du texte.
 ---
 
 # useTypography
 
-`useTypography()` est le composable de contrôle des propriétés de texte pour les panneaux d'édition de texte.
+`useTypography()` fournit l’état et les actions des contrôles typographiques :
 
-Il expose :
+- famille et style ;
+- taille et interligne ;
+- approche ;
+- alignement horizontal et vertical ;
+- gras, italique, souligné et barré ;
+- valeurs mixtes pour une sélection multiple.
 
-- la famille de polices
-- le poids de la police
-- la taille de la police
-- l'état de mise en forme
-- le statut des polices manquantes
-- des helpers pour changer la famille, le poids, l'alignement et les décorations
+Pendant l’édition de texte, les changements peuvent ne s’appliquer qu’à la plage sélectionnée.
 
-## Utilisation
+## Voir aussi
 
-```ts
-import { useTypography } from '@open-pencil/vue'
-
-const typography = useTypography()
-```
-
-## Exemple de base
-
-```ts
-const {
-  fontFamily,
-  fontWeight,
-  fontSize,
-  activeFormatting,
-  setFamily,
-  setWeight,
-  setAlign,
-} = useTypography()
-```
-
-## Exemples pratiques
-
-### Charger et changer une famille de polices
-
-```ts
-const typography = useTypography({
-  loadFont: async (family, style) => {
-    await myFontLoader(family, style)
-  },
-})
-```
-
-### Basculer la mise en forme
-
-```ts
-typography.toggleBold()
-typography.toggleItalic()
-typography.toggleDecoration('UNDERLINE')
-```
-
-## API associées
-
-- [useTextEdit](./use-text-edit)
-- [useSelectionState](./use-selection-state)
+- [TypographyControlsRoot](../components/typography-controls-root)
+- [useFontPicker](../advanced/use-font-picker)
+- [Modifier du texte](/user-guide/text-editing)

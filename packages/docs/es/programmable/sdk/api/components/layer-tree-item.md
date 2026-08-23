@@ -1,16 +1,13 @@
 ---
 title: LayerTreeItem
-description: Primitivo headless de fila para un solo nodo del árbol de capas.
+description: Fila individual de un árbol de capas.
 ---
 
 # LayerTreeItem
 
-`LayerTreeItem` renderiza una fila del árbol de capas y expone manejadores de selección, expansión, visibilidad, bloqueo y renombrado a través de su slot por defecto.
+`LayerTreeItem` representa una fila del árbol. Su ranura predeterminada recibe estado y acciones para selección, despliegue de elementos secundarios, visibilidad, bloqueo y cambio de nombre directo.
 
-Úsalo cuando quieras markup de fila propio de la app con el comportamiento del árbol de capas proporcionado por el SDK.
-
-## APIs relacionadas
+## Véase también
 
 - [LayerTreeRoot](./layer-tree-root)
 - [useLayerTree](../advanced/use-layer-tree)
-- [useLayerDrag](../advanced/use-layer-drag)

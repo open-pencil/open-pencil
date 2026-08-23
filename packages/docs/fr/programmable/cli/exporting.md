@@ -1,59 +1,34 @@
 ---
-title: Exporter
-description: Rendez des fichiers .fig en PNG, JPG, WEBP, SVG ou JSX avec classes Tailwind.
+title: Exporter avec la CLI
+description: Générer images, SVG, HTML et autres sorties sans ouvrir l’éditeur.
 ---
 
-# Exporter
+# Exporter avec la CLI
 
-Exportez des designs depuis le terminal — images raster, vecteurs ou code JSX.
-
-## Export d'images
+`export` produit le rendu d’une page ou d’un objet depuis un fichier compatible.
 
 ```sh
-openpencil export design.fig                          # PNG (par défaut)
-openpencil export design.fig -f jpg -s 2 -q 90       # JPG en 2×, qualité 90
-openpencil export design.fig -f webp -s 3             # WEBP en 3×
-openpencil export design.fig -f svg                   # SVG vectoriel
+bun open-pencil export design.fig -o preview.png
 ```
 
-Options :
+## Choisir le contenu
 
-- `-f` — format : `png`, `jpg`, `webp`, `svg`, `jsx`
-- `-s` — échelle : `1`–`4`
-- `-q` — qualité : `0`–`100` (JPG/WEBP uniquement)
-- `-o` — chemin de sortie
-- `--page` — nom de la page
-- `--node` — identifiant de nœud spécifique
+Les options de la commande permettent de sélectionner une page, un identifiant ou un objet trouvé. Le format est déduit de l’extension ou indiqué explicitement.
 
-## Export JSX
+## Échelle et dimensions
 
-Exportez en JSX avec des classes utilitaires Tailwind :
+L’échelle contrôle la résolution. Une largeur ou une hauteur peut aussi être fixée ; les proportions sont conservées lorsqu’une seule dimension est fournie.
 
-```sh
-openpencil export design.fig -f jsx --style tailwind
-```
+## SVG
 
-Résultat :
+SVG préserve la géométrie vectorielle et convient aux icônes, à la revue et aux modifications ultérieures.
 
-```html
-<div className="flex flex-col gap-4 p-6 bg-white rounded-xl">
-  <p className="text-2xl font-bold text-[#1D1B20]">Card Title</p>
-  <p className="text-sm text-[#49454F]">Description text</p>
-</div>
-```
+## HTML
 
-Supporte aussi `--style openpencil` pour le format JSX natif (voir [Moteur de rendu JSX](../jsx-renderer)).
+L’exportation HTML crée un document autonome avec la structure et les styles disponibles. Elle vise la transmission, l’inspection et les traitements ultérieurs, pas le remplacement à l’identique du rendu CanvasKit. Elle n’est disponible qu’en mode fichier.
 
-## Miniatures
+## Chemin de sortie
 
-```sh
-openpencil export design.fig --thumbnail --width 1920 --height 1080
-```
+`-o` ou `--output` définit le chemin. La CLI signale les erreurs de format, les objets introuvables et les chemins invalides au lieu de produire silencieusement un résultat incomplet.
 
-## Mode application en direct
-
-Omettez le fichier pour exporter depuis l'application en cours d'exécution :
-
-```sh
-openpencil export -f png    # capture du canevas actuel
-```
+Consultez `bun open-pencil export --help` pour les formats et options de la version installée.

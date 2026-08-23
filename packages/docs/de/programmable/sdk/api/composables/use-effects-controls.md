@@ -1,50 +1,19 @@
 ---
 title: useEffectsControls
-description: Effekte-Panel-Hilfsmittel für Schatten, Unschärfen, Erweiterungszustand und Scrub/Commit-Flows.
+description: Schatten und Unschärfen im Effekte-Panel verwalten.
 ---
 
 # useEffectsControls
 
-`useEffectsControls()` ist das Effekte-Eigenschafts-Composable, das von Effekte-Panels verwendet wird.
-
-Es bietet Hilfsmittel für:
-
-- Standard-Effekte
-- Schatten- vs. Unschärfe-Logik
-- erweiterter Element-Zustand
-- Scrub-Vorschau-Bearbeitung
-- Commit-on-Finish-Aktualisierungen
-- Effekttyp- und Farbänderungen
-
-## Verwendung
+`useEffectsControls()` stellt Standardwerte, Einstellungen für Schatten und Unschärfen, den Zustand aufgeklappter Einträge, Vorschau beim Ziehen und Speichern des Endwerts bereit.
 
 ```ts
-import { useEffectsControls } from '@open-pencil/vue'
+const { createDefaultEffect, scrubEffect, commitEffect } = useEffectsControls()
 
-const effects = useEffectsControls()
+scrubEffect(node, index, { radius: 12 })
+commitEffect(node, index, { radius: 12 })
 ```
 
-## Einfaches Beispiel
-
-```ts
-const { effectOptions, createDefaultEffect, toggleExpand, scrubEffect, commitEffect } = useEffectsControls()
-```
-
-## Praktische Beispiele
-
-### Einen Standard-Effekt hinzufügen
-
-```ts
-const effect = effects.createDefaultEffect()
-```
-
-### Scrub-Änderungen in der Vorschau, dann committen
-
-```ts
-effects.scrubEffect(node, index, { radius: 12 })
-effects.commitEffect(node, index, { radius: 12 })
-```
-
-## Verwandte APIs
+## Siehe auch
 
 - [PropertyListRoot](../components/property-list-root)

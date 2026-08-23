@@ -4,6 +4,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { IS_BROWSER } from '#core/constants'
 import { importNodeChanges } from '#core/kiwi/fig/import'
+import { createFigParseWorker } from '#core/kiwi/fig/parse/client'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import type { SerializedSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import { registerFigPopulationWorker } from '#core/kiwi/fig/population/client'
@@ -42,9 +43,7 @@ type WorkerParseResult = WorkerGraphResult | WorkerPageManifestResult
 
 function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Promise<SceneGraph> {
   return new Promise((resolve, reject) => {
-    const worker = new Worker(new URL('../../../kiwi/fig/parse/worker.ts', import.meta.url), {
-      type: 'module'
-    })
+    const worker = createFigParseWorker()
 
     worker.onmessage = (e: MessageEvent<WorkerParseResult>) => {
       if (e.data.type === 'page-manifest') {

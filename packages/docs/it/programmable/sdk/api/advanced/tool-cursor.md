@@ -1,15 +1,15 @@
 ---
 title: toolCursor
-description: Helper che risolve la stringa del cursore per uno strumento dell'editor.
+description: Determinare il cursore CSS dello strumento attivo.
 ---
 
 # toolCursor
 
-`toolCursor(tool, override?)` mappa uno strumento dell'editor al cursore che l'SDK dovrebbe usare, consentendo comunque un override esplicito.
+`toolCursor(tool, override?)` restituisce il cursore CSS di uno strumento. `override` consente di imporre un altro valore.
 
-Usalo quando costruisci shell canvas personalizzate o UI degli strumenti che necessitano di un comportamento del cursore coerente.
+La funzione mantiene cursori coerenti per ogni strumento in un canvas o una barra degli strumenti personalizzati.
 
-## API correlate
+## Vedi anche
 
 - [useCanvas](../composables/use-canvas)
 - [useEditorCommands](../composables/use-editor-commands)

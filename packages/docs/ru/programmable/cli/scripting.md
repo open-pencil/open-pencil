@@ -1,70 +1,157 @@
 ---
-title: Скрипты
-description: Выполняйте JavaScript с Figma Plugin API — запрашивайте узлы, массово изменяйте дизайн, создавайте фреймы.
+title: Сценарии
+description: Выполнение JavaScript через совместимый с Figma Plugin API для поиска, массового изменения и создания дизайна.
 ---
 
-# Скрипты
+# Сценарии
 
-`openpencil eval` предоставляет полный Figma Plugin API в терминале. Читайте узлы, изменяйте свойства, создавайте фигуры — и сохраняйте изменения обратно в файл.
+`openpencil eval` выполняет JavaScript для документа OpenPencil и предоставляет глобальный объект `figma`, совместимый с Figma Plugin API. Команда подходит для пакетных изменений, проверки документов, подготовки тестовых данных и другой автоматизации без интерфейса редактора.
 
-## Базовое использование
+## Первый вызов
 
 ```sh
-openpencil eval design.fig -c "figma.currentPage.children.length"
+openpencil eval design.fig -c "return figma.currentPage.children.length"
 ```
 
-Флаг `-c` принимает JavaScript. Глобальный объект `figma` работает как Figma Plugin API.
-
-## Запрос узлов
+Параметр `-c` принимает JavaScript. Если код не начинается с `return`, OpenPencil помещает его в асинхронную функцию и возвращает её результат, когда он есть.
 
 ```sh
 openpencil eval design.fig -c "
-  figma.currentPage.findAll(n => n.type === 'FRAME' && n.name.includes('Button'))
-    .map(b => ({ id: b.id, name: b.name, w: b.width, h: b.height }))
+  const frame = figma.createFrame()
+  frame.name = 'Card'
+  frame.resize(300, 200)
+  frame.layoutMode = 'VERTICAL'
+  frame.itemSpacing = 12
+  return { id: frame.id, name: frame.name }
+"
+```
+
+## Поиск объектов
+
+```sh
+openpencil eval design.fig -c "
+  return figma.currentPage
+    .findAll((node) => node.type === 'FRAME' && node.name.includes('Button'))
+    .map((button) => ({
+      id: button.id,
+      name: button.name,
+      width: button.width,
+      height: button.height
+    }))
 "
 ```
 
 ## Изменение и сохранение
 
-```sh
-openpencil eval design.fig -c "
-  figma.currentPage.children.forEach(n => n.opacity = 0.5)
-" -w
-```
+`--write` или `-w` записывает изменения во входной файл. `--output` или `-o` создаёт новый файл.
 
-`-w` записывает изменения обратно во входной файл. Используйте `-o output.fig`, чтобы записать в другой файл.
-
-## Чтение из stdin
-
-Для длинных скриптов:
+## Сценарий из стандартного ввода
 
 ```sh
-cat transform.js | openpencil eval design.fig --stdin -w
+cat transform.js | openpencil eval design.fig --stdin --write
 ```
 
-## Режим работы с приложением
+## Открытое приложение
 
-Опустите файл для выполнения команд в запущенном настольном приложении:
+Не указывайте файл, чтобы выполнить сценарий для текущего документа в настольном приложении:
 
 ```sh
-openpencil eval -c "figma.currentPage.name"
+openpencil eval -c "return figma.currentPage.name"
 ```
+
+## Вывод
+
+При перенаправлении вывода по умолчанию используется JSON. Параметр `--json` включает его явно, а `--quiet` или `-q` отключает вывод.
 
 ## Доступный API
 
-Объект `figma` поддерживает:
+API намеренно близок к Figma Plugin API, но работает с SceneGraph и форматами OpenPencil.
 
-- `figma.currentPage` — активная страница
-- `figma.root` — корень документа
-- `figma.createFrame()`, `figma.createRectangle()`, `figma.createEllipse()`, `figma.createText()` и др.
-- `.findAll()`, `.findOne()` — поиск по потомкам
-- `.appendChild()`, `.insertChild()` — манипуляции с деревом
-- Все сеттеры свойств: `.fills`, `.strokes`, `.effects`, `.opacity`, `.cornerRadius`, `.layoutMode`, `.itemSpacing` и др.
+### Документ и страницы
 
-Это тот же API, который используют плагины Figma, поэтому существующие знания и фрагменты кода применимы напрямую.
+- `figma.root`
+- `figma.currentPage`
+- `figma.currentPage.selection`
+- `figma.getNodeById(id)`
+- `figma.createPage()`
 
-## JSON-вывод
+### Создание объектов
 
-```sh
-openpencil eval design.fig -c "..." --json
-```
+- `figma.createFrame()`
+- `figma.createRectangle()`
+- `figma.createEllipse()`
+- `figma.createText()`
+- `figma.createLine()`
+- `figma.createPolygon()`
+- `figma.createStar()`
+- `figma.createVector()`
+- `figma.createComponent()`
+- `figma.createSection()`
+
+### Дерево
+
+- `node.children`
+- `node.parent`
+- `node.appendChild(child)`
+- `node.insertChild(index, child)`
+- `node.clone()`
+- `node.remove()`
+- `node.findAll(callback?)`
+- `node.findOne(callback)`
+- `node.findChild(callback)`
+- `node.findChildren(callback?)`
+- `figma.group(nodes, parent)`
+- `figma.ungroup(node)`
+
+### Компоненты
+
+- `figma.createComponentFromNode(node)`
+- `component.createInstance()`
+- `instance.mainComponent`
+
+### Переменные
+
+- `figma.getLocalVariables(type?)`
+- `figma.getVariableById(id)`
+- `figma.getLocalVariableCollections()`
+- `figma.getVariableCollectionById(id)`
+- `figma.createVariable(name, type, collectionId, value?)`
+- `figma.setVariableValue(variableId, modeId, value)`
+- `figma.deleteVariable(id)`
+- `figma.createVariableCollection(name)`
+- `figma.deleteVariableCollection(id)`
+- `figma.bindVariable(nodeId, field, variableId)`
+- `figma.unbindVariable(nodeId, field)`
+
+### Свойства
+
+Распространённые свойства доступны для чтения и записи через прокси:
+
+- геометрия: `x`, `y`, `width`, `height`, `rotation`, `resize(width, height)`;
+- внешний вид: `fills`, `strokes`, `effects`, `opacity`, `visible`, `locked`, `blendMode`, `clipsContent`;
+- радиусы: `cornerRadius`, `topLeftRadius`, `topRightRadius`, `bottomRightRadius`, `bottomLeftRadius`;
+- текст: `characters`, `fontSize`, `fontName`, `fontWeight`, выравнивание, интерлиньяж, межбуквенный интервал и функции для диапазонов стилей;
+- автоматическая компоновка: `layoutMode`, `primaryAxisAlignItems`, `counterAxisAlignItems`, `itemSpacing`, отступы, размеры и положение;
+- обводка: `strokeWeight`, `strokeAlign`, `dashPattern`.
+
+### Служебные возможности
+
+- `figma.mixed`
+- `figma.createImage(data)`
+- `figma.loadFontAsync(fontName)` ничего не делает, поскольку OpenPencil не блокирует изменение текста до загрузки шрифта плагином
+- `figma.listAvailableFontsAsync()` возвращает доступные системные шрифты
+- `figma.notify(message)` записывает предупреждение в режиме без интерфейса
+- `figma.viewport`
+
+## Пока не совместимо с Figma
+
+Следующие API пока не предоставляются в совместимом виде:
+
+- `node.exportAsync()`
+- `node.setBoundVariable(field, variable)`
+- `node.detachInstance()`
+- `figma.combineAsVariants(components, parent)`
+- API стилей Figma, например `figma.createPaintStyle()` и `figma.createTextStyle()`
+- полная совместимость логических операций над векторами
+
+Вместо них используйте команды экспорта OpenPencil CLI, инструменты основного пакета или прямые вспомогательные функции SceneGraph, когда они доступны.

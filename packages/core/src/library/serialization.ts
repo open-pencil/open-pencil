@@ -1,4 +1,5 @@
 import { SceneGraph } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
 
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
@@ -34,12 +35,17 @@ export function serializeLibraryRevision(
   }
 }
 
+function cloneLibraryNode(node: SceneNode): SceneNode {
+  const cloned = structuredClone(node)
+  return Array.isArray(cloned.guides) ? cloned : { ...cloned, guides: [] }
+}
+
 export function deserializeLibraryRevision(
   revision: SerializedComponentLibraryRevision
 ): ComponentLibraryRevision {
   const graph = new SceneGraph()
   graph.rootId = revision.graph.rootId
-  graph.nodes = new Map(revision.graph.nodes.map(([id, node]) => [id, structuredClone(node)]))
+  graph.nodes = new Map(revision.graph.nodes.map(([id, node]) => [id, cloneLibraryNode(node)]))
   graph.images = new Map(
     revision.graph.images.map(([hash, bytes]) => [hash, new Uint8Array(bytes)])
   )

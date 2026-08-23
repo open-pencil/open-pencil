@@ -1,15 +1,15 @@
 ---
 title: LayoutControlsRoot
-description: Headless Wurzel-Primitiv für Auto-Layout- und Größenanpassungssteuerelemente.
+description: Komponente ohne vorgegebene Gestaltung für automatische Anordnung und Größenmodi.
 ---
 
 # LayoutControlsRoot
 
-`LayoutControlsRoot` gibt den von `useLayout()` zurückgegebenen Slot-Vertrag als strukturelles Primitiv zurück.
+`LayoutControlsRoot` gibt die API von `useLayout()` über seinen Slot weiter.
 
-Verwenden Sie es, wenn Sie eine wiederverwendbare Layout-Steuerelemente-Shell mit app-eigenem Markup möchten.
+Die Anwendung kann ein eigenes Panel für Anordnung und Größe darstellen und dabei Zustand und Aktionen des SDK verwenden.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useLayout](../composables/use-layout)
-- [Eigenschafts-Panels-Anleitung](../../guides/property-panels)
+- [Eigenschaften-Panels](../../guides/property-panels)

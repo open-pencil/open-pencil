@@ -78,6 +78,7 @@ describe('MCP server auto-generated auth token', () => {
       const healthResp = await fetch(`http://127.0.0.1:${httpPort}/health`)
       const health = (await healthResp.json()) as HealthResponse
       expect(health.authRequired).toBe(true)
+      expect(health.tools).toBeUndefined()
     } finally {
       await handle.close()
     }

@@ -1,15 +1,15 @@
 ---
 title: useGradientStops
-description: Stan punktów zatrzymania gradientu i pomocnik mutacji dla edytorów wypełnień.
+description: Stan i działania dotyczące punktów gradientu.
 ---
 
 # useGradientStops
 
-`useGradientStops(fill, onUpdate)` zarządza stanem aktywnego punktu zatrzymania, przełączaniem podtypów, przeciąganiem punktów oraz aktualizacjami koloru lub przezroczystości dla wypełnień gradientowych.
+`useGradientStops(fill, onUpdate)` zarządza aktywnym punktem, rodzajem gradientu, przeciąganiem punktów oraz zmianą położenia, koloru i przezroczystości.
 
-Użyj go przy budowaniu niestandardowych edytorów gradientów wykraczających poza zapakowane prymitywy.
+Użyj composable do zbudowania własnego edytora gradientu bez ponownego implementowania tej logiki.
 
-## Powiązane API
+## Zobacz też
 
 - [GradientEditorRoot](../components/gradient-editor-root)
 - [GradientEditorBar](../components/gradient-editor-bar)

@@ -1,15 +1,15 @@
 ---
 title: useNodeFontStatus
-description: Fehlende-Schrift-Status-Hilfsmittel für Textknoten.
+description: Informationen über fehlende Fonts in einem Text object.
 ---
 
 # useNodeFontStatus
 
-`useNodeFontStatus(node)` gibt fehlende-Schrift-Informationen für einen Textknoten-Getter zurück.
+`useNodeFontStatus(node)` prüft die Fonts des angegebenen Text object und gibt Informationen über nicht geladene Families und Styles zurück.
 
-Verwenden Sie es in Typografie-Panels und Warnungen, die nicht verfügbare Schriftfamilien anzeigen müssen.
+Das composable eignet sich für Typography panels und Warnungen über fehlende Fonts.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useTypography](../composables/use-typography)
 - [TypographyControlsRoot](../components/typography-controls-root)

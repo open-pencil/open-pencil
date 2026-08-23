@@ -1,70 +1,32 @@
 ---
 title: GradientEditorBar
-description: Headless-примитив перетаскиваемой полосы для точек градиента.
+description: Интерактивная полоса для выбора и перетаскивания точек градиента.
 ---
 
 # GradientEditorBar
 
-`GradientEditorBar` — примитив перетаскиваемой полосы, используемый внутри редакторов градиента.
+`GradientEditorBar` предоставляет состояние и обработчики указателя для отображения полосы градиента. Компонент управляет выбором и перетаскиванием точек.
 
-## Свойства
+## Props
 
 <SdkPropsTable
   :rows="[
     { name: 'stops', type: 'GradientStop[]', description: 'Текущие точки градиента.', required: true },
     { name: 'activeStopIndex', type: 'number', description: 'Индекс активной точки.', required: true },
-    { name: 'barBackground', type: 'string', description: 'CSS-строка фона полосы.', required: true }
+    { name: 'barBackground', type: 'string', description: 'CSS-фон полосы.', required: true }
   ]"
 />
 
-## События
+## Events
 
 <SdkEventsTable
   :rows="[
-    { name: 'selectStop', payload: 'index: number', description: 'Генерируется при выборе точки.' },
-    { name: 'dragStop', payload: 'index: number, position: number', description: 'Генерируется при перетаскивании точки.' }
+    { name: 'selectStop', payload: 'index: number', description: 'Вызывается при выборе точки.' },
+    { name: 'dragStop', payload: 'index: number, position: number', description: 'Вызывается во время перетаскивания точки.' }
   ]"
 />
 
-## Слоты
-
-<SdkSlotsTable
-  :rows="[
-    { name: 'default', props: 'bar state + drag handlers', description: 'Полный контракт рендеринга полосы градиента.' }
-  ]"
-/>
-
-### Пропы слота default
-
-```ts
-{
-  stops: GradientStop[]
-  activeStopIndex: number
-  barBackground: string
-  barRef: (el: unknown) => void
-  onStopPointerDown: (index: number, event: PointerEvent) => void
-  onPointerMove: (event: PointerEvent) => void
-  onPointerUp: () => void
-  draggingIndex: number | null
-}
-```
-
-## Пример
-
-```vue
-<GradientEditorBar
-  :stops="stops"
-  :active-stop-index="activeStopIndex"
-  :bar-background="barBackground"
-  @select-stop="selectStop"
-  @drag-stop="dragStop"
-  v-slot="ctx"
->
-  <MyGradientBar v-bind="ctx" />
-</GradientEditorBar>
-```
-
-## Связанные API
+## См. также
 
 - [GradientEditorRoot](./gradient-editor-root)
 - [GradientEditorStop](./gradient-editor-stop)

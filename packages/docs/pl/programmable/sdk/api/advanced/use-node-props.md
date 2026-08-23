@@ -1,17 +1,16 @@
 ---
 title: useNodeProps
-description: Niskopoziomowy pomocnik selekcji i wartości mieszanych dla paneli właściwości.
+description: Niskopoziomowe API do mieszanych wartości i zmiany właściwości zaznaczonych obiektów.
 ---
 
 # useNodeProps
 
-`useNodeProps()` to niskopoziomowy pomocnik panelu właściwości za wyższopoziomowymi kompozytami jak `useAppearance`, `useLayout` i `useTypography`.
+`useNodeProps()` stanowi podstawę `useAppearance`, `useLayout` i `useTypography`.
 
-Użyj go, gdy potrzebujesz wykrywania wartości mieszanych, aktualizacji wielu selekcji, edycji elementów tablicy lub zatwierdzeń właściwości z obsługą cofania.
+Użyj go, jeśli własny panel musi wykrywać mieszane wartości, zmieniać właściwość kilku obiektów, edytować elementy tablicy albo wykonywać podgląd i zapis z obsługą cofania.
 
-## Powiązane API
+## Zobacz też
 
 - [useAppearance](../composables/use-appearance)
 - [useLayout](../composables/use-layout)
 - [useTypography](../composables/use-typography)
-- [PropertyListRoot](../components/property-list-root)

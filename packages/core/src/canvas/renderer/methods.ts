@@ -142,8 +142,13 @@ const rendererMethods: ThisType<SkiaRenderer> = {
     PenOverlay.drawRemoteCursors(this, canvas, graph, cursors)
   },
 
-  drawRulers(canvas: Canvas, graph: SceneGraph, selectedIds: Set<string>): void {
-    Rulers.drawRulers(this, canvas, graph, selectedIds)
+  drawRulers(
+    canvas: Canvas,
+    graph: SceneGraph,
+    selectedIds: Set<string>,
+    guides?: RenderOverlays['guides']
+  ): void {
+    Rulers.drawRulers(this, canvas, graph, selectedIds, guides)
   },
 
   drawSectionTitles(canvas: Canvas, graph: SceneGraph): void {

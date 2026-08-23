@@ -1,11 +1,11 @@
 ---
-title: Компосаблы
-description: Основные компосаблы API в @open-pencil/vue.
+title: Composables
+description: Основные composables пакета @open-pencil/vue.
 ---
 
-# Компосаблы
+# Composables
 
-Это главные компосаблы, которые большинство потребителей `@open-pencil/vue` будут использовать.
+Ниже перечислены composables, которые чаще всего нужны при работе с `@open-pencil/vue`.
 
 ## Контекст и холст
 
@@ -26,12 +26,21 @@ description: Основные компосаблы API в @open-pencil/vue.
 
 - [usePosition](./use-position)
 - [useLayout](./use-layout)
+- [useConstraints](/programmable/sdk/api/composables/use-constraints)
+- [useComponentProperties](/programmable/sdk/api/composables/use-component-properties)
 - [useAppearance](./use-appearance)
+- [useSharedStyleBinding](/programmable/sdk/api/composables/use-shared-style-binding)
+- [useColorModel](/programmable/sdk/api/composables/use-color-model)
+- [useMask](/programmable/sdk/api/composables/use-mask)
 - [useTypography](./use-typography)
 - [useExport](./use-export)
 - [useFillControls](./use-fill-controls)
 - [useStrokeControls](./use-stroke-controls)
 - [useEffectsControls](./use-effects-controls)
+
+## Рабочая область документа
+
+- [useDocumentWorkspace](/programmable/sdk/api/composables/use-document-workspace)
 
 ## Переменные, навигация и локализация
 

@@ -56,10 +56,15 @@
   "arrangeAlignMiddle": "垂直居中",
   "arrangeAlignBottom": "底部对齐",
   "multiplayerCursors": "多人光标",
+  "preferences": "偏好设置",
+  "snapToGeometry": "吸附到几何图形",
+  "snapToObjects": "吸附到对象",
+  "snapToPixelGrid": "吸附到像素网格",
   "renameSelection": "重命名所选内容…",
   "rulers": "标尺",
   "settings": "设置…",
   "splitRight": "向右拆分",
   "splitDown": "向下拆分",
-  "closeView": "关闭视图"
+  "closeView": "关闭视图",
+  "removeGuide": "移除参考线"
 }

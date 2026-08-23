@@ -1,3 +1,4 @@
+import type { CanvasGuide } from './guides'
 import type { Color, Matrix, Rect, Vector } from './primitives'
 
 export interface SceneGraphEvents {
@@ -411,6 +412,7 @@ export interface SceneNode {
   strokes: Stroke[]
   effects: Effect[]
   layoutGrids: LayoutGrid[]
+  guides: CanvasGuide[]
   fillStyleId: string | null
   strokeStyleId: string | null
   textStyleId: string | null

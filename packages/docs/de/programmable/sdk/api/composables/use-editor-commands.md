@@ -1,19 +1,19 @@
 ---
 title: useEditorCommands
-description: Menüs, Aktionen und befehlsgesteuerte UI auf Basis des Editors erstellen.
+description: Menüs und andere UI auf Grundlage gemeinsamer Editor commands erstellen.
 ---
 
 # useEditorCommands
 
-`useEditorCommands()` legt eine befehlsorientierte Schicht über Editor-Aktionen.
+`useEditorCommands()` stellt einen gemeinsamen Zugang zu Editor commands bereit.
 
-Es ist nützlich beim Erstellen von:
+Das composable eignet sich für:
 
-- App-Menüs
-- Kontextmenüs
-- Toolbars
-- Tastaturbefehl-Adaptern
-- Seiten-Verschiebe-Untermenüs
+- Application menus;
+- Kontextmenüs;
+- Toolbars;
+- Shortcut handling;
+- das Submenu Move to page.
 
 ## Verwendung
 
@@ -23,7 +23,7 @@ import { useEditorCommands } from '@open-pencil/vue'
 const { commands, menuItem, runCommand, moveSelectionToPage, otherPages } = useEditorCommands()
 ```
 
-## Einfaches Beispiel
+## Beispiel
 
 ```ts
 const { menuItem } = useEditorCommands()
@@ -36,16 +36,14 @@ const editMenu = [
 ]
 ```
 
-## Praktische Beispiele
-
-### Einen Befehl direkt ausführen
+### Command direkt ausführen
 
 ```ts
 const { runCommand } = useEditorCommands()
 runCommand('selection.duplicate')
 ```
 
-### Ein „Auf Seite verschieben"-Untermenü erstellen
+### Submenu Move to page
 
 ```ts
 const { otherPages, moveSelectionToPage } = useEditorCommands()
@@ -56,13 +54,13 @@ const items = otherPages.value.map(page => ({
 }))
 ```
 
-## Verwandte APIs
+## Siehe auch
 
 - [useMenuModel](./use-menu-model)
 - [useSelectionState](./use-selection-state)
 - [useEditor](./use-editor)
 
-## Wichtigste Typen
+## Zentrale Types
 
 ```ts
 type EditorCommandId =

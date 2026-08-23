@@ -83,6 +83,7 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
     const world = getWorldMatrix(node, editor.graph)
     const absNetwork = transformVectorNetwork(world, node.vectorNetwork)
 
+    state.snapGuides = []
     state.nodeEditState = {
       nodeId,
       origNetwork: cloneVectorNetwork(node.vectorNetwork),
@@ -106,6 +107,8 @@ export function createVectorEditLifecycle(editor: Editor, state: VectorEditState
   function exitNodeEditMode(commit: boolean) {
     const es = getNodeEditState()
     if (!es) return
+    state.snapGuides = []
+    editor.requestRender()
 
     const node = editor.graph.getNode(es.nodeId)
     if (node?.type !== 'VECTOR') {

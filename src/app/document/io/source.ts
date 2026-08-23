@@ -11,6 +11,7 @@ import { createSaveActions } from '@/app/document/io/save'
 import { createDocumentSourceState } from '@/app/document/io/source-state'
 import type { DocumentSourceAccess } from '@/app/document/io/types'
 import { createDocumentRecovery } from '@/app/document/recovery'
+import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 
 type DocumentSourceState = EditorState & {
@@ -58,6 +59,7 @@ export function createDocumentSourceActions({
 
   const recovery = createDocumentRecovery({
     state,
+    isEnabled: () => recoveryEnabled.value,
     buildFigFile: buildRecoveryFigFile,
     hasWritableSource: () => !!getFileHandle() || !!getFilePath() || !!getStorageBinding()
   })

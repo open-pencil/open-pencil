@@ -4,15 +4,16 @@ import * as figModule from '@open-pencil/core/io/formats/fig'
 import * as layoutModule from '@open-pencil/core/layout'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { listAutomationDocuments } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
 import {
+  createDocumentInCurrentTab,
+  createHomeTab,
   createTab,
   getActiveStore,
   getTabsSnapshot,
   openFileInNewTab,
-  showRecentFiles,
+  showNewTab,
   tabCount
 } from '@/app/tabs'
 import { fileIdentitiesMatch, findTabByFileIdentity } from '@/app/tabs/open/identity'
@@ -123,33 +124,39 @@ describe('openFileInNewTab deduplication', () => {
     expect(resolveBrowserFileURL('/design.fig#selection').href).toBe('http://localhost/design.fig')
   })
 
-  test('keeps one permanent Recent Files tab', () => {
+  test('reuses the existing New tab when navigating to the files workspace', () => {
     const initialCount = tabCount()
-    const initialHomeCount = getTabsSnapshot().filter((tab) => tab.showHome).length
+    const initialHomeCount = getTabsSnapshot().filter((tab) => tab.kind === 'home').length
 
-    showRecentFiles()
-    showRecentFiles()
+    showNewTab()
+    showNewTab()
 
     expect(tabCount()).toBe(initialCount + (initialHomeCount === 0 ? 1 : 0))
-    expect(getTabsSnapshot().filter((tab) => tab.showHome)).toHaveLength(1)
+    expect(getTabsSnapshot().filter((tab) => tab.kind === 'home')).toHaveLength(1)
   })
 
-  test('omits the Recent Files tab from MCP documents', () => {
-    const documentStore = getActiveStore()
-    const documentTab = getTabsSnapshot().find((tab) => tab.store === documentStore)
-    expect(documentTab?.showHome).toBe(false)
-    expect(documentStore.state.documentName).toBe('Untitled')
+  test('converts the current New tab into a blank document', () => {
+    createHomeTab()
+    const home = getTabsSnapshot().at(-1)
+    const count = tabCount()
 
-    showRecentFiles()
-    const homeStore = getActiveStore()
-    const documents = listAutomationDocuments(homeStore)
+    const document = createDocumentInCurrentTab()
 
-    expect(documents.some((document) => document.id === documentTab?.id)).toBe(true)
-    expect(documents.some((document) => document.name === 'Untitled')).toBe(true)
-    expect(documents.some((document) => document.active)).toBe(false)
-    for (const homeTab of getTabsSnapshot().filter((tab) => tab.showHome)) {
-      expect(documents.some((document) => document.id === homeTab.id)).toBe(false)
-    }
+    expect(tabCount()).toBe(count)
+    expect(document.id).toBe(home?.id)
+    expect(document.kind).toBe('document')
+  })
+
+  test('opens a file in the current New tab', async () => {
+    createHomeTab()
+    const home = getTabsSnapshot().at(-1)
+    const count = tabCount()
+
+    await openFileInNewTab(new File([], 'design.fig'), undefined, '/tmp/from-home.fig')
+
+    expect(tabCount()).toBe(count)
+    expect(getTabsSnapshot().at(-1)?.id).toBe(home?.id)
+    expect(getTabsSnapshot().at(-1)?.kind).toBe('document')
   })
 
   test('activates the existing tab when the same path is opened again', async () => {

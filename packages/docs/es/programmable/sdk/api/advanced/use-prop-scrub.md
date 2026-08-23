@@ -1,15 +1,14 @@
 ---
 title: usePropScrub
-description: Helper de bajo nivel para actualizaciones de propiedades con arrastre y soporte de confirmación.
+description: Previsualizar y guardar una propiedad numérica durante el arrastre.
 ---
 
 # usePropScrub
 
-`usePropScrub(editor)` coordina las actualizaciones de propiedades en vivo durante el arrastre y confirma los cambios conscientes de deshacer cuando la interacción termina.
+`usePropScrub(editor)` actualiza una propiedad durante el arrastre y escribe el valor final en el historial al terminar la interacción.
 
-Úsalo cuando construyas controles numéricos que ajusten directamente las propiedades de los nodos seleccionados mediante arrastre.
+Resulta apropiado para campos numéricos que modifican propiedades arrastrando.
 
-## APIs relacionadas
+## Véase también
 
-- [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

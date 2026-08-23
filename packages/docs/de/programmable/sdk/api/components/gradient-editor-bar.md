@@ -1,53 +1,30 @@
 ---
 title: GradientEditorBar
-description: Headless ziehbares Balken-Primitiv für Verlaufsstopps.
+description: Interaktiver Gradient bar zum Auswählen und Ziehen von Stops.
 ---
 
 # GradientEditorBar
 
-`GradientEditorBar` ist das ziehbare Balken-Primitiv, das innerhalb von Verlaufs-Editoren verwendet wird.
+`GradientEditorBar` stellt State und Pointer handlers zum Rendern eines Gradient bar bereit. Der Component behandelt Selection und Drag der Stops.
 
 ## Props
 
 <SdkPropsTable
   :rows="[
-    { name: 'stops', type: 'GradientStop[]', description: 'Aktuelle Verlaufsstopps.', required: true },
-    { name: 'activeStopIndex', type: 'number', description: 'Aktiver Stopp-Index.', required: true },
-    { name: 'barBackground', type: 'string', description: 'CSS-Hintergrund-String für den Balken.', required: true }
+    { name: 'stops', type: 'GradientStop[]', description: 'Aktuelle Gradient stops.', required: true },
+    { name: 'activeStopIndex', type: 'number', description: 'Index des Active stop.', required: true },
+    { name: 'barBackground', type: 'string', description: 'CSS background des Bar.', required: true }
   ]"
 />
 
-## Ereignisse
+## Events
 
 <SdkEventsTable
   :rows="[
-    { name: 'selectStop', payload: 'index: number', description: 'Ausgelöst, wenn ein Stopp ausgewählt wird.' },
-    { name: 'dragStop', payload: 'index: number, position: number', description: 'Ausgelöst, während ein Stopp gezogen wird.' }
+    { name: 'selectStop', payload: 'index: number', description: 'Wird bei Auswahl eines Stop ausgegeben.' },
+    { name: 'dragStop', payload: 'index: number, position: number', description: 'Wird während des Drag eines Stop ausgegeben.' }
   ]"
 />
-
-## Slots
-
-<SdkSlotsTable
-  :rows="[
-    { name: 'default', props: 'Balken-Zustand + Zieh-Handler', description: 'Vollständiger Verlaufsbalken-Render-Vertrag.' }
-  ]"
-/>
-
-### Standard-Slot-Props
-
-```ts
-{
-  stops: GradientStop[]
-  activeStopIndex: number
-  barBackground: string
-  barRef: (el: unknown) => void
-  onStopPointerDown: (index: number, event: PointerEvent) => void
-  onPointerMove: (event: PointerEvent) => void
-  onPointerUp: () => void
-  draggingIndex: number | null
-}
-```
 
 ## Beispiel
 
@@ -64,7 +41,7 @@ description: Headless ziehbares Balken-Primitiv für Verlaufsstopps.
 </GradientEditorBar>
 ```
 
-## Verwandte APIs
+## Siehe auch
 
 - [GradientEditorRoot](./gradient-editor-root)
 - [GradientEditorStop](./gradient-editor-stop)

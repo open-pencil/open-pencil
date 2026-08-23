@@ -74,6 +74,8 @@ describe('RTL auto-layout input', () => {
       startY: 40,
       currentX: 100,
       currentY: 40,
+      appliedDx: 0,
+      appliedDy: 0,
       startScreenX: 100,
       startScreenY: 40,
       dragStarted: true,

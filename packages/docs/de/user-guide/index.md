@@ -1,36 +1,37 @@
 ---
 layout: doc
 title: Benutzerhandbuch
-description: Lernen Sie OpenPencil kennen — Canvas-Navigation, Zeichnen, Text, Komponenten, Auto-Layout und mehr.
+description: OpenPencil verwenden — Navigation, Zeichnen, Text, Komponenten, automatische Anordnung und weitere Funktionen.
 ---
 
 # Benutzerhandbuch
 
-OpenPencil ist ein Open-Source, Figma-kompatibler Design-Editor — vollständig lokal, KI-nativ und programmierbar. Dieses Handbuch behandelt alles, was Sie für die effektive Nutzung des Editors wissen müssen.
+OpenPencil ist ein lokaler Open-Source-Design-Editor mit Figma-Kompatibilität, integrierter KI und Automatisierungs-APIs. Dieses Handbuch erklärt die wichtigsten Arbeitsabläufe.
 
-::: tip Plattformübergreifende Tastenkürzel
-In diesem Handbuch verwenden Tastenkürzel Mac-Notation: <kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Strg</kbd> unter Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.
+::: tip Tastenkürzel auf verschiedenen Betriebssystemen
+Die Dokumentation verwendet die macOS-Schreibweise: <kbd>⌘</kbd> entspricht <kbd>Command</kbd> beziehungsweise <kbd>Strg</kbd> unter Windows und Linux, <kbd>⌥</kbd> entspricht <kbd>Option</kbd> beziehungsweise <kbd>Alt</kbd> und <kbd>⇧</kbd> entspricht <kbd>Shift</kbd>.
 :::
 
-## Erste Schritte
+## Einstieg
 
-- [Canvas-Navigation](./canvas-navigation) — Schwenken, Zoomen und das Handwerkzeug
-- [Auswahl & Bearbeitung](./selection-and-manipulation) — Auswählen, Bewegen, Skalieren, Drehen und Organisieren von Knoten
+- [Navigation auf der Arbeitsfläche](./canvas-navigation) — Ansicht verschieben, zoomen und das Handwerkzeug verwenden;
+- [Auswählen und Bearbeiten](./selection-and-manipulation) — Objekte auswählen, verschieben, skalieren, drehen und anordnen.
 
 ## Inhalte erstellen
 
-- [Formen zeichnen](./drawing-shapes) — Rechtecke, Ellipsen, Linien, Frames, Sektionen, Polygone und Sterne
-- [Textbearbeitung](./text-editing) — Text erstellen und bearbeiten mit Rich-Formatierung
-- [Stiftwerkzeug](./pen-tool) — Vektorpfade mit Bézier-Kurven zeichnen
+- [Formen zeichnen](./drawing-shapes) — Rechtecke, Ellipsen, Linien, Rahmen, Sektionen, Polygone und Sterne;
+- [Text bearbeiten](./text-editing) — Text erstellen und formatieren;
+- [Zeichenstift](./pen-tool) — Vektorpfade und Bézierkurven zeichnen;
+- [Vektoren bearbeiten](./vector-edit) — Ankerpunkte, Griffe und Segmente verändern.
 
-## Organisieren
+## Dokument organisieren
 
-- [Ebenen & Seiten](./layers-and-pages) — Ebenenpanel, Seiten und Eigenschaftspanel
-- [Kontextmenü](./context-menu) — Rechtsklick-Aktionen für Zwischenablage, Gruppierung, Komponenten und mehr
-- [Exportieren](./exporting) — Bildexport und .fig-Dateioperationen
+- [Ebenen und Seiten](./layers-and-pages) — Ebenenbaum, Seiten und Eigenschaften;
+- [Kontextmenü](./context-menu) — Zwischenablage, Gruppen, Komponenten und weitere Aktionen;
+- [Export](./exporting) — Bilder, SVG und `.fig`-Dateien exportieren.
 
 ## Erweiterte Funktionen
 
-- [Auto-Layout](./auto-layout) — Flexbox-basierte automatische Positionierung
-- [Komponenten](./components) — Wiederverwendbare Komponenten, Instanzen und Overrides
-- [Variablen](./variables) — Design-Variablen, Sammlungen, Modi und Füllbindungen
+- [Automatische Anordnung](./auto-layout) — Anordnung mit Flexbox und CSS Grid;
+- [Komponenten](./components) — wiederverwendbare Komponenten, Instanzen und Überschreibungen;
+- [Variablen](./variables) — Designvariablen, Sammlungen, Modi und Bindungen.

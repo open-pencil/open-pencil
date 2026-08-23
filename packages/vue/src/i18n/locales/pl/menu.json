@@ -56,10 +56,15 @@
   "arrangeAlignMiddle": "Wyśrodkuj w pionie",
   "arrangeAlignBottom": "Wyrównaj do dołu",
   "multiplayerCursors": "Kursory wielu użytkowników",
+  "preferences": "Preferencje",
+  "snapToGeometry": "Przyciągaj do geometrii",
+  "snapToObjects": "Przyciągaj do obiektów",
+  "snapToPixelGrid": "Przyciągaj do siatki pikseli",
   "renameSelection": "Zmień nazwę zaznaczenia…",
   "rulers": "Linijki",
   "settings": "Ustawienia…",
   "splitRight": "Podziel w prawo",
   "splitDown": "Podziel w dół",
-  "closeView": "Zamknij widok"
+  "closeView": "Zamknij widok",
+  "removeGuide": "Usuń prowadnicę"
 }

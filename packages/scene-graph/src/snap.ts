@@ -2,7 +2,7 @@ import type { SceneNode } from './'
 import { rotatedBBox } from './geometry'
 import type { Rect } from './primitives'
 
-const SNAP_THRESHOLD = 5
+const DEFAULT_SNAP_THRESHOLD = 5
 
 export interface SnapGuide {
   axis: 'x' | 'y'
@@ -21,10 +21,13 @@ function getEdges(node: SceneNode) {
   return rotatedBBox(node.x, node.y, node.width, node.height, node.rotation)
 }
 
+// Pairwise edge/center matching intentionally keeps both axes in one pass.
+// eslint-disable-next-line complexity
 export function computeSnap(
   movingIds: Set<string>,
   movingBounds: Rect,
-  allNodes: SceneNode[]
+  allNodes: SceneNode[],
+  threshold = DEFAULT_SNAP_THRESHOLD
 ): SnapResult {
   const targets = allNodes.filter((n) => !movingIds.has(n.id))
   if (targets.length === 0) return { dx: 0, dy: 0, guides: [] }
@@ -56,7 +59,7 @@ export function computeSnap(
 
     for (const [mVal, tVal] of xPairs) {
       const d = tVal - mVal
-      if (Math.abs(d) < SNAP_THRESHOLD && Math.abs(d) <= Math.abs(bestDx)) {
+      if (Math.abs(d) < threshold && Math.abs(d) <= Math.abs(bestDx)) {
         if (Math.abs(d) < Math.abs(bestDx)) {
           bestDx = d
           guides.length = guides.filter((g) => g.axis === 'y').length
@@ -86,7 +89,7 @@ export function computeSnap(
 
     for (const [mVal, tVal] of yPairs) {
       const d = tVal - mVal
-      if (Math.abs(d) < SNAP_THRESHOLD && Math.abs(d) <= Math.abs(bestDy)) {
+      if (Math.abs(d) < threshold && Math.abs(d) <= Math.abs(bestDy)) {
         if (Math.abs(d) < Math.abs(bestDy)) {
           for (let i = guides.length - 1; i >= 0; i--) {
             if (guides[i].axis === 'y') guides.splice(i, 1)
@@ -103,8 +106,8 @@ export function computeSnap(
   }
 
   return {
-    dx: Math.abs(bestDx) <= SNAP_THRESHOLD ? bestDx : 0,
-    dy: Math.abs(bestDy) <= SNAP_THRESHOLD ? bestDy : 0,
+    dx: Math.abs(bestDx) <= threshold ? bestDx : 0,
+    dy: Math.abs(bestDy) <= threshold ? bestDy : 0,
     guides
   }
 }

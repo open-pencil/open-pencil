@@ -1,15 +1,15 @@
 ---
 title: useCanvasDrop
-description: Pomocnik przeciągania i upuszczania plików obrazów dla powierzchni kanvasu.
+description: Obsługa drag and drop plików graficznych na obszar roboczy.
 ---
 
 # useCanvasDrop
 
-`useCanvasDrop(canvasRef, editor)` okablowuje obsługę dragenter, dragover, dragleave i drop, tak aby pliki obrazów upuszczone na kanwasie były umieszczane na scenie.
+`useCanvasDrop(canvasRef, editor)` podłącza events `dragenter`, `dragover`, `dragleave` i `drop`. Obsługiwane pliki graficzne upuszczone na canvas są dodawane do dokumentu w odpowiednim miejscu.
 
-Użyj go przy budowaniu niestandardowych powierzchni kanvasu akceptujących upuszczanie obrazów.
+Użyj composable w własnym component obszaru roboczego, jeśli ma przyjmować obrazy przez drag and drop.
 
-## Powiązane API
+## Zobacz też
 
 - [CanvasRoot](../components/canvas-root)
 - [CanvasSurface](../components/canvas-surface)

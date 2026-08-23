@@ -1,51 +1,43 @@
 ---
 layout: doc
-title: IA y Automatización
-description: Cada operación en OpenPencil es scriptable — chat con IA, CLI, renderizador JSX, servidor MCP, colaboración en tiempo real.
+title: Automatización y API
+description: AI, MCP, CLI, JSX y API de plugins de Figma para automatizar diseños.
 ---
 
-# IA y Automatización
+# Automatización y API
 
-OpenPencil trata los archivos de diseño como datos. Cada operación disponible en el editor — crear formas, establecer rellenos, gestionar auto-layout, exportar recursos — también está disponible desde la terminal, desde agentes de IA y desde código. Sin plugins que instalar, sin claves de API, sin lista de espera.
+OpenPencil trata los archivos de diseño como datos estructurados. Las operaciones del editor —crear formas, modificar rellenos, configurar la disposición automática o exportar recursos— también están disponibles mediante CLI, agentes de AI y API.
 
-La interfaz del editor y las interfaces de automatización usan el mismo motor. Si puedes hacerlo con un clic, puedes hacerlo con un script.
+## Chat con AI
 
-## Chat con IA
+El asistente integrado puede ejecutar más de 90 herramientas. Una instrucción puede cambiar las sombras de varios botones, crear un componente con variante oscura o exportar todos los marcos de una página a escala 2×.
 
-El asistente integrado tiene acceso a más de 90 herramientas que cubren toda la superficie del editor. Describe lo que quieres en lenguaje natural — "añade una sombra de 16px a todos los botones", "crea un componente de tarjeta con variante para modo oscuro", "exporta cada frame de esta página a 2×".
+[Chat con AI →](./ai-chat)
 
-[Chat con IA →](./ai-chat)
+## MCP
 
-## Colaboración
-
-Edición multijugador en tiempo real mediante WebRTC peer-to-peer. Sin servidor, sin cuenta. Comparte un enlace de sala y edita junto con cursores en vivo y modo de seguimiento. El estado del documento se sincroniza mediante CRDT, así que las ediciones se fusionan automáticamente incluso con conexiones inestables.
-
-[Colaboración →](./collaboration)
-
-## Renderizador JSX
-
-Describe la interfaz como JSX — la misma sintaxis que los LLMs ya conocen de React. Una sola llamada puede crear un árbol completo de componentes con frames, texto, auto-layout, rellenos y bordes. Compacto, declarativo y diferenciable.
-
-En la dirección opuesta, exporta cualquier selección de vuelta a JSX con clases Tailwind — útil para entregar a desarrollo o alimentar diseños de vuelta a un LLM.
-
-[Renderizador JSX →](./jsx-renderer)
-
-## CLI
-
-Inspecciona, exporta y analiza archivos `.fig` sin abrir el editor. Lista páginas, busca nodos, extrae tokens de diseño, renderiza a PNG — todo desde la terminal con salida JSON legible por máquinas.
-
-El CLI también se conecta a la aplicación de escritorio en ejecución vía RPC, para que puedas crear scripts del editor mientras lo usas.
-
-[Inspeccionar Archivos](./cli/inspecting) · [Exportar](./cli/exporting) · [Analizar Diseños](./cli/analyzing) · [Scripting](./cli/scripting)
-
-## Servidor MCP
-
-Conecta Claude Code, Cursor, Windsurf o cualquier cliente compatible con MCP a OpenPencil. El servidor expone 90 herramientas para leer, crear y modificar diseños — las mismas herramientas que usa el chat con IA integrado. Funciona sobre stdio o HTTP con soporte de sesiones.
+Claude Code, Cursor, Windsurf y otros clientes MCP pueden usar las mismas herramientas. El servidor admite stdio y HTTP y mantiene sesiones independientes.
 
 [Servidor MCP →](/programmable/mcp-server)
 
-## ¿Por Qué Abierto?
+## CLI
 
-Figma es una plataforma cerrada. Su servidor MCP es de solo lectura. El acceso CDP por navegador fue eliminado en la versión 126. Los archivos de diseño viven en un formato propietario en los servidores de otra empresa. El desarrollo de plugins requiere un runtime personalizado con APIs limitadas.
+La CLI examina, exporta y analiza archivos `.fig` sin abrir el editor. Puede listar páginas y objetos, buscar contenido, extraer variables de diseño y generar PNG. `--json` facilita la integración con CI y otros programas.
 
-OpenPencil es la alternativa: código abierto, licencia MIT, cada operación scriptable, datos almacenados localmente. Tus archivos de diseño son tuyos — inspecciónalos, transfórmalos, envíalos a CI, aliméntalos a un LLM. Sin necesidad de permiso.
+[CLI →](./cli/inspecting)
+
+## JSX
+
+Una interfaz puede describirse de forma declarativa con JSX. Una llamada crea un árbol completo con marcos, texto, disposición automática, rellenos y contornos.
+
+En sentido inverso, OpenPencil exporta una selección como JSX o HTML con clases Tailwind, útil como base para implementar, revisar código o continuar el trabajo con AI.
+
+[Renderizador JSX →](./jsx-renderer)
+
+## API de plugins de Figma
+
+El comando `eval` ejecuta JavaScript con un objeto global `figma` compatible. Permite consultar y modificar documentos, crear componentes y variables y guardar el resultado.
+
+[Scripting con `eval` →](./cli/scripting)
+
+OpenPencil tiene licencia MIT y guarda los documentos localmente. Los archivos `.fig` se pueden examinar, transformar, procesar en CI o proporcionar como contexto a un modelo sin depender de un proveedor de alojamiento concreto.

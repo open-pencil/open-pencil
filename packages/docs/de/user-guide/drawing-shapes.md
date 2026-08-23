@@ -1,79 +1,48 @@
 ---
 title: Formen zeichnen
-description: Rechtecke, Ellipsen, Linien, Frames, Sektionen, Polygone und Sterne in OpenPencil erstellen.
+description: Rechtecke, Ellipsen, Linien, Rahmen, Sektionen, Polygone und Sterne erstellen.
 ---
 
 # Formen zeichnen
 
-Die untere Werkzeugleiste bietet Werkzeuge zum Erstellen von Formen, Frames und Sektionen. Wählen Sie ein Werkzeug, dann klicken und ziehen Sie auf dem Canvas.
+Die untere Werkzeugleiste enthält Werkzeuge für Formen, Rahmen und Sektionen. Wählen Sie ein Werkzeug und ziehen Sie auf der Arbeitsfläche.
 
-## Werkzeugleiste
+## Werkzeuge
 
-| Werkzeug | Kürzel | Beschreibung |
-|----------|--------|--------------|
-| Rechteck | <kbd>R</kbd> | Zeichnet ein Rechteck |
-| Ellipse | <kbd>O</kbd> | Zeichnet eine Ellipse |
-| Linie | <kbd>L</kbd> | Zeichnet eine Linie |
-| Frame | <kbd>F</kbd> | Zeichnet einen Frame (Container) |
-| Sektion | <kbd>S</kbd> | Zeichnet eine Sektion (übernimmt überlappende Geschwister) |
+| Werkzeug | Taste | Ergebnis |
+|----------|-------|----------|
+| Rechteck | <kbd>R</kbd> | Rechteck |
+| Ellipse | <kbd>O</kbd> | Ellipse |
+| Linie | <kbd>L</kbd> | Linie |
+| Rahmen | <kbd>F</kbd> | Container für andere Objekte |
+| Sektion | <kbd>S</kbd> | Container der obersten Ebene |
 
-## Formen-Flyout
+Polygon und Stern befinden sich im Formenmenü.
 
-Das Formen-Flyout enthält zusätzliche Formen:
+## Proportionen beibehalten
 
-- **Polygon** — erstellt ein Polygon mit standardmäßig 3 Seiten (Dreieck)
-- **Stern** — erstellt einen 5-zackigen Stern
+Mit <kbd>Shift</kbd> wird ein Rechteck zum Quadrat, eine Ellipse zum Kreis und eine Linie rastet bei 0°, 45° und 90° ein.
 
-## Proportionales Zeichnen
-
-Halten Sie <kbd>Shift</kbd> beim Ziehen:
-
-- Rechteck → Quadrat
-- Ellipse → Kreis
-- Linie → rastet auf 0°/45°/90° ein
-
-## Form-Eigenschaften
+## Eigenschaften
 
 ### Füllung
 
-Jede Form kann eine Füllung haben: **Vollfarbe**, **Verlauf** (Linear, Radial, Winkel, Diamant) oder **Bild**.
+Volltonfarbe, linearer, radialer, Winkel- oder Diamantverlauf sowie Bildfüllung.
 
 ### Kontur
 
-Fügen Sie einer Form eine Kontur hinzu. Eigenschaften:
-
-- **Breite** — einheitlich oder pro Seite (Oben/Rechts/Unten/Links) über das Seitenauswahl-Dropdown
-- **Farbe** — Vollton mit Deckkraft
-- **Ausrichtung** — Innen, Mitte oder Außen (beschneidungsbasiertes Rendering wie in Figma)
-- **Kappenstil** — Keine, Rund, Quadrat, Pfeil
-- **Verbindungsstil** — Gehrung, Abgeschrägt, Rund
-- **Strichmuster** — Strich-Ein/Strich-Aus
+Gemeinsame oder seitenspezifische Stärke, Farbe, Ausrichtung innen/mittig/außen, Enden, Verbindungen und Strichelung.
 
 ### Eckenradius
 
-Verfügbar für Rechtecke, Frames, Komponenten und Instanzen. Jede Ecke einzeln einstellbar.
+Ein gemeinsamer oder separater Radius ist für Rechtecke, Rahmen, Komponenten und Instanzen verfügbar.
 
 ### Effekte
 
-- **Schlagschatten** — Versatz, Unschärferadius, Ausbreitung, Farbe
-- **Innerer Schatten** — gleiche Steuerung, im Inneren der Form
-- **Ebenenunschärfe** — verwischt den gesamten Knoten
-- **Hintergrundunschärfe** — verwischt Inhalte hinter dem Knoten
-- **Vordergrundunschärfe** — verwischt Inhalte vor dem Knoten
+Schlagschatten, innerer Schatten sowie Ebenen-, Hintergrund- und Vordergrundunschärfe.
 
-## Frames und Sektionen
+## Rahmen und Sektionen
 
-**Frames** sind Container. Ziehen Sie Formen in einen Frame, um sie zu Kindern zu machen. Frames unterstützen [Auto-Layout](./auto-layout).
+Ein Rahmen ist ein Container. Hineingezogene Objekte werden untergeordnet. Das Beschneiden ist standardmäßig ausgeschaltet. Rahmen unterstützen [automatische Anordnung](./auto-layout).
 
-**Sektionen** sind Container auf oberster Ebene, die überlappende Geschwisterknoten automatisch übernehmen.
-
-## Tastenkürzel
-
-| Aktion | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Rechteck | <kbd>R</kbd> | <kbd>R</kbd> |
-| Ellipse | <kbd>O</kbd> | <kbd>O</kbd> |
-| Linie | <kbd>L</kbd> | <kbd>L</kbd> |
-| Frame | <kbd>F</kbd> | <kbd>F</kbd> |
-| Sektion | <kbd>S</kbd> | <kbd>S</kbd> |
-| Quadrat/Kreis erzwingen | <kbd>Shift</kbd> + <kbd>Ziehen</kbd> | <kbd>Shift</kbd> + <kbd>Ziehen</kbd> |
+Eine Sektion ist ein Container der obersten Ebene und übernimmt beim Zeichnen überlappende Nachbarobjekte.

@@ -1,20 +1,20 @@
 ---
 title: useCanvas
-description: Podłącz renderowanie oparte na CanvasKit do elementu canvas dla edytora OpenPencil.
+description: Podłączenie renderer opartego na CanvasKit do elementu canvas edytora OpenPencil.
 ---
 
 # useCanvas
 
-`useCanvas()` łączy edytor z rzeczywistym elementem `<canvas>`.
+`useCanvas()` łączy edytor z elementem `<canvas>`.
 
 Obsługuje:
 
-- inicjalizację CanvasKit
-- tworzenie powierzchni
-- planowanie renderowania
-- obsługę zmiany rozmiaru
-- opcjonalną widoczność linijek
-- wywołanie zwrotne gotowości renderera
+- inicjalizację CanvasKit;
+- tworzenie surface;
+- planowanie rendering;
+- zmianę rozmiaru;
+- opcjonalne rulers;
+- wywołanie function po przygotowaniu renderer.
 
 ## Użycie
 
@@ -29,7 +29,7 @@ const editor = useEditor()
 useCanvas(canvasRef, editor)
 ```
 
-## Podstawowy przykład
+## Przykład
 
 ```vue
 <script setup lang="ts">
@@ -53,9 +53,7 @@ useCanvas(canvasRef, editor, {
 </template>
 ```
 
-## Przykłady praktyczne
-
-### Wyłącz linijki dla osadzonego podglądu
+### Wyłączenie rulers w osadzonym preview
 
 ```ts
 useCanvas(canvasRef, editor, {
@@ -63,7 +61,7 @@ useCanvas(canvasRef, editor, {
 })
 ```
 
-### Zachowaj bufor rysowania dla zrzutów ekranu
+### Zachowanie drawing buffer dla zrzutów
 
 ```ts
 useCanvas(canvasRef, editor, {
@@ -73,11 +71,11 @@ useCanvas(canvasRef, editor, {
 
 ## Uwagi
 
-- `useCanvas()` jest zorientowany na renderer i w praktyce działa tylko w przeglądarce
-- odpowiada za aktywny potok kanvasu, a nie przepływy plików na poziomie aplikacji
-- powinien być zazwyczaj parowany z `useCanvasInput()` do obsługi interakcji
+- `useCanvas()` pracuje z renderer i jest przeznaczone dla browser.
+- Zarządza działającym obszarem roboczym, ale nie otwieraniem ani zapisywaniem plików.
+- Do obsługi działań użytkownika zwykle uzupełnia je `useCanvasInput()`.
 
-## Powiązane API
+## Zobacz też
 
 - [useEditor](./use-editor)
 - [useCanvasInput](./use-canvas-input)

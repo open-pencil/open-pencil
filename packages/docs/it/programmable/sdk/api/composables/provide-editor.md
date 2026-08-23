@@ -1,46 +1,15 @@
 ---
 title: provideEditor
-description: Fornisce un'istanza dell'editor OpenPencil a un sottoalbero Vue tramite iniezione.
+description: Fornire un’istanza di Editor ai componenti discendenti.
 ---
 
 # provideEditor
 
-`provideEditor(editor)` rende un editor OpenPencil disponibile ai composable e alle primitive headless discendenti tramite l'iniezione Vue.
+`provideEditor(editor)` rende l’editor disponibile a composable e componenti senza stile più in basso nell’albero Vue.
 
-È il fondamento di `useEditor()`.
+Chiamalo una volta alla radice dell’interfaccia e usa `useEditor()` nei discendenti. `OpenPencilProvider`, citato in vecchi esempi, non fa parte dell’API corrente.
 
-## Utilizzo
-
-```ts
-import { provideEditor } from '@open-pencil/vue'
-
-provideEditor(editor)
-```
-
-## Esempio base
-
-```vue
-<script setup lang="ts">
-import { provideEditor } from '@open-pencil/vue'
-
-import type { Editor } from '@open-pencil/core/editor'
-
-const props = defineProps<{
-  editor: Editor
-}>()
-
-provideEditor(props.editor)
-</script>
-
-<template>
-  <slot />
-</template>
-```
-
-## Note
-
-L'SDK attuale usa `provideEditor()` e `useEditor()` direttamente. Alcuni esempi e messaggi di errore più vecchi fanno ancora riferimento a un componente `OpenPencilProvider`, ma il modello di iniezione è la vera superficie API da preferire nella documentazione e nel codice dell'app.
-
-## API correlate
+## Vedi anche
 
 - [useEditor](./use-editor)
+- [Primi passi](../../getting-started)

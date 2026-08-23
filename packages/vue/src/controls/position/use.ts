@@ -21,8 +21,8 @@ export function usePosition() {
   const isMulti = computed(() => nodes.value.length > 1)
   const ids = computed(() => nodes.value.map((n) => n.id))
 
-  const x = computed(() => Math.round(node.value?.x ?? 0))
-  const y = computed(() => Math.round(node.value?.y ?? 0))
+  const x = computed(() => node.value?.x ?? 0)
+  const y = computed(() => node.value?.y ?? 0)
   const width = computed(() => node.value?.width ?? 0)
   const height = computed(() => node.value?.height ?? 0)
   const rotation = computed(() => Math.round(node.value?.rotation ?? 0))

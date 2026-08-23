@@ -1,15 +1,15 @@
 ---
 layout: home
-title: OpenPencil — Open-Source'owy Edytor Graficzny
-description: Open-source'owa alternatywa dla Figma. Otwiera pliki .fig, wbudowane AI, w pełni programowalny.
+title: OpenPencil — edytor graficzny open source
+description: Otwarta alternatywa dla Figmy z obsługą .fig, wbudowanym AI i programowym dostępem do wszystkich operacji.
 
 hero:
   name: OpenPencil
-  text: Open-Source'owy Edytor Graficzny
-  tagline: Otwiera pliki Figmy. Wbudowane AI. W pełni programowalny. Za darmo na zawsze.
+  text: Edytor graficzny open source
+  tagline: Otwiera pliki Figmy. Zawiera AI. Zapewnia pełny dostęp programowy. Pozwala tworzyć własne edytory.
   actions:
     - theme: brand
-      text: Wypróbuj online
+      text: Otwórz w przeglądarce
       link: https://app.openpencil.dev/demo
     - theme: alt
       text: Pobierz
@@ -20,21 +20,24 @@ hero:
 
 features:
   - icon: 📂
-    title: Kompatybilny z Figmą
-    details: Otwiera pliki .fig natywnie. Kopiuj i wklej między Figmą a OpenPencil. Kodek binarny Kiwi z wiernością round-trip.
+    title: Zgodność z Figmą
+    details: Otwiera .fig bez wcześniejszej konwersji. Obsługuje kopiowanie między Figmą a OpenPencil. Binarny kodek Kiwi zachowuje dane podczas importu i eksportu.
   - icon: ⚡
-    title: Programowalny
-    details: Headless CLI do inspekcji, eksportu i analizy plików .fig. Figma Plugin API przez eval. Eksport Tailwind CSS. Wyjście JSON dla CI.
+    title: Automatyzacja
+    details: CLI bez interfejsu graficznego przegląda, eksportuje i analizuje .fig. Polecenie eval udostępnia Figma Plugin API. Dostępne są eksport Tailwind CSS i wyjście JSON dla CI oraz skryptów.
+  - icon: 🧩
+    title: Nie tylko aplikacja
+    details: Vue SDK pozwala tworzyć własne interfejsy edycji, osadzać OpenPencil w innych produktach i budować wyspecjalizowane edytory na wspólnym silniku.
   - icon: 🤖
-    title: Natywne AI
-    details: Wbudowany chat z 90 narzędziami — tworzenie kształtów, ustawianie stylów, zarządzanie layoutem, analiza tokenów. Serwer MCP dla Claude Code, Cursor, Windsurf.
+    title: Wbudowane AI
+    details: Czat AI używa 90 narzędzi do tworzenia obiektów, ustawiania stylów i układu oraz analizowania tokenów. Serwer MCP łączy się z Claude Code, Cursor i Windsurf.
   - icon: 📖
-    title: Open Source
-    details: Licencja MIT. Czytaj i modyfikuj wszystko — edytor, silnik, kodek plików, CLI.
+    title: Open source
+    details: Licencja MIT. Można analizować i zmieniać edytor, silnik, kodek plików i CLI.
   - icon: 🖥️
-    title: Darmowy i lokalny
-    details: Bez konta, bez serwera, bez internetu. Aplikacja desktopowa ~7 MB przez Homebrew, lub korzystaj z aplikacji webowej.
+    title: Bezpłatnie i lokalnie
+    details: Konto, osobny serwer i stałe połączenie z internetem nie są potrzebne. Aplikacja komputerowa zajmuje około 7 MB; dostępna jest również wersja internetowa.
   - icon: 👥
-    title: Współpraca w czasie rzeczywistym
-    details: P2P przez WebRTC — bez serwera. Udostępnij link, edytujcie razem z kursorami na żywo i trybem śledzenia.
+    title: Współpraca
+    details: Połączenie WebRTC bez centralnego serwera. Wyślij odnośnik i wspólnie edytuj dokument, korzystając z kursorów uczestników oraz trybu śledzenia.
 ---

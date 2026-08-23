@@ -213,13 +213,41 @@
         "type": "separator"
       },
       {
+        "id": "preferences",
+        "label": "Preferences",
+        "sub": [
+          {
+            "id": "snap-geometry",
+            "label": "Snap to Geometry",
+            "checkbox": true
+          },
+          {
+            "id": "snap-objects",
+            "label": "Snap to Objects",
+            "checkbox": true
+          },
+          {
+            "id": "snap-pixel-grid",
+            "label": "Snap to Pixel Grid",
+            "checkbox": true
+          },
+          {
+            "type": "separator"
+          },
+          {
+            "id": "settings",
+            "label": "Settings…",
+            "accelerator": "CmdOrCtrl+,"
+          }
+        ]
+      },
+      {
+        "type": "separator"
+      },
+      {
         "id": "toggle-ui",
         "label": "Toggle UI",
         "accelerator": "CmdOrCtrl+\\"
-      },
-      {
-        "id": "settings",
-        "label": "Settings…"
       },
       {
         "type": "separator"

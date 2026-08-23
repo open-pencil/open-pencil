@@ -1,31 +1,28 @@
 ---
-title: Navegación del lienzo
-description: Panorámica, zoom y herramienta mano en OpenPencil.
+title: Navegación por el lienzo
+description: Mover la vista, aplicar zoom y usar la herramienta Mano.
 ---
 
-# Navegación del lienzo
+# Navegación por el lienzo
 
-El lienzo es tu espacio de trabajo infinito.
+El lienzo no tiene límites. El desplazamiento y el zoom permiten llegar a cualquier zona del documento.
 
-## Panorámica
+## Desplazar la vista
 
-- <kbd>Espacio</kbd> + arrastrar — mantén <kbd>Espacio</kbd> y arrastra
-- **Botón central del ratón** — pulsa y arrastra
-- **Trackpad con dos dedos** — desliza con dos dedos
+- Mantén <kbd>Space</kbd> y arrastra sobre el lienzo.
+- Arrastra con el botón central del ratón.
+- Desliza dos dedos sobre el panel táctil.
 
-## Herramienta mano
+## Herramienta Mano
 
-Pulsa <kbd>H</kbd> para activar la herramienta mano. Cambia a otra herramienta (ej. **V**) para desactivar.
+Pulsa <kbd>H</kbd>. Mientras esté activa, cualquier arrastre desplaza la vista sin mantener <kbd>Space</kbd>. Pulsa <kbd>V</kbd> para volver a Selección.
 
 ## Zoom
 
-- <kbd>Ctrl</kbd> + scroll (o <kbd>⌘</kbd> + scroll en Mac) — zoom adelante/atrás
-- **Gesto de pellizco** — pellizca en el trackpad
+El zoom se centra en la posición del puntero. Se puede controlar con <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + desplazamiento, el gesto de pellizco o los atajos.
 
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Panorámica | <kbd>Espacio</kbd> + arrastrar | Espacio + arrastrar |
-| Herramienta mano | <kbd>H</kbd> | <kbd>H</kbd> |
-| Zoom adelante | <kbd>⌘</kbd><kbd>+</kbd> | <kbd>Ctrl</kbd> + <kbd>+</kbd> |
-| Zoom atrás | <kbd>⌘</kbd><kbd>−</kbd> | <kbd>Ctrl</kbd> + <kbd>−</kbd> |
-| Zoom 100% | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Ctrl</kbd> + <kbd>0</kbd> |
+| Acción | macOS | Windows / Linux |
+|--------|-------|-----------------|
+| 100 % | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Ctrl</kbd><kbd>0</kbd> |
+| Encajar documento | <kbd>⌘</kbd><kbd>1</kbd> | <kbd>Ctrl</kbd><kbd>1</kbd> |
+| Ampliar selección | <kbd>⌘</kbd><kbd>2</kbd> | <kbd>Ctrl</kbd><kbd>2</kbd> |

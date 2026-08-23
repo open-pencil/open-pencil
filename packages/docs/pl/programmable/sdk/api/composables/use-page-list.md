@@ -1,13 +1,13 @@
 ---
 title: usePageList
-description: Odczytuj strony i steruj przełączaniem, tworzeniem, usuwaniem i zmianą nazwy stron.
+description: Odczytywanie stron oraz ich przełączanie, tworzenie, usuwanie i przemianowywanie.
 ---
 
 # usePageList
 
-`usePageList()` to kompozyt zarządzania stronami za UI listy stron.
+`usePageList()` udostępnia state i actions potrzebne interfejsowi listy stron.
 
-Udostępnia:
+Zwraca:
 
 - `pages`
 - `currentPageId`
@@ -24,27 +24,25 @@ import { usePageList } from '@open-pencil/vue'
 const pageList = usePageList()
 ```
 
-## Podstawowy przykład
+## Przykład
 
 ```ts
 const { pages, currentPageId, switchPage, addPage } = usePageList()
 ```
 
-## Przykłady praktyczne
-
-### Przełącz strony
+### Przejście do strony
 
 ```ts
 switchPage(pageId)
 ```
 
-### Utwórz nową stronę
+### Utworzenie strony
 
 ```ts
 addPage()
 ```
 
-## Powiązane API
+## Zobacz też
 
 - [PageListRoot](../components/page-list-root)
 - [useMenuModel](./use-menu-model)

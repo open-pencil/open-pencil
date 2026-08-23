@@ -1,29 +1,40 @@
 ---
 title: Variabili
-description: Variabili di design, collezioni, modalità e binding in OpenPencil.
+description: Creare variabili, raccolte e modalità e collegarle alle proprietà di design.
 ---
+
 # Variabili
 
-Token riutilizzabili — colori, spaziatura — vincolabili ai nodi.
+Le variabili memorizzano valori riutilizzabili, come colori e spaziature. Una proprietà collegata viene aggiornata quando cambia la variabile.
 
-## Apertura
-Design tab → Variabili → icona impostazioni.
+## Aprire l’editor
 
-## Collezioni
-Tab per collezione. Doppio click per rinominare.
+Quando non è selezionato alcun oggetto, la scheda **Design** mostra le proprietà della pagina. L’icona delle impostazioni nella sezione Variabili apre l’editor.
 
-## Modalità
-Colonne nella tabella (es. Chiaro/Scuro). Ogni variabile ha un valore per modalità.
+## Raccolte e modalità
 
-## Gestione
-- **Crea** — pulsante "+ Crea variabile"
-- **Modifica nome/valore** — click sulla cella
-- **Cerca** — barra di ricerca
+Una raccolta raggruppa variabili correlate. Ogni raccolta può avere più modalità, per esempio Chiaro e Scuro, con un valore diverso per variabile.
 
-## Binding ai riempimenti
-Selettore variabile nel pannello Fill. Badge viola con nome variabile. Pulsante per scollegare.
+- Un clic cambia raccolta.
+- Un doppio clic sul nome permette di rinominarla.
+- I pulsanti nell’intestazione creano raccolte e modalità.
 
-## Suggerimenti
-- Collezioni per raggruppare token correlati
-- Modalità per temi (Chiaro/Scuro)
-- Supporto alias tra collezioni
+## Modificare le variabili
+
+La tabella contiene nome, tipo e una colonna per modalità. Fai clic su una cella per modificarla.
+
+Sono supportati colore, numero, testo e booleano. I colori si modificano con un campo e un selettore.
+
+## Collegare riempimenti e contorni
+
+Apri il selettore delle variabili dal controllo colore e scegli una variabile compatibile. Il controllo mostra il collegamento invece di copiare il valore.
+
+Aprire o selezionare il campo non modifica il collegamento. Solo la prima variazione reale può rimuoverlo o modificare direttamente la variabile, in base al controllo.
+
+## Alias
+
+Una variabile può fare riferimento a un’altra. OpenPencil risolve la catena in base alla modalità attiva e rileva i cicli.
+
+## Importazione ed esportazione
+
+Le variabili vengono conservate nell’importazione e nell’esportazione `.fig`. La CLI può anche elencarle e modificarle tramite l’API compatibile con i plugin Figma.

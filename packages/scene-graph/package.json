@@ -2,7 +2,19 @@
   "name": "@open-pencil/scene-graph",
   "version": "0.14.0",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-pencil/open-pencil.git",
+    "directory": "packages/scene-graph"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -52,11 +64,29 @@
       "import": "./dist/variant-name.js",
       "default": "./dist/variant-name.js"
     },
+    "./variant-properties": {
+      "types": "./dist/variant-properties.d.ts",
+      "bun": "./src/variant-properties.ts",
+      "import": "./dist/variant-properties.js",
+      "default": "./dist/variant-properties.js"
+    },
     "./vector-network": {
       "types": "./dist/vector-network.d.ts",
       "bun": "./src/vector-network.ts",
       "import": "./dist/vector-network.js",
       "default": "./dist/vector-network.js"
+    },
+    "./guides": {
+      "types": "./dist/guides.d.ts",
+      "bun": "./src/guides.ts",
+      "import": "./dist/guides.js",
+      "default": "./dist/guides.js"
+    },
+    "./layout-guides": {
+      "types": "./dist/layout-guides.d.ts",
+      "bun": "./src/layout-guides.ts",
+      "import": "./dist/layout-guides.js",
+      "default": "./dist/layout-guides.js"
     },
     "./types": {
       "types": "./dist/types.d.ts",
@@ -137,28 +167,16 @@
       "default": "./dist/parse-path.js"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "sideEffects": false,
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
     "check": "bun run typecheck && bun run build && bun run smoke:dist",
     "prepack": "bun run build",
     "smoke:dist": "bun scripts/smoke-dist.ts",
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/open-pencil/open-pencil.git",
-    "directory": "packages/scene-graph"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
   },
   "dependencies": {
     "es-toolkit": "^1.51.0",

@@ -63,6 +63,7 @@ describe('DEFAULT_PACKAGES', () => {
       'packages/dom-css',
       'packages/cli',
       'packages/mcp',
+      'packages/harness',
       'packages/vue'
     ])
   })

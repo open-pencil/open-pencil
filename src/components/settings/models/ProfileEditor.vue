@@ -57,13 +57,16 @@ const connectionTestStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle
 const connectionTestReason = ref<ProviderConnectionTestFailureReason | null>(null)
 const deleteOpen = ref(false)
 const advancedOpen = ref(Boolean(draft.customModelID.trim()))
-const customModelSelected = ref(Boolean(draft.customModelID.trim()))
+const customModelSelected = ref(
+  Boolean(draft.customModelID.trim()) || draft.providerID === 'harness:pi'
+)
 const catalogModel = ref<(typeof providerDef.value.models)[number] | null>(null)
 
 const providerDef = computed(
   () => AI_PROVIDERS.find((provider) => provider.id === draft.providerID) ?? AI_PROVIDERS[0]
 )
 const isACP = computed(() => draft.providerID.startsWith('acp:'))
+const isHarness = computed(() => draft.providerID === 'harness:pi')
 const supportsReasoningEffort = computed(() =>
   ['openai', 'openai-compatible', 'openrouter'].includes(draft.providerID)
 )
@@ -82,6 +85,7 @@ const selectedModelValue = computed(() =>
   customModelSelected.value ? CUSTOM_MODEL_VALUE : draft.modelID
 )
 const knownModel = computed(() => {
+  if (isACP.value) return null
   if (draft.customModelID.trim()) return catalogModel.value
   return (
     catalogModel.value ??
@@ -119,8 +123,7 @@ const canSave = computed(
         : Boolean(draft.modelID.trim())))
 )
 const canTest = computed(() => {
-  if (isACP.value) return false
-  if (draft.customAPIType === 'transcription') return false
+  if (isACP.value || isHarness.value || draft.customAPIType === 'transcription') return false
   if (providerRequiresAPIKey(draft.providerID) && !keyInput.value.trim() && !hasExistingKey.value) {
     return false
   }
@@ -157,6 +160,10 @@ function effectiveModelID(): string {
 }
 
 async function refreshCatalogModel(): Promise<void> {
+  if (isACP.value) {
+    catalogModel.value = null
+    return
+  }
   const providerID = draft.providerID
   const modelID = effectiveModelID()
   catalogModel.value = await resolveModelsDevModel(providerID, modelID)
@@ -176,10 +183,10 @@ function updateProvider(providerID: AIProviderID): void {
   const provider = AI_PROVIDERS.find((definition) => definition.id === providerID)
   draft.modelID = provider?.defaultModel ?? ''
   draft.customModelID = ''
+  customModelSelected.value = providerID === 'harness:pi'
   draft.customBaseURL = ''
   draft.customAPIType = 'completions'
-  advancedOpen.value = false
-  customModelSelected.value = false
+  advancedOpen.value = providerID === 'harness:pi'
   if (providerID.startsWith('acp:')) {
     draft.capabilities = ['tools']
     draft.textInput = true
@@ -405,7 +412,11 @@ void refreshKeyStatus()
         />
       </template>
 
-      <CollapsibleRoot v-model:open="advancedOpen" class="rounded border border-border">
+      <CollapsibleRoot
+        v-if="!isACP"
+        v-model:open="advancedOpen"
+        class="rounded border border-border"
+      >
         <CollapsibleTrigger
           class="flex w-full items-center gap-2 px-2.5 py-2 text-left text-[11px] text-muted hover:text-surface"
         >
@@ -464,6 +475,33 @@ void refreshKeyStatus()
                 :step="1024"
                 :placeholder="dialogs.optional"
                 @update:model-value="draft.contextWindowTokens = Number($event) || undefined"
+              />
+            </ProviderSettingsField>
+
+            <ProviderSettingsField v-if="isHarness" :label="dialogs.harnessThinkingLevel">
+              <AppSelect
+                v-model="draft.harnessThinkingLevel"
+                :label="dialogs.harnessThinkingLevel"
+                :options="[
+                  { value: 'off', label: dialogs.harnessThinkingOff },
+                  { value: 'minimal', label: dialogs.harnessThinkingMinimal },
+                  { value: 'low', label: dialogs.harnessThinkingLow },
+                  { value: 'medium', label: dialogs.harnessThinkingMedium },
+                  { value: 'high', label: dialogs.harnessThinkingHigh },
+                  { value: 'xhigh', label: dialogs.harnessThinkingExtraHigh }
+                ]"
+              />
+            </ProviderSettingsField>
+
+            <ProviderSettingsField v-if="isHarness" :label="dialogs.harnessToolPermissions">
+              <AppSelect
+                v-model="draft.harnessPermissionMode"
+                :label="dialogs.harnessToolPermissions"
+                :options="[
+                  { value: 'allow-reads', label: dialogs.harnessPermissionReads },
+                  { value: 'allow-edits', label: dialogs.harnessPermissionEdits },
+                  { value: 'allow-all', label: dialogs.harnessPermissionAll }
+                ]"
               />
             </ProviderSettingsField>
 

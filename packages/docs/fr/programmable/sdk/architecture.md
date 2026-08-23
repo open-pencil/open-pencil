@@ -1,22 +1,22 @@
 ---
-title: Architecture SDK
-description: Structure des dossiers, frontières d'API publique et patterns de composition dans @open-pencil/vue.
+title: Architecture du SDK
+description: Structure du package, limites de l'API publique et principes de conception de @open-pencil/vue.
 ---
 
-# Architecture SDK
+# Architecture du SDK
 
-`@open-pencil/vue` est la couche Vue au-dessus de `@open-pencil/core`.
+`@open-pencil/vue` relie `@open-pencil/core` à Vue.
 
-Elle ne possède pas le modèle d'éditeur lui-même. Elle adapte l'éditeur core en :
+Le modèle de l’éditeur reste dans le noyau. Ce paquet ajoute :
 
-- injection Vue
-- composables réactifs
-- primitives structurelles headless
-- câblage canvas et input
+- la dependency injection avec Vue ;
+- des composables réactifs ;
+- des composants structurels sans styles ;
+- la connexion de la zone de travail et la gestion des entrées.
 
-## Structure des dossiers
+## Structure du package
 
-Ce package est organisé par domaine.
+Le code est organisé par domaines fonctionnels.
 
 ### Familles de composants
 
@@ -28,18 +28,21 @@ Ce package est organisé par domaine.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
+- `PropertySection/`
+- `SegmentedControl/`
 - `NumberField/`
 - `Toolbar/`
 
-Ces dossiers contiennent des primitives structurelles/headless et des helpers locaux.
+Ces dossiers contiennent des composants structurels sans styles et des fonctions auxiliaires propres à chaque domaine.
 
-### Contrôles
+### Controls
 
-`controls/` contient les composables de contrôles pour les panneaux de propriétés et l'éditeur :
+`controls/` contient les composables destinés aux panneaux de propriétés et aux commandes de l'éditeur :
 
 - `usePosition`
 - `useLayout`
 - `useAppearance`
+- `useColorModel`
 - `useTypography`
 - `useExport`
 - `useFillControls`
@@ -47,69 +50,72 @@ Ces dossiers contiennent des primitives structurelles/headless et des helpers lo
 - `useEffectsControls`
 - `useNodeProps`
 - `usePropScrub`
+- `useEditorPropertyList`
 
 ### Variables
 
-`VariablesEditor/` contient les composables du domaine variables et le câblage d'état.
+`VariablesEditor/` contient les composables et le code qui relie l'état de l'éditeur de variables à Vue.
 
 ### Sélection
 
-`selection/` contient l'état de l'éditeur dérivé de la sélection et les capacités associées.
+`selection/` contient l'état calculé à partir de la sélection et les informations sur les opérations disponibles.
 
 ### Contexte
 
-`context/` contient les helpers d'injection de l'éditeur :
+`context/` contient la clé et les fonctions qui fournissent l’éditeur par injection de dépendances dans Vue :
 
 - `EDITOR_KEY`
 - `provideEditor`
 - `useEditor`
 
-### Interne
+### Internal
 
-`internal/` contient des utilitaires transversaux non destinés à être des primitives headless principales.
+`internal/` contient des fonctions auxiliaires partagées. Elles ne font pas partie des principaux composants publics du paquet.
 
-## Philosophie d'API publique
+## Principes de l'API publique
 
-### Préférer les composables
+### Des composables pour la logique et l'état
 
-Si le problème est principalement de la logique de contrôle, de la dérivation d'état ou des actions éditeur, exposer un composable.
+Si le code sert principalement à calculer ou gérer l'état, ou à exécuter des opérations de l'éditeur, exposez-le sous forme de composable.
 
-### Réserver les primitives headless aux structures significatives
+### Des composants sans styles uniquement lorsque la structure est importante
 
-Utiliser des racines de composants quand ils coordonnent une structure, des enfants, des slots ou du contexte.
+Un composant racine est utile lorsqu'il coordonne la structure, les éléments enfants, les slots ou le contexte.
 
 Exemples :
 
 - `PageListRoot`
 - `PropertyListRoot`
+- `PropertySectionRoot`
+- `SegmentedControlRoot`
 - `ToolbarRoot`
 
-### Éviter les slots fourre-tout de contexte
+### Ne transmettez pas tout le contexte par un seul emplacement
 
-Préférer des props de slot ciblés ou l'usage direct de composables plutôt que des payloads `v-slot="ctx"` massifs.
+Ne transmettez à l’emplacement que les propriétés nécessaires ou utilisez directement le composable. Les composants contrôlés tels que `PropertyListRoot` émettent des événements sémantiques. La connexion à la sélection et à l’historique d’annulation doit se trouver dans un adaptateur ou un composable de contrôle, et non dans le composant lui-même.
 
-## Responsabilités SDK vs Application
+## Responsabilités de l'application et du SDK
 
-### Le SDK possède
+### SDK
 
-- l'intégration éditeur
-- la logique headless réutilisable
-- la structure UI réutilisable sans hypothèses de style
-- l'intégration du rendu canvas
+- intégration avec l'éditeur ;
+- logique réutilisable sans styles ;
+- structure d'interface réutilisable et indépendante de la présentation ;
+- intégration avec le rendu de la zone de travail.
 
-### L'application possède
+### Application
 
-- les styles
-- les shells de mise en page
-- le routage
-- les flux de fichiers du produit
-- les toasts, menus et UX spécifiques à l'application
+- présentation ;
+- mise en page générale ;
+- routage ;
+- ouverture, enregistrement et autres opérations sur les fichiers ;
+- notifications, menus et comportements propres à l'application.
 
-## Règle pratique
+## Règle générale
 
-Si un morceau de logique pourrait être réutilisé dans une autre application basée sur OpenPencil sans emporter les styles applicatifs, il appartient probablement à `@open-pencil/vue`.
+Si du code peut être réutilisé dans un autre éditeur basé sur OpenPencil sans reprendre la présentation de l'application, il devrait probablement faire partie de `@open-pencil/vue`.
 
-## Pages associées
+## Voir aussi
 
-- [Démarrage rapide SDK](./getting-started)
-- [Référence API](./api/)
+- [Premiers pas avec le SDK](./getting-started)
+- [Référence de l'API](./api/)

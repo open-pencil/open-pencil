@@ -56,10 +56,15 @@
   "arrangeAlignMiddle": "Alinear centro verticalmente",
   "arrangeAlignBottom": "Alinear abajo",
   "multiplayerCursors": "Cursores multijugador",
+  "preferences": "Preferencias",
+  "snapToGeometry": "Ajustar a la geometría",
+  "snapToObjects": "Ajustar a objetos",
+  "snapToPixelGrid": "Ajustar a la cuadrícula de píxeles",
   "renameSelection": "Renombrar selección…",
   "rulers": "Reglas",
   "settings": "Ajustes…",
   "splitRight": "Dividir a la derecha",
   "splitDown": "Dividir hacia abajo",
-  "closeView": "Cerrar vista"
+  "closeView": "Cerrar vista",
+  "removeGuide": "Eliminar guía"
 }

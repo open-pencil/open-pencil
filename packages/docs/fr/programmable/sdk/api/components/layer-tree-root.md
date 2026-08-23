@@ -1,14 +1,16 @@
 ---
 title: LayerTreeRoot
-description: Primitive structurelle headless pour les interfaces d'arbre de calques.
+description: Composant sans styles pour la structure et les actions d’un arbre de calques.
 ---
 
 # LayerTreeRoot
 
-`LayerTreeRoot` est la primitive SDK pour afficher un arbre de calques avec un balisage et des styles appartenant à l'application.
+`LayerTreeRoot` fournit les éléments, la sélection, les branches dépliées et les actions de navigation dans la hiérarchie du document.
 
-Utilisez-la quand vous voulez une structure d'arbre réutilisable et un câblage d'interaction sans présentation intégrée.
+Associez-le à `LayerTreeItem` ou affichez vos propres lignes dans son emplacement.
 
-## API associées
+## Voir aussi
 
-- [useSelectionState](../composables/use-selection-state)
+- [LayerTreeItem](./layer-tree-item)
+- [useLayerTree](../advanced/use-layer-tree)
+- [useLayerDrag](../advanced/use-layer-drag)

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { AlertDialogCancel, AlertDialogDescription, AlertDialogTitle } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
+import { recoveryEnabled } from '@/app/document/recovery/preferences'
 import { useNotificationMessages } from '@/app/i18n/notifications'
 import { discardRecoverySnapshot, listRecoverySnapshots, restoreRecoverySnapshot } from '@/app/tabs'
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
@@ -54,7 +55,7 @@ async function discard(snapshot: RecoverySnapshotMeta): Promise<void> {
 }
 
 onMounted(async () => {
-  if (route.path !== '/') return
+  if (route.path !== '/' || !recoveryEnabled.value) return
   try {
     snapshots.value = await listRecoverySnapshots()
     open.value = snapshots.value.length > 0

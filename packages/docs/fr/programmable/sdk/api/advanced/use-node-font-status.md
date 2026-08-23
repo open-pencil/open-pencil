@@ -1,15 +1,15 @@
 ---
 title: useNodeFontStatus
-description: Helper de statut des polices manquantes pour les nœuds texte.
+description: Informations sur les Fonts manquants dans un objet texte.
 ---
 
 # useNodeFontStatus
 
-`useNodeFontStatus(node)` retourne les informations sur les polices manquantes pour un getter de nœud texte.
+`useNodeFontStatus(node)` vérifie les Fonts de l’objet texte indiqué et renvoie des informations sur les Families et Styles non chargés.
 
-Utilisez-le dans les panneaux typographiques et les avertissements qui doivent signaler les familles de polices indisponibles.
+Utilisez le composable dans les panneaux Typography et les avertissements de Fonts manquants.
 
-## API associées
+## Voir aussi
 
 - [useTypography](../composables/use-typography)
 - [TypographyControlsRoot](../components/typography-controls-root)

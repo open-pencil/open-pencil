@@ -6,108 +6,180 @@ import { connectAutomation } from '@/app/automation/bridge/server'
 import type { EditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 
-import { setMCPToolCatalog } from './preferences'
-import { readAutomationHealth, spawnMCPIfNeeded, type AutomationServerHandle } from './spawn'
+import { setMCPToolDescriptors } from './preferences'
+import {
+  type AutomationHealth,
+  type AutomationServerHandle,
+  readAutomationHealth,
+  spawnMCPIfNeeded
+} from './spawn'
 
 export type MCPRuntimeStatus = 'idle' | 'starting' | 'running' | 'stopped' | 'error'
 
-export const mcpRuntime = reactive({
-  status: 'idle' as MCPRuntimeStatus,
-  port: AUTOMATION_HTTP_PORT,
-  version: null as string | null,
-  authRequired: false,
-  error: null as string | null,
-  checking: false,
-  externallyManaged: false
-})
-
-let server: AutomationServerHandle | null = null
-let disconnectAutomation: (() => void) | null = null
-let activeStore: (() => EditorStore) | null = null
-let lifecycle = Promise.resolve()
-
-function enqueueLifecycle(operation: () => Promise<void>): Promise<void> {
-  const next = lifecycle.then(operation, operation)
-  lifecycle = next.catch(() => undefined)
-  return next
+export interface MCPRuntimeState {
+  status: MCPRuntimeStatus
+  port: number
+  version: string | null
+  authRequired: boolean
+  error: string | null
+  checking: boolean
+  externallyManaged: boolean
 }
 
-export async function refreshMCPRuntime(): Promise<void> {
-  mcpRuntime.checking = true
-  try {
-    const health = await readAutomationHealth()
-    mcpRuntime.version = health?.version ?? null
-    mcpRuntime.authRequired = health?.authRequired ?? false
-    setMCPToolCatalog(health?.tools ?? [])
-    if (health) {
-      mcpRuntime.status = 'running'
-      mcpRuntime.error = null
-    } else if (mcpRuntime.status !== 'starting' && mcpRuntime.status !== 'error') {
-      mcpRuntime.status = 'stopped'
-    }
-  } finally {
-    mcpRuntime.checking = false
+export type MCPRuntimeResult = { ok: true } | { ok: false; error: Error }
+
+export interface MCPRuntimeDependencies {
+  connect: (getStore: () => EditorStore, authToken: string | null) => () => void
+  canConnect: () => boolean
+  readHealth: (authToken?: string | null) => Promise<AutomationHealth | null>
+  setToolDescriptors: (tools: NonNullable<AutomationHealth['tools']>) => void
+  spawn: () => Promise<AutomationServerHandle | null>
+}
+
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error))
+}
+
+export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
+  const state = reactive<MCPRuntimeState>({
+    status: 'idle',
+    port: AUTOMATION_HTTP_PORT,
+    version: null,
+    authRequired: false,
+    error: null,
+    checking: false,
+    externallyManaged: false
+  })
+
+  let server: AutomationServerHandle | null = null
+  let disconnectAutomation: (() => void) | null = null
+  let activeStore: (() => EditorStore) | null = null
+  let lifecycle: Promise<void> = Promise.resolve()
+
+  function enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const next = lifecycle.then(operation, operation)
+    lifecycle = next.then(
+      () => undefined,
+      () => undefined
+    )
+    return next
   }
-}
 
-async function start(): Promise<void> {
-  mcpRuntime.status = 'starting'
-  mcpRuntime.error = null
-  mcpRuntime.externallyManaged = false
-  try {
-    server = await spawnMCPIfNeeded()
-    const health = await readAutomationHealth()
-    if (!health) throw new Error('MCP server did not become healthy')
-    mcpRuntime.externallyManaged = server?.managed === false
-    if (activeStore && (import.meta.env.DEV || isTauri())) {
-      disconnectAutomation = connectAutomation(activeStore, server?.authToken ?? null).disconnect
+  function applyHealth(health: AutomationHealth): void {
+    state.version = health.version ?? null
+    state.authRequired = health.authRequired ?? false
+    dependencies.setToolDescriptors(health.tools ?? [])
+    state.status = 'running'
+    state.error = null
+  }
+
+  async function refreshOperation(): Promise<MCPRuntimeResult> {
+    state.checking = true
+    try {
+      const health = await dependencies.readHealth(server?.authToken)
+      if (health) {
+        applyHealth(health)
+        return { ok: true }
+      }
+      state.version = null
+      state.authRequired = false
+      dependencies.setToolDescriptors([])
+      if (state.status !== 'error') state.status = 'stopped'
+      return { ok: true }
+    } catch (error) {
+      const runtimeError = toError(error)
+      state.status = 'error'
+      state.error = runtimeError.message
+      return { ok: false, error: runtimeError }
+    } finally {
+      state.checking = false
     }
-    mcpRuntime.version = health.version ?? null
-    mcpRuntime.authRequired = health.authRequired ?? false
-    setMCPToolCatalog(health.tools ?? [])
-    mcpRuntime.status = 'running'
-  } catch (error) {
+  }
+
+  async function disconnectCurrentServer(): Promise<Error | null> {
     disconnectAutomation?.()
     disconnectAutomation = null
-    if (server) {
-      try {
-        await server.disconnect()
-      } catch (disconnectError) {
-        console.warn('[MCP] Failed to stop server after startup error:', disconnectError)
-      }
-    }
+    const currentServer = server
     server = null
-    mcpRuntime.status = 'error'
-    mcpRuntime.error = error instanceof Error ? error.message : String(error)
-    console.warn('[MCP]', error)
+    try {
+      await currentServer?.disconnect()
+      return null
+    } catch (error) {
+      return toError(error)
+    }
+  }
+
+  async function startOperation(): Promise<MCPRuntimeResult> {
+    state.status = 'starting'
+    state.error = null
+    state.externallyManaged = false
+    try {
+      server = await dependencies.spawn()
+      const health = await dependencies.readHealth(server?.authToken)
+      if (!health) throw new Error('MCP server did not become healthy')
+      state.externallyManaged = server?.managed === false
+      if (activeStore && dependencies.canConnect()) {
+        disconnectAutomation = dependencies.connect(activeStore, server?.authToken ?? null)
+      }
+      applyHealth(health)
+      return { ok: true }
+    } catch (error) {
+      const runtimeError = toError(error)
+      const disconnectError = await disconnectCurrentServer()
+      state.status = 'error'
+      state.error = disconnectError
+        ? `${runtimeError.message}. Cleanup failed: ${disconnectError.message}`
+        : runtimeError.message
+      console.warn('[MCP]', runtimeError)
+      return { ok: false, error: runtimeError }
+    }
+  }
+
+  async function stopOperation(releaseStore: boolean): Promise<MCPRuntimeResult> {
+    const disconnectError = await disconnectCurrentServer()
+    if (releaseStore) activeStore = null
+    state.status = disconnectError ? 'error' : 'stopped'
+    state.version = null
+    state.authRequired = false
+    state.error = disconnectError?.message ?? null
+    state.externallyManaged = false
+    dependencies.setToolDescriptors([])
+    return disconnectError ? { ok: false, error: disconnectError } : { ok: true }
+  }
+
+  return {
+    state,
+    refresh: () => enqueue(refreshOperation),
+    start(getStore: () => EditorStore): Promise<MCPRuntimeResult> {
+      activeStore = getStore
+      return enqueue(startOperation)
+    },
+    stop: () => enqueue(() => stopOperation(true)),
+    restart: () =>
+      enqueue(async () => {
+        const stopResult = await stopOperation(false)
+        if (!stopResult.ok) return stopResult
+        if (!activeStore) {
+          const error = new Error('Editor is not ready')
+          state.status = 'error'
+          state.error = error.message
+          return { ok: false, error } as MCPRuntimeResult
+        }
+        return startOperation()
+      })
   }
 }
 
-export function startMCPRuntime(getStore: () => EditorStore): Promise<void> {
-  activeStore = getStore
-  return enqueueLifecycle(start)
-}
+const appMCPRuntime = createMCPRuntimeService({
+  connect: (getStore, authToken) => connectAutomation(getStore, authToken).disconnect,
+  canConnect: () => import.meta.env.DEV || isTauri(),
+  readHealth: readAutomationHealth,
+  setToolDescriptors: setMCPToolDescriptors,
+  spawn: spawnMCPIfNeeded
+})
 
-async function stop(): Promise<void> {
-  disconnectAutomation?.()
-  disconnectAutomation = null
-  await server?.disconnect()
-  server = null
-  mcpRuntime.status = 'stopped'
-  mcpRuntime.version = null
-  mcpRuntime.authRequired = false
-  mcpRuntime.externallyManaged = false
-  setMCPToolCatalog([])
-}
-
-export function stopMCPRuntime(): Promise<void> {
-  return enqueueLifecycle(stop)
-}
-
-export function restartMCPRuntime(): Promise<void> {
-  return enqueueLifecycle(async () => {
-    await stop()
-    if (!activeStore) throw new Error('Editor is not ready')
-    await start()
-  })
-}
+export const mcpRuntime = appMCPRuntime.state
+export const refreshMCPRuntime = appMCPRuntime.refresh
+export const restartMCPRuntime = () => appMCPRuntime.restart()
+export const startMCPRuntime = (getStore: () => EditorStore) => appMCPRuntime.start(getStore)
+export const stopMCPRuntime = () => appMCPRuntime.stop()

@@ -137,8 +137,40 @@ export const APP_MENU_SCHEMA = [
       },
       { id: 'language', label: 'Language', target: 'browser' },
       { type: 'separator' },
+      {
+        id: 'preferences',
+        label: 'Preferences',
+        sub: [
+          {
+            id: 'snap-geometry',
+            label: 'Snap to Geometry',
+            checkbox: true,
+            handler: 'shell'
+          },
+          {
+            id: 'snap-objects',
+            label: 'Snap to Objects',
+            checkbox: true,
+            handler: 'shell'
+          },
+          {
+            id: 'snap-pixel-grid',
+            label: 'Snap to Pixel Grid',
+            checkbox: true,
+            handler: 'shell'
+          },
+          { type: 'separator' },
+          {
+            id: 'settings',
+            label: 'Settings…',
+            shortcut: 'MOD+,',
+            accelerator: 'CmdOrCtrl+,',
+            handler: 'shell'
+          }
+        ]
+      },
+      { type: 'separator' },
       { id: 'toggle-ui', label: 'Toggle UI', shortcut: 'MOD+\\' },
-      { id: 'settings', label: 'Settings…', handler: 'shell' },
       { type: 'separator' },
       { id: 'profiler', label: 'Profiler', checkbox: true, target: 'browser' },
       {

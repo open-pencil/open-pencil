@@ -1,36 +1,39 @@
 ---
 title: Menú contextual
-description: Acciones del menú contextual (clic derecho) en OpenPencil.
+description: Acciones del portapapeles, orden, grupos, componentes, visibilidad y páginas.
 ---
+
 # Menú contextual
 
-Clic derecho en el lienzo para abrir el menú contextual. Clic derecho en un nodo lo selecciona primero.
-
-## Copiar como
-
-El submenú **Copiar como** ofrece estos formatos:
-
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Copiar como texto | — | — |
-| Copiar como SVG | — | — |
-| Copiar como PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Copiar como JSX | — | — |
+Haz clic con el botón derecho en el lienzo. Si el puntero está sobre un objeto, OpenPencil lo selecciona primero; en una zona vacía, cancela la selección.
 
 ## Portapapeles
-Copiar (<kbd>⌘</kbd><kbd>C</kbd>), Cortar (<kbd>⌘</kbd><kbd>X</kbd>), Pegar (<kbd>⌘</kbd><kbd>V</kbd>), Duplicar (<kbd>⌘</kbd><kbd>D</kbd>), Eliminar (⌫)
 
-## Orden Z
-**]** al frente · **[** al fondo
+**Copiar como** puede escribir la selección como:
 
-## Agrupación
-Agrupar (<kbd>⌘</kbd><kbd>G</kbd>), Desagrupar (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd>), Añadir auto-layout (<kbd>⇧</kbd><kbd>A</kbd>)
+- texto;
+- SVG;
+- PNG;
+- JSX con clases Tailwind.
+
+También están disponibles cortar, copiar, pegar, duplicar y eliminar.
+
+## Orden y organización
+
+El menú permite traer al frente, enviar al fondo, avanzar o retroceder un nivel, agrupar, desagrupar y añadir disposición automática.
 
 ## Componentes
-Crear componente (<kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd>), Crear conjunto (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd>), Crear instancia, Ir al componente principal, Desenlazar instancia (<kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd>). Acciones en morado.
+
+Las acciones de componente aparecen en morado: crear componente, crear instancia, crear conjunto, separar instancia e ir al componente principal.
 
 ## Visibilidad y bloqueo
-Ocultar/Mostrar (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd>), Bloquear/Desbloquear (<kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd>)
 
-## Mover a página
-Submenú con todas las páginas excepto la actual.
+**Mostrar/Ocultar** cambia la visibilidad. **Bloquear/Desbloquear** impide o permite la edición.
+
+## Mover a otra página
+
+**Mover a página** muestra las demás páginas del documento y traslada allí la selección conservando su geometría.
+
+## Exportar
+
+**Exportar…** abre el diálogo de exportación para la selección actual.

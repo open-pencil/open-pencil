@@ -1,54 +1,71 @@
 ---
-title: Auto-layout
-description: Layout flex i grid w OpenPencil — kierunek, odstępy, padding, wyrównanie, rozmiary i ścieżki CSS Grid.
+title: Automatyczny układ
+description: "Flexbox i CSS Grid w OpenPencil: kierunek, odstępy, wypełnienie, wyrównanie i rozmiary elementów potomnych."
 ---
-# Auto-layout
 
-Auto-layout automatycznie pozycjonuje dzieci wewnątrz ramki. Obsługuje dwa tryby: **flex** (przepływ poziomy/pionowy) i **grid** (wiersze i kolumny z wymiarowaniem ścieżek).
+# Automatyczny układ
 
-<kbd>⇧</kbd><kbd>A</kbd> aby włączyć/wyłączyć lub opakować zaznaczenie.
+Automatyczny układ rozmieszcza elementy potomne wewnątrz ramki. Dostępne są dwa tryby: **Flex** z przepływem poziomym lub pionowym oraz **Grid** z wierszami, kolumnami i konfigurowalnymi ścieżkami.
+
+## Włączanie
+
+- Zaznacz ramkę i naciśnij <kbd>⇧</kbd><kbd>A</kbd>, aby włączyć lub wyłączyć automatyczny układ.
+- Zaznacz obiekty bez wspólnej ramki nadrzędnej i naciśnij <kbd>⇧</kbd><kbd>A</kbd>, aby umieścić je w nowej ramce.
+
+Podczas tworzenia ramki obiekty są sortowane według położenia.
 
 ## Kierunek
-- **Poziomy** — od lewej do prawej
-- **Pionowy** — z góry na dół
-- **Zawijanie** — zawija gdy brakuje miejsca
+
+- **Poziomy:** od lewej do prawej.
+- **Pionowy:** od góry do dołu.
+- **Zawijanie:** po wyczerpaniu miejsca obiekty przechodzą do następnego wiersza lub kolumny.
 
 ## Odstępy
-**Gap** między sąsiednimi dziećmi. **Padding** między krawędzią ramki a dziećmi.
+
+Odstęp określa odległość między sąsiednimi elementami. Wypełnienie określa odległość między krawędzią ramki a zawartością i może być wspólne lub osobne dla każdej strony.
 
 ## Wyrównanie
-- **Oś główna (Justify):** początek, środek, koniec, rozłóż
-- **Oś poprzeczna (Align):** początek, środek, koniec, rozciągnij
 
-## Rozmiar dzieci
-- **Stały** — jawna szerokość/wysokość
-- **Wypełnij** — rozciąga się w dostępnej przestrzeni
-- **Dopasuj** — kurczy się do zawartości
+### Główna oś
+
+- początek;
+- środek;
+- koniec;
+- równy odstęp między obiektami.
+
+### Oś poprzeczna
+
+- początek;
+- środek;
+- koniec;
+- rozciągnięcie na dostępną szerokość lub wysokość.
+
+## Rozmiar elementów potomnych
+
+- **Stały:** jawna szerokość lub wysokość;
+- **Wypełnij:** zajmuje dostępne miejsce;
+- **Dopasuj:** rozmiar zależy od zawartości.
+
+Pierwsza rzeczywista zmiana szerokości lub wysokości przełącza tylko tę oś na tryb stały. Sam fokus pola nie zmienia trybu.
+
+## Zmiana kolejności
+
+Przeciągnij element wewnątrz ramki, aby zmienić jego miejsce. Wskaźnik pokazuje przyszłą pozycję.
 
 ## CSS Grid
 
-Layout siatkowy (grid) organizuje dzieci w wierszach i kolumnach z jawnym wymiarowaniem ścieżek.
+Grid rozmieszcza elementy w wierszach i kolumnach o jawnie określonych rozmiarach ścieżek.
 
-### Włączanie siatki
+- **fr:** część dostępnego miejsca;
+- **px:** stała liczba pikseli;
+- **auto:** rozmiar zależny od zawartości.
 
-Wybierz ramkę z włączonym auto-layout i kliknij ikonę siatki w pasku narzędzi layout, aby przełączyć z flex na grid.
+Dla wierszy i kolumn można ustawić osobne odstępy. Domyślnie obiekty kolejno wypełniają komórki wierszami. We właściwościach elementu można zmienić początkowy wiersz lub kolumnę oraz liczbę zajmowanych komórek.
 
-### Wymiarowanie ścieżek
+Grid jest eksportowany do JSX z klasami Tailwind, na przykład `grid grid-cols-3`, `gap-x-4 gap-y-2` i `col-start-2 row-span-2`.
 
-Zdefiniuj ścieżki kolumn i wierszy za pomocą trzech trybów:
+## Wskazówki
 
-- **fr** — jednostka ułamkowa, dzieli dostępną przestrzeń proporcjonalnie
-- **px** — stały rozmiar w pikselach
-- **auto** — dopasowuje się do zawartości
-
-### Odstępy siatki
-
-Ustaw oddzielne odstępy poziome (kolumny) i pionowe (wiersze) między komórkami.
-
-### Pozycjonowanie dzieci
-
-Dzieci są umieszczane w komórkach siatki automatycznie w kolejności wierszy. Można nadpisać umieszczenie wartościami początku kolumny/wiersza i rozpiętości we właściwościach layout dziecka.
-
-### Eksport JSX i Tailwind
-
-Layouty siatkowe eksportują się jako JSX z klasami Tailwind: `grid grid-cols-3`, `gap-x-4 gap-y-2`, `col-start-2 row-span-2`.
+- Zagnieżdżaj ramki z automatycznym układem, aby tworzyć złożone interfejsy responsywne.
+- Tryb „Wypełnij” działa podobnie do `flex-grow: 1` w CSS.
+- Grid sprawdza się w pulpitach, galeriach, formularzach i innych strukturach dwuwymiarowych.

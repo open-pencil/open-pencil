@@ -1,16 +1,15 @@
 ---
 title: ToolbarItem
-description: Primitivo headless de elemento de barra de herramientas para una sola herramienta del editor.
+description: Herramienta individual de la barra del editor.
 ---
 
 # ToolbarItem
 
-`ToolbarItem` expone el estado activo y el comportamiento de selección para una herramienta de la barra de herramientas.
+`ToolbarItem` proporciona el estado activo de una herramienta y gestiona su selección.
 
-Úsalo dentro de `ToolbarRoot` cuando quieras markup personalizado de botón pero con el cableado de selección de herramienta compartido.
+Dentro de `ToolbarRoot`, la aplicación puede representar un botón propio y reutilizar la lógica compartida del SDK.
 
-## APIs relacionadas
+## Véase también
 
 - [ToolbarRoot](./toolbar-root)
-- [useToolbar](../advanced/use-toolbar)
 - [useToolbarState](../advanced/use-toolbar-state)

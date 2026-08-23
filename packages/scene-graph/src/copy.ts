@@ -255,6 +255,7 @@ export function cloneNodeProps(
     strokes: copyOpt(src.strokes, (value) => markCopySource(value, copyStrokes(value))),
     effects: copyOpt(src.effects, (value) => markCopySource(value, copyEffects(value))),
     layoutGrids: copyOpt(src.layoutGrids, copyLayoutGrids),
+    guides: copyOpt(src.guides, (guides) => guides.map((guide) => ({ ...guide }))),
     styleRuns: copyOpt(src.styleRuns, (value) => markCopySource(value, copyStyleRuns(value))),
     // Generated instance descendants have no independent Figma provenance. Retaining the source
     // component's opaque raw payload here duplicates megabytes of metadata per instance.

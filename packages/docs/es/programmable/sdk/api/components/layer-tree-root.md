@@ -1,14 +1,16 @@
 ---
 title: LayerTreeRoot
-description: Primitivo estructural headless para interfaces de árbol de capas.
+description: Componente sin estilos para la estructura y las acciones de un árbol de capas.
 ---
 
 # LayerTreeRoot
 
-`LayerTreeRoot` es el primitivo del SDK para renderizar un árbol de capas con markup y estilos propios de la app.
+`LayerTreeRoot` proporciona elementos, selección, ramas desplegadas y acciones para navegar por la jerarquía del documento.
 
-Úsalo cuando quieras la estructura del árbol y el cableado de interacción reutilizables sin presentación incorporada.
+Combine el componente con `LayerTreeItem` o represente las filas con una ranura propia.
 
-## APIs relacionadas
+## Véase también
 
-- [useSelectionState](../composables/use-selection-state)
+- [LayerTreeItem](./layer-tree-item)
+- [useLayerTree](../advanced/use-layer-tree)
+- [useLayerDrag](../advanced/use-layer-drag)

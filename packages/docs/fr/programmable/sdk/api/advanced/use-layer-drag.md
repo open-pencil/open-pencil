@@ -1,16 +1,15 @@
 ---
 title: useLayerDrag
-description: Helper de câblage drag-and-drop pour la réorganisation de l'arbre des calques.
+description: Gérer le réordonnancement et le changement de conteneur dans un arbre de calques.
 ---
 
 # useLayerDrag
 
-`useLayerDrag(editor, indentPerLevel?)` câble le comportement de drag-and-drop pragmatique pour les lignes de l'arbre des calques et mappe les instructions de dépôt vers les opérations de réorganisation de l'éditeur.
+`useLayerDrag(options)` fournit l’état et les actions nécessaires au glissement des lignes.
 
-Utilisez-le pour étendre ou remplacer l'UI de drag de l'arbre des calques par défaut.
+Il calcule la cible, la position avant/dans/après, la validité du changement et la mise à jour de la hiérarchie. Les positions visuelles sont conservées lorsqu’un objet change de conteneur.
 
-## API associées
+## Voir aussi
 
 - [LayerTreeRoot](../components/layer-tree-root)
-- [LayerTreeItem](../components/layer-tree-item)
 - [useLayerTree](./use-layer-tree)

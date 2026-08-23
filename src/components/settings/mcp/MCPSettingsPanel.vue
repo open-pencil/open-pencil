@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ToolEffect } from '@open-pencil/mcp/tools'
 import { useClipboard } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
@@ -13,6 +14,8 @@ import {
 } from '@/app/automation/mcp/preferences'
 import { mcpRuntime, refreshMCPRuntime, restartMCPRuntime } from '@/app/automation/mcp/runtime'
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
+import { isTauri } from '@/app/tauri/env'
+import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 
 const { dialogs } = useI18n()
@@ -23,16 +26,16 @@ const { copy: copyEndpoint, copied: endpointCopied } = useClipboard({ copiedDuri
 const { copy: copyToken, copied: tokenCopied } = useClipboard({ copiedDuring: 2000 })
 const { copy: copyConfig, copied: configCopied } = useClipboard({ copiedDuring: 2000 })
 const disabledToolNames = computed(() => new Set(disabledMCPTools.value))
-function categoryStatus(documentAccess: 'inspect' | 'modify') {
-  const tools = configurableMCPTools.value.filter((tool) => tool.documentAccess === documentAccess)
+function categoryStatus(effect: ToolEffect) {
+  const tools = configurableMCPTools.value.filter((tool) => tool.effect === effect)
   const enabled = tools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
   return {
     enabled: enabled > 0,
     state: enabled > 0 && enabled < tools.length ? ('mixed' as const) : ('idle' as const)
   }
 }
-const inspectionToolsStatus = computed(() => categoryStatus('inspect'))
-const modificationToolsStatus = computed(() => categoryStatus('modify'))
+const inspectionToolsStatus = computed(() => categoryStatus('read'))
+const modificationToolsStatus = computed(() => categoryStatus('write'))
 const enabledToolCount = computed(
   () => configurableMCPTools.value.filter((tool) => !disabledToolNames.value.has(tool.name)).length
 )
@@ -49,11 +52,12 @@ onMounted(() => {
   void refreshMCPRuntime()
 })
 
-function restart() {
+function restart(): void {
   void restartMCPRuntime()
 }
 
 async function chooseRootDirectory(): Promise<void> {
+  if (!isTauri()) return
   const { open } = await import('@tauri-apps/plugin-dialog')
   const directory = await open({ directory: true, multiple: false })
   if (typeof directory === 'string') mcpRootDirectory.value = directory
@@ -70,18 +74,13 @@ function enableAllTools(): void {
 async function copyClientConfig(): Promise<void> {
   copyError.value = null
   try {
-    const token = await getAutomationAuthToken()
+    const token = mcpRuntime.authRequired ? await getAutomationAuthToken() : null
     const config = {
       mcpServers: {
         'open-pencil': {
+          type: 'streamableHttp',
           url: mcpEndpoint.value,
-          ...(token
-            ? {
-                headers: {
-                  Authorization: `Bearer ${token}`
-                }
-              }
-            : {})
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {})
         }
       }
     }
@@ -104,7 +103,7 @@ async function copyAccessToken(): Promise<void> {
 </script>
 
 <template>
-  <section class="flex flex-col gap-4" data-test-id="settings-mcp-panel">
+  <section class="flex flex-col gap-4" data-test-id="settings-mcp-automation-panel">
     <div>
       <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsMCP }}</h3>
       <p class="mt-1 text-[11px] text-muted">{{ dialogs.mcpDescription }}</p>
@@ -186,6 +185,7 @@ async function copyAccessToken(): Promise<void> {
               {{ dialogs.mcpUseDefaultRoot }}
             </button>
             <button
+              v-if="isTauri()"
               type="button"
               class="rounded border border-border px-2 py-1 text-[10px] text-surface hover:bg-hover"
               data-test-id="settings-mcp-root-directory"
@@ -264,35 +264,35 @@ async function copyAccessToken(): Promise<void> {
       </div>
 
       <div class="border-b border-border p-2">
-        <input
+        <AppInput
           v-model="toolSearch"
           type="search"
+          size="sm"
           :placeholder="dialogs.search"
           :aria-label="dialogs.mcpSearchTools"
-          class="w-full rounded border border-border bg-input px-2.5 py-1.5 text-[11px] text-surface outline-none placeholder:text-muted focus:border-accent"
           data-test-id="settings-mcp-tool-search"
         />
       </div>
 
       <div class="grid grid-cols-2 gap-2 border-b border-border p-2.5">
         <div class="flex items-center justify-between gap-2 rounded bg-input px-2.5 py-2">
-          <span class="text-[10px] text-surface">{{ dialogs.mcpInspectionTools }}</span>
+          <span class="text-[10px] text-surface">{{ dialogs.mcpReadOnlyTools }}</span>
           <AppSwitch
             :model-value="inspectionToolsStatus.enabled"
             :state="inspectionToolsStatus.state"
-            :label="dialogs.mcpInspectionTools"
+            :label="dialogs.mcpReadOnlyTools"
             data-test-id="settings-mcp-inspection-tools"
-            @update:model-value="setMCPToolCategoryEnabled('inspect', $event)"
+            @update:model-value="setMCPToolCategoryEnabled('read', $event)"
           />
         </div>
         <div class="flex items-center justify-between gap-2 rounded bg-input px-2.5 py-2">
-          <span class="text-[10px] text-surface">{{ dialogs.mcpModificationTools }}</span>
+          <span class="text-[10px] text-surface">{{ dialogs.mcpSideEffectTools }}</span>
           <AppSwitch
             :model-value="modificationToolsStatus.enabled"
             :state="modificationToolsStatus.state"
-            :label="dialogs.mcpModificationTools"
+            :label="dialogs.mcpSideEffectTools"
             data-test-id="settings-mcp-modification-tools"
-            @update:model-value="setMCPToolCategoryEnabled('modify', $event)"
+            @update:model-value="setMCPToolCategoryEnabled('write', $event)"
           />
         </div>
       </div>
@@ -324,13 +324,13 @@ async function copyAccessToken(): Promise<void> {
     <div>
       <button
         type="button"
-        class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white disabled:opacity-50"
+        class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
         :disabled="mcpRuntime.status === 'starting' || mcpRuntime.externallyManaged"
         data-test-id="settings-mcp-restart"
         @click="restart"
       >
         {{
-          mcpRuntime.status === 'starting'
+          mcpRuntime.status === 'starting' || mcpRuntime.checking
             ? dialogs.mcpStarting
             : mcpRuntime.externallyManaged
               ? dialogs.mcpExternallyManaged

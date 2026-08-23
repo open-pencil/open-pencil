@@ -1,22 +1,22 @@
 ---
 title: Architektura SDK
-description: Struktura katalogów, granice publicznego API i wzorce kompozycji w @open-pencil/vue.
+description: Struktura pakietu, granice publicznego API i zasady projektowania @open-pencil/vue.
 ---
 
 # Architektura SDK
 
-`@open-pencil/vue` to warstwa Vue nad `@open-pencil/core`.
+`@open-pencil/vue` łączy `@open-pencil/core` z Vue.
 
-Nie jest właścicielem samego modelu edytora. Adaptuje rdzeń edytora do:
+Model edytora nadal znajduje się w core. Ten pakiet dodaje:
 
-- wstrzyknięcia Vue
-- reaktywnych kompozytów
-- bezstanowych prymitywów strukturalnych
-- okablowania kanvasu i wejść
+- dependency injection za pomocą Vue;
+- reaktywne composables;
+- strukturalne komponenty bez narzuconego wyglądu;
+- podłączenie obszaru roboczego i obsługę danych wejściowych.
 
-## Struktura katalogów
+## Struktura pakietu
 
-Pakiet jest zorganizowany według domeny.
+Kod jest podzielony według obszarów funkcjonalnych.
 
 ### Rodziny komponentów
 
@@ -28,18 +28,21 @@ Pakiet jest zorganizowany według domeny.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
+- `PropertySection/`
+- `SegmentedControl/`
 - `NumberField/`
 - `Toolbar/`
 
-Zawierają prymitywy strukturalne/bezstanowe i lokalne pomocniki.
+W tych katalogach znajdują się strukturalne komponenty bez narzuconego wyglądu oraz funkcje pomocnicze danego obszaru.
 
-### Kontrolki
+### Controls
 
-`controls/` zawiera kompozyty panelu właściwości i kontrolek edytora:
+W `controls/` znajdują się composables dla paneli właściwości i elementów sterujących edytora:
 
 - `usePosition`
 - `useLayout`
 - `useAppearance`
+- `useColorModel`
 - `useTypography`
 - `useExport`
 - `useFillControls`
@@ -47,69 +50,72 @@ Zawierają prymitywy strukturalne/bezstanowe i lokalne pomocniki.
 - `useEffectsControls`
 - `useNodeProps`
 - `usePropScrub`
+- `useEditorPropertyList`
 
-### Zmienne
+### Variables
 
-`VariablesEditor/` zawiera kompozyty domeny zmiennych i okablowanie stanu.
+`VariablesEditor/` zawiera composables i kod łączący stan edytora zmiennych z Vue.
 
-### Selekcja
+### Zaznaczenie
 
-`selection/` zawiera stan edytora pochodny od selekcji i możliwości.
+`selection/` zawiera stan obliczany na podstawie zaznaczenia oraz informacje o dostępnych operacjach.
 
 ### Kontekst
 
-`context/` zawiera pomocniki wstrzykiwania edytora:
+`context/` zawiera klucz i funkcje przekazujące edytor przez mechanizm wstrzykiwania zależności Vue:
 
 - `EDITOR_KEY`
 - `provideEditor`
 - `useEditor`
 
-### Wewnętrzne
+### Internal
 
-`internal/` zawiera narzędzia przekrojowe nieprzeznaczone jako główne bezstanowe prymitywy.
+`internal/` zawiera wspólne funkcje pomocnicze, które nie należą do podstawowych komponentów pakietu.
 
-## Filozofia publicznego API
+## Zasady publicznego API
 
-### Preferuj kompozyty
+### Używaj composables do obsługi logiki i stanu
 
-Jeśli problem dotyczy głównie logiki sterowania, derywacji stanu lub akcji edytora, udostępnij kompozyt.
+Jeśli kod przede wszystkim oblicza stan, zarządza nim lub wywołuje operacje edytora, udostępnij go jako composable.
 
-### Zachowaj bezstanowe prymitywy dla znaczącej struktury
+### Twórz komponenty bez wyglądu tylko wtedy, gdy istotna jest struktura
 
-Używaj korzeni komponentów, gdy koordynują strukturę, dzieci, sloty lub kontekst.
+Komponent główny jest potrzebny, gdy koordynuje strukturę, elementy potomne, slots albo kontekst.
 
 Przykłady:
 
 - `PageListRoot`
 - `PropertyListRoot`
+- `PropertySectionRoot`
+- `SegmentedControlRoot`
 - `ToolbarRoot`
 
-### Unikaj slotów z masowym zrzutem kontekstu
+### Nie przekazuj całego kontekstu przez jeden slot
 
-Preferuj skupione właściwości slotów lub bezpośrednie użycie kompozytu zamiast gigantycznych ładunków `v-slot="ctx"`.
+Przekazuj do slot tylko potrzebne props albo użyj composable bezpośrednio. Komponenty kontrolowane, takie jak `PropertyListRoot`, emitują zdarzenia opisujące wykonane operacje. Powiązanie z zaznaczeniem i historią cofania powinno znajdować się w adapterze lub composable sterującym, a nie w samym komponencie.
 
-## Odpowiedzialność aplikacji vs SDK
+## Odpowiedzialność aplikacji i SDK
 
-### SDK odpowiada za
+### SDK
 
-- integrację edytora
-- wielokrotnie używalną logikę bezstanową
-- wielokrotnie używalną strukturę UI bez założeń dotyczących stylowania
-- integrację renderowania kanvasu
+- integracja z edytorem;
+- logika przeznaczona do ponownego użycia, niezależna od wyglądu;
+- struktura interfejsu niezależna od wyglądu;
+- integracja z renderowaniem obszaru roboczego.
 
-### Aplikacja odpowiada za
+### Aplikacja
 
-- stylowanie
-- powłoki layoutu
-- routing
-- przepływy plików produktu
-- powiadomienia, menu i UX specyficzne dla aplikacji
+- wygląd;
+- ogólny układ stron;
+- routing;
+- otwieranie, zapisywanie i inne operacje na plikach;
+- powiadomienia, menu i zachowanie charakterystyczne dla konkretnej aplikacji.
 
-## Praktyczna zasada
+## Prosta zasada
 
-Jeśli logika mogłaby być użyta ponownie w innej aplikacji opartej na OpenPencil bez przenoszenia stylowania aplikacji, prawdopodobnie należy do `@open-pencil/vue`.
+Jeśli kod można bez stylów aplikacji wykorzystać w innym edytorze opartym na OpenPencil, prawdopodobnie powinien znaleźć się w `@open-pencil/vue`.
 
-## Powiązane strony
+## Zobacz też
 
 - [Pierwsze kroki z SDK](./getting-started)
 - [Dokumentacja API](./api/)

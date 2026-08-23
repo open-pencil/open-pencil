@@ -43,9 +43,9 @@ describe('fig roundtrip source metadata', () => {
         blendMode: 'NORMAL'
       }
     ]
-    page.source.fig.rawNodeFields.guides = [
-      { axis: 'X', offset: 42 },
-      { axis: 'Y', offset: 84 }
+    page.guides = [
+      { id: 'x', axis: 'x', position: 42 },
+      { id: 'y', axis: 'y', position: 84 }
     ]
     page.source.fig.rawNodeFields.strokeJoin = 'BEVEL'
     page.source.fig.rawNodeFields.strokeWeight = 0
@@ -76,7 +76,10 @@ describe('fig roundtrip source metadata', () => {
     expect(canvas?.strokeWeight).toBe(0)
     expect(canvas?.backgroundColor).toEqual(page.source.fig.rawNodeFields.backgroundColor)
     expect(canvas?.backgroundPaints).toEqual(page.source.fig.rawNodeFields.backgroundPaints)
-    expect(canvas?.guides).toEqual(page.source.fig.rawNodeFields.guides)
+    expect(canvas?.guides).toEqual([
+      { axis: 'X', offset: 42 },
+      { axis: 'Y', offset: 84 }
+    ])
 
     expect(changes.get('4:4812')?.parentIndex?.position).toBe('~~~~~~~~~~1')
     expect(changes.get('4:4813')?.parentIndex?.position).toBe('~~~~~~~~~~3')

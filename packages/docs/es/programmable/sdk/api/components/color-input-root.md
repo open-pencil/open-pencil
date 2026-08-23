@@ -1,47 +1,15 @@
 ---
 title: ColorInputRoot
-description: Helper headless de input de color con análisis hexadecimal y helpers de actualización.
+description: Estado y acciones para un campo de color controlado.
 ---
 
 # ColorInputRoot
 
-`ColorInputRoot` es un helper headless para interfaces de input de color.
+`ColorInputRoot` normaliza un valor de color, genera su representación hexadecimal y proporciona acciones para actualizarlo desde texto o desde un objeto `Color`.
 
-Deriva un valor hexadecimal a partir de un color y expone helpers de actualización para cambios hexadecimales y de color completo.
+La aplicación representa el campo mediante la ranura predeterminada. Los nombres exactos de sus propiedades de ranura —`color`, `editable`, `hex`, `updateFromHex` y `updateColor`— forman parte de la API.
 
-## Props
-
-<SdkPropsTable
-  :rows="[
-    { name: 'color', type: 'Color', description: 'Valor de color actual.', required: true },
-    { name: 'editable', type: 'boolean | undefined', description: 'Si el consumidor debe presentar el valor como editable.' }
-  ]"
-/>
-
-## Eventos
-
-<SdkEventsTable
-  :rows="[
-    { name: 'update', payload: 'color: Color', description: 'Emitido cuando el color cambia.' }
-  ]"
-/>
-
-## Slots
-
-<SdkSlotsTable
-  :rows="[
-    { name: 'default', props: '{ color: Color, editable: boolean, hex: string, updateFromHex: (value: string) => void, updateColor: (color: Color) => void }', description: 'Contrato principal de renderizado del input de color.' }
-  ]"
-/>
-
-## Ejemplo
-
-```vue
-<ColorInputRoot :color="color" @update="color = $event" v-slot="{ hex, updateFromHex }">
-  <input :value="hex" @input="updateFromHex(($event.target as HTMLInputElement).value)" />
-</ColorInputRoot>
-```
-
-## APIs relacionadas
+## Véase también
 
 - [ColorPickerRoot](./color-picker-root)
+- [useColorVariableBinding](../advanced/use-color-variable-binding)

@@ -1,15 +1,15 @@
 ---
 title: AppearanceControlsRoot
-description: Primitiva root headless per i controlli di opacità, visibilità e raggio degli angoli.
+description: Componente senza stile per opacità, visibilità e raggio degli angoli.
 ---
 
 # AppearanceControlsRoot
 
-`AppearanceControlsRoot` espone il contratto slot restituito da `useAppearance()` come primitiva strutturale.
+`AppearanceControlsRoot` espone nel proprio spazio l’API restituita da `useAppearance()`.
 
-Usala quando vuoi controlli di aspetto riutilizzabili con presentazione personalizzata.
+I campi personalizzati possono riutilizzare stato e azioni dell’SDK senza adottare un’interfaccia imposta.
 
-## API correlate
+## Vedi anche
 
 - [useAppearance](../composables/use-appearance)
-- [Guida Pannelli Proprietà](../../guides/property-panels)
+- [Pannelli delle proprietà](../../guides/property-panels)

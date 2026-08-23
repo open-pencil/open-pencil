@@ -1,64 +1,36 @@
 ---
-title: Chat IA
-description: Asistente IA integrado con más de 90 herramientas para crear y modificar diseños.
+title: Chat con AI
+description: Asistente integrado con más de 90 herramientas para crear, modificar y analizar diseños.
 ---
 
-# Chat IA
+# Chat con AI
 
-Presiona <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>) para abrir el asistente IA. Describe lo que quieres — crea formas, establece estilos, gestiona el layout, trabaja con componentes y analiza tu diseño.
+Pulsa <kbd>⌘</kbd><kbd>J</kbd> o <kbd>Ctrl</kbd><kbd>J</kbd>. El asistente puede crear formas, modificar estilos, configurar disposiciones, trabajar con componentes y analizar el documento.
 
-## Configuración
+## Configurar modelos
 
-1. Abre el panel de chat IA (<kbd>⌘</kbd><kbd>J</kbd>)
-2. Haz clic en el icono de ajustes
-3. Elige un proveedor e introduce tu clave API
-4. Selecciona un modelo
+1. Abre el chat.
+2. Selecciona el icono de ajustes.
+3. Añade un perfil y configura conexión, identificador del modelo, credenciales y capacidades.
 
-### Proveedores compatibles
+Puedes guardar varios perfiles y asignarlos por separado a diseño, revisiones, tareas rápidas y entrada de imágenes. Los perfiles que comparten una conexión reutilizan la misma credencial almacenada de forma segura.
 
-| Proveedor | Modelos | Configuración |
-|-----------|---------|---------------|
-| **OpenRouter** | Claude, GPT-4, Gemini, DeepSeek y otros | Clave API de [openrouter.ai](https://openrouter.ai) |
-| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus, etc. | Clave API de [console.anthropic.com](https://console.anthropic.com) |
-| **OpenAI** | GPT-4o, GPT-4, etc. | Clave API de [platform.openai.com](https://platform.openai.com) |
-| **Google AI** | Gemini 2.0, Gemini 1.5, etc. | Clave API de [aistudio.google.dev](https://aistudio.google.dev) |
-| **Compatible con OpenAI** | Cualquier endpoint con formato de API OpenAI | URL base personalizada + clave. Admite alternancia entre API de Completions y Responses. |
-| **Compatible con Anthropic** | Cualquier endpoint con formato de API Anthropic | URL base personalizada + clave |
+## Proveedores
 
-Sin backend ni suscripción: tu clave se comunica directamente con el proveedor. Las solicitudes del navegador están sujetas a la política CORS del proveedor, y la fiabilidad de las llamadas a herramientas en streaming varía entre despliegues. Consulta la referencia en inglés sobre [compatibilidad de proveedores y modelos BYOK](/programmable/byok-provider-compatibility) para ver resultados medidos y pruebas reproducibles.
+OpenPencil admite conexiones compatibles con OpenAI y Anthropic, además de OpenRouter, Google, Z.ai y proveedores locales. Los modelos y capacidades disponibles dependen de cada servicio.
 
-## Funciones
+OpenPencil no usa un servidor intermediario. Las solicitudes se envían directamente al proveedor; en el navegador se aplican sus políticas CORS. La fiabilidad de las llamadas de herramientas en flujo continuo también puede variar entre despliegues. Consulta [Compatibilidad BYOK](/programmable/byok-provider-compatibility) para ver mediciones y pasos de reproducción.
 
-El asistente tiene más de 90 herramientas en estas categorías:
+## Agentes ACP y MCP remoto
 
-- **Crear** — frames, formas, texto, componentes, páginas. Renderiza JSX para layouts complejos.
-- **Estilo** — rellenos, contornos, efectos, opacidad, radio de borde, modos de fusión.
-- **Layout** — auto-layout, grid, alineación, espaciado, dimensionamiento.
-- **Componentes** — crear componentes, instancias, conjuntos de componentes. Gestionar sobrecargas.
-- **Variables** — crear/editar variables, colecciones, modos. Vincular a rellenos.
-- **Consultar** — buscar nodos, selectores XPath, leer propiedades, listar páginas, fuentes, selección.
-- **Inspeccionar** — `get_jsx` para vista JSX, `diff_jsx` para diferencias estructurales, `describe` para rol semántico y problemas de diseño.
-- **Analizar** — paleta de colores, auditoría tipográfica, consistencia de espaciado, detección de patrones.
-- **Exportar** — PNG, SVG, JSX con clases Tailwind. Verificación visual mediante `export_image`.
-- **Vector** — operaciones booleanas, manipulación de trazados.
+La aplicación de escritorio puede ejecutar agentes ACP y conectarlos a servidores remotos de confianza que implementen [Model Context Protocol](https://modelcontextprotocol.io/). En **Ajustes → Conexiones MCP**, añade un extremo HTTP transmisible, un nombre y, si hace falta, un token Bearer.
 
-## Verificación visual
+El token se guarda en el almacén seguro de credenciales, no en los ajustes ordinarios, y solo se recupera al iniciar la sesión ACP.
 
-El asistente puede verificar su trabajo visualmente. Después de crear o modificar diseños, utiliza `export_image` para capturar una imagen y verificar el resultado contra la solicitud original.
+## Herramientas
 
-## Ejemplos de prompts
+Las herramientas cubren lectura, creación, modificación, estructura, variables, vectores, análisis, descripción, generación de código e imágenes de stock. Cada llamada actúa sobre el editor activo y participa en su historial de deshacer cuando corresponde.
 
-- "Crea una tarjeta con título, descripción y un botón azul"
-- "Haz que todos los botones de esta página usen el mismo radio de borde"
-- "¿Qué fuentes se usan en este archivo?"
-- "Cambia el fondo del frame seleccionado a un degradado de azul a morado"
-- "Exporta el frame seleccionado como SVG"
-- "Muéstrame el JSX de este frame"
+## Privacidad y costes
 
-## Consejos
-
-- Selecciona nodos antes de preguntar — el asistente sabe qué está seleccionado.
-- Sé específico con colores, tamaños y posiciones para resultados precisos.
-- El asistente puede modificar múltiples nodos en un solo mensaje.
-- Usa "deshacer" en el editor — las mutaciones de IA admiten deshacer completo.
-- Todos los layouts se recalculan automáticamente después de cada ejecución de herramienta.
+Las solicitudes se envían al proveedor configurado. Revisa sus condiciones, política de datos y precios antes de enviar documentos sensibles. OpenPencil no incluye créditos de modelos.

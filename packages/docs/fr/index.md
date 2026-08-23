@@ -1,12 +1,12 @@
 ---
 layout: home
-title: OpenPencil — Éditeur de Design Open Source
-description: Alternative open-source à Figma. Ouvre les fichiers .fig, IA intégrée, entièrement programmable.
+title: OpenPencil — Éditeur de design open source
+description: Une alternative open source à Figma, compatible avec les fichiers .fig, avec AI intégrée et automatisation complète.
 
 hero:
   name: OpenPencil
-  text: Éditeur de Design Open Source
-  tagline: Ouvre les fichiers Figma. IA intégrée. Entièrement programmable. Gratuit pour toujours.
+  text: Éditeur de design open source
+  tagline: Ouvrez des fichiers Figma. Utilisez l’AI. Automatisez chaque étape. Créez aussi vos propres éditeurs.
   actions:
     - theme: brand
       text: Essayer en ligne
@@ -20,21 +20,24 @@ hero:
 
 features:
   - icon: 📂
-    title: Compatible Figma
-    details: Ouvre les fichiers .fig nativement. Copier-coller entre Figma et OpenPencil. Codec binaire Kiwi avec fidélité aller-retour.
+    title: Compatible avec Figma
+    details: Ouvrez directement les fichiers .fig. Copiez-collez entre Figma et OpenPencil. Le codec binaire Kiwi conserve les données lors des allers-retours.
   - icon: ⚡
     title: Programmable
-    details: CLI headless pour inspecter, exporter et analyser les fichiers .fig. API Plugin Figma via eval. Export Tailwind CSS. Sortie JSON pour la CI.
+    details: Une CLI sans interface graphique permet d’examiner, d’exporter et d’analyser les fichiers .fig. Utilisez Figma Plugin API avec eval, exportez vers Tailwind CSS et produisez du JSON pour la CI.
+  - icon: 🧩
+    title: Une boîte à outils, pas seulement une application
+    details: Créez des interfaces d’édition avec le SDK Vue, intégrez OpenPencil à d’autres produits ou développez des éditeurs spécialisés sur le même noyau.
   - icon: 🤖
-    title: IA-natif
-    details: Chat intégré avec 90 outils — créer des formes, définir des styles, gérer le layout, analyser les tokens. Serveur MCP pour Claude Code, Cursor, Windsurf.
+    title: AI intégrée
+    details: Le chat propose 90 outils pour créer des formes, modifier les styles, gérer les dispositions et analyser les variables de design. Serveur MCP pour Claude Code, Cursor et Windsurf.
   - icon: 📖
-    title: Open Source
-    details: Licence MIT. Lisez et modifiez tout — l'éditeur, le moteur, le codec de fichiers, le CLI.
+    title: Open source
+    details: Licence MIT. Consultez et modifiez l’éditeur, le moteur, le codec de fichiers et la CLI.
   - icon: 🖥️
     title: Gratuit et local
-    details: Pas de compte, pas de serveur, pas d'internet requis. Application de bureau ~7 Mo via Homebrew, ou utilisez l'app web.
+    details: Aucun compte, serveur ou accès à Internet requis. Application de bureau d’environ 7 Mo via Homebrew ou application web.
   - icon: 👥
     title: Collaboration en temps réel
-    details: P2P via WebRTC — aucun serveur. Partagez un lien, éditez ensemble avec curseurs en direct et mode suivi.
+    details: Connexion P2P par WebRTC, sans serveur central. Partagez un lien, modifiez ensemble et suivez la vue d’un autre participant.
 ---

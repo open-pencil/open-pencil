@@ -2,6 +2,10 @@ import {
   computeAutoLayoutIndicator,
   computeAutoLayoutIndicatorForFrame
 } from '#vue/shared/input/auto-layout'
+import {
+  isPastPointerDragThreshold,
+  POINTER_DRAG_START_THRESHOLD_PX
+} from '#vue/shared/input/drag-threshold'
 import { findMoveDropTarget, reparentOutsideNodes } from '#vue/shared/input/drop-target'
 export { duplicateAndDrag } from '#vue/shared/input/duplicate-drag'
 import { AUTO_LAYOUT_BREAK_THRESHOLD } from '@open-pencil/core/constants'
@@ -12,7 +16,7 @@ import type { DragMove } from '#vue/shared/input/types'
 
 const AUTO_LAYOUT_REORDER_CLICK_SLOP = 3
 const AUTO_LAYOUT_CROSS_AXIS_DRAG_TOLERANCE = 96
-export const MOVE_DRAG_START_THRESHOLD_PX = 3
+export const MOVE_DRAG_START_THRESHOLD_PX = POINTER_DRAG_START_THRESHOLD_PX
 
 function isInsideAutoLayoutDragBounds(parentId: string, cx: number, cy: number, editor: Editor) {
   const parent = editor.graph.getNode(parentId)
@@ -46,9 +50,7 @@ export function detectAutoLayoutParent(editor: Editor): string | undefined {
 }
 
 function isPastDragStartThreshold(d: DragMove, sx: number, sy: number) {
-  const dx = sx - d.startScreenX
-  const dy = sy - d.startScreenY
-  return dx * dx + dy * dy >= MOVE_DRAG_START_THRESHOLD_PX * MOVE_DRAG_START_THRESHOLD_PX
+  return isPastPointerDragThreshold(d.startScreenX, d.startScreenY, sx, sy)
 }
 
 export function handleMoveMove(
@@ -57,7 +59,8 @@ export function handleMoveMove(
   cy: number,
   sx: number,
   sy: number,
-  editor: Editor
+  editor: Editor,
+  disableSnapping = false
 ) {
   d.currentX = cx
   d.currentY = cy
@@ -85,8 +88,16 @@ export function handleMoveMove(
   if (dropParent && dropParent.layoutMode !== 'NONE') {
     computeAutoLayoutIndicatorForFrame(dropParent, cx, cy, editor)
     editor.setDropTarget(dropParent.id)
+    let firstApplied: { dx: number; dy: number } | null = null
     for (const [id, orig] of d.originals) {
-      editor.graph.updateNodePositionPreview(id, Math.round(orig.x + dx), Math.round(orig.y + dy))
+      const previewX = Math.round(orig.x + dx)
+      const previewY = Math.round(orig.y + dy)
+      firstApplied ??= { dx: previewX - orig.x, dy: previewY - orig.y }
+      editor.graph.updateNodePositionPreview(id, previewX, previewY)
+    }
+    if (firstApplied) {
+      d.appliedDx = firstApplied.dx
+      d.appliedDy = firstApplied.dy
     }
     editor.requestRepaint()
     return
@@ -94,12 +105,14 @@ export function handleMoveMove(
 
   editor.setLayoutInsertIndicator(null)
 
-  const snapped = applyMoveSnap(d, dx, dy, editor)
+  const snapped = applyMoveSnap(d, dx, dy, editor, disableSnapping)
   dx = snapped.dx
   dy = snapped.dy
+  d.appliedDx = dx
+  d.appliedDy = dy
 
   for (const [id, orig] of d.originals) {
-    editor.graph.updateNodePositionPreview(id, Math.round(orig.x + dx), Math.round(orig.y + dy))
+    editor.graph.updateNodePositionPreview(id, orig.x + dx, orig.y + dy)
   }
 
   editor.setDropTarget(dropTarget?.id ?? null)
@@ -124,10 +137,8 @@ function restoreOriginalPositions(d: DragMove, editor: Editor) {
 }
 
 function applyFinalPositions(d: DragMove, editor: Editor) {
-  const dx = d.currentX - d.startX
-  const dy = d.currentY - d.startY
   for (const [id, orig] of d.originals) {
-    editor.updateNode(id, { x: Math.round(orig.x + dx), y: Math.round(orig.y + dy) })
+    editor.updateNode(id, { x: orig.x + d.appliedDx, y: orig.y + d.appliedDy })
   }
 }
 

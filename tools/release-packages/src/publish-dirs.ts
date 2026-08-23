@@ -35,6 +35,7 @@ export const DEFAULT_PACKAGES: PackagePublishConfig[] = [
   { dir: 'packages/dom-css', include: ['dist'], extraFiles: ['README.md'] },
   { dir: 'packages/cli', include: ['bin', 'dist'], extraFiles: [] },
   { dir: 'packages/mcp', include: ['dist'], extraFiles: [] },
+  { dir: 'packages/harness', include: ['dist'], extraFiles: ['README.md'] },
   { dir: 'packages/vue', include: ['dist'], extraFiles: ['README.md'] }
 ]
 

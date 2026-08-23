@@ -1,15 +1,15 @@
 ---
 title: LayerTreeItem
-description: Headless Zeilen-Primitiv für einen einzelnen Ebenenbaum-Knoten.
+description: Ein Item im Layer tree.
 ---
 
 # LayerTreeItem
 
-`LayerTreeItem` rendert eine Ebenenbaum-Zeile und gibt Auswahl-, Erweitern-, Sichtbarkeits-, Sperr- und Umbenennen-Handler über seinen Standard-Slot zurück.
+`LayerTreeItem` repräsentiert eine Row im Layer tree. Sein Default slot erhält State und Actions für Selection, Aufklappen der Children, Visibility, Lock und Inline rename.
 
-Verwenden Sie es, wenn Sie app-eigenes Zeilen-Markup mit SDK-bereitgestelltem Ebenenbaum-Verhalten möchten.
+Die Anwendung kann so eigenes Row markup verwenden und die Interactions des SDK beibehalten.
 
-## Verwandte APIs
+## Siehe auch
 
 - [LayerTreeRoot](./layer-tree-root)
 - [useLayerTree](../advanced/use-layer-tree)

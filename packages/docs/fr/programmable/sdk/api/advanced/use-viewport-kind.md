@@ -1,13 +1,13 @@
 ---
 title: useViewportKind
-description: Lit des indicateurs viewport mobile et bureau grossiers pour les shells d'éditeur adaptatifs.
+description: Flags réactifs Mobile et Desktop pour une interface d’édition personnalisée.
 ---
 
 # useViewportKind
 
-`useViewportKind()` retourne de simples indicateurs adaptatifs utilisés par l'interface d'éditeur OpenPencil.
+`useViewportKind()` renvoie une classification simplifiée de la Viewport size utilisée par l’UI responsive d’OpenPencil.
 
-Utilisez-le quand votre shell a besoin d'une légère abstraction au-dessus des points de rupture plutôt que de câbler `useBreakpoints()` directement.
+Utilisez le composable lorsqu’il suffit de distinguer Mobile et Desktop sans configurer directement `useBreakpoints()`.
 
 ## Utilisation
 
@@ -17,11 +17,11 @@ import { useViewportKind } from '@open-pencil/vue'
 const { isMobile, isDesktop } = useViewportKind()
 ```
 
-## Retourne
+## Values
 
 - `isMobile`
 - `isDesktop`
 
-## API associées
+## Voir aussi
 
 - [useCanvas](../composables/use-canvas)

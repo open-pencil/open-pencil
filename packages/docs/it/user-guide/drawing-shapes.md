@@ -1,27 +1,48 @@
 ---
-title: Disegno forme
-description: Creare rettangoli, ellissi, linee, frame e sezioni in OpenPencil.
+title: Disegnare forme
+description: Creare rettangoli, ellissi, linee, frame, sezioni, poligoni e stelle.
 ---
-# Disegno forme
 
-| Strumento | Scorciatoia | Descrizione |
-|-----------|-------------|-------------|
-| Rettangolo | <kbd>R</kbd> | Disegna un rettangolo |
-| Ellisse | <kbd>O</kbd> | Disegna un'ellisse |
-| Linea | <kbd>L</kbd> | Disegna una linea |
-| Frame | <kbd>F</kbd> | Disegna un frame (contenitore) |
-| Sezione | <kbd>S</kbd> | Disegna una sezione |
+# Disegnare forme
 
-## Forme aggiuntive
-**Poligono** e **Stella** nel flyout delle forme.
+La barra inferiore contiene gli strumenti per creare forme, frame e sezioni. Selezionane uno e trascina nell’area di lavoro.
 
-## Disegno vincolato
-<kbd>Shift</kbd> durante il trascinamento: rettangolo → quadrato, ellisse → cerchio, linea → 0°/45°/90°.
+## Strumenti
+
+| Strumento | Tasto | Risultato |
+|-----------|-------|-----------|
+| Rettangolo | <kbd>R</kbd> | Rettangolo |
+| Ellisse | <kbd>O</kbd> | Ellisse |
+| Linea | <kbd>L</kbd> | Linea |
+| Frame | <kbd>F</kbd> | Contenitore di altri oggetti |
+| Sezione | <kbd>S</kbd> | Contenitore di primo livello |
+
+Poligono e Stella sono disponibili nel menu delle forme.
+
+## Mantenere le proporzioni
+
+Con <kbd>Shift</kbd>, un rettangolo diventa quadrato, un’ellisse diventa cerchio e una linea si allinea a 0°, 45° o 90°.
 
 ## Proprietà
-- **Riempimento** — colore solido, gradiente (lineare, radiale, angolare, diamante), immagine
-- **Contorno** — larghezza (uniforme o per lato: Alto/Destra/Basso/Sinistra), colore, allineamento (Interno/Centro/Esterno), stile estremità, stile giunzione, tratteggio
-- **Raggio angoli** — uniforme o indipendente per angolo
-- **Effetti** — ombra esterna, ombra interna, sfocatura livello, sfocatura sfondo
 
-**Frame** sono contenitori con supporto [auto-layout](./auto-layout). **Sezioni** adottano automaticamente i nodi sovrapposti.
+### Riempimento
+
+Colore uniforme, sfumatura lineare, radiale, angolare o a diamante e immagine.
+
+### Contorno
+
+Spessore comune o per lato, colore, allineamento interno/centrale/esterno, estremità, giunzioni e tratteggio.
+
+### Raggio degli angoli
+
+Comune o indipendente per rettangoli, frame, componenti e istanze.
+
+### Effetti
+
+Ombre esterna e interna, sfocatura del livello, dello sfondo o del primo piano.
+
+## Frame e sezioni
+
+Un frame è un contenitore. Gli oggetti trascinati al suo interno diventano figli. Il ritaglio è disattivato per impostazione predefinita. I frame supportano la [disposizione automatica](./auto-layout).
+
+Una sezione è un contenitore di primo livello che adotta automaticamente gli oggetti sovrapposti durante la creazione.

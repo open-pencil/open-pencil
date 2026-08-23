@@ -27,6 +27,12 @@ describe('Tauri file actions', () => {
     await expect(chooseTauriOpenPaths()).resolves.toEqual(['/tmp/design.fig', '/tmp/design.pen'])
   })
 
+  test('rejects unsupported Tauri design files before reading them', async () => {
+    await expect(readTauriDesignFile('/tmp/design.sketch')).rejects.toThrow(
+      'Unsupported document format: /tmp/design.sketch'
+    )
+  })
+
   test('reads a Tauri design file into a File object', async () => {
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('plugin:fs|read_file')

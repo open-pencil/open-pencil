@@ -1,36 +1,31 @@
 ---
 title: PropertyListRoot
-description: Bezstanowy prymityw strukturalny dla UI list wypełnień, obrysów i efektów.
+description: Kontrolowana lista zalewów, obwiedni, efektów i innych właściwości tablicowych.
 ---
+
+<script setup lang="ts">
+import { data } from '#docs-api/components/property-list.data'
+</script>
 
 # PropertyListRoot
 
-`PropertyListRoot` to bezstanowy prymityw strukturalny dla edytorów właściwości opartych na tablicach.
-
-Przeznaczony dla UI właściwości takich jak:
-
-- wypełnienia
-- obrysy
-- efekty
-
-Udostępnia przez slot właściwości dla:
-
-- bieżących elementów
-- wykrywania stanu mieszanego
-- operacji dodawania/usuwania/aktualizacji/łatania
-- przełączania widoczności per element
-
-## Użycie
+`PropertyListRoot` koordynuje interfejs właściwości przechowywanych jako tablica. Otrzymuje elementy i mieszany stan przez właściwości komponentu, emituje zmiany, a przez slot udostępnia działania dodawania, usuwania, zastępowania, częściowej aktualizacji i zmiany widoczności.
 
 ```vue
-<PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
-  <div v-for="(fill, index) in items" :key="index">
-    <button @click="remove(index)">Usuń</button>
-  </div>
-  <button @click="add(defaultFill)">Dodaj wypełnienie</button>
-</PropertyListRoot>
+<script setup lang="ts">
+import { PropertyListRoot, useEditorPropertyList } from '@open-pencil/vue'
+const fills = useEditorPropertyList('fills')
+</script>
+
+<template>
+  <PropertyListRoot
+    prop-key="fills"
+    :items="fills.items.value"
+    :mixed="fills.isMixed.value"
+    @add="fills.actions.add"
+    @remove="fills.actions.remove"
+  />
+</template>
 ```
 
-## Powiązane API
-
-- [Przegląd API SDK](../)
+<SdkComponentAPI :components="data.components" />

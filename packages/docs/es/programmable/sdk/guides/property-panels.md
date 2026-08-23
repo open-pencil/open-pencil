@@ -1,18 +1,17 @@
 ---
-title: Paneles de Propiedades
-description: Construye paneles de propiedades con composables de control y primitivos de lista headless.
+title: Paneles de propiedades
+description: Crear paneles de propiedades con composables y componentes sin aspecto predefinido.
 ---
 
-# Paneles de Propiedades
+# Paneles de propiedades
 
-Los paneles de propiedades en `@open-pencil/vue` están diseñados de forma intencionalmente composable primero.
+`@open-pencil/vue` ofrece principalmente composables para construir paneles de propiedades.
 
-Si un panel principalmente necesita valores derivados de la selección y acciones de actualización, prefiere composables.
-Si un panel necesita estructura reutilizable de array/lista, usa un primitivo headless como `PropertyListRoot`.
+Si un panel necesita valores calculados a partir de la selección y acciones para modificarlos, usa un composable. Si requiere una estructura reutilizable para matrices o listas, usa un componente sin aspecto predefinido como `PropertyListRoot`.
 
-## Composables de control habituales
+## Composables
 
-Para secciones de propiedades estándar, empieza con:
+Para secciones habituales:
 
 - `usePosition()`
 - `useLayout()`
@@ -20,13 +19,25 @@ Para secciones de propiedades estándar, empieza con:
 - `useTypography()`
 - `useExport()`
 
-Para paneles de tipo lista, usa:
+Para propiedades en forma de lista:
 
 - `useFillControls()`
 - `useStrokeControls()`
 - `useEffectsControls()`
 
-## Ejemplo: panel de posición
+## Enlaces con variables
+
+Cuando un campo pueda vincularse a una variable o un token de diseño externo, colócalo dentro de `BindableValueRoot`.
+
+- Sin edición activa, muestra el nombre de la variable; el valor calculado puede aparecer en una ayuda emergente.
+- El foco y la apertura del selector de variables no deben eliminar un enlace existente.
+- Aplica `detach-on-edit`, `readonly-when-bound` o `edit-variable` solo después de una modificación real.
+- Es preferible incluir una acción explícita para eliminar el enlace dentro del selector que un botón fácil de pulsar por accidente junto al campo.
+- Agrupa cambios de enlace, separación durante la edición y actualizaciones de varios objetos en una sola operación por lotes del proveedor.
+
+La aplicación de OpenPencil muestra el nombre de la variable en morado cuando el campo está inactivo. Al empezar a editar, `NumberField` muestra el valor numérico calculado. Una interfaz propia puede presentar el mismo estado de otra forma.
+
+## Ejemplo: posición y tamaño
 
 ```vue
 <script setup lang="ts">
@@ -45,33 +56,45 @@ const { x, y, width, height, updateProp, commitProp } = usePosition()
 </template>
 ```
 
-## Ejemplo: panel de rellenos
+## Ejemplo: rellenos
 
 ```vue
 <script setup lang="ts">
-import { PropertyListRoot, useFillControls } from '@open-pencil/vue'
+import {
+  PropertyListRoot,
+  useEditorPropertyList,
+  useFillControls
+} from '@open-pencil/vue'
 
 const fillControls = useFillControls()
+const fills = useEditorPropertyList('fills')
 </script>
 
 <template>
-  <PropertyListRoot prop-key="fills" v-slot="{ items, add, remove }">
+  <PropertyListRoot
+    prop-key="fills"
+    :items="fills.items.value"
+    :mixed="fills.isMixed.value"
+    @add="fills.actions.add"
+    @remove="fills.actions.remove"
+    v-slot="{ items, actions }"
+  >
     <div v-for="(fill, index) in items" :key="index">
       {{ fill.type }}
-      <button @click="remove(index)">Eliminar</button>
+      <button @click="actions.remove(index)">Eliminar</button>
     </div>
 
-    <button @click="add(fillControls.defaultFill)">Añadir relleno</button>
+    <button @click="actions.add(fillControls.defaultFill)">Añadir relleno</button>
   </PropertyListRoot>
 </template>
 ```
 
-## Regla práctica
+## Elegir la API
 
-- usa composables para la lógica de control directa
-- usa primitivos estructurales cuando la coordinación repetida de lista/árbol/slot es la parte compleja
+- Composables para el estado y las acciones.
+- Componentes estructurales sin aspecto predefinido cuando lo principal sea coordinar listas, árboles o slots repetidos.
 
-## APIs relacionadas
+## Consulta también
 
 - [usePosition](../api/composables/use-position)
 - [useLayout](../api/composables/use-layout)

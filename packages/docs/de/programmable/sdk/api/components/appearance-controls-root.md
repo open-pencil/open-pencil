@@ -1,15 +1,15 @@
 ---
 title: AppearanceControlsRoot
-description: Headless Wurzel-Primitiv für Deckkraft-, Sichtbarkeits- und Eckradius-Steuerelemente.
+description: Komponente ohne vorgegebenes Erscheinungsbild für Deckkraft, Sichtbarkeit und Eckenradius.
 ---
 
 # AppearanceControlsRoot
 
-`AppearanceControlsRoot` gibt den von `useAppearance()` zurückgegebenen Slot-Vertrag als strukturelles Primitiv zurück.
+`AppearanceControlsRoot` gibt Zustand und Aktionen aus `useAppearance()` über seinen Slot weiter.
 
-Verwenden Sie es, wenn Sie wiederverwendbare Erscheinungsbild-Steuerelemente mit benutzerdefinierter Darstellung möchten.
+Eigene Felder für Deckkraft, Sichtbarkeit und Eckenradius können so die Editorlogik des SDK verwenden.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useAppearance](../composables/use-appearance)
-- [Eigenschafts-Panels-Anleitung](../../guides/property-panels)
+- [Eigenschaften-Panels](../../guides/property-panels)

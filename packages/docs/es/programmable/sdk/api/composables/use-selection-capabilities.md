@@ -1,61 +1,15 @@
 ---
 title: useSelectionCapabilities
-description: Deriva booleanos amigables para comandos en UI y acciones impulsadas por la selección.
+description: Operaciones disponibles para la selección actual.
 ---
 
 # useSelectionCapabilities
 
-`useSelectionCapabilities()` expone booleanos reactivos sobre si las acciones habituales del editor están permitidas en el momento actual.
+`useSelectionCapabilities()` calcula si la selección se puede agrupar, desagrupar, convertir en componente, combinar como variantes, separar, ordenar, eliminar o modificar mediante otras operaciones del editor.
 
-Úsalo cuando construyas:
+Use estos indicadores para activar, ocultar o desactivar comandos sin duplicar reglas de tipos.
 
-- menús
-- barras de herramientas
-- atajos de teclado
-- botones de acción
-- paneles contextuales
-
-## Uso
-
-```ts
-import { useSelectionCapabilities } from '@open-pencil/vue'
-
-const caps = useSelectionCapabilities()
-```
-
-## Ejemplo básico
-
-```vue
-<script setup lang="ts">
-import { useSelectionCapabilities } from '@open-pencil/vue'
-
-const { canDelete, canDuplicate, canCreateComponent } = useSelectionCapabilities()
-</script>
-
-<template>
-  <div class="flex gap-2">
-    <button :disabled="!canDuplicate">Duplicar</button>
-    <button :disabled="!canDelete">Eliminar</button>
-    <button :disabled="!canCreateComponent">Hacer componente</button>
-  </div>
-</template>
-```
-
-## Ejemplos prácticos
-
-### Controlar las entradas del menú
-
-```ts
-const { canMoveToPage, canGoToMainComponent } = useSelectionCapabilities()
-```
-
-### Habilitar los comandos de zoom solo cuando sean útiles
-
-```ts
-const { canZoomToSelection } = useSelectionCapabilities()
-```
-
-## APIs relacionadas
+## Véase también
 
 - [useSelectionState](./use-selection-state)
 - [useEditorCommands](./use-editor-commands)

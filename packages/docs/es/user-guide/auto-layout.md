@@ -1,57 +1,35 @@
 ---
-title: Auto-layout
-description: Layout flex y grid en OpenPencil — dirección, espaciado, padding, alineación, dimensionamiento y tracks CSS Grid.
+title: Disposición automática
+description: Flexbox y CSS Grid con dirección, separación, relleno, alineación y modos de tamaño.
 ---
-# Auto-layout
 
-El auto-layout posiciona los hijos automáticamente dentro de un marco. Soporta dos modos: **flex** (flujo horizontal/vertical) y **grid** (filas y columnas con dimensionamiento de tracks).
+# Disposición automática
 
-## Activar auto-layout
+La disposición automática distribuye los objetos secundarios dentro de un marco. Admite Flexbox horizontal o vertical y Grid con filas, columnas y pistas configurables.
 
-- Selecciona un marco y pulsa <kbd>⇧</kbd><kbd>A</kbd> (<kbd>Shift</kbd> + <kbd>A</kbd>) para activar o desactivar el auto-layout
-- Selecciona nodos sueltos (sin marco padre) y pulsa <kbd>⇧</kbd><kbd>A</kbd> para envolverlos en un nuevo marco con auto-layout
+## Activar
 
-## Dirección
-- **Horizontal** — de izquierda a derecha
-- **Vertical** — de arriba abajo
-- **Ajuste** — ajusta cuando se acaba el espacio
+- Selecciona un marco y pulsa <kbd>⇧</kbd><kbd>A</kbd>.
+- Selecciona varios objetos sueltos y usa el mismo atajo para envolverlos en un marco nuevo.
 
-## Espaciado
-**Gap** entre hijos adyacentes. **Padding** entre borde del marco e hijos.
+## Dirección y separación
+
+Los objetos pueden fluir en horizontal, vertical o con salto de línea. La separación controla la distancia entre objetos y el relleno la distancia al borde del marco.
 
 ## Alineación
-- **Eje principal (Justify):** inicio, centro, fin, espacio entre
-- **Eje transversal (Align):** inicio, centro, fin, estirar
 
-## Dimensionamiento de hijos
-- **Fijo** — ancho/alto explícito
-- **Rellenar** — se expande en el espacio disponible
-- **Ajustar** — se reduce al contenido
+En el eje principal están disponibles inicio, centro, final y espacio entre elementos. En el eje transversal se ofrecen inicio, centro, final y estirar.
+
+## Tamaño
+
+- **Fijo:** usa anchura o altura explícitas.
+- **Rellenar:** ocupa el espacio disponible.
+- **Ajustar:** adapta el tamaño al contenido.
+
+El primer cambio real de anchura o altura convierte solo ese eje a fijo. El foco del campo no cambia el modo.
 
 ## CSS Grid
 
-El layout grid organiza los hijos en filas y columnas con dimensionamiento explícito de tracks.
+Grid distribuye los objetos en filas y columnas con tamaños `fr`, `px` o `auto`. Los espacios de fila y columna se configuran por separado. Cada objeto puede definir fila, columna y número de celdas ocupadas.
 
-### Activar Grid
-
-Selecciona un marco con auto-layout activado y haz clic en el icono de cuadrícula en la barra de herramientas de layout para cambiar de flex a grid.
-
-### Dimensionamiento de tracks
-
-Define tracks de columnas y filas con tres modos:
-
-- **fr** — unidad fraccional, divide el espacio disponible proporcionalmente
-- **px** — tamaño fijo en píxeles
-- **auto** — se ajusta al contenido
-
-### Espaciado del grid
-
-Establece gaps horizontales (columnas) y verticales (filas) separados entre celdas.
-
-### Posicionamiento de hijos
-
-Los hijos se colocan en las celdas del grid automáticamente en orden de fila. Puedes sobrescribir la ubicación con valores de inicio de columna/fila y span en las propiedades de layout del hijo.
-
-### Exportación JSX y Tailwind
-
-Los layouts grid se exportan como JSX con clases Tailwind: `grid grid-cols-3`, `gap-x-4 gap-y-2`, `col-start-2 row-span-2`.
+El resultado se exporta como JSX con clases Tailwind.

@@ -1,50 +1,13 @@
 ---
 title: usePageList
-description: Leggi le pagine e gestisci il cambio, la creazione, l'eliminazione e la rinomina delle pagine.
+description: Stato e azioni per un elenco di pagine.
 ---
 
 # usePageList
 
-`usePageList()` è il composable di gestione delle pagine alla base delle UI della lista delle pagine.
+`usePageList()` fornisce pagine, pagina attiva, identificatore della pagina in fase di rinomina, azioni di creazione/apertura/rinomina/eliminazione e gestione del focus.
 
-Espone:
-
-- `pages`
-- `currentPageId`
-- `switchPage`
-- `addPage`
-- `deletePage`
-- `renamePage`
-
-## Utilizzo
-
-```ts
-import { usePageList } from '@open-pencil/vue'
-
-const pageList = usePageList()
-```
-
-## Esempio base
-
-```ts
-const { pages, currentPageId, switchPage, addPage } = usePageList()
-```
-
-## Esempi pratici
-
-### Cambia pagina
-
-```ts
-switchPage(pageId)
-```
-
-### Crea una nuova pagina
-
-```ts
-addPage()
-```
-
-## API correlate
+## Vedi anche
 
 - [PageListRoot](../components/page-list-root)
-- [useMenuModel](./use-menu-model)
+- [useInlineRename](../advanced/use-inline-rename)

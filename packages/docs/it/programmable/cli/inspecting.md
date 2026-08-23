@@ -1,98 +1,44 @@
 ---
-title: Ispezione dei File
-description: Esplora alberi di nodi, cerca per nome o tipo e analizza le proprietà dal terminale.
+title: Esaminare file con la CLI
+description: Consultare pagine, oggetti, gerarchie, variabili e formati dei documenti `.fig`.
 ---
 
-# Ispezione dei File
+# Esaminare file con la CLI
 
-La CLI ti permette di esplorare file `.fig` senza aprire l'editor. Ogni comando funziona anche con l'app in esecuzione — basta omettere l'argomento del file.
-
-::: tip Installazione
-```sh
-npm install -g @open-pencil/cli
-# oppure
-brew install open-pencil/tap/open-pencil
-```
-:::
-
-## Informazioni sul Documento
-
-Ottieni una panoramica rapida — conteggio pagine, nodi totali, font utilizzati, dimensione del file:
+La CLI permette di capire la struttura di un file senza aprire l’editor.
 
 ```sh
-openpencil info design.fig
+bun open-pencil info design.fig
+bun open-pencil pages design.fig
+bun open-pencil tree design.fig
 ```
 
-## Albero dei Nodi
+## Riepilogo
 
-Stampa l'intera gerarchia dei nodi:
+`info` mostra formato, versione, numero di pagine e oggetti, dimensioni dell’area di lavoro, font, variabili e metadati principali.
 
-```sh
-openpencil tree design.fig
-```
+## Pagine e albero
 
-```
-[0] [page] "Getting started" (0:46566)
-  [0] [section] "" (0:46567)
-    [0] [frame] "Body" (0:46568)
-      [0] [frame] "Introduction" (0:46569)
-        [0] [frame] "Introduction Card" (0:46570)
-          [0] [frame] "Guidance" (0:46571)
-```
+`pages` elenca le pagine. `tree` stampa la gerarchia e può limitare profondità, pagina o numero di risultati.
 
-## Trova Nodi
+## Cercare oggetti
 
-Cerca per tipo:
+`find` cerca per nome, tipo o altri criteri.
 
-```sh
-openpencil find design.fig --type TEXT
-```
+## Mostrare un oggetto
 
-Cerca per nome:
+`node` mostra le proprietà dell’identificatore indicato, tra cui geometria, stile, relazioni e dati specifici del tipo.
 
-```sh
-openpencil find design.fig --name "Button"
-```
+## Variabili e formati
 
-Entrambi i flag possono essere combinati per restringere ulteriormente i risultati.
-
-## Dettagli del Nodo
-
-Ispeziona tutte le proprietà di un nodo specifico tramite il suo ID:
-
-```sh
-openpencil node design.fig --id 1:23
-```
-
-## Pagine
-
-Elenca tutte le pagine del documento:
-
-```sh
-openpencil pages design.fig
-```
-
-## Variabili
-
-Elenca le variabili di design e le relative collezioni:
-
-```sh
-openpencil variables design.fig
-```
-
-## Modalità App in Esecuzione
-
-Quando l'app desktop è in esecuzione, ometti l'argomento del file — la CLI si connette tramite RPC e opera sul canvas attivo:
-
-```sh
-openpencil tree              # ispeziona il documento attivo
-openpencil eval -c "..."     # interroga l'editor
-```
+`variables` elenca raccolte, modalità, tipi e valori. `formats` mostra i formati registrati e le capacità di lettura e scrittura.
 
 ## Output JSON
 
-Tutti i comandi supportano `--json` per output leggibile dalle macchine — invia tramite pipe a `jq`, usa negli script CI o elabora con altri strumenti:
+I comandi di consultazione supportano `--json`, adatto a `jq`, CI e programmi che richiedono un output stabile e leggibile dalle macchine.
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+bun open-pencil pages design.fig --json | jq '.[].name'
 ```
+
+Usa `bun open-pencil --help` o aggiungi `--help` a un sottocomando per vedere tutte le opzioni.

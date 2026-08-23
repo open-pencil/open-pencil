@@ -77,8 +77,11 @@ function removeImage(index: number) {
 }
 
 const isStreaming = computed(() => disabled || status === 'streaming' || status === 'submitted')
-const isACPProvider = computed(() => providerID.value.startsWith('acp:'))
-const acpAgentName = computed(() => {
+const isAgentProvider = computed(
+  () => providerID.value.startsWith('acp:') || providerID.value === 'harness:pi'
+)
+const agentName = computed(() => {
+  if (providerID.value === 'harness:pi') return 'Pi'
   const agentId = providerID.value.replace('acp:', '')
   return ACP_AGENTS.find((a) => a.id === agentId)?.name ?? agentId
 })
@@ -201,10 +204,10 @@ function handleSubmit(e: Event) {
 
           <template #model>
             <div class="flex min-w-0 items-center">
-              <template v-if="isACPProvider">
+              <template v-if="isAgentProvider">
                 <div class="flex min-w-0 items-center gap-1 px-1.5 text-[10px] text-muted">
                   <icon-lucide-bot class="size-3 shrink-0" />
-                  <span class="truncate">{{ acpAgentName }}</span>
+                  <span class="truncate">{{ agentName }}</span>
                 </div>
               </template>
               <ChatProfileSelect

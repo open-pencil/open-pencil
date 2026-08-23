@@ -1,20 +1,11 @@
 ---
 title: useVariablesEditor
-description: Komponuj stan okna dialogowego zmiennych, kolumny tabeli i okablowanie TanStack Table.
+description: Przygotowanie stanu okna zmiennych i TanStack Table.
 ---
 
 # useVariablesEditor
 
-`useVariablesEditor()` to wyższopoziomowy kompozyt domeny zmiennych do budowania okna dialogowego zmiennych lub ekranu edytora.
-
-Łączy:
-
-- stan okna dialogowego zmiennych
-- kolumny tabeli zmiennych
-- okablowanie TanStack Vue Table
-- pomocniki kolekcji/trybu
-
-## Użycie
+`useVariablesEditor()` łączy stan okna, kolumny tabeli, integrację TanStack Vue Table oraz funkcje kolekcji i trybów.
 
 ```ts
 const variables = useVariablesEditor({
@@ -25,20 +16,10 @@ const variables = useVariablesEditor({
 })
 ```
 
-## Co zwraca
+Wynik zawiera niskopoziomowy stan okna i tabeli oraz `columns`, `table` i `hasCollections`.
 
-Zawiera stan niższego poziomu okna dialogowego/tabeli plus:
+Użyj tego composable, gdy jeden punkt wejścia ma zapewniać integrację tabeli i obsługę działań.
 
-- `columns`
-- `table`
-- `hasCollections`
+## Zobacz też
 
-## Przykłady praktyczne
-
-### Zbuduj okno dialogowe zmiennych
-
-Użyj `useVariablesEditor()`, gdy chcesz jeden kompozyt, który już łączy tabelę i obsługę akcji razem.
-
-## Powiązane API
-
-- [Przegląd API SDK](../)
+- [Dokumentacja API](../)

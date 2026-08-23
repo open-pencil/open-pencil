@@ -18,7 +18,7 @@ import {
 } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
-import { recentFiles } from '@/app/shell/menu/recent-files'
+import { recentFiles } from '@/app/recent-files'
 
 type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
 

@@ -1,15 +1,15 @@
 ---
 title: useCanvasContext
-description: Helper per il contesto della primitiva per i discendenti di CanvasRoot.
+description: Accedere al contesto fornito da CanvasRoot.
 ---
 
 # useCanvasContext
 
-`useCanvasContext()` legge il contesto canvas locale fornito da `CanvasRoot`.
+`useCanvasContext()` restituisce il contesto del `CanvasRoot` più vicino.
 
-Usalo all'interno dei discendenti come `CanvasSurface` o i tuoi figli canvas personalizzati.
+Usa il composable in `CanvasSurface` o in componenti discendenti personalizzati che richiedono riferimenti e stato del canvas.
 
-## API correlate
+## Vedi anche
 
 - [CanvasRoot](../components/canvas-root)
 - [CanvasSurface](../components/canvas-surface)

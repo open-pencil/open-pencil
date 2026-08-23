@@ -1,15 +1,15 @@
 ---
 title: LayoutControlsRoot
-description: Primitiva root headless per i controlli di auto-layout e dimensionamento.
+description: Componente senza stile per i controlli della disposizione automatica.
 ---
 
 # LayoutControlsRoot
 
-`LayoutControlsRoot` espone il contratto slot restituito da `useLayout()` come primitiva strutturale.
+`LayoutControlsRoot` espone nel proprio spazio stato e azioni di `useLayout()`.
 
-Usala quando vuoi una shell riutilizzabile per i controlli di layout con markup gestito dall'app.
+L’applicazione può creare controlli propri per direzione, spaziatura, margini interni, allineamento, dimensionamento e Grid senza duplicare l’integrazione con l’editor.
 
-## API correlate
+## Vedi anche
 
 - [useLayout](../composables/use-layout)
-- [Guida Pannelli Proprietà](../../guides/property-panels)
+- [Pannelli delle proprietà](../../guides/property-panels)

@@ -7,6 +7,7 @@ import {
   ENABLED_LIBRARIES_PLUGIN_KEY,
   getOpenPencilPluginValue,
   guidToString,
+  importCanvasGuides,
   nodeChangeToProps,
   shouldImportTextAsAutoSize,
   sortChildren,
@@ -15,7 +16,11 @@ import {
 } from '@open-pencil/fig/node-change'
 import type { NodeChange, VariableDataValuesEntry, Color, GUID } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
-import type { VariableType, VariableValue } from '@open-pencil/scene-graph'
+import type {
+  ComponentPropertyDefinition,
+  VariableType,
+  VariableValue
+} from '@open-pencil/scene-graph'
 
 import { BLACK } from '#core/constants'
 import { setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
@@ -33,7 +38,10 @@ function applyImportedCanvasMetadata(
     page.source.fig.rawNodeFields.backgroundColor = structuredClone(canvasNc.backgroundColor)
   if (canvasNc.backgroundPaints)
     page.source.fig.rawNodeFields.backgroundPaints = structuredClone(canvasNc.backgroundPaints)
-  if (canvasNc.guides) page.source.fig.rawNodeFields.guides = structuredClone(canvasNc.guides)
+  if (canvasNc.guides) {
+    page.guides = importCanvasGuides(canvasNc.guides)
+    page.source.fig.rawNodeFields.guides = structuredClone(canvasNc.guides)
+  }
   page.source.fig.rawNodeFields.strokeJoin = canvasNc.strokeJoin
   page.source.fig.rawNodeFields.strokeWeight = canvasNc.strokeWeight
   if (canvasNc.pageType) page.source.fig.rawNodeFields.pageType = canvasNc.pageType
@@ -394,6 +402,52 @@ function remapComponentIds(graph: SceneGraph, guidToNodeId: Map<string, string>)
   })
 }
 
+/**
+ * INSTANCE_SWAP definitions/assignments store a target node's GUID (matching
+ * how it was exported), not this import's freshly-assigned node ID — remap
+ * them the same way remapComponentIds fixes up instance.componentId.
+ */
+function remapInstanceSwapPropertyValues(
+  graph: SceneGraph,
+  guidToNodeId: Map<string, string>
+): void {
+  const defsById = new Map<string, ComponentPropertyDefinition>()
+  for (const node of graph.getAllNodes()) {
+    for (const def of node.componentPropertyDefinitions) {
+      if (!defsById.has(def.id)) defsById.set(def.id, def)
+    }
+  }
+
+  graph.preserveSourceMetadataDuring(() => {
+    for (const node of graph.getAllNodes()) {
+      if (node.componentPropertyDefinitions.length > 0) {
+        const defs = node.componentPropertyDefinitions.map((def) => {
+          if (def.type !== 'INSTANCE_SWAP') return def
+          const remappedDefault = def.defaultValue ? guidToNodeId.get(def.defaultValue) : undefined
+          if (!remappedDefault) return def
+          return { ...def, defaultValue: remappedDefault }
+        })
+        const changed = defs.some((def, i) => def !== node.componentPropertyDefinitions[i])
+        if (changed) graph.updateNode(node.id, { componentPropertyDefinitions: defs })
+      }
+
+      if (Object.keys(node.componentPropertyAssignments).length > 0) {
+        let changed = false
+        const assignments = { ...node.componentPropertyAssignments }
+        for (const [propId, value] of Object.entries(assignments)) {
+          if (defsById.get(propId)?.type !== 'INSTANCE_SWAP') continue
+          const remapped = guidToNodeId.get(value)
+          if (remapped) {
+            assignments[propId] = remapped
+            changed = true
+          }
+        }
+        if (changed) graph.updateNode(node.id, { componentPropertyAssignments: assignments })
+      }
+    }
+  })
+}
+
 function applyVariantPropSpecs(graph: SceneGraph): void {
   for (const node of graph.getAllNodes()) {
     if (node.type !== 'COMPONENT' || node.variantPropSpecs.length === 0 || !node.parentId) continue
@@ -509,6 +563,7 @@ export function importNodeChanges(
   importVariableEntries(changeMap, parentMap, graph, assetRefs)
   importVariableBindings(changeMap, guidToNodeId, graph)
   remapComponentIds(graph, guidToNodeId)
+  remapInstanceSwapPropertyValues(graph, guidToNodeId)
   applyVariantPropSpecs(graph)
 
   const firstPageId = graph.getPages()[0]?.id

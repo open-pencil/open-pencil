@@ -1,11 +1,11 @@
 ---
 title: Designs analysieren
-description: Farben, Typografie, Abstände und wiederkehrende Muster in .fig-Dateien auditieren.
+description: Farben, Typografie, Abstände und wiederkehrende Strukturen in `.fig`-Dateien untersuchen.
 ---
 
 # Designs analysieren
 
-Die `analyze`-Befehle prüfen ein gesamtes Designsystem vom Terminal aus — Inkonsistenzen finden, die tatsächliche Palette extrahieren, Komponenten erkennen, die noch extrahiert werden sollten.
+Die `analyze`-Befehle prüfen ein vollständiges Dokument im Terminal. Sie zeigen Farben und Textstile, Abweichungen bei Abständen und wiederkehrende Strukturen, die sich als Komponenten eignen könnten.
 
 ## Farben
 
@@ -13,14 +13,7 @@ Die `analyze`-Befehle prüfen ein gesamtes Designsystem vom Terminal aus — Ink
 openpencil analyze colors design.fig
 ```
 
-Findet jede Farbe in der Datei, zählt die Verwendung und zeigt ein visuelles Histogramm:
-
-```
-#1d1b20  ██████████████████████████████ 17155×
-#49454f  ██████████████████████████████ 9814×
-#ffffff  ██████████████████████████████ 8620×
-#6750a4  ██████████████████████████████ 3967×
-```
+Zählt jede Farbe und zeigt ein Histogramm.
 
 ## Typografie
 
@@ -28,7 +21,7 @@ Findet jede Farbe in der Datei, zählt die Verwendung und zeigt ein visuelles Hi
 openpencil analyze typography design.fig
 ```
 
-Listet jede Kombination aus Schriftfamilie, -größe und -gewicht mit Nutzungszahlen auf. Nützlich, um einmalige Textstile zu erkennen, die konsolidiert werden sollten.
+Listet Kombinationen aus Schriftfamilie, Größe und Schnitt mit ihrer Häufigkeit auf.
 
 ## Abstände
 
@@ -36,30 +29,16 @@ Listet jede Kombination aus Schriftfamilie, -größe und -gewicht mit Nutzungsza
 openpencil analyze spacing design.fig
 ```
 
-Prüft Gap- und Padding-Werte über alle Auto-Layout-Frames hinweg. Hilft, Inkonsistenzen in der Abstandsskala zu identifizieren — z.B. ein einzelner `13px`-Gap zwischen ansonsten `8/16/24`-Werten.
+Prüft Abstände und Innenabstände in Rahmen mit automatischer Anordnung. So wird beispielsweise ein einzelner Wert von `13px` zwischen üblichen `8/16/24` sichtbar.
 
-## Cluster
+## Wiederkehrende Strukturen
 
 ```sh
 openpencil analyze clusters design.fig
 ```
 
-Findet wiederkehrende Knotenmuster, die in Komponenten extrahiert werden könnten:
-
-```
-3771× frame "container" (100% match)
-     size: 40×40, structure: Frame > [Frame]
-
-2982× instance "Checkboxes" (100% match)
-     size: 48×48, structure: Instance > [Frame]
-```
+Sucht wiederkehrende Objektstrukturen, die als Komponenten zusammengefasst werden könnten.
 
 ## JSON-Ausgabe
 
-Alle Analyse-Befehle unterstützen `--json` für maschinenlesbare Ausgabe:
-
-```sh
-openpencil analyze colors design.fig --json
-```
-
-Weiterleiten an `jq`, in CI-Prüfungen einspeisen oder in Skripten verwenden, die Design-Token-Budgets durchsetzen.
+Alle Analysebefehle unterstützen `--json`. Die Ausgabe kann mit `jq`, in CI oder in Skripten für Designtoken verarbeitet werden.

@@ -1,36 +1,33 @@
 ---
 layout: doc
 title: Guida utente
-description: Impara a usare OpenPencil — navigazione canvas, disegno, testo, componenti, auto-layout e altro.
+description: Navigare, disegnare, modificare testo, usare componenti e configurare la disposizione automatica.
 ---
 
 # Guida utente
 
-OpenPencil è un editor di design open-source, compatibile con Figma — completamente locale, IA-nativo e programmabile.
+OpenPencil è un editor di design locale e open source, compatibile con Figma, con AI integrata e API di automazione.
 
-::: tip Scorciatoie multipiattaforma
-<kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> su Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.
-:::
+## Primi passi
 
-## Orientamento
+- [Navigazione nell’area di lavoro](./canvas-navigation) — spostare la vista, usare lo zoom e lo strumento Mano;
+- [Selezionare e trasformare](./selection-and-manipulation) — selezionare, spostare, ridimensionare, ruotare e ordinare gli oggetti.
 
-- [Navigazione canvas](./canvas-navigation) — panoramica, zoom e strumento mano
-- [Selezione e manipolazione](./selection-and-manipulation) — selezionare, spostare, ridimensionare, ruotare
+## Creare contenuti
 
-## Creazione contenuti
+- [Disegnare forme](./drawing-shapes) — rettangoli, ellissi, linee, frame, sezioni, poligoni e stelle;
+- [Modificare testo](./text-editing) — creare, selezionare e formattare testo;
+- [Strumento Penna](./pen-tool) — disegnare tracciati vettoriali e curve di Bézier;
+- [Modificare vettori](./vector-edit) — intervenire su punti, maniglie e segmenti.
 
-- [Disegno forme](./drawing-shapes) — rettangoli, ellissi, linee, frame, sezioni
-- [Modifica testo](./text-editing) — creare e modificare testo con formattazione rich
-- [Strumento penna](./pen-tool) — percorsi vettoriali con curve di Bézier
+## Organizzare il documento
 
-## Organizzazione
+- [Livelli e pagine](./layers-and-pages) — albero dei livelli, pagine e proprietà;
+- [Menu contestuale](./context-menu) — appunti, gruppi, componenti e altre azioni;
+- [Esportare](./exporting) — immagini, SVG e file `.fig`.
 
-- [Livelli e pagine](./layers-and-pages) — pannello livelli, pagine e proprietà
-- [Menu contestuale](./context-menu) — azioni con click destro
-- [Esportazione](./exporting) — esportazione immagini e operazioni .fig
+## Funzioni avanzate
 
-## Funzionalità avanzate
-
-- [Auto-layout](./auto-layout) — posizionamento automatico basato su flexbox
-- [Componenti](./components) — componenti riutilizzabili, istanze e override
-- [Variabili](./variables) — variabili di design, collezioni, modalità
+- [Disposizione automatica](./auto-layout) — distribuzione con Flexbox e CSS Grid;
+- [Componenti](./components) — componenti riutilizzabili, istanze e sostituzioni;
+- [Variabili](./variables) — raccolte, modalità, valori e collegamenti.

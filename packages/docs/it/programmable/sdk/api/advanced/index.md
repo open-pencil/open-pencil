@@ -1,44 +1,42 @@
 ---
-title: Avanzato
-description: API di livello inferiore e specializzate in @open-pencil/vue.
+title: API avanzate
+description: Utilità di basso livello per interfacce editor specializzate.
 ---
 
-# Avanzato
+# API avanzate
 
-Queste API sono pubbliche, ma sono più specializzate rispetto alla superficie principale di componenti e composable.
+Queste funzioni supportano componenti e composable pubblici. Usale quando un’interfaccia personalizzata non rientra nei controlli di livello superiore.
 
-## Helper per selezione e scena
+## Area di lavoro e strumenti
+
+- [toolCursor](./tool-cursor)
+- [useCanvasContext](./use-canvas-context)
+- [useCanvasDrop](./use-canvas-drop)
+- [useToolbar](./use-toolbar)
+- [useToolbarState](./use-toolbar-state)
+- [useViewportKind](./use-viewport-kind)
+
+## Proprietà e colore
 
 - [useNodeProps](./use-node-props)
-- [useSceneComputed](./use-scene-computed)
 - [usePropScrub](./use-prop-scrub)
-
-## Picker, variabili, locale e funzionamento interno dell'editor
-
+- [usePropertyList](./use-property-list)
 - [useColorVariableBinding](./use-color-variable-binding)
 - [useGradientStops](./use-gradient-stops)
-- [useFontPicker](./use-font-picker)
 - [useOkHCL](./use-okhcl)
+
+## Navigazione e modifica
+
+- [useLayerTree](./use-layer-tree)
+- [useLayerDrag](./use-layer-drag)
+- [useInlineRename](./use-inline-rename)
+- [useFontPicker](./use-font-picker)
+- [useNodeFontStatus](./use-node-font-status)
+- [useSceneComputed](./use-scene-computed)
+
+## Variabili e lingua
+
 - [useVariables](./use-variables)
 - [useVariablesDialogState](./use-variables-dialog-state)
 - [useVariablesTable](./use-variables-table)
-- [API Locale](./locale-apis)
-- [useToolbarState](./use-toolbar-state)
-- [useNodeFontStatus](./use-node-font-status)
-
-## Utility per la shell dell'editor
-
-- [useLayerDrag](./use-layer-drag)
-- [useInlineRename](./use-inline-rename)
-- [useCanvasDrop](./use-canvas-drop)
-- [extractImageFilesFromClipboard](./extract-image-files-from-clipboard)
-- [useViewportKind](./use-viewport-kind)
-- [toolCursor](./tool-cursor)
-
-## Helper per il contesto delle primitive
-
-- [useCanvasContext](./use-canvas-context)
-- [useLayerTree](./use-layer-tree)
-- [useToolbar](./use-toolbar)
-- [usePropertyList](./use-property-list)
-- [useNumberField](/programmable/sdk/api/advanced/use-number-field)
+- [API locali](./locale-apis)

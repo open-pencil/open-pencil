@@ -1,15 +1,15 @@
 ---
 title: extractImageFilesFromClipboard
-description: Utilitaire presse-papiers pour extraire les fichiers images acceptés.
+description: Lire les Image files compatibles d’un ClipboardEvent.
 ---
 
 # extractImageFilesFromClipboard
 
-`extractImageFilesFromClipboard(event)` filtre les fichiers du presse-papiers pour ne retenir que les types d'images acceptés utilisés par le flux de dépôt canvas.
+`extractImageFilesFromClipboard(event)` renvoie les Image files du Clipboard et ignore les File types non compatibles.
 
-Utilisez-le pour implémenter des flux de travail d'images collées depuis le presse-papiers.
+Utilisez cette Function pour implémenter Paste d’Images.
 
-## API associées
+## Voir aussi
 
 - [useCanvasDrop](./use-canvas-drop)
 - [useCanvas](../composables/use-canvas)

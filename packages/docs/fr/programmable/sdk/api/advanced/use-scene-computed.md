@@ -1,15 +1,15 @@
 ---
 title: useSceneComputed
-description: Wrapper de computed pratique pour l'état dérivé de la scène.
+description: Computed value réactif basé sur les données de SceneGraph.
 ---
 
 # useSceneComputed
 
-`useSceneComputed(fn)` est un thin wrapper de computed utilisé pour rendre explicite l'état dérivé de la scène dans les composables de plus haut niveau.
+`useSceneComputed(fn)` est un petit Wrapper de Vue `computed` qui identifie les Values dépendant des données SceneGraph de l’Editor.
 
-Utilisez-le quand vous voulez un état computed révélateur d'intention qui dépend clairement des données de la scène de l'éditeur.
+Il convient aux autres composables qui calculent des Values à partir des objets du document.
 
-## API associées
+## Voir aussi
 
 - [useSelectionState](../composables/use-selection-state)
 - [useSelectionCapabilities](../composables/use-selection-capabilities)

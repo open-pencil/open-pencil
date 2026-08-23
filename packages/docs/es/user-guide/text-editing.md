@@ -1,61 +1,36 @@
 ---
 title: Edición de texto
-description: Crear y editar texto con formato enriquecido en OpenPencil.
+description: Crear texto, seleccionar caracteres y aplicar formato tipográfico.
 ---
-# Edición de texto
 
-Crea nodos de texto y edítalos directamente en el lienzo con soporte completo de texto enriquecido.
+# Edición de texto
 
 ## Crear texto
 
-Pulsa <kbd>T</kbd> para activar la herramienta de texto, luego haz clic en el lienzo. Aparece un nodo de texto vacío con un cursor parpadeante — empieza a escribir inmediatamente.
+Pulsa <kbd>T</kbd> y haz clic en el lienzo. Aparece un objeto vacío con el cursor de inserción listo para escribir.
 
-## Edición inline
+## Editar
 
-Doble clic en un nodo de texto para entrar en modo edición. Un contorno azul rodea el texto para indicar el modo edición. Clic fuera para confirmar y salir.
+Haz doble clic en un objeto de texto. Un contorno azul indica el modo de edición. Haz clic fuera para guardar y salir.
 
-El texto se renderiza directamente en el lienzo — no hay una capa de entrada de texto separada.
+El texto se dibuja directamente en el lienzo; no aparece un campo superpuesto independiente.
 
-## Navegación del cursor
+## Selección
 
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Izquierda/derecha | <kbd>←</kbd> / <kbd>→</kbd> | <kbd>←</kbd> / <kbd>→</kbd> |
-| Arriba/abajo | <kbd>↑</kbd> / <kbd>↓</kbd> | <kbd>↑</kbd> / <kbd>↓</kbd> |
-| Por palabra | <kbd>⌥</kbd><kbd>←</kbd> / <kbd>⌥</kbd><kbd>→</kbd> | <kbd>Ctrl</kbd> + <kbd>←</kbd> / <kbd>Ctrl</kbd> + <kbd>→</kbd> |
-| Inicio/fin de línea | <kbd>⌘</kbd><kbd>←</kbd> / <kbd>⌘</kbd><kbd>→</kbd> | <kbd>Home</kbd> / <kbd>End</kbd> |
+- Un clic sitúa el cursor de inserción.
+- Arrastrar selecciona un intervalo.
+- Doble clic selecciona una palabra.
+- Triple clic selecciona todo el texto.
+- <kbd>Shift</kbd> amplía la selección.
 
-Mantén <kbd>Shift</kbd> con cualquier tecla de movimiento para extender la selección.
+Las flechas mueven el cursor. <kbd>Option</kbd>/<kbd>Ctrl</kbd> salta por palabras; <kbd>Shift</kbd> conserva y amplía la selección.
 
-## Formato enriquecido
+## Formato
 
-Aplica formato al texto seleccionado, o alterna el estilo para todo el nodo cuando no hay selección.
+El panel de propiedades permite cambiar familia, estilo, tamaño, interlineado, espaciado entre letras y alineación. Negrita, cursiva, subrayado y tachado pueden aplicarse a un intervalo sin alterar el resto.
 
-| Acción | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Negrita | <kbd>⌘</kbd><kbd>B</kbd> | <kbd>Ctrl</kbd> + <kbd>B</kbd> |
-| Cursiva | <kbd>⌘</kbd><kbd>I</kbd> | <kbd>Ctrl</kbd> + <kbd>I</kbd> |
-| Subrayado | <kbd>⌘</kbd><kbd>U</kbd> | <kbd>Ctrl</kbd> + <kbd>U</kbd> |
+Los estilos parciales se guardan como intervalos y participan en deshacer y rehacer.
 
-El formato se aplica por carácter. Cuando escribes entre un segmento en negrita y uno regular, el nuevo texto hereda el estilo del segmento anterior.
+## Fuentes
 
-## Selector de fuentes
-
-Abre el selector de fuentes en la sección Tipografía del panel de propiedades para cambiar la familia tipográfica. Incluye:
-
-- **Filtro de búsqueda** — escribe para filtrar la lista de fuentes
-- **Vista previa** — cada nombre de fuente se muestra con su propia tipografía
-- **Scroll virtual** — maneja listas largas de fuentes eficientemente
-
-## Fuentes disponibles
-
-- **Fuente predeterminada** — Inter se carga automáticamente
-- **App de escritorio** — fuentes del sistema y catálogos habilitados de Google Fonts, Fontsource, Bunny Fonts y Fontshare
-- **Navegador** — las fuentes del sistema están disponibles en Chrome y Edge; los catálogos online requieren la app de escritorio
-- **Fuentes descargadas** — la app de escritorio guarda en caché las variantes descargadas para reutilizarlas en el mismo equipo
-
-## Fuentes ausentes y sustituciones
-
-Si una familia o variante solicitada no se puede cargar, OpenPencil muestra una advertencia sobre el editor en lugar de considerar silenciosamente que la tipografía de respaldo es fiel al diseño.
-
-Despliega la advertencia para ver cada variante afectada y su sustituto activo. Usa **Seleccionar capas** para localizar los nodos de texto afectados o **Reintentar fuentes** después de cambiar el acceso a la red, el permiso de fuentes locales o los ajustes de proveedores. Una variante puede sintetizarse a partir de otra variante cargada de la misma familia; una familia ausente usa Inter como sustituto cuando está disponible.
+OpenPencil detecta fuentes del sistema cuando el entorno lo permite. Si falta una fuente, muestra su estado y usa una alternativa hasta que esté disponible.

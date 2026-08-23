@@ -126,6 +126,46 @@ test('resize corner handle drag increases node dimensions', async () => {
   canvas.assertNoErrors()
 })
 
+test('resize snapping preferences control pixel alignment and Control bypass', async () => {
+  await canvas.clearCanvas()
+  await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.snappingPreferences = { geometry: true, objects: false, pixelGrid: false }
+    const id = store.createShape('RECTANGLE', 100.25, 100.25, 100, 100)
+    store.select([id])
+  })
+  await canvas.waitForRender()
+  const box = await page.getByTestId('canvas-element').boundingBox()
+  if (!box) throw new Error('No canvas')
+
+  await page.mouse.move(box.x + 200.25, box.y + 200.25)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 206.25, box.y + 207.25, { steps: 5 })
+  await page.mouse.up()
+  expect(await getSelectedNode(page)).toMatchObject({ width: 106, height: 107 })
+
+  await page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.snappingPreferences.pixelGrid = true
+  })
+  await page.mouse.move(box.x + 206.25, box.y + 207.25)
+  await page.mouse.down()
+  await page.mouse.move(box.x + 212.25, box.y + 214.25, { steps: 5 })
+  await page.mouse.up()
+  expect(await getSelectedNode(page)).toMatchObject({ width: 111.75, height: 113.75 })
+
+  await page.mouse.move(box.x + 212, box.y + 214)
+  await page.mouse.down()
+  await page.keyboard.down('Control')
+  await page.mouse.move(box.x + 218, box.y + 221, { steps: 5 })
+  await page.keyboard.up('Control')
+  await page.mouse.up()
+  expect(await getSelectedNode(page)).toMatchObject({ width: 117.75, height: 120.75 })
+  canvas.assertNoErrors()
+})
+
 test('rotation handle drag rotates node', async () => {
   await canvas.clearCanvas()
   await canvas.drawRect(200, 200, 100, 100)

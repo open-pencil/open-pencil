@@ -1,34 +1,49 @@
 ---
-title: Selezione e manipolazione
-description: Selezionare, spostare, ridimensionare, ruotare e organizzare nodi in OpenPencil.
+title: Selezionare e trasformare
+description: Selezionare, spostare, ridimensionare, ruotare, duplicare e ordinare gli oggetti.
 ---
-# Selezione e manipolazione
 
-## Selezionare
-- **Click** su un nodo per selezionarlo
-- <kbd>Shift</kbd> + click per aggiungere/rimuovere dalla selezione
-- **Trascinamento marquee** — trascina sul canvas vuoto per la selezione rettangolare
-- <kbd>⌘</kbd><kbd>A</kbd> — seleziona tutto
-- **Click su canvas vuoto** — deseleziona tutto
+# Selezionare e trasformare
+
+Gli oggetti selezionati possono essere spostati, ridimensionati, ruotati, duplicati e riordinati tra i livelli.
+
+## Selezione
+
+- Un clic su un oggetto sostituisce la selezione corrente.
+- <kbd>Shift</kbd> + clic aggiunge o rimuove un oggetto.
+- Trascinare in un’area libera crea una selezione rettangolare.
+- <kbd>⌘</kbd><kbd>A</kbd> seleziona tutti gli oggetti della pagina corrente.
+- Un clic su un’area libera annulla la selezione.
 
 ## Spostare
-- **Trascinamento** del nodo selezionato
-- **Frecce** — sposta di 1 px · <kbd>Shift</kbd> + frecce — 10 px
+
+- Trascina un oggetto selezionato.
+- Le frecce spostano di 1 px.
+- <kbd>Shift</kbd> + frecce spostano di 10 px.
 
 ## Ridimensionare
-8 maniglie (4 angoli + 4 punti medi). <kbd>Shift</kbd> + trascinamento mantiene le proporzioni.
+
+La selezione mostra otto maniglie. Trascinane una per modificare larghezza e altezza. Tieni premuto <kbd>Shift</kbd> su una maniglia angolare per conservare le proporzioni.
 
 ## Ruotare
-Passa vicino a un angolo per il cursore di rotazione. <kbd>Shift</kbd> scatta a incrementi di 15°.
+
+Porta il puntatore poco oltre una maniglia angolare finché compare il cursore di rotazione, quindi trascina. <kbd>Shift</kbd> allinea la rotazione a intervalli di 15°.
 
 ## Duplicare
-- <kbd>Alt</kbd> + trascinamento — duplica e sposta · <kbd>⌘</kbd><kbd>D</kbd> — duplica sul posto
+
+- <kbd>⌥</kbd> o <kbd>Alt</kbd> durante il trascinamento crea e sposta una copia.
+- <kbd>⌘</kbd><kbd>D</kbd> o <kbd>Ctrl</kbd><kbd>D</kbd> duplica nella stessa posizione.
 
 ## Eliminare
-<kbd>Backspace</kbd> o **Canc**
 
-## Ordine Z
-**]** porta in primo piano · **[** manda in fondo
+Premi <kbd>Backspace</kbd> o <kbd>Canc</kbd>.
+
+## Ordine
+
+- **]** avanza di un livello; <kbd>⌘</kbd><kbd>]</kbd> o <kbd>Ctrl</kbd><kbd>]</kbd> porta in primo piano.
+- **[** arretra di un livello; <kbd>⌘</kbd><kbd>[</kbd> o <kbd>Ctrl</kbd><kbd>[</kbd> manda sullo sfondo.
 
 ## Visibilità e blocco
-<kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> visibilità · <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> blocco
+
+- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> cambia la visibilità.
+- <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> cambia il blocco.

@@ -1,22 +1,22 @@
 ---
 title: SDK-Architektur
-description: Ordnerstruktur, öffentliche API-Grenzen und Kompositionsmuster in @open-pencil/vue.
+description: Paketstruktur, Grenzen der öffentlichen API und Gestaltungsprinzipien von @open-pencil/vue.
 ---
 
 # SDK-Architektur
 
-`@open-pencil/vue` ist die Vue-seitige Schicht über `@open-pencil/core`.
+`@open-pencil/vue` verbindet `@open-pencil/core` mit Vue.
 
-Das Paket besitzt das Editor-Modell selbst nicht. Es passt den Kern-Editor an in:
+Das Editor-Modell bleibt Bestandteil von core. Dieses Paket ergänzt:
 
-- Vue-Injection
-- reaktive Composables
-- headless strukturelle Primitive
-- Canvas- und Input-Verdrahtung
+- Dependency Injection mit Vue;
+- reaktive Composables;
+- strukturelle Komponenten ohne vorgegebenes Erscheinungsbild;
+- die Anbindung der Arbeitsfläche und Eingabeverarbeitung.
 
-## Ordnerstruktur
+## Paketstruktur
 
-Dieses Paket ist nach Domänen organisiert.
+Der Code ist nach Funktionsbereichen gegliedert.
 
 ### Komponentenfamilien
 
@@ -28,18 +28,21 @@ Dieses Paket ist nach Domänen organisiert.
 - `LayerTree/`
 - `PageList/`
 - `PropertyList/`
+- `PropertySection/`
+- `SegmentedControl/`
 - `NumberField/`
 - `Toolbar/`
 
-Diese enthalten strukturelle/headless Primitive und lokale Hilfsmittel.
+Diese Verzeichnisse enthalten strukturelle Komponenten ohne vorgegebenes Erscheinungsbild und bereichsspezifische Hilfsfunktionen.
 
-### Steuerelemente
+### Controls
 
-`controls/` enthält Composables für Eigenschafts-Panels und Editor-Steuerelemente:
+In `controls/` befinden sich Composables für Eigenschaftenpanels und Editor-Steuerelemente:
 
 - `usePosition`
 - `useLayout`
 - `useAppearance`
+- `useColorModel`
 - `useTypography`
 - `useExport`
 - `useFillControls`
@@ -47,69 +50,72 @@ Diese enthalten strukturelle/headless Primitive und lokale Hilfsmittel.
 - `useEffectsControls`
 - `useNodeProps`
 - `usePropScrub`
+- `useEditorPropertyList`
 
-### Variablen
+### Variables
 
-`VariablesEditor/` enthält Composables und Zustandsverdrahtung für die Variablen-Domäne.
+`VariablesEditor/` enthält Composables und Code, der den Zustand des Variableneditors an Vue anbindet.
 
 ### Auswahl
 
-`selection/` enthält auswahlabgeleiteten Editor-Zustand und Fähigkeiten.
+`selection/` enthält den aus der Auswahl abgeleiteten Zustand sowie Angaben zu den verfügbaren Aktionen.
 
 ### Kontext
 
-`context/` enthält Editor-Injektions-Hilfsmittel:
+`context/` enthält Schlüssel und Funktionen, mit denen der Editor über die Abhängigkeitsinjektion von Vue bereitgestellt wird:
 
 - `EDITOR_KEY`
 - `provideEditor`
 - `useEditor`
 
-### Intern
+### Internal
 
-`internal/` enthält übergreifende Utilities, die nicht als primäre headless Primitive gedacht sind.
+`internal/` enthält gemeinsam genutzte Hilfsfunktionen. Sie gehören nicht zu den zentralen Komponenten des Pakets.
 
-## Philosophie der öffentlichen API
+## Grundsätze der öffentlichen API
 
-### Composables bevorzugen
+### Composables für Logik und Zustand
 
-Wenn es hauptsächlich um Kontrolllogik, Zustandsableitung oder Editor-Aktionen geht, sollte ein Composable verwendet werden.
+Wenn Code hauptsächlich Zustand berechnet oder verwaltet beziehungsweise Editor-Aktionen ausführt, stellen Sie ihn als Composable bereit.
 
-### Headless Primitive für bedeutungsvolle Struktur
+### Komponenten ohne Gestaltung nur bei relevanter Struktur
 
-Komponentenwurzeln verwenden, wenn sie Struktur, Kinder, Slots oder Kontext koordinieren.
+Eine Root-Komponente ist sinnvoll, wenn sie Struktur, untergeordnete Elemente, Slots oder Kontext koordiniert.
 
 Beispiele:
 
 - `PageListRoot`
 - `PropertyListRoot`
+- `PropertySectionRoot`
+- `SegmentedControlRoot`
 - `ToolbarRoot`
 
-### Breite Kontext-Dump-Slots vermeiden
+### Nicht den gesamten Kontext über einen Slot weitergeben
 
-Fokussierte Slot-Props oder direkte Composable-Verwendung gegenüber großen `v-slot="ctx"`-Payloads bevorzugen.
+Übergeben Sie einem Slot nur die benötigten Props oder verwenden Sie das Composable direkt. Kontrollierte Komponenten wie `PropertyListRoot` melden Aktionen durch semantische Events. Die Anbindung an Auswahl und Undo-Verlauf gehört in einen Adapter oder ein steuerndes Composable, nicht in die Komponente selbst.
 
-## Verantwortlichkeit App vs. SDK
+## Zuständigkeiten von Anwendung und SDK
 
-### SDK übernimmt
+### SDK
 
-- Editor-Integration
-- wiederverwendbare headless Logik
-- wiederverwendbare UI-Struktur ohne Styling-Annahmen
-- Canvas-Rendering-Integration
+- Editor-Integration;
+- wiederverwendbare, gestaltungsunabhängige Logik;
+- wiederverwendbare UI-Struktur ohne Vorgaben zur Gestaltung;
+- Integration mit dem Rendering der Arbeitsfläche.
 
-### App übernimmt
+### Anwendung
 
-- Styling
-- Layout-Shells
-- Routing
-- Produkt-Datei-Flows
-- Toasts, Menüs und app-spezifische UX
+- Gestaltung;
+- allgemeines Seitenlayout;
+- Routing;
+- Öffnen, Speichern und weitere Dateioperationen;
+- Benachrichtigungen, Menüs und anwendungsspezifisches Verhalten.
 
-## Praktische Faustregel
+## Faustregel
 
-Wenn ein Stück Logik in einer anderen OpenPencil-basierten App wiederverwendet werden könnte, ohne App-Styling mitzubringen, gehört es wahrscheinlich in `@open-pencil/vue`.
+Kann Code ohne die Gestaltung der Anwendung in einem anderen OpenPencil-basierten Editor wiederverwendet werden, gehört er wahrscheinlich in `@open-pencil/vue`.
 
-## Verwandte Seiten
+## Siehe auch
 
 - [SDK – Erste Schritte](./getting-started)
 - [API-Referenz](./api/)

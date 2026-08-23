@@ -1,36 +1,33 @@
 ---
 layout: doc
-title: Guide utilisateur
-description: Apprenez à utiliser OpenPencil — navigation canvas, dessin, texte, composants, mise en page auto et plus.
+title: Guide d’utilisation
+description: Naviguer, dessiner, modifier du texte, utiliser des composants et configurer la disposition automatique.
 ---
 
-# Guide utilisateur
+# Guide d’utilisation
 
-OpenPencil est un éditeur de design open-source, compatible Figma — entièrement local, IA-natif et programmable.
+OpenPencil est un éditeur de design local et open source, compatible avec Figma, doté d’une AI intégrée et d’API d’automatisation.
 
-::: tip Raccourcis multiplateforme
-<kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> sur Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.
-:::
+## Premiers pas
 
-## Prise en main
+- [Navigation dans la zone de travail](./canvas-navigation) — déplacer la vue, zoomer et utiliser l’outil Main ;
+- [Sélection et transformation](./selection-and-manipulation) — sélectionner, déplacer, redimensionner, faire pivoter et ordonner les objets.
 
-- [Navigation sur le canevas](./canvas-navigation) — panoramique, zoom et outil main
-- [Sélection et manipulation](./selection-and-manipulation) — sélectionner, déplacer, redimensionner, tourner
+## Créer du contenu
 
-## Création de contenu
+- [Dessiner des formes](./drawing-shapes) — rectangles, ellipses, lignes, cadres, sections, polygones et étoiles ;
+- [Modifier du texte](./text-editing) — créer, sélectionner et mettre en forme du texte ;
+- [Outil Plume](./pen-tool) — dessiner des tracés vectoriels et des courbes de Bézier ;
+- [Modifier des vecteurs](./vector-edit) — déplacer points, poignées et segments.
 
-- [Dessiner des formes](./drawing-shapes) — rectangles, ellipses, lignes, cadres, sections
-- [Édition de texte](./text-editing) — créer et modifier du texte riche
-- [Outil plume](./pen-tool) — tracés vectoriels avec courbes de Bézier
+## Organiser le document
 
-## Organisation
+- [Calques et pages](./layers-and-pages) — arbre des calques, pages et propriétés ;
+- [Menu contextuel](./context-menu) — presse-papiers, groupes, composants et autres actions ;
+- [Exporter](./exporting) — images, SVG et fichiers `.fig`.
 
-- [Calques et pages](./layers-and-pages) — panneau calques, pages et propriétés
-- [Menu contextuel](./context-menu) — actions clic droit
-- [Exportation](./exporting) — export d'images et opérations .fig
+## Fonctions avancées
 
-## Fonctionnalités avancées
-
-- [Mise en page auto](./auto-layout) — positionnement automatique basé sur flexbox
-- [Composants](./components) — composants réutilisables, instances et surcharges
-- [Variables](./variables) — variables de design, collections, modes
+- [Disposition automatique](./auto-layout) — distribution avec Flexbox et CSS Grid ;
+- [Composants](./components) — composants réutilisables, instances et surcharges ;
+- [Variables](./variables) — collections, modes, valeurs et liaisons.

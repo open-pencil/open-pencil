@@ -116,25 +116,6 @@ export async function removeCachePrefix(prefix: string): Promise<void> {
   removeStorageEntriesWithPrefix(prefix)
 }
 
-export async function removeCacheEntriesWithPrefix(prefix: string): Promise<void> {
-  if (isTauriRuntime()) {
-    try {
-      const { BaseDirectory, readDir, remove } = await import('@tauri-apps/plugin-fs')
-      const entries = await readDir(APP_CACHE_DIR, { baseDir: BaseDirectory.AppLocalData })
-      await Promise.all(
-        entries
-          .filter((entry) => entry.isFile && entry.name.startsWith(prefix))
-          .map((entry) => remove(cachePath(entry.name), { baseDir: BaseDirectory.AppLocalData }))
-      )
-    } catch (error) {
-      console.warn(`Cache entry cleanup skipped for "${prefix}":`, error)
-    }
-    return
-  }
-
-  removeStorageEntriesWithPrefix(prefix)
-}
-
 type JSONCacheEnvelope<T> = {
   updatedAt: number
   value: T

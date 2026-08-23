@@ -1,15 +1,16 @@
 ---
 title: LayerTreeItem
-description: Bezstanowy prymityw wiersza dla jednego węzła drzewa warstw.
+description: Pojedynczy element drzewa warstw.
 ---
 
 # LayerTreeItem
 
-`LayerTreeItem` renderuje jeden wiersz drzewa warstw i udostępnia przez domyślny slot obsługę selekcji, rozwijania, widoczności, blokady i zmiany nazwy.
+`LayerTreeItem` reprezentuje jeden row drzewa warstw. Domyślny slot otrzymuje state i actions związane z selection, rozwijaniem children, visibility, lock i zmianą nazwy.
 
-Użyj go, gdy chcesz znaczniki wiersza należące do aplikacji z zachowaniem drzewa warstw dostarczanym przez SDK.
+Użyj komponentu, aby zachować logikę SDK i samodzielnie zbudować markup wiersza.
 
-## Powiązane API
+
+## Zobacz też
 
 - [LayerTreeRoot](./layer-tree-root)
 - [useLayerTree](../advanced/use-layer-tree)

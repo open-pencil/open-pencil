@@ -1,13 +1,13 @@
 ---
-title: Kompozyty
-description: Podstawowe API kompozytów w @open-pencil/vue.
+title: Composables
+description: Najważniejsze composables pakietu @open-pencil/vue.
 ---
 
-# Kompozyty
+# Composables
 
-Są to główne kompozyty, z których korzysta większość konsumentów `@open-pencil/vue`.
+Poniżej znajdują się composables najczęściej używane podczas pracy z `@open-pencil/vue`.
 
-## Kontekst i kanvas
+## Kontekst i obszar roboczy
 
 - [provideEditor](./provide-editor)
 - [useEditor](./use-editor)
@@ -15,7 +15,7 @@ Są to główne kompozyty, z których korzysta większość konsumentów `@open-
 - [useCanvasInput](./use-canvas-input)
 - [useTextEdit](./use-text-edit)
 
-## Selekcja i polecenia
+## Zaznaczenie i polecenia
 
 - [useSelectionState](./use-selection-state)
 - [useSelectionCapabilities](./use-selection-capabilities)
@@ -26,12 +26,21 @@ Są to główne kompozyty, z których korzysta większość konsumentów `@open-
 
 - [usePosition](./use-position)
 - [useLayout](./use-layout)
+- [useConstraints](/programmable/sdk/api/composables/use-constraints)
+- [useComponentProperties](/programmable/sdk/api/composables/use-component-properties)
 - [useAppearance](./use-appearance)
+- [useSharedStyleBinding](/programmable/sdk/api/composables/use-shared-style-binding)
+- [useColorModel](/programmable/sdk/api/composables/use-color-model)
+- [useMask](/programmable/sdk/api/composables/use-mask)
 - [useTypography](./use-typography)
 - [useExport](./use-export)
 - [useFillControls](./use-fill-controls)
 - [useStrokeControls](./use-stroke-controls)
 - [useEffectsControls](./use-effects-controls)
+
+## Obszar roboczy dokumentu
+
+- [useDocumentWorkspace](/programmable/sdk/api/composables/use-document-workspace)
 
 ## Zmienne, nawigacja i lokalizacja
 

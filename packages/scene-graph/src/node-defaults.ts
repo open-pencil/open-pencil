@@ -44,6 +44,7 @@ export function createDefaultNode(
     strokes: [],
     effects: [],
     layoutGrids: [],
+    guides: [],
     fillStyleId: null,
     strokeStyleId: null,
     textStyleId: null,

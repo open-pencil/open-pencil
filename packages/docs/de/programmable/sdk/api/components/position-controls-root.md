@@ -1,15 +1,15 @@
 ---
 title: PositionControlsRoot
-description: Headless Wurzel-Primitiv für Positions-, Größen-, Ausrichtungs- und Transformationssteuerelemente.
+description: Komponente ohne vorgegebene Gestaltung für Position, Größe, Ausrichtung und Transformation.
 ---
 
 # PositionControlsRoot
 
-`PositionControlsRoot` gibt Positions-, Größen-, Rotations-, Ausrichtungs-, Spiegel- und Rotations-Handler für die aktuelle Auswahl zurück.
+`PositionControlsRoot` stellt Werte und Aktionen für Position, Größe, Drehung, Ausrichtung und Spiegelung der Auswahl bereit.
 
-Verwenden Sie es, wenn Sie benutzerdefinierte Positionssteuerelemente ohne erneute Implementierung der Editor-Verdrahtung möchten.
+Damit lassen sich eigene Felder und Schaltflächen erstellen, ohne die Editorvorgänge erneut anzubinden.
 
-## Verwandte APIs
+## Siehe auch
 
 - [usePosition](../composables/use-position)
-- [Eigenschafts-Panels-Anleitung](../../guides/property-panels)
+- [Eigenschaften-Panels](../../guides/property-panels)

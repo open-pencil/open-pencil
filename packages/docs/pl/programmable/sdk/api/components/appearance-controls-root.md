@@ -1,15 +1,21 @@
 ---
 title: AppearanceControlsRoot
-description: Bezstanowy prymityw korzenia dla kontrolek przezroczystości, widoczności i promienia narożnika.
+description: Komponent bez narzuconego wyglądu dla przezroczystości, widoczności i promienia narożników.
 ---
+
+<script setup lang="ts">
+import { data } from '#docs-api/components/appearance-controls-root.data'
+</script>
 
 # AppearanceControlsRoot
 
-`AppearanceControlsRoot` udostępnia kontrakt slotu zwracany przez `useAppearance()` jako prymityw strukturalny.
+`AppearanceControlsRoot` przekazuje przez slot stan i działania `useAppearance()`.
 
-Użyj go, gdy chcesz wielokrotnie używalne kontrolki wyglądu z niestandardową prezentacją.
+Aplikacja może zbudować własne pola przezroczystości, widoczności i promienia narożników bez ponownego implementowania logiki edytora.
 
-## Powiązane API
+<SdkComponentAPI :components="data.components" />
+
+## Zobacz też
 
 - [useAppearance](../composables/use-appearance)
-- [Przewodnik po panelach właściwości](../../guides/property-panels)
+- [Panele właściwości](../../guides/property-panels)

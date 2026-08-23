@@ -1,59 +1,40 @@
 ---
-title: Exportieren
-description: .fig-Dateien als PNG, JPG, WEBP, SVG oder JSX mit Tailwind-Klassen rendern.
+title: Export mit der CLI
+description: PNG, JPG, WEBP, SVG, `.fig`, JSX und HTML exportieren oder Dokumentformate umwandeln.
 ---
 
-# Exportieren
+# Export mit der CLI
 
-Designs vom Terminal aus exportieren — Rasterbilder, Vektoren oder JSX-Code.
+Die CLI exportiert Rasterbilder, SVG, Teile eines Dokuments als `.fig`, JSX und HTML.
 
-## Bildexport
+## Formate
 
 ```sh
-openpencil export design.fig                          # PNG (Standard)
-openpencil export design.fig -f jpg -s 2 -q 90       # JPG in 2×, Qualität 90
-openpencil export design.fig -f webp -s 3             # WEBP in 3×
-openpencil export design.fig -f svg                   # SVG-Vektor
+openpencil export design.fig                           # PNG
+openpencil export design.fig -f jpg -s 2 -q 90        # JPG mit 2×
+openpencil export design.fig -f svg                   # SVG
+openpencil export design.fig -f fig --page "Page 1"   # Seite als .fig
+openpencil export design.fig -f html --css tailwind    # HTML mit Tailwind-Klassen
 ```
 
-Optionen:
+`-f` wählt das Format, `-s` den Maßstab, `-q` die Qualität und `-o` den Ausgabepfad. `--page` und `--node` begrenzen den Export.
 
-- `-f` — Format: `png`, `jpg`, `webp`, `svg`, `jsx`
-- `-s` — Skalierung: `1`–`4`
-- `-q` — Qualität: `0`–`100` (nur JPG/WEBP)
-- `-o` — Ausgabepfad
-- `--page` — Seitenname
-- `--node` — bestimmte Knoten-ID
-
-## JSX-Export
-
-Als JSX mit Tailwind-Utility-Klassen exportieren:
+## JSX
 
 ```sh
 openpencil export design.fig -f jsx --style tailwind
 ```
 
-Ausgabe:
+`--style openpencil` erzeugt das native JSX-Format des [JSX-Renderers](../jsx-renderer).
 
-```html
-<div className="flex flex-col gap-4 p-6 bg-white rounded-xl">
-  <p className="text-2xl font-bold text-[#1D1B20]">Card Title</p>
-  <p className="text-sm text-[#49454F]">Description text</p>
-</div>
-```
-
-Unterstützt auch `--style openpencil` für das native JSX-Format (siehe [JSX-Renderer](../jsx-renderer)).
-
-## Vorschaubilder
+## HTML
 
 ```sh
-openpencil export design.fig --thumbnail --width 1920 --height 1080
+openpencil export design.fig -f html
+openpencil export design.fig -f html --css tailwind
+openpencil export design.fig -f html --html standalone --assets external
 ```
 
-## Live-App-Modus
+Der eigenständige HTML-Export wird sofort mit Tailwind kompiliert und benötigt keine Browser-Laufzeit. `--assets external` schreibt CSS und Bilder neben die HTML-Datei. `--fonts assets` speichert aufgelöste Webschriften als lokale `@font-face`-Dateien.
 
-Lass die Datei weg, um aus der laufenden App zu exportieren:
-
-```sh
-openpencil export -f png    # Screenshot der aktuellen Zeichenfläche
-```
+Der HTML-Export dient Übergabe und Weiterverarbeitung, nicht als pixelgenauer Ersatz für die Darstellung auf der Arbeitsfläche.

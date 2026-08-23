@@ -54,7 +54,7 @@ export function responseWithTarget(
 export function listAutomationDocuments(activeStore: EditorStore): AutomationDocumentSummary[] {
   const activeTab = getTabForStore(activeStore)
   return getTabsSnapshot().flatMap((tab) => {
-    if (tab.showHome) return []
+    if (tab.kind === 'home') return []
     const pages = tab.store.graph.getPages().map((page) => ({ id: page.id, name: page.name }))
     const currentPage = tab.store.graph.getNode(tab.store.state.currentPageId)
     const path = tab.store.getDocumentFilePath()

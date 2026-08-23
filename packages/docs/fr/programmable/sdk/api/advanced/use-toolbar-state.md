@@ -1,16 +1,15 @@
 ---
 title: useToolbarState
-description: Helper d'état de barre d'outils orienté présentation pour la pagination de catégories mobiles.
+description: État réactif des outils disponibles et de l’outil actif.
 ---
 
 # useToolbarState
 
-`useToolbarState()` retourne l'état de pagination de catégories mobiles et des helpers comme `goPrev()` et `goNext()` pour les shells de barre d'outils adaptatifs.
+`useToolbarState()` renvoie la liste des outils, l’outil actif et l’action qui permet d’en changer.
 
-Utilisez-le pour construire des mises en page de barre d'outils au-dessus de `ToolbarRoot`.
+Utilisez-le pour obtenir la logique de la barre sans `ToolbarRoot`.
 
-## API associées
+## Voir aussi
 
 - [ToolbarRoot](../components/toolbar-root)
-- [ToolbarItem](../components/toolbar-item)
 - [useToolbar](./use-toolbar)

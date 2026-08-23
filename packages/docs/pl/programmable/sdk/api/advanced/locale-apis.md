@@ -1,11 +1,11 @@
 ---
-title: API języka
-description: Niskopoziomowe store'y języka i metadane eksportowane przez @open-pencil/vue.
+title: Locale API
+description: Low-level locale stores i metadata eksportowane przez @open-pencil/vue.
 ---
 
-# API języka
+# Locale API
 
-Oprócz `useI18n()`, Vue SDK eksportuje niskopoziomowe prymitywy języka dla zaawansowanych integracji:
+Poza `useI18n()` Vue SDK eksportuje low-level API do bezpośredniej pracy z locale:
 
 - `locale`
 - `localeSetting`
@@ -13,7 +13,7 @@ Oprócz `useI18n()`, Vue SDK eksportuje niskopoziomowe prymitywy języka dla zaa
 - `AVAILABLE_LOCALES`
 - `LOCALE_LABELS`
 
-Użyj ich, gdy chcesz bezpośredniego dostępu do store'a, musisz zintegrować stan języka z większą powłoką aplikacji lub chcesz metadanych języka bez subskrybowania pełnego obiektu zwracanego przez `useI18n()`.
+Użyj tych exports, gdy locale jest częścią szerszego application state albo potrzebujesz listy dostępnych języków bez całego API zwracanego przez `useI18n()`.
 
 ## Użycie
 
@@ -27,13 +27,13 @@ import {
 } from '@open-pencil/vue'
 ```
 
-## Uwagi
+## Zachowanie
 
-- `locale` to store aktywnego języka po rozwiązaniu
-- `localeSetting` to store utrwalonego ustawienia użytkownika
-- `setLocale()` aktualizuje preferencję i aktywny język razem
-- `AVAILABLE_LOCALES` i `LOCALE_LABELS` są przydatne dla niestandardowych selektorów
+- `locale` zawiera aktualnie używane locale po uwzględnieniu ustawień i fallback.
+- `localeSetting` przechowuje preference użytkownika.
+- `setLocale()` aktualizuje preference i aktywne locale.
+- `AVAILABLE_LOCALES` i `LOCALE_LABELS` służą do budowania własnego locale picker.
 
-## Powiązane API
+## Zobacz też
 
 - [useI18n](../composables/use-i18n)

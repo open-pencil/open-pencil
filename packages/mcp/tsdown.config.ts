@@ -7,7 +7,7 @@ export default defineConfig({
     stdio: './src/stdio.ts',
     transport: './src/transport/paths.ts',
     discovery: './src/transport/discovery.ts',
-    tools: './src/tool/catalog.ts'
+    tools: './src/tool/index.ts'
   },
   platform: 'node',
   format: ['esm'],

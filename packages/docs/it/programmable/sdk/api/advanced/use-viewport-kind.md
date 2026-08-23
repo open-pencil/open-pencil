@@ -1,27 +1,18 @@
 ---
 title: useViewportKind
-description: Leggi flag di viewport mobile e desktop per shell editor responsive.
+description: Indicatori reattivi per viewport mobile e desktop in un’interfaccia personalizzata.
 ---
 
 # useViewportKind
 
-`useViewportKind()` restituisce semplici flag responsive usati dalla UI dell'editor OpenPencil.
+`useViewportKind()` restituisce una classificazione semplificata della dimensione del viewport usata dall’interfaccia reattiva di OpenPencil.
 
-Usalo quando la tua shell ha bisogno di una leggera astrazione sui breakpoint invece di cablare direttamente `useBreakpoints()`.
-
-## Utilizzo
+Usalo quando basta distinguere mobile e desktop senza configurare direttamente `useBreakpoints()`.
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue'
-
 const { isMobile, isDesktop } = useViewportKind()
 ```
 
-## Restituisce
-
-- `isMobile`
-- `isDesktop`
-
-## API correlate
+## Vedi anche
 
 - [useCanvas](../composables/use-canvas)

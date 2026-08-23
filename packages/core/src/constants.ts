@@ -46,7 +46,7 @@ export function getDefaultCanvasBgColor(): Color {
   return CANVAS_BG_COLOR
 }
 
-export const SNAP_THRESHOLD = 5
+export const SNAP_THRESHOLD_SCREEN_PX = 5
 
 export const RULER_SIZE = 20
 export const RULER_BG_COLOR = { r: 0.14, g: 0.14, b: 0.14, a: 1 } satisfies Color
@@ -187,6 +187,7 @@ export type AIProviderID =
   | 'zai'
   | 'minimax'
   | 'anthropic-compatible'
+  | 'harness:pi'
   | `acp:${ACPAgentID}`
 
 export interface ModelOption {
@@ -208,7 +209,18 @@ export interface AIProviderDef {
   supportsCustomModel?: boolean
 }
 
+export const HARNESS_PROVIDER_ID = 'harness:pi' as const
+
 export const AI_PROVIDERS: AIProviderDef[] = [
+  {
+    id: HARNESS_PROVIDER_ID,
+    name: 'Pi',
+    keyPlaceholder: 'Provider API key',
+    keyURL: '',
+    defaultModel: '',
+    supportsCustomModel: true,
+    models: []
+  },
   {
     id: 'openrouter',
     name: 'OpenRouter',

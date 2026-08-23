@@ -1,3 +1,6 @@
+# Harness sidecar build output
+/binaries/
+
 # Cargo build output
 /target/
 

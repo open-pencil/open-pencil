@@ -40,6 +40,8 @@ export function duplicateAndDrag(
       startY: cy,
       currentX: cx,
       currentY: cy,
+      appliedDx: 0,
+      appliedDy: 0,
       startScreenX: sx,
       startScreenY: sy,
       dragStarted: true,

@@ -1,75 +1,15 @@
 ---
 title: GradientEditorRoot
-description: Headless Wurzel-Primitiv für Verlaufsstopp-Bearbeitung.
+description: Zustand und Aktionen zum Bearbeiten von Verlaufspunkten.
 ---
 
 # GradientEditorRoot
 
-`GradientEditorRoot` ist ein headless Wurzel-Primitiv für Verlaufsbearbeitung.
+`GradientEditorRoot` verwaltet aktiven Punkt, Verlaufsart, Hinzufügen, Entfernen und Aktualisieren von Punkten, Farbe des aktiven Punkts und Hintergrund der Verlaufsleiste.
 
-Es verwaltet:
+Der Standard-Slot erhält alle Daten und Aktionen für eine eigene Verlaufsoberfläche.
 
-- aktiven Stopp-Zustand
-- Subtyp-Wechsel
-- Stopp hinzufügen/entfernen/aktualisieren Logik
-- aktive Farbbearbeitung
-- abgeleiteten Balken-Hintergrund
-
-## Props
-
-<SdkPropsTable
-  :rows="[
-    { name: 'fill', type: 'Fill', description: 'Aktueller Verlaufsfüllungswert.', required: true }
-  ]"
-/>
-
-## Ereignisse
-
-<SdkEventsTable
-  :rows="[
-    { name: 'update', payload: 'fill: Fill', description: 'Ausgelöst, wenn sich die Verlaufsfüllung ändert.' }
-  ]"
-/>
-
-## Slots
-
-<SdkSlotsTable
-  :rows="[
-    { name: 'default', props: 'Editor-Zustand + Handler', description: 'Vollständiger Verlaufs-Editor-Render-Vertrag.' }
-  ]"
-/>
-
-### Standard-Slot-Props
-
-```ts
-{
-  stops: GradientStop[]
-  subtype: GradientSubtype
-  subtypes: Array<{ value: GradientSubtype; label: string }>
-  activeStopIndex: number
-  activeColor: Color
-  barBackground: string
-  setSubtype: (type: GradientSubtype) => void
-  selectStop: (index: number) => void
-  addStop: () => void
-  removeStop: (index: number) => void
-  updateStopPosition: (index: number, position: number) => void
-  updateStopColor: (index: number, hex: string) => void
-  updateStopOpacity: (index: number, opacity: number) => void
-  updateActiveColor: (color: Color) => void
-  dragStop: (index: number, position: number) => void
-}
-```
-
-## Beispiel
-
-```vue
-<GradientEditorRoot :fill="fill" @update="fill = $event" v-slot="ctx">
-  <MyGradientUI v-bind="ctx" />
-</GradientEditorRoot>
-```
-
-## Verwandte APIs
+## Siehe auch
 
 - [GradientEditorBar](./gradient-editor-bar)
 - [GradientEditorStop](./gradient-editor-stop)

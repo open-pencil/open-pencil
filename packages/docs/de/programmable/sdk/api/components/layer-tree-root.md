@@ -1,14 +1,14 @@
 ---
 title: LayerTreeRoot
-description: Headless strukturelles Primitiv für Ebenenbaum-Interfaces.
+description: Headless component für Structure und Actions eines Layer tree.
 ---
 
 # LayerTreeRoot
 
-`LayerTreeRoot` ist das SDK-Primitiv zum Rendern eines Ebenenbaums mit app-eigenem Markup und Styling.
+`LayerTreeRoot` stellt Tree items, Selection, Expanded state und Actions zur Navigation durch die Dokumenthierarchie bereit.
 
-Verwenden Sie es, wenn Sie wiederverwendbare Baumstruktur und Interaktionsverdrahtung ohne eingebaute Darstellung möchten.
+Das SDK verwaltet Daten und Interactions. Die Anwendung rendert eigene Rows und bestimmt deren Styling.
 
-## Verwandte APIs
+## Siehe auch
 
 - [useSelectionState](../composables/use-selection-state)

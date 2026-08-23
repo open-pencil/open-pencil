@@ -10,7 +10,7 @@ import {
 } from '@/app/ai/providers/compatible'
 import type { ModelProviderAdapter } from '@/app/ai/providers/types'
 
-type DirectProviderID = Exclude<AIProviderID, `acp:${string}`>
+type DirectProviderID = Exclude<AIProviderID, `acp:${string}` | `harness:${string}`>
 
 const MODEL_PROVIDER_ADAPTERS = {
   openrouter: {
@@ -52,12 +52,12 @@ const MODEL_PROVIDER_ADAPTERS = {
 } satisfies Record<DirectProviderID, ModelProviderAdapter>
 
 function isDirectProviderID(providerID: AIProviderID): providerID is DirectProviderID {
-  return !providerID.startsWith('acp:')
+  return !providerID.startsWith('acp:') && providerID !== 'harness:pi'
 }
 
 export function modelProviderAdapter(providerID: AIProviderID): ModelProviderAdapter {
   if (!isDirectProviderID(providerID)) {
-    throw new Error('ACP providers do not use direct API models')
+    throw new Error('ACP providers and Harness agents do not use direct API models')
   }
   return MODEL_PROVIDER_ADAPTERS[providerID]
 }

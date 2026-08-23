@@ -1,11 +1,11 @@
 ---
-title: Locale APIs
-description: Низкоуровневые хранилища локалей и метаданные, экспортируемые @open-pencil/vue.
+title: Locale API
+description: Low-level locale stores и metadata из @open-pencil/vue.
 ---
 
-# Locale APIs
+# Locale API
 
-В дополнение к `useI18n()`, Vue SDK экспортирует низкоуровневые примитивы локали для продвинутых интеграций:
+Помимо `useI18n()`, Vue SDK экспортирует API для прямой работы с locale:
 
 - `locale`
 - `localeSetting`
@@ -13,7 +13,7 @@ description: Низкоуровневые хранилища локалей и �
 - `AVAILABLE_LOCALES`
 - `LOCALE_LABELS`
 
-Используйте их, когда нужен прямой доступ к хранилищу, интеграция состояния локали с более крупной оболочкой приложения или метаданные локали без подписки на полный объект возврата `useI18n()`.
+Используйте их для прямого доступа к store, интеграции locale state с application shell или получения metadata без subscription на весь объект `useI18n()`.
 
 ## Использование
 
@@ -27,13 +27,13 @@ import {
 } from '@open-pencil/vue'
 ```
 
-## Примечания
+## Поведение
 
-- `locale` — хранилище разрешённой активной локали
-- `localeSetting` — хранилище сохранённых настроек пользователя
-- `setLocale()` — обновляет настройки и активную локаль одновременно
-- `AVAILABLE_LOCALES` и `LOCALE_LABELS` полезны для кастомных пикеров
+- `locale` — store фактически выбранного locale;
+- `localeSetting` — сохранённая user preference;
+- `setLocale()` одновременно обновляет preference и active locale;
+- `AVAILABLE_LOCALES` и `LOCALE_LABELS` подходят для собственного locale picker.
 
-## Связанные API
+## См. также
 
 - [useI18n](../composables/use-i18n)

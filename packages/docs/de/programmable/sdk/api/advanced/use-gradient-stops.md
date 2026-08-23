@@ -1,15 +1,15 @@
 ---
 title: useGradientStops
-description: Verlaufsstopp-Zustand und Mutations-Hilfsmittel für Füllungs-Editoren.
+description: Zustand und Aktionen für Verlaufspunkte.
 ---
 
 # useGradientStops
 
-`useGradientStops(fill, onUpdate)` verwaltet aktiven Stopp-Zustand, Subtyp-Wechsel, Stopp-Ziehen sowie Farb- oder Deckkraft-Aktualisierungen für Verlaufsfüllungen.
+`useGradientStops(fill, onUpdate)` verwaltet aktiven Punkt, Verlaufsart, Ziehen der Punkte sowie Änderungen an Position, Farbe und Deckkraft.
 
-Verwenden Sie es beim Erstellen benutzerdefinierter Verlaufs-Editoren über die mitgelieferten Primitive hinaus.
+Verwenden Sie das Composable für eine eigene Verlaufsoberfläche, ohne diese Logik erneut umzusetzen.
 
-## Verwandte APIs
+## Siehe auch
 
 - [GradientEditorRoot](../components/gradient-editor-root)
 - [GradientEditorBar](../components/gradient-editor-bar)

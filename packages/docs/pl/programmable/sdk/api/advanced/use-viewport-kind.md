@@ -1,27 +1,18 @@
 ---
 title: useViewportKind
-description: Odczytuj uproszczone flagi mobilnego i desktopowego widoku dla responsywnych powłok edytora.
+description: Reaktywne oznaczenia widoku mobilnego i komputerowego dla własnego interfejsu.
 ---
 
 # useViewportKind
 
-`useViewportKind()` zwraca proste flagi responsywności używane przez UI edytora OpenPencil.
+`useViewportKind()` zwraca uproszczoną klasyfikację rozmiaru widoku używaną przez responsywny interfejs OpenPencil.
 
-Użyj go, gdy twoja powłoka potrzebuje lekkiej abstrakcji nad punktami przełamania zamiast bezpośredniego okablowania `useBreakpoints()`.
-
-## Użycie
+Użyj composable, jeśli wystarczy rozróżnienie widoku mobilnego i komputerowego bez bezpośredniej konfiguracji `useBreakpoints()`.
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue'
-
 const { isMobile, isDesktop } = useViewportKind()
 ```
 
-## Zwraca
-
-- `isMobile`
-- `isDesktop`
-
-## Powiązane API
+## Zobacz też
 
 - [useCanvas](../composables/use-canvas)

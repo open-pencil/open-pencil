@@ -1,4 +1,5 @@
-import { fileURLToPath, URL } from 'node:url'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { createFileSystemTypesCache } from '@shikijs/vitepress-twoslash/cache-fs'
@@ -10,7 +11,10 @@ import { docsLocales } from './locales.ts'
 import { rootThemeConfig } from './root-theme.ts'
 import { BASE, LOCALE_PREFIXES, applyPageSeo, siteHead, withAlternateSitemapLinks } from './seo.ts'
 
-const repoRoot = fileURLToPath(new URL('../../..', import.meta.url))
+const configDir = dirname(fileURLToPath(import.meta.url))
+const docsRoot = dirname(configDir)
+const packagesRoot = dirname(docsRoot)
+const repoRoot = dirname(packagesRoot)
 const fastBuild = process.env.OPENPENCIL_DOCS_FAST_BUILD === '1'
 
 const llmsPlugin = llmstxt({
@@ -50,7 +54,7 @@ export default defineConfig({
     codeTransformers: [
       transformerTwoslash({
         typesCache: createFileSystemTypesCache({
-          dir: fileURLToPath(new URL('./cache/twoslash', import.meta.url))
+          dir: resolve(configDir, 'cache/twoslash')
         }),
         twoslashOptions: {
           compilerOptions: {
@@ -68,8 +72,9 @@ export default defineConfig({
   vite: {
     resolve: {
       alias: {
-        '#docs': fileURLToPath(new URL('.', import.meta.url)),
-        '#vue': fileURLToPath(new URL('../../vue/src', import.meta.url))
+        '#docs': configDir,
+        '#docs-api': resolve(docsRoot, 'programmable/sdk/api'),
+        '#vue': resolve(packagesRoot, 'vue/src')
       }
     },
     plugins: [tailwindcss(), llmsPlugin]

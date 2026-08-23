@@ -1,14 +1,18 @@
 import { spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { mkdir } from 'node:fs/promises'
 import type { IncomingMessage } from 'node:http'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 import type { Plugin } from 'vite'
 
-import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
-import { getSocketPath, platformHasUnixSockets } from '@open-pencil/mcp/transport'
+import { serializeDisabledTools } from '@open-pencil/mcp/tools'
+import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
 
 import {
   DEV_MCP_RESTART_PATH,
-  isDevMCPConfiguration,
+  parseDevMCPConfiguration,
   type DevMCPConfiguration
 } from '../mcp/dev-control'
 
@@ -17,45 +21,105 @@ interface AutomationEnvironmentOptions {
   baseEnv: NodeJS.ProcessEnv
   configuration: DevMCPConfiguration
   corsOrigin: string
+  discoveryPath: string | null
+  httpPort: number
   socketPath: string | null
 }
 
 export function createAutomationEnvironment(
   options: AutomationEnvironmentOptions
 ): NodeJS.ProcessEnv {
-  const { authToken, baseEnv, configuration, corsOrigin, socketPath } = options
+  const { authToken, baseEnv, configuration, corsOrigin, discoveryPath, httpPort, socketPath } =
+    options
   const childEnv = { ...baseEnv }
   delete childEnv.OPENPENCIL_MCP_SOCKET
   delete childEnv.OPENPENCIL_MCP_AUTH_TOKEN
   return {
     ...childEnv,
-    PORT: String(AUTOMATION_HTTP_PORT),
+    PORT: String(httpPort),
     OPENPENCIL_MCP_TCP: '1',
     ...(socketPath ? { OPENPENCIL_MCP_SOCKET: socketPath } : {}),
+    ...(discoveryPath ? { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } : {}),
     OPENPENCIL_MCP_AUTH_TOKEN: configuration.authenticationEnabled ? (authToken ?? '') : '',
     OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin,
     OPENPENCIL_MCP_ROOT: configuration.rootDirectory.trim() || process.cwd(),
-    OPENPENCIL_MCP_DISABLED_TOOLS: configuration.disabledTools
+    OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(configuration.disabledTools)
   }
 }
 
-async function readConfiguration(request: IncomingMessage): Promise<unknown> {
-  let body = ''
-  for await (const chunk of request) {
-    body += String(chunk)
-    if (body.length > 70_000) throw new Error('Request body is too large')
+const MAX_CONFIGURATION_BYTES = 70_000
+const CHILD_EXIT_TIMEOUT_MS = 2_000
+
+type DevMCPConfigurationErrorStatus = 400 | 413
+
+class DevMCPConfigurationRequestError extends Error {
+  constructor(
+    message: string,
+    readonly statusCode: DevMCPConfigurationErrorStatus,
+    options?: ErrorOptions
+  ) {
+    super(message, options)
+    this.name = 'DevMCPConfigurationRequestError'
   }
-  return JSON.parse(body)
+}
+
+export class DevMCPConfigurationTooLargeError extends DevMCPConfigurationRequestError {
+  constructor() {
+    super('Request body is too large', 413)
+    this.name = 'DevMCPConfigurationTooLargeError'
+  }
+}
+
+export class DevMCPConfigurationSyntaxError extends DevMCPConfigurationRequestError {
+  constructor(cause: unknown) {
+    super('Malformed JSON configuration', 400, { cause })
+    this.name = 'DevMCPConfigurationSyntaxError'
+  }
+}
+
+export function devMCPConfigurationErrorStatus(error: unknown): 400 | 413 | 500 {
+  return error instanceof DevMCPConfigurationRequestError ? error.statusCode : 500
+}
+
+export async function readDevMCPConfiguration(request: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = []
+  let byteLength = 0
+  for await (const chunk of request) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+    byteLength += buffer.byteLength
+    if (byteLength > MAX_CONFIGURATION_BYTES) throw new DevMCPConfigurationTooLargeError()
+    chunks.push(buffer)
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  } catch (error) {
+    throw new DevMCPConfigurationSyntaxError(error)
+  }
+}
+
+interface AutomationPluginOptions {
+  browserURL: string
+  corsOrigin: string
+  httpPort: number
+  portlessServiceName: string | null
+  runtimeId: string
+}
+
+function safeRuntimeId(value: string): string {
+  return createHash('sha256').update(value).digest('hex').slice(0, 16)
 }
 
 // TODO: production — bundle MCP server as Tauri sidecar or spawn via shell plugin
-export function automationPlugin(authToken: string | null, corsOrigin: string): Plugin {
+export function automationPlugin(
+  authToken: string | null,
+  options: AutomationPluginOptions
+): Plugin {
   let child: ReturnType<typeof spawn> | null = null
   let lifecycle = Promise.resolve()
   let configuration: DevMCPConfiguration = {
     authenticationEnabled: true,
     rootDirectory: '',
-    disabledTools: ''
+    disabledTools: []
   }
 
   function enqueue(operation: () => Promise<void>): Promise<void> {
@@ -72,22 +136,37 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
       running.once('exit', () => resolve())
     })
     running.kill()
-    const timeout = new Promise<void>((resolve) => {
-      setTimeout(resolve, 2_000)
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    const timedOut = new Promise<boolean>((resolve) => {
+      timeout = setTimeout(() => resolve(true), CHILD_EXIT_TIMEOUT_MS)
     })
-    await Promise.race([exited, timeout])
-    if (running.exitCode === null) running.kill('SIGKILL')
+    const exitedGracefully = await Promise.race([exited.then(() => false), timedOut])
+    if (timeout) clearTimeout(timeout)
+    if (!exitedGracefully && running.exitCode === null) {
+      running.kill('SIGKILL')
+      await exited
+    }
   }
 
   async function startChild(): Promise<void> {
-    const socketPath = platformHasUnixSockets() ? await getSocketPath() : null
-    const spawned = spawn('bun', ['run', 'packages/mcp/src/index.ts'], {
+    const runtimeDir = join(tmpdir(), 'open-pencil-mcp', safeRuntimeId(options.runtimeId))
+    await mkdir(runtimeDir, { recursive: true, mode: 0o700 })
+    const socketPath = platformHasUnixSockets() ? join(runtimeDir, 'mcp.sock') : null
+    const discoveryPath = join(runtimeDir, 'mcp.json')
+    const command = ['bun', 'run', 'packages/mcp/src/index.ts']
+    const spawnCommand = options.portlessServiceName ? 'portless' : command[0]
+    const spawnArgs = options.portlessServiceName
+      ? ['run', '--name', options.portlessServiceName, ...command]
+      : command.slice(1)
+    const spawned = spawn(spawnCommand, spawnArgs, {
       stdio: ['ignore', 'inherit', 'pipe'],
       env: createAutomationEnvironment({
         authToken,
         baseEnv: process.env,
         configuration,
-        corsOrigin,
+        corsOrigin: options.corsOrigin,
+        discoveryPath,
+        httpPort: options.httpPort,
         socketPath
       })
     })
@@ -102,7 +181,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
       const text = data.toString()
       if (text.includes('EADDRINUSE')) {
         console.error(
-          `\x1b[31m[MCP] MCP bind failed (port ${AUTOMATION_HTTP_PORT}${socketPath ? ` or socket ${socketPath}` : ''}). Is another OpenPencil instance running?\x1b[0m`
+          `\x1b[31m[MCP] MCP bind failed (${options.browserURL}${socketPath ? ` or socket ${socketPath}` : ''}). Is another OpenPencil instance running?\x1b[0m`
         )
         spawned.kill()
         if (child === spawned) child = null
@@ -138,8 +217,9 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
         }
         void (async () => {
           try {
-            const nextConfiguration = await readConfiguration(request)
-            if (!isDevMCPConfiguration(nextConfiguration)) {
+            const rawConfiguration = await readDevMCPConfiguration(request)
+            const nextConfiguration = parseDevMCPConfiguration(rawConfiguration)
+            if (!nextConfiguration) {
               response.statusCode = 400
               response.end('Invalid MCP configuration')
               return
@@ -148,7 +228,7 @@ export function automationPlugin(authToken: string | null, corsOrigin: string): 
             response.statusCode = 204
             response.end()
           } catch (error) {
-            response.statusCode = 500
+            response.statusCode = devMCPConfigurationErrorStatus(error)
             response.end(error instanceof Error ? error.message : String(error))
           }
         })()

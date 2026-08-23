@@ -1,6 +1,7 @@
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
+import type { GuidePreview } from '#core/canvas/guides/types'
 import type { EditorContext } from '#core/editor/types'
 
 export function createSelectionOverlayActions(ctx: EditorContext) {
@@ -11,6 +12,29 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
 
   function setSnapGuides(guides: SnapGuide[]) {
     ctx.state.snapGuides = guides
+    ctx.requestRepaint()
+  }
+
+  function setGuidePreview(preview: GuidePreview | null) {
+    ctx.state.guides.preview = preview
+    ctx.requestRepaint()
+  }
+
+  function setHoveredGuide(selection: typeof ctx.state.guides.hovered) {
+    const current = ctx.state.guides.hovered
+    if (current?.ownerId === selection?.ownerId && current?.guideId === selection?.guideId) return
+    ctx.state.guides.hovered = selection
+    ctx.requestRepaint()
+  }
+
+  function setGuideRedline(redline: typeof ctx.state.guides.redline) {
+    ctx.state.guides.redline = redline
+    ctx.requestRepaint()
+  }
+
+  function setSelectedGuide(selection: typeof ctx.state.guides.selected) {
+    ctx.state.guides.selected = selection
+    if (selection) ctx.setSelectedIds(new Set())
     ctx.requestRepaint()
   }
 
@@ -60,6 +84,10 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
   return {
     setMarquee,
     setSnapGuides,
+    setGuidePreview,
+    setHoveredGuide,
+    setGuideRedline,
+    setSelectedGuide,
     setRotationPreview,
     setHoveredNode,
     setMeasurementMode,

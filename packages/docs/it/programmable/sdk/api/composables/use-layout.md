@@ -1,64 +1,15 @@
 ---
 title: useLayout
-description: Lavora con auto-layout, dimensionamento, padding, allineamento e tracce della griglia.
+description: Gestire disposizione automatica, dimensionamento, margini interni, allineamento e tracce Grid.
 ---
 
 # useLayout
 
-`useLayout()` è il composable di controllo principale per i pannelli relativi al layout.
+`useLayout()` fornisce stato e azioni per modalità, direzione, spaziatura, margini interni, allineamento, dimensionamento fisso/riempi/adatta, ritorno a capo e tracce Grid.
 
-Espone stato e azioni per:
+Le azioni modificano la selezione tramite l’editor e partecipano alla cronologia.
 
-- modalità flex vs grid
-- dimensionamento larghezza/altezza
-- padding
-- allineamento
-- modifica delle tracce dei template della griglia
+## Vedi anche
 
-## Utilizzo
-
-```ts
-import { useLayout } from '@open-pencil/vue'
-
-const layout = useLayout()
-```
-
-## Esempio base
-
-```ts
-const {
-  isGrid,
-  isFlex,
-  widthSizing,
-  heightSizing,
-  setAxisSizing,
-  updateAxisSize,
-  commitAxisSize,
-} = useLayout()
-```
-
-## Esempi pratici
-
-### Alterna tra UI di padding uniforme e individuale
-
-```ts
-layout.toggleIndividualPadding()
-```
-
-### Aggiorna le tracce della griglia
-
-```ts
-layout.updateGridTrack('gridTemplateColumns', 0, { sizing: 'FIXED', value: 240 })
-layout.addTrack('gridTemplateRows')
-```
-
-### Cambia l'allineamento
-
-```ts
-layout.setAlignment('CENTER', 'MAX')
-```
-
-## API correlate
-
-- [usePosition](./use-position)
-- [useEditor](./use-editor)
+- [LayoutControlsRoot](../components/layout-controls-root)
+- [Disposizione automatica](/user-guide/auto-layout)

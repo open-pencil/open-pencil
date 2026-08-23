@@ -1,15 +1,15 @@
 ---
 title: useToolbar
-description: Primitiv-Kontext-Hilfsmittel für ToolbarRoot-Nachkommen.
+description: Auf den von ToolbarRoot bereitgestellten Kontext zugreifen.
 ---
 
 # useToolbar
 
-`useToolbar()` liest den lokalen Toolbar-Kontext, der von `ToolbarRoot` bereitgestellt wird.
+`useToolbar()` gibt den Kontext des nächsten `ToolbarRoot` zurück.
 
-Verwenden Sie es innerhalb von Toolbar-Nachkommen, die Zugriff auf Werkzeuge, Aktiv-Zustand oder Werkzeugauswahl-Hilfsmittel benötigen.
+Verwenden Sie das Composable in untergeordneten Komponenten, die Werkzeuge, Aktivzustand oder die Aktion zur Werkzeugauswahl benötigen.
 
-## Verwandte APIs
+## Siehe auch
 
 - [ToolbarRoot](../components/toolbar-root)
 - [ToolbarItem](../components/toolbar-item)

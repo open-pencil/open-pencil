@@ -1,20 +1,20 @@
 ---
 title: Riferimento API
-description: Documentazione di riferimento per componenti, composable e API avanzate di @open-pencil/vue.
+description: Componenti, composable e API avanzate di @open-pencil/vue.
 ---
 
 # Riferimento API
 
-Il riferimento del Vue SDK è organizzato in tre sezioni.
+Il riferimento del Vue SDK è diviso in tre aree.
 
 <SdkCardGroup>
-  <SdkCard title="Componenti" to="/programmable/sdk/api/components/" description="Primitive strutturali headless come CanvasRoot, ToolbarRoot, FontPickerRoot e NumberFieldRoot." />
-  <SdkCard title="Composable" to="/programmable/sdk/api/composables/" description="Composable rivolti all'editor per contesto, cablaggio canvas, selezione, comandi e pannelli proprietà." />
-  <SdkCard title="Avanzato" to="/programmable/sdk/api/advanced/" description="Helper di livello inferiore, contesti primitivi e API specializzate per integrazioni avanzate." />
+  <SdkCard title="Componenti" to="/programmable/sdk/api/components/" description="Componenti senza stile come CanvasRoot, ToolbarRoot, FontPickerRoot e NumberField." />
+  <SdkCard title="Composable" to="/programmable/sdk/api/composables/" description="Stato e azioni per editor, area di lavoro, selezione, comandi e proprietà." />
+  <SdkCard title="API avanzate" to="/programmable/sdk/api/advanced/" description="Contesti di basso livello e funzioni specializzate per integrazioni personalizzate." />
 </SdkCardGroup>
 
-## Percorso suggerito
+## Da dove iniziare
 
-- Inizia con i **Componenti** se stai costruendo primitive UI riutilizzabili per l'editor.
-- Inizia con i **Composable** se stai cablando stato e azioni dell'editor.
-- Usa la sezione **Avanzato** solo quando hai bisogno di helper di livello inferiore o contesti primitivi.
+- **Componenti** per strutture e controlli riutilizzabili.
+- **Composable** per stato e azioni dell’editor.
+- **API avanzate** per accesso diretto a stato o contesto di basso livello.

@@ -1,9 +1,9 @@
 ---
-title: Per Iniziare con l'SDK
-description: Configura @open-pencil/vue con createEditor, provideEditor e un canvas.
+title: Primi passi con l'SDK
+description: Collega @open-pencil/vue, crea un editor e configura l'area di lavoro.
 ---
 
-# Per Iniziare con l'SDK
+# Primi passi con l'SDK
 
 ## Installazione
 
@@ -11,22 +11,22 @@ description: Configura @open-pencil/vue con createEditor, provideEditor e un can
 bun add @open-pencil/core @open-pencil/vue canvaskit-wasm
 ```
 
-L'SDK risiede oggi nel monorepo ed è pubblicato anche come `@open-pencil/vue`.
+L'SDK si trova nel monorepo OpenPencil ed è pubblicato come pacchetto `@open-pencil/vue`.
 
 ```ts
 import { createEditor } from '@open-pencil/core/editor'
 import { provideEditor, useCanvas } from '@open-pencil/vue'
 ```
 
-## Modello concettuale
+## Livelli dell'applicazione
 
-Ci sono tre livelli:
+Un'applicazione basata sull'SDK è composta da tre livelli:
 
-1. `@open-pencil/core` — motore editor indipendente dal framework
-2. `@open-pencil/vue` — composable Vue e primitive headless
-3. la tua app — stile, routing, flussi di file, UI specifica del prodotto
+1. `@open-pencil/core` — il motore dell'editor, indipendente dal framework;
+2. `@open-pencil/vue` — composable e componenti senza stile per Vue;
+3. l'applicazione — stile, routing, gestione dei file e interfaccia specifica del prodotto.
 
-## Configurazione minimale
+## Configurazione minima
 
 ### 1. Crea un editor
 
@@ -39,7 +39,7 @@ const editor = createEditor({
 })
 ```
 
-### 2. Forniscilo a Vue
+### 2. Rendi disponibile l'editor ai componenti discendenti
 
 ```vue
 <script setup lang="ts">
@@ -59,9 +59,9 @@ provideEditor(props.editor)
 </template>
 ```
 
-Puoi considerarlo il livello provider per l'albero dell'editor. La documentazione preferisce `provideEditor()` direttamente perché è la vera superficie API attuale.
+`provideEditor()` rende l'istanza dell'editor disponibile a tutti i componenti sottostanti. La documentazione chiama direttamente questa funzione perché fa parte dell'attuale API pubblica.
 
-### 3. Collega un canvas
+### 3. Collega l'area di lavoro
 
 ```vue
 <script setup lang="ts">
@@ -80,9 +80,9 @@ useCanvas(canvasRef, editor)
 </template>
 ```
 
-## Utilizzo dei composable
+## Utilizzare i composable
 
-Una volta fornito l'editor, i componenti figli possono leggere la selezione e invocare comandi:
+Dopo la chiamata a `provideEditor()`, i componenti discendenti possono leggere la selezione ed eseguire i comandi dell'editor:
 
 ```ts
 import { useEditorCommands, useSelectionState } from '@open-pencil/vue'
@@ -91,7 +91,7 @@ const selection = useSelectionState()
 const commands = useEditorCommands()
 ```
 
-## Esempio base
+## Esempio semplice
 
 ```vue
 <script setup lang="ts">
@@ -114,13 +114,13 @@ useCanvas(canvasRef, editor, {
   <div class="grid h-full grid-rows-[1fr_auto]">
     <canvas ref="canvasRef" class="size-full" />
     <div class="border-t px-3 py-2 text-xs text-muted">
-      Selected: {{ selectedCount }}
+      Selezionati: {{ selectedCount }}
     </div>
   </div>
 </template>
 ```
 
-## Prossimi passi
+## Passaggi successivi
 
 - [Architettura](./architecture)
 - [Riferimento API](./api/)

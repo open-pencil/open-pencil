@@ -7,6 +7,7 @@ import {
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
+import { importCanvasGuides } from './canvas-guides'
 import { convertFigmaDerivedTextGlyphs } from './derived-text-glyphs'
 import { convertFontFeatures } from './font/features'
 import { convertFontVariations } from './font/variations'
@@ -640,6 +641,7 @@ export function nodeChangeToProps(
     ),
     effects: convertEffects(nc.effects),
     layoutGrids: convertLayoutGrids(nc.layoutGrids),
+    guides: importCanvasGuides(nc.guides),
     fillStyleId: styleRefId(nc.styleIdForFill),
     strokeStyleId: styleRefId(nc.styleIdForStrokeFill),
     textStyleId: styleRefId(nc.styleIdForText),

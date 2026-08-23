@@ -3,7 +3,12 @@ import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
 
 import { compressFigDataSync } from '@open-pencil/fig'
-import { buildComponentPropIndex, stringToGuid } from '@open-pencil/fig/node-change'
+import {
+  buildComponentPropIndex,
+  exportCanvasGuides,
+  importCanvasGuides,
+  stringToGuid
+} from '@open-pencil/fig/node-change'
 import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/fig/codec'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
@@ -159,6 +164,51 @@ function assignVariableGuids(
   }
 }
 
+interface ComponentPropertyGuidState {
+  ids: string[]
+  maxLocalId0: number
+  maxLocalId1: number
+}
+
+function collectComponentPropertyGuidState(graph: SceneGraph): ComponentPropertyGuidState {
+  const ids = new Set<string>()
+  let maxLocalId0 = 0
+  let maxLocalId1 = 0
+  for (const node of graph.getAllNodes()) {
+    for (const definition of node.componentPropertyDefinitions) ids.add(definition.id)
+    for (const reference of node.componentPropertyReferences) ids.add(reference.propertyId)
+    for (const propertyId of Object.keys(node.componentPropertyAssignments)) ids.add(propertyId)
+    for (const spec of node.variantPropSpecs) ids.add(spec.propDefId)
+  }
+  for (const propertyId of ids) {
+    const match = /^(\d+):(\d+)$/.exec(propertyId)
+    if (!match) continue
+    const sessionID = Number.parseInt(match[1], 10)
+    const localID = Number.parseInt(match[2], 10)
+    if (sessionID === 0) maxLocalId0 = Math.max(maxLocalId0, localID)
+    if (sessionID === 1) maxLocalId1 = Math.max(maxLocalId1, localID)
+  }
+  return { ids: [...ids], maxLocalId0, maxLocalId1 }
+}
+
+function assignComponentPropertyGuids(
+  propertyIds: readonly string[],
+  localIdCounter: { value: number },
+  propertyIdToGuid: Map<string, GUID>,
+  assignedGuidValues: Set<string>,
+  nodeSourceGuidValues: Set<string>
+): void {
+  for (const propertyId of propertyIds) {
+    const guid = assignVariableGuid(
+      propertyId,
+      localIdCounter,
+      assignedGuidValues,
+      nodeSourceGuidValues
+    )
+    propertyIdToGuid.set(propertyId, guid)
+  }
+}
+
 function appendVariableNodeChanges(
   graph: SceneGraph,
   nodeChanges: KiwiNodeChange[],
@@ -254,8 +304,13 @@ function applyImportedCanvasFields(page: FigExportPage, canvasNc: KiwiNodeChange
       page.source.fig.rawNodeFields.backgroundPaints
     ) as NodeChange['backgroundPaints']
   }
-  if ('guides' in page.source.fig.rawNodeFields) {
-    canvasNc.guides = structuredClone(page.source.fig.rawNodeFields.guides)
+  if (page.guides.length > 0) {
+    const normalized = exportCanvasGuides(page.guides)
+    const raw = page.source.fig.rawNodeFields.guides
+    canvasNc.guides =
+      Array.isArray(raw) && JSON.stringify(importCanvasGuides(raw)) === JSON.stringify(page.guides)
+        ? structuredClone(raw)
+        : normalized
   }
   const strokeJoin = page.source.fig.rawNodeFields.strokeJoin
   if (typeof strokeJoin === 'string') canvasNc.strokeJoin = strokeJoin
@@ -344,6 +399,7 @@ interface InternalResourceContext {
   blobIndexByHex: Map<string, number>
   assignedGuidValues: Set<string>
   componentPropertyDefinitionsById: ReturnType<typeof buildComponentPropIndex>
+  propertyIdToGuid: Map<string, GUID>
 }
 
 function appendInternalResources(context: InternalResourceContext): void {
@@ -366,7 +422,8 @@ function appendInternalResources(context: InternalResourceContext): void {
         context.blobIndexByHex,
         context.assignedGuidValues,
         context.componentPropertyDefinitionsById,
-        context.modeIdToGuid
+        context.modeIdToGuid,
+        context.propertyIdToGuid
       )
     )
   }
@@ -430,6 +487,7 @@ export async function exportFigFile(
   assignedGuidValues.add(`${docGuid.sessionID}:${docGuid.localID}`)
   const varIdToGuid = new Map<string, GUID>()
   const modeIdToGuid = new Map<string, GUID>()
+  const propertyIdToGuid = new Map<string, GUID>()
   const fontDigestMap = await buildFontDigestMap(graph)
   const glyphBlobMap = new Map<string, number>()
   const blobIndexByHex = new Map<string, number>()
@@ -454,6 +512,9 @@ export async function exportFigFile(
       }
     }
   }
+  const propertyGuidState = collectComponentPropertyGuidState(graph)
+  maxLocalId0 = Math.max(maxLocalId0, propertyGuidState.maxLocalId0)
+  maxLocalId1 = Math.max(maxLocalId1, propertyGuidState.maxLocalId1)
   localIdCounter.value = Math.max(localIdCounter.value, maxLocalId0 + 1, maxLocalId1 + 1)
 
   const { canvasEntries, internalCanvasGuid } = buildCanvasEntries(
@@ -472,6 +533,14 @@ export async function exportFigFile(
     localIdCounter,
     varIdToGuid,
     modeIdToGuid,
+    assignedGuidValues,
+    nodeSourceGuidValues
+  )
+
+  assignComponentPropertyGuids(
+    propertyGuidState.ids,
+    localIdCounter,
+    propertyIdToGuid,
     assignedGuidValues,
     nodeSourceGuidValues
   )
@@ -500,7 +569,8 @@ export async function exportFigFile(
           blobIndexByHex,
           assignedGuidValues,
           componentPropertyDefinitionsById,
-          modeIdToGuid
+          modeIdToGuid,
+          propertyIdToGuid
         )
       )
     }
@@ -519,7 +589,8 @@ export async function exportFigFile(
     glyphBlobMap,
     blobIndexByHex,
     assignedGuidValues,
-    componentPropertyDefinitionsById
+    componentPropertyDefinitionsById,
+    propertyIdToGuid
   })
 
   const msg: Record<string, unknown> = {

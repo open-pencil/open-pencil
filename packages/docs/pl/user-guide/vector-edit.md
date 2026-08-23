@@ -1,92 +1,65 @@
 ---
-title: Edycja obiektów wektorowych
-description: "Jak edytować geometrię ścieżki wektorowej: punkty kontrolne, uchwyty Béziera, modyfikatory i akcje narzędzia Pióro w trybie edycji."
+title: Edycja wektorów
+description: Edycja punktów, uchwytów Béziera i segmentów oraz używanie Pióra w trybie edycji.
 ---
 
-# Edycja obiektów wektorowych
+# Edycja wektorów
 
-Tryb edycji obiektów wektorowych pozwala zmieniać **geometrię** krzywej: położenie punktów kontrolnych, kształt segmentów i uchwyty Béziera.  
-W tym trybie edytujesz samą ścieżkę, nie standardowe przekształcenia obiektu.
+Tryb edycji wektorów pozwala zmieniać geometrię ścieżki: położenie punktów, kształt segmentów i uchwyty Béziera. Zamiast transformować cały obiekt, edytujesz samą ścieżkę.
 
-## Wejście w tryb
+## Włączanie trybu edycji
 
-- Zaznacz obiekt wektorowy narzędziem Zaznaczanie.
-- **Kliknij dwukrotnie krzywą**.
+1. Wybierz obiekt wektorowy narzędziem Zaznaczenie.
+2. Kliknij dwukrotnie krzywą.
 
-Aktywuje to edycję geometrii zaznaczonego wektora.
+Aby zakończyć edycję, naciśnij <kbd>Escape</kbd> albo przejdź do innego trybu.
 
-## Wyjście z trybu
+## Zachowanie interfejsu
 
-- Naciśnij <kbd>Escape</kbd>.
-- Lub przejdź do innego kontekstu edycji.
+- Ramka transformacji jest ukryta.
+- Można wybierać i zmieniać punkty, segmenty oraz uchwyty.
+- Narożniki ramki nie aktywują zmiany rozmiaru ani obrotu.
 
-## Co zmienia się w tym trybie
+## Podstawowe operacje
 
-- Normalne obramowanie przekształceń jest wyłączone dla obiektu.
-- Staje się dostępna edycja punktów kontrolnych, segmentów i uchwytów.
-- Kursor nie przełącza się w tryb zmiany rozmiaru/obracania przy narożnikach obramowania.
+### Przesuwanie punktu
 
-## Podstawowe akcje
-
-### Przesuwanie punktu kontrolnego
-
-- Przeciągnij punkt kontrolny.
-- Połączone segmenty i kształt ścieżki aktualizują się na żywo w podglądzie.
+Przeciągnij punkt. Połączone segmenty i kształt ścieżki zmieniają się podczas przeciągania.
 
 ### Edycja uchwytu Béziera
 
-- Przeciągnij uchwyt na punkcie kontrolnym.
-- Domyślnie działanie zależy od aktualnego składu uchwytów danego punktu kontrolnego.
+Przeciągnij uchwyt przy punkcie. Domyślne zachowanie zależy od aktualnego typu punktu.
 
-## Modyfikatory przeciągania uchwytów
+## Modyfikatory uchwytów
 
-| Akcja | Mac | Windows / Linux |
-|-------|-----|-----------------|
-| Ciągły (gładki / ciągły) | <kbd>Cmd</kbd> + przeciągnij | <kbd>Ctrl</kbd> + przeciągnij |
-| Narożnikowy (niezależne uchwyty) | <kbd>Option</kbd> + przeciągnij | <kbd>Alt</kbd> + przeciągnij |
-| Blokada kierunku (tylko długość) | <kbd>Shift</kbd> + przeciągnij | <kbd>Shift</kbd> + przeciągnij |
+| Operacja | macOS | Windows / Linux |
+|----------|-------|-----------------|
+| Ciągły | <kbd>Cmd</kbd> + przeciągnięcie | <kbd>Ctrl</kbd> + przeciągnięcie |
+| Narożny, niezależne uchwyty | <kbd>Option</kbd> + przeciągnięcie | <kbd>Alt</kbd> + przeciągnięcie |
+| Zablokowany kierunek | <kbd>Shift</kbd> + przeciągnięcie | <kbd>Shift</kbd> + przeciągnięcie |
 
-### Ciągły: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + przeciągnij
+### Tryb ciągły
 
-- Aktywny uchwyt jest ograniczony do tej samej linii co uchwyt siostrzany.
-- Zmienia się tylko długość aktywnego uchwytu.
-- Stosuj do płynnych przejść bez łamania narożnika.
+Aktywny uchwyt pozostaje na jednej linii z drugim, zmienia się tylko jego długość, a krzywa zachowuje płynne przejście.
 
-### Narożnikowy: <kbd>Option</kbd>/<kbd>Alt</kbd> + przeciągnij
+### Tryb narożny
 
-- Aktywny uchwyt jest edytowany niezależnie.
-- Uchwyt siostrzany pozostaje na miejscu.
-- Stosuj do tworzenia ostrych przejść narożnikowych.
+Aktywny uchwyt zmienia się niezależnie, a drugi pozostaje na miejscu. Pozwala to utworzyć ostre przejście.
 
-### Blokada kierunku: <kbd>Shift</kbd> + przeciągnij
+### Zablokowany kierunek
 
-Dla punktów kontrolnych ze składem **Ciągłym** lub **Symetrycznym**:
+Dla punktów typu **Continuous** albo **Symmetric** przytrzymanie <kbd>Shift</kbd> blokuje kierunek zapisany przed rozpoczęciem przeciągania. Zmienia się tylko długość jednego lub obu uchwytów.
 
-- kierunek uchwytu jest zablokowany do wartości sprzed **rozpoczęcia bieżącego przeciągania**;
-- przeciąganie zmienia tylko długość uchwytu (lub uchwytów, zależnie od składu).
+## Zmiana wygięcia przez przeciągnięcie punktu
 
-## Zmiana krzywizny przez przeciąganie punktu kontrolnego
+Gdy przeciągasz punkt z wciśniętym <kbd>Cmd</kbd> albo <kbd>Ctrl</kbd>, edytor wybiera właściwy uchwyt na podstawie kierunku dołączonego segmentu, a nie odległości od najbliższego punktu.
 
-Gdy przeciągasz punkt kontrolny przytrzymując <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>, edytor wybiera docelowy uchwyt na podstawie **kierunku przyłączenia segmentu** w tym punkcie (nie według odległości od najbliższego sąsiedniego punktu).  
-Działa to również na punktach kontrolnych wielogałęziowej siatki wektorowej: po rozpoznaniu docelowy uchwyt pozostaje zablokowany przez czas bieżącego przeciągania.
+Działa to również dla rozgałęzionych punktów w sieci wektorowej. Po wybraniu docelowy uchwyt nie zmienia się do końca przeciągania.
 
-## Narzędzie Pióro w trybie edycji
+## Pióro w trybie edycji
 
-Gdy aktywne jest narzędzie Pióro:
+- Kliknij segment, aby dodać punkt i podzielić segment.
+- Kliknij punkt końcowy otwartej ścieżki, aby wznowić rysowanie.
+- Kliknij punkt z wciśniętym <kbd>Option</kbd> albo <kbd>Alt</kbd>, aby go usunąć, jeśli pozwala na to topologia.
 
-- **Kliknij segment**, aby wstawić nowy punkt kontrolny (podział segmentu).
-- **Kliknij punkt końcowy otwartej ścieżki**, aby wznowić rysowanie od tego miejsca.
-- **Option/Alt + kliknij punkt kontrolny**, aby go usunąć (gdy topologia na to pozwala).
-
-Informacje o tworzeniu i zamykaniu ścieżek znajdziesz w sekcji [Narzędzie Pióro](./pen-tool.md).
-
-## Praktyczny przepływ pracy
-
-1. Narysuj kształt narzędziem Pióro.
-2. Kliknij dwukrotnie krzywą, aby wejść w tryb edycji obiektów wektorowych.
-3. Przesuń punkty kontrolne, aby doprecyzować sylwetkę.
-4. Przeciągaj uchwyty:
-   - z <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> — dla płynnych, ciągłych przejść,
-   - z <kbd>Option</kbd>/<kbd>Alt</kbd> — dla niezależnych edycji,
-   - z <kbd>Shift</kbd> — dla edycji tylko długości.
-5. Naciśnij <kbd>Escape</kbd>, aby wyjść.
+Tworzenie i zamykanie ścieżek opisano na stronie [Narzędzie Pióro](./pen-tool.md).

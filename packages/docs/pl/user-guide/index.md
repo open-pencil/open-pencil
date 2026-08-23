@@ -1,36 +1,37 @@
 ---
 layout: doc
 title: Podręcznik użytkownika
-description: Naucz się korzystać z OpenPencil — nawigacja po płótnie, rysowanie, tekst, komponenty, auto-layout i więcej.
+description: Nawigacja, rysowanie, tekst, komponenty, automatyczny układ i pozostałe funkcje OpenPencil.
 ---
 
 # Podręcznik użytkownika
 
-OpenPencil to open-source'owy edytor graficzny, kompatybilny z Figmą — w pełni lokalny, natywnie AI i programowalny.
+OpenPencil to lokalny edytor graficzny open source, zgodny z Figmą i przygotowany do automatyzacji oraz pracy z AI. Ten podręcznik opisuje najważniejsze funkcje edytora.
 
-::: tip Skróty klawiszowe
-<kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> na Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.
+::: tip Skróty w różnych systemach
+W podręczniku używane są oznaczenia z macOS: <kbd>⌘</kbd> oznacza <kbd>Command</kbd> i odpowiada <kbd>Ctrl</kbd> w Windows i Linuksie; <kbd>⌥</kbd> oznacza <kbd>Option</kbd> i odpowiada <kbd>Alt</kbd>; <kbd>⇧</kbd> oznacza <kbd>Shift</kbd>.
 :::
 
-## Nawigacja
+## Nawigacja i zaznaczanie
 
-- [Nawigacja po płótnie](./canvas-navigation) — przesuwanie, powiększanie i narzędzie rączka
-- [Zaznaczanie i edycja](./selection-and-manipulation) — zaznaczanie, przesuwanie, skalowanie, obracanie
+- [Nawigacja po obszarze roboczym](./canvas-navigation) — przesuwanie widoku, powiększenie i narzędzie Rączka;
+- [Zaznaczanie i przekształcanie](./selection-and-manipulation) — wybieranie, przesuwanie, zmiana rozmiaru, obracanie i porządkowanie obiektów.
 
-## Tworzenie treści
+## Tworzenie obiektów
 
-- [Rysowanie kształtów](./drawing-shapes) — prostokąty, elipsy, linie, ramki, sekcje
-- [Edycja tekstu](./text-editing) — tworzenie i edycja tekstu z formatowaniem
-- [Narzędzie pióro](./pen-tool) — ścieżki wektorowe z krzywymi Béziera
+- [Kształty](./drawing-shapes) — prostokąty, elipsy, linie, ramki, sekcje, wielokąty i gwiazdy;
+- [Tekst](./text-editing) — tworzenie i edytowanie tekstu z formatowaniem;
+- [Narzędzie Pióro](./pen-tool) — tworzenie ścieżek wektorowych z krzywymi Béziera;
+- [Edycja wektorów](./vector-edit) — zmiana punktów, uchwytów i segmentów.
 
-## Organizacja
+## Struktura dokumentu i pliki
 
-- [Warstwy i strony](./layers-and-pages) — panel warstw, strony i właściwości
-- [Menu kontekstowe](./context-menu) — akcje prawego przycisku myszy
-- [Eksportowanie](./exporting) — eksport obrazów i operacje .fig
+- [Warstwy i strony](./layers-and-pages) — drzewo warstw, strony i panel właściwości;
+- [Menu kontekstowe](./context-menu) — schowek, grupowanie, komponenty i inne operacje;
+- [Eksport](./exporting) — eksport obrazów i praca z plikami `.fig`.
 
-## Zaawansowane
+## Funkcje zaawansowane
 
-- [Auto-layout](./auto-layout) — automatyczne pozycjonowanie dzieci w ramce
-- [Komponenty](./components) — komponenty wielokrotnego użytku, instancje i nadpisania
-- [Zmienne](./variables) — zmienne projektowe, kolekcje, tryby
+- [Automatyczny układ](./auto-layout) — rozmieszczanie obiektów za pomocą Flexbox i CSS Grid;
+- [Komponenty](./components) — komponenty, egzemplarze i nadpisania przeznaczone do ponownego użycia;
+- [Zmienne](./variables) — zmienne projektu, kolekcje, tryby i powiązania z zalewami.

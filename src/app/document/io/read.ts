@@ -2,7 +2,7 @@ import type { Editor, EditorState } from '@open-pencil/core/editor'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 
 import { yieldToUI } from '@/app/document/io/browser'
-import { readFigFileProgressively } from '@/app/document/io/fig-page-manifest'
+import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import { readReloadSource } from '@/app/document/io/reload-source'
 import { captureReloadState, restoreReloadState } from '@/app/document/io/reload-state'
@@ -46,7 +46,7 @@ export function createOpenActions({
     try {
       state.loading = true
       await yieldToUI()
-      const imported = await readFigFileProgressively(file, editor)
+      const imported = await readFigDocument(file, editor)
       await yieldToUI()
       await applyImportedDocument(editor, imported)
       state.documentName = file.name.replace(/\.fig$/i, '')

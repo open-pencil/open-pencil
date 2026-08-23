@@ -1,16 +1,15 @@
 ---
 title: useLayerDrag
-description: Helper de cableado de arrastrar y soltar para la reordenación del árbol de capas.
+description: Gestionar la reordenación y el cambio de contenedor en un árbol de capas.
 ---
 
 # useLayerDrag
 
-`useLayerDrag(editor, indentPerLevel?)` conecta el comportamiento de arrastre pragmático para las filas del árbol de capas y mapea las instrucciones de soltar a operaciones de reordenación del editor.
+`useLayerDrag(options)` proporciona estado y acciones para arrastrar filas del árbol.
 
-Úsalo cuando extiendas o reemplaces la interfaz de arrastre por defecto del árbol de capas.
+Calcula el destino, la posición antes/dentro/después, la validez del cambio y la actualización de la jerarquía. Mantiene las posiciones visuales cuando un objeto cambia de contenedor.
 
-## APIs relacionadas
+## Véase también
 
 - [LayerTreeRoot](../components/layer-tree-root)
-- [LayerTreeItem](../components/layer-tree-item)
 - [useLayerTree](./use-layer-tree)

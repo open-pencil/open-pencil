@@ -6,6 +6,7 @@ import { useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
+import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
 import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
@@ -57,9 +58,13 @@ export function useAppMenu() {
     'selection.rename': 'renameSelection',
     'selection.moveToPage': 'moveToPage',
     language: 'language',
+    preferences: 'preferences',
     settings: 'settings',
     'view-rulers': 'rulers',
     'view-multiplayer-cursors': 'multiplayerCursors',
+    'snap-geometry': 'snapToGeometry',
+    'snap-objects': 'snapToObjects',
+    'snap-pixel-grid': 'snapToPixelGrid',
     profiler: 'profiler',
     'toggle-ui': 'toggleUI',
     theme: 'theme',
@@ -130,6 +135,12 @@ export function useAppMenu() {
         return store.state.showRulers
       case 'view-multiplayer-cursors':
         return store.state.showRemoteCursors
+      case 'snap-geometry':
+        return store.state.snappingPreferences.geometry
+      case 'snap-objects':
+        return store.state.snappingPreferences.objects
+      case 'snap-pixel-grid':
+        return store.state.snappingPreferences.pixelGrid
       case 'theme-light':
         return theme.value === 'light'
       case 'theme-dark':
@@ -157,6 +168,12 @@ export function useAppMenu() {
         return (value: boolean) => {
           if (store.state.showRemoteCursors !== value) itemAction(item)?.()
         }
+      case 'snap-geometry':
+        return (value: boolean) => setSnappingPreference('geometry', value)
+      case 'snap-objects':
+        return (value: boolean) => setSnappingPreference('objects', value)
+      case 'snap-pixel-grid':
+        return (value: boolean) => setSnappingPreference('pixelGrid', value)
       case 'theme-light':
       case 'theme-dark':
       case 'theme-auto':

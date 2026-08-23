@@ -1,73 +1,42 @@
 ---
 title: Kontextmenü
-description: Rechtsklick-Kontextmenü-Aktionen in OpenPencil — Zwischenablage, Z-Reihenfolge, Gruppierung, Komponenten und mehr.
+description: Aktionen für Zwischenablage, Reihenfolge, Gruppen, Komponenten, Sichtbarkeit und Seiten.
 ---
 
 # Kontextmenü
 
-Rechtsklicken Sie auf dem Canvas, um das Kontextmenü zu öffnen. Bei Rechtsklick auf einen Knoten wird dieser zuerst ausgewählt. Rechtsklick auf leeren Canvas hebt die Auswahl auf.
+Ein Rechtsklick auf die Arbeitsfläche öffnet das Kontextmenü. Über einem Objekt wird es zuerst ausgewählt; auf einer freien Stelle wird die Auswahl aufgehoben.
 
-## Als kopieren
+## Kopieren als
 
-Das Untermenü **Als kopieren** bietet folgende Zwischenablage-Formate:
-
-| Aktion | Kürzel (Mac) | Kürzel (Win/Linux) |
-|--------|--------------|---------------------|
-| Als Text kopieren | — | — |
-| Als SVG kopieren | — | — |
-| Als PNG kopieren | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Strg</kbd> + C |
-| Als JSX kopieren | — | — |
+Die Auswahl kann als Text, SVG, PNG oder JSX in die Zwischenablage geschrieben werden. PNG verwendet den Maßstab 2×; JSX ist mit `renderJsx()` kompatibel.
 
 ## Zwischenablage
 
-| Aktion | Kürzel (Mac) | Kürzel (Win/Linux) |
-|--------|--------------|---------------------|
-| Kopieren | <kbd>⌘</kbd><kbd>C</kbd> | Strg + C |
-| Ausschneiden | <kbd>⌘</kbd><kbd>X</kbd> | Strg + X |
-| Hier einfügen | <kbd>⌘</kbd><kbd>V</kbd> | Strg + V |
-| Duplizieren | <kbd>⌘</kbd><kbd>D</kbd> | Strg + D |
-| Löschen | <kbd>⌫</kbd> | <kbd>Rücktaste</kbd> / <kbd>Entf</kbd> |
+| Aktion | macOS | Windows / Linux |
+|--------|-------|-----------------|
+| Kopieren | <kbd>⌘</kbd><kbd>C</kbd> | <kbd>Strg</kbd><kbd>C</kbd> |
+| Ausschneiden | <kbd>⌘</kbd><kbd>X</kbd> | <kbd>Strg</kbd><kbd>X</kbd> |
+| Hier einfügen | <kbd>⌘</kbd><kbd>V</kbd> | <kbd>Strg</kbd><kbd>V</kbd> |
+| Duplizieren | <kbd>⌘</kbd><kbd>D</kbd> | <kbd>Strg</kbd><kbd>D</kbd> |
+| Löschen | <kbd>⌫</kbd> | Backspace/<kbd>Entf</kbd> |
 
-## Z-Reihenfolge
+## Reihenfolge
 
-| Aktion | Kürzel |
-|--------|--------|
-| Nach vorne bringen | ] |
-| Nach hinten senden | [ |
+<kbd>]</kbd> bringt die Auswahl nach vorn, <kbd>[</kbd> sendet sie nach hinten.
 
-## Gruppierung
+## Gruppen und automatische Anordnung
 
-| Aktion | Kürzel (Mac) | Kürzel (Win/Linux) |
-|--------|--------------|---------------------|
-| Gruppieren | <kbd>⌘</kbd><kbd>G</kbd> | Strg + G |
-| Entgruppieren | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd> | <kbd>Shift</kbd> + <kbd>Strg</kbd> + G |
-| Auto-Layout hinzufügen | <kbd>⇧</kbd><kbd>A</kbd> | <kbd>Shift</kbd> + <kbd>A</kbd> |
+Gruppieren: <kbd>⌘</kbd><kbd>G</kbd>. Aufheben: <kbd>⇧</kbd><kbd>⌘</kbd><kbd>G</kbd>. Automatische Anordnung: <kbd>⇧</kbd><kbd>A</kbd>.
 
-## Komponenten-Aktionen
+## Komponenten
 
-Komponenten-Aktionen werden in Lila dargestellt.
+Die violett dargestellten Aktionen erstellen Komponenten, Komponentensätze und Instanzen, wechseln zur Hauptkomponente oder lösen eine Instanz.
 
-| Aktion | Kürzel (Mac) | Kürzel (Win/Linux) | Verfügbar bei |
-|--------|--------------|---------------------|---------------|
-| Komponente erstellen | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>K</kbd> | Strg + <kbd>Alt</kbd> + <kbd>K</kbd> | Frames, Gruppen |
-| Komponenten-Set erstellen | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>K</kbd> | <kbd>Shift</kbd> + <kbd>Strg</kbd> + K | 2+ Komponenten |
-| Instanz erstellen | — | — | Komponenten |
-| Zur Hauptkomponente | — | — | Instanzen |
-| Instanz lösen | <kbd>⌥</kbd><kbd>⌘</kbd><kbd>B</kbd> | Strg + <kbd>Alt</kbd> + <kbd>B</kbd> | Instanzen |
+## Sichtbarkeit und Sperre
 
-## Sichtbarkeit & Sperre
-
-| Aktion | Kürzel (Mac) | Kürzel (Win/Linux) |
-|--------|--------------|---------------------|
-| Ausblenden / Einblenden | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> | <kbd>Shift</kbd> + <kbd>Strg</kbd> + H |
-| Sperren / Entsperren | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> | <kbd>Shift</kbd> + <kbd>Strg</kbd> + L |
+<kbd>⇧</kbd><kbd>⌘</kbd><kbd>H</kbd> blendet aus oder ein. <kbd>⇧</kbd><kbd>⌘</kbd><kbd>L</kbd> sperrt oder entsperrt.
 
 ## Auf Seite verschieben
 
-Das Untermenü **Auf Seite verschieben** listet alle Seiten außer der aktuellen auf.
-
-## Tipps
-
-- Rechtsklick auf leeren Canvas gibt Zugriff auf Einfügen.
-- Komponenten-Aktionen erscheinen nur bei relevanter Auswahl.
-- Das Kontextmenü spiegelt die Tastenkürzel wider — gut zum Entdecken neuer Kürzel.
+Das Untermenü enthält alle Seiten außer der aktuellen.

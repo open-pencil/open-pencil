@@ -4,6 +4,7 @@ import {
   hitTestEditVertex,
   isEndpoint
 } from '#vue/shared/input/node-edit/hit-test'
+import { applyNodeEditSnap } from '#vue/shared/input/node-edit/snap'
 import type { DragEditHandle, DragEditNode, DragState } from '#vue/shared/input/types'
 
 export {
@@ -149,20 +150,24 @@ export function handleNodeEditMove(
   editor: Editor,
   breakMirroring?: boolean,
   continuous?: boolean,
-  lockDirection?: boolean
+  lockDirection?: boolean,
+  disableSnapping?: boolean
 ) {
   const nodeEditEditor = editor as Editor & NodeEditEditor
   if (d.type === 'edit-node') {
-    const dx = cx - d.startX
-    const dy = cy - d.startY
+    const unsnappedDx = cx - d.startX
+    const unsnappedDy = cy - d.startY
     const es = getNodeEditState(editor)
     if (!es) return
+    let snapped = { x: unsnappedDx, y: unsnappedDy }
+    if (disableSnapping) editor.setSnapGuides([])
+    else snapped = applyNodeEditSnap(d, unsnappedDx, unsnappedDy, editor, es)
 
     for (const [idx, orig] of d.origPositions) {
       es.vertices[idx] = {
         ...es.vertices[idx],
-        x: orig.x + dx,
-        y: orig.y + dy
+        x: orig.x + snapped.x,
+        y: orig.y + snapped.y
       }
     }
     editor.requestRepaint()

@@ -1,15 +1,15 @@
 ---
 title: usePropertyList
-description: Helper de contexto de primitivo para los descendientes de PropertyListRoot.
+description: Acceder al contexto proporcionado por PropertyListRoot.
 ---
 
 # usePropertyList
 
-`usePropertyList()` lee el contexto local de la lista de propiedades proporcionado por `PropertyListRoot`.
+`usePropertyList()` devuelve el contexto del `PropertyListRoot` más cercano.
 
-Úsalo dentro de descendientes que necesiten los elementos actuales, información de estado mixto o manejadores a nivel de fila para rellenos, trazos o efectos.
+Úselo en componentes descendientes que necesiten elementos, estado mixto o acciones para rellenos, contornos y efectos.
 
-## APIs relacionadas
+## Véase también
 
 - [PropertyListRoot](../components/property-list-root)
 - [PropertyListItem](../components/property-list-item)

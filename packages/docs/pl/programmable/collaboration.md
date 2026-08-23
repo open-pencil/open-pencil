@@ -1,38 +1,38 @@
 ---
 title: Współpraca
-description: Wspólna edycja w czasie rzeczywistym przez P2P WebRTC — bez serwera, bez konta.
+description: Jednoczesna edycja bezpośrednio między uczestnikami przez WebRTC, bez osobnego serwera i konta.
 ---
 
 # Współpraca
 
-Edytujcie projekty razem w czasie rzeczywistym. Uczestnicy łączą się bezpośrednio — żaden serwer nie przekazuje Twoich danych, konto nie jest wymagane.
+Kilka osób może jednocześnie edytować jeden dokument. Uczestnicy łączą się bezpośrednio, dlatego centralny serwer nie przekazuje danych, a konto nie jest wymagane.
 
 ## Udostępnianie pokoju
 
-1. Kliknij przycisk udostępniania w prawym górnym rogu
-2. Skopiuj wygenerowany link (`app.openpencil.dev/share/<room-id>`)
-3. Wyślij go swoim współpracownikom
+1. Kliknij przycisk „Udostępnij” w prawym górnym rogu.
+2. Skopiuj odnośnik `app.openpencil.dev/share/<room-id>`.
+3. Wyślij go innym uczestnikom.
 
-Każdy z linkiem może dołączyć. Pokój pozostaje aktywny, dopóki przynajmniej jeden uczestnik ma otwartą stronę.
+Dołączyć może każda osoba znająca odnośnik. Pokój pozostaje dostępny, dopóki co najmniej jeden uczestnik ma otwartą stronę.
 
-## Co się synchronizuje
+## Synchronizowane dane
 
-- **Zmiany w dokumencie** — każda edycja (kształty, tekst, właściwości, layout) synchronizuje się natychmiast
-- **Kursory** — widzisz, gdzie wskazuje każdy współpracownik, wraz z imieniem i kolorem
-- **Zaznaczenia** — podświetlone zaznaczenia są widoczne dla wszystkich
+- **Dokument:** figury, tekst, właściwości i układ są aktualizowane po każdej zmianie.
+- **Kursory:** widoczne są położenie, nazwa i kolor każdego uczestnika.
+- **Zaznaczenie:** obiekty wybrane przez innych są widoczne dla wszystkich.
 
 ## Tryb śledzenia
 
-Kliknij awatar współpracownika na górnym pasku, aby śledzić jego widok. Twoje płótno przesuwa się i przybliża zgodnie z jego widokiem. Kliknij ponownie, aby przestać śledzić.
+Kliknij awatar uczestnika na górnym pasku, aby śledzić jego widok. Położenie i skala obszaru roboczego będą odpowiadać jego widokowi. Ponowne kliknięcie wyłącza śledzenie.
 
 ## Jak to działa
 
-Uczestnicy łączą się bezpośrednio przez WebRTC — Twoje dane projektowe trafiają prosto z przeglądarki do przeglądarki, nigdy przez centralny serwer. Stan dokumentu wykorzystuje CRDT (bezkonfliktowy replikowany typ danych), więc równoczesne edycje łączą się automatycznie bez konfliktów.
+Uczestnicy łączą się bezpośrednio przez WebRTC, dlatego dane dokumentu są przesyłane między przeglądarkami bez centralnego serwera.
 
-Pokój jest przechowywany lokalnie — jeśli odświeżysz stronę, dołączysz ponownie z tym samym stanem.
+Stan dokumentu jest synchronizowany przez Yjs CRDT, który automatycznie łączy równoczesne zmiany. IndexedDB przechowuje stan lokalny, aby można go było odtworzyć po ponownym otwarciu tego samego pokoju.
 
 ## Wskazówki
 
-- Działa w przeglądarce i w aplikacji desktopowej
-- Identyfikatory pokojów są kryptograficznie losowe — tylko osoby z linkiem mogą dołączyć
-- Nieaktywne kursory są automatycznie usuwane po rozłączeniu uczestnika
+- Współpraca działa w przeglądarce i aplikacji komputerowej.
+- Identyfikatory pokojów są tworzone z kryptograficznie bezpiecznych wartości losowych.
+- Kursory i informacje o obecności rozłączonych uczestników są automatycznie usuwane.

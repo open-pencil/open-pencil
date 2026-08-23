@@ -1,26 +1,31 @@
 ---
 title: Livelli e pagine
-description: Gestire livelli, pagine e pannello proprietà in OpenPencil.
+description: Gestire l’albero dei livelli, le pagine e il pannello delle proprietà.
 ---
+
 # Livelli e pagine
 
-## Pannello livelli
-Albero gerarchico sulla sinistra. Espandi/comprimi, trascina per riordinare, attiva/disattiva visibilità con l'icona occhio, doppio click per rinominare. La selezione si sincronizza con il canvas.
+Il pannello sinistro mostra livelli e pagine, l’area di lavoro occupa il centro e le proprietà appaiono a destra. I pannelli laterali sono ridimensionabili.
 
-## Pannello pagine
-- **Cambiare pagina** — click su un tab
-- **Aggiungere** — pulsante aggiungi
-- **Eliminare** — rimuovi pagina corrente
-- **Rinominare** — doppio click sul nome; Invio o clic altrove per confermare, Esc per annullare
+## Livelli
 
-Ogni pagina ha il suo viewport indipendente.
+Ogni oggetto appare nell’albero. Frame, gruppi e componenti possono essere espansi per mostrare i figli.
 
-## Pannello proprietà
-Tre tab: **Design** (proprietà contestuali), **Codice** (JSX / Tailwind CSS v4), **IA** (chat <kbd>⌘</kbd><kbd>J</kbd>).
+- Trascina un livello per cambiarne ordine o contenitore.
+- Usa l’occhio per modificarne la visibilità.
+- Usa il lucchetto per evitare modifiche accidentali.
+- Fai doppio clic sul nome per modificarlo; conferma con <kbd>Enter</kbd> o annulla con <kbd>Escape</kbd>.
 
-Design: aspetto, riempimento, contorno, effetti, tipografia, layout, esportazione.
+La selezione nell’albero e nell’area di lavoro resta sincronizzata. <kbd>Shift</kbd> permette di selezionare più livelli.
 
-## Layout mobile
+## Pagine
 
-Su mobile, i pannelli laterali sono sostituiti da un cassetto inferiore scorrevole con schede: Livelli, Proprietà, Design, Codice.
+L’elenco consente di creare, aprire, rinominare ed eliminare pagine. Ogni pagina conserva posizione e livello di zoom della vista.
 
+Il menu contestuale sposta la selezione in un’altra pagina. Al cambio di pagina OpenPencil ripristina vista e selezione.
+
+## Proprietà
+
+Il pannello destro mostra i controlli applicabili alla selezione: posizione, dimensioni, aspetto, riempimenti, contorni, effetti, tipografia, disposizione ed esportazione.
+
+Senza selezione mostra sfondo e variabili della pagina corrente.

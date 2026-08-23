@@ -1,15 +1,15 @@
 ---
 title: usePropScrub
-description: Helper di basso livello per aggiornamenti di proprietà con trascinamento scrub e supporto al commit.
+description: Anteprima e conferma di una proprietà numerica durante il trascinamento.
 ---
 
 # usePropScrub
 
-`usePropScrub(editor)` coordina gli aggiornamenti in tempo reale delle proprietà durante lo scrubbing e salva le modifiche con supporto all'undo quando l'interazione termina.
+`usePropScrub(editor)` aggiorna una proprietà durante il trascinamento e, al termine dell’interazione, registra la modifica finale nella cronologia Annulla.
 
-Usalo quando costruisci controlli numerici che aggiornano direttamente le proprietà dei nodi selezionati tramite scrub.
+È adatto ai controlli numerici che modificano le proprietà degli oggetti selezionati trascinando.
 
-## API correlate
+## Vedi anche
 
 - [NumberField](/programmable/sdk/api/components/number-field)
 - [useNodeProps](./use-node-props)

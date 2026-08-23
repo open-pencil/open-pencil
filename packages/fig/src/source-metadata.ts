@@ -26,6 +26,7 @@ const EDITED_RAW_FIELDS: Partial<Record<string, readonly string[]>> = {
   strokes: ['strokePaints'],
   effects: ['effects'],
   layoutGrids: ['layoutGrids'],
+  guides: ['guides'],
   exportSettings: ['exportSettings'],
   cornerRadius: ['cornerRadius'],
   independentCorners: ['rectangleCornerRadiiIndependent'],

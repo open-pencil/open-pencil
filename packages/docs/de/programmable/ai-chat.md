@@ -1,64 +1,54 @@
 ---
-title: KI-Chat
-description: Integrierter KI-Assistent mit über 90 Werkzeugen zum Erstellen und Bearbeiten von Designs.
+title: AI-Chat
+description: Integrierter AI-Assistent mit mehr als 90 Werkzeugen zum Erstellen und Bearbeiten von Designs.
 ---
 
-# KI-Chat
+# AI-Chat
 
-Drücken Sie <kbd>⌘</kbd><kbd>J</kbd> (<kbd>Ctrl</kbd> + <kbd>J</kbd>), um den KI-Assistenten zu öffnen. Beschreiben Sie, was Sie möchten — er erstellt Formen, setzt Stile, verwaltet Layouts, arbeitet mit Komponenten und analysiert Ihr Design.
+<kbd>⌘</kbd><kbd>J</kbd> beziehungsweise <kbd>Strg</kbd><kbd>J</kbd> öffnet den Assistenten. Eine Anweisung kann Formen erstellen, Stile ändern, die Anordnung konfigurieren, Komponenten bearbeiten oder das Dokument analysieren.
 
 ## Einrichtung
 
-1. Öffnen Sie das KI-Chat-Panel (<kbd>⌘</kbd><kbd>J</kbd>)
-2. Klicken Sie auf das Einstellungs-Symbol
-3. Wählen Sie einen Anbieter und geben Sie Ihren API-Schlüssel ein
-4. Wählen Sie ein Modell
+1. AI-Chat öffnen.
+2. Einstellungssymbol wählen.
+3. Modell hinzufügen und Anbieter, Modellkennung, Zugangsdaten und Fähigkeiten konfigurieren.
+4. Modell speichern und der Rolle **Design agent** zuweisen.
 
-### Unterstützte Anbieter
+Mehrere Modelle können getrennt für Gestaltung, Prüfung, schnelle Aufgaben und Bildeingaben verwendet werden. Modelle derselben Anbieterverbindung verwenden dieselben sicher gespeicherten Zugangsdaten.
 
-| Anbieter | Modelle | Einrichtung |
-|----------|---------|-------------|
-| **OpenRouter** | Claude, GPT-4, Gemini, DeepSeek u. a. | API-Schlüssel von [openrouter.ai](https://openrouter.ai) |
-| **Anthropic** | Claude 3.5 Sonnet, Claude 3 Opus usw. | API-Schlüssel von [console.anthropic.com](https://console.anthropic.com) |
-| **OpenAI** | GPT-4o, GPT-4 usw. | API-Schlüssel von [platform.openai.com](https://platform.openai.com) |
-| **Google AI** | Gemini 2.0, Gemini 1.5 usw. | API-Schlüssel von [aistudio.google.dev](https://aistudio.google.dev) |
-| **OpenAI-kompatibel** | Jeder Endpunkt mit OpenAI-API-Format | Eigene Basis-URL + Schlüssel. Unterstützt Completions- und Responses-API-Umschaltung. |
-| **Anthropic-kompatibel** | Jeder Endpunkt mit Anthropic-API-Format | Eigene Basis-URL + Schlüssel |
+### Anbieter
 
-Kein Backend, kein Abonnement — Ihr Schlüssel kommuniziert direkt mit dem Anbieter. Browser-Anfragen unterliegen den CORS-Richtlinien des Anbieters, und Modelldeployments unterscheiden sich bei der Zuverlässigkeit gestreamter Tool-Aufrufe. Messwerte und reproduzierbare Tests finden Sie in der englischen Referenz zur [BYOK-Anbieter- und Modellkompatibilität](/programmable/byok-provider-compatibility).
+| Anbieter | Beispiele | Einrichtung |
+|----------|-----------|-------------|
+| **OpenRouter** | Claude, GPT, Gemini, DeepSeek, Qwen und weitere | API-Schlüssel von [openrouter.ai](https://openrouter.ai) |
+| **Anthropic** | Claude Sonnet 4.6, Claude Opus 4.6 | API-Schlüssel von [console.anthropic.com](https://console.anthropic.com) |
+| **OpenAI** | GPT-5.3 Codex, GPT-4.1, o3, o4-mini | API-Schlüssel von [platform.openai.com](https://platform.openai.com) |
+| **Google AI** | Gemini 3.1 Pro, Gemini 3 Flash | API-Schlüssel von [aistudio.google.dev](https://aistudio.google.dev) |
+| **Z.ai** | GLM-5.1, GLM-5, GLM-4.7 und GLM-4.5 | API-Schlüssel laut [Z.ai-Dokumentation](https://docs.z.ai/devpack/quick-start) |
+| **MiniMax** | MiniMax M3, M2.7, M2.7-highspeed, M2.5 und M2.1 | API-Schlüssel von [platform.minimax.io](https://platform.minimax.io/user-center/basic-information/interface-key) |
+| **OpenAI-kompatibel** | Endpunkt im OpenAI-API-Format | Eigene Basisadresse und Schlüssel |
+| **Anthropic-kompatibel** | Endpunkt im Anthropic-API-Format | Eigene Basisadresse und Schlüssel |
 
-## Funktionen
+Anfragen gehen direkt an den Anbieter. Im Browser gelten dessen CORS-Regeln. Bereitstellungen unterscheiden sich darin, wie zuverlässig Werkzeugaufrufe gestreamt werden. Messergebnisse stehen unter [BYOK-Kompatibilität](/programmable/byok-provider-compatibility).
 
-Der Assistent verfügt über 90+ Werkzeuge in diesen Kategorien:
+### Externe MCP-Verbindungen
 
-- **Erstellen** — Frames, Formen, Text, Komponenten, Seiten. Rendert JSX für komplexe Layouts.
-- **Stylen** — Füllungen, Konturen, Effekte, Deckkraft, Eckenradius, Mischmodi.
-- **Layout** — Auto-Layout, Grid, Ausrichtung, Abstände, Größenbestimmung.
-- **Komponenten** — Komponenten, Instanzen, Komponentensätze erstellen. Überschreibungen verwalten.
-- **Variablen** — Variablen, Sammlungen, Modi erstellen/bearbeiten. An Füllungen binden.
-- **Abfragen** — Knoten finden, XPath-Selektoren, Eigenschaften lesen, Seiten, Schriften, Auswahl auflisten.
-- **Inspizieren** — `get_jsx` für JSX-Ansicht, `diff_jsx` für strukturelle Vergleiche, `describe` für semantische Rolle und Design-Probleme.
-- **Analysieren** — Farbpalette, Typografie-Audit, Abstands-Konsistenz, Muster-Erkennung.
-- **Exportieren** — PNG, SVG, JSX mit Tailwind-Klassen. Visuelle Überprüfung via `export_image`.
-- **Vektor** — Boolesche Operationen, Pfadmanipulation.
+Desktop-ACP-Agenten können vertrauenswürdige entfernte MCP-Server verwenden. Unter **Einstellungen → MCP-Verbindungen** wird ein Streamable-HTTP-Endpunkt hinzugefügt, optional ein Bearer-Token gespeichert und die Verbindung aktiviert.
 
-## Visuelle Überprüfung
+Token werden im Anmeldedatenspeicher und erst beim Start einer ACP-Sitzung gelesen. Entfernte Server müssen HTTPS verwenden; für lokale Entwicklung sind Loopback-Adressen über HTTP erlaubt.
 
-Der Assistent kann seine Arbeit visuell überprüfen. Nach dem Erstellen oder Ändern von Designs nutzt er `export_image`, um einen Screenshot aufzunehmen und das Ergebnis mit der ursprünglichen Anforderung zu vergleichen.
+## Werkzeuge
 
-## Beispiel-Prompts
+Der Assistent verfügt über mehr als 90 Werkzeuge für Erstellung, Gestaltung, Anordnung, Komponenten, Variablen, Suche, Prüfung, Analyse, Export und Vektorbearbeitung.
 
-- „Erstelle eine Karte mit Titel, Beschreibung und einem blauen Button"
-- „Alle Buttons auf dieser Seite sollen denselben Eckenradius verwenden"
-- „Welche Schriften werden in dieser Datei verwendet?"
-- „Ändere den Hintergrund des ausgewählten Frames in einen Verlauf von Blau nach Lila"
-- „Exportiere den ausgewählten Frame als SVG"
-- „Zeige mir das JSX für diesen Frame"
+## Visuelle Prüfung
 
-## Tipps
+Nach Änderungen kann der Assistent das Ergebnis mit `export_image` rendern und mit der Anfrage vergleichen. Dadurch werden Anordnungsfehler, fehlende Elemente und abweichende Farben sichtbar.
 
-- Wählen Sie Knoten aus, bevor Sie fragen — der Assistent weiß, was ausgewählt ist.
-- Seien Sie präzise bei Farben, Größen und Positionen für exakte Ergebnisse.
-- Der Assistent kann mehrere Knoten in einer Nachricht bearbeiten.
-- Nutzen Sie „Rückgängig" im Editor — KI-Mutationen unterstützen volles Undo.
-- Alle Layouts werden nach jeder Werkzeugausführung automatisch neu berechnet.
+## Hinweise
+
+- Vor der Anfrage die betreffenden Objekte auswählen; der Assistent kennt die aktuelle Auswahl.
+- Farben, Größen und Positionen möglichst genau angeben.
+- Eine Nachricht kann mehrere Objekte ändern.
+- Änderungen durch AI können rückgängig gemacht werden.
+- Nach jedem Werkzeugaufruf wird die Anordnung neu berechnet.

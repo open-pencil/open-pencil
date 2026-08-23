@@ -1,59 +1,32 @@
 ---
-title: Esportazione
-description: Renderizza file .fig in PNG, JPG, WEBP, SVG o JSX con classi Tailwind.
+title: Esportare dalla CLI
+description: Generare immagini, SVG, HTML e altri output senza aprire l’editor.
 ---
 
-# Esportazione
+# Esportare dalla CLI
 
-Esporta i design dal terminale — immagini raster, vettoriali o codice JSX.
-
-## Esportazione Immagini
+`export` produce il rendering di una pagina o di un oggetto da un file supportato.
 
 ```sh
-openpencil export design.fig                          # PNG (predefinito)
-openpencil export design.fig -f jpg -s 2 -q 90       # JPG a 2×, qualità 90
-openpencil export design.fig -f webp -s 3             # WEBP a 3×
-openpencil export design.fig -f svg                   # SVG vettoriale
+bun open-pencil export design.fig -o preview.png
 ```
 
-Opzioni:
+## Scegliere il contenuto
 
-- `-f` — formato: `png`, `jpg`, `webp`, `svg`, `jsx`
-- `-s` — scala: `1`–`4`
-- `-q` — qualità: `0`–`100` (solo JPG/WEBP)
-- `-o` — percorso di output
-- `--page` — nome della pagina
-- `--node` — ID di un nodo specifico
+Le opzioni del comando selezionano pagina, identificatore o oggetto trovato. Il formato viene dedotto dall’estensione o indicato esplicitamente.
 
-## Esportazione JSX
+## Scala e dimensioni
 
-Esporta come JSX con classi utility Tailwind:
+La scala controlla la risoluzione. È possibile fissare larghezza o altezza; le proporzioni vengono mantenute quando è fornita una sola dimensione.
 
-```sh
-openpencil export design.fig -f jsx --style tailwind
-```
+## SVG e HTML
 
-Output:
+SVG conserva la geometria vettoriale ed è adatto a icone, revisione e modifiche successive.
 
-```html
-<div className="flex flex-col gap-4 p-6 bg-white rounded-xl">
-  <p className="text-2xl font-bold text-[#1D1B20]">Card Title</p>
-  <p className="text-sm text-[#49454F]">Description text</p>
-</div>
-```
+L’esportazione HTML crea un documento autonomo con struttura e stili disponibili. È pensata per consegna, ispezione ed elaborazioni successive, non come sostituto identico del rendering CanvasKit. È disponibile solo lavorando su file.
 
-Supporta anche `--style openpencil` per il formato JSX nativo (vedi [Renderer JSX](../jsx-renderer)).
+## Percorso di output
 
-## Miniature
+`-o` o `--output` definisce il percorso. La CLI segnala formati errati, oggetti mancanti e percorsi non validi invece di produrre risultati parziali in silenzio.
 
-```sh
-openpencil export design.fig --thumbnail --width 1920 --height 1080
-```
-
-## Modalità App in Esecuzione
-
-Ometti il file per esportare dall'app in esecuzione:
-
-```sh
-openpencil export -f png    # screenshot del canvas corrente
-```
+Consulta `bun open-pencil export --help` per formati e opzioni disponibili.

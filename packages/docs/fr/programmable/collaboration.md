@@ -1,38 +1,33 @@
 ---
 title: Collaboration
-description: Édition collaborative en temps réel via P2P WebRTC — sans serveur, sans compte.
+description: Édition P2P en temps réel avec WebRTC et Yjs, sans serveur central.
 ---
 
 # Collaboration
 
-Éditez des designs ensemble en temps réel. Les pairs se connectent directement — aucun serveur ne relaie vos données, aucun compte n'est requis.
+OpenPencil permet à plusieurs personnes de modifier un document en temps réel. Les changements circulent directement entre les participants par WebRTC.
 
-## Partager une salle
+## Démarrer une session
 
-1. Cliquez sur le bouton de partage dans le coin supérieur droit
-2. Copiez le lien généré (`app.openpencil.dev/share/<room-id>`)
-3. Envoyez-le à vos collaborateurs
+Ouvrez le menu de collaboration, créez une salle et partagez le lien. L’identifiant est généré avec un aléa cryptographique et ne contient aucune donnée du document.
 
-Toute personne ayant le lien peut rejoindre la salle. La salle reste active tant qu'au moins un participant a la page ouverte.
+## Données partagées
 
-## Ce qui se synchronise
+- **Document :** formes, texte, propriétés et disposition ;
+- **Présence :** nom, couleur, sélection et page active ;
+- **Curseurs :** position de chaque participant ;
+- **Vue :** possibilité de suivre le cadrage d’une autre personne.
 
-- **Modifications du document** — chaque modification (formes, texte, propriétés, mise en page) se synchronise instantanément
-- **Curseurs** — voyez où chaque collaborateur pointe, avec son nom et sa couleur
-- **Sélections** — les sélections en surbrillance sont visibles par tous
+## Architecture
 
-## Mode suivi
+Yjs maintient l’état partagé sous forme de CRDT. Trystero découvre les participants et établit les connexions WebRTC. Un serveur de signalisation aide à initier la connexion, mais ne relaie pas le document.
 
-Cliquez sur l'avatar d'un collaborateur dans la barre supérieure pour suivre son viewport. Votre canevas se déplace et zoome pour correspondre à sa vue. Cliquez à nouveau pour arrêter de suivre.
+Aucun compte ni déploiement propre n’est nécessaire. La qualité dépend du réseau et de la possibilité d’établir WebRTC entre les participants.
 
-## Comment ça fonctionne
+## Confidentialité
 
-Les pairs se connectent directement via WebRTC — vos données de design passent directement d'un navigateur à l'autre, jamais par un serveur central. L'état du document utilise un CRDT (type de données répliqué sans conflit), donc les modifications concurrentes fusionnent automatiquement sans conflits.
+Le contenu n’est pas stocké sur un serveur OpenPencil. Chaque participant conserve une copie locale. Ne partagez le lien qu’avec des personnes de confiance.
 
-La salle persiste localement — si vous rafraîchissez la page, vous rejoignez avec le même état.
+## Fin de session
 
-## Conseils
-
-- Fonctionne dans le navigateur et l'application de bureau
-- Les identifiants de salle sont cryptographiquement aléatoires — seules les personnes ayant le lien peuvent rejoindre
-- Les curseurs obsolètes sont nettoyés automatiquement lorsqu'un participant se déconnecte
+Lorsque la session se termine, les participants distants et leurs curseurs sont supprimés. Les changements déjà synchronisés restent dans le document local.

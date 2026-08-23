@@ -12,17 +12,21 @@ import {
   readLegacyAIModelStorage,
   writeAIModelSettingsStorage
 } from '@/app/ai/models/storage'
-import type {
-  AIModelCapability,
-  AIModelConnection,
-  AIModelProfile,
-  AIModelProfileDraft,
-  AIModelProfileId,
-  AIModelRole,
-  AIModelRoleAssignment,
-  AIModelSettings,
-  OptionalAIModelRole,
-  ResolvedAIModelRole
+import {
+  HARNESS_PERMISSION_MODES,
+  HARNESS_THINKING_LEVELS,
+  type AIModelCapability,
+  type AIModelConnection,
+  type AIModelProfile,
+  type AIModelProfileDraft,
+  type AIModelProfileId,
+  type AIModelRole,
+  type AIModelRoleAssignment,
+  type AIModelSettings,
+  type OptionalAIModelRole,
+  type ResolvedAIModelRole,
+  type HarnessPermissionMode,
+  type HarnessThinkingLevel
 } from '@/app/ai/models/types'
 
 const LEGACY_CONNECTION_ID = 'connection-default'
@@ -42,6 +46,18 @@ function isProviderID(value: unknown): value is AIProviderID {
 
 function isAPIType(value: unknown): value is 'completions' | 'responses' | 'transcription' {
   return value === 'completions' || value === 'responses' || value === 'transcription'
+}
+
+function isHarnessThinkingLevel(value: unknown): value is HarnessThinkingLevel {
+  return (
+    typeof value === 'string' && HARNESS_THINKING_LEVELS.includes(value as HarnessThinkingLevel)
+  )
+}
+
+function isHarnessPermissionMode(value: unknown): value is HarnessPermissionMode {
+  return (
+    typeof value === 'string' && HARNESS_PERMISSION_MODES.includes(value as HarnessPermissionMode)
+  )
 }
 
 function isCapability(value: unknown): value is AIModelCapability {
@@ -96,6 +112,12 @@ function parseProfile(value: unknown, connectionIds: Set<string>): AIModelProfil
     contextWindowTokens: normalizedContextWindowTokens(value.contextWindowTokens),
     textInput: typeof value.textInput === 'boolean' ? value.textInput : undefined,
     reasoningEffort: stringValue(value.reasoningEffort).trim() || undefined,
+    harnessThinkingLevel: isHarnessThinkingLevel(value.harnessThinkingLevel)
+      ? value.harnessThinkingLevel
+      : undefined,
+    harnessPermissionMode: isHarnessPermissionMode(value.harnessPermissionMode)
+      ? value.harnessPermissionMode
+      : undefined,
     capabilities: [...new Set(capabilities)]
   }
 }
@@ -115,7 +137,9 @@ function isValidOptionalAssignment(
   const profileId = assignment === 'design' ? design : assignment
   const profile = models.find((candidate) => candidate.id === profileId)
   const connection = connections.find((candidate) => candidate.id === profile?.connectionId)
-  if (connection?.providerID.startsWith('acp:')) return false
+  if (connection?.providerID.startsWith('acp:') || connection?.providerID === 'harness:pi') {
+    return false
+  }
   if (role === 'vision' && !profile?.capabilities.includes('vision')) return false
   if (role === 'audio') {
     return assignment !== 'design' && Boolean(profile?.capabilities.includes('audio'))
@@ -237,6 +261,11 @@ export function designModelProfiles(): AIModelProfile[] {
   return aiModelSettings.value.models.filter(isDesignModelProfile)
 }
 
+export function isAgentModelProfile(profile: AIModelProfile | null): boolean {
+  const providerID = profile ? modelConnection(profile.connectionId)?.providerID : undefined
+  return Boolean(providerID?.startsWith('acp:') || providerID === 'harness:pi')
+}
+
 export function isACPModelProfile(profile: AIModelProfile | null): boolean {
   return Boolean(profile && modelConnection(profile.connectionId)?.providerID.startsWith('acp:'))
 }
@@ -314,6 +343,8 @@ function draftForProfile(
     contextWindowTokens: profile.contextWindowTokens,
     textInput: profile.textInput,
     reasoningEffort: profile.reasoningEffort ?? '',
+    harnessThinkingLevel: profile.harnessThinkingLevel ?? 'medium',
+    harnessPermissionMode: profile.harnessPermissionMode ?? 'allow-edits',
     capabilities: [...profile.capabilities]
   }
 }
@@ -334,6 +365,8 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     contextWindowTokens: undefined,
     textInput: undefined,
     reasoningEffort: '',
+    harnessThinkingLevel: 'medium',
+    harnessPermissionMode: 'allow-edits',
     capabilities: ['tools']
   }
 }
@@ -387,6 +420,10 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     contextWindowTokens: normalizedContextWindowTokens(draft.contextWindowTokens),
     textInput: draft.textInput,
     reasoningEffort: draft.reasoningEffort.trim() || undefined,
+    harnessThinkingLevel:
+      draft.providerID === 'harness:pi' ? draft.harnessThinkingLevel : undefined,
+    harnessPermissionMode:
+      draft.providerID === 'harness:pi' ? draft.harnessPermissionMode : undefined,
     capabilities: [...new Set(draft.capabilities)]
   }
   const index = aiModelSettings.value.models.findIndex((model) => model.id === profile.id)
@@ -453,9 +490,8 @@ export function setModelRoleAssignment(role: AIModelRole, assignment: AIModelRol
       assignment === 'design'
         ? modelProfile(aiModelSettings.value.assignments.design)
         : modelProfile(assignment)
-    if (isACPModelProfile(profile) || (role !== 'audio' && isTranscriptionModelProfile(profile))) {
-      return
-    }
+    if (isAgentModelProfile(profile)) return
+    if (role !== 'audio' && isTranscriptionModelProfile(profile)) return
     if (role === 'vision' && !profile?.capabilities.includes('vision')) return
     if (role === 'audio' && !profile?.capabilities.includes('audio')) return
   }

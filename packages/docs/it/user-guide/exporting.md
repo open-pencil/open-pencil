@@ -1,51 +1,31 @@
 ---
-title: Esportazione
-description: Esportare immagini (PNG, JPG, WEBP, SVG) e gestire file .fig in OpenPencil.
+title: Esportare
+description: Esportare la selezione in PNG, JPG, WEBP o SVG e salvare file `.fig`.
 ---
-# Esportazione
 
-## Esportazione immagini
+# Esportare
 
-Seleziona un nodo e usa la sezione Export nel pannello proprietà.
+## Esportazione di immagini
 
-### Impostazioni di esportazione
+Seleziona un oggetto e apri **Esporta** nel pannello delle proprietà. Ogni impostazione definisce formato, scala o larghezza esplicita, suffisso del nome e qualità per JPG/WEBP.
 
-- **Scala** — 0,5×, 0,75×, 1×, 1,5×, 2×, 3× o 4× (nascosta per SVG — i vettori sono indipendenti dalla risoluzione)
-- **Formato** — PNG (sfondo trasparente), JPG (sfondo bianco), WEBP (sfondo trasparente), SVG (vettore)
+Un oggetto può avere più impostazioni. L’anteprima appare su uno sfondo a scacchi per verificare la trasparenza.
 
-### Metodi di esportazione
-
-| Metodo | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Scorciatoia tastiera | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>E</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>E</kbd> |
-| Menu contestuale | Tasto destro <kbd>→</kbd> Esporta… | Tasto destro <kbd>→</kbd> Esporta… |
-| Pannello proprietà | Pulsante "Esporta" | Pulsante "Esporta" |
+Puoi anche aprire **Esporta…** dal menu contestuale.
 
 ## Copia come
 
-Il menu contestuale **Copia come** offre formati aggiuntivi:
+Il menu contestuale copia la selezione come testo, SVG, PNG o JSX.
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Copia come testo | — | — |
-| Copia come SVG | — | — |
-| Copia come PNG | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>C</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>C</kbd> |
-| Copia come JSX | — | — |
+## Salvare documenti
 
-## Operazioni file .fig
+**Salva** aggiorna il file corrente. **Salva con nome…** sceglie una nuova posizione. Tauri usa finestre native; Chrome ed Edge possono usare File System Access API; gli altri browser scaricano il file.
 
-| Action | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Apri | <kbd>⌘</kbd><kbd>O</kbd> | <kbd>Ctrl</kbd> + <kbd>O</kbd> |
-| Salva | <kbd>⌘</kbd><kbd>S</kbd> | <kbd>Ctrl</kbd> + <kbd>S</kbd> |
-| Salva come | <kbd>⇧</kbd><kbd>⌘</kbd><kbd>S</kbd> | <kbd>Shift</kbd> + <kbd>Ctrl</kbd> + <kbd>S</kbd> |
+I file `.fig` esportati includono dati Kiwi, compressione Zstandard e miniatura. Componenti e insiemi vengono conservati per riaprire il file in Figma.
 
-I file salvati sono compressi e includono una miniatura per l'anteprima nel file manager.
+## Scegliere il formato
 
-Compatibilità round-trip con Figma.
-
-## Suggerimenti
-
-- Usa scala 2× o 3× per schermi ad alta risoluzione.
-- JPG usa sempre sfondo bianco — usa PNG o WEBP per la trasparenza.
-- Usa l'export SVG per la modifica vettoriale in editor di codice o Illustrator.
+- PNG conserva la trasparenza ed è adatto alle interfacce.
+- JPG riduce le dimensioni delle fotografie.
+- WEBP offre una buona compressione per il Web.
+- SVG mantiene vettori modificabili ed è adatto a icone e codice.

@@ -1,38 +1,52 @@
 ---
 title: useOkHCL
-description: Работа с цветовыми моделями RGBA и OkHCL для заливок и обводок.
+description: Сохранение цветового замысла OkHCL для заливок и обводок выделенных объектов.
 ---
 
 # useOkHCL
 
-`useOkHCL()` предоставляет хелперы для чтения, включения, отключения и обновления значений цвета OkHCL у заливок и обводок узлов.
+`useOkHCL()` служит адаптером между редактором и метаданными OkHCL заливок и обводок. Он читает сохранённый цветовой замысел, обновляет объекты с поддержкой отмены, сообщает сведения о выходе за цветовой охват и запоминает выбранный формат каждого поля.
 
-Используйте его при создании продвинутых цветовых инструментов, которым нужно переключаться между стандартным редактированием RGBA и перцептивным редактированием OkHCL.
+Для преобразования цветов, изменения каналов и отображения ползунков без зависимости от редактора используйте [`useColorModel()`](/programmable/sdk/api/composables/use-color-model). `useOkHCL()` нужен только там, где результат должен сохраняться в OpenPencil.
 
 ## Использование
 
 ```ts
-import { useOkHCL } from '@open-pencil/vue'
-
 const okhcl = useOkHCL()
+const color = okhcl.getFillOkHCLColor(node, 0)
+okhcl.updateFillOkHCL(node, 0, { c: 0.2 })
 ```
 
-## Возвращает
+## Формат поля
 
-- `getFillColorModel()`
-- `getStrokeColorModel()`
-- `getFillOkHCLColor()`
-- `getStrokeOkHCLColor()`
-- `enableFillOkHCL()`
-- `disableFillOkHCL()`
-- `enableStrokeOkHCL()`
-- `disableStrokeOkHCL()`
-- `updateFillOkHCL()`
-- `updateStrokeOkHCL()`
-- `modelOptions`
+```ts
+const format = okhcl.getFieldFormat(node, 0, 'fill')
+okhcl.setFillFieldFormat(node, 0, 'okhcl')
+```
 
-## Связанные API
+При выборе `okhcl` замысел инициализируется из текущего цвета RGBA заливки или обводки. `fieldOptions` можно использовать для выбора формата.
 
+## Предварительный просмотр
+
+```ts
+const preview = okhcl.getFillPreviewInfo(node, 0)
+// { previewColorSpace, clipped }
+```
+
+Предварительный просмотр учитывает цветовое пространство документа и сообщает, потребовалось ли привести сохранённый цвет OkHCL к доступному охвату.
+
+## Возвращаемое API
+
+- `getFillOkHCLColor()` / `getStrokeOkHCLColor()`
+- `getFillPreviewInfo()` / `getStrokePreviewInfo()`
+- `getFieldFormat()`
+- `setFillFieldFormat()` / `setStrokeFieldFormat()`
+- `updateFillOkHCL()` / `updateStrokeOkHCL()`
+- `fieldOptions`
+
+## См. также
+
+- [useColorModel](/programmable/sdk/api/composables/use-color-model)
 - [useFillControls](../composables/use-fill-controls)
 - [useStrokeControls](../composables/use-stroke-controls)
 - [ColorPickerRoot](../components/color-picker-root)

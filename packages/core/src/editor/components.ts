@@ -1,4 +1,5 @@
-import type { ComponentPropertyDefinition, SceneNode } from '@open-pencil/scene-graph'
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { deriveSlashVariantProperties } from '@open-pencil/scene-graph/variant-properties'
 
 import { randomHex } from '#core/random'
 
@@ -61,43 +62,13 @@ export function createComponentActions(ctx: EditorContext) {
     const containerId = wrapSelectionInContainer('COMPONENT_SET', selectedNodes)
     if (!containerId) return
 
-    const slashCounts = selectedNodes.map((n) => (n.name.match(/\//g) ?? []).length)
-    const hasConsistentSlashes =
-      slashCounts.every((c) => c === slashCounts[0]) && slashCounts[0] > 0
+    const derived = deriveSlashVariantProperties(selectedNodes, () => `prop:${randomHex(8)}`)
+    if (!derived) return
 
-    if (hasConsistentSlashes) {
-      const propCount = slashCounts[0]
-      const propDefs: ComponentPropertyDefinition[] = []
-      const propValues = new Map<string, Set<string>>()
-
-      for (let i = 0; i < propCount; i++) {
-        const propId = `prop:${randomHex(8)}`
-        const propName = i === 0 ? 'Variant' : `Property ${i + 1}`
-        propDefs.push({ id: propId, name: propName, type: 'VARIANT', defaultValue: '' })
-        propValues.set(propName, new Set())
-      }
-
-      for (const node of selectedNodes) {
-        const parts = node.name.split('/').slice(1)
-        const values: Record<string, string> = {}
-        for (let i = 0; i < propDefs.length; i++) {
-          const value = parts[i]?.trim() ?? ''
-          values[propDefs[i].name] = value
-          propValues.get(propDefs[i].name)?.add(value)
-        }
-        ctx.graph.updateNode(node.id, {
-          componentPropertyValues: values,
-          name: Object.values(values).join(', ')
-        })
-      }
-
-      for (const def of propDefs) {
-        def.variantOptions = [...(propValues.get(def.name) ?? [])]
-        if (!def.defaultValue && def.variantOptions[0]) def.defaultValue = def.variantOptions[0]
-      }
-
-      ctx.graph.updateNode(containerId, { componentPropertyDefinitions: propDefs })
+    for (const [nodeId, changes] of derived.variants) {
+      ctx.graph.updateNode(nodeId, changes)
     }
+    ctx.graph.updateNode(containerId, { componentPropertyDefinitions: derived.definitions })
   }
 
   const focusActions = createComponentFocusActions(ctx)

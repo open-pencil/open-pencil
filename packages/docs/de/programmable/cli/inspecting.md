@@ -1,15 +1,17 @@
 ---
-title: Dateien inspizieren
-description: Knotenbäume durchsuchen, nach Name oder Typ suchen und Eigenschaften im Terminal untersuchen.
+title: Dateien untersuchen
+description: Dokumentbaum, Objekte, Seiten und Variablen über die CLI lesen.
 ---
 
-# Dateien inspizieren
+# Dateien untersuchen
 
-Das CLI ermöglicht es, `.fig`-Dateien zu erkunden, ohne den Editor zu öffnen. Jeder Befehl funktioniert auch mit der laufenden App — lass einfach das Dateiargument weg.
+Die CLI liest `.fig`-Dateien, ohne den Editor zu öffnen. Läuft die Desktop-App, kann der Dateiname entfallen; die CLI verwendet dann RPC für das geöffnete Dokument.
 
 ::: tip Installation
 ```sh
 npm install -g @open-pencil/cli
+# oder
+bun add -g @open-pencil/cli
 # oder
 brew install open-pencil/tap/open-pencil
 ```
@@ -17,82 +19,53 @@ brew install open-pencil/tap/open-pencil
 
 ## Dokumentinformationen
 
-Erhalte einen schnellen Überblick — Seitenanzahl, Gesamtknoten, verwendete Schriften, Dateigröße:
-
 ```sh
 openpencil info design.fig
 ```
 
-## Knotenbaum
+Zeigt Seiten, Objektanzahl, verwendete Schriften und Dateigröße.
 
-Gibt die vollständige Knotenhierarchie aus:
+## Dokumentbaum und Suche
 
 ```sh
 openpencil tree design.fig
-```
-
-```
-[0] [page] "Getting started" (0:46566)
-  [0] [section] "" (0:46567)
-    [0] [frame] "Body" (0:46568)
-      [0] [frame] "Introduction" (0:46569)
-        [0] [frame] "Introduction Card" (0:46570)
-          [0] [frame] "Guidance" (0:46571)
-```
-
-## Knoten finden
-
-Nach Typ suchen:
-
-```sh
 openpencil find design.fig --type TEXT
-```
-
-Nach Name suchen:
-
-```sh
 openpencil find design.fig --name "Button"
 ```
 
-Beide Flags können kombiniert werden, um Ergebnisse weiter einzugrenzen.
+## XPath-Abfragen
 
-## Knotendetails
+```sh
+openpencil query design.fig "//FRAME"
+openpencil query design.fig "//TEXT[@fontSize >= 24]"
+openpencil query design.fig "//*[@visible = false]"
+```
 
-Alle Eigenschaften eines bestimmten Knotens anhand seiner ID inspizieren:
+Attributnamen wie `fontSize`, `layoutMode` und `strokeWeight` entsprechen der API und bleiben unverändert.
+
+## Objekte, Seiten und Variablen
 
 ```sh
 openpencil node design.fig --id 1:23
-```
-
-## Seiten
-
-Alle Seiten im Dokument auflisten:
-
-```sh
 openpencil pages design.fig
-```
-
-## Variablen
-
-Designvariablen und ihre Sammlungen auflisten:
-
-```sh
 openpencil variables design.fig
 ```
 
-## Live-App-Modus
-
-Wenn die Desktop-App läuft, lass das Dateiargument weg — das CLI verbindet sich über RPC und arbeitet auf der Live-Zeichenfläche:
+## Geöffnetes Dokument
 
 ```sh
-openpencil tree              # das Live-Dokument inspizieren
-openpencil eval -c "..."     # den Editor abfragen
+openpencil documents
+openpencil tree --document-id tab-123 --page-id 0:1
 ```
 
-## JSON-Ausgabe
+Für automatisierte Abläufe zuerst `openpencil documents --json` aufrufen und anschließend `--document-id` und `--page-id` ausdrücklich übergeben.
 
-Alle Befehle unterstützen `--json` für maschinenlesbare Ausgabe — weiterleiten an `jq`, in CI-Skripte einspeisen oder mit anderen Werkzeugen verarbeiten:
+## Qualitätsprüfung
 
 ```sh
-openpencil tree design.fig --json | jq '.[] | .name'
+openpencil lint design.fig
+openpencil lint design.pen --preset strict
+openpencil lint design.fig --rule color-contrast
 ```
+
+Alle Befehle unterstützen `--json`.

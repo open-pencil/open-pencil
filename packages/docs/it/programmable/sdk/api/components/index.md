@@ -1,43 +1,39 @@
 ---
 title: Componenti
-description: Riferimento ai componenti per le primitive Vue headless in @open-pencil/vue.
+description: Riferimento dei componenti senza stile di @open-pencil/vue.
 ---
 
 # Componenti
 
-`@open-pencil/vue` espone primitive strutturali headless per il cablaggio del canvas, UI di navigazione, pannelli proprietà e controlli di input mirati.
+`@open-pencil/vue` fornisce componenti senza stile per area di lavoro, navigazione, pannelli delle proprietà e campi specializzati.
 
-## Primitive principali dell'editor
+## Area di lavoro
 
-<SdkCardGroup>
-  <SdkCard title="CanvasRoot" to="/programmable/sdk/api/components/canvas-root" description="Struttura canvas headless e contesto." />
-  <SdkCard title="CanvasSurface" to="/programmable/sdk/api/components/canvas-surface" description="Primitiva elemento canvas legata al contesto di CanvasRoot." />
-  <SdkCard title="LayerTreeRoot" to="/programmable/sdk/api/components/layer-tree-root" description="Primitiva headless per l'albero dei layer." />
-  <SdkCard title="LayerTreeItem" to="/programmable/sdk/api/components/layer-tree-item" description="Primitiva per una singola riga dell'albero dei layer." />
-  <SdkCard title="ToolbarRoot" to="/programmable/sdk/api/components/toolbar-root" description="Primitiva headless per la toolbar." />
-  <SdkCard title="ToolbarItem" to="/programmable/sdk/api/components/toolbar-item" description="Primitiva per un singolo strumento della toolbar." />
-  <SdkCard title="PageListRoot" to="/programmable/sdk/api/components/page-list-root" description="Primitiva headless per la lista delle pagine." />
-</SdkCardGroup>
+- [CanvasRoot](./canvas-root) — contesto.
+- [CanvasSurface](./canvas-surface) — superficie di rendering.
 
-## Primitive per il pannello proprietà
+## Navigazione
 
-<SdkCardGroup>
-  <SdkCard title="PropertyListRoot" to="/programmable/sdk/api/components/property-list-root" description="Primitiva headless per la lista delle proprietà." />
-  <SdkCard title="PropertyListItem" to="/programmable/sdk/api/components/property-list-item" description="Primitiva per una singola riga di riempimenti, tratti o effetti." />
-  <SdkCard title="PositionControlsRoot" to="/programmable/sdk/api/components/position-controls-root" description="Controlli di posizione, dimensione e trasformazione." />
-  <SdkCard title="LayoutControlsRoot" to="/programmable/sdk/api/components/layout-controls-root" description="Controlli auto-layout e dimensionamento." />
-  <SdkCard title="AppearanceControlsRoot" to="/programmable/sdk/api/components/appearance-controls-root" description="Controlli opacità, visibilità e raggio degli angoli." />
-  <SdkCard title="TypographyControlsRoot" to="/programmable/sdk/api/components/typography-controls-root" description="Controlli font, allineamento e formattazione." />
-</SdkCardGroup>
+- [PageListRoot](./page-list-root) — pagine e azioni.
+- [LayerTreeRoot](./layer-tree-root) — albero dei livelli.
+- [LayerTreeItem](./layer-tree-item) — riga dell’albero.
+- [ToolbarRoot](./toolbar-root) — barra degli strumenti.
+- [ToolbarItem](./toolbar-item) — singolo strumento.
 
-## Picker e input
+## Proprietà
 
-<SdkCardGroup>
-  <SdkCard title="ColorPickerRoot" to="/programmable/sdk/api/components/color-picker-root" description="Primitiva popover per la selezione del colore." />
-  <SdkCard title="ColorInputRoot" to="/programmable/sdk/api/components/color-input-root" description="Helper headless per l'input del colore." />
-  <SdkCard title="FontPickerRoot" to="/programmable/sdk/api/components/font-picker-root" description="Primitiva searchable per la selezione del font." />
-  <SdkCard title="GradientEditorRoot" to="/programmable/sdk/api/components/gradient-editor-root" description="Primitiva root per l'editor del gradiente." />
-  <SdkCard title="GradientEditorBar" to="/programmable/sdk/api/components/gradient-editor-bar" description="Primitiva barra trascinabile per il gradiente." />
-  <SdkCard title="GradientEditorStop" to="/programmable/sdk/api/components/gradient-editor-stop" description="Primitiva per un singolo stop del gradiente." />
-  <SdkCard title="NumberField" to="/programmable/sdk/api/components/number-field" description="Numeric field with scrubbing, expressions, and keyboard stepping." />
-</SdkCardGroup>
+- [PropertyListRoot](./property-list-root) — elenco controllato.
+- [PropertyListItem](./property-list-item) — riempimento, contorno o effetto.
+- [PositionControlsRoot](./position-controls-root) — posizione e trasformazione.
+- [LayoutControlsRoot](./layout-controls-root) — disposizione automatica.
+- [AppearanceControlsRoot](./appearance-controls-root) — opacità, visibilità e angoli.
+- [TypographyControlsRoot](./typography-controls-root) — font e formattazione.
+
+## Colore, sfumature e font
+
+- [ColorInputRoot](./color-input-root)
+- [ColorPickerRoot](./color-picker-root)
+- [GradientEditorRoot](./gradient-editor-root)
+- [GradientEditorBar](./gradient-editor-bar)
+- [GradientEditorStop](./gradient-editor-stop)
+- [FontPickerRoot](./font-picker-root)

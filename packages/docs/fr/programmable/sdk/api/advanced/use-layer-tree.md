@@ -1,15 +1,15 @@
 ---
 title: useLayerTree
-description: Helper de contexte de primitive pour les descendants de LayerTreeRoot.
+description: Accéder au contexte fourni par LayerTreeRoot.
 ---
 
 # useLayerTree
 
-`useLayerTree()` lit le contexte d'arbre de calques local fourni par `LayerTreeRoot`.
+`useLayerTree()` renvoie le contexte du `LayerTreeRoot` le plus proche.
 
-Utilisez-le à l'intérieur de descendants d'arbre de calques personnalisés qui ont besoin d'accéder aux éléments de l'arbre, à l'état de sélection, à l'état d'expansion ou aux actions de ligne.
+Utilisez-le dans les descendants qui ont besoin des éléments, de la sélection, des branches dépliées ou des actions de ligne.
 
-## API associées
+## Voir aussi
 
 - [LayerTreeRoot](../components/layer-tree-root)
 - [LayerTreeItem](../components/layer-tree-item)

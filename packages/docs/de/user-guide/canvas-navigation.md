@@ -1,44 +1,42 @@
 ---
-title: Canvas-Navigation
-description: Schwenken, Zoomen und das Handwerkzeug in OpenPencil.
+title: Navigation auf der Arbeitsfläche
+description: Ansicht verschieben, zoomen und das Handwerkzeug in OpenPencil verwenden.
 ---
 
-# Canvas-Navigation
+# Navigation auf der Arbeitsfläche
 
-Der Canvas ist Ihr unendlicher Arbeitsbereich. Sie können frei schwenken und zoomen, um durch Ihr Design zu navigieren.
+Die Arbeitsfläche ist unbegrenzt. Verschieben und vergrößern Sie die Ansicht, um jeden Bereich des Dokuments zu erreichen.
 
-## Schwenken
+## Ansicht verschieben
 
-Verschieben Sie den sichtbaren Bereich des Canvas, ohne Objekte zu beeinflussen.
-
-- <kbd>Leertaste</kbd> + Ziehen — <kbd>Leertaste</kbd> halten und irgendwo auf dem Canvas ziehen
-- **Mittlere Maustaste ziehen** — mittlere Maustaste drücken und ziehen
-- **Zwei-Finger-Trackpad** — mit zwei Fingern auf dem Trackpad wischen
+- <kbd>Space</kbd> gedrückt halten und auf der Arbeitsfläche ziehen;
+- mit gedrückter mittlerer Maustaste ziehen;
+- mit zwei Fingern auf dem Trackpad scrollen.
 
 ## Handwerkzeug
 
-Drücken Sie <kbd>H</kbd>, um das Handwerkzeug für kontinuierliches Schwenken zu aktivieren. Jedes Ziehen auf dem Canvas schwenkt den Viewport, ohne die <kbd>Leertaste</kbd> halten zu müssen. Wechseln Sie zu einem anderen Werkzeug (z.B. <kbd>V</kbd> für Auswahl), um zu deaktivieren.
+<kbd>H</kbd> aktiviert das Handwerkzeug. Solange es aktiv ist, verschiebt jedes Ziehen die Ansicht, ohne dass <kbd>Space</kbd> gedrückt werden muss.
 
-## Zoomen
+Mit <kbd>V</kbd> wechseln Sie zurück zum Auswahlwerkzeug.
 
-Hinein- und Herauszoomen, zentriert auf Ihre Cursorposition.
+## Zoom
 
-- <kbd>Strg</kbd> + Scrollen (oder <kbd>⌘</kbd> + Scrollen auf Mac) — nach oben scrollen zum Hineinzoomen, nach unten zum Herauszoomen
-- **Pinch-Geste** — auf dem Trackpad zusammenziehen zum Zoomen
-- **Tastenkürzel** — siehe Tabelle unten
+Der Zoom richtet sich nach der Position des Mauszeigers:
+
+- <kbd>Ctrl</kbd> + Scroll beziehungsweise <kbd>⌘</kbd> + Scroll auf macOS;
+- Zwei-Finger-Zoom auf dem Trackpad;
+- Tastenkürzel aus der Tabelle.
+
+Gesten über den Ebenen- und Eigenschaften-Panels werden nicht an die Arbeitsfläche weitergegeben.
 
 ## Tastenkürzel
 
-| Aktion | Mac | Windows / Linux |
-|--------|-----|-----------------|
-| Schwenken | <kbd>Leertaste</kbd> + Ziehen | Leertaste + Ziehen |
+| Aktion | macOS | Windows / Linux |
+|--------|-------|-----------------|
+| Ansicht verschieben | <kbd>Space</kbd> + Ziehen | <kbd>Space</kbd> + Ziehen |
 | Handwerkzeug | <kbd>H</kbd> | <kbd>H</kbd> |
-| Hineinzoomen | <kbd>⌘</kbd><kbd>+</kbd> | <kbd>Strg</kbd> + <kbd>+</kbd> |
-| Herauszoomen | <kbd>⌘</kbd><kbd>−</kbd> | <kbd>Strg</kbd> + <kbd>−</kbd> |
-| Zoom auf 100% | <kbd>⌘</kbd><kbd>0</kbd> | Strg + 0 |
-
-## Tipps
-
-- Zoomen zielt immer auf die Cursorposition — zeigen Sie auf das, was Sie näher sehen möchten.
-- Das Handwerkzeug ist nützlich, wenn Sie häufig schwenken müssen — es bleibt aktiv, bis Sie das Werkzeug wechseln.
-- Siehe [Auswahl & Bearbeitung](./selection-and-manipulation) für die Arbeit mit Objekten auf dem Canvas.
+| Vergrößern | <kbd>⌘</kbd><kbd>+</kbd> | <kbd>Strg</kbd><kbd>+</kbd> |
+| Verkleinern | <kbd>⌘</kbd><kbd>−</kbd> | <kbd>Strg</kbd><kbd>−</kbd> |
+| 100 % | <kbd>⌘</kbd><kbd>0</kbd> | <kbd>Strg</kbd><kbd>0</kbd> |
+| Dokument einpassen | <kbd>⌘</kbd><kbd>1</kbd> | <kbd>Strg</kbd><kbd>1</kbd> |
+| Auf Auswahl zoomen | <kbd>⌘</kbd><kbd>2</kbd> | <kbd>Strg</kbd><kbd>2</kbd> |

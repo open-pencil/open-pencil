@@ -1,50 +1,19 @@
 ---
 title: useEffectsControls
-description: Helpers del panel de efectos para sombras, desenfoque, estado de expansión y flujos de arrastre/confirmación.
+description: Gestionar efectos de la selección actual.
 ---
 
 # useEffectsControls
 
-`useEffectsControls()` es el composable de propiedades de efectos usado por los paneles de efectos.
+`useEffectsControls()` proporciona:
 
-Proporciona helpers para:
+- efectos actuales y estado mixto;
+- efecto predeterminado;
+- acciones para añadir, eliminar, sustituir y actualizar;
+- cambio de visibilidad;
+- tipos de sombra y desenfoque admitidos.
 
-- efectos por defecto
-- lógica de sombra vs desenfoque
-- estado de elementos expandidos
-- edición mediante arrastre con vista previa
-- actualizaciones de confirmación al terminar
-- cambios de tipo de efecto y color
-
-## Uso
-
-```ts
-import { useEffectsControls } from '@open-pencil/vue'
-
-const effects = useEffectsControls()
-```
-
-## Ejemplo básico
-
-```ts
-const { effectOptions, createDefaultEffect, toggleExpand, scrubEffect, commitEffect } = useEffectsControls()
-```
-
-## Ejemplos prácticos
-
-### Añadir un efecto por defecto
-
-```ts
-const effect = effects.createDefaultEffect()
-```
-
-### Previsualizar cambios con arrastre y luego confirmar
-
-```ts
-effects.scrubEffect(node, index, { radius: 12 })
-effects.commitEffect(node, index, { radius: 12 })
-```
-
-## APIs relacionadas
+## Véase también
 
 - [PropertyListRoot](../components/property-list-root)
+- [useEditorPropertyList](../advanced/use-property-list)

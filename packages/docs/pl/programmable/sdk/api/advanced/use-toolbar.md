@@ -1,15 +1,15 @@
 ---
 title: useToolbar
-description: Pomocnik kontekstu prymitywu dla potomków ToolbarRoot.
+description: Dostęp do kontekstu udostępnionego przez ToolbarRoot.
 ---
 
 # useToolbar
 
-`useToolbar()` odczytuje lokalny kontekst paska narzędzi dostarczany przez `ToolbarRoot`.
+`useToolbar()` zwraca kontekst najbliższego `ToolbarRoot`.
 
-Użyj go wewnątrz potomków paska narzędzi, które potrzebują dostępu do narzędzi, stanu aktywności lub pomocników wyboru narzędzia.
+Użyj composable w komponentach potomnych wymagających listy narzędzi, stanu aktywności albo funkcji wyboru narzędzia.
 
-## Powiązane API
+## Zobacz też
 
 - [ToolbarRoot](../components/toolbar-root)
 - [ToolbarItem](../components/toolbar-item)

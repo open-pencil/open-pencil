@@ -1,27 +1,18 @@
 ---
 title: useViewportKind
-description: Grobe Mobile- und Desktop-Viewport-Flags für responsive Editor-Shells lesen.
+description: Reaktive Kennzeichen für mobile und Desktop-Ansicht einer eigenen Editoroberfläche.
 ---
 
 # useViewportKind
 
-`useViewportKind()` gibt einfache Responsive-Flags zurück, die von der OpenPencil-Editor-UI verwendet werden.
+`useViewportKind()` gibt eine vereinfachte Einordnung der Ansichtsgröße zurück.
 
-Verwenden Sie es, wenn Ihre Shell eine leichte Abstraktion über Breakpoints anstatt einer direkten `useBreakpoints()`-Verdrahtung benötigt.
-
-## Verwendung
+Verwenden Sie das Composable, wenn nur zwischen mobiler und Desktop-Ansicht unterschieden werden muss, ohne `useBreakpoints()` direkt zu konfigurieren.
 
 ```ts
-import { useViewportKind } from '@open-pencil/vue'
-
 const { isMobile, isDesktop } = useViewportKind()
 ```
 
-## Rückgabewerte
-
-- `isMobile`
-- `isDesktop`
-
-## Verwandte APIs
+## Siehe auch
 
 - [useCanvas](../composables/use-canvas)

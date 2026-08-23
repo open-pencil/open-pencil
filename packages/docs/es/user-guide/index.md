@@ -1,36 +1,33 @@
 ---
 layout: doc
-title: Guía del usuario
-description: Aprende a usar OpenPencil — navegación del lienzo, dibujo, texto, componentes, auto-layout y más.
+title: Guía de usuario
+description: Navegar, dibujar, editar texto, usar componentes y configurar la disposición automática en OpenPencil.
 ---
 
-# Guía del usuario
+# Guía de usuario
 
-OpenPencil es un editor de diseño open-source, compatible con Figma — completamente local, IA-nativo y programable.
+OpenPencil es un editor de diseño local y de código abierto, compatible con Figma, con AI integrada y APIs de automatización.
 
-::: tip Atajos multiplataforma
-<kbd>⌘</kbd> = <kbd>Command</kbd> (<kbd>Ctrl</kbd> en Windows/Linux), <kbd>⌥</kbd> = <kbd>Option</kbd> (<kbd>Alt</kbd>), <kbd>⇧</kbd> = <kbd>Shift</kbd>.
-:::
+## Primeros pasos
 
-## Orientación
-
-- [Navegación del lienzo](./canvas-navigation) — panorámica, zoom y herramienta mano
-- [Selección y manipulación](./selection-and-manipulation) — seleccionar, mover, redimensionar, rotar
+- [Navegación por el lienzo](./canvas-navigation) — mover la vista, ampliar y usar la herramienta Mano;
+- [Seleccionar y transformar](./selection-and-manipulation) — seleccionar, mover, redimensionar, rotar y ordenar objetos.
 
 ## Crear contenido
 
-- [Dibujar formas](./drawing-shapes) — rectángulos, elipses, líneas, marcos, secciones
-- [Edición de texto](./text-editing) — crear y editar texto con formato enriquecido
-- [Herramienta pluma](./pen-tool) — trazados vectoriales con curvas de Bézier
+- [Dibujar formas](./drawing-shapes) — rectángulos, elipses, líneas, marcos, secciones, polígonos y estrellas;
+- [Editar texto](./text-editing) — crear, seleccionar y dar formato al texto;
+- [Pluma](./pen-tool) — dibujar rutas vectoriales y curvas de Bézier;
+- [Editar vectores](./vector-edit) — modificar puntos, tiradores y segmentos.
 
-## Organizar
+## Organizar el documento
 
-- [Capas y páginas](./layers-and-pages) — panel de capas, páginas y propiedades
-- [Menú contextual](./context-menu) — acciones del clic derecho
-- [Exportar](./exporting) — exportación de imágenes y operaciones .fig
+- [Capas y páginas](./layers-and-pages) — árbol de capas, páginas y propiedades;
+- [Menú contextual](./context-menu) — portapapeles, grupos, componentes y otras acciones;
+- [Exportar](./exporting) — imágenes, SVG y archivos `.fig`.
 
 ## Funciones avanzadas
 
-- [Auto-layout](./auto-layout) — posicionamiento automático de hijos usando reglas de flexbox
-- [Componentes](./components) — componentes reutilizables, instancias y overrides
-- [Variables](./variables) — variables de diseño, colecciones, modos
+- [Disposición automática](./auto-layout) — distribución con Flexbox y CSS Grid;
+- [Componentes](./components) — componentes reutilizables, instancias y sustituciones;
+- [Variables](./variables) — variables de diseño, colecciones, modos y enlaces.

@@ -56,10 +56,15 @@
   "arrangeAlignMiddle": "上下中央揃え",
   "arrangeAlignBottom": "下揃え",
   "multiplayerCursors": "マルチプレイヤーカーソル",
+  "preferences": "環境設定",
+  "snapToGeometry": "ジオメトリにスナップ",
+  "snapToObjects": "オブジェクトにスナップ",
+  "snapToPixelGrid": "ピクセルグリッドにスナップ",
   "renameSelection": "選択範囲の名前を変更…",
   "rulers": "ルーラー",
   "settings": "設定…",
   "splitRight": "右に分割",
   "splitDown": "下に分割",
-  "closeView": "ビューを閉じる"
+  "closeView": "ビューを閉じる",
+  "removeGuide": "ガイドを削除"
 }

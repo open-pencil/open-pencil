@@ -1,25 +1,10 @@
 import ts from 'typescript'
 
-const roots = [
-  'src',
-  'packages/core/src',
-  'packages/vue/src',
-  'packages/cli/src',
-  'packages/mcp/src',
-  'tests',
-  'scripts',
-  'tools'
-]
+import { discoverTypeShapeFiles } from './files'
+
+const files = await discoverTypeShapeFiles()
 
 type ShapeLocation = { file: string; line: number; name: string }
-
-const files: string[] = []
-for (const root of roots) {
-  for await (const path of new Bun.Glob('**/*.{ts,tsx}').scan(root)) {
-    if (path.endsWith('.d.ts')) continue
-    files.push(`${root}/${path}`)
-  }
-}
 
 function entityNameText(name: ts.EntityName): string {
   return ts.isIdentifier(name) ? name.text : `${entityNameText(name.left)}.${name.right.text}`
