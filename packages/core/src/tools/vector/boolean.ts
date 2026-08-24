@@ -3,6 +3,7 @@ import { defineTool, nodeSummary } from '#core/tools/schema'
 export const booleanUnion = defineTool({
   name: 'boolean_union',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Union (combine) multiple nodes.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to union', required: true }
@@ -16,6 +17,7 @@ export const booleanUnion = defineTool({
 export const booleanSubtract = defineTool({
   name: 'boolean_subtract',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Subtract the second node from the first.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs (first minus rest)', required: true }
@@ -29,6 +31,7 @@ export const booleanSubtract = defineTool({
 export const booleanIntersect = defineTool({
   name: 'boolean_intersect',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Intersect multiple nodes.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to intersect', required: true }
@@ -42,6 +45,7 @@ export const booleanIntersect = defineTool({
 export const booleanExclude = defineTool({
   name: 'boolean_exclude',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Exclude (XOR) multiple nodes.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to exclude', required: true }

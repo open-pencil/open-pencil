@@ -3,6 +3,7 @@ import { defineTool } from '#core/tools/schema'
 export const nodeReplaceWith = defineTool({
   name: 'node_replace_with',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Replace a node with JSX content.',
   params: {
     id: { type: 'string', description: 'Node ID to replace', required: true },

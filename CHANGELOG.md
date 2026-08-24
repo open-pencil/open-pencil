@@ -4,6 +4,8 @@
 
 ### Added
 
+- Improve AI chat with keyless OpenAI-compatible endpoints, persisted and recoverable conversations, queued follow-ups, context usage, and multimodal tool-result images.
+- Expose visual-first document tool metadata and workflows, recent MCP documents, inspection/modification tool filters, and complete local endpoint configuration in Settings.
 - Duplicate guides with Option/Alt-drag, show active guide coordinates in rulers, measure ruler-created guides against selected frames and their contents, and remove guides from the context menu.
 - Create, select, move, transfer, and delete canvas and frame guides directly from rulers, with undoable edits and `.fig` round-trip fidelity.
 - Open to a unified home with recent and configured storage documents, including grid or list layouts.
@@ -63,6 +65,10 @@
 
 ### Fixed
 
+- Synchronize MCP `switch_page` calls with the visible editor page.
+- Classify the MCP `open_file` tool as document inspection rather than document modification.
+- Keep the Home placeholder out of MCP document and page discovery when no design is open.
+- Export MCP-requested pages and nodes from their owning page, even when another page is active.
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
 
 - Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.

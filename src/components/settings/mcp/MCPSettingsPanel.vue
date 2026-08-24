@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { ToolEffect } from '@open-pencil/mcp/tools'
+import type { ToolDescriptor } from '@open-pencil/mcp/tools'
+import { useClipboard } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
@@ -12,23 +13,29 @@ import {
   setMCPToolEnabled
 } from '@/app/automation/mcp/preferences'
 import { mcpRuntime, refreshMCPRuntime, restartMCPRuntime } from '@/app/automation/mcp/runtime'
+import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { isTauri } from '@/app/tauri/env'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 
 const { dialogs } = useI18n()
 const toolSearch = ref('')
+const copyError = ref<string | null>(null)
+const mcpEndpoint = computed(() => `http://127.0.0.1:${mcpRuntime.port}/mcp`)
+const { copy: copyEndpoint, copied: endpointCopied } = useClipboard({ copiedDuring: 2000 })
+const { copy: copyToken, copied: tokenCopied } = useClipboard({ copiedDuring: 2000 })
+const { copy: copyConfig, copied: configCopied } = useClipboard({ copiedDuring: 2000 })
 const disabledToolNames = computed(() => new Set(disabledMCPTools.value))
-function categoryStatus(effect: ToolEffect) {
-  const tools = configurableMCPTools.value.filter((tool) => tool.effect === effect)
+function categoryStatus(documentAccess: ToolDescriptor['documentAccess']) {
+  const tools = configurableMCPTools.value.filter((tool) => tool.documentAccess === documentAccess)
   const enabled = tools.filter((tool) => !disabledToolNames.value.has(tool.name)).length
   return {
     enabled: enabled > 0,
     state: enabled > 0 && enabled < tools.length ? ('mixed' as const) : ('idle' as const)
   }
 }
-const inspectionToolsStatus = computed(() => categoryStatus('read'))
-const modificationToolsStatus = computed(() => categoryStatus('write'))
+const inspectionToolsStatus = computed(() => categoryStatus('inspect'))
+const modificationToolsStatus = computed(() => categoryStatus('modify'))
 const enabledToolCount = computed(
   () => configurableMCPTools.value.filter((tool) => !disabledToolNames.value.has(tool.name)).length
 )
@@ -63,6 +70,36 @@ function isToolEnabled(name: string): boolean {
 function enableAllTools(): void {
   disabledMCPTools.value = []
 }
+
+async function copyClientConfig(): Promise<void> {
+  copyError.value = null
+  try {
+    const token = mcpRuntime.authRequired ? await getAutomationAuthToken() : null
+    const config = {
+      mcpServers: {
+        'open-pencil': {
+          type: 'streamableHttp',
+          url: mcpEndpoint.value,
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {})
+        }
+      }
+    }
+    await copyConfig(JSON.stringify(config, null, 2))
+  } catch (error) {
+    copyError.value = error instanceof Error ? error.message : String(error)
+  }
+}
+
+async function copyAccessToken(): Promise<void> {
+  copyError.value = null
+  try {
+    const token = await getAutomationAuthToken()
+    if (!token) throw new Error(dialogs.value.mcpAccessTokenUnavailable)
+    await copyToken(token)
+  } catch (error) {
+    copyError.value = error instanceof Error ? error.message : String(error)
+  }
+}
 </script>
 
 <template>
@@ -91,7 +128,27 @@ function enableAllTools(): void {
         <dt class="text-muted">{{ dialogs.mcpPort }}</dt>
         <dd class="font-mono text-surface">{{ mcpRuntime.port }}</dd>
         <dt class="text-muted">{{ dialogs.mcpAddress }}</dt>
-        <dd class="select-all font-mono text-surface">127.0.0.1</dd>
+        <dd class="flex min-w-0 items-center gap-2 text-surface">
+          <code class="min-w-0 flex-1 select-all break-all text-[10px]">{{ mcpEndpoint }}</code>
+          <button
+            type="button"
+            class="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-surface"
+            :aria-label="dialogs.mcpCopyEndpoint"
+            data-test-id="settings-mcp-copy-endpoint"
+            @click="copyEndpoint(mcpEndpoint)"
+          >
+            <icon-lucide-check v-if="endpointCopied" class="size-3 text-green-500" />
+            <icon-lucide-copy v-else class="size-3" />
+          </button>
+        </dd>
+        <dt class="text-muted">{{ dialogs.mcpAuthentication }}</dt>
+        <dd class="text-surface">
+          {{ mcpRuntime.authRequired ? dialogs.mcpBearerTokenAuth : dialogs.mcpNoAuthentication }}
+        </dd>
+        <dt class="text-muted">{{ dialogs.mcpCorsOrigin }}</dt>
+        <dd class="break-all font-mono text-[10px] text-surface">
+          {{ mcpRuntime.corsOrigin || dialogs.mcpNoCorsOrigin }}
+        </dd>
         <template v-if="mcpRuntime.version">
           <dt class="text-muted">{{ dialogs.mcpVersion }}</dt>
           <dd class="font-mono text-surface">{{ mcpRuntime.version }}</dd>
@@ -146,6 +203,38 @@ function enableAllTools(): void {
           {{ dialogs.mcpRootDirectoryDescription }}
         </p>
       </div>
+
+      <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-start justify-between gap-3">
+          <p class="max-w-sm text-[10px] leading-relaxed text-muted">
+            {{ dialogs.mcpClientConfigDescription }}
+          </p>
+          <div class="flex shrink-0 items-center gap-1.5">
+            <button
+              v-if="mcpRuntime.authRequired"
+              type="button"
+              class="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[10px] text-surface hover:bg-hover"
+              data-test-id="settings-mcp-copy-token"
+              @click="copyAccessToken"
+            >
+              <icon-lucide-check v-if="tokenCopied" class="size-3 text-green-500" />
+              <icon-lucide-copy v-else class="size-3" />
+              {{ tokenCopied ? dialogs.copied : dialogs.mcpCopyAccessToken }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[10px] text-surface hover:bg-hover"
+              data-test-id="settings-mcp-copy-config"
+              @click="copyClientConfig"
+            >
+              <icon-lucide-check v-if="configCopied" class="size-3 text-green-500" />
+              <icon-lucide-copy v-else class="size-3" />
+              {{ configCopied ? dialogs.copied : dialogs.mcpCopyClientConfig }}
+            </button>
+          </div>
+        </div>
+        <p v-if="copyError" class="mt-2 text-[10px] text-red-400">{{ copyError }}</p>
+      </div>
     </div>
 
     <p
@@ -191,23 +280,23 @@ function enableAllTools(): void {
 
       <div class="grid grid-cols-2 gap-2 border-b border-border p-2.5">
         <div class="flex items-center justify-between gap-2 rounded bg-input px-2.5 py-2">
-          <span class="text-[10px] text-surface">{{ dialogs.mcpReadOnlyTools }}</span>
+          <span class="text-[10px] text-surface">{{ dialogs.mcpInspectionTools }}</span>
           <AppSwitch
             :model-value="inspectionToolsStatus.enabled"
             :state="inspectionToolsStatus.state"
-            :label="dialogs.mcpReadOnlyTools"
+            :label="dialogs.mcpInspectionTools"
             data-test-id="settings-mcp-inspection-tools"
-            @update:model-value="setMCPToolCategoryEnabled('read', $event)"
+            @update:model-value="setMCPToolCategoryEnabled('inspect', $event)"
           />
         </div>
         <div class="flex items-center justify-between gap-2 rounded bg-input px-2.5 py-2">
-          <span class="text-[10px] text-surface">{{ dialogs.mcpSideEffectTools }}</span>
+          <span class="text-[10px] text-surface">{{ dialogs.mcpModificationTools }}</span>
           <AppSwitch
             :model-value="modificationToolsStatus.enabled"
             :state="modificationToolsStatus.state"
-            :label="dialogs.mcpSideEffectTools"
+            :label="dialogs.mcpModificationTools"
             data-test-id="settings-mcp-modification-tools"
-            @update:model-value="setMCPToolCategoryEnabled('write', $event)"
+            @update:model-value="setMCPToolCategoryEnabled('modify', $event)"
           />
         </div>
       </div>

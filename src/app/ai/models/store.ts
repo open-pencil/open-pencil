@@ -74,6 +74,12 @@ function normalizedMaxOutputTokens(value: unknown): number {
     : DEFAULT_MAX_OUTPUT_TOKENS
 }
 
+function normalizedContextWindowTokens(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.min(10_000_000, Math.max(1024, Math.round(value)))
+    : undefined
+}
+
 function parseConnection(value: unknown): AIModelConnection | null {
   if (!isRecord(value)) return null
   const id = stringValue(value.id)
@@ -103,6 +109,8 @@ function parseProfile(value: unknown, connectionIds: Set<string>): AIModelProfil
     modelID: stringValue(value.modelID),
     customModelID: stringValue(value.customModelID),
     maxOutputTokens: normalizedMaxOutputTokens(value.maxOutputTokens),
+    contextWindowTokens: normalizedContextWindowTokens(value.contextWindowTokens),
+    textInput: typeof value.textInput === 'boolean' ? value.textInput : undefined,
     reasoningEffort: stringValue(value.reasoningEffort).trim() || undefined,
     harnessThinkingLevel: isHarnessThinkingLevel(value.harnessThinkingLevel)
       ? value.harnessThinkingLevel
@@ -306,6 +314,8 @@ function draftForProfile(
     customBaseURL: connection.customBaseURL,
     customAPIType: connection.customAPIType,
     maxOutputTokens: profile.maxOutputTokens,
+    contextWindowTokens: profile.contextWindowTokens,
+    textInput: profile.textInput,
     reasoningEffort: profile.reasoningEffort ?? '',
     harnessThinkingLevel: profile.harnessThinkingLevel ?? 'medium',
     harnessPermissionMode: profile.harnessPermissionMode ?? 'allow-edits',
@@ -326,6 +336,8 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     customBaseURL: connection?.customBaseURL ?? '',
     customAPIType: connection?.customAPIType ?? 'completions',
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
+    contextWindowTokens: undefined,
+    textInput: undefined,
     reasoningEffort: '',
     harnessThinkingLevel: 'medium',
     harnessPermissionMode: 'allow-edits',
@@ -362,6 +374,8 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     modelID: draft.modelID.trim() || provider?.defaultModel || '',
     customModelID: draft.customModelID.trim(),
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
+    contextWindowTokens: normalizedContextWindowTokens(draft.contextWindowTokens),
+    textInput: draft.textInput,
     reasoningEffort: draft.reasoningEffort.trim() || undefined,
     harnessThinkingLevel:
       draft.providerID === 'harness:pi' ? draft.harnessThinkingLevel : undefined,

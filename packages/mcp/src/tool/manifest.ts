@@ -18,12 +18,16 @@ const TOOL_CAPABILITY_OVERRIDES: Readonly<Partial<Record<string, readonly ToolCa
 }
 
 export function coreToolEffect(def: ToolDef): ToolEffect {
-  return toolChangesDocument(def) ? 'write' : 'read'
+  const modifiesDocument = def.documentAccess
+    ? def.documentAccess === 'modify'
+    : toolChangesDocument(def)
+  return modifiesDocument ? 'write' : 'read'
 }
 
 export function coreToolCapabilities(def: ToolDef): ToolCapability[] {
   const override = TOOL_CAPABILITY_OVERRIDES[def.name]
-  return override ? [...override] : [toolChangesDocument(def) ? 'document:write' : 'document:read']
+  if (override) return [...override]
+  return [coreToolEffect(def) === 'write' ? 'document:write' : 'document:read']
 }
 
 export function coreToolAvailability(def: ToolDef): ToolAvailability {
@@ -31,10 +35,12 @@ export function coreToolAvailability(def: ToolDef): ToolAvailability {
 }
 
 function coreToolDescriptor(def: ToolDef): ToolDescriptor {
+  const effect = coreToolEffect(def)
   return {
     name: def.name,
     description: def.description,
-    effect: coreToolEffect(def),
+    effect,
+    documentAccess: def.documentAccess ?? (effect === 'write' ? 'modify' : 'inspect'),
     availability: coreToolAvailability(def),
     capabilities: coreToolCapabilities(def),
     enabled: true
@@ -49,6 +55,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       description:
         'List open OpenPencil documents/tabs with their IDs, file paths, current pages, and pages.',
       effect: 'read',
+      documentAccess: 'inspect',
       availability: 'default',
       capabilities: ['document:read'],
       enabled: true
@@ -58,6 +65,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       description:
         'Save the current document to disk. An optional path must stay inside the configured MCP root.',
       effect: 'write',
+      documentAccess: 'modify',
       availability: 'default',
       capabilities: ['document:read', 'filesystem:write'],
       enabled: true
@@ -67,9 +75,10 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
           {
             name: 'open_file',
             description: 'Open a .fig or .pen file from inside the configured MCP root.',
-            effect: 'write',
+            effect: 'read',
+            documentAccess: 'inspect',
             availability: 'filesystem',
-            capabilities: ['filesystem:read', 'document:write'],
+            capabilities: ['filesystem:read', 'document:read'],
             enabled: true
           } satisfies ToolDescriptor,
           {
@@ -77,6 +86,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
             description:
               'Create a new empty document with an optional save path inside the configured MCP root.',
             effect: 'write',
+            documentAccess: 'modify',
             availability: 'filesystem',
             capabilities: ['document:write', 'filesystem:write'],
             enabled: true
@@ -88,6 +98,7 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       description:
         'Get design-to-code generation guidelines. Call before generating frontend code.',
       effect: 'read',
+      documentAccess: 'inspect',
       availability: 'default',
       capabilities: [],
       enabled: true

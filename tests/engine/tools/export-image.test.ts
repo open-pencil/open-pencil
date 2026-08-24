@@ -56,4 +56,40 @@ describe('export_image tool', () => {
 
     expect(calls[0]?.scale).toBe(1)
   })
+
+  test('switches to the page containing the requested node before exporting', async () => {
+    const { figma } = setupToolTest()
+    const initialPage = figma.currentPage
+    const requestedPage = figma.createPage()
+    figma.currentPage = requestedPage
+    const frame = figma.createFrame()
+    frame.resize(375, 812)
+    figma.currentPage = initialPage
+    const exportedPages: string[] = []
+    figma.exportImage = async () => {
+      exportedPages.push(figma.currentPageId)
+      return new Uint8Array([1])
+    }
+
+    const result = await getTool('export_image').execute(figma, { ids: [frame.id] })
+
+    expect(result).not.toEqual({ error: expect.any(String) })
+    expect(exportedPages).toEqual([requestedPage.id])
+    expect(figma.currentPageId).toBe(requestedPage.id)
+  })
+
+  test('rejects node selections spanning multiple pages', async () => {
+    const { figma } = setupToolTest()
+    const first = figma.createFrame()
+    const secondPage = figma.createPage()
+    figma.currentPage = secondPage
+    const second = figma.createFrame()
+    figma.exportImage = async () => new Uint8Array([1])
+
+    const result = await getTool('export_image').execute(figma, {
+      ids: [first.id, second.id]
+    })
+
+    expect(result).toEqual({ error: 'Export selection must stay on a single page' })
+  })
 })

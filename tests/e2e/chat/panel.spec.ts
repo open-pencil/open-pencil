@@ -61,6 +61,17 @@ async function injectMockTransport(page: Page) {
           start(controller) {
             controller.enqueue({ type: 'start', messageId: msgId })
 
+            if (lowerText.includes('slow response')) {
+              controller.enqueue({ type: 'text-start', id: 'text-1' })
+              controller.enqueue({ type: 'text-delta', id: 'text-1', delta: 'Slow response ' })
+              setTimeout(() => {
+                controller.enqueue({ type: 'text-end', id: 'text-1' })
+                controller.enqueue({ type: 'finish', finishReason: 'stop' })
+                controller.close()
+              }, 500)
+              return
+            }
+
             if (wantsTool) {
               const toolCallId = `call-${msgId}`
               controller.enqueue({
@@ -115,6 +126,16 @@ async function injectMockTransport(page: Page) {
         return null
       }
     }))
+  })
+}
+
+async function injectFailingTransport(page: Page) {
+  await page.evaluate(() => {
+    const setChatTransport = window.openPencil?.setChatTransport
+    if (!setChatTransport) throw new Error('Transport override not available')
+    setChatTransport(() => {
+      throw new Error('Mock chat initialization failed')
+    })
   })
 }
 
@@ -259,6 +280,55 @@ test('assistant responds', async () => {
   } else {
     await expect(page.getByText('mock response', { exact: false })).toBeVisible({ timeout: 5000 })
   }
+})
+
+test('queues messages while the assistant is responding', async () => {
+  test.skip(USE_REAL_LLM, 'Requires the delayed mock transport')
+
+  await chatInput().fill('Give me a slow response')
+  await chatInput().press('Enter')
+  await expect(page.getByTestId('chat-stop-button')).toBeVisible()
+  await expect(page.getByTestId('chat-send-button')).toBeHidden()
+
+  await chatInput().fill('Queued follow-up')
+  await expect(page.getByTestId('chat-stop-button')).toBeHidden()
+  await expect(page.getByTestId('chat-send-button')).toBeVisible()
+  await chatInput().fill('')
+  await expect(page.getByTestId('chat-stop-button')).toBeVisible()
+  await chatInput().fill('Queued follow-up')
+  await chatInput().press('Enter')
+
+  const queue = page.getByTestId('chat-message-queue')
+  await expect(queue).toBeVisible()
+  await expect(queue.getByText('Queued follow-up')).toBeVisible()
+  await expect(chatInput()).toBeEnabled()
+
+  await expect(queue).toBeHidden({ timeout: 5000 })
+  await expect(page.getByText('Queued follow-up', { exact: true })).toBeVisible()
+  await expect(page.getByText(/I'll help you with: "Queued follow-up"/)).toBeVisible()
+})
+
+test('keeps a queued message when chat initialization fails', async () => {
+  test.skip(USE_REAL_LLM, 'Requires mock transport replacement')
+
+  await injectMockTransport(page)
+  await chatInput().fill('Give me a slow response')
+  await chatInput().press('Enter')
+  await expect(page.getByTestId('chat-stop-button')).toBeVisible()
+
+  await injectFailingTransport(page)
+  await chatInput().fill('Keep this queued message')
+  await chatInput().press('Enter')
+
+  const queue = page.getByTestId('chat-message-queue')
+  await expect(queue.getByText('Keep this queued message')).toBeVisible()
+  await page.waitForTimeout(800)
+  await expect(queue.getByText('Keep this queued message')).toBeVisible()
+
+  await injectMockTransport(page)
+  await page.getByRole('button', { name: 'Resume' }).click()
+  await expect(queue).toBeHidden({ timeout: 5000 })
+  await expect(page.getByText(/I'll help you with: "Keep this queued message"/)).toBeVisible()
 })
 
 test('completed Markdown responses release streaming parser history', async () => {

@@ -5,6 +5,9 @@ import { computed, markRaw, nextTick, ref, watch } from 'vue'
 
 import { getACPDebugText, clearACPDebugLog, hasACPDebugEntries } from '@/app/ai/acp/transport'
 import { copyChatLog } from '@/app/ai/debug'
+import { removeMessageFromHistory, removePartFromHistory } from '@/app/ai/chat/history'
+import { recoverConversationPrefix } from '@/app/ai/chat/recovery'
+import { clearPersistedChat, readPersistedChat, writePersistedChat } from '@/app/ai/chat/storage'
 import {
   analyzeAttachedImages,
   designMessageWithImageFindings
@@ -65,6 +68,10 @@ void ensureChat()
 const messagesEnd = ref<HTMLDivElement>()
 const debugCopied = refAutoReset(false, 1500)
 const acpLogCopied = refAutoReset(false, 1500)
+const queuedMessages = ref<Array<{ id: string; text: string }>>([])
+const queuePaused = ref(false)
+const recoveryNeeded = ref(readPersistedChat()?.interrupted === true)
+let dispatchingMessage = false
 
 const messages = computed(() => chat.value?.messages ?? [])
 const failureMessage = computed(() => {
@@ -115,17 +122,33 @@ function scrollToBottom() {
   })
 }
 
-watch(messages, scrollToBottom, { deep: true })
+watch(
+  messages,
+  (value) => {
+    scrollToBottom()
+    if (value.length > 0) writePersistedChat(value, recoveryNeeded.value || isChatBusy())
+  },
+  { deep: true }
+)
+watch(status, () => {
+  if (messages.value.length > 0) {
+    writePersistedChat(messages.value, recoveryNeeded.value || isChatBusy())
+  }
+})
 watch(
   () => chatFailure.value?.reason,
   (reason) => {
     if (!reason) return
+    recoveryNeeded.value = true
+    if (messages.value.length > 0) writePersistedChat(messages.value, true)
+    queuePaused.value = true
     toast.error(failureMessage.value ?? dialogs.value.chatRequestFailed)
   }
 )
 watch(
   () => activeTab.value?.id,
   async () => {
+    clearQueue()
     attachmentOperationVersion += 1
     isPreparingImages.value = false
     clearImageAttachmentPresentations()
@@ -134,13 +157,59 @@ watch(
   }
 )
 
+function isChatBusy() {
+  return status.value === 'streaming' || status.value === 'submitted'
+}
+
+function enqueueMessage(text: string) {
+  queuedMessages.value.push({ id: crypto.randomUUID(), text })
+}
+
+async function retryLastMessage() {
+  if (!chat.value || isChatBusy()) return
+  const recovered = recoverConversationPrefix(messages.value)
+  const last = recovered[recovered.length - 1]
+  if (!last) return
+
+  recoveryNeeded.value = false
+  queuePaused.value = false
+  try {
+    chat.value.messages = recovered
+    if (last.role === 'user') {
+      await chat.value.regenerate({ messageId: last.id })
+    } else {
+      const continuation: UIMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        parts: []
+      }
+      chat.value.messages = [...recovered, continuation]
+      await chat.value.regenerate({ messageId: continuation.id })
+    }
+  } catch (error) {
+    recoveryNeeded.value = true
+    toast.error(error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function dispatchNextMessage() {
+  if (queuePaused.value || dispatchingMessage || isChatBusy()) return
+  const next = queuedMessages.value[0]
+  if (!next) return
+  removeQueuedMessage(next.id)
+  await handleSubmit(next.text)
+}
+
 async function handleSubmit(text: string, images: ImageAttachmentDraft[] = []) {
   if (status.value === 'streaming' || status.value === 'submitted' || isPreparingImages.value) {
     for (const image of images) revokeImagePreviewURL(image.previewURL)
     if (images.length > 0) toast.error(dialogs.value.chatRequestFailed)
+    else enqueueMessage(text)
     return
   }
 
+  recoveryNeeded.value = false
+  dispatchingMessage = true
   const operationVersion = ++attachmentOperationVersion
   if (images.length > 0) isPreparingImages.value = true
   clearChatFailure()
@@ -214,14 +283,53 @@ async function handleSubmit(text: string, images: ImageAttachmentDraft[] = []) {
     })
   } catch (e) {
     console.error('Chat error:', e)
+    recoveryNeeded.value = true
+    queuePaused.value = true
     toast.error(dialogs.value.chatRequestFailed)
   } finally {
     if (operationVersion === attachmentOperationVersion) isPreparingImages.value = false
+    dispatchingMessage = false
   }
+
+  await dispatchNextMessage()
 }
 
 function handleStop() {
+  recoveryNeeded.value = true
+  if (messages.value.length > 0) writePersistedChat(messages.value, true)
+  queuePaused.value = true
   chat.value?.stop()
+}
+
+function removeQueuedMessage(id: string) {
+  queuedMessages.value = queuedMessages.value.filter((message) => message.id !== id)
+  if (queuedMessages.value.length === 0) queuePaused.value = false
+}
+
+function persistEditedHistory(updatedMessages: UIMessage[]) {
+  if (!chat.value || isChatBusy()) return
+  chat.value.messages = updatedMessages
+  recoveryNeeded.value = updatedMessages.length > 0
+  if (updatedMessages.length > 0) writePersistedChat(updatedMessages, true)
+  else clearPersistedChat()
+}
+
+function removeChatMessage(messageId: string) {
+  persistEditedHistory(removeMessageFromHistory(messages.value, messageId))
+}
+
+function removeToolExecution(messageId: string, partKey: string) {
+  persistEditedHistory(removePartFromHistory(messages.value, messageId, partKey))
+}
+
+function clearQueue() {
+  queuedMessages.value = []
+  queuePaused.value = false
+}
+
+function resumeQueue() {
+  queuePaused.value = false
+  void dispatchNextMessage()
 }
 
 async function handleCopyDebug() {
@@ -237,14 +345,15 @@ async function handleCopyACPLog() {
 }
 
 function handleClearChat() {
+  clearQueue()
   attachmentOperationVersion += 1
   isPreparingImages.value = false
   clearChatFailure()
   clearImageAttachmentPresentations()
   chat.value = null
-  void resetChat().catch((error: unknown) => {
-    console.error('Chat reset error:', error)
-  })
+  resetChat()
+  clearPersistedChat()
+  recoveryNeeded.value = false
   clearToolLogEntries()
   clearACPDebugLog()
 }
@@ -275,7 +384,22 @@ function handleClearChat() {
               :key="msg.id"
               :message="msg"
               :streaming="isStreamingMessage(msg, index)"
+              :removable="status === 'ready'"
+              @remove-message="removeChatMessage(msg.id)"
+              @remove-part="removeToolExecution(msg.id, $event)"
             />
+
+            <div v-if="recoveryNeeded && status === 'ready'" class="flex justify-center py-2">
+              <button
+                type="button"
+                data-test-id="chat-retry-last-message"
+                class="flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
+                @click="retryLastMessage"
+              >
+                <icon-lucide-rotate-ccw class="size-3" />
+                {{ dialogs.retryLastMessage }}
+              </button>
+            </div>
 
             <!-- Thinking indicator: shown when AI is working but no visible activity -->
             <div v-if="isThinking" data-test-id="chat-typing-indicator" class="flex gap-2">
@@ -349,6 +473,51 @@ function handleClearChat() {
           <icon-lucide-trash-2 class="size-3" />
           Clear
         </AppTextButton>
+      </div>
+
+      <div
+        v-if="queuedMessages.length > 0"
+        data-test-id="chat-message-queue"
+        class="shrink-0 border-t border-border px-3 py-2"
+      >
+        <div class="mb-1.5 flex items-center gap-2 text-[10px] font-medium text-muted">
+          <span>{{ dialogs.queuedMessages({ count: queuedMessages.length }) }}</span>
+          <button
+            v-if="queuePaused"
+            type="button"
+            data-test-id="chat-queue-resume"
+            class="ml-auto flex items-center gap-1 rounded px-1.5 py-0.5 text-accent hover:bg-hover"
+            @click="resumeQueue"
+          >
+            <icon-lucide-play class="size-3" />
+            {{ dialogs.resumeQueue }}
+          </button>
+          <button
+            type="button"
+            class="rounded px-1.5 py-0.5 hover:bg-hover hover:text-surface"
+            @click="clearQueue"
+          >
+            {{ dialogs.clearQueue }}
+          </button>
+        </div>
+        <div class="flex max-h-24 flex-col gap-1 overflow-y-auto">
+          <div
+            v-for="message in queuedMessages"
+            :key="message.id"
+            data-test-id="chat-queued-message"
+            class="flex items-center gap-2 rounded bg-muted/10 px-2 py-1 text-xs"
+          >
+            <span class="min-w-0 flex-1 truncate">{{ message.text }}</span>
+            <button
+              type="button"
+              :aria-label="dialogs.removeQueuedMessage"
+              class="shrink-0 rounded p-0.5 text-muted hover:bg-hover hover:text-surface"
+              @click="removeQueuedMessage(message.id)"
+            >
+              <icon-lucide-x class="size-3" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <ChatInput

@@ -20,6 +20,8 @@ export interface MCPRuntimeState {
   status: MCPRuntimeStatus
   port: number
   version: string | null
+  authRequired: boolean
+  corsOrigin: string | null
   error: string | null
   checking: boolean
   externallyManaged: boolean
@@ -44,6 +46,8 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     status: 'idle',
     port: AUTOMATION_HTTP_PORT,
     version: null,
+    authRequired: false,
+    corsOrigin: null,
     error: null,
     checking: false,
     externallyManaged: false
@@ -65,6 +69,8 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
 
   function applyHealth(health: AutomationHealth): void {
     state.version = health.version ?? null
+    state.authRequired = health.authRequired ?? false
+    state.corsOrigin = health.corsOrigin ?? null
     dependencies.setToolDescriptors(health.tools ?? [])
     state.status = 'running'
     state.error = null
@@ -79,6 +85,8 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
         return { ok: true }
       }
       state.version = null
+      state.authRequired = false
+      state.corsOrigin = null
       dependencies.setToolDescriptors([])
       if (state.status !== 'error') state.status = 'stopped'
       return { ok: true }
@@ -136,6 +144,8 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     if (releaseStore) activeStore = null
     state.status = disconnectError ? 'error' : 'stopped'
     state.version = null
+    state.authRequired = false
+    state.corsOrigin = null
     state.error = disconnectError?.message ?? null
     state.externallyManaged = false
     dependencies.setToolDescriptors([])

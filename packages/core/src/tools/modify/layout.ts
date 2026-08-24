@@ -5,6 +5,7 @@ import { defineTool, nodeNotFound } from '#core/tools/schema'
 export const setLayout = defineTool({
   name: 'set_layout',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set auto-layout (flexbox) on a frame. Direction, alignment, spacing, padding.',
   params: {
     id: { type: 'string', description: 'Frame node ID', required: true },
@@ -86,6 +87,7 @@ export const setLayout = defineTool({
 export const setConstraints = defineTool({
   name: 'set_constraints',
   mutates: true,
+  documentAccess: 'modify',
   description: 'Set resize constraints for a node within its parent.',
   params: {
     id: { type: 'string', description: 'Node ID', required: true },
@@ -116,6 +118,7 @@ export const setConstraints = defineTool({
 export const setLayoutChild = defineTool({
   name: 'set_layout_child',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Configure auto-layout child: sizing (FIXED/HUG/FILL), grow, alignment, absolute positioning.',
   params: {

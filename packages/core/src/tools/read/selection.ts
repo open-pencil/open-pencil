@@ -3,6 +3,7 @@ import { defineTool, nodeToResult } from '#core/tools/schema'
 
 export const getSelection = defineTool({
   name: 'get_selection',
+  documentAccess: 'inspect',
   description: 'Get details about currently selected nodes.',
   params: {},
   execute: (figma) => {
@@ -14,7 +15,7 @@ export const getSelection = defineTool({
 export const selectNodes = defineTool({
   name: 'select_nodes',
   mutates: true,
-  changesDocument: false,
+  documentAccess: 'inspect',
   description: 'Select one or more nodes by ID.',
   params: {
     ids: { type: 'string[]', description: 'Node IDs to select', required: true }

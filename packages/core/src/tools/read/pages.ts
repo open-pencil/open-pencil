@@ -4,12 +4,14 @@ import { defineTool } from '#core/tools/schema'
 
 export const listPages = defineTool({
   name: 'list_pages',
-  description: 'List all pages in the document.',
+  documentAccess: 'inspect',
+  description:
+    'Mandatory first tool call. Compactly returns the current page and all document pages. Call before every other tool; use returned IDs instead of guessing.',
   params: {},
   execute: (figma) => {
     const pages = figma.root.children
     return {
-      current: figma.currentPage.name,
+      current: { id: figma.currentPage.id, name: figma.currentPage.name },
       pages: pages.map((page) => ({ id: page.id, name: page.name }))
     }
   }
@@ -18,7 +20,7 @@ export const listPages = defineTool({
 export const switchPage = defineTool({
   name: 'switch_page',
   mutates: true,
-  changesDocument: false,
+  documentAccess: 'inspect',
   description: 'Switch to a different page by name or ID.',
   params: {
     page: { type: 'string', description: 'Page name or ID', required: true }
@@ -26,7 +28,7 @@ export const switchPage = defineTool({
   execute: (figma, { page }) => {
     const target =
       figma.root.children.find((candidate) => candidate.name === page) ?? figma.getNodeById(page)
-    if (!target) return { error: `Page "${page}" not found` }
+    if (target?.type !== 'CANVAS') return { error: `Page "${page}" not found` }
     figma.currentPage = target
     return { page: target.name, id: target.id }
   }
@@ -34,6 +36,7 @@ export const switchPage = defineTool({
 
 export const getCurrentPage = defineTool({
   name: 'get_current_page',
+  documentAccess: 'inspect',
   description: 'Get the current page name and ID.',
   params: {},
   execute: (figma) => {
@@ -43,6 +46,7 @@ export const getCurrentPage = defineTool({
 
 export const pageBounds = defineTool({
   name: 'page_bounds',
+  documentAccess: 'inspect',
   description: 'Get bounding box of all objects on the current page.',
   params: {},
   execute: (figma) => {

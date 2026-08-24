@@ -4,6 +4,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const analyzeSpacing = defineTool({
   name: 'analyze_spacing',
+  documentAccess: 'inspect',
   description:
     'Analyze spacing values (gap, padding) across the current page. Checks grid compliance.',
   params: {

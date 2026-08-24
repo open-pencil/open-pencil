@@ -14,7 +14,9 @@ import {
 } from '@/app/ai/chat/failure'
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { buildReasoningProviderOptions, type AIProviderOptions } from '@/app/ai/chat/reasoning'
+import { readPersistedChat } from '@/app/ai/chat/storage'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
+import { moveToolImagesToUserMessages } from '@/app/ai/chat/tool-image-messages'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
 import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/app/ai/tools'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
@@ -36,6 +38,7 @@ type ToolLoopTransportOptions = {
   model: LanguageModel
   effectiveModelID: string
   maxOutputTokens: number
+  customAPIType: 'completions' | 'responses'
   reasoningEffort: string
 }
 
@@ -75,6 +78,7 @@ export function createToolLoopTransport({
   model,
   effectiveModelID,
   maxOutputTokens,
+  customAPIType,
   reasoningEffort
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store)
@@ -93,6 +97,10 @@ export function createToolLoopTransport({
     stopWhen: stepCountIs(MAX_AGENT_STEPS),
     maxOutputTokens,
     providerOptions,
+    prepareStep:
+      providerID === 'openai-compatible' && customAPIType === 'completions'
+        ? ({ messages }) => ({ messages: moveToolImagesToUserMessages(messages) })
+        : undefined,
     prepareCall: (options) => {
       resetRunSteps(store)
       return {
@@ -224,6 +232,7 @@ export function createChatSessionManager({
         customModelID: runtime.role.profile.customModelID
       }),
       maxOutputTokens: runtime.role.profile.maxOutputTokens,
+      customAPIType: runtime.role.connection.customAPIType,
       reasoningEffort: runtime.role.profile.reasoningEffort ?? ''
     })
   }
@@ -238,7 +247,7 @@ export function createChatSessionManager({
     }
 
     if (!chat || transportDirty || currentChatStore !== store) {
-      const messages = currentChatMessages.get(store)
+      const messages = currentChatMessages.get(store) ?? readPersistedChat()?.messages
       let transport: ChatTransport<UIMessage>
       if (isACPProvider.value) transport = await createActiveACPTransport()
       else if (isHarnessProvider.value) transport = await createActiveHarnessTransport()

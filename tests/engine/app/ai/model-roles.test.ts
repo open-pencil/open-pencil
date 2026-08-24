@@ -208,6 +208,14 @@ describe('AI model profiles and role assignments', () => {
     expect(saveModelProfileDraft(draft).maxOutputTokens).toBe(16_384)
   })
 
+  test('treats an unspecified text input setting as enabled', () => {
+    const draft = createModelProfileDraft('model-fast')
+    expect(draft.textInput).toBeUndefined()
+
+    draft.textInput = false
+    expect(saveModelProfileDraft(draft).textInput).toBe(false)
+  })
+
   test('persists provider-specific reasoning effort', () => {
     const draft = createModelProfileDraft('model-fast')
     draft.reasoningEffort = 'none'
@@ -275,5 +283,31 @@ describe('AI model profiles and role assignments', () => {
     } finally {
       await setModelConnectionAPIKey('connection-anthropic', '')
     }
+  })
+
+  test('creates an OpenAI-compatible runtime without an API key', async () => {
+    const settings = settingsFixture()
+    settings.connections.push({
+      id: 'connection-local',
+      providerID: 'openai-compatible',
+      customBaseURL: 'http://127.0.0.1:1234/v1',
+      customAPIType: 'completions',
+      credentialProfileId: 'local-no-key'
+    })
+    settings.models.push({
+      id: 'model-local',
+      name: 'LM Studio',
+      connectionId: 'connection-local',
+      modelID: '',
+      customModelID: 'local-model',
+      maxOutputTokens: 4096,
+      capabilities: ['tools']
+    })
+    settings.assignments.design = 'model-local'
+    replaceAIModelSettings(settings)
+
+    const runtime = await createAIModelRuntime('design')
+    expect(runtime?.kind).toBe('direct')
+    expect(runtime?.role.profile.id).toBe('model-local')
   })
 })
