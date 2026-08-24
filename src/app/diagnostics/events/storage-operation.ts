@@ -10,6 +10,6 @@ export function storageOperationForJob(type: OutboxJobType): StorageDiagnosticOp
     case 'deleteCanvas':
       return 'delete'
     default:
-      throw new Error(`Unsupported outbox job type: ${type}`)
+      throw new Error('Unsupported outbox job type')
   }
 }
