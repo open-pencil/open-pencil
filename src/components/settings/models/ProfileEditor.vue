@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import {
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogDescription,
-  AlertDialogTitle,
-  CollapsibleContent,
-  CollapsibleRoot,
-  CollapsibleTrigger
-} from 'reka-ui'
+import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
 
 import { ACP_AGENTS, AI_PROVIDERS, type AIProviderID } from '@open-pencil/core/constants'
@@ -40,7 +32,7 @@ import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSet
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
-import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
+import { AppConfirmationDialog } from '@/components/ui/dialog'
 
 const CUSTOM_MODEL_VALUE = '__custom__'
 const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
@@ -523,28 +515,14 @@ void refreshKeyStatus()
     </div>
   </div>
 
-  <AppAlertDialogRoot v-model:open="deleteOpen" data-test-id="delete-model-dialog">
-    <div class="border-b border-border px-4 py-3">
-      <AlertDialogTitle class="text-sm font-semibold text-surface">
-        {{ dialogs.deleteModel }}
-      </AlertDialogTitle>
-    </div>
-    <AppDialogBody>
-      <AlertDialogDescription class="text-xs text-muted">
-        {{ dialogs.deleteModelDescription }}
-      </AlertDialogDescription>
-    </AppDialogBody>
-    <AppDialogFooter>
-      <AlertDialogCancel as-child>
-        <button class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover">
-          {{ dialogs.cancel }}
-        </button>
-      </AlertDialogCancel>
-      <AlertDialogAction as-child>
-        <button class="rounded bg-danger px-3 py-1.5 text-xs text-white" @click="remove">
-          {{ dialogs.deleteModel }}
-        </button>
-      </AlertDialogAction>
-    </AppDialogFooter>
-  </AppAlertDialogRoot>
+  <AppConfirmationDialog
+    v-model:open="deleteOpen"
+    data-test-id="delete-model-dialog"
+    :heading="dialogs.deleteModel"
+    :description="dialogs.deleteModelDescription"
+    :cancel-label="dialogs.cancel"
+    :confirm-label="dialogs.deleteModel"
+    tone="danger"
+    @confirm="remove"
+  />
 </template>

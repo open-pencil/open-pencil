@@ -1,12 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import {
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogDescription,
-  AlertDialogTitle
-} from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import {
   createMCPConnectionDraft,
@@ -21,7 +15,7 @@ import type { CredentialStatus } from '@/app/settings/credentials/types'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
-import { AppAlertDialogRoot, AppDialogBody, AppDialogFooter } from '@/components/ui/dialog'
+import { AppConfirmationDialog } from '@/components/ui/dialog'
 
 const { dialogs } = useI18n()
 const editing = ref(false)
@@ -235,28 +229,13 @@ onMounted(() => {
     </div>
   </section>
 
-  <AppAlertDialogRoot v-model:open="deleteOpen">
-    <div class="border-b border-border px-4 py-3">
-      <AlertDialogTitle class="text-sm font-semibold text-surface">
-        {{ dialogs.deleteMCPConnection }}
-      </AlertDialogTitle>
-    </div>
-    <AppDialogBody>
-      <AlertDialogDescription class="text-xs text-muted">
-        {{ dialogs.deleteMCPConnectionDescription }}
-      </AlertDialogDescription>
-    </AppDialogBody>
-    <AppDialogFooter>
-      <AlertDialogCancel as-child>
-        <button class="rounded px-3 py-1.5 text-xs text-muted hover:bg-hover">
-          {{ dialogs.cancel }}
-        </button>
-      </AlertDialogCancel>
-      <AlertDialogAction as-child>
-        <button class="rounded bg-danger px-3 py-1.5 text-xs text-white" @click="remove">
-          {{ dialogs.deleteMCPConnection }}
-        </button>
-      </AlertDialogAction>
-    </AppDialogFooter>
-  </AppAlertDialogRoot>
+  <AppConfirmationDialog
+    v-model:open="deleteOpen"
+    :heading="dialogs.deleteMCPConnection"
+    :description="dialogs.deleteMCPConnectionDescription"
+    :cancel-label="dialogs.cancel"
+    :confirm-label="dialogs.deleteMCPConnection"
+    tone="danger"
+    @confirm="remove"
+  />
 </template>

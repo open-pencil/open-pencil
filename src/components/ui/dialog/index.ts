@@ -1,6 +1,7 @@
 export { default as AppAlertDialogRoot } from './AppAlertDialogRoot.vue'
+export { default as AppConfirmationDialog } from './AppConfirmationDialog.vue'
+export { default as AppDialog } from './AppDialog.vue'
 export { default as AppDialogBody } from './AppDialogBody.vue'
-export { default as AppDialogClose } from './AppDialogClose.vue'
 export { default as AppDialogFooter } from './AppDialogFooter.vue'
 export { default as AppDialogHeader } from './AppDialogHeader.vue'
 export { default as AppDialogRoot } from './AppDialogRoot.vue'

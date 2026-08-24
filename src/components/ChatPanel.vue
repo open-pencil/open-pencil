@@ -27,7 +27,7 @@ import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
-import AppTextButton from '@/components/ui/AppTextButton.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import { useAIChat } from '@/app/ai/chat/use'
 import { toast } from '@/app/shell/ui'
@@ -324,31 +324,26 @@ function handleClearChat() {
         v-if="messages.length > 0"
         class="flex shrink-0 items-center gap-1 border-t border-border px-3 py-1"
       >
-        <AppTextButton
-          v-if="IS_DEV"
-          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-hover' }"
-          @click="handleCopyDebug"
-        >
+        <AppButton v-if="IS_DEV" color="neutral" variant="ghost" size="xs" @click="handleCopyDebug">
           <icon-lucide-clipboard-copy v-if="!debugCopied" class="size-3" />
           <icon-lucide-check v-else class="size-3 text-green-400" />
           {{ debugCopied ? 'Copied' : 'Copy log' }}
-        </AppTextButton>
-        <AppTextButton
+        </AppButton>
+        <AppButton
           v-if="IS_DEV && hasACPDebugEntries()"
-          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-hover' }"
+          color="neutral"
+          variant="ghost"
+          size="xs"
           @click="handleCopyACPLog"
         >
           <icon-lucide-bug v-if="!acpLogCopied" class="size-3" />
           <icon-lucide-check v-else class="size-3 text-green-400" />
           {{ acpLogCopied ? 'Copied' : 'ACP log' }}
-        </AppTextButton>
-        <AppTextButton
-          :ui="{ base: 'flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-hover' }"
-          @click="handleClearChat"
-        >
+        </AppButton>
+        <AppButton color="error" variant="ghost" size="xs" @click="handleClearChat">
           <icon-lucide-trash-2 class="size-3" />
           Clear
-        </AppTextButton>
+        </AppButton>
       </div>
 
       <ChatInput
