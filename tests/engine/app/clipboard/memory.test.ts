@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -16,9 +16,16 @@ import {
 import { createEditorStore } from '@/app/editor/session/create'
 import { toast } from '@/app/shell/ui'
 
+const originalClipboard = navigator.clipboard
+
 beforeEach(() => {
   clearInMemoryClipboardHTML()
   toast.toasts.value = []
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined })
+})
+
+afterEach(() => {
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: originalClipboard })
 })
 
 const noop = () => undefined
