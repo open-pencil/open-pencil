@@ -13,7 +13,9 @@ let pendingWrites = Promise.resolve()
 const subscribers = new Set<() => void>()
 
 const memoryStore: DiagnosticsStore = {
-  async record(_event) {},
+  async record(_event) {
+    memoryEvents = memoryEvents.slice(-getDiagnosticsRetention())
+  },
   async list() {
     return [...memoryEvents].reverse()
   },
