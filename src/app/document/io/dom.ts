@@ -71,7 +71,8 @@ export function createDOMOpenActions({
       recordDocumentFailure({
         operation: 'import',
         format: 'dom-css',
-        ...describeDiagnosticError(e)
+        ...describeDiagnosticError(e),
+        retryable: describeDiagnosticError(e).retryable
       })
       toast.error(notificationMessages.get().importDOMCSSFailed({ error: errorDetail(e) }))
       throw e
@@ -93,7 +94,8 @@ export function createDOMOpenActions({
       recordDocumentFailure({
         operation: 'open',
         format: 'dom-css',
-        ...describeDiagnosticError(e)
+        ...describeDiagnosticError(e),
+        retryable: describeDiagnosticError(e).retryable
       })
       toast.error(notificationMessages.get().openDOMCSSFailed({ error: errorDetail(e) }))
     } finally {

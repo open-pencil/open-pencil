@@ -13,14 +13,12 @@ let pendingWrites = Promise.resolve()
 const subscribers = new Set<() => void>()
 
 const memoryStore: DiagnosticsStore = {
-  async record(_event) {
-    // The recorder maintains the in-memory mirror before persistence.
-  },
+  async record(_event) {},
   async list() {
     return [...memoryEvents].reverse()
   },
   async prune(retention) {
-    memoryEvents = memoryEvents.slice(0, retention)
+    memoryEvents = memoryEvents.slice(-retention)
   },
   async clear() {
     memoryEvents = []
@@ -78,7 +76,7 @@ export const diagnostics = {
     return JSON.stringify(await this.list(), null, 2)
   },
   async prune(retention: DiagnosticsRetention): Promise<void> {
-    memoryEvents = memoryEvents.slice(0, retention)
+    memoryEvents = memoryEvents.slice(-retention)
     enqueue(() => getStore().prune(retention))
     await pendingWrites
     notify()

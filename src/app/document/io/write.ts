@@ -71,7 +71,8 @@ export function createDocumentWriter({
       recordDocumentFailure({
         operation: 'save',
         format: 'fig',
-        ...describeDiagnosticError(error)
+        ...describeDiagnosticError(error),
+        retryable: describeDiagnosticError(error).retryable
       })
       throw error
     }

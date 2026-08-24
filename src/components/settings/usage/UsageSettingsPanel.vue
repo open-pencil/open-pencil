@@ -3,6 +3,7 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { diagnostics } from '@/app/diagnostics'
+import { isUsageEnabled } from '@/app/diagnostics/settings'
 import { summarizeUsage, type UsageSummary } from '@/app/usage'
 
 const { dialogs } = useI18n()
@@ -13,11 +14,13 @@ async function refresh() {
 }
 
 onMounted(() => {
+  if (!isUsageEnabled()) return
   void refresh()
 })
 
 const unsubscribe = diagnostics.subscribe(() => {
-  void refresh()
+  if (isUsageEnabled()) void refresh()
+  else summary.value = summarizeUsage([])
 })
 
 onUnmounted(unsubscribe)

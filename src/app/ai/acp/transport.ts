@@ -255,6 +255,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     try {
       automationAuthToken = await getAutomationAuthToken()
     } catch (e) {
+      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       await child.kill().catch(() => undefined)
       throw new Error(formatConnectionError(e, this.agentDef))
     }
@@ -265,6 +266,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         clientCapabilities: {}
       })
     } catch (e) {
+      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       await child.kill().catch(() => undefined)
       throw new Error(formatConnectionError(e, this.agentDef))
     }
@@ -276,6 +278,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         mcpServers: await buildACPMCPServers({ authorizationToken: automationAuthToken })
       })
     } catch (e) {
+      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       await child.kill().catch(() => undefined)
       throw new Error(formatConnectionError(e, this.agentDef))
     }

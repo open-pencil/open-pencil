@@ -58,7 +58,8 @@ export function createOpenActions({
       recordDocumentFailure({
         operation: 'open',
         format: 'fig',
-        ...describeDiagnosticError(e)
+        ...describeDiagnosticError(e),
+        retryable: describeDiagnosticError(e).retryable
       })
       toast.error(
         notificationMessages.get().openFileFailed({

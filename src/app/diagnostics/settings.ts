@@ -38,6 +38,10 @@ export function isDiagnosticsEnabled(): boolean {
   return diagnosticsEnabled.value
 }
 
+export function isUsageEnabled(): boolean {
+  return usageEnabled.value
+}
+
 export function getDiagnosticsRetention(): DiagnosticsRetention {
   return diagnosticsRetention.value
 }

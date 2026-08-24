@@ -24,8 +24,11 @@ export function summarizeDiagnosticEvent(
   const labelKey = labelKeys[event.name]
   const localizedLabel = labelKey ? labels[labelKey] : undefined
   const fallback = labels.diagnosticsTechnicalEvent
-  let label = 'Technical event'
-  if (typeof fallback === 'string') label = fallback
-  if (typeof localizedLabel === 'string') label = localizedLabel
+  const label =
+    typeof localizedLabel === 'string'
+      ? localizedLabel
+      : typeof fallback === 'string'
+        ? fallback
+        : 'Technical event'
   return { category: event.category, label, level: event.level, timestamp: event.timestamp }
 }

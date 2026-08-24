@@ -7,7 +7,8 @@ const documentFailureSchema = v.object({
   operation: v.picklist(['open', 'save', 'import', 'export']),
   format: v.picklist(['fig', 'pen', 'svg', 'dom-css', 'unknown']),
   errorName: v.string(),
-  errorCode: v.nullable(v.string())
+  errorCode: v.nullable(v.string()),
+  retryable: v.nullable(v.boolean())
 })
 
 export function recordDocumentFailure(input: v.InferOutput<typeof documentFailureSchema>): void {

@@ -135,8 +135,20 @@ export function createChatSessionManager({
   let harnessTransportInstance: { destroy(): Promise<void> } | null = null
   let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
 
-  function handleChatFinish({ finishReason }: { finishReason?: FinishReason }): void {
-    recordChatCompleted({ finishReason: finishReason ?? null })
+  function handleChatFinish({
+    finishReason,
+    isAbort,
+    isDisconnect,
+    isError
+  }: {
+    finishReason?: FinishReason
+    isAbort: boolean
+    isDisconnect: boolean
+    isError: boolean
+  }): void {
+    if (!isAbort && !isDisconnect && !isError) {
+      recordChatCompleted({ finishReason: finishReason ?? null })
+    }
   }
 
   function clearFailure(): void {
