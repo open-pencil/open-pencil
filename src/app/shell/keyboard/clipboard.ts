@@ -16,6 +16,20 @@ function cursorPosition(store: EditorStore) {
   return ccx != null && ccy != null ? { x: ccx, y: ccy } : undefined
 }
 
+export async function copyAndDeleteSelection(
+  store: EditorStore,
+  clipboardData: DataTransfer
+): Promise<boolean> {
+  try {
+    await store.writeCopyData(clipboardData)
+    store.deleteSelected()
+    return true
+  } catch (error) {
+    console.warn('Browser clipboard cut failed', error)
+    return false
+  }
+}
+
 export function bindEditorClipboard(store: EditorStore) {
   useEventListener(window, 'copy', (e: ClipboardEvent) => {
     if (isEditing(e) || hasDocumentTextSelection()) return
@@ -37,18 +51,7 @@ export function bindEditorClipboard(store: EditorStore) {
       })
       return
     }
-    if (e.clipboardData) {
-      void store.writeCopyData(e.clipboardData).then(
-        () => {
-          store.deleteSelected()
-          return undefined
-        },
-        (error: unknown) => {
-          console.warn('Browser clipboard cut failed', error)
-          return undefined
-        }
-      )
-    }
+    if (e.clipboardData) void copyAndDeleteSelection(store, e.clipboardData)
   })
 
   useEventListener(window, 'paste', (e: ClipboardEvent) => {
