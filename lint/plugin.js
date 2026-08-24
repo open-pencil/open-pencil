@@ -1842,6 +1842,22 @@ const noDirectOpenPencilWindowInternals = {
   }
 }
 
+const noBunGlobalsInCli = {
+  meta: { docs: { description: 'Disallow Bun globals in Node-compatible CLI source' } },
+  create(context) {
+    const file = normalizedFilename(context)
+    if (!file.includes('/packages/cli/src/')) return {}
+    return {
+      MemberExpression(node) {
+        if (node.object?.type !== 'Identifier' || node.object.name !== 'Bun') return
+        context.report({
+          node,
+          message: 'Use Node-compatible APIs in CLI source instead of Bun globals.'
+        })
+      }
+    }
+  }
+}
 const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   description: 'Disallow top-level test files that encode domains as filename prefixes',
   check(file) {
@@ -2110,7 +2126,8 @@ const noMixedCaseAcronymIdentifiers = {
     }
   },
   create(context) {
-    const canonicalAcronym = /(?:Acp|Ai|Api|Cli|Cors|Css|Html|Ime|Json|Jsx|Mcp|Pdf|Png|Rgb|Rpc|Rtl|Svg|Ui|Url|Uri|Xml)/g
+    const canonicalAcronym =
+      /(?:Acp|Ai|Api|Cli|Cors|Css|Html|Ime|Json|Jsx|Mcp|Pdf|Png|Rgb|Rpc|Rtl|Svg|Ui|Url|Uri|Xml)/g
     const ignoredImports = new Set([
       '@agentclientprotocol/sdk',
       '@tauri-apps/plugin-clipboard-manager',
@@ -2264,6 +2281,7 @@ const plugin = {
     'no-function-alias-imports': noFunctionAliasImports,
     'no-mixed-case-acronym-identifiers': noMixedCaseAcronymIdentifiers,
     'no-flat-kiwi-modules': noFlatKiwiModules,
+    'no-bun-globals-in-cli': noBunGlobalsInCli,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
     'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles
   }
