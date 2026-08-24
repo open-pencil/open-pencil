@@ -30,6 +30,7 @@ async function refreshEventSummaries() {
 void refreshEventSummaries()
 const unsubscribe = diagnostics.subscribe(() => {
   void refreshEventSummaries()
+  void refreshDiagnosticsStats()
 })
 onUnmounted(unsubscribe)
 
@@ -49,6 +50,7 @@ const retentionValue = computed<string>({
     if (parsed === 100 || parsed === 500 || parsed === 1000) {
       diagnosticsRetention.value = parsed
       void pruneDiagnostics(parsed)
+      void refreshDiagnosticsStats()
     }
   }
 })

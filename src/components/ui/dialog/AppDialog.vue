@@ -29,7 +29,9 @@ defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
 const open = defineModel<boolean>('open', { default: false })
 const slots = useSlots()
-const hasHeader = computed(() => Boolean(heading || description || slots.header || slots.title))
+const hasHeader = computed(() =>
+  Boolean(heading || description || slots.header || slots.title || slots.description)
+)
 </script>
 
 <template>
