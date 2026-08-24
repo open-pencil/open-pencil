@@ -84,9 +84,9 @@ export async function copySelectionToTauriClipboard(store: EditorStore) {
     await store.writeCopyData(transfer)
     const html = transfer.getData('text/html')
     const plainText = transfer.getData('text/plain')
-    if (html) setInMemoryClipboardHTML(html)
     if (!html && !plainText) return false
     await writeTauriClipboardHTML(html || plainText, plainText)
+    if (html) setInMemoryClipboardHTML(html)
     return true
   } catch (error) {
     console.warn('Tauri clipboard copy failed', error)
@@ -100,8 +100,8 @@ export async function copySelectionToBrowserClipboard(store: EditorStore): Promi
     await store.writeCopyData(transfer)
     const html = transfer.getData('text/html')
     const plainText = transfer.getData('text/plain')
-    if (html) setInMemoryClipboardHTML(html)
     if (!html && !plainText) return false
+    if (html) setInMemoryClipboardHTML(html)
 
     if (
       typeof ClipboardItem !== 'undefined' &&
@@ -114,6 +114,7 @@ export async function copySelectionToBrowserClipboard(store: EditorStore): Promi
         if (html) itemData['text/html'] = new Blob([html], { type: 'text/html' })
         if (plainText) itemData['text/plain'] = new Blob([plainText], { type: 'text/plain' })
         await navigator.clipboard.write([new ClipboardItem(itemData)])
+        if (html) setInMemoryClipboardHTML(html)
         return true
       } catch (error) {
         console.warn('Modern clipboard write failed', error)
@@ -137,7 +138,10 @@ export async function copySelectionToBrowserClipboard(store: EditorStore): Promi
         }
         document.addEventListener('copy', listener)
         const success = document.execCommand('copy')
-        if (success && copyState.payloadCopied) return true
+        if (success && copyState.payloadCopied) {
+          if (html) setInMemoryClipboardHTML(html)
+          return true
+        }
       } catch (error) {
         console.warn('execCommand copy fallback failed', error)
       } finally {

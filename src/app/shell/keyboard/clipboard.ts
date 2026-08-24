@@ -3,7 +3,7 @@ import { useEventListener } from '@vueuse/core'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
-import { getInMemoryClipboardHTML, setInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
+import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
 import {
   copySelectionToTauriClipboard,
   pasteFromTauriClipboard
@@ -24,11 +24,7 @@ export function bindEditorClipboard(store: EditorStore) {
       void copySelectionToTauriClipboard(store)
       return
     }
-    if (e.clipboardData) {
-      void store.writeCopyData(e.clipboardData)
-      const html = e.clipboardData.getData('text/html')
-      if (html) setInMemoryClipboardHTML(html)
-    }
+    if (e.clipboardData) void store.writeCopyData(e.clipboardData)
   })
 
   useEventListener(window, 'cut', (e: ClipboardEvent) => {
@@ -42,11 +38,17 @@ export function bindEditorClipboard(store: EditorStore) {
       return
     }
     if (e.clipboardData) {
-      void store.writeCopyData(e.clipboardData)
-      const html = e.clipboardData.getData('text/html')
-      if (html) setInMemoryClipboardHTML(html)
+      void store.writeCopyData(e.clipboardData).then(
+        () => {
+          store.deleteSelected()
+          return undefined
+        },
+        (error: unknown) => {
+          console.warn('Browser clipboard cut failed', error)
+          return undefined
+        }
+      )
     }
-    store.deleteSelected()
   })
 
   useEventListener(window, 'paste', (e: ClipboardEvent) => {
