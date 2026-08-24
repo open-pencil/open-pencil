@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
 import { recordDiagnostic } from '../recorder'
+import { isUsageEnabled } from '../settings'
 import type { DiagnosticEvent, DiagnosticValue } from '../types'
 
 const modelStepSchema = v.object({
@@ -25,6 +26,7 @@ function recordAIEvent(
     console.warn(`[Diagnostics] Invalid AI event: ${name}`)
     return
   }
+  if (name === 'model.step.completed' && !isUsageEnabled()) return
   const output = parsed.output as Record<string, DiagnosticValue>
   recordDiagnostic({
     category: 'ai',

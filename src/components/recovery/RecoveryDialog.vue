@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AlertDialogCancel } from 'reka-ui'
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@open-pencil/vue'
@@ -109,7 +110,9 @@ onMounted(async () => {
       </div>
     </AppDialogBody>
     <AppDialogFooter>
-      <AppButton color="neutral" variant="ghost">{{ dialogs.close }}</AppButton>
+      <AlertDialogCancel as-child>
+        <AppButton color="neutral" variant="ghost">{{ dialogs.close }}</AppButton>
+      </AlertDialogCancel>
     </AppDialogFooter>
   </AppAlertDialogRoot>
 </template>
