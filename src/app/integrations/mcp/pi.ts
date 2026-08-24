@@ -1,11 +1,11 @@
 import { AUTOMATION_HTTP_PORT } from '@open-pencil/core/constants'
 
 import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
+import { describeDiagnosticError, recordMCPConnectionFailure } from '@/app/diagnostics'
 import { appCredentialServices } from '@/app/settings/credentials/app'
 
 import { enabledMCPConnections } from './store'
 import type { MCPConnection } from './types'
-
 export type PiMCPServer = {
   url: string
   headers?: Record<string, string>
@@ -15,11 +15,16 @@ export type PiMCPServer = {
 async function externalPiMCPServer(connection: MCPConnection): Promise<PiMCPServer> {
   const headers: Record<string, string> = {}
   if (connection.authentication.type === 'bearer') {
-    const token = await appCredentialServices.resolver.resolve(
-      connection.authentication.credentialRef
-    )
-    if (!token) throw new Error(`MCP connection "${connection.name}" needs a bearer token`)
-    headers.Authorization = `Bearer ${token}`
+    try {
+      const token = await appCredentialServices.resolver.resolve(
+        connection.authentication.credentialRef
+      )
+      if (!token) throw new Error('MCP bearer credential is unavailable')
+      headers.Authorization = `Bearer ${token}`
+    } catch (error) {
+      recordMCPConnectionFailure({ operation: 'connect', ...describeDiagnosticError(error) })
+      throw error
+    }
   }
   return {
     url: connection.transport.url,

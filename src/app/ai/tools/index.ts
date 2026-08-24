@@ -20,23 +20,9 @@ import { useLibraryService } from '@/app/libraries'
 
 export const MAX_AGENT_STEPS = 50
 
-export interface StepUsage {
-  inputTokens: number
-  outputTokens: number
-  cacheReadTokens: number
-  cacheWriteTokens: number
-  timestamp: number
-}
-
 class RunState {
   toolLog: ToolLogEntry[] = []
-  stepUsages: StepUsage[] = []
   currentSteps = 0
-
-  recordStep(usage: StepUsage): void {
-    this.stepUsages.push(usage)
-    this.currentSteps++
-  }
 
   resetSteps(): void {
     this.currentSteps = 0
@@ -48,7 +34,6 @@ class RunState {
 
   clear(): void {
     this.toolLog = []
-    this.stepUsages = []
     this.currentSteps = 0
   }
 }
@@ -68,12 +53,8 @@ export function getToolLogEntries(store?: EditorStore): ToolLogEntry[] {
   return getRunState(store).toolLog
 }
 
-export function getStepUsages(store?: EditorStore): StepUsage[] {
-  return getRunState(store).stepUsages
-}
-
-export function recordStepUsage(usage: StepUsage, store?: EditorStore): void {
-  getRunState(store).recordStep(usage)
+export function recordStep(store?: EditorStore): void {
+  getRunState(store).currentSteps++
 }
 
 export function resetRunSteps(store?: EditorStore): void {
