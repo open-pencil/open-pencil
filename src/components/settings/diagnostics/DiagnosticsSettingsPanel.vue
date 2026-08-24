@@ -90,7 +90,7 @@ async function exportDiagnostics() {
       <label class="flex items-center justify-between gap-4 px-3 py-2.5">
         <span
           ><span class="block text-xs text-surface">{{ dialogs.usageHistory }}</span
-          ><span class="block text-[10px] text-muted">{{
+          ><span v-if="usageEnabled" class="block text-[10px] text-muted">{{
             dialogs.usageHistoryDescription
           }}</span></span
         >

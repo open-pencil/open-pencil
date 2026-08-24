@@ -92,6 +92,11 @@ export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): strin
   return msg
 }
 
+function startupError(error: unknown, agentDef: ACPAgentDef): Error {
+  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(error) })
+  return new Error(formatConnectionError(error, agentDef))
+}
+
 export function buildCrashChunks(
   destroying: boolean,
   textId: string,
@@ -255,9 +260,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
     try {
       automationAuthToken = await getAutomationAuthToken()
     } catch (e) {
-      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       await child.kill().catch(() => undefined)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw startupError(e, this.agentDef)
     }
 
     try {
@@ -266,9 +270,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         clientCapabilities: {}
       })
     } catch (e) {
-      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       await child.kill().catch(() => undefined)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw startupError(e, this.agentDef)
     }
 
     let sessionResult
@@ -278,9 +281,8 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         mcpServers: await buildACPMCPServers({ authorizationToken: automationAuthToken })
       })
     } catch (e) {
-      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       await child.kill().catch(() => undefined)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw startupError(e, this.agentDef)
     }
 
     const session: ACPSession = {
