@@ -29,7 +29,7 @@ async function externalMCPServer(connection: MCPConnection): Promise<McpServer> 
       const token = await appCredentialServices.resolver.resolve(
         connection.authentication.credentialRef
       )
-      if (!token) throw new Error('MCP bearer credential is unavailable')
+      if (!token) throw new Error('MCP connection needs a bearer token')
       headers.push({ name: 'Authorization', value: `Bearer ${token}` })
     } catch (error) {
       recordMCPConnectionFailure({ operation: 'connect', ...describeDiagnosticError(error) })

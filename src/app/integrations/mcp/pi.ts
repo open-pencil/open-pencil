@@ -19,7 +19,7 @@ async function externalPiMCPServer(connection: MCPConnection): Promise<PiMCPServ
       const token = await appCredentialServices.resolver.resolve(
         connection.authentication.credentialRef
       )
-      if (!token) throw new Error('MCP bearer credential is unavailable')
+      if (!token) throw new Error('MCP connection needs a bearer token')
       headers.Authorization = `Bearer ${token}`
     } catch (error) {
       recordMCPConnectionFailure({ operation: 'connect', ...describeDiagnosticError(error) })
