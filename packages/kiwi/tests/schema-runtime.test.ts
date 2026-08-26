@@ -52,4 +52,39 @@ describe('Kiwi schema runtime', () => {
       tags: ['kiwi']
     })
   })
+
+  test('compiles and round-trips without calling the Function constructor', () => {
+    // A CSP of `script-src 'self'` (no `unsafe-eval`) makes `new Function(...)`
+    // throw at construction time, same as `eval`. Embedding compileSchema in
+    // such a sandbox (e.g. a plugin host) requires it to never reach for
+    // either. Poisoning the global constructor is the only way to assert that
+    // from outside `compileSchema`'s own module.
+    const OriginalFunction = globalThis.Function
+    globalThis.Function = new Proxy(OriginalFunction, {
+      construct() {
+        throw new EvalError(
+          "Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of script"
+        )
+      }
+    })
+
+    try {
+      const schema = parseSchema(schemaText)
+      interface ItemCodec {
+        encodeItem(value: unknown): Uint8Array
+        decodeItem(value: Uint8Array): unknown
+      }
+
+      const codec = compileSchema(schema) as ItemCodec
+      const encoded = codec.encodeItem({ id: 7, name: 'CSP-safe', kind: 'BADGE', tags: [] })
+      expect(codec.decodeItem(encoded)).toEqual({
+        id: 7,
+        name: 'CSP-safe',
+        kind: 'BADGE',
+        tags: []
+      })
+    } finally {
+      globalThis.Function = OriginalFunction
+    }
+  })
 })
