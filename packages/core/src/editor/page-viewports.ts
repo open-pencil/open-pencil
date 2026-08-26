@@ -23,20 +23,21 @@ export function createPageViewportStore(ctx: EditorContext) {
     })
   }
 
-  function restorePageViewport(pageId: string) {
+  function restorePageViewport(pageId: string): boolean {
     const viewport = pageViewports.get(pageId)
     if (viewport) {
       ctx.state.panX = viewport.panX
       ctx.state.panY = viewport.panY
       ctx.state.zoom = viewport.zoom
       ctx.state.pageColor = { ...viewport.pageColor }
-      return
+      return true
     }
 
     ctx.state.panX = 0
     ctx.state.panY = 0
     ctx.state.zoom = 1
     ctx.state.pageColor = { ...CANVAS_BG_COLOR }
+    return false
   }
 
   function deletePageViewport(pageId: string) {

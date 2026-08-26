@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add the MCP `close_file` tool and an MCP setting to close other tabs whenever `open_file` opens a document.
 - Duplicate guides with Option/Alt-drag, show active guide coordinates in rulers, measure ruler-created guides against selected frames and their contents, and remove guides from the context menu.
 - Create, select, move, transfer, and delete canvas and frame guides directly from rulers, with undoable edits and `.fig` round-trip fidelity.
 - Open to a unified home with recent and configured storage documents, including grid or list layouts.
@@ -63,6 +64,7 @@
 
 ### Fixed
 
+- Fit a page to the editor viewport only on its first visit, preserving later pan and zoom adjustments.
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
 
 - Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.

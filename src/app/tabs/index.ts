@@ -165,6 +165,11 @@ export async function closeTab(tabId: string): Promise<void> {
   }
 }
 
+export async function closeOtherTabs(exceptTabId: string): Promise<void> {
+  const tabsToClose = getTabsSnapshot().filter((tab) => tab.id !== exceptTabId)
+  for (const tab of tabsToClose) await closeTab(tab.id)
+}
+
 function yieldToUI(): Promise<void> {
   return new Promise((resolve) => {
     requestAnimationFrame(() => resolve())
@@ -459,6 +464,7 @@ export function useTabsStore() {
     leaveHome,
     switchTab,
     closeTab,
+    closeOtherTabs,
     getActiveTabId,
     getTabById,
     getTabForStore,

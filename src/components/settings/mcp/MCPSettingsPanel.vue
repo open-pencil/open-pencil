@@ -8,6 +8,7 @@ import {
   configurableMCPTools,
   disabledMCPTools,
   mcpAuthenticationEnabled,
+  mcpOpenFileClosesOtherTabs,
   mcpRootDirectory,
   setMCPToolCategoryEnabled,
   setMCPToolEnabled
@@ -163,6 +164,24 @@ async function copyAccessToken(): Promise<void> {
             v-model="mcpAuthenticationEnabled"
             :label="dialogs.mcpAuthentication"
             data-test-id="settings-mcp-authentication"
+          />
+        </div>
+      </div>
+
+      <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-medium text-surface">
+              {{ dialogs.mcpOpenFileCloseOtherTabs }}
+            </p>
+            <p class="mt-0.5 text-[10px] leading-relaxed text-muted">
+              {{ dialogs.mcpOpenFileCloseOtherTabsDescription }}
+            </p>
+          </div>
+          <AppSwitch
+            v-model="mcpOpenFileClosesOtherTabs"
+            :label="dialogs.mcpOpenFileCloseOtherTabs"
+            data-test-id="settings-mcp-open-file-close-other-tabs"
           />
         </div>
       </div>

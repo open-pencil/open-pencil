@@ -302,6 +302,9 @@ export const dialogMessageDefaults = {
   mcpUseDefaultRoot: 'Use default',
   mcpRootDirectoryDescription:
     'File tools are limited to this folder. Restart the MCP server to apply changes.',
+  mcpOpenFileCloseOtherTabs: 'Close other tabs when opening a file',
+  mcpOpenFileCloseOtherTabsDescription:
+    'When MCP uses open_file, keep only the opened document tab. This applies immediately.',
   mcpTools: 'Available tools',
   mcpToolsEnabled: params('{enabled} of {total} enabled'),
   mcpEnableAllTools: 'Enable all',

@@ -30,15 +30,14 @@ export function createPageActions(ctx: EditorContext, zoomToFit: () => void) {
     if (page?.type !== 'CANVAS') return
     const switchGeneration = ++pageSwitchGeneration
 
-    pageViewportStore.saveCurrentPageViewport()
-
     const previousPageId = ctx.state.currentPageId
+    if (previousPageId !== pageId) pageViewportStore.saveCurrentPageViewport()
     ctx.state.currentPageId = pageId
     ctx.state.enteredContainerId = null
     ctx.setSelectedIds(new Set())
     if (previousPageId !== pageId) ctx.emitEditorEvent('page:changed', pageId, previousPageId)
 
-    pageViewportStore.restorePageViewport(pageId)
+    const restoredViewport = pageViewportStore.restorePageViewport(pageId)
 
     ctx.state.loading = true
     let populated: boolean
@@ -86,7 +85,10 @@ export function createPageActions(ctx: EditorContext, zoomToFit: () => void) {
     if (ctx.getRenderer() || populated) {
       computeAllLayouts(ctx.graph, pageId)
     }
-    zoomToFit()
+    if (!restoredViewport) {
+      zoomToFit()
+      pageViewportStore.saveCurrentPageViewport()
+    }
     ctx.requestRender()
   }
 

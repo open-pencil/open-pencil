@@ -62,6 +62,14 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
       capabilities: ['document:read', 'filesystem:write'],
       enabled: true
     },
+    {
+      name: 'close_file',
+      description: 'Close an open OpenPencil document/tab by its document ID.',
+      effect: 'write',
+      availability: 'default',
+      capabilities: ['document:write'],
+      enabled: true
+    },
     ...(filesystemEnabled
       ? [
           {

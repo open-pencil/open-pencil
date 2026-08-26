@@ -3,6 +3,7 @@ import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJSX } from '@/app/automation/bridge/export-handlers'
 import {
+  handleCloseFile,
   handleNewDocument,
   handleOpenFile,
   handleSaveFile
@@ -39,7 +40,8 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     selection: handleSelection,
     save_file: handleSaveFile,
     new_document: handleNewDocument,
-    open_file: handleOpenFile
+    open_file: handleOpenFile,
+    close_file: handleCloseFile
   }
 
   async function handleRequest(
@@ -57,7 +59,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
       }
     }
 
-    if (command === 'open_file' || command === 'new_document') {
+    if (command === 'open_file' || command === 'new_document' || command === 'close_file') {
       const handler = commandHandlers[command]
       if (handler) return handler(resolveAutomationTarget(store, undefined), args)
     }

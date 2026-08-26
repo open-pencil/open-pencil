@@ -200,6 +200,7 @@ describe('MCP stdio transport', () => {
     expect(names).toContain('create_shape')
     expect(names).toContain('get_page_tree')
     expect(names).toContain('save_file')
+    expect(names).toContain('close_file')
     expect(names).toContain('list_documents')
     expect(names).toContain('get_codegen_prompt')
     expect(names).not.toContain('rename_node')
@@ -289,6 +290,16 @@ describe('MCP stdio transport', () => {
     expect(result.isError).not.toBe(true)
     const data = JSON.parse(textContent(result.content)) as { saved: boolean }
     expect(data.saved).toBe(true)
+  }, 10000)
+
+  test('close_file via stdio succeeds', async () => {
+    const result = await requireClient().callTool({
+      name: 'close_file',
+      arguments: { document_id: 'doc-1' }
+    })
+    expect(result.isError).not.toBe(true)
+    const data = JSON.parse(textContent(result.content)) as { closed: boolean }
+    expect(data.closed).toBe(true)
   }, 10000)
 
   test('get_codegen_prompt via stdio returns prompt', async () => {

@@ -194,6 +194,26 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
     }
   )
 
+  register(
+    'close_file',
+    {
+      description: 'Close an open OpenPencil document/tab by its document ID.',
+      inputSchema: z.object({
+        document_id: z.string().min(1).describe('OpenPencil document/tab ID to close')
+      })
+    },
+    async (args: { document_id: string }) => {
+      try {
+        const result = await sendRPC({ command: 'close_file', args })
+        const res = result as { ok?: boolean; result?: unknown; error?: string }
+        if (res.ok === false) return fail(new Error(res.error))
+        return ok(res.result ?? { closed: true, document_id: args.document_id })
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
   if (resolvedRoot) {
     register(
       'open_file',
