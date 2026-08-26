@@ -55,6 +55,6 @@ test('regular partial full and independent corner smoothing', async () => {
   })
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  const buffer = await editor.canvas.canvas.screenshot()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('corner-smoothing-profiles.png')
 })

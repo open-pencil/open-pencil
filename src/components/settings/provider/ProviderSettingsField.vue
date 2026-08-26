@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppTextButton from '@/components/ui/AppTextButton.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 
 interface ProviderSettingsFieldProps {
   label: string
@@ -18,9 +18,16 @@ const emit = defineEmits<{ clear: [] }>()
   <div class="flex flex-col gap-1">
     <div class="flex items-center justify-between">
       <label :for="labelFor" class="text-[10px] text-muted">{{ label }}</label>
-      <AppTextButton v-if="clearLabel" v-bind="$attrs" @click="emit('clear')">
+      <AppButton
+        v-if="clearLabel"
+        color="neutral"
+        variant="link"
+        size="xs"
+        v-bind="$attrs"
+        @click="emit('clear')"
+      >
         {{ clearLabel }}
-      </AppTextButton>
+      </AppButton>
     </div>
     <slot />
     <slot name="hint" />

@@ -26,7 +26,9 @@ export function createCanvasMenuActions(store: EditorStore, selectedIds: Ref<Set
   }
 
   function execCommand(cmd: 'copy' | 'cut' | 'paste') {
-    void executeClipboardCommand(store, cmd).then((ok) => {
+    const { cursorCanvasX: ccx, cursorCanvasY: ccy } = store.state
+    const cursorPos = ccx != null && ccy != null ? { x: ccx, y: ccy } : undefined
+    void executeClipboardCommand(store, cmd, cursorPos).then((ok) => {
       if (!ok) toast.error(notificationMessages.get().clipboardAccessBlocked)
       return undefined
     })

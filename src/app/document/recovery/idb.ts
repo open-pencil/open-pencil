@@ -1,4 +1,4 @@
-import { openDB, type DBSchema } from 'idb'
+import type { DBSchema } from 'idb'
 
 import type {
   RecoverySnapshot,
@@ -6,9 +6,19 @@ import type {
   RecoverySnapshotMeta,
   RecoveryStore
 } from '@/app/document/recovery/types'
+import { APP_DATABASE_NAMES, defineAppDatabase, openAppDatabase } from '@/app/storage/idb'
 
-const DB_NAME = 'open-pencil-recovery'
-const DB_VERSION = 1
+const recoveryDatabase = defineAppDatabase<RecoveryDatabase>({
+  name: APP_DATABASE_NAMES.recovery,
+  version: 1,
+  callbacks: {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('meta'))
+        database.createObjectStore('meta', { keyPath: 'id' })
+      if (!database.objectStoreNames.contains('fig')) database.createObjectStore('fig')
+    }
+  }
+})
 
 interface RecoveryDatabase extends DBSchema {
   meta: {
@@ -22,12 +32,7 @@ interface RecoveryDatabase extends DBSchema {
 }
 
 export function createIdbRecoveryStore(): RecoveryStore {
-  const database = openDB<RecoveryDatabase>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'id' })
-      if (!db.objectStoreNames.contains('fig')) db.createObjectStore('fig')
-    }
-  })
+  const database = openAppDatabase(recoveryDatabase)
 
   return {
     async list() {

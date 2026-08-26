@@ -81,5 +81,7 @@ test('vector paths render their resolved style fills', async () => {
   })
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  expect(await editor.canvas.canvas.screenshot()).toMatchSnapshot('vector-path-style-fills.png')
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(
+    'vector-path-style-fills.png'
+  )
 })

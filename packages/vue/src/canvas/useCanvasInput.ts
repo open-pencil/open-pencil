@@ -5,26 +5,26 @@ import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { createGuideInput, selectedTopLevelGuideFrameId } from '#vue/canvas/guides/input'
-import {
-  handleBendHandleMove,
-  handleNodeEditMouseUp,
-  updateNodeEditHover
-} from '#vue/canvas/node-edit/input'
 import { handlePenDragMove, updatePenHover } from '#vue/canvas/pen/input'
 import { createCanvasPointer } from '#vue/canvas/pointer/use'
 import { createTextEditInput } from '#vue/canvas/text-edit/input'
 import { handleToolMouseDown } from '#vue/canvas/tools/input'
 import { createCanvasTransformInput } from '#vue/canvas/transform/input'
+import {
+  handleBendHandleMove,
+  handleNodeEditPointerUp,
+  updateNodeEditHover
+} from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
 import { handleDrawMove, handleDrawUp } from '#vue/shared/input/draw'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
-import { handleNodeEditMove } from '#vue/shared/input/node-edit'
 import { setupPanZoom } from '#vue/shared/input/pan-zoom'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
 import { updateHoverCursor } from '#vue/shared/input/select'
 import { useSpaceHeld } from '#vue/shared/input/space-key'
 import type { DragState } from '#vue/shared/input/types'
+import { handleNodeEditMove } from '#vue/shared/input/vector'
 
 /**
  * Wires pointer and mouse interaction to an OpenPencil canvas.
@@ -348,11 +348,10 @@ export function useCanvasInput(
   }
 
   function onMouseUp() {
-    if (!isEnabled()) return
     if (!drag.value) return
     const d = drag.value
 
-    if (handleNodeEditMouseUp(drag, editor)) return
+    if (handleNodeEditPointerUp(drag, editor)) return
 
     if (d.type === 'guide') {
       guideInput.finish(d)
@@ -395,11 +394,45 @@ export function useCanvasInput(
   }
 
   function cancelPointerInteraction() {
+    if (
+      drag.value?.type === 'edit-node' ||
+      drag.value?.type === 'edit-handle' ||
+      drag.value?.type === 'bend-handle'
+    ) {
+      const methods = editor as Editor & {
+        nodeEditCancelDrag?: () => void
+      }
+      methods.nodeEditCancelDrag?.()
+    }
     drag.value = null
     cursorOverride.value = null
     clearTransientInteractionFeedback()
   }
 
+  function onPointerDown(e: PointerEvent) {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return
+    canvasRef.value?.setPointerCapture(e.pointerId)
+  }
+
+  function onPointerUp(e: PointerEvent) {
+    if (e.pointerType !== 'mouse') return
+    onMouseUp()
+    if (canvasRef.value?.hasPointerCapture(e.pointerId)) {
+      canvasRef.value.releasePointerCapture(e.pointerId)
+    }
+  }
+
+  function onPointerCancel(e: PointerEvent) {
+    if (e.pointerType !== 'mouse') return
+    cancelPointerInteraction()
+    if (canvasRef.value?.hasPointerCapture(e.pointerId)) {
+      canvasRef.value.releasePointerCapture(e.pointerId)
+    }
+  }
+
+  useEventListener(canvasRef, 'pointerdown', onPointerDown)
+  useEventListener(canvasRef, 'pointerup', onPointerUp)
+  useEventListener(canvasRef, 'pointercancel', onPointerCancel)
   useEventListener(canvasRef, 'dblclick', onDblClick)
   useEventListener(canvasRef, 'mousedown', onMouseDown)
   useEventListener(canvasRef, 'mousemove', onMouseMove)

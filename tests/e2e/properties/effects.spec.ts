@@ -4,7 +4,7 @@ const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 async function expectCanvas(name: string) {
   editor.canvas.assertNoErrors()
-  const buffer = await editor.canvas.canvas.screenshot()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot(`${name}.png`)
 }
 

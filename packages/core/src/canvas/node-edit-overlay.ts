@@ -12,7 +12,12 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import { PEN_HANDLE_RADIUS, PEN_VERTEX_RADIUS } from '#core/constants'
-import { regenerateFillGeometry, vectorNetworkToPath } from '#core/vector'
+import {
+  regenerateFillGeometry,
+  vectorHandleId,
+  vectorHandleParts,
+  vectorNetworkToPath
+} from '#core/vector'
 
 import type { SkiaRenderer, RenderOverlays } from './renderer'
 
@@ -29,7 +34,7 @@ export interface NodeEditOverlayState {
   segments: VectorSegment[]
   regions: VectorRegion[]
   selectedVertexIndices: Set<number>
-  selectedHandles?: Set<string>
+  selectedHandles?: Set<number>
   hoveredHandleInfo?: HandleInfo
 }
 
@@ -38,18 +43,18 @@ export interface NodeEditOverlayState {
 const BLUE = [0.23, 0.51, 0.96] as const
 const LIGHT_BLUE = [0.376, 0.647, 0.98] as const
 
-/** Compute set of vertices whose handles should be visible: selected vertices + vertices with selected handles + their direct neighbors */
-function computeHandleVisibleVertices(
+export function computeHandleVisibleVertices(
   selectedVertexIndices: Set<number>,
-  selectedHandles: Set<string>,
+  selectedHandles: Set<number>,
   segments: VectorSegment[]
 ): Set<number> {
   // Seed: selected vertices + vertices that own a selected handle
   const seed = new Set(selectedVertexIndices)
-  for (const key of selectedHandles) {
-    const [siStr, tf] = key.split(':')
-    const seg = segments[Number(siStr)]
-    seed.add(tf === 'tangentStart' ? seg.start : seg.end)
+  for (const handleId of selectedHandles) {
+    const handle = vectorHandleParts(handleId)
+    if (!handle || handle.segmentIndex >= segments.length) continue
+    const seg = segments[handle.segmentIndex]
+    seed.add(handle.tangentField === 'tangentStart' ? seg.start : seg.end)
   }
   // Expand: add only direct neighbors of seed vertices (no cascading)
   const visible = new Set(seed)
@@ -80,7 +85,7 @@ export function drawNodeEditOverlay(
     y: y * r.zoom + r.panY
   })
 
-  const selectedHandles = editState.selectedHandles ?? new Set<string>()
+  const selectedHandles = editState.selectedHandles ?? new Set<number>()
   const hovered = editState.hoveredHandleInfo ?? null
   const handleVisibleVertices = computeHandleVisibleVertices(
     selectedVertexIndices,
@@ -92,7 +97,7 @@ export function drawNodeEditOverlay(
   drawLiveShape(r, canvas, graph, editState.nodeId, vertices, segments, regions)
 
   // Draw technical stroke outline over the shape
-  drawTechStroke(r, canvas, vertices, segments, regions)
+  drawTechStroke(r, canvas, graph, editState.nodeId, vertices, segments, regions)
 
   // Draw tangent handle lines + diamonds for vertices with visible handles
   drawEditHandles(
@@ -291,26 +296,32 @@ function getNodeEditPaints(r: SkiaRenderer) {
 function drawTechStroke(
   r: SkiaRenderer,
   canvas: Canvas,
+  graph: SceneGraph,
+  nodeId: string,
   vertices: VectorVertex[],
   segments: VectorSegment[],
   regions: VectorRegion[]
 ): void {
   const { techStrokePaint } = getNodeEditPaints(r)
-  const network = { vertices, segments, regions }
-  const paths = vectorNetworkToPath(r.ck, network)
+  const node = graph.getNode(nodeId)
+  if (!node) return
+  const world = getWorldMatrix(node, graph)
+  const inverse = Matrix.invert(world)
+  if (!inverse) return
+  const localNetwork = transformVectorNetwork(inverse, { vertices, segments, regions })
+  const paths = vectorNetworkToPath(r.ck, localNetwork)
 
-  // Set stroke width to compensate for canvas scale so it's always 1px on screen
+  // Keep the technical outline in the same coordinate space as the live shape.
   techStrokePaint.setStrokeWidth(1 / r.zoom)
 
   canvas.save()
   canvas.translate(r.panX, r.panY)
   canvas.scale(r.zoom, r.zoom)
-
+  canvas.concat(world)
   for (const p of paths) {
     canvas.drawPath(p, techStrokePaint)
     p.delete()
   }
-
   canvas.restore()
 }
 
@@ -325,7 +336,7 @@ function drawEditHandles(
   segments: VectorSegment[],
   handleVisibleVertices: Set<number>,
   toScreen: ToScreenFn,
-  selectedHandles: Set<string>,
+  selectedHandles: Set<number>,
   hovered: HandleInfo
 ): void {
   const paints = getNodeEditPaints(r)
@@ -369,7 +380,7 @@ function drawSegmentHandle(
   tangentField: 'tangentStart' | 'tangentEnd',
   handleVisibleVertices: Set<number>,
   toScreen: ToScreenFn,
-  selectedHandles: Set<string>,
+  selectedHandles: Set<number>,
   hovered: HandleInfo,
   paints: ReturnType<typeof getNodeEditPaints>
 ): void {
@@ -379,7 +390,7 @@ function drawSegmentHandle(
   const tangent = seg[tangentField]
   if (tangent.x === 0 && tangent.y === 0) return
 
-  const key = `${segmentIndex}:${tangentField}`
+  const key = vectorHandleId(segmentIndex, tangentField)
   const isSel = selectedHandles.has(key)
   const isHov =
     !isSel &&

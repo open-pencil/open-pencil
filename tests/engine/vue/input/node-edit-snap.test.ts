@@ -2,8 +2,8 @@ import { describe, expect, test } from 'bun:test'
 
 import { DEFAULT_SNAPPING_PREFERENCES, createEditor } from '@open-pencil/core/editor'
 
-import { applyNodeEditSnap } from '#vue/shared/input/node-edit/snap'
 import type { DragEditNode } from '#vue/shared/input/types'
+import { applyNodeEditSnap } from '#vue/shared/input/vector/snap'
 
 function createDrag(startX: number, startY: number): DragEditNode {
   return {
@@ -40,7 +40,7 @@ describe('vector edit snapping', () => {
       vertices: [{ x: 10, y: 20 }],
       segments: [],
       selectedVertexIndices: new Set([0]),
-      selectedHandles: new Set<string>(),
+      selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
 
@@ -80,7 +80,7 @@ describe('vector edit snapping', () => {
       ],
       segments: [],
       selectedVertexIndices: new Set([0]),
-      selectedHandles: new Set<string>(),
+      selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
 
@@ -121,7 +121,7 @@ describe('vector edit snapping', () => {
       ],
       segments: [],
       selectedVertexIndices: new Set([0]),
-      selectedHandles: new Set<string>(),
+      selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
 
@@ -158,7 +158,7 @@ describe('vector edit snapping', () => {
       ],
       segments: [],
       selectedVertexIndices: new Set([0]),
-      selectedHandles: new Set<string>(),
+      selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
 
@@ -195,7 +195,7 @@ describe('vector edit snapping', () => {
       vertices: [{ x: 10.2, y: 20.4 }],
       segments: [],
       selectedVertexIndices: new Set([0]),
-      selectedHandles: new Set<string>(),
+      selectedHandles: new Set<number>(),
       hoveredHandleInfo: null
     }
 

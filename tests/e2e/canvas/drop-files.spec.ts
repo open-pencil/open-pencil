@@ -73,7 +73,7 @@ test('mixed SVG and raster drops share placement, selection, and undo', async ()
     undoLabel: 'Place files'
   })
   await editor.canvas.waitForRender()
-  expect(await editor.canvas.canvas.screenshot()).toMatchSnapshot('dropped-svg-multicolor.png')
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('dropped-svg-multicolor.png')
 
   await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
   await expect

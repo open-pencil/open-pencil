@@ -11,6 +11,7 @@ import type { ChatTransport, UIMessage, UIMessageChunk } from 'ai'
 import type { ACPAgentDef } from '@open-pencil/core/constants'
 
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
+import { describeDiagnosticError, recordACPTransportFailure } from '@/app/diagnostics'
 import { buildACPMCPServers } from '@/app/integrations/mcp'
 
 import { mapUpdate } from './map-update'
@@ -89,6 +90,11 @@ export function formatConnectionError(e: unknown, agentDef?: ACPAgentDef): strin
     return missingCommandMessage(agentDef)
   }
   return msg
+}
+
+function startupError(error: unknown, agentDef: ACPAgentDef): Error {
+  recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(error) })
+  return new Error(formatConnectionError(error, agentDef))
 }
 
 export function buildCrashChunks(
@@ -190,11 +196,11 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
             sessionId,
             prompt: [{ type: 'text', text: promptText }]
           })
-          .then((result) => {
-            finish(result.stopReason === 'end_turn' ? 'stop' : 'other')
-            return undefined
-          })
           .catch((e) => {
+            recordACPTransportFailure({
+              operation: 'message',
+              ...describeDiagnosticError(e)
+            })
             finish('error', formatConnectionError(e, this.agentDef))
           })
       }
@@ -228,9 +234,9 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
         }
       })
     } catch (e) {
+      recordACPTransportFailure({ operation: 'start', ...describeDiagnosticError(e) })
       throw new Error(formatConnectionError(e, this.agentDef))
     }
-
     const { child, input, output } = process
     const stream = ndJsonStream(input, output)
     let onUpdate: ACPSession['onUpdate'] = null
@@ -255,7 +261,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       automationAuthToken = await getAutomationAuthToken()
     } catch (e) {
       await child.kill().catch(() => undefined)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw startupError(e, this.agentDef)
     }
 
     try {
@@ -265,7 +271,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       })
     } catch (e) {
       await child.kill().catch(() => undefined)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw startupError(e, this.agentDef)
     }
 
     let sessionResult
@@ -276,7 +282,7 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
       })
     } catch (e) {
       await child.kill().catch(() => undefined)
-      throw new Error(formatConnectionError(e, this.agentDef))
+      throw startupError(e, this.agentDef)
     }
 
     const session: ACPSession = {

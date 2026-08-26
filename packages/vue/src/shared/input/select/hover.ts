@@ -7,8 +7,8 @@ import {
   getHitHandleByMatrix,
   hitTestCornerRotationByMatrix
 } from '#vue/shared/input/geometry'
-import { getNodeEditState } from '#vue/shared/input/node-edit'
 import type { HitTestFns } from '#vue/shared/input/select'
+import { getNodeEditState } from '#vue/shared/input/vector'
 
 function getResizeCursorForSelection(cx: number, cy: number, editor: Editor): string | null {
   for (const id of editor.state.selectedIds) {

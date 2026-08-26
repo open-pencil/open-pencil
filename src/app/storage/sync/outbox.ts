@@ -1,10 +1,21 @@
-import { openDB, type DBSchema } from 'idb'
+import type { DBSchema } from 'idb'
 
+import { APP_DATABASE_NAMES, defineAppDatabase, openAppDatabase } from '@/app/storage/idb'
 import { makeJobId, supersedePutCanvasJobs, type OutboxJob } from '@/app/storage/sync/types'
 
-const DB_NAME = 'open-pencil-cloud-outbox'
-const DB_VERSION = 1
 const STORE = 'jobs'
+
+const outboxDatabase = defineAppDatabase<OutboxDatabase>({
+  name: APP_DATABASE_NAMES.outbox,
+  version: 1,
+  callbacks: {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains(STORE)) {
+        database.createObjectStore(STORE, { keyPath: 'id' })
+      }
+    }
+  }
+})
 
 interface OutboxDatabase extends DBSchema {
   jobs: {
@@ -31,13 +42,7 @@ export type Outbox = {
 }
 
 function openDatabase() {
-  return openDB<OutboxDatabase>(DB_NAME, DB_VERSION, {
-    upgrade(database) {
-      if (!database.objectStoreNames.contains(STORE)) {
-        database.createObjectStore(STORE, { keyPath: 'id' })
-      }
-    }
-  })
+  return openAppDatabase(outboxDatabase)
 }
 
 function buildJob(partial: OutboxEnqueueInput): OutboxJob {

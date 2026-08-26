@@ -3,6 +3,7 @@ import { useEventListener } from '@vueuse/core'
 import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
 import {
   copySelectionToTauriClipboard,
   pasteFromTauriClipboard
@@ -13,6 +14,20 @@ import { isTauri } from '@/app/tauri/env'
 function cursorPosition(store: EditorStore) {
   const { cursorCanvasX: ccx, cursorCanvasY: ccy } = store.state
   return ccx != null && ccy != null ? { x: ccx, y: ccy } : undefined
+}
+
+export async function copyAndDeleteSelection(
+  store: EditorStore,
+  clipboardData: DataTransfer
+): Promise<boolean> {
+  try {
+    await store.writeCopyData(clipboardData)
+    store.deleteSelected()
+    return true
+  } catch (error) {
+    console.warn('Browser clipboard cut failed', error)
+    return false
+  }
 }
 
 export function bindEditorClipboard(store: EditorStore) {
@@ -36,8 +51,7 @@ export function bindEditorClipboard(store: EditorStore) {
       })
       return
     }
-    if (e.clipboardData) void store.writeCopyData(e.clipboardData)
-    store.deleteSelected()
+    if (e.clipboardData) void copyAndDeleteSelection(store, e.clipboardData)
   })
 
   useEventListener(window, 'paste', (e: ClipboardEvent) => {
@@ -60,6 +74,14 @@ export function bindEditorClipboard(store: EditorStore) {
       return
     }
 
-    if (isTauri()) void pasteFromTauriClipboard(store, cursorPos)
+    if (isTauri()) {
+      void pasteFromTauriClipboard(store, cursorPos)
+      return
+    }
+
+    const memoryHTML = getInMemoryClipboardHTML()
+    if (memoryHTML) {
+      void store.pasteFromHTML(memoryHTML, cursorPos)
+    }
   })
 }

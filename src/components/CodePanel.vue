@@ -23,7 +23,7 @@ import {
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import AppTextButton from '@/components/ui/AppTextButton.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import Tip from '@/components/ui/Tip.vue'
 import statusTheme from '@/theme/status'
 
@@ -231,14 +231,17 @@ watch(
         @update:model-value="changeSource"
       />
       <Tip v-if="source !== 'html-css'" :label="dialogs.copyJSXReference">
-        <AppTextButton
+        <AppButton
+          color="neutral"
+          variant="ghost"
+          size="xs"
+          shape="square"
           data-test-id="code-panel-copy-ref"
-          :ui="{ base: 'rounded p-1.5 text-[11px] hover:bg-hover' }"
           @click="copyReference(JSX_REFERENCE)"
         >
           <icon-lucide-check v-if="copiedReference" class="size-3 text-[var(--color-success)]" />
           <icon-lucide-book-open v-else class="size-3" />
-        </AppTextButton>
+        </AppButton>
       </Tip>
     </header>
 
@@ -273,26 +276,28 @@ watch(
         {{ readOnly ? dialogs.codeGeneratedReadOnly : statusText }}
       </span>
       <div class="flex items-center gap-1">
-        <AppTextButton
+        <AppButton
           v-if="dirty && !readOnly"
+          color="neutral"
+          variant="ghost"
+          size="xs"
           data-test-id="code-panel-reset"
-          :ui="{
-            base: 'flex items-center gap-1 rounded px-2 py-1 text-[11px] hover:bg-hover'
-          }"
           @click="resetDraft"
         >
           <icon-lucide-rotate-ccw class="size-3" />
           {{ dialogs.codeReset }}
-        </AppTextButton>
-        <AppTextButton
+        </AppButton>
+        <AppButton
+          color="neutral"
+          variant="ghost"
+          size="xs"
           data-test-id="code-panel-copy"
-          :ui="{ base: 'flex items-center gap-1 rounded px-2 py-1 text-[11px] hover:bg-hover' }"
           @click="copy(draft)"
         >
           <icon-lucide-check v-if="copied" class="size-3 text-[var(--color-success)]" />
           <icon-lucide-copy v-else class="size-3" />
           {{ copied ? dialogs.copied : dialogs.copy }}
-        </AppTextButton>
+        </AppButton>
       </div>
     </footer>
   </div>

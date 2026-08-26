@@ -74,5 +74,5 @@ test('text case vertical alignment and ending truncation', async () => {
   await editor.canvas.waitForRender()
   await editor.page.waitForTimeout(300)
   editor.canvas.assertNoErrors()
-  expect(await editor.canvas.canvas.screenshot()).toMatchSnapshot('typography-depth.png')
+  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('typography-depth.png')
 })

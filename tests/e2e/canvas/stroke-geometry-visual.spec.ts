@@ -75,6 +75,6 @@ test('stroke caps joins and miter limits', async () => {
   })
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  const buffer = await editor.canvas.canvas.screenshot()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('stroke-caps-joins-miter-limits.png')
 })

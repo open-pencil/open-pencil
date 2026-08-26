@@ -77,6 +77,10 @@ export function recordStepUsage(usage: StepUsage, store?: EditorStore): void {
   getRunState(store).recordStep(usage)
 }
 
+export function recordStep(store?: EditorStore): void {
+  getRunState(store).currentSteps++
+}
+
 export function resetRunSteps(store?: EditorStore): void {
   getRunState(store).resetSteps()
 }

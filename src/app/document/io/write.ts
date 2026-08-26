@@ -1,5 +1,6 @@
 import type { EditorState } from '@open-pencil/core/editor'
 
+import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
@@ -40,30 +41,40 @@ export function createDocumentWriter({
     version = state.sceneVersion
   ): Promise<boolean> {
     setLastWriteTime(Date.now())
-    const storage = getStorageBinding()
-    if (storage) {
-      await persistStorageCanvasLocally({
-        providerId: storage.providerId,
-        canvasId: storage.documentId,
-        name: state.documentName || 'Untitled',
-        figBytes: data
-      })
-      return finishWrite(version)
-    }
+    try {
+      const storage = getStorageBinding()
+      if (storage) {
+        await persistStorageCanvasLocally({
+          providerId: storage.providerId,
+          canvasId: storage.documentId,
+          name: state.documentName || 'Untitled',
+          figBytes: data
+        })
+        return await finishWrite(version)
+      }
 
-    const filePath = getFilePath()
-    const fileHandle = getFileHandle()
-    if (filePath && isTauri()) {
-      const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
-      await tauriWrite(filePath, data)
-      return finishWrite(version)
+      const filePath = getFilePath()
+      const fileHandle = getFileHandle()
+      if (filePath && isTauri()) {
+        const { writeFile: tauriWrite } = await import('@tauri-apps/plugin-fs')
+        await tauriWrite(filePath, data)
+        return await finishWrite(version)
+      }
+      if (fileHandle) {
+        const writable = await fileHandle.createWritable()
+        await writable.write(new Uint8Array(data))
+        await writable.close()
+        return await finishWrite(version)
+      }
+      return false
+    } catch (error) {
+      recordDocumentFailure({
+        operation: 'save',
+        format: 'fig',
+        ...describeDiagnosticError(error),
+        retryable: describeDiagnosticError(error).retryable
+      })
+      throw error
     }
-    if (fileHandle) {
-      const writable = await fileHandle.createWritable()
-      await writable.write(new Uint8Array(data))
-      await writable.close()
-      return finishWrite(version)
-    }
-    return false
   }
 }

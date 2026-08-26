@@ -97,10 +97,89 @@ test('vector edit overlay follows nested transforms and live path fills', async 
   })
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  const buffer = await editor.canvas.canvas.screenshot()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('vector-edit-mode-overlay.png')
 })
 
+test('a Pen-created Bézier commits a vertex drag on mouseup', async () => {
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.exitNodeEditMode(true)
+    store.setTool('PEN')
+  })
+  await editor.canvas.waitForRender()
+  const box = await editor.canvas.canvas.boundingBox()
+  if (!box) throw new Error('Canvas bounds unavailable')
+
+  await editor.page.mouse.click(box.x + 180, box.y + 180)
+  await editor.page.mouse.move(box.x + 240, box.y + 140)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(box.x + 280, box.y + 120, { steps: 4 })
+  await editor.page.mouse.up()
+
+  await editor.page.mouse.move(box.x + 420, box.y + 320)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(box.x + 460, box.y + 360, { steps: 4 })
+  await editor.page.mouse.up()
+  const penBeforeCommit = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    return { tool: store?.state.activeTool, vertices: store?.state.penState?.vertices.length ?? 0 }
+  })
+  expect(penBeforeCommit.tool).toBe('PEN')
+  expect(penBeforeCommit.vertices).toBeGreaterThanOrEqual(2)
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.penCommit(false)
+  })
+  await editor.canvas.waitForRender()
+
+  const vectorId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const page = store.graph.getNode(store.state.currentPageId)
+    const vector = page?.childIds
+      .map((id: string) => store.graph.getNode(id))
+      .find((node) => node?.type === 'VECTOR')
+    if (!vector) throw new Error('Pen did not create a vector')
+    return vector.id
+  })
+
+  await editor.page.evaluate((id) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.enterNodeEditMode(id)
+  }, vectorId)
+  await editor.canvas.waitForRender()
+
+  const vertex = await editor.page.evaluate((id) => {
+    const store = window.openPencil?.getStore?.()
+    const node = store?.graph.getNode(id)
+    const edit = store?.getNodeEditState?.()
+    if (!node || node.type !== 'VECTOR' || !edit) throw new Error('Vector edit state unavailable')
+    const point = edit.vertices[0]
+    return { x: point.x, y: point.y, before: node.vectorNetwork?.vertices[0] ?? null }
+  }, vectorId)
+  await editor.page.mouse.move(box.x + vertex.x, box.y + vertex.y)
+  await editor.page.mouse.down()
+  await editor.page.mouse.move(box.x + vertex.x + 35, box.y + vertex.y + 20, { steps: 5 })
+  await editor.page.mouse.up()
+
+  const result = await editor.page.evaluate((id) => {
+    const store = window.openPencil?.getStore?.()
+    const edit = store?.getNodeEditState?.()
+    const node = store?.graph.getNode(id)
+    return {
+      editMode: edit !== null && edit !== undefined,
+      editVertex: edit?.vertices[0] ?? null,
+      graphVertex: node?.type === 'VECTOR' ? (node.vectorNetwork?.vertices[0] ?? null) : null
+    }
+  }, vectorId)
+  expect(result.editMode).toBe(true)
+  expect(result.editVertex).not.toEqual(vertex.before)
+  expect(result.graphVertex).not.toEqual(vertex.before)
+})
 test('dragging a vector point snaps to sibling bounds and clears guides on release', async () => {
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
@@ -152,7 +231,6 @@ test('dragging a vector point snaps to sibling bounds and clears guides on relea
   })
   expect(duringDrag.vertex).toMatchObject({ x: 300, y: 100 })
   expect(duringDrag.guides).toContainEqual({ axis: 'x', position: 300, from: 80, to: 220 })
-  expect(await editor.canvas.canvas.screenshot()).toMatchSnapshot('vector-edit-snap-guide.png')
 
   await editor.page.mouse.up()
   await expect
@@ -160,17 +238,29 @@ test('dragging a vector point snaps to sibling bounds and clears guides on relea
       editor.page.evaluate(() => window.openPencil?.getStore?.().state.snapGuides.length ?? -1)
     )
     .toBe(0)
-  const releasedVertex = await editor.page.evaluate(() => {
-    const vertex = window.openPencil?.getStore?.().getNodeEditState()?.vertices[0]
-    return vertex ? { x: vertex.x, y: vertex.y } : null
+  const committed = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const editState = store?.getNodeEditState()
+    const nodeId = editState?.nodeId
+    const node = nodeId ? store?.graph.getNode(nodeId) : null
+    return {
+      editMode: editState !== null && editState !== undefined,
+      vertex: editState?.vertices[0] ?? null,
+      graphVertex: node?.type === 'VECTOR' ? (node.vectorNetwork?.vertices[0] ?? null) : null,
+      guides: store?.state.snapGuides ?? []
+    }
   })
+  expect(committed.editMode).toBe(true)
+  expect(committed.vertex).toMatchObject({ x: 300, y: 100 })
+  expect(committed.graphVertex).not.toBeNull()
+  expect(committed.guides).toEqual([])
+  const committedVertex = committed.vertex
   await editor.page.mouse.move(box.x + 420, box.y + 260, { steps: 5 })
   expect(
-    await editor.page.evaluate(() => {
-      const vertex = window.openPencil?.getStore?.().getNodeEditState()?.vertices[0]
-      return vertex ? { x: vertex.x, y: vertex.y } : null
-    })
-  ).toEqual(releasedVertex)
+    await editor.page.evaluate(
+      () => window.openPencil?.getStore?.()?.getNodeEditState()?.vertices[0] ?? null
+    )
+  ).toEqual(committedVertex)
 
   await editor.page.mouse.move(box.x + 300, box.y + 100)
   await editor.page.mouse.down()

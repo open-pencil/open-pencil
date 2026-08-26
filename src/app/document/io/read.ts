@@ -1,6 +1,7 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 
+import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import { yieldToUI } from '@/app/document/io/browser'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -54,7 +55,12 @@ export function createOpenActions({
       await fitCurrentPageToViewport()
       editor.requestRender()
     } catch (e) {
-      console.error('Failed to open .fig file:', e)
+      recordDocumentFailure({
+        operation: 'open',
+        format: 'fig',
+        ...describeDiagnosticError(e),
+        retryable: describeDiagnosticError(e).retryable
+      })
       toast.error(
         notificationMessages.get().openFileFailed({
           name: file.name,

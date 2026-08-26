@@ -1,4 +1,4 @@
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import type { DBSchema, IDBPDatabase } from 'idb'
 
 import type {
   ComponentLibraryRevision,
@@ -13,8 +13,27 @@ import {
   serializeLibraryRevision
 } from '@open-pencil/core/library'
 
-const DATABASE_NAME = 'open-pencil-libraries'
-const DATABASE_VERSION = 1
+import { APP_DATABASE_NAMES, defineAppDatabase, openAppDatabase } from '@/app/storage/idb'
+
+const DATABASE_NAME = APP_DATABASE_NAMES.libraries
+
+const libraryDatabase = defineAppDatabase<LocalLibraryDatabase>({
+  name: APP_DATABASE_NAMES.libraries,
+  version: 1,
+  callbacks: {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('revisions')) {
+        const revisions = database.createObjectStore('revisions', {
+          keyPath: ['libraryId', 'revisionId']
+        })
+        revisions.createIndex('by-library', 'libraryId')
+      }
+      if (!database.objectStoreNames.contains('latest')) {
+        database.createObjectStore('latest')
+      }
+    }
+  }
+})
 
 interface StoredLibraryRevision {
   libraryId: string
@@ -38,19 +57,7 @@ export class LocalLibraryCatalog implements LibraryCatalog {
   readonly #database: Promise<IDBPDatabase<LocalLibraryDatabase>>
 
   constructor(databaseName = DATABASE_NAME) {
-    this.#database = openDB<LocalLibraryDatabase>(databaseName, DATABASE_VERSION, {
-      upgrade(database) {
-        if (!database.objectStoreNames.contains('revisions')) {
-          const revisions = database.createObjectStore('revisions', {
-            keyPath: ['libraryId', 'revisionId']
-          })
-          revisions.createIndex('by-library', 'libraryId')
-        }
-        if (!database.objectStoreNames.contains('latest')) {
-          database.createObjectStore('latest')
-        }
-      }
-    })
+    this.#database = openAppDatabase({ ...libraryDatabase, name: databaseName })
   }
 
   async listLibraries(): Promise<LibrarySummary[]> {

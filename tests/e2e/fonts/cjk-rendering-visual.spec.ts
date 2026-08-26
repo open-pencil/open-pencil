@@ -42,7 +42,7 @@ async function expectCanvas(canvas: CanvasHelper, name: string): Promise<void> {
       })
   )
   canvas.assertNoErrors()
-  expect(await canvas.canvas.screenshot()).toMatchSnapshot(`${name}.png`)
+  expect(await canvas.screenshotCanvasRegion()).toMatchSnapshot(`${name}.png`)
 }
 
 test('international text is correct on its first visible paint', async ({ page }) => {

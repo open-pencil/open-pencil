@@ -1,5 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 
+import { computeHandleVisibleVertices } from '@open-pencil/core/canvas/overlays'
 import { createEditor, type Editor } from '@open-pencil/core/editor'
 import { regenerateFillGeometry } from '@open-pencil/core/vector'
 import { SceneGraph } from '@open-pencil/scene-graph'
@@ -7,9 +8,9 @@ import type { SceneNode, VectorNetwork } from '@open-pencil/scene-graph'
 import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
 
-import { createVectorEditHistoryActions } from '@/app/editor/vector-edit/history'
-import { createVectorEditLifecycle } from '@/app/editor/vector-edit/lifecycle'
-import type { VectorEditState } from '@/app/editor/vector-edit/types'
+import { createVectorEditHistoryActions } from '@/app/editor/vector/history'
+import { createVectorEditLifecycle } from '@/app/editor/vector/lifecycle'
+import type { VectorEditState } from '@/app/editor/vector/types'
 
 import { expectDefined, getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -82,6 +83,14 @@ function worldVertices(graph: SceneGraph, nodeId: string) {
 }
 
 describe('vector edit graph ownership', () => {
+  test('ignores stale selected handle indices', () => {
+    const segments = [
+      { start: 0, end: 1, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }
+    ]
+    expect(computeHandleVisibleVertices(new Set([0]), new Set([99, -1, 2]), segments)).toEqual(
+      new Set([0, 1])
+    )
+  })
   test('enters edit mode after the editor graph is replaced', () => {
     const initial = new SceneGraph()
     const replacement = new SceneGraph()
@@ -220,6 +229,27 @@ describe('vector edit with rotated ancestors', () => {
     expect(undoLabels).toEqual(['Edit vector'])
   })
 
+  test('committing one drag rebases the active edit session for the next drag', () => {
+    const { graph, vector, state, lifecycle, undoLabels } = setup(0, 0)
+    lifecycle.enterNodeEditMode(vector.id)
+    const first = expectDefined(state.nodeEditState)
+    first.vertices[0] = { ...expectDefined(first.vertices[0]), x: 25, y: 10 }
+
+    lifecycle.commitNodeEditChanges(first)
+
+    const committed = getNodeOrThrow(graph, vector.id)
+    expect(state.nodeEditState).toBe(first)
+    expect(undoLabels).toEqual(['Edit vector'])
+    expect(expectDefined(first.origAbsNetwork.vertices[0]).x).toBeCloseTo(25, 5)
+    expect(expectDefined(first.origAbsNetwork.vertices[0]).y).toBeCloseTo(10, 5)
+    expect(committed).toBeDefined()
+
+    first.vertices[0] = { ...expectDefined(first.vertices[0]), x: 40, y: 20 }
+    lifecycle.commitNodeEditChanges(first)
+    expect(undoLabels).toEqual(['Edit vector', 'Edit vector'])
+    expect(expectDefined(first.origAbsNetwork.vertices[0]).x).toBeCloseTo(40, 5)
+    expect(expectDefined(first.origAbsNetwork.vertices[0]).y).toBeCloseTo(20, 5)
+  })
   test('tangents rotate with the node on enter', () => {
     const { state, lifecycle, vector } = setup(0, 90)
     lifecycle.enterNodeEditMode(vector.id)

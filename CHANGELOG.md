@@ -12,7 +12,7 @@
 - Run Pi through AI SDK HarnessAgent as a configurable desktop provider with multiple saved model profiles, secure credentials, existing MCP design tools, and per-profile thinking and permission settings.
 - Open multiple selected design files in separate tabs.
 - Let Figma API scripts and automation combine components into variant sets.
-- Monitor and restart the local MCP server, configure its root directory or authentication, and choose individual, read-only, or side-effecting tools it exposes from Settings.
+- Add local AI usage and technical diagnostics, including token telemetry, provider/model summaries, recent failures, configurable retention, export, and clear controls. (#588)
 - Add deterministic two-browser collaboration coverage for bidirectional edits, awareness, departure cleanup, partitioned-peer convergence, and reconnect synchronization without public network dependencies. (#530)
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
 - Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
@@ -40,6 +40,7 @@
 - Show outdated linked library instances by asset and update the current page or all pages in one undoable action. (#239)
 - Add a reproducible Dev Container for web, package, CLI, and non-browser test development.
 - Add local crash recovery for unsaved and pathless documents, including MCP-created documents. (#487)
+- Make local unsaved-work recovery configurable and remove retained recovery snapshots when recovery is disabled. (#574)
 - Add isolated visual inspection that sends bounded selection renders to the configured Vision model and returns text findings without retaining image data in Design chat history. (#232, #471)
 - Add image attachments to AI chat with bounded analysis, immediate transcript thumbnails, hover previews, and click-to-view images. (#232)
 
@@ -65,6 +66,7 @@
 ### Fixed
 
 - Fit a page to the editor viewport only on its first visit, preserving later pan and zoom adjustments.
+- Run `openpencil import` on Node so the npm-installed CLI no longer fails with `Bun is not defined`. (#575)
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
 
 - Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.
@@ -89,6 +91,9 @@
 - Match Figma Plugin API behavior for `rescale()`, page `backgrounds`, and nullable visual `absoluteRenderBounds`. (#442)
 - Keep imported Figma instances linked to their remapped source components so later component edits update existing instances. (#385)
 - Restore native copy, cut, and paste shortcuts in desktop text inputs while preserving design clipboard handling on the canvas.
+- Preserve selected layers when browser clipboard serialization fails during cut operations, and fall back to the session clipboard when system clipboard access is unavailable. (#568)
+- Treat MCP tool results with an omitted `isError` field as successful while preserving explicit MCP errors. (#583)
+- Commit vector vertex and Bézier-handle edits when the pointer is released and keep transformed vector-edit overlays aligned. (#586)
 - Remove the permanent CORS configuration action from cloud-storage settings and report connection results through standard toasts with clear browser-specific guidance.
 - Complete translated app, accessibility, font, color, collaboration, import, connection-test, and browser fallback text across all supported locales, and keep the document language synchronized with the selected locale.
 - Preserve effective nested instance text overrides when importing complex Figma component hierarchies. (#102)

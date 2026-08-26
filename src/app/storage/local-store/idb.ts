@@ -1,11 +1,23 @@
-import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import type { DBSchema, IDBPDatabase } from 'idb'
 
+import { APP_DATABASE_NAMES, defineAppDatabase, openAppDatabase } from '@/app/storage/idb'
 import { buildIndexMeta, buildWriteMeta, sortAndFilterMetas } from '@/app/storage/local-store/meta'
 import type { LocalCanvasStore } from '@/app/storage/local-store/store'
 import type { LocalCanvasMeta, LocalCanvasWriteInput } from '@/app/storage/local-store/types'
 
-const DB_NAME = 'open-pencil-cloud-local'
-const DB_VERSION = 1
+const localCanvasDatabase = defineAppDatabase<LocalCanvasDatabase>({
+  name: APP_DATABASE_NAMES.localCanvas,
+  version: 1,
+  callbacks: {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('meta')) {
+        database.createObjectStore('meta', { keyPath: 'id' })
+      }
+      if (!database.objectStoreNames.contains('fig')) database.createObjectStore('fig')
+      if (!database.objectStoreNames.contains('thumb')) database.createObjectStore('thumb')
+    }
+  }
+})
 
 type StoredBinary = ArrayBuffer | Uint8Array | Blob
 
@@ -33,15 +45,7 @@ async function storedBinaryToBytes(row: StoredBinary | undefined): Promise<Uint8
 }
 
 function openDatabase(): Promise<IDBPDatabase<LocalCanvasDatabase>> {
-  return openDB<LocalCanvasDatabase>(DB_NAME, DB_VERSION, {
-    upgrade(database) {
-      if (!database.objectStoreNames.contains('meta')) {
-        database.createObjectStore('meta', { keyPath: 'id' })
-      }
-      if (!database.objectStoreNames.contains('fig')) database.createObjectStore('fig')
-      if (!database.objectStoreNames.contains('thumb')) database.createObjectStore('thumb')
-    }
-  })
+  return openAppDatabase(localCanvasDatabase)
 }
 
 /** IndexedDB-backed local canvas store (meta + fig/thumb blobs). */

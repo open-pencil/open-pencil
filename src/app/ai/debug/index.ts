@@ -5,7 +5,8 @@ import type { ToolDebugLog, ToolLogEntry } from '@open-pencil/core/tools'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { AIChatFailure } from '@/app/ai/chat/failure'
-import { getStepUsages, getToolLogEntries } from '@/app/ai/tools'
+import { getToolLogEntries } from '@/app/ai/tools'
+import { diagnostics } from '@/app/diagnostics'
 
 const MAX_FAILURE_DETAIL_LENGTH = 240
 const SENSITIVE_DETAIL_PATTERN =
@@ -19,44 +20,31 @@ export function safeFailureDetail(detail: string): string {
 }
 
 export function formatTokenUsage(): string {
-  const steps = getStepUsages()
-  if (steps.length === 0) return '  (no usage data — provider may not report it)'
+  const events = diagnostics.recent().filter((event) => event.name === 'model.step.completed')
+  if (events.length === 0) return '  (no usage data — provider may not report it)'
 
   let totalInput = 0
   let totalOutput = 0
   let totalCacheRead = 0
   let totalCacheWrite = 0
-
-  const lines: string[] = []
-  for (let i = 0; i < steps.length; i++) {
-    const s = steps[i]
-    totalInput += s.inputTokens
-    totalOutput += s.outputTokens
-    totalCacheRead += s.cacheReadTokens
-    totalCacheWrite += s.cacheWriteTokens
-
-    let cacheInfo = ' NO CACHE'
-    if (s.cacheReadTokens > 0) {
-      cacheInfo = ` cache_read=${s.cacheReadTokens}`
-    } else if (s.cacheWriteTokens > 0) {
-      cacheInfo = ` cache_write=${s.cacheWriteTokens}`
-    }
-    lines.push(`  Step ${i + 1}: in=${s.inputTokens} out=${s.outputTokens}${cacheInfo}`)
-  }
-
+  const lines = events.map((event, index) => {
+    const input = event.attributes.inputTokens
+    const output = event.attributes.outputTokens
+    const cacheRead = event.attributes.cacheReadTokens
+    const cacheWrite = event.attributes.cacheWriteTokens
+    if (typeof input === 'number') totalInput += input
+    if (typeof output === 'number') totalOutput += output
+    if (typeof cacheRead === 'number') totalCacheRead += cacheRead
+    if (typeof cacheWrite === 'number') totalCacheWrite += cacheWrite
+    return `  Step ${events.length - index}: in=${input ?? 'not reported'} out=${output ?? 'not reported'} cache_read=${cacheRead ?? 'not reported'} cache_write=${cacheWrite ?? 'not reported'}`
+  })
   const cacheHitRate = totalInput > 0 ? ((totalCacheRead / totalInput) * 100).toFixed(1) : '0.0'
-  const savedTokens = totalCacheRead > 0 ? totalCacheRead - Math.round(totalCacheRead * 0.1) : 0
-
   lines.unshift(
     `Total: in=${totalInput} out=${totalOutput} cache_read=${totalCacheRead} cache_write=${totalCacheWrite}`,
-    `Cache hit rate: ${cacheHitRate}% (saved ~${savedTokens} uncached input tokens, 90% cost reduction on cached)`,
-    `Steps: ${steps.length}`,
-    totalCacheRead === 0 && totalCacheWrite === 0
-      ? '⚠ NO CACHING DETECTED — system prompt + tools are re-processed every step'
-      : ''
+    `Cache hit rate: ${cacheHitRate}%`,
+    `Steps: ${events.length}`
   )
-
-  return lines.filter(Boolean).join('\n')
+  return lines.join('\n')
 }
 
 export function formatLogEntry(entry: ToolLogEntry, index: number): string {

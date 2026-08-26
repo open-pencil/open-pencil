@@ -7,16 +7,17 @@ import { ref } from 'vue'
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 import type { ACPAgentID, AIProviderID } from '@open-pencil/core/constants'
 
-import {
-  classifyAIChatError,
-  classifyAIChatFinish,
-  type AIChatFailure
-} from '@/app/ai/chat/failure'
+import { classifyAIChatError, type AIChatFailure } from '@/app/ai/chat/failure'
 import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { buildReasoningProviderOptions, type AIProviderOptions } from '@/app/ai/chat/reasoning'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt.md?raw'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
-import { MAX_AGENT_STEPS, createAITools, recordStepUsage, resetRunSteps } from '@/app/ai/tools'
+import { MAX_AGENT_STEPS, createAITools, recordStep, resetRunSteps } from '@/app/ai/tools'
+import {
+  recordChatCompleted,
+  recordChatFailed,
+  recordModelStepCompleted
+} from '@/app/diagnostics/events'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
 
 type EditorStore = ReturnType<typeof getActiveEditorStore>
@@ -102,16 +103,15 @@ export function createToolLoopTransport({
       }
     },
     onStepFinish: ({ usage }) => {
-      recordStepUsage(
-        {
-          inputTokens: usage.inputTokens ?? 0,
-          outputTokens: usage.outputTokens ?? 0,
-          cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? 0,
-          cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? 0,
-          timestamp: Date.now()
-        },
-        store
-      )
+      recordStep(store)
+      recordModelStepCompleted({
+        provider: providerID,
+        model: effectiveModelID,
+        inputTokens: usage.inputTokens ?? null,
+        outputTokens: usage.outputTokens ?? null,
+        cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? null,
+        cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? null
+      })
     }
   })
 
@@ -138,13 +138,17 @@ export function createChatSessionManager({
   function handleChatFinish({
     finishReason,
     isAbort,
+    isDisconnect,
     isError
   }: {
     finishReason?: FinishReason
     isAbort: boolean
+    isDisconnect: boolean
     isError: boolean
   }): void {
-    if (!isAbort && !isError) failure.value = classifyAIChatFinish(finishReason)
+    if (!isAbort && !isDisconnect && !isError) {
+      recordChatCompleted({ finishReason: finishReason ?? null })
+    }
   }
 
   function clearFailure(): void {
@@ -248,6 +252,7 @@ export function createChatSessionManager({
         messages,
         onError: (error) => {
           failure.value = classifyAIChatError(error)
+          recordChatFailed({ errorName: error instanceof Error ? error.name : 'unknown' })
         },
         onFinish: handleChatFinish
       })

@@ -53,7 +53,7 @@ test('mixed vector regions keep open stroke segments', async () => {
   })
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  const buffer = await editor.canvas.canvas.screenshot()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('mixed-region-open-segment.png')
 })
 
@@ -109,6 +109,6 @@ test('even-odd vector geometry preserves holes', async () => {
   })
   await editor.canvas.waitForRender()
   editor.canvas.assertNoErrors()
-  const buffer = await editor.canvas.canvas.screenshot()
+  const buffer = await editor.canvas.screenshotCanvasRegion()
   expect(buffer).toMatchSnapshot('even-odd-vector-holes.png')
 })

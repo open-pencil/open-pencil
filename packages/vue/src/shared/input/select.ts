@@ -1,4 +1,4 @@
-import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/node-edit'
+import { getNodeEditState, handleNodeEditDown } from '#vue/shared/input/vector'
 export { resolveHit } from '#vue/shared/input/select/hit'
 import { resolveHit } from '#vue/shared/input/select/hit'
 export { updateHoverCursor } from '#vue/shared/input/select/hover'
