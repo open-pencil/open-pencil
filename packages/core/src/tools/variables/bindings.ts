@@ -3,6 +3,7 @@ import { defineTool } from '#core/tools/schema'
 export const bindVariable = defineTool({
   name: 'bind_variable',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Bind a variable to a node property. For fills/strokes color bindings use indexed format like "fills/0/color".',
   params: {

@@ -210,6 +210,8 @@ async function handleMockCommand(
     }
   }
 
+  if (command === 'close_file') return { closed: true }
+
   if (command === 'save_file' || command === 'new_document' || command === 'open_file') {
     return {}
   }

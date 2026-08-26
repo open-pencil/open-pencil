@@ -3,6 +3,7 @@ import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJSX } from '@/app/automation/bridge/export-handlers'
 import {
+  handleCloseFile,
   handleNewDocument,
   handleOpenFile,
   handleSaveFile
@@ -18,6 +19,7 @@ import {
 } from '@/app/automation/bridge/target'
 import { createAutomationToolHandler } from '@/app/automation/bridge/tool-handlers'
 import type { EditorStore } from '@/app/editor/active-store'
+import { recentFiles } from '@/app/recent-files'
 
 type FigmaFactory = (store: EditorStore, pageId?: string) => FigmaAPI
 
@@ -38,7 +40,8 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     selection: handleSelection,
     save_file: handleSaveFile,
     new_document: handleNewDocument,
-    open_file: handleOpenFile
+    open_file: handleOpenFile,
+    close_file: handleCloseFile
   }
 
   async function handleRequest(
@@ -47,10 +50,16 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     args: unknown
   ): Promise<unknown> {
     if (command === 'list_documents') {
-      return { ok: true, result: { documents: listAutomationDocuments(store) } }
+      return {
+        ok: true,
+        result: {
+          documents: listAutomationDocuments(store),
+          recent_files: recentFiles.value
+        }
+      }
     }
 
-    if (command === 'open_file' || command === 'new_document') {
+    if (command === 'open_file' || command === 'new_document' || command === 'close_file') {
       const handler = commandHandlers[command]
       if (handler) return handler(resolveAutomationTarget(store, undefined), args)
     }

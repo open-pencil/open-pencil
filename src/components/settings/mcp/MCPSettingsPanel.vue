@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ToolEffect } from '@open-pencil/mcp/tools'
+import { useClipboard } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
@@ -7,17 +8,25 @@ import {
   configurableMCPTools,
   disabledMCPTools,
   mcpAuthenticationEnabled,
+  mcpLanAccessEnabled,
+  mcpOpenFileClosesOtherTabs,
   mcpRootDirectory,
   setMCPToolCategoryEnabled,
   setMCPToolEnabled
 } from '@/app/automation/mcp/preferences'
 import { mcpRuntime, refreshMCPRuntime, restartMCPRuntime } from '@/app/automation/mcp/runtime'
+import { getAutomationAuthToken } from '@/app/automation/mcp/spawn'
 import { isTauri } from '@/app/tauri/env'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 
 const { dialogs } = useI18n()
 const toolSearch = ref('')
+const copyError = ref<string | null>(null)
+const mcpEndpoint = computed(() => `http://127.0.0.1:${mcpRuntime.port}/mcp`)
+const { copy: copyEndpoint, copied: endpointCopied } = useClipboard({ copiedDuring: 2000 })
+const { copy: copyToken, copied: tokenCopied } = useClipboard({ copiedDuring: 2000 })
+const { copy: copyConfig, copied: configCopied } = useClipboard({ copiedDuring: 2000 })
 const disabledToolNames = computed(() => new Set(disabledMCPTools.value))
 function categoryStatus(effect: ToolEffect) {
   const tools = configurableMCPTools.value.filter((tool) => tool.effect === effect)
@@ -49,6 +58,11 @@ function restart(): void {
   void restartMCPRuntime()
 }
 
+function setLanAccess(enabled: boolean): void {
+  mcpLanAccessEnabled.value = enabled
+  if (enabled) mcpAuthenticationEnabled.value = true
+}
+
 async function chooseRootDirectory(): Promise<void> {
   if (!isTauri()) return
   const { open } = await import('@tauri-apps/plugin-dialog')
@@ -62,6 +76,36 @@ function isToolEnabled(name: string): boolean {
 
 function enableAllTools(): void {
   disabledMCPTools.value = []
+}
+
+async function copyClientConfig(): Promise<void> {
+  copyError.value = null
+  try {
+    const token = mcpRuntime.authRequired ? await getAutomationAuthToken() : null
+    const config = {
+      mcpServers: {
+        'open-pencil': {
+          type: 'streamableHttp',
+          url: mcpEndpoint.value,
+          ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {})
+        }
+      }
+    }
+    await copyConfig(JSON.stringify(config, null, 2))
+  } catch (error) {
+    copyError.value = error instanceof Error ? error.message : String(error)
+  }
+}
+
+async function copyAccessToken(): Promise<void> {
+  copyError.value = null
+  try {
+    const token = await getAutomationAuthToken()
+    if (!token) throw new Error(dialogs.value.mcpAccessTokenUnavailable)
+    await copyToken(token)
+  } catch (error) {
+    copyError.value = error instanceof Error ? error.message : String(error)
+  }
 }
 </script>
 
@@ -91,7 +135,23 @@ function enableAllTools(): void {
         <dt class="text-muted">{{ dialogs.mcpPort }}</dt>
         <dd class="font-mono text-surface">{{ mcpRuntime.port }}</dd>
         <dt class="text-muted">{{ dialogs.mcpAddress }}</dt>
-        <dd class="select-all font-mono text-surface">127.0.0.1</dd>
+        <dd class="flex min-w-0 items-center gap-2 text-surface">
+          <code class="min-w-0 flex-1 select-all break-all text-[10px]">{{ mcpEndpoint }}</code>
+          <button
+            type="button"
+            class="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-surface"
+            :aria-label="dialogs.mcpCopyEndpoint"
+            data-test-id="settings-mcp-copy-endpoint"
+            @click="copyEndpoint(mcpEndpoint)"
+          >
+            <icon-lucide-check v-if="endpointCopied" class="size-3 text-green-500" />
+            <icon-lucide-copy v-else class="size-3" />
+          </button>
+        </dd>
+        <dt class="text-muted">{{ dialogs.mcpAuthentication }}</dt>
+        <dd class="text-surface">
+          {{ mcpRuntime.authRequired ? dialogs.mcpBearerTokenAuth : dialogs.mcpNoAuthentication }}
+        </dd>
         <template v-if="mcpRuntime.version">
           <dt class="text-muted">{{ dialogs.mcpVersion }}</dt>
           <dd class="font-mono text-surface">{{ mcpRuntime.version }}</dd>
@@ -108,8 +168,35 @@ function enableAllTools(): void {
           </div>
           <AppSwitch
             v-model="mcpAuthenticationEnabled"
-            :label="dialogs.mcpAuthentication"
+             :disabled="mcpLanAccessEnabled"
+             :label="dialogs.mcpAuthentication"
             data-test-id="settings-mcp-authentication"
+          />
+        </div>
+      </div>
+
+      <div class="mt-3 border-t border-border pt-3">
+         <div class="flex items-center justify-between gap-3">
+           <div>
+             <p class="text-[10px] font-medium text-surface">{{ dialogs.mcpLanAccess }}</p>
+             <p class="mt-0.5 text-[10px] leading-relaxed text-muted">{{ dialogs.mcpLanAccessDescription }}</p>
+           </div>
+           <AppSwitch :model-value="mcpLanAccessEnabled" :label="dialogs.mcpLanAccess" @update:model-value="setLanAccess" />
+         </div>
+       </div>
+
+       <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-[10px] font-medium text-surface">{{ dialogs.mcpOpenFileCloseOtherTabs }}</p>
+            <p class="mt-0.5 text-[10px] leading-relaxed text-muted">
+              {{ dialogs.mcpOpenFileCloseOtherTabsDescription }}
+            </p>
+          </div>
+          <AppSwitch
+            v-model="mcpOpenFileClosesOtherTabs"
+            :label="dialogs.mcpOpenFileCloseOtherTabs"
+            data-test-id="settings-mcp-open-file-close-other-tabs"
           />
         </div>
       </div>
@@ -145,6 +232,38 @@ function enableAllTools(): void {
         <p class="mt-1.5 text-[10px] leading-relaxed text-muted">
           {{ dialogs.mcpRootDirectoryDescription }}
         </p>
+      </div>
+
+      <div class="mt-3 border-t border-border pt-3">
+        <div class="flex items-start justify-between gap-3">
+          <p class="max-w-sm text-[10px] leading-relaxed text-muted">
+            {{ dialogs.mcpClientConfigDescription }}
+          </p>
+          <div class="flex shrink-0 items-center gap-1.5">
+            <button
+              v-if="mcpRuntime.authRequired"
+              type="button"
+              class="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[10px] text-surface hover:bg-hover"
+              data-test-id="settings-mcp-copy-token"
+              @click="copyAccessToken"
+            >
+              <icon-lucide-check v-if="tokenCopied" class="size-3 text-green-500" />
+              <icon-lucide-copy v-else class="size-3" />
+              {{ tokenCopied ? dialogs.copied : dialogs.mcpCopyAccessToken }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-[10px] text-surface hover:bg-hover"
+              data-test-id="settings-mcp-copy-config"
+              @click="copyClientConfig"
+            >
+              <icon-lucide-check v-if="configCopied" class="size-3 text-green-500" />
+              <icon-lucide-copy v-else class="size-3" />
+              {{ configCopied ? dialogs.copied : dialogs.mcpCopyClientConfig }}
+            </button>
+          </div>
+        </div>
+        <p v-if="copyError" class="mt-2 text-[10px] text-red-400">{{ copyError }}</p>
       </div>
     </div>
 

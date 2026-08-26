@@ -135,9 +135,9 @@ export async function startSocketListener(
 export async function startTcpListener(
   app: Hono,
   wss: WebSocketServer,
-  httpPort: number
+  httpPort: number,
+  host = '127.0.0.1'
 ): Promise<{ server: HttpServer; port: number } | null> {
-  const host = '127.0.0.1'
   const server = createAppServer(app)
   wireUpgrade(server, wss)
 
@@ -352,10 +352,11 @@ export async function tryStartTcp(
   app: Hono,
   wss: WebSocketServer,
   httpPort: number,
-  state: ListenerState
+  state: ListenerState,
+  host = '127.0.0.1'
 ): Promise<{ server: HttpServer; port: number } | null> {
   try {
-    return await startTcpListener(app, wss, httpPort)
+    return await startTcpListener(app, wss, httpPort, host)
   } catch (err) {
     // If TCP listener fails after the socket listener succeeded, close the
     // socket listener and clean up the socket file to avoid a leak.

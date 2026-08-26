@@ -44,8 +44,8 @@ function isProviderID(value: unknown): value is AIProviderID {
   )
 }
 
-function isAPIType(value: unknown): value is 'completions' | 'responses' {
-  return value === 'completions' || value === 'responses'
+function isAPIType(value: unknown): value is 'completions' | 'responses' | 'transcription' {
+  return value === 'completions' || value === 'responses' || value === 'transcription'
 }
 
 function isHarnessThinkingLevel(value: unknown): value is HarnessThinkingLevel {
@@ -61,7 +61,7 @@ function isHarnessPermissionMode(value: unknown): value is HarnessPermissionMode
 }
 
 function isCapability(value: unknown): value is AIModelCapability {
-  return value === 'tools' || value === 'vision'
+  return value === 'tools' || value === 'vision' || value === 'audio'
 }
 
 function stringValue(value: unknown, fallback = ''): string {
@@ -72,6 +72,12 @@ function normalizedMaxOutputTokens(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.min(128_000, Math.max(1024, Math.round(value)))
     : DEFAULT_MAX_OUTPUT_TOKENS
+}
+
+function normalizedContextWindowTokens(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.min(10_000_000, Math.max(1024, Math.round(value)))
+    : undefined
 }
 
 function parseConnection(value: unknown): AIModelConnection | null {
@@ -103,6 +109,8 @@ function parseProfile(value: unknown, connectionIds: Set<string>): AIModelProfil
     modelID: stringValue(value.modelID),
     customModelID: stringValue(value.customModelID),
     maxOutputTokens: normalizedMaxOutputTokens(value.maxOutputTokens),
+    contextWindowTokens: normalizedContextWindowTokens(value.contextWindowTokens),
+    textInput: typeof value.textInput === 'boolean' ? value.textInput : undefined,
     reasoningEffort: stringValue(value.reasoningEffort).trim() || undefined,
     harnessThinkingLevel: isHarnessThinkingLevel(value.harnessThinkingLevel)
       ? value.harnessThinkingLevel
@@ -119,7 +127,27 @@ function optionalAssignment(value: unknown, modelIds: Set<string>): AIModelRoleA
   return typeof value === 'string' && modelIds.has(value) ? (value as AIModelProfileId) : null
 }
 
-function parseSettings(value: unknown): AIModelSettings | null {
+function isValidOptionalAssignment(
+  role: OptionalAIModelRole,
+  assignment: Exclude<AIModelRoleAssignment, null>,
+  design: AIModelProfileId,
+  models: AIModelProfile[],
+  connections: AIModelConnection[]
+): boolean {
+  const profileId = assignment === 'design' ? design : assignment
+  const profile = models.find((candidate) => candidate.id === profileId)
+  const connection = connections.find((candidate) => candidate.id === profile?.connectionId)
+  if (connection?.providerID.startsWith('acp:') || connection?.providerID === 'harness:pi') {
+    return false
+  }
+  if (role === 'vision' && !profile?.capabilities.includes('vision')) return false
+  if (role === 'audio') {
+    return assignment !== 'design' && Boolean(profile?.capabilities.includes('audio'))
+  }
+  return connection?.customAPIType !== 'transcription'
+}
+
+export function parseAIModelSettings(value: unknown): AIModelSettings | null {
   if (!isRecord(value) || value.version !== 1) return null
   const connections = Array.isArray(value.connections)
     ? value.connections.map(parseConnection).filter((connection) => connection !== null)
@@ -140,18 +168,15 @@ function parseSettings(value: unknown): AIModelSettings | null {
     design: resolvedDesign,
     review: optionalAssignment(rawAssignments.review, modelIds),
     fast: optionalAssignment(rawAssignments.fast, modelIds),
-    vision: optionalAssignment(rawAssignments.vision, modelIds)
+    vision: optionalAssignment(rawAssignments.vision, modelIds),
+    audio: optionalAssignment(rawAssignments.audio, modelIds)
   }
-  for (const role of ['review', 'fast', 'vision'] as const) {
+  for (const role of ['review', 'fast', 'vision', 'audio'] as const) {
     const assignment = assignments[role]
     if (assignment === null) continue
-    const profileId = assignment === 'design' ? resolvedDesign : assignment
-    const profile = models.find((candidate) => candidate.id === profileId)
-    const connection = connections.find((candidate) => candidate.id === profile?.connectionId)
-    const invalidAgent =
-      connection?.providerID.startsWith('acp:') || connection?.providerID === 'harness:pi'
-    const invalidVision = role === 'vision' && !profile?.capabilities.includes('vision')
-    if (invalidAgent || invalidVision) assignments[role] = null
+    if (!isValidOptionalAssignment(role, assignment, resolvedDesign, models, connections)) {
+      assignments[role] = null
+    }
   }
   return { version: 1, connections, models, assignments }
 }
@@ -196,13 +221,14 @@ function legacySettings(): AIModelSettings {
       design: LEGACY_MODEL_ID,
       review: 'design',
       fast: 'design',
-      vision: null
+      vision: null,
+      audio: null
     }
   }
 }
 
 function loadSettings(): AIModelSettings {
-  return parseSettings(readAIModelSettingsStorage()) ?? legacySettings()
+  return parseAIModelSettings(readAIModelSettingsStorage()) ?? legacySettings()
 }
 
 export const aiModelSettings = ref<AIModelSettings>(loadSettings())
@@ -228,7 +254,7 @@ export function modelConnection(connectionId: string): AIModelConnection | null 
 }
 
 export function isDesignModelProfile(profile: AIModelProfile): boolean {
-  return profile.capabilities.includes('tools')
+  return profile.capabilities.includes('tools') && !isTranscriptionModelProfile(profile)
 }
 
 export function designModelProfiles(): AIModelProfile[] {
@@ -244,14 +270,22 @@ export function isACPModelProfile(profile: AIModelProfile | null): boolean {
   return Boolean(profile && modelConnection(profile.connectionId)?.providerID.startsWith('acp:'))
 }
 
+export function isTranscriptionModelProfile(profile: AIModelProfile | null): boolean {
+  return Boolean(
+    profile && modelConnection(profile.connectionId)?.customAPIType === 'transcription'
+  )
+}
+
 export function resolveAIModelRole(role: AIModelRole): ResolvedAIModelRole | null {
   const assignment = aiModelSettings.value.assignments[role]
   if (assignment === null) return null
   const profileId = assignment === 'design' ? aiModelSettings.value.assignments.design : assignment
   const profile = modelProfile(profileId)
   if (!profile) return null
+  if (role !== 'audio' && isTranscriptionModelProfile(profile)) return null
   if (role === 'design' && !isDesignModelProfile(profile)) return null
   if (role === 'vision' && !profile.capabilities.includes('vision')) return null
+  if (role === 'audio' && !profile.capabilities.includes('audio')) return null
   const connection = modelConnection(profile.connectionId)
   return connection ? { requestedRole: role, profile, connection } : null
 }
@@ -306,6 +340,8 @@ function draftForProfile(
     customBaseURL: connection.customBaseURL,
     customAPIType: connection.customAPIType,
     maxOutputTokens: profile.maxOutputTokens,
+    contextWindowTokens: profile.contextWindowTokens,
+    textInput: profile.textInput,
     reasoningEffort: profile.reasoningEffort ?? '',
     harnessThinkingLevel: profile.harnessThinkingLevel ?? 'medium',
     harnessPermissionMode: profile.harnessPermissionMode ?? 'allow-edits',
@@ -326,6 +362,8 @@ function newProfileDraft(connection: AIModelConnection | null): AIModelProfileDr
     customBaseURL: connection?.customBaseURL ?? '',
     customAPIType: connection?.customAPIType ?? 'completions',
     maxOutputTokens: DEFAULT_MAX_OUTPUT_TOKENS,
+    contextWindowTokens: undefined,
+    textInput: undefined,
     reasoningEffort: '',
     harnessThinkingLevel: 'medium',
     harnessPermissionMode: 'allow-edits',
@@ -341,6 +379,23 @@ export function createModelProfileDraft(profileId?: string): AIModelProfileDraft
   return newProfileDraft(designConnection ?? aiModelSettings.value.connections[0])
 }
 
+function repairAssignmentsForProfile(
+  profile: AIModelProfile,
+  apiType: AIModelConnection['customAPIType']
+): void {
+  const assignments = aiModelSettings.value.assignments
+  if (assignments.vision === profile.id && !profile.capabilities.includes('vision')) {
+    assignments.vision = null
+  }
+  if (assignments.audio === profile.id && !profile.capabilities.includes('audio')) {
+    assignments.audio = null
+  }
+  if (apiType !== 'transcription') return
+  for (const role of ['review', 'fast', 'vision'] as const) {
+    if (assignments[role] === profile.id) assignments[role] = null
+  }
+}
+
 export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfile {
   const provider = AI_PROVIDERS.find((definition) => definition.id === draft.providerID)
   const effectiveModel = draft.customModelID.trim() || draft.modelID.trim()
@@ -350,9 +405,9 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
   }
   if (
     draft.profileId === aiModelSettings.value.assignments.design &&
-    !draft.capabilities.includes('tools')
+    (!draft.capabilities.includes('tools') || draft.customAPIType === 'transcription')
   ) {
-    throw new Error('The Design model must support tools')
+    throw new Error('The Design model must support tools and use a language-model API type')
   }
   const connection = connectionForDraft(draft)
   const profile: AIModelProfile = {
@@ -362,6 +417,8 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
     modelID: draft.modelID.trim() || provider?.defaultModel || '',
     customModelID: draft.customModelID.trim(),
     maxOutputTokens: normalizedMaxOutputTokens(draft.maxOutputTokens),
+    contextWindowTokens: normalizedContextWindowTokens(draft.contextWindowTokens),
+    textInput: draft.textInput,
     reasoningEffort: draft.reasoningEffort.trim() || undefined,
     harnessThinkingLevel:
       draft.providerID === 'harness:pi' ? draft.harnessThinkingLevel : undefined,
@@ -372,12 +429,7 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
   const index = aiModelSettings.value.models.findIndex((model) => model.id === profile.id)
   if (index === -1) aiModelSettings.value.models.push(profile)
   else aiModelSettings.value.models[index] = profile
-  if (
-    aiModelSettings.value.assignments.vision === profile.id &&
-    !profile.capabilities.includes('vision')
-  ) {
-    aiModelSettings.value.assignments.vision = null
-  }
+  repairAssignmentsForProfile(profile, connection.customAPIType)
   return profile
 }
 
@@ -407,7 +459,7 @@ export function removeModelProfile(profileId: string): void {
       aiModelSettings.value.assignments.vision = null
     }
   }
-  for (const role of ['review', 'fast', 'vision'] as const) {
+  for (const role of ['review', 'fast', 'vision', 'audio'] as const) {
     if (aiModelSettings.value.assignments[role] === profileId) {
       aiModelSettings.value.assignments[role] = null
     }
@@ -439,7 +491,9 @@ export function setModelRoleAssignment(role: AIModelRole, assignment: AIModelRol
         ? modelProfile(aiModelSettings.value.assignments.design)
         : modelProfile(assignment)
     if (isAgentModelProfile(profile)) return
+    if (role !== 'audio' && isTranscriptionModelProfile(profile)) return
     if (role === 'vision' && !profile?.capabilities.includes('vision')) return
+    if (role === 'audio' && !profile?.capabilities.includes('audio')) return
   }
   aiModelSettings.value.assignments[role] = assignment
 }

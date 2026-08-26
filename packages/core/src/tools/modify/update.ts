@@ -6,6 +6,7 @@ import { defineTool, nodeNotFound } from '#core/tools/schema'
 export const updateNode = defineTool({
   name: 'update_node',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Update properties of an existing node: position, size, opacity, corner radius, visibility, text, font.',
   params: {

@@ -92,18 +92,15 @@
       },
       {
         "id": "copy",
-        "label": "Copy",
-        "accelerator": "CmdOrCtrl+C"
+        "label": "Copy"
       },
       {
         "id": "cut",
-        "label": "Cut",
-        "accelerator": "CmdOrCtrl+X"
+        "label": "Cut"
       },
       {
         "id": "paste",
-        "label": "Paste",
-        "accelerator": "CmdOrCtrl+V"
+        "label": "Paste"
       },
       {
         "id": "paste-to-replace",
@@ -130,8 +127,7 @@
       },
       {
         "id": "selection.selectAll",
-        "label": "Select All",
-        "accelerator": "CmdOrCtrl+A"
+        "label": "Select All"
       },
       {
         "id": "selection.selectInverse",

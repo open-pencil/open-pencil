@@ -13,7 +13,7 @@ import { missingGraphFontScripts } from '#core/text/resolved-requirements'
 import { createPageViewportStore } from './page-viewports'
 import type { EditorContext } from './types'
 
-export function createPageActions(ctx: EditorContext) {
+export function createPageActions(ctx: EditorContext, zoomToFit: () => void) {
   const pageViewportStore = createPageViewportStore(ctx)
   let populationWorkerInstance: ReturnType<typeof createFigPopulationWorker> | undefined
   let populationWorkerGeneration = 0
@@ -30,15 +30,14 @@ export function createPageActions(ctx: EditorContext) {
     if (page?.type !== 'CANVAS') return
     const switchGeneration = ++pageSwitchGeneration
 
-    pageViewportStore.saveCurrentPageViewport()
-
     const previousPageId = ctx.state.currentPageId
+    if (previousPageId !== pageId) pageViewportStore.saveCurrentPageViewport()
     ctx.state.currentPageId = pageId
     ctx.state.enteredContainerId = null
     ctx.setSelectedIds(new Set())
     if (previousPageId !== pageId) ctx.emitEditorEvent('page:changed', pageId, previousPageId)
 
-    pageViewportStore.restorePageViewport(pageId)
+    const restoredViewport = pageViewportStore.restorePageViewport(pageId)
 
     ctx.state.loading = true
     let populated: boolean
@@ -85,6 +84,10 @@ export function createPageActions(ctx: EditorContext) {
     }
     if (ctx.getRenderer() || populated) {
       computeAllLayouts(ctx.graph, pageId)
+    }
+    if (!restoredViewport) {
+      zoomToFit()
+      pageViewportStore.saveCurrentPageViewport()
     }
     ctx.requestRender()
   }

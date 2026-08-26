@@ -1,6 +1,7 @@
 import { valibotSchema } from '@ai-sdk/valibot'
 import { tool } from 'ai'
 import * as v from 'valibot'
+import { shallowReactive } from 'vue'
 
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import {
@@ -20,9 +21,23 @@ import { useLibraryService } from '@/app/libraries'
 
 export const MAX_AGENT_STEPS = 50
 
+export interface StepUsage {
+  inputTokens: number
+  outputTokens: number
+  cacheReadTokens: number
+  cacheWriteTokens: number
+  timestamp: number
+}
+
 class RunState {
   toolLog: ToolLogEntry[] = []
+  stepUsages = shallowReactive<StepUsage[]>([])
   currentSteps = 0
+
+  recordStep(usage: StepUsage): void {
+    this.stepUsages.push(usage)
+    this.currentSteps++
+  }
 
   resetSteps(): void {
     this.currentSteps = 0
@@ -34,6 +49,7 @@ class RunState {
 
   clear(): void {
     this.toolLog = []
+    this.stepUsages.splice(0)
     this.currentSteps = 0
   }
 }
@@ -51,6 +67,14 @@ function getRunState(store?: EditorStore): RunState {
 
 export function getToolLogEntries(store?: EditorStore): ToolLogEntry[] {
   return getRunState(store).toolLog
+}
+
+export function getStepUsages(store?: EditorStore): StepUsage[] {
+  return getRunState(store).stepUsages
+}
+
+export function recordStepUsage(usage: StepUsage, store?: EditorStore): void {
+  getRunState(store).recordStep(usage)
 }
 
 export function recordStep(store?: EditorStore): void {
@@ -80,17 +104,31 @@ export function createAITools(store: EditorStore) {
     [
       ...CORE_TOOLS,
       ...EXTENDED_TOOLS.filter((def) =>
-        ['get_components', 'list_libraries', 'insert_library_component'].includes(def.name)
+        [
+          'export_image',
+          'get_components',
+          'get_page_tree',
+          'insert_library_component',
+          'list_libraries',
+          'list_pages',
+          'switch_page'
+        ].includes(def.name)
       )
     ],
     {
       getFigma: () => makeFigmaFromStore(store),
       onBeforeExecute: (def) => {
-        if (def.mutates) {
+        if (def.mutates && def.name !== 'switch_page') {
           beforeSnapshot = store.snapshotPage()
         }
       },
-      onAfterExecute: async (def) => {
+      onAfterExecute: async (def, figma) => {
+        if (def.name === 'switch_page') {
+          if (figma.currentPageId !== store.state.currentPageId) {
+            await store.switchPage(figma.currentPageId)
+          }
+          return
+        }
         if (def.mutates) {
           const pageId = store.state.currentPageId
           const pageNode = store.graph.getNode(pageId)

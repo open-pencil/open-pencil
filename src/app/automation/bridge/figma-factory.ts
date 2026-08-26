@@ -21,7 +21,7 @@ export function makeFigmaFromStore(
     zoom: store.state.zoom
   }
   api.exportImage = (nodeIds, opts) =>
-    store.renderExportImage(nodeIds, opts.scale ?? 1, opts.format ?? 'PNG')
+    store.renderExportImage(nodeIds, opts.scale ?? 1, opts.format ?? 'PNG', api.currentPageId)
   api.listAvailableFontsAsync = async () => {
     const [systemFonts, familyOptions] = await Promise.all([listFonts(), listFamilies()])
     const fonts = systemFonts.flatMap(({ family, styles }) =>

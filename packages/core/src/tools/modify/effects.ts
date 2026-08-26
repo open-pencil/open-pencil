@@ -7,6 +7,7 @@ import { defineTool, nodeNotFound } from '#core/tools/schema'
 export const setEffects = defineTool({
   name: 'set_effects',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Set effects on a node (drop shadow, inner shadow, blur). Pass an array or a single effect.',
   params: {

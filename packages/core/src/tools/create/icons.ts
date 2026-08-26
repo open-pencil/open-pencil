@@ -5,6 +5,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const fetchIconsTool = defineTool({
   name: 'fetch_icons',
+  documentAccess: 'inspect',
   description:
     'Pre-fetch icons from Iconify into cache. Batches by prefix (one HTTP request per set). Call this once with all needed icons, then use insert_icon to place them instantly. Popular sets: lucide (outline), mdi (filled), heroicons, tabler, solar, mingcute, ri (remix).',
   params: {
@@ -33,6 +34,7 @@ export const fetchIconsTool = defineTool({
 export const insertIcon = defineTool({
   name: 'insert_icon',
   mutates: true,
+  documentAccess: 'modify',
   description:
     'Insert one or more vector icons onto the canvas. Pass a single name or multiple names to batch-insert into the same parent. If already cached by fetch_icons — instant, no network request.',
   params: {
@@ -93,6 +95,7 @@ export const insertIcon = defineTool({
 
 export const searchIconsTool = defineTool({
   name: 'search_icons',
+  documentAccess: 'inspect',
   description:
     'Search Iconify for icons by keyword. Accepts multiple queries — all searched in parallel. Returns results keyed by query.',
   params: {

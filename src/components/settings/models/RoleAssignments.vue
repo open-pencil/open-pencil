@@ -5,6 +5,7 @@ import { useI18n } from '@open-pencil/vue'
 import {
   aiModelSettings,
   isAgentModelProfile,
+  isTranscriptionModelProfile,
   modelProfile,
   setModelRoleAssignment,
   type AIModelRole,
@@ -36,6 +37,11 @@ const roleDefinitions = computed(() => [
     role: 'vision' as const,
     label: dialogs.value.modelRoleVision,
     description: dialogs.value.modelRoleVisionDescription
+  },
+  {
+    role: 'audio' as const,
+    label: dialogs.value.modelRoleAudio,
+    description: dialogs.value.modelRoleAudioDescription
   }
 ])
 
@@ -48,13 +54,18 @@ function assignmentValue(role: AIModelRole): string {
 function optionsForRole(role: AIModelRole) {
   const profiles = aiModelSettings.value.models
     .filter((profile) => {
+      if (role !== 'audio' && isTranscriptionModelProfile(profile)) return false
       if (role === 'design') return profile.capabilities.includes('tools')
       if (isAgentModelProfile(profile)) return false
       if (role === 'vision') return profile.capabilities.includes('vision')
+      if (role === 'audio') return profile.capabilities.includes('audio')
       return true
     })
     .map((profile) => ({ value: profile.id, label: profile.name }))
   if (role === 'design') return profiles
+  if (role === 'audio') {
+    return [{ value: NO_MODEL, label: dialogs.value.noModel }, ...profiles]
+  }
 
   const design = modelProfile(aiModelSettings.value.assignments.design)
   const canInherit =

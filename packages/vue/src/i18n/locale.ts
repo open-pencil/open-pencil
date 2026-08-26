@@ -1,7 +1,17 @@
 import { localeFrom } from '@nanostores/i18n'
 import { atom, onStart } from 'nanostores'
 
-export const AVAILABLE_LOCALES = ['en', 'de', 'es', 'fr', 'it', 'ja', 'pl', 'ru', 'zh-CN'] as const
+export const AVAILABLE_LOCALES = [
+  'en',
+  'de',
+  'es',
+  'fr',
+  'it',
+  'ja',
+  'pl',
+  'ru',
+  'zh-CN'
+] as const
 export type Locale = (typeof AVAILABLE_LOCALES)[number]
 export type TranslatedLocale = Exclude<Locale, 'en'>
 

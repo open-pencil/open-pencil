@@ -53,19 +53,22 @@ export function responseWithTarget(
 
 export function listAutomationDocuments(activeStore: EditorStore): AutomationDocumentSummary[] {
   const activeTab = getTabForStore(activeStore)
-  return getTabsSnapshot().map((tab) => {
+  return getTabsSnapshot().flatMap((tab) => {
+    if (tab.kind === 'home') return []
     const pages = tab.store.graph.getPages().map((page) => ({ id: page.id, name: page.name }))
     const currentPage = tab.store.graph.getNode(tab.store.state.currentPageId)
     const path = tab.store.getDocumentFilePath()
-    return {
-      id: tab.id,
-      name: tab.store.state.documentName,
-      ...(path ? { path } : {}),
-      active: tab.id === activeTab?.id,
-      current_page_id: tab.store.state.currentPageId,
-      current_page_name: currentPage?.name ?? '',
-      pages
-    }
+    return [
+      {
+        id: tab.id,
+        name: tab.store.state.documentName,
+        ...(path ? { path } : {}),
+        active: tab.id === activeTab?.id,
+        current_page_id: tab.store.state.currentPageId,
+        current_page_name: currentPage?.name ?? '',
+        pages
+      }
+    ]
   })
 }
 

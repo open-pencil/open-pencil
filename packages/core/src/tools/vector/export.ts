@@ -4,6 +4,7 @@ import { defineTool } from '#core/tools/schema'
 
 export const exportSVG = defineTool({
   name: 'export_svg',
+  documentAccess: 'inspect',
   description: 'Export nodes as SVG markup. Returns the SVG string.',
   params: {
     ids: {
@@ -28,6 +29,7 @@ export const exportSVG = defineTool({
 
 export const exportPDF = defineTool({
   name: 'export_pdf',
+  documentAccess: 'inspect',
   description:
     'Export nodes as a vector PDF document. Text remains selectable, paths stay sharp at any zoom. Returns base64-encoded PDF data.',
   params: {
@@ -55,8 +57,9 @@ export const exportPDF = defineTool({
 
 export const exportImage = defineTool({
   name: 'export_image',
+  documentAccess: 'inspect',
   description:
-    'Export nodes as a raster image (PNG, JPG, or WEBP). Returns base64-encoded image data. Use to visually verify designs.',
+    'Render nodes as a PNG, JPG, or WEBP image for multimodal inspection. Prefer this after listing root frames and before deep describe calls: images communicate existing designs with far fewer tokens than node-by-node JSON. Returns base64 image data that compatible hosts expose as image content.',
   params: {
     ids: {
       type: 'string[]',

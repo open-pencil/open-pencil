@@ -4,7 +4,13 @@ import { useI18n } from '@open-pencil/vue'
 
 import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
 
-import { aiModelSettings, modelConnection, modelConnectionCredentialStatus } from '@/app/ai/models'
+import {
+  aiModelSettings,
+  modelConnection,
+  modelConnectionCredentialStatus,
+  providerRequiresAPIKey,
+  type AIModelCapability
+} from '@/app/ai/models'
 import type { CredentialStatus } from '@/app/settings/credentials/types'
 import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
@@ -59,10 +65,27 @@ async function refreshStatuses(): Promise<void> {
 
 function statusLabel(connectionId: string, providerID: string): string {
   if (providerID.startsWith('acp:')) return dialogs.value.modelAgentConnection
+  const provider = AI_PROVIDERS.find((definition) => definition.id === providerID)
+  if (provider && !providerRequiresAPIKey(provider.id)) return dialogs.value.connected
   const status = statusByConnection.value[connectionId]
   if (status === 'configured') return dialogs.value.connected
   if (status === 'locked' || status === 'unavailable') return dialogs.value.unavailable
   return dialogs.value.modelNeedsCredential
+}
+
+function connectionIsReady(connectionId: string, providerID: string): boolean {
+  const provider = AI_PROVIDERS.find((definition) => definition.id === providerID)
+  return (
+    providerID.startsWith('acp:') ||
+    Boolean(provider && !providerRequiresAPIKey(provider.id)) ||
+    statusByConnection.value[connectionId] === 'configured'
+  )
+}
+
+function capabilityLabel(capability: AIModelCapability) {
+  if (capability === 'tools') return dialogs.value.modelCapabilityToolsShort
+  if (capability === 'vision') return dialogs.value.modelCapabilityVisionShort
+  return dialogs.value.modelCapabilityAudioShort
 }
 
 function closeEditor(): void {
@@ -128,13 +151,15 @@ watch(
             <span
               class="mr-1 flex items-center gap-1 text-[9px] text-muted"
               :data-state="
-                statusByConnection[profile.connectionId] === 'configured' ? 'configured' : 'missing'
+                connectionIsReady(profile.connectionId, profile.providerID)
+                  ? 'configured'
+                  : 'missing'
               "
             >
               <span
                 class="size-1.5 rounded-full bg-muted data-[state=configured]:bg-[var(--color-success)]"
                 :data-state="
-                  statusByConnection[profile.connectionId] === 'configured'
+                  connectionIsReady(profile.connectionId, profile.providerID)
                     ? 'configured'
                     : 'missing'
                 "
@@ -142,15 +167,17 @@ watch(
               {{ statusLabel(profile.connectionId, profile.providerID) }}
             </span>
             <span
+              v-if="profile.textInput !== false"
+              class="rounded bg-panel px-1.5 py-0.5 text-[9px] text-muted"
+            >
+              {{ dialogs.modelCapabilityTextShort }}
+            </span>
+            <span
               v-for="capability in profile.capabilities"
               :key="capability"
               class="rounded bg-panel px-1.5 py-0.5 text-[9px] text-muted"
             >
-              {{
-                capability === 'tools'
-                  ? dialogs.modelCapabilityToolsShort
-                  : dialogs.modelCapabilityVisionShort
-              }}
+              {{ capabilityLabel(capability) }}
             </span>
           </div>
           <icon-lucide-chevron-right class="size-3.5 shrink-0 text-muted" />

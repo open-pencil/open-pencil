@@ -94,6 +94,7 @@ const handle = await startServer({
     return trimmed
   })(),
   corsOrigin: process.env.OPENPENCIL_MCP_CORS_ORIGIN?.trim() || null,
+  bindHost: process.env.OPENPENCIL_MCP_BIND_HOST?.trim() || '127.0.0.1',
   appAttachTimeoutMs
 })
 

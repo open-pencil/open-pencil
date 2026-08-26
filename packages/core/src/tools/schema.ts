@@ -11,6 +11,7 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import type { FigmaAPI, FigmaNodeProxy } from '#core/figma-api'
 
 export type ParamType = 'string' | 'number' | 'boolean' | 'color' | 'string[]'
+export type DocumentAccess = 'inspect' | 'modify'
 
 export interface ParamDef {
   type: ParamType
@@ -25,7 +26,7 @@ export interface ParamDef {
 export interface ToolDef {
   name: string
   description: string
-  /** Whether execution changes persisted document content. Defaults to `mutates`. */
+  documentAccess?: DocumentAccess
   changesDocument?: boolean
   mutates?: boolean
   params: Record<string, ParamDef>
@@ -53,7 +54,7 @@ type ResolvedParams<P extends Record<string, ParamDef>> = {
 export function defineTool<P extends Record<string, ParamDef>>(def: {
   name: string
   description: string
-  /** Whether execution changes persisted document content. Defaults to `mutates`. */
+  documentAccess?: DocumentAccess
   changesDocument?: boolean
   mutates?: boolean
   params: P
@@ -63,7 +64,7 @@ export function defineTool<P extends Record<string, ParamDef>>(def: {
 }
 
 export function toolChangesDocument(def: ToolDef): boolean {
-  return def.changesDocument ?? def.mutates === true
+  return def.changesDocument ?? (def.documentAccess === 'modify' || def.mutates === true)
 }
 
 export class NodeNotFoundError extends Error {
@@ -79,14 +80,12 @@ export function requireNode(figma: FigmaAPI, id: string): ReturnType<FigmaAPI['g
   return node
 }
 
-export function requireNodes(figma: FigmaAPI, ids: ReadonlyArray<string>): FigmaNodeProxy[] | null {
-  const nodes: FigmaNodeProxy[] = []
-  for (const id of ids) {
-    const node = figma.getNodeById(id)
-    if (!node) return null
-    nodes.push(node)
-  }
-  return nodes
+export function requireNodes(
+  figma: FigmaAPI,
+  ids: ReadonlyArray<string>
+): FigmaNodeProxy[] | null {
+  const nodes = ids.map((id) => figma.getNodeById(id))
+  return nodes.every((node): node is FigmaNodeProxy => node !== null) ? nodes : null
 }
 
 export function nodeNotFound(id: string): { error: string } {

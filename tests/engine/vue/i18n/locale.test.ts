@@ -17,6 +17,9 @@ describe('browser locale matching', () => {
   })
 
   test('does not substitute a different regional locale', () => {
+    expect(resolveBrowserLocale(['pt-BR', 'en-US'])).toBe('en')
+    expect(resolveBrowserLocale(['PT-br', 'en-US'])).toBe('en')
+    expect(resolveBrowserLocale(['pt-PT', 'en-US'])).toBe('en')
     expect(resolveBrowserLocale(['zh-TW', 'fr-CA'])).toBe('fr')
   })
 

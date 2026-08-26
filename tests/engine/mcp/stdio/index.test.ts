@@ -200,6 +200,7 @@ describe('MCP stdio transport', () => {
     expect(names).toContain('create_shape')
     expect(names).toContain('get_page_tree')
     expect(names).toContain('save_file')
+    expect(names).toContain('close_file')
     expect(names).toContain('list_documents')
     expect(names).toContain('get_codegen_prompt')
     expect(names).not.toContain('rename_node')
@@ -265,14 +266,23 @@ describe('MCP stdio transport', () => {
     expect(requestArgs?.args?.page_id).toBeUndefined()
   })
 
-  test('list_documents via stdio returns open documents', async () => {
+  test('list_documents via stdio returns open documents and recent files', async () => {
     const result = await client.callTool({ name: 'list_documents', arguments: {} })
     expect(result.isError).not.toBe(true)
     const data = JSON.parse(textContent(result.content)) as {
       documents: Array<{ id: string; current_page_id: string }>
+      recent_files: Array<{ path: string; name: string; updatedAt: string }>
     }
     expect(data.documents[0].id).toBe('doc-1')
     expect(data.documents[0].current_page_id).toBe(browser?.graph.getPages()[0].id)
+    expect(data.recent_files).toEqual([
+      {
+        id: '/designs/recent.fig',
+        path: '/designs/recent.fig',
+        name: 'recent.fig',
+        updatedAt: '2026-08-19T12:00:00.000Z'
+      }
+    ])
   })
 
   test('save_file via stdio succeeds', async () => {
@@ -280,6 +290,16 @@ describe('MCP stdio transport', () => {
     expect(result.isError).not.toBe(true)
     const data = JSON.parse(textContent(result.content)) as { saved: boolean }
     expect(data.saved).toBe(true)
+  }, 10000)
+
+  test('close_file via stdio succeeds', async () => {
+    const result = await requireClient().callTool({
+      name: 'close_file',
+      arguments: { document_id: 'doc-1' }
+    })
+    expect(result.isError).not.toBe(true)
+    const data = JSON.parse(textContent(result.content)) as { closed: boolean }
+    expect(data.closed).toBe(true)
   }, 10000)
 
   test('get_codegen_prompt via stdio returns prompt', async () => {

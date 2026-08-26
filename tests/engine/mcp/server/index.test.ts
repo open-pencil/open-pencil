@@ -152,6 +152,7 @@ describe('MCP server', () => {
     expect(byName.get('viewport_set')?.effect).toBe('read')
     expect(byName.get('export_image')?.effect).toBe('read')
     expect(byName.get('save_file')?.effect).toBe('write')
+    expect(byName.get('close_file')?.capabilities).toEqual(['document:write'])
     expect(byName.get('update_node')?.effect).toBe('write')
     expect(byName.get('new_document')?.capabilities).toEqual(['document:write', 'filesystem:write'])
     expect(byName.get('eval')?.availability).toBe('eval')
@@ -332,6 +333,19 @@ describe('MCP server with mcpRoot', () => {
       const names = tools.map((t) => t.name)
       expect(names).toContain('open_file')
       expect(names).toContain('new_document')
+    })
+  })
+
+  test('close_file forwards the requested document ID', async () => {
+    await withMCPRootServer(TEST_MCP_ROOT, async (client, browser) => {
+      const result = await client.callTool({
+        name: 'close_file',
+        arguments: { document_id: 'doc-1' }
+      })
+
+      expect(result.isError).not.toBe(true)
+      const request = browser.requests.find((item) => item.command === 'close_file')
+      expect(request?.args).toEqual({ document_id: 'doc-1' })
     })
   })
 

@@ -18,6 +18,7 @@ import {
   modelConnectionCredentialStatus,
   modelConnectionUsageCount,
   modelProfile,
+  providerRequiresAPIKey,
   removeModelProfile,
   resolveModelConnectionAPIKey,
   saveModelProfileDraft,
@@ -97,7 +98,14 @@ const modelDisplayName = computed(() => {
 const hasExistingKey = computed(() => keyStatus.value === 'configured')
 const canDelete = computed(() => Boolean(profileId) && aiModelSettings.value.models.length > 1)
 const toolsEnabled = capabilityModel('tools')
+const textEnabled = computed({
+  get: () => draft.textInput !== false,
+  set: (enabled: boolean) => {
+    draft.textInput = enabled
+  }
+})
 const visionEnabled = capabilityModel('vision')
+const audioEnabled = capabilityModel('audio')
 const canSave = computed(
   () =>
     Boolean(draft.name.trim()) &&
@@ -107,8 +115,10 @@ const canSave = computed(
         : Boolean(draft.modelID.trim())))
 )
 const canTest = computed(() => {
-  if (isACP.value || isHarness.value) return false
-  if (!keyInput.value.trim() && !hasExistingKey.value) return false
+  if (isACP.value || isHarness.value || draft.customAPIType === 'transcription') return false
+  if (providerRequiresAPIKey(draft.providerID) && !keyInput.value.trim() && !hasExistingKey.value) {
+    return false
+  }
   if (providerDef.value.supportsCustomBaseURL && !draft.customBaseURL.trim()) return false
   return customModelSelected.value
     ? Boolean(draft.customModelID.trim())
@@ -171,6 +181,7 @@ function updateProvider(providerID: AIProviderID): void {
   advancedOpen.value = providerID === 'harness:pi'
   if (providerID.startsWith('acp:')) {
     draft.capabilities = ['tools']
+    draft.textInput = true
     if (!draft.name.trim()) draft.name = providerDisplayName.value
   } else {
     applyKnownModelMetadata()
@@ -368,7 +379,8 @@ void refreshKeyStatus()
             :label="dialogs.apiType"
             :options="[
               { value: 'completions', label: dialogs.completions },
-              { value: 'responses', label: dialogs.responses }
+              { value: 'responses', label: dialogs.responses },
+              { value: 'transcription', label: dialogs.transcription }
             ]"
           />
         </ProviderSettingsField>
@@ -435,7 +447,28 @@ void refreshKeyStatus()
                 </span>
                 <AppSwitch v-else v-model="visionEnabled" :label="dialogs.modelCapabilityVision" />
               </div>
+              <div v-if="!knownModel" class="flex items-center justify-between gap-3">
+                <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityText }}</span>
+                <AppSwitch v-model="textEnabled" :label="dialogs.modelCapabilityText" />
+              </div>
+              <div v-if="!knownModel" class="flex items-center justify-between gap-3">
+                <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityAudio }}</span>
+                <AppSwitch v-model="audioEnabled" :label="dialogs.modelCapabilityAudio" />
+              </div>
             </div>
+
+            <ProviderSettingsField :label="dialogs.contextWindowTokens">
+              <ProviderSettingsInput
+                :model-value="draft.contextWindowTokens ?? ''"
+                :aria-label="dialogs.contextWindowTokens"
+                type="number"
+                :min="1024"
+                :max="10000000"
+                :step="1024"
+                :placeholder="dialogs.optional"
+                @update:model-value="draft.contextWindowTokens = Number($event) || undefined"
+              />
+            </ProviderSettingsField>
 
             <ProviderSettingsField v-if="isHarness" :label="dialogs.harnessThinkingLevel">
               <AppSelect
