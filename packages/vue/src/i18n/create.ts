@@ -11,7 +11,6 @@ const localeLoaders = {
   it: () => import('#vue/i18n/locales/it'),
   ja: () => import('#vue/i18n/locales/ja'),
   pl: () => import('#vue/i18n/locales/pl'),
-  'pt-BR': () => import('#vue/i18n/locales/pt-br'),
   ru: () => import('#vue/i18n/locales/ru'),
   'zh-CN': () => import('#vue/i18n/locales/zh-cn')
 } satisfies Record<TranslatedLocale, () => Promise<{ default: ComponentsJSON }>>

@@ -37,7 +37,6 @@ const localeLoaders = {
   it: () => import('./locales/it.json'),
   ja: () => import('./locales/ja.json'),
   pl: () => import('./locales/pl.json'),
-  'pt-BR': async () => ({ default: {} }),
   ru: () => import('./locales/ru.json'),
   'zh-CN': () => import('./locales/zh-cn.json')
 } satisfies Record<TranslatedLocale, () => Promise<{ default: Record<string, string> }>>

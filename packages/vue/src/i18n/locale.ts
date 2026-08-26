@@ -9,7 +9,6 @@ export const AVAILABLE_LOCALES = [
   'it',
   'ja',
   'pl',
-  'pt-BR',
   'ru',
   'zh-CN'
 ] as const
@@ -23,7 +22,6 @@ export const TRANSLATED_LOCALES = [
   'it',
   'ja',
   'pl',
-  'pt-BR',
   'ru',
   'zh-CN'
 ] as const satisfies ReadonlyArray<TranslatedLocale>
@@ -35,7 +33,6 @@ export const LOCALE_DIR_NAMES = {
   it: 'it',
   ja: 'ja',
   pl: 'pl',
-  'pt-BR': 'pt-br',
   ru: 'ru',
   'zh-CN': 'zh-cn'
 } as const satisfies Record<TranslatedLocale, string>
@@ -48,7 +45,6 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   it: 'Italiano',
   ja: '日本語',
   pl: 'Polski',
-  'pt-BR': 'Português (Brasil)',
   ru: 'Русский',
   'zh-CN': '中文（简体）'
 }

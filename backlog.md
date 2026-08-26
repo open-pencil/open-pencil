@@ -38,14 +38,7 @@ Add a dedicated settings surface for the local MCP server:
 - Provide start, stop, and restart controls where the runtime supports them.
 - Keep server lifecycle and status handling isolated from general chat changes.
 
-### 3. Brazilian Portuguese localization
-
-**Status:** Follow-up after the preceding PRs.
-
-Ship the Portuguese translations as an i18n-only PR. Avoid bundling feature behavior changes with
-the locale files.
-
-### 4. Further performance improvements
+### 3. Further performance improvements
 
 **Status:** After the focused feature PRs.
 

@@ -12,13 +12,13 @@ describe('browser locale matching', () => {
   })
 
   test('prefers exact supported regional locales', () => {
-    expect(resolveBrowserLocale(['pt-BR', 'en-US'])).toBe('pt-BR')
-    expect(resolveBrowserLocale(['PT-br', 'en-US'])).toBe('pt-BR')
     expect(resolveBrowserLocale(['zh-CN', 'en-US'])).toBe('zh-CN')
     expect(resolveBrowserLocale(['ZH-cn', 'en-US'])).toBe('zh-CN')
   })
 
   test('does not substitute a different regional locale', () => {
+    expect(resolveBrowserLocale(['pt-BR', 'en-US'])).toBe('en')
+    expect(resolveBrowserLocale(['PT-br', 'en-US'])).toBe('en')
     expect(resolveBrowserLocale(['pt-PT', 'en-US'])).toBe('en')
     expect(resolveBrowserLocale(['zh-TW', 'fr-CA'])).toBe('fr')
   })
