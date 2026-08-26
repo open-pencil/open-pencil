@@ -8,6 +8,7 @@ const TOOL_NAME_PATTERN = /^[a-z0-9_:-]+$/
 
 export interface DevMCPConfiguration {
   authenticationEnabled: boolean
+  lanAccessEnabled: boolean
   rootDirectory: string
   disabledTools: string[]
 }
@@ -33,15 +34,17 @@ function parseDisabledTools(value: unknown): string[] | null {
 export function parseDevMCPConfiguration(value: unknown): DevMCPConfiguration | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const authenticationEnabled = Reflect.get(value, 'authenticationEnabled')
+  const lanAccessEnabled = Reflect.get(value, 'lanAccessEnabled')
   const rootDirectory = Reflect.get(value, 'rootDirectory')
   const disabledTools = parseDisabledTools(Reflect.get(value, 'disabledTools'))
   if (
     typeof authenticationEnabled !== 'boolean' ||
+    typeof lanAccessEnabled !== 'boolean' ||
     typeof rootDirectory !== 'string' ||
     rootDirectory.length > MAX_ROOT_DIRECTORY_LENGTH ||
     !disabledTools
   ) {
     return null
   }
-  return { authenticationEnabled, rootDirectory, disabledTools }
+  return { authenticationEnabled, lanAccessEnabled, rootDirectory, disabledTools }
 }

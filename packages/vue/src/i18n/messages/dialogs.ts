@@ -330,7 +330,10 @@ export const dialogMessageDefaults = {
   mcpNoAuthentication: 'None',
   mcpAuthentication: 'Require authentication',
   mcpAuthenticationDescription:
-    'Protect the localhost MCP endpoint with a bearer token. Disable only on a trusted machine. Restart the server to apply changes.',
+    'Protect the MCP endpoint with a bearer token. LAN access always requires authentication. Restart the server to apply changes.',
+  mcpLanAccess: 'Allow LAN access',
+  mcpLanAccessDescription:
+    'Expose MCP on your local network at 0.0.0.0. Only enable this on a trusted network; authentication is enforced. Restart the server to apply changes.',
   mcpRootDirectory: 'MCP root directory',
   mcpRootDirectoryDefault: 'User home directory (default)',
   mcpChooseRootDirectory: 'Choose folder',

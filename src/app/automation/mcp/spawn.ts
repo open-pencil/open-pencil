@@ -14,7 +14,12 @@ import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
 import { DEV_MCP_RESTART_PATH, type DevMCPConfiguration } from './dev-control'
-import { disabledMCPTools, mcpAuthenticationEnabled, mcpRootDirectory } from './preferences'
+import {
+  disabledMCPTools,
+  mcpAuthenticationEnabled,
+  mcpLanAccessEnabled,
+  mcpRootDirectory
+} from './preferences'
 
 export interface AutomationHealth {
   status: 'ok' | 'no_app'
@@ -340,7 +345,8 @@ async function readExistingServerHandle(): Promise<AutomationServerHandle | null
 async function configureDevMCP(): Promise<AutomationServerHandle> {
   if (!DEV_AUTOMATION_AUTH_TOKEN) throw new Error('MCP development control token is unavailable')
   const configuration: DevMCPConfiguration = {
-    authenticationEnabled: mcpAuthenticationEnabled.value,
+    authenticationEnabled: mcpAuthenticationEnabled.value || mcpLanAccessEnabled.value,
+    lanAccessEnabled: mcpLanAccessEnabled.value,
     rootDirectory: mcpRootDirectory.value,
     disabledTools: [...disabledMCPTools.value]
   }
@@ -376,7 +382,7 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   const executableAvailable = await invoke<boolean>('mcp_executable_available')
   if (!executableAvailable) return rememberStartupError(missingMCPError())
 
-  const authToken = mcpAuthenticationEnabled.value ? randomHex(32) : null
+  const authToken = mcpAuthenticationEnabled.value || mcpLanAccessEnabled.value ? randomHex(32) : null
   // Cache only after MCP startup is confirmed healthy.
 
   const { Command } = await import('@tauri-apps/plugin-shell')
@@ -391,6 +397,7 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
       OPENPENCIL_MCP_AUTH_TOKEN: authToken ?? '',
       OPENPENCIL_MCP_CORS_ORIGIN: window.location.origin,
       OPENPENCIL_MCP_TCP: '1',
+      OPENPENCIL_MCP_BIND_HOST: mcpLanAccessEnabled.value ? '0.0.0.0' : '127.0.0.1',
       OPENPENCIL_MCP_ROOT: mcpRoot,
       OPENPENCIL_MCP_APP_TIMEOUT_MS: String(MCP_APP_ATTACH_TIMEOUT_MS),
       OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(disabledMCPTools.value)

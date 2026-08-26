@@ -38,6 +38,7 @@ export function createAutomationEnvironment(
     ...childEnv,
     PORT: String(httpPort),
     OPENPENCIL_MCP_TCP: '1',
+    OPENPENCIL_MCP_BIND_HOST: configuration.lanAccessEnabled ? '0.0.0.0' : '127.0.0.1',
     ...(socketPath ? { OPENPENCIL_MCP_SOCKET: socketPath } : {}),
     ...(discoveryPath ? { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } : {}),
     OPENPENCIL_MCP_AUTH_TOKEN: configuration.authenticationEnabled ? (authToken ?? '') : '',
@@ -118,6 +119,7 @@ export function automationPlugin(
   let lifecycle = Promise.resolve()
   let configuration: DevMCPConfiguration = {
     authenticationEnabled: true,
+    lanAccessEnabled: false,
     rootDirectory: '',
     disabledTools: []
   }

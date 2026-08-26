@@ -8,6 +8,7 @@ import {
   configurableMCPTools,
   disabledMCPTools,
   mcpAuthenticationEnabled,
+  mcpLanAccessEnabled,
   mcpOpenFileClosesOtherTabs,
   mcpRootDirectory,
   setMCPToolCategoryEnabled,
@@ -55,6 +56,11 @@ onMounted(() => {
 
 function restart(): void {
   void restartMCPRuntime()
+}
+
+function setLanAccess(enabled: boolean): void {
+  mcpLanAccessEnabled.value = enabled
+  if (enabled) mcpAuthenticationEnabled.value = true
 }
 
 async function chooseRootDirectory(): Promise<void> {
@@ -162,18 +168,27 @@ async function copyAccessToken(): Promise<void> {
           </div>
           <AppSwitch
             v-model="mcpAuthenticationEnabled"
-            :label="dialogs.mcpAuthentication"
+             :disabled="mcpLanAccessEnabled"
+             :label="dialogs.mcpAuthentication"
             data-test-id="settings-mcp-authentication"
           />
         </div>
       </div>
 
       <div class="mt-3 border-t border-border pt-3">
+         <div class="flex items-center justify-between gap-3">
+           <div>
+             <p class="text-[10px] font-medium text-surface">{{ dialogs.mcpLanAccess }}</p>
+             <p class="mt-0.5 text-[10px] leading-relaxed text-muted">{{ dialogs.mcpLanAccessDescription }}</p>
+           </div>
+           <AppSwitch :model-value="mcpLanAccessEnabled" :label="dialogs.mcpLanAccess" @update:model-value="setLanAccess" />
+         </div>
+       </div>
+
+       <div class="mt-3 border-t border-border pt-3">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <p class="text-[10px] font-medium text-surface">
-              {{ dialogs.mcpOpenFileCloseOtherTabs }}
-            </p>
+            <p class="text-[10px] font-medium text-surface">{{ dialogs.mcpOpenFileCloseOtherTabs }}</p>
             <p class="mt-0.5 text-[10px] leading-relaxed text-muted">
               {{ dialogs.mcpOpenFileCloseOtherTabsDescription }}
             </p>

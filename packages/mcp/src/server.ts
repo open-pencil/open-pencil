@@ -75,6 +75,8 @@ export interface ServerOptions {
   /** Auth token for /mcp and /rpc endpoints. Auto-generated (32-hex) when omitted. Pass null explicitly to disable auth. */
   authToken?: string | null
   corsOrigin?: string | null
+  /** TCP bind address. Defaults to loopback; use 0.0.0.0 only with authentication enabled. */
+  bindHost?: string
   /**
    * If set, the server starts a grace-period timer while no app is attached.
    * The timer closes the server and removes its discovery file unless an app
@@ -295,6 +297,7 @@ function buildServerContext(options: ServerOptions) {
     options.authToken === undefined ? randomBytes(16).toString('hex') : options.authToken
   const corsOrigin = options.corsOrigin ?? null
   const withTcp = options.withTcp ?? false
+  const bindHost = options.bindHost ?? '127.0.0.1'
 
   // Warn if auth is disabled while TCP is active — any local process can
   // interact with the server without authentication. Socket-only transport
@@ -333,6 +336,7 @@ function buildServerContext(options: ServerOptions) {
   return {
     httpPort,
     withTcp,
+    bindHost,
     mcpSessions,
     browserRPC,
     sendToBrowser,
@@ -443,7 +447,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   let startedAt = ''
   try {
     state.socketResult = await startSocketListener(ctx.app, ctx.wss, options.socketPath ?? null)
-    state.tcpResult = ctx.withTcp ? await tryStartTcp(ctx.app, ctx.wss, ctx.httpPort, state) : null
+    state.tcpResult = ctx.withTcp ? await tryStartTcp(ctx.app, ctx.wss, ctx.httpPort, state, ctx.bindHost) : null
     const resolvedSocketPath = state.socketResult?.resolvedPath ?? null
     const actualHttpPort = state.tcpResult?.port ?? 0
 
