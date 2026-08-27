@@ -1,3 +1,5 @@
+import copy, { type Options as ClipboardCopyOptions } from 'copy-to-clipboard'
+
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
@@ -12,53 +14,38 @@ import type {
   SystemClipboard
 } from '@/app/editor/clipboard/system/types'
 
-async function writeModernBrowserClipboard(payload: ClipboardPayload): Promise<boolean> {
-  if (
-    typeof ClipboardItem === 'undefined' ||
-    typeof Blob === 'undefined' ||
-    typeof navigator === 'undefined' ||
-    typeof (navigator as Partial<Navigator>).clipboard?.write !== 'function'
-  ) {
-    return false
+function clipboardItem(payload: ClipboardPayload): ClipboardItem {
+  const itemData: Record<string, Blob> = {}
+  if (payload.html) itemData['text/html'] = new Blob([payload.html], { type: 'text/html' })
+  if (payload.plainText) {
+    itemData['text/plain'] = new Blob([payload.plainText], { type: 'text/plain' })
   }
-  try {
-    const itemData: Record<string, Blob> = {}
-    if (payload.html) itemData['text/html'] = new Blob([payload.html], { type: 'text/html' })
-    if (payload.plainText) {
-      itemData['text/plain'] = new Blob([payload.plainText], { type: 'text/plain' })
+  return new ClipboardItem(itemData)
+}
+
+function populateLegacyClipboard(data: DataTransfer, payload: ClipboardPayload): void {
+  if (payload.html) data.setData('text/html', payload.html)
+  if (payload.plainText) data.setData('text/plain', payload.plainText)
+}
+
+function customizeClipboardPayload(
+  payload: ClipboardPayload
+): NonNullable<ClipboardCopyOptions['onCopy']> {
+  return (data) => {
+    if (typeof DataTransfer !== 'undefined' && data instanceof DataTransfer) {
+      populateLegacyClipboard(data, payload)
+      return undefined
     }
-    await navigator.clipboard.write([new ClipboardItem(itemData)])
-    return true
-  } catch (error) {
-    console.warn('Modern clipboard write failed', error)
-    return false
+    return clipboardItem(payload)
   }
 }
 
-function writeLegacyBrowserClipboard(payload: ClipboardPayload): boolean {
-  if (
-    typeof document === 'undefined' ||
-    typeof (document as Partial<Document>).execCommand !== 'function'
-  ) {
-    return false
-  }
-  let payloadCopied = false
-  const listener = (event: ClipboardEvent) => {
-    if (!event.clipboardData) return
-    if (payload.html) event.clipboardData.setData('text/html', payload.html)
-    if (payload.plainText) event.clipboardData.setData('text/plain', payload.plainText)
-    event.preventDefault()
-    payloadCopied = true
-  }
-  try {
-    document.addEventListener('copy', listener)
-    return document.execCommand('copy') && payloadCopied
-  } catch (error) {
-    console.warn('execCommand copy fallback failed', error)
-    return false
-  } finally {
-    document.removeEventListener('copy', listener)
-  }
+async function writeBrowserClipboard(payload: ClipboardPayload): Promise<boolean> {
+  const text = payload.html || payload.plainText
+  return copy(text, {
+    format: payload.html ? 'text/html' : 'text/plain',
+    onCopy: customizeClipboardPayload(payload)
+  })
 }
 
 async function readModernBrowserClipboardHTML(): Promise<string | null> {
@@ -82,8 +69,7 @@ async function readModernBrowserClipboardHTML(): Promise<string | null> {
 
 export function createBrowserClipboardEnvironment(): BrowserClipboardEnvironment {
   return {
-    write: writeModernBrowserClipboard,
-    writeLegacy: writeLegacyBrowserClipboard,
+    write: writeBrowserClipboard,
     readHTML: readModernBrowserClipboardHTML
   }
 }
@@ -102,8 +88,7 @@ export async function copySelectionToBrowserClipboard(
     if (!payload.html && !payload.plainText) return false
     if (payload.html) setInMemoryClipboardHTML(payload.html)
 
-    if (environment.write && (await environment.write(payload))) return true
-    return environment.writeLegacy?.(payload) ?? false
+    return (await environment.write?.(payload)) ?? false
   } catch (error) {
     console.warn('Browser clipboard copy failed', error)
     return false

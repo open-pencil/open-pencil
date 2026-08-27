@@ -29,7 +29,7 @@ const unavailableClipboard: SystemClipboard = {
 }
 
 const memoryClipboard: SystemClipboard = {
-  copy: (store) => copySelectionToBrowserClipboard(store, { writeLegacy: () => true }),
+  copy: (store) => copySelectionToBrowserClipboard(store, { write: async () => true }),
   paste: (store, cursorPos) => pasteFromBrowserClipboard(store, cursorPos, {})
 }
 
@@ -49,7 +49,7 @@ describe('in-memory clipboard', () => {
     expect(getInMemoryClipboardHTML()).toBe('')
   })
 
-  test('copySelectionToBrowserClipboard copies payload via execCommand fallback when modern clipboard is unavailable', async () => {
+  test('copySelectionToBrowserClipboard delegates the rich payload to its browser adapter', async () => {
     const store = createEditorStore()
     const pageId = store.state.currentPageId
     const rect = store.graph.createNode('RECTANGLE', pageId, {
@@ -61,12 +61,12 @@ describe('in-memory clipboard', () => {
     })
     store.select([rect.id])
 
-    const writeLegacy = mock(() => true)
-    const success = await copySelectionToBrowserClipboard(store, { writeLegacy })
+    const write = mock(async () => true)
+    const success = await copySelectionToBrowserClipboard(store, { write })
 
     expect(success).toBe(true)
-    expect(writeLegacy).toHaveBeenCalledTimes(1)
-    const payload = writeLegacy.mock.calls[0]?.[0]
+    expect(write).toHaveBeenCalledTimes(1)
+    const payload = write.mock.calls[0]?.[0]
     expect(payload?.html).toBeDefined()
     expect(payload?.plainText).toBeDefined()
     expect(hasInMemoryClipboardHTML()).toBe(true)
@@ -85,8 +85,7 @@ describe('in-memory clipboard', () => {
     store.select([rect.id])
 
     const success = await copySelectionToBrowserClipboard(store, {
-      write: async () => false,
-      writeLegacy: () => false
+      write: async () => false
     })
     expect(success).toBe(false)
   })

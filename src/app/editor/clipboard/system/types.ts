@@ -14,6 +14,5 @@ export interface SystemClipboard {
 
 export interface BrowserClipboardEnvironment {
   write?: (payload: ClipboardPayload) => Promise<boolean>
-  writeLegacy?: (payload: ClipboardPayload) => boolean
   readHTML?: () => Promise<string | null>
 }

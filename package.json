@@ -112,6 +112,7 @@
     "ai": "^7.0.66",
     "aws4fetch": "^1.0.20",
     "canvaskit-wasm": "^0.41.1",
+    "copy-to-clipboard": "^4.0.2",
     "culori": "^4.0.2",
     "dedent": "^1.7.2",
     "es-toolkit": "^1.51.0",
