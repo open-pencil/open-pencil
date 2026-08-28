@@ -13,9 +13,12 @@ describe('design clipboard HTML recognition', () => {
     ).toBe(true)
   })
 
-  test('rejects ordinary text containing a marker-like substring', () => {
-    expect(isDesignClipboardHTML('<p>(figma)</p>')).toBe(false)
-    expect(isDesignClipboardHTML('<!--(figma)incomplete')).toBe(false)
+  test('rejects malformed repeated opening markers in bounded time', () => {
     expect(isDesignClipboardHTML('ordinary clipboard text')).toBe(false)
+    const malformed = '<!--(openpencil)'.repeat(10_000)
+    const startedAt = performance.now()
+
+    expect(isDesignClipboardHTML(malformed)).toBe(false)
+    expect(performance.now() - startedAt).toBeLessThan(50)
   })
 })

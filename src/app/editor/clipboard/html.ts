@@ -1,12 +1,19 @@
-const OPENPENCIL_CLIPBOARD_PATTERN = new RegExp(
-  String.raw`<\x21--\(openpencil\)[\s\S]*?\(\/openpencil\)--\x3e`,
-  'u'
-)
-const FIGMA_CLIPBOARD_PATTERN = new RegExp(
-  String.raw`(?:<\x21--|&lt;\x21--)\(figma\)[\s\S]*?\(\/figma\)(?:--\x3e|--&gt;)`,
-  'u'
-)
+const OPENPENCIL_START = '<!--(openpencil)'
+const OPENPENCIL_END = '(/openpencil)-->'
+const FIGMA_START = '<!--(figma)'
+const FIGMA_END = '(/figma)-->'
+const ESCAPED_FIGMA_START = '&lt;!--(figma)'
+const ESCAPED_FIGMA_END = '(/figma)--&gt;'
+
+function hasCompleteMarker(html: string, start: string, end: string): boolean {
+  const startIndex = html.indexOf(start)
+  return startIndex !== -1 && html.indexOf(end, startIndex + start.length) !== -1
+}
 
 export function isDesignClipboardHTML(html: string): boolean {
-  return OPENPENCIL_CLIPBOARD_PATTERN.test(html) || FIGMA_CLIPBOARD_PATTERN.test(html)
+  return (
+    hasCompleteMarker(html, OPENPENCIL_START, OPENPENCIL_END) ||
+    hasCompleteMarker(html, FIGMA_START, FIGMA_END) ||
+    hasCompleteMarker(html, ESCAPED_FIGMA_START, ESCAPED_FIGMA_END)
+  )
 }
