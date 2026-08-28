@@ -94,6 +94,20 @@ describe('in-memory clipboard', () => {
     expect(success).toBe(false)
   })
 
+  test('browser clipboard does not paste cached design data over unrelated current HTML', async () => {
+    setInMemoryClipboardHTML('<!--(openpencil)cached(/openpencil)-->')
+    const store = createEditorStore()
+    const paste = mock(async () => undefined)
+    store.pasteFromHTML = paste
+    const clipboard = createBrowserSystemClipboard({
+      write: async () => true,
+      readHTML: async () => '<p>ordinary current clipboard</p>'
+    })
+
+    expect(await clipboard.paste(store)).toBe(false)
+    expect(paste).not.toHaveBeenCalled()
+  })
+
   test('executeClipboardCommand cut does not delete nodes when clipboard copy fails', async () => {
     const store = createEditorStore()
     const pageId = store.state.currentPageId

@@ -12,7 +12,8 @@ import type {
   SystemClipboard
 } from '@/app/editor/clipboard/system/types'
 
-function clipboardItem(payload: ClipboardPayload): ClipboardItem {
+function clipboardItem(payload: ClipboardPayload): ClipboardItem | undefined {
+  if (typeof Blob === 'undefined' || typeof ClipboardItem === 'undefined') return undefined
   const itemData: Record<string, Blob> = {}
   if (payload.html) itemData['text/html'] = new Blob([payload.html], { type: 'text/html' })
   if (payload.plainText) {
@@ -94,9 +95,12 @@ async function pasteSelection(
   io: BrowserClipboardIO
 ): Promise<boolean> {
   const html = await io.readHTML()
-  if (html && isDesignClipboardHTML(html)) {
-    await store.pasteFromHTML(html, cursorPos)
-    return true
+  if (html) {
+    if (isDesignClipboardHTML(html)) {
+      await store.pasteFromHTML(html, cursorPos)
+      return true
+    }
+    return false
   }
 
   const memoryHTML = getInMemoryClipboardHTML()
