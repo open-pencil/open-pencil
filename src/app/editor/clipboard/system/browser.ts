@@ -8,6 +8,7 @@ import { getInMemoryClipboardHTML, setInMemoryClipboardHTML } from '@/app/editor
 import { createClipboardTransfer } from '@/app/editor/clipboard/system/transfer'
 import type {
   BrowserClipboardIO,
+  BrowserClipboardReadResult,
   ClipboardPayload,
   SystemClipboard
 } from '@/app/editor/clipboard/system/types'
@@ -47,23 +48,24 @@ async function writeBrowserClipboard(payload: ClipboardPayload): Promise<boolean
   })
 }
 
-async function readBrowserClipboardHTML(): Promise<string | null> {
+async function readBrowserClipboardHTML(): Promise<BrowserClipboardReadResult> {
   if (
     typeof navigator === 'undefined' ||
     typeof (navigator as Partial<Navigator>).clipboard?.read !== 'function'
   ) {
-    return null
+    return { available: false }
   }
   try {
     const items = await navigator.clipboard.read()
     for (const item of items) {
       if (!item.types.includes('text/html')) continue
-      return await (await item.getType('text/html')).text()
+      return { available: true, html: await (await item.getType('text/html')).text() }
     }
+    return { available: true, html: null }
   } catch (error) {
     console.warn('Browser clipboard read failed', error)
+    return { available: false }
   }
-  return null
 }
 
 const browserClipboardIO: BrowserClipboardIO = {
@@ -94,10 +96,10 @@ async function pasteSelection(
   cursorPos: Vector | undefined,
   io: BrowserClipboardIO
 ): Promise<boolean> {
-  const html = await io.readHTML()
-  if (html) {
-    if (isDesignClipboardHTML(html)) {
-      await store.pasteFromHTML(html, cursorPos)
+  const result = await io.readHTML()
+  if (result.available) {
+    if (result.html && isDesignClipboardHTML(result.html)) {
+      await store.pasteFromHTML(result.html, cursorPos)
       return true
     }
     return false

@@ -9,8 +9,7 @@ export function setInMemoryClipboardHTML(html: string, plainText = ''): void {
 export function getInMemoryClipboardHTML(matchingPlainText?: string): string {
   if (
     matchingPlainText !== undefined &&
-    memoryClipboard.plainText !== '' &&
-    memoryClipboard.plainText !== matchingPlainText
+    (memoryClipboard.plainText === '' || memoryClipboard.plainText !== matchingPlainText)
   ) {
     return ''
   }

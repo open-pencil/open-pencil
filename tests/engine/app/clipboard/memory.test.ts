@@ -30,7 +30,7 @@ const unavailableClipboard: SystemClipboard = {
 
 const memoryIO: BrowserClipboardIO = {
   write: async () => true,
-  readHTML: async () => null
+  readHTML: async () => ({ available: false })
 }
 const memoryClipboard = createBrowserSystemClipboard(memoryIO)
 
@@ -42,6 +42,7 @@ describe('in-memory clipboard', () => {
     const sampleHTML = '<!--(openpencil)test-->'
     setInMemoryClipboardHTML(sampleHTML)
 
+    expect(getInMemoryClipboardHTML('unrelated')).toBe('')
     expect(hasInMemoryClipboardHTML()).toBe(true)
     expect(getInMemoryClipboardHTML()).toBe(sampleHTML)
 
@@ -63,7 +64,10 @@ describe('in-memory clipboard', () => {
     store.select([rect.id])
 
     const write = mock(async (_payload: ClipboardPayload) => true)
-    const clipboard = createBrowserSystemClipboard({ write, readHTML: async () => null })
+    const clipboard = createBrowserSystemClipboard({
+      write,
+      readHTML: async () => ({ available: false })
+    })
     const success = await clipboard.copy(store)
 
     expect(success).toBe(true)
@@ -88,7 +92,7 @@ describe('in-memory clipboard', () => {
 
     const clipboard = createBrowserSystemClipboard({
       write: async () => false,
-      readHTML: async () => null
+      readHTML: async () => ({ available: false })
     })
     const success = await clipboard.copy(store)
     expect(success).toBe(false)
@@ -101,7 +105,21 @@ describe('in-memory clipboard', () => {
     store.pasteFromHTML = paste
     const clipboard = createBrowserSystemClipboard({
       write: async () => true,
-      readHTML: async () => '<p>ordinary current clipboard</p>'
+      readHTML: async () => ({ available: true, html: '<p>ordinary current clipboard</p>' })
+    })
+
+    expect(await clipboard.paste(store)).toBe(false)
+    expect(paste).not.toHaveBeenCalled()
+  })
+
+  test('browser clipboard rejects a successful plain-text-only read over stale memory', async () => {
+    setInMemoryClipboardHTML('<!--(openpencil)cached(/openpencil)-->', 'cached')
+    const store = createEditorStore()
+    const paste = mock(async () => undefined)
+    store.pasteFromHTML = paste
+    const clipboard = createBrowserSystemClipboard({
+      write: async () => true,
+      readHTML: async () => ({ available: true, html: null })
     })
 
     expect(await clipboard.paste(store)).toBe(false)

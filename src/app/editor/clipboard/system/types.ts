@@ -12,7 +12,11 @@ export interface SystemClipboard {
   paste(store: EditorStore, cursorPos?: Vector): Promise<boolean>
 }
 
+export type BrowserClipboardReadResult =
+  | { available: false }
+  | { available: true; html: string | null }
+
 export interface BrowserClipboardIO {
   write(payload: ClipboardPayload): Promise<boolean>
-  readHTML(): Promise<string | null>
+  readHTML(): Promise<BrowserClipboardReadResult>
 }
