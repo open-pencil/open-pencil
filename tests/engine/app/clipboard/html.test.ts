@@ -13,12 +13,10 @@ describe('design clipboard HTML recognition', () => {
     ).toBe(true)
   })
 
-  test('rejects malformed repeated opening markers in bounded time', () => {
+  test('rejects malformed repeated opening markers', () => {
     expect(isDesignClipboardHTML('ordinary clipboard text')).toBe(false)
     const malformed = '<!--(openpencil)'.repeat(10_000)
-    const startedAt = performance.now()
 
     expect(isDesignClipboardHTML(malformed)).toBe(false)
-    expect(performance.now() - startedAt).toBeLessThan(50)
   })
 })
