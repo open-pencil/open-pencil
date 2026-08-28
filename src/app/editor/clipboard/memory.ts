@@ -1,9 +1,6 @@
-interface MemoryClipboard {
-  html: string
-  plainText: string
-}
+import type { ClipboardPayload } from '@/app/editor/clipboard/system/types'
 
-let memoryClipboard: MemoryClipboard = { html: '', plainText: '' }
+let memoryClipboard: ClipboardPayload = { html: '', plainText: '' }
 
 export function setInMemoryClipboardHTML(html: string, plainText = ''): void {
   memoryClipboard = { html, plainText }
