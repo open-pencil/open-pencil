@@ -7,7 +7,7 @@ const ESCAPED_FIGMA_END = '(/figma)--&gt;'
 
 function hasCompleteMarker(html: string, start: string, end: string): boolean {
   const startIndex = html.indexOf(start)
-  return startIndex !== -1 && html.indexOf(end, startIndex + start.length) !== -1
+  return startIndex !== -1 && html.includes(end, startIndex + start.length)
 }
 
 export function isDesignClipboardHTML(html: string): boolean {
