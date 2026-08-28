@@ -81,7 +81,7 @@ async function copySelection(store: EditorStore, io: BrowserClipboardIO): Promis
     if (!payload.html && !payload.plainText) return false
     if (payload.html) setInMemoryClipboardHTML(payload.html)
 
-    return io.write(payload)
+    return await io.write(payload)
   } catch (error) {
     console.warn('Browser clipboard copy failed', error)
     return false

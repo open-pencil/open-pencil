@@ -14,6 +14,7 @@ import {
   createBrowserSystemClipboard,
   type BrowserClipboardIO
 } from '@/app/editor/clipboard/system/browser'
+import type { ClipboardPayload } from '@/app/editor/clipboard/system/types'
 import { createEditorStore } from '@/app/editor/session/create'
 import { toast } from '@/app/shell/ui'
 
@@ -61,7 +62,7 @@ describe('in-memory clipboard', () => {
     })
     store.select([rect.id])
 
-    const write = mock(async () => true)
+    const write = mock(async (_payload: ClipboardPayload) => true)
     const clipboard = createBrowserSystemClipboard({ write, readHTML: async () => null })
     const success = await clipboard.copy(store)
 
