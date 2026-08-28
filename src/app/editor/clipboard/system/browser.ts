@@ -3,13 +3,11 @@ import copy, { type Options as ClipboardCopyOptions } from 'copy-to-clipboard'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
 import { getInMemoryClipboardHTML, setInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
-import {
-  createClipboardTransfer,
-  isDesignClipboardHTML
-} from '@/app/editor/clipboard/system/shared'
+import { createClipboardTransfer } from '@/app/editor/clipboard/system/transfer'
 import type {
-  BrowserClipboardEnvironment,
+  BrowserClipboardIO,
   ClipboardPayload,
   SystemClipboard
 } from '@/app/editor/clipboard/system/types'
@@ -48,7 +46,7 @@ async function writeBrowserClipboard(payload: ClipboardPayload): Promise<boolean
   })
 }
 
-async function readModernBrowserClipboardHTML(): Promise<string | null> {
+async function readBrowserClipboardHTML(): Promise<string | null> {
   if (
     typeof navigator === 'undefined' ||
     typeof (navigator as Partial<Navigator>).clipboard?.read !== 'function'
@@ -67,17 +65,12 @@ async function readModernBrowserClipboardHTML(): Promise<string | null> {
   return null
 }
 
-export function createBrowserClipboardEnvironment(): BrowserClipboardEnvironment {
-  return {
-    write: writeBrowserClipboard,
-    readHTML: readModernBrowserClipboardHTML
-  }
+const browserClipboardIO: BrowserClipboardIO = {
+  write: writeBrowserClipboard,
+  readHTML: readBrowserClipboardHTML
 }
 
-export async function copySelectionToBrowserClipboard(
-  store: EditorStore,
-  environment: BrowserClipboardEnvironment = createBrowserClipboardEnvironment()
-): Promise<boolean> {
+async function copySelection(store: EditorStore, io: BrowserClipboardIO): Promise<boolean> {
   try {
     const transfer = createClipboardTransfer()
     await store.writeCopyData(transfer)
@@ -88,19 +81,19 @@ export async function copySelectionToBrowserClipboard(
     if (!payload.html && !payload.plainText) return false
     if (payload.html) setInMemoryClipboardHTML(payload.html)
 
-    return (await environment.write?.(payload)) ?? false
+    return io.write(payload)
   } catch (error) {
     console.warn('Browser clipboard copy failed', error)
     return false
   }
 }
 
-export async function pasteFromBrowserClipboard(
+async function pasteSelection(
   store: EditorStore,
-  cursorPos?: Vector,
-  environment: BrowserClipboardEnvironment = createBrowserClipboardEnvironment()
+  cursorPos: Vector | undefined,
+  io: BrowserClipboardIO
 ): Promise<boolean> {
-  const html = await environment.readHTML?.()
+  const html = await io.readHTML()
   if (html && isDesignClipboardHTML(html)) {
     await store.pasteFromHTML(html, cursorPos)
     return true
@@ -116,10 +109,12 @@ export async function pasteFromBrowserClipboard(
 }
 
 export function createBrowserSystemClipboard(
-  environment: BrowserClipboardEnvironment = createBrowserClipboardEnvironment()
+  io: BrowserClipboardIO = browserClipboardIO
 ): SystemClipboard {
   return {
-    copy: (store) => copySelectionToBrowserClipboard(store, environment),
-    paste: (store, cursorPos) => pasteFromBrowserClipboard(store, cursorPos, environment)
+    copy: (store) => copySelection(store, io),
+    paste: (store, cursorPos) => pasteSelection(store, cursorPos, io)
   }
 }
+
+export const browserSystemClipboard = createBrowserSystemClipboard()

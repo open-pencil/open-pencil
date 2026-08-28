@@ -1,16 +1,14 @@
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { EditorStore } from '@/app/editor/active-store'
+import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
 import { getInMemoryClipboardHTML, setInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
-import {
-  createClipboardTransfer,
-  isDesignClipboardHTML
-} from '@/app/editor/clipboard/system/shared'
+import { createClipboardTransfer } from '@/app/editor/clipboard/system/transfer'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
 import { readTauriClipboardText, writeTauriClipboardHTML } from '@/app/tauri/clipboard'
 import { isTauri } from '@/app/tauri/env'
 
-export async function copySelectionToTauriClipboard(store: EditorStore): Promise<boolean> {
+async function copySelection(store: EditorStore): Promise<boolean> {
   if (!isTauri()) return false
   try {
     const transfer = createClipboardTransfer()
@@ -27,10 +25,7 @@ export async function copySelectionToTauriClipboard(store: EditorStore): Promise
   }
 }
 
-export async function pasteFromTauriClipboard(
-  store: EditorStore,
-  cursorPos?: Vector
-): Promise<boolean> {
+async function pasteSelection(store: EditorStore, cursorPos?: Vector): Promise<boolean> {
   if (!isTauri()) return false
   try {
     const text = await readTauriClipboardText()
@@ -52,6 +47,6 @@ export async function pasteFromTauriClipboard(
 }
 
 export const tauriSystemClipboard: SystemClipboard = {
-  copy: copySelectionToTauriClipboard,
-  paste: pasteFromTauriClipboard
+  copy: copySelection,
+  paste: pasteSelection
 }

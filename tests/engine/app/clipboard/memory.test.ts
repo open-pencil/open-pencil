@@ -9,12 +9,11 @@ import {
   setInMemoryClipboardHTML
 } from '@/app/editor/clipboard/memory'
 import { pasteClipboardToReplace } from '@/app/editor/clipboard/paste-to-replace'
+import { executeClipboardCommand, type SystemClipboard } from '@/app/editor/clipboard/system'
 import {
-  copySelectionToBrowserClipboard,
-  executeClipboardCommand,
-  pasteFromBrowserClipboard,
-  type SystemClipboard
-} from '@/app/editor/clipboard/system'
+  createBrowserSystemClipboard,
+  type BrowserClipboardIO
+} from '@/app/editor/clipboard/system/browser'
 import { createEditorStore } from '@/app/editor/session/create'
 import { toast } from '@/app/shell/ui'
 
@@ -28,10 +27,11 @@ const unavailableClipboard: SystemClipboard = {
   paste: async () => false
 }
 
-const memoryClipboard: SystemClipboard = {
-  copy: (store) => copySelectionToBrowserClipboard(store, { write: async () => true }),
-  paste: (store, cursorPos) => pasteFromBrowserClipboard(store, cursorPos, {})
+const memoryIO: BrowserClipboardIO = {
+  write: async () => true,
+  readHTML: async () => null
 }
+const memoryClipboard = createBrowserSystemClipboard(memoryIO)
 
 describe('in-memory clipboard', () => {
   test('stores, retrieves, and clears clipboard HTML', () => {
@@ -49,7 +49,7 @@ describe('in-memory clipboard', () => {
     expect(getInMemoryClipboardHTML()).toBe('')
   })
 
-  test('copySelectionToBrowserClipboard delegates the rich payload to its browser adapter', async () => {
+  test('browser clipboard delegates the rich payload to its I/O boundary', async () => {
     const store = createEditorStore()
     const pageId = store.state.currentPageId
     const rect = store.graph.createNode('RECTANGLE', pageId, {
@@ -62,7 +62,8 @@ describe('in-memory clipboard', () => {
     store.select([rect.id])
 
     const write = mock(async () => true)
-    const success = await copySelectionToBrowserClipboard(store, { write })
+    const clipboard = createBrowserSystemClipboard({ write, readHTML: async () => null })
+    const success = await clipboard.copy(store)
 
     expect(success).toBe(true)
     expect(write).toHaveBeenCalledTimes(1)
@@ -72,7 +73,7 @@ describe('in-memory clipboard', () => {
     expect(hasInMemoryClipboardHTML()).toBe(true)
   })
 
-  test('copySelectionToBrowserClipboard returns false when execCommand fails or is unavailable', async () => {
+  test('browser clipboard returns false when its writer fails', async () => {
     const store = createEditorStore()
     const pageId = store.state.currentPageId
     const rect = store.graph.createNode('RECTANGLE', pageId, {
@@ -84,9 +85,11 @@ describe('in-memory clipboard', () => {
     })
     store.select([rect.id])
 
-    const success = await copySelectionToBrowserClipboard(store, {
-      write: async () => false
+    const clipboard = createBrowserSystemClipboard({
+      write: async () => false,
+      readHTML: async () => null
     })
+    const success = await clipboard.copy(store)
     expect(success).toBe(false)
   })
 

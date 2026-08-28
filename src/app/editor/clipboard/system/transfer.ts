@@ -1,6 +1,6 @@
 const noop = () => undefined
 
-class MockDataTransfer implements DataTransfer {
+class MemoryDataTransfer implements DataTransfer {
   private data = new Map<string, string>()
 
   dropEffect: 'none' | 'copy' | 'link' | 'move' = 'none'
@@ -63,9 +63,5 @@ export function createClipboardTransfer(): DataTransfer {
       console.warn('DataTransfer instantiation failed', error)
     }
   }
-  return new MockDataTransfer()
-}
-
-export function isDesignClipboardHTML(text: string): boolean {
-  return text.includes('<!--(openpencil)') || text.includes('(figma)')
+  return new MemoryDataTransfer()
 }
