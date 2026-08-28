@@ -84,6 +84,7 @@
   "settings": "Ajustes",
   "settingsDescription": "Gestiona integraciones y preferencias de la aplicación.",
   "settingsGeneral": "General",
+  "settingsLanguageDescription": "Elige el idioma de la interfaz de la aplicación.",
   "settingsEditing": "Edición",
   "settingsSnappingDescription": "Controla la alineación al editar trazados y al mover o redimensionar capas.",
   "snapToGeometry": "Ajustar a la geometría",

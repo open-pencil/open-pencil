@@ -4,6 +4,7 @@
 
 ### Added
 
+- Choose and persist the app interface language from General settings.
 - Duplicate guides with Option/Alt-drag, show active guide coordinates in rulers, measure ruler-created guides against selected frames and their contents, and remove guides from the context menu.
 - Create, select, move, transfer, and delete canvas and frame guides directly from rulers, with undoable edits and `.fig` round-trip fidelity.
 - Open to a unified home with recent and configured storage documents, including grid or list layouts.

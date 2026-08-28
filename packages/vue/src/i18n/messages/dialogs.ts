@@ -177,6 +177,7 @@ export const dialogMessageDefaults = {
   settings: 'Settings',
   settingsDescription: 'Manage integrations and app preferences.',
   settingsGeneral: 'General',
+  settingsLanguageDescription: 'Choose the language used by the app interface.',
   settingsEditing: 'Editing',
   settingsSnappingDescription:
     'Control alignment while editing paths, moving, and resizing layers.',

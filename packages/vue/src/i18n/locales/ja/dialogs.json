@@ -84,6 +84,7 @@
   "settings": "設定",
   "settingsDescription": "連携サービスとアプリの設定を管理します。",
   "settingsGeneral": "一般",
+  "settingsLanguageDescription": "アプリのインターフェースで使用する言語を選択します。",
   "settingsEditing": "編集",
   "settingsSnappingDescription": "パス編集、レイヤーの移動、サイズ変更時の整列方法を設定します。",
   "snapToGeometry": "ジオメトリにスナップ",

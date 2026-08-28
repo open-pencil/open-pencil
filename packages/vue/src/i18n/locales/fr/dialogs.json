@@ -84,6 +84,7 @@
   "settings": "Paramètres",
   "settingsDescription": "Gérez les intégrations et les préférences de l’application.",
   "settingsGeneral": "Général",
+  "settingsLanguageDescription": "Choisissez la langue de l’interface de l’application.",
   "settingsEditing": "Édition",
   "settingsSnappingDescription": "Contrôlez l’alignement lors de la modification des tracés et du déplacement ou redimensionnement des calques.",
   "snapToGeometry": "Aligner sur la géométrie",

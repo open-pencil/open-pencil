@@ -84,6 +84,7 @@
   "settings": "Настройки",
   "settingsDescription": "Управление интеграциями и настройками приложения.",
   "settingsGeneral": "Основные",
+  "settingsLanguageDescription": "Выберите язык интерфейса приложения.",
   "settingsEditing": "Редактирование",
   "settingsSnappingDescription": "Настройте выравнивание при редактировании контуров, перемещении и изменении размеров слоёв.",
   "snapToGeometry": "Привязка к геометрии",

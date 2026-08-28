@@ -88,6 +88,7 @@
   "settings": "Einstellungen",
   "settingsDescription": "Integrationen und App-Einstellungen verwalten.",
   "settingsGeneral": "Allgemein",
+  "settingsLanguageDescription": "Wähle die Sprache der App-Oberfläche.",
   "settingsEditing": "Bearbeitung",
   "settingsSnappingDescription": "Lege die Ausrichtung beim Bearbeiten von Pfaden sowie beim Verschieben und Skalieren von Ebenen fest.",
   "snapToGeometry": "An Geometrie ausrichten",

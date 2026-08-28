@@ -84,6 +84,7 @@
   "settings": "设置",
   "settingsDescription": "管理集成和应用偏好设置。",
   "settingsGeneral": "通用",
+  "settingsLanguageDescription": "选择应用界面使用的语言。",
   "settingsEditing": "编辑",
   "settingsSnappingDescription": "控制编辑路径以及移动或调整图层大小时的对齐方式。",
   "snapToGeometry": "吸附到几何图形",

@@ -2,6 +2,26 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
+test('language can be changed from General settings and persists', async ({ page }) => {
+  await page.goto('/?test')
+  const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+
+  await page.getByTestId('app-settings-trigger').click()
+  await page.getByTestId('settings-language').click()
+  await page.getByRole('option', { name: 'Русский' }).click()
+  await expect(page.getByTestId('app-settings-dialog')).toContainText('Настройки')
+
+  await page.getByTestId('settings-language').click()
+  await page.getByRole('option', { name: 'English' }).click()
+  await expect(page.getByTestId('app-settings-dialog')).toContainText('Settings')
+
+  await page.reload()
+  await canvas.waitForInit()
+  await page.getByTestId('app-settings-trigger').click()
+  await expect(page.getByTestId('settings-language')).toContainText('English')
+})
+
 test('general snapping preferences persist and apply to editor sessions', async ({ page }) => {
   await page.goto('/?test')
   const canvas = new CanvasHelper(page)

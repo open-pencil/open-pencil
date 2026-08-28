@@ -84,6 +84,7 @@
   "settings": "Impostazioni",
   "settingsDescription": "Gestisci integrazioni e preferenze dell’app.",
   "settingsGeneral": "Generali",
+  "settingsLanguageDescription": "Scegli la lingua dell’interfaccia dell’app.",
   "settingsEditing": "Modifica",
   "settingsSnappingDescription": "Controlla l’allineamento durante la modifica dei tracciati e lo spostamento o ridimensionamento dei livelli.",
   "snapToGeometry": "Aggancia alla geometria",

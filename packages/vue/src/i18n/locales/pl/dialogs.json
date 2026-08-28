@@ -84,6 +84,7 @@
   "settings": "Ustawienia",
   "settingsDescription": "Zarządzaj integracjami i preferencjami aplikacji.",
   "settingsGeneral": "Ogólne",
+  "settingsLanguageDescription": "Wybierz język interfejsu aplikacji.",
   "settingsEditing": "Edycja",
   "settingsSnappingDescription": "Określ wyrównywanie podczas edycji ścieżek oraz przesuwania i zmiany rozmiaru warstw.",
   "snapToGeometry": "Przyciągaj do geometrii",
