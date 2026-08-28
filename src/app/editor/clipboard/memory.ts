@@ -1,17 +1,29 @@
-let memoryClipboardHTML = ''
-
-export function setInMemoryClipboardHTML(html: string): void {
-  memoryClipboardHTML = html
+interface MemoryClipboard {
+  html: string
+  plainText: string
 }
 
-export function getInMemoryClipboardHTML(): string {
-  return memoryClipboardHTML
+let memoryClipboard: MemoryClipboard = { html: '', plainText: '' }
+
+export function setInMemoryClipboardHTML(html: string, plainText = ''): void {
+  memoryClipboard = { html, plainText }
+}
+
+export function getInMemoryClipboardHTML(matchingPlainText?: string): string {
+  if (
+    matchingPlainText !== undefined &&
+    memoryClipboard.plainText !== '' &&
+    memoryClipboard.plainText !== matchingPlainText
+  ) {
+    return ''
+  }
+  return memoryClipboard.html
 }
 
 export function hasInMemoryClipboardHTML(): boolean {
-  return Boolean(memoryClipboardHTML)
+  return Boolean(memoryClipboard.html)
 }
 
 export function clearInMemoryClipboardHTML(): void {
-  memoryClipboardHTML = ''
+  memoryClipboard = { html: '', plainText: '' }
 }

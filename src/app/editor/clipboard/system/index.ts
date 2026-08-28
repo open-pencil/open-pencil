@@ -19,9 +19,15 @@ export async function executeClipboardCommand(
   if (command === 'copy') return clipboard.copy(store)
 
   if (command === 'cut') {
+    const selectedIds = new Set(store.state.selectedIds)
     const copied = await clipboard.copy(store)
-    if (copied) store.deleteSelected()
-    return copied
+    if (!copied) return false
+    const selectionUnchanged =
+      selectedIds.size === store.state.selectedIds.size &&
+      [...selectedIds].every((id) => store.state.selectedIds.has(id))
+    if (!selectionUnchanged) return false
+    store.deleteSelected()
+    return true
   }
 
   return clipboard.paste(store, cursorPos)

@@ -80,7 +80,7 @@ async function copySelection(store: EditorStore, io: BrowserClipboardIO): Promis
       plainText: transfer.getData('text/plain')
     }
     if (!payload.html && !payload.plainText) return false
-    if (payload.html) setInMemoryClipboardHTML(payload.html)
+    if (payload.html) setInMemoryClipboardHTML(payload.html, payload.plainText)
 
     return await io.write(payload)
   } catch (error) {

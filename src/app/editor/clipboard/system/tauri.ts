@@ -22,7 +22,7 @@ async function copySelection(store: EditorStore): Promise<boolean> {
     if (!html && !plainText) return false
     if (html) {
       await writeTauriClipboardHTML(html, plainText)
-      setInMemoryClipboardHTML(html)
+      setInMemoryClipboardHTML(html, plainText)
     } else {
       await writeTauriClipboardText(plainText)
     }
@@ -37,24 +37,20 @@ async function pasteSelection(store: EditorStore, cursorPos?: Vector): Promise<b
   if (!isTauri()) return false
   try {
     const text = await readTauriClipboardText()
-    if (text) {
-      if (isDesignClipboardHTML(text)) {
-        await store.pasteFromHTML(text, cursorPos)
-        return true
-      }
-      return false
+    if (text && isDesignClipboardHTML(text)) {
+      await store.pasteFromHTML(text, cursorPos)
+      return true
     }
+    const matchingMemoryHTML = getInMemoryClipboardHTML(text ?? '')
+    if (matchingMemoryHTML && isDesignClipboardHTML(matchingMemoryHTML)) {
+      await store.pasteFromHTML(matchingMemoryHTML, cursorPos)
+      return true
+    }
+    return false
   } catch (error) {
     console.warn('Tauri clipboard paste failed', error)
+    return false
   }
-
-  const memoryHTML = getInMemoryClipboardHTML()
-  if (memoryHTML && isDesignClipboardHTML(memoryHTML)) {
-    await store.pasteFromHTML(memoryHTML, cursorPos)
-    return true
-  }
-
-  return false
 }
 
 export const tauriSystemClipboard: SystemClipboard = {

@@ -125,6 +125,27 @@ describe('in-memory clipboard', () => {
     expect(store.graph.getNode(rect.id)).toBeDefined()
   })
 
+  test('executeClipboardCommand cut preserves a changed selection while copy is pending', async () => {
+    const store = createEditorStore()
+    const pageId = store.state.currentPageId
+    const first = store.graph.createNode('RECTANGLE', pageId, { name: 'First' })
+    const second = store.graph.createNode('RECTANGLE', pageId, { name: 'Second' })
+    store.select([first.id])
+    const copying = Promise.withResolvers<boolean>()
+    const clipboard: SystemClipboard = {
+      copy: () => copying.promise,
+      paste: async () => false
+    }
+
+    const cutting = executeClipboardCommand(store, 'cut', undefined, clipboard)
+    store.select([second.id])
+    copying.resolve(true)
+
+    expect(await cutting).toBe(false)
+    expect(store.graph.getNode(first.id)).toBeDefined()
+    expect(store.graph.getNode(second.id)).toBeDefined()
+  })
+
   test('pasteToReplace uses in-memory clipboard when system clipboard is unavailable', async () => {
     const store = createEditorStore()
     const pageId = store.state.currentPageId
