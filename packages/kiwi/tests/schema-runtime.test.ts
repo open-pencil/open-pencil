@@ -109,7 +109,41 @@ describe('Kiwi schema runtime', () => {
     expect(decoded.name).toBe('custom')
   })
 
-  test('reports malformed field types at their source location', () => {
+  test('reports unknown field types at their source location', () => {
+    const malformedSchema = {
+      package: null,
+      definitions: [
+        {
+          name: 'Item',
+          line: 4,
+          column: 1,
+          kind: 'MESSAGE' as const,
+          fields: [
+            {
+              name: 'value',
+              line: 5,
+              column: 3,
+              type: 'MissingType',
+              isArray: false,
+              isDeprecated: false,
+              value: 1
+            }
+          ]
+        }
+      ]
+    }
+
+    expect(() => compileSchema(malformedSchema)).toThrow(
+      'Invalid type "MissingType" for field "value"'
+    )
+    try {
+      compileSchema(malformedSchema)
+    } catch (error) {
+      expect(error).toMatchObject({ line: 5, column: 3 })
+    }
+  })
+
+  test('reports null field types at their source location', () => {
     const malformedSchema = {
       package: null,
       definitions: [

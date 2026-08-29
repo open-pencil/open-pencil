@@ -1,4 +1,5 @@
 import { ByteBuffer } from './bb'
+import { nativeTypes } from './parser'
 import type { Definition, Field, Schema } from './schema'
 import { error, quote } from './util'
 
@@ -48,8 +49,16 @@ function validateFieldTypes(definitions: Definitions): void {
     if (definition.kind === 'ENUM') continue
     for (let j = 0; j < definition.fields.length; j++) {
       let field = definition.fields[j]
-      if (field.type === null) {
+      let type = field.type
+      if (type === null) {
         error('Invalid type null for field ' + quote(field.name), field.line, field.column)
+      }
+      if (!nativeTypes.includes(type) && !definitions[type]) {
+        error(
+          'Invalid type ' + quote(type) + ' for field ' + quote(field.name),
+          field.line,
+          field.column
+        )
       }
     }
   }
