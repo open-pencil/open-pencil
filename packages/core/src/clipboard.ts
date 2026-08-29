@@ -55,6 +55,7 @@ export async function parseFigmaClipboard(
     const schemaBytes = inflateSync(chunks[0])
     const schema = decodeBinarySchema(new ByteBuffer(schemaBytes))
     const compiled = compileSchema(schema)
+    if (!compiled.decodeMessage) return null
     const dataRaw = await decompressFigKiwiDataAsync(chunks[1])
     const msg = compiled.decodeMessage(dataRaw) as {
       nodeChanges?: KiwiNodeChange[]
