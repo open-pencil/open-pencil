@@ -264,6 +264,7 @@ function interpretEncode(self: RuntimeCodec, definitions: Definitions, definitio
 
     if (definition.kind === 'MESSAGE') buffer.writeVarUint(0)
     if (isTopLevel) return buffer.toUint8Array()
+    return undefined
   }
 }
 
