@@ -42,6 +42,10 @@ function asRuntimeEnum(value: unknown): RuntimeEnum {
   return value as RuntimeEnum
 }
 
+function hasDefinition(definitions: Definitions, name: string): boolean {
+  return Object.hasOwn(definitions, name)
+}
+
 function validateFieldTypes(definitions: Definitions): void {
   let definitionList = Object.values(definitions)
   for (let i = 0; i < definitionList.length; i++) {
@@ -53,7 +57,7 @@ function validateFieldTypes(definitions: Definitions): void {
       if (type === null) {
         error('Invalid type null for field ' + quote(field.name), field.line, field.column)
       }
-      if (!nativeTypes.includes(type) && !definitions[type]) {
+      if (!nativeTypes.includes(type) && !hasDefinition(definitions, type)) {
         error(
           'Invalid type ' + quote(type) + ' for field ' + quote(field.name),
           field.line,
@@ -264,7 +268,7 @@ function interpretEncode(self: RuntimeCodec, definitions: Definitions, definitio
 }
 
 export function compileSchemaRuntime(schema: Schema): RuntimeCodec {
-  let definitions: Definitions = {}
+  let definitions: Definitions = Object.create(null) as Definitions
   for (let i = 0; i < schema.definitions.length; i++) {
     definitions[schema.definitions[i].name] = schema.definitions[i]
   }

@@ -143,7 +143,7 @@ describe('Kiwi schema runtime', () => {
     }
   })
 
-  test('reports null field types at their source location', () => {
+  test('rejects inherited names as field types', () => {
     const malformedSchema = {
       package: null,
       definitions: [
@@ -157,7 +157,7 @@ describe('Kiwi schema runtime', () => {
               name: 'value',
               line: 5,
               column: 3,
-              type: null,
+              type: 'constructor',
               isArray: false,
               isDeprecated: false,
               value: 1
@@ -167,7 +167,9 @@ describe('Kiwi schema runtime', () => {
       ]
     }
 
-    expect(() => compileSchema(malformedSchema)).toThrow(/Invalid type null for field "value"/)
+    expect(() => compileSchema(malformedSchema)).toThrow(
+      'Invalid type "constructor" for field "value"'
+    )
     try {
       compileSchema(malformedSchema)
     } catch (error) {
