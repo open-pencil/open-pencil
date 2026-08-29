@@ -4,7 +4,13 @@ Scene-graph-agnostic Kiwi runtime utilities for OpenPencil.
 
 This package owns pure Kiwi schema parsing, Figma Kiwi schema data, low-level Figma message encode/decode, raw `fig-kiwi` container helpers, and GUID formatting. Complete `.fig` archive parsing lives in `@open-pencil/fig`; SceneGraph integration remains outside this package.
 
-## Installation
+## Credits and licensing
+
+The schema runtime is based on [Kiwi](https://github.com/evanw/kiwi), a
+schema-based binary format and JavaScript implementation by Evan Wallace.
+The original Kiwi implementation is copyright (c) 2016–2023 Evan Wallace and
+is licensed under the MIT License. OpenPencil's adapted runtime is distributed
+under the terms of that license; see [`NOTICE`](./NOTICE).
 
 ```sh
 bun add @open-pencil/kiwi
