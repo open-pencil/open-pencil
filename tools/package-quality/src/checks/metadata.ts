@@ -44,6 +44,7 @@ function checkIncludedRuntimePath(
 ): void {
   checkRuntimePath(packageName, field, value)
   const normalized = value.replace(/^\.\//, '')
+  if (normalized === 'package.json') return
   const topLevelDir = normalized.split('/')[0]
   if (topLevelDir && !files.includes(topLevelDir)) {
     errors.push(
@@ -85,7 +86,7 @@ function walkExports(
     if (key === 'types') {
       checkIncludedTypePath(packageName, `exports.${path.join('.')}`, value, files)
     } else {
-      checkRuntimePath(packageName, `exports.${path.join('.')}`, value)
+      checkIncludedRuntimePath(packageName, `exports.${path.join('.')}`, value, files)
     }
     return
   }

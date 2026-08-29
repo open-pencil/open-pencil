@@ -368,6 +368,18 @@
     "tools/docs": {
       "name": "@open-pencil/docs-tools",
     },
+    "tools/package-quality": {
+      "name": "@open-pencil/package-quality-tools",
+      "dependencies": {
+        "citty": "^0.1.6",
+      },
+    },
+    "tools/visual-oracles": {
+      "name": "@open-pencil/visual-oracle-tools",
+      "dependencies": {
+        "citty": "^0.1.6",
+      },
+    },
   },
   "overrides": {
     "@codemirror/view": "6.43.9",
@@ -1127,9 +1139,13 @@
 
     "@open-pencil/mcp": ["@open-pencil/mcp@workspace:packages/mcp"],
 
+    "@open-pencil/package-quality-tools": ["@open-pencil/package-quality-tools@workspace:tools/package-quality"],
+
     "@open-pencil/pen": ["@open-pencil/pen@workspace:packages/pen"],
 
     "@open-pencil/scene-graph": ["@open-pencil/scene-graph@workspace:packages/scene-graph"],
+
+    "@open-pencil/visual-oracle-tools": ["@open-pencil/visual-oracle-tools@workspace:tools/visual-oracles"],
 
     "@open-pencil/vue": ["@open-pencil/vue@workspace:packages/vue"],
 

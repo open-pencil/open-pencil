@@ -48,7 +48,7 @@ const { values, positionals } = parseArgs({
 const figPath = positionals[0]
 if (!figPath || !values.page || !values['figma-page-id']) {
   console.error(`Usage:
-  bun scripts/visual-bisect.ts <file.fig> --page Primitives --figma-page-id 1:22 [options]
+  bun tools/visual-oracles/src/cli.ts bisect <file.fig> --page Primitives --figma-page-id 1:22 [options]
 
 Options:
   --output DIR          Output directory (default: /tmp/open-pencil-visual-bisect)

@@ -253,6 +253,8 @@ export class FigmaAPI implements NodeProxyHost {
       layoutMode: raw.layoutMode,
       primaryAxisAlign: raw.primaryAxisAlign,
       counterAxisAlign: raw.counterAxisAlign,
+      primaryAxisSizing: raw.primaryAxisSizing,
+      counterAxisSizing: raw.counterAxisSizing,
       itemSpacing: raw.itemSpacing,
       paddingTop: raw.paddingTop,
       paddingRight: raw.paddingRight,

@@ -3,10 +3,10 @@
  * Visual comparison pipeline: Figma vs OpenPencil renderer.
  *
  * Copy an element in Figma, then run:
- *   bun scripts/visual-compare.ts [--scale 2] [--output /tmp/visual-compare]
+ *   bun tools/visual-oracles/src/cli.ts compare node [--scale 2] [--output /tmp/visual-compare]
  *
  * Or pass a node ID directly (skips clipboard):
- *   bun scripts/visual-compare.ts --node 1:23 [--scale 2]
+ *   bun tools/visual-oracles/src/cli.ts compare node --node 1:23 [--scale 2]
  *
  * Outputs:
  *   figma.png  — exported from real Figma
