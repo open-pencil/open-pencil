@@ -145,7 +145,7 @@ function defaultForType(type: VariableType): VariableValue {
 }
 
 export function isVarRef(val: unknown): val is string {
-  return typeof val === 'string' && val.startsWith('$--')
+  return typeof val === 'string' && val.startsWith('$') && val.length > 1
 }
 
 function varName(ref: string): string {

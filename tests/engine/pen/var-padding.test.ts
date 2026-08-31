@@ -121,6 +121,13 @@ describe('applyPadding — variable resolution (#201)', () => {
 })
 
 describe('isVarRef', () => {
+  test.each(['$merk-blauw', '$font-tekst', '$color.background', '$x'])(
+    'recognizes %s as a variable reference',
+    (reference) => {
+      expect(isVarRef(reference)).toBe(true)
+    }
+  )
+
   test('recognizes $--xxx as variable reference', () => {
     expect(isVarRef('$--spacing-lg')).toBe(true)
     expect(isVarRef('$--color-primary')).toBe(true)
@@ -130,6 +137,8 @@ describe('isVarRef', () => {
     expect(isVarRef('24')).toBe(false)
     expect(isVarRef('spacing-lg')).toBe(false)
     expect(isVarRef('')).toBe(false)
+    expect(isVarRef('$')).toBe(false)
+    expect(isVarRef('price$')).toBe(false)
   })
 
   test('rejects non-string values', () => {
