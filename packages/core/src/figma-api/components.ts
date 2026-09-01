@@ -140,14 +140,14 @@ function propertyMetadata(
   definition: ComponentPropertyDefinition,
   includeVariantOptions: boolean
 ): Pick<FigmaComponentPropertyDefinition, 'preferredValues' | 'variantOptions'> {
-  return {
-    ...(definition.preferredValues
-      ? { preferredValues: preferredValues(graph(target, internals), definition.preferredValues) }
-      : {}),
-    ...(includeVariantOptions && definition.variantOptions
-      ? { variantOptions: [...definition.variantOptions] }
-      : {})
+  const metadata: Pick<FigmaComponentPropertyDefinition, 'preferredValues' | 'variantOptions'> = {}
+  if (definition.preferredValues) {
+    metadata.preferredValues = preferredValues(graph(target, internals), definition.preferredValues)
   }
+  if (includeVariantOptions && definition.variantOptions) {
+    metadata.variantOptions = [...definition.variantOptions]
+  }
+  return metadata
 }
 function definitions(
   target: ProxyThis,
@@ -233,20 +233,16 @@ function editPropertyDefinitions(
   }
   const updatedName = changes.name?.trim()
   if (updatedName === '') throw new Error('Property name must not be empty')
-  const updated = {
-    ...definition,
-    ...(updatedName ? { name: updatedName } : {}),
-    ...(changes.defaultValue !== undefined
-      ? {
-          defaultValue:
-            definition.type === 'BOOLEAN'
-              ? String(changes.defaultValue === true || changes.defaultValue === 'true')
-              : String(changes.defaultValue)
-        }
-      : {}),
-    ...(changes.preferredValues
-      ? { preferredValues: changes.preferredValues.map((value) => value.key) }
-      : {})
+  const updated: ComponentPropertyDefinition = { ...definition }
+  if (updatedName) updated.name = updatedName
+  if (changes.defaultValue !== undefined) {
+    updated.defaultValue =
+      definition.type === 'BOOLEAN'
+        ? String(changes.defaultValue === true || changes.defaultValue === 'true')
+        : String(changes.defaultValue)
+  }
+  if (changes.preferredValues) {
+    updated.preferredValues = changes.preferredValues.map((value) => value.key)
   }
   updateNode(target, internals, {
     componentPropertyDefinitions: node.componentPropertyDefinitions.map((item) =>
@@ -400,10 +396,10 @@ export function installComponentPropertyAccessors(
           defaultValue:
             type === 'BOOLEAN'
               ? String(defaultValue === true || defaultValue === 'true')
-              : String(defaultValue),
-          ...(options?.preferredValues
-            ? { preferredValues: options.preferredValues.map((value) => value.key) }
-            : {})
+              : String(defaultValue)
+        }
+        if (options?.preferredValues) {
+          definition.preferredValues = options.preferredValues.map((value) => value.key)
         }
         updateNode(this, internals, {
           componentPropertyDefinitions: [...node.componentPropertyDefinitions, definition]

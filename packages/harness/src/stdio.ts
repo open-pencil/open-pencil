@@ -14,10 +14,10 @@ const stateRoot =
   process.env.OPENPENCIL_HARNESS_STATE_DIR ?? join(homedir(), '.open-pencil', 'harness-sessions')
 const agentDir = process.env.OPENPENCIL_HARNESS_AGENT_DIR
 const apiKey = process.env.OPENPENCIL_HARNESS_API_KEY
-const backend = new PiHarnessBackend({
-  ...(agentDir ? { agentDir } : {}),
-  ...(apiKey ? { apiKey } : {})
-})
+const backendOptions: { agentDir?: string; apiKey?: string } = {}
+if (agentDir) backendOptions.agentDir = agentDir
+if (apiKey) backendOptions.apiKey = apiKey
+const backend = new PiHarnessBackend(backendOptions)
 const service = new HarnessSessionService(
   new Map([[backend.id, backend]]),
   new FileResumeStateStore(stateRoot)

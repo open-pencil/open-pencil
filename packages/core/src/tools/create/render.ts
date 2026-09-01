@@ -50,19 +50,25 @@ export const render = defineTool({
       figma.graph.reorderChild(result.id, parentId, args.insert_index)
     }
 
-    return {
+    const response: {
+      id: string
+      name: string
+      type: string
+      children: string[]
+      warnings?: typeof result.warnings
+      siblings?: Array<{ id: string; name: string; type: string }>
+    } = {
       id: result.id,
       name: result.name,
       type: result.type,
-      children: result.childIds,
-      ...(result.warnings ? { warnings: result.warnings } : {}),
-      ...(results.length > 1
-        ? {
-            siblings: results
-              .slice(1)
-              .map((node) => ({ id: node.id, name: node.name, type: node.type }))
-          }
-        : {})
+      children: result.childIds
     }
+    if (result.warnings) response.warnings = result.warnings
+    if (results.length > 1) {
+      response.siblings = results
+        .slice(1)
+        .map((node) => ({ id: node.id, name: node.name, type: node.type }))
+    }
+    return response
   }
 })

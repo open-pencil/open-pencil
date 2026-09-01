@@ -163,13 +163,16 @@ export class PiHarnessBackend implements HarnessBackend {
         ...optional('instructions', configuration.instructions ?? this.defaults.instructions),
         permissionMode: permissionMode ?? this.defaults.permissionMode ?? 'allow-edits'
       })
-      const session = await agent.createSession({
-        sessionId: options.sessionId,
-        ...(options.resumeState === undefined
-          ? {}
-          : { resumeFrom: options.resumeState as HarnessAgentResumeSessionState }),
-        ...(options.signal === undefined ? {} : { abortSignal: options.signal })
-      })
+      const sessionOptions: {
+        sessionId: string
+        resumeFrom?: HarnessAgentResumeSessionState
+        abortSignal?: AbortSignal
+      } = { sessionId: options.sessionId }
+      if (options.resumeState !== undefined) {
+        sessionOptions.resumeFrom = options.resumeState as HarnessAgentResumeSessionState
+      }
+      if (options.signal !== undefined) sessionOptions.abortSignal = options.signal
+      const session = await agent.createSession(sessionOptions)
       return new PiBackendSession(agent, session)
     })
   }

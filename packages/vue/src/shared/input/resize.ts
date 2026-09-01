@@ -277,15 +277,14 @@ export function commitResizePreview(dragState: DragResize, editor: Editor) {
       editor.updateNode(d.nodeId, finalChanges)
     })
     clearResizedRawGeometry(editor, d.nodeId)
-    editor.commitResize(d.nodeId, {
-      ...d.origRect,
-      ...(d.origVectorNetwork || node.vectorNetwork ? { vectorNetwork: d.origVectorNetwork } : {}),
-      ...(d.origFillGeometry.length > 0 ? { fillGeometry: d.origFillGeometry } : {}),
-      ...(d.origStrokeGeometry.length > 0 ? { strokeGeometry: d.origStrokeGeometry } : {}),
-      ...(d.origDerivedTextGlyphs?.length ? { derivedTextGlyphs: d.origDerivedTextGlyphs } : {}),
-      ...(d.origStrokes.length > 0 ? { strokes: d.origStrokes } : {}),
-      ...(d.origTextPathData ? { textPathData: d.origTextPathData } : {}),
-      ...(d.origTextPathBox ? { textPathBox: d.origTextPathBox } : {})
-    })
+    const original: Parameters<typeof editor.commitResize>[1] = { ...d.origRect }
+    if (d.origVectorNetwork || node.vectorNetwork) original.vectorNetwork = d.origVectorNetwork
+    if (d.origFillGeometry.length > 0) original.fillGeometry = d.origFillGeometry
+    if (d.origStrokeGeometry.length > 0) original.strokeGeometry = d.origStrokeGeometry
+    if (d.origDerivedTextGlyphs?.length) original.derivedTextGlyphs = d.origDerivedTextGlyphs
+    if (d.origStrokes.length > 0) original.strokes = d.origStrokes
+    if (d.origTextPathData) original.textPathData = d.origTextPathData
+    if (d.origTextPathBox) original.textPathBox = d.origTextPathBox
+    editor.commitResize(d.nodeId, original)
   }
 }

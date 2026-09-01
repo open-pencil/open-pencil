@@ -34,10 +34,9 @@ function doRequest(
 ): Promise<{ status: number; data: unknown }> {
   return new Promise((resolve, reject) => {
     const bodyJSON = body ? JSON.stringify(body) : undefined
-    const headers: Record<string, string> = {
-      ...(bodyJSON ? { 'Content-Type': 'application/json' } : {}),
-      ...(info.authToken ? { Authorization: `Bearer ${info.authToken}` } : {})
-    }
+    const headers: Record<string, string> = {}
+    if (bodyJSON) headers['Content-Type'] = 'application/json'
+    if (info.authToken) headers.Authorization = `Bearer ${info.authToken}`
 
     // Use the narrowed `useSocket` variable (string | false) to construct
     // request options so TypeScript knows socketPath is a string when truthy.

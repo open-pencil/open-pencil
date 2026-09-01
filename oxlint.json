@@ -216,6 +216,7 @@
     "open-pencil/no-flat-kiwi-modules": "error",
     "open-pencil/no-bun-globals-in-cli": "error",
     "open-pencil/no-top-level-prefixed-test-files": "error",
+    "open-pencil/no-conditional-object-spreads": "error",
     "open-pencil/no-sibling-domain-prefixed-files": "error",
     "array-callback-return": "error",
     "block-scoped-var": "error",

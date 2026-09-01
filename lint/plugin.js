@@ -2213,6 +2213,35 @@ const noFlatKiwiModules = createProgramFilenameRule({
   }
 })
 
+const noConditionalObjectSpreads = {
+  meta: {
+    docs: {
+      description: 'Require explicit branches instead of complex conditional object spreads'
+    }
+  },
+  create(context) {
+    return {
+      SpreadElement(node) {
+        if (node.parent?.type !== 'ObjectExpression') return
+        if (node.argument?.type !== 'ConditionalExpression') return
+        const branchSizes = [node.argument.consequent, node.argument.alternate]
+          .filter((branch) => branch.type === 'ObjectExpression')
+          .map((branch) => branch.properties.length)
+        const conditionalSpreadCount = node.parent.properties.filter(
+          (property) =>
+            property.type === 'SpreadElement' && property.argument.type === 'ConditionalExpression'
+        ).length
+        if (conditionalSpreadCount < 2 && branchSizes.every((size) => size < 2)) return
+        context.report({
+          node,
+          message:
+            'Extract conditional object construction into an explicit branch or named domain projection.'
+        })
+      }
+    }
+  }
+}
+
 const plugin = {
   meta: { name: 'open-pencil' },
   rules: {
@@ -2283,6 +2312,7 @@ const plugin = {
     'no-flat-kiwi-modules': noFlatKiwiModules,
     'no-bun-globals-in-cli': noBunGlobalsInCli,
     'no-top-level-prefixed-test-files': noTopLevelPrefixedTestFiles,
+    'no-conditional-object-spreads': noConditionalObjectSpreads,
     'no-sibling-domain-prefixed-files': noSiblingDomainPrefixedFiles
   }
 }

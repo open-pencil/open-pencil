@@ -17,10 +17,9 @@ export async function loadRPCData<Result>(
   targetArgs?: AppTargetCLIArgs
 ): Promise<Result> {
   if (isAppMode(file)) {
-    return rpc<Result>(command, {
-      ...(isRPCArgs(args) ? args : {}),
-      ...(targetArgs ? appTargetRPCArgs(targetArgs) : {})
-    })
+    const rpcArgs: RPCArgs = isRPCArgs(args) ? { ...args } : {}
+    if (targetArgs) Object.assign(rpcArgs, appTargetRPCArgs(targetArgs))
+    return rpc<Result>(command, rpcArgs)
   }
   const graph = await loadDocument(requireFile(file))
   prepareDocumentForRPC(graph, command, args)

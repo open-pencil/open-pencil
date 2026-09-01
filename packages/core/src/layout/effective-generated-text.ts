@@ -250,11 +250,10 @@ function propagateIntrinsicSizes(
     if (Object.keys(updates).length === 0) continue
 
     if (node.derivedLayout) {
-      updates.derivedLayout = {
-        ...node.derivedLayout,
-        ...(updates.width === undefined ? {} : { width: nextWidth }),
-        ...(updates.height === undefined ? {} : { height: nextHeight })
-      }
+      const derivedLayout = { ...node.derivedLayout }
+      if (updates.width !== undefined) derivedLayout.width = nextWidth
+      if (updates.height !== undefined) derivedLayout.height = nextHeight
+      updates.derivedLayout = derivedLayout
     }
     if (updates.width !== undefined) {
       stretchChildrenToEffectiveWidth(

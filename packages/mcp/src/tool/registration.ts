@@ -27,13 +27,10 @@ function splitAutomationTarget(args: Record<string, unknown>): {
   args: Record<string, unknown>
 } {
   const { document_id, page_id, ...rest } = args
-  return {
-    target: {
-      ...(typeof document_id === 'string' ? { document_id } : {}),
-      ...(typeof page_id === 'string' ? { page_id } : {})
-    },
-    args: rest
-  }
+  const target: { document_id?: string; page_id?: string } = {}
+  if (typeof document_id === 'string') target.document_id = document_id
+  if (typeof page_id === 'string') target.page_id = page_id
+  return { target, args: rest }
 }
 
 export interface RegisterToolsOptions {
@@ -183,11 +180,10 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
         })
         const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
         if (res.ok === false) return fail(new Error(res.error))
-        return ok({
-          saved: true,
-          ...(safePath ? { path: safePath.resolved } : {}),
-          ...(res.target ? { target: res.target } : {})
-        })
+        const response: { saved: true; path?: string; target?: unknown } = { saved: true }
+        if (safePath) response.path = safePath.resolved
+        if (res.target) response.target = res.target
+        return ok(response)
       } catch (e) {
         return fail(e)
       }
@@ -217,7 +213,9 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
-          return ok({ opened: true, ...(res.target ? { target: res.target } : {}) })
+          const response: { opened: true; target?: unknown } = { opened: true }
+          if (res.target) response.target = res.target
+          return ok(response)
         } catch (e) {
           return fail(e)
         }
@@ -249,7 +247,9 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
           })
           const res = result as { ok?: boolean; result?: unknown; target?: unknown; error?: string }
           if (res.ok === false) return fail(new Error(res.error))
-          return ok({ created: true, ...(res.target ? { target: res.target } : {}) })
+          const response: { created: true; target?: unknown } = { created: true }
+          if (res.target) response.target = res.target
+          return ok(response)
         } catch (e) {
           return fail(e)
         }
