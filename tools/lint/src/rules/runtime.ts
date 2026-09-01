@@ -380,7 +380,9 @@ const maxCompositionRootLines = {
 
     return {
       Program(node) {
-        const lineCount = context.sourceCode.getText().split('\n').length
+        const source = context.sourceCode.getText()
+        const normalized = source.endsWith('\n') ? source.slice(0, -1) : source
+        const lineCount = normalized.split('\n').length
         if (lineCount <= max) return
         context.report({
           node,

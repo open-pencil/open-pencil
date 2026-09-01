@@ -101,6 +101,11 @@ function typeNameText(node: TSESTree.EntityName | null | undefined): string {
   return node.type
 }
 
+function parameterType(parameter: TSESTree.Parameter): string {
+  const value = parameter.type === 'TSParameterProperty' ? parameter.parameter : parameter
+  return canonicalType('typeAnnotation' in value ? value.typeAnnotation?.typeAnnotation : null)
+}
+
 function canonicalType(node: TypeNode | null | undefined): string {
   if (!node) return 'unknown'
   switch (node.type) {
@@ -128,8 +133,10 @@ function canonicalType(node: TypeNode | null | undefined): string {
       return `union<${node.types.map(canonicalType).sort().join('|')}>`
     case 'TSTypeLiteral':
       return `object{${canonicalMembers(node.members)}}`
-    case 'TSFunctionType':
-      return 'function'
+    case 'TSFunctionType': {
+      const parameters = node.params.map(parameterType).join(',')
+      return `function<${parameters}=>${canonicalType(node.returnType?.typeAnnotation)}>`
+    }
     default:
       return node.type
   }

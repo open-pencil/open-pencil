@@ -1,5 +1,7 @@
 import type { TSESTree } from '@typescript-eslint/utils'
 
+import type { Color } from '@open-pencil/scene-graph'
+
 import {
   noConditionalObjectSpreads,
   noFlatKiwiModules,
@@ -188,20 +190,13 @@ const noMathRandom = {
   }
 } satisfies RuleDefinition
 
-interface ColorLiteral {
-  r: number
-  g: number
-  b: number
-  a: number
-}
-
 function isNumericLiteral(node: TSESTree.Node | undefined, value: number): boolean {
   return node?.type === 'Literal' && node.value === value
 }
 
-function colorObjectLiteral(node: TSESTree.ObjectExpression, color: ColorLiteral): boolean {
+function colorObjectLiteral(node: TSESTree.ObjectExpression, color: Color): boolean {
   if (node?.type !== 'ObjectExpression') return false
-  const props = new Map()
+  const props = new Map<string, TSESTree.Node>()
   for (const prop of node.properties ?? []) {
     if (prop.type !== 'Property') return false
     let key: string | null = null

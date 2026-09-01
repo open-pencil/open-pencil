@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 
 import { PiHarnessBackend } from '#harness/backends/pi'
+import type { PiHarnessBackendOptions } from '#harness/backends/pi'
 import type { HarnessRequest, HarnessSidecarMessage } from '#harness/protocol'
 import { parseHarnessRequest } from '#harness/protocol'
 import { HarnessSessionService } from '#harness/service'
@@ -14,7 +15,7 @@ const stateRoot =
   process.env.OPENPENCIL_HARNESS_STATE_DIR ?? join(homedir(), '.open-pencil', 'harness-sessions')
 const agentDir = process.env.OPENPENCIL_HARNESS_AGENT_DIR
 const apiKey = process.env.OPENPENCIL_HARNESS_API_KEY
-const backendOptions: { agentDir?: string; apiKey?: string } = {}
+const backendOptions: PiHarnessBackendOptions = {}
 if (agentDir) backendOptions.agentDir = agentDir
 if (apiKey) backendOptions.apiKey = apiKey
 const backend = new PiHarnessBackend(backendOptions)

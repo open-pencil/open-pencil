@@ -16,6 +16,14 @@ export function normalizedFilename(context: FilenameContext): string {
   )
 }
 
+export function staticPropertyName(
+  property: TSESTree.Expression | TSESTree.PrivateIdentifier
+): string | null {
+  if (property.type === 'Identifier') return property.name
+  if (property.type === 'Literal' && typeof property.value === 'string') return property.value
+  return null
+}
+
 export function importSource(
   node: TSESTree.ImportDeclaration | TSESTree.ExportAllDeclaration | TSESTree.ExportNamedDeclaration
 ): string | null {

@@ -1,5 +1,6 @@
 import type { TSESTree } from '@typescript-eslint/utils'
 
+import { normalizedFilename } from '../support/context.ts'
 import { createProgramFilenameRule } from '../support/factories.ts'
 import type { RuleDefinition } from '../support/types.ts'
 
@@ -44,7 +45,7 @@ const noMixedCaseAcronymIdentifiers = {
     }
   },
   create(context) {
-    const file = context.physicalFilename ?? context.filename ?? ''
+    const file = normalizedFilename(context)
     if (file.includes('/tools/lint/')) return {}
     const canonicalAcronym =
       /(?:Acp|Ai|Api|Cli|Cors|Css|Html|Ime|Json|Jsx|Mcp|Pdf|Png|Rgb|Rpc|Rtl|Svg|Ui|Url|Uri|Xml)/g

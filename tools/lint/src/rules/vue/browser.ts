@@ -1,6 +1,6 @@
 import type { TSESTree } from '@typescript-eslint/utils'
 
-import { normalizedFilename } from '../../support/context.ts'
+import { normalizedFilename, staticPropertyName } from '../../support/context.ts'
 import type { RuleDefinition } from '../../support/types.ts'
 
 const noBrowserSideEffectsInVue = {
@@ -14,14 +14,6 @@ const noBrowserSideEffectsInVue = {
     const file = normalizedFilename(context)
     if (!file.endsWith('.vue')) return {}
 
-    function propertyName(
-      property: TSESTree.Expression | TSESTree.PrivateIdentifier
-    ): string | null {
-      if (property?.type === 'Identifier') return property.name
-      if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
-      return null
-    }
-
     function objectName(object: TSESTree.Expression): string | null {
       return object?.type === 'Identifier' ? object.name : null
     }
@@ -31,7 +23,7 @@ const noBrowserSideEffectsInVue = {
         const callee = node.callee
         if (callee?.type !== 'MemberExpression') return
         const object = objectName(callee.object)
-        const property = propertyName(callee.property)
+        const property = staticPropertyName(callee.property)
 
         if (
           (object === 'window' || object === 'document') &&
@@ -54,8 +46,17 @@ const noBrowserSideEffectsInVue = {
         }
       },
       MemberExpression(node) {
-        const object = objectName(node.object)
-        if (object !== 'localStorage' && object !== 'sessionStorage') return
+        const directStorage = objectName(node.object)
+        let globalStorage: string | null = null
+        if (
+          node.object.type === 'MemberExpression' &&
+          (objectName(node.object.object) === 'window' ||
+            objectName(node.object.object) === 'globalThis')
+        ) {
+          globalStorage = staticPropertyName(node.object.property)
+        }
+        const storage = directStorage ?? globalStorage
+        if (storage !== 'localStorage' && storage !== 'sessionStorage') return
         context.report({
           node,
           message:

@@ -4,11 +4,15 @@ import { importSource, normalizedFilename } from '../support/context.ts'
 import { createImportSourceRule } from '../support/factories.ts'
 import type { RuleContext, RuleDefinition } from '../support/types.ts'
 
+function isPackageOrSubpath(source: string, packageName: string): boolean {
+  return source === packageName || source.startsWith(`${packageName}/`)
+}
+
 const noVueSelfPackageImports = createImportSourceRule({
   description: 'Disallow @open-pencil/vue self-imports inside the Vue SDK — use #vue/* aliases',
   applies: (file) => file.includes('/packages/vue/src/'),
   check: (source) =>
-    source.startsWith('@open-pencil/vue') &&
+    isPackageOrSubpath(source, '@open-pencil/vue') &&
     `Use #vue/* for internal Vue SDK imports instead of self-package import '${source}'.`
 })
 
@@ -153,7 +157,7 @@ const noCoreSelfPackageImports = createImportSourceRule({
   description: 'Disallow @open-pencil/core self-imports inside packages/core/src',
   applies: (file) => file.includes('/packages/core/src/'),
   check: (source) =>
-    source.startsWith('@open-pencil/core') &&
+    isPackageOrSubpath(source, '@open-pencil/core') &&
     'Core internals must import local modules directly instead of importing the @open-pencil/core public package entrypoints.'
 })
 
@@ -195,13 +199,15 @@ const noAppImportsInPackages = createImportSourceRule({
     source.startsWith('@/') && `Workspace packages must not import app-shell alias '${source}'.`
 })
 
-const frameworkImportPrefixes = ['@vue/', '@open-pencil/vue', '@tauri-apps/', '@/']
+const frameworkImportPrefixes = ['@vue/', '@tauri-apps/', '@/']
 
 const noCoreFrameworkImports = createImportSourceRule({
   description: 'Keep @open-pencil/core framework-agnostic by disallowing Vue/Tauri/app imports',
   applies: (file) => file.includes('/packages/core/src/'),
   check: (source) =>
-    (source === 'vue' || frameworkImportPrefixes.some((prefix) => source.startsWith(prefix))) &&
+    (source === 'vue' ||
+      isPackageOrSubpath(source, '@open-pencil/vue') ||
+      frameworkImportPrefixes.some((prefix) => source.startsWith(prefix))) &&
     `@open-pencil/core must stay framework-agnostic; do not import '${source}'.`
 })
 

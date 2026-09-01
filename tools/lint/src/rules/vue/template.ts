@@ -1,3 +1,5 @@
+import { ElementTypes } from '@vue/compiler-core'
+
 import { normalizedFilename } from '../../support/context.ts'
 import type { RuleDefinition } from '../../support/types.ts'
 import {
@@ -54,8 +56,11 @@ const noNativeTitleAttributesInVue = {
         walkVueTemplateAst(template, (templateNode) => {
           if (hasTitleAttribute) return
           if (
-            isStaticVueAttribute(templateNode, 'title') ||
-            isVueBindDirective(templateNode, 'title')
+            templateNode.type === VUE_ELEMENT_NODE &&
+            templateNode.tagType === ElementTypes.ELEMENT &&
+            templateNode.props.some(
+              (prop) => isStaticVueAttribute(prop, 'title') || isVueBindDirective(prop, 'title')
+            )
           ) {
             hasTitleAttribute = true
           }

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 
 import type { TSESTree } from '@typescript-eslint/utils'
 
-import { normalizedFilename } from '../support/context.ts'
+import { normalizedFilename, staticPropertyName } from '../support/context.ts'
 import { createProgramFilenameRule } from '../support/factories.ts'
 import type { RuleDefinition } from '../support/types.ts'
 
@@ -117,7 +117,9 @@ const nonComponentSourceDirectoriesKebabCase = {
       '/packages/vue/src/variables/'
     ]
 
-    const root = roots.find((candidate) => file.includes(candidate))
+    const root = roots
+      .filter((candidate) => file.includes(candidate))
+      .sort((left, right) => right.length - left.length)[0]
     if (!root) return {}
 
     return {
@@ -268,18 +270,10 @@ const noDirectOpenPencilBrowserStore = {
     }
   },
   create(context) {
-    function propertyName(
-      property: TSESTree.Expression | TSESTree.PrivateIdentifier
-    ): string | null {
-      if (property?.type === 'Identifier') return property.name
-      if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
-      return null
-    }
-
     function isOpenPencilMember(node: TSESTree.Expression): boolean {
       return (
         node?.type === 'MemberExpression' &&
-        propertyName(node.property) === 'openPencil' &&
+        staticPropertyName(node.property) === 'openPencil' &&
         ((node.object?.type === 'Identifier' && node.object.name === 'window') ||
           (node.object?.type === 'Identifier' && node.object.name === 'globalThis'))
       )
@@ -287,7 +281,7 @@ const noDirectOpenPencilBrowserStore = {
 
     return {
       MemberExpression(node) {
-        if (propertyName(node.property) !== 'store') return
+        if (staticPropertyName(node.property) !== 'store') return
         if (!isOpenPencilMember(node.object)) return
         context.report({
           node,
@@ -306,17 +300,9 @@ const noDirectOpenPencilWindowInternals = {
     }
   },
   create(context) {
-    function propertyName(
-      property: TSESTree.Expression | TSESTree.PrivateIdentifier
-    ): string | null {
-      if (property?.type === 'Identifier') return property.name
-      if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
-      return null
-    }
-
     return {
       MemberExpression(node) {
-        const name = propertyName(node.property)
+        const name = staticPropertyName(node.property)
         if (!name?.startsWith('__OPEN_PENCIL')) return
         context.report({
           node,
@@ -356,7 +342,7 @@ const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
 const noSiblingDomainPrefixedFiles = createProgramFilenameRule({
   description: 'Disallow files that repeat an existing sibling domain folder in the filename',
   check(file) {
-    const match = file.match(/^(.*\/)([^/]+)\.(?:test\.)?(?:spec\.)?(?:ts|tsx|vue)$/)
+    const match = file.match(/^(.*\/)([^/]+?)(?:\.test|\.spec)?\.(?:ts|tsx|vue)$/)
     if (!match) return false
 
     const [, dir, name] = match
