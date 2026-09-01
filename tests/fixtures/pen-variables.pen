@@ -1,0 +1,77 @@
+{
+  "version": "2.14",
+  "variables": {
+    "merk-blauw": { "type": "color", "value": "#4094D0" },
+    "font-tekst": { "type": "string", "value": "Inter" },
+    "--merk-blauw": { "type": "color", "value": "#4094D0" },
+    "--font-tekst": { "type": "string", "value": "Inter" }
+  },
+  "children": [
+    {
+      "id": "literal",
+      "type": "frame",
+      "name": "Literal values",
+      "x": 60,
+      "y": 80,
+      "width": 220,
+      "height": 160,
+      "fill": "#4094D0",
+      "children": [
+        {
+          "id": "literal-text",
+          "type": "text",
+          "x": 24,
+          "y": 60,
+          "content": "Variable import",
+          "fontFamily": "Inter",
+          "fontSize": 22,
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "plain",
+      "type": "frame",
+      "name": "$name references",
+      "x": 320,
+      "y": 80,
+      "width": 220,
+      "height": 160,
+      "fill": "$merk-blauw",
+      "children": [
+        {
+          "id": "plain-text",
+          "type": "text",
+          "x": 24,
+          "y": 60,
+          "content": "Variable import",
+          "fontFamily": "$font-tekst",
+          "fontSize": 22,
+          "fill": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "id": "dashed",
+      "type": "frame",
+      "name": "$--name references",
+      "x": 580,
+      "y": 80,
+      "width": 220,
+      "height": 160,
+      "fill": "$--merk-blauw",
+      "children": [
+        {
+          "id": "dashed-text",
+          "type": "text",
+          "x": 24,
+          "y": 60,
+          "content": "Variable import",
+          "fontFamily": "$--font-tekst",
+          "fontSize": 22,
+          "fill": "#FFFFFF"
+        }
+      ]
+    }
+  ]
+}
