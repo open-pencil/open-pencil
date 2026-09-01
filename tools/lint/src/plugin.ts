@@ -1,14 +1,13 @@
-import type { TSESTree } from '@typescript-eslint/utils'
-
-import type { Color } from '@open-pencil/scene-graph'
-
 import {
   noConditionalObjectSpreads,
   noFlatKiwiModules,
   noMixedCaseAcronymIdentifiers
-} from './rules/policy.ts'
-import { normalizedFilename } from './support/context.ts'
-import type { RuleDefinition } from './support/types.ts'
+} from '#lint/rules/policy.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
+import type { TSESTree } from '@typescript-eslint/utils'
+
+import type { Color } from '@open-pencil/scene-graph'
 
 const noInlineNamedTypes = {
   meta: {
@@ -131,7 +130,7 @@ import {
   noGeneratedTestIdLiterals,
   noBrowserSideEffectsInVue,
   noDocumentQuerySelectorInVue
-} from './rules/vue/index.ts'
+} from '#lint/rules/vue/index.ts'
 
 const noDirectSelectionToolStateMutation = {
   meta: {
@@ -381,7 +380,7 @@ import {
   noAppVueCoreBarrelImports,
   noAppImportsInPackages,
   noCoreFrameworkImports
-} from './rules/imports.ts'
+} from '#lint/rules/imports.ts'
 import {
   noDirectStorageAccess,
   noBroadDoubleCast,
@@ -396,7 +395,7 @@ import {
   preferVueUseIntervals,
   preferVueUseTimeouts,
   maxCompositionRootLines
-} from './rules/runtime.ts'
+} from '#lint/rules/runtime.ts'
 import {
   vueComponentFilePascalCase,
   componentNamespaceCasing,
@@ -409,13 +408,13 @@ import {
   noBunGlobalsInCli,
   noTopLevelPrefixedTestFiles,
   noSiblingDomainPrefixedFiles
-} from './rules/structure.ts'
+} from '#lint/rules/structure.ts'
 import {
   noBroadUnknownTypeAssertions,
   noDuplicateTypeShapes,
   noLocalJsonObjectAliases,
   noImportTypeAnnotations
-} from './rules/typescript.ts'
+} from '#lint/rules/typescript.ts'
 
 const plugin = {
   meta: { name: 'open-pencil' },

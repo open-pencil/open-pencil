@@ -1,7 +1,6 @@
+import { normalizedFilename } from '#lint/support/context.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
-
-import { normalizedFilename } from '../support/context.ts'
-import type { RuleDefinition } from '../support/types.ts'
 
 function isUnknownTypeAnnotation(typeAnnotation: unknown): boolean {
   return (

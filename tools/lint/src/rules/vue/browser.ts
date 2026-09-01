@@ -1,7 +1,6 @@
+import { normalizedFilename, staticPropertyName } from '#lint/support/context.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
-
-import { normalizedFilename, staticPropertyName } from '../../support/context.ts'
-import type { RuleDefinition } from '../../support/types.ts'
 
 const noBrowserSideEffectsInVue = {
   meta: {

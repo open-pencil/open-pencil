@@ -1,8 +1,7 @@
+import { normalizedFilename } from '#lint/support/context.ts'
+import { createProgramFilenameRule } from '#lint/support/factories.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
-
-import { normalizedFilename } from '../support/context.ts'
-import { createProgramFilenameRule } from '../support/factories.ts'
-import type { RuleDefinition } from '../support/types.ts'
 
 function isObjectKeyIdentifier(node: TSESTree.Identifier): boolean {
   const parent = node.parent

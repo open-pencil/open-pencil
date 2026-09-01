@@ -1,6 +1,5 @@
+import type { RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
-
-import type { RuleDefinition } from '../support/types.ts'
 
 type TypeNode = TSESTree.TypeNode
 

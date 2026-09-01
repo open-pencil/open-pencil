@@ -1,8 +1,7 @@
+import { importSource, normalizedFilename } from '#lint/support/context.ts'
+import { createImportSourceRule } from '#lint/support/factories.ts'
+import type { RuleContext, RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
-
-import { importSource, normalizedFilename } from '../support/context.ts'
-import { createImportSourceRule } from '../support/factories.ts'
-import type { RuleContext, RuleDefinition } from '../support/types.ts'
 
 function isPackageOrSubpath(source: string, packageName: string): boolean {
   return source === packageName || source.startsWith(`${packageName}/`)

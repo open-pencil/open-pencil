@@ -3,8 +3,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 
-import lintPlugin from '../src/plugin.ts'
-import { normalizedFilename } from '../src/support/context.ts'
+import lintPlugin from '#lint/plugin.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
 
 interface Diagnostic {
   code: string

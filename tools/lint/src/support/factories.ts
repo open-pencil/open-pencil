@@ -1,7 +1,6 @@
+import { importSource, normalizedFilename } from '#lint/support/context.ts'
+import type { RuleDefinition, RuleListener } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
-
-import { importSource, normalizedFilename } from './context.ts'
-import type { RuleDefinition, RuleListener } from './types.ts'
 
 interface ProgramFilenameRuleOptions {
   description: string

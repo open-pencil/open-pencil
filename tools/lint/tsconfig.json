@@ -2,7 +2,10 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "types": ["node"],
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "#lint/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*.ts"]
 }

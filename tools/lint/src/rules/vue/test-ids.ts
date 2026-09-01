@@ -1,8 +1,6 @@
-import type { TSESTree } from '@typescript-eslint/utils'
-
-import { normalizedFilename } from '../../support/context.ts'
-import type { RuleDefinition } from '../../support/types.ts'
-import type { VueTemplateNode } from '../../support/vue.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
+import type { VueTemplateNode } from '#lint/support/vue.ts'
 import {
   VUE_DIRECTIVE_NODE,
   hasExpressionCall,
@@ -10,7 +8,8 @@ import {
   isVueBindDirective,
   vueTemplateAst,
   walkVueTemplateAst
-} from '../../support/vue.ts'
+} from '#lint/support/vue.ts'
+import type { TSESTree } from '@typescript-eslint/utils'
 
 const TEST_ID_FORMAT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 

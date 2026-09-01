@@ -2,6 +2,9 @@
   "name": "@open-pencil/lint-tools",
   "private": true,
   "type": "module",
+  "imports": {
+    "#lint/*": "./src/*"
+  },
   "scripts": {
     "test": "tsc --noEmit -p tsconfig.json && bun test tests"
   }

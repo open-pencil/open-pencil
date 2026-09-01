@@ -1,10 +1,9 @@
 import { existsSync } from 'node:fs'
 
+import { normalizedFilename, staticPropertyName } from '#lint/support/context.ts'
+import { createProgramFilenameRule } from '#lint/support/factories.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
 import type { TSESTree } from '@typescript-eslint/utils'
-
-import { normalizedFilename, staticPropertyName } from '../support/context.ts'
-import { createProgramFilenameRule } from '../support/factories.ts'
-import type { RuleDefinition } from '../support/types.ts'
 
 function isPascalCaseName(name: string): boolean {
   return /^[A-Z][A-Za-z0-9]*$/.test(name)

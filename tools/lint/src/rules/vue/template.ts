@@ -1,7 +1,5 @@
-import { ElementTypes } from '@vue/compiler-core'
-
-import { normalizedFilename } from '../../support/context.ts'
-import type { RuleDefinition } from '../../support/types.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
 import {
   VUE_ELEMENT_NODE,
   hasUIHelperCall,
@@ -12,7 +10,8 @@ import {
   vueSfcDescriptor,
   vueTemplateAst,
   walkVueTemplateAst
-} from '../../support/vue.ts'
+} from '#lint/support/vue.ts'
+import { ElementTypes } from '@vue/compiler-core'
 
 const noVueStyleBlocks = {
   meta: {

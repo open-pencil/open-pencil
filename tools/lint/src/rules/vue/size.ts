@@ -1,6 +1,6 @@
-import { normalizedFilename } from '../../support/context.ts'
-import type { RuleDefinition } from '../../support/types.ts'
-import { sourceLineCount } from '../../support/vue.ts'
+import { normalizedFilename } from '#lint/support/context.ts'
+import type { RuleDefinition } from '#lint/support/types.ts'
+import { sourceLineCount } from '#lint/support/vue.ts'
 
 const PROPERTY_SECTION_LINE_ALLOWLIST = new Set([
   '/src/components/properties/LayoutSection/SizeControls.vue'
