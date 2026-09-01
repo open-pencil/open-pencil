@@ -66,15 +66,18 @@ export default defineCommand({
     console.log('')
     console.log(
       fmtList(
-        data.faces.map((face) => ({
-          header: entity(face.family, face.style),
-          details: {
-            status: statusLabel(face.status),
-            ...(face.source ? { source: face.source } : {}),
-            ...(face.substituteFamily ? { substitute: face.substituteFamily } : {}),
-            ...(face.nodeIds.length > 0 ? { nodes: face.nodeIds.length } : {})
+        data.faces.map((face) => {
+          const details: Record<string, string | number> = {
+            status: statusLabel(face.status)
           }
-        })),
+          if (face.source) details.source = face.source
+          if (face.substituteFamily) details.substitute = face.substituteFamily
+          if (face.nodeIds.length > 0) details.nodes = face.nodeIds.length
+          return {
+            header: entity(face.family, face.style),
+            details
+          }
+        }),
         { compact: true }
       )
     )
