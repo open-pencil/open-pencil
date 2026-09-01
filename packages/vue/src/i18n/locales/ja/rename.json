@@ -1,0 +1,13 @@
+{
+  "title": "名前を変更",
+  "layers": "{count} 個のレイヤー名を変更",
+  "preview": "プレビュー",
+  "match": "一致",
+  "to": "変更後の名前",
+  "currentName": "現在の名前",
+  "numberAscending": "番号 ↑",
+  "numberDescending": "番号 ↓",
+  "startAscendingFrom": "昇順の開始番号",
+  "stopDescendingAt": "降順の終了番号",
+  "invalidPattern": "正規表現が無効です"
+}

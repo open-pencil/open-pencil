@@ -19,7 +19,7 @@ import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
 
 const store = useEditorStore()
-const { dialogs, locale } = useI18n()
+const { updates, locale } = useI18n()
 
 useHead({
   titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
@@ -34,7 +34,7 @@ useEventListener(window, 'pagehide', () => {
 
 onMounted(() => {
   toast.setupGlobalErrorHandler()
-  scheduleStartupUpdateCheck(dialogs)
+  scheduleStartupUpdateCheck(updates)
   void kickSyncEngine()
 })
 </script>

@@ -1,0 +1,8 @@
+{
+  "settingsTitle": "Renderowanie",
+  "settingsDescription": "Wybierz sposób wyświetlania dużych obszarów roboczych w OpenPencil.",
+  "progressiveTiled": "Progresywne renderowanie kafelkowe",
+  "progressiveTiledDescription": "Podczas nawigacji aktualizuje duże obszary robocze w ograniczonych kafelkach. Funkcja eksperymentalna; wymaga ponownego wczytania.",
+  "reloadRequired": "Wczytaj ponownie OpenPencil, aby zastosować tę zmianę.",
+  "urlOverride": "Renderer bieżącej sesji jest kontrolowany przez parametr URL. Zapisana preferencja zostanie użyta po usunięciu parametru."
+}

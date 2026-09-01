@@ -1,0 +1,17 @@
+{
+  "inThisRoom": "此房间中",
+  "followingPeerStop": "正在跟随 {name}（点击停止）",
+  "clickToFollowPeer": "点击跟随 {name}",
+  "yourName": "你的名字",
+  "enterYourName": "请输入你的名字",
+  "shareThisFile": "分享此文件",
+  "joinRoom": "加入房间",
+  "join": "加入",
+  "roomLink": "房间链接",
+  "joinCollaboration": "加入协作",
+  "orJoinRoom": "或加入一个房间",
+  "pasteRoomLinkOrId": "粘贴房间链接或 ID",
+  "connected": "已连接",
+  "disconnect": "断开连接",
+  "share": "分享"
+}

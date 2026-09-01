@@ -7,15 +7,15 @@ import { isTauri } from '@/app/tauri/env'
 const STARTUP_UPDATE_CHECK_DELAY_MS = 2500
 
 interface UpdaterMessages {
-  appUpToDate: string
-  updateAvailableTitle: string
-  updateAvailable: (params: { version: string }) => string
-  updateInstallPrompt: string
-  downloadingUpdate: (params: { version: string }) => string
-  updateInstalledTitle: string
-  updateInstalled: (params: { version: string; size: string }) => string
-  updateUnavailable: string
-  updateCheckFailed: (params: { error: string }) => string
+  upToDate: string
+  availableTitle: string
+  available: (params: { version: string }) => string
+  installPrompt: string
+  downloading: (params: { version: string }) => string
+  installedTitle: string
+  installed: (params: { version: string; size: string }) => string
+  unavailable: string
+  checkFailed: (params: { error: string }) => string
 }
 
 interface UpdateCheckOptions {
@@ -57,18 +57,18 @@ async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
     const t = messages.value
 
     if (!update) {
-      if (!silent) toast.info(t.appUpToDate)
+      if (!silent) toast.info(t.upToDate)
       return
     }
 
     const details = [
-      t.updateAvailable({ version: update.version }),
+      t.available({ version: update.version }),
       update.body ? `\n${update.body}` : '',
-      `\n${t.updateInstallPrompt}`
+      `\n${t.installPrompt}`
     ].join('')
 
     const shouldInstall = await confirm(details, {
-      title: t.updateAvailableTitle,
+      title: t.availableTitle,
       kind: 'info'
     })
 
@@ -76,33 +76,31 @@ async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
 
     let downloaded = 0
     let contentLength: number | undefined
-    toast.info(t.downloadingUpdate({ version: update.version }))
+    toast.info(t.downloading({ version: update.version }))
 
     await update.downloadAndInstall((event) => {
       if (event.event === 'Started') {
         contentLength = event.data.contentLength
         return
       }
-      if (event.event === 'Progress') {
-        downloaded += event.data.chunkLength
-      }
+      if (event.event === 'Progress') downloaded += event.data.chunkLength
     })
 
     const sizeLabel = contentLength
       ? ` (${formatBytes(downloaded)} of ${formatBytes(contentLength)})`
       : ''
-    await message(t.updateInstalled({ version: update.version, size: sizeLabel }), {
-      title: t.updateInstalledTitle,
+    await message(t.installed({ version: update.version, size: sizeLabel }), {
+      title: t.installedTitle,
       kind: 'info'
     })
     await relaunch()
   } catch (error) {
     if (!silent) {
-      const message = error instanceof Error ? error.message : String(error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
       toast.warning(
-        isMissingUpdateManifestError(message)
-          ? messages.value.updateUnavailable
-          : messages.value.updateCheckFailed({ error: message })
+        isMissingUpdateManifestError(errorMessage)
+          ? messages.value.unavailable
+          : messages.value.checkFailed({ error: errorMessage })
       )
     }
   }

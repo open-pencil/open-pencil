@@ -2,7 +2,14 @@
 export * from './images'
 export * from './components/properties'
 export * from './copy'
-export { copyInstanceComponentProps } from './instances'
+export {
+  copyInstanceComponentProps,
+  hasInstanceOverride,
+  INSTANCE_SYNC_FIELDS,
+  INSTANCE_SYNC_PROPS,
+  INSTANCE_SYNC_TEXT_PROPS,
+  recordInstanceOverride
+} from './instances'
 export * from './snap'
 export * from './export-scale'
 export * from './coordinate'

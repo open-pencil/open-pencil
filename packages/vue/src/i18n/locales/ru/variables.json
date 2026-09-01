@@ -1,0 +1,13 @@
+{
+  "createCollection": "Создать коллекцию",
+  "renameCollection": "Переименовать коллекцию",
+  "deleteCollection": "Удалить коллекцию",
+  "localVariables": "Локальные переменные",
+  "noVariableCollections": "Нет коллекций переменных",
+  "modes": "Режимы",
+  "addMode": "Добавить режим",
+  "renameMode": "Переименовать режим",
+  "duplicateMode": "Дублировать режим",
+  "deleteMode": "Удалить режим",
+  "setDefaultMode": "Установить по умолчанию"
+}

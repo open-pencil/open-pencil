@@ -1,0 +1,8 @@
+{
+  "settingsTitle": "Darstellung",
+  "settingsDescription": "Wähle, wie OpenPencil große Arbeitsflächen darstellt.",
+  "progressiveTiled": "Progressive gekachelte Darstellung",
+  "progressiveTiledDescription": "Aktualisiert große Arbeitsflächen beim Navigieren in begrenzten Kacheln. Experimentell; Neuladen erforderlich.",
+  "reloadRequired": "Lade OpenPencil neu, um diese Änderung anzuwenden.",
+  "urlOverride": "Der Renderer dieser Sitzung wird durch einen URL-Parameter gesteuert. Deine gespeicherte Einstellung gilt, sobald der Parameter entfernt wird."
+}

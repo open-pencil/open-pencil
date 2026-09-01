@@ -1,0 +1,19 @@
+{
+  "newStoredDocument": "新建文档",
+  "emptyStorageWorkspace": "暂无已存储的文档。",
+  "loadingDocuments": "正在加载文档…",
+  "workspace": "存储工作区",
+  "openWorkspace": "打开工作区",
+  "loadingWorkspace": "正在加载存储工作区…",
+  "notConfigured": "请先配置存储，再使用此工作区。",
+  "providerS3": "S3 存储",
+  "providerR2": "Cloudflare R2",
+  "providerAmazonS3": "Amazon S3",
+  "providerBackblaze": "Backblaze B2",
+  "copyCors": "复制 CORS JSON",
+  "endpoint": "端点",
+  "bucket": "存储桶",
+  "region": "区域",
+  "accessKeyID": "访问密钥 ID",
+  "secretAccessKey": "机密访问密钥"
+}

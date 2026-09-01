@@ -1,0 +1,11 @@
+{
+  "preserveUnsavedWork": "Conserva automaticamente il lavoro non salvato",
+  "preserveUnsavedWorkDescription": "Salva copie locali per ripristinare i documenti dopo una chiusura imprevista.",
+  "dialogTitle": "Recupera il lavoro non salvato",
+  "dialogDescription": "OpenPencil ha trovato documenti di una sessione precedente.",
+  "restoreFailed": "Impossibile ripristinare questo documento.",
+  "settingsTitle": "Ripristino",
+  "settingsDescription": "Gestisci le copie locali di ripristino dei documenti non salvati.",
+  "restore": "Ripristina",
+  "discard": "Scarta"
+}

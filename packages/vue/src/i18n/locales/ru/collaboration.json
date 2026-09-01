@@ -1,0 +1,17 @@
+{
+  "inThisRoom": "В этой комнате",
+  "followingPeerStop": "Следите за {name} (нажмите, чтобы остановить)",
+  "clickToFollowPeer": "Нажмите, чтобы следить за {name}",
+  "yourName": "Ваше имя",
+  "enterYourName": "Введите ваше имя",
+  "shareThisFile": "Поделиться файлом",
+  "joinRoom": "Войти в комнату",
+  "join": "Войти",
+  "roomLink": "Ссылка на комнату",
+  "joinCollaboration": "Присоединиться к совместной работе",
+  "orJoinRoom": "или войти в комнату",
+  "pasteRoomLinkOrId": "Вставьте ссылку на комнату или ID",
+  "connected": "Подключено",
+  "disconnect": "Отключиться",
+  "share": "Поделиться"
+}

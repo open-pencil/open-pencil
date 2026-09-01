@@ -1,0 +1,13 @@
+{
+  "title": "Zmień nazwę",
+  "layers": "Zmień nazwy {count} warstw",
+  "preview": "Podgląd",
+  "match": "Dopasowanie",
+  "to": "Zmień nazwę na",
+  "currentName": "Bieżąca nazwa",
+  "numberAscending": "Numer ↑",
+  "numberDescending": "Numer ↓",
+  "startAscendingFrom": "Zacznij rosnąco od",
+  "stopDescendingAt": "Zakończ malejąco na",
+  "invalidPattern": "Nieprawidłowe wyrażenie regularne"
+}

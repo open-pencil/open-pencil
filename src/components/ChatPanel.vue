@@ -43,7 +43,7 @@ const IS_DEV = import.meta.env.DEV
 
 const { isConfigured, ensureChat, resetChat, chatFailure, clearChatFailure } = useAIChat()
 const { copy } = useClipboard()
-const { dialogs } = useI18n()
+const { ai } = useI18n()
 const notifications = useNotificationMessages()
 
 const chat = ref<Chat<UIMessage> | null>(null)
@@ -70,11 +70,11 @@ const messages = computed(() => chat.value?.messages ?? [])
 const failureMessage = computed(() => {
   switch (chatFailure.value?.reason) {
     case 'insufficient-credit':
-      return dialogs.value.chatInsufficientCredit
+      return ai.value.chatInsufficientCredit
     case 'output-limit':
-      return dialogs.value.chatOutputLimit
+      return ai.value.chatOutputLimit
     case 'request-failed':
-      return dialogs.value.chatRequestFailed
+      return ai.value.chatRequestFailed
     default:
       return null
   }
@@ -120,7 +120,7 @@ watch(
   () => chatFailure.value?.reason,
   (reason) => {
     if (!reason) return
-    toast.error(failureMessage.value ?? dialogs.value.chatRequestFailed)
+    toast.error(failureMessage.value ?? ai.value.chatRequestFailed)
   }
 )
 watch(
@@ -137,7 +137,7 @@ watch(
 async function handleSubmit(text: string, images: ImageAttachmentDraft[] = []) {
   if (status.value === 'streaming' || status.value === 'submitted' || isPreparingImages.value) {
     for (const image of images) revokeImagePreviewURL(image.previewURL)
-    if (images.length > 0) toast.error(dialogs.value.chatRequestFailed)
+    if (images.length > 0) toast.error(ai.value.chatRequestFailed)
     return
   }
 
@@ -149,7 +149,7 @@ async function handleSubmit(text: string, images: ImageAttachmentDraft[] = []) {
     if (currentChat) chat.value = markRaw(currentChat)
     if (!currentChat || operationVersion !== attachmentOperationVersion) {
       for (const image of images) revokeImagePreviewURL(image.previewURL)
-      if (images.length > 0) toast.error(dialogs.value.chatRequestFailed)
+      if (images.length > 0) toast.error(ai.value.chatRequestFailed)
       return
     }
 
@@ -214,7 +214,7 @@ async function handleSubmit(text: string, images: ImageAttachmentDraft[] = []) {
     })
   } catch (e) {
     console.error('Chat error:', e)
-    toast.error(dialogs.value.chatRequestFailed)
+    toast.error(ai.value.chatRequestFailed)
   } finally {
     if (operationVersion === attachmentOperationVersion) isPreparingImages.value = false
   }
@@ -260,7 +260,7 @@ function handleClearChat() {
           <AppPlaceholder
             v-if="messages.length === 0"
             data-test-id="chat-empty-state"
-            :label="dialogs.describeCreateOrChange"
+            :label="ai.describeCreateOrChange"
             :ui="{ root: 'h-full' }"
           >
             <template #icon>

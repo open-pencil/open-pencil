@@ -1,0 +1,8 @@
+{
+  "settingsTitle": "Renderizado",
+  "settingsDescription": "Elige cómo presenta OpenPencil los lienzos grandes.",
+  "progressiveTiled": "Renderizado progresivo por mosaicos",
+  "progressiveTiledDescription": "Actualiza los lienzos grandes en mosaicos limitados durante la navegación. Experimental; requiere recargar.",
+  "reloadRequired": "Recarga OpenPencil para aplicar este cambio.",
+  "urlOverride": "El renderizador de esta sesión está controlado por un parámetro de URL. Tu preferencia guardada se aplicará al eliminarlo."
+}

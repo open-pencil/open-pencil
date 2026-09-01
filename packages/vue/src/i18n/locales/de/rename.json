@@ -1,0 +1,13 @@
+{
+  "title": "Umbenennen",
+  "layers": "{count} Ebenen umbenennen",
+  "preview": "Vorschau",
+  "match": "Übereinstimmung",
+  "to": "Umbenennen in",
+  "currentName": "Aktueller Name",
+  "numberAscending": "Nummer ↑",
+  "numberDescending": "Nummer ↓",
+  "startAscendingFrom": "Aufsteigend beginnen bei",
+  "stopDescendingAt": "Absteigend enden bei",
+  "invalidPattern": "Ungültiger regulärer Ausdruck"
+}

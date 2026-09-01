@@ -51,7 +51,7 @@ const {
 }>()
 
 const toolbar = tv(toolbarTheme)
-const { dialogs } = useI18n()
+const { editor } = useI18n()
 const triggerActive = computed(() => isToolbarToolActive(tool, activeTool))
 const styles = computed(() => toolbar({ active: triggerActive.value, mobile }))
 
@@ -89,7 +89,7 @@ function flyoutItemClass() {
         <button
           v-test-id="toolbarFlyoutTestId(tool.key, mobile)"
           :data-mobile="mobile || undefined"
-          :aria-label="dialogs.toolOptions({ tool: toolLabels[tool.key] })"
+          :aria-label="editor.toolOptions({ tool: toolLabels[tool.key] })"
           :class="styles.flyoutTrigger({ class: ui?.flyoutTrigger })"
         >
           <IconChevronDown :class="styles.flyoutTriggerIcon({ class: ui?.flyoutTriggerIcon })" />

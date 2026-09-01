@@ -1,0 +1,11 @@
+{
+  "preserveUnsavedWork": "自动保留未保存的工作",
+  "preserveUnsavedWorkDescription": "存储本地恢复副本，以便在意外关闭后恢复文档。",
+  "dialogTitle": "恢复未保存的工作",
+  "dialogDescription": "OpenPencil 找到了上次会话中的文档。",
+  "restoreFailed": "无法恢复此文档。",
+  "settingsTitle": "恢复",
+  "settingsDescription": "管理未保存文档的本地恢复副本。",
+  "restore": "恢复",
+  "discard": "丢弃"
+}

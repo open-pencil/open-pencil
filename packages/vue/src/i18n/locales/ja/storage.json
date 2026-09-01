@@ -1,0 +1,19 @@
+{
+  "newStoredDocument": "新規ドキュメント",
+  "emptyStorageWorkspace": "保存されたドキュメントはまだありません。",
+  "loadingDocuments": "ドキュメントを読み込み中…",
+  "workspace": "ストレージワークスペース",
+  "openWorkspace": "ワークスペースを開く",
+  "loadingWorkspace": "ストレージワークスペースを読み込み中…",
+  "notConfigured": "このワークスペースを使用する前にストレージを設定してください。",
+  "providerS3": "S3 ストレージ",
+  "providerR2": "Cloudflare R2",
+  "providerAmazonS3": "Amazon S3",
+  "providerBackblaze": "Backblaze B2",
+  "copyCors": "CORS JSONをコピー",
+  "endpoint": "エンドポイント",
+  "bucket": "バケット",
+  "region": "リージョン",
+  "accessKeyID": "アクセスキー ID",
+  "secretAccessKey": "シークレットアクセスキー"
+}

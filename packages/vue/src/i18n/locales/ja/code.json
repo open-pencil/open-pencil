@@ -1,0 +1,15 @@
+{
+  "copyJSXReference": "JSXのprops参照をクリップボードにコピー",
+  "jsxUpToDate": "最新です",
+  "source": "コードソース",
+  "sourceDesignJSX": "Design JSX",
+  "sourceTailwindJSX": "Tailwind JSX",
+  "sourceHTMLCSS": "HTML/CSS",
+  "editorDesignLabel": "Design JSX",
+  "editorHTMLCSSLabel": "HTML and CSS",
+  "updating": "更新中…",
+  "updatedLive": "リアルタイム更新済み",
+  "previewFailed": "プレビューに失敗しました",
+  "generatedReadOnly": "生成済み、読み取り専用",
+  "reset": "リセット"
+}

@@ -1,0 +1,23 @@
+{
+  "snapToGeometry": "An Geometrie ausrichten",
+  "snapToGeometryDescription": "Gezogene Vektorpunkte an anderen Punkten im Pfad ausrichten.",
+  "snapToObjects": "An Objekten ausrichten",
+  "snapToObjectsDescription": "Vektorpunkte und Ebenengrenzen an Kanten und Mittelpunkten benachbarter Ebenen ausrichten.",
+  "snapToPixelGrid": "Am Pixelraster ausrichten",
+  "snapToPixelGridDescription": "Vektorpunkte, verschobene Ebenen und skalierte Kanten an ganzen Pixeln ausrichten.",
+  "mobilePanelNavigation": "Navigation der mobilen Seitenleiste",
+  "notifications": "Benachrichtigungen",
+  "title": "Einstellungen",
+  "description": "Integrationen und App-Einstellungen verwalten.",
+  "general": "Allgemein",
+  "languageDescription": "Wähle die Sprache der App-Oberfläche.",
+  "editing": "Bearbeitung",
+  "snappingDescription": "Lege die Ausrichtung beim Bearbeiten von Pfaden sowie beim Verschieben und Skalieren von Ebenen fest.",
+  "temporaryDisableSnappingHint": "Halte beim Ziehen die Strg-Taste gedrückt, um das Ausrichten vorübergehend zu deaktivieren.",
+  "aiAndAgents": "KI und Agenten",
+  "usage": "Nutzung",
+  "diagnostics": "Diagnose",
+  "media": "Medien",
+  "automation": "MCP & Automatisierung",
+  "storage": "Cloud-Speicher"
+}

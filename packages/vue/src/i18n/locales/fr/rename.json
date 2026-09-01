@@ -1,0 +1,13 @@
+{
+  "title": "Renommer",
+  "layers": "Renommer {count} calques",
+  "preview": "Aperçu",
+  "match": "Correspondance",
+  "to": "Renommer en",
+  "currentName": "Nom actuel",
+  "numberAscending": "Numéro ↑",
+  "numberDescending": "Numéro ↓",
+  "startAscendingFrom": "Commencer l’ordre croissant à",
+  "stopDescendingAt": "Terminer l’ordre décroissant à",
+  "invalidPattern": "Expression régulière non valide"
+}

@@ -8,7 +8,7 @@ import AppSwitch from '@/components/ui/AppSwitch.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSectionHeader from '@/components/settings/layout/SettingsSectionHeader.vue'
 
-const { dialogs } = useI18n()
+const { rendering } = useI18n()
 const hasURLOverride = appRuntimeConfig.sceneRendererOverride
 const tiledRendering = computed(() => appPreferences.value.rendering.canvasMode === 'tiled')
 const changed = computed(
@@ -22,21 +22,21 @@ function setTiledRendering(enabled: boolean): void {
 
 <template>
   <SettingsSectionHeader>
-    {{ dialogs.settingsRendering }}
-    <template #description>{{ dialogs.settingsRenderingDescription }}</template>
+    {{ rendering.settingsTitle }}
+    <template #description>{{ rendering.settingsDescription }}</template>
   </SettingsSectionHeader>
 
   <SettingsGroup>
     <label class="flex items-center justify-between gap-4 px-3 py-2.5">
       <span>
-        <span class="block text-xs text-surface">{{ dialogs.progressiveTiledRendering }}</span>
+        <span class="block text-xs text-surface">{{ rendering.progressiveTiled }}</span>
         <span class="block text-[10px] text-muted">{{
-          dialogs.progressiveTiledRenderingDescription
+          rendering.progressiveTiledDescription
         }}</span>
       </span>
       <AppSwitch
         :model-value="tiledRendering"
-        :label="dialogs.progressiveTiledRendering"
+        :label="rendering.progressiveTiled"
         data-test-id="settings-progressive-tiled-rendering"
         @update:model-value="setTiledRendering"
       />
@@ -44,9 +44,9 @@ function setTiledRendering(enabled: boolean): void {
   </SettingsGroup>
 
   <p v-if="hasURLOverride" class="text-[10px] text-muted">
-    {{ dialogs.rendererURLOverride }}
+    {{ rendering.urlOverride }}
   </p>
   <p v-else-if="changed" class="text-[10px] text-muted">
-    {{ dialogs.rendererReloadRequired }}
+    {{ rendering.reloadRequired }}
   </p>
 </template>

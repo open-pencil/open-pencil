@@ -22,7 +22,7 @@ import { toast } from '@/app/shell/ui'
 import { resumeStorageSync } from '@/app/storage/sync'
 import AppInput from '@/components/ui/AppInput.vue'
 
-const { dialogs } = useI18n()
+const { storage, settings, credentials, common } = useI18n()
 const notifications = useNotificationMessages()
 const router = useRouter()
 const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
@@ -41,15 +41,15 @@ const configured = computed(
 )
 
 function preferenceLabel(field: string): string {
-  if (field === 'endpoint') return dialogs.value.storageEndpoint
-  if (field === 'bucket') return dialogs.value.storageBucket
-  if (field === 'region') return dialogs.value.storageRegion
+  if (field === 'endpoint') return storage.value.endpoint
+  if (field === 'bucket') return storage.value.bucket
+  if (field === 'region') return storage.value.region
   return field
 }
 
 function credentialLabel(field: string): string {
-  if (field === 'access-key-id') return dialogs.value.storageAccessKeyID
-  if (field === 'secret-access-key') return dialogs.value.storageSecretAccessKey
+  if (field === 'access-key-id') return storage.value.accessKeyID
+  if (field === 'secret-access-key') return storage.value.secretAccessKey
   return field
 }
 
@@ -118,7 +118,7 @@ onMounted(() => void refreshStatuses())
 <template>
   <section class="flex flex-col gap-3" data-test-id="settings-storage-panel">
     <div>
-      <h3 class="text-xs font-semibold text-surface">{{ dialogs.settingsStorage }}</h3>
+      <h3 class="text-xs font-semibold text-surface">{{ settings.storage }}</h3>
       <p class="mt-0.5 text-[10px] text-muted">{{ provider.description }}</p>
     </div>
 
@@ -154,7 +154,7 @@ onMounted(() => void refreshStatuses())
           :aria-label="credentialLabel(field.id)"
           :placeholder="
             credentialStatuses[field.id] === 'configured'
-              ? dialogs.keySavedReplace
+              ? credentials.savedReplace
               : field.placeholder
           "
           size="sm"
@@ -168,7 +168,7 @@ onMounted(() => void refreshStatuses())
           class="rounded bg-hover px-2 text-[10px] text-surface hover:bg-active"
           @click="saveCredential(field.id)"
         >
-          {{ dialogs.save }}
+          {{ common.save }}
         </button>
         <button
           v-else-if="credentialStatuses[field.id] === 'configured'"
@@ -176,7 +176,7 @@ onMounted(() => void refreshStatuses())
           class="rounded px-2 text-[10px] text-muted hover:bg-hover hover:text-surface"
           @click="clearCredential(field.id)"
         >
-          {{ dialogs.clear }}
+          {{ common.clear }}
         </button>
       </div>
     </div>
@@ -188,7 +188,7 @@ onMounted(() => void refreshStatuses())
       data-test-id="settings-storage-test"
       @click="testConnection"
     >
-      {{ dialogs.testConnection }}
+      {{ common.testConnection }}
     </button>
 
     <button
@@ -198,7 +198,7 @@ onMounted(() => void refreshStatuses())
       data-test-id="settings-storage-open-workspace"
       @click="openWorkspace"
     >
-      {{ dialogs.openStorageWorkspace }}
+      {{ storage.openWorkspace }}
     </button>
   </section>
 </template>

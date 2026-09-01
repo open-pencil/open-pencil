@@ -113,16 +113,16 @@ describe('Tauri process helpers', () => {
 
 describe('Tauri updater helper', () => {
   const messages = ref({
-    appUpToDate: 'Up to date',
-    updateAvailableTitle: 'Update available',
-    updateAvailable: ({ version }: { version: string }) => `Version ${version}`,
-    updateInstallPrompt: 'Install now?',
-    downloadingUpdate: ({ version }: { version: string }) => `Downloading ${version}`,
-    updateInstalledTitle: 'Installed',
-    updateInstalled: ({ version, size }: { version: string; size: string }) =>
+    upToDate: 'Up to date',
+    availableTitle: 'Update available',
+    available: ({ version }: { version: string }) => `Version ${version}`,
+    installPrompt: 'Install now?',
+    downloading: ({ version }: { version: string }) => `Downloading ${version}`,
+    installedTitle: 'Installed',
+    installed: ({ version, size }: { version: string; size: string }) =>
       `Installed ${version}${size}`,
-    updateUnavailable: 'Unavailable',
-    updateCheckFailed: ({ error }: { error: string }) => `Failed: ${error}`
+    unavailable: 'Unavailable',
+    checkFailed: ({ error }: { error: string }) => `Failed: ${error}`
   })
 
   test('returns quietly when no Tauri update is available', async () => {

@@ -1,0 +1,23 @@
+{
+  "snapToGeometry": "ジオメトリにスナップ",
+  "snapToGeometryDescription": "ドラッグしたベクターポイントをパス内の他のポイントに揃えます。",
+  "snapToObjects": "オブジェクトにスナップ",
+  "snapToObjectsDescription": "ベクターポイントとレイヤー境界を近くのレイヤーの端や中心に揃えます。",
+  "snapToPixelGrid": "ピクセルグリッドにスナップ",
+  "snapToPixelGridDescription": "ベクターポイント、移動したレイヤー、サイズ変更した端を整数ピクセルに揃えます。",
+  "mobilePanelNavigation": "モバイルパネルのナビゲーション",
+  "notifications": "通知",
+  "title": "設定",
+  "description": "連携サービスとアプリの設定を管理します。",
+  "general": "一般",
+  "languageDescription": "アプリのインターフェースで使用する言語を選択します。",
+  "editing": "編集",
+  "snappingDescription": "パス編集、レイヤーの移動、サイズ変更時の整列方法を設定します。",
+  "temporaryDisableSnappingHint": "ドラッグ中にControlキーを押すと、スナップを一時的に無効にできます。",
+  "aiAndAgents": "AIとエージェント",
+  "usage": "使用状況",
+  "diagnostics": "診断",
+  "media": "メディア",
+  "automation": "MCP と自動化",
+  "storage": "クラウドストレージ"
+}

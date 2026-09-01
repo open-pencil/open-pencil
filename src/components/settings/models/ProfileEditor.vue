@@ -39,7 +39,7 @@ const DEFAULT_MAX_OUTPUT_TOKENS = 16_384
 
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
-const { dialogs } = useI18n()
+const { ai, common, credentials } = useI18n()
 const draft = reactive(createModelProfileDraft(profileId))
 const keyInput = ref('')
 const keyStatus = ref<'configured' | 'missing' | 'unavailable' | 'locked'>('missing')
@@ -69,7 +69,7 @@ const providerDisplayName = computed(() => {
 const modelOptions = computed(() => [
   ...providerDef.value.models.map((model) => ({ value: model.id, label: model.name })),
   ...(providerDef.value.supportsCustomModel
-    ? [{ value: CUSTOM_MODEL_VALUE, label: dialogs.value.customModel }]
+    ? [{ value: CUSTOM_MODEL_VALUE, label: ai.value.customModel }]
     : [])
 ])
 const selectedModelValue = computed(() =>
@@ -278,33 +278,33 @@ void refreshKeyStatus()
       <button
         type="button"
         class="flex size-6 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
-        :aria-label="dialogs.back"
+        :aria-label="common.back"
         @click="emit('done')"
       >
         <icon-lucide-arrow-left class="size-3.5" />
       </button>
       <div>
         <h3 class="text-xs font-semibold text-surface">
-          {{ profileId ? dialogs.editModel : dialogs.addModel }}
+          {{ profileId ? ai.editModel : ai.addModel }}
         </h3>
-        <p class="text-[10px] text-muted">{{ dialogs.modelEditorDescription }}</p>
+        <p class="text-[10px] text-muted">{{ ai.modelEditorDescription }}</p>
       </div>
     </div>
 
     <div class="scrollbar-thin flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto py-3 pr-1">
-      <ProviderSettingsField :label="dialogs.modelName">
+      <ProviderSettingsField :label="ai.modelName">
         <AppInput
           v-model="draft.name"
-          :aria-label="dialogs.modelName"
+          :aria-label="ai.modelName"
           :placeholder="modelDisplayName"
           size="sm"
         />
       </ProviderSettingsField>
 
-      <ProviderSettingsField :label="dialogs.aiProvider">
+      <ProviderSettingsField :label="ai.provider">
         <ProviderSelect
           :model-value="draft.providerID"
-          :aria-label="dialogs.aiProvider"
+          :aria-label="ai.provider"
           data-test-id="settings-model-provider"
           :ui="{
             trigger:
@@ -318,27 +318,27 @@ void refreshKeyStatus()
       <template v-if="!isACP">
         <div class="flex items-center gap-2 pt-1">
           <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
-            {{ dialogs.modelConfiguration }}
+            {{ ai.modelConfiguration }}
           </p>
           <div class="h-px flex-1 bg-border" />
         </div>
 
-        <ProviderSettingsField v-if="modelOptions.length" :label="dialogs.modelID">
+        <ProviderSettingsField v-if="modelOptions.length" :label="ai.modelID">
           <AppSelect
             :model-value="selectedModelValue"
             :options="modelOptions"
-            :label="dialogs.modelID"
+            :label="ai.modelID"
             @update:model-value="updateModel(String($event))"
           />
         </ProviderSettingsField>
 
         <ProviderSettingsField
           v-if="providerDef.supportsCustomModel && selectedModelValue === CUSTOM_MODEL_VALUE"
-          :label="dialogs.customModelID"
+          :label="ai.customModelID"
         >
           <ProviderSettingsInput
             v-model="draft.customModelID"
-            :aria-label="dialogs.customModelID"
+            :aria-label="ai.customModelID"
             data-test-id="provider-settings-custom-model"
             placeholder="e.g. llama-3.3-70b"
           />
@@ -346,41 +346,38 @@ void refreshKeyStatus()
 
         <div class="flex items-center gap-2 pt-1">
           <p class="text-[10px] font-medium uppercase tracking-wide text-muted">
-            {{ dialogs.connectionSettings }}
+            {{ ai.connectionSettings }}
           </p>
           <div class="h-px flex-1 bg-border" />
         </div>
 
-        <ProviderSettingsField v-if="providerDef.supportsCustomBaseURL" :label="dialogs.baseURL">
+        <ProviderSettingsField v-if="providerDef.supportsCustomBaseURL" :label="ai.baseURL">
           <ProviderSettingsInput
             v-model="draft.customBaseURL"
-            :aria-label="dialogs.baseURL"
+            :aria-label="ai.baseURL"
             placeholder="http://localhost:11434/v1"
           />
         </ProviderSettingsField>
 
-        <ProviderSettingsField
-          v-if="draft.providerID === 'openai-compatible'"
-          :label="dialogs.apiType"
-        >
+        <ProviderSettingsField v-if="draft.providerID === 'openai-compatible'" :label="ai.apiType">
           <AppSelect
             v-model="draft.customAPIType"
-            :label="dialogs.apiType"
+            :label="ai.apiType"
             :options="[
-              { value: 'completions', label: dialogs.completions },
-              { value: 'responses', label: dialogs.responses }
+              { value: 'completions', label: ai.completions },
+              { value: 'responses', label: ai.responses }
             ]"
           />
         </ProviderSettingsField>
 
         <ProviderSettingsKeyField
           v-model="keyInput"
-          :label="dialogs.apiKey"
+          :label="ai.apiKey"
           :saved="hasExistingKey"
           kind="api"
-          :placeholder="hasExistingKey ? dialogs.keySavedReplace : providerDef.keyPlaceholder"
+          :placeholder="hasExistingKey ? credentials.savedReplace : providerDef.keyPlaceholder"
           :key-u-r-l="providerDef.keyURL"
-          :key-u-r-l-label="dialogs.getAPIKeyGeneric"
+          :key-u-r-l-label="credentials.getAPIKey"
           @clear="clearKey"
         />
 
@@ -403,82 +400,76 @@ void refreshKeyStatus()
           <icon-lucide-chevron-right
             class="size-3 transition-transform [[data-state=open]>&]:rotate-90"
           />
-          {{ dialogs.advancedModelSettings }}
+          {{ ai.advancedModelSettings }}
         </CollapsibleTrigger>
         <CollapsibleContent class="border-t border-border p-2.5">
           <div class="flex flex-col gap-3">
             <div>
-              <p class="text-[11px] font-medium text-surface">{{ dialogs.modelCapabilities }}</p>
+              <p class="text-[11px] font-medium text-surface">{{ ai.modelCapabilities }}</p>
               <p class="mt-0.5 text-[10px] text-muted">
-                {{
-                  knownModel ? dialogs.modelCapabilitiesDetected : dialogs.modelCapabilitiesManual
-                }}
+                {{ knownModel ? ai.modelCapabilitiesDetected : ai.modelCapabilitiesManual }}
               </p>
             </div>
 
             <div class="flex flex-col gap-2">
               <div class="flex items-center justify-between gap-3">
-                <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityTools }}</span>
+                <span class="text-[11px] text-muted">{{ ai.modelCapabilityTools }}</span>
                 <span v-if="knownModel" class="text-[10px] text-surface">
-                  {{
-                    knownCapabilities.includes('tools') ? dialogs.supported : dialogs.unsupported
-                  }}
+                  {{ knownCapabilities.includes('tools') ? common.supported : common.unsupported }}
                 </span>
-                <AppSwitch v-else v-model="toolsEnabled" :label="dialogs.modelCapabilityTools" />
+                <AppSwitch v-else v-model="toolsEnabled" :label="ai.modelCapabilityTools" />
               </div>
               <div class="flex items-center justify-between gap-3">
-                <span class="text-[11px] text-muted">{{ dialogs.modelCapabilityVision }}</span>
+                <span class="text-[11px] text-muted">{{ ai.modelCapabilityVision }}</span>
                 <span v-if="knownModel" class="text-[10px] text-surface">
-                  {{
-                    knownCapabilities.includes('vision') ? dialogs.supported : dialogs.unsupported
-                  }}
+                  {{ knownCapabilities.includes('vision') ? common.supported : common.unsupported }}
                 </span>
-                <AppSwitch v-else v-model="visionEnabled" :label="dialogs.modelCapabilityVision" />
+                <AppSwitch v-else v-model="visionEnabled" :label="ai.modelCapabilityVision" />
               </div>
             </div>
 
-            <ProviderSettingsField v-if="isHarness" :label="dialogs.harnessThinkingLevel">
+            <ProviderSettingsField v-if="isHarness" :label="ai.harnessThinkingLevel">
               <AppSelect
                 v-model="draft.harnessThinkingLevel"
-                :label="dialogs.harnessThinkingLevel"
+                :label="ai.harnessThinkingLevel"
                 :options="[
-                  { value: 'off', label: dialogs.harnessThinkingOff },
-                  { value: 'minimal', label: dialogs.harnessThinkingMinimal },
-                  { value: 'low', label: dialogs.harnessThinkingLow },
-                  { value: 'medium', label: dialogs.harnessThinkingMedium },
-                  { value: 'high', label: dialogs.harnessThinkingHigh },
-                  { value: 'xhigh', label: dialogs.harnessThinkingExtraHigh }
+                  { value: 'off', label: ai.harnessThinkingOff },
+                  { value: 'minimal', label: ai.harnessThinkingMinimal },
+                  { value: 'low', label: ai.harnessThinkingLow },
+                  { value: 'medium', label: ai.harnessThinkingMedium },
+                  { value: 'high', label: ai.harnessThinkingHigh },
+                  { value: 'xhigh', label: ai.harnessThinkingExtraHigh }
                 ]"
               />
             </ProviderSettingsField>
 
-            <ProviderSettingsField v-if="isHarness" :label="dialogs.harnessToolPermissions">
+            <ProviderSettingsField v-if="isHarness" :label="ai.harnessToolPermissions">
               <AppSelect
                 v-model="draft.harnessPermissionMode"
-                :label="dialogs.harnessToolPermissions"
+                :label="ai.harnessToolPermissions"
                 :options="[
-                  { value: 'allow-reads', label: dialogs.harnessPermissionReads },
-                  { value: 'allow-edits', label: dialogs.harnessPermissionEdits },
-                  { value: 'allow-all', label: dialogs.harnessPermissionAll }
+                  { value: 'allow-reads', label: ai.harnessPermissionReads },
+                  { value: 'allow-edits', label: ai.harnessPermissionEdits },
+                  { value: 'allow-all', label: ai.harnessPermissionAll }
                 ]"
               />
             </ProviderSettingsField>
 
-            <ProviderSettingsField v-if="supportsReasoningEffort" :label="dialogs.reasoningEffort">
+            <ProviderSettingsField v-if="supportsReasoningEffort" :label="ai.reasoningEffort">
               <ProviderSettingsInput
                 v-model="draft.reasoningEffort"
-                :aria-label="dialogs.reasoningEffort"
-                :placeholder="dialogs.reasoningEffortPlaceholder"
+                :aria-label="ai.reasoningEffort"
+                :placeholder="ai.reasoningEffortPlaceholder"
               />
-              <p class="mt-1 text-[10px] text-muted">{{ dialogs.reasoningEffortDescription }}</p>
+              <p class="mt-1 text-[10px] text-muted">{{ ai.reasoningEffortDescription }}</p>
             </ProviderSettingsField>
 
             <div class="border-t border-border pt-2.5">
-              <p class="text-[11px] font-medium text-surface">{{ dialogs.outputLimit }}</p>
+              <p class="text-[11px] font-medium text-surface">{{ ai.outputLimit }}</p>
               <p class="mt-0.5 text-[10px] text-muted">
-                {{ dialogs.outputLimitAutomatic }} ·
+                {{ ai.outputLimitAutomatic }} ·
                 {{ outputTokenRecommendation.toLocaleString() }}
-                {{ dialogs.tokens }}
+                {{ common.tokens }}
               </p>
             </div>
           </div>
@@ -495,14 +486,14 @@ void refreshKeyStatus()
         class="rounded px-2.5 py-1.5 text-[11px] text-danger hover:bg-danger/10"
         @click="deleteOpen = true"
       >
-        {{ dialogs.deleteModel }}
+        {{ ai.deleteModel }}
       </button>
       <button
         type="button"
         class="ml-auto rounded px-2.5 py-1.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
         @click="emit('done')"
       >
-        {{ dialogs.cancel }}
+        {{ common.cancel }}
       </button>
       <button
         type="button"
@@ -510,7 +501,7 @@ void refreshKeyStatus()
         :disabled="!canSave"
         @click="save"
       >
-        {{ dialogs.saveModel }}
+        {{ ai.saveModel }}
       </button>
     </div>
   </div>
@@ -518,10 +509,10 @@ void refreshKeyStatus()
   <AppConfirmationDialog
     v-model:open="deleteOpen"
     data-test-id="delete-model-dialog"
-    :heading="dialogs.deleteModel"
-    :description="dialogs.deleteModelDescription"
-    :cancel-label="dialogs.cancel"
-    :confirm-label="dialogs.deleteModel"
+    :heading="ai.deleteModel"
+    :description="ai.deleteModelDescription"
+    :cancel-label="common.cancel"
+    :confirm-label="ai.deleteModel"
     tone="danger"
     @confirm="remove"
   />

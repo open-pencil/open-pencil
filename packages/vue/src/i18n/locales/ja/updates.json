@@ -1,0 +1,11 @@
+{
+  "upToDate": "OpenPencilは最新の状態です",
+  "availableTitle": "OpenPencilのアップデート",
+  "available": "OpenPencil のバージョン {version} が利用可能です。",
+  "installPrompt": "今すぐダウンロードしてインストールしますか？インストール後、アプリが再起動します。",
+  "downloading": "OpenPencil {version} をダウンロード中",
+  "installedTitle": "アップデート完了",
+  "installed": "OpenPencil のバージョン {version} がインストールされました{size}。再起動しています...",
+  "unavailable": "アップデートはまだ利用できません。まず、latest.json を含む署名付きバージョンを公開してください。",
+  "checkFailed": "アップデートの確認中にエラーが発生しました: {error}"
+}

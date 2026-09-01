@@ -18,6 +18,7 @@ import { isEqual } from 'es-toolkit/predicate'
 
 import { guidToString, resolvedNumericBindingUpdate } from '@open-pencil/fig/node-change'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { hasInstanceOverride } from '@open-pencil/scene-graph'
 import {
   copyFills,
   copyStyleRuns,
@@ -129,6 +130,7 @@ function propagateResolvedFills(
       const source = graph.getNode(node.componentId)
       if (!source || isEqual(source.fills, node.fills)) continue
       if (protectedNodes.has(node.id) && !protectedNodes.has(source.id)) continue
+      if (hasInstanceOverride(graph, node.id, 'fills')) continue
       graph.updateNode(node.id, { fills: copyFills(source.fills) })
       changed = true
     }

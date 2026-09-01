@@ -30,6 +30,7 @@ type KiwiBooleanOperation = NonNullable<NodeChange['booleanOperation']>
 interface KiwiSymbolOverridePayload {
   guidPath?: { guids?: GUID[] }
   textData?: { characters?: string }
+  fillPaints?: Paint[]
   [key: string]: unknown
 }
 
@@ -405,16 +406,52 @@ function serializeTextOverrides(
     const target = context.graph.getNode(targetId)
     if (!target || !isDescendantOf(context, targetId, instance.id)) continue
 
-    const sourceId = target.componentId
-    if (!sourceId) continue
-    const source = context.graph.getNode(sourceId)
-    const overrideGuid = source?.overrideKey ? parseGuidOrNull(source.overrideKey) : null
-    const targetGuid = overrideGuid ?? getOrCreateNodeGuid(context, sourceId, localIdCounter)
+    const targetGuid = resolveOverrideTargetGuid(context, target, localIdCounter)
     if (!targetGuid) continue
 
     result.push({
       guidPath: { guids: [targetGuid] },
       textData: { characters: value }
+    })
+  }
+  return result
+}
+
+/**
+ * Resolves the descendant-node identity a symbol override applies to: the
+ * GUID of the corresponding node inside the target's own main component
+ * (cloneNodeProps stamps componentId with that node's id on every clone).
+ */
+function resolveOverrideTargetGuid(
+  context: SceneNodeToKiwiContext,
+  target: SceneNode,
+  localIdCounter: { value: number }
+): GUID | undefined {
+  const sourceId = target.componentId
+  if (!sourceId) return undefined
+  const source = context.graph.getNode(sourceId)
+  const overrideGuid = source?.overrideKey ? parseGuidOrNull(source.overrideKey) : null
+  return overrideGuid ?? getOrCreateNodeGuid(context, sourceId, localIdCounter)
+}
+
+function serializeFillOverrides(
+  context: SceneNodeToKiwiContext,
+  instance: SceneNode,
+  localIdCounter: { value: number }
+): KiwiSymbolOverridePayload[] {
+  const result: KiwiSymbolOverridePayload[] = []
+  for (const key of Object.keys(instance.overrides)) {
+    if (!key.endsWith(':fills')) continue
+    const targetId = key.slice(0, -':fills'.length)
+    const target = context.graph.getNode(targetId)
+    if (!target || !isDescendantOf(context, targetId, instance.id)) continue
+
+    const targetGuid = resolveOverrideTargetGuid(context, target, localIdCounter)
+    if (!targetGuid) continue
+
+    result.push({
+      guidPath: { guids: [targetGuid] },
+      fillPaints: target.fills.map((fill) => context.fillToKiwiPaint(fill))
     })
   }
   return result
@@ -427,12 +464,12 @@ function overridePathKey(payload: KiwiSymbolOverridePayload): string | null {
     : null
 }
 
-function mergeTextOverrides(
+function mergeOverrides(
   symbolOverrides: KiwiSymbolOverridePayload[],
-  textOverrides: KiwiSymbolOverridePayload[]
+  newOverrides: KiwiSymbolOverridePayload[]
 ): void {
-  for (const textOverride of textOverrides) {
-    const pathKey = overridePathKey(textOverride)
+  for (const override of newOverrides) {
+    const pathKey = overridePathKey(override)
     let existingIndex = -1
     if (pathKey) {
       for (let index = symbolOverrides.length - 1; index >= 0; index--) {
@@ -441,13 +478,8 @@ function mergeTextOverrides(
         break
       }
     }
-    if (existingIndex < 0) symbolOverrides.push(textOverride)
-    else {
-      symbolOverrides[existingIndex] = {
-        ...symbolOverrides[existingIndex],
-        textData: textOverride.textData
-      }
-    }
+    if (existingIndex < 0) symbolOverrides.push(override)
+    else symbolOverrides[existingIndex] = { ...symbolOverrides[existingIndex], ...override }
   }
 }
 
@@ -622,7 +654,8 @@ function applyInstancePayload(
         }) as KiwiSymbolOverridePayload[])
       )
     }
-    mergeTextOverrides(symbolOverrides, serializeTextOverrides(context, node, localIdCounter))
+    mergeOverrides(symbolOverrides, serializeTextOverrides(context, node, localIdCounter))
+    mergeOverrides(symbolOverrides, serializeFillOverrides(context, node, localIdCounter))
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (node.source.fig.uniformScaleFactor != null) {
       symbolData.uniformScaleFactor = node.source.fig.uniformScaleFactor

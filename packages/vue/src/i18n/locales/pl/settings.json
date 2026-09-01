@@ -1,0 +1,23 @@
+{
+  "snapToGeometry": "Przyciągaj do geometrii",
+  "snapToGeometryDescription": "Wyrównuj przeciągane punkty wektorowe do innych punktów ścieżki.",
+  "snapToObjects": "Przyciągaj do obiektów",
+  "snapToObjectsDescription": "Wyrównuj punkty wektorowe i granice warstw do krawędzi i środków pobliskich warstw.",
+  "snapToPixelGrid": "Przyciągaj do siatki pikseli",
+  "snapToPixelGridDescription": "Wyrównuj punkty wektorowe, przesuwane warstwy i zmieniane krawędzie do pełnych pikseli.",
+  "mobilePanelNavigation": "Nawigacja panelu mobilnego",
+  "notifications": "Powiadomienia",
+  "title": "Ustawienia",
+  "description": "Zarządzaj integracjami i preferencjami aplikacji.",
+  "general": "Ogólne",
+  "languageDescription": "Wybierz język interfejsu aplikacji.",
+  "editing": "Edycja",
+  "snappingDescription": "Określ wyrównywanie podczas edycji ścieżek oraz przesuwania i zmiany rozmiaru warstw.",
+  "temporaryDisableSnappingHint": "Przytrzymaj Control podczas przeciągania, aby tymczasowo wyłączyć przyciąganie.",
+  "aiAndAgents": "AI i agenci",
+  "usage": "Użycie",
+  "diagnostics": "Diagnostyka",
+  "media": "Media",
+  "automation": "MCP i automatyzacja",
+  "storage": "Przechowywanie w chmurze"
+}

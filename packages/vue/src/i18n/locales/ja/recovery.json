@@ -1,0 +1,11 @@
+{
+  "preserveUnsavedWork": "未保存の作業を自動的に保持",
+  "preserveUnsavedWorkDescription": "予期しない終了後にドキュメントを復元できるよう、ローカルコピーを保存します。",
+  "dialogTitle": "未保存の作業を復元",
+  "dialogDescription": "OpenPencil が前回のセッションのドキュメントを見つけました。",
+  "restoreFailed": "このドキュメントを復元できませんでした。",
+  "settingsTitle": "復元",
+  "settingsDescription": "未保存ドキュメントのローカル復元コピーを管理します。",
+  "restore": "復元",
+  "discard": "破棄"
+}

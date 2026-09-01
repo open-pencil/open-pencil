@@ -4,7 +4,16 @@ import type { NodeCloneMode } from './copy'
 
 export type { NodeCloneMode } from './copy'
 
-const INSTANCE_SYNC_PROPS: (keyof SceneNode)[] = [
+export const INSTANCE_SYNC_TEXT_PROPS = [
+  'name',
+  'text',
+  'fontSize',
+  'fontWeight',
+  'fontFamily',
+  'textDirection'
+] as const
+
+export const INSTANCE_SYNC_PROPS: (keyof SceneNode)[] = [
   'width',
   'height',
   'minWidth',
@@ -48,6 +57,8 @@ const INSTANCE_SYNC_PROPS: (keyof SceneNode)[] = [
   'boundVariables',
   'variableModes'
 ]
+
+export const INSTANCE_SYNC_FIELDS = [...INSTANCE_SYNC_PROPS, ...INSTANCE_SYNC_TEXT_PROPS] as const
 
 function setSceneProp<K extends keyof SceneNode>(
   target: Partial<SceneNode>,
@@ -142,20 +153,7 @@ function syncChildren(
     const instChild = instChildMap.get(compChildId)
     if (!compChild || !instChild) continue
 
-    for (const key of INSTANCE_SYNC_PROPS) {
-      const overrideKey = `${instChild.id}:${key}`
-      if (overrideKey in overrides) continue
-      copyProp(instChild, compChild, key)
-    }
-
-    for (const key of [
-      'name',
-      'text',
-      'fontSize',
-      'fontWeight',
-      'fontFamily',
-      'textDirection'
-    ] as const) {
+    for (const key of INSTANCE_SYNC_FIELDS) {
       const overrideKey = `${instChild.id}:${key}`
       if (overrideKey in overrides) continue
       copyProp(instChild, compChild, key)
@@ -283,4 +281,50 @@ export function getInstances(graph: SceneGraph, componentId: string): SceneNode[
     if (node) instances.push(node)
   }
   return instances
+}
+
+/** Nearest INSTANCE at or above `nodeId` — self, parent, grandparent, etc. */
+export function findInstanceAncestor(graph: SceneGraph, nodeId: string): SceneNode | undefined {
+  let current = graph.nodes.get(nodeId)
+  while (current) {
+    if (current.type === 'INSTANCE') return current
+    current = current.parentId ? graph.nodes.get(current.parentId) : undefined
+  }
+  return undefined
+}
+
+/**
+ * True when a node field is protected from instance synchronization.
+ */
+export function hasInstanceOverride(graph: SceneGraph, nodeId: string, field: string): boolean {
+  const instance = findInstanceAncestor(graph, nodeId)
+  if (!instance) return false
+  const key = nodeId === instance.id ? field : `${nodeId}:${field}`
+  return key in instance.overrides
+}
+
+/*
+ * syncInstances) won't clobber them, and — if `nodeId` sits inside an INSTANCE —
+ * so the .fig exporter knows to write the diff out as a symbol override. A no-op
+ * for fields outside INSTANCE_SYNC_PROPS or nodes with no INSTANCE ancestor.
+ */
+export function recordInstanceOverride(
+  graph: SceneGraph,
+  nodeId: string,
+  fields: Iterable<string>
+): void {
+  const instance = findInstanceAncestor(graph, nodeId)
+  if (!instance) return
+
+  const relevant = [...fields].filter((field) =>
+    (INSTANCE_SYNC_FIELDS as readonly string[]).includes(field)
+  )
+
+  if (relevant.length === 0) return
+
+  const overrides = { ...instance.overrides }
+  for (const field of relevant) {
+    overrides[nodeId === instance.id ? field : `${nodeId}:${field}`] = true
+  }
+  graph.updateNode(instance.id, { overrides })
 }

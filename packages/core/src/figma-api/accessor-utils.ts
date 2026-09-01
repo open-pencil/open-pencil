@@ -1,3 +1,4 @@
+import { recordInstanceOverride } from '@open-pencil/scene-graph'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
@@ -35,5 +36,14 @@ export function updateNode(
   changes: Partial<SceneNode>
 ): void {
   assertProxyEditable(target, internals)
-  graph(target, internals).updateNode(nodeId(target, internals), changes)
+  const g = graph(target, internals)
+  const id = nodeId(target, internals)
+  const applied = Object.fromEntries(
+    Object.keys(changes)
+      .filter((key) => Reflect.get(changes, key) !== undefined)
+      .map((key) => [key, Reflect.get(changes, key)])
+  ) as Partial<SceneNode>
+  if (Object.keys(applied).length === 0) return
+  g.updateNode(id, applied)
+  recordInstanceOverride(g, id, Object.keys(applied))
 }

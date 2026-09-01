@@ -1,0 +1,8 @@
+{
+  "settingsTitle": "Rendering",
+  "settingsDescription": "Scegli come OpenPencil visualizza le aree di lavoro di grandi dimensioni.",
+  "progressiveTiled": "Rendering progressivo a riquadri",
+  "progressiveTiledDescription": "Aggiorna le aree di lavoro grandi in riquadri limitati durante la navigazione. Sperimentale; richiede il ricaricamento.",
+  "reloadRequired": "Ricarica OpenPencil per applicare questa modifica.",
+  "urlOverride": "Il renderer della sessione corrente è controllato da un parametro URL. La preferenza salvata verrà applicata quando il parametro sarà rimosso."
+}

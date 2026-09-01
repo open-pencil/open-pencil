@@ -1,0 +1,17 @@
+{
+  "inThisRoom": "W tym pokoju",
+  "followingPeerStop": "Obserwujesz {name} (kliknij, aby zatrzymać)",
+  "clickToFollowPeer": "Kliknij, aby obserwować {name}",
+  "yourName": "Twoje imię",
+  "enterYourName": "Wpisz swoje imię",
+  "shareThisFile": "Udostępnij ten plik",
+  "joinRoom": "Dołącz do pokoju",
+  "join": "Dołącz",
+  "roomLink": "Link do pokoju",
+  "joinCollaboration": "Dołącz do współpracy",
+  "orJoinRoom": "lub dołącz do pokoju",
+  "pasteRoomLinkOrId": "Wklej link lub ID pokoju",
+  "connected": "Połączono",
+  "disconnect": "Rozłącz",
+  "share": "Udostępnij"
+}

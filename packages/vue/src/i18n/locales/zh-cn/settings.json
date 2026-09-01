@@ -1,0 +1,23 @@
+{
+  "snapToGeometry": "吸附到几何图形",
+  "snapToGeometryDescription": "将拖动的矢量点与路径中的其他点对齐。",
+  "snapToObjects": "吸附到对象",
+  "snapToObjectsDescription": "将矢量点和图层边界与附近图层的边缘和中心对齐。",
+  "snapToPixelGrid": "吸附到像素网格",
+  "snapToPixelGridDescription": "将矢量点、移动的图层和调整大小的边缘与整数像素对齐。",
+  "mobilePanelNavigation": "移动面板导航",
+  "notifications": "通知",
+  "title": "设置",
+  "description": "管理集成和应用偏好设置。",
+  "general": "通用",
+  "languageDescription": "选择应用界面使用的语言。",
+  "editing": "编辑",
+  "snappingDescription": "控制编辑路径以及移动或调整图层大小时的对齐方式。",
+  "temporaryDisableSnappingHint": "拖动时按住 Control 可暂时禁用吸附。",
+  "aiAndAgents": "AI 和代理",
+  "usage": "使用情况",
+  "diagnostics": "诊断",
+  "media": "媒体",
+  "automation": "MCP 与自动化",
+  "storage": "云存储"
+}

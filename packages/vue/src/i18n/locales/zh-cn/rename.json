@@ -1,0 +1,13 @@
+{
+  "title": "重命名",
+  "layers": "重命名 {count} 个图层",
+  "preview": "预览",
+  "match": "匹配",
+  "to": "重命名为",
+  "currentName": "当前名称",
+  "numberAscending": "编号 ↑",
+  "numberDescending": "编号 ↓",
+  "startAscendingFrom": "升序起始值",
+  "stopDescendingAt": "降序结束值",
+  "invalidPattern": "正则表达式无效"
+}

@@ -17,7 +17,7 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 
-const { dialogs } = useI18n()
+const { automation, common, credentials } = useI18n()
 const editing = ref(false)
 const draft = ref<MCPConnectionDraft>(createMCPConnectionDraft())
 const tokenDraft = ref('')
@@ -58,7 +58,7 @@ async function save(): Promise<void> {
       !tokenDraft.value.trim() &&
       tokenStatus.value !== 'configured'
     ) {
-      throw new Error(dialogs.value.mcpBearerTokenRequired)
+      throw new Error(automation.value.bearerTokenRequired)
     }
     const connection = saveMCPConnectionDraft(draft.value)
     if (draft.value.authenticationType === 'none') {
@@ -117,53 +117,55 @@ onMounted(() => {
       <div class="flex items-center justify-between">
         <div>
           <h3 class="text-xs font-semibold text-surface">
-            {{ draft.id ? dialogs.editMCPConnection : dialogs.addMCPConnection }}
+            {{ draft.id ? automation.editConnection : automation.addServerConnection }}
           </h3>
-          <p class="text-[10px] text-muted">{{ dialogs.mcpConnectionEditorDescription }}</p>
+          <p class="text-[10px] text-muted">{{ automation.connectionEditorDescription }}</p>
         </div>
         <button
           type="button"
           class="text-[10px] text-muted hover:text-surface"
           @click="editing = false"
         >
-          {{ dialogs.back }}
+          {{ common.back }}
         </button>
       </div>
 
       <label class="flex flex-col gap-1 text-[10px] text-muted">
-        {{ dialogs.connectionName }}
+        {{ automation.connectionName }}
         <AppInput
           v-model="draft.name"
           tone="panel"
           size="sm"
-          :aria-label="dialogs.connectionName"
+          :aria-label="automation.connectionName"
         />
       </label>
       <label class="flex flex-col gap-1 text-[10px] text-muted">
-        {{ dialogs.mcpServerURL }}
+        {{ automation.serverURL }}
         <AppInput
           v-model="draft.url"
           tone="panel"
           size="sm"
-          :aria-label="dialogs.mcpServerURL"
+          :aria-label="automation.serverURL"
           placeholder="https://example.com/mcp"
         />
       </label>
-      <AppSwitch v-model="draft.enabled" :label="dialogs.enableMCPConnection" />
+      <AppSwitch v-model="draft.enabled" :label="automation.enableConnection" />
       <AppSwitch
         :model-value="draft.authenticationType === 'bearer'"
-        :label="dialogs.mcpBearerAuthentication"
+        :label="automation.bearerAuthentication"
         @update:model-value="draft.authenticationType = $event ? 'bearer' : 'none'"
       />
       <ProviderSettingsKeyField
         v-if="draft.authenticationType === 'bearer'"
         v-model="tokenDraft"
-        :label="dialogs.mcpBearerToken"
+        :label="automation.bearerToken"
         input-id="mcp-bearer-token"
         :saved="tokenStatus === 'configured'"
         kind="api"
         :placeholder="
-          tokenStatus === 'configured' ? dialogs.keySavedReplace : dialogs.mcpBearerTokenPlaceholder
+          tokenStatus === 'configured'
+            ? credentials.savedReplace
+            : automation.bearerTokenPlaceholder
         "
         @clear="clearCredential"
       />
@@ -176,7 +178,7 @@ onMounted(() => {
           class="text-[10px] text-danger hover:underline"
           @click="deleteOpen = true"
         >
-          {{ dialogs.deleteMCPConnection }}
+          {{ automation.deleteConnection }}
         </button>
         <span v-else />
         <button
@@ -184,7 +186,7 @@ onMounted(() => {
           class="rounded bg-accent px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
           @click="save"
         >
-          {{ dialogs.save }}
+          {{ common.save }}
         </button>
       </div>
     </div>
@@ -192,8 +194,8 @@ onMounted(() => {
     <div v-else>
       <div class="mb-2 flex items-center justify-between">
         <div>
-          <h3 class="text-xs font-semibold text-surface">{{ dialogs.mcpConnections }}</h3>
-          <p class="text-[10px] text-muted">{{ dialogs.mcpConnectionsDescription }}</p>
+          <h3 class="text-xs font-semibold text-surface">{{ automation.connections }}</h3>
+          <p class="text-[10px] text-muted">{{ automation.connectionsDescription }}</p>
         </div>
         <button
           type="button"
@@ -201,7 +203,7 @@ onMounted(() => {
           @click="startAdd"
         >
           <icon-lucide-plus class="size-3" />
-          {{ dialogs.addConnection }}
+          {{ automation.addConnection }}
         </button>
       </div>
       <div v-if="mcpConnectionSettings.connections.length" class="flex flex-col gap-1.5">
@@ -218,23 +220,23 @@ onMounted(() => {
             <p class="truncate text-[10px] text-muted">{{ connection.transport.url }}</p>
           </div>
           <span class="text-[9px] text-muted">
-            {{ connection.enabled ? dialogs.enabled : dialogs.disabled }}
+            {{ connection.enabled ? common.enabled : common.disabled }}
           </span>
           <icon-lucide-chevron-right class="size-3.5 text-muted" />
         </button>
       </div>
       <p v-else class="rounded border border-dashed border-border p-3 text-[10px] text-muted">
-        {{ dialogs.noMCPConnections }}
+        {{ automation.noConnections }}
       </p>
     </div>
   </section>
 
   <AppConfirmationDialog
     v-model:open="deleteOpen"
-    :heading="dialogs.deleteMCPConnection"
-    :description="dialogs.deleteMCPConnectionDescription"
-    :cancel-label="dialogs.cancel"
-    :confirm-label="dialogs.deleteMCPConnection"
+    :heading="automation.deleteConnection"
+    :description="automation.deleteConnectionDescription"
+    :cancel-label="common.cancel"
+    :confirm-label="automation.deleteConnection"
     tone="danger"
     @confirm="remove"
   />

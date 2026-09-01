@@ -1,0 +1,11 @@
+{
+  "preserveUnsavedWork": "Conserver automatiquement le travail non enregistré",
+  "preserveUnsavedWorkDescription": "Stockez des copies locales afin de restaurer les documents après un arrêt inattendu.",
+  "dialogTitle": "Récupérer le travail non enregistré",
+  "dialogDescription": "OpenPencil a trouvé des documents d’une session précédente.",
+  "restoreFailed": "Impossible de restaurer ce document.",
+  "settingsTitle": "Récupération",
+  "settingsDescription": "Gérez les copies locales de récupération des documents non enregistrés.",
+  "restore": "Restaurer",
+  "discard": "Supprimer"
+}

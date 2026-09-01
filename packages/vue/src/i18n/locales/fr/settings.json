@@ -1,0 +1,23 @@
+{
+  "snapToGeometry": "Aligner sur la géométrie",
+  "snapToGeometryDescription": "Aligne les points vectoriels déplacés sur les autres points du tracé.",
+  "snapToObjects": "Aligner sur les objets",
+  "snapToObjectsDescription": "Aligne les points vectoriels et les limites des calques sur les bords et centres des calques voisins.",
+  "snapToPixelGrid": "Aligner sur la grille de pixels",
+  "snapToPixelGridDescription": "Aligne les points vectoriels, les calques déplacés et les bords redimensionnés sur des pixels entiers.",
+  "mobilePanelNavigation": "Navigation du panneau mobile",
+  "notifications": "Notifications",
+  "title": "Paramètres",
+  "description": "Gérez les intégrations et les préférences de l’application.",
+  "general": "Général",
+  "languageDescription": "Choisissez la langue de l’interface de l’application.",
+  "editing": "Édition",
+  "snappingDescription": "Contrôlez l’alignement lors de la modification des tracés et du déplacement ou redimensionnement des calques.",
+  "temporaryDisableSnappingHint": "Maintenez la touche Contrôle pendant le déplacement pour désactiver temporairement l’alignement.",
+  "aiAndAgents": "IA et agents",
+  "usage": "Utilisation",
+  "diagnostics": "Diagnostics",
+  "media": "Médias",
+  "automation": "MCP et automatisation",
+  "storage": "Stockage cloud"
+}

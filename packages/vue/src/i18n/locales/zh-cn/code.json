@@ -1,0 +1,15 @@
+{
+  "copyJSXReference": "复制 JSX 属性参考到剪贴板",
+  "jsxUpToDate": "已是最新",
+  "source": "代码来源",
+  "sourceDesignJSX": "Design JSX",
+  "sourceTailwindJSX": "Tailwind JSX",
+  "sourceHTMLCSS": "HTML/CSS",
+  "editorDesignLabel": "Design JSX",
+  "editorHTMLCSSLabel": "HTML and CSS",
+  "updating": "正在更新…",
+  "updatedLive": "已实时更新",
+  "previewFailed": "预览失败",
+  "generatedReadOnly": "已生成，只读",
+  "reset": "重置"
+}

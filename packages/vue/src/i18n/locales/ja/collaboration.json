@@ -1,0 +1,17 @@
+{
+  "inThisRoom": "このルーム内",
+  "followingPeerStop": "{name} をフォロー中 (クリックして停止)",
+  "clickToFollowPeer": "クリックして {name} をフォロー",
+  "yourName": "お名前",
+  "enterYourName": "名前を入力してください",
+  "shareThisFile": "このファイルを共有",
+  "joinRoom": "ルームに参加",
+  "join": "参加",
+  "roomLink": "ルームのリンク",
+  "joinCollaboration": "共同編集に参加",
+  "orJoinRoom": "またはルームに参加",
+  "pasteRoomLinkOrId": "ルームのリンクまたはIDを貼り付け",
+  "connected": "接続済み",
+  "disconnect": "切断",
+  "share": "共有"
+}

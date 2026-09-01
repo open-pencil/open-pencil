@@ -24,7 +24,7 @@ const emit = defineEmits<{
   clear: []
 }>()
 
-const { dialogs } = useI18n()
+const { common } = useI18n()
 
 const inputDataTestId = computed(() => {
   if (kind === 'pexels') return 'provider-settings-pexels-key'
@@ -43,7 +43,7 @@ const clearDataTestId = computed(() => {
   <ProviderSettingsField
     :label="label"
     :label-for="inputId"
-    :clear-label="saved ? dialogs.clear : undefined"
+    :clear-label="saved ? common.clear : undefined"
     :data-test-id="clearDataTestId"
     @clear="emit('clear')"
   >

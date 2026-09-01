@@ -9,7 +9,7 @@ import { activeTab } from '@/app/tabs'
 
 const emit = defineEmits<{ 'new-document': [] }>()
 const query = defineModel<string>({ required: true })
-const { dialogs, menu } = useI18n()
+const { menu, files } = useI18n()
 const { isMobile } = useViewportKind()
 const searchInput = templateRef<HTMLInputElement>('searchInput')
 
@@ -39,8 +39,8 @@ watch(
         name="file-search"
         autocomplete="off"
         class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-        :placeholder="isMobile ? dialogs.searchFiles : dialogs.searchRecentAndStorageFiles"
-        :aria-label="dialogs.searchFiles"
+        :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
+        :aria-label="files.searchFiles"
       />
     </label>
     <div class="grid grid-cols-2 gap-2 sm:contents">
@@ -60,7 +60,7 @@ watch(
         @click="emit('new-document')"
       >
         <icon-lucide-plus class="mr-1 size-3.5" />
-        {{ dialogs.newDesign }}
+        {{ files.newDesign }}
       </button>
     </div>
   </div>

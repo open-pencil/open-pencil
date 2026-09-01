@@ -9,7 +9,7 @@ import type { CredentialStatus } from '@/app/settings/credentials/types'
 import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
 
-const { dialogs } = useI18n()
+const { ai, collaboration, common } = useI18n()
 const editing = ref(false)
 const editingProfileId = ref<string>()
 const statusByConnection = ref<Record<string, CredentialStatus>>({})
@@ -58,11 +58,11 @@ async function refreshStatuses(): Promise<void> {
 }
 
 function statusLabel(connectionId: string, providerID: string): string {
-  if (providerID.startsWith('acp:')) return dialogs.value.modelAgentConnection
+  if (providerID.startsWith('acp:')) return ai.value.modelAgentConnection
   const status = statusByConnection.value[connectionId]
-  if (status === 'configured') return dialogs.value.connected
-  if (status === 'locked' || status === 'unavailable') return dialogs.value.unavailable
-  return dialogs.value.modelNeedsCredential
+  if (status === 'configured') return collaboration.value.connected
+  if (status === 'locked' || status === 'unavailable') return common.value.unavailable
+  return ai.value.modelNeedsCredential
 }
 
 function closeEditor(): void {
@@ -91,8 +91,8 @@ watch(
     <section>
       <div class="mb-2 flex items-center justify-between">
         <div>
-          <h3 class="text-xs font-semibold text-surface">{{ dialogs.models }}</h3>
-          <p class="text-[10px] text-muted">{{ dialogs.modelsDescription }}</p>
+          <h3 class="text-xs font-semibold text-surface">{{ ai.modelsTitle }}</h3>
+          <p class="text-[10px] text-muted">{{ ai.modelsDescription }}</p>
         </div>
         <button
           type="button"
@@ -101,7 +101,7 @@ watch(
           @click="addModel"
         >
           <icon-lucide-plus class="size-3" />
-          {{ dialogs.addModel }}
+          {{ ai.addModel }}
         </button>
       </div>
 
@@ -148,8 +148,8 @@ watch(
             >
               {{
                 capability === 'tools'
-                  ? dialogs.modelCapabilityToolsShort
-                  : dialogs.modelCapabilityVisionShort
+                  ? ai.modelCapabilityToolsShort
+                  : ai.modelCapabilityVisionShort
               }}
             </span>
           </div>
@@ -160,8 +160,8 @@ watch(
 
     <section class="mt-5 border-t border-border pt-4">
       <div class="mb-3">
-        <h3 class="text-xs font-semibold text-surface">{{ dialogs.modelAssignments }}</h3>
-        <p class="text-[10px] text-muted">{{ dialogs.modelAssignmentsDescription }}</p>
+        <h3 class="text-xs font-semibold text-surface">{{ ai.modelAssignments }}</h3>
+        <p class="text-[10px] text-muted">{{ ai.modelAssignmentsDescription }}</p>
       </div>
       <RoleAssignments />
     </section>

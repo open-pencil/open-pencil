@@ -1,0 +1,15 @@
+{
+  "copyJSXReference": "Copiar referencia de props JSX al portapapeles",
+  "jsxUpToDate": "Actualizado",
+  "source": "Fuente del código",
+  "sourceDesignJSX": "Design JSX",
+  "sourceTailwindJSX": "Tailwind JSX",
+  "sourceHTMLCSS": "HTML/CSS",
+  "editorDesignLabel": "Design JSX",
+  "editorHTMLCSSLabel": "HTML and CSS",
+  "updating": "Actualizando…",
+  "updatedLive": "Actualizado en vivo",
+  "previewFailed": "Error de vista previa",
+  "generatedReadOnly": "Generado, solo lectura",
+  "reset": "Restablecer"
+}

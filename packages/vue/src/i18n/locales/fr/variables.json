@@ -1,0 +1,13 @@
+{
+  "createCollection": "Créer une collection",
+  "renameCollection": "Renommer la collection",
+  "deleteCollection": "Supprimer la collection",
+  "localVariables": "Variables locales",
+  "noVariableCollections": "Aucune collection de variables",
+  "modes": "Modes",
+  "addMode": "Ajouter un mode",
+  "renameMode": "Renommer le mode",
+  "duplicateMode": "Dupliquer le mode",
+  "deleteMode": "Supprimer le mode",
+  "setDefaultMode": "Définir par défaut"
+}

@@ -1,0 +1,5 @@
+{
+  "toolOptions": "Параметры инструмента «{tool}»",
+  "removeGradientStop": "Удалить точку градиента",
+  "showUI": "Показать интерфейс ({shortcut})"
+}

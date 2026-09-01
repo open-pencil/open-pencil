@@ -1,0 +1,19 @@
+{
+  "newStoredDocument": "Neues Dokument",
+  "emptyStorageWorkspace": "Noch keine gespeicherten Dokumente.",
+  "loadingDocuments": "Dokumente werden geladen…",
+  "workspace": "Speicher-Arbeitsbereich",
+  "openWorkspace": "Arbeitsbereich öffnen",
+  "loadingWorkspace": "Speicher-Arbeitsbereich wird geladen…",
+  "notConfigured": "Konfiguriere den Speicher, bevor du diesen Arbeitsbereich verwendest.",
+  "providerS3": "S3-Speicher",
+  "providerR2": "Cloudflare R2",
+  "providerAmazonS3": "Amazon S3",
+  "providerBackblaze": "Backblaze B2",
+  "copyCors": "CORS-JSON kopieren",
+  "endpoint": "Endpunkt",
+  "bucket": "Bucket",
+  "region": "Region",
+  "accessKeyID": "Zugriffsschlüssel-ID",
+  "secretAccessKey": "Geheimer Zugriffsschlüssel"
+}

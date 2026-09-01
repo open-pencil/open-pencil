@@ -1,0 +1,8 @@
+{
+  "settingsTitle": "渲染",
+  "settingsDescription": "选择 OpenPencil 显示大型画布的方式。",
+  "progressiveTiled": "渐进式分块画布渲染",
+  "progressiveTiledDescription": "导航时以有限大小的分块更新大型画布。此功能为实验性功能，需要重新加载。",
+  "reloadRequired": "重新加载 OpenPencil 以应用此更改。",
+  "urlOverride": "当前会话的渲染器由 URL 参数控制。移除该参数后将应用已保存的偏好设置。"
+}

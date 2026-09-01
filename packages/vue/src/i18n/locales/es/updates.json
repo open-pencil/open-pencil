@@ -1,0 +1,11 @@
+{
+  "upToDate": "OpenPencil está actualizado",
+  "availableTitle": "Actualizar OpenPencil",
+  "available": "Está disponible la versión {version} de OpenPencil.",
+  "installPrompt": "¿Descargar e instalar ahora? La app se reiniciará después de instalar la actualización.",
+  "downloading": "Descargando OpenPencil {version}",
+  "installedTitle": "Actualización instalada",
+  "installed": "Se ha instalado la versión {version} de OpenPencil{size}. Reiniciando ahora...",
+  "unavailable": "Las actualizaciones aún no están disponibles. Publica primero una versión firmada con latest.json.",
+  "checkFailed": "Error al encontrar actualizaciones: {error}"
+}

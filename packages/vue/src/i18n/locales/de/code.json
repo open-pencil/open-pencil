@@ -1,0 +1,15 @@
+{
+  "copyJSXReference": "JSX-Prop-Referenz in die Zwischenablage kopieren",
+  "jsxUpToDate": "Aktuell",
+  "source": "Codequelle",
+  "sourceDesignJSX": "Design JSX",
+  "sourceTailwindJSX": "Tailwind JSX",
+  "sourceHTMLCSS": "HTML/CSS",
+  "editorDesignLabel": "Design JSX",
+  "editorHTMLCSSLabel": "HTML and CSS",
+  "updating": "Wird aktualisiert…",
+  "updatedLive": "Live aktualisiert",
+  "previewFailed": "Vorschau fehlgeschlagen",
+  "generatedReadOnly": "Generiert, schreibgeschützt",
+  "reset": "Zurücksetzen"
+}

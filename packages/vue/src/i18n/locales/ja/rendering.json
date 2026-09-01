@@ -1,0 +1,8 @@
+{
+  "settingsTitle": "レンダリング",
+  "settingsDescription": "大きなキャンバスを OpenPencil で表示する方法を選択します。",
+  "progressiveTiled": "プログレッシブタイルレンダリング",
+  "progressiveTiledDescription": "移動中に大きなキャンバスを限定されたタイル単位で更新します。試験機能のため、再読み込みが必要です。",
+  "reloadRequired": "この変更を適用するには OpenPencil を再読み込みしてください。",
+  "urlOverride": "現在のセッションのレンダラーは URL パラメーターで指定されています。保存した設定はパラメーターを削除すると適用されます。"
+}
