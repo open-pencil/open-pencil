@@ -66,5 +66,9 @@
   "splitRight": "Nach rechts teilen",
   "splitDown": "Nach unten teilen",
   "closeView": "Ansicht schließen",
-  "removeGuide": "Hilfslinie entfernen"
+  "removeGuide": "Hilfslinie entfernen",
+  "exportSelectionAsPNG": "Auswahl als PNG exportieren",
+  "exportSelectionAsSVG": "Auswahl als SVG exportieren",
+  "exportSelectionAsPPTX": "Auswahl als PPTX exportieren",
+  "exportSelectionAsFig": "Auswahl als .fig exportieren"
 }

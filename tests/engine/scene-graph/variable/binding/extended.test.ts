@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { SceneGraph } from '@open-pencil/core'
 import { FigmaAPI } from '@open-pencil/core/figma-api'
 import { nodeProxyToJSON } from '@open-pencil/core/figma-api/serialization'
+import { setInstanceOverride } from '@open-pencil/scene-graph'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -156,7 +157,7 @@ describe('INSTANCE_SYNC_PROPS includes boundVariables', () => {
     const instanceChild = graph.getChildren(instance.id)[0]
 
     // Set an override to block boundVariables sync
-    instance.overrides[`${instanceChild.id}:boundVariables`] = true
+    setInstanceOverride(instance.instanceOverrides, instance.id, instanceChild.id, 'boundVariables')
 
     // Change component child's binding
     graph.bindVariable(child.id, 'fills/0/color', 'v2')

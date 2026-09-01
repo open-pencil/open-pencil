@@ -34,17 +34,18 @@ export function createAutomationEnvironment(
   const childEnv = { ...baseEnv }
   delete childEnv.OPENPENCIL_MCP_SOCKET
   delete childEnv.OPENPENCIL_MCP_AUTH_TOKEN
-  return {
+  const environment: NodeJS.ProcessEnv = {
     ...childEnv,
     PORT: String(httpPort),
     OPENPENCIL_MCP_TCP: '1',
-    ...(socketPath ? { OPENPENCIL_MCP_SOCKET: socketPath } : {}),
-    ...(discoveryPath ? { OPENPENCIL_MCP_DISCOVERY_PATH: discoveryPath } : {}),
     OPENPENCIL_MCP_AUTH_TOKEN: configuration.authenticationEnabled ? (authToken ?? '') : '',
     OPENPENCIL_MCP_CORS_ORIGIN: corsOrigin,
     OPENPENCIL_MCP_ROOT: configuration.rootDirectory.trim() || process.cwd(),
     OPENPENCIL_MCP_DISABLED_TOOLS: serializeDisabledTools(configuration.disabledTools)
   }
+  if (socketPath) environment.OPENPENCIL_MCP_SOCKET = socketPath
+  if (discoveryPath) environment.OPENPENCIL_MCP_DISCOVERY_PATH = discoveryPath
+  return environment
 }
 
 const MAX_CONFIGURATION_BYTES = 70_000

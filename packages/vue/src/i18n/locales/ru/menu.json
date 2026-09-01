@@ -66,5 +66,9 @@
   "splitRight": "Разделить вправо",
   "splitDown": "Разделить вниз",
   "closeView": "Закрыть вид",
-  "removeGuide": "Удалить направляющую"
+  "removeGuide": "Удалить направляющую",
+  "exportSelectionAsPNG": "Экспортировать выделение как PNG",
+  "exportSelectionAsSVG": "Экспортировать выделение как SVG",
+  "exportSelectionAsPPTX": "Экспортировать выделение как PPTX",
+  "exportSelectionAsFig": "Экспортировать выделение как .fig"
 }

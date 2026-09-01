@@ -21,9 +21,10 @@ import {
 } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
-import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
+import CommandPalette from '@/components/commands/CommandPalette.vue'
 import SafariBanner from '@/components/SafariBanner.vue'
 import TabBar from '@/components/TabBar.vue'
+import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
 import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
 
@@ -100,6 +101,7 @@ onUnmounted(() => {
     <SafariBanner />
     <FontStatusBanner />
     <RenameSelectionDialog />
+    <CommandPalette />
     <TabBar />
     <HomeWorkspace v-show="activeTab?.kind === 'home'" @new-document="createDocumentInCurrentTab" />
     <EditorWorkspace v-if="activeTab?.kind !== 'home'" />

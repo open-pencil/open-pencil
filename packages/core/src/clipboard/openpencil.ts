@@ -1,11 +1,27 @@
 import { deflateSync, inflateSync } from 'fflate'
 
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import {
+  createInstanceOverrideState,
+  deserializeInstanceOverrideState,
+  serializeInstanceOverrideState,
+  setInstanceOverride,
+  type InstanceOverrideState,
+  type SceneGraph,
+  type SceneNode,
+  type SerializedInstanceOverrideState
+} from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { decodeBase64, encodeBase64 } from '#core/bytes'
 
-// --- Internal copy/paste (OpenPencil ↔ OpenPencil) ---
+interface SerializedClipboardNode extends JSONObject {
+  overrides?: Record<string, unknown>
+  instanceOverrides?: SerializedInstanceOverrideState
+  textPicture?: string | Uint8Array
+  children?: SerializedClipboardNode[]
+}
+
+type ClipboardNode = SceneNode & { children?: ClipboardNode[] }
 
 export interface OpenPencilClipboardData {
   nodes: Array<SceneNode & { children?: SceneNode[] }>
@@ -26,7 +42,7 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
     }
     const decoded = JSON.parse(new TextDecoder().decode(bytes))
     if (decoded.format === 'openpencil/v1' && Array.isArray(decoded.nodes)) {
-      restoreTextPictures(decoded.nodes)
+      const nodes = restoreNodeData(decoded.nodes as SerializedClipboardNode[])
       const images = new Map<string, Uint8Array>()
       if (decoded.images && typeof decoded.images === 'object') {
         for (const [hash, b64] of Object.entries(decoded.images)) {
@@ -35,7 +51,7 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
           }
         }
       }
-      return { nodes: decoded.nodes, images }
+      return { nodes, images }
     }
   } catch (e) {
     console.warn('Failed to parse OpenPencil clipboard data:', e)
@@ -43,15 +59,36 @@ export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData 
   return null
 }
 
-function restoreTextPictures(nodes: JSONObject[]): void {
-  for (const node of nodes) {
-    if (typeof node.textPicture === 'string') {
-      node.textPicture = decodeBase64(node.textPicture)
-    }
-    if (Array.isArray(node.children)) {
-      restoreTextPictures(node.children)
+function legacyInstanceOverrides(
+  nodeId: string,
+  overrides: Record<string, unknown> | undefined
+): InstanceOverrideState {
+  const state = createInstanceOverrideState()
+  for (const [key, value] of Object.entries(overrides ?? {})) {
+    const separator = key.lastIndexOf(':')
+    if (separator === -1) {
+      setInstanceOverride(state, nodeId, nodeId, key, value)
+    } else {
+      setInstanceOverride(state, nodeId, key.slice(0, separator), key.slice(separator + 1), value)
     }
   }
+  return state
+}
+
+function restoreNodeData(nodes: SerializedClipboardNode[]): ClipboardNode[] {
+  return nodes.map((node) => {
+    const { children, instanceOverrides, overrides, textPicture, ...rest } = node
+    const nodeId = typeof rest.id === 'string' ? rest.id : ''
+    const overrideState = instanceOverrides
+      ? deserializeInstanceOverrideState(instanceOverrides)
+      : legacyInstanceOverrides(nodeId, overrides)
+    return {
+      ...rest,
+      instanceOverrides: overrideState,
+      textPicture: typeof textPicture === 'string' ? decodeBase64(textPicture) : textPicture,
+      ...(children ? { children: restoreNodeData(children) } : {})
+    } as ClipboardNode
+  })
 }
 
 export type TextPictureBuilder = (node: SceneNode) => Uint8Array | null
@@ -98,7 +135,10 @@ function collectNodeTree(
 ): JSONObject[] {
   return nodes.map((node) => {
     const children = graph.getChildren(node.id)
-    const serialized: Record<string, unknown> = { ...node }
+    const serialized: Record<string, unknown> = {
+      ...node,
+      instanceOverrides: serializeInstanceOverrideState(node.instanceOverrides)
+    }
 
     if (node.type === 'TEXT' && node.text && textPictureBuilder) {
       const pic = node.textPicture ?? textPictureBuilder(node)

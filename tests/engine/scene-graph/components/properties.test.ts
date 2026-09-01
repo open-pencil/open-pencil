@@ -5,6 +5,7 @@ import {
   componentPropertyDefinitions,
   componentPropertyOwners,
   findComponentPropertyTarget,
+  forEachInstanceOverride,
   removeComponentProperty,
   resolveComponentPropertyValue,
   SceneGraph
@@ -104,8 +105,18 @@ describe('component properties', () => {
     const updatedInstance = graph.getNode(instance.id)
     expect(updatedInstance?.componentPropertyAssignments['prop:swap']).toBe(alternate.id)
     expect(
-      Object.keys(updatedInstance?.overrides ?? {}).some((key) => key.endsWith(':componentId'))
+      (() => {
+        let found = false
+        forEachInstanceOverride(
+          updatedInstance?.instanceOverrides ?? { self: new Map(), descendants: new Map() },
+          (_nodeId, field) => {
+            if (field === 'componentId') found = true
+          }
+        )
+        return found
+      })()
     ).toBe(true)
+
     const target = findComponentPropertyTarget(graph, instance, 'prop:swap')?.node
     expect(target?.type).toBe('INSTANCE')
     expect(target?.componentId).toBe(alternate.id)

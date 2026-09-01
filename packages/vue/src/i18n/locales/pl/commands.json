@@ -39,5 +39,11 @@
   "distributeHorizontal": "Rozłóż odstępy w poziomie",
   "distributeVertical": "Rozłóż odstępy w pionie",
   "selectInverse": "Odwróć zaznaczenie",
-  "sendBackward": "Przesuń do tyłu"
+  "sendBackward": "Przesuń do tyłu",
+  "paletteSearchPlaceholder": "Wpisz polecenie lub wyszukaj…",
+  "paletteAriaLabel": "Paleta poleceń",
+  "paletteSearchAriaLabel": "Szukaj poleceń",
+  "paletteDescription": "Wyszukuj i uruchamiaj polecenia OpenPencil.",
+  "paletteNoCommands": "Nie znaleziono poleceń.",
+  "paletteBack": "Wstecz"
 }

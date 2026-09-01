@@ -66,5 +66,9 @@
   "splitRight": "Dividi a destra",
   "splitDown": "Dividi in basso",
   "closeView": "Chiudi vista",
-  "removeGuide": "Rimuovi guida"
+  "removeGuide": "Rimuovi guida",
+  "exportSelectionAsPNG": "Esporta selezione come PNG",
+  "exportSelectionAsSVG": "Esporta selezione come SVG",
+  "exportSelectionAsPPTX": "Esporta selezione come PPTX",
+  "exportSelectionAsFig": "Esporta selezione come .fig"
 }

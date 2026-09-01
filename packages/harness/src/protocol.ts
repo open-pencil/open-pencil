@@ -97,16 +97,18 @@ function parseConfiguration(value: unknown): HarnessSessionConfiguration {
   if (!isAdapterID(value.adapter)) throw new Error('Unknown Harness adapter')
   if (!isSandboxID(value.sandbox)) throw new Error('Unknown Harness sandbox')
   const mcpServers = parseJSONRecord(value.mcpServers, 'mcpServers')
-  return {
+  const settings = parseJSONRecord(value.settings, 'settings')
+  const configuration: HarnessSessionConfiguration = {
     adapter: value.adapter,
     sandbox: value.sandbox,
-    model: requireString(value, 'model'),
-    ...(parseJSONRecord(value.settings, 'settings')
-      ? { settings: parseJSONRecord(value.settings, 'settings') }
-      : {}),
-    ...(mcpServers ? { mcpServers: mcpServers as Record<string, Record<string, JSONValue>> } : {}),
-    ...(typeof value.instructions === 'string' ? { instructions: value.instructions } : {})
+    model: requireString(value, 'model')
   }
+  if (settings) configuration.settings = settings
+  if (mcpServers) {
+    configuration.mcpServers = mcpServers as Record<string, Record<string, JSONValue>>
+  }
+  if (typeof value.instructions === 'string') configuration.instructions = value.instructions
+  return configuration
 }
 
 function parseSessionParams(value: unknown): { sessionId: string } {

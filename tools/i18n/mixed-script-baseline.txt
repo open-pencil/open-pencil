@@ -2,7 +2,6 @@ ja:ai.apiKey
 ja:ai.apiType
 ja:ai.baseURL
 ja:ai.baseURLPlaceholder
-ja:ai.connectProvider
 ja:ai.connectionTestAPITypeMismatch
 ja:ai.connectionTestAuthFailed
 ja:ai.connectionTestBrowserNetworkFailed
@@ -12,6 +11,7 @@ ja:ai.connectionTestMissingBaseURL
 ja:ai.connectionTestMissingModel
 ja:ai.connectionTestModelNotFound
 ja:ai.connectionTestNetworkFailed
+ja:ai.connectProvider
 ja:ai.customModelID
 ja:ai.getProviderAPIKey
 ja:ai.modelID
@@ -45,6 +45,7 @@ ja:code.copyJSXReference
 ja:collaboration.clickToFollowPeer
 ja:collaboration.followingPeerStop
 ja:collaboration.pasteRoomLinkOrId
+ja:commands.paletteDescription
 ja:credentials.getAPIKey
 ja:credentials.storage
 ja:diagnostics.acpFailed
@@ -60,9 +61,9 @@ ja:editor.showUI
 ja:editor.toolOptions
 ja:files.browserFileAPINotSupported
 ja:files.clipboardImageFetchFailed
-ja:files.clipboardImageUnavailableWeb
 ja:files.clipboardImagesFetchFailed
 ja:files.clipboardImagesUnavailableWeb
+ja:files.clipboardImageUnavailableWeb
 ja:files.closeTab
 ja:files.importFailed
 ja:files.importHTMLCSS
@@ -79,8 +80,8 @@ ja:fonts.providerEnabled
 ja:fonts.webFontProvidersRequireDesktopApp
 ja:media.getPexelsAPIKey
 ja:media.getUnsplashAccessKey
-ja:media.pexelsAPIKey
 ja:media.pexelsAlternativeOptional
+ja:media.pexelsAPIKey
 ja:media.stockPhotoToolOptional
 ja:media.unsplashAccessKey
 ja:media.vectorizationDescription
@@ -89,6 +90,10 @@ ja:menu.copyAsPNG
 ja:menu.copyAsSVG
 ja:menu.copyNodeId
 ja:menu.copyXPath
+ja:menu.exportSelectionAsFig
+ja:menu.exportSelectionAsPNG
+ja:menu.exportSelectionAsPPTX
+ja:menu.exportSelectionAsSVG
 ja:menu.toggleUI
 ja:pages.pageName
 ja:panels.assetVariantSummary
@@ -128,7 +133,6 @@ zh-cn:ai.apiKey
 zh-cn:ai.apiType
 zh-cn:ai.baseURLPlaceholder
 zh-cn:ai.chatOutputLimit
-zh-cn:ai.connectProvider
 zh-cn:ai.connectionTestAPITypeMismatch
 zh-cn:ai.connectionTestAuthFailed
 zh-cn:ai.connectionTestBrowserNetworkFailed
@@ -138,6 +142,7 @@ zh-cn:ai.connectionTestMissingBaseURL
 zh-cn:ai.connectionTestMissingModel
 zh-cn:ai.connectionTestModelNotFound
 zh-cn:ai.connectionTestNetworkFailed
+zh-cn:ai.connectProvider
 zh-cn:ai.customModelID
 zh-cn:ai.getProviderAPIKey
 zh-cn:ai.maxOutputTokens
@@ -172,6 +177,7 @@ zh-cn:code.copyJSXReference
 zh-cn:collaboration.clickToFollowPeer
 zh-cn:collaboration.followingPeerStop
 zh-cn:collaboration.pasteRoomLinkOrId
+zh-cn:commands.paletteDescription
 zh-cn:credentials.getAPIKey
 zh-cn:credentials.storage
 zh-cn:diagnostics.acpFailed
@@ -203,8 +209,8 @@ zh-cn:fonts.providerDisabled
 zh-cn:fonts.providerEnabled
 zh-cn:media.getPexelsAPIKey
 zh-cn:media.getUnsplashAccessKey
-zh-cn:media.pexelsAPIKey
 zh-cn:media.pexelsAlternativeOptional
+zh-cn:media.pexelsAPIKey
 zh-cn:media.stockPhotoToolOptional
 zh-cn:media.unsplashAccessKey
 zh-cn:media.vectorizationDescription
@@ -213,6 +219,10 @@ zh-cn:menu.copyAsPNG
 zh-cn:menu.copyAsSVG
 zh-cn:menu.copyNodeId
 zh-cn:menu.copyXPath
+zh-cn:menu.exportSelectionAsFig
+zh-cn:menu.exportSelectionAsPNG
+zh-cn:menu.exportSelectionAsPPTX
+zh-cn:menu.exportSelectionAsSVG
 zh-cn:pages.pageName
 zh-cn:panels.assetVariantSummary
 zh-cn:panels.colorHintHsb

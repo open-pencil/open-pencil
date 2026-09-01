@@ -1,15 +1,34 @@
+import type { Component } from 'vue'
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import IconDownload from '~icons/lucide/download'
+import IconEye from '~icons/lucide/eye'
+import IconFile from '~icons/lucide/file'
+import IconFolderOpen from '~icons/lucide/folder-open'
+import IconLayers from '~icons/lucide/layers-2'
+import IconPencil from '~icons/lucide/pencil'
+import IconRedo from '~icons/lucide/redo-2'
+import IconSave from '~icons/lucide/save'
+import IconSettings from '~icons/lucide/settings'
+import IconType from '~icons/lucide/type'
+import IconUndo from '~icons/lucide/undo-2'
+import IconZoomIn from '~icons/lucide/zoom-in'
+import IconZoomOut from '~icons/lucide/zoom-out'
 
-import type { MenuEntry } from '@open-pencil/vue'
-import { useEditorCommands, useI18n } from '@open-pencil/vue'
+import type { CommandPaletteGroup, CommandPaletteItem, MenuEntry } from '@open-pencil/vue'
+import { shortcutPlatform, useEditorCommands, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { createSharedEditorMenuActions } from '@/app/shell/menu/editor-actions'
 import { openStorageWorkspace } from '@/app/shell/menu/navigation'
-import type { AppMenuActionItem, AppMenuEntry, AppMenuGroupSchema } from '@/app/shell/menu/schema'
+import type {
+  AppMenuActionItem,
+  AppMenuEntry,
+  AppMenuGroupSchema,
+  AppMenuIcon
+} from '@/app/shell/menu/schema'
 import { APP_MENU_SCHEMA } from '@/app/shell/menu/schema'
 import { createSelectionMenuActions } from '@/app/shell/menu/selection-actions'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
@@ -19,7 +38,35 @@ import { closeTab, activeTab } from '@/app/tabs'
 
 export interface AppMenuGroup {
   label: string
+  paletteIcon?: Component
   items: MenuEntry[]
+}
+
+const APP_MENU_ICONS: Record<AppMenuIcon, Component> = {
+  download: IconDownload,
+  eye: IconEye,
+  file: IconFile,
+  'folder-open': IconFolderOpen,
+  layers: IconLayers,
+  pencil: IconPencil,
+  redo: IconRedo,
+  save: IconSave,
+  settings: IconSettings,
+  type: IconType,
+  undo: IconUndo,
+  'zoom-in': IconZoomIn,
+  'zoom-out': IconZoomOut
+}
+
+function shortcutKeys(shortcut: string | undefined): string[] | undefined {
+  if (!shortcut) return undefined
+  const platform = shortcutPlatform()
+  return shortcut.split('+').map((key) => {
+    if (key === 'MOD') return platform === 'mac' ? '⌘' : 'Ctrl'
+    if (key === 'SHIFT') return platform === 'mac' ? '⇧' : 'Shift'
+    if (key === 'ALT') return platform === 'mac' ? '⌥' : 'Alt'
+    return key
+  })
 }
 
 function isVisible(entry: { target?: string }): boolean {
@@ -200,6 +247,16 @@ export function useAppMenu() {
     return key ? menu.value[key] : entry.label
   }
 
+  function resolvePalette(entry: AppMenuActionItem) {
+    return entry.palette
+      ? {
+          ...entry.palette,
+          label: entry.palette.label ? menu.value[entry.palette.label] : undefined,
+          icon: entry.palette.icon ? APP_MENU_ICONS[entry.palette.icon] : undefined
+        }
+      : undefined
+  }
+
   function buildEntry(entry: AppMenuEntry): MenuEntry | null {
     if (!isVisible(entry)) return null
     if (isSeparator(entry)) return { separator: true }
@@ -223,11 +280,19 @@ export function useAppMenu() {
     }
 
     if (entry.command) {
-      return commandMenuItem(entry.command, appMenuShortcutLabel(entry.id))
+      return {
+        ...commandMenuItem(entry.command, appMenuShortcutLabel(entry.id)),
+        menuId: entry.id,
+        palette: resolvePalette(entry),
+        paletteShortcut: entry.shortcut
+      }
     }
 
     return {
+      menuId: entry.id,
       label: menuLabel(entry),
+      palette: resolvePalette(entry),
+      paletteShortcut: entry.shortcut,
       shortcut: appMenuShortcutLabel(entry.id),
       action: itemAction(entry),
       disabled: disabled(entry),
@@ -246,13 +311,50 @@ export function useAppMenu() {
     if (!isVisible(group)) return null
     return {
       label: groupLabel(group),
+      paletteIcon: group.paletteIcon ? APP_MENU_ICONS[group.paletteIcon] : undefined,
       items: group.items.map(buildEntry).filter((item): item is MenuEntry => item !== null)
     }
+  }
+
+  function paletteEntries(
+    entry: MenuEntry,
+    category: string,
+    fallbackIcon?: Component
+  ): CommandPaletteItem[] {
+    if ('separator' in entry) return []
+    if (!entry.menuId)
+      return entry.sub?.flatMap((child) => paletteEntries(child, category, fallbackIcon)) ?? []
+
+    const item: CommandPaletteItem = {
+      id: entry.menuId,
+      label: entry.palette?.label ?? entry.label,
+      icon: entry.palette?.icon ?? fallbackIcon,
+      shortcut: entry.paletteShortcut
+        ? { keys: shortcutKeys(entry.paletteShortcut) ?? [] }
+        : undefined,
+      description: entry.palette?.description,
+      keywords: entry.palette?.keywords,
+      disabled: entry.disabled,
+      onSelect:
+        entry.action ??
+        (entry.onCheckedChange ? () => entry.onCheckedChange?.(!entry.checked) : undefined)
+    }
+    const children =
+      entry.sub?.flatMap((child) => paletteEntries(child, category, fallbackIcon)) ?? []
+    return [item, ...children]
   }
 
   const topMenus = computed<AppMenuGroup[]>(() =>
     APP_MENU_SCHEMA.map(buildGroup).filter((group): group is AppMenuGroup => group !== null)
   )
 
-  return { topMenus }
+  const commandGroups = computed<CommandPaletteGroup[]>(() =>
+    topMenus.value.map((group) => ({
+      id: group.label.toLowerCase(),
+      label: group.label,
+      items: group.items.flatMap((entry) => paletteEntries(entry, group.label, group.paletteIcon))
+    }))
+  )
+
+  return { topMenus, commandGroups }
 }

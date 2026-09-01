@@ -39,5 +39,11 @@
   "distributeHorizontal": "Répartir l’espacement horizontal",
   "distributeVertical": "Répartir l’espacement vertical",
   "selectInverse": "Inverser la sélection",
-  "sendBackward": "Reculer"
+  "sendBackward": "Reculer",
+  "paletteSearchPlaceholder": "Saisissez une commande ou recherchez…",
+  "paletteAriaLabel": "Palette de commandes",
+  "paletteSearchAriaLabel": "Rechercher des commandes",
+  "paletteDescription": "Rechercher et exécuter des commandes OpenPencil.",
+  "paletteNoCommands": "Aucune commande trouvée.",
+  "paletteBack": "Retour"
 }

@@ -34,7 +34,17 @@ export { useSelectionState } from '#vue/editor/selection-state/use'
 export { useEditorEvent } from '#vue/editor/events/use'
 export { useSelectionCapabilities } from '#vue/editor/selection-capabilities/use'
 
-/** Command and menu composition helpers. */
+/** Command palette primitives and search state. */
+export { CommandPaletteRoot } from '#vue/primitives/CommandPalette'
+export type {
+  CommandPaletteGroup,
+  CommandPaletteItem,
+  CommandPaletteShortcut,
+  CommandPaletteLabels,
+  CommandPaletteUI,
+  UseCommandPaletteOptions
+} from '#vue/primitives/CommandPalette'
+
 export { useEditorCommands } from '#vue/editor/commands/use'
 export { EDITOR_COMMAND_METADATA, editorCommandMetadata } from '#vue/editor/commands/registry'
 export { formatShortcut, shortcutPlatform } from '#vue/editor/commands/shortcut'

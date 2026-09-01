@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/core'
+import { getInstanceOverride } from '@open-pencil/scene-graph'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -78,7 +79,14 @@ describe('bindVariable on instance child sets override flag', () => {
 
     graph.bindVariable(instanceChild.id, 'fills/0/color', 'v2')
 
-    expect(instance.overrides[`${instanceChild.id}:boundVariables`]).toBe(true)
+    expect(
+      getInstanceOverride(
+        instance.instanceOverrides,
+        instance.id,
+        instanceChild.id,
+        'boundVariables'
+      )
+    ).toBe(true)
   })
 
   test('binding on instance child survives syncInstances', () => {
@@ -138,7 +146,9 @@ describe('bindVariable on INSTANCE node itself sets override', () => {
 
     graph.bindVariable(instance.id, 'opacity', 'v2')
 
-    expect(instance.overrides['boundVariables']).toBe(true)
+    expect(
+      getInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'boundVariables')
+    ).toBe(true)
   })
 
   test('binding on INSTANCE node survives syncInstances', () => {
@@ -223,7 +233,14 @@ describe('removeVariable emits events and sets overrides', () => {
 
     graph.removeVariable('v1')
 
-    expect(instance.overrides[`${instanceChild.id}:boundVariables`]).toBe(true)
+    expect(
+      getInstanceOverride(
+        instance.instanceOverrides,
+        instance.id,
+        instanceChild.id,
+        'boundVariables'
+      )
+    ).toBe(true)
   })
 
   test('removeVariable does not emit for unaffected nodes', () => {

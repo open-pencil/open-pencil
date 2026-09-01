@@ -20,8 +20,8 @@ export function appTargetRPCArgs(args: AppTargetCLIArgs): {
   document_id?: string
   page_id?: string
 } {
-  return {
-    ...(args['document-id'] ? { document_id: args['document-id'] } : {}),
-    ...(args['page-id'] ? { page_id: args['page-id'] } : {})
-  }
+  const target: { document_id?: string; page_id?: string } = {}
+  if (args['document-id']) target.document_id = args['document-id']
+  if (args['page-id']) target.page_id = args['page-id']
+  return target
 }

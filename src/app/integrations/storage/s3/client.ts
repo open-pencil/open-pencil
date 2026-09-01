@@ -215,16 +215,15 @@ export async function putObject(
     bytes.byteOffset,
     bytes.byteOffset + bytes.byteLength
   ) as ArrayBuffer
+  const headers: Record<string, string> = { 'Content-Type': contentType }
+  if (options?.ifMatch) headers['If-Match'] = options.ifMatch
+  if (options?.ifNoneMatch) headers['If-None-Match'] = options.ifNoneMatch
   const res = await s3Request(
     config,
     objectURL(config, key),
     {
       method: 'PUT',
-      headers: {
-        'Content-Type': contentType,
-        ...(options?.ifMatch ? { 'If-Match': options.ifMatch } : {}),
-        ...(options?.ifNoneMatch ? { 'If-None-Match': options.ifNoneMatch } : {})
-      },
+      headers,
       body: payload
     },
     onUploadProgress

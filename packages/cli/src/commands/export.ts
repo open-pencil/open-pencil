@@ -14,6 +14,7 @@ import {
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
+import { applyExportFontPolicy, exportFontRoots, FONT_POLICIES } from '#cli/export-font-policy'
 import { ok, printError } from '#cli/format'
 import { loadDocument, populateDocumentPage, populateWholeDocument } from '#cli/headless'
 
@@ -39,6 +40,7 @@ interface ExportArgs {
   css: string
   assets: string
   fonts: string
+  'font-policy': string
   thumbnail?: boolean
   width: string
   height: string
@@ -210,6 +212,17 @@ async function exportFromFile(format: string, args: ExportArgs) {
   const target = args.node
     ? { scope: 'node' as const, nodeId: args.node }
     : { scope: 'page' as const, pageId: page.id }
+  await applyExportFontPolicy(
+    graph,
+    exportFontRoots(
+      args.node,
+      page.id,
+      pages.map((candidate) => candidate.id),
+      wholeDocument
+    ),
+    format,
+    args['font-policy']
+  )
 
   if (args.thumbnail) {
     printError('Thumbnail export is not supported by the shared file export path yet.')
@@ -312,6 +325,11 @@ export default defineCommand({
       description: 'HTML font output: assets or none (default: none)',
       default: 'none'
     },
+    'font-policy': {
+      type: 'string',
+      description: 'Raster/PDF font policy: warn, strict, or allow (default: warn)',
+      default: 'warn'
+    },
     thumbnail: { type: 'boolean', description: 'Export page thumbnail instead of full render' },
     width: { type: 'string', description: 'Thumbnail width (default: 1920)', default: '1920' },
     height: { type: 'string', description: 'Thumbnail height (default: 1080)', default: '1080' },
@@ -348,6 +366,11 @@ export default defineCommand({
 
     if (format === 'HTML' && !HTML_FONTS.has(args.fonts)) {
       printError(`Invalid HTML font output "${args.fonts}". Use assets or none.`)
+      process.exit(1)
+    }
+
+    if (!FONT_POLICIES.has(args['font-policy'])) {
+      printError(`Invalid font policy "${args['font-policy']}". Use warn, strict, or allow.`)
       process.exit(1)
     }
 

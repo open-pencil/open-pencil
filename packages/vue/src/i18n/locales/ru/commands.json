@@ -39,5 +39,11 @@
   "distributeHorizontal": "Распределить интервалы по горизонтали",
   "distributeVertical": "Распределить интервалы по вертикали",
   "selectInverse": "Инвертировать выделение",
-  "sendBackward": "Переместить назад"
+  "sendBackward": "Переместить назад",
+  "paletteSearchPlaceholder": "Введите команду или выполните поиск…",
+  "paletteAriaLabel": "Палитра команд",
+  "paletteSearchAriaLabel": "Поиск команд",
+  "paletteDescription": "Поиск и выполнение команд OpenPencil.",
+  "paletteNoCommands": "Команды не найдены.",
+  "paletteBack": "Назад"
 }

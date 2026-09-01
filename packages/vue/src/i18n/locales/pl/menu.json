@@ -66,5 +66,9 @@
   "splitRight": "Podziel w prawo",
   "splitDown": "Podziel w dół",
   "closeView": "Zamknij widok",
-  "removeGuide": "Usuń prowadnicę"
+  "removeGuide": "Usuń prowadnicę",
+  "exportSelectionAsPNG": "Eksportuj zaznaczenie jako PNG",
+  "exportSelectionAsSVG": "Eksportuj zaznaczenie jako SVG",
+  "exportSelectionAsPPTX": "Eksportuj zaznaczenie jako PPTX",
+  "exportSelectionAsFig": "Eksportuj zaznaczenie jako .fig"
 }

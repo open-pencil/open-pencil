@@ -66,5 +66,9 @@
   "splitRight": "向右拆分",
   "splitDown": "向下拆分",
   "closeView": "关闭视图",
-  "removeGuide": "移除参考线"
+  "removeGuide": "移除参考线",
+  "exportSelectionAsPNG": "将所选内容导出为 PNG",
+  "exportSelectionAsSVG": "将所选内容导出为 SVG",
+  "exportSelectionAsPPTX": "将所选内容导出为 PPTX",
+  "exportSelectionAsFig": "将所选内容导出为 .fig"
 }

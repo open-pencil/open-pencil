@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true,
+    "paths": {
+      "#lint/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}
