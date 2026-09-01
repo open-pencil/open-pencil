@@ -419,6 +419,18 @@
   "overrides": [
     {
       "files": [
+        "tools/lint/src/**/*.js",
+        "tools/lint/tests/**/*.ts"
+      ],
+      "rules": {
+        "open-pencil/no-generated-test-id-literals": "off",
+        "open-pencil/no-hardcoded-color-constants": "off",
+        "open-pencil/no-mixed-case-acronym-identifiers": "off",
+        "open-pencil/no-deep-parent-relative-imports": "off"
+      }
+    },
+    {
+      "files": [
         "src/**/*.ts",
         "packages/*/src/**/*.ts"
       ],
