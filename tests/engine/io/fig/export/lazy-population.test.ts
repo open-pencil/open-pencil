@@ -6,7 +6,7 @@ import {
   setLazyFigImportContext
 } from '@open-pencil/core/kiwi/fig/lazy-import'
 import { cloneSceneGraphForFigExport } from '@open-pencil/core/kiwi/fig/parse/transfer'
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
 
 function lazyExportGraph() {
   const graph = new SceneGraph()
@@ -38,7 +38,9 @@ function createEditedInstance(
   if (!instance) throw new Error(`Could not create instance: ${name}`)
   const textId = instance.childIds[0]
   graph.updateNode(textId, { text })
-  graph.updateNode(instance.id, { overrides: { [`${textId}:text`]: text } })
+  setInstanceOverride(instance.instanceOverrides, instance.id, textId, 'text', text)
+  graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
+
   return { instance, textId }
 }
 

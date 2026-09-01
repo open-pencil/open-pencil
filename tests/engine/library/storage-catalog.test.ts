@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { getInstanceOverride, SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 import { StorageLibraryCatalog } from '@/app/libraries/catalog/storage'
@@ -69,6 +69,45 @@ describe('storage library catalog', () => {
     expect([...restored.graph.getAllNodes()].some((node) => node.componentKey === 'button')).toBe(
       true
     )
+  })
+
+  test('preserves instance overrides through persisted revisions', async () => {
+    const objects = new MemoryObjects()
+    const catalog = new StorageLibraryCatalog(objects)
+    const graph = sourceGraph()
+    const component = [...graph.getAllNodes()].find((node) => node.componentKey === 'button')
+    if (!component) throw new Error('Expected component')
+    const nestedComponent = graph.createNode('COMPONENT', component.id, {
+      name: 'Icon',
+      componentKey: 'icon'
+    })
+    const instance = graph.createInstance(nestedComponent.id, component.id)
+    if (!instance) throw new Error('Expected instance')
+    setInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'pluginData', {
+      $openPencilType: 'openpencil/map',
+      entries: []
+    })
+
+    const published = await catalog.publishRevision({
+      libraryId: 'design-system',
+      name: 'Design system',
+      graph
+    })
+    const restored = await catalog.getRevision('design-system', published.manifest.revisionId)
+    const restoredInstance = [...restored.graph.getAllNodes()].find(
+      (node) => node.type === 'INSTANCE'
+    )
+    if (!restoredInstance) throw new Error('Expected restored instance')
+
+    expect(restoredInstance.instanceOverrides.self).toBeInstanceOf(Map)
+    expect(
+      getInstanceOverride(
+        restoredInstance.instanceOverrides,
+        restoredInstance.id,
+        restoredInstance.id,
+        'pluginData'
+      )
+    ).toEqual({ $openPencilType: 'openpencil/map', entries: [] })
   })
 
   test('rejects corrupted revision content', async () => {

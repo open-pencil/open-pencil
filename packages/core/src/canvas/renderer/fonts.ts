@@ -10,8 +10,7 @@ import {
   SIZE_FONT_SIZE
 } from '#core/constants'
 import { fontManager } from '#core/text/fonts'
-import { collectGraphFontRequirements } from '#core/text/requirements'
-import { missingGraphFontScripts } from '#core/text/resolved-requirements'
+import { prepareGraphFonts } from '#core/text/prepare'
 import type { FontResolutionSnapshot } from '#core/text/resolver'
 
 export function syncFontGeneration(r: SkiaRenderer): void {
@@ -118,15 +117,7 @@ export async function prepareForExport(
   const previousTextMeasurer = getTextMeasurer()
   setTextMeasurer((node, maxWidth) => r.measureTextNode(node, maxWidth))
 
-  const fontKeys = fontManager.collectFontKeys(graph, nodeIds)
-  const requirements = collectGraphFontRequirements(graph, nodeIds)
-  await Promise.all(
-    fontKeys.map(([family, style]) => fontManager.loadFont(family, style, requirements.characters))
-  )
-  await fontManager.ensureFallbackPack(
-    missingGraphFontScripts(requirements),
-    requirements.characters
-  )
+  await prepareGraphFonts(graph, nodeIds)
   syncFontGeneration(r)
   computeAllLayouts(graph, pageId)
 

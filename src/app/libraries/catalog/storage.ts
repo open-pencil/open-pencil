@@ -29,13 +29,46 @@ function revisionKey(libraryId: string, revisionId: string): string {
   return `${PREFIX}/${libraryId}/revisions/${revisionId}.json`
 }
 
+const MAP_TAG = 'openpencil/map'
+
+interface EncodedMap {
+  $openPencilType: typeof MAP_TAG
+  entries: unknown[]
+}
+
+function isEncodedMap(value: object): value is EncodedMap {
+  return (
+    '$openPencilType' in value &&
+    value.$openPencilType === MAP_TAG &&
+    'entries' in value &&
+    Array.isArray(value.entries)
+  )
+}
+
+function isMap(value: unknown): value is Map<unknown, unknown> {
+  return value instanceof Map
+}
+
+function isMarkerShapedObject(value: object): boolean {
+  return '$openPencilType' in value
+}
+
 function encodeValue(value: unknown): unknown {
+  if (isMap(value)) {
+    return {
+      $openPencilType: MAP_TAG,
+      entries: [...value].map(([key, entry]) => [encodeValue(key), encodeValue(entry)])
+    }
+  }
   if (value instanceof Uint8Array) return { $bytes: encodeBase64(value) }
   if (Array.isArray(value)) return value.map(encodeValue)
   if (value && typeof value === 'object') {
-    return Object.fromEntries(
+    const encoded = Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [key, encodeValue(entry)])
     )
+    return isMarkerShapedObject(value)
+      ? { $openPencilType: 'openpencil/object', value: encoded }
+      : encoded
   }
   return value
 }
@@ -43,6 +76,27 @@ function encodeValue(value: unknown): unknown {
 function decodeValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(decodeValue)
   if (value && typeof value === 'object') {
+    if (
+      '$openPencilType' in value &&
+      value.$openPencilType === 'openpencil/object' &&
+      'value' in value &&
+      value.value &&
+      typeof value.value === 'object' &&
+      !Array.isArray(value.value)
+    ) {
+      return Object.fromEntries(
+        Object.entries(value.value).map(([key, entry]) => [key, decodeValue(entry)])
+      )
+    }
+    if (isEncodedMap(value)) {
+      return new Map(
+        value.entries.flatMap((entry) =>
+          Array.isArray(entry) && entry.length === 2
+            ? [[decodeValue(entry[0]), decodeValue(entry[1])] as const]
+            : []
+        )
+      )
+    }
     if ('$bytes' in value && typeof (value as { $bytes?: unknown }).$bytes === 'string') {
       return decodeBase64((value as { $bytes: string }).$bytes)
     }

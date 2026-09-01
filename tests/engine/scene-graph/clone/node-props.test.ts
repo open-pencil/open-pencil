@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/core'
+import { getInstanceOverride, setInstanceOverride } from '@open-pencil/scene-graph'
 import { cloneNodeProps } from '@open-pencil/scene-graph/copy'
 
 function pageId(graph: SceneGraph): string {
@@ -119,20 +120,30 @@ describe('cloneNodeProps deep-copies overrides values', () => {
     const instance = graph.createInstance(component.id, page)
     if (!instance) throw new Error('instance failed')
     const instanceChild = graph.getChildren(instance.id)[0]
-    instance.overrides[`${instanceChild.id}:fills`] = [
+    setInstanceOverride(instance.instanceOverrides, instance.id, instanceChild.id, 'fills', [
       { type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, visible: true, opacity: 1 }
-    ]
+    ])
 
     const clone = graph.cloneTree(instance.id, page)
     if (!clone) throw new Error('clone failed')
     const clonedInstance = graph.getNode(clone.id)
-    const overrideKey = `${instanceChild.id}:fills`
-    const cloneOverrideVal = clonedInstance.overrides[overrideKey] as Array<{
+    const cloneOverrideVal = getInstanceOverride(
+      clonedInstance.instanceOverrides,
+      clonedInstance.id,
+      instanceChild.id,
+      'fills'
+    ) as Array<{
       color: { r: number }
     }>
     if (cloneOverrideVal) cloneOverrideVal[0].color.r = 0.5
 
-    const origOverrideVal = instance.overrides[overrideKey] as Array<{ color: { r: number } }>
+    const origOverrideVal = getInstanceOverride(
+      instance.instanceOverrides,
+      instance.id,
+      instanceChild.id,
+      'fills'
+    ) as Array<{ color: { r: number } }>
+
     if (origOverrideVal) expect(origOverrideVal[0].color.r).toBe(0)
   })
 })
@@ -203,7 +214,7 @@ describe('cloneNodeProps coverage guard', () => {
     const node = graph.createNode('RECTANGLE', page, {
       name: 'Rich node',
       boundVariables: { 'fills/0/color': 'v1' },
-      overrides: { nested: { value: true } },
+      instanceOverrides: { self: new Map(), descendants: new Map() },
       vectorNetwork: {
         vertices: [{ x: 0, y: 0 }],
         segments: [{ start: 0, end: 0, tangentStart: { x: 0, y: 0 }, tangentEnd: { x: 0, y: 0 } }],

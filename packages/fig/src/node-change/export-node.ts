@@ -1,12 +1,12 @@
 import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import { DEFAULT_STROKE_MITER_LIMIT } from '@open-pencil/scene-graph'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyReferenceField,
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
+import { DEFAULT_STROKE_MITER_LIMIT, forEachInstanceOverride } from '@open-pencil/scene-graph'
 import type { Color, GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../source-metadata'
@@ -400,20 +400,14 @@ function serializeTextOverrides(
   localIdCounter: { value: number }
 ): KiwiSymbolOverridePayload[] {
   const result: KiwiSymbolOverridePayload[] = []
-  for (const [key, value] of Object.entries(instance.overrides)) {
-    if (!key.endsWith(':text') || typeof value !== 'string') continue
-    const targetId = key.slice(0, -':text'.length)
-    const target = context.graph.getNode(targetId)
-    if (!target || !isDescendantOf(context, targetId, instance.id)) continue
-
+  forEachInstanceOverride(instance.instanceOverrides, (nodeId, field, value) => {
+    if (field !== 'text' || typeof value !== 'string' || !nodeId) return
+    const target = context.graph.getNode(nodeId)
+    if (!target || !isDescendantOf(context, nodeId, instance.id)) return
     const targetGuid = resolveOverrideTargetGuid(context, target, localIdCounter)
-    if (!targetGuid) continue
-
-    result.push({
-      guidPath: { guids: [targetGuid] },
-      textData: { characters: value }
-    })
-  }
+    if (targetGuid)
+      result.push({ guidPath: { guids: [targetGuid] }, textData: { characters: value } })
+  })
   return result
 }
 
@@ -440,20 +434,17 @@ function serializeFillOverrides(
   localIdCounter: { value: number }
 ): KiwiSymbolOverridePayload[] {
   const result: KiwiSymbolOverridePayload[] = []
-  for (const key of Object.keys(instance.overrides)) {
-    if (!key.endsWith(':fills')) continue
-    const targetId = key.slice(0, -':fills'.length)
-    const target = context.graph.getNode(targetId)
-    if (!target || !isDescendantOf(context, targetId, instance.id)) continue
-
+  forEachInstanceOverride(instance.instanceOverrides, (nodeId, field) => {
+    if (field !== 'fills' || !nodeId) return
+    const target = context.graph.getNode(nodeId)
+    if (!target || !isDescendantOf(context, nodeId, instance.id)) return
     const targetGuid = resolveOverrideTargetGuid(context, target, localIdCounter)
-    if (!targetGuid) continue
-
-    result.push({
-      guidPath: { guids: [targetGuid] },
-      fillPaints: target.fills.map((fill) => context.fillToKiwiPaint(fill))
-    })
-  }
+    if (targetGuid)
+      result.push({
+        guidPath: { guids: [targetGuid] },
+        fillPaints: target.fills.map((fill) => context.fillToKiwiPaint(fill))
+      })
+  })
   return result
 }
 

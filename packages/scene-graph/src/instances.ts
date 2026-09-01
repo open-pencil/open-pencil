@@ -1,6 +1,13 @@
 import type { SceneGraph, SceneNode } from './'
 import { cloneNodeProps, copyEffects, copyFills, copyStrokes, copyStyleRuns } from './copy'
 import type { NodeCloneMode } from './copy'
+import {
+  clearInstanceOverrides,
+  getInstanceOverride,
+  hasInstanceOverride as hasNodeInstanceOverride,
+  setInstanceOverride,
+  type InstanceOverrideState
+} from './instance-overrides'
 
 export type { NodeCloneMode } from './copy'
 
@@ -120,7 +127,7 @@ function syncChildren(
   graph: SceneGraph,
   compParentId: string,
   instParentId: string,
-  overrides: Record<string, unknown>
+  overrides: InstanceOverrideState
 ): void {
   const compParent = graph.nodes.get(compParentId)
   const instParent = graph.nodes.get(instParentId)
@@ -130,7 +137,13 @@ function syncChildren(
   for (const childId of instParent.childIds) {
     const child = graph.nodes.get(childId)
     if (!child) continue
-    const sourceComponentId = overrides[`${child.id}:sourceComponentId`]
+    const sourceComponentId = getInstanceOverride(
+      overrides,
+      instParentId,
+      child.id,
+      'sourceComponentId'
+    )
+
     const mappedComponentId =
       typeof sourceComponentId === 'string' ? sourceComponentId : child.componentId
     if (mappedComponentId) instChildMap.set(mappedComponentId, child)
@@ -154,12 +167,15 @@ function syncChildren(
     if (!compChild || !instChild) continue
 
     for (const key of INSTANCE_SYNC_FIELDS) {
-      const overrideKey = `${instChild.id}:${key}`
-      if (overrideKey in overrides) continue
+      if (hasNodeInstanceOverride(overrides, instParentId, instChild.id, key)) continue
+
       copyProp(instChild, compChild, key)
     }
 
-    if (compChild.childIds.length > 0 && !(`${instChild.id}:componentId` in overrides)) {
+    if (
+      compChild.childIds.length > 0 &&
+      !hasNodeInstanceOverride(overrides, instParentId, instChild.id, 'componentId')
+    ) {
       syncChildren(graph, compChildId, instChild.id, overrides)
     }
   }
@@ -168,8 +184,13 @@ function syncChildren(
   instParent.childIds.sort((a, b) => {
     const nodeA = graph.nodes.get(a)
     const nodeB = graph.nodes.get(b)
-    const sourceA = nodeA ? overrides[`${nodeA.id}:sourceComponentId`] : undefined
-    const sourceB = nodeB ? overrides[`${nodeB.id}:sourceComponentId`] : undefined
+    const sourceA = nodeA
+      ? getInstanceOverride(overrides, instParentId, nodeA.id, 'sourceComponentId')
+      : undefined
+    const sourceB = nodeB
+      ? getInstanceOverride(overrides, instParentId, nodeB.id, 'sourceComponentId')
+      : undefined
+
     const mappedA = typeof sourceA === 'string' ? sourceA : nodeA?.componentId
     const mappedB = typeof sourceB === 'string' ? sourceB : nodeB?.componentId
     const idxA = mappedA ? compChildOrder.indexOf(mappedA) : -1
@@ -230,9 +251,10 @@ export function swapInstanceComponent(
   const previousComponent = instance.componentId ? graph.nodes.get(instance.componentId) : undefined
   const updates: Partial<SceneNode> = { componentId }
   for (const key of INSTANCE_SYNC_PROPS) {
-    if (key in instance.overrides) continue
+    if (hasNodeInstanceOverride(instance.instanceOverrides, instance.id, instance.id, key)) continue
     copyProp(updates, component, key)
   }
+
   if (!previousComponent || instance.name === previousComponent.name) updates.name = component.name
 
   const childIds = Array.from(instance.childIds)
@@ -247,11 +269,11 @@ export function syncInstances(graph: SceneGraph, componentId: string): void {
 
   for (const instance of getInstances(graph, componentId)) {
     for (const key of INSTANCE_SYNC_PROPS) {
-      if (key in instance.overrides) continue
+      if (hasNodeInstanceOverride(instance.instanceOverrides, instance.id, instance.id, key))
+        continue
       copyProp(instance, component, key)
     }
-
-    syncChildren(graph, component.id, instance.id, instance.overrides)
+    syncChildren(graph, component.id, instance.id, instance.instanceOverrides)
   }
 }
 
@@ -263,7 +285,7 @@ export function detachInstance(graph: SceneGraph, instanceId: string): void {
   }
   node.type = 'FRAME'
   node.componentId = null
-  node.overrides = {}
+  clearInstanceOverrides(node.instanceOverrides)
 }
 
 export function getMainComponent(graph: SceneGraph, instanceId: string): SceneNode | undefined {
@@ -299,8 +321,7 @@ export function findInstanceAncestor(graph: SceneGraph, nodeId: string): SceneNo
 export function hasInstanceOverride(graph: SceneGraph, nodeId: string, field: string): boolean {
   const instance = findInstanceAncestor(graph, nodeId)
   if (!instance) return false
-  const key = nodeId === instance.id ? field : `${nodeId}:${field}`
-  return key in instance.overrides
+  return hasNodeInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
 }
 
 /*
@@ -308,6 +329,17 @@ export function hasInstanceOverride(graph: SceneGraph, nodeId: string, field: st
  * so the .fig exporter knows to write the diff out as a symbol override. A no-op
  * for fields outside INSTANCE_SYNC_PROPS or nodes with no INSTANCE ancestor.
  */
+export function recordInstanceOverrideValue(
+  graph: SceneGraph,
+  nodeId: string,
+  field: string,
+  value: unknown
+): void {
+  const instance = findInstanceAncestor(graph, nodeId)
+  if (!instance) return
+  setInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field, value)
+  graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
+}
 export function recordInstanceOverride(
   graph: SceneGraph,
   nodeId: string,
@@ -322,9 +354,7 @@ export function recordInstanceOverride(
 
   if (relevant.length === 0) return
 
-  const overrides = { ...instance.overrides }
-  for (const field of relevant) {
-    overrides[nodeId === instance.id ? field : `${nodeId}:${field}`] = true
-  }
-  graph.updateNode(instance.id, { overrides })
+  for (const field of relevant)
+    setInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
+  graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
 }

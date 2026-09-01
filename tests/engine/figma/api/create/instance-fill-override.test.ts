@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { getInstanceOverride } from '@open-pencil/scene-graph'
+
 import { createAPI } from '../helpers'
 
 describe('setting fills on an instance descendant', () => {
@@ -19,7 +21,14 @@ describe('setting fills on an instance descendant', () => {
     ]
 
     const raw = api.graph.getNode(instance.id)
-    expect(raw?.overrides[`${vector.id}:fills`]).toBe(true)
+    expect(
+      getInstanceOverride(
+        raw?.instanceOverrides ?? { self: new Map(), descendants: new Map() },
+        instance.id,
+        vector.id,
+        'fills'
+      )
+    ).toBe(true)
   })
 
   test('preserves text edits on an instance descendant during resync', () => {
@@ -34,7 +43,18 @@ describe('setting fills on an instance descendant', () => {
     if (!instanceText) throw new Error('instance text not found')
     instanceText.characters = 'Custom'
 
-    expect(api.graph.getNode(instance.id)?.overrides[`${instanceText.id}:text`]).toBe(true)
+    expect(
+      getInstanceOverride(
+        api.graph.getNode(instance.id)?.instanceOverrides ?? {
+          self: new Map(),
+          descendants: new Map()
+        },
+        instance.id,
+        instanceText.id,
+        'text'
+      )
+    ).toBe(true)
+
     text.characters = 'Updated default'
     api.graph.syncInstances(component.id)
 
@@ -46,6 +66,6 @@ describe('setting fills on an instance descendant', () => {
     frame.fills = [{ type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }]
 
     const raw = api.graph.getNode(frame.id)
-    expect(raw?.overrides ?? {}).toEqual({})
+    expect(raw?.instanceOverrides.self.size ?? 0).toBe(0)
   })
 })

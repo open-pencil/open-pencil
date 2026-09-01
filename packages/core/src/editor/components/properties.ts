@@ -1,5 +1,6 @@
 import {
   applyComponentPropertyValue,
+  cloneInstanceOverrideState,
   componentPropertyDefinitions,
   findComponentPropertyTarget,
   resolveComponentPropertyValue
@@ -100,7 +101,8 @@ export function createComponentPropertyActions(
     }
 
     const previousAssignments = { ...instance.componentPropertyAssignments }
-    const previousOverrides = structuredClone(instance.overrides)
+    const previousOverrides = cloneInstanceOverrideState(instance.instanceOverrides)
+
     const target = propertyTarget(ctx, instance, propertyId)
     const assignedValue = instance.componentPropertyAssignments[propertyId]
     const previousValue =
@@ -120,7 +122,7 @@ export function createComponentPropertyActions(
         if (live) {
           ctx.graph.updateNode(instanceId, {
             componentPropertyAssignments: previousAssignments,
-            overrides: previousOverrides
+            instanceOverrides: cloneInstanceOverrideState(previousOverrides)
           })
           const restoredTarget = propertyTarget(ctx, live, propertyId)
           if (restoredTarget?.field === 'TEXT' && restoredTarget.node.type === 'TEXT') {

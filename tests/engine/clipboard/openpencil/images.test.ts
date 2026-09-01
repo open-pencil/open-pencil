@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { deflateSync } from 'fflate'
+
 import {
   buildOpenPencilClipboardHTML,
   FigmaAPI,
@@ -7,6 +9,8 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/core'
+import { encodeBase64 } from '@open-pencil/core/bytes'
+import { getInstanceOverride, setInstanceOverride } from '@open-pencil/scene-graph'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -41,6 +45,56 @@ describe('clipboard roundtrip with images', () => {
 
     return { graph, node, imageHash: hash, imageBytes }
   }
+
+  test('migrates legacy flat instance overrides', () => {
+    const legacy = {
+      format: 'openpencil/v1',
+      nodes: [
+        {
+          id: 'instance',
+          type: 'INSTANCE',
+          overrides: { text: 'Self', '0:2:text': 'Custom' },
+          children: []
+        }
+      ],
+      images: {}
+    }
+    const encoded = encodeBase64(deflateSync(new TextEncoder().encode(JSON.stringify(legacy))))
+    const parsed = expectDefined(
+      parseOpenPencilClipboard(`<!--(openpencil)${encoded}(/openpencil)-->`),
+      'OpenPencil clipboard'
+    )
+    const instance = parsed.nodes[0]
+
+    expect(getInstanceOverride(instance.instanceOverrides, instance.id, instance.id, 'text')).toBe(
+      'Self'
+    )
+    expect(getInstanceOverride(instance.instanceOverrides, instance.id, '0:2', 'text')).toBe(
+      'Custom'
+    )
+  })
+
+  test('preserves structured instance overrides', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id)
+    graph.createNode('TEXT', component.id, { text: 'Default' })
+    const instance = expectDefined(graph.createInstance(component.id, page.id), 'instance')
+    const child = expectDefined(graph.getChildren(instance.id)[0], 'instance child')
+    setInstanceOverride(instance.instanceOverrides, instance.id, child.id, 'text', 'Custom')
+
+    const parsed = expectDefined(
+      parseOpenPencilClipboard(buildOpenPencilClipboardHTML([instance], graph)),
+      'OpenPencil clipboard'
+    )
+    const pasted = parsed.nodes[0]
+
+    expect(pasted.instanceOverrides.self).toBeInstanceOf(Map)
+    expect(pasted.instanceOverrides.descendants).toBeInstanceOf(Map)
+    expect(getInstanceOverride(pasted.instanceOverrides, pasted.id, child.id, 'text')).toBe(
+      'Custom'
+    )
+  })
 
   test('round-trips image bytes through clipboard', () => {
     const { graph, node, imageHash, imageBytes } = graphWithImageNode()

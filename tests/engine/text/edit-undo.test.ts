@@ -1,11 +1,10 @@
 import { describe, test, expect } from 'bun:test'
 
-import type { CanvasKit } from 'canvaskit-wasm'
-
 import { SceneGraph, TextEditor, UndoManager } from '@open-pencil/core'
 import type { DerivedTextGlyph, StyleRun } from '@open-pencil/core'
 import { createTextActions } from '@open-pencil/core/editor'
 import type { EditorContext, EditorState } from '@open-pencil/core/editor'
+import { getInstanceOverride } from '@open-pencil/scene-graph'
 
 import { fontManager } from '#core/text/fonts'
 
@@ -220,13 +219,27 @@ describe('text edit undo', () => {
     actions.commitTextEdit()
 
     expect(getNodeOrThrow(graph, instanceText.id).text).toBe('')
-    expect(getNodeOrThrow(graph, instance.id).overrides[`${instanceText.id}:text`]).toBe('')
+    expect(
+      getInstanceOverride(
+        getNodeOrThrow(graph, instance.id).instanceOverrides,
+        instance.id,
+        instanceText.id,
+        'text'
+      )
+    ).toBe('')
     graph.syncInstances(component.id)
     expect(getNodeOrThrow(graph, instanceText.id).text).toBe('')
 
     undo.undo()
     expect(getNodeOrThrow(graph, instanceText.id).text).toBe('Confidential')
-    expect(`${instanceText.id}:text` in getNodeOrThrow(graph, instance.id).overrides).toBe(false)
+    expect(
+      getInstanceOverride(
+        getNodeOrThrow(graph, instance.id).instanceOverrides,
+        instance.id,
+        instanceText.id,
+        'text'
+      )
+    ).toBeUndefined()
 
     undo.redo()
     graph.syncInstances(component.id)
@@ -248,7 +261,14 @@ describe('text edit undo', () => {
     })
     actions.commitTextEdit()
 
-    expect(`${instanceText.id}:text` in getNodeOrThrow(graph, instance.id).overrides).toBe(false)
+    expect(
+      getInstanceOverride(
+        getNodeOrThrow(graph, instance.id).instanceOverrides,
+        instance.id,
+        instanceText.id,
+        'text'
+      )
+    ).toBeUndefined()
   })
 
   test('commitTextEdit preserves auto-height text bounds', () => {

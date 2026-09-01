@@ -1,3 +1,4 @@
+import { cloneInstanceOverrideState } from '@open-pencil/scene-graph'
 import type { SceneNode, Vector } from '@open-pencil/scene-graph'
 import { getAxisAlignedWorldBounds, getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
 import Matrix from '@open-pencil/scene-graph/matrix'
@@ -97,6 +98,7 @@ export function createComponentInstanceActions(ctx: EditorContext) {
     if (selectedNode?.type !== 'INSTANCE') return
 
     const prevComponentId = selectedNode.componentId
+    const previousOverrides = cloneInstanceOverrideState(selectedNode.instanceOverrides)
 
     ctx.graph.detachInstance(selectedNode.id)
     ctx.setSelectedIds(new Set([selectedNode.id]))
@@ -111,7 +113,7 @@ export function createComponentInstanceActions(ctx: EditorContext) {
         ctx.graph.updateNode(selectedNode.id, {
           type: 'INSTANCE',
           componentId: prevComponentId,
-          overrides: {}
+          instanceOverrides: cloneInstanceOverrideState(previousOverrides)
         })
       }
     })
