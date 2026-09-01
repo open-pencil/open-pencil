@@ -1,7 +1,8 @@
-import { normalizedFilename } from '../../support/context.js'
+import { normalizedFilename } from '../../support/context.ts'
+import type { RuleDefinition } from '../../support/types.ts'
 import {
   VUE_ELEMENT_NODE,
-  hasUiHelperCall,
+  hasUIHelperCall,
   isBoundStringLiteral,
   isStaticVueAttribute,
   isVueBindDirective,
@@ -9,7 +10,7 @@ import {
   vueSfcDescriptor,
   vueTemplateAst,
   walkVueTemplateAst
-} from '../../support/vue.js'
+} from '../../support/vue.ts'
 
 const noVueStyleBlocks = {
   meta: {
@@ -33,7 +34,7 @@ const noVueStyleBlocks = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noNativeTitleAttributesInVue = {
   meta: {
@@ -67,7 +68,7 @@ const noNativeTitleAttributesInVue = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noHardcodedTipLabelsInVue = {
   meta: {
@@ -99,7 +100,7 @@ const noHardcodedTipLabelsInVue = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noRawSvgInAppVueTemplates = {
   meta: {
@@ -129,7 +130,7 @@ const noRawSvgInAppVueTemplates = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noUiHelperCallsInVueTemplates = {
   meta: {
@@ -147,7 +148,7 @@ const noUiHelperCallsInVueTemplates = {
         if (!template) return
         let hasTemplateUiHelperCall = false
         walkVueTemplateAst(template, (templateNode) => {
-          if (!hasTemplateUiHelperCall && hasUiHelperCall(templateNode)) {
+          if (!hasTemplateUiHelperCall && hasUIHelperCall(templateNode)) {
             hasTemplateUiHelperCall = true
           }
         })
@@ -159,7 +160,7 @@ const noUiHelperCallsInVueTemplates = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 export {
   noHardcodedTipLabelsInVue,

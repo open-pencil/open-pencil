@@ -1,4 +1,7 @@
-import { normalizedFilename } from '../../support/context.js'
+import type { TSESTree } from '@typescript-eslint/utils'
+
+import { normalizedFilename } from '../../support/context.ts'
+import type { RuleDefinition } from '../../support/types.ts'
 
 const noBrowserSideEffectsInVue = {
   meta: {
@@ -11,13 +14,15 @@ const noBrowserSideEffectsInVue = {
     const file = normalizedFilename(context)
     if (!file.endsWith('.vue')) return {}
 
-    function propertyName(property) {
+    function propertyName(
+      property: TSESTree.Expression | TSESTree.PrivateIdentifier
+    ): string | null {
       if (property?.type === 'Identifier') return property.name
       if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
       return null
     }
 
-    function objectName(object) {
+    function objectName(object: TSESTree.Expression): string | null {
       return object?.type === 'Identifier' ? object.name : null
     }
 
@@ -59,7 +64,7 @@ const noBrowserSideEffectsInVue = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noDocumentQuerySelectorInVue = {
   meta: {
@@ -92,6 +97,6 @@ const noDocumentQuerySelectorInVue = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 export { noBrowserSideEffectsInVue, noDocumentQuerySelectorInVue }

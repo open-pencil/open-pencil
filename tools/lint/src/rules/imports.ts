@@ -1,5 +1,8 @@
-import { importSource, normalizedFilename } from '../support/context.js'
-import { createImportSourceRule } from '../support/factories.js'
+import type { TSESTree } from '@typescript-eslint/utils'
+
+import { importSource, normalizedFilename } from '../support/context.ts'
+import { createImportSourceRule } from '../support/factories.ts'
+import type { RuleContext, RuleDefinition } from '../support/types.ts'
 
 const noVueSelfPackageImports = createImportSourceRule({
   description: 'Disallow @open-pencil/vue self-imports inside the Vue SDK — use #vue/* aliases',
@@ -19,24 +22,42 @@ const noCrossPackageSourceImports = createImportSourceRule({
     `Use workspace package exports or package-local aliases instead of cross-package source import '${source}'.`
 })
 
-function createParentRelativeImportRule({ description, applies, message, minDepth = 1 }) {
+interface ImportBoundaryRuleOptions {
+  description: string
+  applies(file: string): boolean
+  message: string
+  minDepth?: number
+}
+
+function createParentRelativeImportRule({
+  description,
+  applies,
+  message,
+  minDepth = 1
+}: ImportBoundaryRuleOptions): RuleDefinition {
   return {
     meta: {
       docs: { description }
     },
-    create(context) {
+    create(context: RuleContext) {
       const file = normalizedFilename(context)
       if (!applies(file)) return {}
 
-      function reportSource(node, source) {
+      function reportSource(node: TSESTree.Node, source: string | null) {
         if (!source?.startsWith('../')) return
-        const depth = source.match(/^(?:\.\.\/)+/)?.[0].split('../').length - 1
+        const parentPrefix = source.match(/^(?:\.\.\/)+/)?.[0]
+        const depth = parentPrefix ? parentPrefix.split('../').length - 1 : 0
         if ((depth ?? 0) < minDepth) return
         if (/^(?:\.\.\/)+package\.json$/.test(source)) return
         context.report({ node, message })
       }
 
-      function reportParentRelative(node) {
+      function reportParentRelative(
+        node:
+          | TSESTree.ImportDeclaration
+          | TSESTree.ExportAllDeclaration
+          | TSESTree.ExportNamedDeclaration
+      ) {
         reportSource(node, importSource(node))
       }
 
@@ -45,7 +66,12 @@ function createParentRelativeImportRule({ description, applies, message, minDept
         ExportNamedDeclaration: reportParentRelative,
         ImportDeclaration: reportParentRelative,
         ImportExpression(node) {
-          reportSource(node, typeof node.source?.value === 'string' ? node.source.value : null)
+          reportSource(
+            node,
+            node.source?.type === 'Literal' && typeof node.source.value === 'string'
+              ? node.source.value
+              : null
+          )
         }
       }
     }
@@ -84,7 +110,17 @@ const noCliParentRelativeImports = createParentRelativeImportRule({
   message: 'Use the #cli/* package-local alias instead of parent-relative CLI imports.'
 })
 
-function createExactCoreBarrelImportRule({ description, applies, message }) {
+interface ExactCoreBarrelRuleOptions {
+  description: string
+  applies(file: string): boolean
+  message: string
+}
+
+function createExactCoreBarrelImportRule({
+  description,
+  applies,
+  message
+}: ExactCoreBarrelRuleOptions): RuleDefinition {
   return createImportSourceRule({
     description,
     applies,
@@ -141,7 +177,7 @@ const noInlinePromptConstants = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noAppVueCoreBarrelImports = createExactCoreBarrelImportRule({
   description:

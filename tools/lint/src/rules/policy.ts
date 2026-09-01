@@ -1,16 +1,19 @@
-import { createProgramFilenameRule } from '../support/factories.js'
+import type { TSESTree } from '@typescript-eslint/utils'
 
-function isObjectKeyIdentifier(node) {
+import { createProgramFilenameRule } from '../support/factories.ts'
+import type { RuleDefinition } from '../support/types.ts'
+
+function isObjectKeyIdentifier(node: TSESTree.Identifier): boolean {
   const parent = node.parent
   return (
     (parent?.type === 'Property' || parent?.type === 'TSPropertySignature') &&
     parent.key === node &&
     !parent.computed &&
-    parent.value !== node
+    (parent.type !== 'Property' || parent.value !== node)
   )
 }
 
-function isExternalMemberIdentifier(node) {
+function isExternalMemberIdentifier(node: TSESTree.Identifier): boolean {
   const parent = node.parent
   return (
     parent?.type === 'MemberExpression' &&
@@ -20,7 +23,10 @@ function isExternalMemberIdentifier(node) {
   )
 }
 
-function isIgnoredAcronymIdentifier(node, ignoredImports) {
+function isIgnoredAcronymIdentifier(
+  node: TSESTree.Identifier,
+  ignoredImports: ReadonlySet<string>
+): boolean {
   if (isObjectKeyIdentifier(node) || isExternalMemberIdentifier(node)) return true
   const parent = node.parent
   if (parent?.type === 'ImportSpecifier' && parent.imported === node) {
@@ -80,7 +86,7 @@ const noMixedCaseAcronymIdentifiers = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noFlatKiwiModules = createProgramFilenameRule({
   description: 'Disallow flat top-level Kiwi modules — group code under Kiwi subdomains',
@@ -123,6 +129,6 @@ const noConditionalObjectSpreads = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 export { noMixedCaseAcronymIdentifiers, noFlatKiwiModules, noConditionalObjectSpreads }

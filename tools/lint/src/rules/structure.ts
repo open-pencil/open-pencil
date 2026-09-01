@@ -1,13 +1,16 @@
 import { existsSync } from 'node:fs'
 
-import { normalizedFilename } from '../support/context.js'
-import { createProgramFilenameRule } from '../support/factories.js'
+import type { TSESTree } from '@typescript-eslint/utils'
 
-function isPascalCaseName(name) {
+import { normalizedFilename } from '../support/context.ts'
+import { createProgramFilenameRule } from '../support/factories.ts'
+import type { RuleDefinition } from '../support/types.ts'
+
+function isPascalCaseName(name: string): boolean {
   return /^[A-Z][A-Za-z0-9]*$/.test(name)
 }
 
-function isKebabOrLowercaseName(name) {
+function isKebabOrLowercaseName(name: string): boolean {
   return /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)
 }
 
@@ -36,7 +39,7 @@ const vueComponentFilePascalCase = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const componentNamespaceCasing = {
   meta: {
@@ -88,7 +91,7 @@ const componentNamespaceCasing = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const nonComponentSourceDirectoriesKebabCase = {
   meta: {
@@ -130,7 +133,7 @@ const nonComponentSourceDirectoriesKebabCase = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noComponentRootSiblingFolder = {
   meta: {
@@ -154,7 +157,7 @@ const noComponentRootSiblingFolder = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noUselessPassThroughWrappers = {
   meta: {
@@ -164,8 +167,8 @@ const noUselessPassThroughWrappers = {
     }
   },
   create(context) {
-    function paramNames(params) {
-      const names = []
+    function paramNames(params: readonly TSESTree.Parameter[]): string[] | null {
+      const names: string[] = []
       for (const param of params ?? []) {
         if (param.type !== 'Identifier') return null
         names.push(param.name)
@@ -173,7 +176,9 @@ const noUselessPassThroughWrappers = {
       return names
     }
 
-    function returnedCall(body) {
+    function returnedCall(
+      body: TSESTree.BlockStatement | TSESTree.Expression
+    ): TSESTree.CallExpression | null {
       if (!body) return null
       if (body.type === 'CallExpression') return body
       if (body.type !== 'BlockStatement') return null
@@ -184,16 +189,24 @@ const noUselessPassThroughWrappers = {
       return statement.argument?.type === 'CallExpression' ? statement.argument : null
     }
 
-    function calleeName(callee) {
+    function calleeName(callee: TSESTree.CallExpression['callee']): string | null {
       return callee?.type === 'Identifier' ? callee.name : null
     }
 
-    function isSameArgumentForwarding(args, params) {
+    function isSameArgumentForwarding(
+      args: readonly TSESTree.CallExpressionArgument[],
+      params: readonly string[]
+    ): boolean {
       if (args?.length !== params.length) return false
       return args.every((arg, index) => arg.type === 'Identifier' && arg.name === params[index])
     }
 
-    function check(node, name, params, body) {
+    function check(
+      node: TSESTree.Node,
+      name: string,
+      params: readonly TSESTree.Parameter[],
+      body: TSESTree.BlockStatement | TSESTree.Expression
+    ) {
       const names = paramNames(params)
       if (!names) return
       const call = returnedCall(body)
@@ -223,7 +236,7 @@ const noUselessPassThroughWrappers = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noFunctionAliasImports = {
   meta: {
@@ -246,7 +259,7 @@ const noFunctionAliasImports = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noDirectOpenPencilBrowserStore = {
   meta: {
@@ -255,13 +268,15 @@ const noDirectOpenPencilBrowserStore = {
     }
   },
   create(context) {
-    function propertyName(property) {
+    function propertyName(
+      property: TSESTree.Expression | TSESTree.PrivateIdentifier
+    ): string | null {
       if (property?.type === 'Identifier') return property.name
       if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
       return null
     }
 
-    function isOpenPencilMember(node) {
+    function isOpenPencilMember(node: TSESTree.Expression): boolean {
       return (
         node?.type === 'MemberExpression' &&
         propertyName(node.property) === 'openPencil' &&
@@ -282,7 +297,7 @@ const noDirectOpenPencilBrowserStore = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noDirectOpenPencilWindowInternals = {
   meta: {
@@ -291,7 +306,9 @@ const noDirectOpenPencilWindowInternals = {
     }
   },
   create(context) {
-    function propertyName(property) {
+    function propertyName(
+      property: TSESTree.Expression | TSESTree.PrivateIdentifier
+    ): string | null {
       if (property?.type === 'Identifier') return property.name
       if (property?.type === 'Literal' && typeof property.value === 'string') return property.value
       return null
@@ -309,7 +326,7 @@ const noDirectOpenPencilWindowInternals = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noBunGlobalsInCli = {
   meta: { docs: { description: 'Disallow Bun globals in Node-compatible CLI source' } },
@@ -326,7 +343,7 @@ const noBunGlobalsInCli = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 const noTopLevelPrefixedTestFiles = createProgramFilenameRule({
   description: 'Disallow top-level test files that encode domains as filename prefixes',
   check(file) {
@@ -348,7 +365,7 @@ const noSiblingDomainPrefixedFiles = createProgramFilenameRule({
 
     const prefix = parts[0]
     const suffix = parts.at(-1)
-    let domain = null
+    let domain: string | null = null
     if (existsSync(`${dir}${prefix}`)) domain = prefix
     else if (suffix && existsSync(`${dir}${suffix}`)) domain = suffix
     if (!domain) return false

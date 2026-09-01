@@ -1,4 +1,8 @@
-import { normalizedFilename } from '../../support/context.js'
+import type { TSESTree } from '@typescript-eslint/utils'
+
+import { normalizedFilename } from '../../support/context.ts'
+import type { RuleDefinition } from '../../support/types.ts'
+import type { VueTemplateNode } from '../../support/vue.ts'
 import {
   VUE_DIRECTIVE_NODE,
   hasExpressionCall,
@@ -6,7 +10,7 @@ import {
   isVueBindDirective,
   vueTemplateAst,
   walkVueTemplateAst
-} from '../../support/vue.js'
+} from '../../support/vue.ts'
 
 const TEST_ID_FORMAT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/
 
@@ -21,7 +25,7 @@ const noRawTestIdStringProps = {
     const file = normalizedFilename(context)
     if (!file.endsWith('.vue')) return {}
 
-    function isTestIdKey(key) {
+    function isTestIdKey(key: TSESTree.PropertyName): boolean {
       if (key?.type !== 'Identifier') return false
       return key.name === 'testId' || key.name.endsWith('TestId')
     }
@@ -37,7 +41,7 @@ const noRawTestIdStringProps = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noDynamicDataTestIdInVue = {
   meta: {
@@ -66,7 +70,7 @@ const noDynamicDataTestIdInVue = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noTestIdHelperBindInVue = {
   meta: {
@@ -100,7 +104,7 @@ const noTestIdHelperBindInVue = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noInvalidTestIdAttributes = {
   meta: {
@@ -116,7 +120,7 @@ const noInvalidTestIdAttributes = {
       Program(node) {
         const template = vueTemplateAst(context.sourceCode.getText(), file)
         if (!template) return
-        let invalidId = null
+        let invalidId: string | null = null
         let hasInvalidSpelling = false
         walkVueTemplateAst(template, (templateNode) => {
           if (hasInvalidSpelling || invalidId !== null) return
@@ -129,8 +133,8 @@ const noInvalidTestIdAttributes = {
             hasInvalidSpelling = true
             return
           }
-          if (!isStaticVueAttribute(templateNode, 'data-test-id')) return
-          const id = templateNode.value?.content ?? ''
+          const id = staticVueAttributeValue(templateNode, 'data-test-id')
+          if (id === null) return
           if (!TEST_ID_FORMAT.test(id)) invalidId = id
         })
         if (hasInvalidSpelling) {
@@ -148,7 +152,7 @@ const noInvalidTestIdAttributes = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noRawTestIdSelectorsInTests = {
   meta: {
@@ -183,9 +187,14 @@ const noRawTestIdSelectorsInTests = {
       }
     }
   }
+} satisfies RuleDefinition
+
+function staticVueAttributeValue(node: VueTemplateNode, name: string): string | null {
+  if (!isStaticVueAttribute(node, name)) return null
+  return node.value?.content ?? ''
 }
 
-function isGeneratedTestIdLiteral(value) {
+function isGeneratedTestIdLiteral(value: unknown): boolean {
   if (typeof value !== 'string') return false
   const toolbarValue = value.startsWith('mobile-toolbar-') ? value.slice('mobile-'.length) : value
   return (
@@ -211,7 +220,7 @@ const noGeneratedTestIdLiterals = {
     if (file.endsWith('/tests/helpers/test-ids.ts')) return {}
     if (!file.includes('/src/') && !file.includes('/tests/')) return {}
 
-    function report(node) {
+    function report(node: TSESTree.Node) {
       context.report({
         node,
         message:
@@ -239,7 +248,7 @@ const noGeneratedTestIdLiterals = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 export {
   noDynamicDataTestIdInVue,

@@ -1,7 +1,15 @@
-import { normalizedFilename } from '../support/context.js'
+import type { TSESTree } from '@typescript-eslint/utils'
 
-function isUnknownTypeAnnotation(typeAnnotation) {
-  return typeAnnotation?.type === 'TSUnknownKeyword'
+import { normalizedFilename } from '../support/context.ts'
+import type { RuleDefinition } from '../support/types.ts'
+
+function isUnknownTypeAnnotation(typeAnnotation: unknown): boolean {
+  return (
+    typeAnnotation !== null &&
+    typeof typeAnnotation === 'object' &&
+    'type' in typeAnnotation &&
+    typeAnnotation.type === 'TSUnknownKeyword'
+  )
 }
 
 const noDirectStorageAccess = {
@@ -22,7 +30,7 @@ const noDirectStorageAccess = {
     ]
     if (allowedFiles.some((suffix) => file.endsWith(suffix))) return {}
 
-    function reportStorage(node, name) {
+    function reportStorage(node: TSESTree.Identifier, name: string) {
       context.report({
         node,
         message: `Use a dedicated storage module instead of direct ${name} access.`
@@ -36,6 +44,13 @@ const noDirectStorageAccess = {
       }
     }
   }
+} satisfies RuleDefinition
+
+function nestedAsType(node: { expression: unknown }): unknown {
+  const expression = node.expression
+  return expression && typeof expression === 'object' && 'typeAnnotation' in expression
+    ? expression.typeAnnotation
+    : null
 }
 
 const noBroadDoubleCast = {
@@ -50,7 +65,7 @@ const noBroadDoubleCast = {
 
     return {
       TSAsExpression(node) {
-        if (isUnknownTypeAnnotation(node.expression?.typeAnnotation)) {
+        if (isUnknownTypeAnnotation(nestedAsType(node))) {
           context.report({
             node,
             message: 'Avoid `as unknown as ...`; model the value with a precise type or helper.'
@@ -59,15 +74,14 @@ const noBroadDoubleCast = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
-function isRecordStringUnknownType(typeAnnotation) {
+function isRecordStringUnknownType(typeAnnotation: TSESTree.TypeNode): boolean {
   if (typeAnnotation?.type !== 'TSTypeReference') return false
   if (typeAnnotation.typeName?.type !== 'Identifier' || typeAnnotation.typeName.name !== 'Record') {
     return false
   }
-  const parameters =
-    typeAnnotation.typeParameters?.params ?? typeAnnotation.typeArguments?.params ?? []
+  const parameters = typeAnnotation.typeArguments?.params ?? []
   return parameters[0]?.type === 'TSStringKeyword' && parameters[1]?.type === 'TSUnknownKeyword'
 }
 
@@ -80,7 +94,7 @@ const noUnknownRecordDoubleCast = {
   create(context) {
     return {
       TSAsExpression(node) {
-        if (!isUnknownTypeAnnotation(node.expression?.typeAnnotation)) return
+        if (!isUnknownTypeAnnotation(nestedAsType(node))) return
         if (!isRecordStringUnknownType(node.typeAnnotation)) return
         context.report({
           node,
@@ -90,7 +104,7 @@ const noUnknownRecordDoubleCast = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noFunctionType = {
   meta: {
@@ -109,7 +123,7 @@ const noFunctionType = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noReflectDeleteGlobalThisOutsideTests = {
   meta: {
@@ -141,7 +155,7 @@ const noReflectDeleteGlobalThisOutsideTests = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noTsSuppressionComments = {
   meta: {
@@ -164,7 +178,7 @@ const noTsSuppressionComments = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noCoreBrowserGlobals = {
   meta: {
@@ -197,7 +211,7 @@ const noCoreBrowserGlobals = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noDirectGraphEmitterSubscriptions = {
   meta: {
@@ -224,7 +238,7 @@ const noDirectGraphEmitterSubscriptions = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noOnUnmountedInCompositionRoots = {
   meta: {
@@ -250,7 +264,7 @@ const noOnUnmountedInCompositionRoots = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noComposableStateWrappers = {
   meta: {
@@ -274,7 +288,7 @@ const noComposableStateWrappers = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const preferVueUseIntervals = {
   meta: {
@@ -287,7 +301,7 @@ const preferVueUseIntervals = {
     const applies = file.includes('/src/app/') || file.includes('/packages/vue/src/')
     if (!applies) return {}
 
-    function intervalName(callee) {
+    function intervalName(callee: TSESTree.Expression): string | null {
       if (callee?.type === 'Identifier') return callee.name
       if (callee?.type === 'MemberExpression' && callee.property?.type === 'Identifier') {
         return callee.property.name
@@ -306,7 +320,7 @@ const preferVueUseIntervals = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const preferVueUseTimeouts = {
   meta: {
@@ -333,7 +347,7 @@ const preferVueUseTimeouts = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const maxCompositionRootLines = {
   meta: {
@@ -358,7 +372,11 @@ const maxCompositionRootLines = {
       /\/(?:use|create)\.ts$/.test(file)
     if (!applies) return {}
 
-    const max = context.options[0]?.max ?? 260
+    const options = context.options[0]
+    const max =
+      options && typeof options === 'object' && 'max' in options && typeof options.max === 'number'
+        ? options.max
+        : 260
 
     return {
       Program(node) {
@@ -371,7 +389,7 @@ const maxCompositionRootLines = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 export {
   noDirectStorageAccess,

@@ -1,5 +1,5 @@
-export { noBrowserSideEffectsInVue, noDocumentQuerySelectorInVue } from './browser.js'
-export { noLargePropertySectionComponents } from './size.js'
+export { noBrowserSideEffectsInVue, noDocumentQuerySelectorInVue } from './browser.ts'
+export { noLargePropertySectionComponents } from './size.ts'
 export {
   noDynamicDataTestIdInVue,
   noGeneratedTestIdLiterals,
@@ -7,11 +7,11 @@ export {
   noRawTestIdSelectorsInTests,
   noRawTestIdStringProps,
   noTestIdHelperBindInVue
-} from './test-ids.js'
+} from './test-ids.ts'
 export {
   noHardcodedTipLabelsInVue,
   noNativeTitleAttributesInVue,
   noRawSvgInAppVueTemplates,
   noUiHelperCallsInVueTemplates,
   noVueStyleBlocks
-} from './template.js'
+} from './template.ts'

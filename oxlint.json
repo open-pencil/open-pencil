@@ -419,7 +419,7 @@
   "overrides": [
     {
       "files": [
-        "tools/lint/src/**/*.js",
+        "tools/lint/src/**/*.ts",
         "tools/lint/tests/**/*.ts"
       ],
       "rules": {

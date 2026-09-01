@@ -1,9 +1,12 @@
+import type { TSESTree } from '@typescript-eslint/utils'
+
 import {
   noConditionalObjectSpreads,
   noFlatKiwiModules,
   noMixedCaseAcronymIdentifiers
-} from './rules/policy.js'
-import { normalizedFilename } from './support/context.js'
+} from './rules/policy.ts'
+import { normalizedFilename } from './support/context.ts'
+import type { RuleDefinition } from './support/types.ts'
 
 const noInlineNamedTypes = {
   meta: {
@@ -23,21 +26,24 @@ const noInlineNamedTypes = {
     const typesOption = context.options[0]
     if (!typesOption || typeof typesOption !== 'object') return {}
 
-    const shapeToName = new Map()
+    const shapeToName = new Map<string, string>()
     for (const [name, shape] of Object.entries(typesOption)) {
-      shapeToName.set(shape, name)
+      if (typeof shape === 'string') shapeToName.set(shape, name)
     }
 
     return {
       TSTypeLiteral(node) {
         const props = node.members?.filter(
-          (m) => m.type === 'TSPropertySignature' && m.key?.type === 'Identifier'
+          (member) => member.type === 'TSPropertySignature' && member.key?.type === 'Identifier'
         )
         if (!props || props.length < 2) return
 
         const shape = props
-          .map((m) => {
-            const typeNode = m.typeAnnotation?.typeAnnotation
+          .map((member) => {
+            if (member.type !== 'TSPropertySignature' || member.key.type !== 'Identifier') {
+              return ''
+            }
+            const typeNode = member.typeAnnotation?.typeAnnotation
             let typeName = 'unknown'
             if (typeNode) {
               switch (typeNode.type) {
@@ -52,7 +58,7 @@ const noInlineNamedTypes = {
                   break
               }
             }
-            return `${m.key.name}:${typeName}`
+            return `${member.key.name}:${typeName}`
           })
           .sort()
           .join(',')
@@ -67,7 +73,7 @@ const noInlineNamedTypes = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noStructuredCloneSceneArrays = {
   meta: {
@@ -84,15 +90,11 @@ const noStructuredCloneSceneArrays = {
     ]
   },
   create(context) {
-    const props = new Set(
-      context.options[0] ?? [
-        'fills',
-        'strokes',
-        'effects',
-        'styleRuns',
-        'fillGeometry',
-        'strokeGeometry'
-      ]
+    const configuredProperties = context.options[0]
+    const props = new Set<string>(
+      Array.isArray(configuredProperties)
+        ? configuredProperties.filter((value): value is string => typeof value === 'string')
+        : ['fills', 'strokes', 'effects', 'styleRuns', 'fillGeometry', 'strokeGeometry']
     )
     return {
       CallExpression(node) {
@@ -110,7 +112,7 @@ const noStructuredCloneSceneArrays = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 import {
   noVueStyleBlocks,
@@ -127,7 +129,7 @@ import {
   noGeneratedTestIdLiterals,
   noBrowserSideEffectsInVue,
   noDocumentQuerySelectorInVue
-} from './rules/vue/index.js'
+} from './rules/vue/index.ts'
 
 const noDirectSelectionToolStateMutation = {
   meta: {
@@ -158,7 +160,7 @@ const noDirectSelectionToolStateMutation = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noMathRandom = {
   meta: {
@@ -184,18 +186,28 @@ const noMathRandom = {
       }
     }
   }
+} satisfies RuleDefinition
+
+interface ColorLiteral {
+  r: number
+  g: number
+  b: number
+  a: number
 }
 
-function isNumericLiteral(node, value) {
+function isNumericLiteral(node: TSESTree.Node | undefined, value: number): boolean {
   return node?.type === 'Literal' && node.value === value
 }
 
-function colorObjectLiteral(node, color) {
+function colorObjectLiteral(node: TSESTree.ObjectExpression, color: ColorLiteral): boolean {
   if (node?.type !== 'ObjectExpression') return false
   const props = new Map()
   for (const prop of node.properties ?? []) {
     if (prop.type !== 'Property') return false
-    const key = prop.key.type === 'Identifier' ? prop.key.name : prop.key.value
+    let key: string | null = null
+    if (prop.key.type === 'Identifier') key = prop.key.name
+    else if (prop.key.type === 'Literal') key = String(prop.key.value)
+    if (key === null) return false
     props.set(key, prop.value)
   }
   return Object.entries(color).every(([key, value]) => isNumericLiteral(props.get(key), value))
@@ -230,7 +242,7 @@ const noHardcodedColorConstants = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noHandRolledColor = {
   meta: {
@@ -258,7 +270,7 @@ const noHandRolledColor = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noRawConsoleFormat = {
   meta: {
@@ -301,7 +313,7 @@ const noRawConsoleFormat = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noSilentCatch = {
   meta: {
@@ -326,7 +338,7 @@ const noSilentCatch = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 const noTypeofWindowCheck = {
   meta: {
@@ -341,7 +353,7 @@ const noTypeofWindowCheck = {
     return {
       BinaryExpression(node) {
         if (node.operator !== '!==' && node.operator !== '===') return
-        const isTypeofWindow = (side) =>
+        const isTypeofWindow = (side: TSESTree.Expression) =>
           side.type === 'UnaryExpression' &&
           side.operator === 'typeof' &&
           side.argument?.type === 'Identifier' &&
@@ -356,7 +368,7 @@ const noTypeofWindowCheck = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 import {
   noVueSelfPackageImports,
@@ -374,7 +386,7 @@ import {
   noAppVueCoreBarrelImports,
   noAppImportsInPackages,
   noCoreFrameworkImports
-} from './rules/imports.js'
+} from './rules/imports.ts'
 import {
   noDirectStorageAccess,
   noBroadDoubleCast,
@@ -389,7 +401,7 @@ import {
   preferVueUseIntervals,
   preferVueUseTimeouts,
   maxCompositionRootLines
-} from './rules/runtime.js'
+} from './rules/runtime.ts'
 import {
   vueComponentFilePascalCase,
   componentNamespaceCasing,
@@ -402,13 +414,13 @@ import {
   noBunGlobalsInCli,
   noTopLevelPrefixedTestFiles,
   noSiblingDomainPrefixedFiles
-} from './rules/structure.js'
+} from './rules/structure.ts'
 import {
   noBroadUnknownTypeAssertions,
   noDuplicateTypeShapes,
   noLocalJsonObjectAliases,
   noImportTypeAnnotations
-} from './rules/typescript.js'
+} from './rules/typescript.ts'
 
 const plugin = {
   meta: { name: 'open-pencil' },

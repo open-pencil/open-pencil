@@ -1,5 +1,6 @@
-import { normalizedFilename } from '../../support/context.js'
-import { sourceLineCount } from '../../support/vue.js'
+import { normalizedFilename } from '../../support/context.ts'
+import type { RuleDefinition } from '../../support/types.ts'
+import { sourceLineCount } from '../../support/vue.ts'
 
 const PROPERTY_SECTION_LINE_ALLOWLIST = new Set([
   '/src/components/properties/LayoutSection/SizeControls.vue'
@@ -28,6 +29,6 @@ const noLargePropertySectionComponents = {
       }
     }
   }
-}
+} satisfies RuleDefinition
 
 export { noLargePropertySectionComponents }

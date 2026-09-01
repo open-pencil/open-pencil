@@ -1,1 +1,1 @@
-export { default } from '../tools/lint/src/plugin.js'
+export { default } from '../tools/lint/src/plugin.ts'
