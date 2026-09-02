@@ -2,10 +2,6 @@
 
 ## Unreleased
 
-### Fixed
-
-- Stop showing a misleading desktop-only warning when web font loading or catalog lookup fails.
-
 ### Added
 
 - Add a searchable command palette for editor and application actions.
@@ -41,6 +37,7 @@
 
 ### Fixed
 
+- Stop showing a misleading desktop-only warning when web font loading or catalog lookup fails.
 - Preserve source text offsets when resolving fallback languages after text-case transformations.
 - Track character coverage restored from downloaded font cache entries.
 
