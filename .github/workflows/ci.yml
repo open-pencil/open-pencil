@@ -154,6 +154,9 @@ jobs:
       - name: Run Cloud PostgreSQL and SeaweedFS E2E
         run: bun --filter @open-pencil/cloud test:e2e
 
+      - name: Build browser Cloud dependencies
+        run: bun --filter @open-pencil/core build && bun --filter @open-pencil/mcp build
+
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
 
