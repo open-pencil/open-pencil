@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Stop showing a misleading desktop-only warning when web font loading or catalog lookup fails.
+
 ### Added
 
 - Add a searchable command palette for editor and application actions.
