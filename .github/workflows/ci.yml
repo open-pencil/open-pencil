@@ -150,6 +150,8 @@ jobs:
           persist-credentials: false
 
       - uses: ./.github/actions/setup-bun
+        with:
+          lfs: 'true'
 
       - name: Run Cloud PostgreSQL and SeaweedFS E2E
         run: bun --filter @open-pencil/cloud test:e2e
