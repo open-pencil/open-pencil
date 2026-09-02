@@ -35,6 +35,7 @@ jobs:
         with:
           languages: javascript-typescript
           build-mode: none
+          config-file: ./.github/codeql/cloud.yml
           queries: security-extended,security-and-quality
 
       - name: Analyze
