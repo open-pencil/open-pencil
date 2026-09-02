@@ -1,5 +1,4 @@
 import type { FetchFunction } from '@/app/http/types'
-import { IS_BROWSER } from '@/constants'
 
 const MAX_WEB_FONT_RESPONSE_BYTES = 8 * 1024 * 1024
 const ALLOWED_WEB_FONT_HOSTS = new Set([
@@ -12,7 +11,7 @@ const ALLOWED_WEB_FONT_HOSTS = new Set([
 
 export function createBrowserWebFontFetch(
   nativeFetch: typeof globalThis.fetch,
-  origin = IS_BROWSER ? window.location.origin : ''
+  origin = typeof window === 'undefined' ? '' : (window.location?.origin ?? '')
 ): FetchFunction {
   return async (input, init) => {
     const request = new Request(input, init)
@@ -41,7 +40,4 @@ export function createBrowserWebFontFetch(
   }
 }
 
-export const browserWebFontFetch = createBrowserWebFontFetch(
-  globalThis.fetch.bind(globalThis),
-  IS_BROWSER ? window.location.origin : ''
-)
+export const browserWebFontFetch = createBrowserWebFontFetch(globalThis.fetch.bind(globalThis))
