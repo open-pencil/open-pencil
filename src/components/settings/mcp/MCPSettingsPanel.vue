@@ -60,7 +60,6 @@ function restart(): void {
 
 function setLanAccess(enabled: boolean): void {
   mcpLanAccessEnabled.value = enabled
-  if (enabled) mcpAuthenticationEnabled.value = true
 }
 
 async function chooseRootDirectory(): Promise<void> {
@@ -168,7 +167,6 @@ async function copyAccessToken(): Promise<void> {
           </div>
           <AppSwitch
             v-model="mcpAuthenticationEnabled"
-             :disabled="mcpLanAccessEnabled"
              :label="dialogs.mcpAuthentication"
             data-test-id="settings-mcp-authentication"
           />

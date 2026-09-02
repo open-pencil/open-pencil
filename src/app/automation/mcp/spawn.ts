@@ -345,7 +345,7 @@ async function readExistingServerHandle(): Promise<AutomationServerHandle | null
 async function configureDevMCP(): Promise<AutomationServerHandle> {
   if (!DEV_AUTOMATION_AUTH_TOKEN) throw new Error('MCP development control token is unavailable')
   const configuration: DevMCPConfiguration = {
-    authenticationEnabled: mcpAuthenticationEnabled.value || mcpLanAccessEnabled.value,
+    authenticationEnabled: mcpAuthenticationEnabled.value,
     lanAccessEnabled: mcpLanAccessEnabled.value,
     rootDirectory: mcpRootDirectory.value,
     disabledTools: [...disabledMCPTools.value]
@@ -382,7 +382,7 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   const executableAvailable = await invoke<boolean>('mcp_executable_available')
   if (!executableAvailable) return rememberStartupError(missingMCPError())
 
-  const authToken = mcpAuthenticationEnabled.value || mcpLanAccessEnabled.value ? randomHex(32) : null
+  const authToken = mcpAuthenticationEnabled.value ? randomHex(32) : null
   // Cache only after MCP startup is confirmed healthy.
 
   const { Command } = await import('@tauri-apps/plugin-shell')

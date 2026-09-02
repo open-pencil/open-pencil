@@ -65,6 +65,7 @@
 
 ### Fixed
 
+- Synchronize MCP image exports with the target page and selected layers in the editor canvas before capturing them.
 - Fit a page to the editor viewport only on its first visit, preserving later pan and zoom adjustments.
 - Run `openpencil import` on Node so the npm-installed CLI no longer fails with `Bun is not defined`. (#575)
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.

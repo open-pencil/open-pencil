@@ -4,9 +4,11 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import { ALL_TOOLS, registerComponentCatalog } from '@open-pencil/core/tools'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
+import { presentExportImageTarget } from '@/app/automation/bridge/export-handlers'
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 import { useLibraryService } from '@/app/libraries'
+import { getActiveTabId, switchTab } from '@/app/tabs'
 
 type FigmaFactory = (store: AutomationTarget['store'], pageId?: string) => FigmaAPI
 
@@ -47,6 +49,11 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     const libraryService = useLibraryService()
     libraryService.bindEditor(store)
     registerComponentCatalog(store.graph, libraryService)
+    if (toolName === 'export_image') {
+      await presentExportImageTarget(target, toolArgs, (documentId) => {
+        if (getActiveTabId() !== documentId) switchTab(documentId)
+      })
+    }
     const figma = makeFigma(store, target.pageId)
     const result = await def.execute(figma, toolArgs)
 

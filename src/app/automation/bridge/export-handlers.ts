@@ -3,6 +3,53 @@ import { selectionToJSX, sceneNodeToJSX, type RasterExportFormat } from '@open-p
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 
+type ActivateDocument = (documentId: string) => void
+
+type ExportPresentationTarget = {
+  documentId: string
+  pageId: string
+  store: {
+    state: { currentPageId: string }
+    graph: { getChildren(parentId: string): { id: string }[] }
+    switchPage(pageId: string): Promise<void>
+    select(ids: string[]): void
+    zoomToSelection(): void
+  }
+}
+
+function exportNodeIds(
+  target: ExportPresentationTarget,
+  toolArgs: Record<string, unknown>
+): string[] {
+  const requestedIds = toolArgs.ids
+  if (Array.isArray(requestedIds) && requestedIds.length > 0) {
+    return requestedIds.filter((id): id is string => typeof id === 'string')
+  }
+  return target.store.graph.getChildren(target.pageId).map((node) => node.id)
+}
+
+function waitForCanvasRender(): Promise<void> {
+  if (typeof requestAnimationFrame !== 'function') return Promise.resolve()
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
+}
+
+export async function presentExportImageTarget(
+  target: ExportPresentationTarget,
+  toolArgs: Record<string, unknown>,
+  activateDocument: ActivateDocument
+): Promise<void> {
+  activateDocument(target.documentId)
+
+  const { store } = target
+  if (store.state.currentPageId !== target.pageId) await store.switchPage(target.pageId)
+
+  store.select(exportNodeIds(target, toolArgs))
+  store.zoomToSelection()
+  await waitForCanvasRender()
+}
+
 export async function handleExport(target: AutomationTarget, args: unknown): Promise<unknown> {
   const store = target.store
   const exportArgs = args as { nodeIds?: string[]; scale?: number; format?: string } | undefined

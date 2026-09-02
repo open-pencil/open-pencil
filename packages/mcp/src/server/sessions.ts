@@ -19,7 +19,7 @@ type MCPSessionManagerOptions = {
   registerTools: (server: McpServer) => void
 }
 
-const MAX_MCP_SESSIONS = 10
+const MAX_MCP_SESSIONS = 100
 const MCP_SESSION_TTL_MS = 15 * 60_000
 const SESSION_CLOSE_TIMEOUT_MS = 5_000
 
