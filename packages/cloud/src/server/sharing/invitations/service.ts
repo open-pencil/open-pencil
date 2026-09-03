@@ -11,7 +11,6 @@ import type { CloudDatabase } from '#cloud/server/db'
 import { DocumentNotFoundError } from '#cloud/server/documents/service'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { Kysely } from 'kysely'
-import { sql } from 'kysely'
 import { nanoid } from 'nanoid'
 
 import { requireSharingAccess } from '../access'
@@ -65,7 +64,7 @@ export function createInvitationService(
     const inviter = await database
       .selectFrom('user')
       .select('name')
-      .where(sql<string>`id::text`, '=', invitation.invitedBy)
+      .where('id', '=', invitation.invitedBy)
       .executeTakeFirst()
     return {
       documentName: invitation.documentName,

@@ -3,7 +3,6 @@ import { sha256 } from '@noble/hashes/sha2.js'
 import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils.js'
 import type { ClientRateLimitInfo, Store } from 'hono-rate-limiter'
 import type { Kysely } from 'kysely'
-import { sql } from 'kysely'
 
 export class PostgresRateLimitStore implements Store {
   readonly localKeys = false
@@ -33,21 +32,28 @@ export class PostgresRateLimitStore implements Store {
     const resetTime = new Date(
       Math.floor(now.getTime() / this.windowMs) * this.windowMs + this.windowMs
     )
-    const result = await sql<{ requestCount: number; windowStartedAt: Date }>`
-      insert into cloud_rate_limit (key_hash, window_started_at, request_count, updated_at)
-      values (${this.hash(key)}, ${new Date(resetTime.getTime() - this.windowMs)}, 1, ${now})
-      on conflict (key_hash) do update set
-        request_count = case
-          when cloud_rate_limit.window_started_at = excluded.window_started_at
-          then cloud_rate_limit.request_count + 1
-          else 1
-        end,
-        window_started_at = excluded.window_started_at,
-        updated_at = excluded.updated_at
-      returning request_count as "requestCount", window_started_at as "windowStartedAt"
-    `.execute(this.database)
-    const row = result.rows[0]
-    if (!row) throw new Error('Rate limit increment returned no row')
+    const row = await this.database
+      .insertInto('cloudRateLimit')
+      .values({
+        keyHash: this.hash(key),
+        windowStartedAt: new Date(resetTime.getTime() - this.windowMs),
+        requestCount: 1,
+        updatedAt: now
+      })
+      .onConflict((conflict) =>
+        conflict.column('keyHash').doUpdateSet((expression) => ({
+          requestCount: expression
+            .case()
+            .whenRef('cloudRateLimit.windowStartedAt', '=', 'excluded.windowStartedAt')
+            .then(expression('cloudRateLimit.requestCount', '+', 1))
+            .else(1)
+            .end(),
+          windowStartedAt: expression.ref('excluded.windowStartedAt'),
+          updatedAt: expression.ref('excluded.updatedAt')
+        }))
+      )
+      .returning(['requestCount', 'windowStartedAt'])
+      .executeTakeFirstOrThrow()
     return {
       totalHits: Number(row.requestCount),
       resetTime: new Date(new Date(row.windowStartedAt).getTime() + this.windowMs)

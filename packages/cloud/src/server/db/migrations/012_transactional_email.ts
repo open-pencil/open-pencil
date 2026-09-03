@@ -1,4 +1,5 @@
-import { type Kysely, sql } from 'kysely'
+import { checkColumnIn, CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
+import type { Kysely } from 'kysely'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema
@@ -10,19 +11,28 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('payload_encrypted', 'text')
     .addColumn('status', 'text', (column) => column.notNull().defaultTo('pending'))
     .addColumn('attempt_count', 'integer', (column) => column.notNull().defaultTo(0))
-    .addColumn('next_attempt_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
+    .addColumn('next_attempt_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
     .addColumn('claim_id', 'uuid')
     .addColumn('claimed_at', 'timestamptz')
     .addColumn('transport', 'text')
     .addColumn('transport_message_id', 'text')
     .addColumn('last_error_code', 'text')
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
+    .addColumn('updated_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
     .addColumn('accepted_at', 'timestamptz')
-    .addCheckConstraint('transactional_email_kind_check', sql`kind in ('document-invitation')`)
+    .addCheckConstraint(
+      'transactional_email_kind_check',
+      checkColumnIn('kind', ['document-invitation'])
+    )
     .addCheckConstraint(
       'transactional_email_status_check',
-      sql`status in ('pending', 'sending', 'accepted', 'failed', 'suppressed')`
+      checkColumnIn('status', ['pending', 'sending', 'accepted', 'failed', 'suppressed'])
     )
     .execute()
 

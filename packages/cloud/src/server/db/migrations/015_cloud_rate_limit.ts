@@ -1,4 +1,6 @@
-import { type Kysely, sql } from 'kysely'
+import type { Kysely } from 'kysely'
+
+import { addCurrentTimestampColumns } from './helpers'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema
@@ -10,8 +12,8 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('key_hash', 'text', (column) => column.primaryKey())
     .addColumn('window_started_at', 'timestamptz', (column) => column.notNull())
     .addColumn('request_count', 'integer', (column) => column.notNull().defaultTo(1))
-    .addColumn('updated_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .execute()
+  await addCurrentTimestampColumns(database, 'cloud_rate_limit', ['updated_at'])
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {

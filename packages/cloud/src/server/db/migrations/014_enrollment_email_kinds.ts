@@ -1,26 +1,30 @@
-import { type Kysely, sql } from 'kysely'
+import type { Kysely } from 'kysely'
+
+import { replaceCheckConstraint } from './helpers'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
-  await database.schema
-    .alterTable('transactional_email')
-    .dropConstraint('transactional_email_kind_check')
-    .execute()
-  await database.schema
-    .alterTable('transactional_email')
-    .addCheckConstraint(
-      'transactional_email_kind_check',
-      sql`kind in ('document-invitation', 'enrollment-requested', 'admin-enrollment-notification', 'enrollment-approved', 'enrollment-rejected', 'enrollment-revoked')`
-    )
-    .execute()
+  await replaceCheckConstraint(
+    database,
+    'transactional_email',
+    'transactional_email_kind_check',
+    'kind',
+    [
+      'document-invitation',
+      'enrollment-requested',
+      'admin-enrollment-notification',
+      'enrollment-approved',
+      'enrollment-rejected',
+      'enrollment-revoked'
+    ]
+  )
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {
-  await database.schema
-    .alterTable('transactional_email')
-    .dropConstraint('transactional_email_kind_check')
-    .execute()
-  await database.schema
-    .alterTable('transactional_email')
-    .addCheckConstraint('transactional_email_kind_check', sql`kind in ('document-invitation')`)
-    .execute()
+  await replaceCheckConstraint(
+    database,
+    'transactional_email',
+    'transactional_email_kind_check',
+    'kind',
+    ['document-invitation']
+  )
 }

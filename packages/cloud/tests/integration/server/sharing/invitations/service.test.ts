@@ -133,10 +133,15 @@ describe('document sharing invitations integration', () => {
   test('encrypts and consumes OAuth invitation continuations once', async () => {
     const context = await seedSharing()
     try {
+      await assignOwnerUser(context, {
+        id: OWNER_ID,
+        name: 'Owner',
+        email: 'owner-continuation@example.com'
+      })
       const sharing = createDocumentSharingService(context.runtime.database, {
         continuationSecret: 'continuation-test-secret-at-least-32-characters'
       })
-      const created = await sharing.createInvitation('owner', context.documentId, {
+      const created = await sharing.createInvitation(OWNER_ID, context.documentId, {
         email: 'continuation@example.com',
         permission: 'view'
       })

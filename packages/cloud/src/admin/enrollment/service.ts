@@ -1,6 +1,6 @@
 import { AdminDomainError } from '#cloud/admin/errors'
 import type { CloudDatabase } from '#cloud/server/db'
-import { type Kysely, sql } from 'kysely'
+import type { Kysely } from 'kysely'
 
 import {
   enqueueEnrollmentRequested,
@@ -204,7 +204,7 @@ export function createEnrollmentService(
     async pendingCount(): Promise<number> {
       const row = await database
         .selectFrom('cloudEnrollment')
-        .select(sql<number>`count(*)`.as('count'))
+        .select(({ fn }) => fn.countAll<number>().as('count'))
         .where('status', '=', 'pending')
         .executeTakeFirstOrThrow()
       return Number(row.count)

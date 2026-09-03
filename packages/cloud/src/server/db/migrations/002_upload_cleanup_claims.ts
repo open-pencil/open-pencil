@@ -1,4 +1,5 @@
-import { type Kysely, sql } from 'kysely'
+import { checkColumnIn } from '#cloud/server/db/expressions'
+import type { Kysely } from 'kysely'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema
@@ -11,7 +12,7 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .alterTable('upload')
     .addCheckConstraint(
       'upload_status_check',
-      sql`status in ('pending', 'cleaning', 'committed', 'abandoned')`
+      checkColumnIn('status', ['pending', 'cleaning', 'committed', 'abandoned'])
     )
     .execute()
 }
@@ -20,7 +21,10 @@ export async function down(database: Kysely<unknown>): Promise<void> {
   await database.schema.alterTable('upload').dropConstraint('upload_status_check').execute()
   await database.schema
     .alterTable('upload')
-    .addCheckConstraint('upload_status_check', sql`status in ('pending', 'committed', 'abandoned')`)
+    .addCheckConstraint(
+      'upload_status_check',
+      checkColumnIn('status', ['pending', 'committed', 'abandoned'])
+    )
     .execute()
   await database.schema
     .alterTable('upload')

@@ -1,4 +1,4 @@
-import { type Kysely, sql } from 'kysely'
+import type { Kysely } from 'kysely'
 import { Migrator, type Migration, type MigrationProvider } from 'kysely/migration'
 
 import * as foundation from './migrations/001_foundation'
@@ -61,19 +61,12 @@ const REQUIRED_AUTH_SCHEMA: Record<string, string[]> = {
 async function existingAuthSchema(
   database: Kysely<CloudDatabase>
 ): Promise<Map<string, Set<string>>> {
-  const rows = await sql<{ tableName: string; columnName: string }>`
-    select table_name as "tableName", column_name as "columnName"
-    from information_schema.columns
-    where table_schema = current_schema()
-      and table_name in (${sql.join(Object.keys(REQUIRED_AUTH_SCHEMA))})
-  `.execute(database)
-  const schema = new Map<string, Set<string>>()
-  for (const row of rows.rows) {
-    const columns = schema.get(row.tableName) ?? new Set<string>()
-    columns.add(row.columnName)
-    schema.set(row.tableName, columns)
-  }
-  return schema
+  const tables = await database.introspection.getTables()
+  return new Map(
+    tables
+      .filter((table) => Object.hasOwn(REQUIRED_AUTH_SCHEMA, table.name))
+      .map((table) => [table.name, new Set(table.columns.map((column) => column.name))])
+  )
 }
 
 async function migrateAuthSchema(

@@ -1,4 +1,5 @@
-import { type Kysely, sql } from 'kysely'
+import { checkColumnIn, CURRENT_TIMESTAMP, EMPTY_JSON_OBJECT } from '#cloud/server/db/expressions'
+import type { Kysely } from 'kysely'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema
@@ -8,14 +9,16 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('name', 'text')
     .addColumn('reason', 'text')
     .addColumn('status', 'text', (column) => column.notNull().defaultTo('pending'))
-    .addColumn('requested_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
+    .addColumn('requested_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
     .addColumn('reviewed_at', 'timestamptz')
     .addColumn('reviewed_by', 'text')
     .addColumn('review_note', 'text')
     .addColumn('approved_user_id', 'text')
     .addCheckConstraint(
       'cloud_enrollment_status_check',
-      sql`status in ('pending', 'approved', 'rejected', 'revoked')`
+      checkColumnIn('status', ['pending', 'approved', 'rejected', 'revoked'])
     )
     .execute()
 
@@ -32,8 +35,10 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('action', 'text', (column) => column.notNull())
     .addColumn('subject_type', 'text', (column) => column.notNull())
     .addColumn('subject_id', 'text', (column) => column.notNull())
-    .addColumn('metadata', 'jsonb', (column) => column.notNull().defaultTo(sql`'{}'::jsonb`))
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
+    .addColumn('metadata', 'jsonb', (column) => column.notNull().defaultTo(EMPTY_JSON_OBJECT))
+    .addColumn('created_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
     .execute()
 
   await database.schema

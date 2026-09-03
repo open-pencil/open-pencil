@@ -1,4 +1,7 @@
-import { type Kysely, sql } from 'kysely'
+import { checkColumnIn } from '#cloud/server/db/expressions'
+import type { Kysely } from 'kysely'
+
+import { addCurrentTimestampColumns } from './helpers'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
   await database.schema
@@ -11,13 +14,15 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('secret_hash', 'text', (column) => column.notNull())
     .addColumn('room_epoch', 'integer', (column) => column.notNull().defaultTo(0))
     .addColumn('created_by', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .addColumn('expires_at', 'timestamptz')
     .addColumn('revoked_at', 'timestamptz')
     .addColumn('last_used_at', 'timestamptz')
-    .addCheckConstraint('document_share_permission_check', sql`permission in ('view', 'edit')`)
+    .addCheckConstraint(
+      'document_share_permission_check',
+      checkColumnIn('permission', ['view', 'edit'])
+    )
     .execute()
+  await addCurrentTimestampColumns(database, 'document_share', ['created_at', 'updated_at'])
 
   await database.schema
     .createTable('document_grant')
@@ -28,12 +33,14 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('user_id', 'text', (column) => column.notNull())
     .addColumn('permission', 'text', (column) => column.notNull())
     .addColumn('created_by', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .addColumn('revoked_at', 'timestamptz')
     .addUniqueConstraint('document_grant_document_user_unique', ['document_id', 'user_id'])
-    .addCheckConstraint('document_grant_permission_check', sql`permission in ('view', 'edit')`)
+    .addCheckConstraint(
+      'document_grant_permission_check',
+      checkColumnIn('permission', ['view', 'edit'])
+    )
     .execute()
+  await addCurrentTimestampColumns(database, 'document_grant', ['created_at', 'updated_at'])
 
   await database.schema
     .createTable('document_invitation')
@@ -45,12 +52,15 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('permission', 'text', (column) => column.notNull())
     .addColumn('token_hash', 'text', (column) => column.notNull())
     .addColumn('invited_by', 'text', (column) => column.notNull())
-    .addColumn('invited_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .addColumn('expires_at', 'timestamptz', (column) => column.notNull())
     .addColumn('accepted_at', 'timestamptz')
     .addColumn('revoked_at', 'timestamptz')
-    .addCheckConstraint('document_invitation_permission_check', sql`permission in ('view', 'edit')`)
+    .addCheckConstraint(
+      'document_invitation_permission_check',
+      checkColumnIn('permission', ['view', 'edit'])
+    )
     .execute()
+  await addCurrentTimestampColumns(database, 'document_invitation', ['invited_at'])
 
   await database.schema
     .createIndex('document_share_document_index')

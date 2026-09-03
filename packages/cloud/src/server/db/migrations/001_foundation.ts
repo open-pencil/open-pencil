@@ -1,4 +1,7 @@
+import { checkColumnIn, CURRENT_TIMESTAMP } from '#cloud/server/db/expressions'
 import { type Kysely, sql } from 'kysely'
+
+import { addCurrentTimestampColumns } from './helpers'
 
 const UPDATED_AT_TRIGGER = 'openpencil_set_updated_at'
 
@@ -9,9 +12,8 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('name', 'text', (column) => column.notNull())
     .addColumn('slug', 'text', (column) => column.notNull().unique())
     .addColumn('created_by', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .execute()
+  await addCurrentTimestampColumns(database, 'workspace', ['created_at', 'updated_at'])
 
   await database.schema
     .createTable('workspace_member')
@@ -20,10 +22,13 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     )
     .addColumn('user_id', 'text', (column) => column.notNull())
     .addColumn('role', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .addPrimaryKeyConstraint('workspace_member_primary', ['workspace_id', 'user_id'])
-    .addCheckConstraint('workspace_member_role_check', sql`role in ('admin', 'editor', 'viewer')`)
+    .addCheckConstraint(
+      'workspace_member_role_check',
+      checkColumnIn('role', ['admin', 'editor', 'viewer'])
+    )
     .execute()
+  await addCurrentTimestampColumns(database, 'workspace_member', ['created_at'])
 
   await database.schema
     .createTable('document')
@@ -35,10 +40,9 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('current_revision_id', 'uuid')
     .addColumn('version', 'integer', (column) => column.notNull().defaultTo(0))
     .addColumn('created_by', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
-    .addColumn('updated_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
     .addColumn('deleted_at', 'timestamptz')
     .execute()
+  await addCurrentTimestampColumns(database, 'document', ['created_at', 'updated_at'])
 
   await database.schema
     .createTable('storage_object')
@@ -47,7 +51,9 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('checksum', 'text', (column) => column.notNull())
     .addColumn('byte_size', 'bigint', (column) => column.notNull())
     .addColumn('content_type', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
     .execute()
 
   await database.schema
@@ -63,7 +69,9 @@ export async function up(database: Kysely<unknown>): Promise<void> {
       column.references('storage_object.id').onDelete('restrict').notNull()
     )
     .addColumn('created_by', 'text', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
     .execute()
 
   await database.schema
@@ -91,11 +99,16 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .addColumn('checksum', 'text', (column) => column.notNull())
     .addColumn('created_by', 'text', (column) => column.notNull())
     .addColumn('byte_size', 'bigint', (column) => column.notNull())
-    .addColumn('created_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
+    .addColumn('created_at', 'timestamptz', (column) =>
+      column.notNull().defaultTo(CURRENT_TIMESTAMP)
+    )
     .addColumn('content_type', 'text', (column) => column.notNull())
     .addColumn('multipart_upload_id', 'text')
     .addColumn('expires_at', 'timestamptz', (column) => column.notNull())
-    .addCheckConstraint('upload_status_check', sql`status in ('pending', 'committed', 'abandoned')`)
+    .addCheckConstraint(
+      'upload_status_check',
+      checkColumnIn('status', ['pending', 'committed', 'abandoned'])
+    )
     .execute()
 
   await database.schema

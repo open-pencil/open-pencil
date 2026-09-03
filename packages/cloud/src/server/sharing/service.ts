@@ -3,7 +3,6 @@ import type { CloudDatabase } from '#cloud/server/db'
 import type { InvitationDelivery, InvitationOutbox } from '#cloud/server/invitations'
 import type { CloudPolicy } from '#cloud/server/policy/policy'
 import type { Kysely } from 'kysely'
-import { sql } from 'kysely'
 
 import { requireSharingAccess } from './access'
 import {
@@ -45,7 +44,9 @@ export function createDocumentSharingService(
       const user = await database
         .selectFrom('user')
         .select(['id', 'name', 'email', 'image'])
-        .where(sql<string>`lower(email)`, '=', input.email)
+        .where((expression) =>
+          expression(expression.fn('lower', [expression.ref('email')]), '=', input.email)
+        )
         .executeTakeFirst()
       return user ?? null
     },

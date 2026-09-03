@@ -1,13 +1,14 @@
-import { type Kysely, sql } from 'kysely'
+import type { Kysely } from 'kysely'
+
+import { addCurrentTimestampColumns } from './helpers'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
-  await sql`
-    create table cloud_auth_schema (
-      id text primary key,
-      version text not null,
-      updated_at timestamptz not null default now()
-    )
-  `.execute(database)
+  await database.schema
+    .createTable('cloud_auth_schema')
+    .addColumn('id', 'text', (column) => column.primaryKey())
+    .addColumn('version', 'text', (column) => column.notNull())
+    .execute()
+  await addCurrentTimestampColumns(database, 'cloud_auth_schema', ['updated_at'])
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {

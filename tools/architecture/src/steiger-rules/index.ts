@@ -475,6 +475,26 @@ const noShortcutTextInLabels = createTextRule(
   }
 )
 
+const noUnscopedCloudSQL = createTextRule(
+  'open-pencil/no-unscoped-cloud-sql',
+  (sourceRel, content) => {
+    if (!sourceRel.startsWith('packages/cloud/src/')) return []
+    if (
+      sourceRel === 'packages/cloud/src/server/db/expressions.ts' ||
+      sourceRel === 'packages/cloud/src/server/db/migrations/001_foundation.ts'
+    ) {
+      return []
+    }
+    if (!/import\s*\{[^}]*\bsql\b[^}]*\}\s*from\s*['"]kysely['"]/su.test(content)) return []
+    return [
+      {
+        message:
+          'Use Kysely builders or a named expression from server/db/expressions instead of importing sql directly.'
+      }
+    ]
+  }
+)
+
 const noUIImportsInCore = createImportRule(
   'open-pencil/no-ui-imports-in-core',
   (sourceRel, specifier) => {
@@ -522,6 +542,7 @@ export const openPencilArchitecturePlugin = {
     noNativeTitleAttributesInVue,
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
+    noUnscopedCloudSQL,
     noUIImportsInCore
   ]
 }
