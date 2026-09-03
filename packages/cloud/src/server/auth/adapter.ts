@@ -22,4 +22,5 @@ export interface CloudAuthAdapter {
   revokeUserSessions(headers: Headers, userId: string): Promise<void>
   setRole(headers: Headers, userId: string, role: 'user' | 'admin'): Promise<void>
   migrate: () => Promise<void>
+  schemaVersion: string
 }

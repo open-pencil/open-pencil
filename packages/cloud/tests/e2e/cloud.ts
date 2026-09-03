@@ -78,7 +78,7 @@ const database = createNodeCloudDatabase({ connectionString: config.databaseURL 
 const objects = createS3ObjectStore(config)
 try {
   const auth = createBetterAuthAdapter(config, database)
-  await migrateCloudDatabase(database, auth.migrate)
+  await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
   const app = createCloudApp({ config, database, auth, objects, resolveSession: async () => actor })
   const ready = await app.request('/ready')
   if (!ready.ok) throw new Error(`Cloud readiness failed with HTTP ${ready.status}`)

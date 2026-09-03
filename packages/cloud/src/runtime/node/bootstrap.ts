@@ -19,6 +19,6 @@ export async function createMigratedNodeCloudDatabase(
     (await loadNodeCloudServerConfig(environment)) ?? cloudServerConfigFromEnvironment(environment)
   const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
   const auth = createBetterAuthAdapter(config, database)
-  await migrateCloudDatabase(database, auth.migrate)
+  await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
   return { config, database, auth }
 }

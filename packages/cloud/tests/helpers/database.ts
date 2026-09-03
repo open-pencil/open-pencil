@@ -31,7 +31,7 @@ export async function createCloudTestDatabase(): Promise<CloudTestDatabase> {
     dialect: new PGliteDialect(pglite)
   })
   const auth = createBetterAuthAdapter(testConfig, database)
-  await migrateCloudDatabase(database, auth.migrate)
+  await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
   return {
     database,
     async close() {

@@ -47,7 +47,7 @@ function checksum(bytes: Uint8Array): string {
 const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
 const objects = createS3ObjectStore(config)
 const auth = createBetterAuthAdapter(config, database)
-await migrateCloudDatabase(database, auth.migrate)
+await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
 
 const workspaceId = crypto.randomUUID()
 const documentId = crypto.randomUUID()

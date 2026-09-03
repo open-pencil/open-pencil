@@ -223,8 +223,15 @@ export interface CloudAdminAuditEventTable {
   createdAt: TimestampColumn
 }
 
+export interface CloudAuthSchemaTable {
+  id: string
+  version: string
+  updatedAt: TimestampColumn
+}
+
 export interface CloudDatabase {
   user: AuthUserTable
+  cloudAuthSchema: CloudAuthSchemaTable
   cloudEnrollment: CloudEnrollmentTable
   cloudRateLimit: CloudRateLimitTable
   cloudAdminAuditEvent: CloudAdminAuditEventTable

@@ -12,6 +12,7 @@ function complete(): Promise<void> {
 
 function authAdapter() {
   return {
+    schemaVersion: 'test',
     async listUsers() {
       return { users: [], total: 0 }
     },

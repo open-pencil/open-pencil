@@ -1,4 +1,4 @@
-import type { Kysely } from 'kysely'
+import { type Kysely, sql } from 'kysely'
 import { Migrator, type Migration, type MigrationProvider } from 'kysely/migration'
 
 import * as foundation from './migrations/001_foundation'
@@ -16,6 +16,7 @@ import * as transactionalEmail from './migrations/012_transactional_email'
 import * as adminEnrollment from './migrations/013_admin_enrollment'
 import * as enrollmentEmailKinds from './migrations/014_enrollment_email_kinds'
 import * as cloudRateLimit from './migrations/015_cloud_rate_limit'
+import * as authSchema from './migrations/016_auth_schema'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
@@ -33,7 +34,8 @@ const migrations: Record<string, Migration> = {
   '012_transactional_email': transactionalEmail,
   '013_admin_enrollment': adminEnrollment,
   '014_enrollment_email_kinds': enrollmentEmailKinds,
-  '015_cloud_rate_limit': cloudRateLimit
+  '015_cloud_rate_limit': cloudRateLimit,
+  '016_auth_schema': authSchema
 }
 
 class CloudMigrationProvider implements MigrationProvider {
@@ -42,9 +44,81 @@ class CloudMigrationProvider implements MigrationProvider {
   }
 }
 
+export type CloudAuthMigration = {
+  run(): Promise<void>
+  schemaVersion: string
+}
+
+const REQUIRED_AUTH_SCHEMA: Record<string, string[]> = {
+  user: ['id', 'name', 'email', 'email_verified', 'created_at', 'updated_at', 'role', 'banned'],
+  session: ['id', 'expires_at', 'token', 'user_id', 'impersonated_by'],
+  account: ['id', 'issuer', 'account_id', 'provider_id', 'user_id'],
+  verification: ['id', 'identifier', 'value', 'expires_at'],
+  device_code: ['id', 'device_code', 'user_code', 'status', 'client_id'],
+  rate_limit: ['id', 'key', 'count', 'last_request']
+}
+
+async function existingAuthSchema(
+  database: Kysely<CloudDatabase>
+): Promise<Map<string, Set<string>>> {
+  const rows = await sql<{ tableName: string; columnName: string }>`
+    select table_name as "tableName", column_name as "columnName"
+    from information_schema.columns
+    where table_schema = current_schema()
+      and table_name in (${sql.join(Object.keys(REQUIRED_AUTH_SCHEMA))})
+  `.execute(database)
+  const schema = new Map<string, Set<string>>()
+  for (const row of rows.rows) {
+    const columns = schema.get(row.tableName) ?? new Set<string>()
+    columns.add(row.columnName)
+    schema.set(row.tableName, columns)
+  }
+  return schema
+}
+
+async function migrateAuthSchema(
+  database: Kysely<CloudDatabase>,
+  migration: CloudAuthMigration
+): Promise<void> {
+  const recorded = await database
+    .selectFrom('cloudAuthSchema')
+    .select('version')
+    .where('id', '=', 'better-auth')
+    .executeTakeFirst()
+  if (recorded) {
+    if (recorded.version !== migration.schemaVersion) {
+      throw new Error(
+        `Better Auth schema ${recorded.version} requires an explicit migration to ${migration.schemaVersion}`
+      )
+    }
+    return
+  }
+
+  const existing = await existingAuthSchema(database)
+  if (existing.size === 0) {
+    await migration.run()
+  } else {
+    const missing = Object.entries(REQUIRED_AUTH_SCHEMA).flatMap(([table, requiredColumns]) => {
+      const columns = existing.get(table)
+      if (!columns) return [table]
+      return requiredColumns
+        .filter((column) => !columns.has(column))
+        .map((column) => `${table}.${column}`)
+    })
+    if (missing.length > 0) {
+      throw new Error(`Existing Better Auth schema is incomplete: ${missing.join(', ')}`)
+    }
+  }
+
+  await database
+    .insertInto('cloudAuthSchema')
+    .values({ id: 'better-auth', version: migration.schemaVersion, updatedAt: new Date() })
+    .execute()
+}
+
 export async function migrateCloudDatabase(
   database: Kysely<CloudDatabase>,
-  runAuthMigrations?: () => Promise<void>
+  authMigration?: CloudAuthMigration
 ): Promise<void> {
   const migrator = new Migrator({
     db: database,
@@ -60,5 +134,5 @@ export async function migrateCloudDatabase(
       'OpenPencil Cloud database migration failed'
     )
   }
-  await runAuthMigrations?.()
+  if (authMigration) await migrateAuthSchema(database, authMigration)
 }

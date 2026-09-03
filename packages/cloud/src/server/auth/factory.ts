@@ -11,6 +11,7 @@ import type { CloudAuthAdapter } from './adapter'
 
 const APPLE_AUDIENCE = 'https://appleid.apple.com'
 const APPLE_SECRET_LIFETIME_SECONDS = 180 * 24 * 60 * 60
+const BETTER_AUTH_SCHEMA_VERSION = '1.7.2'
 
 async function generateAppleClientSecret(config: CloudServerConfig): Promise<string> {
   if (
@@ -184,6 +185,7 @@ export function createBetterAuthAdapter(
     async setRole(headers, userId, role) {
       await auth.api.setRole({ headers, body: { userId, role } })
     },
+    schemaVersion: BETTER_AUTH_SCHEMA_VERSION,
     async migrate() {
       const migrations = await getMigrations(auth.options)
       await migrations.runMigrations()
