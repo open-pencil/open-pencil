@@ -38,6 +38,12 @@
 
 ### Fixed
 
+- Prevent the stock photo tool from replacing text, lines, structural layers, or containers with content while supporting closed shape geometry.
+- Preserve explicit text alignment metadata on imported Figma vectors across save and reload.
+
+- Preserve explicit normal blend modes on imported Figma text and vector nodes across save and reload.
+
+- Preserve implicit fixed-size text inside imported Figma auto-layout frames across save and reload.
 - Stop showing a misleading desktop-only warning when web font loading or catalog lookup fails.
 - Preserve source text offsets when resolving fallback languages after text-case transformations.
 - Track character coverage restored from downloaded font cache entries.

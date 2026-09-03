@@ -23,6 +23,25 @@ describe('@open-pencil/fig source metadata policy', () => {
     expect(node.source.fig.rawNodeFields.fillPaints).toBeDefined()
   })
 
+  test('invalidates explicit blend and text alignment metadata after edits', () => {
+    const graph = new SceneGraph()
+    const node = graph.createNode('VECTOR', graph.getPages()[0].id)
+    node.source.fig.rawNodeFields = {
+      blendMode: 'NORMAL',
+      textAlignHorizontal: 'CENTER',
+      textAlignVertical: 'CENTER',
+      derivedTextData: { layoutSize: { x: 24, y: 24 } }
+    }
+
+    graph.updateNode(node.id, {
+      blendMode: 'MULTIPLY',
+      textAlignHorizontal: 'LEFT',
+      textAlignVertical: 'TOP'
+    })
+
+    expect(effectiveFigmaRawNodeFields(node)).toEqual({})
+  })
+
   test('invalidates effective raw geometry without deleting provenance', () => {
     const graph = new SceneGraph()
     const node = graph.createNode('RECTANGLE', graph.getPages()[0].id)

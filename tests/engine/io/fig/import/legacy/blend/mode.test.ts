@@ -17,9 +17,20 @@ describe('fig-import: blend mode', () => {
     expect(n.blendMode).toBe('MULTIPLY')
   })
 
-  test('defaults to PASS_THROUGH', () => {
-    const graph = importNodeChanges([doc(), canvas(), node('RECTANGLE', 10, 1)])
-    const n = graph.getChildren(graph.getPages()[0].id)[0]
-    expect(n.blendMode).toBe('PASS_THROUGH')
+  test('keeps omitted blend modes as PASS_THROUGH', () => {
+    const graph = importNodeChanges([
+      doc(),
+      canvas(),
+      node('TEXT', 10, 1),
+      node('VECTOR', 11, 1),
+      node('FRAME', 12, 1),
+      node('RECTANGLE', 13, 1)
+    ])
+    expect(graph.getChildren(graph.getPages()[0].id).map((item) => item.blendMode)).toEqual([
+      'PASS_THROUGH',
+      'PASS_THROUGH',
+      'PASS_THROUGH',
+      'PASS_THROUGH'
+    ])
   })
 })
