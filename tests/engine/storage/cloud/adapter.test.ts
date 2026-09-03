@@ -54,6 +54,7 @@ describe('OpenPencil Cloud storage adapter', () => {
           deployment: 'self-hosted',
           apiURL: 'https://cloud.example.com/api',
           authURL: 'https://cloud.example.com/api/auth',
+          appURL: 'https://app.example.com',
           capabilities: { documents: true, workspaces: true, collaboration: false },
           authentication: { socialProviders: [], enterpriseSSO: false }
         })
@@ -103,6 +104,7 @@ describe('OpenPencil Cloud storage adapter', () => {
           deployment: 'self-hosted',
           apiURL: 'https://cloud.example.com/api',
           authURL: 'https://cloud.example.com/api/auth',
+          appURL: 'https://app.example.com',
           capabilities: { documents: true, workspaces: true, collaboration: false },
           authentication: { socialProviders: [], enterpriseSSO: false }
         })

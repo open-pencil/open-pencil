@@ -4,17 +4,21 @@
   "private": true,
   "license": "MIT",
   "type": "module",
+  "imports": {
+    "#ui/*": "./src/*"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "openpencil-source": "./src/index.ts",
       "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./styles/tokens.css": "./src/styles/tokens.css"
+    "./styles.css": "./src/styles.css"
   },
   "sideEffects": ["**/*.css"],
-  "files": ["dist", "src/styles/tokens.css"],
+  "files": ["dist", "src/styles.css", "src/styles/tokens.css"],
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
     "typecheck": "bunx vue-tsc --noEmit -p tsconfig.json",
@@ -24,6 +28,7 @@
     "vue": "^3.5.41"
   },
   "dependencies": {
+    "reka-ui": "^2.10.3",
     "tailwind-variants": "^3.3.1"
   },
   "devDependencies": {

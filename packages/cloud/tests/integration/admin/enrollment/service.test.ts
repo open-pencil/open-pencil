@@ -22,14 +22,28 @@ describe('Cloud enrollment integration', () => {
         status: 'pending'
       })
       if (!pending) throw new Error('Expected pending enrollment')
+      await runtime.database
+        .insertInto('user')
+        .values({
+          id: '44444444-4444-4444-8444-444444444444',
+          name: 'Person',
+          email: 'person@example.com',
+          emailVerified: true,
+          image: null,
+          role: 'user',
+          banned: false
+        })
+        .execute()
       expect(
         await enrollment.review('admin-user', pending.id, 'approved', { note: 'Early access' })
       ).toMatchObject({
         status: 'approved',
+        approvedUserId: '44444444-4444-4444-8444-444444444444',
         reviewedBy: 'admin-user',
         reviewNote: 'Early access'
       })
       expect(await enrollment.isApproved('PERSON@example.com')).toBe(true)
+      expect(await enrollment.statusForEmail('PERSON@example.com')).toBe('approved')
       expect(
         await runtime.database
           .selectFrom('cloudAdminAuditEvent')

@@ -1,18 +1,21 @@
 @import 'tailwindcss';
-
-@theme {
-  --color-cloud-bg: #0d0f12;
-  --color-cloud-panel: #171a1f;
-  --color-cloud-line: #2a2f37;
-  --color-cloud-muted: #949ca8;
-  --color-cloud-brand: #9747ff;
-  --color-cloud-danger: #ef5b5b;
-}
+@import '@open-pencil/ui/styles.css';
 
 @layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-canvas);
+  }
+  html[data-theme='light'] {
+    color-scheme: light;
+  }
   body {
-    @apply m-0 bg-cloud-bg text-white antialiased;
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    @apply m-0 bg-canvas text-surface antialiased;
+    font-family:
+      Inter,
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
   button,
   input,

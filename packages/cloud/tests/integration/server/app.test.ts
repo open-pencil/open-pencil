@@ -17,6 +17,7 @@ import { CLOUD_PROTOCOL_VERSION } from '@open-pencil/cloud/contract'
 import {
   createCloudApp,
   createBetterAuthAdapter,
+  createEnrollmentService,
   parseCloudServerConfig,
   type CloudDatabase
 } from '@open-pencil/cloud/server'
@@ -105,33 +106,36 @@ function services() {
 }
 
 describe('createCloudApp', () => {
-  test('accepts enrollment requests without authentication and protects admin routes', async () => {
+  test('materializes enrollment from an authenticated identity and protects admin routes', async () => {
     const runtime = await createCloudTestDatabase()
     try {
+      const approvalConfig = parseCloudServerConfig({ ...config, enrollmentMode: 'approval' })
       const app = createCloudApp({
         ...services(),
+        config: approvalConfig,
         database: runtime.database,
-        auth: createBetterAuthAdapter(config, runtime.database)
+        auth: createBetterAuthAdapter(approvalConfig, runtime.database),
+        resolveIdentity: async () => ({
+          userId: 'pending-user',
+          email: 'pending@example.com',
+          name: 'Pending User'
+        })
       })
-      const requested = await app.request('/api/enrollment/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'person@example.com', name: 'Person' })
+      expect((await app.request('/api/enrollment/request', { method: 'POST' })).status).toBe(401)
+      expect(await (await app.request('/api/account/status')).json()).toEqual({
+        user: {
+          userId: 'pending-user',
+          email: 'pending@example.com',
+          name: 'Pending User'
+        },
+        state: 'pending'
       })
-      expect(requested.status).toBe(202)
-      expect(await requested.json()).toEqual({ accepted: true })
       expect(
         await runtime.database
           .selectFrom('cloudEnrollment')
           .select(['emailNormalized', 'status'])
           .executeTakeFirstOrThrow()
-      ).toEqual({ emailNormalized: 'person@example.com', status: 'pending' })
-      const oversized = await app.request('/api/enrollment/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Content-Length': '3000' },
-        body: JSON.stringify({ email: 'oversized@example.com' })
-      })
-      expect(oversized.status).toBe(413)
+      ).toEqual({ emailNormalized: 'pending@example.com', status: 'pending' })
       expect((await app.request('/api/admin/enrollments')).status).toBe(401)
     } finally {
       await runtime.close()
@@ -193,36 +197,35 @@ describe('createCloudApp', () => {
     }
   })
 
-  test('limits enrollment opaquely without limiting Better Auth routes', async () => {
+  test('exposes restricted account state without authorizing product APIs', async () => {
     const runtime = await createCloudTestDatabase()
     try {
-      const limitedConfig = parseCloudServerConfig({
-        ...config,
-        enrollmentRateLimitMaximumRequests: 2,
-        enrollmentRateLimitWindowMs: 60_000,
-        authTrustedIPHeaders: ['cf-connecting-ip']
-      })
+      const approvalConfig = parseCloudServerConfig({ ...config, enrollmentMode: 'approval' })
+      const pendingIdentity = {
+        userId: 'pending-user',
+        email: 'pending@example.com',
+        name: 'Pending User',
+        deploymentRole: 'user' as const
+      }
       const app = createCloudApp({
         ...services(),
-        config: limitedConfig,
+        config: approvalConfig,
         database: runtime.database,
-        auth: createBetterAuthAdapter(limitedConfig, runtime.database)
+        auth: createBetterAuthAdapter(approvalConfig, runtime.database),
+        resolveIdentity: async () => pendingIdentity,
+        resolveSession: async () => null
       })
-      for (let index = 0; index < 4; index++) {
-        const response = await app.request('/api/enrollment/request', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'cf-connecting-ip': '192.0.2.1' },
-          body: JSON.stringify({ email: `limited-${index}@example.com` })
-        })
-        expect(response.status).toBe(202)
-        expect(await response.json()).toEqual({ accepted: true })
-      }
-      expect(
-        await runtime.database
-          .selectFrom('cloudEnrollment')
-          .select(({ fn }) => fn.countAll<number>().as('count'))
-          .executeTakeFirstOrThrow()
-      ).toEqual({ count: 2 })
+      await createEnrollmentService(runtime.database).request({
+        email: pendingIdentity.email,
+        name: pendingIdentity.name
+      })
+
+      expect(await (await app.request('/api/account/status')).json()).toEqual({
+        user: pendingIdentity,
+        state: 'pending'
+      })
+      expect((await app.request('/api/session')).status).toBe(401)
+      expect((await app.request('/api/admin/enrollments')).status).toBe(401)
     } finally {
       await runtime.close()
     }
@@ -259,6 +262,24 @@ describe('createCloudApp', () => {
     }
   })
 
+  test('serves indexing policy through robots and response headers', async () => {
+    const denied = createCloudApp(services())
+    const robots = await denied.request('/robots.txt')
+    expect(await robots.text()).toBe('User-agent: *\nDisallow: /\n')
+    expect((await denied.request('/health')).headers.get('X-Robots-Tag')).toBe(
+      'noindex, nofollow, noarchive'
+    )
+
+    const allowedServices = services()
+    allowedServices.config = { ...allowedServices.config, indexingPolicy: 'allow' }
+    const allowed = createCloudApp(allowedServices)
+    expect(await (await allowed.request('/robots.txt')).text()).toContain('Disallow: /admin')
+    expect((await allowed.request('/health')).headers.get('X-Robots-Tag')).toBeNull()
+    expect((await allowed.request('/api/session')).headers.get('X-Robots-Tag')).toBe(
+      'noindex, nofollow, noarchive'
+    )
+  })
+
   test('serves a health response without starting a listener', async () => {
     const response = await createCloudApp(services()).request('/health')
 
@@ -278,6 +299,7 @@ describe('createCloudApp', () => {
       deployment: 'self-hosted',
       apiURL: 'https://pencil.example.com/api',
       authURL: 'https://pencil.example.com/api/auth',
+      appURL: 'https://pencil.example.com',
       authentication: {
         socialProviders: ['google'],
         enterpriseSSO: false,

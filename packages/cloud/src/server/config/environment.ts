@@ -54,16 +54,9 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
     authTrustedProxies:
       v.parse(originsEnvironmentSchema, environment.OPENPENCIL_CLOUD_AUTH_TRUSTED_PROXIES) ?? [],
     enrollmentMode: environment.OPENPENCIL_CLOUD_ENROLLMENT_MODE,
+    indexingPolicy: environment.OPENPENCIL_CLOUD_INDEXING_POLICY,
     enrollmentAdminNotificationEmails:
       v.parse(originsEnvironmentSchema, environment.OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS) ?? [],
-    enrollmentRateLimitWindowMs: v.parse(
-      integerEnvironmentSchema,
-      environment.OPENPENCIL_CLOUD_ENROLLMENT_RATE_LIMIT_WINDOW_MS
-    ),
-    enrollmentRateLimitMaximumRequests: v.parse(
-      integerEnvironmentSchema,
-      environment.OPENPENCIL_CLOUD_ENROLLMENT_RATE_LIMIT_MAX
-    ),
     deploymentAdminUserIds:
       v.parse(originsEnvironmentSchema, environment.OPENPENCIL_CLOUD_ADMIN_USER_IDS) ?? [],
     googleClientId: environment.GOOGLE_CLIENT_ID,

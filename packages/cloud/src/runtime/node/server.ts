@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   createCloudApp,
+  createBetterAuthAdapter,
   createCollaborationStateStore,
   createDefaultCloudPolicy,
   DatabaseEntitlementSource,
@@ -11,11 +12,13 @@ import {
   StaticEntitlementSource,
   staticEntitlementValues,
   createDocumentCleanupService,
+  createEnrollmentService,
   createRateLimitCleanupService,
   createUploadCleanupService,
   CLOUD_FEATURE_KEYS,
   startCleanupWorker,
-  startTransactionalEmailWorker
+  startTransactionalEmailWorker,
+  withIndexingPolicy
 } from '#cloud/server'
 
 import { createNodeAdminAssetHandler } from './admin-assets'
@@ -36,13 +39,19 @@ function adminAssetDirectory(): string {
 
 export async function startNodeCloudServer(options: NodeCloudServerOptions = {}) {
   const environment = options.environment ?? process.env
-  const { config, database, auth } = await createMigratedNodeCloudDatabase(environment)
+  const { config, database } = await createMigratedNodeCloudDatabase(environment)
   const objects = createS3ObjectStore(config)
   const {
     email,
     invitationOutbox,
     transport: emailTransport
   } = createNodeTransactionalEmailRuntime(config, database)
+  const enrollment = createEnrollmentService(database, {
+    appURL: config.appURL ?? config.publicURL,
+    adminRecipients: config.enrollmentAdminNotificationEmails,
+    email
+  })
+  const auth = createBetterAuthAdapter(config, database, enrollment)
   const cleanup = config.cleanupEnabled
     ? startCleanupWorker(
         {
@@ -65,7 +74,8 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     auth,
     objects,
     invitationOutbox,
-    transactionalEmail: email
+    transactionalEmail: email,
+    enrollment
   })
   const emailWorker = emailTransport
     ? startTransactionalEmailWorker(email, {
@@ -112,7 +122,9 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
   const adminAssets = createNodeAdminAssetHandler(adminAssetDirectory())
   const server = Bun.serve({
     async fetch(request) {
-      return (await adminAssets(request)) ?? app.fetch(request)
+      const path = new URL(request.url).pathname
+      const response = (await adminAssets(request)) ?? (await app.fetch(request))
+      return withIndexingPolicy(response, path, config.indexingPolicy)
     },
     hostname: '0.0.0.0',
     port: options.port ?? Number(environment.PORT ?? 8787)

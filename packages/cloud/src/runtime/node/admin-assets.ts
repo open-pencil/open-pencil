@@ -10,7 +10,16 @@ const CONTENT_TYPES: Record<string, string> = {
 }
 
 function isAdminPage(pathname: string): boolean {
-  return pathname === '/join' || pathname === '/admin' || pathname.startsWith('/admin/')
+  return (
+    pathname === '/' ||
+    pathname === '/join' ||
+    pathname === '/sign-in' ||
+    pathname === '/sign-up' ||
+    pathname === '/app' ||
+    pathname.startsWith('/account/') ||
+    pathname === '/admin' ||
+    pathname.startsWith('/admin/')
+  )
 }
 
 export function createNodeAdminAssetHandler(directory: string) {

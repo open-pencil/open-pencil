@@ -25,6 +25,7 @@ export const cloudDiscoverySchema = v.object({
   deployment: cloudDeploymentSchema,
   apiURL: v.pipe(v.string(), v.url()),
   authURL: v.pipe(v.string(), v.url()),
+  appURL: v.optional(v.pipe(v.string(), v.url())),
   authentication: cloudAuthenticationSchema,
   capabilities: cloudCapabilitiesSchema
 })

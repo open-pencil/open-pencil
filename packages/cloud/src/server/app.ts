@@ -5,7 +5,7 @@ import {
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
-  createPublicEnrollmentRoutes
+  type EnrollmentService
 } from '#cloud/admin'
 import {
   CLOUD_DISCOVERY_PATH,
@@ -20,8 +20,10 @@ import {
 } from '#cloud/server/api'
 import {
   configuredSocialProviders,
+  createCloudIdentityResolver,
   createCloudSessionResolver,
   type CloudAuthAdapter,
+  type CloudIdentityResolver,
   type CloudSessionResolver
 } from '#cloud/server/auth'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
@@ -57,10 +59,12 @@ export type CloudServices = {
   database: Kysely<CloudDatabase>
   auth: CloudAuthAdapter
   objects: ObjectStore
+  resolveIdentity?: CloudIdentityResolver
   resolveSession?: CloudSessionResolver
   invitationDelivery?: InvitationDelivery
   invitationOutbox?: InvitationOutbox
   transactionalEmail?: TransactionalEmailService
+  enrollment?: EnrollmentService
   entitlementSource?: EntitlementSource
   policy?: CloudPolicy
 }
@@ -75,6 +79,7 @@ function discoveryFromServices(services: CloudServices): CloudDiscovery {
     deployment: services.config.deployment,
     apiURL,
     authURL,
+    appURL: services.config.appURL ?? services.config.publicURL,
     authentication: {
       socialProviders: configuredSocialProviders(services.config),
       enterpriseSSO: false,
@@ -88,8 +93,38 @@ function discoveryFromServices(services: CloudServices): CloudDiscovery {
   })
 }
 
+export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {
+  return (
+    policy === 'deny' ||
+    path.startsWith('/api/') ||
+    path.startsWith('/admin') ||
+    path.startsWith('/account') ||
+    path === '/app' ||
+    path === '/sign-in' ||
+    path === '/sign-up' ||
+    path === '/join' ||
+    path === CLOUD_DISCOVERY_PATH
+  )
+}
+
+export function withIndexingPolicy(
+  response: Response,
+  path: string,
+  policy: 'allow' | 'deny'
+): Response {
+  if (!shouldPreventIndexing(path, policy)) return response
+  const headers = new Headers(response.headers)
+  headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  })
+}
+
 export function createCloudApp(services: CloudServices) {
   const discovery = discoveryFromServices(services)
+  const resolveIdentity = services.resolveIdentity ?? createCloudIdentityResolver(services.auth)
   const resolveSession = services.resolveSession ?? createCloudSessionResolver(services.auth)
   const allowedOrigins = new Set(
     [services.config.publicURL, ...services.config.trustedOrigins].map(
@@ -104,11 +139,13 @@ export function createCloudApp(services: CloudServices) {
     maxAge: 600
   })
   const workspaces = createWorkspaceService(services.database)
-  const enrollment = createEnrollmentService(services.database, {
-    appURL: services.config.appURL ?? services.config.publicURL,
-    adminRecipients: services.config.enrollmentAdminNotificationEmails,
-    email: services.transactionalEmail
-  })
+  const enrollment =
+    services.enrollment ??
+    createEnrollmentService(services.database, {
+      appURL: services.config.appURL ?? services.config.publicURL,
+      adminRecipients: services.config.enrollmentAdminNotificationEmails,
+      email: services.transactionalEmail
+    })
   const admin = createCloudAdminRoutes(
     {
       email: createAdminEmailService(
@@ -209,6 +246,20 @@ export function createCloudApp(services: CloudServices) {
   return new Hono<CloudEnvironment>()
     .use(CLOUD_DISCOVERY_PATH, cloudCORS)
     .use('/api/*', cloudCORS)
+    .use('*', async (context, next) => {
+      await next()
+      if (shouldPreventIndexing(context.req.path, services.config.indexingPolicy)) {
+        context.header('X-Robots-Tag', 'noindex, nofollow, noarchive')
+      }
+    })
+    .get('/robots.txt', (context) => {
+      context.header('Content-Type', 'text/plain; charset=utf-8')
+      return context.body(
+        services.config.indexingPolicy === 'deny'
+          ? 'User-agent: *\nDisallow: /\n'
+          : 'User-agent: *\nDisallow: /admin\nDisallow: /account\nDisallow: /app\nDisallow: /api\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /join\nDisallow: /.well-known\n'
+      )
+    })
     .get('/health', (context) =>
       context.json({
         status: 'ok' as const,
@@ -237,18 +288,21 @@ export function createCloudApp(services: CloudServices) {
       }
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
-    .route(
-      '/api',
-      createPublicEnrollmentRoutes(enrollment, {
-        mode: services.config.enrollmentMode,
-        database: services.database,
-        secret: services.config.authSecret,
-        windowMs: services.config.enrollmentRateLimitWindowMs,
-        maximumRequests: services.config.enrollmentRateLimitMaximumRequests,
-        ipHeaders: services.config.authTrustedIPHeaders
-      })
-    )
     .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
+    .get('/api/account/status', async (context) => {
+      const identity = await resolveIdentity(context.req.raw)
+      if (!identity) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      let enrollmentStatus = await enrollment.statusForEmail(identity.email)
+      if (services.config.enrollmentMode === 'approval' && !enrollmentStatus) {
+        await enrollment.request({ email: identity.email, name: identity.name })
+        enrollmentStatus = 'pending'
+      }
+      const state =
+        services.config.enrollmentMode !== 'approval' || enrollmentStatus === 'approved'
+          ? ('active' as const)
+          : (enrollmentStatus ?? 'pending')
+      return context.json({ user: identity, state })
+    })
     .use('/api/public/shares/:shareId/collaboration-ticket', publicCollaborationLimiter)
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)

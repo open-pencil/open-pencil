@@ -31,6 +31,9 @@ function authAdapter() {
     async handler() {
       return new Response()
     },
+    async resolveIdentity() {
+      return null
+    },
     async resolveSession() {
       return null
     },

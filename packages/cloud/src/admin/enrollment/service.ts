@@ -74,6 +74,14 @@ export function createEnrollmentService(
   database: Kysely<CloudDatabase>,
   emailOptions: EnrollmentEmailOptions = { appURL: '', adminRecipients: [] }
 ) {
+  const statusForEmail = async (email: string): Promise<EnrollmentStatus | null> => {
+    const row = await database
+      .selectFrom('cloudEnrollment')
+      .select('status')
+      .where('emailNormalized', '=', normalizeEnrollmentEmail(email))
+      .executeTakeFirst()
+    return row?.status ?? null
+  }
   return {
     async request(input: EnrollmentRequestInput): Promise<void> {
       const emailNormalized = normalizeEnrollmentEmail(input.email)
@@ -124,15 +132,9 @@ export function createEnrollmentService(
         })
       })
     },
+    statusForEmail,
     async isApproved(email: string): Promise<boolean> {
-      return Boolean(
-        await database
-          .selectFrom('cloudEnrollment')
-          .select('id')
-          .where('emailNormalized', '=', normalizeEnrollmentEmail(email))
-          .where('status', '=', 'approved')
-          .executeTakeFirst()
-      )
+      return (await statusForEmail(email)) === 'approved'
     },
     async list(status?: EnrollmentStatus): Promise<EnrollmentRecord[]> {
       let query = database.selectFrom('cloudEnrollment').selectAll()
@@ -159,13 +161,22 @@ export function createEnrollmentService(
           )
         }
         const now = new Date()
+        const approvedUser =
+          status === 'approved'
+            ? await transaction
+                .selectFrom('user')
+                .select('id')
+                .where('email', '=', current.emailNormalized)
+                .executeTakeFirst()
+            : undefined
         const row = await transaction
           .updateTable('cloudEnrollment')
           .set({
             status,
             reviewedAt: now,
             reviewedBy: actorId,
-            reviewNote: input.note?.trim() || null
+            reviewNote: input.note?.trim() || null,
+            approvedUserId: approvedUser?.id ?? current.approvedUserId
           })
           .where('id', '=', enrollmentId)
           .where('status', '=', current.status)

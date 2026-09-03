@@ -1,5 +1,6 @@
-import { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES } from '#cloud/server/config/limits'
 import * as v from 'valibot'
+
+export const CLOUD_PROTOCOL_MAX_UPLOAD_BYTES = 1024 * 1024 * 1024
 
 const checksumSchema = v.pipe(v.string(), v.regex(/^[A-Za-z0-9+/]{43}=$/))
 

@@ -11,6 +11,7 @@ const discovery = {
   deployment: 'self-hosted' as const,
   apiURL: 'https://pencil.example.com/api',
   authURL: 'https://pencil.example.com/api/auth',
+  appURL: 'https://app.example.com',
   authentication: {
     socialProviders: ['google' as const],
     enterpriseSSO: true,

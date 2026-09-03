@@ -10,8 +10,16 @@ export type CloudAdminUser = {
   createdAt: Date
 }
 
+export type CloudIdentity = {
+  userId: string
+  email: string
+  name: string
+  deploymentRole?: 'user' | 'admin'
+}
+
 export interface CloudAuthAdapter {
   handler(request: Request): Promise<Response>
+  resolveIdentity(headers: Headers): Promise<CloudIdentity | null>
   resolveSession(headers: Headers): Promise<CloudActor | null>
   listUsers(
     headers: Headers,

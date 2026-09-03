@@ -27,19 +27,20 @@ const context = { waitUntil: () => undefined }
 describe('Cloudflare admin assets', () => {
   test('preserves SPA routes for the Assets binding fallback', async () => {
     const worker = createCloudflareWorker()
-    expect(
-      await (
-        await worker.fetch(new Request('https://cloud.example.com/join'), environment, context)
-      ).text()
-    ).toBe('/join')
-    expect(
-      await (
-        await worker.fetch(
-          new Request('https://cloud.example.com/admin/sign-in'),
-          environment,
-          context
-        )
-      ).text()
-    ).toBe('/admin/sign-in')
+    for (const path of [
+      '/',
+      '/join',
+      '/sign-in',
+      '/sign-up',
+      '/account/pending',
+      '/app',
+      '/admin'
+    ]) {
+      expect(
+        await (
+          await worker.fetch(new Request(`https://cloud.example.com${path}`), environment, context)
+        ).text()
+      ).toBe(path)
+    }
   })
 })

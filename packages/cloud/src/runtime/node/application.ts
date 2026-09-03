@@ -5,6 +5,7 @@ import {
   cloudServerConfigFromEnvironment,
   createBetterAuthAdapter,
   createCloudApp,
+  createEnrollmentService,
   type CloudApp,
   type CloudEnvironment,
   type CloudServerConfig,
@@ -28,16 +29,22 @@ export function createNodeCloudApplication(options: NodeCloudApplicationOptions 
   const database = createNodeCloudDatabase({
     connectionString: options.databaseURL ?? config.databaseURL
   })
-  const auth = createBetterAuthAdapter(config, database)
   const objects = createS3ObjectStore(config)
   const { email, invitationOutbox } = createNodeTransactionalEmailRuntime(config, database)
+  const enrollment = createEnrollmentService(database, {
+    appURL: config.appURL ?? config.publicURL,
+    adminRecipients: config.enrollmentAdminNotificationEmails,
+    email
+  })
+  const auth = createBetterAuthAdapter(config, database, enrollment)
   const app = createCloudApp({
     config,
     database,
     auth,
     objects,
     invitationOutbox,
-    transactionalEmail: email
+    transactionalEmail: email,
+    enrollment
   })
   return { app, config, database, objects, email }
 }

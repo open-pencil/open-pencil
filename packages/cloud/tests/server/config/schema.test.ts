@@ -22,6 +22,7 @@ describe('Cloud server configuration', () => {
   test('accepts a self-hosted configuration without social providers', () => {
     expect(parseCloudServerConfig(baseConfig)).toMatchObject({
       deployment: 'self-hosted',
+      indexingPolicy: 'deny',
       trustedOrigins: []
     })
   })
@@ -89,6 +90,7 @@ describe('Cloud server configuration', () => {
       OPENPENCIL_CLOUD_TRUSTED_ORIGINS: 'https://app.example.com, https://desktop.example.com',
       OPENPENCIL_CLOUD_AUTH_IP_HEADERS: 'cf-connecting-ip',
       OPENPENCIL_CLOUD_AUTH_TRUSTED_PROXIES: '192.0.2.10, 10.0.0.0/24',
+      OPENPENCIL_CLOUD_INDEXING_POLICY: 'allow',
       S3_ENDPOINT: baseConfig.s3Endpoint,
       S3_REGION: baseConfig.s3Region,
       S3_BUCKET: baseConfig.s3Bucket,
@@ -96,6 +98,7 @@ describe('Cloud server configuration', () => {
       S3_SECRET_ACCESS_KEY: baseConfig.s3SecretAccessKey
     })
 
+    expect(config.indexingPolicy).toBe('allow')
     expect(config.trustedOrigins).toEqual([
       'https://app.example.com',
       'https://desktop.example.com'

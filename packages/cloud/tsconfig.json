@@ -18,6 +18,7 @@
     "paths": {
       "#cloud/*": ["./src/*"],
       "#cloud-test/*": ["./tests/*"],
+      "#admin/*": ["./admin/src/*"],
       "@open-pencil/cloud/contract": ["./src/contract/index.ts"],
       "@open-pencil/cloud/client": ["./src/client/index.ts"],
       "@open-pencil/cloud/email": ["./src/email/index.ts"],

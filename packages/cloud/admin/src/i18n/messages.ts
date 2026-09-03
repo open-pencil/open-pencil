@@ -1,0 +1,176 @@
+import { params } from '@nanostores/i18n'
+
+export const commonMessageDefaults = {
+  productName: 'OpenPencil Cloud',
+  cancel: 'Cancel',
+  back: 'Back',
+  retry: 'Retry',
+  refresh: 'Refresh',
+  search: 'Search',
+  loading: 'Loading…',
+  signOut: 'Sign out',
+  noResults: 'No results',
+  optional: 'optional',
+  status: 'Status',
+  actions: 'Actions',
+  attempts: params('{count} attempts'),
+  noError: 'No error',
+  userRole: 'User',
+  administratorRole: 'Administrator',
+  primaryNavigation: 'Primary navigation',
+  administrationNavigation: 'Administration',
+  cloudCapabilities: 'Cloud capabilities',
+  language: 'Language',
+  theme: 'Theme',
+  themeLight: 'Light',
+  themeDark: 'Dark',
+  themeSystem: 'System'
+} as const
+
+export const publicMessageDefaults = {
+  homeTitle: 'Design together, from anywhere',
+  homeDescription:
+    'Share OpenPencil files, collaborate live, and keep every version organized in one workspace.',
+  localFirstLabel: 'A shared space for your designs',
+  openEditor: 'Open the editor',
+  openCloud: 'Open Cloud',
+  notFoundTitle: 'Page not found',
+  notFoundDescription: 'The page you requested does not exist.',
+  backHome: 'Back to Cloud',
+  localFirstTitle: 'Live collaboration',
+  localFirstDescription: 'Work together in the same design and see changes as they happen.',
+  portableTitle: 'Share instantly',
+  portableDescription: 'Invite teammates or send a secure link when your work is ready.',
+  sharingTitle: 'Version history',
+  sharingDescription: 'Keep a reliable record of every saved version of your design.'
+} as const
+
+export const authMessageDefaults = {
+  signIn: 'Sign in',
+  signUp: 'Sign up',
+  signInTitle: 'Welcome back',
+  signUpTitle: 'Create your account',
+  signInDescription: 'Continue with an identity provider configured by this Cloud instance.',
+  signUpDescription: 'Create an account with a verified identity.',
+  approvalDisclosure: 'New accounts are reviewed by an administrator.',
+  haveAccount: 'Already have an account?',
+  needAccount: 'New to OpenPencil Cloud?',
+  loadingProviders: 'Loading sign-in providers…',
+  continueGoogle: 'Continue with Google',
+  continueApple: 'Continue with Apple',
+  openingProvider: params('Opening {provider}…'),
+  noProviders: 'No social sign-in provider is configured for this Cloud instance.',
+  forbiddenTitle: 'Deployment administrator access required',
+  forbiddenDescription:
+    'Your account is signed in but does not have deployment-administrator access.'
+} as const
+
+export const accountMessageDefaults = {
+  pendingTitle: 'Your account is awaiting approval',
+  pendingDescription:
+    'An administrator for this OpenPencil Cloud instance must approve your account before you can use Cloud.',
+  checkAgain: 'Check again',
+  rejectedTitle: 'Your account request was rejected',
+  rejectedDescription: 'This Cloud instance did not approve your account request.',
+  revokedTitle: 'Your Cloud access was revoked',
+  revokedDescription:
+    'Contact an administrator for this Cloud instance if you believe this is an error.',
+  readyLabel: 'Cloud is ready',
+  dashboardTitle: 'Your OpenPencil Cloud workspace',
+  dashboardDescription:
+    'Open the editor to create, synchronize, share, and collaborate on Cloud documents.',
+  workspacesTitle: 'Workspaces',
+  workspaceRole: params('{role} role'),
+  noWorkspacesTitle: 'No Cloud workspaces yet',
+  noWorkspacesDescription: 'Open the editor to create your first Cloud workspace.'
+} as const
+
+export const adminMessageDefaults = {
+  enrollment: 'Enrollment',
+  enrollmentDescription: 'Review access requests. Approval controls account provisioning.',
+  users: 'Users',
+  email: 'Email',
+  emailDescription: 'Transport acceptance and retry state. Sensitive payloads are never displayed.',
+  audit: 'Audit',
+  operations: 'Operations',
+  filterEnrollment: 'Filter enrollment status',
+  allStatuses: 'All statuses',
+  statusPending: 'Pending',
+  statusApproved: 'Approved',
+  statusRejected: 'Rejected',
+  statusRevoked: 'Revoked',
+  requested: 'Requested',
+  reason: 'Reason',
+  approve: 'Approve',
+  reject: 'Reject',
+  revoke: 'Revoke',
+  noEnrollments: 'No enrollment requests.',
+  searchUsers: 'Search users by email',
+  makeAdmin: 'Make admin',
+  removeAdmin: 'Remove admin',
+  revokeSessions: 'Revoke sessions',
+  ban: 'Ban',
+  unban: 'Unban',
+  regenerate: 'Regenerate',
+  noEmailMessages: 'No transactional email messages.',
+  noAuditEvents: 'No audit events.',
+  revokeTitle: 'Revoke Cloud access?',
+  rejectTitle: 'Reject access request?',
+  banTitle: 'Ban user?',
+  removeAdminTitle: 'Remove deployment administrator?',
+  confirmationReason: 'Reason',
+  deployment: 'Deployment',
+  enrollmentMode: 'Enrollment mode',
+  emailTransport: 'Email transport',
+  pendingEnrollment: 'Pending enrollment',
+  pendingEmail: 'Pending email',
+  failedEmail: 'Failed email'
+} as const
+
+export const headMessageDefaults = {
+  homeTitle: 'OpenPencil Cloud',
+  homeDescription: 'Share designs, collaborate live, and keep every version organized.',
+  signInTitle: 'Sign in',
+  signInDescription: 'Sign in to OpenPencil Cloud.',
+  signUpTitle: 'Create an account',
+  signUpDescription: 'Create an OpenPencil Cloud account.',
+  pendingTitle: 'Awaiting approval',
+  pendingDescription: 'Your OpenPencil Cloud account is awaiting administrator approval.',
+  rejectedTitle: 'Request rejected',
+  rejectedDescription: 'Your OpenPencil Cloud account request was rejected.',
+  revokedTitle: 'Access revoked',
+  revokedDescription: 'Your OpenPencil Cloud access was revoked.',
+  dashboardTitle: 'Cloud workspace',
+  dashboardDescription: 'Open your OpenPencil Cloud workspace.',
+  notFoundTitle: 'Page not found',
+  notFoundDescription: 'The requested OpenPencil Cloud page was not found.',
+  enrollmentTitle: 'Enrollment',
+  enrollmentDescription: 'Review OpenPencil Cloud enrollment.',
+  usersTitle: 'Users',
+  usersDescription: 'Administer OpenPencil Cloud users.',
+  emailTitle: 'Email',
+  emailDescription: 'Review transactional email delivery.',
+  auditTitle: 'Audit',
+  auditDescription: 'Review deployment administration events.',
+  operationsTitle: 'Operations',
+  operationsDescription: 'Review OpenPencil Cloud deployment health.',
+  forbiddenTitle: 'Access required',
+  forbiddenDescription: 'Deployment administrator access is required.'
+} as const
+
+export const errorMessageDefaults = {
+  network: 'Cloud could not be reached. Check your connection and try again.',
+  timeout: 'Cloud took too long to respond. Try again.',
+  protocol: 'Cloud returned an invalid response. Contact support if this continues.',
+  authenticationRequired: 'Your session expired. Sign in again.',
+  authorizationRequired: 'Deployment administrator access is required.',
+  invalidEnrollmentTransition: 'This enrollment state changed. Refresh and try again.',
+  lastAdminRequired: 'At least one active deployment administrator is required.',
+  selfActionForbidden: 'You cannot perform that action on your own account.',
+  emailRegenerationUnavailable: 'This email cannot be regenerated from current records.',
+  unknown: 'Something went wrong. Try again.',
+  discoveryUnavailable: 'Sign-in providers could not be loaded. Try again.',
+  signInCancelled: 'Sign in was cancelled or denied.',
+  enrollmentClosed: 'Cloud enrollment is currently closed.',
+  providerError: 'The identity provider could not complete sign in. Try again.'
+} as const

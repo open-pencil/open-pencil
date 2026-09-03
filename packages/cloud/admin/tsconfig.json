@@ -1,11 +1,16 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "rootDir": ".",
+    "rootDir": "../..",
     "noEmit": true,
+    "baseUrl": "..",
     "paths": {
-      "#admin/*": ["./src/*"],
-      "@open-pencil/ui": ["../../ui/src/index.ts"]
+      "#admin/*": ["./admin/src/*"],
+      "#cloud/*": ["./src/*"],
+      "#ui/*": ["../ui/src/*"],
+      "@open-pencil/cloud/contract": ["./src/contract/index.ts"],
+      "@open-pencil/cloud/client": ["./src/client/index.ts"],
+      "@open-pencil/ui": ["../ui/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]

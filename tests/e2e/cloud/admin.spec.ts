@@ -3,25 +3,61 @@ import { expect, test } from '@playwright/test'
 const enabled = process.env.OPENPENCIL_CLOUD_E2E === '1'
 const serverURL = process.env.OPENPENCIL_CLOUD_E2E_URL ?? ''
 
-test.describe('Cloud enrollment and administration', () => {
+test.describe('Cloud account and administration', () => {
   test.skip(!enabled, 'Cloud browser E2E environment is unavailable')
 
-  test('submits a non-enumerating waitlist request', async ({ page }) => {
+  test('offers normal sign-up and sign-in flows', async ({ page }) => {
+    await page.goto(`${serverURL}/`)
+    await expect(page.getByRole('link', { name: 'Sign up' }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Admin sign in' })).toHaveCount(0)
+
+    await page.evaluate(() => {
+      document.documentElement.dataset.navigationMarker = 'preserved'
+    })
+    const signUp = page.getByRole('link', { name: 'Sign up' }).first()
+    await signUp.click()
+    await expect(page).toHaveURL(`${serverURL}/sign-up`)
+    await expect(page.locator('html')).toHaveAttribute('data-navigation-marker', 'preserved')
+    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
+
     await page.goto(`${serverURL}/join`)
-    await page.getByLabel('Email').fill('waitlist@example.com')
-    await page.getByLabel('Name (optional)').fill('Waitlist Person')
-    await page.getByRole('button', { name: 'Request access' }).click()
-    await expect(page.getByText('Your request was received.')).toBeVisible()
-    await page.reload()
-    await page.getByLabel('Email').fill('waitlist@example.com')
-    await page.getByRole('button', { name: 'Request access' }).click()
-    await expect(page.getByText('Your request was received.')).toBeVisible()
+    await expect(page).toHaveURL(`${serverURL}/sign-up`)
+    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
   })
 
-  test('redirects unauthenticated admin visitors to sign in', async ({ page }) => {
+  test('shows pending account state without product access', async ({ context, page }) => {
+    await context.addCookies([
+      { name: 'openpencil-cloud-e2e-session', value: 'pending', url: serverURL }
+    ])
+    await page.goto(`${serverURL}/`)
+    await expect(page).toHaveURL(`${serverURL}/account/pending`)
+    await expect(
+      page.getByRole('heading', { name: 'Your account is awaiting approval' })
+    ).toBeVisible()
+    await page.goto(`${serverURL}/app`)
+    await expect(page).toHaveURL(`${serverURL}/account/pending`)
+  })
+
+  test('redirects unauthenticated admin visitors through normal sign in', async ({ page }) => {
     await page.goto(`${serverURL}/admin/enrollment`)
-    await expect(page).toHaveURL(`${serverURL}/admin/sign-in`)
-    await expect(page.getByRole('heading', { name: 'Admin sign in' })).toBeVisible()
+    await expect(page).toHaveURL(`${serverURL}/sign-in?redirect=/admin/enrollment`)
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
+  })
+
+  test('shows Admin only to deployment administrators', async ({ context, page }) => {
+    await context.addCookies([
+      { name: 'openpencil-cloud-e2e-session', value: 'recipient', url: serverURL }
+    ])
+    await page.goto(`${serverURL}/app`)
+    await expect(page.getByRole('link', { name: 'Administration' })).toHaveCount(0)
+
+    await context.clearCookies()
+    await context.addCookies([
+      { name: 'openpencil-cloud-e2e-session', value: 'owner', url: serverURL }
+    ])
+    await page.goto(`${serverURL}/app`)
+    await expect(page.getByRole('link', { name: 'Administration' })).toBeVisible()
   })
 
   test('allows the deployment administrator to review enrollment', async ({ context, page }) => {
@@ -30,7 +66,7 @@ test.describe('Cloud enrollment and administration', () => {
     ])
     await page.goto(`${serverURL}/admin/enrollment`)
     await expect(page.getByRole('heading', { name: 'Enrollment' })).toBeVisible()
-    const row = page.getByRole('row').filter({ hasText: 'waitlist@example.com' })
+    const row = page.getByRole('row').filter({ hasText: 'pending@cloud-e2e.test' })
     await expect(row).toBeVisible()
     await row.getByRole('button', { name: 'Approve' }).click()
     await expect(row).toContainText('approved')

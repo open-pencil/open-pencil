@@ -9,6 +9,7 @@ const discovery: CloudDiscovery = {
   deployment: 'self-hosted',
   apiURL: 'https://cloud.example.com/api',
   authURL: 'https://cloud.example.com/api/auth',
+  appURL: 'https://app.example.com',
   authentication: { socialProviders: [], enterpriseSSO: false, enrollmentMode: 'open' },
   capabilities: { documents: true, workspaces: true, collaboration: true }
 }

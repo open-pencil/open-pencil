@@ -7,7 +7,6 @@ export {
   createAdminUserService,
   createCloudAdminRoutes,
   createEnrollmentService,
-  createPublicEnrollmentRoutes,
   normalizeEnrollmentEmail,
   type AdminAuditService,
   type AdminErrorCode,
@@ -23,9 +22,12 @@ export {
 export {
   configuredSocialProviders,
   createBetterAuthAdapter,
+  createCloudIdentityResolver,
   createCloudSessionResolver,
   type CloudActor,
   type CloudAuthAdapter,
+  type CloudIdentity,
+  type CloudIdentityResolver,
   type CloudSessionResolver,
   workspaceAccessControl,
   workspaceRoles,
@@ -39,7 +41,13 @@ export {
   type CloudAPIServices,
   type PublicCloudAPI
 } from './api'
-export { createCloudApp, type CloudApp, type CloudServices } from './app'
+export {
+  createCloudApp,
+  shouldPreventIndexing,
+  withIndexingPolicy,
+  type CloudApp,
+  type CloudServices
+} from './app'
 export {
   createDocumentCleanupService,
   createUploadCleanupService,

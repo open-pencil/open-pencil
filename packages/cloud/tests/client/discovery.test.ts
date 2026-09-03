@@ -8,6 +8,7 @@ const discovery = {
   deployment: 'official' as const,
   apiURL: 'https://cloud.openpencil.dev/api',
   authURL: 'https://cloud.openpencil.dev/api/auth',
+  appURL: 'https://app.openpencil.dev',
   authentication: {
     socialProviders: ['apple' as const, 'google' as const],
     enterpriseSSO: false,

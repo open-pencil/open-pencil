@@ -122,7 +122,7 @@ Add `--volumes` only when you intentionally want to remove all persisted Cloud d
 
 - Put the Cloud API and S3 endpoint behind TLS with stable public hostnames.
 - Change every development credential in `.env` and in `seaweedfs/s3.json`; both locations must agree.
-- Enrollment requests are non-enumerating and protected by PostgreSQL-backed normalized-email limits plus trusted client-IP headers when configured. Configure `OPENPENCIL_CLOUD_ENROLLMENT_RATE_LIMIT_WINDOW_MS`, `OPENPENCIL_CLOUD_ENROLLMENT_RATE_LIMIT_MAX`, and `OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS`. Rejected or revoked addresses may submit a new request; approved and pending records remain unchanged.
+- Approval-gated enrollment creates a pending record only after the identity provider verifies the account. Pending, rejected, and revoked accounts can read their own status but cannot access product or administration APIs. Configure `OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS` to notify deployment administrators.
 - Configure `OPENPENCIL_CLOUD_URL` and `OPENPENCIL_CLOUD_TRUSTED_ORIGINS` for the actual browser origins.
 - Keep `S3_CHECKSUM_VERIFICATION=metadata` for this SeaweedFS profile. OpenPencil stores the document SHA-256 as immutable object metadata and verifies it before committing a revision.
 - Configure Google or Apple variables in `.env` only when enabling those providers.

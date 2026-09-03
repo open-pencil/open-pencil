@@ -1,5 +1,8 @@
 import { tv } from 'tailwind-variants'
 
+export const panelFieldBase =
+  'h-8 min-w-0 rounded-md border border-border bg-panel-field text-surface outline-none hover:bg-panel-field-hover focus:border-panel-focus focus-visible:border-panel-focus disabled:cursor-not-allowed disabled:text-muted disabled:opacity-60'
+
 export const inputTheme = tv({
   base: [
     'min-w-0 w-full rounded-md border border-border bg-input text-surface outline-none',

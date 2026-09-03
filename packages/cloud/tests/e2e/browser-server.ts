@@ -16,7 +16,11 @@ import {
   StaticEntitlementSource
 } from '@open-pencil/cloud/server'
 
-import { cloudE2EActors, createCloudE2ESessionResolver } from './session'
+import {
+  cloudE2EActors,
+  createCloudE2EIdentityResolver,
+  createCloudE2ESessionResolver
+} from './session'
 
 const port = Number(process.env.OPENPENCIL_CLOUD_E2E_PORT ?? 8787)
 const appOrigin = process.env.OPENPENCIL_APP_ORIGIN ?? 'http://localhost:1420'
@@ -73,17 +77,20 @@ await database
 await database
   .insertInto('cloudEnrollment')
   .values(
-    Object.values(cloudE2EActors).map((actor) => ({
-      id: crypto.randomUUID(),
-      emailNormalized: actor.email,
-      name: actor.name,
-      reason: 'Browser E2E',
-      status: 'approved' as const,
-      reviewedAt: new Date(),
-      reviewedBy: cloudE2EActors.owner.userId,
-      reviewNote: null,
-      approvedUserId: actor.userId
-    }))
+    Object.values(cloudE2EActors).map((actor) => {
+      const pending = actor.userId === cloudE2EActors.pending.userId
+      return {
+        id: crypto.randomUUID(),
+        emailNormalized: actor.email,
+        name: actor.name,
+        reason: 'Browser E2E',
+        status: pending ? ('pending' as const) : ('approved' as const),
+        reviewedAt: pending ? null : new Date(),
+        reviewedBy: pending ? null : cloudE2EActors.owner.userId,
+        reviewNote: null,
+        approvedUserId: pending ? null : actor.userId
+      }
+    })
   )
   .execute()
 await database
@@ -164,6 +171,7 @@ const app = createCloudApp({
     'cloud.collaboration.enabled': true,
     'cloud.collaboration.maximum-participants': 10
   }),
+  resolveIdentity: createCloudE2EIdentityResolver(),
   resolveSession: createCloudE2ESessionResolver()
 })
 const adminAssets = createNodeAdminAssetHandler(repositoryPath('packages/cloud/dist/admin'))

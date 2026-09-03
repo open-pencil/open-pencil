@@ -1,4 +1,4 @@
-import { createEnrollmentService } from '#cloud/admin/enrollment/service'
+import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/enrollment/service'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { betterAuth, type BetterAuthOptions } from 'better-auth'
@@ -63,9 +63,9 @@ function socialProviders(config: CloudServerConfig): BetterAuthOptions['socialPr
 
 export function createBetterAuthAdapter(
   config: CloudServerConfig,
-  database: Kysely<CloudDatabase>
+  database: Kysely<CloudDatabase>,
+  enrollment: EnrollmentService = createEnrollmentService(database)
 ): CloudAuthAdapter {
-  const enrollment = createEnrollmentService(database)
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
     baseURL: config.publicURL,
@@ -97,19 +97,9 @@ export function createBetterAuthAdapter(
       }
     },
     user: {
-      validateUserInfo: async ({ user, source }) => {
-        if (source.action !== 'create-user') return undefined
-        if (config.enrollmentMode === 'closed') {
+      validateUserInfo: ({ source }) => {
+        if (source.action === 'create-user' && config.enrollmentMode === 'closed') {
           return { error: 'enrollment_closed', errorDescription: 'Cloud enrollment is closed' }
-        }
-        if (
-          config.enrollmentMode === 'approval' &&
-          (!user.email || !(await enrollment.isApproved(user.email)))
-        ) {
-          return {
-            error: 'enrollment_approval_required',
-            errorDescription: 'Cloud enrollment approval is required'
-          }
         }
         return undefined
       }
@@ -118,6 +108,9 @@ export function createBetterAuthAdapter(
       user: {
         create: {
           after: async (user) => {
+            if (config.enrollmentMode === 'approval') {
+              await enrollment.request({ email: user.email, name: user.name })
+            }
             await enrollment.bindApprovedUser(user.email, user.id)
           }
         }
@@ -143,23 +136,27 @@ export function createBetterAuthAdapter(
     ]
   })
 
+  const resolveIdentity = async (headers: Headers) => {
+    const session = await auth.api.getSession({ headers })
+    if (!session) return null
+    return {
+      userId: session.user.id,
+      email: session.user.email,
+      name: session.user.name,
+      deploymentRole: session.user.role === 'admin' ? ('admin' as const) : ('user' as const)
+    }
+  }
+
   return {
     handler: auth.handler,
+    resolveIdentity,
     async resolveSession(headers) {
-      const session = await auth.api.getSession({ headers })
-      if (!session) return null
-      if (
-        config.enrollmentMode === 'approval' &&
-        !(await enrollment.isApproved(session.user.email))
-      ) {
+      const identity = await resolveIdentity(headers)
+      if (!identity) return null
+      if (config.enrollmentMode === 'approval' && !(await enrollment.isApproved(identity.email))) {
         return null
       }
-      return {
-        userId: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        deploymentRole: session.user.role ?? undefined
-      }
+      return identity
     },
     async listUsers(headers, query) {
       const listQuery = query?.searchValue

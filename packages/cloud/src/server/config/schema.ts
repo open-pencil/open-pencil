@@ -1,10 +1,10 @@
+import { CLOUD_PROTOCOL_MAX_UPLOAD_BYTES } from '#cloud/contract'
 import { staticEntitlementsSchema } from '#cloud/server/policy/static'
 import * as v from 'valibot'
 
 import {
   CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
-  CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM,
-  CLOUD_PROTOCOL_MAX_UPLOAD_BYTES
+  CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM
 } from './limits'
 
 const httpURLSchema = v.pipe(
@@ -64,17 +64,10 @@ const rawCloudServerConfigSchema = v.object({
   authTrustedIPHeaders: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   authTrustedProxies: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
+  indexingPolicy: v.optional(v.picklist(['allow', 'deny']), 'deny'),
   enrollmentAdminNotificationEmails: v.optional(
     v.array(v.pipe(v.string(), v.trim(), v.email())),
     []
-  ),
-  enrollmentRateLimitWindowMs: v.optional(
-    v.pipe(v.number(), v.integer(), v.minValue(1000)),
-    60 * 60_000
-  ),
-  enrollmentRateLimitMaximumRequests: v.optional(
-    v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)),
-    10
   ),
   deploymentAdminUserIds: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   googleClientId: optionalTextSchema,

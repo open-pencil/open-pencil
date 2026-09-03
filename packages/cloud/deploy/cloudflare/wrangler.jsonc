@@ -29,6 +29,7 @@
         "OPENPENCIL_CLOUD_TRUSTED_ORIGINS": "https://app.openpencil.dev,https://cloud-staging.openpencil.dev",
         "OPENPENCIL_CLOUD_AUTH_IP_HEADERS": "cf-connecting-ip",
         "OPENPENCIL_CLOUD_ENROLLMENT_MODE": "approval",
+        "OPENPENCIL_CLOUD_INDEXING_POLICY": "deny",
         "OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS": "admin@openpencil.dev",
         "OPENPENCIL_CLOUD_EMAIL_TRANSPORT": "none",
         "S3_ENDPOINT": "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech",

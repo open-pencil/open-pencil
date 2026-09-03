@@ -1,120 +1,173 @@
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers)
-  headers.set('Content-Type', 'application/json')
-  const response = await fetch(`/api${path}`, {
-    ...init,
-    credentials: 'include',
-    headers
-  })
-  if (response.status === 401 && globalThis.location.pathname !== '/admin/sign-in') {
-    globalThis.location.assign('/admin/sign-in')
-    throw new Error('Authentication required')
+import * as v from 'valibot'
+
+import type { CloudFetch } from '@open-pencil/cloud/client'
+import {
+  adminAuditResponseSchema,
+  adminEmailResponseSchema,
+  adminErrorResponseSchema,
+  adminMutationResponseSchema,
+  adminOperationsResponseSchema,
+  cloudAccountStatusResponseSchema,
+  cloudAdminSessionResponseSchema,
+  cloudAdminUsersResponseSchema,
+  enrollmentReviewResponseSchema,
+  enrollmentsResponseSchema,
+  type AdminErrorCode
+} from '@open-pencil/cloud/contract'
+
+export type CloudAdminAPIErrorKind =
+  | 'authentication-required'
+  | 'authorization-required'
+  | 'cancelled'
+  | 'domain'
+  | 'network'
+  | 'protocol'
+  | 'timeout'
+
+export class CloudAdminAPIError extends Error {
+  override readonly name = 'CloudAdminAPIError'
+
+  constructor(
+    readonly kind: CloudAdminAPIErrorKind,
+    readonly code?: AdminErrorCode,
+    options?: ErrorOptions
+  ) {
+    super(kind, options)
   }
-  if (response.status === 403) throw new Error('Deployment administrator access is required')
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { error?: { code?: string } } | null
-    const code = body?.error?.code
-    const messages: Record<string, string> = {
-      invalid_enrollment_transition: 'This enrollment state changed. Refresh and try again.',
-      last_admin_required: 'At least one active deployment administrator is required.',
-      self_admin_action_forbidden: 'You cannot perform that action on your own account.',
-      email_regeneration_unavailable: 'This email cannot be regenerated from current records.'
+}
+
+export type CloudAdminAPIClientOptions = {
+  baseURL?: string
+  fetch?: CloudFetch
+  timeoutMs?: number
+}
+
+function requestURL(baseURL: string, path: string): URL {
+  return new URL(`/api${path}`, baseURL)
+}
+
+export function createCloudAdminAPIClient(options: CloudAdminAPIClientOptions = {}) {
+  const baseURL = options.baseURL
+  const requestFetch = options.fetch ?? globalThis.fetch
+  const timeoutMs = options.timeoutMs ?? 10_000
+
+  async function request<Output>(
+    path: string,
+    schema: v.GenericSchema<unknown, Output>,
+    init: RequestInit = {}
+  ): Promise<Output> {
+    const headers = new Headers(init.headers)
+    headers.set('Accept', 'application/json')
+    if (init.body) headers.set('Content-Type', 'application/json')
+    const timeout = AbortSignal.timeout(timeoutMs)
+    const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout
+    let response: Response
+    try {
+      response = await requestFetch(requestURL(baseURL ?? globalThis.location.origin, path), {
+        ...init,
+        credentials: 'include',
+        headers,
+        signal
+      })
+    } catch (cause) {
+      if (init.signal?.aborted) throw new CloudAdminAPIError('cancelled', undefined, { cause })
+      if (timeout.aborted) throw new CloudAdminAPIError('timeout', undefined, { cause })
+      throw new CloudAdminAPIError('network', undefined, { cause })
     }
-    throw new Error((code && messages[code]) || `Cloud request failed: ${response.status}`)
+    if (response.status === 401) throw new CloudAdminAPIError('authentication-required')
+    if (response.status === 403) throw new CloudAdminAPIError('authorization-required')
+
+    let body: unknown
+    try {
+      body = await response.json()
+    } catch (cause) {
+      throw new CloudAdminAPIError('protocol', undefined, { cause })
+    }
+    if (!response.ok) {
+      const error = v.safeParse(adminErrorResponseSchema, body)
+      throw new CloudAdminAPIError('domain', error.success ? error.output.error.code : undefined)
+    }
+    const parsed = v.safeParse(schema, body)
+    if (!parsed.success)
+      throw new CloudAdminAPIError('protocol', undefined, { cause: parsed.issues })
+    return parsed.output
   }
-  return response.json() as Promise<T>
+
+  return {
+    accountStatus(signal?: AbortSignal) {
+      return request('/account/status', cloudAccountStatusResponseSchema, { signal })
+    },
+    session(signal?: AbortSignal) {
+      return request('/session', cloudAdminSessionResponseSchema, { signal })
+    },
+    enrollments(status?: string, signal?: AbortSignal) {
+      const query = new URLSearchParams()
+      if (status) query.set('status', status)
+      const suffix = query.size ? `?${query}` : ''
+      return request(`/admin/enrollments${suffix}`, enrollmentsResponseSchema, { signal })
+    },
+    reviewEnrollment(
+      id: string,
+      action: 'approve' | 'reject' | 'revoke',
+      note?: string,
+      signal?: AbortSignal
+    ) {
+      return request(
+        `/admin/enrollments/${encodeURIComponent(id)}/${action}`,
+        enrollmentReviewResponseSchema,
+        {
+          method: 'POST',
+          body: JSON.stringify({ note }),
+          signal
+        }
+      )
+    },
+    users(search?: string, signal?: AbortSignal) {
+      const query = new URLSearchParams()
+      if (search) query.set('search', search)
+      const suffix = query.size ? `?${query}` : ''
+      return request(`/admin/users${suffix}`, cloudAdminUsersResponseSchema, { signal })
+    },
+    userAction(
+      action: 'ban' | 'unban' | 'revoke-sessions',
+      userId: string,
+      reason?: string,
+      signal?: AbortSignal
+    ) {
+      return request(`/admin/users/${action}`, adminMutationResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify({ userId, reason }),
+        signal
+      })
+    },
+    setAdmin(userId: string, enabled: boolean, signal?: AbortSignal) {
+      return request('/admin/users/set-admin', adminMutationResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify({ userId, enabled }),
+        signal
+      })
+    },
+    email(signal?: AbortSignal) {
+      return request('/admin/email', adminEmailResponseSchema, { signal })
+    },
+    regenerateEmail(id: string, signal?: AbortSignal) {
+      return request(
+        `/admin/email/${encodeURIComponent(id)}/regenerate`,
+        adminMutationResponseSchema,
+        {
+          method: 'POST',
+          signal
+        }
+      )
+    },
+    audit(signal?: AbortSignal) {
+      return request('/admin/audit', adminAuditResponseSchema, { signal })
+    },
+    operations(signal?: AbortSignal) {
+      return request('/admin/operations', adminOperationsResponseSchema, { signal })
+    }
+  }
 }
 
-export const cloudAdminAPI = {
-  requestEnrollment(input: { email: string; name?: string; reason?: string }) {
-    return request<{ accepted: true }>('/enrollment/request', {
-      method: 'POST',
-      body: JSON.stringify(input)
-    })
-  },
-  session() {
-    return request<{ user: { userId: string; email: string; name: string } }>('/session')
-  },
-  enrollments(status?: string) {
-    const query = status ? `?status=${encodeURIComponent(status)}` : ''
-    return request<{ enrollments: Enrollment[] }>(`/admin/enrollments${query}`)
-  },
-  reviewEnrollment(id: string, action: 'approve' | 'reject' | 'revoke', note?: string) {
-    return request<{ enrollment: Enrollment }>(`/admin/enrollments/${id}/${action}`, {
-      method: 'POST',
-      body: JSON.stringify({ note })
-    })
-  },
-  users(search?: string) {
-    const query = search ? `?search=${encodeURIComponent(search)}` : ''
-    return request<{ users: CloudUser[]; total: number }>(`/admin/users${query}`)
-  },
-  userAction(action: 'ban' | 'unban' | 'revoke-sessions', userId: string, reason?: string) {
-    return request<{ ok: true }>(`/admin/users/${action}`, {
-      method: 'POST',
-      body: JSON.stringify({ userId, reason })
-    })
-  },
-  setAdmin(userId: string, enabled: boolean) {
-    return request<{ ok: true }>('/admin/users/set-admin', {
-      method: 'POST',
-      body: JSON.stringify({ userId, enabled })
-    })
-  },
-  email() {
-    return request<{ messages: EmailMessage[] }>('/admin/email')
-  },
-  regenerateEmail(id: string) {
-    return request<{ ok: true }>(`/admin/email/${id}/regenerate`, { method: 'POST' })
-  },
-  audit() {
-    return request<{ events: AuditEvent[] }>('/admin/audit')
-  },
-  operations() {
-    return request<Operations>('/admin/operations')
-  }
-}
-
-export type Enrollment = {
-  id: string
-  email: string
-  name: string | null
-  reason: string | null
-  status: 'pending' | 'approved' | 'rejected' | 'revoked'
-  requestedAt: string
-  reviewedAt: string | null
-  reviewNote: string | null
-}
-export type CloudUser = {
-  id: string
-  name: string
-  email: string
-  role?: string
-  banned: boolean | null
-}
-export type EmailMessage = {
-  id: string
-  kind: string
-  recipientEmailNormalized: string
-  status: string
-  attemptCount: number
-  lastErrorCode: string | null
-  regeneratable: boolean
-  createdAt: string
-}
-export type AuditEvent = {
-  id: string
-  actorUserId: string
-  action: string
-  subjectType: string
-  subjectId: string
-  createdAt: string
-}
-export type Operations = {
-  deployment: string
-  enrollmentMode: string
-  emailTransport: string
-  pendingEnrollment: number
-  pendingEmail: number
-  failedEmail: number
-}
+export type CloudAdminAPIClient = ReturnType<typeof createCloudAdminAPIClient>
+export const cloudAdminAPI = createCloudAdminAPIClient()

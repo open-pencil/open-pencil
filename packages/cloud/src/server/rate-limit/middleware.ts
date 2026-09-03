@@ -14,8 +14,6 @@ export type RateLimitPolicy = {
 }
 
 export const CLOUD_RATE_LIMITS = {
-  enrollmentEmail: { namespace: 'enrollment-email', windowMs: 60 * 60_000, limit: 5 },
-  enrollmentIP: { namespace: 'enrollment-ip', windowMs: 60 * 60_000, limit: 20 },
   publicCapability: { namespace: 'public-capability', windowMs: 60_000, limit: 30 },
   collaborationTicket: { namespace: 'collaboration-ticket', windowMs: 60_000, limit: 60 },
   invitationMutation: { namespace: 'invitation-mutation', windowMs: 60_000, limit: 30 },

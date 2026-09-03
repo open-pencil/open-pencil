@@ -23,6 +23,7 @@
 - Add reusable remote MCP connections for ACP agents, with Streamable HTTP endpoints and credential-backed bearer tokens.
 - Author and manage multidimensional component variants and published component libraries, including revision previews, linked-instance updates, stable library identities, offline catalogs, storage-backed catalogs, and read-only library definitions. (#239)
 - Add an optional, self-hostable OpenPencil Cloud with PostgreSQL metadata, immutable S3-compatible document revisions, authenticated workspaces, approval-gated administration, transactional email, and server-enforced sharing and collaboration.
+- Add a standalone, localized OpenPencil Cloud web application with unified sign-up and sign-in, account approval states, workspace access, deployment administration, responsive themes, and accessible shared controls.
 - Recover unsaved and pathless documents locally, with settings to disable recovery and remove retained snapshots. (#487, #574)
 - Inspect selected designs with a configured Vision model and attach images to AI chat with bounded analysis and previews. (#232, #471)
 

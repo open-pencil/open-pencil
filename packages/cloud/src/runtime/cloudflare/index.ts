@@ -5,7 +5,9 @@ import {
   createBetterAuthAdapter,
   createCloudDatabase,
   createDocumentCleanupService,
+  createEnrollmentService,
   createRateLimitCleanupService,
+  withIndexingPolicy,
   createInvitationOutbox,
   createTransactionalEmailService,
   createUploadCleanupService,
@@ -68,7 +70,6 @@ export function createCloudflareCloudRuntime(environment: CloudflareCloudEnviron
     })
   })
   const objects = createS3ObjectStore(config)
-  const auth = createBetterAuthAdapter(config, database)
   const emailTransport =
     config.emailTransport === 'cloudflare' && environment.EMAIL
       ? createCloudflareEmailTransport(environment.EMAIL)
@@ -81,6 +82,12 @@ export function createCloudflareCloudRuntime(environment: CloudflareCloudEnviron
     from: config.emailFrom ?? '',
     transport: emailTransport
   })
+  const enrollment = createEnrollmentService(database, {
+    appURL: config.appURL ?? config.publicURL,
+    adminRecipients: config.enrollmentAdminNotificationEmails,
+    email
+  })
+  const auth = createBetterAuthAdapter(config, database, enrollment)
   return {
     app: createCloudApp({
       config,
@@ -88,7 +95,8 @@ export function createCloudflareCloudRuntime(environment: CloudflareCloudEnviron
       auth,
       objects,
       invitationOutbox: emailTransport ? createInvitationOutbox(email) : undefined,
-      transactionalEmail: email
+      transactionalEmail: email,
+      enrollment
     }),
     database,
     email,
@@ -114,20 +122,26 @@ export function createCloudflareWorker() {
     ): Promise<Response> {
       const runtime = createCloudflareCloudRuntime(environment)
       const url = new URL(request.url)
-      if (
+      const assetRequest =
         environment.ASSETS &&
-        (url.pathname === '/join' ||
+        (url.pathname === '/' ||
+          url.pathname === '/join' ||
+          url.pathname === '/sign-in' ||
+          url.pathname === '/sign-up' ||
+          url.pathname === '/app' ||
+          url.pathname.startsWith('/account/') ||
           url.pathname === '/admin' ||
           url.pathname.startsWith('/admin/') ||
           url.pathname.startsWith('/assets/'))
-      ) {
-        const response = await environment.ASSETS.fetch(request)
-        context.waitUntil(runtime.database.destroy())
-        return response
-      }
-      const response = await runtime.app.fetch(request)
+      const response = assetRequest
+        ? await environment.ASSETS?.fetch(request)
+        : await runtime.app.fetch(request)
       context.waitUntil(runtime.database.destroy())
-      return response
+      return withIndexingPolicy(
+        response ?? new Response('Not found', { status: 404 }),
+        url.pathname,
+        runtime.config.indexingPolicy
+      )
     },
     async scheduled(
       _event: unknown,

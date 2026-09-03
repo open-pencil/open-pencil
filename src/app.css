@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import '@open-pencil/ui/styles/tokens.css';
+@import '@open-pencil/ui/styles.css';
 @import 'tw-animate-css';
 
 @utility scrollbar-none {

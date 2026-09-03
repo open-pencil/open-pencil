@@ -21,7 +21,7 @@ export async function enqueueEnrollmentRequested(
       idempotencyKey: `enrollment-requested/${input.enrollmentId}/${input.revision}`,
       kind: 'enrollment-requested',
       recipientEmail: input.email,
-      payload: { name: input.name, actionURL: `${options.appURL}/join` }
+      payload: { name: input.name, actionURL: `${options.appURL}/sign-in` }
     },
     transaction
   )
@@ -62,7 +62,7 @@ export async function enqueueEnrollmentReview(
       recipientEmail: input.recipientEmail,
       payload: {
         name: input.name,
-        actionURL: input.status === 'approved' ? options.appURL : `${options.appURL}/join`
+        actionURL: input.status === 'approved' ? options.appURL : `${options.appURL}/sign-in`
       }
     },
     transaction

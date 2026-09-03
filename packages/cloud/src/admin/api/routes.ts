@@ -1,28 +1,21 @@
-import { boundedEnrollmentBody, requireTrustedMutationOrigin } from '#cloud/admin/api/security'
+import { requireTrustedMutationOrigin } from '#cloud/admin/api/security'
 import type { AdminAuditService } from '#cloud/admin/audit/service'
 import {
   enrollmentStatusSchema,
-  parseEnrollmentRequest,
   parseEnrollmentReview,
   parseUserMutation,
   parseUserRoleMutation
 } from '#cloud/admin/contracts'
 import type { AdminEmailService } from '#cloud/admin/email/service'
-import type { EnrollmentMode, EnrollmentService } from '#cloud/admin/enrollment/service'
+import type { EnrollmentService } from '#cloud/admin/enrollment/service'
 import { adminErrorStatus, AdminDomainError } from '#cloud/admin/errors'
 import type { AdminOperationsService } from '#cloud/admin/operations/service'
 import type { AdminUserService } from '#cloud/admin/users/service'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
 import type { CloudDatabase } from '#cloud/server/db'
-import {
-  CLOUD_RATE_LIMITS,
-  createActorRateLimiter,
-  createCloudRateLimiter,
-  createTrustedIPRateLimiter,
-  rateLimitKey
-} from '#cloud/server/rate-limit'
+import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
 import { validatedJSON } from '#cloud/server/validation'
-import { Hono, type Context } from 'hono'
+import { Hono } from 'hono'
 import type { Kysely } from 'kysely'
 import * as v from 'valibot'
 
@@ -32,56 +25,6 @@ export type CloudAdminServices = {
   users: AdminUserService
   audit: AdminAuditService
   operations: AdminOperationsService
-}
-
-export function createPublicEnrollmentRoutes(
-  enrollment: EnrollmentService,
-  options: {
-    mode: EnrollmentMode
-    database: Kysely<CloudDatabase>
-    secret: string
-    windowMs: number
-    maximumRequests: number
-    ipHeaders: string[]
-  }
-) {
-  const genericResponse = (context: Context) => context.json({ accepted: true as const }, 202)
-  const ipLimiter = createTrustedIPRateLimiter(
-    options.database,
-    options.secret,
-    {
-      ...CLOUD_RATE_LIMITS.enrollmentIP,
-      windowMs: options.windowMs,
-      limit: options.maximumRequests
-    },
-    { trustedHeaders: options.ipHeaders },
-    genericResponse
-  )
-  return new Hono().post(
-    '/enrollment/request',
-    boundedEnrollmentBody,
-    validatedJSON(parseEnrollmentRequest),
-    async (context, next) => {
-      const input = context.req.valid('json')
-      return createCloudRateLimiter({
-        database: options.database,
-        secret: options.secret,
-        policy: {
-          ...CLOUD_RATE_LIMITS.enrollmentEmail,
-          windowMs: options.windowMs,
-          limit: Math.max(2, Math.floor(options.maximumRequests / 2))
-        },
-        standardHeaders: false,
-        keyGenerator: () => rateLimitKey.email(input.email),
-        handler: genericResponse
-      })(context, next)
-    },
-    ipLimiter,
-    async (context) => {
-      if (options.mode !== 'closed') await enrollment.request(context.req.valid('json'))
-      return context.json({ accepted: true as const }, 202)
-    }
-  )
 }
 
 export function createCloudAdminRoutes(
