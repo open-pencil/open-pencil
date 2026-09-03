@@ -7,6 +7,7 @@ rules:
       include:
         - /packages/cloud/src/server
       exclude:
+        - /packages/cloud/src/server/db/expressions.ts
         - /packages/cloud/src/server/db/migrations
         - /packages/cloud/src/server/db/migrate.ts
     patterns:
