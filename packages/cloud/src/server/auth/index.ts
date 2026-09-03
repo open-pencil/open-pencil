@@ -1,5 +1,7 @@
 export type { CloudAuthAdapter } from './adapter'
-export { createBetterAuthAdapter } from './factory'
+export { createAuthenticationEmailService, type AuthenticationEmailService } from './email'
+export { createCloudAuthenticationRuntime } from './runtime'
+export { createBetterAuthAdapter, type CloudAuthRuntimeOptions } from './factory'
 export {
   createCloudIdentityResolver,
   createCloudSessionResolver,

@@ -1,8 +1,7 @@
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
-  createBetterAuthAdapter,
+  createCloudAuthenticationRuntime,
   createCloudApp,
-  createEnrollmentService,
   type CloudApp,
   type CloudEnvironment,
   type CloudServerConfig,
@@ -34,12 +33,7 @@ export async function createNodeCloudApplication(
   })
   const objects = createS3ObjectStore(config)
   const { email, invitationOutbox } = createNodeTransactionalEmailRuntime(config, database)
-  const enrollment = createEnrollmentService(database, {
-    appURL: config.appURL ?? config.publicURL,
-    adminRecipients: config.enrollmentAdminNotificationEmails,
-    email
-  })
-  const auth = createBetterAuthAdapter(config, database, enrollment)
+  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
   const app = createCloudApp({
     config,
     database,

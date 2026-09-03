@@ -59,6 +59,15 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
       v.parse(originsEnvironmentSchema, environment.OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS) ?? [],
     deploymentAdminUserIds:
       v.parse(originsEnvironmentSchema, environment.OPENPENCIL_CLOUD_ADMIN_USER_IDS) ?? [],
+    compromisedPasswordCheck: v.parse(
+      booleanEnvironmentSchema,
+      environment.OPENPENCIL_CLOUD_COMPROMISED_PASSWORD_CHECK
+    ),
+    captchaProvider: environment.OPENPENCIL_CLOUD_CAPTCHA_PROVIDER,
+    captchaSiteKey: environment.OPENPENCIL_CLOUD_CAPTCHA_SITE_KEY,
+    captchaSecretKey: environment.TURNSTILE_SECRET_KEY,
+    captchaAllowedHostnames:
+      v.parse(originsEnvironmentSchema, environment.OPENPENCIL_CLOUD_CAPTCHA_HOSTNAMES) ?? [],
     googleClientId: environment.GOOGLE_CLIENT_ID,
     googleClientSecret: environment.GOOGLE_CLIENT_SECRET,
     appleClientId: environment.APPLE_CLIENT_ID,

@@ -63,7 +63,7 @@ async function signOut(): Promise<void> {
                 {{ messages.auth.value.signIn }}
               </RouterLink>
               <RouterLink
-                to="/sign-up"
+                to="/auth/sign-up"
                 class="rounded-md bg-accent px-3 py-2 text-xs font-medium text-white no-underline hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
               >
                 {{ messages.auth.value.signUp }}

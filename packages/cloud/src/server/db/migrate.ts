@@ -17,6 +17,7 @@ import * as adminEnrollment from './migrations/013_admin_enrollment'
 import * as enrollmentEmailKinds from './migrations/014_enrollment_email_kinds'
 import * as cloudRateLimit from './migrations/015_cloud_rate_limit'
 import * as authSchema from './migrations/016_auth_schema'
+import * as authenticationEmailKinds from './migrations/017_authentication_email_kinds'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
@@ -35,7 +36,8 @@ const migrations: Record<string, Migration> = {
   '013_admin_enrollment': adminEnrollment,
   '014_enrollment_email_kinds': enrollmentEmailKinds,
   '015_cloud_rate_limit': cloudRateLimit,
-  '016_auth_schema': authSchema
+  '016_auth_schema': authSchema,
+  '017_authentication_email_kinds': authenticationEmailKinds
 }
 
 class CloudMigrationProvider implements MigrationProvider {

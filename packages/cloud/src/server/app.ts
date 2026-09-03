@@ -74,6 +74,7 @@ export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): b
     policy === 'deny' ||
     path.startsWith('/api/') ||
     path.startsWith('/admin') ||
+    path.startsWith('/auth') ||
     path.startsWith('/account') ||
     path === '/app' ||
     path === '/sign-in' ||
@@ -233,7 +234,7 @@ export function createCloudApp(services: CloudServices) {
       return context.body(
         services.config.indexingPolicy === 'deny'
           ? 'User-agent: *\nDisallow: /\n'
-          : 'User-agent: *\nDisallow: /admin\nDisallow: /account\nDisallow: /app\nDisallow: /api\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /join\nDisallow: /.well-known\n'
+          : 'User-agent: *\nDisallow: /admin\nDisallow: /account\nDisallow: /app\nDisallow: /api\nDisallow: /auth\nDisallow: /sign-in\nDisallow: /sign-up\nDisallow: /join\nDisallow: /.well-known\n'
       )
     })
     .get('/health', (context) =>

@@ -5,8 +5,11 @@ import OperationsView from '#admin/admin/operations/OperationsView.vue'
 import UsersView from '#admin/admin/users/UsersView.vue'
 import DashboardView from '#admin/app/dashboard/DashboardView.vue'
 import AuthView from '#admin/auth/AuthView.vue'
+import ForgotPasswordView from '#admin/auth/ForgotPasswordView.vue'
 import PendingView from '#admin/auth/PendingView.vue'
+import ResetPasswordView from '#admin/auth/ResetPasswordView.vue'
 import RestrictedView from '#admin/auth/RestrictedView.vue'
+import VerifyEmailView from '#admin/auth/VerifyEmailView.vue'
 import AdminShell from '#admin/components/layout/AdminShell.vue'
 import HomeView from '#admin/public/home/HomeView.vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
@@ -26,7 +29,7 @@ const routes = [
     meta: { headKey: 'home', indexing: 'public' }
   },
   {
-    path: '/sign-in',
+    path: '/auth/sign-in',
     name: 'sign-in',
     component: AuthView,
     props: { intent: 'sign-in' },
@@ -34,13 +37,34 @@ const routes = [
     meta: { headKey: 'signIn', indexing: 'private' }
   },
   {
-    path: '/sign-up',
+    path: '/auth/sign-up',
     name: 'sign-up',
     component: AuthView,
     props: { intent: 'sign-up' },
     beforeEnter: resolveAnonymous,
     meta: { headKey: 'signUp', indexing: 'private' }
   },
+  {
+    path: '/auth/verify-email',
+    name: 'verify-email',
+    component: VerifyEmailView,
+    meta: { headKey: 'verifyEmail', indexing: 'private' }
+  },
+  {
+    path: '/auth/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPasswordView,
+    beforeEnter: resolveAnonymous,
+    meta: { headKey: 'forgotPassword', indexing: 'private' }
+  },
+  {
+    path: '/auth/reset-password',
+    name: 'reset-password',
+    component: ResetPasswordView,
+    meta: { headKey: 'resetPassword', indexing: 'private' }
+  },
+  { path: '/sign-in', redirect: { name: 'sign-in' } },
+  { path: '/sign-up', redirect: { name: 'sign-up' } },
   { path: '/join', redirect: { name: 'sign-up' } },
   { path: '/admin/sign-in', redirect: { name: 'sign-in', query: { redirect: '/admin' } } },
   {

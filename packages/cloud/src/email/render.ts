@@ -4,6 +4,7 @@ import { DocumentInvitationEmail } from './templates/document-invitation'
 import { EnrollmentEmail } from './templates/enrollment'
 import type {
   AdminEnrollmentNotificationPayload,
+  AuthenticationEmailPayload,
   DocumentInvitationEmailPayload,
   EnrollmentEmailPayload,
   RenderedTransactionalEmail,
@@ -40,7 +41,11 @@ async function renderDocumentInvitation(payload: DocumentInvitationEmailPayload)
 
 type EnrollmentMessageKind = Exclude<
   TransactionalEmailKind,
-  'document-invitation' | 'admin-enrollment-notification'
+  | 'document-invitation'
+  | 'admin-enrollment-notification'
+  | 'email-verification'
+  | 'password-reset'
+  | 'password-changed'
 >
 
 type EnrollmentCopy = {
@@ -90,7 +95,14 @@ function enrollmentCopy(kind: EnrollmentMessageKind, name: string): EnrollmentCo
 }
 
 async function renderEnrollment(
-  kind: Exclude<TransactionalEmailKind, 'document-invitation' | 'admin-enrollment-notification'>,
+  kind: Exclude<
+    TransactionalEmailKind,
+    | 'document-invitation'
+    | 'admin-enrollment-notification'
+    | 'email-verification'
+    | 'password-reset'
+    | 'password-changed'
+  >,
   payload: EnrollmentEmailPayload
 ) {
   const copy = enrollmentCopy(kind, payload.name)
@@ -111,6 +123,36 @@ async function renderAdminNotification(payload: AdminEnrollmentNotificationPaylo
   )
 }
 
+async function renderAuthentication(
+  kind: 'email-verification' | 'password-reset' | 'password-changed',
+  payload: AuthenticationEmailPayload
+) {
+  const copy = {
+    'email-verification': {
+      subject: 'Verify your OpenPencil Cloud email',
+      heading: 'Verify your email',
+      preview: 'Verify your email address to continue to OpenPencil Cloud.',
+      message: `Hi ${payload.name}, verify your email address to continue.`,
+      actionLabel: 'Verify email'
+    },
+    'password-reset': {
+      subject: 'Reset your OpenPencil Cloud password',
+      heading: 'Reset your password',
+      preview: 'Use this secure link to choose a new password.',
+      message: `Hi ${payload.name}, use the link below to choose a new password.`,
+      actionLabel: 'Reset password'
+    },
+    'password-changed': {
+      subject: 'Your OpenPencil Cloud password changed',
+      heading: 'Password changed',
+      preview: 'Your OpenPencil Cloud password was changed.',
+      message: `Hi ${payload.name}, your password was changed. If this was not you, contact your administrator.`,
+      actionLabel: 'Open OpenPencil Cloud'
+    }
+  }[kind]
+  return rendered(EnrollmentEmail, { ...copy, actionURL: payload.actionURL ?? '#' }, copy.subject)
+}
+
 export async function renderTransactionalEmail<Kind extends TransactionalEmailKind>(
   kind: Kind,
   payload: TransactionalEmailPayloadByKind[Kind]
@@ -120,6 +162,9 @@ export async function renderTransactionalEmail<Kind extends TransactionalEmailKi
   }
   if (kind === 'admin-enrollment-notification') {
     return renderAdminNotification(payload as AdminEnrollmentNotificationPayload)
+  }
+  if (kind === 'email-verification' || kind === 'password-reset' || kind === 'password-changed') {
+    return renderAuthentication(kind, payload as AuthenticationEmailPayload)
   }
   return renderEnrollment(kind, payload as EnrollmentEmailPayload)
 }

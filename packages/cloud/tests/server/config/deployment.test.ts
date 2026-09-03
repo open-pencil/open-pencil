@@ -21,7 +21,30 @@ trusted_origins = ["https://app.example.com"]
 [authentication]
 enrollment_mode = "approval"
 
+[authentication.email_password]
+enabled = true
+sign_up = false
+minimum_password_length = 16
+maximum_password_length = 120
+verification_link_expires_minutes = 30
+password_reset_link_expires_minutes = 45
+compromised_password_check = true
+
+[authentication.captcha]
+provider = "cloudflare-turnstile"
+site_key = "public-turnstile-site-key"
+allowed_hostnames = ["cloud.example.com"]
+
 [authentication.providers.google]
+
+[email]
+transport = "smtp"
+from = "cloud@example.com"
+
+[email.smtp]
+host = "smtp.example.com"
+port = 465
+secure = true
 
 [object_storage]
 endpoint = "https://objects.example.com"
@@ -32,8 +55,11 @@ bucket = "openpencil"
 const environment = {
   DATABASE_URL: 'postgresql://user:password@database/openpencil',
   BETTER_AUTH_SECRET: 'auth-secret-at-least-32-characters-long',
+  TURNSTILE_SECRET_KEY: 'turnstile-secret',
   GOOGLE_CLIENT_ID: 'google-public-client-id',
   GOOGLE_CLIENT_SECRET: 'google-secret',
+  OPENPENCIL_CLOUD_SMTP_USER: 'smtp-user',
+  OPENPENCIL_CLOUD_SMTP_PASSWORD: 'smtp-password',
   S3_ACCESS_KEY_ID: 'access-key',
   S3_SECRET_ACCESS_KEY: 'secret-key'
 }
@@ -76,6 +102,17 @@ describe('Cloud TOML deployment configuration', () => {
       databaseURL: environment.DATABASE_URL,
       authSecret: environment.BETTER_AUTH_SECRET,
       enrollmentMode: 'approval',
+      emailPasswordEnabled: true,
+      emailPasswordSignUpEnabled: false,
+      emailPasswordMinimumLength: 16,
+      emailPasswordMaximumLength: 120,
+      emailVerificationExpiresIn: 1800,
+      passwordResetExpiresIn: 2700,
+      compromisedPasswordCheck: true,
+      captchaProvider: 'cloudflare-turnstile',
+      captchaSiteKey: 'public-turnstile-site-key',
+      captchaSecretKey: 'turnstile-secret',
+      captchaAllowedHostnames: ['cloud.example.com'],
       googleClientId: 'google-public-client-id',
       googleClientSecret: environment.GOOGLE_CLIENT_SECRET,
       s3AccessKeyId: environment.S3_ACCESS_KEY_ID,

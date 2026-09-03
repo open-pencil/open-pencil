@@ -14,11 +14,11 @@ describe('enrollment email rendering', () => {
     test(`renders HTML and text for ${kind}`, async () => {
       const rendered = await renderTransactionalEmail(kind, {
         name: 'Person',
-        actionURL: 'https://cloud.example.com/sign-in'
+        actionURL: 'https://cloud.example.com/auth/sign-in'
       })
       expect(rendered.subject).toBeString()
-      expect(rendered.html).toContain('https://cloud.example.com/sign-in')
-      expect(rendered.text).toContain('https://cloud.example.com/sign-in')
+      expect(rendered.html).toContain('https://cloud.example.com/auth/sign-in')
+      expect(rendered.text).toContain('https://cloud.example.com/auth/sign-in')
       expect(rendered.html).not.toContain('internal note')
     })
   }

@@ -15,7 +15,8 @@ const DEFAULT_SECRET_NAMES = {
   s3SecretAccessKey: 'S3_SECRET_ACCESS_KEY',
   s3SessionToken: 'S3_SESSION_TOKEN',
   smtpUser: 'OPENPENCIL_CLOUD_SMTP_USER',
-  smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD'
+  smtpPassword: 'OPENPENCIL_CLOUD_SMTP_PASSWORD',
+  turnstileSecretKey: 'TURNSTILE_SECRET_KEY'
 } as const
 
 const url = v.pipe(v.string(), v.url())
@@ -85,6 +86,40 @@ export const cloudDeploymentConfigSchema = v.object({
     enrollment_mode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
     admin_notification_emails: v.optional(v.array(v.pipe(v.string(), v.email())), []),
     admin_user_ids: v.optional(v.array(text), []),
+    email_password: v.optional(
+      v.object({
+        enabled: v.optional(v.boolean(), false),
+        sign_up: v.optional(v.boolean(), true),
+        minimum_password_length: v.optional(
+          v.pipe(v.number(), v.integer(), v.minValue(8), v.maxValue(128)),
+          15
+        ),
+        maximum_password_length: v.optional(
+          v.pipe(v.number(), v.integer(), v.minValue(15), v.maxValue(128)),
+          128
+        ),
+        verification_link_expires_minutes: v.optional(positiveInteger, 60),
+        password_reset_link_expires_minutes: v.optional(positiveInteger, 60),
+        compromised_password_check: v.optional(v.boolean(), false)
+      }),
+      {
+        enabled: false,
+        sign_up: true,
+        minimum_password_length: 15,
+        maximum_password_length: 128,
+        verification_link_expires_minutes: 60,
+        password_reset_link_expires_minutes: 60,
+        compromised_password_check: false
+      }
+    ),
+    captcha: v.optional(
+      v.object({
+        provider: v.literal('cloudflare-turnstile'),
+        site_key: text,
+        secret_key: defaultReference(DEFAULT_SECRET_NAMES.turnstileSecretKey),
+        allowed_hostnames: v.optional(v.array(text), [])
+      })
+    ),
     trusted_proxies: v.optional(
       v.object({
         headers: v.optional(v.array(text), []),
@@ -284,6 +319,21 @@ export function parseCloudDeploymentConfig(
     enrollmentMode: config.authentication.enrollment_mode,
     enrollmentAdminNotificationEmails: config.authentication.admin_notification_emails,
     deploymentAdminUserIds: config.authentication.admin_user_ids,
+    emailPasswordEnabled: config.authentication.email_password.enabled,
+    emailPasswordSignUpEnabled: config.authentication.email_password.sign_up,
+    emailPasswordMinimumLength: config.authentication.email_password.minimum_password_length,
+    emailPasswordMaximumLength: config.authentication.email_password.maximum_password_length,
+    emailVerificationExpiresIn:
+      config.authentication.email_password.verification_link_expires_minutes * 60,
+    passwordResetExpiresIn:
+      config.authentication.email_password.password_reset_link_expires_minutes * 60,
+    compromisedPasswordCheck: config.authentication.email_password.compromised_password_check,
+    captchaProvider: config.authentication.captcha?.provider,
+    captchaSiteKey: config.authentication.captcha?.site_key,
+    captchaSecretKey: config.authentication.captcha
+      ? requiredSecret(environment, config.authentication.captcha.secret_key)
+      : undefined,
+    captchaAllowedHostnames: config.authentication.captcha?.allowed_hostnames,
     authTrustedIPHeaders: config.authentication.trusted_proxies.headers,
     authTrustedProxies: config.authentication.trusted_proxies.addresses,
     ...authenticationConfig(config, environment),

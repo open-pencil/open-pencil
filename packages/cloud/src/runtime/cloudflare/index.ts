@@ -5,10 +5,9 @@ import {
   cloudDiscoveryFromConfig,
   parseCloudDeploymentConfig,
   createCloudApp,
-  createBetterAuthAdapter,
+  createCloudAuthenticationRuntime,
   createCloudDatabase,
   createDocumentCleanupService,
-  createEnrollmentService,
   createRateLimitCleanupService,
   withIndexingPolicy,
   createInvitationOutbox,
@@ -67,7 +66,10 @@ function stringEnvironment(environment: CloudflareCloudEnvironment): CloudEnviro
   return values
 }
 
-export function createCloudflareCloudRuntime(environment: CloudflareCloudEnvironment) {
+export function createCloudflareCloudRuntime(
+  environment: CloudflareCloudEnvironment,
+  runInBackground?: (promise: Promise<unknown>) => void
+) {
   const config = environment.OPENPENCIL_CLOUD_CONFIG
     ? parseCloudDeploymentConfig(
         environment.OPENPENCIL_CLOUD_CONFIG,
@@ -92,12 +94,9 @@ export function createCloudflareCloudRuntime(environment: CloudflareCloudEnviron
     from: config.emailFrom ?? '',
     transport: emailTransport
   })
-  const enrollment = createEnrollmentService(database, {
-    appURL: config.appURL ?? config.publicURL,
-    adminRecipients: config.enrollmentAdminNotificationEmails,
-    email
+  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email, {
+    runInBackground
   })
-  const auth = createBetterAuthAdapter(config, database, enrollment)
   return {
     app: createCloudApp({
       config,
@@ -130,7 +129,9 @@ export function createCloudflareWorker() {
       environment: CloudflareCloudEnvironment,
       context: CloudflareExecutionContext
     ): Promise<Response> {
-      const runtime = createCloudflareCloudRuntime(environment)
+      const runtime = createCloudflareCloudRuntime(environment, (promise) =>
+        context.waitUntil(promise)
+      )
       const url = new URL(request.url)
       const assetRequest =
         environment.ASSETS &&
@@ -138,6 +139,7 @@ export function createCloudflareWorker() {
           url.pathname === '/join' ||
           url.pathname === '/sign-in' ||
           url.pathname === '/sign-up' ||
+          url.pathname.startsWith('/auth/') ||
           url.pathname === '/app' ||
           url.pathname.startsWith('/account/') ||
           url.pathname === '/admin' ||

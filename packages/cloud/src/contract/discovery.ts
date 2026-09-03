@@ -7,6 +7,19 @@ export const cloudDeploymentSchema = v.picklist(['official', 'self-hosted'])
 export type CloudDeployment = v.InferOutput<typeof cloudDeploymentSchema>
 
 export const cloudAuthenticationSchema = v.object({
+  emailPassword: v.optional(
+    v.object({
+      signIn: v.boolean(),
+      signUp: v.boolean(),
+      minimumPasswordLength: v.pipe(v.number(), v.integer(), v.minValue(8)),
+      captcha: v.optional(
+        v.object({
+          provider: v.literal('cloudflare-turnstile'),
+          siteKey: v.pipe(v.string(), v.trim(), v.minLength(1))
+        })
+      )
+    })
+  ),
   socialProviders: v.array(v.picklist(['apple', 'google'])),
   enterpriseSSO: v.boolean(),
   enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open')

@@ -1,6 +1,11 @@
 import { describe, expect, mock, test } from 'bun:test'
 
-import { signInToCloud, signOutFromCloud, type CloudFetch } from '@open-pencil/cloud/client'
+import {
+  createCloudAuthClient,
+  signInToCloud,
+  signOutFromCloud,
+  type CloudFetch
+} from '@open-pencil/cloud/client'
 import { parseCloudDiscovery } from '@open-pencil/cloud/contract'
 
 const discovery = parseCloudDiscovery({
@@ -14,6 +19,25 @@ const discovery = parseCloudDiscovery({
 })
 
 describe('Cloud Better Auth client', () => {
+  test('sends the CAPTCHA response through Better Auth', async () => {
+    let request: Request | undefined
+    const fetch: CloudFetch = mock(async (input, init) => {
+      request = new Request(input, init)
+      return Response.json({ status: true })
+    })
+    const client = createCloudAuthClient(discovery, {
+      captchaResponse: 'turnstile-token',
+      fetch
+    })
+
+    await client.requestPasswordReset({
+      email: 'person@example.com',
+      redirectTo: 'https://cloud.example.com/auth/reset-password'
+    })
+
+    expect(request?.headers.get('x-captcha-response')).toBe('turnstile-token')
+  })
+
   test('starts social sign-in and signs out through Better Auth client actions', async () => {
     const requests: Request[] = []
     const fetch: CloudFetch = mock(async (input, init) => {

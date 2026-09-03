@@ -3,11 +3,12 @@ import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { betterAuth, type BetterAuthOptions } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
-import { admin, bearer, deviceAuthorization } from 'better-auth/plugins'
+import { admin, bearer, captcha, deviceAuthorization, haveIBeenPwned } from 'better-auth/plugins'
 import { importPKCS8, SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
 
 import type { CloudAuthAdapter } from './adapter'
+import type { AuthenticationEmailService } from './email'
 
 const APPLE_AUDIENCE = 'https://appleid.apple.com'
 const APPLE_SECRET_LIFETIME_SECONDS = 180 * 24 * 60 * 60
@@ -61,11 +62,18 @@ function socialProviders(config: CloudServerConfig): BetterAuthOptions['socialPr
   return providers
 }
 
+export type CloudAuthRuntimeOptions = {
+  email?: AuthenticationEmailService
+  runInBackground?: (promise: Promise<unknown>) => void
+}
+
 export function createBetterAuthAdapter(
   config: CloudServerConfig,
   database: Kysely<CloudDatabase>,
-  enrollment: EnrollmentService = createEnrollmentService(database)
+  enrollment: EnrollmentService = createEnrollmentService(database),
+  runtime: CloudAuthRuntimeOptions = {}
 ): CloudAuthAdapter {
+  const authenticationEmail = runtime.email
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
     baseURL: config.publicURL,
@@ -77,12 +85,22 @@ export function createBetterAuthAdapter(
       casing: 'camel',
       transaction: true
     },
+    account: {
+      accountLinking: {
+        enabled: true,
+        disableImplicitLinking: false,
+        trustedProviders: ['google', 'apple'],
+        allowDifferentEmails: false,
+        allowUnlinkingAll: false
+      }
+    },
     advanced: {
       database: { generateId: 'uuid' },
       ipAddress: {
         ipAddressHeaders: config.authTrustedIPHeaders,
         trustedProxies: config.authTrustedProxies
-      }
+      },
+      ...(runtime.runInBackground ? { backgroundTasks: { handler: runtime.runInBackground } } : {})
     },
     rateLimit: {
       enabled: true,
@@ -93,9 +111,65 @@ export function createBetterAuthAdapter(
         '/device/code': { window: 60, max: 10 },
         '/device/token': { window: 60, max: 60 },
         '/device/approve': { window: 60, max: 10 },
-        '/device/deny': { window: 60, max: 10 }
+        '/device/deny': { window: 60, max: 10 },
+        '/sign-in/email': { window: 10, max: 3 },
+        '/sign-up/email': { window: 10, max: 3 },
+        '/request-password-reset': { window: 60, max: 3 },
+        '/send-verification-email': { window: 60, max: 3 }
       }
     },
+    emailAndPassword: config.emailPasswordEnabled
+      ? {
+          enabled: true,
+          disableSignUp: !config.emailPasswordSignUpEnabled,
+          requireEmailVerification: true,
+          minPasswordLength: config.emailPasswordMinimumLength,
+          maxPasswordLength: config.emailPasswordMaximumLength,
+          autoSignIn: false,
+          resetPasswordTokenExpiresIn: config.passwordResetExpiresIn,
+          revokeSessionsOnPasswordReset: true,
+          sendResetPassword: authenticationEmail
+            ? ({ user, url, token }) =>
+                authenticationEmail.sendPasswordReset({
+                  email: user.email,
+                  name: user.name,
+                  url,
+                  token
+                })
+            : undefined,
+          onPasswordReset: authenticationEmail
+            ? ({ user }) =>
+                authenticationEmail.sendPasswordChanged({
+                  email: user.email,
+                  name: user.name,
+                  userId: user.id,
+                  url: config.publicURL
+                })
+            : undefined
+        }
+      : undefined,
+    emailVerification:
+      config.emailPasswordEnabled && authenticationEmail
+        ? {
+            expiresIn: config.emailVerificationExpiresIn,
+            sendOnSignUp: true,
+            sendOnSignIn: true,
+            autoSignInAfterVerification: true,
+            sendVerificationEmail: ({ user, url, token }) =>
+              authenticationEmail.sendVerification({
+                email: user.email,
+                name: user.name,
+                url,
+                token
+              }),
+            afterEmailVerification: async (user) => {
+              if (config.enrollmentMode === 'approval') {
+                await enrollment.request({ email: user.email, name: user.name })
+              }
+              await enrollment.bindApprovedUser(user.email, user.id)
+            }
+          }
+        : undefined,
     user: {
       validateUserInfo: ({ source }) => {
         if (source.action === 'create-user' && config.enrollmentMode === 'closed') {
@@ -108,6 +182,7 @@ export function createBetterAuthAdapter(
       user: {
         create: {
           after: async (user) => {
+            if (!user.emailVerified) return
             if (config.enrollmentMode === 'approval') {
               await enrollment.request({ email: user.email, name: user.name })
             }
@@ -117,6 +192,17 @@ export function createBetterAuthAdapter(
       }
     },
     plugins: [
+      ...(config.captchaProvider && config.captchaSecretKey
+        ? [
+            captcha({
+              provider: config.captchaProvider,
+              secretKey: config.captchaSecretKey,
+              allowedHostnames: config.captchaAllowedHostnames,
+              endpoints: ['/sign-up/email', '/sign-in/email', '/request-password-reset']
+            })
+          ]
+        : []),
+      ...(config.compromisedPasswordCheck ? [haveIBeenPwned()] : []),
       admin(
         config.deploymentAdminUserIds.length > 0
           ? { adminUserIds: config.deploymentAdminUserIds }
@@ -143,7 +229,10 @@ export function createBetterAuthAdapter(
       userId: session.user.id,
       email: session.user.email,
       name: session.user.name,
-      deploymentRole: session.user.role === 'admin' ? ('admin' as const) : ('user' as const)
+      deploymentRole:
+        'role' in session.user && session.user.role === 'admin'
+          ? ('admin' as const)
+          : ('user' as const)
     }
   }
 

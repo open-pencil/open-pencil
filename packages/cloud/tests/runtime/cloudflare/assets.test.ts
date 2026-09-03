@@ -50,6 +50,11 @@ describe('Cloudflare admin assets', () => {
       '/join',
       '/sign-in',
       '/sign-up',
+      '/auth/sign-in',
+      '/auth/sign-up',
+      '/auth/verify-email',
+      '/auth/forgot-password',
+      '/auth/reset-password',
       '/account/pending',
       '/app',
       '/admin'

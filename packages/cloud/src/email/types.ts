@@ -7,6 +7,9 @@ export type TransactionalEmailKind =
   | 'enrollment-approved'
   | 'enrollment-rejected'
   | 'enrollment-revoked'
+  | 'email-verification'
+  | 'password-reset'
+  | 'password-changed'
 
 export type DocumentInvitationEmailPayload = {
   inviterName: string
@@ -28,6 +31,11 @@ export type AdminEnrollmentNotificationPayload = {
   actionURL: string
 }
 
+export type AuthenticationEmailPayload = {
+  name: string
+  actionURL?: string
+}
+
 export type TransactionalEmailPayloadByKind = {
   'document-invitation': DocumentInvitationEmailPayload
   'enrollment-requested': EnrollmentEmailPayload
@@ -35,6 +43,9 @@ export type TransactionalEmailPayloadByKind = {
   'enrollment-approved': EnrollmentEmailPayload
   'enrollment-rejected': EnrollmentEmailPayload
   'enrollment-revoked': EnrollmentEmailPayload
+  'email-verification': AuthenticationEmailPayload
+  'password-reset': AuthenticationEmailPayload
+  'password-changed': AuthenticationEmailPayload
 }
 
 export type TransactionalEmailMessage<

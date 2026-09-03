@@ -5,7 +5,7 @@ import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cloudDiscoveryFromConfig,
   createCloudApp,
-  createBetterAuthAdapter,
+  createCloudAuthenticationRuntime,
   createCollaborationStateStore,
   createDefaultCloudPolicy,
   DatabaseEntitlementSource,
@@ -13,7 +13,6 @@ import {
   StaticEntitlementSource,
   staticEntitlementValues,
   createDocumentCleanupService,
-  createEnrollmentService,
   createRateLimitCleanupService,
   createUploadCleanupService,
   CLOUD_FEATURE_KEYS,
@@ -47,12 +46,7 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
     invitationOutbox,
     transport: emailTransport
   } = createNodeTransactionalEmailRuntime(config, database)
-  const enrollment = createEnrollmentService(database, {
-    appURL: config.appURL ?? config.publicURL,
-    adminRecipients: config.enrollmentAdminNotificationEmails,
-    email
-  })
-  const auth = createBetterAuthAdapter(config, database, enrollment)
+  const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
   const cleanup = config.cleanupEnabled
     ? startCleanupWorker(
         {

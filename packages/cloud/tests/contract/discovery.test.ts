@@ -15,7 +15,16 @@ const discovery = {
   authentication: {
     socialProviders: ['google' as const],
     enterpriseSSO: true,
-    enrollmentMode: 'open' as const
+    enrollmentMode: 'open' as const,
+    emailPassword: {
+      signIn: true,
+      signUp: false,
+      minimumPasswordLength: 15,
+      captcha: {
+        provider: 'cloudflare-turnstile' as const,
+        siteKey: 'public-site-key'
+      }
+    }
   },
   capabilities: {
     documents: true,

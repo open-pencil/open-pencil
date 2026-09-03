@@ -17,7 +17,12 @@ const discovery = {
   authentication: {
     socialProviders: ['google'],
     enterpriseSSO: false,
-    enrollmentMode: 'approval'
+    enrollmentMode: 'approval',
+    emailPassword: {
+      signIn: true,
+      signUp: true,
+      minimumPasswordLength: 15
+    }
   },
   capabilities: { documents: true, workspaces: true, collaboration: true }
 } satisfies CloudDiscovery

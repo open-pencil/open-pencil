@@ -15,6 +15,21 @@ enrollment_mode = "open"
 admin_notification_emails = []
 # The signing secret defaults to BETTER_AUTH_SECRET.
 
+[authentication.email_password]
+enabled = false
+sign_up = true
+minimum_password_length = 15
+maximum_password_length = 128
+verification_link_expires_minutes = 60
+password_reset_link_expires_minutes = 60
+compromised_password_check = false
+
+# Recommended when enabling public sign-up. TURNSTILE_SECRET_KEY remains external.
+# [authentication.captcha]
+# provider = "cloudflare-turnstile"
+# site_key = "replace-with-public-site-key"
+# allowed_hostnames = ["cloud.example.com"]
+
 [authentication.trusted_proxies]
 headers = []
 addresses = []

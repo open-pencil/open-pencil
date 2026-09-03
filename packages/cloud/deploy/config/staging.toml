@@ -16,6 +16,11 @@ trusted_origins = [
 enrollment_mode = "approval"
 admin_notification_emails = ["admin@openpencil.dev"]
 
+# Keep credential authentication disabled until outbound transactional email and abuse controls are
+# configured for the public deployment.
+[authentication.email_password]
+enabled = false
+
 [authentication.trusted_proxies]
 headers = ["cf-connecting-ip"]
 addresses = []

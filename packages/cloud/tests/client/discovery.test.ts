@@ -12,7 +12,16 @@ const discovery = {
   authentication: {
     socialProviders: ['apple' as const, 'google' as const],
     enterpriseSSO: false,
-    enrollmentMode: 'open' as const
+    enrollmentMode: 'open' as const,
+    emailPassword: {
+      signIn: true,
+      signUp: true,
+      minimumPasswordLength: 15,
+      captcha: {
+        provider: 'cloudflare-turnstile' as const,
+        siteKey: 'public-site-key'
+      }
+    }
   },
   capabilities: {
     documents: true,

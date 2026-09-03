@@ -11,7 +11,7 @@ test.describe('Cloud account and administration', () => {
     page.on('request', (request) => {
       if (request.url().includes('/.well-known/openpencil')) discoveryRequests.push(request.url())
     })
-    await page.goto(`${serverURL}/sign-up`)
+    await page.goto(`${serverURL}/auth/sign-up`)
     await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible()
     expect(discoveryRequests).toEqual([])
 
@@ -25,12 +25,12 @@ test.describe('Cloud account and administration', () => {
     })
     const signUp = page.getByRole('link', { name: 'Sign up' }).first()
     await signUp.click()
-    await expect(page).toHaveURL(`${serverURL}/sign-up`)
+    await expect(page).toHaveURL(`${serverURL}/auth/sign-up`)
     await expect(page.locator('html')).toHaveAttribute('data-navigation-marker', 'preserved')
     await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
 
     await page.goto(`${serverURL}/join`)
-    await expect(page).toHaveURL(`${serverURL}/sign-up`)
+    await expect(page).toHaveURL(`${serverURL}/auth/sign-up`)
     await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible()
   })
 
@@ -49,7 +49,7 @@ test.describe('Cloud account and administration', () => {
 
   test('redirects unauthenticated admin visitors through normal sign in', async ({ page }) => {
     await page.goto(`${serverURL}/admin/enrollment`)
-    await expect(page).toHaveURL(`${serverURL}/sign-in?redirect=/admin/enrollment`)
+    await expect(page).toHaveURL(`${serverURL}/auth/sign-in?redirect=/admin/enrollment`)
     await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()
   })
 

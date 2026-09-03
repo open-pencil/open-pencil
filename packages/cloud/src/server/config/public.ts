@@ -17,6 +17,23 @@ export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscov
     authURL: new URL('/api/auth', config.publicURL).href.replace(/\/$/, ''),
     appURL: config.appURL ?? config.publicURL,
     authentication: {
+      ...(config.emailPasswordEnabled
+        ? {
+            emailPassword: {
+              signIn: true,
+              signUp: config.emailPasswordSignUpEnabled,
+              minimumPasswordLength: config.emailPasswordMinimumLength,
+              ...(config.captchaProvider && config.captchaSiteKey
+                ? {
+                    captcha: {
+                      provider: config.captchaProvider,
+                      siteKey: config.captchaSiteKey
+                    }
+                  }
+                : {})
+            }
+          }
+        : {}),
       socialProviders: configuredSocialProviders(config),
       enterpriseSSO: false,
       enrollmentMode: config.enrollmentMode

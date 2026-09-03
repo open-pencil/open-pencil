@@ -45,14 +45,14 @@ watchEffect(() => {
         <div class="mt-7 flex flex-wrap gap-2">
           <RouterActionLink
             v-if="signUpAvailable"
-            to="/sign-up"
+            to="/auth/sign-up"
             color="primary"
             variant="solid"
             size="lg"
           >
             {{ messages.auth.value.signUp }}
           </RouterActionLink>
-          <RouterActionLink to="/sign-in" color="neutral" variant="outline" size="lg">
+          <RouterActionLink to="/auth/sign-in" color="neutral" variant="outline" size="lg">
             {{ messages.auth.value.signIn }}
           </RouterActionLink>
         </div>

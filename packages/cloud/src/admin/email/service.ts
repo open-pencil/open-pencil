@@ -63,7 +63,7 @@ export function createAdminEmailService(
             recipientEmail: enrollment.emailNormalized,
             payload: {
               name: enrollment.name ?? 'there',
-              actionURL: kind === 'enrollment-approved' ? appURL : `${appURL}/sign-in`
+              actionURL: kind === 'enrollment-approved' ? appURL : `${appURL}/auth/sign-in`
             }
           },
           transaction

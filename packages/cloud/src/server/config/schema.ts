@@ -70,6 +70,23 @@ const rawCloudServerConfigSchema = v.object({
     []
   ),
   deploymentAdminUserIds: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
+  emailPasswordEnabled: v.optional(v.boolean(), false),
+  emailPasswordSignUpEnabled: v.optional(v.boolean(), true),
+  emailPasswordMinimumLength: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(8), v.maxValue(128)),
+    15
+  ),
+  emailPasswordMaximumLength: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(15), v.maxValue(128)),
+    128
+  ),
+  emailVerificationExpiresIn: v.optional(v.pipe(v.number(), v.integer(), v.minValue(60)), 3600),
+  passwordResetExpiresIn: v.optional(v.pipe(v.number(), v.integer(), v.minValue(60)), 3600),
+  compromisedPasswordCheck: v.optional(v.boolean(), false),
+  captchaProvider: v.optional(v.literal('cloudflare-turnstile')),
+  captchaSiteKey: optionalTextSchema,
+  captchaSecretKey: optionalTextSchema,
+  captchaAllowedHostnames: v.optional(v.array(v.pipe(v.string(), v.trim(), v.minLength(1))), []),
   googleClientId: optionalTextSchema,
   googleClientSecret: optionalTextSchema,
   appleClientId: optionalTextSchema,
@@ -134,15 +151,25 @@ function requireTogether(
   }
 }
 
-export function parseCloudServerConfig(input: unknown): CloudServerConfig {
-  const config = v.parse(rawCloudServerConfigSchema, input)
-  if (
-    config.appURL &&
-    !config.trustedOrigins.some(
-      (origin) => new URL(origin).origin === new URL(config.appURL ?? '').origin
+function validateAuthenticationConfig(config: CloudServerConfig): void {
+  if (config.emailPasswordMinimumLength > config.emailPasswordMaximumLength) {
+    throw new CloudConfigError('Minimum password length cannot exceed maximum password length')
+  }
+  if (config.emailPasswordEnabled && config.emailTransport === 'none') {
+    throw new CloudConfigError(
+      'Email and password authentication requires transactional email delivery'
     )
+  }
+  requireTogether(config, 'CAPTCHA', ['captchaProvider', 'captchaSiteKey', 'captchaSecretKey'])
+  if (
+    config.deployment === 'official' &&
+    config.emailPasswordEnabled &&
+    config.emailPasswordSignUpEnabled &&
+    (!config.compromisedPasswordCheck || !config.captchaProvider)
   ) {
-    throw new CloudConfigError('Cloud app URL must be included in trusted origins')
+    throw new CloudConfigError(
+      'Official email and password sign-up requires compromised-password checks and CAPTCHA'
+    )
   }
   requireTogether(config, 'Google', ['googleClientId', 'googleClientSecret'])
   requireTogether(config, 'Apple', [
@@ -151,6 +178,9 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
     'appleKeyId',
     'applePrivateKey'
   ])
+}
+
+function validateEmailConfig(config: CloudServerConfig): void {
   requireTogether(config, 'SMTP', ['smtpHost', 'smtpPort'])
   requireTogether(config, 'SMTP authentication', ['smtpUser', 'smtpPassword'])
   if (config.emailTransport === 'smtp' && !config.smtpHost) {
@@ -165,20 +195,37 @@ export function parseCloudServerConfig(input: unknown): CloudServerConfig {
   if (config.deployment === 'official' && config.smtpHost && config.smtpSecure === false) {
     throw new CloudConfigError('Official SMTP delivery must use a secure connection')
   }
+}
+
+function validateObjectStorageConfig(config: CloudServerConfig): void {
   if (config.s3KmsKeyId && config.s3ServerSideEncryption !== 'aws:kms') {
     throw new CloudConfigError('S3 KMS key ID requires aws:kms server-side encryption')
   }
   const endpointHost = new URL(config.s3Endpoint).hostname
-  if (endpointHost.endsWith('.r2.cloudflarestorage.com')) {
-    if (config.s3Region !== 'auto') {
-      throw new CloudConfigError('Cloudflare R2 S3 region must be auto')
-    }
-    if (config.s3ForcePathStyle) {
-      throw new CloudConfigError('Cloudflare R2 S3 endpoint must disable path-style requests')
-    }
-    if (config.s3ChecksumVerification !== 'metadata') {
-      throw new CloudConfigError('Cloudflare R2 checksum verification must use metadata')
-    }
+  if (!endpointHost.endsWith('.r2.cloudflarestorage.com')) return
+  if (config.s3Region !== 'auto') {
+    throw new CloudConfigError('Cloudflare R2 S3 region must be auto')
   }
+  if (config.s3ForcePathStyle) {
+    throw new CloudConfigError('Cloudflare R2 S3 endpoint must disable path-style requests')
+  }
+  if (config.s3ChecksumVerification !== 'metadata') {
+    throw new CloudConfigError('Cloudflare R2 checksum verification must use metadata')
+  }
+}
+
+export function parseCloudServerConfig(input: unknown): CloudServerConfig {
+  const config = v.parse(rawCloudServerConfigSchema, input)
+  if (
+    config.appURL &&
+    !config.trustedOrigins.some(
+      (origin) => new URL(origin).origin === new URL(config.appURL ?? '').origin
+    )
+  ) {
+    throw new CloudConfigError('Cloud app URL must be included in trusted origins')
+  }
+  validateAuthenticationConfig(config)
+  validateEmailConfig(config)
+  validateObjectStorageConfig(config)
   return config
 }

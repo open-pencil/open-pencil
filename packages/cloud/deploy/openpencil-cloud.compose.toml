@@ -13,6 +13,9 @@ trusted_origins = ["http://localhost:5173"]
 enrollment_mode = "open"
 admin_notification_emails = []
 
+[authentication.email_password]
+enabled = false
+
 [authentication.trusted_proxies]
 headers = []
 addresses = []

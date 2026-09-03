@@ -94,6 +94,7 @@
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",
+    "@vueuse/core": "^14.4.0",
     "better-auth": "1.7.2",
     "hono": "^4.13.2",
     "hono-rate-limiter": "^0.5.3",

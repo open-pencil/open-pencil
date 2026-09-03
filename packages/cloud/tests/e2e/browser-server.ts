@@ -28,6 +28,13 @@ const appOrigin = process.env.OPENPENCIL_APP_ORIGIN ?? 'http://localhost:1420'
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   enrollmentMode: 'approval',
+  emailPasswordEnabled: true,
+  emailPasswordMinimumLength: 15,
+  emailTransport: 'smtp',
+  emailFrom: 'cloud-e2e@example.com',
+  smtpHost: 'smtp.example.com',
+  smtpPort: 465,
+  smtpSecure: true,
   publicURL: `http://127.0.0.1:${port}`,
   appURL: appOrigin,
   collaborationURL: `ws://127.0.0.1:${Number(process.env.OPENPENCIL_CLOUD_COLLABORATION_PORT ?? 12345)}`,

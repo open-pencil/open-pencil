@@ -25,6 +25,7 @@
 - Add an optional, self-hostable OpenPencil Cloud with PostgreSQL metadata, immutable S3-compatible document revisions, authenticated workspaces, approval-gated administration, transactional email, and server-enforced sharing and collaboration.
 - Add a standalone, localized OpenPencil Cloud web application with unified sign-up and sign-in, account approval states, workspace access, deployment administration, responsive themes, and accessible shared controls.
 - Configure OpenPencil Cloud through versioned TOML with conventional external secret references, generated structured Cloudflare settings, and first-render authentication bootstrap data.
+- Sign in to self-hosted OpenPencil Cloud deployments with verified email and password, including encrypted outbox-backed verification and recovery messages, approval after verification, compromised-password protection, secure account linking, and session revocation after password resets.
 - Recover unsaved and pathless documents locally, with settings to disable recovery and remove retained snapshots. (#487, #574)
 - Inspect selected designs with a configured Vision model and attach images to AI chat with bounded analysis and previews. (#232, #471)
 

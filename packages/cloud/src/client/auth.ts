@@ -17,10 +17,16 @@ type DeviceActionResult = Promise<{
   error?: { error_description: string }
 }>
 
-export type CloudAuthClient = {
-  getSession: ReturnType<typeof createAuthClient>['getSession']
-  signIn: ReturnType<typeof createAuthClient>['signIn']
-  signOut: ReturnType<typeof createAuthClient>['signOut']
+export type CloudAuthClient = Pick<
+  ReturnType<typeof createAuthClient>,
+  | 'getSession'
+  | 'signIn'
+  | 'signOut'
+  | 'signUp'
+  | 'sendVerificationEmail'
+  | 'requestPasswordReset'
+  | 'resetPassword'
+> & {
   device: {
     (input: { query: { user_code: string } }): Promise<{
       data?: { user_code: string; status: string }
@@ -33,7 +39,15 @@ export type CloudAuthClient = {
 
 export type CloudAuthClientOptions = {
   accessToken?: string
+  captchaResponse?: string
   fetch?: CloudFetch
+}
+
+function authHeaders(options: CloudAuthClientOptions): HeadersInit | undefined {
+  const headers: Record<string, string> = {}
+  if (options.accessToken) headers.Authorization = `Bearer ${options.accessToken}`
+  if (options.captchaResponse) headers['x-captcha-response'] = options.captchaResponse
+  return Object.keys(headers).length > 0 ? headers : undefined
 }
 
 export function createCloudAuthClient(
@@ -46,9 +60,7 @@ export function createCloudAuthClient(
     fetchOptions: {
       credentials: 'include',
       customFetchImpl: options.fetch,
-      ...(options.accessToken
-        ? { headers: { Authorization: `Bearer ${options.accessToken}` } }
-        : {})
+      headers: authHeaders(options)
     }
   }) as CloudAuthClient
 }

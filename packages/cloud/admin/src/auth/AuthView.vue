@@ -2,11 +2,12 @@
 import { AppButton } from '@open-pencil/ui'
 import { useQuery } from '@tanstack/vue-query'
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { discoveryQueryOptions } from '#admin/app/query/options'
 import AsyncError from '#admin/components/feedback/AsyncError.vue'
 import PublicShell from '#admin/components/layout/PublicShell.vue'
+import CredentialForm from '#admin/auth/credentials/CredentialForm.vue'
 import { useOAuthCallback } from '#admin/auth/useOAuthCallback'
 import { useSignIn } from '#admin/auth/useSignIn'
 import { useCloudI18n } from '#admin/i18n/use'
@@ -14,6 +15,7 @@ import { useCloudI18n } from '#admin/i18n/use'
 const { intent } = defineProps<{ intent: 'sign-in' | 'sign-up' }>()
 const messages = useCloudI18n()
 const route = useRoute()
+const router = useRouter()
 const callback = useOAuthCallback()
 const discovery = useQuery(discoveryQueryOptions())
 const safeRedirect = computed(() => {
@@ -32,6 +34,18 @@ const callbackMessage = computed(() => {
   return ''
 })
 const isSignUp = computed(() => intent === 'sign-up')
+const credentials = computed(() => discovery.data.value?.authentication.emailPassword)
+const hasSocialProviders = computed(() =>
+  Boolean(discovery.data.value?.authentication.socialProviders.length)
+)
+
+function completeAuthentication(): void {
+  void router.replace(safeRedirect.value)
+}
+
+function showVerification(email: string): void {
+  void router.replace({ name: 'verify-email', query: { state: 'sent', email } })
+}
 
 function providerLabel(provider: 'google' | 'apple'): string {
   return provider === 'google'
@@ -48,12 +62,22 @@ function providerLabel(provider: 'google' | 'apple'): string {
           {{ isSignUp ? messages.auth.value.signUpTitle : messages.auth.value.signInTitle }}
         </h1>
         <AsyncError v-if="callbackMessage" class="mt-5" :title="callbackMessage" />
-        <div
-          v-if="discovery.data.value?.authentication.socialProviders.length"
-          class="mt-5 grid gap-2"
-        >
+        <CredentialForm
+          v-if="discovery.data.value && credentials?.signIn && (!isSignUp || credentials.signUp)"
+          class="mt-5"
+          :discovery="discovery.data.value"
+          :intent="intent"
+          @verified="completeAuthentication"
+          @verification-required="showVerification"
+        />
+        <div v-if="credentials?.signIn && hasSocialProviders" class="my-5 flex items-center gap-3">
+          <span class="h-px flex-1 bg-border" />
+          <span class="text-xs text-muted">{{ messages.auth.value.or }}</span>
+          <span class="h-px flex-1 bg-border" />
+        </div>
+        <div v-if="hasSocialProviders" class="mt-5 grid gap-2">
           <AppButton
-            v-for="provider in discovery.data.value.authentication.socialProviders"
+            v-for="provider in discovery.data.value?.authentication.socialProviders ?? []"
             :key="provider"
             color="neutral"
             variant="solid"
@@ -64,7 +88,11 @@ function providerLabel(provider: 'google' | 'apple'): string {
             {{ providerLabel(provider) }}
           </AppButton>
         </div>
-        <AsyncError v-else class="mt-5" :title="messages.auth.value.noProviders" />
+        <AsyncError
+          v-else-if="!credentials?.signIn"
+          class="mt-5"
+          :title="messages.auth.value.noProviders"
+        />
         <p
           v-if="isSignUp && discovery.data.value?.authentication.enrollmentMode === 'approval'"
           class="mb-0 mt-4 text-center text-xs leading-5 text-muted"

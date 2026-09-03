@@ -27,6 +27,34 @@ describe('Cloud server configuration', () => {
     })
   })
 
+  test('requires email delivery when enabling email and password', () => {
+    expect(() => parseCloudServerConfig({ ...baseConfig, emailPasswordEnabled: true })).toThrow(
+      'requires transactional email delivery'
+    )
+  })
+
+  test('requires strong abuse controls for official public credential sign-up', () => {
+    expect(() =>
+      parseCloudServerConfig({
+        ...baseConfig,
+        deployment: 'official',
+        emailPasswordEnabled: true,
+        emailTransport: 'cloudflare',
+        emailFrom: 'cloud@example.com'
+      })
+    ).toThrow('requires compromised-password checks and CAPTCHA')
+  })
+
+  test('requires CAPTCHA public and secret configuration together', () => {
+    expect(() =>
+      parseCloudServerConfig({
+        ...baseConfig,
+        captchaProvider: 'cloudflare-turnstile',
+        captchaSiteKey: 'public-site-key'
+      })
+    ).toThrow('CAPTCHA configuration must provide')
+  })
+
   test('requires Google credentials together', () => {
     expect(() =>
       parseCloudServerConfig({ ...baseConfig, googleClientId: 'google-client' })

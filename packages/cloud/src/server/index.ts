@@ -20,14 +20,18 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
+  createAuthenticationEmailService,
+  createCloudAuthenticationRuntime,
   createBetterAuthAdapter,
   createCloudIdentityResolver,
   createCloudSessionResolver,
   type CloudActor,
   type CloudAuthAdapter,
+  type CloudAuthRuntimeOptions,
   type CloudIdentity,
   type CloudIdentityResolver,
   type CloudSessionResolver,
+  type AuthenticationEmailService,
   workspaceAccessControl,
   workspaceRoles,
   workspaceStatements
