@@ -1,12 +1,13 @@
 import { type Kysely, sql } from 'kysely'
 
 export async function up(database: Kysely<unknown>): Promise<void> {
-  await database.schema
-    .createTable('cloud_auth_schema')
-    .addColumn('id', 'text', (column) => column.primaryKey())
-    .addColumn('version', 'text', (column) => column.notNull())
-    .addColumn('updated_at', 'timestamptz', (column) => column.notNull().defaultTo(sql`now()`))
-    .execute()
+  await sql`
+    create table cloud_auth_schema (
+      id text primary key,
+      version text not null,
+      updated_at timestamptz not null default now()
+    )
+  `.execute(database)
 }
 
 export async function down(database: Kysely<unknown>): Promise<void> {
