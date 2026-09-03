@@ -51,8 +51,16 @@ jobs:
       - name: Build Cloud Worker and admin application
         run: bun --filter @open-pencil/cloud build
 
+      - name: Generate structured Cloudflare configuration
+        run: >-
+          bun run generate:cloudflare-config
+          "packages/cloud/deploy/config/$CLOUD_TARGET.toml"
+          "$WRANGLER_CONFIG"
+          "packages/cloud/deploy/cloudflare/wrangler.generated.json"
+          "$CLOUD_TARGET"
+
       - name: Validate Cloudflare bundle
-        run: bunx wrangler deploy --config "$WRANGLER_CONFIG" --env "$CLOUD_TARGET" --dry-run
+        run: bunx wrangler deploy --config "packages/cloud/deploy/cloudflare/wrangler.generated.json" --env "$CLOUD_TARGET" --dry-run
 
   migrate:
     name: Migrate Cloud database
@@ -75,24 +83,13 @@ jobs:
       - name: Run direct-Neon migrations
         run: bun --filter @open-pencil/cloud migrate
         env:
+          OPENPENCIL_CLOUD_CONFIG: packages/cloud/deploy/config/${{ inputs.target || 'staging' }}.toml
           DATABASE_URL: ${{ secrets.NEON_MIGRATOR_DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          OPENPENCIL_CLOUD_DEPLOYMENT: official
-          OPENPENCIL_CLOUD_URL: ${{ vars.CLOUD_URL }}
-          OPENPENCIL_CLOUD_APP_URL: ${{ vars.APP_URL }}
-          OPENPENCIL_CLOUD_TRUSTED_ORIGINS: ${{ vars.APP_URL }},${{ vars.CLOUD_URL }}
-          OPENPENCIL_CLOUD_ENROLLMENT_MODE: approval
-          OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS: ${{ vars.ENROLLMENT_ADMIN_EMAILS }}
-          OPENPENCIL_CLOUD_EMAIL_TRANSPORT: none
-          S3_ENDPOINT: ${{ vars.S3_ENDPOINT }}
-          S3_REGION: ${{ vars.S3_REGION }}
-          S3_BUCKET: ${{ vars.S3_BUCKET }}
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_FORCE_PATH_STYLE: "true"
-          S3_CHECKSUM_VERIFICATION: metadata
 
   deploy:
     name: Deploy Cloud Worker
@@ -115,6 +112,14 @@ jobs:
 
       - name: Build Cloud Worker and admin application
         run: bun --filter @open-pencil/cloud build
+
+      - name: Generate structured Cloudflare configuration
+        run: >-
+          bun run generate:cloudflare-config
+          "packages/cloud/deploy/config/$CLOUD_TARGET.toml"
+          "$WRANGLER_CONFIG"
+          "packages/cloud/deploy/cloudflare/wrangler.generated.json"
+          "$CLOUD_TARGET"
 
       - name: Write additive Worker secrets
         shell: bash
@@ -147,7 +152,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >-
-            deploy --config ${{ env.WRANGLER_CONFIG }} --env ${{ env.CLOUD_TARGET }}
+            deploy --config packages/cloud/deploy/cloudflare/wrangler.generated.json --env ${{ env.CLOUD_TARGET }}
             --secrets-file ${{ runner.temp }}/cloud-secrets.json
 
   smoke:

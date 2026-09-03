@@ -6,7 +6,7 @@ export {
   type CloudCollaborationContext,
   type CloudCollaborationRelayOptions
 } from './collaboration'
-export { loadNodeCloudServerConfig } from './config'
+export { loadNodeCloudServerConfig, resolveNodeCloudServerConfig } from './config'
 export {
   createNodeTransactionalEmailRuntime,
   type NodeTransactionalEmailRuntime

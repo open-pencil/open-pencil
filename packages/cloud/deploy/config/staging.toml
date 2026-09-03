@@ -1,0 +1,47 @@
+schema_version = 2
+
+[deployment]
+mode = "official"
+public_url = "https://cloud-staging.openpencil.dev"
+app_url = "https://app.openpencil.dev"
+indexing = "deny"
+trusted_origins = [
+  "https://app.openpencil.dev",
+  "https://cloud-staging.openpencil.dev",
+]
+
+[database]
+
+[authentication]
+enrollment_mode = "approval"
+admin_notification_emails = ["admin@openpencil.dev"]
+
+[authentication.trusted_proxies]
+headers = ["cf-connecting-ip"]
+addresses = []
+
+[authentication.providers.google]
+# Defaults to GOOGLE_CLIENT_ID.
+
+[object_storage]
+endpoint = "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech"
+region = "us-east-2"
+bucket = "openpencil-cloud-staging"
+force_path_style = true
+checksum_verification = "metadata"
+
+[email]
+transport = "none"
+
+[workers.email]
+batch_size = 50
+interval_ms = 30000
+lease_ms = 300000
+maximum_attempts = 5
+
+[workers.cleanup]
+enabled = true
+batch_size = 100
+interval_ms = 60000
+lease_ms = 300000
+document_retention_days = 30

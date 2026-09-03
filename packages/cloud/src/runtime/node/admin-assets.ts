@@ -1,6 +1,8 @@
 import { open } from 'node:fs/promises'
 import { extname, join, normalize } from 'node:path'
 
+import { injectCloudBootstrap, type CloudDiscovery } from '#cloud/contract'
+
 const CONTENT_TYPES: Record<string, string> = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
@@ -22,7 +24,7 @@ function isAdminPage(pathname: string): boolean {
   )
 }
 
-export function createNodeAdminAssetHandler(directory: string) {
+export function createNodeAdminAssetHandler(directory: string, discovery?: CloudDiscovery) {
   return async (request: Request): Promise<Response | null> => {
     const url = new URL(request.url)
     if (!isAdminPage(url.pathname) && !url.pathname.startsWith('/assets/')) return null
@@ -34,7 +36,12 @@ export function createNodeAdminAssetHandler(directory: string) {
     try {
       file = await open(path, 'r')
       if (!(await file.stat()).isFile()) return new Response('Not found', { status: 404 })
-      return new Response(await file.readFile(), {
+      const bytes = await file.readFile()
+      const body =
+        relative === 'index.html' && discovery
+          ? injectCloudBootstrap(bytes.toString('utf8'), discovery)
+          : bytes
+      return new Response(body, {
         headers: {
           'Content-Type': CONTENT_TYPES[extname(path)] ?? 'application/octet-stream',
           'Cache-Control':

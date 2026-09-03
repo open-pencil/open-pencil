@@ -54,7 +54,6 @@ export default {
     approvalDisclosure: '新しいアカウントは管理者が確認します。',
     haveAccount: 'すでにアカウントをお持ちですか？',
     needAccount: 'OpenPencil Cloudを初めて使用しますか？',
-    loadingProviders: 'サインインプロバイダーを読み込んでいます…',
     continueGoogle: 'Googleで続行',
     continueApple: 'Appleで続行',
     openingProvider: '{provider}を開いています…',
@@ -134,11 +133,11 @@ export default {
     selfActionForbidden: 'ご自身のアカウントでその操作を実行することはできません。',
     emailRegenerationUnavailable: 'このメールは現在のレコードから再生成することはできません。',
     unknown: '何か問題が発生しました。後でもう一度試してください',
-    discoveryUnavailable:
-      'サインインプロバイダを読み込めませんでした。もう一度やり直してください。',
     signInCancelled: 'サインインがキャンセルまたは拒否されました。',
     enrollmentClosed: 'Cloud登録は現在終了しています。',
-    providerError: 'IDプロバイダーがサインインを完了できませんでした。もう一度やり直してください。'
+    providerError: 'IDプロバイダーがサインインを完了できませんでした。もう一度やり直してください。',
+    configUnavailable: 'Cloud設定を利用できません',
+    configUnavailableDescription: '展開管理者がこのCloudインスタンスを修正する必要があります。'
   },
   head: {
     homeTitle: 'OpenPencil Cloud',

@@ -56,7 +56,6 @@ export default {
     approvalDisclosure: 'Neue Konten werden von einem Administrator geprüft.',
     haveAccount: 'Sie haben bereits ein Konto?',
     needAccount: 'Neu bei OpenPencil Cloud?',
-    loadingProviders: 'Anmeldeanbieter werden geladen...',
     continueGoogle: 'Weiter mit Google',
     continueApple: 'Weiter mit Apple',
     openingProvider: '{provider} wird geöffnet…',
@@ -143,11 +142,13 @@ export default {
     emailRegenerationUnavailable:
       'Diese E-Mail kann nicht aus aktuellen Datensätzen wiederhergestellt werden.',
     unknown: 'Etwas ist schief gelaufen. Versuch es noch einmal.',
-    discoveryUnavailable: 'Anmeldeanbieter konnten nicht geladen werden. Versuchen Sie es erneut.',
     signInCancelled: 'Die Anmeldung wurde abgebrochen oder abgelehnt.',
     enrollmentClosed: 'Die Cloud-Anmeldung ist derzeit abgeschlossen.',
     providerError:
-      'Der Identitätsanbieter konnte die Anmeldung nicht abschließen. Versuchen Sie es erneut.'
+      'Der Identitätsanbieter konnte die Anmeldung nicht abschließen. Versuchen Sie es erneut.',
+    configUnavailable: 'Cloud-Konfiguration ist nicht verfügbar',
+    configUnavailableDescription:
+      'Der Bereitstellungsadministrator muss diese Cloud-Instanz korrigieren.'
   },
   head: {
     homeTitle: 'OpenPencil Cloud',

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { CLOUD_BOOTSTRAP_ID, parseCloudBootstrap } from '@open-pencil/cloud/contract'
 import {
   createCloudflareWorker,
   type CloudflareCloudEnvironment
@@ -7,8 +8,22 @@ import {
 
 const environment = {
   HYPERDRIVE: { connectionString: 'postgresql://localhost/test' },
-  OPENPENCIL_CLOUD_DEPLOYMENT: 'self-hosted',
-  OPENPENCIL_CLOUD_URL: 'https://cloud.example.com',
+  OPENPENCIL_CLOUD_CONFIG: {
+    schema_version: 2,
+    deployment: {
+      mode: 'self-hosted',
+      public_url: 'https://cloud.example.com',
+      indexing: 'deny',
+      trusted_origins: []
+    },
+    authentication: { enrollment_mode: 'open' },
+    object_storage: {
+      endpoint: 'https://objects.example.com',
+      region: 'us-east-1',
+      bucket: 'openpencil'
+    },
+    email: { transport: 'none' }
+  },
   BETTER_AUTH_SECRET: 'cloudflare-assets-test-secret-at-least-32-characters',
   S3_ENDPOINT: 'https://objects.example.com',
   S3_REGION: 'us-east-1',
@@ -17,7 +32,10 @@ const environment = {
   S3_SECRET_ACCESS_KEY: 'secret-key',
   ASSETS: {
     async fetch(request: Request) {
-      return new Response(new URL(request.url).pathname)
+      return new Response(
+        `<script id="openpencil-cloud-bootstrap" type="application/json"></script>${new URL(request.url).pathname}`,
+        { headers: { 'Content-Type': 'text/html' } }
+      )
     }
   }
 } as CloudflareCloudEnvironment
@@ -36,11 +54,16 @@ describe('Cloudflare admin assets', () => {
       '/app',
       '/admin'
     ]) {
-      expect(
-        await (
-          await worker.fetch(new Request(`https://cloud.example.com${path}`), environment, context)
-        ).text()
-      ).toBe(path)
+      const html = await (
+        await worker.fetch(new Request(`https://cloud.example.com${path}`), environment, context)
+      ).text()
+      expect(html).toContain(path)
+      const source = html.match(
+        new RegExp(`id="${CLOUD_BOOTSTRAP_ID}" type="application/json">([^<]+)</script>`)
+      )?.[1]
+      expect(source ? parseCloudBootstrap(source) : null).toMatchObject({
+        authentication: { socialProviders: [], enrollmentMode: 'open' }
+      })
     }
   })
 })

@@ -7,42 +7,22 @@ app_url = "http://localhost:5173"
 indexing = "deny"
 trusted_origins = ["http://localhost:5173"]
 
-# Defaults to DATABASE_URL.
 [database]
 
 [authentication]
 enrollment_mode = "open"
 admin_notification_emails = []
-# The signing secret defaults to BETTER_AUTH_SECRET.
 
 [authentication.trusted_proxies]
 headers = []
 addresses = []
 
-# Add this table to enable Google. The client secret defaults to
-# GOOGLE_CLIENT_SECRET. The client ID may instead use
-# client_id = { from_env = "GOOGLE_CLIENT_ID" }.
-# [authentication.providers.google]
-# client_id = "your-public-google-client-id"
-
-# Add this table to enable Apple. The private key defaults to APPLE_PRIVATE_KEY.
-# [authentication.providers.apple]
-# client_id = "dev.openpencil.cloud"
-# team_id = "TEAM_ID"
-# key_id = "KEY_ID"
-# app_bundle_identifier = "dev.openpencil"
-
 [object_storage]
-endpoint = "http://localhost:8333"
+endpoint = "http://seaweedfs:8333"
 region = "us-east-1"
 bucket = "openpencil"
 force_path_style = true
 checksum_verification = "metadata"
-# Credentials default to S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
-
-[collaboration]
-public_url = "ws://localhost:1234"
-port = 1234
 
 [email]
 transport = "none"

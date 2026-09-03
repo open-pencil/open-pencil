@@ -54,7 +54,6 @@ export default {
     approvalDisclosure: 'I nuovi account vengono esaminati da un amministratore.',
     haveAccount: 'Hai già un account?',
     needAccount: 'Non conosci OpenPencil Cloud?',
-    loadingProviders: 'Caricamento dei provider di accesso in corso...',
     continueGoogle: 'Continua con Google',
     continueApple: 'Continua con Apple',
     openingProvider: 'Apertura di {provider} in corso...',
@@ -135,10 +134,12 @@ export default {
     selfActionForbidden: 'Non puoi eseguire questa azione per tuo conto.',
     emailRegenerationUnavailable: 'Questa e-mail non può essere rigenerata dai record correnti.',
     unknown: 'Qualcosa è andato storto. Riprova più tardi.',
-    discoveryUnavailable: 'Impossibile caricare i provider di accesso. Riprova.',
     signInCancelled: "L'accesso è stato annullato o negato.",
     enrollmentClosed: "L'iscrizione a Cloud è attualmente chiusa.",
-    providerError: "Il provider di identità non è riuscito a completare l'accesso. Riprova."
+    providerError: "Il provider di identità non è riuscito a completare l'accesso. Riprova.",
+    configUnavailable: 'La configurazione di Cloud non è disponibile',
+    configUnavailableDescription:
+      'L’amministratore della distribuzione deve correggere questa istanza Cloud.'
   },
   head: {
     homeTitle: 'OpenPencil Cloud',

@@ -251,7 +251,7 @@ Named policy profiles cover opaque enrollment and capability limits, authenticat
 
 Enrollment follows an explicit state machine: pending requests may be approved or rejected; rejected and revoked addresses may re-request; approved access may be revoked. `closed` blocks new requests and provisioning but does not invalidate existing sessions, while `approval` requires continued approval for session resolution. Public requests are non-enumerating and use PostgreSQL-backed hashed email limits plus trusted client-IP headers when configured.
 
-Enrollment requests and reviews enqueue requester/admin transactional email in the same PostgreSQL transaction as the state change. Configure administrator notifications with `OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS`; email rendering and delivery use the portable encrypted outbox described below.
+Enrollment requests and reviews enqueue requester/admin transactional email in the same PostgreSQL transaction as the state change. Configure administrator notifications with `authentication.admin_notification_emails` in deployment TOML; email rendering and delivery use the portable encrypted outbox described below.
 
 Bootstrap is explicit through the Node CLI (`admin approve` followed by `admin grant` after first sign-in). Application startup does not seed enrollment or administrator policy.
 

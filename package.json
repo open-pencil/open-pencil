@@ -17,6 +17,7 @@
     "packages/mcp",
     "packages/harness",
     "packages/docs",
+    "tools/cloud-deploy",
     "tools/docs",
     "tools/package-quality",
     "tools/visual-oracles"
@@ -70,7 +71,7 @@
     "docs:build": "bun --filter @open-pencil/docs build",
     "docs:build:production": "bun --filter @open-pencil/docs build:production",
     "docs:preview": "bun --filter @open-pencil/docs preview",
-    "generate:tauri-menu": "bun tools/tauri-menu/src/generate.ts",
+    "generate:cloudflare-config": "bun tools/cloud-deploy/src/index.ts",
     "check:audit:high": "bun audit --audit-level=high",
     "check:cloud-policy": "docker run --rm -v \"$PWD:/src\" -w /src semgrep/semgrep:1.153.0 semgrep --no-git-ignore --config tools/security/semgrep/cloud.yml --error --metrics=off packages/cloud/src src/app/collab src/app/integrations/storage/cloud"
   },

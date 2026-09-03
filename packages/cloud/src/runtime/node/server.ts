@@ -3,6 +3,7 @@ import { join } from 'node:path'
 
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
+  cloudDiscoveryFromConfig,
   createCloudApp,
   createBetterAuthAdapter,
   createCollaborationStateStore,
@@ -119,7 +120,10 @@ export async function startNodeCloudServer(options: NodeCloudServerOptions = {})
       })
     : undefined
   if (collaboration) await collaboration.listen(config.collaborationPort)
-  const adminAssets = createNodeAdminAssetHandler(adminAssetDirectory())
+  const adminAssets = createNodeAdminAssetHandler(
+    adminAssetDirectory(),
+    cloudDiscoveryFromConfig(config)
+  )
   const server = Bun.serve({
     async fetch(request) {
       const path = new URL(request.url).pathname

@@ -55,7 +55,6 @@ export const authMessageDefaults = {
   approvalDisclosure: 'New accounts are reviewed by an administrator.',
   haveAccount: 'Already have an account?',
   needAccount: 'New to OpenPencil Cloud?',
-  loadingProviders: 'Loading sign-in providers…',
   continueGoogle: 'Continue with Google',
   continueApple: 'Continue with Apple',
   openingProvider: params('Opening {provider}…'),
@@ -169,8 +168,9 @@ export const errorMessageDefaults = {
   selfActionForbidden: 'You cannot perform that action on your own account.',
   emailRegenerationUnavailable: 'This email cannot be regenerated from current records.',
   unknown: 'Something went wrong. Try again.',
-  discoveryUnavailable: 'Sign-in providers could not be loaded. Try again.',
   signInCancelled: 'Sign in was cancelled or denied.',
   enrollmentClosed: 'Cloud enrollment is currently closed.',
-  providerError: 'The identity provider could not complete sign in. Try again.'
+  providerError: 'The identity provider could not complete sign in. Try again.',
+  configUnavailable: 'Cloud configuration is unavailable',
+  configUnavailableDescription: 'The deployment administrator must correct this Cloud instance.'
 } as const

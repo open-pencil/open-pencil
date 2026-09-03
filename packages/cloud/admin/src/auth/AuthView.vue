@@ -48,18 +48,8 @@ function providerLabel(provider: 'google' | 'apple'): string {
           {{ isSignUp ? messages.auth.value.signUpTitle : messages.auth.value.signInTitle }}
         </h1>
         <AsyncError v-if="callbackMessage" class="mt-5" :title="callbackMessage" />
-        <AsyncError
-          v-if="discovery.isError.value"
-          class="mt-5"
-          :title="messages.errors.value.discoveryUnavailable"
-          :retry-label="messages.common.value.retry"
-          @retry="discovery.refetch()"
-        />
-        <p v-if="discovery.isPending.value" class="mt-5 text-sm text-muted" role="status">
-          {{ messages.auth.value.loadingProviders }}
-        </p>
         <div
-          v-else-if="discovery.data.value?.authentication.socialProviders.length"
+          v-if="discovery.data.value?.authentication.socialProviders.length"
           class="mt-5 grid gap-2"
         >
           <AppButton
@@ -74,17 +64,13 @@ function providerLabel(provider: 'google' | 'apple'): string {
             {{ providerLabel(provider) }}
           </AppButton>
         </div>
+        <AsyncError v-else class="mt-5" :title="messages.auth.value.noProviders" />
         <p
           v-if="isSignUp && discovery.data.value?.authentication.enrollmentMode === 'approval'"
           class="mb-0 mt-4 text-center text-xs leading-5 text-muted"
         >
           {{ messages.auth.value.approvalDisclosure }}
         </p>
-        <AsyncError
-          v-else-if="!discovery.isError.value"
-          class="mt-5"
-          :title="messages.auth.value.noProviders"
-        />
         <AsyncError
           v-if="signIn.mutation.isError.value"
           class="mt-3"

@@ -1,6 +1,9 @@
+import { CLOUD_BOOTSTRAP_ID, serializeCloudBootstrap } from '#cloud/contract'
 import { createS3ObjectStore } from '#cloud/runtime/s3/objects'
 import {
   cloudServerConfigFromEnvironment,
+  cloudDiscoveryFromConfig,
+  parseCloudDeploymentConfig,
   createCloudApp,
   createBetterAuthAdapter,
   createCloudDatabase,
@@ -32,6 +35,7 @@ export type CloudflareCloudEnvironment = {
   HYPERDRIVE: CloudflareHyperdrive
   EMAIL?: CloudflareEmailBinding
   ASSETS?: CloudflareAssetsBinding
+  OPENPENCIL_CLOUD_CONFIG?: object
   OPENPENCIL_CLOUD_DEPLOYMENT?: string
   OPENPENCIL_CLOUD_URL?: string
   OPENPENCIL_CLOUD_APP_URL?: string
@@ -49,6 +53,7 @@ export type CloudflareCloudEnvironment = {
     | CloudflareAssetsBinding
     | CloudflareEmailBinding
     | CloudflareHyperdrive
+    | object
     | undefined
 }
 
@@ -63,7 +68,12 @@ function stringEnvironment(environment: CloudflareCloudEnvironment): CloudEnviro
 }
 
 export function createCloudflareCloudRuntime(environment: CloudflareCloudEnvironment) {
-  const config = cloudServerConfigFromEnvironment(stringEnvironment(environment))
+  const config = environment.OPENPENCIL_CLOUD_CONFIG
+    ? parseCloudDeploymentConfig(
+        environment.OPENPENCIL_CLOUD_CONFIG,
+        stringEnvironment(environment)
+      )
+    : cloudServerConfigFromEnvironment(stringEnvironment(environment))
   const database = createCloudDatabase({
     dialect: new PostgresDialect({
       pool: new Pool({ connectionString: environment.HYPERDRIVE.connectionString, max: 5 })
@@ -136,9 +146,21 @@ export function createCloudflareWorker() {
       const response = assetRequest
         ? await environment.ASSETS?.fetch(request)
         : await runtime.app.fetch(request)
+      const bootstrappedResponse =
+        assetRequest && response?.headers.get('content-type')?.includes('text/html')
+          ? new HTMLRewriter()
+              .on(`#${CLOUD_BOOTSTRAP_ID}`, {
+                element(element) {
+                  element.setInnerContent(
+                    serializeCloudBootstrap(cloudDiscoveryFromConfig(runtime.config))
+                  )
+                }
+              })
+              .transform(response)
+          : response
       context.waitUntil(runtime.database.destroy())
       return withIndexingPolicy(
-        response ?? new Response('Not found', { status: 404 }),
+        bootstrappedResponse ?? new Response('Not found', { status: 404 }),
         url.pathname,
         runtime.config.indexingPolicy
       )

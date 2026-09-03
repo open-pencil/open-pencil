@@ -55,7 +55,6 @@ export default {
     approvalDisclosure: 'Nowe konta są sprawdzane przez administratora.',
     haveAccount: 'Masz już konto?',
     needAccount: 'Pierwszy raz w OpenPencil Cloud?',
-    loadingProviders: 'Ładowanie dostawców logowania…',
     continueGoogle: 'Kontynuuj za pomocą Google',
     continueApple: 'Kontynuuj za pomocą Apple',
     openingProvider: 'Otwieranie {provider}…',
@@ -138,10 +137,11 @@ export default {
     emailRegenerationUnavailable:
       'Tej wiadomości e-mail nie można wygenerować ponownie z bieżących rekordów.',
     unknown: 'Ojej! Coś poszło nie tak! Spróbuj ponownie',
-    discoveryUnavailable: 'Nie można załadować dostawców logowania. Spróbuj ponownie.',
     signInCancelled: 'Logowanie zostało anulowane lub odrzucone.',
     enrollmentClosed: 'Rejestracja Cloud jest obecnie zamknięta.',
-    providerError: 'Dostawca tożsamości nie mógł dokończyć logowania. Spróbuj ponownie.'
+    providerError: 'Dostawca tożsamości nie mógł dokończyć logowania. Spróbuj ponownie.',
+    configUnavailable: 'Konfiguracja Cloud jest niedostępna',
+    configUnavailableDescription: 'Administrator wdrożenia musi poprawić tę instancję Cloud.'
   },
   head: {
     homeTitle: 'OpenPencil Cloud',

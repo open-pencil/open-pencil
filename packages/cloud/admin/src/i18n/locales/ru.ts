@@ -55,7 +55,6 @@ export default {
     approvalDisclosure: 'Новые аккаунты проверяет администратор.',
     haveAccount: 'Уже есть аккаунт?',
     needAccount: 'Впервые в OpenPencil Cloud?',
-    loadingProviders: 'Загрузка поставщиков услуг входа...',
     continueGoogle: 'Продолжить с Google',
     continueApple: 'Продолжить с Apple',
     openingProvider: 'Открытие {provider}…',
@@ -138,10 +137,12 @@ export default {
     selfActionForbidden: 'Вы не можете выполнить это действие за свой счет.',
     emailRegenerationUnavailable: 'Это письмо не может быть восстановлено из текущих записей.',
     unknown: 'Что-то пошло не так, пожалуйста, попробуйте еще раз.',
-    discoveryUnavailable: 'Не удалось загрузить поставщиков услуг входа. Повторите попытку.',
     signInCancelled: 'Вход отменен или отклонен.',
     enrollmentClosed: 'Регистрация Cloud в настоящее время закрыта.',
-    providerError: 'Поставщику удостоверений не удалось завершить вход. Повторите попытку.'
+    providerError: 'Поставщику удостоверений не удалось завершить вход. Повторите попытку.',
+    configUnavailable: 'Конфигурация Cloud недоступна',
+    configUnavailableDescription:
+      'Администратор развертывания должен исправить этот экземпляр Cloud.'
   },
   head: {
     homeTitle: 'OpenPencil Cloud',

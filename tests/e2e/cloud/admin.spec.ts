@@ -7,6 +7,14 @@ test.describe('Cloud account and administration', () => {
   test.skip(!enabled, 'Cloud browser E2E environment is unavailable')
 
   test('offers normal sign-up and sign-in flows', async ({ page }) => {
+    const discoveryRequests: string[] = []
+    page.on('request', (request) => {
+      if (request.url().includes('/.well-known/openpencil')) discoveryRequests.push(request.url())
+    })
+    await page.goto(`${serverURL}/sign-up`)
+    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible()
+    expect(discoveryRequests).toEqual([])
+
     await page.goto(`${serverURL}/`)
     await expect(page.getByRole('link', { name: 'Sign up' }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible()

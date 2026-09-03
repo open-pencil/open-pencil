@@ -9,7 +9,7 @@ export const discoveryQueryOptions = () =>
   queryOptions({
     queryKey: cloudQueryKeys.discovery,
     queryFn: ({ signal }) => discoverCloud(globalThis.location.origin, { signal }),
-    staleTime: Number.POSITIVE_INFINITY
+    staleTime: 'static' as const
   })
 
 export const accountQueryOptions = () =>

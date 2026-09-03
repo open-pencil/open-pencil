@@ -2,7 +2,7 @@
 
 ## Vercel Node
 
-The Vercel adapter is under `deploy/vercel/` and uses the normal Node PostgreSQL and S3-compatible runtime. Configure the same Cloud environment variables as the Compose profile.
+The Vercel adapter is under `deploy/vercel/` and uses the normal Node PostgreSQL and S3-compatible runtime. Point `OPENPENCIL_CLOUD_CONFIG` at a deployed TOML file and provide the referenced secrets through Vercel environment variables.
 
 Before deploying a new application version, run migrations as a separate release step:
 
@@ -10,13 +10,7 @@ Before deploying a new application version, run migrations as a separate release
 bun --filter @open-pencil/cloud migrate
 ```
 
-Do not run migrations inside the request handler. Disable the in-process worker in serverless environments:
-
-```text
-OPENPENCIL_CLOUD_CLEANUP_ENABLED=false
-```
-
-Run cleanup from Vercel Cron or another scheduler as a one-shot command:
+Set `workers.cleanup.enabled = false` in deployment TOML. Run cleanup from Vercel Cron or another scheduler as a one-shot command:
 
 ```sh
 bun --filter @open-pencil/cloud cleanup
@@ -24,12 +18,9 @@ bun --filter @open-pencil/cloud cleanup
 
 The cleanup command uses the same bounded, multi-worker-safe claims as the long-running Node worker.
 
-## Cloudflare Workers adapter skeleton
+## Cloudflare Workers adapter
 
-The checked-in Worker assembly is an adapter skeleton, not a deploy-ready R2 reference profile. It
-currently supports Hyperdrive plus an S3-compatible object store configured through secret string
-bindings. It does not yet consume an `R2Bucket` binding or provide a Worker invitation-delivery
-binding.
+The checked-in Worker assembly uses Hyperdrive plus an S3-compatible object store. Durable application settings come from the structured `OPENPENCIL_CLOUD_CONFIG` binding generated from versioned deployment TOML. Hyperdrive, Assets, Email Service, routes, cron triggers, and encrypted secrets remain native Cloudflare bindings.
 
 To develop it further, use the portable app assembly with:
 

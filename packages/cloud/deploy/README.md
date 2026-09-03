@@ -15,16 +15,17 @@ docker compose ps
 curl --fail http://localhost:8787/ready
 ```
 
-The Node runtime prefers the versioned TOML file referenced by `OPENPENCIL_CLOUD_CONFIG` and falls
-back to the legacy environment mapping when no path is configured. Start from
-[`openpencil-cloud.example.toml`](./openpencil-cloud.example.toml). TOML contains infrastructure and
-technical ceilings; production secrets are resolved through `from_env` references.
+The Node runtime loads the versioned TOML file referenced by `OPENPENCIL_CLOUD_CONFIG`. Start from [`openpencil-cloud.example.toml`](./openpencil-cloud.example.toml). TOML owns deployment URLs, enrollment, authentication-provider enablement, storage behavior, email delivery, worker schedules, retention, entitlements, and technical limits. Environment variables resolve conventional secret references only; they do not silently override TOML values.
 
-The Cloud API is available at `http://localhost:8787`. The standalone Cloud pages are served at `/join` and `/admin`; they are built from `packages/cloud/admin` into the package's `dist/admin` artifact. PostgreSQL and SeaweedFS are also published on ports `54329`, `8333`, and `9333` for local inspection and smoke tests.
+The default references are `DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APPLE_PRIVATE_KEY`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_SESSION_TOKEN`, `OPENPENCIL_CLOUD_SMTP_USER`, and `OPENPENCIL_CLOUD_SMTP_PASSWORD`. Override a name with `{ from_env = "CUSTOM_NAME" }` only when required. Missing required references fail startup by variable name without exposing values. The legacy flat environment loader remains available only when `OPENPENCIL_CLOUD_CONFIG` is unset.
+
+Cloudflare cannot mount TOML at runtime. Official deployment TOML files live under [`config/`](./config/) and `generate:cloudflare-config` validates them into a temporary structured Wrangler variable. Hyperdrive, Assets, Email Service, routes, cron triggers, and encrypted secrets remain native Cloudflare bindings.
+
+The Cloud API is available at `http://localhost:8787`. The standalone Cloud application is served at `/`, `/sign-up`, `/sign-in`, `/app`, and `/admin`; compatibility routes redirect `/join` and `/admin/sign-in` into the unified account flow. PostgreSQL and SeaweedFS are also published on ports `54329`, `8333`, and `9333` for local inspection and smoke tests.
 
 ### Enrollment and first administrator
 
-Set `OPENPENCIL_CLOUD_ENROLLMENT_MODE=approval` for a controlled deployment. Approve the first operator before social sign-in:
+Set `authentication.enrollment_mode = "approval"` in TOML for a controlled deployment. A verified identity creates a pending account that an administrator can review.
 
 ```sh
 bun --filter @open-pencil/cloud admin approve owner@example.com
@@ -36,7 +37,7 @@ After that user signs in once and Better Auth creates the account, grant deploym
 bun --filter @open-pencil/cloud admin grant owner@example.com
 ```
 
-Deployment administrators are distinct from workspace administrators. `OPENPENCIL_CLOUD_ADMIN_USER_IDS` is an optional immutable-ID bootstrap escape hatch; ordinary administration uses Better Auth's persisted `admin` role. Startup never grants roles or changes enrollment state.
+Deployment administrators are distinct from workspace administrators. `authentication.admin_user_ids` is an optional immutable-ID bootstrap escape hatch; ordinary administration uses Better Auth's persisted `admin` role. Startup never grants roles or changes enrollment state.
 
 The Cloud container runs database migrations before accepting requests. Named volumes preserve PostgreSQL and SeaweedFS data across restarts.
 
@@ -84,21 +85,19 @@ docker compose -f compose.garage.yml down
 
 ### Transactional email
 
-`OPENPENCIL_CLOUD_URL` configures the API origin. `OPENPENCIL_CLOUD_APP_URL` configures the browser editor origin used in emailed invitation links and must also appear in `OPENPENCIL_CLOUD_TRUSTED_ORIGINS`.
+`deployment.public_url` configures the API origin. `deployment.app_url` configures the browser editor origin used in emailed invitation links and must also appear in `deployment.trusted_origins`.
 
 Vue Email renders matching HTML and plain-text bodies. PostgreSQL owns an encrypted, idempotent outbox with bounded claims and retries; the transport records relay acceptance rather than claiming inbox delivery.
 
-Node deployments use `OPENPENCIL_CLOUD_EMAIL_TRANSPORT=smtp`. Configure `OPENPENCIL_CLOUD_SMTP_HOST`, `OPENPENCIL_CLOUD_SMTP_PORT`, `OPENPENCIL_CLOUD_SMTP_SECURE`, and `OPENPENCIL_CLOUD_EMAIL_FROM`. Add `OPENPENCIL_CLOUD_SMTP_USER` and `OPENPENCIL_CLOUD_SMTP_PASSWORD` together when authentication is required.
+Node deployments set `email.transport = "smtp"` and configure `[email.smtp]` in TOML. SMTP credentials default to `OPENPENCIL_CLOUD_SMTP_USER` and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when the credential references are present.
 
-Cloudflare deployments use `OPENPENCIL_CLOUD_EMAIL_TRANSPORT=cloudflare`, set `OPENPENCIL_CLOUD_EMAIL_FROM`, and configure the `EMAIL` `send_email` binding in `cloudflare/wrangler.jsonc`. The sending domain must be onboarded to Cloudflare Email Service. The scheduled Worker drains the same PostgreSQL outbox service used by Node; the binding is only a transport adapter.
+Cloudflare deployments set `email.transport = "cloudflare"` and `email.from` in deployment TOML, then configure the `EMAIL` `send_email` binding in `cloudflare/wrangler.jsonc`. The sending domain must be onboarded to Cloudflare Email Service. The scheduled Worker drains the same PostgreSQL outbox service used by Node; the binding is only a transport adapter.
 
-Set `OPENPENCIL_CLOUD_EMAIL_TRANSPORT=none` when delivery is intentionally disabled. In that mode document invitations remain token-based but no email outbox row is created. Delivery tuning uses `OPENPENCIL_CLOUD_EMAIL_BATCH_SIZE`, `OPENPENCIL_CLOUD_EMAIL_INTERVAL_MS`, `OPENPENCIL_CLOUD_EMAIL_LEASE_MS`, and `OPENPENCIL_CLOUD_EMAIL_MAXIMUM_ATTEMPTS`.
+Set `email.transport = "none"` when delivery is intentionally disabled. In that mode document invitations remain token-based but no email outbox row is created. Delivery tuning lives under `[workers.email]`.
 
 ### Cloud collaboration relay
 
-Set `OPENPENCIL_CLOUD_COLLABORATION_URL` to a dedicated Hocuspocus WebSocket endpoint and
-`OPENPENCIL_CLOUD_COLLABORATION_PORT` to the local listener port to issue
-Cloud collaboration tickets with server-enforced write permissions. The relay validates the signed
+Configure `[collaboration]` with `public_url` and `port` for a dedicated Hocuspocus WebSocket endpoint that issues Cloud collaboration tickets with server-enforced write permissions. The relay validates the signed
 Cloud ticket, binds it to the document epoch room, marks viewers read-only, supports active token
 refresh through Hocuspocus, stamps awareness with server-verified document/permission metadata, and
 persists binary Yjs state through the official Hocuspocus database extension. Cloud relay sessions use
@@ -122,10 +121,10 @@ Add `--volumes` only when you intentionally want to remove all persisted Cloud d
 
 - Put the Cloud API and S3 endpoint behind TLS with stable public hostnames.
 - Change every development credential in `.env` and in `seaweedfs/s3.json`; both locations must agree.
-- Approval-gated enrollment creates a pending record only after the identity provider verifies the account. Pending, rejected, and revoked accounts can read their own status but cannot access product or administration APIs. Configure `OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS` to notify deployment administrators.
-- Configure `OPENPENCIL_CLOUD_URL` and `OPENPENCIL_CLOUD_TRUSTED_ORIGINS` for the actual browser origins.
-- Keep `S3_CHECKSUM_VERIFICATION=metadata` for this SeaweedFS profile. OpenPencil stores the document SHA-256 as immutable object metadata and verifies it before committing a revision.
-- Configure Google or Apple variables in `.env` only when enabling those providers.
-- Configure `OPENPENCIL_CLOUD_CLEANUP_BATCH_SIZE`, `OPENPENCIL_CLOUD_CLEANUP_INTERVAL_MS`, and `OPENPENCIL_CLOUD_CLEANUP_LEASE_MS` for the expected upload volume. Deleted documents remain recoverable for `OPENPENCIL_CLOUD_DOCUMENT_RETENTION_MS` (30 days by default) before immutable revisions and objects are physically collected. The Node runtime runs a bounded cleanup worker by default; set `OPENPENCIL_CLOUD_CLEANUP_ENABLED=false` when cleanup is managed by a separate process.
+- Approval-gated enrollment creates a pending record only after the identity provider verifies the account. Pending, rejected, and revoked accounts can read their own status but cannot access product or administration APIs. Configure `authentication.admin_notification_emails` to notify deployment administrators.
+- Configure `deployment.public_url`, `deployment.app_url`, and `deployment.trusted_origins` for the actual browser origins.
+- Keep `object_storage.checksum_verification = "metadata"` for this SeaweedFS profile. OpenPencil stores the document SHA-256 as immutable object metadata and verifies it before committing a revision.
+- Add a Google or Apple provider table only when enabling that provider, and supply its required secret references externally.
+- Configure `[workers.cleanup]` for the expected upload volume and retention policy. The Node runtime runs a bounded cleanup worker by default; set `enabled = false` when cleanup is managed by a separate process.
 - Back up both named volumes. Immutable revision keys remove any dependency on bucket versioning, but do not replace backups.
 - Scale PostgreSQL and SeaweedFS independently for production; the single-node services here prioritize an understandable reference setup.

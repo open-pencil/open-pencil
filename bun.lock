@@ -447,6 +447,13 @@
         "canvaskit-wasm",
       ],
     },
+    "tools/cloud-deploy": {
+      "name": "@open-pencil/cloud-deploy-tools",
+      "dependencies": {
+        "@open-pencil/cloud": "workspace:*",
+        "jsonc-parser": "^3.3.1",
+      },
+    },
     "tools/docs": {
       "name": "@open-pencil/docs-tools",
     },
@@ -1273,6 +1280,8 @@
     "@open-pencil/cli": ["@open-pencil/cli@workspace:packages/cli"],
 
     "@open-pencil/cloud": ["@open-pencil/cloud@workspace:packages/cloud"],
+
+    "@open-pencil/cloud-deploy-tools": ["@open-pencil/cloud-deploy-tools@workspace:tools/cloud-deploy"],
 
     "@open-pencil/core": ["@open-pencil/core@workspace:packages/core"],
 

@@ -11,6 +11,7 @@ import {
 import {
   createCloudApp,
   createBetterAuthAdapter,
+  cloudDiscoveryFromConfig,
   migrateCloudDatabase,
   parseCloudServerConfig,
   StaticEntitlementSource
@@ -174,7 +175,10 @@ const app = createCloudApp({
   resolveIdentity: createCloudE2EIdentityResolver(),
   resolveSession: createCloudE2ESessionResolver()
 })
-const adminAssets = createNodeAdminAssetHandler(repositoryPath('packages/cloud/dist/admin'))
+const adminAssets = createNodeAdminAssetHandler(
+  repositoryPath('packages/cloud/dist/admin'),
+  cloudDiscoveryFromConfig(config)
+)
 const server = Bun.serve({
   hostname: '127.0.0.1',
   port,

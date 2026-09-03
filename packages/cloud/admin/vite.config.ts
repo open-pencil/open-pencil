@@ -7,8 +7,22 @@ import Icons from 'unplugin-icons/vite'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 
+import { injectCloudBootstrap, parseCloudDiscovery } from '@open-pencil/cloud/contract'
+
 export default defineConfig(({ command }) => {
   const proxyTarget = process.env.OPENPENCIL_CLOUD_DEV_PROXY
+  const bootstrapPlugin = {
+    name: 'openpencil-cloud-development-bootstrap',
+    apply: 'serve' as const,
+    async transformIndexHtml(html: string) {
+      if (!proxyTarget) {
+        throw new Error('OPENPENCIL_CLOUD_DEV_PROXY is required to serve the Cloud application')
+      }
+      const response = await fetch(new URL('/.well-known/openpencil', proxyTarget))
+      if (!response.ok) throw new Error(`Cloud discovery failed with HTTP ${response.status}`)
+      return injectCloudBootstrap(html, parseCloudDiscovery(await response.json()))
+    }
+  }
   return {
     root: new URL('.', import.meta.url).pathname,
     base: '/',
@@ -16,7 +30,8 @@ export default defineConfig(({ command }) => {
       vue(),
       Icons({ compiler: 'vue3' }),
       Components({ resolvers: [IconsResolver({ prefix: 'icon' })] }),
-      tailwindcss()
+      tailwindcss(),
+      bootstrapPlugin
     ],
     build: {
       outDir: '../dist/admin',

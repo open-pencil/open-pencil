@@ -23,6 +23,10 @@ Bun workspace packages:
 
 The root Tauri/Vite app lives in `src/`; app services and state belong under `src/app/**`, views under `src/views/**`, and app UI under `src/components/**`.
 
+### Cloud deployment configuration
+
+OpenPencil Cloud uses schema-versioned TOML as the canonical authored deployment configuration. Durable URLs, policies, provider enablement, storage behavior, worker schedules, retention, entitlements, and technical limits belong in TOML. Environment variables resolve conventional secret references and process bootstrap values; they must not silently override a selected TOML file. Cloudflare receives the same validated schema as a generated structured Wrangler variable, while Hyperdrive, Assets, Email Service, routes, cron triggers, and encrypted secrets remain native bindings. Deployment-file generation belongs under `tools/cloud-deploy/`, not package runtime or tests.
+
 ### Public package exports
 
 Across package/app boundaries, import the owning package's public exports—never workspace internals or forwarding-only shims. `@open-pencil/scene-graph` owns graph types and primitives; `@open-pencil/kiwi` owns low-level Kiwi/FIG helpers; `@open-pencil/core` provides the compatibility barrel plus targeted subpaths listed in `packages/core/package.json`. Cloud consumers use the explicit `@open-pencil/cloud/contract`, `/client`, `/server`, `/runtime/node`, and `/runtime/cloudflare` subpaths so browser code does not pull server dependencies.

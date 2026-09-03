@@ -20,7 +20,6 @@ export {
   type EnrollmentStatus
 } from '#cloud/admin'
 export {
-  configuredSocialProviders,
   createBetterAuthAdapter,
   createCloudIdentityResolver,
   createCloudSessionResolver,
@@ -79,13 +78,20 @@ export {
 } from './collaboration'
 export {
   CloudConfigError,
+  cloudDeploymentConfigSchema,
+  cloudDiscoveryFromConfig,
+  configuredSocialProviders,
   cloudServerConfigFromEnvironment,
+  parseCloudDeploymentConfig,
+  parseCloudDeploymentSource,
   parseCloudDeploymentTOML,
   parseCloudServerConfig,
   CLOUD_DEFAULT_MAX_COLLABORATION_MESSAGE_BYTES,
   CLOUD_DEFAULT_MAX_CONNECTIONS_PER_ROOM,
   CLOUD_PROTOCOL_MAX_UPLOAD_BYTES,
+  type CloudDeploymentConfig,
   type CloudEnvironment,
+  type CloudSecretReference,
   type CloudServerConfig,
   type CloudTechnicalLimits
 } from './config'

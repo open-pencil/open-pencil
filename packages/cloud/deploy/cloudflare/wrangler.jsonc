@@ -22,22 +22,7 @@
           "custom_domain": true
         }
       ],
-      "vars": {
-        "OPENPENCIL_CLOUD_DEPLOYMENT": "official",
-        "OPENPENCIL_CLOUD_URL": "https://cloud-staging.openpencil.dev",
-        "OPENPENCIL_CLOUD_APP_URL": "https://app.openpencil.dev",
-        "OPENPENCIL_CLOUD_TRUSTED_ORIGINS": "https://app.openpencil.dev,https://cloud-staging.openpencil.dev",
-        "OPENPENCIL_CLOUD_AUTH_IP_HEADERS": "cf-connecting-ip",
-        "OPENPENCIL_CLOUD_ENROLLMENT_MODE": "approval",
-        "OPENPENCIL_CLOUD_INDEXING_POLICY": "deny",
-        "OPENPENCIL_CLOUD_ENROLLMENT_ADMIN_EMAILS": "admin@openpencil.dev",
-        "OPENPENCIL_CLOUD_EMAIL_TRANSPORT": "none",
-        "S3_ENDPOINT": "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech",
-        "S3_REGION": "us-east-2",
-        "S3_BUCKET": "openpencil-cloud-staging",
-        "S3_FORCE_PATH_STYLE": "true",
-        "S3_CHECKSUM_VERIFICATION": "metadata"
-      },
+      "vars": {},
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
 import {
+  cloudServerConfigFromEnvironment,
   parseCloudDeploymentTOML,
   type CloudEnvironment,
   type CloudServerConfig
@@ -12,4 +13,12 @@ export async function loadNodeCloudServerConfig(
   const path = environment.OPENPENCIL_CLOUD_CONFIG
   if (!path) return null
   return parseCloudDeploymentTOML(await readFile(path, 'utf8'), environment)
+}
+
+export async function resolveNodeCloudServerConfig(
+  environment: CloudEnvironment
+): Promise<CloudServerConfig> {
+  return (
+    (await loadNodeCloudServerConfig(environment)) ?? cloudServerConfigFromEnvironment(environment)
+  )
 }

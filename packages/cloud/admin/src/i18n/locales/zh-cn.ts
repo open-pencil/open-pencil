@@ -53,7 +53,6 @@ export default {
     approvalDisclosure: '新帐户将由管理员审核。',
     haveAccount: '已有帐户？',
     needAccount: '首次使用OpenPencil Cloud？',
-    loadingProviders: '正在加载登录提供程序…',
     continueGoogle: '继续使用Google',
     continueApple: '继续使用Apple',
     openingProvider: '正在打开{provider}…',
@@ -129,10 +128,11 @@ export default {
     selfActionForbidden: '您不能在自己的帐户上执行该操作。',
     emailRegenerationUnavailable: '无法从当前记录重新生成此电子邮件。',
     unknown: '已出错，再试一次。',
-    discoveryUnavailable: '无法加载登录提供程序。请重试。',
     signInCancelled: '登录被取消或拒绝。',
     enrollmentClosed: 'Cloud登记目前已关闭。',
-    providerError: '标识提供程序无法完成登录。请重试。'
+    providerError: '标识提供程序无法完成登录。请重试。',
+    configUnavailable: 'Cloud配置不可用',
+    configUnavailableDescription: '部署管理员必须修正此Cloud实例。'
   },
   head: {
     homeTitle: 'OpenPencil Cloud',

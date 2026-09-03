@@ -1,0 +1,13 @@
+{
+  "name": "@open-pencil/cloud-deploy-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "bun src/index.ts",
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/cloud": "workspace:*",
+    "jsonc-parser": "^3.3.1"
+  }
+}

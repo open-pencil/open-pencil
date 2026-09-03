@@ -7,19 +7,13 @@ import {
   createEnrollmentService,
   type EnrollmentService
 } from '#cloud/admin'
-import {
-  CLOUD_DISCOVERY_PATH,
-  CLOUD_PROTOCOL_VERSION,
-  parseCloudDiscovery,
-  type CloudDiscovery
-} from '#cloud/contract'
+import { CLOUD_DISCOVERY_PATH, CLOUD_PROTOCOL_VERSION, type CloudDiscovery } from '#cloud/contract'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
   type CloudAPIEnvironment
 } from '#cloud/server/api'
 import {
-  configuredSocialProviders,
   createCloudIdentityResolver,
   createCloudSessionResolver,
   type CloudAuthAdapter,
@@ -27,7 +21,7 @@ import {
   type CloudSessionResolver
 } from '#cloud/server/auth'
 import { createCollaborationTicketService } from '#cloud/server/collaboration'
-import type { CloudServerConfig } from '#cloud/server/config'
+import { cloudDiscoveryFromConfig, type CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
 import { createDocumentService } from '#cloud/server/documents'
 import type { TransactionalEmailService } from '#cloud/server/email'
@@ -72,25 +66,7 @@ export type CloudServices = {
 type CloudEnvironment = CloudAPIEnvironment
 
 function discoveryFromServices(services: CloudServices): CloudDiscovery {
-  const apiURL = new URL('/api', services.config.publicURL).href.replace(/\/$/, '')
-  const authURL = new URL('/api/auth', services.config.publicURL).href.replace(/\/$/, '')
-  return parseCloudDiscovery({
-    protocolVersion: CLOUD_PROTOCOL_VERSION,
-    deployment: services.config.deployment,
-    apiURL,
-    authURL,
-    appURL: services.config.appURL ?? services.config.publicURL,
-    authentication: {
-      socialProviders: configuredSocialProviders(services.config),
-      enterpriseSSO: false,
-      enrollmentMode: services.config.enrollmentMode
-    },
-    capabilities: {
-      documents: true,
-      workspaces: true,
-      collaboration: true
-    }
-  })
+  return cloudDiscoveryFromConfig(services.config)
 }
 
 export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {

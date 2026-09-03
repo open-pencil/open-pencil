@@ -11,7 +11,7 @@ export async function GET(request: Request): Promise<Response> {
   if (!process.env.CRON_SECRET || authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: { code: 'unauthorized' } }, { status: 401 })
   }
-  const runtime = createNodeCloudApplication()
+  const runtime = await createNodeCloudApplication()
   try {
     const uploads = await createUploadCleanupService(
       runtime.database,
