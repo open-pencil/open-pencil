@@ -196,6 +196,8 @@ export interface ModelOption {
   tag?: string
   capabilities?: readonly ('tools' | 'vision')[]
   recommendedMaxOutputTokens?: number
+  releaseDate?: string
+  status?: 'active' | 'beta' | 'deprecated'
 }
 
 export interface AIProviderDef {
@@ -226,20 +228,39 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'OpenRouter',
     keyPlaceholder: 'sk-or-…',
     keyURL: 'https://openrouter.ai/keys',
-    defaultModel: 'anthropic/claude-sonnet-4.6',
+    defaultModel: 'anthropic/claude-sonnet-5',
     supportsCustomModel: true,
     models: [
       {
-        id: 'anthropic/claude-sonnet-4.6',
-        name: 'Claude Sonnet 4.6',
+        id: 'anthropic/claude-sonnet-5',
+        name: 'Claude Sonnet 5',
         tag: 'Best for design',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'anthropic/claude-opus-4.6',
-        name: 'Claude Opus 4.6',
+        id: 'anthropic/claude-opus-5',
+        name: 'Claude Opus 5',
         tag: 'Smartest',
         capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'openai/gpt-5.6',
+        name: 'GPT-5.6',
+        tag: 'Latest OpenAI',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'google/gemini-3.8-flash',
+        name: 'Gemini 3.8 Flash',
+        tag: 'Fast',
+        capabilities: ['tools', 'vision']
+      },
+      { id: 'z-ai/glm-5.3', name: 'GLM-5.3', capabilities: ['tools'] },
+      {
+        id: 'deepseek/deepseek-v4-pro',
+        name: 'DeepSeek V4 Pro',
+        tag: 'Reasoning',
+        capabilities: ['tools']
       },
       {
         id: 'moonshotai/kimi-k2.5',
@@ -247,21 +268,6 @@ export const AI_PROVIDERS: AIProviderDef[] = [
         tag: 'Vision + code',
         capabilities: ['tools', 'vision']
       },
-      {
-        id: 'google/gemini-3.1-pro-preview',
-        name: 'Gemini 3.1 Pro',
-        tag: '1M context',
-        capabilities: ['tools', 'vision']
-      },
-      { id: 'openai/gpt-5.3-codex', name: 'GPT-5.3 Codex' },
-      {
-        id: 'google/gemini-3-flash-preview',
-        name: 'Gemini 3 Flash',
-        tag: 'Fast',
-        capabilities: ['tools', 'vision']
-      },
-      { id: 'deepseek/deepseek-v3.2', name: 'DeepSeek V3.2', tag: 'Cheap' },
-      { id: 'qwen/qwen3.5-flash-02-23', name: 'Qwen 3.5 Flash', tag: 'Cheap' },
       { id: 'qwen/qwen3-coder:free', name: 'Qwen3 Coder', tag: 'Free' },
       { id: 'openai/gpt-oss-120b:free', name: 'GPT-OSS 120B', tag: 'Free' }
     ]
@@ -271,18 +277,24 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'Anthropic',
     keyPlaceholder: 'sk-ant-…',
     keyURL: 'https://console.anthropic.com/settings/keys',
-    defaultModel: 'claude-sonnet-4-6-20260301',
+    defaultModel: 'claude-sonnet-5',
     models: [
       {
-        id: 'claude-sonnet-4-6-20260301',
-        name: 'Claude Sonnet 4.6',
+        id: 'claude-sonnet-5',
+        name: 'Claude Sonnet 5',
         tag: 'Best for design',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'claude-opus-4-6-20260301',
-        name: 'Claude Opus 4.6',
+        id: 'claude-opus-5',
+        name: 'Claude Opus 5',
         tag: 'Smartest',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'claude-fable-5-1',
+        name: 'Claude Fable 5.1',
+        tag: 'Latest',
         capabilities: ['tools', 'vision']
       }
     ]
@@ -292,12 +304,12 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'OpenAI',
     keyPlaceholder: 'sk-…',
     keyURL: 'https://platform.openai.com/api-keys',
-    defaultModel: 'gpt-5.3-codex',
+    defaultModel: 'gpt-5.6',
     models: [
-      { id: 'gpt-5.3-codex', name: 'GPT-5.3 Codex' },
-      { id: 'gpt-4.1', name: 'GPT-4.1' },
-      { id: 'o3', name: 'o3', tag: 'Reasoning' },
-      { id: 'o4-mini', name: 'o4-mini', tag: 'Fast reasoning' }
+      { id: 'gpt-5.6', name: 'GPT-5.6', tag: 'Best' },
+      { id: 'gpt-5.5', name: 'GPT-5.5' },
+      { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini', tag: 'Fast' },
+      { id: 'gpt-5.4-nano', name: 'GPT-5.4 nano', tag: 'Cheap' }
     ]
   },
   {
@@ -305,18 +317,25 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'Google AI',
     keyPlaceholder: 'AIza…',
     keyURL: 'https://aistudio.google.com/apikey',
-    defaultModel: 'gemini-3.1-pro-preview',
+    defaultModel: 'gemini-3.8-flash',
     models: [
       {
-        id: 'gemini-3.1-pro-preview',
-        name: 'Gemini 3.1 Pro',
-        tag: '1M context',
+        id: 'gemini-3.8-flash',
+        name: 'Gemini 3.8 Flash',
+        tag: 'Latest',
+        capabilities: ['tools', 'vision']
+      },
+      { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', capabilities: ['tools', 'vision'] },
+      {
+        id: 'gemini-flash-latest',
+        name: 'Gemini Flash Latest',
+        tag: 'Alias',
         capabilities: ['tools', 'vision']
       },
       {
-        id: 'gemini-3-flash-preview',
-        name: 'Gemini 3 Flash',
-        tag: 'Fast',
+        id: 'gemini-3.1-pro-preview',
+        name: 'Gemini 3.1 Pro',
+        tag: 'Pro',
         capabilities: ['tools', 'vision']
       }
     ]
@@ -337,9 +356,13 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     name: 'Z.ai',
     keyPlaceholder: 'API key',
     keyURL: 'https://docs.z.ai/devpack/quick-start',
-    defaultModel: 'glm-5.1',
+    defaultModel: 'glm-5.3',
     models: [
-      { id: 'glm-5.1', name: 'GLM-5.1', tag: 'Best' },
+      { id: 'glm-5.3', name: 'GLM-5.3', tag: 'Best' },
+      { id: 'glm-5.3-flash', name: 'GLM-5.3-Flash', tag: 'Fast' },
+      { id: 'glm-5.2', name: 'GLM-5.2' },
+      { id: 'glm-5v-turbo', name: 'GLM-5V-Turbo', tag: 'Vision' },
+      { id: 'glm-5.1', name: 'GLM-5.1' },
       { id: 'glm-5', name: 'GLM-5' },
       { id: 'glm-5-code', name: 'GLM-5-Code' },
       { id: 'glm-4.7', name: 'GLM-4.7' },

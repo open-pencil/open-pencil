@@ -5,6 +5,7 @@
 ### Added
 
 - Add a searchable command palette for editor and application actions.
+- Search current AI provider catalogs from model pickers, with curated recommendations, recent compatible models, and offline fallbacks.
 - Render triangle and line arrow stroke caps on lines and open vector paths, and choose them from the stroke cap picker.
 - Expose component properties and instance-swap targets through the Figma API and automation.
 - Normalize imported stroke dash patterns for more reliable `.fig` compatibility.

@@ -7,6 +7,7 @@ import { ACP_AGENTS, AI_PROVIDERS, type AIProviderID } from '@open-pencil/core/c
 
 import { refreshAIProviderStatus } from '@/app/ai/chat/storage'
 import { resolveModelsDevModel } from '@/app/ai/models/catalog'
+import { useProviderModelCatalog } from '@/app/ai/models/use-provider-model-catalog'
 import {
   testProviderConnection,
   type ProviderConnectionTestFailureReason
@@ -29,6 +30,7 @@ import ProviderSelect from '@/components/settings/provider-select/ProviderSelect
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
+import AppCombobox from '@/components/ui/AppCombobox.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
@@ -56,6 +58,9 @@ const catalogModel = ref<(typeof providerDef.value.models)[number] | null>(null)
 const providerDef = computed(
   () => AI_PROVIDERS.find((provider) => provider.id === draft.providerID) ?? AI_PROVIDERS[0]
 )
+const catalogProviderID = computed(() => draft.providerID)
+const fallbackModels = computed(() => providerDef.value.models)
+const { models: availableModels } = useProviderModelCatalog(catalogProviderID, fallbackModels)
 const isACP = computed(() => draft.providerID.startsWith('acp:'))
 const isHarness = computed(() => draft.providerID === 'harness:pi')
 const supportsReasoningEffort = computed(() =>
@@ -66,12 +71,39 @@ const providerDisplayName = computed(() => {
   const agentID = draft.providerID.slice('acp:'.length)
   return ACP_AGENTS.find((agent) => agent.id === agentID)?.name ?? draft.providerID
 })
-const modelOptions = computed(() => [
-  ...providerDef.value.models.map((model) => ({ value: model.id, label: model.name })),
-  ...(providerDef.value.supportsCustomModel
-    ? [{ value: CUSTOM_MODEL_VALUE, label: ai.value.customModel }]
-    : [])
-])
+function modelGroup(modelID: string, recommendedIds: Set<string>, latestIds: Set<string>): string {
+  if (recommendedIds.has(modelID)) return ai.value.recommendedModels
+  if (latestIds.has(modelID)) return ai.value.latestModels
+  return ai.value.allModels
+}
+
+const modelOptions = computed(() => {
+  const recommendedIds = new Set(providerDef.value.models.map((model) => model.id))
+  const latestIds = new Set(
+    availableModels.value
+      .filter((model) => !recommendedIds.has(model.id) && model.releaseDate)
+      .slice(0, 8)
+      .map((model) => model.id)
+  )
+  return [
+    ...availableModels.value.map((model) => ({
+      value: model.id,
+      label: model.name,
+      description: model.id,
+      meta: model.tag ?? (latestIds.has(model.id) ? ai.value.latest : undefined),
+      group: modelGroup(model.id, recommendedIds, latestIds)
+    })),
+    ...(providerDef.value.supportsCustomModel
+      ? [
+          {
+            value: CUSTOM_MODEL_VALUE,
+            label: ai.value.customModel,
+            group: ai.value.customModel
+          }
+        ]
+      : [])
+  ]
+})
 const selectedModelValue = computed(() =>
   customModelSelected.value ? CUSTOM_MODEL_VALUE : draft.modelID
 )
@@ -324,10 +356,13 @@ void refreshKeyStatus()
         </div>
 
         <ProviderSettingsField v-if="modelOptions.length" :label="ai.modelID">
-          <AppSelect
+          <AppCombobox
             :model-value="selectedModelValue"
             :options="modelOptions"
             :label="ai.modelID"
+            :placeholder="ai.selectModel"
+            :search-placeholder="ai.searchModels"
+            :empty-label="common.noResults"
             @update:model-value="updateModel(String($event))"
           />
         </ProviderSettingsField>
