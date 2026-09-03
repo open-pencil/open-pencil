@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises'
+import { open } from 'node:fs/promises'
 import { extname, join, normalize } from 'node:path'
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -21,9 +21,11 @@ export function createNodeAdminAssetHandler(directory: string) {
     const safePath = normalize(relative)
     if (safePath.startsWith('..')) return new Response('Not found', { status: 404 })
     const path = join(directory, safePath)
+    let file
     try {
-      if (!(await stat(path)).isFile()) return new Response('Not found', { status: 404 })
-      return new Response(await readFile(path), {
+      file = await open(path, 'r')
+      if (!(await file.stat()).isFile()) return new Response('Not found', { status: 404 })
+      return new Response(await file.readFile(), {
         headers: {
           'Content-Type': CONTENT_TYPES[extname(path)] ?? 'application/octet-stream',
           'Cache-Control':
@@ -32,6 +34,8 @@ export function createNodeAdminAssetHandler(directory: string) {
       })
     } catch {
       return new Response('Admin UI is not built', { status: 503 })
+    } finally {
+      await file?.close()
     }
   }
 }
