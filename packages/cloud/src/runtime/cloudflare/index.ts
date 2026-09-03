@@ -121,9 +121,7 @@ export function createCloudflareWorker() {
           url.pathname.startsWith('/admin/') ||
           url.pathname.startsWith('/assets/'))
       ) {
-        const assetURL = new URL(request.url)
-        if (!url.pathname.startsWith('/assets/')) assetURL.pathname = '/index.html'
-        const response = await environment.ASSETS.fetch(new Request(assetURL, request))
+        const response = await environment.ASSETS.fetch(request)
         context.waitUntil(runtime.database.destroy())
         return response
       }

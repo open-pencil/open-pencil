@@ -18,8 +18,8 @@
       "name": "openpencil-cloud-staging",
       "routes": [
         {
-          "pattern": "cloud-staging.openpencil.dev/*",
-          "zone_name": "openpencil.dev"
+          "pattern": "cloud-staging.openpencil.dev",
+          "custom_domain": true
         }
       ],
       "vars": {
@@ -34,7 +34,7 @@
         "S3_ENDPOINT": "https://br-lucky-forest-aeigmjr4.storage.c-2.us-east-2.aws.neon.tech",
         "S3_REGION": "us-east-2",
         "S3_BUCKET": "openpencil-cloud-staging",
-        "S3_FORCE_PATH_STYLE": "false",
+        "S3_FORCE_PATH_STYLE": "true",
         "S3_CHECKSUM_VERIFICATION": "metadata"
       },
       "hyperdrive": [
