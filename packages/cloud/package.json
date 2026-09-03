@@ -81,6 +81,7 @@
     "@hocuspocus/server": "^4.6.0",
     "@noble/hashes": "^2.3.0",
     "@openfeature/server-sdk": "^1.23.0",
+    "@open-pencil/ui": "workspace:*",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue-email/components": "^0.0.21",
     "@vue-email/render": "^0.0.9",

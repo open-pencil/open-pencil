@@ -4,7 +4,8 @@
     "rootDir": ".",
     "noEmit": true,
     "paths": {
-      "#admin/*": ["./src/*"]
+      "#admin/*": ["./src/*"],
+      "@open-pencil/ui": ["../../ui/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
