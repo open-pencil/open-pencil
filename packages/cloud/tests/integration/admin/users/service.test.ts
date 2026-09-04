@@ -37,6 +37,18 @@ function authAdapter() {
     async resolveSession() {
       return null
     },
+    async listAuthenticationMethods() {
+      return []
+    },
+    async changePassword() {
+      return complete()
+    },
+    async startSocialLink() {
+      return 'https://accounts.example.com/link'
+    },
+    async unlinkAuthenticationMethod() {
+      return complete()
+    },
     async migrate() {
       return complete()
     }

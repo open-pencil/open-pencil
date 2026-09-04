@@ -108,7 +108,26 @@ export const accountMessageDefaults = {
   workspacesTitle: 'Workspaces',
   workspaceRole: params('{role} role'),
   noWorkspacesTitle: 'No Cloud workspaces yet',
-  noWorkspacesDescription: 'Open the editor to create your first Cloud workspace.'
+  noWorkspacesDescription: 'Open the editor to create your first Cloud workspace.',
+  securityNavigation: 'Security',
+  securityTitle: 'Account security',
+  securityDescription: 'Manage the methods you use to sign in to OpenPencil Cloud.',
+  signInMethods: 'Sign-in methods',
+  passwordMethod: 'Email and password',
+  googleMethod: 'Google',
+  appleMethod: 'Apple',
+  methodConnected: 'Connected',
+  unlinkMethod: 'Unlink',
+  unlinkTitle: 'Unlink sign-in method?',
+  unlinkDescription: 'You will no longer be able to use this method to sign in.',
+  addPassword: 'Add password',
+  addPasswordEmailSent: 'Check your email to set a password.',
+  linkProvider: params('Link {provider}'),
+  changePassword: 'Change password',
+  changePasswordDescription: 'Changing your password signs out your other sessions.',
+  currentPassword: 'Current password',
+  updatePassword: 'Update password',
+  passwordChanged: 'Your password was changed and other sessions were signed out.'
 } as const
 
 export const adminMessageDefaults = {
@@ -174,6 +193,8 @@ export const headMessageDefaults = {
   revokedDescription: 'Your OpenPencil Cloud access was revoked.',
   dashboardTitle: 'Cloud workspace',
   dashboardDescription: 'Open your OpenPencil Cloud workspace.',
+  securityTitle: 'Account security',
+  securityDescription: 'Manage OpenPencil Cloud sign-in methods.',
   notFoundTitle: 'Page not found',
   notFoundDescription: 'The requested OpenPencil Cloud page was not found.',
   enrollmentTitle: 'Enrollment',
@@ -212,6 +233,9 @@ export const errorMessageDefaults = {
   invalidResetLink: 'This password reset link is invalid or expired.',
   rateLimited: 'Too many attempts. Wait a moment and try again.',
   credentialUnknown: 'We could not complete that request. Try again.',
+  currentPasswordInvalid: 'The current password is incorrect.',
+  lastAuthenticationMethod: 'Connect another sign-in method before unlinking this one.',
+  sessionNotFresh: 'Sign in again before changing this security setting.',
   configUnavailable: 'Cloud configuration is unavailable',
   configUnavailableDescription: 'The deployment administrator must correct this Cloud instance.'
 } as const

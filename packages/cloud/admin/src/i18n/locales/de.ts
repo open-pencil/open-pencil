@@ -110,7 +110,26 @@ export default {
     workspaceRole: 'Rolle: {role}',
     noWorkspacesTitle: 'Noch keine Cloud-Arbeitsbereiche',
     noWorkspacesDescription:
-      'Öffnen Sie den Editor, um Ihren ersten Cloud-Arbeitsbereich zu erstellen.'
+      'Öffnen Sie den Editor, um Ihren ersten Cloud-Arbeitsbereich zu erstellen.',
+    securityNavigation: 'Sicherheit',
+    securityTitle: 'Kontosicherheit',
+    securityDescription: 'Verwalten Sie Ihre Anmeldemethoden für OpenPencil Cloud.',
+    signInMethods: 'Anmeldemethoden',
+    passwordMethod: 'E-Mail und Passwort',
+    googleMethod: 'Google',
+    appleMethod: 'Apple',
+    methodConnected: 'Verbunden',
+    unlinkMethod: 'Trennen',
+    unlinkTitle: 'Anmeldemethode trennen?',
+    unlinkDescription: 'Sie können diese Methode danach nicht mehr zur Anmeldung verwenden.',
+    addPassword: 'Passwort hinzufügen',
+    addPasswordEmailSent: 'Prüfen Sie Ihre E-Mail, um ein Passwort festzulegen.',
+    linkProvider: '{provider} verknüpfen',
+    changePassword: 'Passwort ändern',
+    changePasswordDescription: 'Beim Ändern des Passworts werden andere Sitzungen abgemeldet.',
+    currentPassword: 'Aktuelles Passwort',
+    updatePassword: 'Passwort aktualisieren',
+    passwordChanged: 'Ihr Passwort wurde geändert und andere Sitzungen wurden abgemeldet.'
   },
   admin: {
     enrollment: 'Zugriffsanfragen',
@@ -182,6 +201,9 @@ export default {
     invalidResetLink: 'Dieser Link ist ungültig oder abgelaufen.',
     rateLimited: 'Zu viele Versuche. Warten Sie kurz und versuchen Sie es erneut.',
     credentialUnknown: 'Die Anfrage konnte nicht abgeschlossen werden. Versuchen Sie es erneut.',
+    currentPasswordInvalid: 'Das aktuelle Passwort ist falsch.',
+    lastAuthenticationMethod: 'Verbinden Sie eine weitere Anmeldemethode, bevor Sie diese trennen.',
+    sessionNotFresh: 'Melden Sie sich erneut an, bevor Sie diese Sicherheitseinstellung ändern.',
     configUnavailable: 'Cloud-Konfiguration ist nicht verfügbar',
     configUnavailableDescription:
       'Der Bereitstellungsadministrator muss diese Cloud-Instanz korrigieren.'
@@ -210,6 +232,8 @@ export default {
     revokedDescription: 'Ihr OpenPencil Cloud-Zugriff wurde entzogen.',
     dashboardTitle: 'Cloud-Arbeitsbereich',
     dashboardDescription: 'Öffnen Sie Ihren OpenPencil Cloud-Arbeitsbereich.',
+    securityTitle: 'Kontosicherheit',
+    securityDescription: 'Verwalten Sie die Anmeldemethoden für OpenPencil Cloud.',
     notFoundTitle: 'Seite nicht gefunden',
     notFoundDescription: 'Die angeforderte OpenPencil Cloud-Seite wurde nicht gefunden.',
     enrollmentTitle: 'Immatrikulation',

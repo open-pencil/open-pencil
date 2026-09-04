@@ -1,7 +1,7 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/enrollment/service'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
-import { betterAuth, type BetterAuthOptions } from 'better-auth'
+import { APIError, betterAuth, type BetterAuthOptions } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
 import { admin, bearer, captcha, deviceAuthorization, haveIBeenPwned } from 'better-auth/plugins'
 import { importPKCS8, SignJWT } from 'jose'
@@ -13,6 +13,7 @@ import type { AuthenticationEmailService } from './email'
 const APPLE_AUDIENCE = 'https://appleid.apple.com'
 const APPLE_SECRET_LIFETIME_SECONDS = 180 * 24 * 60 * 60
 const BETTER_AUTH_SCHEMA_VERSION = '1.7.2'
+const ACCOUNT_SECURITY_FRESH_AGE_SECONDS = 10 * 60
 
 async function generateAppleClientSecret(config: CloudServerConfig): Promise<string> {
   if (
@@ -91,9 +92,11 @@ export function createBetterAuthAdapter(
         disableImplicitLinking: false,
         trustedProviders: ['google', 'apple'],
         allowDifferentEmails: false,
-        allowUnlinkingAll: false
+        allowUnlinkingAll: false,
+        requireLocalEmailVerified: true
       }
     },
+    session: { freshAge: ACCOUNT_SECURITY_FRESH_AGE_SECONDS },
     advanced: {
       database: { generateId: 'uuid' },
       ipAddress: {
@@ -246,6 +249,56 @@ export function createBetterAuthAdapter(
         return null
       }
       return identity
+    },
+    async listAuthenticationMethods(headers) {
+      const accounts = await auth.api.listUserAccounts({ headers })
+      return accounts.map((account) => ({
+        id: account.id,
+        providerId: account.providerId,
+        createdAt: account.createdAt
+      }))
+    },
+    async changePassword(headers, input) {
+      const session = authenticationEmail ? await auth.api.getSession({ headers }) : null
+      await auth.api.changePassword({
+        headers,
+        body: { ...input, revokeOtherSessions: false }
+      })
+      await auth.api.revokeOtherSessions({ headers })
+      if (authenticationEmail && session) {
+        await authenticationEmail.sendPasswordChanged({
+          email: session.user.email,
+          name: session.user.name,
+          userId: session.user.id,
+          url: config.publicURL
+        })
+      }
+    },
+    async startSocialLink(headers, input) {
+      const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } })
+      const createdAt = session?.session.createdAt
+      if (
+        !createdAt ||
+        Date.now() - new Date(createdAt).getTime() >= ACCOUNT_SECURITY_FRESH_AGE_SECONDS * 1000
+      ) {
+        throw APIError.from('FORBIDDEN', {
+          code: 'SESSION_NOT_FRESH',
+          message: 'Session is not fresh'
+        })
+      }
+      const response = await auth.api.linkSocialAccount({
+        headers,
+        body: {
+          provider: input.provider,
+          callbackURL: input.callbackURL,
+          errorCallbackURL: input.callbackURL,
+          disableRedirect: true
+        }
+      })
+      return response.url
+    },
+    async unlinkAuthenticationMethod(headers, methodId) {
+      await auth.api.unlinkAccount({ headers, body: { accountId: methodId } })
     },
     async listUsers(headers, query) {
       const listQuery = query?.searchValue

@@ -1,6 +1,7 @@
 export const cloudQueryKeys = {
   discovery: ['cloud', 'discovery'] as const,
   account: ['cloud', 'account'] as const,
+  authenticationMethods: ['cloud', 'account', 'authentication-methods'] as const,
   workspaces: ['cloud', 'workspaces'] as const,
   session: ['cloud', 'session'] as const,
   enrollments: {

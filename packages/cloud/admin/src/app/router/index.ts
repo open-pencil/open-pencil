@@ -1,3 +1,4 @@
+import SecurityView from '#admin/account/security/SecurityView.vue'
 import AuditView from '#admin/admin/audit/AuditView.vue'
 import EmailView from '#admin/admin/email/EmailView.vue'
 import EnrollmentView from '#admin/admin/enrollment/EnrollmentView.vue'
@@ -89,6 +90,13 @@ const routes = [
     props: { state: 'revoked' },
     beforeEnter: requireAccountState('revoked'),
     meta: { headKey: 'revoked', indexing: 'private' }
+  },
+  {
+    path: '/app/account/security',
+    name: 'account-security',
+    component: SecurityView,
+    beforeEnter: requireActiveAccount,
+    meta: { headKey: 'security', indexing: 'private' }
   },
   {
     path: '/app',

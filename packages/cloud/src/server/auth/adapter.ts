@@ -17,10 +17,26 @@ export type CloudIdentity = {
   deploymentRole?: 'user' | 'admin'
 }
 
+export type CloudAuthenticationMethodRecord = {
+  id: string
+  providerId: string
+  createdAt: Date
+}
+
 export interface CloudAuthAdapter {
   handler(request: Request): Promise<Response>
   resolveIdentity(headers: Headers): Promise<CloudIdentity | null>
   resolveSession(headers: Headers): Promise<CloudActor | null>
+  listAuthenticationMethods(headers: Headers): Promise<CloudAuthenticationMethodRecord[]>
+  changePassword(
+    headers: Headers,
+    input: { currentPassword: string; newPassword: string }
+  ): Promise<void>
+  startSocialLink(
+    headers: Headers,
+    input: { provider: 'google' | 'apple'; callbackURL: string }
+  ): Promise<string>
+  unlinkAuthenticationMethod(headers: Headers, methodId: string): Promise<void>
   listUsers(
     headers: Headers,
     query?: { searchValue?: string; limit?: number; offset?: number }

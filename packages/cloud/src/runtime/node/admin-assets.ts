@@ -19,6 +19,7 @@ function isAdminPage(pathname: string): boolean {
     pathname === '/sign-up' ||
     pathname.startsWith('/auth/') ||
     pathname === '/app' ||
+    pathname.startsWith('/app/') ||
     pathname.startsWith('/account/') ||
     pathname === '/admin' ||
     pathname.startsWith('/admin/')

@@ -49,6 +49,7 @@ describe('Node admin assets', () => {
         '/auth/verify-email',
         '/auth/forgot-password',
         '/auth/reset-password',
+        '/app/account/security',
         '/account/pending',
         '/app',
         '/admin/users'

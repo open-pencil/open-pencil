@@ -141,6 +141,7 @@ export function createCloudflareWorker() {
           url.pathname === '/sign-up' ||
           url.pathname.startsWith('/auth/') ||
           url.pathname === '/app' ||
+          url.pathname.startsWith('/app/') ||
           url.pathname.startsWith('/account/') ||
           url.pathname === '/admin' ||
           url.pathname.startsWith('/admin/') ||

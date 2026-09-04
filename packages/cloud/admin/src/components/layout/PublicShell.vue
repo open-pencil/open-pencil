@@ -14,6 +14,7 @@ const route = useRoute()
 const queryClient = useQueryClient()
 const account = useQuery(accountQueryOptions())
 const isSignedIn = computed(() => account.isSuccess.value)
+const isActive = computed(() => account.data.value?.state === 'active')
 const isAdmin = computed(
   () => account.data.value?.state === 'active' && account.data.value.user.deploymentRole === 'admin'
 )
@@ -40,6 +41,13 @@ async function signOut(): Promise<void> {
         <div class="flex items-center gap-1">
           <CloudPreferences />
           <template v-if="isSignedIn">
+            <RouterLink
+              v-if="isActive"
+              to="/app/account/security"
+              class="rounded-md px-3 py-2 text-xs text-muted no-underline hover:bg-hover hover:text-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+            >
+              {{ messages.account.value.securityNavigation }}
+            </RouterLink>
             <RouterLink
               v-if="isAdmin"
               to="/admin"

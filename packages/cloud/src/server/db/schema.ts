@@ -1,6 +1,7 @@
 import type { EnrollmentStatus } from '#cloud/admin/enrollment/service'
 import type { DocumentPermission, WorkspaceRole } from '#cloud/contract'
 import type { TransactionalEmailKind, TransactionalEmailPayloadByKind } from '#cloud/email'
+import type { Account, Session } from 'better-auth'
 import type { ColumnType, Generated, Insertable, Selectable, Updateable } from 'kysely'
 
 export type TimestampColumn = ColumnType<Date, Date | string | undefined, Date | string | null>
@@ -230,6 +231,8 @@ export interface CloudAuthSchemaTable {
 }
 
 export interface CloudDatabase {
+  account: Account
+  session: Session
   user: AuthUserTable
   cloudAuthSchema: CloudAuthSchemaTable
   cloudEnrollment: CloudEnrollmentTable

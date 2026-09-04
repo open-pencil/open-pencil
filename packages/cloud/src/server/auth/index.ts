@@ -1,3 +1,4 @@
+export { createAccountAuthenticationService, type AccountAuthenticationService } from './account'
 export type { CloudAuthAdapter } from './adapter'
 export { createAuthenticationEmailService, type AuthenticationEmailService } from './email'
 export { createCloudAuthenticationRuntime } from './runtime'

@@ -7,13 +7,22 @@ import {
   createEnrollmentService,
   type EnrollmentService
 } from '#cloud/admin'
-import { CLOUD_DISCOVERY_PATH, CLOUD_PROTOCOL_VERSION, type CloudDiscovery } from '#cloud/contract'
+import {
+  CLOUD_DISCOVERY_PATH,
+  CLOUD_PROTOCOL_VERSION,
+  parseCloudPasswordChange,
+  parseCloudSocialLink,
+  parseCloudUnlinkAuthenticationMethod,
+  type AccountSecurityErrorCode,
+  type CloudDiscovery
+} from '#cloud/contract'
 import {
   createCloudAPIRouter,
   createPublicCloudAPIRouter,
   type CloudAPIEnvironment
 } from '#cloud/server/api'
 import {
+  createAccountAuthenticationService,
   createCloudIdentityResolver,
   createCloudSessionResolver,
   type CloudAuthAdapter,
@@ -43,10 +52,20 @@ import {
   createTrustedIPRateLimiter
 } from '#cloud/server/rate-limit'
 import { createDocumentSharingService } from '#cloud/server/sharing'
+import { validatedJSON } from '#cloud/server/validation'
 import { createWorkspaceService } from '#cloud/server/workspaces'
-import { Hono } from 'hono'
+import { APIError } from 'better-auth'
+import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
 import type { Kysely } from 'kysely'
+
+const ACCOUNT_SECURITY_ERROR_CODES: Record<string, AccountSecurityErrorCode> = {
+  INVALID_PASSWORD: 'current_password_invalid',
+  PASSWORD_TOO_SHORT: 'password_too_short',
+  PASSWORD_TOO_LONG: 'password_too_long',
+  FAILED_TO_UNLINK_LAST_ACCOUNT: 'last_authentication_method',
+  SESSION_NOT_FRESH: 'session_not_fresh'
+}
 
 export type CloudServices = {
   config: CloudServerConfig
@@ -68,6 +87,22 @@ type CloudEnvironment = CloudAPIEnvironment
 function discoveryFromServices(services: CloudServices): CloudDiscovery {
   return cloudDiscoveryFromConfig(services.config)
 }
+
+const ACTIVE_ACCOUNT_AUTH_PATHS = new Set([
+  '/api/auth/account-info',
+  '/api/auth/change-email',
+  '/api/auth/change-password',
+  '/api/auth/delete-user',
+  '/api/auth/get-access-token',
+  '/api/auth/link-social',
+  '/api/auth/list-accounts',
+  '/api/auth/list-sessions',
+  '/api/auth/refresh-token',
+  '/api/auth/revoke-other-sessions',
+  '/api/auth/revoke-session',
+  '/api/auth/revoke-sessions',
+  '/api/auth/unlink-account'
+])
 
 export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {
   return (
@@ -173,6 +208,32 @@ export function createCloudApp(services: CloudServices) {
     deploymentMode: services.config.deployment
   })
 
+  const accountAuthentication = createAccountAuthenticationService(services.auth, services.config)
+  const accountAction = async <Value>(operation: () => Promise<Value>, context: Context) => {
+    try {
+      return await operation()
+    } catch (error) {
+      if (error instanceof APIError) {
+        return context.json(
+          {
+            error: {
+              code:
+                ACCOUNT_SECURITY_ERROR_CODES[error.body?.code ?? ''] ??
+                'authentication_method_failed'
+            }
+          },
+          error.statusCode as 400 | 401 | 403 | 404 | 409 | 422 | 429 | 500
+        )
+      }
+      throw error
+    }
+  }
+  const requireActiveSession = async (context: Context, next: () => Promise<void>) => {
+    const actor = await resolveSession(context.req.raw)
+    if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+    context.set('actor', actor)
+    return next()
+  }
   const publicRateLimiter = createTrustedIPRateLimiter(
     services.database,
     services.config.authSecret,
@@ -265,7 +326,15 @@ export function createCloudApp(services: CloudServices) {
       }
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
-    .on(['GET', 'POST'], '/api/auth/*', (context) => services.auth.handler(context.req.raw))
+    .on(['GET', 'POST'], '/api/auth/*', async (context) => {
+      if (
+        ACTIVE_ACCOUNT_AUTH_PATHS.has(context.req.path) &&
+        !(await resolveSession(context.req.raw))
+      ) {
+        return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      }
+      return services.auth.handler(context.req.raw)
+    })
     .get('/api/account/status', async (context) => {
       const identity = await resolveIdentity(context.req.raw)
       if (!identity) return context.json({ error: { code: 'unauthorized' as const } }, 401)
@@ -280,17 +349,66 @@ export function createCloudApp(services: CloudServices) {
           : (enrollmentStatus ?? 'pending')
       return context.json({ user: identity, state })
     })
+    .use('/api/account/authentication/*', requireActiveSession)
+    .use('/api/account/authentication/*', authenticatedMutationLimiter)
+    .post(
+      '/api/account/authentication/change-password',
+      validatedJSON(parseCloudPasswordChange),
+      async (context) => {
+        const result = await accountAction(
+          () =>
+            accountAuthentication.changePassword(
+              context.req.raw.headers,
+              context.req.valid('json')
+            ),
+          context
+        )
+        return result instanceof Response ? result : context.json({ ok: true as const })
+      }
+    )
+    .post(
+      '/api/account/authentication/link-social',
+      validatedJSON(parseCloudSocialLink),
+      async (context) => {
+        const result = await accountAction(
+          () =>
+            accountAuthentication.startSocialLink(
+              context.req.raw.headers,
+              context.req.valid('json')
+            ),
+          context
+        )
+        return result instanceof Response ? result : context.json({ url: result })
+      }
+    )
+    .post(
+      '/api/account/authentication/unlink',
+      validatedJSON(parseCloudUnlinkAuthenticationMethod),
+      async (context) => {
+        const result = await accountAction(
+          () =>
+            accountAuthentication.unlink(
+              context.req.raw.headers,
+              context.req.valid('json').methodId
+            ),
+          context
+        )
+        return result instanceof Response ? result : context.json({ ok: true as const })
+      }
+    )
+    .get('/api/account/authentication', async (context) => {
+      const result = await accountAction(
+        () => accountAuthentication.methods(context.req.raw.headers),
+        context
+      )
+      return result instanceof Response ? result : context.json(result)
+    })
     .use('/api/public/shares/:shareId/collaboration-ticket', publicCollaborationLimiter)
     .use('/api/public/*', publicRateLimiter)
     .use('/api/shares/*', publicRateLimiter)
     .use('/api/invitations/*', publicRateLimiter)
     .route('/api', publicCloudAPI)
-    .use('/api/*', async (context, next) => {
-      const actor = await resolveSession(context.req.raw)
-      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
-      context.set('actor', actor)
-      return next()
-    })
+    .use('/api/*', requireActiveSession)
     .route('/api/admin', admin)
     .use('/api/*', authenticatedMutationLimiter)
     .route('/api', cloudAPI)

@@ -18,6 +18,7 @@ const HEAD_KEYS = {
   rejected: ['rejectedTitle', 'rejectedDescription'],
   revoked: ['revokedTitle', 'revokedDescription'],
   dashboard: ['dashboardTitle', 'dashboardDescription'],
+  security: ['securityTitle', 'securityDescription'],
   notFound: ['notFoundTitle', 'notFoundDescription'],
   enrollment: ['enrollmentTitle', 'enrollmentDescription'],
   users: ['usersTitle', 'usersDescription'],

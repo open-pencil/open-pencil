@@ -20,6 +20,12 @@ export const accountQueryOptions = () =>
     retry: false
   })
 
+export const authenticationMethodsQueryOptions = () =>
+  queryOptions({
+    queryKey: cloudQueryKeys.authenticationMethods,
+    queryFn: ({ signal }) => cloudAdminAPI.authenticationMethods(signal)
+  })
+
 export const workspacesQueryOptions = () =>
   queryOptions({
     queryKey: cloudQueryKeys.workspaces,

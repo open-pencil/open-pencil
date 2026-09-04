@@ -52,5 +52,14 @@ describe('Cloud admin API client', () => {
       kind: 'domain',
       code: 'last_admin_required'
     })
+    const account = createCloudAdminAPIClient({
+      baseURL: 'https://cloud.example.com',
+      fetch: async () =>
+        Response.json({ error: { code: 'last_authentication_method' } }, { status: 400 })
+    })
+    await expect(account.unlinkAuthenticationMethod('method')).rejects.toMatchObject({
+      kind: 'domain',
+      code: 'last_authentication_method'
+    })
   })
 })

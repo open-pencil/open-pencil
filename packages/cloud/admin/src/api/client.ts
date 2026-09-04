@@ -2,17 +2,25 @@ import * as v from 'valibot'
 
 import type { CloudFetch } from '@open-pencil/cloud/client'
 import {
+  accountSecurityErrorResponseSchema,
   adminAuditResponseSchema,
   adminEmailResponseSchema,
   adminErrorResponseSchema,
   adminMutationResponseSchema,
   adminOperationsResponseSchema,
+  cloudAccountMutationResponseSchema,
   cloudAccountStatusResponseSchema,
+  cloudAuthenticationMethodsResponseSchema,
+  cloudPasswordChangeSchema,
+  cloudSocialLinkResponseSchema,
+  cloudSocialLinkSchema,
+  cloudUnlinkAuthenticationMethodSchema,
   cloudAdminSessionResponseSchema,
   cloudAdminUsersResponseSchema,
   enrollmentReviewResponseSchema,
   enrollmentsResponseSchema,
-  type AdminErrorCode
+  type AdminErrorCode,
+  type AccountSecurityErrorCode
 } from '@open-pencil/cloud/contract'
 
 export type CloudAdminAPIErrorKind =
@@ -29,7 +37,7 @@ export class CloudAdminAPIError extends Error {
 
   constructor(
     readonly kind: CloudAdminAPIErrorKind,
-    readonly code?: AdminErrorCode,
+    readonly code?: AdminErrorCode | AccountSecurityErrorCode,
     options?: ErrorOptions
   ) {
     super(kind, options)
@@ -84,8 +92,12 @@ export function createCloudAdminAPIClient(options: CloudAdminAPIClientOptions = 
       throw new CloudAdminAPIError('protocol', undefined, { cause })
     }
     if (!response.ok) {
-      const error = v.safeParse(adminErrorResponseSchema, body)
-      throw new CloudAdminAPIError('domain', error.success ? error.output.error.code : undefined)
+      const accountError = v.safeParse(accountSecurityErrorResponseSchema, body)
+      const adminError = v.safeParse(adminErrorResponseSchema, body)
+      let code: AdminErrorCode | AccountSecurityErrorCode | undefined
+      if (accountError.success) code = accountError.output.error.code
+      else if (adminError.success) code = adminError.output.error.code
+      throw new CloudAdminAPIError('domain', code)
     }
     const parsed = v.safeParse(schema, body)
     if (!parsed.success)
@@ -96,6 +108,45 @@ export function createCloudAdminAPIClient(options: CloudAdminAPIClientOptions = 
   return {
     accountStatus(signal?: AbortSignal) {
       return request('/account/status', cloudAccountStatusResponseSchema, { signal })
+    },
+    authenticationMethods(signal?: AbortSignal) {
+      return request('/account/authentication', cloudAuthenticationMethodsResponseSchema, {
+        signal
+      })
+    },
+    changePassword(currentPassword: string, newPassword: string, signal?: AbortSignal) {
+      return request(
+        '/account/authentication/change-password',
+        cloudAccountMutationResponseSchema,
+        {
+          method: 'POST',
+          body: JSON.stringify(
+            v.parse(cloudPasswordChangeSchema, { currentPassword, newPassword })
+          ),
+          signal
+        }
+      )
+    },
+    linkSocial(provider: 'google' | 'apple', callbackURL: string, signal?: AbortSignal) {
+      return request('/account/authentication/link-social', cloudSocialLinkResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudSocialLinkSchema, { provider, callbackURL })),
+        signal
+      })
+    },
+    unlinkAuthenticationMethod(methodId: string, signal?: AbortSignal) {
+      return request('/account/authentication/unlink', cloudAccountMutationResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudUnlinkAuthenticationMethodSchema, { methodId })),
+        signal
+      })
+    },
+    requestPasswordReset(email: string, redirectTo: string, signal?: AbortSignal) {
+      return request('/auth/request-password-reset', v.object({ status: v.boolean() }), {
+        method: 'POST',
+        body: JSON.stringify({ email, redirectTo }),
+        signal
+      })
     },
     session(signal?: AbortSignal) {
       return request('/session', cloudAdminSessionResponseSchema, { signal })

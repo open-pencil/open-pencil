@@ -21,6 +21,7 @@ export {
 } from '#cloud/admin'
 export {
   createAuthenticationEmailService,
+  createAccountAuthenticationService,
   createCloudAuthenticationRuntime,
   createBetterAuthAdapter,
   createCloudIdentityResolver,
@@ -31,6 +32,7 @@ export {
   type CloudIdentity,
   type CloudIdentityResolver,
   type CloudSessionResolver,
+  type AccountAuthenticationService,
   type AuthenticationEmailService,
   workspaceAccessControl,
   workspaceRoles,

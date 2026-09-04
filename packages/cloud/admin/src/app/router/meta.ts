@@ -13,6 +13,7 @@ export const cloudHeadKeySchema = v.picklist([
   'rejected',
   'revoked',
   'dashboard',
+  'security',
   'notFound',
   'enrollment',
   'users',
