@@ -88,7 +88,9 @@ export default {
     or: 'lub',
     forbiddenTitle: 'Wymagany dostęp administratora wdrożenia',
     forbiddenDescription:
-      'Twoje konto jest zalogowane, ale nie ma dostępu do administratora stanowiska.'
+      'Twoje konto jest zalogowane, ale nie ma dostępu do administratora stanowiska.',
+    mfaChallengeTitle: 'Potwierdź swoją tożsamość',
+    mfaChallengeDescription: 'Wprowadź kod z aplikacji uwierzytelniającej lub kod odzyskiwania.'
   },
   account: {
     pendingTitle: 'Twoje konto oczekuje na zatwierdzenie',
@@ -125,7 +127,29 @@ export default {
     changePasswordDescription: 'Zmiana hasła wyloguje pozostałe sesje.',
     currentPassword: 'Aktualne hasło',
     updatePassword: 'Zaktualizuj hasło',
-    passwordChanged: 'Hasło zostało zmienione, a pozostałe sesje wylogowane.'
+    passwordChanged: 'Hasło zostało zmienione, a pozostałe sesje wylogowane.',
+    mfaTitle: 'Uwierzytelnianie wieloskładnikowe',
+    mfaDescription: 'Chroń poufne operacje konta i administracji.',
+    mfaVerified: 'Ta sesja przeszła weryfikację wieloskładnikową.',
+    authenticatorApp: 'Aplikacja uwierzytelniająca',
+    authenticatorSetup: 'Zeskanuj kod QR, a następnie wpisz kod z aplikacji.',
+    authenticatorQRCode: 'Kod QR konfiguracji aplikacji uwierzytelniającej',
+    manualSetup: 'Wprowadź klucz konfiguracji ręcznie',
+    verificationCode: 'Kod weryfikacyjny',
+    verifyMFA: 'Zweryfikuj',
+    verifyWithPasskey: 'Zweryfikuj kluczem dostępu',
+    setUpAuthenticator: 'Skonfiguruj aplikację',
+    recoveryCodes: 'Kody odzyskiwania',
+    recoveryCodesDescription: 'Przechowuj te jednorazowe kody w bezpiecznym miejscu.',
+    recoveryCodesAcknowledgement: 'Kody odzyskiwania zostały zapisane w bezpiecznym miejscu.',
+    recoveryCodesSaved: 'Kody zapisane',
+    recoveryCode: 'Kod odzyskiwania',
+    useRecoveryCode: 'Użyj kodu odzyskiwania',
+    passkeys: 'Klucze dostępu',
+    unnamedPasskey: 'Klucz dostępu bez nazwy',
+    passkeyName: 'Nazwa klucza dostępu',
+    addPasskey: 'Dodaj klucz dostępu',
+    removePasskey: 'Usuń'
   },
   admin: {
     enrollment: 'Zapisy',
@@ -178,6 +202,7 @@ export default {
     authorizationRequired: 'Wymagany jest dostęp administratora wdrożenia.',
     invalidEnrollmentTransition: 'Ten stan rejestracji uległ zmianie. Odśwież i spróbuj ponownie.',
     lastAdminRequired: 'Wymagany jest co najmniej jeden aktywny administrator wdrożenia.',
+    mfaRequired: 'Skonfiguruj uwierzytelnianie wieloskładnikowe przed kontynuowaniem.',
     selfActionForbidden: 'Nie możesz wykonać tej czynności na własny rachunek.',
     emailRegenerationUnavailable:
       'Tej wiadomości e-mail nie można wygenerować ponownie z bieżących rekordów.',
@@ -193,6 +218,8 @@ export default {
     invalidResetLink: 'Link jest nieprawidłowy lub wygasł.',
     rateLimited: 'Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.',
     credentialUnknown: 'Nie udało się ukończyć żądania. Spróbuj ponownie.',
+    mfaFailed: 'Nie udało się zaktualizować uwierzytelniania wieloskładnikowego.',
+    mfaInvalidCode: 'Kod weryfikacyjny jest nieprawidłowy lub wygasł.',
     currentPasswordInvalid: 'Aktualne hasło jest nieprawidłowe.',
     lastAuthenticationMethod: 'Połącz inną metodę logowania przed odłączeniem tej.',
     sessionNotFresh: 'Zaloguj się ponownie przed zmianą tego ustawienia bezpieczeństwa.',
@@ -213,6 +240,8 @@ export default {
     forgotPasswordDescription: 'Poproś o link do zresetowania hasła OpenPencil Cloud.',
     resetPasswordTitle: 'Zresetuj hasło',
     resetPasswordDescription: 'Wybierz nowe hasło OpenPencil Cloud.',
+    mfaChallengeTitle: 'Weryfikacja wieloskładnikowa',
+    mfaChallengeDescription: 'Potwierdź swoją tożsamość, aby kontynuować.',
     pendingTitle: 'Oczekuje na zatwierdzenie',
     pendingDescription: 'Konto OpenPencil Cloud oczekuje na zatwierdzenie administratora.',
     rejectedTitle: 'Wniosek odrzucony',

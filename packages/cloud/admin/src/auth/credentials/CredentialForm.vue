@@ -59,11 +59,15 @@ async function submit(): Promise<void> {
       })
       emit('verificationRequired', email.value)
     } else {
-      await service.signIn({
+      const result = await service.signIn({
         email: email.value,
         password: password.value,
         rememberMe: rememberMe.value
       })
+      if ('twoFactorRequired' in result && result.twoFactorRequired) {
+        globalThis.location.assign('/auth/two-factor')
+        return
+      }
       emit('verified')
     }
   } catch (cause) {

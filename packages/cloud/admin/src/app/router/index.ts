@@ -7,6 +7,7 @@ import UsersView from '#admin/admin/users/UsersView.vue'
 import DashboardView from '#admin/app/dashboard/DashboardView.vue'
 import AuthView from '#admin/auth/AuthView.vue'
 import ForgotPasswordView from '#admin/auth/ForgotPasswordView.vue'
+import MFAChallengeView from '#admin/auth/MFAChallengeView.vue'
 import PendingView from '#admin/auth/PendingView.vue'
 import ResetPasswordView from '#admin/auth/ResetPasswordView.vue'
 import RestrictedView from '#admin/auth/RestrictedView.vue'
@@ -57,6 +58,13 @@ const routes = [
     component: ForgotPasswordView,
     beforeEnter: resolveAnonymous,
     meta: { headKey: 'forgotPassword', indexing: 'private' }
+  },
+  {
+    path: '/auth/two-factor',
+    name: 'mfa-challenge',
+    component: MFAChallengeView,
+    beforeEnter: requireActiveAccount,
+    meta: { headKey: 'mfaChallenge', indexing: 'private' }
   },
   {
     path: '/auth/reset-password',

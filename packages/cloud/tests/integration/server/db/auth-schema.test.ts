@@ -22,7 +22,8 @@ async function createRequiredAuthSchema(database: Awaited<ReturnType<typeof test
         ['created_at', 'timestamptz'],
         ['updated_at', 'timestamptz'],
         ['role', 'text'],
-        ['banned', 'boolean']
+        ['banned', 'boolean'],
+        ['two_factor_enabled', 'boolean']
       ]
     ],
     [
@@ -65,6 +66,30 @@ async function createRequiredAuthSchema(database: Awaited<ReturnType<typeof test
       ]
     ],
     [
+      'two_factor',
+      [
+        ['id', 'text'],
+        ['secret', 'text'],
+        ['backup_codes', 'text'],
+        ['user_id', 'text'],
+        ['verified', 'boolean'],
+        ['failed_verification_count', 'integer'],
+        ['locked_until', 'timestamptz']
+      ]
+    ],
+    [
+      'passkey',
+      [
+        ['id', 'text'],
+        ['public_key', 'text'],
+        ['user_id', 'text'],
+        ['credential_id', 'text'],
+        ['counter', 'integer'],
+        ['device_type', 'text'],
+        ['backed_up', 'boolean']
+      ]
+    ],
+    [
       'rate_limit',
       [
         ['id', 'text'],
@@ -88,7 +113,7 @@ describe('Better Auth schema ledger', () => {
     const database = await testDatabase()
     let runs = 0
     const migration = {
-      schemaVersion: '1.7.2',
+      schemaVersion: '1.7.2+mfa.1',
       async run() {
         runs++
         await createRequiredAuthSchema(database)
@@ -100,7 +125,7 @@ describe('Better Auth schema ledger', () => {
       expect(runs).toBe(1)
       expect(
         await database.selectFrom('cloudAuthSchema').selectAll().executeTakeFirstOrThrow()
-      ).toMatchObject({ id: 'better-auth', version: '1.7.2' })
+      ).toMatchObject({ id: 'better-auth', version: '1.7.2+mfa.1' })
     } finally {
       await database.destroy()
     }
@@ -112,14 +137,14 @@ describe('Better Auth schema ledger', () => {
       await migrateCloudDatabase(database)
       await createRequiredAuthSchema(database)
       await migrateCloudDatabase(database, {
-        schemaVersion: '1.7.2',
+        schemaVersion: '1.7.2+mfa.1',
         run: () => {
           throw new Error('Complete schemas must be adopted')
         }
       })
       expect(
         await database.selectFrom('cloudAuthSchema').select('version').executeTakeFirstOrThrow()
-      ).toEqual({ version: '1.7.2' })
+      ).toEqual({ version: '1.7.2+mfa.1' })
     } finally {
       await database.destroy()
     }

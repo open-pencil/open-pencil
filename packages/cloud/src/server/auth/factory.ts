@@ -1,18 +1,27 @@
 import { createEnrollmentService, type EnrollmentService } from '#cloud/admin/enrollment/service'
 import type { CloudServerConfig } from '#cloud/server/config'
 import type { CloudDatabase } from '#cloud/server/db'
+import { passkey } from '@better-auth/passkey'
 import { APIError, betterAuth, type BetterAuthOptions } from 'better-auth'
 import { getMigrations } from 'better-auth/db/migration'
-import { admin, bearer, captcha, deviceAuthorization, haveIBeenPwned } from 'better-auth/plugins'
+import {
+  admin,
+  bearer,
+  captcha,
+  deviceAuthorization,
+  haveIBeenPwned,
+  twoFactor
+} from 'better-auth/plugins'
 import { importPKCS8, SignJWT } from 'jose'
 import type { Kysely } from 'kysely'
 
 import type { CloudAuthAdapter } from './adapter'
 import type { AuthenticationEmailService } from './email'
+import { createMFAAssuranceService } from './mfa-assurance'
 
 const APPLE_AUDIENCE = 'https://appleid.apple.com'
 const APPLE_SECRET_LIFETIME_SECONDS = 180 * 24 * 60 * 60
-const BETTER_AUTH_SCHEMA_VERSION = '1.7.2'
+const BETTER_AUTH_SCHEMA_VERSION = '1.7.2+mfa.1'
 const ACCOUNT_SECURITY_FRESH_AGE_SECONDS = 10 * 60
 
 async function generateAppleClientSecret(config: CloudServerConfig): Promise<string> {
@@ -63,6 +72,55 @@ function socialProviders(config: CloudServerConfig): BetterAuthOptions['socialPr
   return providers
 }
 
+function assuranceMethod(path: string): 'totp' | 'recovery-code' | 'passkey' | null {
+  if (path === '/api/auth/two-factor/verify-totp') return 'totp'
+  if (path === '/api/auth/two-factor/verify-backup-code') return 'recovery-code'
+  if (path === '/api/auth/passkey/verify-authentication') return 'passkey'
+  return null
+}
+
+async function recordResponseAssurance(
+  response: Response,
+  method: 'totp' | 'recovery-code' | 'passkey',
+  database: Kysely<CloudDatabase>,
+  assurance: ReturnType<typeof createMFAAssuranceService>
+): Promise<void> {
+  const signedToken = response.headers.get('set-auth-token')
+  const token = signedToken?.split('.', 1)[0]
+  if (!token) return
+  const session = await database
+    .selectFrom('session')
+    .select(['id', 'userId'])
+    .where('token', '=', token)
+    .executeTakeFirst()
+  if (session) await assurance.record({ sessionId: session.id, userId: session.userId, method })
+}
+
+async function verifySecondFactor(
+  auth: { handler(request: Request): Promise<Response> },
+  config: CloudServerConfig,
+  database: Kysely<CloudDatabase>,
+  assurance: ReturnType<typeof createMFAAssuranceService>,
+  headers: Headers,
+  code: string,
+  method: 'totp' | 'recovery-code'
+): Promise<Response> {
+  const path = method === 'totp' ? 'verify-totp' : 'verify-backup-code'
+  const response = await auth.handler(
+    new Request(new URL(`/api/auth/two-factor/${path}`, config.publicURL), {
+      method: 'POST',
+      headers: new Headers({
+        ...Object.fromEntries(headers),
+        'Content-Type': 'application/json'
+      }),
+      body: JSON.stringify({ code, trustDevice: false })
+    })
+  )
+  if (!response.ok) throw APIError.fromStatus(response.status as 401)
+  await recordResponseAssurance(response, method, database, assurance)
+  return response
+}
+
 export type CloudAuthRuntimeOptions = {
   email?: AuthenticationEmailService
   runInBackground?: (promise: Promise<unknown>) => void
@@ -75,6 +133,7 @@ export function createBetterAuthAdapter(
   runtime: CloudAuthRuntimeOptions = {}
 ): CloudAuthAdapter {
   const authenticationEmail = runtime.email
+  const assurance = createMFAAssuranceService(database, config)
   const auth = betterAuth({
     appName: 'OpenPencil Cloud',
     baseURL: config.publicURL,
@@ -206,6 +265,21 @@ export function createBetterAuthAdapter(
           ]
         : []),
       ...(config.compromisedPasswordCheck ? [haveIBeenPwned()] : []),
+      twoFactor({
+        issuer: 'OpenPencil Cloud',
+        trustDeviceMaxAge: config.mfaTrustedDeviceDays * 24 * 60 * 60,
+        allowPasswordless: true,
+        totpOptions: { disable: !config.totpEnabled, allowPasswordless: true },
+        backupCodeOptions: {
+          disable: !config.totpEnabled || !config.recoveryCodesEnabled,
+          storeBackupCodes: 'encrypted'
+        }
+      }),
+      passkey({
+        rpID: config.passkeyRPID ?? new URL(config.publicURL).hostname,
+        rpName: config.passkeyRPName,
+        origin: config.passkeyOrigin ?? new URL(config.publicURL).origin
+      }),
       admin(
         config.deploymentAdminUserIds.length > 0
           ? { adminUserIds: config.deploymentAdminUserIds }
@@ -240,7 +314,13 @@ export function createBetterAuthAdapter(
   }
 
   return {
-    handler: auth.handler,
+    handler: async (request) => {
+      const response = await auth.handler(request)
+      const method = assuranceMethod(new URL(request.url).pathname)
+      if (response.ok && method)
+        await recordResponseAssurance(response, method, database, assurance)
+      return response
+    },
     resolveIdentity,
     async resolveSession(headers) {
       const identity = await resolveIdentity(headers)
@@ -323,6 +403,49 @@ export function createBetterAuthAdapter(
     },
     async setRole(headers, userId, role) {
       await auth.api.setRole({ headers, body: { userId, role } })
+    },
+    async mfaStatus(headers) {
+      const session = await auth.api.getSession({ headers, query: { disableCookieCache: true } })
+      if (!session) return null
+      const passkeys = await auth.api.listPasskeys({ headers })
+      return assurance.status({
+        sessionId: session.session.id,
+        userId: session.user.id,
+        deploymentRole: 'role' in session.user && session.user.role === 'admin' ? 'admin' : 'user',
+        twoFactorEnabled:
+          'twoFactorEnabled' in session.user && session.user.twoFactorEnabled === true,
+        passkeyCount: passkeys.length
+      })
+    },
+    async enableTOTP(headers, password) {
+      const response = await auth.api.enableTwoFactor({
+        headers,
+        body: { password, method: 'totp' }
+      })
+      if (response.method !== 'totp') throw new Error('TOTP setup was unavailable')
+      return { totpURI: response.totpURI, backupCodes: response.backupCodes }
+    },
+    async verifyTOTP(headers, code) {
+      return verifySecondFactor(auth, config, database, assurance, headers, code, 'totp')
+    },
+    async verifyRecoveryCode(headers, code) {
+      return verifySecondFactor(auth, config, database, assurance, headers, code, 'recovery-code')
+    },
+    async generateRecoveryCodes(headers, password) {
+      return (await auth.api.generateBackupCodes({ headers, body: { password } })).backupCodes
+    },
+    async disableTOTP(headers, password) {
+      await auth.api.disableTwoFactor({ headers, body: { password } })
+    },
+    async listPasskeys(headers) {
+      return (await auth.api.listPasskeys({ headers })).map((item) => ({
+        id: item.id,
+        name: item.name,
+        createdAt: item.createdAt
+      }))
+    },
+    async deletePasskey(headers, id) {
+      await auth.api.deletePasskey({ headers, body: { id } })
     },
     schemaVersion: BETTER_AUTH_SCHEMA_VERSION,
     async migrate() {

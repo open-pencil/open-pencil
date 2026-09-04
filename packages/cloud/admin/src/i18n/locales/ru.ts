@@ -87,7 +87,9 @@ export default {
     or: 'или',
     forbiddenTitle: 'Требуется доступ администратора развертывания',
     forbiddenDescription:
-      'Ваша учетная запись выполнила вход, но не имеет доступа администратора развертывания.'
+      'Ваша учетная запись выполнила вход, но не имеет доступа администратора развертывания.',
+    mfaChallengeTitle: 'Подтвердите личность',
+    mfaChallengeDescription: 'Введите код из приложения или код восстановления.'
   },
   account: {
     pendingTitle: 'Ваш аккаунт ожидает одобрения',
@@ -124,7 +126,29 @@ export default {
     changePasswordDescription: 'После смены пароля другие сессии будут завершены.',
     currentPassword: 'Текущий пароль',
     updatePassword: 'Обновить пароль',
-    passwordChanged: 'Пароль изменён, а другие сессии завершены.'
+    passwordChanged: 'Пароль изменён, а другие сессии завершены.',
+    mfaTitle: 'Многофакторная аутентификация',
+    mfaDescription: 'Защитите важные действия с аккаунтом и администрированием.',
+    mfaVerified: 'Эта сессия прошла многофакторную проверку.',
+    authenticatorApp: 'Приложение-аутентификатор',
+    authenticatorSetup: 'Отсканируйте QR-код и введите код из приложения.',
+    authenticatorQRCode: 'QR-код для настройки приложения-аутентификатора',
+    manualSetup: 'Ввести ключ настройки вручную',
+    verificationCode: 'Код подтверждения',
+    verifyMFA: 'Подтвердить',
+    verifyWithPasskey: 'Подтвердить с помощью ключа доступа',
+    setUpAuthenticator: 'Настроить приложение',
+    recoveryCodes: 'Коды восстановления',
+    recoveryCodesDescription: 'Сохраните эти одноразовые коды в надёжном месте.',
+    recoveryCodesAcknowledgement: 'Я сохранил коды восстановления в надёжном месте.',
+    recoveryCodesSaved: 'Коды сохранены',
+    recoveryCode: 'Код восстановления',
+    useRecoveryCode: 'Использовать код восстановления',
+    passkeys: 'Ключи доступа',
+    unnamedPasskey: 'Ключ доступа без имени',
+    passkeyName: 'Название ключа доступа',
+    addPasskey: 'Добавить ключ доступа',
+    removePasskey: 'Удалить'
   },
   admin: {
     enrollment: 'Заявки на доступ',
@@ -179,6 +203,7 @@ export default {
     invalidEnrollmentTransition:
       'Это состояние регистрации изменилось. Обновите и повторите попытку.',
     lastAdminRequired: 'Требуется хотя бы один активный администратор развертывания.',
+    mfaRequired: 'Настройте многофакторную аутентификацию, прежде чем продолжить.',
     selfActionForbidden: 'Вы не можете выполнить это действие за свой счет.',
     emailRegenerationUnavailable: 'Это письмо не может быть восстановлено из текущих записей.',
     unknown: 'Что-то пошло не так, пожалуйста, попробуйте еще раз.',
@@ -193,6 +218,8 @@ export default {
     invalidResetLink: 'Ссылка недействительна или устарела.',
     rateLimited: 'Слишком много попыток. Подождите и повторите.',
     credentialUnknown: 'Не удалось выполнить запрос. Повторите попытку.',
+    mfaFailed: 'Не удалось обновить многофакторную аутентификацию.',
+    mfaInvalidCode: 'Код подтверждения недействителен или просрочен.',
     currentPasswordInvalid: 'Текущий пароль указан неверно.',
     lastAuthenticationMethod: 'Подключите другой способ входа перед отключением этого.',
     sessionNotFresh: 'Войдите снова перед изменением этой настройки безопасности.',
@@ -214,6 +241,8 @@ export default {
     forgotPasswordDescription: 'Запросите ссылку для сброса пароля OpenPencil Cloud.',
     resetPasswordTitle: 'Сброс пароля',
     resetPasswordDescription: 'Выберите новый пароль OpenPencil Cloud.',
+    mfaChallengeTitle: 'Многофакторная проверка',
+    mfaChallengeDescription: 'Подтвердите свою личность, чтобы продолжить.',
     pendingTitle: 'Ожидает одобрения',
     pendingDescription: 'Аккаунт OpenPencil Cloud ожидает одобрения администратора.',
     rejectedTitle: 'Заявка отклонена',

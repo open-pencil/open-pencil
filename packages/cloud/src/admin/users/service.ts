@@ -3,7 +3,11 @@ import type { CloudAuthAdapter } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import type { Kysely } from 'kysely'
 
-export function createAdminUserService(database: Kysely<CloudDatabase>, auth: CloudAuthAdapter) {
+export function createAdminUserService(
+  database: Kysely<CloudDatabase>,
+  auth: CloudAuthAdapter,
+  options: { requireMFA?: boolean } = {}
+) {
   async function audit(actorId: string, action: string, userId: string): Promise<void> {
     await database
       .insertInto('cloudAdminAuditEvent')
@@ -75,6 +79,24 @@ export function createAdminUserService(database: Kysely<CloudDatabase>, auth: Cl
       enabled: boolean
     ): Promise<void> {
       if (!enabled) await requireSafeTarget(actorId, userId, 'demote')
+      if (enabled && options.requireMFA) {
+        const user = await database
+          .selectFrom('user')
+          .select('twoFactorEnabled')
+          .where('id', '=', userId)
+          .executeTakeFirst()
+        const passkey = await database
+          .selectFrom('passkey')
+          .select('id')
+          .where('userId', '=', userId)
+          .executeTakeFirst()
+        if (!user?.twoFactorEnabled && !passkey) {
+          throw new AdminDomainError(
+            'mfa_required',
+            'Users must enroll MFA before becoming deployment administrators'
+          )
+        }
+      }
       await auth.setRole(headers, userId, enabled ? 'admin' : 'user')
       await audit(actorId, enabled ? 'user.admin-granted' : 'user.admin-revoked', userId)
     }

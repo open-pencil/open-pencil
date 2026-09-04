@@ -26,6 +26,19 @@ export const authenticationMethodsQueryOptions = () =>
     queryFn: ({ signal }) => cloudAdminAPI.authenticationMethods(signal)
   })
 
+export const mfaStatusQueryOptions = () =>
+  queryOptions({
+    queryKey: cloudQueryKeys.mfa,
+    queryFn: ({ signal }) => cloudAdminAPI.mfaStatus(signal),
+    staleTime: 0
+  })
+
+export const passkeysQueryOptions = () =>
+  queryOptions({
+    queryKey: cloudQueryKeys.passkeys,
+    queryFn: ({ signal }) => cloudAdminAPI.passkeys(signal)
+  })
+
 export const workspacesQueryOptions = () =>
   queryOptions({
     queryKey: cloudQueryKeys.workspaces,

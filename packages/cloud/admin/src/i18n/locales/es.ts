@@ -88,7 +88,9 @@ export default {
     or: 'o',
     forbiddenTitle: 'Se requiere acceso de administrador de implementación',
     forbiddenDescription:
-      'Su cuenta ha iniciado sesión, pero no tiene acceso de administrador de implementación.'
+      'Su cuenta ha iniciado sesión, pero no tiene acceso de administrador de implementación.',
+    mfaChallengeTitle: 'Verifique su identidad',
+    mfaChallengeDescription: 'Introduzca un código del autenticador o de recuperación.'
   },
   account: {
     pendingTitle: 'Su cuenta está pendiente de aprobación',
@@ -124,7 +126,29 @@ export default {
     changePasswordDescription: 'Al cambiar la contraseña se cerrarán las demás sesiones.',
     currentPassword: 'Contraseña actual',
     updatePassword: 'Actualizar contraseña',
-    passwordChanged: 'Su contraseña cambió y se cerraron las demás sesiones.'
+    passwordChanged: 'Su contraseña cambió y se cerraron las demás sesiones.',
+    mfaTitle: 'Autenticación multifactor',
+    mfaDescription: 'Proteja las acciones confidenciales de cuenta y administración.',
+    mfaVerified: 'Esta sesión completó la verificación multifactor.',
+    authenticatorApp: 'Aplicación de autenticación',
+    authenticatorSetup: 'Escanee el código QR e introduzca el código del autenticador.',
+    authenticatorQRCode: 'Código QR para configurar el autenticador',
+    manualSetup: 'Introducir una clave de configuración manualmente',
+    verificationCode: 'Código de verificación',
+    verifyMFA: 'Verificar',
+    verifyWithPasskey: 'Verificar con llave de acceso',
+    setUpAuthenticator: 'Configurar autenticador',
+    recoveryCodes: 'Códigos de recuperación',
+    recoveryCodesDescription: 'Guarde estos códigos de un solo uso en un lugar seguro.',
+    recoveryCodesAcknowledgement: 'He guardado estos códigos de recuperación en un lugar seguro.',
+    recoveryCodesSaved: 'He guardado los códigos',
+    recoveryCode: 'Código de recuperación',
+    useRecoveryCode: 'Usar código de recuperación',
+    passkeys: 'Claves de acceso',
+    unnamedPasskey: 'Clave de acceso sin nombre',
+    passkeyName: 'Nombre de la clave de acceso',
+    addPasskey: 'Añadir clave de acceso',
+    removePasskey: 'Eliminar'
   },
   admin: {
     enrollment: 'Inscripción',
@@ -179,6 +203,7 @@ export default {
     invalidEnrollmentTransition:
       'Este estado de inscripción ha cambiado. Actualiza e inténtalo de nuevo.',
     lastAdminRequired: 'Se requiere al menos un administrador de implementación activo.',
+    mfaRequired: 'Configure la autenticación multifactor antes de continuar.',
     selfActionForbidden: 'No puede realizar esa acción por su propia cuenta.',
     emailRegenerationUnavailable:
       'Este correo electrónico no se puede regenerar a partir de los registros actuales.',
@@ -195,6 +220,8 @@ export default {
     invalidResetLink: 'El enlace no es válido o ha caducado.',
     rateLimited: 'Demasiados intentos. Espera un momento y vuelve a intentarlo.',
     credentialUnknown: 'No pudimos completar la solicitud. Inténtalo de nuevo.',
+    mfaFailed: 'No se pudo actualizar la autenticación multifactor.',
+    mfaInvalidCode: 'El código de verificación no es válido o ha caducado.',
     currentPasswordInvalid: 'La contraseña actual es incorrecta.',
     lastAuthenticationMethod: 'Conecte otro método de acceso antes de desvincular este.',
     sessionNotFresh: 'Vuelva a iniciar sesión antes de cambiar esta opción de seguridad.',
@@ -217,6 +244,8 @@ export default {
       'Solicita un enlace para restablecer tu contraseña de OpenPencil Cloud.',
     resetPasswordTitle: 'Restablecer contraseña',
     resetPasswordDescription: 'Elige una nueva contraseña de OpenPencil Cloud.',
+    mfaChallengeTitle: 'Verificación multifactor',
+    mfaChallengeDescription: 'Verifique su identidad para continuar.',
     pendingTitle: 'Pendiente de aprobación',
     pendingDescription: 'Su cuenta de OpenPencil Cloud está pendiente de aprobación.',
     rejectedTitle: 'Solicitud rechazada',

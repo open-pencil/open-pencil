@@ -63,6 +63,26 @@ export function cloudServerConfigFromEnvironment(environment: CloudEnvironment):
       booleanEnvironmentSchema,
       environment.OPENPENCIL_CLOUD_COMPROMISED_PASSWORD_CHECK
     ),
+    deploymentAdminMFARequired: v.parse(
+      booleanEnvironmentSchema,
+      environment.OPENPENCIL_CLOUD_ADMIN_MFA_REQUIRED
+    ),
+    totpEnabled: v.parse(booleanEnvironmentSchema, environment.OPENPENCIL_CLOUD_TOTP_ENABLED),
+    passkeysEnabled: v.parse(
+      booleanEnvironmentSchema,
+      environment.OPENPENCIL_CLOUD_PASSKEYS_ENABLED
+    ),
+    recoveryCodesEnabled: v.parse(
+      booleanEnvironmentSchema,
+      environment.OPENPENCIL_CLOUD_RECOVERY_CODES_ENABLED
+    ),
+    mfaTrustedDeviceDays: v.parse(
+      integerEnvironmentSchema,
+      environment.OPENPENCIL_CLOUD_MFA_TRUSTED_DEVICE_DAYS
+    ),
+    passkeyRPID: environment.OPENPENCIL_CLOUD_PASSKEY_RP_ID,
+    passkeyRPName: environment.OPENPENCIL_CLOUD_PASSKEY_RP_NAME,
+    passkeyOrigin: environment.OPENPENCIL_CLOUD_PASSKEY_ORIGIN,
     captchaProvider: environment.OPENPENCIL_CLOUD_CAPTCHA_PROVIDER,
     captchaSiteKey: environment.OPENPENCIL_CLOUD_CAPTCHA_SITE_KEY,
     captchaSecretKey: environment.TURNSTILE_SECRET_KEY,

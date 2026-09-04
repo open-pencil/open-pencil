@@ -10,34 +10,40 @@ export function configuredSocialProviders(config: CloudServerConfig): Array<'app
 }
 
 export function cloudDiscoveryFromConfig(config: CloudServerConfig): CloudDiscovery {
+  const authentication: CloudDiscovery['authentication'] = {
+    socialProviders: configuredSocialProviders(config),
+    enterpriseSSO: false,
+    enrollmentMode: config.enrollmentMode
+  }
+  if (config.emailPasswordEnabled) {
+    authentication.emailPassword = {
+      signIn: true,
+      signUp: config.emailPasswordSignUpEnabled,
+      minimumPasswordLength: config.emailPasswordMinimumLength
+    }
+    if (config.captchaProvider && config.captchaSiteKey) {
+      authentication.emailPassword.captcha = {
+        provider: config.captchaProvider,
+        siteKey: config.captchaSiteKey
+      }
+    }
+  }
+  if (config.totpEnabled || config.passkeysEnabled) {
+    authentication.mfa = {
+      deploymentAdminRequired: config.deploymentAdminMFARequired,
+      totp: config.totpEnabled,
+      passkeys: config.passkeysEnabled,
+      recoveryCodes: config.totpEnabled && config.recoveryCodesEnabled
+    }
+  }
+
   return parseCloudDiscovery({
     protocolVersion: CLOUD_PROTOCOL_VERSION,
     deployment: config.deployment,
     apiURL: new URL('/api', config.publicURL).href.replace(/\/$/, ''),
     authURL: new URL('/api/auth', config.publicURL).href.replace(/\/$/, ''),
     appURL: config.appURL ?? config.publicURL,
-    authentication: {
-      ...(config.emailPasswordEnabled
-        ? {
-            emailPassword: {
-              signIn: true,
-              signUp: config.emailPasswordSignUpEnabled,
-              minimumPasswordLength: config.emailPasswordMinimumLength,
-              ...(config.captchaProvider && config.captchaSiteKey
-                ? {
-                    captcha: {
-                      provider: config.captchaProvider,
-                      siteKey: config.captchaSiteKey
-                    }
-                  }
-                : {})
-            }
-          }
-        : {}),
-      socialProviders: configuredSocialProviders(config),
-      enterpriseSSO: false,
-      enrollmentMode: config.enrollmentMode
-    },
+    authentication,
     capabilities: {
       documents: true,
       workspaces: true,

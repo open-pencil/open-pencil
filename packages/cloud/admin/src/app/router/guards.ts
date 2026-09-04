@@ -1,6 +1,6 @@
 import { CloudAdminAPIError } from '#admin/api/client'
 import { queryClient } from '#admin/app/query/client'
-import { accountQueryOptions } from '#admin/app/query/options'
+import { accountQueryOptions, mfaStatusQueryOptions } from '#admin/app/query/options'
 import type { NavigationGuard } from 'vue-router'
 
 function signInRedirect(path: string) {
@@ -55,5 +55,10 @@ export const requireDeploymentAdmin: NavigationGuard = async (to) => {
   const active = await activeAccountDestination(to.fullPath)
   if (active !== true) return active
   const account = await queryClient.ensureQueryData(accountQueryOptions())
-  return account.user.deploymentRole === 'admin' ? true : { name: 'admin-forbidden' }
+  if (account.user.deploymentRole !== 'admin') return { name: 'admin-forbidden' }
+  const mfa = await queryClient.ensureQueryData(mfaStatusQueryOptions())
+  if (!mfa.mfa.enabled) {
+    return { name: 'account-security', query: { setup: 'mfa', redirect: to.fullPath } }
+  }
+  return mfa.mfa.required ? { name: 'mfa-challenge', query: { redirect: to.fullPath } } : true
 }

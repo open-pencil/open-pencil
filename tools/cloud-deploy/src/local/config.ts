@@ -30,6 +30,18 @@ export function localCloudDeployment(config: LocalCloudDevelopmentConfig): Cloud
         password_reset_link_expires_minutes: 60,
         compromised_password_check: false
       },
+      mfa: {
+        deployment_admin_required: false,
+        totp_enabled: true,
+        passkeys_enabled: true,
+        recovery_codes_enabled: true,
+        trusted_device_days: 14
+      },
+      passkeys: {
+        rp_id: new URL(config.cloudURL).hostname,
+        rp_name: 'OpenPencil Cloud',
+        origin: config.cloudURL
+      },
       trusted_proxies: { headers: [], addresses: [] }
     },
     object_storage: {

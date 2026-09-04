@@ -7,6 +7,7 @@ export type CredentialAuthErrorCode =
   | 'password_too_short'
   | 'password_too_long'
   | 'invalid_token'
+  | 'mfa_required'
   | 'rate_limited'
   | 'unknown'
 
@@ -30,6 +31,7 @@ function credentialError(error: BetterAuthError | null | undefined): CredentialA
   if (code === 'PASSWORD_TOO_SHORT') return new CredentialAuthError('password_too_short')
   if (code === 'PASSWORD_TOO_LONG') return new CredentialAuthError('password_too_long')
   if (code === 'INVALID_TOKEN') return new CredentialAuthError('invalid_token')
+  if (code === 'mfa_required') return new CredentialAuthError('mfa_required')
   return new CredentialAuthError('unknown')
 }
 
@@ -42,6 +44,9 @@ export function createCredentialAuthService(
     async signIn(input: { email: string; password: string; rememberMe: boolean }) {
       const result = await auth.signIn.email(input)
       if (result.error) throw credentialError(result.error)
+      if ('twoFactorRedirect' in result.data && result.data.twoFactorRedirect === true) {
+        return { twoFactorRequired: true as const }
+      }
       return result.data
     },
     async signUp(input: { name: string; email: string; password: string; callbackURL: string }) {

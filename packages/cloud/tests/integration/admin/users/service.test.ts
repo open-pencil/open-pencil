@@ -5,6 +5,7 @@ import { createCloudTestDatabase } from '#cloud-test/helpers/database'
 import { createAdminUserService } from '@open-pencil/cloud/server'
 
 const ADMIN_ID = '11111111-1111-4111-8111-111111111111'
+const USER_ID = '22222222-2222-4222-8222-222222222222'
 
 function complete(): Promise<void> {
   return Promise.resolve()
@@ -49,6 +50,30 @@ function authAdapter() {
     async unlinkAuthenticationMethod() {
       return complete()
     },
+    async mfaStatus() {
+      return null
+    },
+    async enableTOTP() {
+      return { totpURI: '', backupCodes: [] }
+    },
+    async verifyTOTP() {
+      return undefined
+    },
+    async verifyRecoveryCode() {
+      return undefined
+    },
+    async generateRecoveryCodes() {
+      return []
+    },
+    async disableTOTP() {
+      return complete()
+    },
+    async listPasskeys() {
+      return []
+    },
+    async deletePasskey() {
+      return complete()
+    },
     async migrate() {
       return complete()
     }
@@ -61,15 +86,26 @@ describe('deployment admin user safety', () => {
     try {
       await runtime.database
         .insertInto('user')
-        .values({
-          id: ADMIN_ID,
-          name: 'Admin',
-          email: 'admin@example.com',
-          emailVerified: true,
-          image: null,
-          role: 'admin',
-          banned: false
-        })
+        .values([
+          {
+            id: ADMIN_ID,
+            name: 'Admin',
+            email: 'admin@example.com',
+            emailVerified: true,
+            image: null,
+            role: 'admin',
+            banned: false
+          },
+          {
+            id: USER_ID,
+            name: 'User',
+            email: 'user@example.com',
+            emailVerified: true,
+            image: null,
+            role: 'user',
+            banned: false
+          }
+        ])
         .execute()
       const service = createAdminUserService(runtime.database, authAdapter())
       await expect(service.ban(new Headers(), ADMIN_ID, ADMIN_ID)).rejects.toThrow(
@@ -78,6 +114,21 @@ describe('deployment admin user safety', () => {
       await expect(service.setAdmin(new Headers(), 'other-admin', ADMIN_ID, false)).rejects.toThrow(
         'last deployment administrator'
       )
+
+      const protectedService = createAdminUserService(runtime.database, authAdapter(), {
+        requireMFA: true
+      })
+      await expect(
+        protectedService.setAdmin(new Headers(), ADMIN_ID, USER_ID, true)
+      ).rejects.toThrow('enroll MFA')
+      await runtime.database
+        .updateTable('user')
+        .set({ twoFactorEnabled: true })
+        .where('id', '=', USER_ID)
+        .execute()
+      await expect(
+        protectedService.setAdmin(new Headers(), ADMIN_ID, USER_ID, true)
+      ).resolves.toBeUndefined()
     } finally {
       await runtime.close()
     }

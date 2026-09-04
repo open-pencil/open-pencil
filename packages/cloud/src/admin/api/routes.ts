@@ -12,6 +12,7 @@ import { adminErrorStatus, AdminDomainError } from '#cloud/admin/errors'
 import type { AdminOperationsService } from '#cloud/admin/operations/service'
 import type { AdminUserService } from '#cloud/admin/users/service'
 import type { CloudAPIEnvironment } from '#cloud/server/api'
+import type { CloudAuthAdapter } from '#cloud/server/auth'
 import type { CloudDatabase } from '#cloud/server/db'
 import { CLOUD_RATE_LIMITS, createActorRateLimiter } from '#cloud/server/rate-limit'
 import { validatedJSON } from '#cloud/server/validation'
@@ -30,20 +31,22 @@ export type CloudAdminServices = {
 export function createCloudAdminRoutes(
   services: CloudAdminServices,
   trustedOrigins: ReadonlySet<string>,
-  rateLimit: {
+  security: {
+    auth: CloudAuthAdapter
     database: Kysely<CloudDatabase>
+    requireMFA: boolean
     secret: string
   }
 ) {
   const adminRead = createActorRateLimiter(
-    rateLimit.database,
-    rateLimit.secret,
+    security.database,
+    security.secret,
     CLOUD_RATE_LIMITS.adminRead,
     (context) => context.req.method !== 'GET'
   )
   const adminMutation = createActorRateLimiter(
-    rateLimit.database,
-    rateLimit.secret,
+    security.database,
+    security.secret,
     CLOUD_RATE_LIMITS.adminMutation,
     (context) => context.req.method === 'GET'
   )
@@ -51,8 +54,15 @@ export function createCloudAdminRoutes(
     .use('*', requireTrustedMutationOrigin(trustedOrigins))
     .use('*', async (context, next) => {
       const actor = context.get('actor')
-      if (actor.deploymentRole !== 'admin')
+      if (actor.deploymentRole !== 'admin') {
         return context.json({ error: { code: 'forbidden' as const } }, 403)
+      }
+      if (security.requireMFA) {
+        const status = await security.auth.mfaStatus(context.req.raw.headers)
+        if (!status?.assured) {
+          return context.json({ error: { code: 'mfa_required' as const } }, 403)
+        }
+      }
       return next()
     })
     .use('*', adminRead)

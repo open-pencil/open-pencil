@@ -22,7 +22,15 @@ export const cloudAuthenticationSchema = v.object({
   ),
   socialProviders: v.array(v.picklist(['apple', 'google'])),
   enterpriseSSO: v.boolean(),
-  enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open')
+  enrollmentMode: v.optional(v.picklist(['open', 'approval', 'closed']), 'open'),
+  mfa: v.optional(
+    v.object({
+      deploymentAdminRequired: v.boolean(),
+      totp: v.boolean(),
+      passkeys: v.boolean(),
+      recoveryCodes: v.boolean()
+    })
+  )
 })
 export type CloudAuthentication = v.InferOutput<typeof cloudAuthenticationSchema>
 

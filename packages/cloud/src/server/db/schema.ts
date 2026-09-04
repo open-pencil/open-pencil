@@ -123,8 +123,40 @@ export interface AuthUserTable {
   banned: Generated<boolean | null>
   banReason: Generated<string | null>
   banExpires: TimestampColumn | null
+  twoFactorEnabled: Generated<boolean>
   createdAt: TimestampColumn
   updatedAt: TimestampColumn
+}
+
+export interface TwoFactorTable {
+  id: string
+  secret: string
+  backupCodes: string
+  userId: string
+  verified: Generated<boolean>
+  failedVerificationCount: Generated<number>
+  lockedUntil: TimestampColumn | null
+}
+
+export interface PasskeyTable {
+  id: string
+  name: string | null
+  publicKey: string
+  userId: string
+  credentialID: string
+  counter: number
+  deviceType: string
+  backedUp: boolean
+  transports: string | null
+  createdAt: TimestampColumn
+  aaguid: string | null
+}
+
+export interface CloudMFAAssuranceTable {
+  sessionId: string
+  userId: string
+  method: 'totp' | 'recovery-code' | 'passkey'
+  verifiedAt: TimestampColumn
 }
 
 export interface DocumentCollaborationStateTable {
@@ -233,6 +265,9 @@ export interface CloudAuthSchemaTable {
 export interface CloudDatabase {
   account: Account
   session: Session
+  twoFactor: TwoFactorTable
+  passkey: PasskeyTable
+  cloudMfaAssurance: CloudMFAAssuranceTable
   user: AuthUserTable
   cloudAuthSchema: CloudAuthSchemaTable
   cloudEnrollment: CloudEnrollmentTable

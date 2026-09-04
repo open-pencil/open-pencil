@@ -21,6 +21,18 @@ trusted_origins = ["https://app.example.com"]
 [authentication]
 enrollment_mode = "approval"
 
+[authentication.mfa]
+deployment_admin_required = true
+totp_enabled = true
+passkeys_enabled = true
+recovery_codes_enabled = true
+trusted_device_days = 7
+
+[authentication.passkeys]
+rp_id = "cloud.example.com"
+rp_name = "OpenPencil Cloud"
+origin = "https://cloud.example.com"
+
 [authentication.email_password]
 enabled = true
 sign_up = false
@@ -109,6 +121,14 @@ describe('Cloud TOML deployment configuration', () => {
       emailVerificationExpiresIn: 1800,
       passwordResetExpiresIn: 2700,
       compromisedPasswordCheck: true,
+      deploymentAdminMFARequired: true,
+      totpEnabled: true,
+      passkeysEnabled: true,
+      recoveryCodesEnabled: true,
+      mfaTrustedDeviceDays: 7,
+      passkeyRPID: 'cloud.example.com',
+      passkeyRPName: 'OpenPencil Cloud',
+      passkeyOrigin: 'https://cloud.example.com',
       captchaProvider: 'cloudflare-turnstile',
       captchaSiteKey: 'public-turnstile-site-key',
       captchaSecretKey: 'turnstile-secret',

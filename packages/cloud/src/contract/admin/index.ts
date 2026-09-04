@@ -14,7 +14,8 @@ export const adminErrorCodeSchema = v.picklist([
   'invalid_enrollment_transition',
   'last_admin_required',
   'self_admin_action_forbidden',
-  'email_regeneration_unavailable'
+  'email_regeneration_unavailable',
+  'mfa_required'
 ])
 
 export const adminErrorResponseSchema = v.object({

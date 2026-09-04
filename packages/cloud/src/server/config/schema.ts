@@ -83,6 +83,14 @@ const rawCloudServerConfigSchema = v.object({
   emailVerificationExpiresIn: v.optional(v.pipe(v.number(), v.integer(), v.minValue(60)), 3600),
   passwordResetExpiresIn: v.optional(v.pipe(v.number(), v.integer(), v.minValue(60)), 3600),
   compromisedPasswordCheck: v.optional(v.boolean(), false),
+  deploymentAdminMFARequired: v.optional(v.boolean(), false),
+  totpEnabled: v.optional(v.boolean(), false),
+  passkeysEnabled: v.optional(v.boolean(), false),
+  recoveryCodesEnabled: v.optional(v.boolean(), false),
+  mfaTrustedDeviceDays: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14),
+  passkeyRPID: optionalTextSchema,
+  passkeyRPName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1)), 'OpenPencil Cloud'),
+  passkeyOrigin: v.optional(httpURLSchema),
   captchaProvider: v.optional(v.literal('cloudflare-turnstile')),
   captchaSiteKey: optionalTextSchema,
   captchaSecretKey: optionalTextSchema,
@@ -159,6 +167,21 @@ function validateAuthenticationConfig(config: CloudServerConfig): void {
     throw new CloudConfigError(
       'Email and password authentication requires transactional email delivery'
     )
+  }
+  if (config.deploymentAdminMFARequired && !config.totpEnabled && !config.passkeysEnabled) {
+    throw new CloudConfigError('Deployment administrator MFA requires TOTP or passkeys')
+  }
+  if (config.recoveryCodesEnabled && !config.totpEnabled) {
+    throw new CloudConfigError('MFA recovery codes require TOTP')
+  }
+  if (config.passkeysEnabled) {
+    const publicURL = new URL(config.publicURL)
+    if (config.passkeyOrigin && new URL(config.passkeyOrigin).origin !== publicURL.origin) {
+      throw new CloudConfigError('Passkey origin must match the Cloud public URL origin')
+    }
+    if (config.passkeyRPID && config.passkeyRPID !== publicURL.hostname) {
+      throw new CloudConfigError('Passkey RP ID must match the Cloud public URL hostname')
+    }
   }
   requireTogether(config, 'CAPTCHA', ['captchaProvider', 'captchaSiteKey', 'captchaSecretKey'])
   if (

@@ -9,6 +9,7 @@ export const cloudHeadKeySchema = v.picklist([
   'verifyEmail',
   'forgotPassword',
   'resetPassword',
+  'mfaChallenge',
   'pending',
   'rejected',
   'revoked',

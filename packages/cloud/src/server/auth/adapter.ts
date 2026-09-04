@@ -10,6 +10,15 @@ export type CloudAdminUser = {
   createdAt: Date
 }
 
+export type CloudMFAStatus = {
+  required: boolean
+  enabled: boolean
+  assured: boolean
+  totpAvailable: boolean
+  passkeysAvailable: boolean
+  recoveryCodesAvailable: boolean
+}
+
 export type CloudIdentity = {
   userId: string
   email: string
@@ -45,6 +54,17 @@ export interface CloudAuthAdapter {
   unbanUser(headers: Headers, userId: string): Promise<void>
   revokeUserSessions(headers: Headers, userId: string): Promise<void>
   setRole(headers: Headers, userId: string, role: 'user' | 'admin'): Promise<void>
+  mfaStatus(headers: Headers): Promise<CloudMFAStatus | null>
+  enableTOTP(
+    headers: Headers,
+    password?: string
+  ): Promise<{ totpURI: string; backupCodes: string[] }>
+  verifyTOTP(headers: Headers, code: string): Promise<Response | undefined>
+  verifyRecoveryCode(headers: Headers, code: string): Promise<Response | undefined>
+  generateRecoveryCodes(headers: Headers, password?: string): Promise<string[]>
+  disableTOTP(headers: Headers, password?: string): Promise<void>
+  listPasskeys(headers: Headers): Promise<Array<{ id: string; name?: string; createdAt: Date }>>
+  deletePasskey(headers: Headers, id: string): Promise<void>
   migrate: () => Promise<void>
   schemaVersion: string
 }

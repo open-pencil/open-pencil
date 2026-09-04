@@ -18,6 +18,7 @@ import * as enrollmentEmailKinds from './migrations/014_enrollment_email_kinds'
 import * as cloudRateLimit from './migrations/015_cloud_rate_limit'
 import * as authSchema from './migrations/016_auth_schema'
 import * as authenticationEmailKinds from './migrations/017_authentication_email_kinds'
+import * as authenticationMFA from './migrations/018_authentication_mfa'
 import type { CloudDatabase } from './schema'
 
 const migrations: Record<string, Migration> = {
@@ -37,7 +38,8 @@ const migrations: Record<string, Migration> = {
   '014_enrollment_email_kinds': enrollmentEmailKinds,
   '015_cloud_rate_limit': cloudRateLimit,
   '016_auth_schema': authSchema,
-  '017_authentication_email_kinds': authenticationEmailKinds
+  '017_authentication_email_kinds': authenticationEmailKinds,
+  '018_authentication_mfa': authenticationMFA
 }
 
 class CloudMigrationProvider implements MigrationProvider {
@@ -52,12 +54,32 @@ export type CloudAuthMigration = {
 }
 
 const REQUIRED_AUTH_SCHEMA: Record<string, string[]> = {
-  user: ['id', 'name', 'email', 'email_verified', 'created_at', 'updated_at', 'role', 'banned'],
+  user: [
+    'id',
+    'name',
+    'email',
+    'email_verified',
+    'created_at',
+    'updated_at',
+    'role',
+    'banned',
+    'two_factor_enabled'
+  ],
   session: ['id', 'expires_at', 'token', 'user_id', 'impersonated_by'],
   account: ['id', 'issuer', 'account_id', 'provider_id', 'user_id'],
   verification: ['id', 'identifier', 'value', 'expires_at'],
   device_code: ['id', 'device_code', 'user_code', 'status', 'client_id'],
-  rate_limit: ['id', 'key', 'count', 'last_request']
+  rate_limit: ['id', 'key', 'count', 'last_request'],
+  two_factor: [
+    'id',
+    'secret',
+    'backup_codes',
+    'user_id',
+    'verified',
+    'failed_verification_count',
+    'locked_until'
+  ],
+  passkey: ['id', 'public_key', 'user_id', 'credential_id', 'counter', 'device_type', 'backed_up']
 }
 
 async function existingAuthSchema(

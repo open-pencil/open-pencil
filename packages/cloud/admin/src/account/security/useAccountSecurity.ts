@@ -117,6 +117,7 @@ export function useAccountSecurity() {
     changePassword,
     confirmation,
     currentPassword,
+    discovery,
     formError,
     hasPassword,
     linkProvider,

@@ -112,6 +112,29 @@ export const cloudDeploymentConfigSchema = v.object({
         compromised_password_check: false
       }
     ),
+    mfa: v.optional(
+      v.object({
+        deployment_admin_required: v.optional(v.boolean(), false),
+        totp_enabled: v.optional(v.boolean(), false),
+        passkeys_enabled: v.optional(v.boolean(), false),
+        recovery_codes_enabled: v.optional(v.boolean(), false),
+        trusted_device_days: v.optional(v.pipe(v.number(), v.integer(), v.minValue(0)), 14)
+      }),
+      {
+        deployment_admin_required: false,
+        totp_enabled: false,
+        passkeys_enabled: false,
+        recovery_codes_enabled: false,
+        trusted_device_days: 14
+      }
+    ),
+    passkeys: v.optional(
+      v.object({
+        rp_id: text,
+        rp_name: v.optional(text, 'OpenPencil Cloud'),
+        origin: url
+      })
+    ),
     captcha: v.optional(
       v.object({
         provider: v.literal('cloudflare-turnstile'),
@@ -328,6 +351,14 @@ export function parseCloudDeploymentConfig(
     passwordResetExpiresIn:
       config.authentication.email_password.password_reset_link_expires_minutes * 60,
     compromisedPasswordCheck: config.authentication.email_password.compromised_password_check,
+    deploymentAdminMFARequired: config.authentication.mfa.deployment_admin_required,
+    totpEnabled: config.authentication.mfa.totp_enabled,
+    passkeysEnabled: config.authentication.mfa.passkeys_enabled,
+    recoveryCodesEnabled: config.authentication.mfa.recovery_codes_enabled,
+    mfaTrustedDeviceDays: config.authentication.mfa.trusted_device_days,
+    passkeyRPID: config.authentication.passkeys?.rp_id,
+    passkeyRPName: config.authentication.passkeys?.rp_name,
+    passkeyOrigin: config.authentication.passkeys?.origin,
     captchaProvider: config.authentication.captcha?.provider,
     captchaSiteKey: config.authentication.captcha?.site_key,
     captchaSecretKey: config.authentication.captcha

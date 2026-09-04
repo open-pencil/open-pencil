@@ -13,6 +13,18 @@ trusted_origins = ["http://localhost:5173"]
 enrollment_mode = "open"
 admin_notification_emails = []
 
+[authentication.mfa]
+deployment_admin_required = false
+totp_enabled = true
+passkeys_enabled = true
+recovery_codes_enabled = true
+trusted_device_days = 14
+
+[authentication.passkeys]
+rp_id = "localhost"
+rp_name = "OpenPencil Cloud"
+origin = "http://localhost:8787"
+
 [authentication.email_password]
 # The standalone Compose profile enables credentials and captures every message in Mailpit.
 # `bun run cloud:dev` generates equivalent configuration with branch-scoped Portless URLs.

@@ -13,6 +13,7 @@ export function errorMessage(error: unknown, messages: ErrorMessages): string {
   if (error.kind === 'cancelled') return ''
   if (error.code === 'invalid_enrollment_transition') return messages.invalidEnrollmentTransition
   if (error.code === 'last_admin_required') return messages.lastAdminRequired
+  if (error.code === 'mfa_required') return messages.mfaRequired
   if (error.code === 'self_admin_action_forbidden') return messages.selfActionForbidden
   if (error.code === 'email_regeneration_unavailable') return messages.emailRegenerationUnavailable
   return messages.unknown

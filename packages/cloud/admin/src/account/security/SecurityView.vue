@@ -4,6 +4,7 @@ import { AppButton, AppInput } from '@open-pencil/ui'
 import ConfirmDialog from '#admin/components/dialog/ConfirmDialog.vue'
 import AsyncBoundary from '#admin/components/feedback/AsyncBoundary.vue'
 import PublicShell from '#admin/components/layout/PublicShell.vue'
+import MFASection from './mfa/MFASection.vue'
 import { useAccountSecurity } from './useAccountSecurity'
 
 const {
@@ -17,6 +18,7 @@ const {
   linkProvider,
   messages,
   methods,
+  discovery,
   minimumLength,
   newPassword,
   passwordChanged,
@@ -95,6 +97,8 @@ function confirmUnlink(): void {
             {{ messages.account.value.addPasswordEmailSent }}
           </p>
         </section>
+
+        <MFASection :discovery="discovery.data.value" />
 
         <section v-if="hasPassword" class="mt-6 rounded-xl border border-border bg-panel p-6">
           <h2 class="m-0 text-lg font-semibold">{{ messages.account.value.changePassword }}</h2>

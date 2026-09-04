@@ -89,7 +89,9 @@ export default {
     or: 'ou',
     forbiddenTitle: 'Accès administrateur de déploiement requis',
     forbiddenDescription:
-      "Votre compte est connecté mais n'a pas d'accès administrateur-déploiement."
+      "Votre compte est connecté mais n'a pas d'accès administrateur-déploiement.",
+    mfaChallengeTitle: 'Vérifiez votre identité',
+    mfaChallengeDescription: 'Saisissez un code d’authentification ou de récupération.'
   },
   account: {
     pendingTitle: 'Votre compte attend une approbation',
@@ -126,7 +128,29 @@ export default {
     changePasswordDescription: 'La modification du mot de passe ferme vos autres sessions.',
     currentPassword: 'Mot de passe actuel',
     updatePassword: 'Mettre à jour le mot de passe',
-    passwordChanged: 'Votre mot de passe a été modifié et les autres sessions ont été fermées.'
+    passwordChanged: 'Votre mot de passe a été modifié et les autres sessions ont été fermées.',
+    mfaTitle: 'Authentification multifacteur',
+    mfaDescription: 'Protégez les actions sensibles du compte et de l’administration.',
+    mfaVerified: 'Cette session a réussi la vérification multifacteur.',
+    authenticatorApp: 'Application d’authentification',
+    authenticatorSetup: 'Scannez le code QR, puis saisissez le code de l’application.',
+    authenticatorQRCode: 'Code QR de configuration de l’application',
+    manualSetup: 'Saisir une clé de configuration manuellement',
+    verificationCode: 'Code de vérification',
+    verifyMFA: 'Vérifier',
+    verifyWithPasskey: 'Vérifier avec une clé d’accès',
+    setUpAuthenticator: 'Configurer l’application',
+    recoveryCodes: 'Codes de récupération',
+    recoveryCodesDescription: 'Conservez ces codes à usage unique dans un endroit sûr.',
+    recoveryCodesAcknowledgement: 'J’ai enregistré ces codes de récupération en lieu sûr.',
+    recoveryCodesSaved: 'Codes enregistrés',
+    recoveryCode: 'Code de récupération',
+    useRecoveryCode: 'Utiliser un code de récupération',
+    passkeys: 'Clés d’accès',
+    unnamedPasskey: 'Clé d’accès sans nom',
+    passkeyName: 'Nom de la clé d’accès',
+    addPasskey: 'Ajouter une clé d’accès',
+    removePasskey: 'Supprimer'
   },
   admin: {
     enrollment: 'Inscription',
@@ -179,6 +203,7 @@ export default {
     authorizationRequired: "L'accès administrateur de déploiement est requis.",
     invalidEnrollmentTransition: "Cet état d'inscription a changé. Actualisez et réessayez.",
     lastAdminRequired: 'Au moins un administrateur de déploiement actif est requis.',
+    mfaRequired: 'Configurez l’authentification multifacteur avant de continuer.',
     selfActionForbidden: 'Vous ne pouvez pas effectuer cette action pour votre propre compte.',
     emailRegenerationUnavailable:
       'Cet e-mail ne peut pas être régénéré à partir des enregistrements actuels.',
@@ -194,6 +219,8 @@ export default {
     invalidResetLink: 'Ce lien est invalide ou a expiré.',
     rateLimited: 'Trop de tentatives. Patientez puis réessayez.',
     credentialUnknown: 'Impossible de terminer la demande. Réessayez.',
+    mfaFailed: 'Impossible de mettre à jour l’authentification multifacteur.',
+    mfaInvalidCode: 'Le code de vérification est invalide ou expiré.',
     currentPasswordInvalid: 'Le mot de passe actuel est incorrect.',
     lastAuthenticationMethod: 'Associez une autre méthode avant de dissocier celle-ci.',
     sessionNotFresh: 'Reconnectez-vous avant de modifier ce paramètre de sécurité.',
@@ -216,6 +243,8 @@ export default {
       'Demandez un lien de réinitialisation du mot de passe OpenPencil Cloud.',
     resetPasswordTitle: 'Réinitialiser le mot de passe',
     resetPasswordDescription: 'Choisissez un nouveau mot de passe OpenPencil Cloud.',
+    mfaChallengeTitle: 'Vérification multifacteur',
+    mfaChallengeDescription: 'Vérifiez votre identité pour continuer.',
     pendingTitle: 'En attente d’approbation',
     pendingDescription: 'Votre compte OpenPencil Cloud attend l’approbation d’un administrateur.',
     rejectedTitle: 'Demande rejetée',

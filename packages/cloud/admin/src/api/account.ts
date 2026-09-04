@@ -4,6 +4,14 @@ import {
   cloudAccountMutationResponseSchema,
   cloudAccountStatusResponseSchema,
   cloudAuthenticationMethodsResponseSchema,
+  cloudMFAEnableResponseSchema,
+  cloudMFAEnableSchema,
+  cloudMFARecoveryCodesResponseSchema,
+  cloudMFAStatusResponseSchema,
+  cloudMFAVerifyResponseSchema,
+  cloudMFAVerifySchema,
+  cloudPasskeyDeleteSchema,
+  cloudPasskeysResponseSchema,
   cloudPasswordChangeSchema,
   cloudSocialLinkResponseSchema,
   cloudSocialLinkSchema,
@@ -19,6 +27,54 @@ export function createAccountAPI(request: CloudRequest) {
     },
     authenticationMethods(signal?: AbortSignal) {
       return request('/account/authentication', cloudAuthenticationMethodsResponseSchema, {
+        signal
+      })
+    },
+    mfaStatus(signal?: AbortSignal) {
+      return request('/account/mfa', cloudMFAStatusResponseSchema, { signal })
+    },
+    enableTOTP(password?: string, signal?: AbortSignal) {
+      return request('/account/mfa/totp/enable', cloudMFAEnableResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudMFAEnableSchema, { password })),
+        signal
+      })
+    },
+    verifyTOTP(code: string, signal?: AbortSignal) {
+      return request('/account/mfa/totp/verify', cloudMFAVerifyResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudMFAVerifySchema, { code })),
+        signal
+      })
+    },
+    verifyRecoveryCode(code: string, signal?: AbortSignal) {
+      return request('/account/mfa/recovery/verify', cloudMFAVerifyResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudMFAVerifySchema, { code })),
+        signal
+      })
+    },
+    regenerateRecoveryCodes(password?: string, signal?: AbortSignal) {
+      return request('/account/mfa/recovery/regenerate', cloudMFARecoveryCodesResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudMFAEnableSchema, { password })),
+        signal
+      })
+    },
+    disableTOTP(password?: string, signal?: AbortSignal) {
+      return request('/account/mfa/totp/disable', cloudAccountMutationResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudMFAEnableSchema, { password })),
+        signal
+      })
+    },
+    passkeys(signal?: AbortSignal) {
+      return request('/account/mfa/passkeys', cloudPasskeysResponseSchema, { signal })
+    },
+    deletePasskey(id: string, signal?: AbortSignal) {
+      return request('/account/mfa/passkeys/delete', cloudAccountMutationResponseSchema, {
+        method: 'POST',
+        body: JSON.stringify(v.parse(cloudPasskeyDeleteSchema, { id })),
         signal
       })
     },

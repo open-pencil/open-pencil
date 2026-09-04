@@ -46,6 +46,40 @@ export const accountSecurityErrorResponseSchema = v.object({
   error: v.object({ code: accountSecurityErrorCodeSchema })
 })
 
+export const cloudMFAStatusSchema = v.object({
+  required: v.boolean(),
+  enabled: v.boolean(),
+  assured: v.boolean(),
+  totpAvailable: v.boolean(),
+  passkeysAvailable: v.boolean(),
+  recoveryCodesAvailable: v.boolean()
+})
+export const cloudMFAStatusResponseSchema = v.object({ mfa: cloudMFAStatusSchema })
+export const cloudMFAEnableSchema = v.object({ password: v.optional(v.string()) })
+export const cloudMFAEnableResponseSchema = v.object({
+  totpURI: v.string(),
+  backupCodes: v.array(v.string())
+})
+export const cloudMFAVerifySchema = v.object({ code: v.pipe(v.string(), v.trim(), v.minLength(1)) })
+export const cloudMFAVerifyResponseSchema = v.object({ ok: v.literal(true) })
+export const cloudMFARecoveryCodesResponseSchema = v.object({ backupCodes: v.array(v.string()) })
+export const cloudPasskeySchema = v.object({
+  id: v.string(),
+  name: v.optional(v.string()),
+  createdAt: v.string()
+})
+export const cloudPasskeysResponseSchema = v.object({ passkeys: v.array(cloudPasskeySchema) })
+export const cloudPasskeyDeleteSchema = v.object({ id: v.string() })
+
+export function parseCloudMFAEnable(input: unknown) {
+  return v.parse(cloudMFAEnableSchema, input)
+}
+export function parseCloudMFAVerify(input: unknown) {
+  return v.parse(cloudMFAVerifySchema, input)
+}
+export function parseCloudPasskeyDelete(input: unknown) {
+  return v.parse(cloudPasskeyDeleteSchema, input)
+}
 export function parseCloudPasswordChange(input: unknown) {
   return v.parse(cloudPasswordChangeSchema, input)
 }

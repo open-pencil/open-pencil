@@ -3,6 +3,7 @@ export type AdminErrorCode =
   | 'last_admin_required'
   | 'self_admin_action_forbidden'
   | 'email_regeneration_unavailable'
+  | 'mfa_required'
 
 export class AdminDomainError extends Error {
   override readonly name = 'AdminDomainError'

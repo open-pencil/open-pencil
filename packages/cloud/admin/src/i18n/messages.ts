@@ -88,7 +88,9 @@ export const authMessageDefaults = {
   or: 'or',
   forbiddenTitle: 'Deployment administrator access required',
   forbiddenDescription:
-    'Your account is signed in but does not have deployment-administrator access.'
+    'Your account is signed in but does not have deployment-administrator access.',
+  mfaChallengeTitle: 'Verify it’s you',
+  mfaChallengeDescription: 'Enter an authenticator or recovery code to continue.'
 } as const
 
 export const accountMessageDefaults = {
@@ -127,7 +129,29 @@ export const accountMessageDefaults = {
   changePasswordDescription: 'Changing your password signs out your other sessions.',
   currentPassword: 'Current password',
   updatePassword: 'Update password',
-  passwordChanged: 'Your password was changed and other sessions were signed out.'
+  passwordChanged: 'Your password was changed and other sessions were signed out.',
+  mfaTitle: 'Multi-factor authentication',
+  mfaDescription: 'Protect sensitive account and deployment administration actions.',
+  mfaVerified: 'This session completed multi-factor verification.',
+  authenticatorApp: 'Authenticator app',
+  authenticatorSetup: 'Scan this QR code, then enter the code from your authenticator.',
+  authenticatorQRCode: 'Authenticator setup QR code',
+  manualSetup: 'Enter a setup key manually',
+  verificationCode: 'Verification code',
+  verifyMFA: 'Verify',
+  verifyWithPasskey: 'Verify with passkey',
+  setUpAuthenticator: 'Set up authenticator',
+  recoveryCodes: 'Recovery codes',
+  recoveryCodesDescription: 'Store these one-time codes somewhere safe.',
+  recoveryCodesAcknowledgement: 'I saved these recovery codes in a safe place.',
+  recoveryCodesSaved: 'I saved the codes',
+  recoveryCode: 'Recovery code',
+  useRecoveryCode: 'Use recovery code',
+  passkeys: 'Passkeys',
+  unnamedPasskey: 'Unnamed passkey',
+  passkeyName: 'Passkey name',
+  addPasskey: 'Add passkey',
+  removePasskey: 'Remove'
 } as const
 
 export const adminMessageDefaults = {
@@ -185,6 +209,8 @@ export const headMessageDefaults = {
   forgotPasswordDescription: 'Request an OpenPencil Cloud password reset.',
   resetPasswordTitle: 'Reset password',
   resetPasswordDescription: 'Choose a new OpenPencil Cloud password.',
+  mfaChallengeTitle: 'Multi-factor verification',
+  mfaChallengeDescription: 'Verify your identity to continue.',
   pendingTitle: 'Awaiting approval',
   pendingDescription: 'Your OpenPencil Cloud account is awaiting administrator approval.',
   rejectedTitle: 'Request rejected',
@@ -219,6 +245,7 @@ export const errorMessageDefaults = {
   authorizationRequired: 'Deployment administrator access is required.',
   invalidEnrollmentTransition: 'This enrollment state changed. Refresh and try again.',
   lastAdminRequired: 'At least one active deployment administrator is required.',
+  mfaRequired: 'Set up multi-factor authentication before continuing.',
   selfActionForbidden: 'You cannot perform that action on your own account.',
   emailRegenerationUnavailable: 'This email cannot be regenerated from current records.',
   unknown: 'Something went wrong. Try again.',
@@ -233,6 +260,8 @@ export const errorMessageDefaults = {
   invalidResetLink: 'This password reset link is invalid or expired.',
   rateLimited: 'Too many attempts. Wait a moment and try again.',
   credentialUnknown: 'We could not complete that request. Try again.',
+  mfaFailed: 'Multi-factor authentication could not be updated.',
+  mfaInvalidCode: 'The verification code is invalid or expired.',
   currentPasswordInvalid: 'The current password is incorrect.',
   lastAuthenticationMethod: 'Connect another sign-in method before unlinking this one.',
   sessionNotFresh: 'Sign in again before changing this security setting.',

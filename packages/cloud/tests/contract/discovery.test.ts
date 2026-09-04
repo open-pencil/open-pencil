@@ -24,6 +24,12 @@ const discovery = {
         provider: 'cloudflare-turnstile' as const,
         siteKey: 'public-site-key'
       }
+    },
+    mfa: {
+      deploymentAdminRequired: true,
+      totp: true,
+      passkeys: true,
+      recoveryCodes: true
     }
   },
   capabilities: {

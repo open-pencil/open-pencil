@@ -14,6 +14,7 @@ const HEAD_KEYS = {
   verifyEmail: ['verifyEmailTitle', 'verifyEmailDescription'],
   forgotPassword: ['forgotPasswordTitle', 'forgotPasswordDescription'],
   resetPassword: ['resetPasswordTitle', 'resetPasswordDescription'],
+  mfaChallenge: ['mfaChallengeTitle', 'mfaChallengeDescription'],
   pending: ['pendingTitle', 'pendingDescription'],
   rejected: ['rejectedTitle', 'rejectedDescription'],
   revoked: ['revokedTitle', 'revokedDescription'],

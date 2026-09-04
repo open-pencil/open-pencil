@@ -90,7 +90,9 @@ export default {
     or: 'oder',
     forbiddenTitle: 'Zugriff des Bereitstellungsadministrators erforderlich',
     forbiddenDescription:
-      'Ihr Konto ist angemeldet, hat aber keinen Zugriff auf den Bereitstellungsadministrator.'
+      'Ihr Konto ist angemeldet, hat aber keinen Zugriff auf den Bereitstellungsadministrator.',
+    mfaChallengeTitle: 'Identität bestätigen',
+    mfaChallengeDescription: 'Geben Sie einen Authentifizierungs- oder Wiederherstellungscode ein.'
   },
   account: {
     pendingTitle: 'Ihr Konto wartet auf Genehmigung',
@@ -129,7 +131,29 @@ export default {
     changePasswordDescription: 'Beim Ändern des Passworts werden andere Sitzungen abgemeldet.',
     currentPassword: 'Aktuelles Passwort',
     updatePassword: 'Passwort aktualisieren',
-    passwordChanged: 'Ihr Passwort wurde geändert und andere Sitzungen wurden abgemeldet.'
+    passwordChanged: 'Ihr Passwort wurde geändert und andere Sitzungen wurden abgemeldet.',
+    mfaTitle: 'Mehrfaktor-Authentifizierung',
+    mfaDescription: 'Schützen Sie vertrauliche Konto- und Verwaltungsaktionen.',
+    mfaVerified: 'Diese Sitzung wurde mit einem zweiten Faktor bestätigt.',
+    authenticatorApp: 'Authentifizierungs-App',
+    authenticatorSetup: 'Scannen Sie den QR-Code und geben Sie anschließend den Code ein.',
+    authenticatorQRCode: 'QR-Code zur Einrichtung der Authentifizierung',
+    manualSetup: 'Einrichtungsschlüssel manuell eingeben',
+    verificationCode: 'Bestätigungscode',
+    verifyMFA: 'Bestätigen',
+    verifyWithPasskey: 'Mit Passkey bestätigen',
+    setUpAuthenticator: 'Authentifizierungs-App einrichten',
+    recoveryCodes: 'Wiederherstellungscodes',
+    recoveryCodesDescription: 'Bewahren Sie diese Einmalcodes sicher auf.',
+    recoveryCodesAcknowledgement: 'Ich habe diese Wiederherstellungscodes sicher gespeichert.',
+    recoveryCodesSaved: 'Codes gespeichert',
+    recoveryCode: 'Wiederherstellungscode',
+    useRecoveryCode: 'Wiederherstellungscode verwenden',
+    passkeys: 'Passkeys',
+    unnamedPasskey: 'Unbenannter Passkey',
+    passkeyName: 'Passkey-Name',
+    addPasskey: 'Passkey hinzufügen',
+    removePasskey: 'Entfernen'
   },
   admin: {
     enrollment: 'Zugriffsanfragen',
@@ -185,6 +209,7 @@ export default {
     invalidEnrollmentTransition:
       'Dieser Registrierungsstatus hat sich geändert. Aktualisieren und erneut versuchen.',
     lastAdminRequired: 'Mindestens ein aktiver Bereitstellungsadministrator ist erforderlich.',
+    mfaRequired: 'Richten Sie die Mehrfaktor-Authentifizierung ein, bevor Sie fortfahren.',
     selfActionForbidden: 'Sie können diese Aktion nicht auf eigene Rechnung durchführen.',
     emailRegenerationUnavailable:
       'Diese E-Mail kann nicht aus aktuellen Datensätzen wiederhergestellt werden.',
@@ -201,6 +226,8 @@ export default {
     invalidResetLink: 'Dieser Link ist ungültig oder abgelaufen.',
     rateLimited: 'Zu viele Versuche. Warten Sie kurz und versuchen Sie es erneut.',
     credentialUnknown: 'Die Anfrage konnte nicht abgeschlossen werden. Versuchen Sie es erneut.',
+    mfaFailed: 'Die Mehrfaktor-Authentifizierung konnte nicht aktualisiert werden.',
+    mfaInvalidCode: 'Der Bestätigungscode ist ungültig oder abgelaufen.',
     currentPasswordInvalid: 'Das aktuelle Passwort ist falsch.',
     lastAuthenticationMethod: 'Verbinden Sie eine weitere Anmeldemethode, bevor Sie diese trennen.',
     sessionNotFresh: 'Melden Sie sich erneut an, bevor Sie diese Sicherheitseinstellung ändern.',
@@ -223,6 +250,8 @@ export default {
       'Fordern Sie einen Link zum Zurücksetzen Ihres OpenPencil Cloud-Passworts an.',
     resetPasswordTitle: 'Passwort zurücksetzen',
     resetPasswordDescription: 'Wählen Sie ein neues OpenPencil Cloud-Passwort.',
+    mfaChallengeTitle: 'Mehrfaktor-Bestätigung',
+    mfaChallengeDescription: 'Bestätigen Sie Ihre Identität, um fortzufahren.',
     pendingTitle: 'Warten auf Genehmigung',
     pendingDescription:
       'Ihr OpenPencil Cloud-Konto wartet auf die Genehmigung eines Administrators.',

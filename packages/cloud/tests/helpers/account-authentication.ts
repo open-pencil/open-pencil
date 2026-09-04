@@ -50,7 +50,7 @@ export function authenticationCookie(response: Response): string {
   return value
 }
 
-function objects() {
+export function accountAuthenticationObjects() {
   return {
     capabilities: { nativeSHA256: true, multipartUpload: false, conditionalWrites: false },
     async checkReadiness() {
@@ -73,11 +73,13 @@ function objects() {
 
 export async function createAccountAuthenticationFixture(
   options: {
+    config?: typeof accountAuthenticationConfig
     onPasswordChanged?: () => void
   } = {}
 ) {
+  const config = options.config ?? accountAuthenticationConfig
   const runtime = await createCloudTestDatabase()
-  const auth = createBetterAuthAdapter(accountAuthenticationConfig, runtime.database, undefined, {
+  const auth = createBetterAuthAdapter(config, runtime.database, undefined, {
     email: {
       sendVerification: ignore,
       sendPasswordReset: ignore,
@@ -89,10 +91,10 @@ export async function createAccountAuthenticationFixture(
   return {
     ...runtime,
     app: createCloudApp({
-      config: accountAuthenticationConfig,
+      config,
       database: runtime.database,
       auth,
-      objects: objects()
+      objects: accountAuthenticationObjects()
     })
   }
 }

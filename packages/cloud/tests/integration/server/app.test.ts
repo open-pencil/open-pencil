@@ -142,6 +142,37 @@ describe('createCloudApp', () => {
     }
   })
 
+  test('requires MFA assurance only for deployment administration', async () => {
+    const runtime = await createCloudTestDatabase()
+    try {
+      const enforcedConfig = parseCloudServerConfig({
+        ...config,
+        deploymentAdminMFARequired: true,
+        totpEnabled: true
+      })
+      const auth = createBetterAuthAdapter(enforcedConfig, runtime.database)
+      const app = createCloudApp({
+        ...services(),
+        config: enforcedConfig,
+        database: runtime.database,
+        auth,
+        resolveSession: async () => ({
+          userId: 'admin-user',
+          email: 'admin@example.com',
+          name: 'Admin',
+          deploymentRole: 'admin'
+        })
+      })
+      expect((await app.request('/api/session')).status).toBe(200)
+      expect((await app.request('/api/admin/operations')).status).toBe(403)
+      expect(await (await app.request('/api/admin/operations')).json()).toEqual({
+        error: { code: 'mfa_required' }
+      })
+    } finally {
+      await runtime.close()
+    }
+  })
+
   test('allows only deployment administrators to use admin routes', async () => {
     const runtime = await createCloudTestDatabase()
     try {

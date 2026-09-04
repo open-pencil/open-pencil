@@ -11,6 +11,9 @@ import {
   CLOUD_DISCOVERY_PATH,
   CLOUD_PROTOCOL_VERSION,
   parseCloudPasswordChange,
+  parseCloudMFAEnable,
+  parseCloudMFAVerify,
+  parseCloudPasskeyDelete,
   parseCloudSocialLink,
   parseCloudUnlinkAuthenticationMethod,
   type AccountSecurityErrorCode,
@@ -88,7 +91,21 @@ function discoveryFromServices(services: CloudServices): CloudDiscovery {
   return cloudDiscoveryFromConfig(services.config)
 }
 
+const POLICY_MANAGED_AUTH_PATHS = new Set([
+  '/api/auth/passkey/delete-passkey',
+  '/api/auth/two-factor/disable'
+])
+
 const ACTIVE_ACCOUNT_AUTH_PATHS = new Set([
+  '/api/auth/passkey/delete-passkey',
+  '/api/auth/passkey/generate-register-options',
+  '/api/auth/passkey/list-user-passkeys',
+  '/api/auth/passkey/update-passkey',
+  '/api/auth/passkey/verify-registration',
+  '/api/auth/two-factor/disable',
+  '/api/auth/two-factor/enable',
+  '/api/auth/two-factor/generate-backup-codes',
+  '/api/auth/two-factor/get-totp-uri',
   '/api/auth/account-info',
   '/api/auth/change-email',
   '/api/auth/change-password',
@@ -103,6 +120,19 @@ const ACTIVE_ACCOUNT_AUTH_PATHS = new Set([
   '/api/auth/revoke-sessions',
   '/api/auth/unlink-account'
 ])
+
+function successfulAuthResponse(response: Response): Response {
+  const headers = new Headers(response.headers)
+  headers.set('Content-Type', 'application/json')
+  return new Response(JSON.stringify({ ok: true }), { status: 200, headers })
+}
+
+function completedMFAResponse(result: Response | undefined, context: Context): Response {
+  if (result instanceof Response) {
+    return result.ok ? successfulAuthResponse(result) : result
+  }
+  return context.json({ ok: true as const })
+}
 
 export function shouldPreventIndexing(path: string, policy: 'allow' | 'deny'): boolean {
   return (
@@ -166,12 +196,19 @@ export function createCloudApp(services: CloudServices) {
         services.config.appURL ?? services.config.publicURL
       ),
       enrollment,
-      users: createAdminUserService(services.database, services.auth),
+      users: createAdminUserService(services.database, services.auth, {
+        requireMFA: services.config.deploymentAdminMFARequired
+      }),
       audit: createAdminAuditService(services.database),
       operations: createAdminOperationsService(services.database, services.config)
     },
     allowedOrigins,
-    { database: services.database, secret: services.config.authSecret }
+    {
+      database: services.database,
+      secret: services.config.authSecret,
+      auth: services.auth,
+      requireMFA: services.config.deploymentAdminMFARequired
+    }
   )
   const entitlementSource =
     services.entitlementSource ??
@@ -227,6 +264,26 @@ export function createCloudApp(services: CloudServices) {
       }
       throw error
     }
+  }
+  const activeAccountAction = async <Value>(
+    context: Context,
+    operation: () => Promise<Value>
+  ): Promise<Value | Response> => {
+    if (!(await resolveSession(context.req.raw))) {
+      return context.json({ error: { code: 'unauthorized' as const } }, 401)
+    }
+    return accountAction(operation, context)
+  }
+  const verifiedMFAAction = async (
+    context: Context,
+    identityResolver: CloudIdentityResolver,
+    verify: () => Promise<Response | undefined>
+  ): Promise<Response> => {
+    if (!(await identityResolver(context.req.raw))) {
+      return context.json({ error: { code: 'unauthorized' as const } }, 401)
+    }
+    const result = await accountAction(verify, context)
+    return completedMFAResponse(result instanceof Response ? result : undefined, context)
   }
   const requireActiveSession = async (context: Context, next: () => Promise<void>) => {
     const actor = await resolveSession(context.req.raw)
@@ -327,6 +384,9 @@ export function createCloudApp(services: CloudServices) {
     })
     .get(CLOUD_DISCOVERY_PATH, (context) => context.json(discovery))
     .on(['GET', 'POST'], '/api/auth/*', async (context) => {
+      if (POLICY_MANAGED_AUTH_PATHS.has(context.req.path)) {
+        return context.json({ error: { code: 'forbidden' as const } }, 403)
+      }
       if (
         ACTIVE_ACCOUNT_AUTH_PATHS.has(context.req.path) &&
         !(await resolveSession(context.req.raw))
@@ -349,6 +409,84 @@ export function createCloudApp(services: CloudServices) {
           : (enrollmentStatus ?? 'pending')
       return context.json({ user: identity, state })
     })
+    .get('/api/account/mfa', async (context) => {
+      const actor = await resolveSession(context.req.raw)
+      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      const mfa = await services.auth.mfaStatus(context.req.raw.headers)
+      return mfa
+        ? context.json({ mfa })
+        : context.json({ error: { code: 'unauthorized' as const } }, 401)
+    })
+    .post('/api/account/mfa/totp/enable', validatedJSON(parseCloudMFAEnable), async (context) => {
+      const result = await activeAccountAction(context, () =>
+        services.auth.enableTOTP(context.req.raw.headers, context.req.valid('json').password)
+      )
+      return result instanceof Response ? result : context.json(result)
+    })
+    .post('/api/account/mfa/totp/verify', validatedJSON(parseCloudMFAVerify), (context) =>
+      verifiedMFAAction(context, resolveSession, () =>
+        services.auth.verifyTOTP(context.req.raw.headers, context.req.valid('json').code)
+      )
+    )
+    .post('/api/account/mfa/recovery/verify', validatedJSON(parseCloudMFAVerify), (context) =>
+      verifiedMFAAction(context, resolveIdentity, () =>
+        services.auth.verifyRecoveryCode(context.req.raw.headers, context.req.valid('json').code)
+      )
+    )
+    .post(
+      '/api/account/mfa/recovery/regenerate',
+      validatedJSON(parseCloudMFAEnable),
+      async (context) => {
+        const result = await activeAccountAction(context, () =>
+          services.auth.generateRecoveryCodes(
+            context.req.raw.headers,
+            context.req.valid('json').password
+          )
+        )
+        return result instanceof Response ? result : context.json({ backupCodes: result })
+      }
+    )
+    .post('/api/account/mfa/totp/disable', validatedJSON(parseCloudMFAEnable), async (context) => {
+      const actor = await resolveSession(context.req.raw)
+      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      if (actor.deploymentRole === 'admin' && services.config.deploymentAdminMFARequired) {
+        const passkeys = await services.auth.listPasskeys(context.req.raw.headers)
+        if (passkeys.length === 0) {
+          return context.json({ error: { code: 'mfa_required' as const } }, 403)
+        }
+      }
+      const result = await accountAction(
+        () =>
+          services.auth.disableTOTP(context.req.raw.headers, context.req.valid('json').password),
+        context
+      )
+      return result instanceof Response ? result : context.json({ ok: true as const })
+    })
+    .get('/api/account/mfa/passkeys', async (context) => {
+      const actor = await resolveSession(context.req.raw)
+      if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+      return context.json({ passkeys: await services.auth.listPasskeys(context.req.raw.headers) })
+    })
+    .post(
+      '/api/account/mfa/passkeys/delete',
+      validatedJSON(parseCloudPasskeyDelete),
+      async (context) => {
+        const actor = await resolveSession(context.req.raw)
+        if (!actor) return context.json({ error: { code: 'unauthorized' as const } }, 401)
+        const status = await services.auth.mfaStatus(context.req.raw.headers)
+        const passkeys = await services.auth.listPasskeys(context.req.raw.headers)
+        if (
+          actor.deploymentRole === 'admin' &&
+          services.config.deploymentAdminMFARequired &&
+          !status?.enabled &&
+          passkeys.length <= 1
+        ) {
+          return context.json({ error: { code: 'mfa_required' as const } }, 403)
+        }
+        await services.auth.deletePasskey(context.req.raw.headers, context.req.valid('json').id)
+        return context.json({ ok: true as const })
+      }
+    )
     .use('/api/account/authentication/*', requireActiveSession)
     .use('/api/account/authentication/*', authenticatedMutationLimiter)
     .post(

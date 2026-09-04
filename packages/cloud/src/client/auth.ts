@@ -1,6 +1,7 @@
 import type { CloudDiscovery } from '#cloud/contract'
+import { passkeyClient } from '@better-auth/passkey/client'
 import { createAuthClient } from 'better-auth/client'
-import { deviceAuthorizationClient } from 'better-auth/client/plugins'
+import { deviceAuthorizationClient, twoFactorClient } from 'better-auth/client/plugins'
 
 import type { CloudFetch } from './discovery'
 
@@ -27,6 +28,28 @@ export type CloudAuthClient = Pick<
   | 'requestPasswordReset'
   | 'resetPassword'
 > & {
+  signIn: ReturnType<typeof createAuthClient>['signIn'] & {
+    passkey(): Promise<{
+      data: unknown
+      error: { message?: string; code?: string; status: number } | null
+    }>
+  }
+  twoFactor: {
+    verifyTotp(input: { code: string; trustDevice?: boolean }): Promise<{
+      data: unknown
+      error: { message?: string; code?: string; status: number } | null
+    }>
+    verifyBackupCode(input: { code: string; trustDevice?: boolean }): Promise<{
+      data: unknown
+      error: { message?: string; code?: string; status: number } | null
+    }>
+  }
+  passkey: {
+    addPasskey(input?: { name?: string }): Promise<{
+      data: unknown
+      error: { message?: string; code?: string; status: number } | null
+    }>
+  }
   device: {
     (input: { query: { user_code: string } }): Promise<{
       data?: { user_code: string; status: string }
@@ -56,7 +79,11 @@ export function createCloudAuthClient(
 ): CloudAuthClient {
   return createAuthClient({
     baseURL: discovery.authURL,
-    plugins: [deviceAuthorizationClient()],
+    plugins: [
+      deviceAuthorizationClient(),
+      twoFactorClient({ twoFactorPage: '/auth/two-factor' }),
+      passkeyClient()
+    ],
     fetchOptions: {
       credentials: 'include',
       customFetchImpl: options.fetch,
