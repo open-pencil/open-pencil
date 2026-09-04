@@ -2,9 +2,27 @@
 
 See [Backend security checks](./security.md) for local and CI hardening guidance.
 
-This profile runs OpenPencil Cloud with PostgreSQL 17 and a SeaweedFS S3-compatible object store. It is intended as a self-hosting reference and local integration environment.
+This profile runs OpenPencil Cloud with PostgreSQL 17, a SeaweedFS S3-compatible object store, and Mailpit for captured development email. It is intended as a self-hosting reference and local integration environment.
 
-## Start
+## Local development
+
+From the repository root, use the worktree-safe orchestrator:
+
+```sh
+bun run cloud:dev
+# OpenPencil Cloud: https://<branch>.cloud.open-pencil.localhost
+# Captured email:  https://<branch>.mail.open-pencil.localhost
+```
+
+The command generates an ignored TOML file containing the current branch-scoped Portless origins, starts an isolated Compose project, and registers loopback-only Cloud and Mailpit routes. Local email/password registration is enabled. Open Mailpit to inspect Vue Email HTML/text and follow verification or reset links; its SMTP port is available only inside the Compose network.
+
+Stop containers and remove their Portless aliases with:
+
+```sh
+bun run cloud:dev:down
+```
+
+## Standalone self-hosting reference
 
 ```sh
 cd packages/cloud/deploy
@@ -21,7 +39,7 @@ The default references are `DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_
 
 Cloudflare cannot mount TOML at runtime. Official deployment TOML files live under [`config/`](./config/) and `generate:cloudflare-config` validates them into a temporary structured Wrangler variable. Hyperdrive, Assets, Email Service, routes, cron triggers, and encrypted secrets remain native Cloudflare bindings.
 
-The Cloud API is available at `http://localhost:8787`. The standalone Cloud application is served at `/`, `/sign-up`, `/sign-in`, `/app`, and `/admin`; compatibility routes redirect `/join` and `/admin/sign-in` into the unified account flow. PostgreSQL and SeaweedFS are also published on ports `54329`, `8333`, and `9333` for local inspection and smoke tests.
+The standalone Cloud application serves `/`, `/auth/sign-up`, `/auth/sign-in`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password`, `/app`, and `/admin`. Compatibility routes preserve `/sign-up`, `/sign-in`, `/join`, and `/admin/sign-in`. Direct Compose host bindings are loopback-only; prefer the Portless development workflow above for browser access. PostgreSQL and SeaweedFS ports remain available on loopback for local inspection and smoke tests.
 
 ### Enrollment and first administrator
 
@@ -89,7 +107,7 @@ docker compose -f compose.garage.yml down
 
 Vue Email renders matching HTML and plain-text bodies. PostgreSQL owns an encrypted, idempotent outbox with bounded claims and retries; the transport records relay acceptance rather than claiming inbox delivery.
 
-Node deployments set `email.transport = "smtp"` and configure `[email.smtp]` in TOML. SMTP credentials default to `OPENPENCIL_CLOUD_SMTP_USER` and `OPENPENCIL_CLOUD_SMTP_PASSWORD` when the credential references are present.
+For local development, Compose pins Mailpit `v1.31.0`. The Cloud container sends unauthenticated SMTP to `mailpit:1025` on the private Compose network; only the Mailpit HTTP UI is bound to loopback and exposed through Portless. Its SQLite mailbox is retained in `cloud-mailpit`, pruned to 500 messages or seven days, and never relays externally.
 
 Cloudflare deployments set `email.transport = "cloudflare"` and `email.from` in deployment TOML, then configure the `EMAIL` `send_email` binding in `cloudflare/wrangler.jsonc`. The sending domain must be onboarded to Cloudflare Email Service. The scheduled Worker drains the same PostgreSQL outbox service used by Node; the binding is only a transport adapter.
 
@@ -105,9 +123,10 @@ PostgreSQL rather than browser IndexedDB for room persistence.
 Without this setting, Cloud documents retain the temporary Trystero path and advertise that writes
 are not server-enforced.
 
-Compose host ports can be overridden with `OPENPENCIL_CLOUD_PORT`, `POSTGRES_PORT`,
+Compose host ports can be overridden with `OPENPENCIL_CLOUD_PORT`, `MAILPIT_UI_PORT`, `POSTGRES_PORT`,
 `SEAWEEDFS_S3_PORT`, and `SEAWEEDFS_MASTER_PORT`. This is useful for parallel deployments and CI; the
-container ports remain unchanged.
+container ports remain unchanged. `bun run cloud:dev` assigns Cloud and Mailpit ports dynamically and
+should be preferred for interactive development.
 
 ## Stop
 

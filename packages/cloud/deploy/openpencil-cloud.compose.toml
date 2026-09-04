@@ -14,7 +14,15 @@ enrollment_mode = "open"
 admin_notification_emails = []
 
 [authentication.email_password]
-enabled = false
+# The standalone Compose profile enables credentials and captures every message in Mailpit.
+# `bun run cloud:dev` generates equivalent configuration with branch-scoped Portless URLs.
+enabled = true
+sign_up = true
+minimum_password_length = 15
+maximum_password_length = 128
+verification_link_expires_minutes = 60
+password_reset_link_expires_minutes = 60
+compromised_password_check = false
 
 [authentication.trusted_proxies]
 headers = []
@@ -28,11 +36,17 @@ force_path_style = true
 checksum_verification = "metadata"
 
 [email]
-transport = "none"
+transport = "smtp"
+from = "OpenPencil Cloud <cloud@openpencil.localhost>"
+
+[email.smtp]
+host = "mailpit"
+port = 1025
+secure = false
 
 [workers.email]
 batch_size = 50
-interval_ms = 30000
+interval_ms = 1000
 lease_ms = 300000
 maximum_attempts = 5
 

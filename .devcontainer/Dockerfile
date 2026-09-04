@@ -28,6 +28,10 @@ RUN apt-get update \
         /workspace/open-pencil/packages/vue/node_modules \
         /workspace/open-pencil/packages/cli/node_modules \
         /workspace/open-pencil/packages/mcp/node_modules \
+        /workspace/open-pencil/packages/cloud/node_modules \
+        /workspace/open-pencil/packages/ui/node_modules \
+        /workspace/open-pencil/packages/harness/node_modules \
+        /workspace/open-pencil/tools/cloud-deploy/node_modules \
         /workspace/open-pencil/packages/docs/node_modules \
         /workspace/open-pencil/tools/docs/node_modules
 

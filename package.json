@@ -24,6 +24,8 @@
   ],
   "type": "module",
   "scripts": {
+    "cloud:dev": "bun tools/cloud-deploy/src/local/index.ts up",
+    "cloud:dev:down": "bun tools/cloud-deploy/src/local/index.ts down",
     "dev": "vite",
     "dev:portless": "portless run vite",
     "build": "bun run build:packages && bun run lint && vite build",

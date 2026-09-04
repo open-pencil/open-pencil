@@ -27,6 +27,8 @@ The root Tauri/Vite app lives in `src/`; app services and state belong under `sr
 
 OpenPencil Cloud uses schema-versioned TOML as the canonical authored deployment configuration. Durable URLs, policies, provider enablement, storage behavior, worker schedules, retention, entitlements, and technical limits belong in TOML. Environment variables resolve conventional secret references and process bootstrap values; they must not silently override a selected TOML file. Cloudflare receives the same validated schema as a generated structured Wrangler variable, while Hyperdrive, Assets, Email Service, routes, cron triggers, and encrypted secrets remain native bindings. Deployment-file generation belongs under `tools/cloud-deploy/`, not package runtime or tests.
 
+The local Cloud development stack uses pinned Mailpit for SMTP capture. SMTP stays private to the Compose network, while the mailbox UI and Cloud application are exposed as branch-scoped Portless routes. `tools/cloud-deploy/src/local/` owns orchestration and generated TOML; do not add fixed interactive ports or hand-written worktree URLs. The default Dev Container remains lean and must not mount the host Docker socket or start optional Cloud services automatically.
+
 ### Public package exports
 
 Across package/app boundaries, import the owning package's public exports—never workspace internals or forwarding-only shims. `@open-pencil/scene-graph` owns graph types and primitives; `@open-pencil/kiwi` owns low-level Kiwi/FIG helpers; `@open-pencil/core` provides the compatibility barrel plus targeted subpaths listed in `packages/core/package.json`. Cloud consumers use the explicit `@open-pencil/cloud/contract`, `/client`, `/server`, `/runtime/node`, and `/runtime/cloudflare` subpaths so browser code does not pull server dependencies.
@@ -66,7 +68,8 @@ App dialogs compose the Reka-backed components under `src/components/ui/dialog/`
 ## Commands
 
 - `bun run dev:portless` — browser editor server at `https://open-pencil.localhost`; worktrees use `https://<branch>.open-pencil.localhost`.
-- `bun --filter @open-pencil/cloud dev:admin` — standalone Cloud application through Portless at `https://<branch>.cloud.open-pencil.localhost` in worktrees.
+- `bun --filter @open-pencil/cloud dev:admin` — standalone Cloud frontend through Portless while proxying a selected Cloud API.
+- `bun run cloud:dev` / `bun run cloud:dev:down` — start or stop the complete branch-isolated local Cloud, PostgreSQL, SeaweedFS, and Mailpit stack; use the printed Portless Cloud and Mail routes.
 - `bun run dev` — fixed `http://localhost:1420` server reserved for Playwright, Tauri, and Dev Containers.
 - `bun run check` — complete build, lint, type, architecture, docs, package, dependency, security, tooling, and duplication gate.
 - `bun run format` — format and sort imports.

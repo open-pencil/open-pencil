@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@open-pencil/cloud": "workspace:*",
-    "jsonc-parser": "^3.3.1"
+    "jsonc-parser": "^3.3.1",
+    "smol-toml": "^1.8.0"
   }
 }
