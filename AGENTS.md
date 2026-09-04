@@ -65,8 +65,9 @@ App dialogs compose the Reka-backed components under `src/components/ui/dialog/`
 
 ## Commands
 
-- `bun run dev:portless` — preferred browser server at `https://open-pencil.localhost`; worktrees use `https://<branch>.open-pencil.localhost`.
-- `bun run dev` — fixed `http://localhost:1420` server for Playwright, Tauri, and Dev Containers.
+- `bun run dev:portless` — browser editor server at `https://open-pencil.localhost`; worktrees use `https://<branch>.open-pencil.localhost`.
+- `bun --filter @open-pencil/cloud dev:admin` — standalone Cloud application through Portless at `https://<branch>.cloud.open-pencil.localhost` in worktrees.
+- `bun run dev` — fixed `http://localhost:1420` server reserved for Playwright, Tauri, and Dev Containers.
 - `bun run check` — complete build, lint, type, architecture, docs, package, dependency, security, tooling, and duplication gate.
 - `bun run format` — format and sort imports.
 - `bun run test:unit` / `bun run test` — engine/unit and Playwright suites.
@@ -75,7 +76,7 @@ App dialogs compose the Reka-backed components under `src/components/ui/dialog/`
 
 ## Git worktrees and development servers
 
-Prefer `dev:portless`, especially in worktrees. It assigns branch-specific app and `mcp.open-pencil` sibling URLs with isolated runtime discovery. Use fixed-port `dev` only for Playwright, Tauri, and Dev Container flows.
+All interactive development servers must run through Portless, especially in worktrees. It assigns branch-specific app and `mcp.open-pencil` sibling URLs with isolated runtime discovery. Fixed ports are reserved for automated Playwright, Tauri, Dev Container, and other non-interactive infrastructure flows that require predetermined endpoints.
 
 ## Releases & CI
 

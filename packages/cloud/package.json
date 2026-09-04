@@ -61,7 +61,7 @@
     "build": "bun run build:library && bun run build:admin",
     "build:library": "bunx tsdown --config tsdown.config.ts",
     "build:admin": "bunx vite build --config admin/vite.config.ts",
-    "dev:admin": "bun run build:library && bunx vite --config admin/vite.config.ts",
+    "dev:admin": "bun run build:library && portless run --name cloud.open-pencil vite --config admin/vite.config.ts",
     "check": "bun run typecheck && bun run typecheck:admin && bun run test && bun run build",
     "test": "bun run test:unit && bun run test:integration && bun run test:admin",
     "test:unit": "bun test tests/client tests/contract tests/runtime tests/server",
