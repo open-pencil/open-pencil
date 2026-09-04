@@ -15,7 +15,7 @@ async function createRequiredAuthSchema(database: Awaited<ReturnType<typeof test
     [
       'user',
       [
-        ['id', 'text'],
+        ['id', 'uuid'],
         ['name', 'text'],
         ['email', 'text'],
         ['email_verified', 'boolean'],
@@ -29,21 +29,21 @@ async function createRequiredAuthSchema(database: Awaited<ReturnType<typeof test
     [
       'session',
       [
-        ['id', 'text'],
+        ['id', 'uuid'],
         ['expires_at', 'timestamptz'],
         ['token', 'text'],
-        ['user_id', 'text'],
+        ['user_id', 'uuid'],
         ['impersonated_by', 'text']
       ]
     ],
     [
       'account',
       [
-        ['id', 'text'],
+        ['id', 'uuid'],
         ['issuer', 'text'],
         ['account_id', 'text'],
         ['provider_id', 'text'],
-        ['user_id', 'text']
+        ['user_id', 'uuid']
       ]
     ],
     [
@@ -68,10 +68,10 @@ async function createRequiredAuthSchema(database: Awaited<ReturnType<typeof test
     [
       'two_factor',
       [
-        ['id', 'text'],
+        ['id', 'uuid'],
         ['secret', 'text'],
         ['backup_codes', 'text'],
-        ['user_id', 'text'],
+        ['user_id', 'uuid'],
         ['verified', 'boolean'],
         ['failed_verification_count', 'integer'],
         ['locked_until', 'timestamptz']
@@ -80,9 +80,9 @@ async function createRequiredAuthSchema(database: Awaited<ReturnType<typeof test
     [
       'passkey',
       [
-        ['id', 'text'],
+        ['id', 'uuid'],
         ['public_key', 'text'],
-        ['user_id', 'text'],
+        ['user_id', 'uuid'],
         ['credential_id', 'text'],
         ['counter', 'integer'],
         ['device_type', 'text'],
@@ -102,7 +102,7 @@ async function createRequiredAuthSchema(database: Awaited<ReturnType<typeof test
   for (const [table, columns] of tables) {
     let builder = database.schema.createTable(table)
     for (const [column, type] of columns) {
-      builder = builder.addColumn(column, type as 'text')
+      builder = builder.addColumn(column, type as 'text' | 'uuid')
     }
     await builder.execute()
   }
@@ -154,7 +154,7 @@ describe('Better Auth schema ledger', () => {
     const database = await testDatabase()
     try {
       await migrateCloudDatabase(database)
-      await database.schema.createTable('user').addColumn('id', 'text').execute()
+      await database.schema.createTable('user').addColumn('id', 'uuid').execute()
       await expect(
         migrateCloudDatabase(database, { schemaVersion: '1.7.2', run: async () => undefined })
       ).rejects.toThrow('Existing Better Auth schema is incomplete')

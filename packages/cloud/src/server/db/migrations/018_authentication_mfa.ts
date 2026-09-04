@@ -10,8 +10,8 @@ export async function up(database: Kysely<unknown>): Promise<void> {
   const tables = await tableNames(database)
   await database.schema
     .createTable('cloud_mfa_assurance')
-    .addColumn('session_id', 'text', (column) => column.primaryKey())
-    .addColumn('user_id', 'text', (column) => column.notNull())
+    .addColumn('session_id', 'uuid', (column) => column.primaryKey())
+    .addColumn('user_id', 'uuid', (column) => column.notNull())
     .addColumn('method', 'text', (column) => column.notNull())
     .addColumn('verified_at', 'timestamptz', (column) => column.notNull())
     .execute()
@@ -23,10 +23,10 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .execute()
   await database.schema
     .createTable('two_factor')
-    .addColumn('id', 'text', (column) => column.primaryKey())
+    .addColumn('id', 'uuid', (column) => column.primaryKey())
     .addColumn('secret', 'text', (column) => column.notNull().unique())
     .addColumn('backup_codes', 'text', (column) => column.notNull())
-    .addColumn('user_id', 'text', (column) =>
+    .addColumn('user_id', 'uuid', (column) =>
       column.notNull().references('user.id').onDelete('cascade')
     )
     .addColumn('verified', 'boolean', (column) => column.notNull().defaultTo(true))
@@ -40,10 +40,10 @@ export async function up(database: Kysely<unknown>): Promise<void> {
     .execute()
   await database.schema
     .createTable('passkey')
-    .addColumn('id', 'text', (column) => column.primaryKey())
+    .addColumn('id', 'uuid', (column) => column.primaryKey())
     .addColumn('name', 'text')
     .addColumn('public_key', 'text', (column) => column.notNull())
-    .addColumn('user_id', 'text', (column) =>
+    .addColumn('user_id', 'uuid', (column) =>
       column.notNull().references('user.id').onDelete('cascade')
     )
     .addColumn('credential_id', 'text', (column) => column.notNull().unique())
