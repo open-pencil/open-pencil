@@ -61,6 +61,7 @@ docs/.vitepress/dist/
 .wrangler/
 packages/cloud/deploy/cloudflare/wrangler.generated.json
 packages/cloud/deploy/generated/
+packages/cloud/dist-standalone/
 packages/collab/.wrangler/
 
 # External/generated dependency checkouts

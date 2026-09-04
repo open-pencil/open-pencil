@@ -2,21 +2,12 @@ FROM oven/bun:1.4.0-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json bun.lock ./
+COPY package.json bun.lock tsconfig.json ./
 COPY packages packages
 COPY tools/docs/package.json tools/docs/package.json
 RUN bun install --frozen-lockfile --filter @open-pencil/cloud \
-  && bun --filter @open-pencil/cloud build
-
-FROM oven/bun:1.4.0-alpine AS production-dependencies
-
-WORKDIR /app
-
-COPY package.json bun.lock ./
-COPY packages packages
-COPY tools/docs/package.json tools/docs/package.json
-RUN bun install --frozen-lockfile --production --filter @open-pencil/cloud \
-  && rm -rf node_modules/.bun/@typescript+native-preview-* node_modules/@typescript/native-preview
+  && bunx tsdown --config packages/cloud/tsdown.standalone.config.ts \
+  && bun --filter @open-pencil/cloud build:admin
 
 FROM oven/bun:1.4.0-alpine AS runtime
 
@@ -26,13 +17,12 @@ RUN apk upgrade --no-cache \
 
 WORKDIR /app
 
-COPY --from=production-dependencies --chown=openpencil:openpencil /app/node_modules ./node_modules
-COPY --from=builder --chown=openpencil:openpencil /app/packages/cloud/package.json ./packages/cloud/package.json
-COPY --from=builder --chown=openpencil:openpencil /app/packages/cloud/dist ./packages/cloud/dist
+COPY --from=builder --chown=openpencil:openpencil /app/packages/cloud/dist-standalone ./packages/cloud/dist
+COPY --from=builder --chown=openpencil:openpencil /app/packages/cloud/dist/admin ./packages/cloud/dist/admin
 
 USER openpencil
 
 ENV NODE_ENV=production
 EXPOSE 8787
 
-CMD ["bun", "packages/cloud/dist/runtime-node.mjs"]
+CMD ["bun", "packages/cloud/dist/server.mjs"]

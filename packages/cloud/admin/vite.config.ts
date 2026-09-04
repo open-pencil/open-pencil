@@ -1,13 +1,12 @@
 import process from 'node:process'
 
+import { injectCloudBootstrap, parseCloudDiscovery } from '#cloud/contract'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import IconsResolver from 'unplugin-icons/resolver'
 import Icons from 'unplugin-icons/vite'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
-
-import { injectCloudBootstrap, parseCloudDiscovery } from '@open-pencil/cloud/contract'
 
 export default defineConfig(({ command }) => {
   const proxyTarget = process.env.OPENPENCIL_CLOUD_DEV_PROXY

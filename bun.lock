@@ -212,6 +212,7 @@
       },
       "devDependencies": {
         "@electric-sql/pglite": "0.4.1",
+        "@iconify-json/lucide": "^1.2.123",
         "@tailwindcss/vite": "^4.3.3",
         "@types/bun": "^1.3.14",
         "@types/nodemailer": "^8.0.1",

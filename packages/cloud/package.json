@@ -60,6 +60,7 @@
   "scripts": {
     "build": "bun run build:library && bun run build:admin",
     "build:library": "bunx tsdown --config tsdown.config.ts",
+    "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
     "build:admin": "bunx vite build --config admin/vite.config.ts",
     "dev:admin": "bun run build:library && portless run --name cloud.open-pencil vite --config admin/vite.config.ts",
     "check": "bun run typecheck && bun run typecheck:admin && bun run test && bun run build",
@@ -116,6 +117,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.4.1",
+    "@iconify-json/lucide": "^1.2.123",
     "@tailwindcss/vite": "^4.3.3",
     "@types/bun": "^1.3.14",
     "@types/nodemailer": "^8.0.1",

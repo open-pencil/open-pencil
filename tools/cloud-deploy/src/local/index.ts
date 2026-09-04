@@ -66,6 +66,13 @@ async function composePort(project: string, service: string, port: number): Prom
   return value
 }
 
+function aliasName(url: string): string {
+  const hostname = new URL(url).hostname
+  const suffix = '.localhost'
+  if (!hostname.endsWith(suffix)) throw new Error(`Portless returned an unexpected URL: ${url}`)
+  return hostname.slice(0, -suffix.length)
+}
+
 async function registerAlias(name: string, port: number): Promise<void> {
   await execute(['bunx', 'portless', 'alias', name, String(port), '--force'])
 }
@@ -78,7 +85,11 @@ async function stop(project: string): Promise<void> {
   await execute(['docker', 'compose', '--project-name', project, '--file', composeFile, 'down'], {
     allowFailure: true
   })
-  await Promise.all([removeAlias('cloud.open-pencil'), removeAlias('mail.open-pencil')])
+  const [cloudURL, mailURL] = await Promise.all([
+    portlessURL('cloud.open-pencil'),
+    portlessURL('mail.open-pencil')
+  ])
+  await Promise.all([removeAlias(aliasName(cloudURL)), removeAlias(aliasName(mailURL))])
 }
 
 async function start(): Promise<void> {
@@ -122,8 +133,8 @@ async function start(): Promise<void> {
     composePort(project, 'mailpit', 8025)
   ])
   try {
-    await registerAlias('cloud.open-pencil', cloudPort)
-    await registerAlias('mail.open-pencil', mailpitPort)
+    await registerAlias(aliasName(cloudURL), cloudPort)
+    await registerAlias(aliasName(mailURL), mailpitPort)
   } catch (error) {
     await stop(project)
     throw error
