@@ -12,7 +12,7 @@ test.describe('Cloud account and administration', () => {
       if (request.url().includes('/.well-known/openpencil')) discoveryRequests.push(request.url())
     })
     await page.goto(`${serverURL}/auth/sign-up`)
-    await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible()
     expect(discoveryRequests).toEqual([])
 
     await page.goto(`${serverURL}/`)

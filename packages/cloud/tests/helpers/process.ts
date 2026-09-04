@@ -15,6 +15,13 @@ export async function runProcess(command: string[], options: RunProcessOptions):
   if (exitCode !== 0) throw new Error(`${command.join(' ')} exited with code ${exitCode}`)
 }
 
-export function composeCommand(projectName: string, composeFile: string): string[] {
-  return ['docker', 'compose', '--project-name', projectName, '-f', composeFile]
+export function composeCommand(projectName: string, composeFiles: string | string[]): string[] {
+  const files = typeof composeFiles === 'string' ? [composeFiles] : composeFiles
+  return [
+    'docker',
+    'compose',
+    '--project-name',
+    projectName,
+    ...files.flatMap((file) => ['-f', file])
+  ]
 }

@@ -6,14 +6,16 @@ import { repositoryPath } from '#cloud-test/helpers/paths'
 import {
   createNodeAdminAssetHandler,
   createNodeCloudDatabase,
+  createNodeTransactionalEmailRuntime,
   createS3ObjectStore
 } from '@open-pencil/cloud/runtime/node'
 import {
   createCloudApp,
-  createBetterAuthAdapter,
+  createCloudAuthenticationRuntime,
   cloudDiscoveryFromConfig,
   migrateCloudDatabase,
   parseCloudServerConfig,
+  startTransactionalEmailWorker,
   StaticEntitlementSource
 } from '@open-pencil/cloud/server'
 
@@ -25,6 +27,7 @@ import {
 
 const port = Number(process.env.OPENPENCIL_CLOUD_E2E_PORT ?? 8787)
 const appOrigin = process.env.OPENPENCIL_APP_ORIGIN ?? 'http://localhost:1420'
+const mailpitPort = Number(process.env.MAILPIT_SMTP_PORT ?? 1025)
 const config = parseCloudServerConfig({
   deployment: 'self-hosted',
   enrollmentMode: 'approval',
@@ -32,9 +35,9 @@ const config = parseCloudServerConfig({
   emailPasswordMinimumLength: 15,
   emailTransport: 'smtp',
   emailFrom: 'cloud-e2e@example.com',
-  smtpHost: 'smtp.example.com',
-  smtpPort: 465,
-  smtpSecure: true,
+  smtpHost: '127.0.0.1',
+  smtpPort: mailpitPort,
+  smtpSecure: false,
   publicURL: `http://127.0.0.1:${port}`,
   appURL: appOrigin,
   collaborationURL: `ws://127.0.0.1:${Number(process.env.OPENPENCIL_CLOUD_COLLABORATION_PORT ?? 12345)}`,
@@ -58,8 +61,17 @@ function checksum(bytes: Uint8Array): string {
 
 const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
 const objects = createS3ObjectStore(config)
-const auth = createBetterAuthAdapter(config, database)
+const { email, invitationOutbox, transport } = createNodeTransactionalEmailRuntime(config, database)
+const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
 await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
+const emailWorker = transport
+  ? startTransactionalEmailWorker(email, {
+      batchSize: 10,
+      intervalMs: 100,
+      leaseDurationMs: 30_000,
+      maximumAttempts: 3
+    })
+  : undefined
 
 const workspaceId = crypto.randomUUID()
 const documentId = crypto.randomUUID()
@@ -166,11 +178,16 @@ const uploaded = await fetch(upload.url, {
 })
 if (!uploaded.ok) throw new Error(`Browser E2E fixture upload failed with HTTP ${uploaded.status}`)
 
+const testIdentity = createCloudE2EIdentityResolver()
+const testSession = createCloudE2ESessionResolver()
 const app = createCloudApp({
   config,
   database,
   auth,
   objects,
+  invitationOutbox,
+  transactionalEmail: email,
+  enrollment,
   entitlementSource: new StaticEntitlementSource({
     'cloud.sharing.capability-links': true,
     'cloud.sharing.anonymous-view': true,
@@ -179,8 +196,10 @@ const app = createCloudApp({
     'cloud.collaboration.enabled': true,
     'cloud.collaboration.maximum-participants': 10
   }),
-  resolveIdentity: createCloudE2EIdentityResolver(),
-  resolveSession: createCloudE2ESessionResolver()
+  resolveIdentity: async (request) =>
+    (await testIdentity(request)) ?? auth.resolveIdentity(request.headers),
+  resolveSession: async (request) =>
+    (await testSession(request)) ?? auth.resolveSession(request.headers)
 })
 const adminAssets = createNodeAdminAssetHandler(
   repositoryPath('packages/cloud/dist/admin'),
@@ -200,6 +219,7 @@ console.log(
 
 async function stop() {
   await server.stop()
+  await emailWorker?.stop()
   await database.destroy()
   process.exit(0)
 }
