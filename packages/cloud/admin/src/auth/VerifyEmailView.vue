@@ -39,7 +39,7 @@ async function resend(): Promise<void> {
 
 <template>
   <PublicShell>
-    <main class="grid min-h-[calc(100vh-7rem)] place-items-center p-5">
+    <main class="grid place-items-center p-5">
       <section
         class="w-full max-w-md rounded-xl border border-border bg-panel p-6 text-center shadow-2xl"
       >

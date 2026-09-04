@@ -29,9 +29,7 @@ watchEffect(() => {
 
 <template>
   <PublicShell>
-    <main
-      class="mx-auto flex min-h-[calc(100vh-7rem)] w-full max-w-6xl flex-col justify-center px-5 py-16"
-    >
+    <main class="mx-auto flex w-full max-w-6xl flex-col justify-center px-5 py-16">
       <section class="max-w-3xl">
         <p class="mb-3 text-xs font-medium text-component">
           {{ messages.public.value.localFirstLabel }}

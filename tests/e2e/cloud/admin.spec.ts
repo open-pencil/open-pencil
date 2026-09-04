@@ -17,6 +17,19 @@ test.describe('Cloud account and administration', () => {
 
     await page.goto(`${serverURL}/`)
     await expect(page.getByRole('link', { name: 'Sign up' }).first()).toBeVisible()
+    expect(
+      await page.evaluate(() => ({
+        clientWidth: document.documentElement.clientWidth,
+        innerWidth,
+        scrollHeight: document.documentElement.scrollHeight,
+        innerHeight
+      }))
+    ).toEqual({
+      clientWidth: 1280,
+      innerWidth: 1280,
+      scrollHeight: 800,
+      innerHeight: 800
+    })
     await expect(page.getByRole('link', { name: 'Sign in' }).first()).toBeVisible()
     await expect(page.getByRole('link', { name: 'Admin sign in' })).toHaveCount(0)
 

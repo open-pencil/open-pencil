@@ -16,7 +16,7 @@ const workspaces = useQuery(workspacesQueryOptions())
 
 <template>
   <PublicShell>
-    <main class="mx-auto min-h-[calc(100vh-7rem)] w-full max-w-6xl px-5 py-12">
+    <main class="mx-auto w-full max-w-6xl px-5 py-12">
       <section class="rounded-xl border border-border bg-panel p-6 sm:p-8">
         <p class="mb-2 text-xs font-medium text-component">
           {{ messages.account.value.readyLabel }}

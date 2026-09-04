@@ -19,7 +19,7 @@ async function signOut(): Promise<void> {
 
 <template>
   <PublicShell>
-    <main class="mx-auto grid min-h-[calc(100vh-7rem)] max-w-2xl place-items-center p-5">
+    <main class="mx-auto grid max-w-2xl place-items-center p-5">
       <section class="w-full rounded-xl border border-border bg-panel p-6 text-center shadow-2xl">
         <h1 class="m-0 text-2xl font-semibold">
           {{

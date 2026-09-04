@@ -25,7 +25,7 @@ async function signOut(): Promise<void> {
 </script>
 
 <template>
-  <div class="min-h-screen bg-canvas text-surface">
+  <div class="grid min-h-dvh grid-rows-[auto_minmax(0,1fr)_auto] bg-canvas text-surface">
     <header class="border-b border-border bg-panel/90 backdrop-blur">
       <nav
         class="mx-auto flex min-h-14 max-w-6xl items-center justify-between gap-2 px-4 sm:px-5"

@@ -8,7 +8,7 @@ const messages = useCloudI18n()
 
 <template>
   <PublicShell>
-    <main class="grid min-h-[calc(100vh-7rem)] place-items-center p-5 text-center">
+    <main class="grid place-items-center p-5 text-center">
       <section>
         <p class="text-sm font-medium text-component">404</p>
         <h1 class="mt-2 text-3xl font-semibold">{{ messages.public.value.notFoundTitle }}</h1>
