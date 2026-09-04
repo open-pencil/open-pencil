@@ -42,6 +42,14 @@ function toastClass(tone: ToastVariant) {
       <ToastDescription class="min-w-0 flex-1 select-text">
         {{ t.message }}<span v-if="t.count > 1" class="ml-1.5 opacity-70">×{{ t.count }}</span>
       </ToastDescription>
+      <button
+        v-if="t.action"
+        type="button"
+        class="shrink-0 cursor-pointer rounded px-1.5 py-0.5 text-[10px] font-medium underline-offset-2 hover:underline"
+        @click="t.action.run()"
+      >
+        {{ t.action.label }}
+      </button>
       <Tip
         v-if="t.variant !== 'default'"
         :label="copied ? common.copiedExclamation : common.copyMessage"

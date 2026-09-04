@@ -1,7 +1,11 @@
+
 ja:ai.apiKey
 ja:ai.apiType
 ja:ai.baseURL
 ja:ai.baseURLPlaceholder
+ja:ai.chatAuthenticationFailed
+ja:ai.chatForbidden
+ja:ai.chatNetworkFailed
 ja:ai.connectionTestAPITypeMismatch
 ja:ai.connectionTestAuthFailed
 ja:ai.connectionTestBrowserNetworkFailed
@@ -20,6 +24,8 @@ ja:ai.modelRoleDesignDescription
 ja:ai.permissionRequest
 ja:ai.provider
 ja:ai.reasoningEffortPlaceholder
+ja:ai.removeImageAttachment
+ja:ai.viewAttachment
 ja:automation.addServerConnection
 ja:automation.authenticationDescription
 ja:automation.bearerAuthentication
@@ -141,6 +147,9 @@ ja:variableTypes.booleanHint
 zh-cn:ai.apiKey
 zh-cn:ai.apiType
 zh-cn:ai.baseURLPlaceholder
+zh-cn:ai.chatAuthenticationFailed
+zh-cn:ai.chatForbidden
+zh-cn:ai.chatNetworkFailed
 zh-cn:ai.chatOutputLimit
 zh-cn:ai.connectionTestAPITypeMismatch
 zh-cn:ai.connectionTestAuthFailed
@@ -161,6 +170,8 @@ zh-cn:ai.modelRoleDesignDescription
 zh-cn:ai.permissionRequest
 zh-cn:ai.provider
 zh-cn:ai.reasoningEffortPlaceholder
+zh-cn:ai.removeImageAttachment
+zh-cn:ai.viewAttachment
 zh-cn:automation.addServerConnection
 zh-cn:automation.authenticationDescription
 zh-cn:automation.bearerAuthentication

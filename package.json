@@ -53,7 +53,8 @@
     "check:packages": "bun tools/package-quality/src/cli.ts check",
     "check:arch": "steiger .",
     "check:vue": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p packages/vue/tsconfig.json",
-    "test": "playwright test --project=openpencil",
+    "test": "playwright test --project=openpencil --grep-invert @real-llm",
+    "test:real-llm": "playwright test --project=openpencil --grep @real-llm",
     "test:update": "playwright test --project=openpencil --update-snapshots",
     "test:figma": "playwright test --project=figma",
     "figma:debug": "open -a Figma --args --remote-debugging-port=9222",
@@ -109,6 +110,7 @@
     "@open-pencil/scene-graph": "workspace:*",
     "@open-pencil/vue": "workspace:*",
     "@openrouter/ai-sdk-provider": "^3.0.0",
+    "@stream-markdown/code": "2.0.0-beta.2",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/vue-table": "^8.21.3",
     "@tauri-apps/api": "^2.11.1",
@@ -148,7 +150,7 @@
     "valibot": "^1.4.2",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0",
-    "vue-stream-markdown": "1.0.4",
+    "vue-stream-markdown": "2.0.0-beta.2",
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.32",
@@ -228,10 +230,10 @@
     "ws": "^8.21.3"
   },
   "overrides": {
+    "@codemirror/view": "6.43.9",
     "brace-expansion@2": "2.1.4",
     "protobufjs": "7.5.5",
-    "websocket-driver": "0.7.5",
-    "@codemirror/view": "6.43.9"
+    "websocket-driver": "0.7.5"
   },
   "packageManager": "bun@1.4.0"
 }

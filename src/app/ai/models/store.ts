@@ -119,6 +119,29 @@ function optionalAssignment(value: unknown, modelIds: Set<string>): AIModelRoleA
   return typeof value === 'string' && modelIds.has(value) ? (value as AIModelProfileId) : null
 }
 
+function curatedModelCapabilities(
+  providerID: AIProviderID,
+  modelID: string
+): AIModelCapability[] | null {
+  const model = AI_PROVIDERS.find((provider) => provider.id === providerID)?.models.find(
+    (candidate) => candidate.id === modelID
+  )
+  return model?.capabilities ? [...model.capabilities] : null
+}
+
+function hydrateCuratedCapabilities(
+  profiles: AIModelProfile[],
+  connections: AIModelConnection[]
+): void {
+  for (const profile of profiles) {
+    if (profile.customModelID) continue
+    const connection = connections.find((candidate) => candidate.id === profile.connectionId)
+    if (!connection) continue
+    const capabilities = curatedModelCapabilities(connection.providerID, profile.modelID)
+    if (capabilities) profile.capabilities = [...new Set(capabilities)]
+  }
+}
+
 function parseSettings(value: unknown): AIModelSettings | null {
   if (!isRecord(value) || value.version !== 1) return null
   const connections = Array.isArray(value.connections)
@@ -131,6 +154,7 @@ function parseSettings(value: unknown): AIModelSettings | null {
         .filter((profile) => profile !== null)
     : []
   if (!models.length) return null
+  hydrateCuratedCapabilities(models, connections)
   const modelIds = new Set(models.map((profile) => profile.id))
   const rawAssignments = isRecord(value.assignments) ? value.assignments : {}
   const rawDesign = stringValue(rawAssignments.design)
@@ -167,6 +191,7 @@ function legacySettings(): AIModelSettings {
     ? provider?.models.find((model) => model.id === displayModel)?.name || displayModel
     : 'Design model'
   const maxOutputTokens = Number(readLegacyAIModelStorage('ai-max-output-tokens'))
+  const curatedCapabilities = customModelID ? null : curatedModelCapabilities(providerID, modelID)
   return {
     version: 1,
     connections: [
@@ -189,14 +214,14 @@ function legacySettings(): AIModelSettings {
         maxOutputTokens: Number.isFinite(maxOutputTokens)
           ? maxOutputTokens
           : DEFAULT_MAX_OUTPUT_TOKENS,
-        capabilities: ['tools']
+        capabilities: curatedCapabilities ?? ['tools']
       }
     ],
     assignments: {
       design: LEGACY_MODEL_ID,
       review: 'design',
       fast: 'design',
-      vision: null
+      vision: curatedCapabilities?.includes('vision') ? 'design' : null
     }
   }
 }
@@ -372,6 +397,13 @@ export function saveModelProfileDraft(draft: AIModelProfileDraft): AIModelProfil
   const index = aiModelSettings.value.models.findIndex((model) => model.id === profile.id)
   if (index === -1) aiModelSettings.value.models.push(profile)
   else aiModelSettings.value.models[index] = profile
+  if (
+    aiModelSettings.value.assignments.vision === null &&
+    aiModelSettings.value.assignments.design === profile.id &&
+    profile.capabilities.includes('vision')
+  ) {
+    aiModelSettings.value.assignments.vision = 'design'
+  }
   if (
     aiModelSettings.value.assignments.vision === profile.id &&
     !profile.capabilities.includes('vision')

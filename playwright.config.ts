@@ -33,6 +33,7 @@ export default defineConfig({
       name: 'openpencil',
       testDir: './tests/e2e',
       testIgnore: ['**/native/**'],
+      fullyParallel: false
     },
     {
       name: 'openpencil-webkit',

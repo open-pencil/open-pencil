@@ -3,7 +3,7 @@ import { controlHeight } from '@/theme/control'
 export default {
   slots: {
     root: 'min-w-0 rounded-xl border border-border bg-input transition-colors hover:border-muted/60 focus-within:border-panel-focus focus-within:ring-1 focus-within:ring-accent/30',
-    attachment: 'px-2 pt-2',
+    attachment: 'm-2 mb-0',
     control: 'min-w-0',
     toolbar: 'flex min-w-0 items-center gap-1 px-1.5 pb-1.5',
     model: 'min-w-0 flex-1',

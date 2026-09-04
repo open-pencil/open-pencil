@@ -1,26 +1,25 @@
 <script setup lang="ts">
-import { useFileDialog } from '@vueuse/core'
+import { useTextareaAutosize } from '@vueuse/core'
 import { TooltipProvider } from 'reka-ui'
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, ref } from 'vue'
 
+import { useI18n, useSelectionState } from '@open-pencil/vue'
+
+import ChatNodePreview from '@/components/chat/ChatNodePreview.vue'
 import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
-import ProviderModelSelect from '@/components/chat/ProviderModelSelect.vue'
+import { useAttachmentDrafts } from '@/components/chat/input/useAttachments'
 import IconButton from '@/components/ui/IconButton.vue'
 import InputGroup from '@/components/ui/InputGroup.vue'
+import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
+import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
-import { designModelProfile, designModelProfiles } from '@/app/ai/models'
-import {
-  createImagePreviewURL,
-  revokeImagePreviewURL,
-  validateImageAttachmentFile
-} from '@/app/ai/attachment/image/prepare'
-import { MAX_IMAGE_ATTACHMENTS, type ImageAttachmentDraft } from '@/app/ai/attachment/image/types'
+import { designModelProfile } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { useI18n } from '@open-pencil/vue'
 
 import { ACP_AGENTS } from '@open-pencil/core/constants'
 
 const { providerID, providerDef, modelID, customModelID } = useAIChat()
+const { editor, selectedIds } = useSelectionState()
 const { ai } = useI18n()
 
 const { status, disabled = false } = defineProps<{
@@ -29,51 +28,31 @@ const { status, disabled = false } = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  submit: [text: string, images: ImageAttachmentDraft[]]
+  submit: [submission: ChatSubmission]
   stop: []
   error: [message: string]
 }>()
 
+const textarea = ref<HTMLTextAreaElement>()
 const input = ref('')
-const images = ref<ImageAttachmentDraft[]>([])
-const {
-  open: openImageDialog,
-  reset: resetImageDialog,
-  onChange: onImageChange
-} = useFileDialog({
-  accept: 'image/png,image/jpeg,image/webp',
-  multiple: true,
-  reset: true
+const { triggerResize } = useTextareaAutosize({ element: textarea, input, maxHeight: 160 })
+const attachments = useAttachmentDrafts({
+  editor,
+  selectedIds,
+  reportError: (message) => emit('error', message)
 })
-
-function addImageFiles(files: File[]) {
-  const available = MAX_IMAGE_ATTACHMENTS - images.value.length
-  if (available <= 0) {
-    emit('error', `You can attach up to ${MAX_IMAGE_ATTACHMENTS} images.`)
-    resetImageDialog()
-    return
-  }
-
-  for (const file of files.slice(0, available)) {
-    const validationError = validateImageAttachmentFile(file)
-    if (validationError) {
-      emit('error', validationError)
-      continue
-    }
-    images.value.push({ file, previewURL: createImagePreviewURL(file) })
-  }
-  if (files.length > available) {
-    emit('error', `You can attach up to ${MAX_IMAGE_ATTACHMENTS} images.`)
-  }
-  resetImageDialog()
-}
-
-function removeImage(index: number) {
-  const image = images.value[index]
-  if (image) revokeImagePreviewURL(image.previewURL)
-  images.value.splice(index, 1)
-  resetImageDialog()
-}
+const {
+  images,
+  nodes: referencedNodes,
+  canToggleSelection: canAddSelection,
+  selectionActive: selectionContextActive,
+  openImageDialog,
+  removeImage,
+  removeNode: removeReferencedNode,
+  toggleSelection: toggleCurrentSelection,
+  handlePaste,
+  takeSubmission
+} = attachments
 
 const isStreaming = computed(() => disabled || status === 'streaming' || status === 'submitted')
 const isAgentProvider = computed(
@@ -98,32 +77,10 @@ const selectedModelName = computed(() => {
   return providerDef.value.models.find((m) => m.id === modelID.value)?.name ?? modelID.value
 })
 
-// Switching between saved profiles only makes sense once more than one can drive the design agent.
-const switchableProfiles = computed(designModelProfiles)
-const canSwitchProfile = computed(() => switchableProfiles.value.length > 1)
+// The composer switches configured Design-role profiles; raw provider model selection lives in Settings.
 const selectedProfileName = computed(
   () => designModelProfile.value?.name ?? selectedModelName.value
 )
-
-function clearImages() {
-  for (const image of images.value) revokeImagePreviewURL(image.previewURL)
-  images.value = []
-  resetImageDialog()
-}
-
-onImageChange((selectedFiles) => {
-  if (selectedFiles) addImageFiles([...selectedFiles])
-})
-
-function handlePaste(event: ClipboardEvent) {
-  const files = event.clipboardData?.files
-  const images = files ? [...files].filter((file) => file.type.startsWith('image/')) : []
-  if (images.length === 0) return
-  event.preventDefault()
-  addImageFiles(images)
-}
-
-onBeforeUnmount(clearImages)
 
 function handleInputKeydown(event: KeyboardEvent) {
   if (event.code !== 'Enter' || event.shiftKey || event.isComposing) return
@@ -136,11 +93,9 @@ function handleSubmit(e: Event) {
   e.preventDefault()
   const text = input.value.trim()
   if (!text) return
-  const submittedImages = images.value
-  images.value = []
-  resetImageDialog()
-  emit('submit', text, submittedImages)
+  emit('submit', takeSubmission(text))
   input.value = ''
+  triggerResize()
 }
 </script>
 
@@ -149,8 +104,26 @@ function handleSubmit(e: Event) {
     <div class="shrink-0 border-t border-border p-2.5">
       <form @submit="handleSubmit" @paste.stop="handlePaste">
         <InputGroup :disabled="isStreaming">
-          <template v-if="images.length" #attachment>
+          <template v-if="images.length || referencedNodes.length" #attachment>
             <div class="flex flex-wrap gap-1.5">
+              <div
+                v-for="node in referencedNodes"
+                :key="node.id"
+                data-slot="chat-context-chip"
+                class="flex min-w-0 max-w-full items-center gap-2 rounded-lg border border-border bg-canvas p-1.5 shadow-xs"
+              >
+                <ChatNodePreview :editor="editor" :node="node" />
+                <span class="min-w-0 flex-1 truncate text-[10px] text-surface">
+                  {{ node.name || node.type }}
+                </span>
+                <IconButton
+                  :label="ai.removeNodeContext"
+                  size="xs"
+                  @click="removeReferencedNode(node.id)"
+                >
+                  <icon-lucide-x class="size-3" />
+                </IconButton>
+              </div>
               <div
                 v-for="(image, index) in images"
                 :key="image.previewURL"
@@ -167,7 +140,7 @@ function handleSubmit(e: Event) {
                   {{ image.file.name }}
                 </span>
                 <IconButton
-                  :label="`Remove image ${image.file.name}`"
+                  :label="ai.removeImageAttachment({ name: image.file.name })"
                   size="xs"
                   @click="removeImage(index)"
                 >
@@ -178,13 +151,14 @@ function handleSubmit(e: Event) {
           </template>
 
           <textarea
+            ref="textarea"
             v-model="input"
             data-test-id="chat-input"
             :placeholder="ai.describeChange"
             :disabled="isStreaming"
             rows="2"
             aria-label="Describe a change"
-            class="block min-h-12 w-full resize-none bg-transparent px-3 pt-2.5 pb-1 text-xs leading-relaxed text-surface outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-60"
+            class="block min-h-12 w-full resize-none overflow-y-auto bg-transparent px-3 pt-2.5 pb-1 text-xs leading-relaxed text-surface outline-none placeholder:text-muted disabled:cursor-not-allowed disabled:opacity-60"
             @keydown="handleInputKeydown"
             @copy.stop
             @cut.stop
@@ -192,7 +166,17 @@ function handleSubmit(e: Event) {
 
           <template #leading>
             <IconButton
-              label="Attach images"
+              :label="ai.addSelectionContext"
+              size="sm"
+              :active="selectionContextActive"
+              :disabled="isStreaming || !canAddSelection"
+              data-slot="chat-add-selection-context"
+              @click="toggleCurrentSelection"
+            >
+              <icon-lucide-mouse-pointer-2 class="size-4" />
+            </IconButton>
+            <IconButton
+              :label="ai.attachImages"
               size="sm"
               :disabled="isStreaming || images.length >= MAX_IMAGE_ATTACHMENTS"
               @click="openImageDialog()"
@@ -209,26 +193,11 @@ function handleSubmit(e: Event) {
                   <span class="truncate">{{ agentName }}</span>
                 </div>
               </template>
-              <ChatProfileSelect
-                v-else-if="canSwitchProfile && (isCustomProvider || usesCustomModel)"
-              >
+              <ChatProfileSelect v-else>
                 <template #value>
                   <span class="min-w-0 truncate">{{ selectedProfileName }}</span>
                 </template>
               </ChatProfileSelect>
-              <div
-                v-else-if="isCustomProvider || usesCustomModel"
-                class="flex min-w-0 items-center gap-1 px-1.5 text-[10px] text-muted"
-                data-test-id="chat-custom-model-label"
-              >
-                <icon-lucide-bot class="size-3 shrink-0" />
-                <span class="truncate">{{ selectedModelName }}</span>
-              </div>
-              <ProviderModelSelect v-else>
-                <template #value>
-                  <span class="min-w-0 truncate">{{ selectedModelName }}</span>
-                </template>
-              </ProviderModelSelect>
             </div>
           </template>
 

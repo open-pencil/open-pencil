@@ -1,25 +1,13 @@
 <script setup lang="ts">
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { refAutoReset, useClipboard } from '@vueuse/core'
-import { computed, markRaw, nextTick, ref, watch } from 'vue'
+import { computed, markRaw, shallowRef, nextTick, ref, watch } from 'vue'
 
 import { getACPDebugText, clearACPDebugLog, hasACPDebugEntries } from '@/app/ai/acp/transport'
 import { copyChatLog } from '@/app/ai/debug'
-import {
-  analyzeAttachedImages,
-  designMessageWithImageFindings
-} from '@/app/ai/attachment/image/analyze'
-import {
-  createImagePreviewURL,
-  isImageAttachmentMediaType,
-  prepareImageAttachment,
-  revokeImagePreviewURL
-} from '@/app/ai/attachment/image/prepare'
-import {
-  clearImageAttachmentPresentations,
-  setImageAttachmentPresentations
-} from '@/app/ai/attachment/image/presentation'
-import type { ImageAttachmentDraft } from '@/app/ai/attachment/image/types'
+import { clearVisibleMessageText } from '@/app/ai/chat/presentation'
+import { useChatSubmission } from '@/app/ai/chat/submission/use'
+import { clearMessageAttachments } from '@/app/ai/attachment/presentation/store'
 import { clearToolLogEntries, didHitStepLimit } from '@/app/ai/tools'
 import { activeTab } from '@/app/tabs'
 import { getActiveEditorStore } from '@/app/editor/active-store'
@@ -31,6 +19,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 import { useAIChat } from '@/app/ai/chat/use'
 import { toast } from '@/app/shell/ui'
+import { openSettingsDialog } from '@/app/settings/dialog'
 import { useI18n } from '@open-pencil/vue'
 
 import { useNotificationMessages } from '@/app/i18n/notifications'
@@ -46,9 +35,20 @@ const { copy } = useClipboard()
 const { ai } = useI18n()
 const notifications = useNotificationMessages()
 
-const chat = ref<Chat<UIMessage> | null>(null)
-const isPreparingImages = ref(false)
-let attachmentOperationVersion = 0
+const chat = shallowRef<Chat<UIMessage> | null>(null)
+const submission = useChatSubmission({
+  chat,
+  ensureChat,
+  clearFailure: clearChatFailure,
+  getEditor: getActiveEditorStore,
+  messages: computed(() => ({
+    openSettings: ai.value.openProviderSettingsAction,
+    requestFailed: ai.value.chatRequestFailed,
+    visionUnavailable: ai.value.visionModelUnavailable
+  })),
+  reportError: toast.error,
+  openModelSettings: () => openSettingsDialog('ai')
+})
 
 void ensureChat()
   .then((c) => {
@@ -69,16 +69,29 @@ const acpLogCopied = refAutoReset(false, 1500)
 const messages = computed(() => chat.value?.messages ?? [])
 const failureMessage = computed(() => {
   switch (chatFailure.value?.reason) {
+    case 'authentication':
+      return ai.value.chatAuthenticationFailed
+    case 'forbidden':
+      return ai.value.chatForbidden
     case 'insufficient-credit':
       return ai.value.chatInsufficientCredit
+    case 'model-not-found':
+      return ai.value.chatModelNotFound
+    case 'network':
+      return ai.value.chatNetworkFailed
     case 'output-limit':
       return ai.value.chatOutputLimit
+    case 'rate-limit':
+      return ai.value.chatRateLimited
     case 'request-failed':
       return ai.value.chatRequestFailed
     default:
       return null
   }
 })
+const failureHasSettingsAction = computed(() =>
+  ['authentication', 'forbidden', 'model-not-found'].includes(chatFailure.value?.reason ?? '')
+)
 const status = computed(() => chat.value?.status ?? 'ready')
 function isStreamingMessage(message: UIMessage, index: number): boolean {
   return (
@@ -120,108 +133,30 @@ watch(
   () => chatFailure.value?.reason,
   (reason) => {
     if (!reason) return
-    toast.error(failureMessage.value ?? ai.value.chatRequestFailed)
+    toast.error(
+      failureMessage.value ?? ai.value.chatRequestFailed,
+      failureHasSettingsAction.value
+        ? {
+            label: ai.value.openProviderSettingsAction,
+            run: () => openSettingsDialog('ai')
+          }
+        : undefined
+    )
   }
 )
 watch(
   () => activeTab.value?.id,
   async () => {
-    attachmentOperationVersion += 1
-    isPreparingImages.value = false
-    clearImageAttachmentPresentations()
+    submission.cancel()
+    clearMessageAttachments()
+    clearVisibleMessageText()
     const nextChat = await ensureChat()
     chat.value = nextChat ? markRaw(nextChat) : null
   }
 )
 
-async function handleSubmit(text: string, images: ImageAttachmentDraft[] = []) {
-  if (status.value === 'streaming' || status.value === 'submitted' || isPreparingImages.value) {
-    for (const image of images) revokeImagePreviewURL(image.previewURL)
-    if (images.length > 0) toast.error(ai.value.chatRequestFailed)
-    return
-  }
-
-  const operationVersion = ++attachmentOperationVersion
-  if (images.length > 0) isPreparingImages.value = true
-  clearChatFailure()
-  try {
-    const currentChat = chat.value ?? (await ensureChat())
-    if (currentChat) chat.value = markRaw(currentChat)
-    if (!currentChat || operationVersion !== attachmentOperationVersion) {
-      for (const image of images) revokeImagePreviewURL(image.previewURL)
-      if (images.length > 0) toast.error(ai.value.chatRequestFailed)
-      return
-    }
-
-    if (images.length === 0) {
-      await currentChat.sendMessage({ text })
-      return
-    }
-
-    const messageId = crypto.randomUUID()
-    currentChat.messages = [
-      ...currentChat.messages,
-      { id: messageId, role: 'user', parts: [{ type: 'text', text }] }
-    ]
-    setImageAttachmentPresentations(
-      messageId,
-      images.map((image) => ({
-        id: crypto.randomUUID(),
-        messageId,
-        name: image.file.name,
-        mediaType: isImageAttachmentMediaType(image.file.type) ? image.file.type : 'image/png',
-        originalWidth: 0,
-        originalHeight: 0,
-        previewWidth: 0,
-        previewHeight: 0,
-        previewURL: image.previewURL,
-        displayText: text
-      }))
-    )
-
-    const preparedImages = await Promise.all(
-      images.map((image) => prepareImageAttachment(image.file))
-    )
-    const findings = await analyzeAttachedImages(getActiveEditorStore(), text, preparedImages)
-    if (operationVersion !== attachmentOperationVersion || chat.value !== currentChat) return
-
-    setImageAttachmentPresentations(
-      messageId,
-      preparedImages.map((prepared, index) => {
-        const image = images[index]
-        const previewURL = createImagePreviewURL(prepared.blob)
-        return {
-          id: crypto.randomUUID(),
-          messageId,
-          name: image?.file.name ?? `Image ${index + 1}`,
-          mediaType: prepared.mediaType,
-          originalWidth: prepared.originalWidth,
-          originalHeight: prepared.originalHeight,
-          previewWidth: prepared.width,
-          previewHeight: prepared.height,
-          previewURL,
-          displayText: text
-        }
-      })
-    )
-    await currentChat.sendMessage({
-      messageId,
-      text: designMessageWithImageFindings(
-        text,
-        images.map((image) => image.file.name),
-        findings
-      )
-    })
-  } catch (e) {
-    console.error('Chat error:', e)
-    toast.error(ai.value.chatRequestFailed)
-  } finally {
-    if (operationVersion === attachmentOperationVersion) isPreparingImages.value = false
-  }
-}
-
 function handleStop() {
-  chat.value?.stop()
+  submission.stop()
 }
 
 async function handleCopyDebug() {
@@ -237,10 +172,10 @@ async function handleCopyACPLog() {
 }
 
 function handleClearChat() {
-  attachmentOperationVersion += 1
-  isPreparingImages.value = false
+  submission.cancel()
   clearChatFailure()
-  clearImageAttachmentPresentations()
+  clearMessageAttachments()
+  clearVisibleMessageText()
   chat.value = null
   void resetChat().catch((error: unknown) => {
     console.error('Chat reset error:', error)
@@ -304,7 +239,14 @@ function handleClearChat() {
             <div v-if="showContinue" class="flex justify-center py-2">
               <button
                 class="flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
-                @click="handleSubmit('Continue where you left off')"
+                @click="
+                  submission.submit({
+                    modelText: 'Continue where you left off',
+                    displayText: 'Continue where you left off',
+                    images: [],
+                    nodes: []
+                  })
+                "
               >
                 <icon-lucide-play class="size-3" />
                 Continue
@@ -348,8 +290,8 @@ function handleClearChat() {
 
       <ChatInput
         :status="status"
-        :disabled="isPreparingImages"
-        @submit="handleSubmit"
+        :disabled="submission.busy.value"
+        @submit="submission.submit"
         @stop="handleStop"
         @error="toast.error"
       />

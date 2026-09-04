@@ -1,40 +1,38 @@
-import { computed, shallowReactive } from 'vue'
+import type { ImageAttachmentDraft, PreparedImageAttachment } from '@/app/ai/attachment/image/types'
+import type { ImagePresentation } from '@/app/ai/attachment/presentation/types'
 
-import { revokeImagePreviewURL } from '@/app/ai/attachment/image/prepare'
-import type { ImageAttachmentPresentation } from '@/app/ai/attachment/image/types'
-
-const attachments = shallowReactive(new Map<string, ImageAttachmentPresentation[]>())
-
-export function visibleUserMessageText(messageId: string, text: string): string {
-  const attachment = attachments.get(messageId)?.[0]
-  return attachment?.displayText ?? text
-}
-
-export function imageAttachmentsForMessage(messageId: string) {
-  return computed(() => attachments.get(messageId) ?? [])
-}
-
-export function setImageAttachmentPresentations(
+export function imageDraftPresentations(
   messageId: string,
-  nextAttachments: ImageAttachmentPresentation[]
-): void {
-  const previous = attachments.get(messageId)
-  if (previous) {
-    const retainedURLs = new Set(nextAttachments.map((attachment) => attachment.previewURL))
-    for (const staleAttachment of previous) {
-      if (!retainedURLs.has(staleAttachment.previewURL)) {
-        revokeImagePreviewURL(staleAttachment.previewURL)
-      }
-    }
-  }
-  attachments.set(messageId, nextAttachments)
+  images: ImageAttachmentDraft[]
+): ImagePresentation[] {
+  return images.map((image) => ({
+    id: crypto.randomUUID(),
+    messageId,
+    kind: 'image',
+    name: image.file.name,
+    preview: image.file,
+    mediaType:
+      image.file.type === 'image/jpeg' ||
+      image.file.type === 'image/webp' ||
+      image.file.type === 'image/png'
+        ? image.file.type
+        : 'image/png',
+    originalSize: { x: 0, y: 0 }
+  }))
 }
 
-export function clearImageAttachmentPresentations(): void {
-  for (const messageAttachments of attachments.values()) {
-    for (const attachment of messageAttachments) {
-      revokeImagePreviewURL(attachment.previewURL)
-    }
-  }
-  attachments.clear()
+export function preparedImagePresentations(
+  messageId: string,
+  drafts: ImageAttachmentDraft[],
+  images: PreparedImageAttachment[]
+): ImagePresentation[] {
+  return images.map((image, index) => ({
+    id: crypto.randomUUID(),
+    messageId,
+    kind: 'image',
+    name: drafts[index]?.file.name ?? `Image ${index + 1}`,
+    preview: image.blob,
+    mediaType: image.mediaType,
+    originalSize: { x: image.originalWidth, y: image.originalHeight }
+  }))
 }

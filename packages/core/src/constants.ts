@@ -229,16 +229,37 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     defaultModel: 'anthropic/claude-sonnet-4.6',
     supportsCustomModel: true,
     models: [
-      { id: 'anthropic/claude-sonnet-4.6', name: 'Claude Sonnet 4.6', tag: 'Best for design' },
-      { id: 'anthropic/claude-opus-4.6', name: 'Claude Opus 4.6', tag: 'Smartest' },
-      { id: 'moonshotai/kimi-k2.5', name: 'Kimi K2.5', tag: 'Vision + code' },
+      {
+        id: 'anthropic/claude-sonnet-4.6',
+        name: 'Claude Sonnet 4.6',
+        tag: 'Best for design',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'anthropic/claude-opus-4.6',
+        name: 'Claude Opus 4.6',
+        tag: 'Smartest',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'moonshotai/kimi-k2.5',
+        name: 'Kimi K2.5',
+        tag: 'Vision + code',
+        capabilities: ['tools', 'vision']
+      },
       {
         id: 'google/gemini-3.1-pro-preview',
         name: 'Gemini 3.1 Pro',
-        tag: '1M context'
+        tag: '1M context',
+        capabilities: ['tools', 'vision']
       },
       { id: 'openai/gpt-5.3-codex', name: 'GPT-5.3 Codex' },
-      { id: 'google/gemini-3-flash-preview', name: 'Gemini 3 Flash', tag: 'Fast' },
+      {
+        id: 'google/gemini-3-flash-preview',
+        name: 'Gemini 3 Flash',
+        tag: 'Fast',
+        capabilities: ['tools', 'vision']
+      },
       { id: 'deepseek/deepseek-v3.2', name: 'DeepSeek V3.2', tag: 'Cheap' },
       { id: 'qwen/qwen3.5-flash-02-23', name: 'Qwen 3.5 Flash', tag: 'Cheap' },
       { id: 'qwen/qwen3-coder:free', name: 'Qwen3 Coder', tag: 'Free' },
@@ -252,8 +273,18 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     keyURL: 'https://console.anthropic.com/settings/keys',
     defaultModel: 'claude-sonnet-4-6-20260301',
     models: [
-      { id: 'claude-sonnet-4-6-20260301', name: 'Claude Sonnet 4.6', tag: 'Best for design' },
-      { id: 'claude-opus-4-6-20260301', name: 'Claude Opus 4.6', tag: 'Smartest' }
+      {
+        id: 'claude-sonnet-4-6-20260301',
+        name: 'Claude Sonnet 4.6',
+        tag: 'Best for design',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'claude-opus-4-6-20260301',
+        name: 'Claude Opus 4.6',
+        tag: 'Smartest',
+        capabilities: ['tools', 'vision']
+      }
     ]
   },
   {
@@ -276,8 +307,18 @@ export const AI_PROVIDERS: AIProviderDef[] = [
     keyURL: 'https://aistudio.google.com/apikey',
     defaultModel: 'gemini-3.1-pro-preview',
     models: [
-      { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro', tag: '1M context' },
-      { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash', tag: 'Fast' }
+      {
+        id: 'gemini-3.1-pro-preview',
+        name: 'Gemini 3.1 Pro',
+        tag: '1M context',
+        capabilities: ['tools', 'vision']
+      },
+      {
+        id: 'gemini-3-flash-preview',
+        name: 'Gemini 3 Flash',
+        tag: 'Fast',
+        capabilities: ['tools', 'vision']
+      }
     ]
   },
   {

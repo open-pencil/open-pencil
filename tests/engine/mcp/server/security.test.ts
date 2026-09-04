@@ -32,6 +32,42 @@ function testSocketPath(): string | null {
   return join(SOCKET_DIR, `mcp-test-${process.pid}-${++testCounter}.sock`)
 }
 
+describe('MCP server CORS', () => {
+  test('accepts authenticated health preflight from the configured worktree origin', async () => {
+    const origin = 'https://feature.open-pencil.localhost'
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      corsOrigin: origin,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      const response = await fetch(`http://127.0.0.1:${httpPort}/health`, {
+        method: 'OPTIONS',
+        headers: {
+          origin,
+          'access-control-request-method': 'GET',
+          'access-control-request-headers': 'authorization'
+        }
+      })
+      expect(response.status).toBe(204)
+      expect(response.headers.get('access-control-allow-origin')).toBe(origin)
+      expect(response.headers.get('access-control-allow-headers')).toContain('Authorization')
+    } finally {
+      await handle.close()
+    }
+  })
+})
+
 // ---------------------------------------------------------------------------
 // Auto-generated auth token
 // ---------------------------------------------------------------------------
