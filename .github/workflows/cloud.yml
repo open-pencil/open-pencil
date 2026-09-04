@@ -83,7 +83,7 @@ jobs:
       - name: Run direct-Neon migrations
         run: bun --filter @open-pencil/cloud migrate
         env:
-          OPENPENCIL_CLOUD_CONFIG: packages/cloud/deploy/config/${{ inputs.target || 'staging' }}.toml
+          OPENPENCIL_CLOUD_CONFIG: deploy/config/${{ inputs.target || 'staging' }}.toml
           DATABASE_URL: ${{ secrets.NEON_MIGRATOR_DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
