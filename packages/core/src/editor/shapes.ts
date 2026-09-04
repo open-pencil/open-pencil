@@ -42,6 +42,7 @@ export function createShapeActions(ctx: EditorContext) {
     parentId?: string,
     name?: string
   ): string {
+    if (!ctx.canMutate()) throw new Error('Document is read-only')
     const fill = DEFAULT_FILLS[type] ?? DEFAULT_FILLS.RECTANGLE
     const pid = parentId ?? ctx.state.currentPageId
     const overrides: Partial<SceneNode> = {

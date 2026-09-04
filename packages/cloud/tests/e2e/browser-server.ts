@@ -1,0 +1,228 @@
+import { createHash } from 'node:crypto'
+import { readFile } from 'node:fs/promises'
+
+import { repositoryPath } from '#cloud-test/helpers/paths'
+
+import {
+  createNodeAdminAssetHandler,
+  createNodeCloudDatabase,
+  createNodeTransactionalEmailRuntime,
+  createS3ObjectStore
+} from '@open-pencil/cloud/runtime/node'
+import {
+  createCloudApp,
+  createCloudAuthenticationRuntime,
+  cloudDiscoveryFromConfig,
+  migrateCloudDatabase,
+  parseCloudServerConfig,
+  startTransactionalEmailWorker,
+  StaticEntitlementSource
+} from '@open-pencil/cloud/server'
+
+import {
+  cloudE2EActors,
+  createCloudE2EIdentityResolver,
+  createCloudE2ESessionResolver
+} from './session'
+
+const port = Number(process.env.OPENPENCIL_CLOUD_E2E_PORT ?? 8787)
+const appOrigin = process.env.OPENPENCIL_APP_ORIGIN ?? 'http://localhost:1420'
+const mailpitPort = Number(process.env.MAILPIT_SMTP_PORT ?? 1025)
+const config = parseCloudServerConfig({
+  deployment: 'self-hosted',
+  enrollmentMode: 'approval',
+  emailPasswordEnabled: true,
+  emailPasswordMinimumLength: 15,
+  emailTransport: 'smtp',
+  emailFrom: 'cloud-e2e@example.com',
+  smtpHost: '127.0.0.1',
+  smtpPort: mailpitPort,
+  smtpSecure: false,
+  publicURL: `http://127.0.0.1:${port}`,
+  appURL: appOrigin,
+  collaborationURL: `ws://127.0.0.1:${Number(process.env.OPENPENCIL_CLOUD_COLLABORATION_PORT ?? 12345)}`,
+  trustedOrigins: [appOrigin],
+  databaseURL:
+    process.env.DATABASE_URL ??
+    'postgresql://openpencil:openpencil-development-password@localhost:54329/openpencil',
+  authSecret: 'browser-e2e-secret-at-least-32-characters',
+  s3Endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:8333',
+  s3Region: process.env.S3_REGION ?? 'us-east-1',
+  s3Bucket: process.env.S3_BUCKET ?? 'openpencil',
+  s3AccessKeyId: process.env.S3_ACCESS_KEY_ID ?? 'openpencil',
+  s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? 'openpencil-development-secret',
+  s3ForcePathStyle: true,
+  s3ChecksumVerification: 'metadata'
+})
+
+function checksum(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('base64')
+}
+
+const database = createNodeCloudDatabase({ connectionString: config.databaseURL })
+const objects = createS3ObjectStore(config)
+const { email, invitationOutbox, transport } = createNodeTransactionalEmailRuntime(config, database)
+const { auth, enrollment } = createCloudAuthenticationRuntime(config, database, email)
+await migrateCloudDatabase(database, { run: auth.migrate, schemaVersion: auth.schemaVersion })
+const emailWorker = transport
+  ? startTransactionalEmailWorker(email, {
+      batchSize: 10,
+      intervalMs: 100,
+      leaseDurationMs: 30_000,
+      maximumAttempts: 3
+    })
+  : undefined
+
+const workspaceId = crypto.randomUUID()
+const documentId = crypto.randomUUID()
+const revisionId = crypto.randomUUID()
+const objectId = crypto.randomUUID()
+const objectKey = `browser-e2e/${documentId}/${revisionId}.fig`
+const fixturePath = repositoryPath('tests/fixtures/cloud-collaboration.fig')
+const fixture = new Uint8Array(await readFile(fixturePath))
+const fixtureChecksum = checksum(fixture)
+
+await database
+  .insertInto('user')
+  .values(
+    Object.values(cloudE2EActors).map((actor) => ({
+      id: actor.userId,
+      name: actor.name,
+      email: actor.email,
+      emailVerified: true,
+      image: null
+    }))
+  )
+  .execute()
+await database
+  .insertInto('cloudEnrollment')
+  .values(
+    Object.values(cloudE2EActors).map((actor) => {
+      const pending = actor.userId === cloudE2EActors.pending.userId
+      return {
+        id: crypto.randomUUID(),
+        emailNormalized: actor.email,
+        name: actor.name,
+        reason: 'Browser E2E',
+        status: pending ? ('pending' as const) : ('approved' as const),
+        reviewedAt: pending ? null : new Date(),
+        reviewedBy: pending ? null : cloudE2EActors.owner.userId,
+        reviewNote: null,
+        approvedUserId: pending ? null : actor.userId
+      }
+    })
+  )
+  .execute()
+await database
+  .insertInto('workspace')
+  .values({
+    id: workspaceId,
+    name: 'Cloud browser E2E',
+    slug: `cloud-browser-e2e-${workspaceId}`,
+    createdBy: cloudE2EActors.owner.userId
+  })
+  .execute()
+await database
+  .insertInto('workspaceMember')
+  .values({ workspaceId, userId: cloudE2EActors.owner.userId, role: 'admin' })
+  .execute()
+await database
+  .insertInto('document')
+  .values({
+    id: documentId,
+    workspaceId,
+    name: 'Cloud sharing fixture',
+    currentRevisionId: null,
+    createdBy: cloudE2EActors.owner.userId
+  })
+  .execute()
+await database
+  .insertInto('storageObject')
+  .values({
+    id: objectId,
+    objectKey,
+    checksum: fixtureChecksum,
+    byteSize: fixture.byteLength,
+    contentType: 'application/octet-stream'
+  })
+  .execute()
+await database
+  .insertInto('documentRevision')
+  .values({
+    id: revisionId,
+    documentId,
+    parentRevisionId: null,
+    storageObjectId: objectId,
+    createdBy: cloudE2EActors.owner.userId
+  })
+  .execute()
+
+await database
+  .updateTable('document')
+  .set({ currentRevisionId: revisionId })
+  .where('id', '=', documentId)
+  .execute()
+
+const upload = await objects.createUpload({
+  key: objectKey,
+  byteSize: fixture.byteLength,
+  checksum: fixtureChecksum,
+  contentType: 'application/octet-stream',
+  expiresAt: new Date(Date.now() + 5 * 60_000)
+})
+if (upload.kind !== 'single') throw new Error('Browser E2E fixture unexpectedly used multipart')
+const uploaded = await fetch(upload.url, {
+  method: upload.method,
+  headers: upload.headers,
+  body: fixture
+})
+if (!uploaded.ok) throw new Error(`Browser E2E fixture upload failed with HTTP ${uploaded.status}`)
+
+const testIdentity = createCloudE2EIdentityResolver()
+const testSession = createCloudE2ESessionResolver()
+const app = createCloudApp({
+  config,
+  database,
+  auth,
+  objects,
+  invitationOutbox,
+  transactionalEmail: email,
+  enrollment,
+  entitlementSource: new StaticEntitlementSource({
+    'cloud.sharing.capability-links': true,
+    'cloud.sharing.anonymous-view': true,
+    'cloud.sharing.anonymous-edit': true,
+    'cloud.sharing.guest-presence': true,
+    'cloud.collaboration.enabled': true,
+    'cloud.collaboration.maximum-participants': 10
+  }),
+  resolveIdentity: async (request) =>
+    (await testIdentity(request)) ?? auth.resolveIdentity(request.headers),
+  resolveSession: async (request) =>
+    (await testSession(request)) ?? auth.resolveSession(request.headers)
+})
+const adminAssets = createNodeAdminAssetHandler(
+  repositoryPath('packages/cloud/dist/admin'),
+  cloudDiscoveryFromConfig(config)
+)
+const server = Bun.serve({
+  hostname: '127.0.0.1',
+  port,
+  async fetch(request) {
+    return (await adminAssets(request)) ?? app.fetch(request)
+  }
+})
+
+console.log(
+  `OPENPENCIL_CLOUD_E2E_READY ${JSON.stringify({ serverURL: config.publicURL, workspaceId, documentId })}`
+)
+
+async function stop() {
+  await server.stop()
+  await emailWorker?.stop()
+  await database.destroy()
+  process.exit(0)
+}
+
+process.on('SIGINT', () => void stop())
+process.on('SIGTERM', () => void stop())

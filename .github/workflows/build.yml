@@ -62,9 +62,11 @@ jobs:
           NOTES_FILE="$RUNNER_TEMP/release-notes.md"
           bun tools/release-packages/src/extract-release-notes.ts "$VERSION" "$NOTES_FILE"
           EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
-          echo "release_notes<<$EOF" >> "$GITHUB_OUTPUT"
-          cat "$NOTES_FILE" >> "$GITHUB_OUTPUT"
-          echo "$EOF" >> "$GITHUB_OUTPUT"
+          {
+            echo "release_notes<<$EOF"
+            cat "$NOTES_FILE"
+            echo "$EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build Tauri
         uses: tauri-apps/tauri-action@v0
@@ -124,9 +126,12 @@ jobs:
           mkdir -p .npm-packages
           pack_if_new() {
             local dir=$1
-            local name=$(node -p "require('./$dir/package.json').name")
-            local version=$(node -p "require('./$dir/package.json').version")
-            local publish_dir=".publish/$(basename "$dir")"
+            local name
+            local version
+            local publish_dir
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
+            publish_dir=".publish/$(basename "$dir")"
             if npm view "${name}@${version}" version 2>/dev/null; then
               echo "${name}@${version} already published, skipping pack"
             else
@@ -149,13 +154,17 @@ jobs:
         run: |
           publish_if_new() {
             local dir=$1
-            local name=$(node -p "require('./$dir/package.json').name")
-            local version=$(node -p "require('./$dir/package.json').version")
+            local name
+            local version
+            name=$(node -p "require('./$dir/package.json').name")
+            version=$(node -p "require('./$dir/package.json').version")
             if npm view "${name}@${version}" version 2>/dev/null; then
               echo "${name}@${version} already published, skipping"
             else
               local tarball
-              tarball=$(cd .npm-packages && ls open-pencil-$(basename "$dir")-${version}.tgz)
+              local package_basename
+              package_basename=$(basename "$dir")
+              tarball=$(cd .npm-packages && ls "open-pencil-${package_basename}-${version}.tgz")
               npm publish "./.npm-packages/${tarball}" --access public --provenance
             fi
           }

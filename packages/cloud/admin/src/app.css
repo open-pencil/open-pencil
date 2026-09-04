@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+@import '@open-pencil/ui/styles.css';
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-canvas);
+  }
+  html[data-theme='light'] {
+    color-scheme: light;
+  }
+  body {
+    @apply m-0 bg-canvas text-surface antialiased;
+    font-family:
+      Inter,
+      system-ui,
+      -apple-system,
+      sans-serif;
+  }
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}

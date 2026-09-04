@@ -141,6 +141,30 @@ jobs:
       - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test
 
+  cloud-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+        with:
+          lfs: 'true'
+
+      - name: Run Cloud PostgreSQL and SeaweedFS E2E
+        run: bun --filter @open-pencil/cloud test:e2e
+
+      - name: Build browser Cloud dependencies
+        run: bun --filter @open-pencil/core build && bun --filter @open-pencil/mcp build
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run Cloud browser sharing E2E
+        run: bun run --filter @open-pencil/cloud test:e2e:browser
+
   unit-tests:
     timeout-minutes: 10
     runs-on: ubuntu-latest

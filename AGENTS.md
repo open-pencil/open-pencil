@@ -12,6 +12,7 @@ Bun workspace packages:
 - `pen` — Pencil.dev `.pen` model, parser, and SceneGraph adapter.
 - `kiwi` — SceneGraph-independent Kiwi schema/runtime, codecs, containers, and parse helpers.
 - `fig` — `.fig` archives, SceneGraph conversion, metadata policy, and component/instance interpretation.
+- `cloud` — portable Cloud contracts and clients plus Hono server, Node, and Cloudflare runtime adapters; deployment instructions live under `packages/cloud/deploy/**`.
 - `core` — renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and document I/O; depends on scene-graph, pen, kiwi, and fig, and keeps browser DOM out.
 - `dom-css` — DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters.
 - `vue` — headless Vue 3 SDK primitives and composables; the root app is one consumer.
@@ -22,9 +23,15 @@ Bun workspace packages:
 
 The root Tauri/Vite app lives in `src/`; app services and state belong under `src/app/**`, views under `src/views/**`, and app UI under `src/components/**`.
 
+### Cloud deployment configuration
+
+OpenPencil Cloud uses schema-versioned TOML as the canonical authored deployment configuration. Durable URLs, policies, provider enablement, storage behavior, worker schedules, retention, entitlements, and technical limits belong in TOML. Environment variables resolve conventional secret references and process bootstrap values; they must not silently override a selected TOML file. Cloudflare receives the same validated schema as a generated structured Wrangler variable, while Hyperdrive, Assets, Email Service, routes, cron triggers, and encrypted secrets remain native bindings. Deployment-file generation belongs under `tools/cloud-deploy/`, not package runtime or tests.
+
+The local Cloud development stack uses pinned Mailpit for SMTP capture. SMTP stays private to the Compose network, while the mailbox UI and Cloud application are exposed as branch-scoped Portless routes. `tools/cloud-deploy/src/local/` owns orchestration and generated TOML; do not add fixed interactive ports or hand-written worktree URLs. `dist-standalone/` is the dependency-bundled Node server artifact used by the Docker image; public `runtime-node` package exports remain dependency-externalized libraries. The default Dev Container remains lean and must not mount the host Docker socket or start optional Cloud services automatically.
+
 ### Public package exports
 
-Across package/app boundaries, import the owning package's public exports—never workspace internals or forwarding-only shims. `@open-pencil/scene-graph` owns graph types and primitives; `@open-pencil/kiwi` owns low-level Kiwi/FIG helpers; `@open-pencil/core` provides the compatibility barrel plus targeted subpaths listed in `packages/core/package.json`.
+Across package/app boundaries, import the owning package's public exports—never workspace internals or forwarding-only shims. `@open-pencil/scene-graph` owns graph types and primitives; `@open-pencil/kiwi` owns low-level Kiwi/FIG helpers; `@open-pencil/core` provides the compatibility barrel plus targeted subpaths listed in `packages/core/package.json`. Cloud consumers use the explicit `@open-pencil/cloud/contract`, `/client`, `/server`, `/runtime/node`, and `/runtime/cloudflare` subpaths so browser code does not pull server dependencies.
 
 CanvasKit runtime loading is centralized in `@open-pencil/core/canvaskit`. Headless raster export may dynamically load `canvaskit-wasm/full`; elsewhere prefer `import type` and pass CanvasKit in.
 
@@ -60,8 +67,10 @@ App dialogs compose the Reka-backed components under `src/components/ui/dialog/`
 
 ## Commands
 
-- `bun run dev:portless` — preferred browser server at `https://open-pencil.localhost`; worktrees use `https://<branch>.open-pencil.localhost`.
-- `bun run dev` — fixed `http://localhost:1420` server for Playwright, Tauri, and Dev Containers.
+- `bun run dev:portless` — browser editor server at `https://open-pencil.localhost`; worktrees use `https://<branch>.open-pencil.localhost`.
+- `bun --filter @open-pencil/cloud dev:admin` — standalone Cloud frontend through Portless while proxying a selected Cloud API.
+- `bun run cloud:dev` / `bun run cloud:dev:down` — start or stop the complete branch-isolated local Cloud, PostgreSQL, SeaweedFS, and Mailpit stack; use the printed Portless Cloud and Mail routes.
+- `bun run dev` — fixed `http://localhost:1420` server reserved for Playwright, Tauri, and Dev Containers.
 - `bun run check` — complete build, lint, type, architecture, docs, package, dependency, security, tooling, and duplication gate.
 - `bun run format` — format and sort imports.
 - `bun run test:unit` / `bun run test` — engine/unit and Playwright suites.
@@ -70,7 +79,7 @@ App dialogs compose the Reka-backed components under `src/components/ui/dialog/`
 
 ## Git worktrees and development servers
 
-Prefer `dev:portless`, especially in worktrees. It assigns branch-specific app and `mcp.open-pencil` sibling URLs with isolated runtime discovery. Use fixed-port `dev` only for Playwright, Tauri, and Dev Container flows.
+All interactive development servers must run through Portless, especially in worktrees. It assigns branch-specific app and `mcp.open-pencil` sibling URLs with isolated runtime discovery. Fixed ports are reserved for automated Playwright, Tauri, Dev Container, and other non-interactive infrastructure flows that require predetermined endpoints.
 
 ## Releases & CI
 
@@ -118,7 +127,7 @@ Use Conventional Commits (`feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `bu
 
 - Put code and tests in the established owning domain; inspect nearby structure before adding files.
 - `bun run check:arch` enforces boundaries: use public workspace exports, keep Core framework-neutral, keep app services out of views/shared UI, and keep property-panel internals scoped to that panel.
-- Tests belong in `tests/e2e/**/*.spec.ts` (browser UI/visual), `tests/figma/**/*.spec.ts` (Figma automation), `tests/engine/**/*.test.ts` (engine/unit), `tests/helpers/**` (shared helpers), or an established package-local test location. Mirror source domains where practical and test behavior/contracts, not source text. Never commit temporary/profile specs.
+- Tests belong in `tests/e2e/**/*.spec.ts` (browser UI/visual), `tests/figma/**/*.spec.ts` (Figma automation), `tests/engine/**/*.test.ts` (engine/unit), `tests/helpers/**` (shared helpers), or an established package-local test location. Mirror source domains where practical and test behavior/contracts, not source text. Cloud package tests use `packages/cloud/tests/{server,runtime,client,contract}/**` for unit coverage, `packages/cloud/tests/integration/**` for PostgreSQL integration, and `packages/cloud/tests/e2e/**` for process/container orchestration. Never commit temporary/profile specs.
 
 ### File and folder naming
 
@@ -130,7 +139,7 @@ Use Conventional Commits (`feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `bu
 
 Private tooling belongs under `tools/<domain>/{src,tests}`, with kebab-case domains and focused tests. `scripts/` may contain only tiny compatibility entrypoints; put real workflow, release, architecture, package, or visual tooling in `tools/`.
 
-- Use `@/` for app cross-directory imports. Package aliases are `#vue/*`, `#cli/*`, `#dom-css/*`, `#mcp/*`, and `#core/*`; prefer clear relative imports nearby.
+- Use `@/` for app cross-directory imports. Package aliases are `#vue/*`, `#cli/*`, `#cloud/*`, `#dom-css/*`, `#mcp/*`, and `#core/*`; prefer clear relative imports nearby.
 - No `any`, non-null assertions, or `Math.random()`; use precise types, guards, and `crypto.getRandomValues()`.
 - Reuse named types and primitives from `@open-pencil/scene-graph`; do not respell `Color`, `Vector`, `SceneNode`, `Effect`, `Fill`, or `Stroke` shapes.
 - Window API declarations belong in `src/global.d.ts` or `packages/core/src/global.d.ts`.

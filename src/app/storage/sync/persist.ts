@@ -14,6 +14,9 @@ export type StoragePersistenceDependencies = {
 
 export type PersistStorageCanvasOptions = {
   providerId: StorageProviderID
+  documentId?: string
+  connectionId?: string
+  workspaceId?: string
   canvasId: string
   name: string
   figBytes: Uint8Array
@@ -37,6 +40,9 @@ export async function persistStorageCanvasLocally(
   const metadata = await runtime.store.writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
+    documentId: options.documentId,
+    connectionId: options.connectionId,
+    workspaceId: options.workspaceId,
     name: options.name,
     figBytes: options.figBytes,
     thumbBytes: thumbnailBytes,
@@ -53,11 +59,15 @@ export async function persistStorageCanvasLocally(
 
 export type SeedStorageCanvasOptions = {
   providerId: StorageProviderID
+  documentId?: string
+  connectionId?: string
+  workspaceId?: string
   canvasId: string
   name: string
   updatedAt: string
   figBytes: Uint8Array
   thumbnailBytes?: Uint8Array | null
+  remoteRevisionId?: string | null
   markSynced?: boolean
 }
 
@@ -67,6 +77,9 @@ export async function seedStorageCanvasFromRemote(
   await getLocalCanvasStore().writeCanvas({
     id: options.canvasId,
     providerId: options.providerId,
+    documentId: options.documentId,
+    connectionId: options.connectionId,
+    workspaceId: options.workspaceId,
     name: options.name,
     updatedAt: options.updatedAt,
     figBytes: options.figBytes,
@@ -77,7 +90,8 @@ export async function seedStorageCanvasFromRemote(
   await getLocalCanvasStore().updateMeta(options.canvasId, {
     lastSyncedAt: options.updatedAt || new Date().toISOString(),
     syncStatus: 'synced',
-    lastSyncError: null
+    lastSyncError: null,
+    remoteRevisionId: options.remoteRevisionId
   })
   await evictLocalFigCache(new Set([options.canvasId]))
 }

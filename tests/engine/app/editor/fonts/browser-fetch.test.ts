@@ -32,6 +32,14 @@ describe('browser web font fetch', () => {
       Response
     )
   })
+  test('uses an injected application origin for same-origin resources', async () => {
+    const fontFetch = createBrowserWebFontFetch(
+      mock(async () => new Response(new Uint8Array([1]))) as typeof fetch,
+      'http://127.0.0.1:4301'
+    )
+    await expect(fontFetch('http://127.0.0.1:4301/font.ttf')).resolves.toBeInstanceOf(Response)
+  })
+
   test('returns bounded responses from approved provider hosts', async () => {
     const fontFetch = createBrowserWebFontFetch(
       mock(

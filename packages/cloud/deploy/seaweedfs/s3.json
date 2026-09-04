@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "openpencil-cloud",
+      "credentials": [
+        {
+          "accessKey": "openpencil",
+          "secretKey": "openpencil-development-secret"
+        }
+      ],
+      "actions": ["Admin", "Read", "List", "Write"]
+    }
+  ]
+}

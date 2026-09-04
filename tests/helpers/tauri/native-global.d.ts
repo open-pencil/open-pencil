@@ -16,6 +16,7 @@ type NativeTestStore = {
     selectedIds: Set<string>
     renderVersion: number
     sceneVersion: number
+    snappingPreferences: { objects: boolean }
   }
   graph: {
     createNode: (type: string, parentId: string, changes: Record<string, unknown>) => NativeTestNode

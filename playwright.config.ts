@@ -1,5 +1,9 @@
 import { defineConfig } from '@playwright/test'
 
+const e2eAppPort = Number(process.env.OPENPENCIL_E2E_APP_PORT ?? 1420)
+const e2eBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${e2eAppPort}`
+const isolatedE2EApp = process.env.OPENPENCIL_E2E_APP_PORT !== undefined
+
 export default defineConfig({
   testDir: './tests',
   timeout: 15_000,
@@ -15,7 +19,7 @@ export default defineConfig({
     }
   },
   use: {
-    baseURL: 'http://localhost:1420',
+    baseURL: e2eBaseURL,
     testIdAttribute: 'data-test-id',
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 2,
@@ -28,7 +32,7 @@ export default defineConfig({
     {
       name: 'openpencil',
       testDir: './tests/e2e',
-      testIgnore: '**/native/**',
+      testIgnore: ['**/native/**'],
       fullyParallel: false
     },
     {
@@ -50,8 +54,8 @@ export default defineConfig({
     }
   ],
   webServer: {
-    command: 'bun run dev',
-    port: 1420,
-    reuseExistingServer: true
+    command: `bun run dev -- --host 127.0.0.1 --port ${e2eAppPort} --strictPort`,
+    port: e2eAppPort,
+    reuseExistingServer: !isolatedE2EApp
   }
 })

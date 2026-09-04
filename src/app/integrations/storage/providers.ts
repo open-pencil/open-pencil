@@ -1,5 +1,18 @@
+import { createCloudStorageAdapter } from './cloud/adapter'
 import { defineStorageProvider, StorageProviderRegistry } from './registry'
 import { createS3StorageAdapter } from './s3/adapter'
+
+export const OPENPENCIL_CLOUD_PROVIDER = defineStorageProvider({
+  id: 'openpencil-cloud',
+  label: 'OpenPencil Cloud',
+  description: 'Official or self-hosted OpenPencil Cloud workspace',
+  preferenceFields: [
+    { id: 'server-url', label: 'Server URL', kind: 'url', required: true },
+    { id: 'workspace-id', label: 'Workspace ID', kind: 'text', required: true }
+  ],
+  credentialFields: [],
+  createAdapter: createCloudStorageAdapter
+})
 
 export const S3_STORAGE_PROVIDER = defineStorageProvider({
   id: 's3-compatible',
@@ -17,4 +30,7 @@ export const S3_STORAGE_PROVIDER = defineStorageProvider({
   createAdapter: createS3StorageAdapter
 })
 
-export const storageProviderRegistry = new StorageProviderRegistry([S3_STORAGE_PROVIDER])
+export const storageProviderRegistry = new StorageProviderRegistry([
+  OPENPENCIL_CLOUD_PROVIDER,
+  S3_STORAGE_PROVIDER
+])

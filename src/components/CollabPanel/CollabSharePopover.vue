@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { tv } from 'tailwind-variants'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 
+import { isCloudDocument } from '@/app/collab/cloud-sharing'
+import { useActiveEditorStoreRef } from '@/app/editor/active-store'
+import CloudShareDialog from '@/components/collab/cloud-share-dialog/CloudShareDialog.vue'
 import ConnectedRoom from '@/components/CollabPanel/ConnectedRoom.vue'
 import JoinRoomPrompt from '@/components/CollabPanel/JoinRoomPrompt.vue'
 import ShareOrJoinRoom from '@/components/CollabPanel/ShareOrJoinRoom.vue'
@@ -11,6 +14,12 @@ import { usePopoverUI } from '@/components/ui/popover'
 import collaborationTheme from '@/theme/collaboration'
 
 const collab = useCollabPanelContext()
+const activeStore = useActiveEditorStoreRef()
+const cloudDialogOpen = ref(false)
+const cloudDocument = computed(() => {
+  const store = activeStore.value
+  return collab.state.identity.source === 'cloud' || (store ? isCloudDocument(store) : false)
+})
 const cls = usePopoverUI({ content: 'z-50 w-72 p-3' })
 const connection = computed(() => {
   if (collab.state.connected) return 'connected'
@@ -22,7 +31,16 @@ const styles = computed(() => collaboration({ connection: connection.value }))
 </script>
 
 <template>
-  <PopoverRoot v-model:open="collab.popoverOpen">
+  <button
+    v-if="cloudDocument"
+    data-test-id="cloud-share-button"
+    :class="styles.shareButton()"
+    @click="cloudDialogOpen = true"
+  >
+    <icon-lucide-share-2 class="size-3.5" />
+    {{ collab.messages.share }}
+  </button>
+  <PopoverRoot v-else v-model:open="collab.popoverOpen">
     <PopoverTrigger as-child>
       <button
         data-test-id="collab-share-button"
@@ -54,4 +72,5 @@ const styles = computed(() => collaboration({ connection: connection.value }))
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>
+  <CloudShareDialog v-if="cloudDocument" v-model:open="cloudDialogOpen" />
 </template>

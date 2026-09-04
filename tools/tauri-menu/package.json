@@ -1,5 +1,8 @@
 {
   "name": "@open-pencil/tauri-menu-tools",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "generate": "bun --cwd ../.. tools/tauri-menu/src/generate.ts"
+  }
 }

@@ -31,13 +31,21 @@ export async function storageCredentialStatuses(
   return Object.fromEntries(entries)
 }
 
+export function createStorageAdapter(
+  providerID: StorageProviderID,
+  preferences: Readonly<Record<string, string>>,
+  profileID = 'default'
+): StorageAdapter {
+  return storageProviderRegistry.createAdapter(providerID, {
+    preferences,
+    credentials: appCredentialServices.resolver,
+    profileId: profileID
+  })
+}
+
 export function createActiveStorageAdapter(
   providerID: StorageProviderID = activeStorageProviderID.value,
   profileID = 'default'
 ): StorageAdapter {
-  return storageProviderRegistry.createAdapter(providerID, {
-    preferences: readStoragePreferences(providerID),
-    credentials: appCredentialServices.resolver,
-    profileId: profileID
-  })
+  return createStorageAdapter(providerID, readStoragePreferences(providerID), profileID)
 }

@@ -50,6 +50,8 @@
   ],
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
+    "check": "bun run typecheck && bun run build",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json",
     "prepublishOnly": "bun run build"
   },
   "repository": {

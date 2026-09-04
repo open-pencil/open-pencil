@@ -1,0 +1,31 @@
+services:
+  garage:
+    image: dxflrs/garage:v2.3.0
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    environment:
+      GARAGE_DEFAULT_ACCESS_KEY: ${GARAGE_ACCESS_KEY_ID:-GKopenpencildevelopment0000000000}
+      GARAGE_DEFAULT_SECRET_KEY: ${GARAGE_SECRET_ACCESS_KEY:-openpencil-garage-development-secret-key}
+      GARAGE_DEFAULT_BUCKET: ${GARAGE_BUCKET:-openpencil}
+    ports:
+      - "3900:3900"
+      - "3903:3903"
+    volumes:
+      - garage-meta:/var/lib/garage/meta
+      - garage-data:/var/lib/garage/data
+      - ./garage/garage.toml:/etc/garage.toml:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/garage",
+          "-c",
+          "/etc/garage.toml",
+          "status"
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  garage-meta:
+  garage-data:

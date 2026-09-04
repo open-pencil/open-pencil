@@ -59,6 +59,9 @@ docs/.vitepress/dist/
 
 # Cloudflare/Wrangler local state
 .wrangler/
+packages/cloud/deploy/cloudflare/wrangler.generated.json
+packages/cloud/deploy/generated/
+packages/cloud/dist-standalone/
 packages/collab/.wrangler/
 
 # External/generated dependency checkouts
@@ -77,3 +80,4 @@ scratch/
 
 # OpenCode
 .opencode/
+.neon

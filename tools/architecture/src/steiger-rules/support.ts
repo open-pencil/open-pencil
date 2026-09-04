@@ -45,6 +45,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
   '#core/': 'packages/core/src/',
   '#vue/': 'packages/vue/src/',
   '#cli/': 'packages/cli/src/',
+  '#cloud/': 'packages/cloud/src/',
   '#mcp/': 'packages/mcp/src/'
 }
 
@@ -52,6 +53,7 @@ export const PACKAGE_ALIAS_OWNERS: Record<string, string> = {
   '#core/': 'packages/core/src/',
   '#vue/': 'packages/vue/src/',
   '#cli/': 'packages/cli/src/',
+  '#cloud/': 'packages/cloud/src/',
   '#mcp/': 'packages/mcp/src/'
 }
 

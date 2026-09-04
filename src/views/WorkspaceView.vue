@@ -5,6 +5,7 @@ import { useHead } from '@unhead/vue'
 import { useRoute } from 'vue-router'
 
 import { exposeCollaborationActions } from '@/app/browser-bridge'
+import { getCloudCollaborationTicket } from '@/app/collab/cloud-sharing'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { startMCPRuntime, stopMCPRuntime } from '@/app/automation/mcp/runtime'
 import { COLLAB_KEY, useCollab } from '@/app/collab/use'
@@ -19,6 +20,7 @@ import {
   getActiveStore,
   tabCount
 } from '@/app/tabs'
+import { onActiveDocumentOpened } from '@/app/tabs/events'
 import { isTauri } from '@/app/tauri/env'
 import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
@@ -60,6 +62,18 @@ useEventListener(
 )
 
 const fileAssociationCleanup = ref<(() => void) | null>(null)
+const activeDocumentCleanup = ref<(() => void) | null>(null)
+
+async function connectCloudDocument() {
+  const store = getActiveStore()
+  const binding = store.getStorageBinding()
+  if (binding?.providerId !== 'openpencil-cloud') {
+    if (collab.state.value.identity.source === 'cloud') collab.disconnect()
+    return
+  }
+  const ticketRequest = () => getCloudCollaborationTicket(store)
+  await collab.connectCloud({ ticket: await ticketRequest(), refresh: ticketRequest })
+}
 
 interface PendingOpenFile {
   path: string
@@ -81,6 +95,11 @@ async function bindAssociatedFileOpen(): Promise<void> {
 }
 
 onMounted(async () => {
+  activeDocumentCleanup.value = onActiveDocumentOpened((store) => {
+    if (store !== getActiveStore()) return
+    void connectCloudDocument().catch((error) => console.error('[Cloud collaboration]', error))
+  })
+  await connectCloudDocument().catch((error) => console.error('[Cloud collaboration]', error))
   await startMCPRuntime(getActiveStore)
 
   try {
@@ -93,6 +112,8 @@ onMounted(async () => {
 onUnmounted(() => {
   void stopMCPRuntime()
   fileAssociationCleanup.value?.()
+  activeDocumentCleanup.value?.()
+  collab.disconnect()
 })
 </script>
 

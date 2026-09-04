@@ -6,7 +6,11 @@ function flattenPlugins(plugins: PluginOption[]): PluginOption[] {
 }
 
 const config: StorybookConfig = {
-  stories: ['../src/**/*.stories.@(js|ts)', '../packages/vue/src/**/*.stories.@(js|ts)'],
+  stories: [
+    '../src/**/*.stories.@(js|ts)',
+    '../packages/ui/src/**/*.stories.@(js|ts)',
+    '../packages/vue/src/**/*.stories.@(js|ts)'
+  ],
   addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-themes'],
   framework: {
     name: '@storybook/vue3-vite',

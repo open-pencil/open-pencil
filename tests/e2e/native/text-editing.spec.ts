@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert'
 
+import { openNativeEditorDocument } from '#tests/helpers/tauri/editor-ready'
 import {
   createNativeTextFixture,
   readNativeEditorSnapshot
@@ -12,6 +13,7 @@ describe('native text editing', () => {
       async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
       { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
     )
+    await openNativeEditorDocument()
     await createNativeTextFixture('Replace me')
     const textarea = await $('textarea[aria-hidden="true"]')
     await textarea.waitForExist()

@@ -22,6 +22,12 @@
 - Show unavailable or substituted document fonts with affected-layer selection and retry actions, and expose font fidelity through the Figma API and MCP tooling. (#503)
 - Add reusable remote MCP connections for ACP agents, with Streamable HTTP endpoints and credential-backed bearer tokens.
 - Author and manage multidimensional component variants and published component libraries, including revision previews, linked-instance updates, stable library identities, offline catalogs, storage-backed catalogs, and read-only library definitions. (#239)
+- Add an optional, self-hostable OpenPencil Cloud with PostgreSQL metadata, immutable S3-compatible document revisions, authenticated workspaces, approval-gated administration, transactional email, and server-enforced sharing and collaboration.
+- Add a standalone, localized OpenPencil Cloud web application with unified sign-up and sign-in, account approval states, workspace access, deployment administration, responsive themes, and accessible shared controls.
+- Configure OpenPencil Cloud through versioned TOML with conventional external secret references, generated structured Cloudflare settings, and first-render authentication bootstrap data.
+- Sign in to self-hosted OpenPencil Cloud deployments with verified email and password, including encrypted outbox-backed verification and recovery messages, approval after verification, compromised-password protection, secure account linking, and session revocation after password resets.
+- Manage OpenPencil Cloud sign-in methods from Account Security, including password setup and changes, social-account linking, protected unlinking, other-session revocation, passkeys, authenticator codes, and single-use recovery codes.
+- Require recent server-verified multi-factor assurance for deployment administration and prevent administrators from removing their final strong authentication method.
 - Recover unsaved and pathless documents locally, with settings to disable recovery and remove retained snapshots. (#487, #574)
 - Inspect selected designs with a configured Vision model and attach images to AI chat with bounded analysis and previews. (#232, #471)
 - Pin selected layers as explicit AI chat context, show collapsible reasoning, copy individual responses, and grow the composer with multiline prompts. (#13)
@@ -58,6 +64,7 @@
 - Run `openpencil import` on Node so npm-installed CLI users no longer encounter `Bun is not defined`. (#575)
 - Generate recent-file previews from the conventional `Cover` page without modifying the source file.
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
+- Preserve Cloud document owner permissions while attaching collaboration and isolate Cloud browser tests from running development services.
 - Resolve Vue SDK semantic test selectors correctly in non-browser runtimes. (#397)
 - Commit vector vertex and Bézier-handle edits when the pointer is released and keep transformed vector-edit overlays aligned. (#586)
 - Preserve app-created component properties and instance-swap targets across `.fig` save and reload cycles. (#548)

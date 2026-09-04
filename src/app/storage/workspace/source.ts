@@ -1,4 +1,4 @@
-import type { StorageDocument } from '@/app/integrations/storage'
+import type { StorageDocument, StorageDocumentBinding } from '@/app/integrations/storage'
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
@@ -6,6 +6,8 @@ import {
   storagePreferencesComplete,
   storageProviderRegistry
 } from '@/app/integrations/storage'
+import { activeCloudConnectionProfile } from '@/app/integrations/storage/cloud/profiles'
+import { localStorageIdentity } from '@/app/storage/id'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
@@ -56,14 +58,31 @@ export function createStorageWorkspaceSource(
       const reconciliation = reconcileStorageDocuments(local, remote)
       for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
       for (const document of reconciliation.remoteDocumentsToSeed) {
+        const profile = providerID === 'openpencil-cloud' ? activeCloudConnectionProfile() : null
+        let binding: StorageDocumentBinding
+        if (providerID === 'openpencil-cloud') {
+          if (!profile?.selectedWorkspaceId) {
+            throw new Error('OpenPencil Cloud connection and workspace are required')
+          }
+          binding = {
+            providerId: 'openpencil-cloud',
+            connectionId: profile.id,
+            workspaceId: profile.selectedWorkspaceId,
+            documentId: document.id
+          }
+        } else {
+          binding = { providerId: providerID, documentId: document.id }
+        }
+        const identity = localStorageIdentity(binding)
         await localStore.upsertIndexMeta({
-          id: document.id,
-          providerId: providerID,
+          id: identity.canvasId,
+          ...identity,
           name: document.name,
           updatedAt: document.updatedAt,
           syncStatus: 'synced',
           lastSyncedAt: document.updatedAt,
-          lastSyncError: null
+          lastSyncError: null,
+          remoteRevisionId: document.remoteRevisionId
         })
       }
       if (activeStorageProviderID.value !== providerID) return null

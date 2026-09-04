@@ -1,0 +1,179 @@
+name: Deploy Cloud
+
+on:
+  pull_request:
+    types: [labeled]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Cloud environment to deploy
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+      deploy:
+        description: Run migrations and deploy after validation
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: cloud-${{ inputs.target || 'staging' }}
+  cancel-in-progress: false
+
+env:
+  CLOUD_TARGET: ${{ inputs.target || 'staging' }}
+  WRANGLER_CONFIG: packages/cloud/deploy/cloudflare/wrangler.jsonc
+
+jobs:
+  validate:
+    name: Validate Cloud artifact
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.label.name == 'deploy-cloud-staging' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'cloud-foundation')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Check Cloud package
+        run: bun --filter @open-pencil/cloud check
+
+      - name: Build Cloud Worker and admin application
+        run: bun --filter @open-pencil/cloud build
+
+      - name: Generate structured Cloudflare configuration
+        run: >-
+          bun run generate:cloudflare-config
+          "packages/cloud/deploy/config/$CLOUD_TARGET.toml"
+          "$WRANGLER_CONFIG"
+          "packages/cloud/deploy/cloudflare/wrangler.generated.json"
+          "$CLOUD_TARGET"
+
+      - name: Validate Cloudflare bundle
+        run: bunx wrangler deploy --config "packages/cloud/deploy/cloudflare/wrangler.generated.json" --env "$CLOUD_TARGET" --dry-run
+
+  migrate:
+    name: Migrate Cloud database
+    if: >-
+      inputs.deploy ||
+      (github.event_name == 'pull_request' &&
+      github.event.label.name == 'deploy-cloud-staging')
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: cloud-${{ inputs.target || 'staging' }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Run direct-Neon migrations
+        run: bun --filter @open-pencil/cloud migrate
+        env:
+          OPENPENCIL_CLOUD_CONFIG: packages/cloud/deploy/config/${{ inputs.target || 'staging' }}.toml
+          DATABASE_URL: ${{ secrets.NEON_MIGRATOR_DATABASE_URL }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+
+  deploy:
+    name: Deploy Cloud Worker
+    if: >-
+      inputs.deploy ||
+      (github.event_name == 'pull_request' &&
+      github.event.label.name == 'deploy-cloud-staging')
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: cloud-${{ inputs.target || 'staging' }}
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Build Cloud Worker and admin application
+        run: bun --filter @open-pencil/cloud build
+
+      - name: Generate structured Cloudflare configuration
+        run: >-
+          bun run generate:cloudflare-config
+          "packages/cloud/deploy/config/$CLOUD_TARGET.toml"
+          "$WRANGLER_CONFIG"
+          "packages/cloud/deploy/cloudflare/wrangler.generated.json"
+          "$CLOUD_TARGET"
+
+      - name: Write additive Worker secrets
+        shell: bash
+        run: |
+          umask 077
+          jq -n \
+            --arg auth "$BETTER_AUTH_SECRET" \
+            --arg googleId "$GOOGLE_CLIENT_ID" \
+            --arg googleSecret "$GOOGLE_CLIENT_SECRET" \
+            --arg access "$S3_ACCESS_KEY_ID" \
+            --arg secret "$S3_SECRET_ACCESS_KEY" \
+            '{
+              BETTER_AUTH_SECRET: $auth,
+              GOOGLE_CLIENT_ID: $googleId,
+              GOOGLE_CLIENT_SECRET: $googleSecret,
+              S3_ACCESS_KEY_ID: $access,
+              S3_SECRET_ACCESS_KEY: $secret
+            }' \
+            > "$RUNNER_TEMP/cloud-secrets.json"
+        env:
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+
+      - name: Deploy Cloudflare Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            deploy --config packages/cloud/deploy/cloudflare/wrangler.generated.json --env ${{ env.CLOUD_TARGET }}
+            --secrets-file ${{ runner.temp }}/cloud-secrets.json
+
+  smoke:
+    name: Smoke test Cloud
+    if: >-
+      inputs.deploy ||
+      (github.event_name == 'pull_request' &&
+      github.event.label.name == 'deploy-cloud-staging')
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: cloud-${{ inputs.target || 'staging' }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check public Cloud routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in /health /ready /.well-known/openpencil /join /admin/sign-in; do
+            curl --fail --location --silent --show-error --retry 6 --retry-all-errors \
+              --retry-delay 5 --max-time 30 "$CLOUD_URL$path" >/dev/null
+          done
+        env:
+          CLOUD_URL: ${{ vars.CLOUD_URL }}

@@ -1,0 +1,74 @@
+rules:
+  - id: cloud-no-raw-sql
+    message: Use Kysely's typed query builder; raw SQL is restricted to migrations and reviewed database helpers.
+    severity: ERROR
+    languages: [typescript]
+    paths:
+      include:
+        - /packages/cloud/src/server
+      exclude:
+        - /packages/cloud/src/server/db/expressions.ts
+        - /packages/cloud/src/server/db/migrations
+        - /packages/cloud/src/server/db/migrate.ts
+    patterns:
+      - pattern: sql`...`
+
+  - id: cloud-no-nonconstant-html-response
+    message: Cloud APIs should return typed JSON or a constant response body, not dynamically constructed HTML.
+    severity: ERROR
+    languages: [typescript]
+    paths:
+      include:
+        - /packages/cloud/src/server
+    patterns:
+      - pattern: $CTX.html($VALUE, ...)
+      - pattern-not: $CTX.html("...", ...)
+
+  - id: cloud-no-capability-secret-in-query
+    message: Bearer capability secrets belong in URL fragments or request bodies, never query strings.
+    severity: ERROR
+    languages: [typescript]
+    paths:
+      include:
+        - /packages/cloud/src
+        - /src/app/collab
+        - /src/app/integrations/storage/cloud
+    patterns:
+      - pattern-either:
+          - pattern: $URL.searchParams.set("secret", $VALUE)
+          - pattern: $URL.searchParams.append("secret", $VALUE)
+          - pattern: $URL.searchParams.set("token", $VALUE)
+          - pattern: $URL.searchParams.append("token", $VALUE)
+
+  - id: cloud-no-nonsecure-nanoid
+    message: Never use nanoid/non-secure for public identifiers or bearer capabilities.
+    severity: ERROR
+    languages: [typescript]
+    paths:
+      include:
+        - /packages/cloud
+        - /src/app/collab
+    patterns:
+      - pattern-either:
+          - pattern: import $X from "nanoid/non-secure"
+          - pattern: import { ... } from "nanoid/non-secure"
+
+  - id: cloud-no-secret-logging
+    message: Do not write Cloud secrets, tokens, cookies, room keys, or authorization values to logs.
+    severity: ERROR
+    languages: [typescript]
+    paths:
+      include:
+        - /packages/cloud/src
+        - /src/app/collab
+        - /src/app/integrations/storage/cloud
+    patterns:
+      - pattern-either:
+          - pattern: console.log(..., $VALUE, ...)
+          - pattern: console.info(..., $VALUE, ...)
+          - pattern: console.warn(..., $VALUE, ...)
+          - pattern: console.error(..., $VALUE, ...)
+          - pattern: console.debug(..., $VALUE, ...)
+      - metavariable-regex:
+          metavariable: $VALUE
+          regex: (?i)^(.*secret.*|.*token.*|.*authorization.*|.*cookie.*|.*roomKey.*|.*privateKey.*)$

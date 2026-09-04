@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "bun --filter @open-pencil/cloud build:admin",
+  "functions": {
+    "api/index.ts": { "maxDuration": 60 },
+    "api/internal/cleanup.ts": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/api/internal/cleanup", "destination": "/api/internal/cleanup" },
+    { "source": "/(.*)", "destination": "/api" }
+  ],
+  "crons": [{ "path": "/api/internal/cleanup", "schedule": "0 * * * *" }]
+}
