@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { AppButton, AppInput } from '@open-pencil/ui'
 import { useQuery } from '@tanstack/vue-query'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { discoveryQueryOptions } from '#admin/app/query/options'
 import PublicShell from '#admin/components/layout/PublicShell.vue'
 import { useCloudI18n } from '#admin/i18n/use'
 import { createCredentialAuthService } from './credentials/service'
+import TurnstileChallenge from './credentials/TurnstileChallenge.vue'
 
 const messages = useCloudI18n()
 const discovery = useQuery(discoveryQueryOptions())
@@ -14,6 +15,8 @@ const email = ref('')
 const sent = ref(false)
 const pending = ref(false)
 const error = ref(false)
+const captchaResponse = ref('')
+const captcha = computed(() => discovery.data.value?.authentication.emailPassword?.captcha)
 
 async function submit(): Promise<void> {
   const instance = discovery.data.value
@@ -21,10 +24,9 @@ async function submit(): Promise<void> {
   pending.value = true
   error.value = false
   try {
-    await createCredentialAuthService(instance).requestPasswordReset(
-      email.value,
-      new URL('/auth/reset-password', location.origin).href
-    )
+    await createCredentialAuthService(instance, {
+      captchaResponse: captchaResponse.value || undefined
+    }).requestPasswordReset(email.value, new URL('/auth/reset-password', location.origin).href)
     sent.value = true
   } catch {
     error.value = true
@@ -54,10 +56,22 @@ async function submit(): Promise<void> {
               size="lg"
             />
           </label>
+          <TurnstileChallenge
+            v-if="captcha"
+            :site-key="captcha.siteKey"
+            @update="captchaResponse = $event"
+          />
           <p v-if="error" class="m-0 text-xs text-error" role="alert">
             {{ messages.errors.value.credentialUnknown }}
           </p>
-          <AppButton type="submit" color="primary" variant="solid" size="lg" :loading="pending">
+          <AppButton
+            type="submit"
+            color="primary"
+            variant="solid"
+            size="lg"
+            :disabled="Boolean(captcha && !captchaResponse)"
+            :loading="pending"
+          >
             {{ messages.auth.value.sendResetLink }}
           </AppButton>
         </form>
