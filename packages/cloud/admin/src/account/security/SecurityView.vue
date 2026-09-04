@@ -1,124 +1,34 @@
 <script setup lang="ts">
-import { cloudAdminAPI } from '#admin/api/client'
 import { AppButton, AppInput } from '@open-pencil/ui'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
 
-import { cloudQueryKeys } from '#admin/app/query/keys'
-import { authenticationMethodsQueryOptions, discoveryQueryOptions } from '#admin/app/query/options'
 import ConfirmDialog from '#admin/components/dialog/ConfirmDialog.vue'
-import PublicShell from '#admin/components/layout/PublicShell.vue'
 import AsyncBoundary from '#admin/components/feedback/AsyncBoundary.vue'
-import { useCloudI18n } from '#admin/i18n/use'
-import {
-  AccountSecurityError,
-  changeAccountPassword,
-  startAccountSocialLink,
-  unlinkAccountMethod
-} from './service'
+import PublicShell from '#admin/components/layout/PublicShell.vue'
+import { useAccountSecurity } from './useAccountSecurity'
 
-const messages = useCloudI18n()
-const queryClient = useQueryClient()
-const methods = useQuery(authenticationMethodsQueryOptions())
-const discovery = useQuery(discoveryQueryOptions())
-const currentPassword = ref('')
-const newPassword = ref('')
-const confirmation = ref('')
-const formError = ref('')
-const passwordChanged = ref(false)
-const addPasswordSent = ref(false)
-const pendingUnlinkMethod = ref<{ id: string; provider: 'credential' | 'google' | 'apple' }>()
-const hasPassword = computed(() =>
-  methods.data.value?.methods.some((method) => method.provider === 'credential')
-)
-const minimumLength = computed(
-  () => discovery.data.value?.authentication.emailPassword?.minimumPasswordLength ?? 15
-)
-
-function providerLabel(provider: 'credential' | 'google' | 'apple'): string {
-  if (provider === 'credential') return messages.account.value.passwordMethod
-  return provider === 'google'
-    ? messages.account.value.googleMethod
-    : messages.account.value.appleMethod
-}
-
-function errorMessage(error: unknown): string {
-  if (!(error instanceof AccountSecurityError)) return messages.errors.value.credentialUnknown
-  if (error.code === 'current_password_invalid') return messages.errors.value.currentPasswordInvalid
-  if (error.code === 'password_too_short') {
-    return messages.errors.value.passwordTooShort({ count: minimumLength.value })
-  }
-  if (error.code === 'password_too_long') return messages.errors.value.passwordTooLong
-  if (error.code === 'last_method') return messages.errors.value.lastAuthenticationMethod
-  if (error.code === 'session_not_fresh') return messages.errors.value.sessionNotFresh
-  return messages.errors.value.credentialUnknown
-}
-
-const changePassword = useMutation({
-  mutationFn: () => changeAccountPassword(currentPassword.value, newPassword.value),
-  onSuccess() {
-    currentPassword.value = ''
-    newPassword.value = ''
-    confirmation.value = ''
-    passwordChanged.value = true
-  },
-  onError(error) {
-    formError.value = errorMessage(error)
-  }
-})
-
-const unlink = useMutation({
-  mutationFn: unlinkAccountMethod,
-  async onSuccess() {
-    await queryClient.invalidateQueries({ queryKey: cloudQueryKeys.authenticationMethods })
-  },
-  onError(error) {
-    formError.value = errorMessage(error)
-  }
-})
+const {
+  addPassword,
+  addPasswordSent,
+  changePassword,
+  confirmation,
+  currentPassword,
+  formError,
+  hasPassword,
+  linkProvider,
+  messages,
+  methods,
+  minimumLength,
+  newPassword,
+  passwordChanged,
+  pendingUnlinkMethod,
+  providerLabel,
+  submitPassword,
+  unlink
+} = useAccountSecurity()
 
 function confirmUnlink(): void {
   const method = pendingUnlinkMethod.value
-  if (!method) return
-  unlink.mutate(method.id, {
-    onSuccess() {
-      pendingUnlinkMethod.value = undefined
-    }
-  })
-}
-
-async function submitPassword(): Promise<void> {
-  formError.value = ''
-  passwordChanged.value = false
-  if (newPassword.value !== confirmation.value) {
-    formError.value = messages.errors.value.passwordMismatch
-    return
-  }
-  await changePassword.mutateAsync().catch(() => undefined)
-}
-
-async function addPassword(): Promise<void> {
-  const email = queryClient.getQueryData<{ user: { email: string } }>(cloudQueryKeys.account)?.user
-    .email
-  if (!email) return
-  try {
-    await cloudAdminAPI.requestPasswordReset(
-      email,
-      new URL('/auth/reset-password', globalThis.location.origin).href
-    )
-    passwordChanged.value = false
-    addPasswordSent.value = true
-    formError.value = ''
-  } catch (error) {
-    formError.value = errorMessage(error)
-  }
-}
-
-function linkProvider(provider: 'google' | 'apple'): void {
-  const callbackURL = new URL('/app/account/security?linked=1', globalThis.location.origin).href
-  void startAccountSocialLink(provider, callbackURL).catch((error) => {
-    formError.value = errorMessage(error)
-  })
+  if (method) unlink.mutate(method.id)
 }
 </script>
 
@@ -162,7 +72,7 @@ function linkProvider(provider: 'google' | 'apple'): void {
                 variant="ghost"
                 size="xs"
                 :loading="unlink.isPending.value"
-                @click="pendingUnlinkMethod = { id: method.id, provider: method.provider }"
+                @click="pendingUnlinkMethod = method"
               >
                 {{ messages.account.value.unlinkMethod }}
               </AppButton>
