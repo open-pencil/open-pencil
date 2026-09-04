@@ -6,7 +6,7 @@ import { isAuthorized } from '#mcp/auth'
 import type { RPCJSONObject } from '#mcp/json'
 import type { PendingRequest } from '#mcp/rpc-types'
 
-const RPC_TIMEOUT = 20_000
+const RPC_TIMEOUT = 600_000
 const APP_WAIT_TIMEOUT = 10_000
 
 const APP_NOT_CONNECTED_MESSAGE =
@@ -227,7 +227,7 @@ export function createBrowserRPCBridge({ authToken, onConnectionChange }: Browse
     browserRegistered = true
     if (previousBrowserWs && previousBrowserWs !== ws) {
       // Reject in-flight requests to the old browser. Without this, pending
-      // requests sit in the pending map until RPC_TIMEOUT (20s), because
+      // requests sit in the pending map until RPC_TIMEOUT (10m), because
       // handleClose for the old socket returns early (browserWs is already
       // set to the new socket, so browserWs !== previousBrowserWs).
       rejectAllPending('Browser reconnected')

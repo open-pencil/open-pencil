@@ -6,7 +6,7 @@ import type { DiscoveryInfo } from '@open-pencil/mcp/discovery'
 import { platformHasUnixSockets } from '@open-pencil/mcp/transport'
 
 /** Maximum time to wait for a single RPC request before giving up. */
-const RPC_TIMEOUT_MS = 30_000
+const RPC_TIMEOUT_MS = 615_000
 
 let cachedInfo: DiscoveryInfo | null = null
 
