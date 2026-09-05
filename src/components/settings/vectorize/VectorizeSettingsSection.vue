@@ -1,52 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'
+
+import { ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
-import {
-  setVectorizeCredential,
-  vectorizeCredentialStatus,
-  vectorizeProviderID,
-  VECTORIZE_PROVIDER_DEFINITIONS
-} from '@/app/editor/vectorize'
+import { vectorizeProviderID } from '@/app/editor/vectorize'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 
 const { media, ai, credentials } = useI18n()
 const keyDraft = ref('')
-const keyStatus = ref<'configured' | 'missing' | 'unavailable' | 'locked'>('missing')
-const provider = computed(() =>
-  VECTORIZE_PROVIDER_DEFINITIONS.find((definition) => definition.id === vectorizeProviderID.value)
-)
-const providerOptions = VECTORIZE_PROVIDER_DEFINITIONS.map((definition) => ({
-  value: definition.id,
-  label: definition.name
-}))
 
-async function refreshStatus(): Promise<void> {
-  const providerID = vectorizeProviderID.value
-  const status = await vectorizeCredentialStatus(providerID)
-  if (vectorizeProviderID.value === providerID) keyStatus.value = status
-}
-
-async function saveCredential(): Promise<void> {
-  if (!keyDraft.value.trim()) return
-  await setVectorizeCredential(vectorizeProviderID.value, keyDraft.value)
-  keyDraft.value = ''
-  await refreshStatus()
-}
-
-async function clearCredential(): Promise<void> {
-  await setVectorizeCredential(vectorizeProviderID.value, '')
-  keyDraft.value = ''
-  await refreshStatus()
-}
-
-watch(vectorizeProviderID, () => {
-  keyDraft.value = ''
-  void refreshStatus()
-})
-
-onMounted(() => void refreshStatus())
+const { keyStatus, provider, providerOptions, saveCredential, clearCredential } =
+  useVectorizeSettings(keyDraft)
 </script>
 
 <template>

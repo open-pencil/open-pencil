@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
-import { computed, onMounted, ref, watch } from 'vue'
+import { useMCPConnectionSettings } from '@/app/integrations/mcp/settings/use'
 
-import {
-  createMCPConnectionDraft,
-  mcpConnectionCredentialStatus,
-  mcpConnectionSettings,
-  removeMCPConnection,
-  saveMCPConnectionDraft,
-  setMCPConnectionCredential,
-  type MCPConnectionDraft
-} from '@/app/integrations/mcp'
-import type { CredentialStatus } from '@/app/settings/credentials/types'
+import { useI18n } from '@open-pencil/vue'
+import { ref } from 'vue'
+
+import { mcpConnectionSettings } from '@/app/integrations/mcp'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
@@ -19,96 +12,25 @@ import { AppConfirmationDialog } from '@/components/ui/dialog'
 
 const { automation, common, credentials } = useI18n()
 const editing = ref(false)
-const draft = ref<MCPConnectionDraft>(createMCPConnectionDraft())
 const tokenDraft = ref('')
-const tokenStatus = ref<CredentialStatus>('missing')
-const error = ref('')
 const deleteOpen = ref(false)
 
-const savedConnection = computed(() =>
-  draft.value.id
-    ? mcpConnectionSettings.value.connections.find((connection) => connection.id === draft.value.id)
-    : undefined
-)
-
-function startAdd(): void {
-  draft.value = createMCPConnectionDraft()
-  tokenDraft.value = ''
-  tokenStatus.value = 'missing'
-  error.value = ''
+const connection = useMCPConnectionSettings(tokenDraft, automation)
+const { draft, tokenStatus, error, clearCredential } = connection
+function startAdd() {
+  connection.startAdd()
   editing.value = true
 }
-
-async function startEdit(id: string): Promise<void> {
-  const connection = mcpConnectionSettings.value.connections.find((item) => item.id === id)
-  if (!connection) return
-  draft.value = createMCPConnectionDraft(connection)
-  tokenDraft.value = ''
-  tokenStatus.value = await mcpConnectionCredentialStatus(connection.id)
-  error.value = ''
-  editing.value = true
+async function startEdit(id: string) {
+  if (await connection.startEdit(id)) editing.value = true
 }
-
-async function save(): Promise<void> {
-  error.value = ''
-  try {
-    if (
-      draft.value.enabled &&
-      draft.value.authenticationType === 'bearer' &&
-      !tokenDraft.value.trim() &&
-      tokenStatus.value !== 'configured'
-    ) {
-      throw new Error(automation.value.bearerTokenRequired)
-    }
-    const connection = saveMCPConnectionDraft(draft.value)
-    if (draft.value.authenticationType === 'none') {
-      await setMCPConnectionCredential(connection.id, '')
-    } else if (tokenDraft.value.trim()) {
-      await setMCPConnectionCredential(connection.id, tokenDraft.value)
-    }
-    editing.value = false
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : String(cause)
-  }
+async function save() {
+  if (await connection.save()) editing.value = false
 }
-
-async function clearCredential(): Promise<void> {
-  if (!draft.value.id) return
-  error.value = ''
-  try {
-    await setMCPConnectionCredential(draft.value.id, '')
-    draft.value.enabled = false
-    saveMCPConnectionDraft(draft.value)
-    tokenDraft.value = ''
-    tokenStatus.value = 'missing'
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : String(cause)
-  }
+async function remove() {
+  if (await connection.remove()) editing.value = false
+  deleteOpen.value = false
 }
-
-async function remove(): Promise<void> {
-  if (!draft.value.id) return
-  error.value = ''
-  try {
-    await removeMCPConnection(draft.value.id)
-    deleteOpen.value = false
-    editing.value = false
-  } catch (cause) {
-    deleteOpen.value = false
-    error.value = cause instanceof Error ? cause.message : String(cause)
-  }
-}
-
-watch(
-  () => draft.value.authenticationType,
-  (type) => {
-    if (type === 'none') tokenDraft.value = ''
-  }
-)
-
-onMounted(() => {
-  tokenStatus.value = savedConnection.value ? 'configured' : 'missing'
-})
 </script>
 
 <template>

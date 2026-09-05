@@ -1,33 +1,15 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { useUsageSettings } from '@/app/usage/settings/use'
+
 import { useI18n } from '@open-pencil/vue'
 
-import { diagnostics } from '@/app/diagnostics'
-import { isUsageEnabled } from '@/app/diagnostics/settings'
-import { summarizeUsage, type UsageSummary } from '@/app/usage'
-
 const { diagnostics: diagnosticMessages, settings } = useI18n()
-const summary = ref<UsageSummary>(summarizeUsage([]))
-
-async function refresh() {
-  summary.value = summarizeUsage(await diagnostics.list())
-}
-
-onMounted(() => {
-  if (!isUsageEnabled()) return
-  void refresh()
-})
-
-const unsubscribe = diagnostics.subscribe(() => {
-  if (isUsageEnabled()) void refresh()
-  else summary.value = summarizeUsage([])
-})
-
-onUnmounted(unsubscribe)
 
 function formatTokenValue(value: number | null): string {
   return value === null ? diagnosticMessages.value.usageNotReported : value.toLocaleString()
 }
+
+const { summary } = useUsageSettings()
 </script>
 
 <template>

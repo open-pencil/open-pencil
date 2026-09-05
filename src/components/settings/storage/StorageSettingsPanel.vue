@@ -1,44 +1,20 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { useStorageSettings } from '@/app/integrations/storage/settings/use'
+
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@open-pencil/vue'
 
 import { useNotificationMessages } from '@/app/i18n/notifications'
 
-import {
-  activeStorageProviderID,
-  createActiveStorageAdapter,
-  readStoragePreferences,
-  storageCredentialStatuses,
-  storagePreferencesComplete,
-  storageProviderRegistry,
-  writeStoragePreference
-} from '@/app/integrations/storage'
-import { appCredentialServices } from '@/app/settings/credentials/app'
 import { settingsDialogOpen } from '@/app/settings/dialog'
-import { credentialRef } from '@/app/settings/credentials/reference'
-import type { CredentialStatus } from '@/app/settings/credentials/types'
 import { toast } from '@/app/shell/ui'
-import { resumeStorageSync } from '@/app/storage/sync'
 import AppInput from '@/components/ui/AppInput.vue'
 
 const { storage, settings, credentials, common } = useI18n()
 const notifications = useNotificationMessages()
 const router = useRouter()
-const provider = computed(() => storageProviderRegistry.get(activeStorageProviderID.value))
-const preferenceDrafts = ref<Record<string, string>>({
-  ...readStoragePreferences(provider.value.id)
-})
 const credentialDrafts = ref<Record<string, string>>({})
-const credentialStatuses = ref<Record<string, CredentialStatus>>({})
-const busy = ref(false)
-const configured = computed(
-  () =>
-    storagePreferencesComplete(provider.value.id) &&
-    provider.value.credentialFields.every(
-      (field) => !field.required || credentialStatuses.value[field.id] === 'configured'
-    )
-)
 
 function preferenceLabel(field: string): string {
   if (field === 'endpoint') return storage.value.endpoint
@@ -53,66 +29,29 @@ function credentialLabel(field: string): string {
   return field
 }
 
-async function refreshStatuses(): Promise<void> {
-  credentialStatuses.value = await storageCredentialStatuses(provider.value.id)
-}
-
-function savePreferences(): void {
-  for (const field of provider.value.preferenceFields) {
-    writeStoragePreference(provider.value.id, field.id, preferenceDrafts.value[field.id] ?? '')
-  }
-  void resumeStorageSync()
-}
-
-async function saveCredential(field: string): Promise<void> {
-  const value = credentialDrafts.value[field]?.trim()
-  if (!value) return
-  await appCredentialServices.manager.set(credentialRef(provider.value.id, field), value)
-  credentialDrafts.value[field] = ''
-  await refreshStatuses()
-  await resumeStorageSync()
-}
-
-async function clearCredential(field: string): Promise<void> {
-  await appCredentialServices.manager.clear(credentialRef(provider.value.id, field))
-  credentialDrafts.value[field] = ''
-  await refreshStatuses()
-}
-
 async function openWorkspace(): Promise<void> {
   settingsDialogOpen.value = false
   await router.push('/storage')
 }
 
 async function testConnection(): Promise<void> {
-  busy.value = true
-  try {
-    savePreferences()
-    for (const field of provider.value.credentialFields) {
-      await saveCredential(field.id)
-    }
-    await resumeStorageSync()
-    const connection = await createActiveStorageAdapter(provider.value.id).testConnection()
-    if (connection.ok) toast.info(notifications.value.storageConnected)
-    else toast.error(notifications.value.storageConnectionFailed({ error: connection.message }))
-  } catch (error) {
-    toast.error(
-      notifications.value.storageConnectionFailed({
-        error: error instanceof Error ? error.message : String(error)
-      })
-    )
-  } finally {
-    busy.value = false
-  }
+  const result = await testStorageConnection()
+  if (!result) return
+  if (result.ok) toast.info(notifications.value.storageConnected)
+  else toast.error(notifications.value.storageConnectionFailed({ error: result.message }))
 }
 
-watch(activeStorageProviderID, (providerID) => {
-  preferenceDrafts.value = { ...readStoragePreferences(providerID) }
-  credentialDrafts.value = {}
-  void refreshStatuses()
-})
-
-onMounted(() => void refreshStatuses())
+const {
+  testConnection: testStorageConnection,
+  provider,
+  preferenceDrafts,
+  credentialStatuses,
+  busy,
+  configured,
+  savePreferences,
+  saveCredential,
+  clearCredential
+} = useStorageSettings(credentialDrafts)
 </script>
 
 <template>
