@@ -1,0 +1,852 @@
+[
+  {
+    "guid": {
+      "sessionID": 4,
+      "localID": 482
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "position": "!"
+    },
+    "type": "FRAME",
+    "name": "H3 AccordionTrigger",
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 4,
+      "localID": 483
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 91
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Text",
+    "textData": {
+      "characters": "Is it accessible?"
+    },
+    "fontSize": 16,
+    "size": {
+      "x": 424,
+      "y": 24
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 16
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 91
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 4,
+        "localID": 482
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Button",
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "stackMode": "HORIZONTAL",
+    "stackPrimarySizing": "FIXED",
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 94
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 94,
+        "localID": 5467
+      },
+      "position": "I=OOOOOOOOOOOOOOOOOOOP#}}}}}}}f"
+    },
+    "type": "SYMBOL",
+    "name": "Chevron Down",
+    "size": {
+      "x": 24,
+      "y": 24
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 484,
+      "m10": 0,
+      "m11": 1,
+      "m12": 164
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 95
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 91
+      },
+      "position": "%"
+    },
+    "type": "INSTANCE",
+    "name": "Chevron Down",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 93
+              }
+            ]
+          }
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 94
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "size": {
+      "x": 16,
+      "y": 16
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 424,
+      "m10": 0,
+      "m11": 1,
+      "m12": 20
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 156
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 250
+      },
+      "position": "!"
+    },
+    "type": "SYMBOL",
+    "name": "State=Closed",
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 20,
+      "m10": 0,
+      "m11": 1,
+      "m12": 20
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 163
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "position": "%"
+    },
+    "type": "INSTANCE",
+    "name": "AccordionItem",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 169
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "position": "&"
+    },
+    "type": "INSTANCE",
+    "name": "AccordionItem",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "textData": {
+            "characters": "Is it styled?"
+          }
+        }
+      ]
+    },
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 56
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 175
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "position": "'"
+    },
+    "type": "INSTANCE",
+    "name": "AccordionItem",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "textData": {
+            "characters": "Is it animated?"
+          }
+        }
+      ]
+    },
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 112
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 186
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 428
+      },
+      "position": "&@#"
+    },
+    "type": "SYMBOL",
+    "name": "Accordion",
+    "size": {
+      "x": 440,
+      "y": 168
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 690,
+      "m10": 0,
+      "m11": 1,
+      "m12": 254
+    },
+    "stackMode": "VERTICAL",
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 212
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "position": "\""
+    },
+    "type": "FRAME",
+    "name": "Div AccordionContent",
+    "size": {
+      "x": 443.79998779296875,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 56
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 213
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 212
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Div",
+    "size": {
+      "x": 443.800048828125,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "stackMode": "HORIZONTAL",
+    "stackPrimarySizing": "FIXED",
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 214
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 213
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Yes. It adheres to the WAI-ARIA design pattern.",
+    "textData": {
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern."
+    },
+    "fontSize": 16,
+    "size": {
+      "x": 443.800048828125,
+      "y": 20
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 251
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 250
+      },
+      "position": "\""
+    },
+    "type": "SYMBOL",
+    "name": "State=Open",
+    "size": {
+      "x": 440,
+      "y": 92
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 20,
+      "m10": 0,
+      "m11": 1,
+      "m12": 96
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 252
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 251
+      },
+      "position": "!"
+    },
+    "type": "FRAME",
+    "name": "H3",
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 253
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 252
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Button",
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "stackMode": "HORIZONTAL",
+    "stackPrimarySizing": "FIXED",
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 254
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 253
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Text",
+    "textData": {
+      "characters": "Is it accessible?"
+    },
+    "fontSize": 16,
+    "size": {
+      "x": 424,
+      "y": 24
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 16
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 255
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 253
+      },
+      "position": "%"
+    },
+    "type": "INSTANCE",
+    "name": "Chevron Down",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 94
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "size": {
+      "x": 16,
+      "y": 16
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 424,
+      "m10": 0,
+      "m11": 1,
+      "m12": 20
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 256
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 251
+      },
+      "position": "\""
+    },
+    "type": "FRAME",
+    "name": "Div",
+    "size": {
+      "x": 440,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 56
+    },
+    "stackMode": "VERTICAL"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 257
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 256
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Div",
+    "size": {
+      "x": 440,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "stackMode": "HORIZONTAL",
+    "stackPrimarySizing": "FIXED",
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 258
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 257
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Text",
+    "textData": {
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern."
+    },
+    "fontSize": 14,
+    "size": {
+      "x": 440,
+      "y": 20
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 283
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 408
+      },
+      "position": "!"
+    },
+    "type": "INSTANCE",
+    "name": "Accordion",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 163
+              }
+            ]
+          },
+          "overriddenSymbolID": {
+            "sessionID": 7,
+            "localID": 251
+          }
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 163
+              },
+              {
+                "sessionID": 7,
+                "localID": 254
+              }
+            ]
+          },
+          "fontSize": 16
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 163
+              },
+              {
+                "sessionID": 7,
+                "localID": 258
+              }
+            ]
+          },
+          "fontSize": 14
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 169
+              },
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "fontSize": 16
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 175
+              },
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "fontSize": 16
+        }
+      ]
+    },
+    "size": {
+      "x": 440,
+      "y": 204
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 100,
+      "m10": 0,
+      "m11": 1,
+      "m12": 100
+    },
+    "stackMode": "VERTICAL",
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+  },
+  {
+    "guid": {
+      "sessionID": 94,
+      "localID": 5438
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "position": "\""
+    },
+    "type": "VECTOR",
+    "name": "Icon",
+    "size": {
+      "x": 14,
+      "y": 8
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 5,
+      "m10": 0,
+      "m11": 1,
+      "m12": 8
+    }
+  }
+]
