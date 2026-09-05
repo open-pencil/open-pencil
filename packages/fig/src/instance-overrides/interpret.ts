@@ -8,7 +8,12 @@ import {
   instanceBindings,
   type PropertyBinding
 } from './interpret-bindings'
-import type { ComponentPropAssignment, SymbolData, SymbolOverride } from './types'
+import type {
+  ComponentPropAssignment,
+  DerivedSymbolOverride,
+  SymbolData,
+  SymbolOverride
+} from './types'
 
 function readOverrideKey(value: unknown): GUID | undefined {
   if (!value || typeof value !== 'object' || !('sessionID' in value) || !('localID' in value))
@@ -33,6 +38,8 @@ export interface InstancePathDiagnostic {
 }
 
 export interface InterpretInstanceOptions {
+  /** Apply explicitly saved effective bounds, geometry and typography; no inferred scaling or layout. */
+  derivedBounds?: boolean
   /** Unresolved property overrides are skipped only when a diagnostic receiver is supplied. */
   onUnresolvedProperty?: (diagnostic: InstancePathDiagnostic) => void
 }
@@ -103,6 +110,41 @@ function applyPropertyOverrides(
     }
     Object.assign(target.properties, structuredClone(props))
     record(target, props)
+  }
+}
+
+function applyDerivedBounds(
+  source: NodeChange,
+  root: InstanceOccurrence,
+  targetFor: (path: readonly GUID[]) => InstanceOccurrence,
+  options: InterpretInstanceOptions
+): void {
+  if (!options.derivedBounds) return
+  const derived = source.derivedSymbolData as DerivedSymbolOverride[] | undefined
+  for (const entry of derived ?? []) {
+    const path = entry.guidPath?.guids
+    if (!path?.length) continue
+    let target: InstanceOccurrence
+    try {
+      target = targetFor(path)
+    } catch (error) {
+      // Derived records can retain stale paths just like explicit property records.
+      if (!(error instanceof InstancePathError) || !options.onUnresolvedProperty) throw error
+      options.onUnresolvedProperty(error.diagnostic)
+      continue
+    }
+    if (target === root) continue // Placed root bounds belong to its NodeChange.
+    if (entry.fontSize !== undefined) target.properties.fontSize = entry.fontSize
+    if (entry.lineHeight !== undefined)
+      target.properties.lineHeight = structuredClone(entry.lineHeight)
+    if (entry.letterSpacing !== undefined)
+      target.properties.letterSpacing = structuredClone(entry.letterSpacing)
+    if (entry.size) target.properties.size = structuredClone(entry.size)
+    if (entry.transform) target.properties.transform = structuredClone(entry.transform)
+    const { fillGeometry, strokeGeometry, vectorData } = structuredClone(entry)
+    if (fillGeometry) target.properties.fillGeometry = fillGeometry
+    if (strokeGeometry) target.properties.strokeGeometry = strokeGeometry
+    if (vectorData) target.properties.vectorData = vectorData
   }
 }
 
@@ -348,6 +390,7 @@ export function interpretInstance(
         adopt
       )
       applyPropertyOverrides(overrides, targetFor, options, recordPatch)
+      applyDerivedBounds(source, occurrence, targetFor, options)
       recipes.set(occurrence, (next) => expand(id, bindings, [...assignments, ...next]))
       return occurrence
     } finally {

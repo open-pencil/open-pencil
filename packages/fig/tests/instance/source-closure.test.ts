@@ -1,12 +1,13 @@
 import { expect, test } from 'bun:test'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
 import {
   interpretInstance,
   type InstanceOccurrence,
   type InstancePathDiagnostic
-} from '../src/instance-overrides/interpret'
+} from '#fig/instance-overrides/interpret'
+
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+
 import fixture from './fixtures/accordion-source-closure.json'
 
 function texts(node: InstanceOccurrence): string[] {

@@ -7,8 +7,8 @@ import {
   protectField,
   syncNodeProps,
   type ProtectionMap
-} from '../src/instance-overrides'
-import { propagateOverridesTransitively } from '../src/instance-overrides/sync/propagate'
+} from '#fig/instance-overrides/index'
+import { propagateOverridesTransitively } from '#fig/instance-overrides/sync/propagate'
 
 describe('@open-pencil/fig instance interpretation', () => {
   test('populates an empty instance from its component tree', () => {

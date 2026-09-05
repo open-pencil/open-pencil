@@ -1,8 +1,9 @@
 import { expect, test } from 'bun:test'
 
+import { interpretInstance, type InstancePathDiagnostic } from '#fig/instance-overrides/interpret'
+
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { interpretInstance, type InstancePathDiagnostic } from '../src/instance-overrides/interpret'
 import fixture from './fixtures/stale-chevron-override.json'
 
 test('reports stale property overrides and leaves the actual replacement vector untouched', () => {

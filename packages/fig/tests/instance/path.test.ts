@@ -1,8 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 
+import { interpretInstance } from '#fig/instance-overrides/interpret'
+
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { interpretInstance } from '../src/instance-overrides/interpret'
 import fixture from './fixtures/accordion-instance-paths.json'
 
 // Reduced from shadcn Figma kit (Community), Accordion 7:283.

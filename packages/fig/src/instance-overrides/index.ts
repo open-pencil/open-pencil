@@ -1,3 +1,13 @@
+// Experimental occurrence interpreter; not used by production FIG import.
+export { interpretInstance } from './interpret'
+export type {
+  InstanceOccurrence,
+  InterpretInstanceOptions,
+  InstancePathDiagnostic
+} from './interpret'
+export { materializeInstance } from './materialize-instance'
+export type { MaterializedInstance } from './materialize-instance'
+
 export { buildDsdLayoutUpdates } from './derived-symbol-data/layout'
 export { applyGeneratedFreeformStretch, propagateDsdChanges } from './derived-symbol-data/propagate'
 export { protectField, type ProtectionMap } from './patches'

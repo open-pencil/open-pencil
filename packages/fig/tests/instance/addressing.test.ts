@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { interpretInstance } from '#fig/instance-overrides/interpret'
 
-import { interpretInstance } from '../src/instance-overrides/interpret'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 const component = { sessionID: 1, localID: 1 }
 const label = { sessionID: 1, localID: 2 }

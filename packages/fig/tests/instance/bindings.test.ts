@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { interpretInstance } from '#fig/instance-overrides/interpret'
+import type { SymbolOverride } from '#fig/instance-overrides/types'
 
-import { interpretInstance } from '../src/instance-overrides/interpret'
-import type { SymbolOverride } from '../src/instance-overrides/types'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 const guid = (localID: number) => ({ sessionID: 1, localID })
 
