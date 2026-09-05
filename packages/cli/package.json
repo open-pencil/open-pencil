@@ -12,7 +12,7 @@
   "exports": {
     "./library": {
       "types": "./dist/library/index.d.mts",
-      "bun": "./src/library/index.ts",
+      "bun": "./dist/library/index.mjs",
       "import": "./dist/library/index.mjs",
       "default": "./dist/library/index.mjs"
     }

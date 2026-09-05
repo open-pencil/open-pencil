@@ -19,43 +19,43 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./schema-runtime": {
       "types": "./dist/schema-runtime.d.ts",
-      "bun": "./src/schema-runtime/index.ts",
+      "bun": "./dist/schema-runtime.js",
       "import": "./dist/schema-runtime.js",
       "default": "./dist/schema-runtime.js"
     },
     "./fig": {
       "types": "./dist/fig.d.ts",
-      "bun": "./src/fig/index.ts",
+      "bun": "./dist/fig.js",
       "import": "./dist/fig.js",
       "default": "./dist/fig.js"
     },
     "./fig/codec": {
       "types": "./dist/fig/codec.d.ts",
-      "bun": "./src/fig/codec.ts",
+      "bun": "./dist/fig/codec.js",
       "import": "./dist/fig/codec.js",
       "default": "./dist/fig/codec.js"
     },
     "./fig/container": {
       "types": "./dist/fig/container.d.ts",
-      "bun": "./src/fig/container.ts",
+      "bun": "./dist/fig/container.js",
       "import": "./dist/fig/container.js",
       "default": "./dist/fig/container.js"
     },
     "./fig/guid": {
       "types": "./dist/fig/guid.d.ts",
-      "bun": "./src/fig/guid.ts",
+      "bun": "./dist/fig/guid.js",
       "import": "./dist/fig/guid.js",
       "default": "./dist/fig/guid.js"
     },
     "./fig/parse": {
       "types": "./dist/fig/parse.d.ts",
-      "bun": "./src/fig/parse.ts",
+      "bun": "./dist/fig/parse.js",
       "import": "./dist/fig/parse.js",
       "default": "./dist/fig/parse.js"
     }

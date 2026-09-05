@@ -77,6 +77,9 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
+      - name: Build workspace package dependencies
+        run: bun run build:packages
+
       - name: Validate translations
         run: bun run check:i18n
 
@@ -158,8 +161,8 @@ jobs:
         with:
           lfs: 'true'
 
-      - name: Build shared Core test dependency
-        run: bun --filter @open-pencil/core build
+      - name: Build workspace test dependencies
+        run: bun run build:test-packages
 
       - name: Run ${{ matrix.group }} engine tests
         shell: bash

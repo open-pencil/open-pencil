@@ -6,19 +6,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
+      "bun": "./dist/index.js",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./node-change": {
       "types": "./dist/node-change.d.ts",
-      "bun": "./src/node-change/index.ts",
+      "bun": "./dist/node-change.js",
       "import": "./dist/node-change.js",
       "default": "./dist/node-change.js"
     },
     "./instance-overrides": {
       "types": "./dist/instance-overrides.d.ts",
-      "bun": "./src/instance-overrides/index.ts",
+      "bun": "./dist/instance-overrides.js",
       "import": "./dist/instance-overrides.js",
       "default": "./dist/instance-overrides.js"
     }
@@ -47,11 +47,9 @@
     "access": "public",
     "provenance": true
   },
-  "peerDependencies": {
-    "@open-pencil/kiwi": "workspace:*",
-    "@open-pencil/scene-graph": "workspace:*"
-  },
   "dependencies": {
+    "@open-pencil/kiwi": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
     "es-toolkit": "^1.51.0",
     "fflate": "^0.8.3"
   },

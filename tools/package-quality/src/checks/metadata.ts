@@ -28,7 +28,7 @@ const rootPackage = readPackageJSON('.')
 const expectedVersion = rootPackage.version
 
 function checkRuntimePath(packageName: string, field: string, value: string): void {
-  if (value.endsWith('.ts') && !value.endsWith('.d.ts')) {
+  if (value.endsWith('.ts') || isDeclarationPath(value)) {
     errors.push(`${packageName}: ${field} must not point to runtime TypeScript (${value})`)
   }
   if (value.startsWith('./src/')) {
@@ -82,7 +82,9 @@ function walkExports(
 ): void {
   if (typeof value === 'string') {
     const key = path.at(-1)
-    if (key === 'bun') return
+    // `bun` is a runtime condition like `import`/`default` and must resolve
+    // from the packed tarball. Skipping it here hides publish-time failures
+    // (e.g. targets pointing at absent ./src files).
     if (key === 'types') {
       checkIncludedTypePath(packageName, `exports.${path.join('.')}`, value, files)
     } else {

@@ -25,6 +25,12 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./scene-graph": {
+      "types": "./dist/scene-graph/index.d.ts",
+      "bun": "./dist/scene-graph/index.js",
+      "import": "./dist/scene-graph/index.js",
+      "default": "./dist/scene-graph/index.js"
+    },
     "./color": {
       "types": "./dist/color/index.d.ts",
       "import": "./dist/color/index.js",
@@ -86,8 +92,8 @@
       "default": "./dist/rpc/index.js"
     },
     "./library": {
-      "bun": "./src/library/index.ts",
       "types": "./dist/library/index.d.ts",
+      "bun": "./dist/library/index.js",
       "import": "./dist/library/index.js",
       "default": "./dist/library/index.js"
     },
@@ -132,8 +138,8 @@
       "default": "./dist/clipboard.js"
     },
     "./bytes": {
-      "bun": "./src/bytes/index.ts",
       "types": "./dist/bytes/index.d.ts",
+      "bun": "./dist/bytes/index.js",
       "import": "./dist/bytes/index.js",
       "default": "./dist/bytes/index.js"
     },
@@ -152,6 +158,12 @@
       "import": "./dist/xpath.js",
       "default": "./dist/xpath.js"
     },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "bun": "./dist/types.js",
+      "import": "./dist/types.js",
+      "default": "./dist/types.js"
+    },
     "./canvaskit": {
       "types": "./dist/canvaskit.d.ts",
       "import": "./dist/canvaskit.js",
@@ -161,6 +173,12 @@
       "types": "./dist/layout.d.ts",
       "import": "./dist/layout.js",
       "default": "./dist/layout.js"
+    },
+    "./geometry": {
+      "types": "./dist/geometry.d.ts",
+      "bun": "./dist/geometry.js",
+      "import": "./dist/geometry.js",
+      "default": "./dist/geometry.js"
     }
   },
   "publishConfig": {
