@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { MIXED, useI18n, useSharedStyleBinding } from '@open-pencil/vue'
 
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 

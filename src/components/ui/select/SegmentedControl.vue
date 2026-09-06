@@ -2,7 +2,7 @@
 import type { VNode } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
-import type { SegmentedControlTheme } from '@/theme/segmented-control'
+import type { SegmentedControlTheme } from '@/theme/select/segmented-control'
 
 export interface SegmentedControlOption {
   value: string
@@ -29,7 +29,7 @@ import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 import { SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue'
 
-import theme from '@/theme/segmented-control'
+import theme from '@/theme/select/segmented-control'
 
 const { options, label, size = 'sm', ui } = defineProps<SegmentedControlProps>()
 defineSlots<SegmentedControlSlots>()

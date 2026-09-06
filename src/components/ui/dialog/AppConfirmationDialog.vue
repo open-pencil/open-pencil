@@ -7,7 +7,7 @@ import {
 } from 'reka-ui'
 import { computed } from 'vue'
 
-import AppButton from '@/components/ui/AppButton.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppDialogBody from './AppDialogBody.vue'
 import AppDialogFooter from './AppDialogFooter.vue'
 import AppAlertDialogRoot from './AppAlertDialogRoot.vue'

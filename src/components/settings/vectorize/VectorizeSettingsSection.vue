@@ -6,7 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { vectorizeProviderID } from '@/app/editor/vectorize'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { media, ai, credentials } = useI18n()
 const keyDraft = ref('')

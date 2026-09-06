@@ -16,7 +16,7 @@ import StockPhotoKeysSection from '@/components/settings/provider/StockPhotoKeys
 import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import VectorizeSettingsSection from '@/components/settings/vectorize/VectorizeSettingsSection.vue'
-import AppSwitch from '@/components/ui/AppSwitch.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
 const { credentials, settings, common } = useI18n()

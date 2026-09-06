@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 import { useI18n } from '@open-pencil/vue'
 
-import statusTheme from '@/theme/status'
+import statusTheme from '@/theme/feedback/status'
 
 import type { ProviderConnectionTestFailureReason } from '@/app/ai/chat/connection-test'
 

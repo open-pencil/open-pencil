@@ -2,7 +2,7 @@
 import { useEventListener, useTimeoutFn } from '@vueuse/core'
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { useTooltipUI } from '@/components/ui/tooltip'
+import { useTooltipUI } from '@/components/ui/overlay/tooltip'
 
 const TOOLTIP_OPEN_DELAY_MS = 400
 const TOOLTIP_SIDE_OFFSET = 4

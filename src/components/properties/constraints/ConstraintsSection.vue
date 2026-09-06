@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { ConstraintsControlRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import ConstraintsPinControl from '@/components/properties/constraints/ConstraintsPinControl.vue'
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import constraintsTheme from '@/theme/constraints'

@@ -5,7 +5,7 @@ import AutoLayoutControls from '@/components/properties/LayoutSection/AutoLayout
 import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
 import FlexControls from '@/components/properties/LayoutSection/FlexControls.vue'
 import GridControls from '@/components/properties/LayoutSection/GridControls.vue'
-import IconButton from '@/components/ui/IconButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
 import SizeControls from '@/components/properties/LayoutSection/size/SizeControls.vue'
 import TextResizingControl from '@/components/properties/LayoutSection/TextResizingControl.vue'

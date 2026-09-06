@@ -7,7 +7,7 @@ import {
   type AppButtonShape,
   type AppButtonSize,
   type AppButtonVariant
-} from '@/theme/button'
+} from '@/theme/button/button'
 
 const {
   color = 'neutral',

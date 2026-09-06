@@ -3,7 +3,7 @@ import type { ClassValue } from 'tailwind-variants'
 import type { VNode } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
-import type theme from '@/theme/paint-field'
+import type theme from '@/theme/paint/field'
 
 export type PaintFieldUI = ComponentUI<typeof theme>
 
@@ -26,7 +26,7 @@ import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 
 import NumberField from '@/components/inputs/NumberField.vue'
-import paintFieldTheme from '@/theme/paint-field'
+import paintFieldTheme from '@/theme/paint/field'
 
 const { opacity, opacityLabel, class: className, ui } = defineProps<PaintFieldProps>()
 const emit = defineEmits<{ 'update:opacity': [opacity: number] }>()

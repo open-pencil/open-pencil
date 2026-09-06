@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-import theme from '@/theme/icon-button'
+import theme from '@/theme/button/icon-button'
 
 export interface IconButtonUI {
   base?: string

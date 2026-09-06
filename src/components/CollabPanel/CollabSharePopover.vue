@@ -7,7 +7,7 @@ import ConnectedRoom from '@/components/CollabPanel/ConnectedRoom.vue'
 import JoinRoomPrompt from '@/components/CollabPanel/JoinRoomPrompt.vue'
 import ShareOrJoinRoom from '@/components/CollabPanel/ShareOrJoinRoom.vue'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
-import { usePopoverUI } from '@/components/ui/popover'
+import { usePopoverUI } from '@/components/ui/overlay/popover'
 import collaborationTheme from '@/theme/collaboration'
 
 const collab = useCollabPanelContext()

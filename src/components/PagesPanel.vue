@@ -13,8 +13,8 @@ import {
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/Tip.vue'
-import { useMenuUI } from '@/components/ui/menu'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import { useMenuUI } from '@/components/ui/menu/menu'
 import pageListTheme from '@/theme/page-list'
 
 type PageItem = Pick<SceneNode, 'id' | 'name' | 'childIds'>

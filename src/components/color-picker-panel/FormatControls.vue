@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import HsbFields from '@/components/color-picker-panel/HsbFields.vue'
 import HslFields from '@/components/color-picker-panel/HslFields.vue'
 import OkhclFields from '@/components/color-picker-panel/OkhclFields.vue'

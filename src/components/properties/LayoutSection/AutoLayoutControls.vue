@@ -3,9 +3,9 @@ import { computed } from 'vue'
 
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
-import IconButton from '@/components/ui/IconButton.vue'
-import SegmentedControl from '@/components/ui/SegmentedControl.vue'
-import Tip from '@/components/ui/Tip.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 import type { LayoutMode } from '@open-pencil/scene-graph'
 

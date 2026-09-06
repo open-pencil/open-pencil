@@ -1,6 +1,6 @@
 import { tv, type VariantProps } from 'tailwind-variants'
 
-import dialogTheme from '@/theme/dialog'
+import dialogTheme from '@/theme/dialog/index'
 
 export const dialog = tv(dialogTheme)
 

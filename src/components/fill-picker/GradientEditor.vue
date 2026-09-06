@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import AppSelect from '@/components/ui/AppSelect.vue'
-import Tip from '@/components/ui/Tip.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import fillPickerTheme from '@/theme/fill-picker'

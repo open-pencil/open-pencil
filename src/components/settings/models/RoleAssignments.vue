@@ -4,7 +4,7 @@ import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
 import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { ai } = useI18n()
 

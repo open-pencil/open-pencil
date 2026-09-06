@@ -6,8 +6,8 @@ import { ref } from 'vue'
 
 import { mcpConnectionSettings } from '@/app/integrations/mcp'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
-import AppInput from '@/components/ui/AppInput.vue'
-import AppSwitch from '@/components/ui/AppSwitch.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 
 const { automation, common, credentials } = useI18n()

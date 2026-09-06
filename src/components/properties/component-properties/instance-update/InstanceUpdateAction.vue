@@ -14,8 +14,8 @@ import { useI18n } from '@open-pencil/vue'
 import type { EditorStore } from '@/app/editor/session'
 import type { LibraryService } from '@/app/libraries'
 import { useInstanceUpdate } from '@/components/properties/component-properties/instance-update/use'
-import Tip from '@/components/ui/Tip.vue'
-import { useMenuUI } from '@/components/ui/menu'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import { useMenuUI } from '@/components/ui/menu/menu'
 
 const { node, editor, service } = defineProps<{
   node: SceneNode | null | undefined

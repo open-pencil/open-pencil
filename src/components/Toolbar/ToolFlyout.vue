@@ -13,8 +13,8 @@ import {
 
 import IconChevronDown from '~icons/lucide/chevron-down'
 
-import AppShortcutText from '@/components/ui/AppShortcutText.vue'
-import { menu } from '@/components/ui/menu'
+import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
+import { menu } from '@/components/ui/menu/menu'
 import toolbarTheme from '@/theme/toolbar'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import {

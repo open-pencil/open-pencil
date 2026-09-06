@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 
-import AppButton from '@/components/ui/AppButton.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 
 import AppConfirmationDialog from './AppConfirmationDialog.vue'
 import AppDialog from './AppDialog.vue'

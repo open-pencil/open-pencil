@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 
 import { MIXED, type MixedValue } from '@open-pencil/vue'
 
-import AppInput from '@/components/ui/AppInput.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 
 const { value, label } = defineProps<{ value: MixedValue<string>; label: string }>()
 const emit = defineEmits<{ commit: [value: string] }>()

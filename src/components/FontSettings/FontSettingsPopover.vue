@@ -7,9 +7,9 @@ import { useFontSettings } from '@/components/FontSettings/use'
 import { WEB_FONT_PROVIDER_IDS, WEB_FONT_PROVIDER_LABELS } from '@open-pencil/core/text'
 import type { WebFontProviderId } from '@open-pencil/core/text'
 import { useI18n } from '@open-pencil/vue'
-import Tip from '@/components/ui/Tip.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import { usePopoverUI } from '@/components/ui/popover'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import { usePopoverUI } from '@/components/ui/overlay/popover'
 
 const { fonts, common } = useI18n()
 const cls = usePopoverUI({ content: 'isolate z-[51] w-80 p-3' })

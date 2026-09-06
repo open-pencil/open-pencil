@@ -2,7 +2,7 @@
 import { useI18n } from '@open-pencil/vue'
 
 import { openSettingsDialog } from '@/app/settings/dialog'
-import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
 const { ai } = useI18n()
 </script>

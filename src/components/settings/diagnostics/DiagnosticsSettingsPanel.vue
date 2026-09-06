@@ -11,8 +11,8 @@ import {
 } from '@/app/diagnostics/settings'
 import { toast } from '@/app/shell/ui'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
-import AppButton from '@/components/ui/AppButton.vue'
-import AppSwitch from '@/components/ui/AppSwitch.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { common, diagnostics: diagnosticMessages } = useI18n()
 const clearOpen = ref(false)

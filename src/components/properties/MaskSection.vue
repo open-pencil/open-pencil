@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 import { useI18n, useMask } from '@open-pencil/vue'
 
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 

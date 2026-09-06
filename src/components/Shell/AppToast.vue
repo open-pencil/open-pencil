@@ -3,11 +3,11 @@ import { ToastProvider, ToastRoot, ToastDescription, ToastViewport, ToastClose }
 
 import { useClipboard } from '@vueuse/core'
 
-import Tip from '@/components/ui/Tip.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import { toast } from '@/app/shell/ui'
-import { useToastUI } from '@/components/ui/toast'
+import { useToastUI } from '@/components/ui/feedback/toast'
 
-import type { ToastVariant } from '@/components/ui/toast'
+import type { ToastVariant } from '@/components/ui/feedback/toast'
 import { useI18n } from '@open-pencil/vue'
 
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })

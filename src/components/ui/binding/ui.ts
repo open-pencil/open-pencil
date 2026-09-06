@@ -3,8 +3,8 @@ import { tv } from 'tailwind-variants'
 import type { BindingState } from '@open-pencil/vue'
 
 import type { ComponentUI } from '@/components/ui/types'
-import theme from '@/theme/binding-field'
-import type { BindingFieldTheme } from '@/theme/binding-field'
+import theme from '@/theme/binding/field'
+import type { BindingFieldTheme } from '@/theme/binding/field'
 
 export type BindingFieldUI = ComponentUI<BindingFieldTheme>
 

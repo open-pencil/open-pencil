@@ -9,7 +9,7 @@ import { useNotificationMessages } from '@/app/i18n/notifications'
 
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
-import AppInput from '@/components/ui/AppInput.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 
 const { storage, settings, credentials, common } = useI18n()
 const notifications = useNotificationMessages()

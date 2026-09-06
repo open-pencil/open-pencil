@@ -3,7 +3,7 @@ import { tv } from 'tailwind-variants'
 
 import { colorToCSS } from '@open-pencil/core/color'
 
-import Tip from '@/components/ui/Tip.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import { initials } from '@/app/shell/ui'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
 import collaborationTheme from '@/theme/collaboration'

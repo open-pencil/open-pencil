@@ -5,7 +5,7 @@ import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
 import { colorToCSS } from '@open-pencil/core/color'
 import type { CanvasLabelEdit } from '@open-pencil/vue'
 
-import InlineLabelEditor from '@/components/ui/inline-label-editor/InlineLabelEditor.vue'
+import InlineLabelEditor from '@/components/ui/input/InlineLabelEditor.vue'
 import type { CanvasLabelPresentation } from '@/components/canvas/labels/presentation'
 
 const { edit, presentation, reference } = defineProps<{

@@ -2,7 +2,7 @@ import { ref, watch, type Ref } from 'vue'
 
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
-import { listCatalogModels } from '@/app/ai/models/catalog'
+import { listCatalogModels } from './index'
 
 export function useProviderModelCatalog(
   providerID: Readonly<Ref<AIProviderID>>,

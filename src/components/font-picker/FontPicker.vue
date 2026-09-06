@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { FontPickerRoot, useI18n } from '@open-pencil/vue'
 
-import { useSelectUI } from '@/components/ui/select'
-import { usePopoverUI } from '@/components/ui/popover'
+import { useSelectUI } from '@/components/ui/select/select'
+import { usePopoverUI } from '@/components/ui/overlay/popover'
 import {
   listFamilies,
   loadFont,

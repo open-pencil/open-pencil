@@ -6,7 +6,7 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
 
 import AppMenu from '@/components/Shell/AppMenu.vue'
-import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import splitterTheme from '@/theme/splitter'
 import AssetsPanel from './assets-panel/AssetsPanel.vue'
 import LayerTree from './LayerTree/LayerTree.vue'

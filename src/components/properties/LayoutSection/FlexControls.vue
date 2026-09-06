@@ -12,13 +12,13 @@ import {
   SelectViewport
 } from 'reka-ui'
 
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import layoutAlignmentTheme from '@/theme/layout-alignment'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
 import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
-import { useSelectUI } from '@/components/ui/select'
+import { useSelectUI } from '@/components/ui/select/select'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import type { LayoutDirection, LayoutAlign } from '@open-pencil/scene-graph'

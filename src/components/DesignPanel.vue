@@ -7,7 +7,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, useLibraryService } from '@/app/libraries'
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
 import PanelHeader from '@/components/ui/panel/PanelHeader.vue'
-import Tip from '@/components/ui/Tip.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 import VariablesDialog from './variables/VariablesDialog.vue'
 import AppearanceSection from './properties/AppearanceSection.vue'

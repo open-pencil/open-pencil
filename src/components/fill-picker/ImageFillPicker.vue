@@ -2,7 +2,7 @@
 import { computed, shallowRef, watch } from 'vue'
 import { useFileDialog, useObjectUrl } from '@vueuse/core'
 
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 

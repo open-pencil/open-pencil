@@ -14,8 +14,8 @@ import {
   SelectViewport
 } from 'reka-ui'
 
-import theme from '@/theme/app-select'
-import type { AppSelectTheme } from '@/theme/app-select'
+import theme from '@/theme/select/app'
+import type { AppSelectTheme } from '@/theme/select/app'
 import type { ComponentUI } from '@/components/ui/types'
 
 interface AppSelectProps<TValue extends string | number> {

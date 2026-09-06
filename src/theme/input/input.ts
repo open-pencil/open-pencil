@@ -1,4 +1,4 @@
-import { panelFieldBase, panelFieldState } from './panel/field'
+import { panelFieldBase, panelFieldState } from '../panel/field'
 
 const defaultInputBase =
   'min-w-0 rounded-md border border-border bg-input text-surface outline-none hover:border-muted/60 focus:border-panel-focus focus:ring-1 focus:ring-accent/25 disabled:cursor-not-allowed disabled:opacity-60'

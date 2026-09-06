@@ -7,7 +7,7 @@ import type {
 import type { VNode } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
-import type { NumberFieldTheme } from '@/theme/number-field'
+import type { NumberFieldTheme } from '@/theme/input/number-field'
 
 export type NumberFieldUI = ComponentUI<NumberFieldTheme>
 
@@ -40,7 +40,7 @@ import { computed, normalizeClass, useAttrs } from 'vue'
 import { tv } from 'tailwind-variants'
 import { NumberFieldRoot, NumberFieldInput, NumberFieldValue, useI18n } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
-import theme from '@/theme/number-field'
+import theme from '@/theme/input/number-field'
 
 const attrs = useAttrs()
 const slots = defineSlots<NumberFieldSlots>()

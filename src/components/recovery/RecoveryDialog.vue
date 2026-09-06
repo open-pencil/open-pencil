@@ -9,7 +9,7 @@ import { discardRecoverySnapshot, listRecoverySnapshots, restoreRecoverySnapshot
 import type { RecoverySnapshotMeta } from '@/app/document/recovery'
 import { formatStorageBytes } from '@/app/storage/format-bytes'
 import { toast } from '@/app/shell/ui'
-import AppButton from '@/components/ui/AppButton.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 
 const { recovery, common } = useI18n()
 const notifications = useNotificationMessages()

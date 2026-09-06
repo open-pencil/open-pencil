@@ -1,6 +1,6 @@
 import { tv } from 'tailwind-variants'
 
-import theme from '@/theme/input'
+import theme from '@/theme/input/input'
 
 export interface InputUI {
   base?: string

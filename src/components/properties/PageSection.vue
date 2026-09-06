@@ -6,7 +6,7 @@ import { useI18n } from '@open-pencil/vue'
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import PaintField from '@/components/properties/paint/PaintField.vue'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
-import FillSwatch from '@/components/ui/FillSwatch.vue'
+import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import { useEditorStore } from '@/app/editor/active-store'
 

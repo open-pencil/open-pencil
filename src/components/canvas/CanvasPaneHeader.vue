@@ -12,8 +12,8 @@ import {
 import { useI18n } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import type { SplitDirection } from '@/app/editor/panes/split-tree'
-import IconButton from '@/components/ui/IconButton.vue'
-import { menuItem, useMenuUI } from '@/components/ui/menu'
+import IconButton from '@/components/ui/button/IconButton.vue'
+import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 import canvasPaneHeaderTheme from '@/theme/canvas-pane-header'
 
 const { paneId } = defineProps<{

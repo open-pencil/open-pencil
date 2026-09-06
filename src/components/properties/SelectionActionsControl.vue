@@ -2,7 +2,7 @@
 import { useEditorCommands } from '@open-pencil/vue'
 
 import BooleanOperationsControl from '@/components/properties/BooleanOperationsControl.vue'
-import IconButton from '@/components/ui/IconButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 
 const { showBooleanOperations = false } = defineProps<{
   showBooleanOperations?: boolean

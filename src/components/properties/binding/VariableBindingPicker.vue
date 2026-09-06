@@ -31,7 +31,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 
 import { BindableValuePicker, useBindableValue } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/Tip.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import { BindingTrigger, useBindingFieldUI } from '@/components/ui/binding'
 
 const {

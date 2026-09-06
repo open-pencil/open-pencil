@@ -10,12 +10,12 @@ import {
   useBlendModeOptions
 } from '@/components/properties/blend-mode/use'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
-import AppSelect from '@/components/ui/AppSelect.vue'
-import FillSwatch from '@/components/ui/FillSwatch.vue'
-import IconButton from '@/components/ui/IconButton.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-import Tip from '@/components/ui/Tip.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 import type { Effect, Fill } from '@open-pencil/scene-graph'
 

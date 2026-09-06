@@ -33,8 +33,8 @@ import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import { useCanvasContextMenu } from '@/app/editor/canvas/menu/context'
 import { canvasMenuItemClass, canvasMenuShortcutClass } from '@/app/editor/canvas/menu/model'
-import AppShortcutText from '@/components/ui/AppShortcutText.vue'
-import { menu, useMenuUI } from '@/components/ui/menu'
+import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
+import { menu, useMenuUI } from '@/components/ui/menu/menu'
 
 const store = useEditorStore()
 

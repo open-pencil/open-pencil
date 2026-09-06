@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 
 import type { ControlSize } from '@/theme/control'
-import theme from '@/theme/input'
+import theme from '@/theme/input/input'
 
 interface AppInputProps {
   id?: string

@@ -7,7 +7,7 @@ import { useToolbarActions } from '@/components/Toolbar/actions'
 import { useActionToast } from '@/app/shell/toast/action'
 import { useEditorStore } from '@/app/editor/active-store'
 import { toolIcons } from '@/app/editor/icons'
-import { useMenuUI } from '@/components/ui/menu'
+import { useMenuUI } from '@/components/ui/menu/menu'
 import {
   ToolbarRoot,
   useEditorCommands,

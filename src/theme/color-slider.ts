@@ -1,4 +1,4 @@
-import { CHECKERBOARD_BACKGROUND } from '@/theme/checkerboard'
+import { CHECKERBOARD_BACKGROUND } from '@/theme/paint/checkerboard'
 
 export default {
   slots: {

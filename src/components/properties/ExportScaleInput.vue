@@ -8,9 +8,9 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { useInputUI } from '@/components/ui/input'
-import { menuItem, useMenuUI } from '@/components/ui/menu'
-import Tip from '@/components/ui/Tip.vue'
+import { useInputUI } from '@/components/ui/input/input'
+import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 interface ExportScaleInputProps {
   presets: readonly number[]

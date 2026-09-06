@@ -20,8 +20,8 @@ import {
 import IconChevronRight from '~icons/lucide/chevron-right'
 
 import { vTestId, useI18n } from '@open-pencil/vue'
-import AppShortcutText from '@/components/ui/AppShortcutText.vue'
-import { useMenuUI } from '@/components/ui/menu'
+import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
+import { useMenuUI } from '@/components/ui/menu/menu'
 import { IS_TAURI } from '@/constants'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
 import { useDocumentNameRename } from '@/app/shell/menu/document-name'

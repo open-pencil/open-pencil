@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 
 import { useI18n } from '@open-pencil/vue'
 
-import Tip from '../ui/Tip.vue'
+import Tip from '../ui/overlay/Tip.vue'
 import { useLayerTreeUI } from './ui'
 
 import layerTreeTheme from '@/theme/layer-tree'

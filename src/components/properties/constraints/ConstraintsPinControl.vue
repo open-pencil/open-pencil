@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 
 import { constraintPins, useI18n } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/Tip.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import constraintsTheme from '@/theme/constraints'
 
 import type {

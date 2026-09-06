@@ -3,8 +3,8 @@ import { computed, reactive, ref, watch } from 'vue'
 
 import { useI18n, useVariantAuthoring } from '@open-pencil/vue'
 
-import AppInput from '@/components/ui/AppInput.vue'
-import IconButton from '@/components/ui/IconButton.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 

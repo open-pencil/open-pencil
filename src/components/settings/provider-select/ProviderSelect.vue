@@ -2,7 +2,7 @@
 import { promiseTimeout } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 
-import AppGroupedSelect from '@/components/ui/AppGroupedSelect.vue'
+import AppGroupedSelect from '@/components/ui/select/AppGroupedSelect.vue'
 import {
   ACP_AGENTS,
   AI_PROVIDERS,

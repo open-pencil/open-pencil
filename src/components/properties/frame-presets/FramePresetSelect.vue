@@ -9,7 +9,7 @@ import {
   FRAME_RESIZE_PRESET_CATEGORIES,
   FRAME_RESIZE_PRESETS
 } from '@/app/editor/frame-presets'
-import AppGroupedSelect from '@/components/ui/AppGroupedSelect.vue'
+import AppGroupedSelect from '@/components/ui/select/AppGroupedSelect.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 const store = useEditorStore()

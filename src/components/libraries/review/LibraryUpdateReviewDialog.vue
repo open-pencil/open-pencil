@@ -11,7 +11,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { closeLibraryReview, libraryReviewRequest, useLibraryService } from '@/app/libraries'
 import { toast } from '@/app/shell/ui'
 import LibraryComparisonPreview from '@/components/libraries/review/LibraryComparisonPreview.vue'
-import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
 const editor = useEditorStore()

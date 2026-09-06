@@ -14,8 +14,8 @@ import {
 } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { isTauri } from '@/app/tauri/env'
-import AppInput from '@/components/ui/AppInput.vue'
-import AppSwitch from '@/components/ui/AppSwitch.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { settings, automation, common } = useI18n()
 const statusMessage = computed(() => {

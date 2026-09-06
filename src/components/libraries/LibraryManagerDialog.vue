@@ -6,8 +6,8 @@ import { useI18n } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
 import { useLibraryManager } from '@/components/libraries/useLibraryManager'
-import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
-import AppSwitch from '@/components/ui/AppSwitch.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
 const { initialSection = 'browse' } = defineProps<{

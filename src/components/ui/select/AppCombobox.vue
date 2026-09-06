@@ -18,8 +18,8 @@ import {
   type AcceptableValue
 } from 'reka-ui'
 
-import theme from '@/theme/combobox'
-import type { AppComboboxTheme } from '@/theme/combobox'
+import theme from '@/theme/select/combobox'
+import type { AppComboboxTheme } from '@/theme/select/combobox'
 import type { ComponentUI } from '@/components/ui/types'
 
 export type AppComboboxOption = {

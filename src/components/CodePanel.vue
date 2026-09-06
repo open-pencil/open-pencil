@@ -22,10 +22,10 @@ import {
 } from '@/app/code/dom-preview'
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
-import AppSelect from '@/components/ui/AppSelect.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import Tip from '@/components/ui/Tip.vue'
-import statusTheme from '@/theme/status'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import statusTheme from '@/theme/feedback/status'
 
 const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/CodeEditor.vue'))
 

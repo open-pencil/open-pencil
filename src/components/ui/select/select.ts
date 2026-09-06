@@ -1,7 +1,7 @@
 import { tv } from 'tailwind-variants'
 
 import type { ComponentUI } from '@/components/ui/types'
-import theme from '@/theme/select'
+import theme from '@/theme/select/select'
 
 export interface SelectContentVariants {
   radius?: keyof typeof theme.variants.radius

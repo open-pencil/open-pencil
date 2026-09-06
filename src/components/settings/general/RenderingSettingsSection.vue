@@ -4,7 +4,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences, updateCanvasRenderingMode } from '@/app/settings/preferences/store'
-import AppSwitch from '@/components/ui/AppSwitch.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSectionHeader from '@/components/settings/layout/SettingsSectionHeader.vue'
 

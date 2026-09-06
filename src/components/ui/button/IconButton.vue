@@ -2,9 +2,9 @@
 import { computed, normalizeClass, useAttrs } from 'vue'
 import { tv } from 'tailwind-variants'
 
-import theme from '@/theme/icon-button'
+import theme from '@/theme/button/icon-button'
 import type { ControlSize } from '@/theme/control'
-import Tip from '@/components/ui/Tip.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 const {
   active = false,

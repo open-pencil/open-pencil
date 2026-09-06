@@ -81,7 +81,9 @@ const meta = {
 
 export default meta
 
-export const Default: Story = {
+export const Default: Story = {}
+
+export const KeyboardSelection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('button', { name: 'Model' }))

@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { ComponentUI } from '@/components/ui/types'
-import type { SwitchTheme } from '@/theme/switch'
+import type { SwitchTheme } from '@/theme/toggle/switch'
 
 export type AppSwitchUI = ComponentUI<SwitchTheme>
 
@@ -17,7 +17,7 @@ import { computed } from 'vue'
 import { SwitchRoot, SwitchThumb } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import theme from '@/theme/switch'
+import theme from '@/theme/toggle/switch'
 
 const { label, size = 'sm', state = 'idle', ui } = defineProps<AppSwitchProps>()
 const modelValue = defineModel<boolean>({ required: true })

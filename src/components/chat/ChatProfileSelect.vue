@@ -25,7 +25,7 @@ import {
 import type { AIModelProfile, AIModelProfileId } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatProfileItem from '@/components/chat/ChatProfileItem.vue'
-import { useSelectUI } from '@/components/ui/select'
+import { useSelectUI } from '@/components/ui/select/select'
 import { chatProfileTheme } from '@/theme/chat/profile'
 
 const { ai } = useI18n()

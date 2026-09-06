@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 
-import theme from '@/theme/textarea'
+import theme from '@/theme/input/textarea'
 
 const model = defineModel<string>({ default: '' })
 

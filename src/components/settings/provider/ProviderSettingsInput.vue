@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppInput from '@/components/ui/AppInput.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 
 interface ProviderSettingsInputProps {
   id?: string

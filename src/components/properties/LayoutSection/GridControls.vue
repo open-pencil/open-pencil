@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
-import IconButton from '@/components/ui/IconButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import type { GridTrackProp } from '@/components/properties/LayoutSection/types'

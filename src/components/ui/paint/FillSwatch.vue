@@ -4,7 +4,7 @@ import type { VNode } from 'vue'
 import type { Fill } from '@open-pencil/scene-graph'
 import type { FillSwatchSlotProps } from '@open-pencil/vue'
 import type { ComponentUI } from '@/components/ui/types'
-import type theme from '@/theme/fill-swatch'
+import type theme from '@/theme/paint/fill-swatch'
 
 export type FillSwatchUI = ComponentUI<typeof theme>
 
@@ -24,7 +24,7 @@ import { computed, normalizeClass, useAttrs } from 'vue'
 import { tv } from 'tailwind-variants'
 import { FillSwatch as FillSwatchPrimitive } from '@open-pencil/vue'
 
-import fillSwatchTheme from '@/theme/fill-swatch'
+import fillSwatchTheme from '@/theme/paint/fill-swatch'
 
 const { fill, label, ui } = defineProps<FillSwatchProps>()
 const attrs = useAttrs()

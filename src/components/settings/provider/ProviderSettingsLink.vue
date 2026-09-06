@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { openExternalLink } from '@/app/shell/ui'
-import AppButton from '@/components/ui/AppButton.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 
 const { href } = defineProps<{ href: string }>()
 </script>
