@@ -7,6 +7,14 @@ test('renders imported .pen variable colors and fonts like literal values', asyn
     window.openPencil?.openFile?.('/tests/fixtures/pen-variables.pen')
   )
   await editor.canvas.waitForInit()
+  expect(
+    await editor.page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      return ['literal-text', 'plain-text', 'dashed-text'].map(
+        (id) => store?.graph.getNode(id)?.fontFamily
+      )
+    })
+  ).toEqual(['Noto Naskh Arabic', 'Noto Naskh Arabic', 'Noto Naskh Arabic'])
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')

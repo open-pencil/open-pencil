@@ -2,9 +2,9 @@
   "version": "2.14",
   "variables": {
     "merk-blauw": { "type": "color", "value": "#4094D0" },
-    "font-tekst": { "type": "string", "value": "Inter" },
+    "font-tekst": { "type": "string", "value": "Noto Naskh Arabic" },
     "--merk-blauw": { "type": "color", "value": "#4094D0" },
-    "--font-tekst": { "type": "string", "value": "Inter" }
+    "--font-tekst": { "type": "string", "value": "Noto Naskh Arabic" }
   },
   "children": [
     {
@@ -22,8 +22,8 @@
           "type": "text",
           "x": 24,
           "y": 60,
-          "content": "Variable import",
-          "fontFamily": "Inter",
+          "content": "مرحبا بالعالم",
+          "fontFamily": "Noto Naskh Arabic",
           "fontSize": 22,
           "fill": "#FFFFFF"
         }
@@ -44,7 +44,7 @@
           "type": "text",
           "x": 24,
           "y": 60,
-          "content": "Variable import",
+          "content": "مرحبا بالعالم",
           "fontFamily": "$font-tekst",
           "fontSize": 22,
           "fill": "#FFFFFF"
@@ -66,7 +66,7 @@
           "type": "text",
           "x": 24,
           "y": 60,
-          "content": "Variable import",
+          "content": "مرحبا بالعالم",
           "fontFamily": "$--font-tekst",
           "fontSize": 22,
           "fill": "#FFFFFF"

@@ -18,6 +18,33 @@ function parseVariableDocument(prefix: string, children: PenNode[]) {
   return parsePenFile(JSON.stringify(document))
 }
 
+test('keeps plain and double-dash variable names distinct in one document', () => {
+  const document: PenDocument = {
+    version: '2.14',
+    variables: {
+      blue: { type: 'color', value: '#4094D0' },
+      '--blue': { type: 'color', value: '#FFFFFF' }
+    },
+    children: [
+      { id: 'plain', type: 'frame', fill: '$blue' },
+      { id: 'dashed', type: 'frame', fill: '$--blue' }
+    ]
+  }
+  const graph = parsePenFile(JSON.stringify(document))
+  const plain = graph.getNode('plain')
+  const dashed = graph.getNode('dashed')
+  const plainId = plain?.boundVariables['fills[0]']
+  const dashedId = dashed?.boundVariables['fills[0]']
+
+  expect(plain?.fills[0]?.color).toEqual(BLUE)
+  expect(dashed?.fills[0]?.color).toEqual({ r: 1, g: 1, b: 1, a: 1 })
+  expect(plainId).toBeDefined()
+  expect(dashedId).toBeDefined()
+  expect(plainId).not.toBe(dashedId)
+  expect(graph.variables.get(plainId ?? '')?.name).toBe('blue')
+  expect(graph.variables.get(dashedId ?? '')?.name).toBe('--blue')
+})
+
 describe.each(['', '--'])('parsePenFile — $%sname references (#563)', (prefix) => {
   const colorRef = `$${prefix}merk-blauw`
   const fontRef = `$${prefix}font-tekst`
