@@ -6,7 +6,11 @@ import type {
   SceneGraph,
   SceneNode
 } from '@open-pencil/scene-graph'
-import { DEFAULT_STROKE_MITER_LIMIT, forEachInstanceOverride } from '@open-pencil/scene-graph'
+import {
+  DEFAULT_STROKE_MITER_LIMIT,
+  forEachInstanceOverride,
+  getInstanceOverride
+} from '@open-pencil/scene-graph'
 import type { Color, GUID, Matrix, Vector } from '@open-pencil/scene-graph/primitives'
 
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../source-metadata'
@@ -394,20 +398,60 @@ function isDescendantOf(context: SceneNodeToKiwiContext, nodeId: string, ancesto
   return false
 }
 
-function serializeTextOverrides(
+function serializeRuntimePropertyOverrides(
   context: SceneNodeToKiwiContext,
   instance: SceneNode,
   localIdCounter: { value: number }
 ): KiwiSymbolOverridePayload[] {
   const result: KiwiSymbolOverridePayload[] = []
-  forEachInstanceOverride(instance.instanceOverrides, (nodeId, field, value) => {
-    if (field !== 'text' || typeof value !== 'string' || !nodeId) return
-    const target = context.graph.getNode(nodeId)
-    if (!target || !isDescendantOf(context, nodeId, instance.id)) return
-    const targetGuid = resolveOverrideTargetGuid(context, target, localIdCounter)
-    if (targetGuid)
-      result.push({ guidPath: { guids: [targetGuid] }, textData: { characters: value } })
-  })
+  const address = (owner: SceneNode, target: SceneNode): GUID[] | undefined => {
+    const boundaries: SceneNode[] = []
+    let parent = target.parentId ? context.graph.getNode(target.parentId) : undefined
+    while (parent && parent.id !== owner.id) {
+      if (parent.type === 'INSTANCE') boundaries.unshift(parent)
+      parent = parent.parentId ? context.graph.getNode(parent.parentId) : undefined
+    }
+    if (!parent) return undefined
+    const path: GUID[] = []
+    let scope = owner
+    for (const node of [...boundaries, target]) {
+      const mapped = getInstanceOverride(
+        scope.instanceOverrides,
+        scope.id,
+        node.id,
+        'sourceComponentId'
+      )
+      const sourceId = typeof mapped === 'string' ? mapped : node.componentId
+      if (!sourceId) return undefined
+      const source = context.graph.getNode(sourceId)
+      const guid = source?.overrideKey ? parseGuidOrNull(source.overrideKey) : null
+      const resolved = guid ?? getOrCreateNodeGuid(context, sourceId, localIdCounter)
+      if (!resolved) return undefined
+      path.push(resolved)
+      scope = node
+    }
+    return path
+  }
+  const collect = (owner: SceneNode): void => {
+    forEachInstanceOverride(owner.instanceOverrides, (nodeId, field, value) => {
+      if ((field !== 'text' && field !== 'visible') || !nodeId) return
+      const target = context.graph.getNode(nodeId)
+      if (!target || !isDescendantOf(context, nodeId, instance.id)) return
+      const path = address(instance, target)
+      if (path)
+        result.push({
+          guidPath: { guids: path },
+          ...(field === 'text'
+            ? { textData: { characters: typeof value === 'string' ? value : target.text } }
+            : { visible: target.visible })
+        })
+    })
+  }
+  const visit = (node: SceneNode): void => {
+    if (node.type === 'INSTANCE') collect(node)
+    for (const child of context.graph.getChildren(node.id)) visit(child)
+  }
+  visit(instance)
   return result
 }
 
@@ -645,7 +689,10 @@ function applyInstancePayload(
         }) as KiwiSymbolOverridePayload[])
       )
     }
-    mergeOverrides(symbolOverrides, serializeTextOverrides(context, node, localIdCounter))
+    mergeOverrides(
+      symbolOverrides,
+      serializeRuntimePropertyOverrides(context, node, localIdCounter)
+    )
     mergeOverrides(symbolOverrides, serializeFillOverrides(context, node, localIdCounter))
     if (symbolOverrides.length > 0) symbolData.symbolOverrides = symbolOverrides
     if (node.source.fig.uniformScaleFactor != null) {

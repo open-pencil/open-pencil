@@ -19,6 +19,9 @@ Current ownership:
 - SceneGraph-to-`NodeChange` export conversion with an explicit glyph-outline runtime service
 - Package-local archive, conversion, instance, export, and dist smoke tests
 
+The reader replacement plan, identity model, override provenance, oracle evidence,
+and mandatory old-reader deletion are documented in [Instance interpretation](./INSTANCE-INTERPRETATION.md).
+
 Planned ownership:
 
 - Oracle-backed `.fig` fixtures

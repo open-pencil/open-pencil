@@ -427,11 +427,18 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
       const blobIdx = blobs.length
       blobs.push(geometry.commandsBlob)
       if (!geometry.fills || geometry.fills.length === 0) {
-        return { windingRule: geometry.windingRule, commandsBlob: blobIdx }
+        return {
+          windingRule: geometry.windingRule === 'EVENODD' ? 'ODD' : 'NONZERO',
+          commandsBlob: blobIdx
+        }
       }
       const styleID = styleOverrides.length + 1
       styleOverrides.push({ styleID, fillPaints: geometry.fills.map(fillToKiwiPaint) })
-      return { windingRule: geometry.windingRule, commandsBlob: blobIdx, styleID }
+      return {
+        windingRule: geometry.windingRule === 'EVENODD' ? 'ODD' : 'NONZERO',
+        commandsBlob: blobIdx,
+        styleID
+      }
     })
   }
 
@@ -442,7 +449,7 @@ function serializeGeometry(node: SceneNode, nc: KiwiNodeChange, blobs: Uint8Arra
     nc.strokeGeometry = node.strokeGeometry.map((g) => {
       const blobIdx = blobs.length
       blobs.push(g.commandsBlob)
-      return { windingRule: g.windingRule, commandsBlob: blobIdx }
+      return { windingRule: g.windingRule === 'EVENODD' ? 'ODD' : 'NONZERO', commandsBlob: blobIdx }
     })
   }
 }

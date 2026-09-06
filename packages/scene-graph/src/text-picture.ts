@@ -45,6 +45,7 @@ export function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode
   const keys = Object.keys(changes)
   if (node.textPicture && keys.some((key) => TEXT_PICTURE_KEYS.has(key))) node.textPicture = null
   const glyphsInvalidated = keys.some((key) => GLYPH_AFFECTING_KEYS.has(key))
+  if (glyphsInvalidated && !('derivedLayout' in changes)) node.derivedLayout = null
   // A successful path-text edit supplies reflowed glyphs in `changes`. Every
   // other mutation path must drop stale baked glyphs and path identity rather
   // than pair new text/style with old visible outlines.

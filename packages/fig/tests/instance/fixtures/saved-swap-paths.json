@@ -1,0 +1,504 @@
+[
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1259
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1258
+      },
+      "position": "!"
+    },
+    "type": "SYMBOL",
+    "name": "Source",
+    "size": {
+      "x": 100,
+      "y": 40
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "opacity": 1
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1260
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1259
+      },
+      "position": "!"
+    },
+    "type": "TEXT",
+    "name": "Label",
+    "size": {
+      "x": 71,
+      "y": 15
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "opacity": 1,
+    "textData": {
+      "characters": "Source label",
+      "lines": [
+        {
+          "lineType": "PLAIN",
+          "styleId": 0,
+          "indentationLevel": 0,
+          "sourceDirectionality": "AUTO",
+          "listStartOffset": 0,
+          "isFirstLineOfList": false
+        }
+      ]
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1261
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1258
+      },
+      "position": "\""
+    },
+    "type": "SYMBOL",
+    "name": "Replacement",
+    "size": {
+      "x": 160,
+      "y": 64
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 240,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "opacity": 1
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1262
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1261
+      },
+      "position": "!"
+    },
+    "type": "TEXT",
+    "name": "Label",
+    "size": {
+      "x": 105,
+      "y": 15
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "opacity": 1,
+    "textData": {
+      "characters": "Replacement label",
+      "lines": [
+        {
+          "lineType": "PLAIN",
+          "styleId": 0,
+          "indentationLevel": 0,
+          "sourceDirectionality": "AUTO",
+          "listStartOffset": 0,
+          "isFirstLineOfList": false
+        }
+      ]
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1263
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1258
+      },
+      "position": "#"
+    },
+    "type": "INSTANCE",
+    "name": "Untouched swap",
+    "size": {
+      "x": 160,
+      "y": 64
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 150
+    },
+    "opacity": 1,
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 10965,
+        "localID": 1261
+      },
+      "symbolOverrides": [
+        {
+          "name": "Untouched swap",
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1261
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1266
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1258
+      },
+      "position": "$"
+    },
+    "type": "INSTANCE",
+    "name": "Edited swap",
+    "size": {
+      "x": 120,
+      "y": 50
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 250
+    },
+    "opacity": 0.6000000238418579,
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 10965,
+        "localID": 1261
+      },
+      "symbolOverrides": [
+        {
+          "name": "Edited swap",
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1261
+              }
+            ]
+          },
+          "opacity": 0.6000000238418579,
+          "size": {
+            "x": 120,
+            "y": 50
+          }
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1262
+              }
+            ]
+          },
+          "textData": {
+            "characters": "Edited label",
+            "lines": [
+              {
+                "lineType": "PLAIN",
+                "styleId": 0,
+                "indentationLevel": 0,
+                "sourceDirectionality": "AUTO",
+                "listStartOffset": 0,
+                "isFirstLineOfList": false
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1269
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1258
+      },
+      "position": "%"
+    },
+    "type": "SYMBOL",
+    "name": "Host",
+    "size": {
+      "x": 100,
+      "y": 100
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 500,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "opacity": 1
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1270
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1269
+      },
+      "position": "!"
+    },
+    "type": "INSTANCE",
+    "name": "Source",
+    "size": {
+      "x": 100,
+      "y": 40
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "opacity": 1,
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 10965,
+        "localID": 1259
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1260
+              }
+            ]
+          },
+          "textData": {
+            "characters": "Inherited edit",
+            "lines": [
+              {
+                "lineType": "PLAIN",
+                "styleId": 0,
+                "indentationLevel": 0,
+                "sourceDirectionality": "AUTO",
+                "listStartOffset": 0,
+                "isFirstLineOfList": false
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1272
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1258
+      },
+      "position": "&"
+    },
+    "type": "INSTANCE",
+    "name": "Nested swap",
+    "size": {
+      "x": 100,
+      "y": 100
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 350
+    },
+    "opacity": 1,
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 10965,
+        "localID": 1269
+      },
+      "symbolOverrides": [
+        {
+          "name": "Nested swap",
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1269
+              }
+            ]
+          }
+        },
+        {
+          "overriddenSymbolID": {
+            "sessionID": 10965,
+            "localID": 1261
+          },
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1270
+              }
+            ]
+          }
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1270
+              },
+              {
+                "sessionID": 10965,
+                "localID": 1262
+              }
+            ]
+          },
+          "overrideLevel": 1,
+          "textData": {
+            "characters": "Inherited edit",
+            "lines": [
+              {
+                "lineType": "PLAIN",
+                "styleId": 0,
+                "indentationLevel": 0,
+                "sourceDirectionality": "AUTO",
+                "listStartOffset": 0,
+                "isFirstLineOfList": false
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 10965,
+      "localID": 1276
+    },
+    "parentIndex": {
+      "guid": {
+        "sessionID": 10965,
+        "localID": 1258
+      },
+      "position": "'"
+    },
+    "type": "INSTANCE",
+    "name": "Nested assignment",
+    "size": {
+      "x": 100,
+      "y": 100
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 450
+    },
+    "opacity": 1,
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 10965,
+        "localID": 1269
+      },
+      "symbolOverrides": [
+        {
+          "name": "Nested assignment",
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1269
+              }
+            ]
+          }
+        },
+        {
+          "overriddenSymbolID": {
+            "sessionID": 10965,
+            "localID": 1261
+          },
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 10965,
+                "localID": 1270
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    }
+  }
+]

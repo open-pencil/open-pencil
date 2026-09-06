@@ -123,6 +123,20 @@ function cloneChildrenWithMapping(
   }
 }
 
+function enclosingInstanceOverrideFields(graph: SceneGraph, node: SceneNode): Set<string> {
+  const fields = new Set<string>()
+  let parent = node.parentId ? graph.nodes.get(node.parentId) : undefined
+  while (parent) {
+    if (parent.type === 'INSTANCE') {
+      for (const field of parent.instanceOverrides.descendants.get(node.id)?.keys() ?? []) {
+        fields.add(field)
+      }
+    }
+    parent = parent.parentId ? graph.nodes.get(parent.parentId) : undefined
+  }
+  return fields
+}
+
 function syncChildren(
   graph: SceneGraph,
   compParentId: string,
@@ -166,8 +180,13 @@ function syncChildren(
     const instChild = instChildMap.get(compChildId)
     if (!compChild || !instChild) continue
 
+    const enclosingOverrides = enclosingInstanceOverrideFields(graph, instChild)
     for (const key of INSTANCE_SYNC_FIELDS) {
-      if (hasNodeInstanceOverride(overrides, instParentId, instChild.id, key)) continue
+      if (
+        hasNodeInstanceOverride(overrides, instParentId, instChild.id, key) ||
+        enclosingOverrides.has(key)
+      )
+        continue
 
       copyProp(instChild, compChild, key)
     }

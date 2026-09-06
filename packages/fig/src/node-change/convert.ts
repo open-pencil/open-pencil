@@ -452,7 +452,11 @@ function convertLayoutProps(
 > &
   Partial<Pick<SceneNode, 'derivedLayout'>> {
   const layoutMode = mapStackMode(nc.stackMode)
-  const primaryAxisSizing = mapStackSizing(nc.stackPrimarySizing)
+  const primaryAxisSizing =
+    nc.stackPrimarySizing === undefined &&
+    (layoutMode === 'HORIZONTAL' || layoutMode === 'VERTICAL')
+      ? 'HUG'
+      : mapStackSizing(nc.stackPrimarySizing)
   const counterAxisSizing = mapStackSizing(nc.stackCounterSizing)
   const derivedLayout = visibleContainerDerivedLayout(
     nc,
