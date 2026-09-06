@@ -123,6 +123,8 @@ export function createYjsGraphSync({
   getYimages,
   setSuppressYjsEvents
 }: YjsGraphSyncOptions) {
+  let pendingPageSwitch: { store: EditorStore; pageId: string } | undefined
+
   function syncNodeToYjs(nodeId: string) {
     const store = getStore()
     const ydoc = getYdoc()
@@ -250,7 +252,19 @@ export function createYjsGraphSync({
     const pages = store.graph.getPages()
     if (pages.some((page) => page.id === store.state.currentPageId)) return
     if (pages.length === 0) return
-    void store.switchPage(pages[0].id)
+    const pageId = pages[0].id
+    if (pendingPageSwitch?.store === store && pendingPageSwitch.pageId === pageId) return
+    const pending = { store, pageId }
+    pendingPageSwitch = pending
+    void store
+      .switchPage(pageId)
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === 'AbortError') return
+        logCollabSyncError('Failed to switch to a synced page', error)
+      })
+      .finally(() => {
+        if (pendingPageSwitch === pending) pendingPageSwitch = undefined
+      })
   }
 
   return { syncNodeToYjs, syncAllNodesToYjs, applyYjsToGraph }

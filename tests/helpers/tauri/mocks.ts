@@ -24,5 +24,7 @@ export async function clearTauriMocks() {
   if (!('window' in globalThis)) return
   const { clearMocks } = await import('@tauri-apps/api/mocks')
   clearMocks()
+  Reflect.deleteProperty(window, '__TAURI_INTERNALS__')
+  Reflect.deleteProperty(window, '__TAURI_EVENT_PLUGIN_INTERNALS__')
   delete (globalThis as typeof globalThis & { window?: unknown }).window
 }

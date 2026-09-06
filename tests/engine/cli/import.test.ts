@@ -52,33 +52,36 @@ function findNode(nodes: Iterable<SceneNode>, name: string): SceneNode | undefin
   }
 }
 
-test('import CLI writes DesignDOM JSON output', async () => {
-  const { htmlPath, cssPath, dir } = await createFixture()
-  const output = join(dir, 'card.json')
+test.each(['card.json', 'missing/nested/card.json'])(
+  'import CLI writes DesignDOM JSON output to %s',
+  async (relativeOutput) => {
+    const { htmlPath, cssPath, dir } = await createFixture()
+    const output = join(dir, relativeOutput)
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
-    'import',
-    htmlPath,
-    '--css',
-    cssPath,
-    '--format',
-    'json',
-    '--output',
-    output,
-    '--json'
-  ])
+    const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+      'import',
+      htmlPath,
+      '--css',
+      cssPath,
+      '--format',
+      'json',
+      '--output',
+      output,
+      '--json'
+    ])
 
-  expect(stderr).toBe('')
-  expect(exitCode).toBe(0)
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
 
-  const summary = JSON.parse(stdout)
-  expect(summary).toMatchObject({ format: 'json', output, pages: 1, rootElements: 1 })
+    const summary = JSON.parse(stdout)
+    expect(summary).toMatchObject({ format: 'json', output, pages: 1, rootElements: 1 })
 
-  const document = JSON.parse(await Bun.file(output).text())
-  expect(document.children[0].tagName).toBe('article')
-  expect(document.children[0].computedStyle.display).toBe('flex')
-  expect(document.children[0].computedStyle.width).toBe('240px')
-})
+    const document = JSON.parse(await Bun.file(output).text())
+    expect(document.children[0].tagName).toBe('article')
+    expect(document.children[0].computedStyle.display).toBe('flex')
+    expect(document.children[0].computedStyle.width).toBe('240px')
+  }
+)
 
 test('import CLI reads embedded HTML styles without a sidecar CSS file', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-embedded-'))
@@ -118,34 +121,37 @@ test('import CLI reads embedded HTML styles without a sidecar CSS file', async (
   expect(document.children[0].computedStyle.gap).toBe('10px')
 })
 
-test('import CLI writes a .fig that core IO can import', async () => {
-  const { htmlPath, cssPath, dir } = await createFixture()
-  const output = join(dir, 'card.fig')
+test.each(['card.fig', 'missing/nested/card.fig'])(
+  'import CLI writes a .fig that core IO can import to %s',
+  async (relativeOutput) => {
+    const { htmlPath, cssPath, dir } = await createFixture()
+    const output = join(dir, relativeOutput)
 
-  const { stdout, stderr, exitCode } = await runOpenPencilCLI([
-    'import',
-    htmlPath,
-    '--css',
-    cssPath,
-    '--output',
-    output,
-    '--json'
-  ])
+    const { stdout, stderr, exitCode } = await runOpenPencilCLI([
+      'import',
+      htmlPath,
+      '--css',
+      cssPath,
+      '--output',
+      output,
+      '--json'
+    ])
 
-  expect(stderr).toBe('')
-  expect(exitCode).toBe(0)
-  expect(JSON.parse(stdout)).toMatchObject({ format: 'fig', output, pages: 1, rootElements: 1 })
+    expect(stderr).toBe('')
+    expect(exitCode).toBe(0)
+    expect(JSON.parse(stdout)).toMatchObject({ format: 'fig', output, pages: 1, rootElements: 1 })
 
-  const bytes = new Uint8Array(await Bun.file(output).arrayBuffer())
-  const graph = await parseFigFile(bytes)
-  const nodes = [...graph.nodes.values()]
-  const card = findNode(nodes, 'card')
-  const title = findNode(nodes, 'DOM/CSS card')
+    const bytes = new Uint8Array(await Bun.file(output).arrayBuffer())
+    const graph = await parseFigFile(bytes)
+    const nodes = [...graph.nodes.values()]
+    const card = findNode(nodes, 'card')
+    const title = findNode(nodes, 'DOM/CSS card')
 
-  expect(graph.getPages()).toHaveLength(1)
-  expect(card?.type).toBe('FRAME')
-  expect(title?.type).toBe('TEXT')
-})
+    expect(graph.getPages()).toHaveLength(1)
+    expect(card?.type).toBe('FRAME')
+    expect(title?.type).toBe('TEXT')
+  }
+)
 
 test('import CLI compiles Tailwind candidates before import', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'open-pencil-import-cli-tailwind-'))

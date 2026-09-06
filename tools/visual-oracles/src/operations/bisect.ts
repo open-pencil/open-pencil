@@ -9,7 +9,7 @@ import { $ } from 'bun'
 import { parseColor } from '@open-pencil/core/color'
 import { headlessRenderNodes, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
 import { computeAllLayouts } from '@open-pencil/core/layout'
-import type { SceneGraph } from '@open-pencil/core/scene-graph'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 interface DiffMetrics {
   mean: number
