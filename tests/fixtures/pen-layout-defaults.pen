@@ -1,0 +1,41 @@
+{
+  "version": "2.17",
+  "children": [
+    {
+      "type": "frame",
+      "id": "screen",
+      "name": "Screen",
+      "width": 1440,
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "section",
+          "name": "Omitted horizontal layout",
+          "width": "fill_container",
+          "gap": 56,
+          "padding": [72, 80],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "fixed-child",
+              "name": "Fixed child",
+              "width": 620,
+              "height": 420,
+              "fill": "#3355AA"
+            },
+            {
+              "type": "frame",
+              "id": "fill-child",
+              "name": "Fill child",
+              "width": "fill_container",
+              "height": 420,
+              "fill": "#AA3355"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

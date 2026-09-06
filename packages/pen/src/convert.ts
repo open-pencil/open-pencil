@@ -66,6 +66,11 @@ interface PenFillObject {
 }
 
 type PenFill = string | PenFillObject | PenFillObject[]
+type PenSpacingValue = number | string
+type PenPadding =
+  | PenSpacingValue
+  | [PenSpacingValue, PenSpacingValue]
+  | [PenSpacingValue, PenSpacingValue, PenSpacingValue, PenSpacingValue]
 
 export interface PenNode {
   type: string
@@ -88,7 +93,7 @@ export interface PenNode {
   effect?: PenEffect | PenEffect[]
   layout?: string
   gap?: number | string
-  padding?: number | string | (number | string)[]
+  padding?: PenPadding
   justifyContent?: string
   alignItems?: string
   children?: PenNode[]
@@ -386,6 +391,15 @@ export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx?:
   const resolve = (v: number | string): number =>
     typeof v === 'string' ? (isVarRef(v) && ctx ? ctx.resolveNumber(v) : Number(v) || 0) : v
   if (Array.isArray(padding)) {
+    if (padding.length === 2) {
+      const vertical = resolve(padding[0])
+      const horizontal = resolve(padding[1])
+      node.paddingTop = vertical
+      node.paddingRight = horizontal
+      node.paddingBottom = vertical
+      node.paddingLeft = horizontal
+      return
+    }
     node.paddingTop = resolve(padding[0] ?? 0)
     node.paddingRight = resolve(padding[1] ?? 0)
     node.paddingBottom = resolve(padding[2] ?? 0)
@@ -402,8 +416,15 @@ export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx?:
 export function parseSize(value: number | string | undefined, fallback: number, ctx?: VarContext) {
   if (value === undefined) return { value: fallback, sizing: 'FIXED' as LayoutSizing }
   if (typeof value === 'number') return { value, sizing: 'FIXED' as LayoutSizing }
-  if (value === 'fill_container') return { value: fallback, sizing: 'FILL' as LayoutSizing }
-  if (value === 'hug_content') return { value: fallback, sizing: 'HUG' as LayoutSizing }
+  const sizing = /^(fill_container|fit_content|hug_content)(?:\(([^)]+)\))?$/.exec(value)
+  if (sizing) {
+    const fallbackValue = sizing.at(2)
+    const parsedFallback = fallbackValue === undefined ? fallback : Number(fallbackValue)
+    return {
+      value: Number.isFinite(parsedFallback) ? parsedFallback : fallback,
+      sizing: sizing[1] === 'fill_container' ? ('FILL' as LayoutSizing) : ('HUG' as LayoutSizing)
+    }
+  }
   if (isVarRef(value) && ctx)
     return { value: ctx.resolveNumber(value), sizing: 'FIXED' as LayoutSizing }
   const parsed = Number(value)
@@ -413,6 +434,7 @@ export function parseSize(value: number | string | undefined, fallback: number, 
 export function mapLayoutMode(pen: PenNode): LayoutMode {
   if (pen.layout === 'row' || pen.layout === 'horizontal') return 'HORIZONTAL'
   if (pen.layout === 'column' || pen.layout === 'vertical') return 'VERTICAL'
+  if (pen.type === 'frame' && pen.layout === undefined) return 'HORIZONTAL'
   return 'NONE'
 }
 

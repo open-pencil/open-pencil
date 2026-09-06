@@ -120,6 +120,18 @@ describe('applyPadding — variable resolution (#201)', () => {
   })
 })
 
+describe('applyPadding — Pen shorthand (#564)', () => {
+  test('expands two values as vertical and horizontal pairs', () => {
+    const node = makeNode()
+    applyPadding(node, [72, 80])
+
+    expect(node.paddingTop).toBe(72)
+    expect(node.paddingRight).toBe(80)
+    expect(node.paddingBottom).toBe(72)
+    expect(node.paddingLeft).toBe(80)
+  })
+})
+
 describe('isVarRef', () => {
   test.each(['$merk-blauw', '$font-tekst', '$color.background', '$x'])(
     'recognizes %s as a variable reference',

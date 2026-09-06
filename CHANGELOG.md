@@ -46,6 +46,7 @@
 
 ### Fixed
 
+- Honor `.pen` frame layout defaults and sizing and padding shorthands so imported auto-layout frames keep their computed dimensions and child positions. (#564)
 - Avoid macOS Keychain prompts during credential status checks and pause repeated credential access after failures until explicitly retried from Settings.
 
 - Route browser Command/Ctrl plus and minus shortcuts to canvas zoom instead of page zoom.
