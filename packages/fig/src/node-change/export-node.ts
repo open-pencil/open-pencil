@@ -401,12 +401,15 @@ function serializeTextOverrides(
 ): KiwiSymbolOverridePayload[] {
   const result: KiwiSymbolOverridePayload[] = []
   forEachInstanceOverride(instance.instanceOverrides, (nodeId, field, value) => {
-    if (field !== 'text' || typeof value !== 'string' || !nodeId) return
+    if (field !== 'text' || !nodeId) return
     const target = context.graph.getNode(nodeId)
     if (!target || !isDescendantOf(context, nodeId, instance.id)) return
     const targetGuid = resolveOverrideTargetGuid(context, target, localIdCounter)
     if (targetGuid)
-      result.push({ guidPath: { guids: [targetGuid] }, textData: { characters: value } })
+      result.push({
+        guidPath: { guids: [targetGuid] },
+        textData: { characters: typeof value === 'string' ? value : target.text }
+      })
   })
   return result
 }
