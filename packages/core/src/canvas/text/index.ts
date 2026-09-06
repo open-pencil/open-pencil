@@ -22,7 +22,7 @@ import {
   fontFaceDemand,
   fontRemoteCoverageDemand,
   fontResolver,
-  missingGlyphCharacters,
+  missingGlyphOccurrences,
   type FontResolutionSettled
 } from '#core/text/resolver'
 
@@ -70,10 +70,23 @@ function requiredNodeFaces(node: SceneNode): Array<{ family: string; style: stri
   return Array.from(faces.values())
 }
 
-function languageForCharacter(node: SceneNode, character: string): string | null {
-  const index = node.text.indexOf(character)
-  const run = node.styleRuns.find((item) => index >= item.start && index < item.start + item.length)
+function languageForCharacter(node: SceneNode, sourceIndex: number): string | null {
+  const run = node.styleRuns.find(
+    (item) => sourceIndex >= item.start && sourceIndex < item.start + item.length
+  )
   return run?.style.textLanguage ?? node.textLanguage
+}
+
+function transformedSourceOffsets(node: SceneNode): number[] {
+  const offsets: number[] = []
+  let sourceIndex = 0
+  for (const sourceCharacter of node.text) {
+    for (const _character of transformTextCase(sourceCharacter, node.textCase)) {
+      offsets.push(sourceIndex)
+    }
+    sourceIndex += sourceCharacter.length
+  }
+  return offsets
 }
 
 export type NodeFontReadiness = 'ready' | 'substituted' | 'pending' | 'exhausted'
@@ -119,13 +132,17 @@ function demandRemoteCoverage(r: TextRenderer, node: SceneNode, characters: stri
 function observedGlyphReadiness(r: TextRenderer, node: SceneNode): NodeFontReadiness {
   const paragraph = buildParagraph(r, node)
   paragraph.layout(resolveParagraphLayoutWidth(node))
-  const missingCharacters = missingGlyphCharacters(node.text, paragraph.getShapedLines())
+  const missingOccurrences = missingGlyphOccurrences(
+    transformTextCase(node.text, node.textCase),
+    paragraph.getShapedLines(),
+    transformedSourceOffsets(node)
+  )
   paragraph.delete()
-  if (missingCharacters.length === 0) return 'ready'
+  if (missingOccurrences.length === 0) return 'ready'
 
   const charactersByScript = new Map<FontFallbackScript, string[]>()
-  for (const character of missingCharacters) {
-    const script = fontFallbackScriptForCharacter(character, languageForCharacter(node, character))
+  for (const { character, utf16Start } of missingOccurrences) {
+    const script = fontFallbackScriptForCharacter(character, languageForCharacter(node, utf16Start))
     if (!script) continue
     const characters = charactersByScript.get(script) ?? []
     characters.push(character)

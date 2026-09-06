@@ -142,7 +142,6 @@ export class TileScheduler {
         if (jobsExecuted === 0) {
           const result = execute(job)
           this.jobs.shift()
-          jobsExecuted++
           metrics.interruptibleCompleted++
           addJobMetrics(metrics, result)
           if (result.overBudget || result.renderMs > this.budgetMs) metrics.overBudgetJobs++

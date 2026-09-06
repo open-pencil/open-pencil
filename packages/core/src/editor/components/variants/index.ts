@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- component variant operations share one atomic editor domain */
+
 import { omit } from 'es-toolkit/object'
 
 import type {

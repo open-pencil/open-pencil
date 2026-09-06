@@ -14,6 +14,13 @@ const MAX_IMAGE_ANALYSIS_TOKENS = 1200
 
 export type ImageAnalysisDependencies = VisionModelDependencies
 
+export class VisionModelUnavailableError extends Error {
+  constructor() {
+    super('Configure a Vision model in Settings to attach images.')
+    this.name = 'VisionModelUnavailableError'
+  }
+}
+
 export async function analyzeAttachedImages(
   store: EditorStore,
   instruction: string,
@@ -24,9 +31,7 @@ export async function analyzeAttachedImages(
   }
 ): Promise<string> {
   const runtime = await dependencies.createRuntime('vision')
-  if (runtime?.kind !== 'direct') {
-    throw new Error('Configure a vision-capable model in Settings to attach images.')
-  }
+  if (runtime?.kind !== 'direct') throw new VisionModelUnavailableError()
 
   const content: Array<
     | { type: 'text'; text: string }

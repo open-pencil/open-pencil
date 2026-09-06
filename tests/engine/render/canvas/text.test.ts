@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- text rendering scenarios share CanvasKit setup and fixtures */
+
 import { describe, test, expect, mock } from 'bun:test'
 
 import {

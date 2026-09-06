@@ -103,6 +103,29 @@ describe('AI adapter', () => {
     expect(result.children.length).toBeGreaterThan(0)
   })
 
+  test('uses an execution wrapper when provided', async () => {
+    const calls: string[] = []
+    const graph = new SceneGraph()
+    const figma = new FigmaAPI(graph)
+    const createShape = ALL_TOOLS.find((candidate) => candidate.name === 'create_shape')
+    if (!createShape) throw new Error('create_shape tool missing')
+    const tools = toolsToAI(
+      [createShape],
+      {
+        getFigma: () => figma,
+        executeTool: async (def, target, args) => {
+          calls.push(def.name)
+          return def.execute(target, args)
+        }
+      },
+      { v, valibotSchema, tool }
+    )
+
+    await adapterTool(tools, 'create_shape').execute({ type: 'RECTANGLE' })
+
+    expect(calls).toEqual(['create_shape'])
+  })
+
   test('onBeforeExecute and onAfterExecute are called', async () => {
     const graph = new SceneGraph()
     const figma = new FigmaAPI(graph)

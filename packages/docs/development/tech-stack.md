@@ -26,18 +26,18 @@
 
 ```json
 {
-  "canvaskit-wasm": "^0.40.0",
-  "vue": "^3.5.29",
-  "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.2",
+  "canvaskit-wasm": "^0.41.1",
+  "vue": "^3.5.41",
+  "yoga-layout": "npm:@open-pencil/yoga-layout@3.3.0-grid.3",
   "nanoevents": "^9.1.0",
   "sucrase": "^3.35.1",
-  "reka-ui": "^2.8.2",
-  "tailwindcss": "^4.2.1",
+  "reka-ui": "^2.10.3",
+  "tailwindcss": "^4.3.3",
   "culori": "^4.0.2",
   "fzstd": "^0.1.1",
-  "fflate": "^0.8.2",
-  "trystero": "^0.20.0",
-  "yjs": "^13.6.24",
+  "fflate": "^0.8.3",
+  "trystero": "^0.22.0",
+  "yjs": "^13.6.32",
   "y-indexeddb": "^9.0.12"
 }
 ```

@@ -25,6 +25,27 @@ describe('createComponentFromNode', () => {
     expect(api.getNodeById(frameId)).toBeNull()
   })
 
+  test('preserves root variable bindings and explicit modes', () => {
+    const api = createAPI()
+    const collection = api.createVariableCollection('Radii')
+    const variable = api.createVariable('radius/md', 'FLOAT', collection.id, 8)
+
+    const frame = api.createFrame()
+    frame.name = 'Card'
+    frame.resize(200, 50)
+    frame.cornerRadius = 8
+    api.bindVariable(frame.id, 'cornerRadius', variable.id)
+    api.graph.updateNode(frame.id, {
+      variableModes: { [collection.id]: collection.defaultModeId }
+    })
+
+    const comp = api.createComponentFromNode(frame)
+    const raw = api.graph.getNode(comp.id)
+
+    expect(raw?.boundVariables.cornerRadius).toBe(variable.id)
+    expect(raw?.variableModes).toEqual({ [collection.id]: collection.defaultModeId })
+  })
+
   test('preserves auto-layout HUG sizing when padding changes after conversion', () => {
     const api = createAPI()
     const frame = api.createFrame()

@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { useI18n, SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue'
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
 
-import {
-  diagnostics,
-  summarizeDiagnosticEvent,
-  type DiagnosticEventSummary
-} from '@/app/diagnostics'
+import { diagnostics, summarizeDiagnosticEvent } from '@/app/diagnostics'
 import {
   diagnosticsRetentionOptions,
   pruneDiagnostics,
@@ -18,21 +15,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 
 const { common, diagnostics: diagnosticMessages } = useI18n()
-const recentEvents = ref<DiagnosticEventSummary[]>([])
 const clearOpen = ref(false)
-
-async function refreshEventSummaries() {
-  recentEvents.value = (await diagnostics.list())
-    .slice(0, 20)
-    .map((event) => summarizeDiagnosticEvent(event, diagnosticMessages.value))
-}
-
-void refreshEventSummaries()
-const unsubscribe = diagnostics.subscribe(() => {
-  void refreshEventSummaries()
-  void refreshDiagnosticsStats()
-})
-onUnmounted(unsubscribe)
 
 const {
   diagnosticsEnabled,
@@ -42,6 +25,10 @@ const {
   diagnosticsRetention,
   refreshDiagnosticsStats
 } = useDiagnosticsSettings()
+const { recentEvents } = useRecentDiagnostics(
+  (events) => events.map((event) => summarizeDiagnosticEvent(event, diagnosticMessages.value)),
+  refreshDiagnosticsStats
+)
 
 const retentionValue = computed<string>({
   get: () => String(diagnosticsRetention.value),

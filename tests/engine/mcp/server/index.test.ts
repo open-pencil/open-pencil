@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- MCP server scenarios share lifecycle and transport fixtures */
+
 import { describe, expect, test, beforeEach, afterEach } from 'bun:test'
 import { mkdir, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'

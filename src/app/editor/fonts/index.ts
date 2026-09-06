@@ -12,7 +12,6 @@ import {
   type WebFontProviderId
 } from '@open-pencil/core/text'
 import type { SceneGraph } from '@open-pencil/scene-graph'
-import { fontsMessages } from '@open-pencil/vue'
 
 import { browserWebFontFetch } from '@/app/editor/fonts/browser-fetch'
 import {
@@ -20,7 +19,6 @@ import {
   createTauriDownloadedFontCache,
   downloadedFontCacheSummary as tauriDownloadedFontCacheSummary
 } from '@/app/editor/fonts/cache'
-import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 import { tauriFetch } from '@/app/tauri/http'
 import { IS_TAURI } from '@/constants'
@@ -55,14 +53,6 @@ watch(
 )
 
 let tauriFontCacheConfigured = false
-let webFontUnavailableToastShown = false
-
-function showWebFontUnavailableToast(): void {
-  if (webFontUnavailableToastShown || isTauri() || !onlineFontsEnabled.value) return
-  if (!WEB_FONT_PROVIDER_IDS.some((provider) => fontProviderSettings.value[provider])) return
-  webFontUnavailableToastShown = true
-  toast.warning(fontsMessages.get().webFontProvidersRequireDesktopApp)
-}
 
 function configureTauriFontCache() {
   if (tauriFontCacheConfigured || !isTauri()) return
@@ -152,7 +142,6 @@ export async function listFamilies(): Promise<FontFamilyOption[]> {
       byFamily.set(font.family, { family: font.family, source: 'local' })
     return [...byFamily.values()].sort((a, b) => a.family.localeCompare(b.family))
   }
-  showWebFontUnavailableToast()
   return fontManager.listFamilyOptions()
 }
 
@@ -227,7 +216,5 @@ export async function loadFont(
   signal?: AbortSignal
 ): Promise<ArrayBuffer | null> {
   configureTauriFontCache()
-  const loaded = await fontManager.loadFont(family, style, characters, signal)
-  if (!loaded) showWebFontUnavailableToast()
-  return loaded
+  return fontManager.loadFont(family, style, characters, signal)
 }

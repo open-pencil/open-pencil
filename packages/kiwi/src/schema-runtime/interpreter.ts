@@ -230,18 +230,18 @@ function interpretDecode(self: RuntimeCodec, definitions: Definitions, definitio
 
     if (definition.kind === 'MESSAGE') {
       while (true) {
-        let id = buffer.readVarUint()
+        const id = buffer.readVarUint()
         if (id === 0) return result
-        let field = fieldsById.get(id)
+        const field = fieldsById.get(id)
         if (!field) throw new Error('Attempted to parse invalid message')
         readInto(self, definitions, field, buffer, result)
       }
+    } else {
+      for (let i = 0; i < definition.fields.length; i++) {
+        readInto(self, definitions, definition.fields[i], buffer, result)
+      }
+      return result
     }
-
-    for (let i = 0; i < definition.fields.length; i++) {
-      readInto(self, definitions, definition.fields[i], buffer, result)
-    }
-    return result
   }
 }
 

@@ -14,20 +14,22 @@ import {
   isConfigured,
   maxOutputTokens,
   modelID,
-  pexelsKeyStatus,
   providerDef,
   providerID,
   registerAIChatEffects,
   resolveAPIKey,
-  setAPIKey,
-  setPexelsKey,
-  setRememberCredentials,
-  setUnsplashKey,
-  unsplashKeyStatus
+  setAPIKey
 } from '@/app/ai/chat/storage'
 import { createChatSessionManager } from '@/app/ai/chat/transports'
 import { exposeChatTransportOverride } from '@/app/browser-bridge'
 import { getActiveEditorStore } from '@/app/editor/active-store'
+import {
+  pexelsKeyStatus,
+  unsplashKeyStatus,
+  setPexelsKey,
+  setUnsplashKey,
+  setRememberCredentials
+} from '@/app/settings/credentials/media'
 
 const activeTab = ref<'design' | 'code' | 'ai'>('design')
 

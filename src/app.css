@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import 'vue-stream-markdown/index.css' layer(components);
+@import './theme/chat/markdown.css';
 
 @utility scrollbar-none {
   -ms-overflow-style: none;

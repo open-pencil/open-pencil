@@ -2,7 +2,6 @@ import { valibotSchema } from '@ai-sdk/valibot'
 import { tool } from 'ai'
 import * as v from 'valibot'
 
-import { computeAllLayouts } from '@open-pencil/core/layout'
 import {
   CORE_TOOLS,
   EXTENDED_TOOLS,
@@ -85,17 +84,21 @@ export function createAITools(store: EditorStore) {
     ],
     {
       getFigma: () => makeFigmaFromStore(store),
-      onBeforeExecute: (def) => {
-        if (def.mutates) {
-          beforeSnapshot = store.snapshotPage()
-        }
+      executeTool: async (def, figma, args) => {
+        if (def.mutates) beforeSnapshot = store.snapshotPage()
+        return def.mutates
+          ? store.runMutationWithLayout(
+              () => def.execute(figma, args),
+              figma.currentPageId,
+              async () => {
+                const pageNode = store.graph.getNode(figma.currentPageId)
+                if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
+              }
+            )
+          : def.execute(figma, args)
       },
       onAfterExecute: async (def) => {
         if (def.mutates) {
-          const pageId = store.state.currentPageId
-          const pageNode = store.graph.getNode(pageId)
-          if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
-          computeAllLayouts(store.graph, pageId)
           store.requestRender()
           if (beforeSnapshot) {
             const before = beforeSnapshot

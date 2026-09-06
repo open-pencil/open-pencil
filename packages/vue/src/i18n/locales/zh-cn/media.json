@@ -7,5 +7,5 @@
   "stockPhotoToolOptional": "可选，用于 stock_photo 工具",
   "pexelsAlternativeOptional": "可选，作为 Pexels 的替代",
   "getPexelsAPIKey": "获取免费 Pexels API 密钥 →",
-  "getUnsplashAccessKey": "获取免费 Unsplash Access Key →"
+  "getUnsplashAccessKey": "获取免费的 Unsplash 访问密钥 →"
 }

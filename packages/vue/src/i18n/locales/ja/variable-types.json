@@ -6,5 +6,5 @@
   "text": "テキスト",
   "textHint": "テキストとラベル",
   "boolean": "ブーリアン (真偽値)",
-  "booleanHint": "真 (True) または 偽 (False)"
+  "booleanHint": "真または偽"
 }

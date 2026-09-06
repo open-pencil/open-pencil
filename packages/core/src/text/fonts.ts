@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- font loading and registration share FontManager lifecycle state */
+
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -147,6 +149,10 @@ export class FontManager {
   ): Promise<ArrayBuffer | null> {
     const cached = await this.readDownloadedFont(family, style, characters)
     if (!cached) return null
+    const key = `${family}|${style}`
+    const loadedCoverage = this.remoteCoverage.get(key) ?? new Set<string>()
+    for (const character of normalizedCoverageText(characters)) loadedCoverage.add(character)
+    this.remoteCoverage.set(key, loadedCoverage)
     return this.registerAndCache(family, style, cached, 'cache')
   }
 

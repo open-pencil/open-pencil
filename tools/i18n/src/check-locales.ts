@@ -10,6 +10,8 @@ import {
   type TranslatedLocale
 } from '@open-pencil/vue'
 
+import { hasMixedLatinAndCjk, placeholders } from './quality'
+
 const LOCALES_DIR = 'packages/vue/src/i18n/locales'
 const LOCALE_FILE_NAMES: Record<string, string> = {
   variableTypes: 'variable-types'
@@ -17,7 +19,6 @@ const LOCALE_FILE_NAMES: Record<string, string> = {
 const REQUIRED_INDEX_FILE = 'index.ts'
 const TRANSLATION_BASELINE_PATH = 'tools/i18n/translation-baseline.txt'
 const MIXED_SCRIPT_BASELINE_PATH = 'tools/i18n/mixed-script-baseline.txt'
-const PLACEHOLDER_PATTERN = /\{([A-Za-z][A-Za-z0-9_]*)\}/g
 
 function sourceMessage(value: unknown): string | null {
   if (typeof value === 'string') return value
@@ -28,19 +29,8 @@ function sourceMessage(value: unknown): string | null {
   return null
 }
 
-function placeholders(value: string): string[] {
-  return [...value.matchAll(PLACEHOLDER_PATTERN)].map((match) => match[1]).sort()
-}
-
 function normalized(value: string): string {
   return value.normalize('NFKC').replaceAll(/\s+/g, ' ').trim()
-}
-
-function hasMixedLatinAndCjk(value: string): boolean {
-  return (
-    /\p{Script=Latin}/u.test(value) &&
-    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(value)
-  )
 }
 
 function localeFileName(namespace: string) {

@@ -51,6 +51,7 @@ export interface StepBudget {
 export interface AIAdapterOptions {
   getFigma: () => FigmaAPI
   onBeforeExecute?: (def: ToolDef) => void
+  executeTool?: (def: ToolDef, figma: FigmaAPI, args: Record<string, unknown>) => Promise<unknown>
   onAfterExecute?: (def: ToolDef) => Promise<void> | void
   onFlashNodes?: (nodeIds: string[]) => void
   onToolLog?: (entry: ToolLogEntry) => void
@@ -167,7 +168,9 @@ export function toolsToAI(
 
         options.onBeforeExecute?.(def)
         try {
-          let execResult = await def.execute(options.getFigma(), args)
+          let execResult = options.executeTool
+            ? await options.executeTool(def, figma, args)
+            : await def.execute(figma, args)
           if (def.mutates && options.onFlashNodes) {
             const ids = extractNodeIds(execResult)
             if (ids.length > 0) options.onFlashNodes(ids)

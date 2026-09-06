@@ -31,13 +31,14 @@ type ChatSessionOptions = {
   getActiveEditorStore: () => EditorStore
 }
 
-type ToolLoopTransportOptions = {
+export type ToolLoopTransportOptions = {
   store: EditorStore
   providerID: AIProviderID
   model: LanguageModel
   effectiveModelID: string
   maxOutputTokens: number
   reasoningEffort: string
+  onError?: (error: unknown) => void
 }
 
 const ANTHROPIC_CACHE_CONTROL = {
@@ -76,7 +77,8 @@ export function createToolLoopTransport({
   model,
   effectiveModelID,
   maxOutputTokens,
-  reasoningEffort
+  reasoningEffort,
+  onError
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store)
   const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
@@ -115,7 +117,13 @@ export function createToolLoopTransport({
     }
   })
 
-  return new DirectChatTransport({ agent }) as ChatTransport<UIMessage>
+  return new DirectChatTransport({
+    agent,
+    onError: (error) => {
+      onError?.(error)
+      return 'The provider rejected the request.'
+    }
+  }) as ChatTransport<UIMessage>
 }
 
 export function createChatSessionManager({
@@ -134,6 +142,11 @@ export function createChatSessionManager({
   let acpTransportInstance: { destroy(): Promise<void> } | null = null
   let harnessTransportInstance: { destroy(): Promise<void> } | null = null
   let overrideTransport: (() => ChatTransport<UIMessage>) | null = null
+  let activeProviderError: unknown = null
+
+  function captureProviderError(error: unknown): void {
+    activeProviderError ??= error
+  }
 
   function handleChatFinish({
     finishReason,
@@ -152,6 +165,7 @@ export function createChatSessionManager({
   }
 
   function clearFailure(): void {
+    activeProviderError = null
     failure.value = null
   }
 
@@ -228,7 +242,8 @@ export function createChatSessionManager({
         customModelID: runtime.role.profile.customModelID
       }),
       maxOutputTokens: runtime.role.profile.maxOutputTokens,
-      reasoningEffort: runtime.role.profile.reasoningEffort ?? ''
+      reasoningEffort: runtime.role.profile.reasoningEffort ?? '',
+      onError: captureProviderError
     })
   }
 
@@ -251,8 +266,12 @@ export function createChatSessionManager({
         transport,
         messages,
         onError: (error) => {
-          failure.value = classifyAIChatError(error)
-          recordChatFailed({ errorName: error instanceof Error ? error.name : 'unknown' })
+          const reportedError = activeProviderError ?? error
+          activeProviderError = null
+          failure.value = classifyAIChatError(reportedError)
+          recordChatFailed({
+            errorName: reportedError instanceof Error ? reportedError.name : 'unknown'
+          })
         },
         onFinish: handleChatFinish
       })

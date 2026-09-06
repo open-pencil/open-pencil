@@ -101,9 +101,9 @@ function updateChildFromYoga(graph: SceneGraph, child: SceneNode, yogaChild: Yog
   if (!child.visible || child.layoutPositioning === 'ABSOLUTE') return
 
   const preservesImportedFrameGeometry =
-    child.type === 'FRAME' &&
     child.source.format === 'fig' &&
-    frameSourceIsFig(graph, child.parentId)
+    frameSourceIsFig(graph, child.parentId) &&
+    (child.type === 'FRAME' || child.type === 'LINE')
   const preservesImportedPosition =
     preservesImportedFrameGeometry ||
     (child.source.format === 'fig' && Math.abs(child.rotation) > 0.001)

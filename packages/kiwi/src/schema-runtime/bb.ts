@@ -110,10 +110,11 @@ export class ByteBuffer {
     let value = BigInt(0)
     let shift = BigInt(0)
     let seven = BigInt(7)
-    let byte: number
-    while ((byte = this.readByte()) & 128 && shift < 56) {
+    let byte = this.readByte()
+    while (byte & 128 && shift < 56) {
       value |= BigInt(byte & 127) << shift
       shift += seven
+      byte = this.readByte()
     }
     value |= BigInt(byte) << shift
     return value

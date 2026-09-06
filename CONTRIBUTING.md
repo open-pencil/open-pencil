@@ -5,7 +5,6 @@
 ```bash
 git clone https://github.com/open-pencil/open-pencil.git
 cd open-pencil
-git clone https://github.com/open-pencil/vue-stream-markdown.git
 bun install
 ```
 
@@ -49,85 +48,60 @@ CodeRabbit may flag PR description or readability issues for maintainers to revi
 Run all of these before submitting a PR:
 
 ```bash
-bun run check        # oxlint + typecheck
+bun run check        # lint, type checks, architecture, package, duplication, and tooling checks
 bun run format       # oxfmt with import sorting
-bun run test:dupes   # jscpd < 3% duplication
-bun run test:unit    # bun:test (tests/engine/)
-bun run test         # Playwright E2E (auto-starts dev server)
+bun run test:unit    # bun:test engine/unit suite
+bun run test         # Playwright browser E2E and visual regression
 ```
 
 ## Project structure
 
-- `packages/core` — scene graph, renderer, layout, codec (zero DOM deps)
-- `packages/cli` — headless CLI for .fig inspection and export
-- `packages/mcp` — MCP server for AI tools (stdio + HTTP)
-- `packages/docs` — VitePress documentation site (openpencil.dev)
-- `src/` — Tauri/Vite desktop editor
+OpenPencil is a Bun monorepo. Stable ownership boundaries are:
+
+- `packages/scene-graph`, `pen`, `kiwi`, and `fig` — framework-neutral document models and format layers.
+- `packages/core` — renderer, layout, editor core, Figma API, tools, and app-facing document I/O.
+- `packages/dom-css` and `vue` — DOM/CSS projection and the headless Vue SDK.
+- `packages/cli`, `mcp`, and `harness` — automation and agent-facing entry points.
+- `src/app` — app services, state, and integrations; `src/components` and `src/views` — app UI and views.
+- `packages/docs` — the published VitePress site.
+
+See [`AGENTS.md`](./AGENTS.md) for canonical package ownership and architecture rules, and [Architecture](https://openpencil.dev/development/architecture) for the public overview.
+
+## Codebase fit
+
+Before adding a helper, type, component, state mechanism, parser, or test utility, inspect the owning domain, nearby implementations, existing dependencies, and tests. Reuse or extend the established mechanism; extract genuinely shared logic instead of introducing a parallel implementation.
+
+Keep package boundaries and public exports intact. Keep pull requests focused: exclude temporary or development scaffolding, unrelated refactors, and changelog claims that are not represented by the diff.
+
+## Tests
+
+Place tests in the established layer and mirror the source domain where practical:
+
+- `tests/e2e/**/*.spec.ts` — browser UI and visual behavior.
+- `tests/figma/**/*.spec.ts` — Figma automation.
+- `tests/engine/**/*.test.ts` — engine and unit behavior.
+- `tests/helpers/**` — shared test utilities.
+- Package-local `tests/**` — standalone package coverage where that structure already exists.
+
+Test behavior and stable contracts, not source text or implementation details. Before adding a test file or helper, inspect nearby tests and follow their existing structure.
+
+### Test selectors
+
+Playwright tests should locate behavior the way users and assistive technology do: prefer roles and accessible names, labels, and visible text. Scope repeated controls to a named region. Multi-part components expose local `data-slot` anatomy, while stable app concepts may expose semantic attributes such as `data-property`, `data-command`, or `data-node-id`.
+
+Reserve `data-test-id` for integration boundaries that have no meaningful user-facing or domain identity. Do not add test-ID props to reusable components or generate compound IDs from component nesting.
 
 ## Conventions
 
 See [`AGENTS.md`](./AGENTS.md) for the full architecture reference, code conventions, and quality checklist. Key points:
 
-- Bun runtime, not Node
-- Tailwind 4 for styles, no inline CSS or `<style>` blocks
-- No `any`, no `!` non-null assertions
-- `@/` import alias for app code, relative imports within core
-- Use `crypto.getRandomValues()`, never `Math.random()`
-- Icons via unplugin-icons (`<icon-lucide-*>`)
-- Use existing deps and Reka UI components before hand-rolling (see AGENTS.md → Code quality)
-- Follow the Reka UI-inspired file structure: PascalCase component namespace folders and Vue files, lowercase/kebab non-component domains, and multi-file root components colocated inside their namespace folder
-- Keep UI labels translatable. Do not hardcode user-facing strings in Vue templates when an i18n namespace exists.
-- Keep shortcuts out of labels/translations. Put command shortcut tokens and keyboard bindings in `packages/vue/src/editor/commands/registry.ts`, then render them with `formatShortcut()` so macOS and Windows/Linux display correctly.
-- Canvas context-menu grouping belongs in `packages/vue/src/editor/menu-model/canvas.ts`; components should render the menu model instead of hand-building command groups.
-
-## Test IDs (`data-test-id`)
-
-Every interactive or structurally significant element must have a `data-test-id` attribute. These are used by Playwright E2E tests and must follow the naming convention below.
-
-### Naming rules
-
-- **kebab-case**, all lowercase
-- Pattern: `{component}-{element}` or `{component}-{element}-{variant}`
-- Mobile counterparts are prefixed with `mobile-`
-- Dynamic IDs use template literals: `` :data-test-id="`toolbar-tool-${key.toLowerCase()}`" ``
-
-### Nomenclature
-
-| Prefix | Component | Examples |
-|--------|-----------|---------|
-| `toolbar-` | Desktop toolbar | `toolbar`, `toolbar-tool-select`, `toolbar-flyout-frame`, `toolbar-flyout-item-ellipse` |
-| `mobile-toolbar-` | Mobile toolbar | `mobile-toolbar`, `mobile-toolbar-prev`, `mobile-toolbar-next`, `mobile-toolbar-tool-select`, `mobile-toolbar-flyout-frame`, `mobile-toolbar-copy`, `mobile-toolbar-front` |
-| `mobile-toolbar-tools` | Mobile tools category | Container for drawing tools |
-| `mobile-toolbar-edit` | Mobile edit category | Container for edit actions (copy, paste, cut, duplicate, delete) |
-| `mobile-toolbar-arrange` | Mobile arrange category | Container for arrange actions (front, back, group, ungroup, lock) |
-| `mobile-drawer-` | Mobile bottom drawer | `mobile-drawer`, `mobile-drawer-handle`, `mobile-drawer-pages`, `mobile-drawer-content`, `mobile-drawer-layers`, `mobile-drawer-design`, `mobile-drawer-code`, `mobile-drawer-ai` |
-| `mobile-ribbon-` | Mobile bottom tab bar | `mobile-ribbon`, `mobile-ribbon-layers`, `mobile-ribbon-design`, `mobile-ribbon-code`, `mobile-ribbon-ai` |
-| `layers-` | Layers panel | `layers-panel`, `layers-header`, `layers-tree`, `layers-item` |
-| `pages-` | Pages panel | `pages-panel`, `pages-header`, `pages-item`, `pages-item-input`, `pages-add` |
-| `properties-` | Properties panel | `properties-panel`, `properties-tab-design`, `properties-tab-code`, `properties-tab-ai`, `properties-zoom` |
-| `design-` | Design tab | `design-node-header`, `design-multi-header`, `design-panel-single`, `design-panel-multi`, `design-panel-empty` |
-| `position-` | Position section | `position-section`, `position-align-left`, `position-flip-horizontal`, `position-rotate-90` |
-| `layout-` | Layout section | `layout-section`, `layout-add-auto`, `layout-remove-auto`, `layout-direction-horizontal` |
-| `fill-` | Fill section | `fill-section`, `fill-section-add`, `fill-item` |
-| `stroke-` | Stroke section | `stroke-section`, `stroke-section-add`, `stroke-item` |
-| `effects-` | Effects section | `effects-section`, `effects-section-add`, `effects-item` |
-| `export-` | Export section | `export-section`, `export-section-add`, `export-button`, `export-item` |
-| `typography-` | Typography section | `typography-section`, `typography-missing-font` |
-| `variables-` | Variables | `variables-section`, `variables-dialog`, `variables-add-variable` |
-| `context-` | Context menu | `context-copy`, `context-paste`, `context-delete`, `context-group` |
-| `color-` | Color picker | `color-picker-popover`, `color-picker-swatch`, `color-hex-input` |
-| `fill-picker-` | Fill picker | `fill-picker-swatch`, `fill-picker-tab-solid`, `fill-picker-tab-gradient` |
-| `font-picker-` | Font picker | `font-picker-trigger`, `font-picker-search`, `font-picker-item` |
-| `chat-` | Chat / AI panel | `chat-panel`, `chat-input`, `chat-send-button`, `chat-messages` |
-| `code-` | Code panel | `code-panel`, `code-panel-header`, `code-panel-copy` |
-| `collab-` | Collaboration | `collab-popover`, `collab-share-button`, `collab-copy-link` |
-| `canvas-` | Canvas | `canvas-area`, `canvas-element`, `canvas-loading` |
-| `editor-` | Editor root | `editor-root`, `editor-document-name`, `editor-show-ui` |
-| `app-` | App chrome | `app-logo`, `app-document-name`, `app-toggle-ui`, `app-select-trigger` |
-| `tabbar-` | Tab bar | `tabbar-tab`, `tabbar-new`, `tabbar-close` |
-| `number-field` | Number field | `number-field`, `number-field-input` |
-| `toast-` | Toast notifications | `toast-item`, `toast-close`, `toast-copy-error` |
-| `safari-banner` | Safari warning | `safari-banner`, `safari-banner-dismiss` |
+- Bun runtime, not Node.
+- Tailwind 4 for styles; no inline CSS or component `<style>` blocks.
+- No `any` or non-null assertions; use guards and precise types.
+- Use public package exports across package boundaries.
+- Use `crypto.getRandomValues()`, never `Math.random()`.
+- Use existing dependencies and Reka UI components before hand-rolling.
+- Keep UI labels translatable and shortcuts in the shared command registry.
 
 ## Test fixtures
 
@@ -135,4 +109,4 @@ Every interactive or structurally significant element must have a `data-test-id`
 
 ## Commits
 
-Follow the existing style in `git log`. Keep messages concise. Update `CHANGELOG.md` for user-facing changes.
+Follow the commit-message conventions in [`AGENTS.md`](./AGENTS.md). Update `CHANGELOG.md` for user-facing changes.

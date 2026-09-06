@@ -133,7 +133,6 @@ function traceOrderedSegments(
       parts.push(
         `M${coordinate(vertices[segmentStart].x, decimals)} ${coordinate(vertices[segmentStart].y, decimals)}`
       )
-      currentIndex = segmentStart
     }
     parts.push(segmentToSVG(segment, vertices, forward, decimals))
     currentIndex = forward ? segment.end : segment.start

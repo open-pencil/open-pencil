@@ -4,13 +4,15 @@ early_access: false
 
 reviews:
   profile: "assertive"
-  request_changes_workflow: true
+  request_changes_workflow: false
   high_level_summary: true
   review_status: true
   auto_review:
     enabled: true
     drafts: false
   pre_merge_checks:
+    docstrings:
+      mode: "off"
     title:
       mode: "error"
       requirements: "Apply CONTRIBUTING.md → Pull requests → PR title. Request a clearer title when it is non-English, vague, placeholder-like, or does not identify the actual change."

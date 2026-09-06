@@ -1,6 +1,5 @@
 import { renderTreeNode } from '@open-pencil/core/design-jsx'
 import type { FigmaAPI } from '@open-pencil/core/figma-api'
-import { computeAllLayouts } from '@open-pencil/core/layout'
 import { ALL_TOOLS, registerComponentCatalog } from '@open-pencil/core/tools'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
@@ -17,13 +16,18 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
   ): Promise<unknown> {
     const store = target.store
     const tree = toolArgs.tree as Parameters<typeof renderTreeNode>[1]
-    const result = await renderTreeNode(store.graph, tree, {
-      parentId: (toolArgs.parent_id as string | undefined) ?? target.pageId,
-      x: toolArgs.x as number | undefined,
-      y: toolArgs.y as number | undefined
-    })
-    await ensureGraphFonts(store.graph, [result.id], store.renderer)
-    computeAllLayouts(store.graph, target.pageId)
+    const result = await store.runMutationWithLayout(
+      () =>
+        renderTreeNode(store.graph, tree, {
+          parentId: (toolArgs.parent_id as string | undefined) ?? target.pageId,
+          x: toolArgs.x as number | undefined,
+          y: toolArgs.y as number | undefined
+        }),
+      target.pageId,
+      async (node) => {
+        await ensureGraphFonts(store.graph, [node.id], store.renderer)
+      }
+    )
     store.requestRender()
     store.flashNodes([result.id])
     return {
@@ -48,12 +52,18 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     libraryService.bindEditor(store)
     registerComponentCatalog(store.graph, libraryService)
     const figma = makeFigma(store, target.pageId)
-    const result = await def.execute(figma, toolArgs)
+    const result = def.mutates
+      ? await store.runMutationWithLayout(
+          () => def.execute(figma, toolArgs),
+          figma.currentPageId,
+          async () => {
+            const pageNode = store.graph.getNode(figma.currentPageId)
+            if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
+          }
+        )
+      : await def.execute(figma, toolArgs)
 
     if (def.mutates) {
-      const pageNode = store.graph.getNode(figma.currentPageId)
-      if (pageNode) await ensureGraphFonts(store.graph, pageNode.childIds, store.renderer)
-      computeAllLayouts(store.graph, figma.currentPageId)
       store.requestRender()
       store.flashNodes(extractNodeIds(result))
     }

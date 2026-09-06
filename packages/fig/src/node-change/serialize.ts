@@ -225,7 +225,10 @@ function serializeTextProps(
     nc.fontVariations = node.fontVariations.map(fontVariationToKiwi)
   }
   const autoResize = resolveTextAutoResize(node, graph)
-  nc.textAutoResize = autoResize
+  const rawNodeFields = effectiveFigmaRawNodeFields(node)
+  if (!node.source.id || autoResize !== 'NONE' || 'textAutoResize' in rawNodeFields) {
+    nc.textAutoResize = autoResize
+  }
   nc.textAlignHorizontal = node.textAlignHorizontal
   nc.textAlignVertical = node.textAlignVertical
   nc.textUserLayoutVersion = 4

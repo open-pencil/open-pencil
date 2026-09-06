@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check-changelog": "bun src/check-changelog.ts",
     "prepare-publish-dirs": "bun src/prepare-publish-dirs.ts",
     "validate-tarballs": "bun src/validate-tarballs.ts",
     "test": "bun test tests"

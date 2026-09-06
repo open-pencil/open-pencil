@@ -271,6 +271,33 @@ describe('text node export', () => {
     expect(textNc.stackChildAlignSelf).toBeUndefined()
   })
 
+  test('omits implicit fixed text sizing for imported auto-layout text', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, { layoutMode: 'VERTICAL' })
+    const text = graph.createNode('TEXT', frame.id, {
+      text: 'Supporting text',
+      textAutoResize: 'NONE',
+      source: {
+        ...frame.source,
+        format: 'fig',
+        id: '1:2',
+        fig: {
+          ...frame.source.fig,
+          rawNodeFields: {}
+        }
+      }
+    })
+
+    const exported = await exportFigFile(graph)
+    const parsed = await parseFigFile(exported.buffer as ArrayBuffer)
+    const restored = parsed.getAllNodes().find((node) => node.name === text.name)
+
+    expect(restored?.textAutoResize).toBe('NONE')
+    expect(restored?.source.fig.rawNodeFields).not.toHaveProperty('textAutoResize')
+  })
+
   test('style runs produce multiple fontMetaData entries', async () => {
     await initCodec()
 

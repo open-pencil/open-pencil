@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- JSX property conversion stays together to preserve shared coercion rules */
+
 import type {
   Effect,
   Fill,

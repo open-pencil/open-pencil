@@ -1,47 +1,42 @@
 <script setup lang="ts">
-import {
-  SelectContent,
-  SelectItem,
-  SelectItemText,
-  SelectPortal,
-  SelectRoot,
-  SelectTrigger,
-  SelectViewport
-} from 'reka-ui'
+import { computed } from 'vue'
 
-import AppBadge from '@/components/ui/AppBadge.vue'
-import { useSelectUI } from '@/components/ui/select'
+import { useI18n } from '@open-pencil/vue'
+
+import AppCombobox from '@/components/ui/AppCombobox.vue'
 import { useAIChat } from '@/app/ai/chat/use'
+import { modelPickerOptions } from '@/app/ai/models/picker/options'
+import { useProviderModelCatalog } from '@/app/ai/models/use-provider-model-catalog'
 
-const { modelID, providerDef } = useAIChat()
-const selectCls = useSelectUI({
-  trigger: 'gap-1 rounded border-none bg-transparent px-1.5 py-0.5 text-[10px] text-muted',
-  content: 'max-h-60 overflow-y-auto',
-  item: 'gap-2 rounded px-2 py-1.5 text-[11px]'
-})
+const { modelID, providerDef, providerID } = useAIChat()
+const { ai, common } = useI18n()
+const fallbackModels = computed(() => providerDef.value.models)
+const { models } = useProviderModelCatalog(providerID, fallbackModels)
+
+const options = computed(() => modelPickerOptions(models.value, providerDef.value.models, ai.value))
 </script>
 
 <template>
-  <SelectRoot v-model="modelID">
-    <SelectTrigger data-test-id="chat-model-selector" :class="selectCls.trigger">
-      <icon-lucide-bot class="size-3" />
-      <slot name="value" />
-      <icon-lucide-chevron-down class="size-2.5" />
-    </SelectTrigger>
-    <SelectPortal>
-      <SelectContent position="popper" side="top" :side-offset="4" :class="selectCls.content">
-        <SelectViewport>
-          <SelectItem
-            v-for="model in providerDef.models"
-            :key="model.id"
-            :value="model.id"
-            :class="selectCls.item"
-          >
-            <SelectItemText class="flex-1">{{ model.name }}</SelectItemText>
-            <AppBadge v-if="model.tag">{{ model.tag }}</AppBadge>
-          </SelectItem>
-        </SelectViewport>
-      </SelectContent>
-    </SelectPortal>
-  </SelectRoot>
+  <AppCombobox
+    v-model="modelID"
+    :options="options"
+    :label="ai.modelID"
+    :search-placeholder="ai.searchModels"
+    :empty-label="common.noResults"
+    data-test-id="chat-model-selector"
+    :ui="{
+      trigger: 'h-6 w-auto max-w-72 border-none bg-transparent hover:bg-hover',
+      value: 'text-[10px] text-muted',
+      content: 'min-w-72'
+    }"
+  >
+    <template #value="{ option }">
+      <div class="flex min-w-0 flex-1 items-center gap-1">
+        <icon-lucide-bot class="size-3 shrink-0" />
+        <slot name="value">
+          <span class="truncate">{{ option?.label }}</span>
+        </slot>
+      </div>
+    </template>
+  </AppCombobox>
 </template>

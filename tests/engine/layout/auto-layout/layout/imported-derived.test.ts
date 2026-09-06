@@ -4,6 +4,31 @@ import { computeAllLayouts, SceneGraph } from '@open-pencil/core'
 import { getAbsolutePositionFull } from '@open-pencil/scene-graph'
 
 describe('imported auto-layout bounds', () => {
+  test('preserves direct imported line geometry inside imported parents', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const frame = graph.createNode('FRAME', page.id, {
+      width: 320,
+      height: 1,
+      layoutMode: 'VERTICAL',
+      primaryAxisSizing: 'FIXED',
+      counterAxisSizing: 'FIXED',
+      source: { ...page.source, format: 'fig', id: '1:1' }
+    })
+    const line = graph.createNode('LINE', frame.id, {
+      x: 0,
+      y: 1,
+      width: 320,
+      height: 0,
+      layoutAlignSelf: 'STRETCH',
+      source: { ...page.source, format: 'fig', id: '1:2' }
+    })
+
+    computeAllLayouts(graph)
+
+    expect(graph.getNode(line.id)).toMatchObject({ x: 0, y: 1, width: 320, height: 0 })
+  })
+
   test('preserves visible hug container bounds when hidden children would collapse layout', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

@@ -5,97 +5,76 @@
 ### Added
 
 - Add a searchable command palette for editor and application actions.
+- Search current AI provider catalogs from model pickers, with curated recommendations, recent compatible models, and offline fallbacks.
 - Render triangle and line arrow stroke caps on lines and open vector paths, and choose them from the stroke cap picker.
-- Add a timestamp-faithful pan and zoom benchmark workflow with physical macOS trackpad recording, CDP and DOM replay, Chromium traces, frame-pacing and latency distributions, zoom-anchor drift and viewport-jump detection, retained-backing settlement metrics, and a documented native Instruments acceptance procedure.
+- Expose component properties and instance-swap targets through the Figma API and automation.
+- Normalize imported stroke dash patterns for more reliable `.fig` compatibility.
 
-- Choose and persist the app interface language from General settings.
-- Duplicate guides with Option/Alt-drag, show active guide coordinates in rulers, measure ruler-created guides against selected frames and their contents, and remove guides from the context menu.
-- Create, select, move, transfer, and delete canvas and frame guides directly from rulers, with undoable edits and `.fig` round-trip fidelity.
-- Open to a unified home with recent and configured storage documents, including grid or list layouts.
-- Snap vector points, moved layers, and resized edges to nearby geometry, sibling layer bounds, canvas and frame layout guides, and whole-pixel coordinates with visible alignment guides, fractional-coordinate preservation when pixel snapping is off, and persistent geometry, object, and pixel-grid controls in General settings and the Preferences menu.
-- Run Pi through AI SDK HarnessAgent as a configurable desktop provider with multiple saved model profiles, secure credentials, existing MCP design tools, and per-profile thinking and permission settings.
-- Open multiple selected design files in separate tabs.
-- Let Figma API scripts and automation combine components into variant sets.
+- Create, select, move, duplicate, transfer, and delete canvas and frame guides directly from rulers, with undoable edits, measurements, context-menu actions, and `.fig` round-trip fidelity.
+- Open to a unified home with recent and configured storage documents in grid or list layouts, and open multiple selected design files in separate tabs.
+- Snap vector points, moved layers, and resized edges to nearby geometry, guides, frame and canvas bounds, and whole-pixel coordinates, with visible alignment guides and persistent snapping preferences.
+- Run Pi through AI SDK HarnessAgent as a configurable desktop provider with saved model profiles, secure credentials, existing MCP design tools, and per-profile thinking and permission settings.
+- Combine components into variant sets through Figma API scripts and automation.
 - Add local AI usage and technical diagnostics, including token telemetry, provider/model summaries, recent failures, configurable retention, export, and clear controls. (#588)
-- Add deterministic two-browser collaboration coverage for bidirectional edits, awareness, departure cleanup, partitioned-peer convergence, and reconnect synchronization without public network dependencies. (#530)
 - Import, render, edit, resize, select, and export Figma text-on-path layers while preserving their curved glyph layout.
-- Show Figma-style temporary distance measurements between selected and Option/Alt-hovered layers. (#491)
-- Add a single CodeMirror editor for live Design JSX and HTML/CSS canvas previews, with Tailwind JSX viewing, completion, diagnostics, line numbers, bounded execution, and session-level undo. (#130)
-- Allow supported AI model profiles to set a provider-specific reasoning effort. (#454)
+- Show temporary Figma-style distance measurements between selected and Option/Alt-hovered layers. (#491)
+- Edit Design JSX and HTML/CSS previews in CodeMirror, with Tailwind viewing, completion, diagnostics, bounded execution, and session-level undo. (#130)
+- Set provider-specific reasoning effort on supported AI model profiles. (#454)
 - Show unavailable or substituted document fonts with affected-layer selection and retry actions, and expose font fidelity through the Figma API and MCP tooling. (#503)
-- Add reusable remote MCP connections for ACP agents, with Streamable HTTP endpoints and bearer tokens stored in the configured credential backend.
-- Author multidimensional component variants in the Design panel, including property/value renaming, sparse-combination diagnostics, variant duplication, and exact instance transitions. (#239)
-- Create deterministic, dependency-complete component-library revisions through the provider-neutral Core library catalog, with browser IndexedDB persistence for local catalogs. (#239)
-- Enable published component libraries per document, browse their assets alongside local components, and lazily materialize read-only definitions for offline linked instances. (#239)
-- Detect newer component-library revisions and explicitly apply stable-key updates to linked instances while preserving assignments and retaining old definitions. (#239)
-- Let AI, MCP, and headless tools discover enabled library components, rank preferred libraries before local assets, and insert components by stable library identity. (#239)
-- Publish the current document as an immutable local component library from the Assets panel, assigning durable collision-safe asset keys on first publication. (#239)
-- Preview component-library asset changes before acceptance and undo or redo accepted instance updates as one editor history action. (#239)
-- Preserve enabled-library bindings and materialized definition identities through `.fig` save/reopen, and reject Figma API or AI edits to read-only library definitions. (#239)
-- Enforce read-only library capabilities across visual/layout Figma API setters, structural edits, editor history actions, variant authoring, and clipboard replacement while keeping instances editable. (#239)
-- Publish component-library revisions to storage-provider object namespaces with immutable revision objects, validated manifests, and conflict-checked latest pointers. (#239)
-- Switch the library manager between local and configured storage catalogs, caching remote revisions in IndexedDB for offline browsing and insertion. (#239)
-- Bind the active library catalog into live automation requests so MCP component discovery and stable-identity insertion use the targeted document’s enabled libraries. (#239)
-- Show affected-instance and variant-fallback counts before accepting a component-library update. (#239)
-- Persist the selected local/storage catalog and preferred-library priorities, restoring them for Assets browsing and AI component ranking. (#239)
-- Validate downloaded library revisions against size, node, image, content-hash, and revision-hash limits before caching or materialization. (#239)
-- Manage bounded filesystem component-library catalogs from the CLI with JSON-capable `libraries list` and immutable `libraries publish` commands. (#239)
-- Track library update state per linked instance so individual instances or every instance of one asset can accept a revision while older definitions remain usable. (#239)
-- Show outdated linked library instances by asset and update the current page or all pages in one undoable action. (#239)
-- Add a reproducible Dev Container for web, package, CLI, and non-browser test development.
-- Add local crash recovery for unsaved and pathless documents, including MCP-created documents. (#487)
-- Make local unsaved-work recovery configurable and remove retained recovery snapshots when recovery is disabled. (#574)
-- Add isolated visual inspection that sends bounded selection renders to the configured Vision model and returns text findings without retaining image data in Design chat history. (#232, #471)
-- Add image attachments to AI chat with bounded analysis, immediate transcript thumbnails, hover previews, and click-to-view images. (#232)
+- Add reusable remote MCP connections for ACP agents, with Streamable HTTP endpoints and credential-backed bearer tokens.
+- Author and manage multidimensional component variants and published component libraries, including revision previews, linked-instance updates, stable library identities, offline catalogs, storage-backed catalogs, and read-only library definitions. (#239)
+- Recover unsaved and pathless documents locally, with settings to disable recovery and remove retained snapshots. (#487, #574)
+- Inspect selected designs with a configured Vision model and attach images to AI chat with bounded analysis and previews. (#232, #471)
+- Pin selected layers as explicit AI chat context, show collapsible reasoning, copy individual responses, and grow the composer with multiline prompts. (#13)
+- Render streaming AI responses with the upstream Comark-based Markdown pipeline and optional Shiki code highlighting without the former project fork.
 
 ### Changed
 
 - Vertically center shaped section titles and allow renaming a section by double-clicking its canvas label.
-- Load supported online fonts in the browser before revealing imported pages, preserve substituted text during editing, and shape canvas labels with bundled Inter typography.
-- Upgrade CanvasKit to 0.41 and migrate renderer geometry to immutable paths built through `PathBuilder`.
+- Load supported online fonts before revealing imported pages, preserve substituted text during editing, and shape canvas labels with bundled Inter typography.
+- Upgrade CanvasKit to 0.41 and use immutable renderer paths through `PathBuilder`.
 - Upgrade direct model chat providers and transports to AI SDK 7 while retaining the local ACP execution path.
 - Localize file, clipboard, collaboration, chat, vectorization, storage, recovery, and component-library notifications in every supported language.
 - Move MCP connections into their own Settings destination instead of presenting them as part of model configuration.
 - Pan horizontally with Shift+wheel while preserving native horizontal trackpad movement.
 
-### Performance
-
-- Keep rapid trackpad zoom reversals responsive on complex documents by cancelling obsolete high-resolution scene reconstruction and settling only after navigation becomes idle.
-- Keep zooming responsive on effect-heavy documents by reusing bounded, invalidation-aware raster snapshots for supported shadow effects while retaining vector-picture fallbacks for backdrop-dependent and oversized effects.
-- Show the FIG page list from a lightweight Kiwi scan before materializing the full document, making large files feel responsive sooner.
-- Avoid redundant collaboration writes when synchronized node fields have not changed.
-- Release obsolete streamed Markdown parser history after each AI response completes, preventing chat memory from multiplying with every streamed chunk. (#544)
-- Open large documents faster by using cached world positions while finding layers under the pointer. (#527)
-- Coalesce writable-document autosaves that overlap an active `.fig` export while preserving a trailing save for newer edits. (#528)
-- Defer JSX generation and syntax highlighting until the Code panel is active, keeping large canvas selections responsive. (#500)
-- Index Figma clipboard children once during import instead of rescanning every pasted node, keeping large flat pastes linear. (#500)
-- Reduce peak memory during `.fig` export by sharing immutable binary resources with the isolated export graph.
-
 ### Fixed
 
-- Resolve `$name` references in imported `.pen` fills, strokes, font families, sizes, and spacing without requiring a `--` prefix. (#563)
+- Resolve `$name` references in imported `.pen` fills, stroke fills, font families, dimensions, and spacing without requiring a `--` prefix. (#563)
+- Prevent the stock photo tool from replacing text, lines, structural layers, or containers with content while supporting closed shape geometry.
+- Preserve explicit text alignment metadata on imported Figma vectors across save and reload.
+
+- Preserve explicit normal blend modes on imported Figma text and vector nodes across save and reload.
+
+- Preserve implicit fixed-size text inside imported Figma auto-layout frames across save and reload.
+- Stop showing a misleading desktop-only warning when web font loading or catalog lookup fails.
+- Preserve source text offsets when resolving fallback languages after text-case transformations.
+- Track character coverage restored from downloaded font cache entries.
+
+- Preserve imported Figma divider-line geometry during auto-layout recomputation, preventing half-pixel shifts on save and reload.
+
 - Make published package export conditions resolve to files included in npm tarballs.
 - Use the user's home directory as the default MCP file root on Windows, avoiding the caller's unreliable working directory.
 - Open legacy raw `.fig` files that store the Kiwi document and thumbnail without a ZIP wrapper. (#582)
-- Preserve a frame's auto-layout HUG sizing mode when converting it into a component with `create_component`, so later padding changes still resize the component as expected.
-- Run `openpencil import` on Node so the npm-installed CLI no longer fails with `Bun is not defined`. (#575)
+- Preserve a frame's auto-layout HUG sizing mode when converting it into a component with `create_component`.
+- Run `openpencil import` on Node so npm-installed CLI users no longer encounter `Bun is not defined`. (#575)
+- Generate recent-file previews from the conventional `Cover` page without modifying the source file.
 - Isolate browser-development MCP servers behind worktree-aware Portless WebSocket routes and per-runtime socket/discovery paths, preventing concurrent worktrees from competing for port 7600 or the global MCP socket.
-
-- Generate and cache recent-file previews from the conventional `Cover` page after opening a `.fig`, without modifying the source file.
+- Resolve Vue SDK semantic test selectors correctly in non-browser runtimes. (#397)
+- Commit vector vertex and Bézier-handle edits when the pointer is released and keep transformed vector-edit overlays aligned. (#586)
 - Preserve app-created component properties and instance-swap targets across `.fig` save and reload cycles. (#548)
-- Reconnect desktop automation to an already-running MCP server by allowing access to its discovery file. (#546)
+
+- Reconnect desktop automation to an already-running MCP server through its discovery file. (#546)
 - Keep text-editing carets, hit testing, and selection highlights aligned with vertically centered or bottom-aligned text. (#539)
-- Match AI chat code-block syntax colors and backgrounds to the active light or dark theme. (#537)
-- Let desktop users select and copy AI chat text without replacing it with the selected canvas layers. (#538)
+- Match AI chat code-block colors and backgrounds to the active theme, and let desktop users select and copy chat text without replacing it with canvas layers. (#537, #538)
 - Restore visible above, below, and child drop feedback while dragging layers in the Layers panel.
-- Place editor-created instances beside nested source components in world space, including transformed source and destination parents.
+- Place editor-created instances beside nested source components in world space, including transformed parents.
 - Prevent malformed collaboration updates from corrupting synchronized nodes or derived text rendering.
-- Transfer native `.fig` exports over binary Tauri IPC instead of JSON byte arrays, preventing large desktop saves from being truncated or exhausting WebView memory. (#484)
-- Keep unsaved source-less documents recoverable after their editor tab is closed, matching Figma's retained offline-change behavior.
+- Transfer native `.fig` exports over binary Tauri IPC, preventing large desktop saves from being truncated or exhausting WebView memory. (#484)
+- Keep unsaved source-less documents recoverable after their editor tab is closed.
 - Decode zstd-compressed FIG containers, reject invalid compressed payloads, and preserve exact fixture byte ranges. (#397)
 - Compose caller CSS with Tailwind defaults when importing DOM/CSS documents. (#397)
 - Preserve desktop HTTP timeout, abort, and empty-response semantics. (#397)
-- Resolve Vue SDK semantic test selectors correctly in non-browser runtimes. (#397)
 - Report whether missing Figma clipboard images were actually fetched. (#397)
 - Report exhausted provider credit, request failures, and output-token limits through localized chat toasts and copied diagnostics. (#451, #454)
 - Prevent Windows desktop crashes when loading large system fonts for non-Latin text.
@@ -105,14 +84,27 @@
 - Restore native copy, cut, and paste shortcuts in desktop text inputs while preserving design clipboard handling on the canvas.
 - Preserve selected layers when browser clipboard serialization fails during cut operations, and fall back to the session clipboard when system clipboard access is unavailable. (#568)
 - Treat MCP tool results with an omitted `isError` field as successful while preserving explicit MCP errors. (#583)
-- Commit vector vertex and Bézier-handle edits when the pointer is released and keep transformed vector-edit overlays aligned. (#586)
 - Remove the permanent CORS configuration action from cloud-storage settings and report connection results through standard toasts with clear browser-specific guidance.
-- Complete translated app, accessibility, font, color, collaboration, import, connection-test, and browser fallback text across all supported locales, and keep the document language synchronized with the selected locale.
+- Complete translated app, accessibility, font, color, collaboration, import, connection-test, and browser fallback text across all supported locales, and synchronize document language with the selected locale.
 - Preserve effective nested instance text overrides when importing complex Figma component hierarchies. (#102)
 - Preserve SVG clip paths, including clip shapes referenced through `<use>`, when importing editable vectors.
 - Preserve circles, ellipses, rectangles, lines, polylines, and polygons supplied as JSX children of inline SVG elements. (#452)
 - Preserve component links when pasting Figma instances so later component edits continue to update them.
 - Stop local MCP servers after the app disconnects instead of leaving orphaned background processes. (#494)
+
+### Performance
+
+- Scope automation and Figma API layout reconciliation to graph nodes and parent containers actually changed by each mutation.
+- Keep rapid trackpad zoom reversals and effect-heavy document navigation responsive by cancelling obsolete reconstruction and reusing safe raster snapshots.
+- Show the FIG page list from a lightweight Kiwi scan before materializing the full document.
+- Avoid redundant collaboration writes when synchronized node fields have not changed.
+- Release obsolete streamed Markdown parser history after each AI response completes, preventing chat memory from multiplying with every streamed chunk. (#544)
+- Open large documents faster by using cached world positions while finding layers under the pointer. (#527)
+- Coalesce writable-document autosaves that overlap an active `.fig` export while preserving a trailing save for newer edits. (#528)
+- Defer JSX generation and syntax highlighting until the Code panel is active, keeping large canvas selections responsive. (#500)
+- Index Figma clipboard children once during import instead of rescanning every pasted node, keeping large flat pastes linear. (#500)
+- Reduce peak memory during `.fig` export by sharing immutable binary resources with the isolated export graph.
+
 
 ## 0.14.0 — 2026-08-10
 

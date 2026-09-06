@@ -9,19 +9,6 @@ export type ImageAttachmentDraft = {
   previewURL: string
 }
 
-export type ImageAttachmentPresentation = {
-  id: string
-  messageId: string
-  name: string
-  mediaType: ImageAttachmentMediaType
-  originalWidth: number
-  originalHeight: number
-  previewWidth: number
-  previewHeight: number
-  previewURL: string
-  displayText: string
-}
-
 export type PreparedImageAttachment = {
   data: Uint8Array
   blob: Blob

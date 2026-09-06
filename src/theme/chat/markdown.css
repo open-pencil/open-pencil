@@ -1,0 +1,85 @@
+@reference 'tailwindcss';
+
+.chat-markdown-root [data-stream-markdown='code-block'],
+.chat-markdown-root .shiki {
+  background-color: var(--color-input);
+}
+
+.chat-markdown {
+  --shiki-dark-bg: var(--color-input);
+  @apply text-[11px] leading-4;
+
+  [data-stream-markdown='blockquote'],
+  [data-stream-markdown='code-block'] {
+    @apply my-2;
+  }
+
+  [data-stream-markdown='code-block-header'] {
+    @apply h-6 px-1.5 py-0 text-[9px] leading-3;
+  }
+
+  [data-stream-markdown='code-block-header'] [data-stream-markdown='actions'] {
+    @apply gap-0.5;
+  }
+
+  [data-stream-markdown='code-block-header'] [data-stream-markdown='button'] {
+    @apply size-4 p-0;
+  }
+
+  [data-stream-markdown='code-block-header'] [data-stream-markdown='button'] svg,
+  [data-stream-markdown='language-title'] svg {
+    @apply size-2.5;
+  }
+
+  [data-stream-markdown='code-line'] {
+    @apply min-h-4 text-[11px] leading-4;
+
+    &::before {
+      @apply mr-2 text-[9px];
+    }
+  }
+
+  [data-stream-markdown='code-block'] [data-stream-markdown='code'] {
+    @apply p-1.5 text-[11px] leading-4;
+  }
+
+  [data-stream-markdown='heading-1'] {
+    @apply mt-2.5 mb-1 text-sm;
+  }
+
+  [data-stream-markdown='heading-2'] {
+    @apply mt-2.5 mb-1 text-xs;
+  }
+
+  [data-stream-markdown='heading-3'],
+  [data-stream-markdown='heading-4'],
+  [data-stream-markdown='heading-5'],
+  [data-stream-markdown='heading-6'] {
+    @apply mt-2 mb-1 text-[11px];
+  }
+
+  [data-stream-markdown='language-name'] {
+    @apply text-[9px] leading-3;
+  }
+
+  [data-stream-markdown='language-title'] {
+    @apply gap-1;
+  }
+
+  [data-stream-markdown='li'] {
+    @apply py-0;
+  }
+
+  [data-stream-markdown='ol'],
+  [data-stream-markdown='ul'] {
+    @apply leading-4;
+  }
+
+  [data-stream-markdown='p'] {
+    @apply my-1.5;
+  }
+
+  [data-stream-markdown='thematic-break'] {
+    @apply my-2;
+  }
+}

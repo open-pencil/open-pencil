@@ -1,41 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { useModelSettings } from '@/app/ai/models/settings/use'
+
+import { ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
-import { ACP_AGENTS, AI_PROVIDERS } from '@open-pencil/core/constants'
-
-import { aiModelSettings, modelConnection, modelConnectionCredentialStatus } from '@/app/ai/models'
-import type { CredentialStatus } from '@/app/settings/credentials/types'
 import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
 
 const { ai, collaboration, common } = useI18n()
 const editing = ref(false)
 const editingProfileId = ref<string>()
-const statusByConnection = ref<Record<string, CredentialStatus>>({})
-function providerName(providerID: string): string {
-  if (providerID === 'harness:pi') return 'Pi'
-  if (providerID.startsWith('acp:')) {
-    const agentID = providerID.slice('acp:'.length)
-    return ACP_AGENTS.find((agent) => agent.id === agentID)?.name ?? providerID
-  }
-  return AI_PROVIDERS.find((provider) => provider.id === providerID)?.name ?? providerID
-}
-
-const profiles = computed(() =>
-  aiModelSettings.value.models.map((profile) => {
-    const connection = modelConnection(profile.connectionId)
-    const provider = AI_PROVIDERS.find((definition) => definition.id === connection?.providerID)
-    const modelId = profile.customModelID || profile.modelID
-    const modelName = provider?.models.find((model) => model.id === modelId)?.name || modelId
-    return {
-      ...profile,
-      providerID: connection?.providerID ?? '',
-      providerName: providerName(connection?.providerID ?? ''),
-      modelName
-    }
-  })
-)
 
 function addModel(): void {
   editingProfileId.value = undefined
@@ -45,16 +19,6 @@ function addModel(): void {
 function editModel(profileId: string): void {
   editingProfileId.value = profileId
   editing.value = true
-}
-
-async function refreshStatuses(): Promise<void> {
-  const entries = await Promise.all(
-    aiModelSettings.value.connections.map(
-      async (connection) =>
-        [connection.id, await modelConnectionCredentialStatus(connection.id)] as const
-    )
-  )
-  statusByConnection.value = Object.fromEntries(entries)
 }
 
 function statusLabel(connectionId: string, providerID: string): string {
@@ -71,11 +35,7 @@ function closeEditor(): void {
   void refreshStatuses()
 }
 
-watch(
-  () => aiModelSettings.value.connections.map((connection) => connection.id),
-  () => void refreshStatuses(),
-  { immediate: true }
-)
+const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
 </script>
 
 <template>

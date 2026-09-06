@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- font loading scenarios share provider and CanvasKit lifecycle fixtures */
+
 import { describe, test, expect } from 'bun:test'
 
 import type { CanvasKit, TypefaceFontProvider } from 'canvaskit-wasm'
@@ -212,6 +214,33 @@ describe('FontManager loaded font cache', () => {
     expect(writes).toBe(0)
   })
 
+  test('tracks character coverage restored from downloaded cache', async () => {
+    const manager = new FontManager()
+    manager.attachProvider({} as CanvasKit, createRecordingProvider().provider)
+    const cached = new ArrayBuffer(16)
+    manager.setDownloadedFontCache({
+      async read(family, style, characters) {
+        return family === 'SubsetCache' && style === 'Regular' && characters === 'A' ? cached : null
+      },
+      async write() {
+        return undefined
+      }
+    })
+
+    await expect(manager.loadFont('SubsetCache', 'Regular', 'A')).resolves.toBe(cached)
+    const originalLoadRemoteFont = manager.loadRemoteFont.bind(manager)
+    let requested = ''
+    manager.loadRemoteFont = async (_family, _style, characters) => {
+      requested = characters ?? ''
+      return cached
+    }
+    try {
+      await manager.loadFont('SubsetCache', 'Regular', 'B')
+    } finally {
+      manager.loadRemoteFont = originalLoadRemoteFont
+    }
+    expect(requested).toContain('B')
+  })
   test('forwards cancellation to fallback web-font requests', async () => {
     const manager = new FontManager()
     let remoteRequestStarted: (() => void) | null = null

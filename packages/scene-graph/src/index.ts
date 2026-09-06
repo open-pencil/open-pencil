@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- SceneGraph exposes a stable facade over domain modules */
+export * from './mutation-impact'
 export * from './instance-overrides'
 export * from './images'
 export * from './components/properties'
@@ -493,7 +494,8 @@ export class SceneGraph {
     const node = this.nodes.get(nodeId)
     if (!node) return
 
-    const oldParent = node.parentId ? this.nodes.get(node.parentId) : undefined
+    const previousParentId = node.parentId
+    const oldParent = previousParentId ? this.nodes.get(previousParentId) : undefined
     const newParent = this.nodes.get(parentId)
     if (!newParent || this.isDescendant(parentId, nodeId)) return
 
@@ -516,22 +518,23 @@ export class SceneGraph {
     idx = Math.min(idx, newParent.childIds.length)
     newParent.childIds.splice(idx, 0, nodeId)
 
-    this.emitter.emit('node:reordered', nodeId, parentId, idx)
+    this.emitter.emit('node:reordered', nodeId, parentId, idx, previousParentId)
   }
 
   insertChildAt(childId: string, parentId: string, index: number): void {
-    const oldParent = this.getNode(this.getNode(childId)?.parentId ?? '')
+    const node = this.getNode(childId)
+    const newParent = this.getNode(parentId)
+    if (!node || !newParent || childId === parentId || this.isDescendant(parentId, childId)) return
+    const previousParentId = node.parentId
+    const oldParent = previousParentId ? this.getNode(previousParentId) : undefined
     if (oldParent) {
       oldParent.childIds = oldParent.childIds.filter((id) => id !== childId)
     }
-    const newParent = this.getNode(parentId)
-    if (!newParent) return
     newParent.childIds = newParent.childIds.filter((id) => id !== childId)
     newParent.childIds.splice(index, 0, childId)
-    const node = this.getNode(childId)
-    if (node) node.parentId = parentId
+    node.parentId = parentId
     this.clearAbsPosCache()
-    this.emitter.emit('node:reordered', childId, parentId, index)
+    this.emitter.emit('node:reordered', childId, parentId, index, previousParentId)
   }
 
   deleteNode(id: string): void {
@@ -553,7 +556,7 @@ export class SceneGraph {
       this.instanceIndex.get(node.componentId)?.delete(id)
     }
     this.nodes.delete(id)
-    this.emitter.emit('node:deleted', id)
+    this.emitter.emit('node:deleted', id, node.parentId)
   }
 
   hitTest(px: number, py: number, scopeId?: string): SceneNode | null {

@@ -36,7 +36,8 @@
     "lint:structure": "oxlint -c oxlint.json vite.config.ts vite/ .storybook/ src/ packages/scene-graph/src/ packages/scene-graph/scripts/ packages/core/src/ packages/vue/src/ packages/cli/src/ packages/mcp/src/ packages/harness/src/ packages/harness/tests/ packages/dom-css/src/ packages/dom-css/tests/ packages/dom-css/scripts/ packages/pen/src/ packages/pen/scripts/ packages/kiwi/src/ packages/kiwi/tests/ packages/kiwi/scripts/ packages/fig/src/ packages/fig/tests/ packages/fig/scripts/ tests/ scripts/ tools/",
     "format": "oxfmt --write .oxfmtrc.json vite.config.ts vite/ .storybook/ src/ packages/scene-graph/src/ packages/scene-graph/scripts/ packages/core/src/ packages/cli/src/ packages/mcp/src/ packages/harness/src/ packages/harness/tests/ packages/vue/src/ packages/dom-css/src/ packages/dom-css/tests/ packages/dom-css/scripts/ packages/pen/src/ packages/pen/scripts/ packages/kiwi/src/ packages/kiwi/tests/ packages/kiwi/scripts/ packages/fig/src/ packages/fig/tests/ packages/fig/scripts/ tests scripts/ tools/",
     "format:check": "bun run format && status=$(git status --porcelain -uall) && test -z \"$status\" || (echo \"$status\" && exit 1)",
-    "check": "bun run build:packages && bun run lint && tsgo --noEmit && bun run check:vue && bun run check:native-test && bun run check:i18n && bun run check:docs && bun run check:packages && bun run check:deps && bun run check:audit && bun run check:secrets && bun run check:monorepo && bun run check:arch && bun run test:type-shapes && bun run test:tools && bun run test:dupes",
+    "check": "bun run build:packages && bun run lint && tsgo --noEmit && bun run check:vue && bun run check:native-test && bun run check:i18n && bun run check:docs && bun run check:changelog && bun run check:packages && bun run check:deps && bun run check:audit && bun run check:secrets && bun run check:monorepo && bun run check:arch && bun run test:type-shapes && bun run test:tools && bun run test:dupes",
+    "check:changelog": "bun tools/release-packages/src/check-changelog.ts",
     "check:deps": "knip --include unlisted,unresolved,binaries",
     "check:docs": "bun --filter @open-pencil/docs check",
     "check:audit": "bun audit --audit-level=critical",
@@ -47,7 +48,8 @@
     "check:packages": "bun tools/package-quality/src/cli.ts check",
     "check:arch": "steiger .",
     "check:vue": "vue-tsc --noEmit -p tsconfig.json && vue-tsc --noEmit -p packages/vue/tsconfig.json",
-    "test": "playwright test --project=openpencil",
+    "test": "playwright test --project=openpencil --grep-invert @real-llm",
+    "test:real-llm": "playwright test --project=openpencil --grep @real-llm",
     "test:update": "playwright test --project=openpencil --update-snapshots",
     "test:figma": "playwright test --project=figma",
     "figma:debug": "open -a Figma --args --remote-debugging-port=9222",
@@ -99,6 +101,7 @@
     "@open-pencil/scene-graph": "workspace:*",
     "@open-pencil/vue": "workspace:*",
     "@openrouter/ai-sdk-provider": "^3.0.0",
+    "@stream-markdown/code": "2.0.0-beta.2",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/vue-table": "^8.21.3",
     "@tauri-apps/api": "^2.11.1",
@@ -120,6 +123,7 @@
     "dedent": "^1.7.2",
     "es-toolkit": "^1.51.0",
     "fflate": "^0.8.3",
+    "fuse.js": "^7.5.0",
     "fzstd": "^0.1.1",
     "hast-util-to-html": "^9.0.5",
     "idb": "^8.0.3",
@@ -138,7 +142,7 @@
     "valibot": "^1.4.2",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0",
-    "vue-stream-markdown": "1.0.4",
+    "vue-stream-markdown": "2.0.0-beta.2",
     "y-indexeddb": "^9.0.12",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.32",
@@ -209,9 +213,9 @@
     "ws": "^8.21.3"
   },
   "overrides": {
+    "@codemirror/view": "6.43.9",
     "protobufjs": "7.5.5",
-    "websocket-driver": "0.7.5",
-    "@codemirror/view": "6.43.9"
+    "websocket-driver": "0.7.5"
   },
   "packageManager": "bun@1.3.10"
 }

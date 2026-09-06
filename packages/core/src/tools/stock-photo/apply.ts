@@ -1,16 +1,27 @@
+import type { SceneNode } from '@open-pencil/scene-graph'
+
 import type { FigmaAPI } from '#core/figma-api'
 
 import type { StockPhotoProvider, StockPhotoResult } from './providers'
+
+const STOCK_PHOTO_TARGET_TYPES: ReadonlySet<SceneNode['type']> = new Set([
+  'FRAME',
+  'RECTANGLE',
+  'ROUNDED_RECTANGLE',
+  'ELLIPSE',
+  'STAR',
+  'POLYGON',
+  'VECTOR',
+  'BOOLEAN_OPERATION',
+  'COMPONENT',
+  'INSTANCE'
+])
 
 export interface PhotoRequest {
   id: string
   query: string
   index?: number
   orientation?: 'landscape' | 'portrait' | 'square'
-}
-
-interface NodeWithChildren {
-  children: unknown[]
 }
 
 export interface PhotoResult {
@@ -33,9 +44,22 @@ export async function applyPhoto(
   const node = figma.getNodeById(req.id)
   if (!node) return { id: req.id, error: 'Not found' }
 
-  const children = 'children' in node ? (node as NodeWithChildren).children : []
-  if (children.length > 0) {
-    return { id: req.id, error: `"${node.name}" has children — use a leaf shape` }
+  if (!STOCK_PHOTO_TARGET_TYPES.has(node.type)) {
+    return {
+      id: req.id,
+      error: `"${node.name}" (${node.type}) is not a suitable stock photo target`
+    }
+  }
+
+  if (node.type === 'VECTOR' && (node.vectorNetwork.regions?.length ?? 0) === 0) {
+    return {
+      id: req.id,
+      error: `"${node.name}" has no closed vector regions — use closed area geometry`
+    }
+  }
+
+  if (node.type !== 'BOOLEAN_OPERATION' && node.children.length > 0) {
+    return { id: req.id, error: `"${node.name}" has children — use a leaf image placeholder` }
   }
 
   const perPage = Math.min((req.index ?? 0) + 3, 15)

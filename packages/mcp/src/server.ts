@@ -440,7 +440,7 @@ export async function startServer(options: ServerOptions = {}): Promise<ServerHa
   wireConnectionHandling(ctx.wss, ctx.browserRPC)
 
   const state: ListenerState = { socketResult: null, tcpResult: null }
-  let startedAt = ''
+  let startedAt: string
   try {
     state.socketResult = await startSocketListener(ctx.app, ctx.wss, options.socketPath ?? null)
     state.tcpResult = ctx.withTcp ? await tryStartTcp(ctx.app, ctx.wss, ctx.httpPort, state) : null

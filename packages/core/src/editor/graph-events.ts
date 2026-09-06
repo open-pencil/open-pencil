@@ -112,16 +112,16 @@ export function createGraphEventSubscription(options: GraphEventOptions) {
         options.emitEditorEvent('node:created', node)
         onNodeStructureChanged(node.id)
       },
-      deleted: (id) => {
-        options.emitEditorEvent('node:deleted', id)
+      deleted: (id, _parentId) => {
+        options.emitEditorEvent('node:deleted', id, _parentId)
         onNodeStructureChanged(id)
       },
       reparented: (nodeId, oldParentId, newParentId) => {
         options.emitEditorEvent('node:reparented', nodeId, oldParentId, newParentId)
         onNodeStructureChanged(nodeId)
       },
-      reordered: (nodeId, parentId, index) => {
-        options.emitEditorEvent('node:reordered', nodeId, parentId, index)
+      reordered: (nodeId, parentId, index, previousParentId) => {
+        options.emitEditorEvent('node:reordered', nodeId, parentId, index, previousParentId)
         onNodeStructureChanged(nodeId)
       }
     })

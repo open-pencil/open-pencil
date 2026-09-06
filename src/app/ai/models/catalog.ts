@@ -1,3 +1,4 @@
+import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import type { AIProviderID, ModelOption } from '@open-pencil/core/constants'
 
 import { readCacheJSON, writeCacheJSON } from '@/app/cache'
@@ -21,6 +22,9 @@ type ModelsDevModel = {
   name?: unknown
   attachment?: unknown
   tool_call?: unknown
+  status?: unknown
+  release_date?: unknown
+  modalities?: { output?: unknown }
   limit?: { output?: unknown }
 }
 
@@ -32,19 +36,27 @@ type ModelsDevCatalog = Record<string, ModelsDevProvider>
 
 let catalogPromise: Promise<ModelsDevCatalog | null> | null = null
 
+function normalizedStatus(status: unknown): ModelOption['status'] {
+  if (status === 'beta' || status === 'deprecated') return status
+  return 'active'
+}
+
 function normalizeModel(id: string, model: ModelsDevModel): ModelOption {
   const capabilities: ('tools' | 'vision')[] = []
   if (model.tool_call === true) capabilities.push('tools')
   if (model.attachment === true) capabilities.push('vision')
-  const output = model.limit?.output
-  return {
+  const normalized: ModelOption = {
     id,
     name: typeof model.name === 'string' && model.name ? model.name : id,
     capabilities,
-    ...(typeof output === 'number' && Number.isFinite(output)
-      ? { recommendedMaxOutputTokens: Math.min(128_000, Math.max(1024, output)) }
-      : {})
+    status: normalizedStatus(model.status)
   }
+  const output = model.limit?.output
+  if (typeof output === 'number' && Number.isFinite(output)) {
+    normalized.recommendedMaxOutputTokens = Math.min(128_000, Math.max(1024, output))
+  }
+  if (typeof model.release_date === 'string') normalized.releaseDate = model.release_date
+  return normalized
 }
 
 async function loadCatalog(
@@ -69,6 +81,23 @@ async function loadCatalog(
   }
 }
 
+async function resolvedCatalog(fetcher?: typeof fetch): Promise<ModelsDevCatalog | null> {
+  const nativeFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : undefined
+  const resolvedFetcher = fetcher ?? nativeFetch
+  if (!resolvedFetcher) return null
+  const useCache = resolvedFetcher === nativeFetch
+  if (!useCache) return loadCatalog(resolvedFetcher, { useCache: false })
+  const pending = (catalogPromise ??= loadCatalog(resolvedFetcher, { useCache: true }))
+  try {
+    const catalog = await pending
+    if (!catalog && catalogPromise === pending) catalogPromise = null
+    return catalog
+  } catch {
+    if (catalogPromise === pending) catalogPromise = null
+    return null
+  }
+}
+
 function modelIDCandidates(providerKey: string, modelID: string): string[] {
   const unprefixed = modelID.startsWith(`${providerKey}/`)
     ? modelID.slice(providerKey.length + 1)
@@ -83,6 +112,50 @@ function modelIDCandidates(providerKey: string, modelID: string): string[] {
   ]
 }
 
+function curatedProviderModels(providerID: AIProviderID): ModelOption[] {
+  return AI_PROVIDERS.find((provider) => provider.id === providerID)?.models ?? []
+}
+
+function supportsDesignWork(model: ModelsDevModel): boolean {
+  if (model.tool_call !== true || model.status === 'deprecated') return false
+  const outputModalities = model.modalities?.output
+  return Array.isArray(outputModalities) && outputModalities.includes('text')
+}
+
+function mergeCuratedModels(curated: ModelOption[], catalog: ModelOption[]): ModelOption[] {
+  const catalogById = new Map(catalog.map((model) => [model.id, model]))
+  const recommended = curated.map((model) => ({
+    ...catalogById.get(model.id),
+    ...model,
+    capabilities: catalogById.get(model.id)?.capabilities ?? model.capabilities,
+    recommendedMaxOutputTokens:
+      catalogById.get(model.id)?.recommendedMaxOutputTokens ?? model.recommendedMaxOutputTokens
+  }))
+  const curatedIds = new Set(curated.map((model) => model.id))
+  const remaining = catalog
+    .filter((model) => !curatedIds.has(model.id))
+    .sort((left, right) => (right.releaseDate ?? '').localeCompare(left.releaseDate ?? ''))
+  return [...recommended, ...remaining]
+}
+
+export async function listCatalogModels(
+  providerID: AIProviderID,
+  fetcher?: typeof fetch
+): Promise<ModelOption[]> {
+  const curated = curatedProviderModels(providerID)
+  const providerKeys = PROVIDER_KEYS[providerID]
+  if (!providerKeys?.length) return curated
+  const catalog = await resolvedCatalog(fetcher)
+  if (!catalog) return curated
+
+  const models = providerKeys.flatMap((providerKey) =>
+    Object.entries(catalog[providerKey]?.models ?? {})
+      .filter(([, model]) => supportsDesignWork(model))
+      .map(([id, model]) => normalizeModel(id, model))
+  )
+  return models.length ? mergeCuratedModels(curated, models) : curated
+}
+
 export async function resolveModelsDevModel(
   providerID: AIProviderID,
   modelID: string,
@@ -90,13 +163,7 @@ export async function resolveModelsDevModel(
 ): Promise<ModelOption | null> {
   const providerKeys = PROVIDER_KEYS[providerID]
   if (!providerKeys?.length || !modelID) return null
-  const nativeFetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : undefined
-  const resolvedFetcher = fetcher ?? nativeFetch
-  if (!resolvedFetcher) return null
-  const useCache = resolvedFetcher === nativeFetch
-  const catalog = await (useCache
-    ? (catalogPromise ??= loadCatalog(resolvedFetcher, { useCache: true }))
-    : loadCatalog(resolvedFetcher, { useCache: false }))
+  const catalog = await resolvedCatalog(fetcher)
   if (!catalog) return null
 
   for (const providerKey of providerKeys) {
