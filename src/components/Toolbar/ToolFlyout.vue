@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
 import {
+  ToolbarButton,
   DropdownMenuContent,
   DropdownMenuItemIndicator,
   DropdownMenuPortal,
@@ -86,14 +87,14 @@ function flyoutItemClass() {
 
     <DropdownMenuRoot>
       <DropdownMenuTrigger as-child>
-        <button
+        <ToolbarButton
           v-test-id="toolbarFlyoutTestId(tool.key, mobile)"
           :data-mobile="mobile || undefined"
           :aria-label="editor.toolOptions({ tool: toolLabels[tool.key] })"
           :class="styles.flyoutTrigger({ class: ui?.flyoutTrigger })"
         >
           <IconChevronDown :class="styles.flyoutTriggerIcon({ class: ui?.flyoutTriggerIcon })" />
-        </button>
+        </ToolbarButton>
       </DropdownMenuTrigger>
 
       <DropdownMenuPortal>

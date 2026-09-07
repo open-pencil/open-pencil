@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const stories = [
+  'editor-toolbar--default',
   'editor-properties-layout-alignment--default',
   'home-document-entry--default',
   'home-document-entry--list',

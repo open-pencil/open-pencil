@@ -30,7 +30,7 @@
 
 ### Changed
 
-- Navigate Settings and library sections with accessible keyboard-operated tabs.
+- Navigate Settings and library sections with accessible keyboard-operated tabs, and move keyboard focus between desktop and mobile toolbar controls without changing the active tool.
 - Move focus spatially through auto-layout alignment controls with arrow keys and apply alignment with Enter or Space.
 - Vertically center shaped section titles and allow renaming a section by double-clicking its canvas label.
 - Load supported online fonts before revealing imported pages, preserve substituted text during editing, and shape canvas labels with bundled Inter typography.
