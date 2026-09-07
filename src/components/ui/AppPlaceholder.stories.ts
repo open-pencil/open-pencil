@@ -10,7 +10,7 @@ type PlaceholderStoryArgs = {
 }
 
 const meta = {
-  title: 'Design System/Placeholder',
+  title: 'Design System/Feedback/Placeholder',
   args: {
     label: 'No documents yet',
     description: 'Create a document to start working in this space.',

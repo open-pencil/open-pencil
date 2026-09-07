@@ -4,7 +4,7 @@ import { expect, within } from 'storybook/test'
 import LayerTreeThemeDemo from './demo/LayerTreeThemeDemo.vue'
 
 const meta = {
-  title: 'Design System/Editor/Layer Tree',
+  title: 'Editor/Layer Tree',
   component: LayerTreeThemeDemo,
   tags: ['autodocs'],
   parameters: {

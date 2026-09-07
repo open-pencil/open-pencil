@@ -4,7 +4,7 @@ import { expect, within } from 'storybook/test'
 import NavigationThemeDemo from './demo/NavigationThemeDemo.vue'
 
 const meta = {
-  title: 'Design System/Editor/Navigation',
+  title: 'Editor/Navigation',
   component: NavigationThemeDemo,
   tags: ['autodocs'],
   parameters: {

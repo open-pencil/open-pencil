@@ -12,7 +12,7 @@ import AppDialogHeader from './AppDialogHeader.vue'
 import AppDialogRoot from './AppDialogRoot.vue'
 
 const meta = {
-  title: 'Design System/Dialog',
+  title: 'Design System/Overlays/Dialog',
   component: AppDialogRoot,
   tags: ['autodocs']
 } satisfies Meta<typeof AppDialogRoot>

@@ -15,6 +15,7 @@ export type SegmentedControlUI = ComponentUI<SegmentedControlTheme>
 export interface SegmentedControlProps {
   options: SegmentedControlOption[]
   label?: string
+  required?: boolean
   size?: keyof SegmentedControlTheme['variants']['size']
   ui?: SegmentedControlUI
 }
@@ -31,7 +32,7 @@ import { SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue'
 
 import theme from '@/theme/segmented-control'
 
-const { options, label, size = 'sm', ui } = defineProps<SegmentedControlProps>()
+const { options, label, required = false, size = 'sm', ui } = defineProps<SegmentedControlProps>()
 defineSlots<SegmentedControlSlots>()
 const modelValue = defineModel<string>({ required: true })
 const emit = defineEmits<{ change: [value: string] }>()
@@ -48,6 +49,7 @@ function select(value: string | string[] | undefined) {
 <template>
   <SegmentedControlRoot
     :model-value="modelValue"
+    :required="required"
     :aria-label="label"
     :class="styles.root({ class: ui?.root })"
     @update:model-value="select"

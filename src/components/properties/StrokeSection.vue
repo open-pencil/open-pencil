@@ -28,7 +28,7 @@ import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
 import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
-import FillSwatch from '@/components/ui/FillSwatch.vue'
+import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
@@ -152,16 +152,10 @@ function onToggleSides(activeNode: SceneNode | null) {
                 @cancel="cancelPaintMutation(binding.actions)"
               >
                 <template #trigger>
-                  <button
-                    type="button"
-                    :aria-label="panels.stroke"
-                    class="size-4 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
-                  >
-                    <FillSwatch
-                      :fill="strokePreview(stroke, binding.resolvedValue ?? stroke.color)"
-                      class="size-full"
-                    />
-                  </button>
+                  <FillSwatchTrigger
+                    :label="panels.stroke"
+                    :fill="strokePreview(stroke, binding.resolvedValue ?? stroke.color)"
+                  />
                 </template>
               </ColorPicker>
             </template>

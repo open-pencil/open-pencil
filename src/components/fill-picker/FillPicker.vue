@@ -7,7 +7,7 @@ import { applySolidFillColor, FillRoot, useI18n } from '@open-pencil/vue'
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import GradientEditor from '@/components/fill-picker/GradientEditor.vue'
 import ImageFillPicker from '@/components/fill-picker/ImageFillPicker.vue'
-import FillSwatch from '@/components/ui/FillSwatch.vue'
+import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
 import Tip from '@/components/ui/Tip.vue'
 import { usePopoverUI } from '@/components/ui/popover'
 import fillPickerTheme from '@/theme/fill-picker'
@@ -48,19 +48,12 @@ function cancelFromEscape(event: KeyboardEvent) {
   <FillRoot :fill="fill" @update="emit('update', $event)" v-slot="root">
     <PopoverRoot @update:open="emit('openChange', $event)">
       <PopoverTrigger as-child>
-        <button
-          type="button"
-          :aria-label="panels.fill"
+        <FillSwatchTrigger
+          :fill="fill"
+          :label="panels.fill"
+          :background="swatchBackground"
           data-test-id="fill-picker-swatch"
-          class="size-4 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
-        >
-          <FillSwatch :fill="fill" class="size-full" v-slot="swatch">
-            <span
-              class="pointer-events-none absolute inset-0"
-              :style="{ background: swatchBackground ?? swatch.background }"
-            />
-          </FillSwatch>
-        </button>
+        />
       </PopoverTrigger>
 
       <PopoverPortal>

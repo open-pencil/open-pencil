@@ -53,7 +53,7 @@ type AppComboboxStoryArgs = {
 type Story = StoryObj<AppComboboxStoryArgs>
 
 const meta = {
-  title: 'Design System/Combobox',
+  title: 'Design System/Inputs/Combobox',
   component: AppCombobox,
   parameters: { layout: 'centered' },
   render: (args) => ({

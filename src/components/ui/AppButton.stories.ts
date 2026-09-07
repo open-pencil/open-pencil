@@ -14,7 +14,7 @@ type AppButtonStoryArgs = {
 type Story = StoryObj<AppButtonStoryArgs>
 
 const meta = {
-  title: 'Design System/Button',
+  title: 'Design System/Actions/Button',
   component: AppButton,
   args: {
     color: 'neutral',

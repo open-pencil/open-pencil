@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import { useMCPConnectionSettings } from '@/app/integrations/mcp/settings/use'
 
 import { useI18n } from '@open-pencil/vue'
@@ -129,23 +130,21 @@ async function remove() {
         </button>
       </div>
       <div v-if="mcpConnectionSettings.connections.length" class="flex flex-col gap-1.5">
-        <button
+        <AppActionRow
           v-for="connection in mcpConnectionSettings.connections"
           :key="connection.id"
-          type="button"
-          class="flex items-center gap-2 rounded border border-border bg-panel-field px-3 py-2 text-left hover:bg-panel-field-hover"
           @click="startEdit(connection.id)"
         >
-          <icon-lucide-plug class="size-3.5 text-muted" />
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-[11px] font-medium text-surface">{{ connection.name }}</p>
-            <p class="truncate text-[10px] text-muted">{{ connection.transport.url }}</p>
-          </div>
-          <span class="text-[9px] text-muted">
-            {{ connection.enabled ? common.enabled : common.disabled }}
-          </span>
-          <icon-lucide-chevron-right class="size-3.5 text-muted" />
-        </button>
+          <template #leading><icon-lucide-plug class="size-3.5" /></template>
+          {{ connection.name }}
+          <template #description>{{ connection.transport.url }}</template>
+          <template #trailing>
+            <span class="text-[9px]">{{
+              connection.enabled ? common.enabled : common.disabled
+            }}</span>
+            <icon-lucide-chevron-right class="size-3.5" />
+          </template>
+        </AppActionRow>
       </div>
       <p v-else class="rounded border border-dashed border-border p-3 text-[10px] text-muted">
         {{ automation.noConnections }}

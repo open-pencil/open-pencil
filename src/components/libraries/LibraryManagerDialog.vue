@@ -6,6 +6,11 @@ import { useI18n } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
 import { useLibraryManager } from '@/components/libraries/useLibraryManager'
+import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
+import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
+import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
+import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
@@ -38,6 +43,10 @@ const {
 watch(open, (isOpen) => {
   if (isOpen) section.value = initialSection
 })
+function selectSource(value: string) {
+  if (value === 'local' || value === 'storage') void setSource(value)
+}
+
 function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
   const initialInstanceId = group.instanceIds[0]
   if (!initialInstanceId) return
@@ -48,9 +57,6 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
     initialInstanceId
   })
 }
-
-const navigationClass =
-  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
 </script>
 
 <template>
@@ -70,49 +76,34 @@ const navigationClass =
         </button>
       </template>
     </AppDialogHeader>
-    <div class="flex min-h-0 flex-1">
-      <nav class="w-40 shrink-0 border-r border-border p-2" :aria-label="panels.manageLibraries">
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="section === 'browse' ? 'active' : 'inactive'"
-          @click="section = 'browse'"
-        >
-          <icon-lucide-library class="size-3.5" /> {{ panels.browseLibraries }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="section === 'updates' ? 'active' : 'inactive'"
-          @click="section = 'updates'"
-        >
-          <icon-lucide-refresh-cw class="size-3.5" /> {{ panels.libraryUpdates }}
-          <span
-            v-if="visibleUpdateGroups.length"
-            class="ml-auto rounded-full bg-accent px-1.5 text-[10px] text-white"
-            >{{ visibleUpdateGroups.length }}</span
-          >
-        </button>
-      </nav>
-      <section v-if="section === 'browse'" class="min-h-0 flex-1 overflow-y-auto p-4">
-        <div class="mb-4 flex gap-1">
-          <button
-            type="button"
-            class="rounded px-2 py-1 text-xs data-[active=true]:bg-hover"
-            :data-active="service.catalogSource === 'local'"
-            @click="setSource('local')"
-          >
-            {{ panels.localLibraries }}
-          </button>
-          <button
-            type="button"
-            class="rounded px-2 py-1 text-xs data-[active=true]:bg-hover"
-            :data-active="service.catalogSource === 'storage'"
-            @click="setSource('storage')"
-          >
-            {{ panels.storageLibraries }}
-          </button>
-        </div>
+    <AppTabsRoot v-model="section" orientation="vertical">
+      <AppTabsList :label="panels.manageLibraries">
+        <AppTabsTrigger value="browse">
+          <template #leading><icon-lucide-library class="size-3.5" /></template>
+          {{ panels.browseLibraries }}
+        </AppTabsTrigger>
+        <AppTabsTrigger value="updates">
+          <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
+          {{ panels.libraryUpdates }}
+          <template v-if="visibleUpdateGroups.length" #trailing>
+            <span class="rounded-full bg-accent px-1.5 text-[10px] text-white">{{
+              visibleUpdateGroups.length
+            }}</span>
+          </template>
+        </AppTabsTrigger>
+      </AppTabsList>
+      <AppTabsContent value="browse">
+        <SegmentedControl
+          required
+          class="mb-4"
+          :model-value="service.catalogSource"
+          :label="panels.browseLibraries"
+          :options="[
+            { value: 'local', label: panels.localLibraries },
+            { value: 'storage', label: panels.storageLibraries }
+          ]"
+          @update:model-value="selectSource"
+        />
         <div
           v-for="library in service.summaries.value"
           :key="library.libraryId"
@@ -151,8 +142,8 @@ const navigationClass =
           :label="panels.noLibraries"
           size="compact"
         />
-      </section>
-      <section v-else class="flex min-h-0 flex-1 flex-col">
+      </AppTabsContent>
+      <AppTabsContent value="updates" :ui="{ content: 'flex flex-col overflow-hidden p-0' }">
         <div class="min-h-0 flex-1 overflow-y-auto p-4">
           <h3 class="mb-3 text-sm font-semibold text-surface">{{ panels.libraryUpdates }}</h3>
           <div
@@ -195,7 +186,7 @@ const navigationClass =
             {{ panels.updateAll }}
           </button>
         </AppDialogFooter>
-      </section>
-    </div>
+      </AppTabsContent>
+    </AppTabsRoot>
   </AppDialogRoot>
 </template>

@@ -30,6 +30,7 @@
 
 ### Changed
 
+- Navigate Settings and library sections with accessible keyboard-operated tabs.
 - Vertically center shaped section titles and allow renaming a section by double-clicking its canvas label.
 - Load supported online fonts before revealing imported pages, preserve substituted text during editing, and shape canvas labels with bundled Inter typography.
 - Upgrade CanvasKit to 0.41 and use immutable renderer paths through `PathBuilder`.

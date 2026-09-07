@@ -19,7 +19,7 @@ import PanelHeader from './PanelHeader.vue'
 import PanelSection from './PanelSection.vue'
 
 const meta = {
-  title: 'Design System/Properties/Panel Foundation',
+  title: 'Design System/Layout/Panel Foundation',
   tags: ['autodocs'],
   parameters: {
     docs: {
