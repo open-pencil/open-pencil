@@ -30,6 +30,15 @@ describe('Portless MCP routing', () => {
     })
   })
 
+  test('preserves a nonstandard proxy port for the MCP service', () => {
+    expect(devAutomationRoute('https://controls.open-pencil.localhost:1355', 7600)).toEqual({
+      browserURL: 'wss://controls.mcp.open-pencil.localhost:1355',
+      corsOrigin: 'https://controls.open-pencil.localhost:1355',
+      portlessServiceName: 'mcp.open-pencil',
+      runtimeId: 'controls.mcp.open-pencil.localhost'
+    })
+  })
+
   test('rejects unrelated Portless hostnames', () => {
     expect(() => devAutomationRoute('https://other.localhost', 7600)).toThrow(
       'Unexpected OpenPencil Portless URL'
