@@ -1,9 +1,9 @@
 const layerTreeTheme = {
   slots: {
     viewport: 'scrollbar-thin h-full overflow-y-auto px-1',
-    row: 'group/row relative flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent py-1.5 pr-1 text-left text-[11px] text-surface hover:bg-hover',
+    row: 'group/row relative flex w-full cursor-pointer items-center gap-1 rounded border-none bg-transparent pr-1 text-left text-[11px] text-surface hover:bg-hover',
     disclosure:
-      'flex w-4 shrink-0 cursor-pointer items-center justify-center text-muted transition-transform hover:text-surface',
+      'flex w-4 shrink-0 cursor-pointer items-center justify-center text-current transition-transform',
     disclosurePlaceholder: 'w-4 shrink-0',
     icon: 'size-3 shrink-0',
     label: 'min-w-0 flex-1 truncate',
@@ -12,14 +12,14 @@ const layerTreeTheme = {
       'flex size-4 items-center justify-center rounded text-current outline-none hover:bg-white/15 focus-visible:ring-1 focus-visible:ring-panel-focus',
     actionIcon: 'size-3',
     dropIndicator: 'pointer-events-none absolute bg-accent',
-    renameRow: 'flex w-full items-center gap-1 py-1',
+    renameRow: 'group/row relative flex w-full items-center gap-1 pr-1 text-[11px] text-surface',
     renameIcon: 'size-3 shrink-0 opacity-70',
     renameInput:
       'min-w-0 flex-1 rounded border border-accent bg-input px-1 py-0 text-[11px] text-surface outline-none'
   },
   variants: {
     selected: {
-      true: { row: 'bg-panel-selected text-surface hover:bg-panel-selected' },
+      true: { row: 'bg-panel-selected text-white hover:bg-panel-selected' },
       false: { row: 'bg-transparent text-surface hover:bg-hover' }
     },
     focused: {
@@ -69,6 +69,11 @@ const layerTreeTheme = {
     }
   },
   compoundVariants: [
+    {
+      selected: true,
+      focused: true,
+      class: { icon: 'text-white opacity-100' }
+    },
     {
       selected: true,
       focused: false,
