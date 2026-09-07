@@ -28,7 +28,7 @@ export default defineConfig({
     {
       name: 'openpencil',
       testDir: './tests/e2e',
-      testIgnore: '**/native/**',
+      testIgnore: ['**/native/**', '**/storybook/**'],
       fullyParallel: false
     },
     {
