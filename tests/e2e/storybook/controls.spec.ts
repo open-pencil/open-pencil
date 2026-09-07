@@ -1,6 +1,10 @@
 import { expect, test } from '@playwright/test'
 
 const stories = [
+  'home-document-entry--default',
+  'home-document-entry--list',
+  'home-document-entry--long-name',
+  'home-document-entry--disabled',
   'design-system-lists-action-row--default',
   'design-system-paint-fill-swatch--default',
   'design-system-paint-fill-swatch--transparent',

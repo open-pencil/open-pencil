@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import { computed, ref, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 
@@ -256,54 +257,29 @@ function formattedDate(updatedAt: string): string {
           v-if="filteredRecentFiles.length && view === 'grid'"
           class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
         >
-          <button
+          <DocumentEntry
             v-for="document in filteredRecentFiles"
             :key="document.id"
-            type="button"
-            class="group min-w-0 text-left"
-            @click="openRecent(document)"
-          >
-            <div
-              v-workspace-preview="document.id"
-              class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-border bg-panel-field transition-colors group-hover:border-panel-focus"
-            >
-              <img
-                v-if="previewURL(document.id)"
-                :src="previewURL(document.id) ?? undefined"
-                alt=""
-                class="size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]"
-              />
-              <icon-lucide-file-image v-else class="size-8 text-muted/40" />
-            </div>
-            <p class="mt-2 truncate text-xs font-medium">{{ document.name }}</p>
-            <p class="mt-0.5 truncate text-[10px] text-muted">
-              {{ formattedDate(document.updatedAt) }}
-            </p>
-          </button>
+            v-workspace-preview="document.id"
+            :name="document.name"
+            :metadata="formattedDate(document.updatedAt)"
+            :previewURL="previewURL(document.id)"
+            @open="openRecent(document)"
+          />
         </div>
 
         <div
           v-else-if="filteredRecentFiles.length"
           class="overflow-hidden rounded-lg border border-border"
         >
-          <button
+          <DocumentEntry
             v-for="document in filteredRecentFiles"
             :key="document.id"
-            type="button"
-            class="flex min-h-14 w-full items-center gap-3 border-b border-border px-3 py-2 text-left last:border-b-0 hover:bg-hover sm:min-h-0 sm:px-4 sm:py-3"
-            @click="openRecent(document)"
-          >
-            <icon-lucide-file-image class="size-4 shrink-0 text-accent" />
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-xs font-medium">{{ document.name }}</span>
-              <span class="mt-0.5 block truncate text-[10px] text-muted sm:hidden">{{
-                formattedDate(document.updatedAt)
-              }}</span>
-            </span>
-            <span class="hidden shrink-0 text-[10px] text-muted sm:inline">{{
-              formattedDate(document.updatedAt)
-            }}</span>
-          </button>
+            view="list"
+            :name="document.name"
+            :metadata="formattedDate(document.updatedAt)"
+            @open="openRecent(document)"
+          />
         </div>
 
         <div
@@ -378,54 +354,29 @@ function formattedDate(updatedAt: string): string {
           v-else-if="filteredStorageDocuments.length && view === 'grid'"
           class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
         >
-          <button
+          <DocumentEntry
             v-for="document in filteredStorageDocuments"
             :key="document.id"
-            type="button"
-            class="group min-w-0 text-left"
-            @click="openStorageDocument(document)"
-          >
-            <div
-              v-storage-preview="document.id"
-              class="flex aspect-video items-center justify-center overflow-hidden rounded-lg border border-border bg-panel-field transition-colors group-hover:border-panel-focus"
-            >
-              <img
-                v-if="storagePreviewURL(document.id)"
-                :src="storagePreviewURL(document.id) ?? undefined"
-                alt=""
-                class="size-full object-cover transition-transform duration-200 group-hover:scale-[1.015]"
-              />
-              <icon-lucide-file-image v-else class="size-8 text-muted/40" />
-            </div>
-            <p class="mt-2 truncate text-xs font-medium">{{ document.name }}</p>
-            <p class="mt-0.5 truncate text-[10px] text-muted">
-              {{ formattedDate(document.updatedAt) }}
-            </p>
-          </button>
+            v-storage-preview="document.id"
+            :name="document.name"
+            :metadata="formattedDate(document.updatedAt)"
+            :previewURL="storagePreviewURL(document.id)"
+            @open="openStorageDocument(document)"
+          />
         </div>
 
         <div
           v-else-if="filteredStorageDocuments.length"
           class="overflow-hidden rounded-lg border border-border"
         >
-          <button
+          <DocumentEntry
             v-for="document in filteredStorageDocuments"
             :key="document.id"
-            type="button"
-            class="flex min-h-14 w-full items-center gap-3 border-b border-border px-3 py-2 text-left last:border-b-0 hover:bg-hover sm:min-h-0 sm:px-4 sm:py-3"
-            @click="openStorageDocument(document)"
-          >
-            <icon-lucide-file-image class="size-4 shrink-0 text-accent" />
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-xs font-medium">{{ document.name }}</span>
-              <span class="mt-0.5 block truncate text-[10px] text-muted sm:hidden">{{
-                formattedDate(document.updatedAt)
-              }}</span>
-            </span>
-            <span class="hidden shrink-0 text-[10px] text-muted sm:inline">{{
-              formattedDate(document.updatedAt)
-            }}</span>
-          </button>
+            view="list"
+            :name="document.name"
+            :metadata="formattedDate(document.updatedAt)"
+            @open="openStorageDocument(document)"
+          />
         </div>
 
         <div
