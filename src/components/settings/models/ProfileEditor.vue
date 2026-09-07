@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import { ref } from 'vue'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { useI18n } from '@open-pencil/vue'
@@ -276,29 +277,15 @@ async function remove() {
     </div>
 
     <div class="flex shrink-0 items-center gap-2 border-t border-border pt-3">
-      <button
-        v-if="canDelete"
-        type="button"
-        class="rounded px-2.5 py-1.5 text-[11px] text-danger hover:bg-danger/10"
-        @click="deleteOpen = true"
-      >
+      <AppButton v-if="canDelete" color="error" @click="deleteOpen = true">
         {{ ai.deleteModel }}
-      </button>
-      <button
-        type="button"
-        class="ml-auto rounded px-2.5 py-1.5 text-[11px] text-muted hover:bg-hover hover:text-surface"
-        @click="emit('done')"
-      >
+      </AppButton>
+      <AppButton class="ml-auto" @click="emit('done')">
         {{ common.cancel }}
-      </button>
-      <button
-        type="button"
-        class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
-        :disabled="!canSave"
-        @click="save"
-      >
+      </AppButton>
+      <AppButton color="primary" variant="solid" :disabled="!canSave" @click="save">
         {{ ai.saveModel }}
-      </button>
+      </AppButton>
     </div>
   </div>
 

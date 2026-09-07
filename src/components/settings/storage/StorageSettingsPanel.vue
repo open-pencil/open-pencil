@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import { useStorageSettings } from '@/app/integrations/storage/settings/use'
 
 import { ref } from 'vue'
@@ -101,43 +102,42 @@ const {
           class="min-w-0 flex-1"
           @enter="saveCredential(field.id)"
         />
-        <button
+        <AppButton
           v-if="credentialDrafts[field.id]?.trim()"
-          type="button"
-          class="rounded bg-hover px-2 text-[10px] text-surface hover:bg-active"
+          size="xs"
+          variant="soft"
           @click="saveCredential(field.id)"
         >
           {{ common.save }}
-        </button>
-        <button
+        </AppButton>
+        <AppButton
           v-else-if="credentialStatuses[field.id] === 'configured'"
-          type="button"
-          class="rounded px-2 text-[10px] text-muted hover:bg-hover hover:text-surface"
+          size="xs"
           @click="clearCredential(field.id)"
         >
           {{ common.clear }}
-        </button>
+        </AppButton>
       </div>
     </div>
 
-    <button
-      type="button"
-      class="mt-1 rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+    <AppButton
+      color="primary"
+      variant="solid"
+      class="mt-1"
       :disabled="busy"
       data-test-id="settings-storage-test"
       @click="testConnection"
     >
       {{ common.testConnection }}
-    </button>
+    </AppButton>
 
-    <button
-      type="button"
-      class="rounded border border-border px-3 py-1.5 text-[11px] font-medium text-surface hover:bg-hover disabled:text-muted disabled:opacity-50"
+    <AppButton
+      variant="outline"
       :disabled="!configured"
       data-test-id="settings-storage-open-workspace"
       @click="openWorkspace"
     >
       {{ storage.openWorkspace }}
-    </button>
+    </AppButton>
   </section>
 </template>

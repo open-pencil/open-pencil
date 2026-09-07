@@ -42,6 +42,7 @@
 
 ### Fixed
 
+- Keep action-button labels on one line while allowing explicit wrapping overrides.
 - Prevent the stock photo tool from replacing text, lines, structural layers, or containers with content while supporting closed shape geometry.
 - Preserve explicit text alignment metadata on imported Figma vectors across save and reload.
 

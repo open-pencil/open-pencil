@@ -52,6 +52,18 @@ export const Error: Story = { args: { color: 'error', variant: 'ghost' } }
 export const Link: Story = { args: { color: 'primary', variant: 'link' } }
 export const Disabled: Story = { args: { disabled: true } }
 export const Loading: Story = { args: { loading: true } }
+export const ConstrainedLabels: Story = {
+  render: () => ({
+    components: { AppButton },
+    template: `
+      <div class="flex w-64 flex-col gap-3 bg-panel p-4 text-surface">
+        <AppButton variant="outline" :ui="{ base: 'w-16' }">保存设置</AppButton>
+        <AppButton variant="outline" :ui="{ base: 'h-auto w-32 whitespace-normal py-2' }">A deliberately wrapping action label</AppButton>
+      </div>
+    `
+  })
+}
+
 export const Sizes: Story = {
   render: () => ({
     components: { AppButton },
