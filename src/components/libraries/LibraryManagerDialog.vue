@@ -15,7 +15,12 @@ import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import {
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot
+} from '@/components/ui/dialog'
 
 const { initialSection = 'browse' } = defineProps<{
   initialSection?: 'browse' | 'updates'
@@ -69,11 +74,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
       :close-label="common.close"
     >
       <template #actions>
-        <AppButton
-          variant="link"
-          :ui="{ base: 'ml-auto text-component hover:text-component' }"
-          @click="openPublish"
-        >
+        <AppButton color="primary" variant="link" class="ml-auto" @click="openPublish">
           {{ panels.publishLibrary }}
         </AppButton>
       </template>
@@ -94,53 +95,55 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
           </template>
         </AppTabsTrigger>
       </AppTabsList>
-      <AppTabsContent value="browse">
-        <SegmentedControl
-          required
-          class="mb-4"
-          :model-value="service.catalogSource"
-          :label="panels.browseLibraries"
-          :options="[
-            { value: 'local', label: panels.localLibraries },
-            { value: 'storage', label: panels.storageLibraries }
-          ]"
-          @update:model-value="selectSource"
-        />
-        <div
-          v-for="library in service.summaries.value"
-          :key="library.libraryId"
-          class="flex items-center gap-3 border-b border-border py-3"
-        >
-          <icon-lucide-library class="size-4 text-component" />
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-xs text-surface">{{ library.name }}</p>
-            <p class="text-[10px] text-muted">
-              {{ panels.libraryAssetCount({ count: library.assetCount }) }}
-            </p>
-          </div>
-          <IconButton
-            v-if="editor.graph.enabledLibraries.get(library.libraryId)?.enabled"
-            :label="panels.preferLibrary"
-            @click="preferLibrary(library.libraryId)"
+      <AppTabsContent value="browse" as-child>
+        <AppDialogBody>
+          <SegmentedControl
+            required
+            class="mb-4"
+            :model-value="service.catalogSource"
+            :label="panels.browseLibraries"
+            :options="[
+              { value: 'local', label: panels.localLibraries },
+              { value: 'storage', label: panels.storageLibraries }
+            ]"
+            @update:model-value="selectSource"
+          />
+          <div
+            v-for="library in service.summaries.value"
+            :key="library.libraryId"
+            class="flex items-center gap-3 border-b border-border py-3"
           >
-            <icon-lucide-star class="size-4" />
-          </IconButton>
-          <AppButton variant="outline" @click="toggleLibrary(library.libraryId)">
-            {{
-              editor.graph.enabledLibraries.get(library.libraryId)?.enabled
-                ? panels.disableLibrary
-                : panels.enableLibrary
-            }}
-          </AppButton>
-        </div>
-        <AppPlaceholder
-          v-if="!loading && service.summaries.value.length === 0"
-          :label="panels.noLibraries"
-          size="compact"
-        />
+            <icon-lucide-library class="size-4 text-component" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-xs text-surface">{{ library.name }}</p>
+              <p class="text-[10px] text-muted">
+                {{ panels.libraryAssetCount({ count: library.assetCount }) }}
+              </p>
+            </div>
+            <IconButton
+              v-if="editor.graph.enabledLibraries.get(library.libraryId)?.enabled"
+              :label="panels.preferLibrary"
+              @click="preferLibrary(library.libraryId)"
+            >
+              <icon-lucide-star class="size-4" />
+            </IconButton>
+            <AppButton variant="outline" @click="toggleLibrary(library.libraryId)">
+              {{
+                editor.graph.enabledLibraries.get(library.libraryId)?.enabled
+                  ? panels.disableLibrary
+                  : panels.enableLibrary
+              }}
+            </AppButton>
+          </div>
+          <AppPlaceholder
+            v-if="!loading && service.summaries.value.length === 0"
+            :label="panels.noLibraries"
+            size="compact"
+          />
+        </AppDialogBody>
       </AppTabsContent>
-      <AppTabsContent value="updates" :ui="{ content: 'flex flex-col overflow-hidden p-0' }">
-        <div class="min-h-0 flex-1 overflow-y-auto p-4">
+      <AppTabsContent value="updates" class="flex flex-col overflow-hidden">
+        <AppDialogBody>
           <h3 class="mb-3 text-sm font-semibold text-surface">{{ panels.libraryUpdates }}</h3>
           <div
             v-for="asset in visibleUpdateGroups"
@@ -165,7 +168,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
             :label="panels.noLibraryUpdates"
             size="compact"
           />
-        </div>
+        </AppDialogBody>
         <AppDialogFooter :ui="{ footer: 'justify-between' }">
           <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
           <AppButton

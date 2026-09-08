@@ -22,7 +22,12 @@ import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
 import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import {
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot
+} from '@/components/ui/dialog'
 
 const { credentials, settings, common } = useI18n()
 function onOpenChange(open: boolean): void {
@@ -92,28 +97,42 @@ const credentialBackendLabel = computed(() => {
         </AppTabsTrigger>
       </AppTabsList>
 
-      <AppTabsContent value="general"><GeneralSettingsPanel /></AppTabsContent>
-      <AppTabsContent value="ai">
-        <section class="flex h-full flex-col" data-test-id="settings-ai-panel">
-          <ModelsPanel />
-        </section>
+      <AppTabsContent value="general" as-child>
+        <AppDialogBody><GeneralSettingsPanel /></AppDialogBody>
       </AppTabsContent>
-      <AppTabsContent value="usage"><UsageSettingsPanel /></AppTabsContent>
-      <AppTabsContent value="diagnostics"><DiagnosticsSettingsPanel /></AppTabsContent>
-      <AppTabsContent value="mcp">
-        <section class="flex flex-col" data-test-id="settings-mcp-panel">
-          <MCPSettingsPanel />
-          <MCPConnectionsSection />
-        </section>
+      <AppTabsContent value="ai" as-child>
+        <AppDialogBody>
+          <section class="flex h-full flex-col" data-test-id="settings-ai-panel">
+            <ModelsPanel />
+          </section>
+        </AppDialogBody>
       </AppTabsContent>
-      <AppTabsContent value="media">
-        <section class="flex flex-col gap-2.5" data-test-id="settings-media-panel">
-          <h3 class="text-xs font-semibold text-surface">{{ settings.media }}</h3>
-          <StockPhotoKeysSection />
-          <VectorizeSettingsSection />
-        </section>
+      <AppTabsContent value="usage" as-child>
+        <AppDialogBody><UsageSettingsPanel /></AppDialogBody>
       </AppTabsContent>
-      <AppTabsContent value="storage"><StorageSettingsPanel /></AppTabsContent>
+      <AppTabsContent value="diagnostics" as-child>
+        <AppDialogBody><DiagnosticsSettingsPanel /></AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="mcp" as-child>
+        <AppDialogBody>
+          <section class="flex flex-col" data-test-id="settings-mcp-panel">
+            <MCPSettingsPanel />
+            <MCPConnectionsSection />
+          </section>
+        </AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="media" as-child>
+        <AppDialogBody>
+          <section class="flex flex-col gap-2.5" data-test-id="settings-media-panel">
+            <h3 class="text-xs font-semibold text-surface">{{ settings.media }}</h3>
+            <StockPhotoKeysSection />
+            <VectorizeSettingsSection />
+          </section>
+        </AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="storage" as-child>
+        <AppDialogBody><StorageSettingsPanel /></AppDialogBody>
+      </AppTabsContent>
     </AppTabsRoot>
 
     <AppDialogFooter :ui="{ footer: 'justify-between' }">

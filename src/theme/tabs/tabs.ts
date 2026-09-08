@@ -10,6 +10,6 @@ export const tabs = tv({
     label: 'min-w-0',
     trailing: 'ml-auto shrink-0',
     content:
-      'min-h-0 flex-1 overflow-y-auto p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50'
+      'min-h-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent/50'
   }
 })

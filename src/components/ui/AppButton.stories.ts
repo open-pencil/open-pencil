@@ -52,6 +52,24 @@ export const Error: Story = { args: { color: 'error', variant: 'ghost' } }
 export const Link: Story = { args: { color: 'primary', variant: 'link' } }
 export const Disabled: Story = { args: { disabled: true } }
 export const Loading: Story = { args: { loading: true } }
+export const ColorMatrix: Story = {
+  render: () => ({
+    components: { AppButton },
+    setup: () => ({
+      colors: ['neutral', 'primary', 'error'],
+      variants: ['solid', 'outline', 'soft', 'subtle', 'ghost', 'link']
+    }),
+    template: `
+      <div class="space-y-4 bg-panel p-6 text-surface">
+        <div v-for="color in colors" :key="color" class="flex flex-wrap items-center gap-3">
+          <AppButton v-for="variant in variants" :key="variant" :color="color" :variant="variant">{{ color }} {{ variant }}</AppButton>
+          <AppButton :color="color" variant="solid" disabled>Disabled</AppButton>
+        </div>
+      </div>
+    `
+  })
+}
+
 export const ConstrainedLabels: Story = {
   render: () => ({
     components: { AppButton },

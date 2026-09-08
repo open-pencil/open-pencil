@@ -40,8 +40,8 @@ const meta = {
           </AppTabsTrigger>
           <AppTabsTrigger value="unavailable" disabled>Unavailable</AppTabsTrigger>
         </AppTabsList>
-        <AppTabsContent value="general">General preferences</AppTabsContent>
-        <AppTabsContent value="media">Media preferences</AppTabsContent>
+        <AppTabsContent value="general" class="p-4">General preferences</AppTabsContent>
+        <AppTabsContent value="media" class="p-4">Media preferences</AppTabsContent>
       </AppTabsRoot>
     `
   })

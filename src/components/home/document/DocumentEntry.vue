@@ -8,8 +8,7 @@ const {
   previewURL,
   view = 'grid',
   disabled = false,
-  class: className,
-  ui
+  class: className
 } = defineProps<{
   name: string
   metadata: string
@@ -17,66 +16,32 @@ const {
   view?: 'grid' | 'list'
   disabled?: boolean
   class?: HTMLAttributes['class']
-  ui?: Partial<
-    Record<
-      | 'root'
-      | 'trigger'
-      | 'preview'
-      | 'image'
-      | 'fallback'
-      | 'icon'
-      | 'body'
-      | 'name'
-      | 'metadata'
-      | 'trailingMetadata'
-      | 'actions',
-      string
-    >
-  >
 }>()
 const emit = defineEmits<{ open: [] }>()
 const styles = computed(() => documentEntry({ view }))
 </script>
 
 <template>
-  <div
-    data-slot="document-entry"
-    :class="styles.root({ class: [ui?.root, normalizeClass(className)] })"
-  >
+  <div data-slot="document-entry" :class="styles.root({ class: normalizeClass(className) })">
     <button
       type="button"
       :disabled="disabled"
       data-slot="trigger"
-      :class="styles.trigger({ class: ui?.trigger })"
+      :class="styles.trigger()"
       @click="emit('open')"
     >
-      <span
-        v-if="view === 'grid'"
-        data-slot="preview"
-        :class="styles.preview({ class: ui?.preview })"
-      >
-        <img
-          v-if="previewURL"
-          :src="previewURL"
-          alt=""
-          :class="styles.image({ class: ui?.image })"
-        />
-        <icon-lucide-file-image v-else :class="styles.fallback({ class: ui?.fallback })" />
+      <span v-if="view === 'grid'" data-slot="preview" :class="styles.preview()">
+        <img v-if="previewURL" :src="previewURL" alt="" :class="styles.image()" />
+        <icon-lucide-file-image v-else :class="styles.fallback()" />
       </span>
-      <icon-lucide-file-image v-else :class="styles.icon({ class: ui?.icon })" />
-      <span data-slot="body" :class="styles.body({ class: ui?.body })">
-        <span data-slot="name" :class="styles.name({ class: ui?.name })">{{ name }}</span>
-        <span data-slot="metadata" :class="styles.metadata({ class: ui?.metadata })">{{
-          metadata
-        }}</span>
+      <icon-lucide-file-image v-else :class="styles.icon()" />
+      <span data-slot="body" :class="styles.body()">
+        <span data-slot="name" :class="styles.name()">{{ name }}</span>
+        <span data-slot="metadata" :class="styles.metadata()">{{ metadata }}</span>
       </span>
-      <span
-        v-if="view === 'list'"
-        :class="styles.trailingMetadata({ class: ui?.trailingMetadata })"
-        >{{ metadata }}</span
-      >
+      <span v-if="view === 'list'" :class="styles.trailingMetadata()">{{ metadata }}</span>
     </button>
-    <div v-if="$slots.actions" data-slot="actions" :class="styles.actions({ class: ui?.actions })">
+    <div v-if="$slots.actions" data-slot="actions" :class="styles.actions()">
       <slot name="actions" />
     </div>
   </div>
