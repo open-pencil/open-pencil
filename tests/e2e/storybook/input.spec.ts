@@ -1,5 +1,14 @@
 import { expect, test } from '@playwright/test'
 
+test('conditional trailing content preserves input focus while typing', async ({ page }) => {
+  await page.goto('/iframe.html?id=design-system-inputs-input--conditional-trailing&viewMode=story')
+  const input = page.getByRole('textbox', { name: 'Conditional trailing input' })
+  await input.focus()
+  await page.keyboard.type('Continuous typing')
+  await expect(input).toHaveValue('Continuous typing')
+  await expect(input).toBeFocused()
+})
+
 test('adorned search accepts text, clears through its trailing action, and forwards native attributes', async ({
   page
 }) => {

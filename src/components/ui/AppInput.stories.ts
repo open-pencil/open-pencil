@@ -40,4 +40,14 @@ const meta = {
   })
 } satisfies Meta
 export default meta
+export const ConditionalTrailing: StoryObj<typeof meta> = {
+  render: () => ({
+    components: { AppInput, IconButton, IconX },
+    setup: () => ({ value: ref('') }),
+    template: `<AppInput v-model="value" aria-label="Conditional trailing input">
+      <template v-if="value" #trailing><IconButton label="Clear" @click="value = ''"><IconX class="size-4" /></IconButton></template>
+    </AppInput>`
+  })
+}
+
 export const Default: StoryObj<typeof meta> = {}
