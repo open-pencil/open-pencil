@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import { computed, ref, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
@@ -300,26 +302,20 @@ function formattedDate(updatedAt: string): string {
             </p>
           </div>
           <div class="ml-auto flex shrink-0 items-center gap-1">
-            <Tip :label="common.refresh">
-              <button
-                type="button"
-                class="flex size-10 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface sm:size-7"
-                :aria-label="common.refresh"
-                @click="storageWorkspace.refresh"
-              >
-                <icon-lucide-refresh-cw class="size-3.5" />
-              </button>
-            </Tip>
-            <Tip :label="settings.title">
-              <button
-                type="button"
-                class="flex size-10 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface sm:size-7"
-                :aria-label="settings.title"
-                @click="openSettingsDialog('storage')"
-              >
-                <icon-lucide-settings-2 class="size-3.5" />
-              </button>
-            </Tip>
+            <IconButton
+              :label="common.refresh"
+              class="size-10 sm:size-7"
+              @click="storageWorkspace.refresh"
+            >
+              <icon-lucide-refresh-cw class="size-3.5" />
+            </IconButton>
+            <IconButton
+              :label="settings.title"
+              class="size-10 sm:size-7"
+              @click="openSettingsDialog('storage')"
+            >
+              <icon-lucide-settings-2 class="size-3.5" />
+            </IconButton>
           </div>
         </div>
 
@@ -341,13 +337,9 @@ function formattedDate(updatedAt: string): string {
           role="alert"
         >
           <p class="text-xs text-danger">{{ storageError }}</p>
-          <button
-            type="button"
-            class="mt-3 rounded border border-border px-3 py-1.5 text-xs hover:bg-hover"
-            @click="storageWorkspace.refresh"
-          >
+          <AppButton variant="outline" class="mt-3" @click="storageWorkspace.refresh">
             {{ common.refresh }}
-          </button>
+          </AppButton>
         </div>
 
         <div
@@ -384,13 +376,9 @@ function formattedDate(updatedAt: string): string {
           class="rounded-lg border border-dashed border-border px-4 py-4 text-center text-xs text-muted sm:py-6"
         >
           <p>{{ storage.notConfigured }}</p>
-          <button
-            type="button"
-            class="mt-3 rounded border border-border px-3 py-1.5 text-xs text-surface hover:bg-hover"
-            @click="openSettingsDialog('storage')"
-          >
+          <AppButton variant="outline" class="mt-3" @click="openSettingsDialog('storage')">
             {{ settings.title }}
-          </button>
+          </AppButton>
         </div>
 
         <div
