@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconButton from '@/components/ui/IconButton.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import { ref } from 'vue'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
@@ -69,14 +70,9 @@ async function remove() {
 <template>
   <div class="flex min-h-0 flex-1 flex-col" data-test-id="settings-model-editor">
     <div class="flex items-center gap-2 border-b border-border pb-3">
-      <button
-        type="button"
-        class="flex size-6 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
-        :aria-label="common.back"
-        @click="emit('done')"
-      >
+      <IconButton :label="common.back" @click="emit('done')">
         <icon-lucide-arrow-left class="size-3.5" />
-      </button>
+      </IconButton>
       <div>
         <h3 class="text-xs font-semibold text-surface">
           {{ profileId ? ai.editModel : ai.addModel }}

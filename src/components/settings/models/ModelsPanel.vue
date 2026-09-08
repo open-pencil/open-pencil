@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import { useModelSettings } from '@/app/ai/models/settings/use'
 
@@ -55,15 +56,15 @@ const { profiles, statusByConnection, refreshStatuses } = useModelSettings()
           <h3 class="text-xs font-semibold text-surface">{{ ai.modelsTitle }}</h3>
           <p class="text-[10px] text-muted">{{ ai.modelsDescription }}</p>
         </div>
-        <button
-          type="button"
-          class="flex items-center gap-1 rounded bg-accent px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
+        <AppButton
+          color="primary"
+          variant="solid"
           data-test-id="settings-add-model"
           @click="addModel"
         >
-          <icon-lucide-plus class="size-3" />
+          <template #leading><icon-lucide-plus class="size-3" /></template>
           {{ ai.addModel }}
-        </button>
+        </AppButton>
       </div>
 
       <div class="flex flex-col gap-1.5" data-test-id="settings-model-list">
