@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import { computed, ref } from 'vue'
 import {
   SelectContent,
@@ -101,10 +102,10 @@ function manageModels(): void {
               </SelectItemText>
             </SelectItem>
           </SelectGroup>
-          <button type="button" :class="ui.footer()" @click="manageModels">
-            <icon-lucide-settings :class="ui.footerIcon()" />
+          <AppButton class="w-full justify-start" @click="manageModels">
+            <template #leading><icon-lucide-settings :class="ui.footerIcon()" /></template>
             {{ ai.manageModelsAndRoles }}
-          </button>
+          </AppButton>
         </SelectViewport>
       </SelectContent>
     </SelectPortal>

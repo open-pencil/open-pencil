@@ -41,7 +41,7 @@ test('opens to the recent-files home and starts a new document', async ({ page }
 
   await page.getByTestId('tabbar-tab').first().click()
   await page.getByTestId('tabbar-tab').first().hover()
-  await page.getByTestId('tabbar-tab').first().getByTestId('tabbar-close').click()
+  await page.locator('[data-slot="tab-item"]').first().getByTestId('tabbar-close').click()
 
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
 })

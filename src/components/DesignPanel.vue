@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import { computed, ref } from 'vue'
 
 import { useI18n, useSelectionState, useEditorCommands } from '@open-pencil/vue'
@@ -132,20 +133,17 @@ const { panels } = useI18n()
       v-if="node.type === 'INSTANCE'"
       class="flex flex-col gap-1 border-b border-border px-3 py-2"
     >
-      <button
-        type="button"
-        class="rounded bg-component/10 px-2 py-1 text-left text-[11px] text-component hover:bg-component/20"
+      <AppButton
+        color="primary"
+        variant="soft"
+        class="justify-start"
         @click="goToMainComponent.run()"
       >
         {{ panels.goToMainComponent }}
-      </button>
-      <button
-        type="button"
-        class="rounded px-2 py-1 text-left text-[11px] text-muted hover:bg-hover"
-        @click="detachInstance.run()"
-      >
+      </AppButton>
+      <AppButton class="justify-start" @click="detachInstance.run()">
         {{ panels.detachInstance }}
-      </button>
+      </AppButton>
     </div>
 
     <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
