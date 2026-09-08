@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import HudButton from '@/components/mobile-hud/HudButton.vue'
+import { useMenuMessages } from '@open-pencil/vue'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -10,6 +12,7 @@ import {
 import { menu, useMenuUI } from '@/components/ui/menu'
 import { useMobileHudContext } from '@/components/MobileHud/context'
 
+const menuMessages = useMenuMessages()
 const hud = useMobileHudContext()
 const menuCls = useMenuUI({
   content: 'w-48 rounded-xl p-1.5 shadow-xl',
@@ -20,11 +23,9 @@ const menuCls = useMenuUI({
 <template>
   <DropdownMenuRoot>
     <DropdownMenuTrigger as-child>
-      <button
-        class="flex size-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-panel/70 shadow-md backdrop-blur-xl select-none active:bg-hover"
-      >
-        <icon-lucide-menu class="size-3.5 text-surface" />
-      </button>
+      <HudButton icon-only :label="menuMessages.file">
+        <icon-lucide-menu class="size-3.5" />
+      </HudButton>
     </DropdownMenuTrigger>
     <DropdownMenuPortal>
       <DropdownMenuContent :side-offset="8" side="bottom" align="end" :class="menuCls.content">

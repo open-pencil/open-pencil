@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const stories = [
+  'editor-mobile-hud-actions--default',
   'design-system-actions-button--color-matrix',
   'design-system-actions-button--constrained-labels',
   'editor-toolbar--default',
