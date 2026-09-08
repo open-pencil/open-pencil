@@ -79,6 +79,7 @@ provideLayerTreeUI(() => undefined)
       :text-content="(node) => node.name"
     >
       <TreeItem
+        as-child
         v-bind="item.bind"
         v-slot="{ isSelected, isExpanded, handleToggle }"
         @toggle="
