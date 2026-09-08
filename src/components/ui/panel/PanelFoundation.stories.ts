@@ -13,6 +13,7 @@ import AppSelect from '@/components/ui/AppSelect.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 
+import PanelSelectionDemo from './demo/PanelSelectionDemo.vue'
 import PanelFieldGroup from './PanelFieldGroup.vue'
 import PanelGrid from './PanelGrid.vue'
 import PanelHeader from './PanelHeader.vue'
@@ -33,6 +34,10 @@ const meta = {
 
 export default meta
 type Story = StoryObj<typeof meta>
+
+export const SelectionTransition: Story = {
+  render: () => ({ components: { PanelSelectionDemo }, template: '<PanelSelectionDemo />' })
+}
 
 export const StateMatrix: Story = {
   render: () => ({

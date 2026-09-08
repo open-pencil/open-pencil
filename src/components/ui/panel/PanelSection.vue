@@ -22,7 +22,7 @@ export interface PanelSectionSlots {
 </script>
 
 <script setup lang="ts">
-import { computed, getCurrentInstance } from 'vue'
+import { getCurrentInstance } from 'vue'
 import { tv } from 'tailwind-variants'
 import {
   PropertySectionActions,
@@ -48,7 +48,12 @@ const controlled = vnodeProps ? Object.hasOwn(vnodeProps, 'open') : false
 const emit = defineEmits<{ 'update:open': [open: boolean] }>()
 const slots = defineSlots<PanelSectionSlots>()
 
-const styles = computed(() => tv(theme)({ actions: Boolean(slots.actions) }))
+const section = tv(theme)
+// Slot presence can change with the selected node without changing any props.
+// Resolve it during rendering instead of caching a non-reactive slots lookup.
+function styles() {
+  return section({ actions: Boolean(slots.actions) })
+}
 </script>
 
 <template>
@@ -58,18 +63,21 @@ const styles = computed(() => tv(theme)({ actions: Boolean(slots.actions) }))
     :default-open="defaultOpen"
     :empty="empty"
     :aria-label="label"
-    :class="styles.root({ class: [ui?.root, className] })"
+    :class="styles().root({ class: [ui?.root, className] })"
     @update:open="emit('update:open', $event)"
   >
-    <PropertySectionHeader :class="styles.header({ class: ui?.header })">
-      <PropertySectionTitle :class="styles.title({ class: ui?.title })">
+    <PropertySectionHeader :class="styles().header({ class: ui?.header })">
+      <PropertySectionTitle :class="styles().title({ class: ui?.title })">
         <span role="heading" aria-level="3">{{ label }}</span>
       </PropertySectionTitle>
-      <PropertySectionActions v-if="slots.actions" :class="styles.actions({ class: ui?.actions })">
+      <PropertySectionActions
+        v-if="slots.actions"
+        :class="styles().actions({ class: ui?.actions })"
+      >
         <slot name="actions" />
       </PropertySectionActions>
     </PropertySectionHeader>
-    <PropertySectionContent :class="styles.body({ class: ui?.body })">
+    <PropertySectionContent :class="styles().body({ class: ui?.body })">
       <slot />
       <PropertySectionEmptyAction v-if="slots.emptyAction" as-child>
         <slot name="emptyAction" />
