@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconButton from '@/components/ui/IconButton.vue'
 import { computed } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import {
@@ -66,14 +67,9 @@ if (IS_BROWSER) {
         <Search class="mx-2 size-5 shrink-0 text-muted" />
       </template>
       <template #search-trailing>
-        <button
-          type="button"
-          class="ml-2 inline-flex size-8 shrink-0 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
-          :aria-label="common.close"
-          @click="close"
-        >
+        <IconButton class="ml-2" size="md" :label="common.close" @click="close">
           <X class="size-5" />
-        </button>
+        </IconButton>
       </template>
       <template #empty>
         <p class="px-4 py-8 text-center text-xs text-muted">
