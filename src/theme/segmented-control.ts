@@ -6,7 +6,8 @@ const segmentedControlTheme = {
   variants: {
     size: {
       sm: { item: 'px-1.5 text-[11px]' },
-      md: { item: 'px-2 text-[11px]' }
+      md: { item: 'px-2 text-[11px]' },
+      touch: { item: 'h-10 min-w-10 px-2 text-xs' }
     }
   },
   defaultVariants: {

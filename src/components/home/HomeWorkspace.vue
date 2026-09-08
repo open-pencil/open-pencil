@@ -5,7 +5,7 @@ import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import { computed, ref, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 
-import { useDocumentWorkspace, useI18n } from '@open-pencil/vue'
+import { useDocumentWorkspace, useI18n, useViewportKind } from '@open-pencil/vue'
 
 import {
   activeStorageProviderID,
@@ -26,10 +26,11 @@ import { openFileFromPath } from '@/app/shell/menu/use'
 import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
-import Tip from '@/components/ui/Tip.vue'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 
 const emit = defineEmits<{ 'new-document': [] }>()
 const { panels, locale, storage, files, common, settings } = useI18n()
+const { isMobile } = useViewportKind()
 const view = useLocalStorage<'grid' | 'list'>('open-pencil:home-files-view', 'grid')
 const query = ref('')
 const openError = ref<string | null>(null)
@@ -174,80 +175,36 @@ function formattedDate(updatedAt: string): string {
       </p>
 
       <section v-if="!noSearchMatches">
-        <div class="mb-3">
-          <div class="flex items-start gap-3">
-            <div class="min-w-0 flex-1">
-              <h1 class="text-base font-semibold">{{ files.recentFiles }}</h1>
-              <p class="mt-0.5 text-pretty text-xs text-muted">
-                {{ files.recentFilesDescription }}
-              </p>
-            </div>
-            <div class="ml-auto hidden shrink-0 items-center gap-1 sm:flex">
-              <IconButton
-                v-if="hasRecentFiles"
-                :label="common.clear"
-                class="size-10 sm:size-7"
-                data-test-id="recent-files-clear"
-                @click="clearRecentFiles"
-              >
-                <icon-lucide-trash-2 class="size-3.5" />
-              </IconButton>
-              <div class="flex rounded border border-border p-0.5">
-                <Tip :label="panels.gridView">
-                  <button
-                    type="button"
-                    class="flex size-10 items-center justify-center rounded-sm text-muted hover:text-surface sm:size-7"
-                    :class="{ 'bg-hover text-surface': view === 'grid' }"
-                    :aria-label="panels.gridView"
-                    @click="view = 'grid'"
-                  >
-                    <icon-lucide-layout-grid class="size-3.5" />
-                  </button>
-                </Tip>
-                <Tip :label="panels.listView">
-                  <button
-                    type="button"
-                    class="flex size-10 items-center justify-center rounded-sm text-muted hover:text-surface sm:size-7"
-                    :class="{ 'bg-hover text-surface': view === 'list' }"
-                    :aria-label="panels.listView"
-                    @click="view = 'list'"
-                  >
-                    <icon-lucide-list class="size-3.5" />
-                  </button>
-                </Tip>
-              </div>
-            </div>
+        <div class="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
+          <div class="col-span-2 min-w-0 sm:col-span-1">
+            <h1 class="text-base font-semibold">{{ files.recentFiles }}</h1>
+            <p class="mt-0.5 text-pretty text-xs text-muted">{{ files.recentFilesDescription }}</p>
           </div>
-          <div class="mt-2 flex items-center justify-end gap-1 sm:hidden">
+          <div class="col-span-2 flex items-center justify-end gap-1 sm:col-span-1">
             <IconButton
               v-if="hasRecentFiles"
               :label="common.clear"
-              size="md"
+              class="size-10 sm:size-7"
               data-test-id="recent-files-clear"
               @click="clearRecentFiles"
             >
               <icon-lucide-trash-2 class="size-3.5" />
             </IconButton>
-            <div class="flex rounded border border-border p-0.5">
-              <button
-                type="button"
-                class="flex size-8 items-center justify-center rounded-sm text-muted"
-                :class="{ 'bg-hover text-surface': view === 'grid' }"
-                :aria-label="panels.gridView"
-                @click="view = 'grid'"
-              >
-                <icon-lucide-layout-grid class="size-3.5" />
-              </button>
-              <button
-                type="button"
-                class="flex size-8 items-center justify-center rounded-sm text-muted"
-                :class="{ 'bg-hover text-surface': view === 'list' }"
-                :aria-label="panels.listView"
-                @click="view = 'list'"
-              >
-                <icon-lucide-list class="size-3.5" />
-              </button>
-            </div>
+            <SegmentedControl
+              v-model="view"
+              required
+              :label="files.recentFiles"
+              :size="isMobile ? 'touch' : 'md'"
+              :options="[
+                { value: 'grid', label: panels.gridView },
+                { value: 'list', label: panels.listView }
+              ]"
+            >
+              <template #option="{ option }">
+                <icon-lucide-layout-grid v-if="option.value === 'grid'" class="size-3.5" />
+                <icon-lucide-list v-else class="size-3.5" />
+              </template>
+            </SegmentedControl>
           </div>
         </div>
 
