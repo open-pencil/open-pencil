@@ -1,3 +1,5 @@
+import type { HocuspocusProvider } from '@hocuspocus/provider'
+import { useTimeoutFn } from '@vueuse/core'
 import type { Ref } from 'vue'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import * as awarenessProtocol from 'y-protocols/awareness'
@@ -6,9 +8,15 @@ import * as Y from 'yjs'
 
 import { randomIndex } from '@open-pencil/core/random'
 
+import { createCloudYjsProvider } from '@/app/collab/cloud-provider'
 import { connectCollabRoom } from '@/app/collab/room'
+import {
+  collaborationTicketRefreshDelay,
+  requireActiveCollaborationTicket,
+  sameCollaborationRoom
+} from '@/app/collab/ticket'
 import type { CollabRoomTransport } from '@/app/collab/transport'
-import type { CollabState } from '@/app/collab/types'
+import type { CloudCollaborationCredentials, CollabState } from '@/app/collab/types'
 import { bindCollabGraphEvents, registerYjsObservers } from '@/app/collab/yjs-sync'
 import type { EditorStore } from '@/app/editor/active-store'
 import { PEER_COLORS } from '@/constants'
@@ -19,16 +27,26 @@ export type CollabRuntime = {
   ynodes: Y.Map<Y.Map<unknown>> | null
   yimages: Y.Map<Uint8Array> | null
   room: CollabRoomTransport | null
+  cloudProvider: HocuspocusProvider | null
   persistence: IndexeddbPersistence | null
   connectedStore: EditorStore | null
   suppressGraphSync: boolean
   suppressYjsEvents: boolean
   unbindGraphEvents: (() => void) | null
   stopZoomWatch: (() => void) | null
+  stopTicketRefresh: (() => void) | null
 }
 
-type ConnectCollabSessionOptions = {
+type CollabSyncActions = {
+  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
+  syncNodeToYjs: (nodeId: string) => void
+  syncAllNodesToYjs: () => void
+}
+
+type ConnectCollabSessionOptions = CollabSyncActions & {
   roomId: string
+  cloud?: CloudCollaborationCredentials
+  onCloudTicketError: (error: unknown) => void
   runtime: CollabRuntime
   state: Ref<CollabState>
   store: EditorStore
@@ -36,30 +54,30 @@ type ConnectCollabSessionOptions = {
   updatePeersList: () => void
   tickFollow: () => void
   broadcastAwareness: () => void
-  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncNodeToYjs: (nodeId: string) => void
 }
 
-type CollabConnectionActionsOptions = {
+type CollabConnectionActionsOptions = CollabSyncActions & {
   runtime: CollabRuntime
   state: Ref<CollabState>
   getStore: () => EditorStore
   updatePeersList: () => void
   tickFollow: () => void
   broadcastAwareness: () => void
-  applyYjsToGraph: (events: Y.YEvent<Y.Map<unknown>>[]) => void
-  syncNodeToYjs: (nodeId: string) => void
   resetFollow: () => void
+  getLocalName: () => string
+  onCloudTicketError: (error: unknown) => void
 }
 
 type CollabSessionResources = {
   store: EditorStore
   room: CollabRoomTransport | null
+  cloudProvider: HocuspocusProvider | null
   awareness: awarenessProtocol.Awareness | null
   persistence: IndexeddbPersistence | null
   ydoc: Y.Doc | null
   unbindGraphEvents: (() => void) | null
   stopZoomWatch: (() => void) | null
+  stopTicketRefresh: (() => void) | null
   resetFollow: () => void
 }
 
@@ -70,12 +88,14 @@ export function createCollabRuntime(): CollabRuntime {
     ynodes: null,
     yimages: null,
     room: null,
+    cloudProvider: null,
     persistence: null,
     connectedStore: null,
     suppressGraphSync: false,
     suppressYjsEvents: false,
     unbindGraphEvents: null,
-    stopZoomWatch: null
+    stopZoomWatch: null,
+    stopTicketRefresh: null
   }
 }
 
@@ -85,7 +105,13 @@ export function createInitialCollabState(localName: string): CollabState {
     roomId: null,
     peers: [],
     localName,
-    localColor: PEER_COLORS[randomIndex(PEER_COLORS.length)]
+    localColor: PEER_COLORS[randomIndex(PEER_COLORS.length)],
+    identity: {
+      source: 'local',
+      principal: null,
+      permission: null,
+      serverEnforcedWrites: false
+    }
   }
 }
 
@@ -98,11 +124,15 @@ export function createCollabConnectionActions({
   broadcastAwareness,
   applyYjsToGraph,
   syncNodeToYjs,
-  resetFollow
+  syncAllNodesToYjs,
+  resetFollow,
+  getLocalName,
+  onCloudTicketError
 }: CollabConnectionActionsOptions) {
   function connect(roomId: string) {
-    connectCollabSession({
+    void connectCollabSession({
       roomId,
+      onCloudTicketError,
       runtime,
       state,
       store: getStore(),
@@ -111,7 +141,27 @@ export function createCollabConnectionActions({
       tickFollow,
       broadcastAwareness,
       applyYjsToGraph,
-      syncNodeToYjs
+      syncNodeToYjs,
+      syncAllNodesToYjs
+    })
+  }
+
+  async function connectCloud(credentials: CloudCollaborationCredentials) {
+    const ticket = requireActiveCollaborationTicket(credentials.ticket)
+    await connectCollabSession({
+      roomId: ticket.roomId,
+      cloud: credentials,
+      onCloudTicketError,
+      runtime,
+      state,
+      store: getStore(),
+      disconnect,
+      updatePeersList,
+      tickFollow,
+      broadcastAwareness,
+      applyYjsToGraph,
+      syncNodeToYjs,
+      syncAllNodesToYjs
     })
   }
 
@@ -120,18 +170,20 @@ export function createCollabConnectionActions({
     disposeCollabSessionResources({
       store,
       room: runtime.room,
+      cloudProvider: runtime.cloudProvider,
       awareness: runtime.awareness,
       persistence: runtime.persistence,
       ydoc: runtime.ydoc,
       unbindGraphEvents: runtime.unbindGraphEvents,
       stopZoomWatch: runtime.stopZoomWatch,
+      stopTicketRefresh: runtime.stopTicketRefresh,
       resetFollow
     })
     resetCollabRuntime(runtime)
-    resetCollabConnectionState(state)
+    resetCollabConnectionState(state, getLocalName())
   }
 
-  return { connect, disconnect }
+  return { connect, connectCloud, disconnect }
 }
 
 export function watchAwarenessZoom(store: EditorStore, getAwareness: () => Awareness | null) {
@@ -147,8 +199,10 @@ export function watchAwarenessZoom(store: EditorStore, getAwareness: () => Aware
   })
 }
 
-export function connectCollabSession({
+export async function connectCollabSession({
   roomId,
+  cloud,
+  onCloudTicketError,
   runtime,
   state,
   store,
@@ -157,17 +211,36 @@ export function connectCollabSession({
   tickFollow,
   broadcastAwareness,
   applyYjsToGraph,
-  syncNodeToYjs
+  syncNodeToYjs,
+  syncAllNodesToYjs
 }: ConnectCollabSessionOptions) {
-  if (runtime.room) disconnect()
+  if (runtime.room || runtime.cloudProvider) disconnect()
 
   runtime.connectedStore = store
   state.value.roomId = roomId
+  if (cloud) {
+    const ticket = requireActiveCollaborationTicket(cloud.ticket)
+    state.value.localName = ticket.principal.name
+    state.value.identity = {
+      source: 'cloud',
+      principal: ticket.principal,
+      permission: ticket.permission,
+      serverEnforcedWrites: ticket.serverEnforcedWrites
+    }
+    if (store.state.accessMode !== 'owner') store.setAccessMode(ticket.permission)
+  } else {
+    state.value.identity = {
+      source: 'local',
+      principal: null,
+      permission: null,
+      serverEnforcedWrites: false
+    }
+  }
   runtime.ydoc = new Y.Doc()
   runtime.awareness = new awarenessProtocol.Awareness(runtime.ydoc)
   runtime.ynodes = runtime.ydoc.getMap('nodes')
   runtime.yimages = runtime.ydoc.getMap('images')
-  runtime.persistence = new IndexeddbPersistence(`op-room-${roomId}`, runtime.ydoc)
+  runtime.persistence = cloud ? null : new IndexeddbPersistence(`op-room-${roomId}`, runtime.ydoc)
 
   runtime.awareness.on('change', () => {
     updatePeersList()
@@ -185,37 +258,151 @@ export function connectCollabSession({
     applyYjsToGraph
   })
 
-  const roomConnection = connectCollabRoom({
-    roomId,
-    ydoc: runtime.ydoc,
-    awareness: runtime.awareness,
-    setConnected: () => {
-      state.value.connected = true
-    },
-    updatePeersList
-  })
-  runtime.room = roomConnection.room
-  state.value.connected = true
+  const ticket = cloud ? requireActiveCollaborationTicket(cloud.ticket) : null
+  const cloudProvider = ticket
+    ? await createCloudYjsProvider({
+        ticket,
+        document: runtime.ydoc,
+        awareness: runtime.awareness,
+        onSynced: () => {
+          if (runtime.ynodes?.size === 0 && store.canMutate()) syncAllNodesToYjs()
+        },
+        onStatus: (connected) => {
+          state.value.connected = connected
+        }
+      })
+    : null
+  runtime.cloudProvider = cloudProvider
+  const roomConnection = cloudProvider
+    ? null
+    : connectCollabRoom({
+        roomId,
+        canSendUpdates: store.canMutate,
+        ydoc: runtime.ydoc,
+        awareness: runtime.awareness,
+        setConnected: () => {
+          state.value.connected = true
+        },
+        updatePeersList
+      })
+  runtime.room = roomConnection?.room ?? null
+  state.value.connected = !cloudProvider
   broadcastAwareness()
 
   runtime.stopZoomWatch = watchAwarenessZoom(store, () => runtime.awareness)
+  if (cloud) {
+    scheduleCollaborationTicketRefresh({
+      credentials: cloud,
+      runtime,
+      state,
+      store,
+      reconnect: (credentials) =>
+        connectCollabSession({
+          roomId: credentials.ticket.roomId,
+          cloud: credentials,
+          onCloudTicketError,
+          runtime,
+          state,
+          store,
+          disconnect,
+          updatePeersList,
+          tickFollow,
+          broadcastAwareness,
+          applyYjsToGraph,
+          syncNodeToYjs,
+          syncAllNodesToYjs
+        }),
+      disconnect,
+      broadcastAwareness,
+      onError: onCloudTicketError
+    })
+  }
 
-  runtime.unbindGraphEvents = bindCollabGraphEvents({
-    store,
-    getYdoc: () => runtime.ydoc,
-    getYnodes: () => runtime.ynodes,
-    getSuppressGraphSync: () => runtime.suppressGraphSync,
-    setSuppressYjsEvents: (value) => {
-      runtime.suppressYjsEvents = value
+  runtime.unbindGraphEvents = store.canMutate()
+    ? bindCollabGraphEvents({
+        store,
+        getYdoc: () => runtime.ydoc,
+        getYnodes: () => runtime.ynodes,
+        getSuppressGraphSync: () => runtime.suppressGraphSync,
+        setSuppressYjsEvents: (value) => {
+          runtime.suppressYjsEvents = value
+        },
+        syncNodeToYjs
+      })
+    : null
+}
+
+type CollaborationTicketRefreshOptions = {
+  credentials: CloudCollaborationCredentials
+  runtime: CollabRuntime
+  state: Ref<CollabState>
+  store: EditorStore
+  reconnect: (credentials: CloudCollaborationCredentials) => Promise<void>
+  disconnect: () => void
+  broadcastAwareness: () => void
+  onError: (error: unknown) => void
+}
+
+export function scheduleCollaborationTicketRefresh({
+  credentials,
+  runtime,
+  state,
+  store,
+  reconnect,
+  disconnect,
+  broadcastAwareness,
+  onError
+}: CollaborationTicketRefreshOptions): void {
+  const current = requireActiveCollaborationTicket(credentials.ticket)
+  const timer = useTimeoutFn(
+    async () => {
+      try {
+        const refreshed = requireActiveCollaborationTicket(await credentials.refresh())
+        const nextCredentials = { ...credentials, ticket: refreshed }
+        if (!sameCollaborationRoom(current, refreshed)) {
+          await reconnect(nextCredentials)
+          return
+        }
+        if (runtime.cloudProvider && refreshed.provider === 'hocuspocus') {
+          runtime.cloudProvider.configuration.token = refreshed.token
+          await runtime.cloudProvider.sendToken()
+        }
+        state.value.localName = refreshed.principal.name
+        state.value.identity = {
+          source: 'cloud',
+          principal: refreshed.principal,
+          permission: refreshed.permission,
+          serverEnforcedWrites: refreshed.serverEnforcedWrites
+        }
+        store.setAccessMode(refreshed.permission)
+        broadcastAwareness()
+        scheduleCollaborationTicketRefresh({
+          credentials: nextCredentials,
+          runtime,
+          state,
+          store,
+          reconnect,
+          disconnect,
+          broadcastAwareness,
+          onError
+        })
+      } catch (error) {
+        disconnect()
+        onError(error)
+      }
     },
-    syncNodeToYjs
-  })
+    collaborationTicketRefreshDelay(current),
+    { immediate: true }
+  )
+  runtime.stopTicketRefresh = timer.stop
 }
 
 export function resetCollabRuntime(runtime: CollabRuntime) {
   runtime.unbindGraphEvents = null
   runtime.stopZoomWatch = null
+  runtime.stopTicketRefresh = null
   runtime.room = null
+  runtime.cloudProvider = null
   runtime.awareness = null
   runtime.persistence = null
   runtime.ydoc = null
@@ -224,15 +411,24 @@ export function resetCollabRuntime(runtime: CollabRuntime) {
   runtime.connectedStore = null
 }
 
-export function resetCollabConnectionState(state: Ref<CollabState>) {
+export function resetCollabConnectionState(state: Ref<CollabState>, localName: string) {
   state.value.connected = false
   state.value.roomId = null
   state.value.peers = []
+  state.value.localName = localName
+  state.value.identity = {
+    source: 'local',
+    principal: null,
+    permission: null,
+    serverEnforcedWrites: false
+  }
 }
 
 export function disposeCollabSessionResources(resources: CollabSessionResources) {
   resources.unbindGraphEvents?.()
   resources.stopZoomWatch?.()
+  resources.stopTicketRefresh?.()
+  resources.cloudProvider?.destroy()
   void resources.room?.leave()
   resources.awareness?.destroy()
   if (resources.persistence) {

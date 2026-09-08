@@ -1,0 +1,34 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "openpencil-cloud",
+  "main": "worker.ts",
+  "compatibility_date": "2026-08-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "../../dist/admin",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "not_found_handling": "single-page-application"
+  },
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "replace-with-hyperdrive-id" }],
+  "triggers": { "crons": ["0 * * * *"] },
+  "env": {
+    "staging": {
+      "name": "openpencil-cloud-staging",
+      "routes": [
+        {
+          "pattern": "cloud-staging.openpencil.dev",
+          "custom_domain": true
+        }
+      ],
+      "vars": {},
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "4e4c4652a8a14c77bfdb2d50862d2e64"
+        }
+      ]
+    }
+  }
+}

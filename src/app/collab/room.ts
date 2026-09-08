@@ -6,6 +6,7 @@ import { joinCollabRoom, type JoinCollabRoom } from '@/app/collab/transport'
 
 export type CollabRoomOptions = {
   roomId: string
+  canSendUpdates: () => boolean
   ydoc: Y.Doc
   awareness: awarenessProtocol.Awareness
   setConnected: () => void
@@ -38,6 +39,7 @@ function awarenessClientIds(data: Uint8Array): number[] {
 
 export function connectCollabRoom({
   roomId,
+  canSendUpdates,
   ydoc,
   awareness,
   setConnected,
@@ -51,6 +53,10 @@ export function connectCollabRoom({
   const [sendSyncReply, getSyncReply] = room.makeAction('sync-reply')
 
   const awarenessClientsByPeer = new Map<string, Set<number>>()
+  const guardedSendYjsUpdate = (data: Uint8Array, peerId?: string) => {
+    if (!canSendUpdates()) return
+    sendYjsUpdate(data, peerId)
+  }
 
   getUpdate((data) => {
     Y.applyUpdate(ydoc, data, 'remote')
@@ -72,7 +78,7 @@ export function connectCollabRoom({
 
   ydoc.on('update', (update: Uint8Array, origin: unknown) => {
     if (origin === 'remote') return
-    sendYjsUpdate(update)
+    guardedSendYjsUpdate(update)
   })
 
   awareness.on(
@@ -101,5 +107,5 @@ export function connectCollabRoom({
     updatePeersList()
   })
 
-  return { room, sendYjsUpdate, sendAwareness, sendSyncStep1 }
+  return { room, sendYjsUpdate: guardedSendYjsUpdate, sendAwareness, sendSyncStep1 }
 }

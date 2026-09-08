@@ -1,0 +1,137 @@
+{
+  "name": "@open-pencil/cloud",
+  "version": "0.14.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "imports": {
+    "#cloud/*": {
+      "types": "./src/*",
+      "bun": "./src/*",
+      "default": "./dist/*"
+    },
+    "#cloud-test/*": "./tests/*",
+    "#admin/*": "./admin/src/*"
+  },
+  "exports": {
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "openpencil-source": "./src/contract/index.ts",
+      "bun": "./src/contract/index.ts",
+      "import": "./dist/contract.js",
+      "default": "./dist/contract.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "openpencil-source": "./src/client/index.ts",
+      "bun": "./src/client/index.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    },
+    "./email": {
+      "types": "./dist/email.d.ts",
+      "bun": "./src/email/index.ts",
+      "import": "./dist/email.js",
+      "default": "./dist/email.js"
+    },
+    "./runtime/cloudflare": {
+      "types": "./dist/runtime-cloudflare.d.ts",
+      "bun": "./src/runtime/cloudflare/index.ts",
+      "import": "./dist/runtime-cloudflare.js",
+      "default": "./dist/runtime-cloudflare.js"
+    },
+    "./runtime/node": {
+      "types": "./dist/runtime-node.d.mts",
+      "bun": "./src/runtime/node/index.ts",
+      "import": "./dist/runtime-node.mjs",
+      "default": "./dist/runtime-node.mjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "bun": "./src/server/index.ts",
+      "import": "./dist/server.js",
+      "default": "./dist/server.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun run build:library && bun run build:admin",
+    "build:library": "bunx tsdown --config tsdown.config.ts",
+    "build:standalone": "bunx tsdown --config tsdown.standalone.config.ts",
+    "build:admin": "bunx vite build --config admin/vite.config.ts",
+    "dev:admin": "bun run build:library && portless run --name cloud.open-pencil vite --config admin/vite.config.ts",
+    "check": "bun run typecheck && bun run typecheck:admin && bun run test && bun run build",
+    "test": "bun run test:unit && bun run test:integration && bun run test:admin",
+    "test:unit": "bun test tests/client tests/contract tests/runtime tests/server",
+    "test:admin": "bun test tests/admin",
+    "test:integration": "bun test --max-concurrency 8 tests/integration",
+    "test:e2e": "bun tests/e2e/run.ts",
+    "test:e2e:browser": "bun tests/e2e/browser-run.ts",
+    "test:e2e:garage": "bun tests/e2e/garage.ts",
+    "migrate": "bun src/runtime/node/migrate.ts",
+    "cleanup": "bun src/runtime/node/cleanup.ts",
+    "quota:reconcile": "bun src/runtime/node/quota-reconcile.ts",
+    "entitlements": "bun src/runtime/node/entitlements.ts",
+    "admin": "bun src/runtime/node/admin.ts",
+    "typecheck": "bunx tsc --noEmit -p tsconfig.json",
+    "typecheck:admin": "bunx vue-tsc --noEmit -p admin/tsconfig.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1110.0",
+    "@aws-sdk/s3-request-presigner": "^3.1110.0",
+    "@better-auth/passkey": "1.7.2",
+    "@better-auth/utils": "0.4.2",
+    "@hocuspocus/extension-database": "^4.6.0",
+    "@hocuspocus/provider": "^4.6.0",
+    "@hocuspocus/server": "^4.6.0",
+    "@nanostores/i18n": "^1.3.3",
+    "@nanostores/vue": "^1.1.0",
+    "@noble/hashes": "^2.3.0",
+    "@open-pencil/ui": "workspace:*",
+    "@openfeature/server-sdk": "^1.23.0",
+    "@tanstack/vue-query": "^5.90.21",
+    "@unhead/vue": "^2.1.17",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue-email/components": "^0.0.21",
+    "@vue-email/render": "^0.0.9",
+    "@vueuse/core": "^14.4.0",
+    "better-auth": "1.7.2",
+    "es-toolkit": "^1.51.0",
+    "hono": "^4.13.2",
+    "hono-rate-limiter": "^0.5.3",
+    "jose": "^6.2.8",
+    "kysely": "^0.29.5",
+    "nanoid": "^6.0.1",
+    "nanostores": "^1.5.0",
+    "nodemailer": "^9.0.5",
+    "reka-ui": "^2.10.3",
+    "smol-toml": "^1.8.0",
+    "valibot": "^1.4.2",
+    "vue": "^3.5.41",
+    "vue-router": "^5.2.0",
+    "yjs": "^13.6.32"
+  },
+  "optionalDependencies": {
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.4.1",
+    "@iconify-json/lucide": "^1.2.123",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/bun": "^1.3.14",
+    "@types/nodemailer": "^8.0.1",
+    "@types/pg": "^8.21.0",
+    "@types/qrcode": "1.5.5",
+    "kysely-pglite-dialect": "1.3.1",
+    "qrcode": "1.5.4",
+    "tailwindcss": "^4.3.3",
+    "tsdown": "^0.22.14",
+    "typescript": "~5.8.3",
+    "unplugin-icons": "^23.0.1",
+    "unplugin-vue-components": "^31.1.0",
+    "vite": "8.1.4"
+  }
+}

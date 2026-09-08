@@ -1,14 +1,22 @@
 use keyring::{Entry, Error as KeyringError};
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "native-test")]
+use std::collections::HashMap;
+#[cfg(feature = "native-test")]
+use std::sync::Mutex;
 
 const CREDENTIAL_SERVICE: &str = "net.dannote.open-pencil.credentials";
+
+#[cfg(feature = "native-test")]
+pub struct NativeTestCredentials(pub Mutex<HashMap<String, String>>);
+
 const AVAILABILITY_ACCOUNT: &str = "v1:system:default:availability";
 const MAX_SEGMENT_LENGTH: usize = 64;
 const MAX_CREDENTIAL_LENGTH: usize = 16 * 1024;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CredentialRef {
+pub(crate) struct CredentialRef {
     integration_id: String,
     profile_id: String,
     field: String,
@@ -16,9 +24,9 @@ pub struct CredentialRef {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CredentialError {
+pub(crate) struct CredentialError {
     code: CredentialErrorCode,
-    message: &'static str,
+    pub(crate) message: &'static str,
 }
 
 #[derive(Clone, Copy, Debug, Serialize)]
@@ -125,6 +133,10 @@ fn account_for(reference: &CredentialRef) -> Result<String, CredentialError> {
         "v1:{}:{}:{}",
         reference.integration_id, reference.profile_id, reference.field
     ))
+}
+
+pub(crate) fn validated_account(reference: &CredentialRef) -> Result<String, CredentialError> {
+    account_for(reference)
 }
 
 fn public_error(error: BackendError) -> CredentialError {

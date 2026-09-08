@@ -47,6 +47,11 @@ export function createOpenPencilAliases(rootDir: string) {
     },
     { find: /^@open-pencil\/vue$/, replacement: resolve(rootDir, 'packages/vue/src/index.ts') },
     { find: '@open-pencil/vue', replacement: resolve(rootDir, 'packages/vue/src') },
+    {
+      find: /^@open-pencil\/ui\/styles.css$/,
+      replacement: resolve(rootDir, 'packages/ui/src/styles.css')
+    },
+    { find: /^@open-pencil\/ui$/, replacement: resolve(rootDir, 'packages/ui/src/index.ts') },
     { find: /^@open-pencil\/core$/, replacement: resolve(rootDir, 'packages/core/src/index.ts') },
     { find: '@open-pencil/core', replacement: resolve(rootDir, 'packages/core/src') },
     {

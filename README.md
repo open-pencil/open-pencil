@@ -262,7 +262,21 @@ The first Portless run creates and trusts a local HTTPS certificate. Linked Git 
 
 Alternatively, open the repository in any [Dev Container](https://containers.dev/)-compatible tool. The container pins Bun, installs the workspace dependencies, and forwards the direct web editor on port 1420. Start it with `bun run dev` after the container is ready.
 
-The Dev Container supports the web editor, packages, CLI, and automated checks. Native Tauri development still requires the host setup described below because desktop windows and platform WebView dependencies are not provided in the container.
+### Local Cloud development
+
+The optional local Cloud stack includes PostgreSQL, SeaweedFS, the Cloud application, and a pinned Mailpit inbox. Docker is required. Each Git worktree receives isolated Compose resources and branch-scoped Portless routes:
+
+```sh
+bun run cloud:dev
+# Cloud: https://<branch>.cloud.open-pencil.localhost
+# Mail:  https://<branch>.mail.open-pencil.localhost
+
+bun run cloud:dev:down
+```
+
+Email/password sign-up is enabled in this local stack. Verification, password-reset, and account-change messages are captured by Mailpit and are never delivered externally. Open the Mailpit route to follow verification and reset links. The SMTP listener is private to the Compose network; browser-facing services bind to loopback and are exposed through Portless.
+
+The default Dev Container remains editor-focused and does not mount the host Docker socket or start Cloud services automatically. Start `bun run cloud:dev` on the Docker host, then use the printed Portless URLs from either the host browser or the Dev Container. Native Tauri development still requires the host setup described below because desktop windows and platform WebView dependencies are not provided in the container.
 
 ### Quality gates
 

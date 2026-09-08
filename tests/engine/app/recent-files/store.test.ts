@@ -42,6 +42,23 @@ describe('recent documents', () => {
     expect(recentLocalFileAt(0)).toBe('/tmp/local.fig')
   })
 
+  test('keeps same-ID Cloud documents from different instances separate with their bindings', () => {
+    const first = {
+      providerId: 'openpencil-cloud' as const,
+      connectionId: 'instance-a',
+      workspaceId: 'workspace-a',
+      documentId: 'shared-id'
+    }
+    const second = { ...first, connectionId: 'instance-b', workspaceId: 'workspace-b' }
+    rememberRecentStorageDocument(first.providerId, first.documentId, 'First', first)
+    rememberRecentStorageDocument(second.providerId, second.documentId, 'Second', second)
+    expect(recentFiles.value).toHaveLength(2)
+    expect(recentFiles.value).toMatchObject([
+      { id: 'storage:openpencil-cloud:instance-b:shared-id', binding: second },
+      { id: 'storage:openpencil-cloud:instance-a:shared-id', binding: first }
+    ])
+  })
+
   test('forgets missing local files and clears the list', () => {
     rememberRecentFile('/tmp/first.fig')
     rememberRecentFile('/tmp/second.fig')

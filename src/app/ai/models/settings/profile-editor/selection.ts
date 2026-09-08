@@ -8,7 +8,7 @@ import {
 } from '@open-pencil/core/constants'
 
 import type { AIModelProfileDraft, AIModelCapability } from '@/app/ai/models'
-import { resolveModelsDevModel } from '@/app/ai/models/catalog'
+import { resolveModelsDevModel } from '@/app/ai/models/catalog/index'
 import { useProviderModelCatalog } from '@/app/ai/models/catalog/use'
 import { modelPickerOptions, type ModelPickerLabels } from '@/app/ai/models/picker/options'
 

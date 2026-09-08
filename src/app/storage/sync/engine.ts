@@ -1,3 +1,4 @@
+import { CloudAPIError } from '@open-pencil/cloud/client'
 import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import {
@@ -10,10 +11,18 @@ import {
   createActiveStorageAdapter,
   storageCredentialStatuses,
   storagePreferencesComplete,
-  storageProviderRegistry
+  storageProviderRegistry,
+  type StorageAdapter,
+  type StorageProviderID
 } from '@/app/integrations/storage'
+import {
+  createBoundStorageAdapter,
+  StorageBindingUnavailableError
+} from '@/app/integrations/storage/binding'
 import { evictLocalFigCache } from '@/app/storage/cache-eviction'
+import { remoteDocumentId } from '@/app/storage/id'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
+import type { LocalCanvasMeta } from '@/app/storage/local-store'
 import { getOutbox } from '@/app/storage/sync/outbox'
 import { setUploadProgress } from '@/app/storage/sync/progress'
 import { setPendingSyncCount, setSyncUI } from '@/app/storage/sync/status'
@@ -37,6 +46,7 @@ let onlineBound = false
 
 function isOnline(): boolean {
   if (typeof navigator === 'undefined') return true
+  if (!('onLine' in navigator)) return true
   return navigator.onLine
 }
 
@@ -53,6 +63,11 @@ export function nextSyncWakeDelay(jobs: OutboxJob[], now = Date.now()): number |
 }
 
 function isPermanentError(error: unknown): boolean {
+  if (error instanceof CloudAPIError) {
+    return (
+      error.status === 400 || error.status === 401 || error.status === 403 || error.status === 404
+    )
+  }
   if (!(error instanceof Error)) return false
   const msg = error.message.toLowerCase()
   return (
@@ -64,11 +79,83 @@ function isPermanentError(error: unknown): boolean {
   )
 }
 
+export type StorageSyncFailureKind = 'blocked' | 'conflict' | 'permanent' | 'transient'
+
+export function storageSyncFailureKind(error: unknown): StorageSyncFailureKind {
+  if (error instanceof CloudAPIError && error.code === 'revision_conflict') return 'conflict'
+  if (error instanceof StorageSyncBlockedError || error instanceof StorageBindingUnavailableError)
+    return 'blocked'
+  return isPermanentError(error) ? 'permanent' : 'transient'
+}
+
+async function putCanvasJob(
+  job: OutboxJob,
+  providerID: StorageProviderID,
+  meta: LocalCanvasMeta,
+  adapter: StorageAdapter,
+  remoteId: string
+): Promise<void> {
+  if (meta.revision > job.revision || !meta.hasFig) return
+  const store = getLocalCanvasStore()
+  const fig = await store.readFig(job.canvasId)
+  if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
+  setUploadProgress(job.canvasId, 0)
+  let syncResult: { remoteRevisionId?: string | null } | undefined
+  try {
+    syncResult =
+      (await adapter.putDocument(
+        remoteId,
+        fig,
+        { name: meta.name, updatedAt: meta.updatedAt },
+        ({ transferredBytes, totalBytes }) => {
+          if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
+        },
+        { remoteRevisionId: meta.remoteRevisionId ?? null }
+      )) ?? undefined
+  } finally {
+    setUploadProgress(job.canvasId, null)
+  }
+  const latest = await store.getMeta(job.canvasId)
+  if (!latest || latest.revision !== job.revision || latest.tombstoned) return
+  await store.updateMeta(
+    job.canvasId,
+    {
+      syncStatus: 'synced',
+      lastSyncedAt: new Date().toISOString(),
+      lastSyncError: null,
+      remoteRevisionId: syncResult?.remoteRevisionId ?? latest.remoteRevisionId
+    },
+    { expectedRevision: job.revision }
+  )
+  await evictLocalFigCache(new Set([job.canvasId]))
+  emitStorageWorkspaceEvent({
+    providerId: providerID,
+    documentId: job.canvasId,
+    kind: 'synced'
+  })
+}
+
+function adapterForMeta(
+  providerID: StorageProviderID,
+  meta: LocalCanvasMeta | null
+): StorageAdapter {
+  if (providerID !== 'openpencil-cloud') return createActiveStorageAdapter(providerID)
+  if (!meta?.connectionId || !meta.workspaceId || !meta.documentId) {
+    throw new StorageSyncBlockedError('Cloud document identity is incomplete')
+  }
+  return createBoundStorageAdapter({
+    providerId: 'openpencil-cloud',
+    connectionId: meta.connectionId,
+    workspaceId: meta.workspaceId,
+    documentId: meta.documentId
+  })
+}
+
 async function runJob(job: OutboxJob): Promise<void> {
   const store = getLocalCanvasStore()
   const meta = await store.getMeta(job.canvasId)
   const providerID = meta?.providerId ?? activeStorageProviderID.value
-  if (!storagePreferencesComplete(providerID)) {
+  if (providerID !== 'openpencil-cloud' && !storagePreferencesComplete(providerID)) {
     throw new StorageSyncBlockedError('Storage is not configured')
   }
   const provider = storageProviderRegistry.get(providerID)
@@ -79,14 +166,22 @@ async function runJob(job: OutboxJob): Promise<void> {
   if (missingCredential) {
     throw new StorageSyncBlockedError('Storage credentials are unavailable')
   }
-  const adapter = createActiveStorageAdapter(providerID)
+  const adapter = adapterForMeta(providerID, meta)
+
+  const remoteId = remoteDocumentId(
+    job.canvasId,
+    meta ?? { providerId: providerID, documentId: job.canvasId }
+  )
 
   if (job.type === 'deleteCanvas') {
-    await adapter.deleteDocument(job.canvasId)
+    await adapter.deleteDocument(remoteId)
     // Keep the tombstoned row: reconcile purges it once the remote listing
     // confirms the object is gone. Removing it here opened a race where a
     // concurrent reconcile re-seeded the canvas from a stale remote listing.
-    await store.updateMeta(job.canvasId, { syncStatus: 'synced', lastSyncError: null })
+    await store.updateMeta(job.canvasId, {
+      syncStatus: 'synced',
+      lastSyncError: null
+    })
     return
   }
 
@@ -96,46 +191,7 @@ async function runJob(job: OutboxJob): Promise<void> {
   }
 
   if (job.type === 'putCanvas') {
-    // Superseded by a newer local revision already on disk
-    if (meta.revision > job.revision) return
-    if (!meta.hasFig) return
-    const fig = await store.readFig(job.canvasId)
-    if (!fig || fig.byteLength === 0) throw new Error('Local document missing for sync')
-    setUploadProgress(job.canvasId, 0)
-    try {
-      await adapter.putDocument(
-        job.canvasId,
-        fig,
-        {
-          name: meta.name,
-          updatedAt: meta.updatedAt
-        },
-        ({ transferredBytes, totalBytes }) => {
-          if (totalBytes) setUploadProgress(job.canvasId, transferredBytes / totalBytes)
-        }
-      )
-    } finally {
-      setUploadProgress(job.canvasId, null)
-    }
-    // Only mark synced if still on this revision and no other pending work for newer rev
-    const latest = await store.getMeta(job.canvasId)
-    if (latest && latest.revision === job.revision && !latest.tombstoned) {
-      await store.updateMeta(
-        job.canvasId,
-        {
-          syncStatus: 'synced',
-          lastSyncedAt: new Date().toISOString(),
-          lastSyncError: null
-        },
-        { expectedRevision: job.revision }
-      )
-      await evictLocalFigCache(new Set([job.canvasId]))
-      emitStorageWorkspaceEvent({
-        providerId: providerID,
-        documentId: job.canvasId,
-        kind: 'synced'
-      })
-    }
+    await putCanvasJob(job, providerID, meta, adapter, remoteId)
     return
   }
 
@@ -143,7 +199,7 @@ async function runJob(job: OutboxJob): Promise<void> {
   if (!adapter.putThumbnail) return
   const thumb = await store.readThumb(job.canvasId)
   if (!thumb) return
-  await adapter.putThumbnail(job.canvasId, thumb)
+  await adapter.putThumbnail(remoteId, thumb)
 }
 
 async function pumpOnce(): Promise<void> {
@@ -188,7 +244,21 @@ async function pumpOnce(): Promise<void> {
       retryable
     })
     const message = error instanceof Error ? error.message : String(error)
-    if (error instanceof StorageSyncBlockedError) {
+    const failureKind = storageSyncFailureKind(error)
+    if (failureKind === 'conflict') {
+      await getLocalCanvasStore().updateMeta(job.canvasId, {
+        syncStatus: 'conflict',
+        lastSyncError: 'Remote document changed since the last synchronized revision'
+      })
+      await outbox.update({
+        ...job,
+        attempts: job.attempts + 1,
+        nextAttemptAt: Number.MAX_SAFE_INTEGER
+      })
+      setSyncUI('error', 'A Cloud document has conflicting local and remote changes')
+      return
+    }
+    if (failureKind === 'blocked') {
       await outbox.update({
         ...job,
         nextAttemptAt: Number.MAX_SAFE_INTEGER
@@ -213,7 +283,9 @@ async function pumpOnce(): Promise<void> {
       } else {
         // Keep a record without touching syncStatus so the stale remote
         // thumbnail is at least diagnosable.
-        await getLocalCanvasStore().updateMeta(job.canvasId, { lastSyncError: message })
+        await getLocalCanvasStore().updateMeta(job.canvasId, {
+          lastSyncError: message
+        })
       }
       if (job.type === 'putThumb') {
         await outbox.remove(job.id)

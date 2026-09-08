@@ -32,7 +32,10 @@ export type Tool =
   | 'PEN'
   | 'HAND'
 
+export type EditorAccessMode = 'owner' | 'edit' | 'view'
+
 export interface EditorSharedState {
+  accessMode: EditorAccessMode
   activeTool: Tool
   snappingPreferences: SnappingPreferences
   remoteCursors: Array<{
@@ -176,6 +179,8 @@ export interface EditorContext {
   setSelectedIds: (ids: Set<string>) => void
   setActiveTool: (tool: Tool) => void
   setNavigationPhase: (phase: NavigationPhase, inputAt?: number) => void
+  canMutate: () => boolean
+  setAccessMode: (mode: EditorAccessMode) => void
   runLayoutForNode: (id: string) => void
   runMutationWithLayout: <T>(
     operation: () => T | Promise<T>,

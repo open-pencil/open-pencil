@@ -7,7 +7,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { EditorStore } from '@/app/editor/active-store'
 import { PEER_COLORS, ROOM_ID_CHARS, ROOM_ID_LENGTH } from '@/constants'
 
-import type { RemotePeer } from './types'
+import type { RemotePeer, CollaborationIdentity } from './types'
 
 type Awareness = awarenessProtocol.Awareness
 
@@ -18,6 +18,19 @@ type CursorState = {
   zoom?: number
 }
 
+type AwarenessUser = {
+  name?: string
+  color?: Color
+  identity?: CollaborationIdentity
+}
+
+const LOCAL_IDENTITY: CollaborationIdentity = {
+  source: 'local',
+  principal: null,
+  permission: null,
+  serverEnforcedWrites: false
+}
+
 export function buildRemotePeers(
   states: Map<number, Record<string, unknown>>,
   localClientId: number
@@ -26,12 +39,13 @@ export function buildRemotePeers(
 
   states.forEach((peerState, clientId) => {
     if (clientId === localClientId) return
-    const user = peerState.user as { name?: string; color?: Color } | undefined
+    const user = peerState.user as AwarenessUser | undefined
     if (!user) return
     peers.push({
       clientId,
       name: user.name || 'Anonymous',
       color: user.color || PEER_COLORS[clientId % PEER_COLORS.length],
+      identity: user.identity ?? LOCAL_IDENTITY,
       cursor: peerState.cursor as RemotePeer['cursor'],
       selection: peerState.selection as string[]
     })

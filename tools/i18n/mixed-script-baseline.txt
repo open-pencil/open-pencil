@@ -42,6 +42,12 @@ ja:automation.rootDirectoryDescription
 ja:automation.searchTools
 ja:automation.serverURL
 ja:automation.toolsRestartNotice
+ja:cloud.authorizeDesktop
+ja:cloud.connectionsDescription
+ja:cloud.instanceAddressInvalid
+ja:cloud.enterInstanceURL
+ja:cloud.serverURL
+ja:cloud.statusConnectionErrorDescription
 ja:code.copyJSXReference
 ja:code.editorHTMLCSSLabel
 ja:collaboration.pasteRoomLinkOrId
@@ -152,6 +158,11 @@ zh-cn:automation.rootDirectoryDescription
 zh-cn:automation.searchTools
 zh-cn:automation.serverURL
 zh-cn:automation.toolsRestartNotice
+zh-cn:cloud.authorizeDesktop
+zh-cn:cloud.connectionsDescription
+zh-cn:cloud.instanceAddressInvalid
+zh-cn:cloud.enterInstanceURL
+zh-cn:cloud.statusConnectionErrorDescription
 zh-cn:code.copyJSXReference
 zh-cn:code.editorHTMLCSSLabel
 zh-cn:collaboration.pasteRoomLinkOrId

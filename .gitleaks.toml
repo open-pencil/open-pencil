@@ -35,6 +35,18 @@ paths = ['''tests/e2e/chat/panel\.spec\.ts''']
 regexes = ['''sk-or-test-key-12345''']
 
 [[allowlists]]
+description = "Cloud test and local compatibility credentials"
+regexTarget = "line"
+paths = [
+  '''packages/cloud/deploy/garage/garage\.toml''',
+  '''packages/cloud/tests/.*\.ts'''
+]
+regexes = [
+  '''rpc_secret\s*=\s*"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"''',
+  '''(integration|collaboration)-test-secret-at-least-32-characters'''
+]
+
+[[allowlists]]
 description = "Figma fixture identifiers are public test metadata"
 regexTarget = "line"
 paths = [

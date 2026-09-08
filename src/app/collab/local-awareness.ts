@@ -23,7 +23,8 @@ export function createLocalAwarenessActions({
     if (!awareness) return
     awareness.setLocalStateField('user', {
       name: state.value.localName,
-      color: state.value.localColor
+      color: state.value.localColor,
+      identity: state.value.identity
     })
   }
 
@@ -55,6 +56,7 @@ export function createLocalAwarenessActions({
   }
 
   function setLocalName(name: string) {
+    if (state.value.identity.source === 'cloud') return
     state.value.localName = name
     storedName.value = name
     broadcastAwareness()

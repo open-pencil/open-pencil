@@ -2,6 +2,7 @@ import type { EditorState } from '@open-pencil/core/editor'
 
 import { describeDiagnosticError, recordDocumentFailure } from '@/app/diagnostics'
 import type { StorageDocumentBinding } from '@/app/integrations/storage/types'
+import { localStorageIdentity } from '@/app/storage/id'
 import { persistStorageCanvasLocally } from '@/app/storage/sync/persist'
 import { isTauri } from '@/app/tauri/env'
 
@@ -44,9 +45,10 @@ export function createDocumentWriter({
     try {
       const storage = getStorageBinding()
       if (storage) {
+        if (state.accessMode === 'view') return false
+        const identity = localStorageIdentity(storage)
         await persistStorageCanvasLocally({
-          providerId: storage.providerId,
-          canvasId: storage.documentId,
+          ...identity,
           name: state.documentName || 'Untitled',
           figBytes: data
         })

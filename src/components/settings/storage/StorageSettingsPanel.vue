@@ -1,22 +1,31 @@
 <script setup lang="ts">
 import { useStorageSettings } from '@/app/integrations/storage/settings/use'
 
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from '@open-pencil/vue'
 
 import { useNotificationMessages } from '@/app/i18n/notifications'
 
+import { activeStorageProviderID, storageProviderRegistry } from '@/app/integrations/storage'
+import CloudSettingsPanel from '@/components/settings/cloud/CloudSettingsPanel.vue'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { storage, settings, credentials, common } = useI18n()
 const notifications = useNotificationMessages()
 const router = useRouter()
 const credentialDrafts = ref<Record<string, string>>({})
+const providerOptions = storageProviderRegistry
+  .list()
+  .map((registration) => ({ value: registration.id, label: registration.label }))
+const isCloudProvider = computed(() => provider.value.id === 'openpencil-cloud')
 
 function preferenceLabel(field: string): string {
+  if (field === 'server-url') return 'Server URL'
+  if (field === 'workspace-id') return 'Workspace ID'
   if (field === 'endpoint') return storage.value.endpoint
   if (field === 'bucket') return storage.value.bucket
   if (field === 'region') return storage.value.region
@@ -61,8 +70,16 @@ const {
       <p class="mt-0.5 text-[10px] text-muted">{{ provider.description }}</p>
     </div>
 
+    <AppSelect
+      v-model="activeStorageProviderID"
+      label="Storage provider"
+      :options="providerOptions"
+    />
+
     <label
-      v-for="field in provider.preferenceFields"
+      v-for="field in provider.preferenceFields.filter(
+        (preference) => !(isCloudProvider && preference.id === 'workspace-id')
+      )"
       :key="field.id"
       class="flex flex-col gap-1 text-[10px] text-muted"
     >
@@ -75,6 +92,8 @@ const {
         @change="savePreferences"
       />
     </label>
+
+    <CloudSettingsPanel v-if="isCloudProvider" />
 
     <div
       v-for="field in provider.credentialFields"

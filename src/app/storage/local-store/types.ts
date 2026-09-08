@@ -6,6 +6,10 @@ export type LocalSyncStatus = 'synced' | 'pending' | 'error' | 'conflict'
 export type LocalCanvasMeta = {
   id: string
   providerId: StorageProviderID
+  /** Remote provider document ID; defaults to id for legacy/non-Cloud rows. */
+  documentId?: string
+  connectionId?: string
+  workspaceId?: string
   name: string
   updatedAt: string
   /** Monotonic local revision; increments on each local write. */
@@ -17,6 +21,8 @@ export type LocalCanvasMeta = {
   tombstoned: boolean
   hasFig: boolean
   hasThumb: boolean
+  /** Last Cloud revision observed after a verified download or successful upload. */
+  remoteRevisionId?: string | null
   /** Size of the cached fig blob in bytes (set on write; backfilled by eviction). */
   figSize?: number
   /** Last time this canvas was opened on this device (LRU eviction key). */
@@ -36,6 +42,9 @@ export type LocalCanvasIndexInput = Omit<
 export type LocalCanvasWriteInput = {
   id: string
   providerId: StorageProviderID
+  documentId?: string
+  connectionId?: string
+  workspaceId?: string
   name: string
   updatedAt?: string
   figBytes: Uint8Array

@@ -13,6 +13,23 @@ export function sortAndFilterMetas(
   return filtered.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
+function sourceMeta(
+  input: Pick<
+    LocalCanvasWriteInput,
+    'id' | 'providerId' | 'documentId' | 'connectionId' | 'workspaceId' | 'name'
+  >,
+  existing: LocalCanvasMeta | null
+) {
+  return {
+    id: input.id,
+    providerId: input.providerId,
+    documentId: input.documentId ?? existing?.documentId,
+    connectionId: input.connectionId ?? existing?.connectionId,
+    workspaceId: input.workspaceId ?? existing?.workspaceId,
+    name: input.name
+  }
+}
+
 /** Meta row for a full canvas write (fig bytes present). */
 export function buildWriteMeta(
   input: LocalCanvasWriteInput,
@@ -20,9 +37,7 @@ export function buildWriteMeta(
   hasThumb: boolean
 ): LocalCanvasMeta {
   return {
-    id: input.id,
-    providerId: input.providerId,
-    name: input.name,
+    ...sourceMeta(input, existing),
     updatedAt: input.updatedAt ?? new Date().toISOString(),
     revision: input.revision ?? (existing ? existing.revision + 1 : 1),
     syncStatus: input.syncStatus ?? 'pending',
@@ -33,6 +48,7 @@ export function buildWriteMeta(
     hasFig: true,
     hasThumb,
     figSize: input.figBytes.byteLength,
+    remoteRevisionId: existing?.remoteRevisionId,
     lastOpenedAt: existing?.lastOpenedAt
   }
 }
@@ -43,9 +59,7 @@ export function buildIndexMeta(
   existing: LocalCanvasMeta | null
 ): LocalCanvasMeta {
   return {
-    id: input.id,
-    providerId: input.providerId,
-    name: input.name,
+    ...sourceMeta(input, existing),
     updatedAt: input.updatedAt,
     revision: input.revision ?? existing?.revision ?? 1,
     syncStatus: input.syncStatus,
@@ -53,6 +67,7 @@ export function buildIndexMeta(
     lastSyncError: input.lastSyncError,
     tombstoned: false,
     hasFig: input.hasFig ?? existing?.hasFig ?? false,
-    hasThumb: input.hasThumb ?? existing?.hasThumb ?? false
+    hasThumb: input.hasThumb ?? existing?.hasThumb ?? false,
+    remoteRevisionId: input.remoteRevisionId ?? existing?.remoteRevisionId
   }
 }

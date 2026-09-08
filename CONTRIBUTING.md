@@ -11,12 +11,24 @@ bun install
 ## Development
 
 ```bash
-bun run dev          # Vite dev server on localhost:1420
+bun run dev:portless # Browser editor at https://open-pencil.localhost
 bun run tauri dev    # Tauri desktop app with hot reload
 
 # For macOS release builds with ad-hoc signing (no Apple Developer account, local testing only):
 APPLE_SIGNING_IDENTITY=- bun run tauri build -c '{"bundle": { "createUpdaterArtifacts": false }}'
 ```
+
+For optional Cloud development, install Docker and run:
+
+```bash
+bun run cloud:dev
+# Cloud: https://<branch>.cloud.open-pencil.localhost
+# Mail:  https://<branch>.mail.open-pencil.localhost
+
+bun run cloud:dev:down
+```
+
+The local Cloud stack enables verified email/password authentication and captures all messages in Mailpit. It does not deliver email externally. The default Dev Container remains lightweight; start optional Cloud services on the Docker host and open the printed Portless URLs.
 
 ## Pull requests
 

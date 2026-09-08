@@ -9,6 +9,7 @@ import {
   automationMessages,
   codeMessages,
   collaborationMessages,
+  cloudMessages,
   commandMessages,
   commonMessages,
   credentialsMessages,
@@ -39,6 +40,7 @@ export const useAIMessages = () => useI18nNamespace(aiMessages)
 export const useAutomationMessages = () => useI18nNamespace(automationMessages)
 export const useCodeMessages = () => useI18nNamespace(codeMessages)
 export const useCollaborationMessages = () => useI18nNamespace(collaborationMessages)
+export const useCloudMessages = () => useI18nNamespace(cloudMessages)
 export const useCommandMessages = () => useI18nNamespace(commandMessages)
 export const useCommonMessages = () => useI18nNamespace(commonMessages)
 export const useCredentialMessages = () => useI18nNamespace(credentialsMessages)
@@ -67,6 +69,7 @@ export function useI18n() {
     automation: useAutomationMessages(),
     code: useCodeMessages(),
     collaboration: useCollaborationMessages(),
+    cloud: useCloudMessages(),
     commands: useCommandMessages(),
     common: useCommonMessages(),
     credentials: useCredentialMessages(),

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 interface RootPackageJSON {
@@ -18,7 +18,13 @@ function readJSON<T>(path: string): T {
 
 const rootPackage = readJSON<RootPackageJSON>(join(rootDir, 'package.json'))
 
-export const publicPackageDirs = (rootPackage.workspaces ?? []).filter((workspaceDir) => {
+const workspaceDirs = (rootPackage.workspaces ?? []).flatMap((workspacePattern) => {
+  if (!workspacePattern.includes('*')) return [workspacePattern]
+  const packagePattern = `${workspacePattern}/package.json`
+  return [...new Bun.Glob(packagePattern).scanSync({ cwd: rootDir, onlyFiles: true })].map(dirname)
+})
+
+export const publicPackageDirs = workspaceDirs.filter((workspaceDir) => {
   const workspacePackage = readJSON<WorkspacePackageJSON>(
     join(rootDir, workspaceDir, 'package.json')
   )

@@ -61,30 +61,32 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       text: 'Default'
     })
     const instance = graph.createInstance(component.id, page.id)
-    expect(instance).toBeDefined()
-    const targetText = graph.getChildren(instance?.id ?? '')[0]
-    expect(targetText).toBeDefined()
+    if (!instance) throw new Error('Expected instance creation to succeed')
+    const targetText = graph.getChildren(instance.id)[0]
+    if (!targetText) throw new Error('Expected instance text child')
     const originalOverride = {
       guidPath: { guids: [{ sessionID: 2, localID: 20 }] },
       textData: { characters: 'Stale' },
       opacity: 0.5
     }
-    graph.updateNode(instance?.id ?? '', {
+    graph.updateNode(instance.id, {
       instanceOverrides: {
         self: new Map(),
-        descendants: new Map([[targetText?.id ?? '', new Map([['text', 'Edited']])]])
+        descendants: new Map([[targetText.id, new Map([['text', 'Edited']])]])
       },
       source: {
-        ...instance?.source,
+        ...instance.source,
         fig: {
-          ...instance?.source.fig,
+          ...instance.source.fig,
           symbolOverrides: [originalOverride]
         }
       }
     })
 
+    const updatedInstance = graph.getNode(instance.id)
+    if (!updatedInstance) throw new Error('Expected updated instance')
     const [change] = sceneNodeToKiwi(
-      graph.getNode(instance?.id ?? '') ?? instance,
+      updatedInstance,
       { sessionID: 1, localID: 1 },
       0,
       { value: 2 },
@@ -93,7 +95,11 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     )
 
     expect(sourceText.overrideKey).toBe('2:20')
-    expect(change.symbolData?.symbolOverrides).toEqual([
+    expect(change.symbolData && 'symbolOverrides' in change.symbolData)
+    if (!change.symbolData || !('symbolOverrides' in change.symbolData)) {
+      throw new Error('Expected symbol overrides')
+    }
+    expect(change.symbolData.symbolOverrides).toEqual([
       {
         ...originalOverride,
         textData: { characters: 'Edited' }

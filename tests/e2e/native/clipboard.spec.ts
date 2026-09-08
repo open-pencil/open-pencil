@@ -25,9 +25,10 @@ describe('native clipboard routing', () => {
       await browser.keys(['Control', 'c'])
       await browser.keys(['ArrowRight'])
       await browser.keys(['Control', 'v'])
-      await browser.pause(200)
-
-      const events = await recorder.read()
+      const events = await recorder.waitFor(
+        (recorded) => recorded.some((event) => event.type === 'paste'),
+        'Native paste event was not delivered'
+      )
       const value = await input.getValue()
       const clipboardEvents = events.filter(
         (event) => event.type === 'copy' || event.type === 'paste'

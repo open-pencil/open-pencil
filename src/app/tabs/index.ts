@@ -9,6 +9,7 @@ import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
+import { getCloudDocumentAccess } from '@/app/cloud/documents/sharing'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
@@ -18,22 +19,26 @@ import { setActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorPreparationHandle as DocumentLoadSession } from '@/app/editor/preparation/types'
 import { createEditorStore } from '@/app/editor/session'
 import type { EditorStore } from '@/app/editor/session'
-import { notificationMessages } from '@/app/i18n/notifications'
 import {
   activeStorageProviderID,
-  createActiveStorageAdapter,
-  type StorageDocument
+  type StorageDocument,
+  type StorageDocumentBinding
 } from '@/app/integrations/storage'
+import {
+  createBoundStorageAdapter,
+  selectedStorageBinding
+} from '@/app/integrations/storage/binding'
 import {
   cacheRecentFileThumbnail,
   loadCachedRecentFileThumbnail,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
-import { toast } from '@/app/shell/ui'
-import { getLocalCanvasStore } from '@/app/storage/local-store'
-import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
+import { storageCanvasId } from '@/app/storage/id'
+import { emitActiveDocumentOpened } from '@/app/tabs/events'
 import { createFileOpenCoordinator } from '@/app/tabs/open/coordinator'
 import { findTabByFileIdentity } from '@/app/tabs/open/identity'
+import { useStorageOpenRecovery } from '@/app/tabs/open/recovery'
+import { readStorageDocument } from '@/app/tabs/open/storage'
 
 export type TabKind = 'home' | 'document'
 
@@ -271,10 +276,17 @@ function watchOpenedFigCover(path: string, store: EditorStore): void {
   )
 }
 
-function findStorageTab(providerId: string, documentId: string): Tab | undefined {
+function findStorageTab(
+  providerId: string,
+  documentId: string,
+  connectionId?: string
+): Tab | undefined {
   return tabsRef.value.find((tab) => {
     const binding = tab.store.getStorageBinding()
-    return binding?.providerId === providerId && binding.documentId === documentId
+    if (binding?.providerId !== providerId || binding.documentId !== documentId) return false
+    return providerId === 'openpencil-cloud'
+      ? binding.connectionId === connectionId
+      : connectionId === undefined
   })
 }
 
@@ -291,12 +303,32 @@ function failPreparation(
   })
 }
 
-export async function openStorageDocumentInNewTab(document: StorageDocument): Promise<void> {
-  const providerId = activeStorageProviderID.value
-  const existing = findStorageTab(providerId, document.id)
+type StorageOpenIdentity = {
+  providerId: string
+  canvasId: string
+  binding: StorageDocumentBinding
+}
+
+function storageOpenIdentity(providerId: string, documentId: string): StorageOpenIdentity {
+  const binding = selectedStorageBinding(documentId, providerId)
+  return { providerId, canvasId: storageCanvasId(binding), binding }
+}
+
+export async function openStorageDocumentInNewTab(
+  document: StorageDocument,
+  binding?: StorageDocumentBinding
+): Promise<void> {
+  const identity: StorageOpenIdentity = binding
+    ? { providerId: binding.providerId, canvasId: storageCanvasId(binding), binding }
+    : storageOpenIdentity(activeStorageProviderID.value, document.id)
+  if (identity.binding.documentId !== document.id)
+    throw new Error('Document binding does not match the requested document')
+  const connectionId =
+    identity.binding.providerId === 'openpencil-cloud' ? identity.binding.connectionId : undefined
+  const existing = findStorageTab(identity.providerId, document.id, connectionId)
   if (existing) {
     switchTab(existing.id)
-    rememberRecentStorageDocument(providerId, document.id, document.name)
+    rememberRecentStorageDocument(identity.providerId, document.id, document.name, identity.binding)
     return
   }
 
@@ -308,58 +340,30 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
   })
   let succeeded = false
   try {
-    load.update({ phase: 'reading', detail: document.name })
-    const local = getLocalCanvasStore()
-    const localMetadata = await local.getMeta(document.id)
-    load.signal.throwIfAborted()
-    const localBytes = localMetadata?.hasFig ? await local.readFig(document.id) : null
-    load.signal.throwIfAborted()
-    const localIsAuthoritative =
-      localMetadata?.syncStatus !== 'synced' ||
-      !document.metadataAuthoritative ||
-      localMetadata.updatedAt >= document.updatedAt
-    let bytes = localBytes && localIsAuthoritative ? localBytes : null
-
-    if (!bytes) {
-      bytes = await createActiveStorageAdapter(providerId).getDocument(
-        document.id,
-        (progress) =>
-          load.update({
-            phase: 'reading',
-            detail: document.name,
-            completed: progress.transferredBytes,
-            total: progress.totalBytes,
-            unit: 'bytes'
-          }),
-        load.signal
-      )
-      await seedStorageCanvasFromRemote({
-        providerId,
-        canvasId: document.id,
-        name: document.name,
-        updatedAt: document.updatedAt,
-        figBytes: bytes
-      })
-      load.signal.throwIfAborted()
-    }
-
-    const fileBytes = new Uint8Array(bytes.byteLength)
-    fileBytes.set(bytes)
-    const file = new File([fileBytes.buffer], `${document.name}.fig`, {
-      type: 'application/octet-stream'
-    })
+    const adapter = createBoundStorageAdapter(identity.binding)
+    const file = await readStorageDocument(document, identity.binding, adapter, load)
     load.update({ phase: 'decoding', detail: document.name })
     const imported = await readFigForTab(file, load.signal)
     await showImportedGraph(
       store,
       imported,
-      () => store.setStorageDocumentSource({ providerId, documentId: document.id }, document.name),
+      async () => {
+        store.setStorageDocumentSource(identity.binding, document.name)
+        setActiveEditorStore(store)
+        if (identity.providerId === 'openpencil-cloud') {
+          const access = await getCloudDocumentAccess(store)
+          store.setAccessMode(access.sources.includes('owner') ? 'owner' : access.permission)
+        } else store.setAccessMode('owner')
+      },
       load
     )
-    rememberRecentStorageDocument(providerId, document.id, document.name)
+    rememberRecentStorageDocument(identity.providerId, document.id, document.name, identity.binding)
+    emitActiveDocumentOpened(store)
+    useStorageOpenRecovery().opened(identity.binding)
     succeeded = true
   } catch (error) {
     if (!load.signal.aborted) {
+      useStorageOpenRecovery().failed({ document, binding: identity.binding })
       const diagnostic = describeDiagnosticError(error)
       load.fail({
         code: 'read-failed',
@@ -367,12 +371,6 @@ export async function openStorageDocumentInNewTab(document: StorageDocument): Pr
         retryable: diagnostic.retryable ?? true
       })
       recordStorageFailure({ operation: 'download', ...diagnostic })
-      toast.error(
-        notificationMessages.get().openFileFailed({
-          name: document.name,
-          error: error instanceof Error ? error.message : String(error)
-        })
-      )
     }
     if (created) {
       const tab = getTabForStore(store)

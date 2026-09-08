@@ -69,7 +69,6 @@ const TOOL_LAYOUT_MESSAGE =
 
 const strictToolsLayout = createFileRule('open-pencil/strict-tools-layout', (sourceRel) => {
   if (!sourceRel.startsWith('tools/') || !TEXT_EXTENSIONS.has(path.extname(sourceRel))) return null
-  if (sourceRel === 'tools/test.ts') return null
   const [, domain, segment] = sourceRel.split('/')
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(domain))
     return 'Tool package folders must use kebab-case domain names.'
@@ -476,6 +475,26 @@ const noShortcutTextInLabels = createTextRule(
   }
 )
 
+const noUnscopedCloudSQL = createTextRule(
+  'open-pencil/no-unscoped-cloud-sql',
+  (sourceRel, content) => {
+    if (!sourceRel.startsWith('packages/cloud/src/')) return []
+    if (
+      sourceRel === 'packages/cloud/src/server/db/expressions.ts' ||
+      sourceRel === 'packages/cloud/src/server/db/migrations/001_foundation.ts'
+    ) {
+      return []
+    }
+    if (!/import\s*\{[^}]*\bsql\b[^}]*\}\s*from\s*['"]kysely['"]/su.test(content)) return []
+    return [
+      {
+        message:
+          'Use Kysely builders or a named expression from server/db/expressions instead of importing sql directly.'
+      }
+    ]
+  }
+)
+
 const noUIImportsInCore = createImportRule(
   'open-pencil/no-ui-imports-in-core',
   (sourceRel, specifier) => {
@@ -523,6 +542,7 @@ export const openPencilArchitecturePlugin = {
     noNativeTitleAttributesInVue,
     noShortcutTextInLabels,
     noHardcodedMacOSShortcutGlyphs,
+    noUnscopedCloudSQL,
     noUIImportsInCore
   ]
 }

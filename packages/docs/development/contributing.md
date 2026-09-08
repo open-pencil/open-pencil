@@ -10,11 +10,24 @@ See [Architecture](/development/architecture) for a public overview. Use root `A
 
 ## Development setup
 
-```sh
-bun install
-bun run dev          # Editor at localhost:1420
-bun run docs:dev     # Docs at localhost:5173
+```bash
+bun run dev:portless # Editor at https://open-pencil.localhost
+bun run docs:dev     # Documentation
 ```
+
+### Optional Cloud stack
+
+With Docker available on the host, start the isolated local Cloud application, PostgreSQL, object storage, and captured-email inbox:
+
+```sh
+bun run cloud:dev
+# Cloud: https://<branch>.cloud.open-pencil.localhost
+# Mail:  https://<branch>.mail.open-pencil.localhost
+
+bun run cloud:dev:down
+```
+
+Local email/password registration is enabled. Verification and password-reset messages stay inside Mailpit; open the printed Mail route to follow their links. The default Dev Container intentionally does not mount the host Docker socket or start optional Cloud services. Start the stack on the Docker host and use its Portless URLs from the container or host browser.
 
 ## Pull requests
 

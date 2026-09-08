@@ -25,7 +25,9 @@ const noDirectStorageAccess = {
       '/src/app/cache/index.ts',
       '/src/app/settings/credentials/storage.ts',
       '/src/app/shell/layout-storage.ts',
-      '/packages/vue/src/i18n/locale.ts'
+      '/packages/vue/src/i18n/locale.ts',
+      '/tests/helpers/cloud/browser-storage.ts',
+      '/tests/helpers/storage/memory-web-storage.ts'
     ]
     if (allowedFiles.some((suffix) => file.endsWith(suffix))) return {}
 

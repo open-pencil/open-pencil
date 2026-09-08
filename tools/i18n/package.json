@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check": "bun --cwd ../.. tools/i18n/src/check-locales.ts",
     "test": "bun test"
   }
 }

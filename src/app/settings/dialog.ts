@@ -5,6 +5,7 @@ export type SettingsSection =
   | 'ai'
   | 'usage'
   | 'diagnostics'
+  | 'cloud'
   | 'mcp'
   | 'media'
   | 'storage'

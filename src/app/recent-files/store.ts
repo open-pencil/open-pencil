@@ -1,7 +1,7 @@
 import { useLocalStorage } from '@vueuse/core'
 import { computed } from 'vue'
 
-import type { StorageProviderID } from '@/app/integrations/storage'
+import type { StorageProviderID, StorageDocumentBinding } from '@/app/integrations/storage'
 
 import { clearRecentFileThumbnails } from './thumbnails'
 
@@ -19,6 +19,7 @@ export interface RecentLocalDocument {
 export interface RecentStorageDocument {
   id: string
   kind: 'storage'
+  binding?: StorageDocumentBinding
   providerId: StorageProviderID
   documentId: string
   name: string
@@ -73,10 +74,14 @@ export function rememberRecentFile(path: string): void {
 export function rememberRecentStorageDocument(
   providerId: StorageProviderID,
   documentId: string,
-  name: string
+  name: string,
+  binding?: StorageDocumentBinding
 ): void {
   remember({
-    id: storageDocumentId(providerId, documentId),
+    id: binding?.connectionId
+      ? `storage:${providerId}:${binding.connectionId}:${documentId}`
+      : storageDocumentId(providerId, documentId),
+    binding,
     kind: 'storage',
     providerId,
     documentId,

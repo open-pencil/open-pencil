@@ -1,4 +1,5 @@
-import type { StorageDocument } from '@/app/integrations/storage'
+import { activeCloudConnectionProfile } from '@/app/cloud/instances/profiles'
+import type { StorageDocument, StorageDocumentBinding } from '@/app/integrations/storage'
 import {
   activeStorageProviderID,
   createActiveStorageAdapter,
@@ -6,6 +7,7 @@ import {
   storagePreferencesComplete,
   storageProviderRegistry
 } from '@/app/integrations/storage'
+import { localStorageIdentity, remoteDocumentId } from '@/app/storage/id'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { reconcileStorageDocuments } from '@/app/storage/reconcile'
 import { onStorageWorkspaceEvent } from '@/app/storage/workspace/events'
@@ -27,6 +29,18 @@ export function createStorageWorkspaceSource(
 
     async refresh(): Promise<StorageDocument[] | null> {
       const providerID = activeStorageProviderID.value
+      const selectedProfile =
+        providerID === 'openpencil-cloud' ? activeCloudConnectionProfile() : null
+      const profile = selectedProfile ? { ...selectedProfile } : null
+      const isCurrent = () => {
+        if (activeStorageProviderID.value !== providerID) return false
+        if (providerID !== 'openpencil-cloud') return true
+        const current = activeCloudConnectionProfile()
+        return (
+          current?.id === profile?.id &&
+          current?.selectedWorkspaceId === profile?.selectedWorkspaceId
+        )
+      }
       const provider = storageProviderRegistry.get(providerID)
       const statuses = await storageCredentialStatuses(providerID)
       const configured =
@@ -36,10 +50,21 @@ export function createStorageWorkspaceSource(
         )
       const localStore = getLocalCanvasStore()
       const local = (await localStore.listMetas(true)).filter(
-        (metadata) => metadata.providerId === providerID
+        (metadata) =>
+          metadata.providerId === providerID &&
+          (providerID !== 'openpencil-cloud' ||
+            (metadata.connectionId === profile?.id &&
+              metadata.workspaceId === profile?.selectedWorkspaceId))
       )
+      const scopedLocal =
+        providerID === 'openpencil-cloud'
+          ? local.map((metadata) => ({
+              ...metadata,
+              id: remoteDocumentId(metadata.id, metadata)
+            }))
+          : local
       if (!configured) {
-        const documents = local
+        const documents = scopedLocal
           .filter((metadata) => !metadata.tombstoned)
           .map((metadata) => ({
             id: metadata.id,
@@ -47,26 +72,47 @@ export function createStorageWorkspaceSource(
             updatedAt: metadata.updatedAt,
             metadataAuthoritative: true
           }))
-        if (activeStorageProviderID.value !== providerID) return null
+        if (!isCurrent()) return null
         onSnapshot({ documents, configured })
         return documents
       }
 
+      if (!isCurrent()) return null
       const remote = await createActiveStorageAdapter(providerID).listDocuments()
-      const reconciliation = reconcileStorageDocuments(local, remote)
-      for (const id of reconciliation.localIdsToPurge) await localStore.remove(id)
+      if (!isCurrent()) return null
+      const reconciliation = reconcileStorageDocuments(scopedLocal, remote)
+      for (const id of reconciliation.localIdsToPurge) {
+        const metadata = local.find((candidate) => remoteDocumentId(candidate.id, candidate) === id)
+        if (metadata) await localStore.remove(metadata.id)
+      }
       for (const document of reconciliation.remoteDocumentsToSeed) {
+        let binding: StorageDocumentBinding
+        if (providerID === 'openpencil-cloud') {
+          if (!profile?.selectedWorkspaceId) {
+            throw new Error('OpenPencil Cloud connection and workspace are required')
+          }
+          binding = {
+            providerId: 'openpencil-cloud',
+            connectionId: profile.id,
+            workspaceId: profile.selectedWorkspaceId,
+            documentId: document.id
+          }
+        } else {
+          binding = { providerId: providerID, documentId: document.id }
+        }
+        const identity = localStorageIdentity(binding)
         await localStore.upsertIndexMeta({
-          id: document.id,
-          providerId: providerID,
+          id: identity.canvasId,
+          ...identity,
           name: document.name,
           updatedAt: document.updatedAt,
           syncStatus: 'synced',
           lastSyncedAt: document.updatedAt,
-          lastSyncError: null
+          lastSyncError: null,
+          remoteRevisionId: document.remoteRevisionId
         })
       }
-      if (activeStorageProviderID.value !== providerID) return null
+      if (!isCurrent()) return null
       onSnapshot({ documents: reconciliation.documents, configured })
       return reconciliation.documents
     },

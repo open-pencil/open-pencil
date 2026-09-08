@@ -271,7 +271,14 @@ describe('@open-pencil/fig instance interpretation', () => {
       horizontalConstraint: 'SCALE',
       verticalConstraint: 'SCALE',
       fills: [
-        { type: 'IMAGE', imageHash: 'avatar', opacity: 1, visible: true, blendMode: 'NORMAL' }
+        {
+          type: 'IMAGE',
+          color: { r: 1, g: 1, b: 1, a: 1 },
+          imageHash: 'avatar',
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
       ]
     })
     const avatar = graph.createNode('INSTANCE', pageId, {
@@ -332,7 +339,14 @@ describe('@open-pencil/fig instance interpretation', () => {
       horizontalConstraint: 'SCALE',
       verticalConstraint: 'SCALE',
       fills: [
-        { type: 'IMAGE', imageHash: 'avatar', opacity: 1, visible: true, blendMode: 'NORMAL' }
+        {
+          type: 'IMAGE',
+          color: { r: 1, g: 1, b: 1, a: 1 },
+          imageHash: 'avatar',
+          opacity: 1,
+          visible: true,
+          blendMode: 'NORMAL'
+        }
       ]
     })
     graph.createNode('RECTANGLE', multiComponent.id, { width: 10, height: 10 })

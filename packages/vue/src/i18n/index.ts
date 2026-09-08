@@ -5,6 +5,7 @@ export {
   useAutomationMessages,
   useCodeMessages,
   useCollaborationMessages,
+  useCloudMessages,
   useCommandMessages,
   useCommonMessages,
   useCredentialMessages,

@@ -1,0 +1,9 @@
+name: "OpenPencil Cloud security"
+
+paths:
+  - "packages/cloud/**"
+  - "src/app/collab/**"
+  - "src/app/integrations/storage/cloud/**"
+paths-ignore:
+  - "packages/cloud/tests/**"
+  - "tests/**"

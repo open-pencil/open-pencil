@@ -120,15 +120,24 @@ async function openRecent(document: RecentDocument): Promise<void> {
       await openFileFromPath(document.path)
       return
     }
-    const storageDocument = storageDocuments.value.find(
-      (candidate) => candidate.id === document.documentId
-    )
+    if (document.providerId === 'openpencil-cloud' && !document.binding) {
+      throw new Error(
+        'This recent Cloud document has no saved instance identity. Open it from its workspace.'
+      )
+    }
+    const storageDocument = document.binding
+      ? undefined
+      : storageDocuments.value.find((candidate) => candidate.id === document.documentId)
     await openStorageDocumentInNewTab(
       storageDocument ?? {
         id: document.documentId,
         name: document.name,
         updatedAt: document.updatedAt
-      }
+      },
+      document.binding ??
+        (document.providerId !== 'openpencil-cloud'
+          ? { providerId: document.providerId, documentId: document.documentId }
+          : undefined)
     )
   } catch (error) {
     forgetRecentDocument(document.id)
@@ -383,6 +392,7 @@ function formattedDate(updatedAt: string): string {
             :key="document.id"
             type="button"
             class="group min-w-0 text-left"
+            :data-document-id="document.id"
             @click="openStorageDocument(document)"
           >
             <div
@@ -413,6 +423,7 @@ function formattedDate(updatedAt: string): string {
             :key="document.id"
             type="button"
             class="flex min-h-14 w-full items-center gap-3 border-b border-border px-3 py-2 text-left last:border-b-0 hover:bg-hover sm:min-h-0 sm:px-4 sm:py-3"
+            :data-document-id="document.id"
             @click="openStorageDocument(document)"
           >
             <icon-lucide-file-image class="size-4 shrink-0 text-accent" />

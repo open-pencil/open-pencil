@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
+    "noFallthroughCasesInSwitch": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "types": ["bun"],
+    "paths": {
+      "#cloud/*": ["./src/*"],
+      "#cloud-test/*": ["./tests/*"],
+      "#admin/*": ["./admin/src/*"],
+      "@open-pencil/cloud/contract": ["./src/contract/index.ts"],
+      "@open-pencil/cloud/client": ["./src/client/index.ts"],
+      "@open-pencil/cloud/email": ["./src/email/index.ts"],
+      "@open-pencil/cloud/runtime/cloudflare": ["./src/runtime/cloudflare/index.ts"],
+      "@open-pencil/cloud/runtime/node": ["./src/runtime/node/index.ts"],
+      "@open-pencil/cloud/server": ["./src/server/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "deploy/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

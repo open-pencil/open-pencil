@@ -25,7 +25,7 @@ bun run check
 Package publishing changes should also run:
 
 ```sh
-bun run test:packages
+bun run test:publishing
 ```
 
 ## Code conventions

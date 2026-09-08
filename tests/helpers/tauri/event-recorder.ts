@@ -31,6 +31,10 @@ export type NativeEventRecord = {
 export type NativeEventRecorder = {
   clear: () => Promise<void>
   read: () => Promise<NativeEventRecord[]>
+  waitFor: (
+    predicate: (events: NativeEventRecord[]) => boolean,
+    timeoutMessage: string
+  ) => Promise<NativeEventRecord[]>
   stop: () => Promise<void>
 }
 
@@ -161,6 +165,11 @@ async function installRecorder(): Promise<void> {
 
 export async function startNativeEventRecorder(): Promise<NativeEventRecorder> {
   await installRecorder()
+  const read = () =>
+    browser.execute(() => {
+      const state = (window as NativeEventRecorderWindow).__OPENPENCIL_NATIVE_EVENT_RECORDER__
+      return structuredClone(state?.events ?? [])
+    })
   return {
     async clear() {
       await browser.execute(() => {
@@ -170,11 +179,17 @@ export async function startNativeEventRecorder(): Promise<NativeEventRecorder> {
         state.sequence = 0
       })
     },
-    async read() {
-      return browser.execute(() => {
-        const state = (window as NativeEventRecorderWindow).__OPENPENCIL_NATIVE_EVENT_RECORDER__
-        return structuredClone(state?.events ?? [])
-      })
+    read,
+    async waitFor(predicate, timeoutMessage) {
+      let events: NativeEventRecord[] = []
+      await browser.waitUntil(
+        async () => {
+          events = await read()
+          return predicate(events)
+        },
+        { timeoutMsg: timeoutMessage }
+      )
+      return events
     },
     async stop() {
       await browser.execute(() => {

@@ -19,6 +19,8 @@
   ],
   "scripts": {
     "build": "bunx tsdown --config tsdown.config.ts",
+    "check": "bun run typecheck && bun run build",
+    "typecheck": "bunx vue-tsc --noEmit -p tsconfig.json",
     "prepack": "bun run build"
   },
   "repository": {

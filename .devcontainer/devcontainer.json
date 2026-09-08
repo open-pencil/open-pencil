@@ -20,6 +20,10 @@
     "source=open-pencil-vue-modules-${devcontainerId},target=/workspace/open-pencil/packages/vue/node_modules,type=volume",
     "source=open-pencil-cli-modules-${devcontainerId},target=/workspace/open-pencil/packages/cli/node_modules,type=volume",
     "source=open-pencil-mcp-modules-${devcontainerId},target=/workspace/open-pencil/packages/mcp/node_modules,type=volume",
+    "source=open-pencil-cloud-modules-${devcontainerId},target=/workspace/open-pencil/packages/cloud/node_modules,type=volume",
+    "source=open-pencil-ui-modules-${devcontainerId},target=/workspace/open-pencil/packages/ui/node_modules,type=volume",
+    "source=open-pencil-harness-modules-${devcontainerId},target=/workspace/open-pencil/packages/harness/node_modules,type=volume",
+    "source=open-pencil-cloud-deploy-tool-modules-${devcontainerId},target=/workspace/open-pencil/tools/cloud-deploy/node_modules,type=volume",
     "source=open-pencil-docs-modules-${devcontainerId},target=/workspace/open-pencil/packages/docs/node_modules,type=volume",
     "source=open-pencil-docs-tool-modules-${devcontainerId},target=/workspace/open-pencil/tools/docs/node_modules,type=volume"
   ],

@@ -1,0 +1,4 @@
+services:
+  mailpit:
+    ports:
+      - '127.0.0.1:${MAILPIT_SMTP_PORT}:1025'

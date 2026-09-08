@@ -1,0 +1,70 @@
+name: Cloud security
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'packages/cloud/**'
+      - 'src/app/collab/**'
+      - 'src/app/integrations/storage/cloud/**'
+      - 'tools/security/**'
+      - '.github/workflows/cloud-security.yml'
+  push:
+    branches: [master]
+  schedule:
+    - cron: '7 6 * * 4'
+  workflow_dispatch:
+
+concurrency:
+  group: cloud-security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: Cloud policy rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: semgrep/semgrep:1.153.0
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Scan Cloud boundaries
+        run: >-
+          semgrep
+          --config tools/security/semgrep/cloud.yml
+          --error
+          --metrics=off
+          packages/cloud/src
+          src/app/collab
+          src/app/integrations/storage/cloud
+
+  container:
+    name: Cloud container image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build Cloud image
+        run: docker build --tag openpencil-cloud:security --file packages/cloud/deploy/Dockerfile .
+
+      - name: Scan image vulnerabilities
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: openpencil-cloud:security
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@v0.21.0
+        with:
+          image: openpencil-cloud:security
+          format: cyclonedx-json
+          output-file: openpencil-cloud.cdx.json
+          upload-artifact: true

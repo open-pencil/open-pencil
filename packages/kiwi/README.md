@@ -28,7 +28,7 @@ Package scripts:
 - `bun run test` — package-local Bun tests for schema runtime, Figma schema guards, codec, container, parse, GUID, and variable bindings
 - `bun run typecheck` — type-checks `src`, tests, and package scripts
 - `bun run build` — builds the distributable `dist` entrypoints
-- `bun run smoke:dist` — imports built output and exercises the public API
+- `bun run smoke` — imports built output and exercises the public API
 - `bun run check` — runs typecheck, tests, build, and dist smoke in sequence
 
 ## Schema runtime

@@ -109,7 +109,9 @@ export function joinTestCollabRoom(roomId: string): CollabRoomTransport {
       if (peers.delete(message.senderId)) leaveHandler?.(message.senderId)
     } else {
       addPeer(message.senderId)
-      receivers.get(message.namespace)?.(new Uint8Array(message.data), message.senderId)
+      const receiver = receivers.get(message.namespace)
+      if (typeof receiver !== 'function') return
+      receiver(new Uint8Array(message.data), message.senderId)
     }
   })
 
