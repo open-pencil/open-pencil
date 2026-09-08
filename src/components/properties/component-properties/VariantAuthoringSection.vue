@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import { computed, reactive, ref, watch } from 'vue'
 
 import { useI18n, useVariantAuthoring } from '@open-pencil/vue'
@@ -264,13 +265,14 @@ function createProperty() {
           :aria-label="panels.variantPropertyValue"
         />
       </div>
-      <button
+      <AppButton
         type="submit"
-        class="h-6 rounded bg-hover px-2 text-[10px] text-surface hover:bg-active disabled:opacity-50"
+        size="xs"
+        variant="soft"
         :disabled="!newPropertyName.trim() || !newPropertyValue.trim()"
       >
         {{ panels.addVariantProperty }}
-      </button>
+      </AppButton>
     </form>
   </PanelSection>
 </template>

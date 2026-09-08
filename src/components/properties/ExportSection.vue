@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import { useObjectUrl } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
@@ -153,15 +154,17 @@ watch(previewKey, updatePreview, { flush: 'post' })
       </template>
     </PanelItemRow>
 
-    <button
+    <AppButton
       v-if="activeSettings.length > 0"
+      color="primary"
+      variant="solid"
       data-test-id="export-button"
-      class="mt-1.5 w-full cursor-pointer truncate rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-default disabled:opacity-50"
+      class="mt-1.5 w-full"
       :disabled="exporting"
       @click="doExport"
     >
-      {{ panels.export }} {{ activeName }}
-    </button>
+      <span class="truncate">{{ panels.export }} {{ activeName }}</span>
+    </AppButton>
 
     <Tip v-if="activeSettings.length > 0" :label="panels.toggleExportPreview">
       <button
