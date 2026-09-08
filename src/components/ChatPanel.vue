@@ -237,8 +237,10 @@ function handleClearChat() {
 
             <!-- Continue button when step limit reached -->
             <div v-if="showContinue" class="flex justify-center py-2">
-              <button
-                class="flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
+              <AppButton
+                color="primary"
+                variant="soft"
+                shape="pill"
                 @click="
                   submission.submit({
                     modelText: 'Continue where you left off',
@@ -248,9 +250,9 @@ function handleClearChat() {
                   })
                 "
               >
-                <icon-lucide-play class="size-3" />
+                <template #leading><icon-lucide-play class="size-3" /></template>
                 Continue
-              </button>
+              </AppButton>
             </div>
 
             <div ref="messagesEnd" />

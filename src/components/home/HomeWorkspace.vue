@@ -183,17 +183,15 @@ function formattedDate(updatedAt: string): string {
               </p>
             </div>
             <div class="ml-auto hidden shrink-0 items-center gap-1 sm:flex">
-              <Tip v-if="hasRecentFiles" :label="common.clear">
-                <button
-                  type="button"
-                  class="flex size-10 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface sm:size-7"
-                  :aria-label="common.clear"
-                  data-test-id="recent-files-clear"
-                  @click="clearRecentFiles"
-                >
-                  <icon-lucide-trash-2 class="size-3.5" />
-                </button>
-              </Tip>
+              <IconButton
+                v-if="hasRecentFiles"
+                :label="common.clear"
+                class="size-10 sm:size-7"
+                data-test-id="recent-files-clear"
+                @click="clearRecentFiles"
+              >
+                <icon-lucide-trash-2 class="size-3.5" />
+              </IconButton>
               <div class="flex rounded border border-border p-0.5">
                 <Tip :label="panels.gridView">
                   <button
@@ -221,17 +219,15 @@ function formattedDate(updatedAt: string): string {
             </div>
           </div>
           <div class="mt-2 flex items-center justify-end gap-1 sm:hidden">
-            <Tip v-if="hasRecentFiles" :label="common.clear">
-              <button
-                type="button"
-                class="flex size-8 items-center justify-center rounded text-muted hover:bg-hover hover:text-surface"
-                :aria-label="common.clear"
-                data-test-id="recent-files-clear"
-                @click="clearRecentFiles"
-              >
-                <icon-lucide-trash-2 class="size-3.5" />
-              </button>
-            </Tip>
+            <IconButton
+              v-if="hasRecentFiles"
+              :label="common.clear"
+              size="md"
+              data-test-id="recent-files-clear"
+              @click="clearRecentFiles"
+            >
+              <icon-lucide-trash-2 class="size-3.5" />
+            </IconButton>
             <div class="flex rounded border border-border p-0.5">
               <button
                 type="button"
