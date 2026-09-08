@@ -120,24 +120,25 @@ const {
       </div>
     </div>
 
-    <AppButton
-      color="primary"
-      variant="solid"
-      class="mt-1"
-      :disabled="busy"
-      data-test-id="settings-storage-test"
-      @click="testConnection"
-    >
-      {{ common.testConnection }}
-    </AppButton>
+    <div class="mt-1 flex flex-wrap items-center gap-2">
+      <AppButton
+        color="primary"
+        variant="solid"
+        :disabled="busy"
+        data-test-id="settings-storage-test"
+        @click="testConnection"
+      >
+        {{ common.testConnection }}
+      </AppButton>
 
-    <AppButton
-      variant="outline"
-      :disabled="!configured"
-      data-test-id="settings-storage-open-workspace"
-      @click="openWorkspace"
-    >
-      {{ storage.openWorkspace }}
-    </AppButton>
+      <AppButton
+        variant="outline"
+        :disabled="!configured"
+        data-test-id="settings-storage-open-workspace"
+        @click="openWorkspace"
+      >
+        {{ storage.openWorkspace }}
+      </AppButton>
+    </div>
   </section>
 </template>

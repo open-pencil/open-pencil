@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  computed,
-  normalizeClass,
-  useAttrs,
-  useSlots,
-  useTemplateRef,
-  type HTMLAttributes
-} from 'vue'
+import { normalizeClass, useAttrs, useSlots, useTemplateRef, type HTMLAttributes } from 'vue'
 import { Primitive } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
@@ -60,8 +53,8 @@ defineExpose({
   blur: () => input.value?.blur()
 })
 const slots = useSlots()
-const inputClass = computed(() =>
-  tv(theme)({
+function inputClass() {
+  return tv(theme)({
     tone,
     size,
     state,
@@ -70,10 +63,10 @@ const inputClass = computed(() =>
       ui?.input,
       !slots.leading && !slots.trailing ? normalizeClass(className) : '',
       slots.leading ? 'pl-10' : '',
-      slots.trailing ? 'pr-10' : ''
+      slots.trailing ? 'pr-10 [&::-webkit-search-cancel-button]:appearance-none' : ''
     ]
   })
-)
+}
 
 const modelValue = defineModel<string | number>({ required: true })
 const emit = defineEmits<{
@@ -110,7 +103,7 @@ const emit = defineEmits<{
       :min="min"
       :max="max"
       :step="step"
-      :class="inputClass"
+      :class="inputClass()"
       @change="emit('change')"
       @keydown.enter="emit('enter', $event)"
       @focus="emit('focus', $event)"

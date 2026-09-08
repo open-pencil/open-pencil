@@ -3,7 +3,7 @@ import AppButton from '@/components/ui/AppButton.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import { nextTick, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useViewportKind } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
@@ -28,6 +28,7 @@ const { initialSection = 'browse' } = defineProps<{
 const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
+const { isMobile } = useViewportKind()
 const { panels, common } = useI18n()
 
 async function openPublish() {
@@ -79,7 +80,7 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
         </AppButton>
       </template>
     </AppDialogHeader>
-    <AppTabsRoot v-model="section" orientation="vertical">
+    <AppTabsRoot v-model="section" :orientation="isMobile ? 'horizontal' : 'vertical'">
       <AppTabsList :label="panels.manageLibraries">
         <AppTabsTrigger value="browse">
           <template #leading><icon-lucide-library class="size-3.5" /></template>

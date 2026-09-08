@@ -1,5 +1,17 @@
 import { expect, test } from '@playwright/test'
 
+for (const theme of ['light', 'dark']) {
+  test(`populated search with trailing action in ${theme}`, async ({ page }) => {
+    await page.goto(
+      `/iframe.html?id=design-system-inputs-input--default&viewMode=story&globals=theme:${theme}`
+    )
+    const input = page.getByRole('searchbox', { name: 'Search files' })
+    await input.fill('A long file name with a clear action')
+    await expect(page.getByRole('button', { name: 'Clear search' })).toBeVisible()
+    await expect(page.locator('#storybook-root')).toHaveScreenshot(`populated-search-${theme}.png`)
+  })
+}
+
 test('conditional trailing content preserves input focus while typing', async ({ page }) => {
   await page.goto('/iframe.html?id=design-system-inputs-input--conditional-trailing&viewMode=story')
   const input = page.getByRole('textbox', { name: 'Conditional trailing input' })

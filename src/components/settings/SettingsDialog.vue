@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DialogClose } from 'reka-ui'
 import { computed } from 'vue'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useViewportKind } from '@open-pencil/vue'
 import { IS_TAURI } from '@open-pencil/core/constants'
 
 import { browserCredentialsRemembered, appCredentialServices } from '@/app/settings/credentials/app'
@@ -29,6 +29,7 @@ import {
   AppDialogRoot
 } from '@/components/ui/dialog'
 
+const { isMobile } = useViewportKind()
 const { credentials, settings, common } = useI18n()
 function onOpenChange(open: boolean): void {
   settingsDialogOpen.value = open
@@ -65,7 +66,10 @@ const credentialBackendLabel = computed(() => {
       :close-label="common.close"
     />
 
-    <AppTabsRoot v-model="settingsDialogSection" orientation="vertical">
+    <AppTabsRoot
+      v-model="settingsDialogSection"
+      :orientation="isMobile ? 'horizontal' : 'vertical'"
+    >
       <AppTabsList :label="settings.title">
         <AppTabsTrigger value="general" data-test-id="settings-section-general">
           <template #leading><icon-lucide-settings class="size-3.5" /></template>
