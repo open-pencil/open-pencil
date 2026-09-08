@@ -17,6 +17,7 @@ export interface VariableBindingPickerProps {
 </script>
 
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import {
   ComboboxAnchor,
   ComboboxContent,
@@ -157,16 +158,16 @@ defineOptions({ inheritAttrs: false })
         </ComboboxViewport>
 
         <div :class="styles.pickerFooter" data-slot="footer">
-          <button
+          <AppButton
             v-if="picker.state === 'bound'"
-            type="button"
-            :class="styles.pickerAction"
+            size="xs"
+            class="w-full justify-start"
             data-slot="action"
             @click="detach"
           >
-            <icon-lucide-unlink class="size-3" />
-            <span>{{ detachLabel }}</span>
-          </button>
+            <template #leading><icon-lucide-unlink class="size-3" /></template>
+            {{ detachLabel }}
+          </AppButton>
 
           <form
             v-if="creating"
@@ -182,25 +183,26 @@ defineOptions({ inheritAttrs: false })
               :class="styles.createInput"
               data-slot="createInput"
             />
-            <button
+            <AppButton
+              size="xs"
+              variant="soft"
               :disabled="!canCreate"
-              :class="styles.createSubmit"
               data-slot="createSubmit"
               type="submit"
             >
               {{ createSubmitLabel }}
-            </button>
+            </AppButton>
           </form>
-          <button
+          <AppButton
             v-else-if="createLabel"
-            type="button"
-            :class="styles.pickerAction"
+            size="xs"
+            class="w-full justify-start"
             data-slot="action"
             @click="startCreate"
           >
-            <icon-lucide-plus class="size-3" />
+            <template #leading><icon-lucide-plus class="size-3" /></template>
             <span class="min-w-0 flex-1 truncate">{{ createLabel }}</span>
-          </button>
+          </AppButton>
         </div>
       </ComboboxContent>
     </ComboboxPortal>

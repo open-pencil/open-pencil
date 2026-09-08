@@ -20,6 +20,8 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+export const PickerActions: Story = {}
+
 export const StateMatrix: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

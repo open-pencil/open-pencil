@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconButton from '@/components/ui/IconButton.vue'
 import { ref, watch, type ComponentPublicInstance } from 'vue'
 import { templateRef } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
@@ -13,7 +14,6 @@ import {
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/Tip.vue'
 import { useMenuUI } from '@/components/ui/menu'
 import pageListTheme from '@/theme/list/page'
 
@@ -88,11 +88,9 @@ function setupPageRowRef(
     <div data-test-id="pages-panel" :class="baseStyles.panel()">
       <div :class="baseStyles.header()">
         <span data-test-id="pages-header" :class="baseStyles.title()">{{ panels.pages }}</span>
-        <Tip :label="panels.addPage">
-          <button data-test-id="pages-add" :class="baseStyles.add()" @click="actions.add()">
-            +
-          </button>
-        </Tip>
+        <IconButton :label="panels.addPage" data-test-id="pages-add" @click="actions.add()">
+          <icon-lucide-plus class="size-3.5" />
+        </IconButton>
       </div>
       <div :class="baseStyles.body()">
         <div data-test-id="pages-scroll" :class="baseStyles.viewport()">

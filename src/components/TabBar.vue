@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import IconButton from '@/components/ui/IconButton.vue'
 import { computed } from 'vue'
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
@@ -77,15 +78,8 @@ function onClose(e: MouseEvent, tabId: string) {
         </Tip>
       </TabsTrigger>
     </TabsList>
-    <Tip :label="files.newTab">
-      <button
-        data-test-id="tabbar-new"
-        :class="baseStyles.newAction()"
-        :aria-label="files.newTab"
-        @click="createNewTab"
-      >
-        <icon-lucide-plus :class="baseStyles.newIcon()" />
-      </button>
-    </Tip>
+    <IconButton :label="files.newTab" size="md" data-test-id="tabbar-new" @click="createNewTab">
+      <icon-lucide-plus :class="baseStyles.newIcon()" />
+    </IconButton>
   </TabsRoot>
 </template>
