@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import { selectTarget } from '@open-pencil/vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
@@ -16,26 +17,30 @@ const collab = useCollabPanelContext()
       class="min-w-0 flex-1"
       @focus="selectTarget($event)"
     />
-    <button
+    <AppButton
+      color="primary"
+      variant="solid"
       data-test-id="collab-copy-link"
-      class="flex h-7 cursor-pointer items-center gap-1 rounded border-none bg-accent px-2 text-xs text-white hover:bg-accent/90"
       @click="collab.copyLink"
     >
-      <icon-lucide-check v-if="collab.copied" class="size-3" />
-      <icon-lucide-copy v-else class="size-3" />
+      <template #leading>
+        <icon-lucide-check v-if="collab.copied" class="size-3" />
+        <icon-lucide-copy v-else class="size-3" />
+      </template>
       {{ collab.copied ? 'Copied' : 'Copy' }}
-    </button>
+    </AppButton>
   </div>
 
   <div class="mb-2 text-xs font-medium text-surface">
     {{ collab.peers.length + 1 }} {{ collab.peers.length === 0 ? 'person' : 'people' }} in this room
   </div>
 
-  <button
+  <AppButton
+    variant="outline"
+    class="w-full"
     data-test-id="collab-disconnect"
-    class="flex h-7 w-full cursor-pointer items-center justify-center rounded border border-border bg-transparent text-xs text-muted hover:bg-hover hover:text-surface"
     @click="collab.disconnect"
   >
     Disconnect
-  </button>
+  </AppButton>
 </template>
