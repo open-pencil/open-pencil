@@ -42,6 +42,7 @@
 
 ### Fixed
 
+- Keep home search comfortably sized on mobile and cancel pending desktop search focus when leaving the home tab.
 - Preserve native Enter and Space activation on focused buttons instead of consuming them as canvas shortcuts.
 - Keep layer-tree rows within their virtualized bounds and use white text and disclosure arrows for focused selections.
 - Keep action-button labels on one line while allowing explicit wrapping overrides.

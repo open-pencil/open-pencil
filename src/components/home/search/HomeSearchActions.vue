@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppInput from '@/components/ui/AppInput.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import { nextTick, watch } from 'vue'
 import { templateRef } from '@vueuse/core'
@@ -12,38 +13,45 @@ const emit = defineEmits<{ 'new-document': [] }>()
 const query = defineModel<string>({ required: true })
 const { menu, files } = useI18n()
 const { isMobile } = useViewportKind()
-const searchInput = templateRef<HTMLInputElement>('searchInput')
+const searchInput = templateRef<{ focus: (options?: FocusOptions) => void }>('searchInput')
 
-async function focusSearch(): Promise<void> {
+function focusSearch(onCleanup: (cleanup: () => void) => void): void {
   if (isMobile.value || activeTab.value?.kind !== 'home') return
-  await nextTick()
-  setTimeout(() => searchInput.value?.focus(), 300)
+  const tabId = activeTab.value.id
+  const previousFocus = document.activeElement
+  let cancelled = false
+  onCleanup(() => {
+    cancelled = true
+  })
+  void nextTick(() => {
+    if (cancelled || isMobile.value || activeTab.value?.id !== tabId) return
+    if (document.activeElement !== previousFocus) return
+    searchInput.value?.focus({ preventScroll: true })
+  })
 }
 
 watch(
   () => activeTab.value?.id,
-  () => void focusSearch(),
-  { immediate: true }
+  (_id, _previousId, onCleanup) => focusSearch(onCleanup),
+  { immediate: true, flush: 'post' }
 )
 </script>
 
 <template>
   <div class="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center">
-    <label
-      class="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-border bg-panel px-3.5 focus-within:border-panel-focus focus-within:ring-1 focus-within:ring-panel-focus sm:h-9 sm:gap-2 sm:bg-panel-field sm:px-3 sm:focus-within:ring-0"
+    <AppInput
+      ref="searchInput"
+      v-model="query"
+      type="search"
+      name="file-search"
+      autocomplete="off"
+      class="sm:flex-1"
+      :density="isMobile ? 'comfortable' : 'compact'"
+      :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
+      :aria-label="files.searchFiles"
     >
-      <icon-lucide-search class="size-4.5 shrink-0 text-muted sm:size-4" />
-      <input
-        ref="searchInput"
-        v-model="query"
-        type="search"
-        name="file-search"
-        autocomplete="off"
-        class="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-        :placeholder="isMobile ? files.searchFiles : files.searchRecentAndStorageFiles"
-        :aria-label="files.searchFiles"
-      />
-    </label>
+      <template #leading><icon-lucide-search class="size-4" /></template>
+    </AppInput>
     <div class="grid grid-cols-2 gap-2 sm:contents">
       <AppButton size="lg" variant="outline" data-test-id="home-open-file" @click="openFileDialog">
         <template #leading><icon-lucide-folder-open class="size-3.5" /></template>
