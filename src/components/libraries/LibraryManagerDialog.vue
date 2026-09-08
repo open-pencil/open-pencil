@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import { nextTick, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
@@ -67,13 +69,13 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
       :close-label="common.close"
     >
       <template #actions>
-        <button
-          type="button"
-          class="ml-auto text-xs text-component hover:underline"
+        <AppButton
+          variant="link"
+          :ui="{ base: 'ml-auto text-component hover:text-component' }"
           @click="openPublish"
         >
           {{ panels.publishLibrary }}
-        </button>
+        </AppButton>
       </template>
     </AppDialogHeader>
     <AppTabsRoot v-model="section" orientation="vertical">
@@ -116,26 +118,20 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
               {{ panels.libraryAssetCount({ count: library.assetCount }) }}
             </p>
           </div>
-          <button
+          <IconButton
             v-if="editor.graph.enabledLibraries.get(library.libraryId)?.enabled"
-            type="button"
-            class="text-muted hover:text-component"
-            :aria-label="panels.preferLibrary"
+            :label="panels.preferLibrary"
             @click="preferLibrary(library.libraryId)"
           >
             <icon-lucide-star class="size-4" />
-          </button>
-          <button
-            type="button"
-            class="rounded border border-border px-2 py-1 text-xs"
-            @click="toggleLibrary(library.libraryId)"
-          >
+          </IconButton>
+          <AppButton variant="outline" @click="toggleLibrary(library.libraryId)">
             {{
               editor.graph.enabledLibraries.get(library.libraryId)?.enabled
                 ? panels.disableLibrary
                 : panels.enableLibrary
             }}
-          </button>
+          </AppButton>
         </div>
         <AppPlaceholder
           v-if="!loading && service.summaries.value.length === 0"
@@ -160,14 +156,9 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
                 </p>
               </button>
             </div>
-            <button
-              type="button"
-              class="rounded border border-border px-3 py-1 text-xs"
-              :disabled="applying !== null"
-              @click="updateAsset(asset)"
-            >
+            <AppButton variant="outline" :disabled="applying !== null" @click="updateAsset(asset)">
               {{ panels.updateLibraryAsset }}
-            </button>
+            </AppButton>
           </div>
           <AppPlaceholder
             v-if="visibleUpdateGroups.length === 0"
@@ -177,14 +168,14 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
         </div>
         <AppDialogFooter :ui="{ footer: 'justify-between' }">
           <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
-          <button
-            type="button"
-            class="rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-50"
+          <AppButton
+            color="primary"
+            variant="solid"
             :disabled="visibleUpdateGroups.length === 0 || applying !== null"
             @click="updateAll"
           >
             {{ panels.updateAll }}
-          </button>
+          </AppButton>
         </AppDialogFooter>
       </AppTabsContent>
     </AppTabsRoot>

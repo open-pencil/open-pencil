@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, shallowRef, watch } from 'vue'
 
@@ -240,22 +242,20 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
     </div>
     <AppDialogFooter :ui="{ footer: 'justify-between' }">
       <div class="flex items-center gap-2 text-xs text-muted">
-        <button
-          type="button"
-          :aria-label="panels.previousLibraryInstance"
+        <IconButton
+          :label="panels.previousLibraryInstance"
           :disabled="applying || instanceIndex === 0"
           @click="instanceIndex--"
         >
           <icon-lucide-chevron-left class="size-4" />
-        </button>
-        <button
-          type="button"
-          :aria-label="panels.nextLibraryInstance"
+        </IconButton>
+        <IconButton
+          :label="panels.nextLibraryInstance"
           :disabled="applying || !request || instanceIndex >= request.instanceIds.length - 1"
           @click="instanceIndex++"
         >
           <icon-lucide-chevron-right class="size-4" />
-        </button>
+        </IconButton>
         {{
           panels.libraryInstancePosition({
             current: instanceIndex + 1,
@@ -264,22 +264,12 @@ watch([request, currentInstanceId], () => void loadPreview(), { immediate: true 
         }}
       </div>
       <div class="flex gap-2">
-        <button
-          type="button"
-          class="rounded border border-border px-3 py-1.5 text-xs"
-          :disabled="applying"
-          @click="updateInstance"
-        >
+        <AppButton variant="outline" :disabled="applying" @click="updateInstance">
           {{ panels.updateInstance }}
-        </button>
-        <button
-          type="button"
-          class="rounded bg-accent px-3 py-1.5 text-xs text-white"
-          :disabled="applying"
-          @click="updateAll"
-        >
+        </AppButton>
+        <AppButton color="primary" variant="solid" :disabled="applying" @click="updateAll">
           {{ panels.updateAll }}
-        </button>
+        </AppButton>
       </div>
     </AppDialogFooter>
   </AppDialogRoot>

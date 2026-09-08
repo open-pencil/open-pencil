@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppButton from '@/components/ui/AppButton.vue'
 import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import { useMCPConnectionSettings } from '@/app/integrations/mcp/settings/use'
 
@@ -44,13 +45,9 @@ async function remove() {
           </h3>
           <p class="text-[10px] text-muted">{{ automation.connectionEditorDescription }}</p>
         </div>
-        <button
-          type="button"
-          class="text-[10px] text-muted hover:text-surface"
-          @click="editing = false"
-        >
+        <AppButton size="xs" @click="editing = false">
           {{ common.back }}
-        </button>
+        </AppButton>
       </div>
 
       <label class="flex flex-col gap-1 text-[10px] text-muted">
@@ -95,22 +92,19 @@ async function remove() {
 
       <p v-if="error" class="text-[10px] text-danger" role="alert">{{ error }}</p>
       <div class="flex items-center justify-between">
-        <button
+        <AppButton
           v-if="draft.id"
-          type="button"
-          class="text-[10px] text-danger hover:underline"
+          size="xs"
+          color="error"
+          variant="link"
           @click="deleteOpen = true"
         >
           {{ automation.deleteConnection }}
-        </button>
+        </AppButton>
         <span v-else />
-        <button
-          type="button"
-          class="rounded bg-accent px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
-          @click="save"
-        >
+        <AppButton color="primary" variant="solid" @click="save">
           {{ common.save }}
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -120,14 +114,10 @@ async function remove() {
           <h3 class="text-xs font-semibold text-surface">{{ automation.connections }}</h3>
           <p class="text-[10px] text-muted">{{ automation.connectionsDescription }}</p>
         </div>
-        <button
-          type="button"
-          class="flex items-center gap-1 rounded bg-panel px-2 py-1 text-[10px] text-surface hover:bg-hover"
-          @click="startAdd"
-        >
-          <icon-lucide-plus class="size-3" />
+        <AppButton size="xs" variant="soft" @click="startAdd">
+          <template #leading><icon-lucide-plus class="size-3" /></template>
           {{ automation.addConnection }}
-        </button>
+        </AppButton>
       </div>
       <div v-if="mcpConnectionSettings.connections.length" class="flex flex-col gap-1.5">
         <AppActionRow
