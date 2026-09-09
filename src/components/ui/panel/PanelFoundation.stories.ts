@@ -13,13 +13,14 @@ import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
+import PanelSelectionDemo from './demo/PanelSelectionDemo.vue'
 import PanelFieldGroup from './PanelFieldGroup.vue'
 import PanelGrid from './PanelGrid.vue'
 import PanelHeader from './PanelHeader.vue'
 import PanelSection from './PanelSection.vue'
 
 const meta = {
-  title: 'Design System/Properties/Panel Foundation',
+  title: 'Design System/Layout/Panel Foundation',
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -33,6 +34,10 @@ const meta = {
 
 export default meta
 type Story = StoryObj<typeof meta>
+
+export const SelectionTransition: Story = {
+  render: () => ({ components: { PanelSelectionDemo }, template: '<PanelSelectionDemo />' })
+}
 
 export const StateMatrix: Story = {
   render: () => ({

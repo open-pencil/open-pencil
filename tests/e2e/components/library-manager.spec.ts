@@ -62,6 +62,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await expect(publish.getByLabel('Library ID')).toBeHidden()
   await page.keyboard.press('Escape')
   await page.keyboard.press('ControlOrMeta+KeyN')
+  await page.getByRole('button', { name: 'New design', exact: true }).click()
   await expect.poll(() => page.evaluate(() => !!window.openPencil?.getStore?.())).toBe(true)
 
   await page.getByTestId('left-panel-assets-tab').click()
@@ -155,7 +156,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
   await page.getByTestId('left-panel-assets-tab').click()
   await expect(page.getByRole('button', { name: 'Review library updates' })).toBeVisible()
   await page.getByRole('button', { name: 'Review library updates' }).click()
-  await expect(manager.getByRole('button', { name: /Updates/ })).toHaveAttribute(
+  await expect(manager.getByRole('tab', { name: /Updates/ })).toHaveAttribute(
     'data-state',
     'active'
   )
@@ -283,7 +284,7 @@ test('library manager scopes populated updates and does not mutate on discovery'
 
   await page.getByTestId('left-panel-assets-tab').click()
   await page.getByRole('button', { name: /libraries|updates/i }).click()
-  await manager.getByRole('button', { name: /Updates/ }).click()
+  await manager.getByRole('tab', { name: /Updates/ }).click()
   await manager.getByRole('button', { name: 'Button updated' }).click()
   await expect(reviewDialog).toBeVisible()
   await page.keyboard.press('Escape')
