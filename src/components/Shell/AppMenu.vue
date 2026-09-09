@@ -36,6 +36,7 @@ import {
   updateMenuChecked
 } from '@/app/shell/menu/entry'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import { IS_TAURI } from '@/constants'
@@ -77,27 +78,20 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
         @dblclick="startRename"
         >{{ store.state.documentName }}</span
       >
-      <Tip :label="settings.title">
-        <button
-          type="button"
-          data-test-id="app-settings-trigger"
-          :aria-label="settings.title"
-          class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
-          @click="openSettingsDialog()"
-        >
-          <icon-lucide-settings class="size-3.5" />
-        </button>
-      </Tip>
-      <Tip :label="`${t.toggleUI} (${appMenuShortcutLabel('toggle-ui')})`">
-        <button
-          data-test-id="app-toggle-ui"
-          :aria-label="t.toggleUI"
-          class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-muted transition-colors hover:bg-hover hover:text-surface"
-          @click="store.state.showUI = !store.state.showUI"
-        >
-          <icon-lucide-sidebar class="size-3.5" />
-        </button>
-      </Tip>
+      <IconButton
+        :label="settings.title"
+        data-test-id="app-settings-trigger"
+        @click="openSettingsDialog()"
+      >
+        <icon-lucide-settings class="size-3.5" />
+      </IconButton>
+      <IconButton
+        :label="`${t.toggleUI} (${appMenuShortcutLabel('toggle-ui')})`"
+        data-test-id="app-toggle-ui"
+        @click="store.state.showUI = !store.state.showUI"
+      >
+        <icon-lucide-sidebar class="size-3.5" />
+      </IconButton>
     </div>
     <div v-if="!IS_TAURI" class="flex items-center px-1 pb-1">
       <MenubarRoot class="scrollbar-none flex items-center gap-0.5 overflow-x-auto">

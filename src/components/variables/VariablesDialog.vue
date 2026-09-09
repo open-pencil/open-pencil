@@ -33,10 +33,11 @@ import type { VariableType } from '@open-pencil/scene-graph'
 import { variablesAddTestId, vTestId, useI18n, useVariablesEditor } from '@open-pencil/vue'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppDialogRoot } from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
-import Tip from '@/components/ui/overlay/Tip.vue'
 import variableTableTheme from '@/theme/variable-table'
 
 const open = defineModel<boolean>('open', { default: false })
@@ -138,13 +139,13 @@ function resizeHandleClass(resizing: boolean) {
           <icon-lucide-folder class="size-5" />
         </template>
         <template #action>
-          <button
+          <AppButton
+            variant="soft"
             data-test-id="variables-create-collection"
-            class="cursor-pointer rounded bg-hover px-3 py-1.5 text-xs text-surface hover:bg-border"
             @click="ctx.addCollection"
           >
             {{ variables.createCollection }}
-          </button>
+          </AppButton>
         </template>
       </AppPlaceholder>
     </div>
@@ -220,15 +221,13 @@ function resizeHandleClass(resizing: boolean) {
                 :placeholder="common.search"
               />
             </div>
-            <Tip :label="variables.createCollection">
-              <button
-                data-test-id="variables-add-collection"
-                class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
-                @click="ctx.addCollection"
-              >
-                <icon-lucide-folder-plus class="size-3.5" />
-              </button>
-            </Tip>
+            <IconButton
+              :label="variables.createCollection"
+              data-test-id="variables-add-collection"
+              @click="ctx.addCollection"
+            >
+              <icon-lucide-folder-plus class="size-3.5" />
+            </IconButton>
             <DialogClose
               :aria-label="common.close"
               class="flex size-6 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
@@ -336,15 +335,13 @@ function resizeHandleClass(resizing: boolean) {
                     />
                   </th>
                   <th class="w-8 px-1 py-2">
-                    <Tip :label="variables.addMode">
-                      <button
-                        data-test-id="variables-add-mode"
-                        class="flex size-5 cursor-pointer items-center justify-center rounded border-none bg-transparent text-muted hover:bg-hover hover:text-surface"
-                        @click="ctx.addMode"
-                      >
-                        <icon-lucide-plus class="size-3" />
-                      </button>
-                    </Tip>
+                    <IconButton
+                      :label="variables.addMode"
+                      data-test-id="variables-add-mode"
+                      @click="ctx.addMode"
+                    >
+                      <icon-lucide-plus class="size-3" />
+                    </IconButton>
                   </th>
                 </tr>
               </thead>
@@ -374,14 +371,11 @@ function resizeHandleClass(resizing: boolean) {
             <span class="text-xs text-muted">{{ panels.createVariable }}</span>
             <DropdownMenuRoot>
               <DropdownMenuTrigger as-child>
-                <button
-                  data-test-id="variables-add-variable"
-                  class="flex cursor-pointer items-center gap-1.5 rounded bg-hover px-2.5 py-1.5 text-xs text-surface hover:bg-border"
-                >
-                  <icon-lucide-plus class="size-3.5" />
+                <AppButton variant="soft" data-test-id="variables-add-variable">
+                  <template #leading><icon-lucide-plus class="size-3.5" /></template>
                   {{ panels.add }}
-                  <icon-lucide-chevron-down class="size-3" />
-                </button>
+                  <template #trailing><icon-lucide-chevron-down class="size-3" /></template>
+                </AppButton>
               </DropdownMenuTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuContent

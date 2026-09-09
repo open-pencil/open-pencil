@@ -6,6 +6,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
@@ -91,13 +92,10 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
 
         <!-- Continue button when step limit reached -->
         <div v-if="showContinue" class="flex justify-center py-2">
-          <button
-            class="flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
-            @click="emit('continue')"
-          >
-            <icon-lucide-play class="size-3" />
+          <AppButton color="primary" variant="soft" shape="pill" @click="emit('continue')">
+            <template #leading><icon-lucide-play class="size-3" /></template>
             {{ ai.continueChat }}
-          </button>
+          </AppButton>
         </div>
       </div>
     </ScrollAreaViewport>

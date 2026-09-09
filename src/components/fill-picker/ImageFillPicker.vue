@@ -5,6 +5,7 @@ import { computed, shallowRef, watch } from 'vue'
 import type { Fill, ImageScaleMode } from '@open-pencil/scene-graph'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const IMAGE_SCALE_MODES: { value: ImageScaleMode; label: string }[] = [
@@ -67,14 +68,15 @@ const scaleMode = computed({
     >
       <img :src="imagePreviewURL" class="max-h-full max-w-full object-contain" />
     </div>
-    <button
-      class="flex h-7 w-full cursor-pointer items-center justify-center gap-1 rounded border border-border bg-input text-xs text-surface hover:bg-hover"
+    <AppButton
+      variant="outline"
+      class="w-full"
       data-test-id="fill-picker-choose-image"
       @click="pickImage()"
     >
-      <icon-lucide-image class="size-3" />
+      <template #leading><icon-lucide-image class="size-3" /></template>
       {{ fill.imageHash ? 'Replace' : 'Choose image' }}
-    </button>
+    </AppButton>
     <AppSelect
       :model-value="scaleMode"
       :options="IMAGE_SCALE_MODES"

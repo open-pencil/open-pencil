@@ -25,6 +25,7 @@ import {
 import type { AIModelProfile, AIModelProfileId } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatProfileItem from '@/components/chat/ChatProfileItem.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import { useSelectUI } from '@/components/ui/select/select'
 import { chatProfileTheme } from '@/theme/chat/profile'
 
@@ -101,10 +102,10 @@ function manageModels(): void {
               </SelectItemText>
             </SelectItem>
           </SelectGroup>
-          <button type="button" :class="ui.footer()" @click="manageModels">
-            <icon-lucide-settings :class="ui.footerIcon()" />
+          <AppButton class="w-full justify-start" @click="manageModels">
+            <template #leading><icon-lucide-settings :class="ui.footerIcon()" /></template>
             {{ ai.manageModelsAndRoles }}
-          </button>
+          </AppButton>
         </SelectViewport>
       </SelectContent>
     </SelectPortal>
