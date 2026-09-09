@@ -1,11 +1,9 @@
 import { join } from 'node:path'
 
-import { readJSON } from './json'
-import type { PackageManifest, WorkspacePackage } from './types'
+import { readPackageJSON } from 'pkg-types'
 
-interface RootManifest {
-  workspaces?: string[]
-}
+import { readPackageManifest } from './manifest'
+import type { PackageManifest, WorkspacePackage } from './types'
 
 const DEPENDENCY_FIELDS = [
   'dependencies',
@@ -14,12 +12,16 @@ const DEPENDENCY_FIELDS = [
 ] as const satisfies ReadonlyArray<keyof PackageManifest>
 
 export async function discoverPublicPackages(root: string): Promise<WorkspacePackage[]> {
-  const rootManifest = await readJSON<RootManifest>(join(root, 'package.json'))
+  const rootManifest = await readPackageJSON(join(root, 'package.json'))
   const packages: WorkspacePackage[] = []
 
-  for (const directory of rootManifest.workspaces ?? []) {
-    const manifest = await readJSON<PackageManifest>(join(root, directory, 'package.json'))
-    if (manifest.private !== true) packages.push({ directory, manifest })
+  const workspaces = rootManifest.workspaces ?? []
+  if (!Array.isArray(workspaces)) throw new Error('Expected an array of workspace directories')
+  for (const directory of workspaces) {
+    const raw = await readPackageJSON(join(root, directory, 'package.json'))
+    if (raw.private === true) continue
+    const manifest = await readPackageManifest(join(root, directory, 'package.json'))
+    packages.push({ directory, manifest })
   }
 
   return packages

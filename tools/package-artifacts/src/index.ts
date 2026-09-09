@@ -1,6 +1,6 @@
 export * from './build'
 export * from './catalog'
 export * from './exports'
-export * from './json'
+export * from './manifest'
 export * from './process'
 export * from './types'

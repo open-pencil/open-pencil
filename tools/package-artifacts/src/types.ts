@@ -1,18 +1,26 @@
-export interface PackageManifest extends Record<string, unknown> {
+// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream pkg-types export name.
+import type { PackageJson as PackageJSON } from 'pkg-types'
+
+export interface PackageManifest
+  extends
+    Pick<
+      PackageJSON,
+      | 'private'
+      | 'files'
+      | 'main'
+      | 'types'
+      | 'bin'
+      | 'scripts'
+      | 'dependencies'
+      | 'devDependencies'
+      | 'peerDependencies'
+      | 'optionalDependencies'
+    >,
+    Record<string, unknown> {
   name: string
   version: string
-  private?: boolean
-  files?: string[]
-  main?: string
-  types?: string
-  bin?: Record<string, string> | string
   exports?: unknown
   imports?: unknown
-  scripts?: Record<string, string>
-  dependencies?: Record<string, string>
-  devDependencies?: Record<string, string>
-  peerDependencies?: Record<string, string>
-  optionalDependencies?: Record<string, string>
   publishConfig?: Record<string, unknown>
 }
 

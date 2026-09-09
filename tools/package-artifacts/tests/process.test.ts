@@ -12,6 +12,27 @@ describe('runCommand', () => {
     expect(result.stdout).toBe('ready')
   })
 
+  test('captures output larger than a pipe buffer before resolving', async () => {
+    const result = await runCommand({
+      command: process.execPath,
+      args: ['--eval', "process.stdout.write('x'.repeat(262144)); process.stderr.write('done')"],
+      cwd: process.cwd(),
+      timeoutMs: 10_000
+    })
+    expect(result.stdout).toHaveLength(262144)
+    expect(result.stderr).toBe('done')
+  })
+
+  test('reports missing executables', async () => {
+    await expect(
+      runCommand({
+        command: '/nonexistent/open-pencil-command',
+        cwd: process.cwd(),
+        timeoutMs: 1000
+      })
+    ).rejects.toThrow()
+  })
+
   test('returns structured command failures', async () => {
     const failure = runCommand({
       command: process.execPath,

@@ -14,6 +14,7 @@ async function fixtureRoot() {
   await mkdir(join(root, 'packages/example/dist'), { recursive: true })
   await writeFile(join(root, 'packages/example/dist/index.js'), 'export {}\n')
   await writeFile(join(root, 'packages/example/README.md'), '# Example\n')
+  await writeFile(join(root, 'packages/example/LICENSE'), 'fixture license\n')
   await writeFile(join(root, 'package.json'), JSON.stringify({ workspaces: ['packages/example'] }))
   await writeFile(
     join(root, 'packages/example/package.json'),
@@ -83,9 +84,7 @@ describe('publishPackageJSON', () => {
 describe('discoverPublishPackages', () => {
   test('derives release contents from public workspace manifests', async () => {
     const root = await fixtureRoot()
-    expect(await discoverPublishPackages(root)).toEqual([
-      { directory: 'packages/example', include: ['dist', 'README.md'] }
-    ])
+    expect(await discoverPublishPackages(root)).toEqual([{ directory: 'packages/example' }])
   })
 })
 
@@ -102,6 +101,7 @@ describe('preparePublishDirectories', () => {
     })
 
     expect(await readFile(join(outRoot, 'example/dist/index.js'), 'utf8')).toBe('export {}\n')
+    expect(await readFile(join(outRoot, 'example/LICENSE'), 'utf8')).toBe('fixture license\n')
     expect(await readFile(join(outRoot, 'example/README.md'), 'utf8')).toBe('# Example\n')
     expect(JSON.parse(await readFile(join(outRoot, 'example/package.json'), 'utf8'))).toEqual({
       name: '@open-pencil/example',

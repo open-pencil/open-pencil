@@ -1,15 +1,16 @@
-import { copyFile, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 
 import {
   discoverPublicPackages,
+  readPackageManifest,
+  runCommand,
   type PackageManifest,
   type WorkspacePackage
 } from '@open-pencil/package-artifacts'
 
 export interface PackagePublishConfig {
   directory: string
-  include: string[]
 }
 
 export interface PreparePublishDirectoriesOptions {
@@ -27,28 +28,6 @@ const PACKAGE_FIELDS = [
   'optionalDependencies'
 ] as const satisfies ReadonlyArray<keyof PackageManifest>
 const PUBLISH_CONFIG_FIELDS = new Set(['access', 'provenance', 'registry'])
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await stat(path)
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function copyRecursive(from: string, to: string): Promise<void> {
-  const sourceStat = await stat(from)
-  if (sourceStat.isDirectory()) {
-    await mkdir(to, { recursive: true })
-    for (const entry of await readdir(from)) {
-      await copyRecursive(join(from, entry), join(to, entry))
-    }
-    return
-  }
-  await mkdir(dirname(to), { recursive: true })
-  await copyFile(from, to)
-}
 
 export function publishPackageJSON(source: PackageManifest, coreVersion: string): PackageManifest {
   const json = structuredClone(source)
@@ -84,20 +63,39 @@ export function publishPackageJSON(source: PackageManifest, coreVersion: string)
 }
 
 export function packagePublishConfig(pkg: WorkspacePackage): PackagePublishConfig {
-  const include = new Set(pkg.manifest.files)
-  const binTargets =
-    typeof pkg.manifest.bin === 'string'
-      ? [pkg.manifest.bin]
-      : Object.values(pkg.manifest.bin ?? {})
-  for (const target of binTargets) {
-    const topLevel = target.replace(/^\.\//, '').split('/')[0]
-    if (topLevel) include.add(topLevel)
-  }
-  return { directory: pkg.directory, include: [...include] }
+  return { directory: pkg.directory }
 }
 
 export async function discoverPublishPackages(root: string): Promise<PackagePublishConfig[]> {
   return (await discoverPublicPackages(root)).map(packagePublishConfig)
+}
+
+function npmPackFiles(stdout: string): string[] {
+  const data: unknown = JSON.parse(stdout)
+  if (
+    !Array.isArray(data) ||
+    data.length !== 1 ||
+    !data[0] ||
+    typeof data[0] !== 'object' ||
+    !('files' in data[0]) ||
+    !Array.isArray(data[0].files)
+  ) {
+    throw new Error('npm pack did not return a file listing')
+  }
+  return data[0].files.map((entry: unknown) => {
+    if (
+      !entry ||
+      typeof entry !== 'object' ||
+      !('path' in entry) ||
+      typeof entry.path !== 'string' ||
+      entry.path.startsWith('/') ||
+      entry.path.includes('\\') ||
+      entry.path.split('/').includes('..')
+    ) {
+      throw new Error('npm pack returned an invalid file path')
+    }
+    return entry.path
+  })
 }
 
 export async function preparePublishDirectories(
@@ -112,14 +110,20 @@ export async function preparePublishDirectories(
     const destinationDir = join(outRoot, basename(pkg.directory))
     await mkdir(destinationDir, { recursive: true })
 
-    for (const relativePath of pkg.include) {
-      const from = join(sourceDir, relativePath)
-      if (await exists(from)) await copyRecursive(from, join(destinationDir, relativePath))
+    const listing = await runCommand({
+      command: 'npm',
+      args: ['pack', '--dry-run', '--json', '--ignore-scripts'],
+      cwd: sourceDir,
+      timeoutMs: 60_000
+    })
+    const files = npmPackFiles(listing.stdout)
+    for (const relativePath of files) {
+      const destination = join(destinationDir, relativePath)
+      await mkdir(dirname(destination), { recursive: true })
+      await cp(join(sourceDir, relativePath), destination, { dereference: false })
     }
 
-    const packageJSON = JSON.parse(
-      await readFile(join(sourceDir, 'package.json'), 'utf8')
-    ) as PackageManifest
+    const packageJSON = await readPackageManifest(join(sourceDir, 'package.json'))
     const publishJSON = publishPackageJSON(packageJSON, options.coreVersion)
     await writeFile(
       join(destinationDir, 'package.json'),
