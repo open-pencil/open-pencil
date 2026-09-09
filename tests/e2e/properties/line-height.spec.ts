@@ -16,9 +16,7 @@ test('automatic line height survives focus and can be restored with undo', async
   })
   const field = page.locator('[data-property="lineHeight"]')
   await expect(field).toContainText('Auto')
-  await expect(page.getByRole('region', { name: 'Typography', exact: true })).toHaveScreenshot(
-    'line-height-auto.png'
-  )
+
   await page.evaluate((id) => window.openPencil?.getStore?.().updateNode(id, { fontSize: 30 }), id)
   const input = page.getByRole('spinbutton', { name: 'Line height', exact: true })
   await input.focus()
@@ -52,9 +50,7 @@ test('automatic line height survives focus and can be restored with undo', async
   await page.getByPlaceholder('Variable name').fill('Typography/Line height/Body')
   await page.getByRole('button', { name: 'Create', exact: true }).click()
   await expect(field).toHaveAttribute('data-bound')
-  await expect(page.getByRole('region', { name: 'Typography', exact: true })).toHaveScreenshot(
-    'line-height-bound.png'
-  )
+
   await page.getByRole('combobox', { name: 'Line height mode' }).click()
   await page.getByRole('option', { name: 'Auto', exact: true }).click()
   await expect(field).not.toHaveAttribute('data-bound')

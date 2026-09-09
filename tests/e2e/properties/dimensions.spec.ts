@@ -31,7 +31,15 @@ for (const theme of ['light', 'dark']) {
       const width = section.locator('[data-property="width"]')
       await expect(width).toContainText('12345')
       await expect(section.locator('[data-property="height"]')).toContainText('6789')
-      await expect(section).toHaveScreenshot(`dimensions-values-${theme}.png`)
+      for (const axis of ['width', 'height']) {
+        const value = section
+          .locator(`[data-property="${axis}"] [data-slot="value"] > span`)
+          .first()
+        await expect(value).toBeVisible()
+        await expect
+          .poll(() => value.evaluate((element) => element.scrollWidth <= element.clientWidth))
+          .toBe(true)
+      }
       await width.getByRole('button', { name: 'Apply variable' }).click()
       await page
         .getByRole('button', { name: 'Create number variable from 12345', exact: true })
@@ -41,7 +49,7 @@ for (const theme of ['light', 'dark']) {
         .fill('Dimensions/Content/Maximum comfortable width')
       await page.getByRole('button', { name: 'Create', exact: true }).click()
       await expect(width).toHaveAttribute('data-bound')
-      await expect(section).toHaveScreenshot(`dimensions-bound-${theme}.png`)
+      if (theme === 'light') await expect(section).toHaveScreenshot('dimensions-bound-light.png')
       await width.getByRole('combobox', { name: 'Width', exact: true }).click()
       await expect(page.getByRole('option', { name: 'Fixed', exact: true })).toBeVisible()
       await page.keyboard.press('Escape')

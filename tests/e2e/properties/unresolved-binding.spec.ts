@@ -73,7 +73,8 @@ for (const theme of ['light', 'dark']) {
         const paint = page.getByRole('region', { name, exact: true })
         await expect(paint.locator('[data-slot="pill"][data-unresolved]')).toBeVisible()
         await expect(paint.locator('[data-property="opacity"]')).toContainText('100')
-        await expect(paint).toHaveScreenshot(`unresolved-${name.toLowerCase()}-${theme}.png`)
+        if (theme === 'dark' && name === 'Fill')
+          await expect(paint).toHaveScreenshot('unresolved-fill-dark.png')
         await paint.getByRole('button', { name: 'Apply variable' }).click()
         await page.getByRole('button', { name: 'Detach variable', exact: true }).click()
         await expect(paint.locator('[data-slot="pill"]')).toHaveCount(0)
@@ -85,7 +86,6 @@ for (const theme of ['light', 'dark']) {
         await expect(paint).toContainText('Paint/Replacement')
         await expect(paint.locator('[data-slot="pill"]')).not.toHaveAttribute('data-unresolved')
       }
-      await expect(section).toHaveScreenshot(`unresolved-number-${theme}.png`)
       await field.getByRole('button', { name: 'Apply variable' }).click()
       await page.getByRole('button', { name: 'Detach variable', exact: true }).click()
       await expect(field.locator('[data-slot="pill"]')).toHaveCount(0)

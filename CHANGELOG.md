@@ -34,9 +34,8 @@
 
 ### Changed
 
-- Group advanced stroke dash, cap, join, and miter controls in a dedicated settings popover.
-- Navigate Settings and library sections with accessible keyboard-operated tabs, and move keyboard focus between desktop and mobile toolbar controls without changing the active tool.
-- Move focus spatially through auto-layout alignment controls with arrow keys and apply alignment with Enter or Space.
+- Improve keyboard navigation across Settings, libraries, toolbars, and auto-layout alignment controls, while keeping mobile dialogs readable.
+- Group advanced stroke options in a settings popover.
 - Vertically center shaped section titles and allow renaming a section by double-clicking its canvas label.
 - Load supported online fonts before revealing imported pages, preserve substituted text during editing, and shape canvas labels with bundled Inter typography.
 - Upgrade CanvasKit to 0.41 and use immutable renderer paths through `PathBuilder`.
@@ -47,16 +46,10 @@
 
 ### Fixed
 
-- Show automatic line height explicitly and restore Auto with an undoable mode change, including removal of variable bindings.
-- Show unavailable variable bindings explicitly while preserving their identity for replacement or detachment, and keep paint opacity independent of color bindings.
-- Resolve bound field values using each layer’s variable mode, show mixed values when selected layers resolve differently, and keep variable edits scoped to the modes captured when editing begins.
-- Give width and height their own rows so numeric values and variable bindings remain readable beside sizing controls.
-- Display letter spacing in pixels to match rendered and variable-bound values, and keep numeric-field units and binding actions clear of truncated variable names.
-- Keep home search comfortably sized on mobile without stealing focus from keyboard-operated document tabs.
-- Keep mobile Settings content readable with horizontal navigation and prevent search clear controls from overlapping entered text.
-- Preserve native Enter and Space activation on focused buttons instead of consuming them as canvas shortcuts.
-- Keep layer-tree rows within their virtualized bounds and use white text and disclosure arrows for focused selections.
-- Keep action-button labels on one line while allowing explicit wrapping overrides.
+- Resolve variable-bound fields in each layer’s mode, keep edits scoped to the affected modes with undo, and make broken bindings visible and recoverable.
+- Keep property values readable beside binding and sizing controls, display letter spacing in pixels, and support explicit automatic line height.
+- Preserve native button activation and keyboard focus when navigating editor controls.
+- Keep virtualized layer rows aligned and focused selections legible.
 - Prevent the stock photo tool from replacing text, lines, structural layers, or containers with content while supporting closed shape geometry.
 - Preserve explicit text alignment metadata on imported Figma vectors across save and reload.
 

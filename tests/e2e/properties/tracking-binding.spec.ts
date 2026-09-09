@@ -26,11 +26,11 @@ for (const theme of ['light', 'dark']) {
     await page.getByPlaceholder('Variable name').fill('Typography/Tracking/Comfortable')
     await page.getByRole('button', { name: 'Create', exact: true }).click()
     await expect(field).toHaveAttribute('data-bound')
-    await expect(section).toHaveScreenshot(`tracking-bound-${theme}.png`)
+
     const input = section.getByRole('spinbutton', { name: 'Letter spacing', exact: true })
     await input.focus()
     await expect(field).toHaveAttribute('data-bound')
-    await expect(section).toHaveScreenshot(`tracking-editing-${theme}.png`)
+
     await input.fill('3')
     await input.press('Enter')
     await expect

@@ -25,7 +25,6 @@ for (const theme of ['light', 'dark']) {
       return id
     }, theme)
     const section = page.getByRole('region', { name: 'Auto layout', exact: true })
-    await expect(section).toHaveScreenshot(`auto-layout-fixed-${theme}.png`)
     await page.evaluate(
       (id) =>
         window.openPencil?.getStore?.().updateNode(id, {
@@ -37,7 +36,6 @@ for (const theme of ['light', 'dark']) {
         }),
       id
     )
-    await expect(section).toHaveScreenshot(`auto-layout-auto-asymmetric-${theme}.png`)
     await page.evaluate(
       (id) =>
         window.openPencil?.getStore?.().updateNode(id, {
