@@ -48,24 +48,6 @@ export function createAndBindNumberVariable(
   editor.bindVariable(target.nodeId, target.path, id)
 }
 
-export function setNumberVariableValue(
-  editor: Editor,
-  variableId: string,
-  value: number,
-  target?: BindingTarget
-) {
-  const variable = editor.getVariable(variableId)
-  if (!variable) return
-  const collection = editor.getCollection(variable.collectionId)
-  if (!collection) return
-  if (target) {
-    const modeId = editor.graph.getNodeVariableModeId(target.nodeId, collection.id)
-    editor.updateVariableValue(variableId, modeId, value)
-    return
-  }
-  for (const mode of collection.modes) editor.updateVariableValue(variableId, mode.modeId, value)
-}
-
 export function useNumberBindingProvider() {
   return useOpenPencilBindingProvider<number>({
     type: 'FLOAT',
@@ -77,7 +59,6 @@ export function useNumberBindingProvider() {
       prepareModeEdit(editor, id, target, () =>
         editor.graph.resolveNumberVariableForNode(target.nodeId, id)
       ),
-    create: createAndBindNumberVariable,
-    setValue: setNumberVariableValue
+    create: createAndBindNumberVariable
   })
 }

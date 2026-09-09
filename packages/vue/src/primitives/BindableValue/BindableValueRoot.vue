@@ -139,7 +139,6 @@ function beginMutation(source: BindingMutationSource): boolean {
     !startedUnbound &&
     !startedMixed &&
     policy.value === 'edit-variable' &&
-    !provider.setValue &&
     !provider.prepareEdit
   ) {
     return false
@@ -191,10 +190,7 @@ function restoreWithoutRollback() {
   if (detachedForInteraction) {
     for (const [target, variableId] of bindingSnapshot) provider.bind(target, variableId)
   } else if (interactionPolicy === 'edit-variable') {
-    for (const edit of valueEdits) {
-      if (edit.restore) edit.restore()
-      else edit.set(edit.value)
-    }
+    for (const edit of valueEdits) edit.restore()
   }
 }
 

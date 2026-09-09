@@ -15,7 +15,7 @@ export interface BindingValueEdit<V> {
   /** Stable identity of the variable and storage location being edited. */
   key: string
   value: V
-  restore?(): void
+  restore(): void
   set(value: V): void
 }
 
@@ -31,7 +31,6 @@ export interface BindingProvider<V = unknown> {
   unbind(target: BindingTarget): void
   create?(target: BindingTarget, value: V, name: string): void
   prepareEdit?(variableId: string, target: BindingTarget): BindingValueEdit<V> | undefined
-  setValue?(variableId: string, value: V, target?: BindingTarget): void
   runBatch?<T>(label: string, action: () => T): T
   beginBatch?(label: string): void
   commitBatch?(): void

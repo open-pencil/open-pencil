@@ -51,25 +51,6 @@ export function createAndBindColorVariable(
   editor.bindVariable(target.nodeId, target.path, id)
 }
 
-export function setColorVariableValue(
-  editor: Editor,
-  variableId: string,
-  value: Color,
-  target?: BindingTarget
-) {
-  const variable = editor.getVariable(variableId)
-  if (!variable) return
-  const collection = editor.getCollection(variable.collectionId)
-  if (!collection) return
-  if (target) {
-    const modeId = editor.graph.getNodeVariableModeId(target.nodeId, collection.id)
-    editor.updateVariableValue(variableId, modeId, structuredClone(value))
-    return
-  }
-  for (const mode of collection.modes)
-    editor.updateVariableValue(variableId, mode.modeId, structuredClone(value))
-}
-
 export function useColorBindingProvider() {
   return useOpenPencilBindingProvider<Color>({
     type: 'COLOR',
@@ -81,7 +62,6 @@ export function useColorBindingProvider() {
       prepareModeEdit(editor, id, target, () =>
         editor.graph.resolveColorVariableForNode(target.nodeId, id)
       ),
-    create: createAndBindColorVariable,
-    setValue: setColorVariableValue
+    create: createAndBindColorVariable
   })
 }
