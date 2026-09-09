@@ -12,6 +12,17 @@ describe('tarball metadata', () => {
     ).toEqual({ other: './other.js' })
   })
 
+  test('collects targets across multiple subpaths', () => {
+    expect(
+      packageExportTargetPaths({
+        exports: {
+          '.': { types: './dist/index.d.ts', import: './dist/index.js' },
+          './feature': { import: './dist/feature.js' }
+        }
+      })
+    ).toEqual(['./dist/index.d.ts', './dist/index.js', './dist/feature.js'])
+  })
+
   test('collects nested and wildcard export targets', () => {
     expect(
       packageExportTargetPaths({

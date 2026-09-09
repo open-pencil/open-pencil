@@ -4,8 +4,8 @@ import { join } from 'node:path'
 
 import { discoverPublicPackages, orderPackagesByDependencies } from '@open-pencil/package-artifacts'
 
-import { packPublicPackages } from './smoke/artifacts'
-import { verifyArtifactConsumers } from './smoke/consumer'
+import { verifyArtifactConsumers } from './consumer'
+import { packPublicPackages } from './pack'
 
 export async function verifyPackedPackages(root: string): Promise<void> {
   const temporaryRoot = await mkdtemp(join(tmpdir(), 'open-pencil-package-smoke-'))

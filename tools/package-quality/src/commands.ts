@@ -2,10 +2,10 @@ import { defineCommand } from 'citty'
 
 import { resolveWorkspaceRoot } from '@open-pencil/package-artifacts'
 
-import { checkTypes } from '../checks/attw'
-import { formatPackageDiagnostics, validatePackageMetadata } from '../checks/metadata'
-import { checkPublint } from '../checks/publint'
-import { verifyPackedPackages } from '../smoke'
+import { checkTypes } from './checks/attw'
+import { formatPackageDiagnostics, validatePackageMetadata } from './checks/metadata'
+import { checkPublint } from './checks/publint'
+import { verifyPackedPackages } from './smoke/verify'
 
 const rootArg = { type: 'string', description: 'Explicit workspace root' } as const
 

@@ -1,8 +1,8 @@
 import { readPackageJSON } from 'pkg-types'
 import * as v from 'valibot'
 
-import { parseJSONObject } from './npm-output'
-import { packageManifestSchema } from './schemas'
+import { parseJSONObject } from '../json'
+import { packageManifestSchema } from './schema'
 import type { PackageManifest } from './types'
 
 export async function readPackageManifest(path: string): Promise<PackageManifest> {

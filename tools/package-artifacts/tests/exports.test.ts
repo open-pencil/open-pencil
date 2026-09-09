@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 
-import { collectExportTargets, concreteImportSpecifiers, validateManifest } from '../src/exports'
-import type { PackageManifest } from '../src/types'
+import {
+  collectExportTargets,
+  concreteImportSpecifiers,
+  validateManifest
+} from '../src/manifest/exports'
+import type { PackageManifest } from '../src/manifest/types'
 
 const validManifest: PackageManifest = {
   name: '@open-pencil/example',

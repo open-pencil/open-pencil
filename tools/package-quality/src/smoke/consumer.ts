@@ -4,12 +4,8 @@ import { join } from 'node:path'
 
 import { inspectTarball } from '@open-pencil/package-artifacts/tarball'
 
-import {
-  installPackedPackages,
-  verifyPackageBinaries,
-  verifyPublicImports,
-  verifyRuntimeScenarios
-} from './artifacts'
+import { installPackedPackages } from './install'
+import { verifyPackageBinaries, verifyPublicImports, verifyRuntimeScenarios } from './runtime'
 import { runtimeScenarios } from './scenarios'
 import { verifyTypeConsumer } from './type-consumer'
 

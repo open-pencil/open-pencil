@@ -46,7 +46,7 @@ async function createPackageFixture(
   return packageDirectory
 }
 
-import { evaluateRuntime } from '../src/smoke/artifacts'
+import { evaluateRuntime } from '../src/smoke/runtime'
 
 const temporaryDirectories: string[] = []
 

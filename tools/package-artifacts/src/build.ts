@@ -1,9 +1,9 @@
 import { join } from 'node:path'
 
-import { discoverPublicPackages, orderPackagesByDependencies } from './catalog'
+import type { WorkspacePackage } from './manifest/types'
 import { runCommand } from './process'
-import { resolveWorkspaceRoot } from './root'
-import type { WorkspacePackage } from './types'
+import { discoverPublicPackages, orderPackagesByDependencies } from './workspace/catalog'
+import { resolveWorkspaceRoot } from './workspace/root'
 
 export interface BuildPublicPackagesOptions {
   log?: (message: string) => void

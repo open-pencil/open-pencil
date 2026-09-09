@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { resolveWorkspaceRoot } from '../src/root'
+import { resolveWorkspaceRoot } from '../src/workspace/root'
 
 test('nearest workspace lockfile isolates nested worktrees from the parent checkout', async () => {
   const parent = await mkdtemp(join(tmpdir(), 'workspace-root-'))

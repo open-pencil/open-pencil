@@ -3,8 +3,8 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { discoverPublicPackages, orderPackagesByDependencies } from '../src/catalog'
-import type { WorkspacePackage } from '../src/types'
+import type { WorkspacePackage } from '../src/manifest/types'
+import { discoverPublicPackages, orderPackagesByDependencies } from '../src/workspace/catalog'
 
 function pkg(name: string, dependencies: Record<string, string> = {}): WorkspacePackage {
   return { directory: `packages/${name}`, manifest: { name, version: '1.0.0', dependencies } }

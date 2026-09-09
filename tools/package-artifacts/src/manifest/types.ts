@@ -1,6 +1,6 @@
 import type * as v from 'valibot'
 
-import type { packageManifestSchema } from './schemas'
+import type { packageManifestSchema } from './schema'
 
 export type PackageManifest = v.InferOutput<typeof packageManifestSchema>
 

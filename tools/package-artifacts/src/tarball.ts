@@ -3,9 +3,9 @@ import { readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 
-import { collectExportTargets } from './exports'
-import { parsePackageManifest } from './manifest'
-import type { PackageManifest } from './types'
+import { collectExportTargets } from './manifest/exports'
+import { parsePackageManifest } from './manifest/read'
+import type { PackageManifest } from './manifest/types'
 
 const execFileAsync = promisify(execFile)
 

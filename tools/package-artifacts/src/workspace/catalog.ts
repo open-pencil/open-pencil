@@ -2,9 +2,9 @@ import { join } from 'node:path'
 
 import { readPackageJSON } from 'pkg-types'
 
-import { readPackageManifest } from './manifest'
-import { parseWorkspace } from './schemas'
-import type { PackageManifest, WorkspacePackage } from './types'
+import { readPackageManifest } from '../manifest/read'
+import type { PackageManifest, WorkspacePackage } from '../manifest/types'
+import { parseWorkspace } from './schema'
 
 const DEPENDENCY_FIELDS = [
   'dependencies',

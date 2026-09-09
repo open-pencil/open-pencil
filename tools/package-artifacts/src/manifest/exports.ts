@@ -1,4 +1,4 @@
-import type { PackageTarget } from './schemas'
+import type { PackageTarget } from './schema'
 import type { PackageDiagnostic, PackageManifest } from './types'
 
 export interface ExportTarget {
