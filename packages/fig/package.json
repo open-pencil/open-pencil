@@ -6,16 +6,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./node-change": {
       "types": "./dist/node-change.d.ts",
+      "bun": "./src/node-change/index.ts",
       "import": "./dist/node-change.js",
       "default": "./dist/node-change.js"
     },
     "./instance-overrides": {
       "types": "./dist/instance-overrides.d.ts",
+      "bun": "./src/instance-overrides/index.ts",
       "import": "./dist/instance-overrides.js",
       "default": "./dist/instance-overrides.js"
     }
@@ -25,6 +28,7 @@
   "sideEffects": false,
   "files": [
     "dist",
+    "src",
     "README.md"
   ],
   "scripts": {

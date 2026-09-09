@@ -49,8 +49,8 @@ function exportTargetPattern(target: string): RegExp {
 }
 
 function targetExists(entries: Set<string>, target: string): boolean {
-  if (!target.startsWith('./')) return true
-  const relativeTarget = target.slice(2)
+  const relativeTarget = target.replace(/^\.\//, '')
+  if (relativeTarget.startsWith('/') || relativeTarget.split('/').includes('..')) return false
   if (!relativeTarget.includes('*')) return entries.has(`package/${relativeTarget}`)
   const pattern = exportTargetPattern(relativeTarget)
   return [...entries].some((entry) =>
@@ -67,6 +67,10 @@ export async function inspectTarball(tarballPath: string): Promise<TarballInspec
   const report = (field: string, message: string) =>
     diagnostics.push({ field, message, packageName: manifest.name, tarballPath })
 
+  for (const field of ['main', 'types'] as const) {
+    const target = manifest[field]
+    if (target && !targetExists(entries, target)) report(field, `target is missing (${target})`)
+  }
   for (const [name, target] of Object.entries(packageBinTargets(manifest))) {
     if (!targetExists(entries, target)) report(`bin.${name}`, `target is missing (${target})`)
   }

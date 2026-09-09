@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 
+import { fileURLToPath } from 'node:url'
+
 import { defineCommand, runMain } from 'citty'
 
 import {
@@ -9,7 +11,7 @@ import {
   publishReleasePackages
 } from './workflow'
 
-const root = process.cwd()
+const root = fileURLToPath(new URL('../../..', import.meta.url))
 
 const main = defineCommand({
   meta: { name: 'release-packages', description: 'Build and publish verified npm packages' },

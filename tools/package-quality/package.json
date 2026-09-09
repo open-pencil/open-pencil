@@ -2,6 +2,9 @@
   "name": "@open-pencil/package-quality-tools",
   "private": true,
   "type": "module",
+  "exports": {
+    "./consumer": "./src/smoke/consumer.ts"
+  },
   "scripts": {
     "test": "bun test tests"
   },

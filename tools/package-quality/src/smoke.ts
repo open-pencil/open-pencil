@@ -5,44 +5,23 @@ import { fileURLToPath } from 'node:url'
 
 import { discoverPublicPackages, orderPackagesByDependencies } from '@open-pencil/package-artifacts'
 
-import {
-  assertNoRuntimeSource,
-  installPackedPackages,
-  overlayPackedPackages,
-  packPublicPackages,
-  verifyPackageBinaries,
-  verifyPublicImports,
-  verifyRuntimeScenarios
-} from './smoke/artifacts'
-import { runtimeScenarios } from './smoke/scenarios'
-import { verifyTypeConsumer } from './smoke/type-consumer'
+import { packPublicPackages } from './smoke/artifacts'
+import { verifyArtifactConsumers } from './smoke/consumer'
 
 export async function verifyPackedPackages(root: string): Promise<void> {
   const temporaryRoot = await mkdtemp(join(tmpdir(), 'open-pencil-package-smoke-'))
   try {
     const packages = orderPackagesByDependencies(await discoverPublicPackages(root))
-    let consumerDirectory: string | undefined
-    for (const packageManager of ['bun', 'npm'] as const) {
-      const packageSet = await packPublicPackages(
-        root,
-        join(temporaryRoot, `${packageManager}-tarballs`),
-        packages,
-        packageManager
-      )
-      assertNoRuntimeSource(packageSet.inspections)
-
-      if (!consumerDirectory) {
-        consumerDirectory = join(temporaryRoot, 'consumer')
-        await installPackedPackages(consumerDirectory, packageSet.tarballs)
-      } else {
-        await overlayPackedPackages(consumerDirectory, packageSet.inspections)
-      }
-      const manifests = packageSet.inspections.map(({ manifest }) => manifest)
-      await verifyPublicImports(manifests, consumerDirectory)
-      await verifyRuntimeScenarios(runtimeScenarios, consumerDirectory)
-      await verifyTypeConsumer(root, consumerDirectory)
-      await verifyPackageBinaries(consumerDirectory)
-    }
+    // Raw npm packing retains workspace:* dependencies. Inspect it without claiming
+    // installation compatibility; Bun packing normalizes those dependencies.
+    await packPublicPackages(root, join(temporaryRoot, 'npm-tarballs'), packages, 'npm')
+    const packageSet = await packPublicPackages(
+      root,
+      join(temporaryRoot, 'bun-tarballs'),
+      packages,
+      'bun'
+    )
+    await verifyArtifactConsumers(root, packageSet.tarballs)
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true })
   }
@@ -51,5 +30,5 @@ export async function verifyPackedPackages(root: string): Promise<void> {
 if (import.meta.main) {
   const root = fileURLToPath(new URL('../../..', import.meta.url))
   await verifyPackedPackages(root)
-  console.log('npm and Bun package artifacts pass installed Node and Bun verification.')
+  console.log('Raw npm archive inspection and Bun-packed Node/Bun consumer verification passed.')
 }

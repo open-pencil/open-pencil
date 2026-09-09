@@ -50,8 +50,6 @@ describe('export metadata', () => {
       }
     })
     expect(diagnostics.map(({ message }) => message)).toEqual([
-      'runtime target is TypeScript (./src/index.ts)',
-      'runtime target points to source (./src/index.ts)',
       'target is excluded by files (./src/index.ts)',
       'runtime target is a declaration file (./dist/index.d.ts)'
     ])

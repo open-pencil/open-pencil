@@ -56,7 +56,7 @@
 
 - Preserve imported Figma divider-line geometry during auto-layout recomputation, preventing half-pixel shifts on save and reload.
 
-- Make package exports resolve to packed build artifacts under both Node and Bun, including direct workspace and Git-based package installs. ([#663](https://github.com/open-pencil/open-pencil/issues/663))
+- Resolve package imports under Node and Bun from ordinary tarballs while preserving Bun source-first workspace execution. (#663)
 - Use the user's home directory as the default MCP file root on Windows, avoiding the caller's unreliable working directory.
 - Open legacy raw `.fig` files that store the Kiwi document and thumbnail without a ZIP wrapper. (#582)
 - Preserve a frame's auto-layout HUG sizing mode when converting it into a component with `create_component`.

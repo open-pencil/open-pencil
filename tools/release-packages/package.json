@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@open-pencil/package-artifacts": "workspace:*",
+    "@open-pencil/package-quality-tools": "workspace:*",
     "citty": "^0.1.6"
   }
 }

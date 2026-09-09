@@ -6,13 +6,21 @@ import { join } from 'node:path'
 import { runCommand } from '@open-pencil/package-artifacts'
 import { inspectTarball } from '@open-pencil/package-artifacts/tarball'
 
-async function createPackageFixture(root: string, bunTarget: string): Promise<string> {
+async function createPackageFixture(
+  root: string,
+  bunTarget: string,
+  files = ['dist']
+): Promise<string> {
   const packageDirectory = join(root, 'package')
   await mkdir(join(packageDirectory, 'dist'), { recursive: true })
   await mkdir(join(packageDirectory, 'src'), { recursive: true })
   await writeFile(join(packageDirectory, 'dist/index.js'), 'export const ready = true\n')
   await writeFile(join(packageDirectory, 'dist/index.d.ts'), 'export declare const ready: true\n')
-  await writeFile(join(packageDirectory, 'src/index.ts'), 'export const ready = true\n')
+  await writeFile(
+    join(packageDirectory, 'src/index.ts'),
+    "export { ready } from '#fixture/value'\n"
+  )
+  await writeFile(join(packageDirectory, 'src/value.ts'), 'export const ready = true\n')
   await writeFile(
     join(packageDirectory, 'package.json'),
     `${JSON.stringify(
@@ -20,7 +28,8 @@ async function createPackageFixture(root: string, bunTarget: string): Promise<st
         name: '@fixture/resolution',
         version: '1.0.0',
         type: 'module',
-        files: ['dist'],
+        imports: { '#fixture/*': './src/*.ts' },
+        files,
         exports: {
           '.': {
             types: './dist/index.d.ts',
@@ -47,10 +56,10 @@ afterEach(async () => {
   )
 })
 
-async function packAndInstall(bunTarget: string) {
+async function packAndInstall(bunTarget: string, files = ['dist']) {
   const root = await mkdtemp(join(tmpdir(), 'open-pencil-package-resolution-'))
   temporaryDirectories.push(root)
-  const packageDirectory = await createPackageFixture(root, bunTarget)
+  const packageDirectory = await createPackageFixture(root, bunTarget, files)
   const artifacts = join(root, 'artifacts')
   const consumer = join(root, 'consumer')
   await mkdir(artifacts)
@@ -84,6 +93,26 @@ describe('packed runtime resolution', () => {
       )
     }
   })
+
+  test('ships transitive source imports with the source directory', async () => {
+    const { consumer, tarball } = await packAndInstall('./src/index.ts', ['dist', 'src'])
+    expect((await inspectTarball(tarball)).diagnostics).toEqual([])
+    for (const runtime of ['node', 'bun'] as const) {
+      await evaluateRuntime(
+        runtime,
+        "const { ready } = await import('@fixture/resolution'); if (!ready) throw new Error('missing value')",
+        consumer
+      )
+    }
+  }, 120_000)
+
+  test('an entrypoint-only file list does not satisfy transitive imports', async () => {
+    const { consumer, tarball } = await packAndInstall('./src/index.ts', ['dist', 'src/index.ts'])
+    expect((await inspectTarball(tarball)).diagnostics).toEqual([])
+    await expect(
+      evaluateRuntime('bun', "await import('@fixture/resolution')", consumer)
+    ).rejects.toThrow()
+  }, 120_000)
 
   test('detects the source-only Bun condition from issue 663', async () => {
     const { consumer, tarball } = await packAndInstall('./src/index.ts')

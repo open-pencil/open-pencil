@@ -68,7 +68,7 @@ export async function runCommand(request: CommandRequest): Promise<CommandResult
       if (timeout) clearTimeout(timeout)
       reject(error)
     })
-    child.once('exit', (exitCode, signal) => {
+    child.once('close', (exitCode, signal) => {
       if (timeout) clearTimeout(timeout)
       if (exitCode === 0) {
         resolve({ stderr, stdout })

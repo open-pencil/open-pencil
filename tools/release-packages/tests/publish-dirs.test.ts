@@ -28,7 +28,9 @@ async function fixtureRoot() {
           '.': { bun: './dist/index.js', import: './dist/index.js' }
         },
         devDependencies: { typescript: '^5.0.0' },
-        publishConfig: { access: 'public', main: './dist/index.js', types: './dist/index.d.ts' }
+        main: './dist/index.js',
+        types: './dist/index.d.ts',
+        publishConfig: { access: 'public' }
       },
       null,
       2
@@ -38,6 +40,20 @@ async function fixtureRoot() {
 }
 
 describe('publishPackageJSON', () => {
+  test('rejects resolution rewrites even when injected through publishConfig', () => {
+    expect(() =>
+      publishPackageJSON(
+        {
+          name: '@fixture/example',
+          version: '1.0.0',
+          exports: { '.': './dist/index.js' },
+          publishConfig: { exports: { '.': './missing.js' } }
+        },
+        '1.0.0'
+      )
+    ).toThrow('publishConfig must not rewrite exports')
+  })
+
   test('rewrites workspace dependencies without changing runtime exports', () => {
     const exports = { '.': { bun: './dist/index.js', import: './dist/index.js' } }
     const json = publishPackageJSON(
@@ -48,7 +64,8 @@ describe('publishPackageJSON', () => {
         dependencies: { '@open-pencil/core': 'workspace:*', zod: '^4.0.0' },
         exports,
         devDependencies: { typescript: '^5.0.0' },
-        publishConfig: { access: 'public', main: './dist/index.js' }
+        main: './dist/index.js',
+        publishConfig: { access: 'public' }
       },
       '0.13.2'
     )

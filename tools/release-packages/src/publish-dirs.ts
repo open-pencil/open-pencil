@@ -52,6 +52,15 @@ async function copyRecursive(from: string, to: string): Promise<void> {
 
 export function publishPackageJSON(source: PackageManifest, coreVersion: string): PackageManifest {
   const json = structuredClone(source)
+  for (const field of ['exports', 'imports', 'main', 'types', 'bin'] as const) {
+    if (
+      source.publishConfig &&
+      field in source.publishConfig &&
+      JSON.stringify(source.publishConfig[field]) !== JSON.stringify(source[field])
+    ) {
+      throw new Error(`${source.name}: publishConfig must not rewrite ${field}`)
+    }
+  }
 
   for (const field of PACKAGE_FIELDS) {
     const dependencies = json[field]

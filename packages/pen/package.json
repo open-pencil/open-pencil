@@ -6,6 +6,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "bun": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
@@ -15,6 +16,7 @@
   "sideEffects": false,
   "files": [
     "dist",
+    "src",
     "README.md"
   ],
   "scripts": {

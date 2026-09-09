@@ -1,5 +1,5 @@
-import { mkdir, readdir, rm } from 'node:fs/promises'
-import { basename, join } from 'node:path'
+import { mkdir } from 'node:fs/promises'
+import { isAbsolute, join } from 'node:path'
 
 import {
   concreteImportSpecifiers,
@@ -26,7 +26,7 @@ function tarballFromOutput(output: string, directory: string): string {
     .reverse()
     .find((line: string) => line.endsWith('.tgz'))
   if (!filename) throw new Error(`Package manager did not report a tarball in ${directory}`)
-  return filename.startsWith('/') ? filename : join(directory, filename)
+  return isAbsolute(filename) ? filename : join(directory, filename)
 }
 
 export async function packPublicPackages(
@@ -71,24 +71,6 @@ function npmTarballFromOutput(output: string, directory: string, packageName: st
   const filename = result[0]?.filename
   if (!filename) throw new Error(`${packageName}: npm pack did not report a tarball`)
   return join(directory, filename)
-}
-
-export async function overlayPackedPackages(
-  consumerDirectory: string,
-  inspections: TarballInspection[]
-): Promise<void> {
-  for (const { manifest, tarballPath } of inspections) {
-    const segments = manifest.name.split('/')
-    const packageDirectory = join(consumerDirectory, 'node_modules', ...segments)
-    await rm(packageDirectory, { recursive: true, force: true })
-    await mkdir(packageDirectory, { recursive: true })
-    await runCommand({
-      command: 'tar',
-      args: ['-xzf', tarballPath, '-C', packageDirectory, '--strip-components=1'],
-      cwd: consumerDirectory,
-      timeoutMs: 30_000
-    })
-  }
 }
 
 export async function installPackedPackages(
@@ -156,9 +138,7 @@ export async function verifyRuntimeScenarios(
 
 export async function verifyPackageBinaries(consumerDirectory: string): Promise<void> {
   const binaryDirectory = join(consumerDirectory, 'node_modules', '.bin')
-  const binaries = (await readdir(binaryDirectory)).filter((name) =>
-    ['openpencil', 'openpencil-mcp', 'openpencil-mcp-http'].includes(name)
-  )
+  const binaries = ['openpencil', 'openpencil-mcp', 'openpencil-mcp-http']
   for (const runtime of ['node', 'bun'] as const) {
     for (const binary of binaries) {
       await runCommand({
@@ -169,13 +149,4 @@ export async function verifyPackageBinaries(consumerDirectory: string): Promise<
       })
     }
   }
-}
-
-export function assertNoRuntimeSource(inspections: TarballInspection[]): void {
-  const invalid = inspections.flatMap(({ entries, tarballPath }) =>
-    [...entries]
-      .filter((entry) => /package\/src\/.*\.[cm]?tsx?$/.test(entry) && !/\.d\.[cm]?ts$/.test(entry))
-      .map((entry) => `${basename(tarballPath)}: ${entry}`)
-  )
-  if (invalid.length > 0) throw new Error(`Tarballs include runtime source:\n${invalid.join('\n')}`)
 }

@@ -10,6 +10,7 @@ import {
   type WorkspacePackage
 } from '@open-pencil/package-artifacts'
 import { inspectTarball, validatePackedTarballs } from '@open-pencil/package-artifacts/tarball'
+import { verifyArtifactConsumers } from '@open-pencil/package-quality-tools/consumer'
 
 import { discoverPublishPackages, preparePublishDirectories } from './publish-dirs'
 
@@ -103,10 +104,6 @@ export async function packReleasePackages(
 
   for (const entry of plan) {
     const { manifest } = entry.package
-    if (entry.status === 'published') {
-      console.log(`Skipping ${manifest.name}@${manifest.version}: already published`)
-      continue
-    }
     const preparedDirectory = join(paths.prepared, basename(entry.package.directory))
     const result = await runCommand({
       command: 'npm',
@@ -117,9 +114,7 @@ export async function packReleasePackages(
     console.log(`Packed ${manifest.name}: ${packedFilename(result.stdout, manifest.name)}`)
   }
 
-  if (plan.some(({ status }) => status === 'unpublished')) {
-    await validatePackedTarballs(paths.artifacts)
-  }
+  await validatePackedTarballs(paths.artifacts)
   return plan
 }
 
@@ -152,7 +147,10 @@ export function validatePublicationArtifacts(
       .map(({ package: pkg }) => `${pkg.manifest.name}@${pkg.manifest.version}`)
   )
   const missing = [...expected].filter((key) => !artifacts.has(key))
-  const unexpected = [...artifacts.keys()].filter((key) => !expected.has(key))
+  const known = new Set(
+    plan.map(({ package: pkg }) => `${pkg.manifest.name}@${pkg.manifest.version}`)
+  )
+  const unexpected = [...artifacts.keys()].filter((key) => !known.has(key))
   if (missing.length === 0 && unexpected.length === 0) return
 
   const messages = [
@@ -167,6 +165,7 @@ export async function publishReleasePackages(root: string): Promise<PublicationP
   const plan = await createPublicationPlan(root)
   const artifacts = await artifactsByPackage(paths.artifacts)
   validatePublicationArtifacts(plan, artifacts)
+  await verifyArtifactConsumers(root, [...artifacts.values()])
 
   for (const entry of plan) {
     const { manifest } = entry.package

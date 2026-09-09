@@ -1,7 +1,9 @@
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import {
   discoverPublicPackages,
+  readJSON,
   validateManifest,
   type PackageDiagnostic
 } from '@open-pencil/package-artifacts'
@@ -14,7 +16,9 @@ export async function validatePackageMetadata(root: string): Promise<PackageDiag
     ]
   }
 
-  const expectedVersion = packages[0]?.manifest.version
+  const { version: expectedVersion } = await readJSON<{ version: string }>(
+    join(root, 'package.json')
+  )
   const diagnostics = packages.flatMap(({ manifest }) => validateManifest(manifest))
   for (const { manifest } of packages) {
     if (manifest.version !== expectedVersion) {

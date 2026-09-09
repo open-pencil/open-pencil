@@ -77,10 +77,14 @@ export function validateManifest(manifest: PackageManifest): PackageDiagnostic[]
   const report = (field: string, message: string) =>
     diagnostics.push({ field, message, packageName: manifest.name })
 
-  function validateRuntime(field: string, target: string): void {
+  function validateRuntime(field: string, target: string, condition: string | null = null): void {
     if (isDeclarationPath(target)) report(field, `runtime target is a declaration file (${target})`)
-    else if (/\.[cm]?tsx?$/.test(target)) report(field, `runtime target is TypeScript (${target})`)
-    if (target.startsWith('./src/')) report(field, `runtime target points to source (${target})`)
+    else if (/\.[cm]?tsx?$/.test(target) && condition !== 'bun') {
+      report(field, `runtime target is TypeScript (${target})`)
+    }
+    if (target.startsWith('./src/') && condition !== 'bun') {
+      report(field, `runtime target points to source (${target})`)
+    }
     if (!includedByFiles(target, files)) report(field, `target is excluded by files (${target})`)
   }
 
@@ -102,7 +106,7 @@ export function validateManifest(manifest: PackageManifest): PackageDiagnostic[]
   }
   for (const entry of collectExportTargets(manifest.exports, ['exports'])) {
     if (entry.condition === 'types') validateTypes(entry.field, entry.target)
-    else validateRuntime(entry.field, entry.target)
+    else validateRuntime(entry.field, entry.target, entry.condition)
   }
   if (
     manifest.publishConfig &&

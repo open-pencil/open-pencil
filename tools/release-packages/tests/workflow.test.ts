@@ -77,7 +77,10 @@ describe('release workflow', () => {
         [{ package: packageEntry, status: 'published' }],
         new Map([['@fixture/example@1.0.0', '/artifact.tgz']])
       )
-    ).toThrow('Unexpected package artifact for @fixture/example@1.0.0')
+    ).not.toThrow()
+    expect(() =>
+      validatePublicationArtifacts([], new Map([['@fixture/unknown@1.0.0', '/artifact.tgz']]))
+    ).toThrow('Unexpected package artifact for @fixture/unknown@1.0.0')
   })
 
   test('packs and validates an unpublished release artifact', async () => {
