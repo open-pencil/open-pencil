@@ -88,7 +88,7 @@ describe('release workflow', () => {
     await mkdir(join(root, 'packages/example/dist'), { recursive: true })
     await writeFile(
       join(root, 'package.json'),
-      JSON.stringify({ workspaces: ['packages/example'] })
+      JSON.stringify({ name: 'fixture', version: '1.0.0', workspaces: ['packages/example'] })
     )
     await writeFile(join(root, 'packages/example/dist/index.js'), 'export const ready = true\n')
     await writeFile(

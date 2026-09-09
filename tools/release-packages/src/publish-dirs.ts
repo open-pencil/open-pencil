@@ -3,11 +3,14 @@ import { basename, dirname, join } from 'node:path'
 
 import {
   discoverPublicPackages,
+  parseNpmPack,
   readPackageManifest,
   runCommand,
   type PackageManifest,
   type WorkspacePackage
 } from '@open-pencil/package-artifacts'
+
+import { NPM_RELEASE_POLICY } from './policy'
 
 export interface PackagePublishConfig {
   directory: string
@@ -30,6 +33,15 @@ const PACKAGE_FIELDS = [
 const PUBLISH_CONFIG_FIELDS = new Set(['access', 'provenance', 'registry'])
 
 export function publishPackageJSON(source: PackageManifest, coreVersion: string): PackageManifest {
+  if (source.publishConfig) {
+    for (const [field, expected] of Object.entries(NPM_RELEASE_POLICY)) {
+      if (field in source.publishConfig && source.publishConfig[field] !== expected) {
+        throw new Error(
+          `${source.name}: publishConfig.${field} conflicts with the public npm release policy`
+        )
+      }
+    }
+  }
   const json = structuredClone(source)
   for (const field of ['exports', 'imports', 'main', 'types', 'bin'] as const) {
     if (
@@ -70,34 +82,6 @@ export async function discoverPublishPackages(root: string): Promise<PackagePubl
   return (await discoverPublicPackages(root)).map(packagePublishConfig)
 }
 
-function npmPackFiles(stdout: string): string[] {
-  const data: unknown = JSON.parse(stdout)
-  if (
-    !Array.isArray(data) ||
-    data.length !== 1 ||
-    !data[0] ||
-    typeof data[0] !== 'object' ||
-    !('files' in data[0]) ||
-    !Array.isArray(data[0].files)
-  ) {
-    throw new Error('npm pack did not return a file listing')
-  }
-  return data[0].files.map((entry: unknown) => {
-    if (
-      !entry ||
-      typeof entry !== 'object' ||
-      !('path' in entry) ||
-      typeof entry.path !== 'string' ||
-      entry.path.startsWith('/') ||
-      entry.path.includes('\\') ||
-      entry.path.split('/').includes('..')
-    ) {
-      throw new Error('npm pack returned an invalid file path')
-    }
-    return entry.path
-  })
-}
-
 export async function preparePublishDirectories(
   options: PreparePublishDirectoriesOptions
 ): Promise<void> {
@@ -116,7 +100,7 @@ export async function preparePublishDirectories(
       cwd: sourceDir,
       timeoutMs: 60_000
     })
-    const files = npmPackFiles(listing.stdout)
+    const files = parseNpmPack(listing.stdout).files
     for (const relativePath of files) {
       const destination = join(destinationDir, relativePath)
       await mkdir(dirname(destination), { recursive: true })

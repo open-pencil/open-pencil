@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { promisify } from 'node:util'
 
 import { collectExportTargets } from './exports'
+import { parsePackageManifest } from './manifest'
 import type { PackageManifest } from './types'
 
 const execFileAsync = promisify(execFile)
@@ -40,7 +41,7 @@ export async function tarballPackageJSON(tarballPath: string): Promise<PackageMa
   const { stdout } = await execFileAsync('tar', ['-xOf', tarballPath, 'package/package.json'], {
     encoding: 'utf8'
   })
-  return JSON.parse(stdout) as PackageManifest
+  return parsePackageManifest(stdout, `${tarballPath}: package/package.json`)
 }
 
 function exportTargetPattern(target: string): RegExp {

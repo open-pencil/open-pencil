@@ -41,6 +41,18 @@ async function fixtureRoot() {
 }
 
 describe('publishPackageJSON', () => {
+  test('rejects conflicting publication settings', () => {
+    for (const publishConfig of [
+      { access: 'restricted' },
+      { provenance: false },
+      { registry: 'https://other.invalid/' }
+    ]) {
+      expect(() =>
+        publishPackageJSON({ name: 'fixture', version: '1.0.0', publishConfig }, '1.0.0')
+      ).toThrow('conflicts with the public npm release policy')
+    }
+  })
+
   test('rejects resolution rewrites even when injected through publishConfig', () => {
     expect(() =>
       publishPackageJSON(

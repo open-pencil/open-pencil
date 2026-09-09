@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises'
 import { isAbsolute, join } from 'node:path'
 
 import {
+  parseNpmPack,
   concreteImportSpecifiers,
   runCommand,
   type PackageManifest,
@@ -51,7 +52,7 @@ export async function packPublicPackages(
     const tarball =
       packageManager === 'bun'
         ? tarballFromOutput(result.stdout, outputDirectory)
-        : npmTarballFromOutput(result.stdout, outputDirectory, pkg.manifest.name)
+        : npmTarballFromOutput(result.stdout, outputDirectory)
     tarballs.push(tarball)
   }
   const inspections = await Promise.all(tarballs.map(inspectTarball))
@@ -66,11 +67,8 @@ export async function packPublicPackages(
   return { inspections, packages, tarballs }
 }
 
-function npmTarballFromOutput(output: string, directory: string, packageName: string): string {
-  const result = JSON.parse(output) as Array<{ filename?: string }>
-  const filename = result[0]?.filename
-  if (!filename) throw new Error(`${packageName}: npm pack did not report a tarball`)
-  return join(directory, filename)
+function npmTarballFromOutput(output: string, directory: string): string {
+  return join(directory, parseNpmPack(output).filename)
 }
 
 export async function installPackedPackages(

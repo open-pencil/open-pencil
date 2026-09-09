@@ -6,12 +6,16 @@ import {
   CommandError,
   discoverPublicPackages,
   orderPackagesByDependencies,
+  parseNpmPack,
+  parseJSONObject,
+  readPackageManifest,
   runCommand,
   type WorkspacePackage
 } from '@open-pencil/package-artifacts'
 import { inspectTarball, validatePackedTarballs } from '@open-pencil/package-artifacts/tarball'
 import { verifyArtifactConsumers } from '@open-pencil/package-quality-tools/consumer'
 
+import { NPM_RELEASE_POLICY } from './policy'
 import { discoverPublishPackages, preparePublishDirectories } from './publish-dirs'
 
 export interface PublicationPlanEntry {
@@ -39,8 +43,8 @@ export { buildPublicPackages as buildReleasePackages }
 
 export async function prepareReleasePackages(root: string): Promise<void> {
   const packages = await discoverPublicPackages(root)
-  const version = packages[0]?.manifest.version
-  if (!version) throw new Error('No public packages discovered')
+  const { version } = await readPackageManifest(join(root, 'package.json'))
+  if (packages.length === 0) throw new Error('No public packages discovered')
   if (packages.some(({ manifest }) => manifest.version !== version)) {
     throw new Error('Public package versions must be aligned before release preparation')
   }
@@ -57,14 +61,21 @@ async function packageIsPublished(pkg: WorkspacePackage, root: string): Promise<
   try {
     await runCommand({
       command: 'npm',
-      args: ['view', specifier, 'version', '--json'],
+      args: ['view', specifier, 'version', '--json', '--registry', NPM_RELEASE_POLICY.registry],
       cwd: root,
       timeoutMs: 30_000
     })
     return true
   } catch (error) {
-    if (error instanceof CommandError && /E404|is not in this registry/.test(error.stderr)) {
-      return false
+    if (error instanceof CommandError) {
+      try {
+        const response = parseJSONObject(error.stdout, 'npm view')
+        const detail = response.error
+        if (detail && typeof detail === 'object' && 'code' in detail && detail.code === 'E404')
+          return false
+      } catch {
+        throw error
+      }
     }
     throw error
   }
@@ -80,17 +91,6 @@ export async function createPublicationPlan(
     package: pkg,
     status: statuses[index] ? 'published' : 'unpublished'
   }))
-}
-
-interface NpmPackResult {
-  filename?: string
-}
-
-function packedFilename(stdout: string, packageName: string): string {
-  const result = JSON.parse(stdout) as NpmPackResult[]
-  const filename = result[0]?.filename
-  if (!filename) throw new Error(`${packageName}: npm pack did not return an artifact filename`)
-  return filename
 }
 
 export async function packReleasePackages(
@@ -111,7 +111,7 @@ export async function packReleasePackages(
       cwd: preparedDirectory,
       timeoutMs: 60_000
     })
-    console.log(`Packed ${manifest.name}: ${packedFilename(result.stdout, manifest.name)}`)
+    console.log(`Packed ${manifest.name}: ${parseNpmPack(result.stdout).filename}`)
   }
 
   await validatePackedTarballs(paths.artifacts)
@@ -160,12 +160,29 @@ export function validatePublicationArtifacts(
   throw new Error(messages.join('\n'))
 }
 
-export async function publishReleasePackages(root: string): Promise<PublicationPlanEntry[]> {
+export interface PublicationOperations {
+  plan(root: string): Promise<PublicationPlanEntry[]>
+  artifacts(directory: string): Promise<Map<string, string>>
+  verify(root: string, tarballs: string[]): Promise<void>
+  execute: typeof runCommand
+}
+
+const publicationOperations: PublicationOperations = {
+  plan: createPublicationPlan,
+  artifacts: artifactsByPackage,
+  verify: verifyArtifactConsumers,
+  execute: runCommand
+}
+
+export async function publishReleasePackages(
+  root: string,
+  operations: PublicationOperations = publicationOperations
+): Promise<PublicationPlanEntry[]> {
   const paths = releasePaths(root)
-  const plan = await createPublicationPlan(root)
-  const artifacts = await artifactsByPackage(paths.artifacts)
+  const plan = await operations.plan(root)
+  const artifacts = await operations.artifacts(paths.artifacts)
   validatePublicationArtifacts(plan, artifacts)
-  await verifyArtifactConsumers(root, [...artifacts.values()])
+  await operations.verify(root, [...artifacts.values()])
 
   for (const entry of plan) {
     const { manifest } = entry.package
@@ -176,9 +193,17 @@ export async function publishReleasePackages(root: string): Promise<PublicationP
     const key = `${manifest.name}@${manifest.version}`
     const artifact = artifacts.get(key)
     if (!artifact) throw new Error(`Publication artifact disappeared for ${key}`)
-    await runCommand({
+    await operations.execute({
       command: 'npm',
-      args: ['publish', artifact, '--access', 'public', '--provenance'],
+      args: [
+        'publish',
+        artifact,
+        '--access',
+        NPM_RELEASE_POLICY.access,
+        '--provenance',
+        '--registry',
+        NPM_RELEASE_POLICY.registry
+      ],
       cwd: root,
       output: 'inherit',
       timeoutMs: 120_000
