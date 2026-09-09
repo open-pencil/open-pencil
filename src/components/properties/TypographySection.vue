@@ -131,7 +131,7 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.letterSpacing">
           <VariableNumberField
-            suffix="%"
+            suffix="px"
             :model-value="ctx.node.value.letterSpacing"
             :aria-label="panels.letterSpacing"
             :node-id="ctx.node.value.id"
