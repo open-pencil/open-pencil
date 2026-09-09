@@ -14,7 +14,7 @@ import VariableNumberField from '@/components/properties/VariableNumberField.vue
 import { useSelectUI } from '@/components/ui/select'
 import Tip from '@/components/ui/Tip.vue'
 
-import type { SizeLimitFieldProps } from '@/components/properties/LayoutSection/size/types'
+import type { SizeLimitFieldProps } from '@/components/properties/layout/size/types'
 
 const { item } = defineProps<SizeLimitFieldProps>()
 

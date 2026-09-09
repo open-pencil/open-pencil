@@ -346,5 +346,6 @@
   "brightness": "Jasność",
   "lightness": "Jasność",
   "chroma": "Chroma",
-  "alpha": "Alfa"
+  "alpha": "Alfa",
+  "individualPadding": "Indywidualne dopełnienie"
 }

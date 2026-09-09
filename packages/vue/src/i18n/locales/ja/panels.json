@@ -346,5 +346,6 @@
   "brightness": "明度",
   "lightness": "明度",
   "chroma": "彩度",
-  "alpha": "アルファ"
+  "alpha": "アルファ",
+  "individualPadding": "個別のパディング"
 }

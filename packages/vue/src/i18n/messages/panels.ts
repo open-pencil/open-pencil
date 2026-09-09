@@ -6,6 +6,7 @@ export const panelMessageDefaults = {
   untitled: 'Untitled',
   nodeCopyString: ' copy',
   layers: 'Layers',
+  individualPadding: 'Individual padding',
   pages: 'Pages',
   design: 'Design',
   code: 'Code',

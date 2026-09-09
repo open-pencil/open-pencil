@@ -346,5 +346,6 @@
   "brightness": "Brillo",
   "lightness": "Luminosidad",
   "chroma": "Croma",
-  "alpha": "Alfa"
+  "alpha": "Alfa",
+  "individualPadding": "Relleno individual"
 }

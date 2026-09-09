@@ -16,7 +16,7 @@ import { useSelectUI } from '@/components/ui/select'
 import Tip from '@/components/ui/Tip.vue'
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
-import type { SizeAxisFieldProps } from '@/components/properties/LayoutSection/size/types'
+import type { SizeAxisFieldProps } from '@/components/properties/layout/size/types'
 import type { SizeLimitProp } from '@open-pencil/vue'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
