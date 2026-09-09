@@ -346,5 +346,6 @@
   "brightness": "Luminosità",
   "lightness": "Chiarezza",
   "chroma": "Croma",
-  "alpha": "Alfa"
+  "alpha": "Alfa",
+  "individualPadding": "Spaziatura interna individuale"
 }

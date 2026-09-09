@@ -14,7 +14,7 @@ import type { LayoutSizing } from '@open-pencil/scene-graph'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 import type { SizeLimitProp } from '@open-pencil/vue'
 
-import type { SizeAxisFieldProps } from '@/components/properties/LayoutSection/size/types'
+import type { SizeAxisFieldProps } from '@/components/properties/layout/size/types'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import { useSelectUI } from '@/components/ui/select/select'

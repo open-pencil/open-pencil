@@ -346,5 +346,6 @@
   "brightness": "Яркость",
   "lightness": "Светлота",
   "chroma": "Цветность",
-  "alpha": "Альфа"
+  "alpha": "Альфа",
+  "individualPadding": "Отступы по сторонам"
 }

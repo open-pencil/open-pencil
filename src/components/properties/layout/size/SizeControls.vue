@@ -3,9 +3,9 @@ import { computed } from 'vue'
 
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
-import SizeAxisField from '@/components/properties/LayoutSection/size/SizeAxisField.vue'
-import SizeLimitField from '@/components/properties/LayoutSection/size/SizeLimitField.vue'
-import type { SizeLimitItem } from '@/components/properties/LayoutSection/size/types'
+import SizeAxisField from '@/components/properties/layout/size/SizeAxisField.vue'
+import SizeLimitField from '@/components/properties/layout/size/SizeLimitField.vue'
+import type { SizeLimitItem } from '@/components/properties/layout/size/types'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 
 const ctx = useLayoutControlsContext()
@@ -48,7 +48,7 @@ const visibleSizeLimits = computed(() =>
 </script>
 
 <template>
-  <PanelGrid :columns="2">
+  <PanelGrid :columns="1">
     <SizeAxisField axis="width" icon="W" :label="panels.width" />
     <SizeAxisField axis="height" icon="H" :label="panels.height" />
   </PanelGrid>

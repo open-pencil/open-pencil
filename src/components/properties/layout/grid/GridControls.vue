@@ -3,7 +3,7 @@ import type { GridTrackSizing } from '@open-pencil/scene-graph'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
-import type { GridTrackProp } from '@/components/properties/LayoutSection/types'
+import type { GridTrackProp } from '@/components/properties/layout/types'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 

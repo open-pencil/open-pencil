@@ -346,5 +346,6 @@
   "brightness": "Helligkeit",
   "lightness": "Helligkeit",
   "chroma": "Chroma",
-  "alpha": "Alpha"
+  "alpha": "Alpha",
+  "individualPadding": "Individueller Innenabstand"
 }

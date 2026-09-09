@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { LayoutControlsRoot, useI18n } from '@open-pencil/vue'
 
-import AutoLayoutControls from '@/components/properties/LayoutSection/AutoLayoutControls.vue'
-import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
-import FlexControls from '@/components/properties/LayoutSection/FlexControls.vue'
-import GridControls from '@/components/properties/LayoutSection/GridControls.vue'
-import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
-import SizeControls from '@/components/properties/LayoutSection/size/SizeControls.vue'
-import TextResizingControl from '@/components/properties/LayoutSection/TextResizingControl.vue'
+import ClipContentControl from '@/components/properties/layout/ClipContentControl.vue'
+import FlexControls from '@/components/properties/layout/flex/FlexControls.vue'
+import GridControls from '@/components/properties/layout/grid/GridControls.vue'
+import LayoutFlowControl from '@/components/properties/layout/LayoutFlowControl.vue'
+import PaddingControls from '@/components/properties/layout/padding/PaddingControls.vue'
+import SizeControls from '@/components/properties/layout/size/SizeControls.vue'
+import TextResizingControl from '@/components/properties/layout/TextResizingControl.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
@@ -37,7 +37,7 @@ const CONTAINER_TYPES = ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE']
           </IconButton>
         </template>
 
-        <AutoLayoutControls v-if="CONTAINER_TYPES.includes(ctx.node.type)" />
+        <LayoutFlowControl v-if="CONTAINER_TYPES.includes(ctx.node.type)" />
         <div class="mt-2 mb-1 text-[11px] text-muted">{{ panels.dimensions }}</div>
         <TextResizingControl v-if="ctx.node.type === 'TEXT'" />
         <SizeControls />

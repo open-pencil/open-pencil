@@ -346,5 +346,6 @@
   "brightness": "亮度",
   "lightness": "明度",
   "chroma": "色度",
-  "alpha": "透明度"
+  "alpha": "透明度",
+  "individualPadding": "独立内边距"
 }

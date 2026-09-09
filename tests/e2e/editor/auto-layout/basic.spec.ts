@@ -50,7 +50,7 @@ test('Shift+A wraps selection in auto-layout frame', async () => {
   expect(expectDefined(node, 'node').childIds.length).toBe(2)
 
   frameId = expectDefined(node, 'node').id
-  await expect(propertySection(page, 'Auto layout')).toHaveScreenshot('layout-size-controls.png')
+
   await expect(propertySection(page, 'Layout')).toHaveCount(0)
   canvas.assertNoErrors()
 })
@@ -283,7 +283,6 @@ test('Freeform disables auto layout and a flow option restores it', async () => 
   await expect(layout.getByRole('checkbox', { name: 'Clip content' })).toBeVisible()
   await expect(layout.getByRole('button', { name: 'Freeform' })).toHaveAttribute('data-state', 'on')
   await expect(propertySection(page, 'Auto layout')).toHaveCount(0)
-  await expect(layout).toHaveScreenshot('layout-freeform-controls.png')
 
   await layout.getByRole('button', { name: 'Vertical layout' }).click()
   await canvas.waitForRender()

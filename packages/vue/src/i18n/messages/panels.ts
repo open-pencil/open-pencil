@@ -5,6 +5,7 @@ import { i18n } from '#vue/i18n/create'
 export const panelMessageDefaults = {
   untitled: 'Untitled',
   nodeCopyString: ' copy',
+  individualPadding: 'Individual padding',
   layers: 'Layers',
   pages: 'Pages',
   design: 'Design',
