@@ -54,13 +54,14 @@ test('shows geometry controls only after a stroke is added', async () => {
 
   await propertySection(page, 'Stroke').getByRole('button', { name: 'Add stroke' }).click()
   await canvas.waitForRender()
+  await propertySection(page, 'Stroke').getByRole('button', { name: 'Stroke settings' }).click()
   await expect(page.locator('[data-property="stroke-cap"]')).toBeVisible()
   await expect(page.locator('[data-property="stroke-join"]')).toBeVisible()
   await expect(page.locator('[data-property="stroke-miter-limit"]')).toBeVisible()
 })
 
 test('updates cap, join, and miter state from compact controls', async () => {
-  const section = propertySection(page, 'Stroke')
+  const section = page.getByRole('dialog', { name: 'Stroke settings' })
   await section.getByRole('button', { name: 'Round cap' }).click()
   await section.getByRole('button', { name: 'Bevel join' }).click()
   await section.getByRole('spinbutton', { name: 'Miter limit' }).focus()
@@ -79,6 +80,7 @@ test('updates cap, join, and miter state from compact controls', async () => {
     }
   ])
 
+  await page.keyboard.press('Escape')
   await canvas.pressKey('Meta+z')
   await canvas.waitForRender()
   expect((await selectedStrokeGeometry())[0]?.miterLimit).toBe(4)
@@ -91,12 +93,16 @@ test('applies mixed multi-selection joins in one undo step', async () => {
   await canvas.pressKey('Meta+a')
   await canvas.waitForRender()
 
-  const roundJoin = propertySection(page, 'Stroke').getByRole('button', { name: 'Round join' })
+  const roundJoin = page
+    .getByRole('dialog', { name: 'Stroke settings' })
+    .getByRole('button', { name: 'Round join' })
+  await propertySection(page, 'Stroke').getByRole('button', { name: 'Stroke settings' }).click()
   await expect(roundJoin).toBeVisible()
   await roundJoin.click()
   await canvas.waitForRender()
   expect((await selectedStrokeGeometry()).map((value) => value?.join)).toEqual(['ROUND', 'ROUND'])
 
+  await page.keyboard.press('Escape')
   await canvas.pressKey('Meta+z')
   await canvas.waitForRender()
   expect((await selectedStrokeGeometry()).map((value) => value?.join)).toEqual(['MITER', 'MITER'])

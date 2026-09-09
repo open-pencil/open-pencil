@@ -30,6 +30,7 @@
 
 ### Changed
 
+- Group advanced stroke dash, cap, join, and miter controls in a dedicated settings popover.
 - Navigate Settings and library sections with accessible keyboard-operated tabs, and move keyboard focus between desktop and mobile toolbar controls without changing the active tool.
 - Move focus spatially through auto-layout alignment controls with arrow keys and apply alignment with Enter or Space.
 - Vertically center shaped section titles and allow renaming a section by double-clicking its canvas label.

@@ -347,5 +347,8 @@
   "lightness": "Helligkeit",
   "chroma": "Chroma",
   "alpha": "Alpha",
-  "individualPadding": "Individueller Innenabstand"
+  "individualPadding": "Individueller Innenabstand",
+  "strokeSettings": "Kontureinstellungen",
+  "strokeDashLength": "Strich",
+  "strokeDashGap": "Lücke"
 }
