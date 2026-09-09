@@ -107,132 +107,132 @@ function effectPreview(effect: Effect): Fill {
                 "
               />
             </div>
-
-            <div
-              v-if="effectsCtx.expandedIndex.value === index"
-              class="flex flex-col gap-1.5 py-1.5"
-              data-slot="effect-settings"
-            >
-              <PanelFieldGroup :label="panels.blendMode">
-                <AppSelect
-                  :model-value="effect.blendMode ?? 'NORMAL'"
-                  :options="blendModeOptions"
-                  :label="panels.blendMode"
-                  data-property="effect-blend-mode"
-                  @update:model-value="
-                    commitDiscretePropertyListChange(flush, () =>
-                      actions.patch(index, { blendMode: $event as Effect['blendMode'] })
-                    )
-                  "
-                />
-              </PanelFieldGroup>
-              <template v-if="effectsCtx.isShadow(effect.type)">
-                <div class="flex items-center gap-1.5">
-                  <Tip :label="panels.xAxis">
-                    <NumberField
-                      icon="X"
-                      :model-value="effect.offset.x"
-                      data-property="effect-offset-x"
-                      @update:model-value="
-                        effectsCtx.scrubEffect(activeNode, index, {
-                          offset: { ...effect.offset, x: $event }
-                        })
-                      "
-                      @commit="
-                        effectsCtx.commitEffect(activeNode, index, {
-                          offset: { ...effect.offset, x: $event }
-                        })
-                      "
-                    />
-                  </Tip>
-                  <Tip :label="panels.yAxis">
-                    <NumberField
-                      icon="Y"
-                      :model-value="effect.offset.y"
-                      data-property="effect-offset-y"
-                      @update:model-value="
-                        effectsCtx.scrubEffect(activeNode, index, {
-                          offset: { ...effect.offset, y: $event }
-                        })
-                      "
-                      @commit="
-                        effectsCtx.commitEffect(activeNode, index, {
-                          offset: { ...effect.offset, y: $event }
-                        })
-                      "
-                    />
-                  </Tip>
-                </div>
-
-                <div class="flex items-center gap-1.5">
-                  <Tip :label="panels.radius">
-                    <NumberField
-                      icon="B"
-                      :model-value="effect.radius"
-                      :min="0"
-                      data-property="effect-radius"
-                      @update:model-value="
-                        effectsCtx.scrubEffect(activeNode, index, { radius: $event })
-                      "
-                      @commit="effectsCtx.commitEffect(activeNode, index, { radius: $event })"
-                    />
-                  </Tip>
-                  <Tip :label="panels.spread">
-                    <NumberField
-                      icon="S"
-                      :model-value="effect.spread"
-                      data-property="effect-spread"
-                      @update:model-value="
-                        effectsCtx.scrubEffect(activeNode, index, { spread: $event })
-                      "
-                      @commit="effectsCtx.commitEffect(activeNode, index, { spread: $event })"
-                    />
-                  </Tip>
-                </div>
-
-                <div class="flex items-center gap-1.5">
-                  <ColorInput
-                    class="min-w-0 flex-1"
-                    :color="effect.color"
-                    editable
-                    @update="effectsCtx.updateColor(actions.patch, index, $event)"
-                  />
-                  <Tip :label="panels.opacity">
-                    <NumberField
-                      class="w-14"
-                      suffix="%"
-                      :model-value="Math.round(effect.color.a * 100)"
-                      :min="0"
-                      :max="100"
-                      data-property="effect-opacity"
-                      @update:model-value="
-                        effectsCtx.scrubEffect(activeNode, index, {
-                          color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
-                        })
-                      "
-                      @commit="
-                        effectsCtx.commitEffect(activeNode, index, {
-                          color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
-                        })
-                      "
-                    />
-                  </Tip>
-                </div>
-              </template>
-
-              <NumberField
-                v-else
-                class="w-24 flex-none"
-                icon="B"
-                :model-value="effect.radius"
-                :min="0"
-                data-property="effect-radius"
-                @update:model-value="effectsCtx.scrubEffect(activeNode, index, { radius: $event })"
-                @commit="effectsCtx.commitEffect(activeNode, index, { radius: $event })"
-              />
-            </div>
           </div>
         </PropertyItemRow>
+
+        <div
+          v-if="effectsCtx.expandedIndex.value === index"
+          class="flex flex-col gap-1.5 py-2"
+          data-slot="effect-settings"
+        >
+          <PanelFieldGroup :label="panels.blendMode">
+            <AppSelect
+              :model-value="effect.blendMode ?? 'NORMAL'"
+              :options="blendModeOptions"
+              :label="panels.blendMode"
+              data-property="effect-blend-mode"
+              @update:model-value="
+                commitDiscretePropertyListChange(flush, () =>
+                  actions.patch(index, { blendMode: $event as Effect['blendMode'] })
+                )
+              "
+            />
+          </PanelFieldGroup>
+          <template v-if="effectsCtx.isShadow(effect.type)">
+            <div class="flex items-center gap-1.5">
+              <Tip :label="panels.xAxis">
+                <NumberField
+                  icon="X"
+                  :model-value="effect.offset.x"
+                  data-property="effect-offset-x"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(activeNode, index, {
+                      offset: { ...effect.offset, x: $event }
+                    })
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(activeNode, index, {
+                      offset: { ...effect.offset, x: $event }
+                    })
+                  "
+                />
+              </Tip>
+              <Tip :label="panels.yAxis">
+                <NumberField
+                  icon="Y"
+                  :model-value="effect.offset.y"
+                  data-property="effect-offset-y"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(activeNode, index, {
+                      offset: { ...effect.offset, y: $event }
+                    })
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(activeNode, index, {
+                      offset: { ...effect.offset, y: $event }
+                    })
+                  "
+                />
+              </Tip>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <Tip :label="panels.radius">
+                <NumberField
+                  icon="B"
+                  :model-value="effect.radius"
+                  :min="0"
+                  data-property="effect-radius"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(activeNode, index, { radius: $event })
+                  "
+                  @commit="effectsCtx.commitEffect(activeNode, index, { radius: $event })"
+                />
+              </Tip>
+              <Tip :label="panels.spread">
+                <NumberField
+                  icon="S"
+                  :model-value="effect.spread"
+                  data-property="effect-spread"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(activeNode, index, { spread: $event })
+                  "
+                  @commit="effectsCtx.commitEffect(activeNode, index, { spread: $event })"
+                />
+              </Tip>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              <ColorInput
+                class="min-w-0 flex-1"
+                :color="effect.color"
+                editable
+                @update="effectsCtx.updateColor(actions.patch, index, $event)"
+              />
+              <Tip :label="panels.opacity">
+                <NumberField
+                  class="w-14"
+                  suffix="%"
+                  :model-value="Math.round(effect.color.a * 100)"
+                  :min="0"
+                  :max="100"
+                  data-property="effect-opacity"
+                  @update:model-value="
+                    effectsCtx.scrubEffect(activeNode, index, {
+                      color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
+                    })
+                  "
+                  @commit="
+                    effectsCtx.commitEffect(activeNode, index, {
+                      color: { ...effect.color, a: Math.max(0, Math.min(1, $event / 100)) }
+                    })
+                  "
+                />
+              </Tip>
+            </div>
+          </template>
+
+          <NumberField
+            v-else
+            class="w-24 flex-none"
+            icon="B"
+            :model-value="effect.radius"
+            :min="0"
+            data-property="effect-radius"
+            @update:model-value="effectsCtx.scrubEffect(activeNode, index, { radius: $event })"
+            @commit="effectsCtx.commitEffect(activeNode, index, { radius: $event })"
+          />
+        </div>
       </div>
     </PanelSection>
   </PropertyListRoot>

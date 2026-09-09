@@ -6,8 +6,6 @@ import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
   applySolidStrokeColor,
   BindableValueRoot,
-  isStrokeCapValue,
-  MIXED,
   useColorBindingProvider,
   useI18n,
   useOkHCL,
@@ -32,15 +30,14 @@ import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
-import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
-import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
+import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
-import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+
+import StrokeSettingsPopover from './StrokeSettingsPopover.vue'
 
 const strokeCtx = useStrokeControls()
-const { advancedActive, cap, join, miterLimit } = strokeCtx
+const { advancedActive } = strokeCtx
 const colorProvider = useColorBindingProvider()
 const okhcl = useOkHCL()
 const { panels, common } = useI18n()
@@ -64,18 +61,6 @@ function updateStrokeColor(
 ) {
   if (!applyPaintMutation(binding, flush, () => patch(applySolidStrokeColor(color)))) return
   if (commit) commitPaintMutation(binding)
-}
-
-function setCap(value: string) {
-  if (isStrokeCapValue(value)) {
-    strokeCtx.setCap(value)
-  }
-}
-
-function setJoin(value: string) {
-  if (value === 'MITER' || value === 'BEVEL' || value === 'ROUND') {
-    strokeCtx.setJoin(value)
-  }
 }
 
 function onToggleSides(activeNode: SceneNode | null) {
@@ -151,16 +136,10 @@ function onToggleSides(activeNode: SceneNode | null) {
                 @cancel="cancelPaintMutation(binding.actions)"
               >
                 <template #trigger>
-                  <button
-                    type="button"
-                    :aria-label="panels.stroke"
-                    class="size-4 shrink-0 cursor-pointer rounded-sm border-0 bg-transparent p-0"
-                  >
-                    <FillSwatch
-                      :fill="strokePreview(stroke, binding.resolvedValue ?? stroke.color)"
-                      class="size-full"
-                    />
-                  </button>
+                  <FillSwatchTrigger
+                    :label="panels.stroke"
+                    :fill="strokePreview(stroke, binding.resolvedValue ?? stroke.color)"
+                  />
                 </template>
               </ColorPicker>
             </template>
@@ -220,6 +199,11 @@ function onToggleSides(activeNode: SceneNode | null) {
             @update:model-value="actions.patch(0, { weight: $event })"
           />
         </Tip>
+        <StrokeSettingsPopover
+          v-if="advancedActive"
+          :stroke="items[0]"
+          @patch="actions.patch(0, $event)"
+        />
         <IconButton
           :label="panels.strokeSides"
           size="xs"
@@ -232,97 +216,7 @@ function onToggleSides(activeNode: SceneNode | null) {
         </IconButton>
       </div>
 
-      <div v-if="!isMixed && items.length > 0" class="mt-1.5 flex items-center gap-1.5">
-        <IconButton
-          :label="panels.strokeDash"
-          size="xs"
-          class="shrink-0"
-          :active="strokeCtx.dashState(items[0]).on"
-          data-property="stroke-dash"
-          @click="actions.patch(0, strokeCtx.toggleDash(items[0]))"
-        >
-          <span class="flex items-center gap-0.5">
-            <icon-lucide-minus class="size-2.5" />
-            <icon-lucide-minus class="size-2.5" />
-          </span>
-        </IconButton>
-        <template v-if="strokeCtx.dashState(items[0]).on">
-          <NumberField
-            class="flex-1"
-            icon="D"
-            :model-value="items[0]?.dashPattern?.[0] ?? 6"
-            :min="1"
-            data-property="stroke-dash-length"
-            @update:model-value="actions.patch(0, strokeCtx.setDash(items[0], $event))"
-          />
-          <NumberField
-            class="flex-1"
-            icon="G"
-            :model-value="items[0]?.dashPattern?.[1] ?? items[0]?.dashPattern?.[0] ?? 6"
-            :min="1"
-            data-property="stroke-dash-gap"
-            @update:model-value="actions.patch(0, strokeCtx.setGap(items[0], $event))"
-          />
-        </template>
-      </div>
-
-      <PanelGrid v-if="advancedActive" :columns="3" class="mt-1.5">
-        <PanelFieldGroup :label="panels.strokeCap">
-          <SegmentedControl
-            :model-value="cap === MIXED ? 'MIXED' : cap"
-            :options="strokeCtx.capOptions"
-            :label="panels.strokeCap"
-            data-property="stroke-cap"
-            @update:model-value="setCap"
-          >
-            <template #option="{ option }">
-              <Tip :label="option.label">
-                <icon-lucide-minus v-if="option.value === 'NONE'" class="size-3" />
-                <icon-lucide-circle v-else-if="option.value === 'ROUND'" class="size-2.5" />
-                <icon-lucide-square v-else-if="option.value === 'SQUARE'" class="size-2.5" />
-                <icon-lucide-arrow-right
-                  v-else-if="option.value === 'ARROW_LINES'"
-                  class="size-3"
-                />
-                <icon-lucide-triangle v-else class="size-2.5" />
-              </Tip>
-            </template>
-          </SegmentedControl>
-        </PanelFieldGroup>
-
-        <PanelFieldGroup :label="panels.strokeJoin">
-          <SegmentedControl
-            :model-value="join === MIXED ? 'MIXED' : join"
-            :options="strokeCtx.joinOptions"
-            :label="panels.strokeJoin"
-            data-property="stroke-join"
-            @update:model-value="setJoin"
-          >
-            <template #option="{ option }">
-              <Tip :label="option.label">
-                <icon-lucide-corner-up-right v-if="option.value === 'MITER'" class="size-3" />
-                <icon-lucide-triangle v-else-if="option.value === 'BEVEL'" class="size-2.5" />
-                <icon-lucide-circle v-else class="size-2.5" />
-              </Tip>
-            </template>
-          </SegmentedControl>
-        </PanelFieldGroup>
-
-        <PanelFieldGroup :label="panels.strokeMiterLimit">
-          <NumberField
-            :model-value="miterLimit"
-            :min="1"
-            data-property="stroke-miter-limit"
-            :aria-label="panels.strokeMiterLimit"
-            @update:model-value="strokeCtx.updateMiterLimit"
-            @commit="strokeCtx.commitMiterLimit"
-          >
-            <template #icon>
-              <icon-lucide-triangle-right class="size-3" />
-            </template>
-          </NumberField>
-        </PanelFieldGroup>
-      </PanelGrid>
+      <StrokeSettingsPopover v-if="isMixed && advancedActive" />
 
       <div
         v-if="!isMixed && items.length > 0 && expandedSides"

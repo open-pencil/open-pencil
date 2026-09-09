@@ -347,5 +347,8 @@
   "lightness": "Clarté",
   "chroma": "Chroma",
   "alpha": "Alpha",
-  "individualPadding": "Marges intérieures individuelles"
+  "individualPadding": "Marges intérieures individuelles",
+  "strokeSettings": "Paramètres du contour",
+  "strokeDashLength": "Tiret",
+  "strokeDashGap": "Espacement"
 }

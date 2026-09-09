@@ -347,5 +347,8 @@
   "lightness": "Chiarezza",
   "chroma": "Croma",
   "alpha": "Alfa",
-  "individualPadding": "Spaziatura interna individuale"
+  "individualPadding": "Spaziatura interna individuale",
+  "strokeSettings": "Impostazioni del tratto",
+  "strokeDashLength": "Trattino",
+  "strokeDashGap": "Spazio"
 }

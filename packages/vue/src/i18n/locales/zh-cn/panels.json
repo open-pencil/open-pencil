@@ -347,5 +347,8 @@
   "lightness": "明度",
   "chroma": "色度",
   "alpha": "透明度",
-  "individualPadding": "独立内边距"
+  "individualPadding": "独立内边距",
+  "strokeSettings": "描边设置",
+  "strokeDashLength": "虚线",
+  "strokeDashGap": "间距"
 }
