@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Breaking changes
+
+- Update custom Vue SDK binding providers to implement `getBindingId()` and handle the `unresolved` state. Replace `setValue()` with `prepareEdit()`, returning a stable edit key, captured value, setter, and restoration callback for each variable destination.
+
 ### Added
 
 - Add a searchable command palette for editor and application actions.
@@ -47,7 +51,7 @@
 - Show unavailable variable bindings explicitly while preserving their identity for replacement or detachment, and keep paint opacity independent of color bindings.
 - Resolve bound field values using each layer’s variable mode, show mixed values when selected layers resolve differently, and keep variable edits scoped to the modes captured when editing begins.
 - Display letter spacing in pixels to match rendered and variable-bound values, and keep numeric-field units and binding actions clear of truncated variable names.
-- Keep home search comfortably sized on mobile and cancel pending desktop search focus when leaving the home tab.
+- Keep home search comfortably sized on mobile without stealing focus from keyboard-operated document tabs.
 - Keep mobile Settings content readable with horizontal navigation and prevent search clear controls from overlapping entered text.
 - Preserve native Enter and Space activation on focused buttons instead of consuming them as canvas shortcuts.
 - Keep layer-tree rows within their virtualized bounds and use white text and disclosure arrows for focused selections.
