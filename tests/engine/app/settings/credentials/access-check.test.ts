@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { createCredentialAccessCheck } from '@/app/settings/credentials/settings/access-check'
+import { createCredentialAccessCheck } from '@/app/settings/credentials/preferences/access-check'
 
 test('failed queries do not claim paused access and can be retried', async () => {
   let fails = true

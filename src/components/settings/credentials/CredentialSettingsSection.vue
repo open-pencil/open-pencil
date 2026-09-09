@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from '@open-pencil/vue'
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { useCredentialSettings } from '@/app/settings/credentials/settings/use'
+import { useCredentialSettings } from '@/app/settings/credentials/preferences/use'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
