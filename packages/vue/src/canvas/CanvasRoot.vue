@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useEditor } from '#vue/editor/context'
-import { useCanvas, type UseCanvasOptions } from '#vue/canvas/surface/use'
 import { provideCanvas } from '#vue/canvas/context'
+import { useCanvas, type UseCanvasOptions } from '#vue/canvas/surface/use'
+import { useEditor } from '#vue/editor/context'
 
 const { showRulers, preserveDrawingBuffer } = defineProps<UseCanvasOptions>()
 

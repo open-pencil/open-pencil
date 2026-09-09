@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import Fuse from 'fuse.js'
-import { computed, ref } from 'vue'
-import { tv } from 'tailwind-variants'
 import {
   ComboboxAnchor,
   ComboboxContent,
@@ -17,10 +15,12 @@ import {
   ComboboxViewport,
   type AcceptableValue
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
+import { computed, ref } from 'vue'
 
+import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/select/combobox'
 import type { AppComboboxTheme } from '@/theme/select/combobox'
-import type { ComponentUI } from '@/components/ui/types'
 
 export type AppComboboxOption = {
   value: string

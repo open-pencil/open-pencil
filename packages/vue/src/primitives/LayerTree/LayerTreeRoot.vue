@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onScopeDispose, ref } from 'vue'
 import { TreeRoot } from 'reka-ui'
+import { computed, nextTick, onScopeDispose, ref } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { useEditor } from '#vue/editor/context'
 import { provideLayerTree } from '#vue/primitives/LayerTree/context'
+import type {
+  LayerNode,
+  LayerSelectionMode,
+  LayerTreeVirtualizer
+} from '#vue/primitives/LayerTree/context'
 import {
   buildLayerTreeModel,
   layerSelectionForTarget,
@@ -13,12 +18,6 @@ import {
   visibleLayerRows
 } from '#vue/primitives/LayerTree/model'
 import { useLayerDrag } from '#vue/primitives/LayerTree/useLayerDrag'
-
-import type {
-  LayerNode,
-  LayerSelectionMode,
-  LayerTreeVirtualizer
-} from '#vue/primitives/LayerTree/context'
 
 const { indentPerLevel = 16 } = defineProps<{
   indentPerLevel?: number

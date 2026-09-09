@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ColorSliderRoot, ColorSliderThumb, ColorSliderTrack } from 'reka-ui'
-
 import type { Color as RekaColor, ColorChannel, ColorSpace } from 'reka-ui'
+
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
-import NumberField from '@/components/inputs/NumberField.vue'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
+import NumberField from '@/components/inputs/NumberField.vue'
 
 interface StandardColorSliderProps {
   label: string

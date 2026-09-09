@@ -9,15 +9,15 @@ import {
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
-
-import VariableNumberField from '@/components/properties/VariableNumberField.vue'
-import { useSelectUI } from '@/components/ui/select/select'
-import Tip from '@/components/ui/overlay/Tip.vue'
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
-import type { SizeAxisFieldProps } from '@/components/properties/LayoutSection/size/types'
+import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 import type { SizeLimitProp } from '@open-pencil/vue'
+
+import type { SizeAxisFieldProps } from '@/components/properties/LayoutSection/size/types'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import { useSelectUI } from '@/components/ui/select/select'
 
 type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLimitProp}`
 

@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+
+import type { LayoutGrid } from '@open-pencil/scene-graph'
 import { useEditor, useI18n, useSceneComputed } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
+import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
-
-import type { LayoutGrid } from '@open-pencil/scene-graph'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const editor = useEditor()
 const { panels } = useI18n()

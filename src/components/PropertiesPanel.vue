@@ -2,6 +2,7 @@
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 
 import { useI18n } from '@open-pencil/vue'
+
 import { useAIChat } from '@/app/ai/chat/use'
 
 import ChatPanel from './ChatPanel.vue'

@@ -2,8 +2,8 @@
 import { ChannelSliderRoot, ChannelSliderThumb, ChannelSliderTrack } from '@open-pencil/vue'
 
 import type { ColorSliderUI } from '@/components/color-picker-panel/ui'
-import NumberField from '@/components/inputs/NumberField.vue'
 import { useColorSliderUI } from '@/components/color-picker-panel/ui'
+import NumberField from '@/components/inputs/NumberField.vue'
 
 interface OkhclChannelSliderProps {
   label: string

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { provide, toRef } from 'vue'
 import {
   ListboxContent,
   ListboxFilter,
@@ -8,15 +7,16 @@ import {
   ListboxItem,
   ListboxRoot
 } from 'reka-ui'
+import { provide, toRef } from 'vue'
 
 import { COMMAND_PALETTE_KEY } from './context'
-import { useCommandPalette } from './useCommandPalette'
 import type {
   CommandPaletteGroup,
   CommandPaletteItem,
   CommandPaletteLabels,
   CommandPaletteUI
 } from './types'
+import { useCommandPalette } from './useCommandPalette'
 
 const {
   groups,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useModelSettings } from '@/app/ai/models/settings/use'
-
 import { ref } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
+import { useModelSettings } from '@/app/ai/models/settings/use'
 import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
 

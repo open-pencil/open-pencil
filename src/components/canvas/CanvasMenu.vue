@@ -8,14 +8,16 @@ import {
   ContextMenuSubContent,
   ContextMenuPortal
 } from 'reka-ui'
+import { computed, type Component } from 'vue'
 import IconChevronRight from '~icons/lucide/chevron-right'
 import IconCombine from '~icons/lucide/combine'
 import IconCopyMinus from '~icons/lucide/copy-minus'
 import IconCopyX from '~icons/lucide/copy-x'
 import IconListCollapse from '~icons/lucide/list-collapse'
 import IconSpline from '~icons/lucide/spline'
-import IconTypeOutline from '~icons/lucide/type-outline'
 import IconSquaresIntersect from '~icons/lucide/squares-intersect'
+import IconTypeOutline from '~icons/lucide/type-outline'
+
 import {
   vTestId,
   useEditorCommands,
@@ -25,14 +27,13 @@ import {
   editorCommandMetadata,
   formatShortcut
 } from '@open-pencil/vue'
-import { computed, type Component } from 'vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
-import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import { createCanvasMenuActions } from '@/app/editor/canvas/menu/actions'
 import { useCanvasContextMenu } from '@/app/editor/canvas/menu/context'
 import { canvasMenuItemClass, canvasMenuShortcutClass } from '@/app/editor/canvas/menu/model'
+import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { menu, useMenuUI } from '@/components/ui/menu/menu'
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useUsageSettings } from '@/app/usage/settings/use'
-
 import { useI18n } from '@open-pencil/vue'
+
+import { useUsageSettings } from '@/app/usage/settings/use'
 
 const { diagnostics: diagnosticMessages, settings } = useI18n()
 

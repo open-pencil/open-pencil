@@ -1,11 +1,11 @@
 <script setup lang="ts">
+import { provideMobileHud } from '@/components/MobileHud/context'
 import MobileActionToast from '@/components/MobileHud/MobileActionToast.vue'
 import MobileActiveToolBadge from '@/components/MobileHud/MobileActiveToolBadge.vue'
 import MobileFileMenu from '@/components/MobileHud/MobileFileMenu.vue'
 import MobilePresencePopover from '@/components/MobileHud/MobilePresencePopover.vue'
 import MobileShareButton from '@/components/MobileHud/MobileShareButton.vue'
 import MobileUndoRedo from '@/components/MobileHud/MobileUndoRedo.vue'
-import { provideMobileHud } from '@/components/MobileHud/context'
 
 provideMobileHud()
 </script>

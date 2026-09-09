@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { computed, useTemplateRef, watch } from 'vue'
 import { tv } from 'tailwind-variants'
-import { nodeIcon } from '@/app/editor/icons'
-import LayerTreeDisclosure from './LayerTreeDisclosure.vue'
-import { useLayerTreeUI } from './ui'
-
-import layerTreeTheme from '@/theme/layer-tree'
+import { computed, useTemplateRef, watch } from 'vue'
 
 import type { LayerNode } from '@open-pencil/vue'
+
+import { nodeIcon } from '@/app/editor/icons'
+import layerTreeTheme from '@/theme/layer-tree'
+
+import LayerTreeDisclosure from './LayerTreeDisclosure.vue'
 import type { LayerRenameControls, LayerTreeItemActions } from './types'
+import { useLayerTreeUI } from './ui'
 
 const { renameControls, expanded } = defineProps<{
   node: LayerNode

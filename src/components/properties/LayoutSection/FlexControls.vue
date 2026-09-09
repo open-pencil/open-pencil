@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { tv } from 'tailwind-variants'
 import {
   SelectContent,
   SelectItem,
@@ -11,17 +9,18 @@ import {
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
-
-import AppSelect from '@/components/ui/select/AppSelect.vue'
-import layoutAlignmentTheme from '@/theme/layout-alignment'
-
-import VariableNumberField from '@/components/properties/VariableNumberField.vue'
-import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
-import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
-import { useSelectUI } from '@/components/ui/select/select'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { tv } from 'tailwind-variants'
+import { ref } from 'vue'
 
 import type { LayoutDirection, LayoutAlign } from '@open-pencil/scene-graph'
+import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+
+import ClipContentControl from '@/components/properties/LayoutSection/ClipContentControl.vue'
+import PaddingControls from '@/components/properties/LayoutSection/PaddingControls.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import { useSelectUI } from '@/components/ui/select/select'
+import layoutAlignmentTheme from '@/theme/layout-alignment'
 
 const ctx = useLayoutControlsContext()
 const layoutAlignment = tv(layoutAlignmentTheme)

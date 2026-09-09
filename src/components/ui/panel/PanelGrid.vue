@@ -1,6 +1,7 @@
 <script lang="ts">
-import type { PropertyGridRootSlots } from '@open-pencil/vue'
 import type { ClassValue } from 'tailwind-variants'
+
+import type { PropertyGridRootSlots } from '@open-pencil/vue'
 
 export interface PanelGridProps {
   columns?: 1 | 2 | 3
@@ -12,8 +13,9 @@ export type PanelGridSlots = PropertyGridRootSlots
 </script>
 
 <script setup lang="ts">
-import { PropertyGridRoot } from '@open-pencil/vue'
 import { tv } from 'tailwind-variants'
+
+import { PropertyGridRoot } from '@open-pencil/vue'
 
 import theme from '@/theme/panel/grid'
 

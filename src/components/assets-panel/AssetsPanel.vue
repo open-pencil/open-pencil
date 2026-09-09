@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useObjectUrl } from '@vueuse/core'
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -10,26 +9,27 @@ import {
   DialogClose,
   DialogTitle
 } from 'reka-ui'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { useI18n } from '@open-pencil/vue'
 
-import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
+import { nodeIcon } from '@/app/editor/icons'
 import { useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
-import LibraryManagerDialog from '@/components/libraries/LibraryManagerDialog.vue'
-import { useLibraryEntry } from '@/components/libraries/useLibraryEntry'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
-import AppInput from '@/components/ui/input/AppInput.vue'
-import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import LibraryManagerDialog from '@/components/libraries/LibraryManagerDialog.vue'
+import { useLibraryEntry } from '@/components/libraries/useLibraryEntry'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogRoot, useDialogUI } from '@/components/ui/dialog'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
-import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import { ASSET_GRID_THUMBNAIL_SIZE, ASSET_LIST_THUMBNAIL_SIZE } from '@/constants'
 
 type AssetView = 'grid' | 'list'

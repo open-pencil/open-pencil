@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { tv } from 'tailwind-variants'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
 import { formatShortcut, useI18n, useViewportKind } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
+import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
 import { activeTab } from '@/app/tabs'
 import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
@@ -15,9 +16,8 @@ import LayersPanel from '@/components/LayersPanel.vue'
 import MobileDrawer from '@/components/MobileDrawer.vue'
 import MobileHud from '@/components/MobileHud/MobileHud.vue'
 import PropertiesPanel from '@/components/PropertiesPanel.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
 import Toolbar from '@/components/Toolbar/Toolbar.vue'
-import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import splitterTheme from '@/theme/splitter'
 
 const showChrome = appRuntimeConfig.showChrome

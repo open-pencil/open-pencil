@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useTypography } from '#vue/controls/typography/use'
-
-import type { TypographyFontLoader } from '#vue/controls/typography/use'
 import type { AcceptableValue } from 'reka-ui'
+
+import { useTypography } from '#vue/controls/typography/use'
+import type { TypographyFontLoader } from '#vue/controls/typography/use'
 
 const { fontLoader } = defineProps<{
   fontLoader?: TypographyFontLoader

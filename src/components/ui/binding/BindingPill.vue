@@ -16,8 +16,8 @@ export interface BindingPillProps {
 <script setup lang="ts">
 import { computed, normalizeClass } from 'vue'
 
-import Tip from '@/components/ui/overlay/Tip.vue'
 import { useBindingFieldUI } from '@/components/ui/binding/ui'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 const {
   label,

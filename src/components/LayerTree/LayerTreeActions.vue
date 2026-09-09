@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
-
-import Tip from '../ui/overlay/Tip.vue'
-import { useLayerTreeUI } from './ui'
+import type { LayerNode } from '@open-pencil/vue'
 
 import layerTreeTheme from '@/theme/layer-tree'
 
-import type { LayerNode } from '@open-pencil/vue'
+import Tip from '../ui/overlay/Tip.vue'
+import { useLayerTreeUI } from './ui'
 
 const { node, selected } = defineProps<{
   node: LayerNode

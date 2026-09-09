@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
 import { colorToCSS } from '@open-pencil/core/color'
+import { useI18n } from '@open-pencil/vue'
 
-import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
+import StandardColorSlider from '@/components/color-picker-panel/StandardColorSlider.vue'
 
 const ctx = useColorPickerPanelContext()
 const { panels } = useI18n()

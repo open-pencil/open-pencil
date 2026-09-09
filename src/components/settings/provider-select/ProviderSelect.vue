@@ -2,7 +2,6 @@
 import { promiseTimeout } from '@vueuse/core'
 import { computed, onMounted, ref } from 'vue'
 
-import AppGroupedSelect from '@/components/ui/select/AppGroupedSelect.vue'
 import {
   ACP_AGENTS,
   AI_PROVIDERS,
@@ -10,6 +9,8 @@ import {
   IS_TAURI,
   type AIProviderID
 } from '@open-pencil/core/constants'
+
+import AppGroupedSelect from '@/components/ui/select/AppGroupedSelect.vue'
 
 const mcpAvailable = ref(false)
 

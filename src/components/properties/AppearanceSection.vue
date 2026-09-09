@@ -1,16 +1,15 @@
 <script setup lang="ts">
+import type { BlendMode } from '@open-pencil/scene-graph'
 import { AppearanceControlsRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
-import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import { useBlendModeOptions } from '@/components/properties/blend-mode/use'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-
-import type { BlendMode } from '@open-pencil/scene-graph'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { panels } = useI18n()
 type BlendModeSelectValue = BlendMode | 'MIXED'

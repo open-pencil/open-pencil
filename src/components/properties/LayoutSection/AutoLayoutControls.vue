@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { LayoutMode } from '@open-pencil/scene-graph'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import IconButton from '@/components/ui/button/IconButton.vue'
-import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
-
-import type { LayoutMode } from '@open-pencil/scene-graph'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
 const ctx = useLayoutControlsContext()
 const { panels } = useI18n()

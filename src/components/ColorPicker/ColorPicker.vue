@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { VNode } from 'vue'
+
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { ColorPickerRoot, useI18n } from '@open-pencil/vue'
+import type { OkHCLControls } from '@open-pencil/vue'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
-
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { OkHCLControls } from '@open-pencil/vue'
-import type { VNode } from 'vue'
 
 const { panels } = useI18n()
 const { color, okhcl = null } = defineProps<{ color: Color; okhcl?: OkHCLControls | null }>()

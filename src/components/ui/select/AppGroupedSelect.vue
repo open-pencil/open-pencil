@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends string | number">
-import { tv } from 'tailwind-variants'
 import {
   SelectContent,
   SelectGroup,
@@ -12,10 +11,11 @@ import {
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
+import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/select/grouped'
 import type { AppGroupedSelectTheme } from '@/theme/select/grouped'
-import type { ComponentUI } from '@/components/ui/types'
 
 interface SelectOption<TValue extends string | number> {
   value: TValue

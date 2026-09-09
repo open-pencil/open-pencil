@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import SizeAxisField from '@/components/properties/LayoutSection/size/SizeAxisField.vue'
 import SizeLimitField from '@/components/properties/LayoutSection/size/SizeLimitField.vue'
-import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
-
 import type { SizeLimitItem } from '@/components/properties/LayoutSection/size/types'
+import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 
 const ctx = useLayoutControlsContext()
 const { panels } = useI18n()

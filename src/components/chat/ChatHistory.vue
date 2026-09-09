@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
 import { useFocus } from '@vueuse/core'
 import {
   PopoverRoot,
@@ -13,13 +12,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from 'reka-ui'
-import { useI18n } from '@open-pencil/vue'
-import AppButton from '@/components/ui/button/AppButton.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
 import { tv } from 'tailwind-variants'
-import iconButtonTheme from '@/theme/button/icon-button'
+import { computed, nextTick, ref, watch } from 'vue'
+
+import { useI18n } from '@open-pencil/vue'
+
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import iconButtonTheme from '@/theme/button/icon-button'
 import { chatHistoryTheme } from '@/theme/chat/history'
 
 const {

@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { refAutoReset, useClipboard } from '@vueuse/core'
 import { isReasoningUIPart, isTextUIPart, isToolUIPart, getToolName } from 'ai'
+import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
+import { computed } from 'vue'
+
 import { useI18n, vTestId } from '@open-pencil/vue'
 
-import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 import { attachmentsForMessage } from '@/app/ai/attachment/presentation/store'
+import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
+import { reasoningDisplay } from '@/app/ai/chat/preferences'
 import { visibleUserMessageText } from '@/app/ai/chat/presentation'
 import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
-import { reasoningDisplay } from '@/app/ai/chat/preferences'
 import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
-import { classifyToolState } from './tool-state'
 
-import type { UIDataTypes, UIMessage, UIMessagePart, UITools } from 'ai'
+import { classifyToolState } from './tool-state'
 
 const {
   message,

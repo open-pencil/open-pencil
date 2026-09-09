@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useLocalStorage } from '@vueuse/core'
 
-import { IS_BROWSER, IS_TAURI } from '@/constants'
 import { useI18n } from '@open-pencil/vue'
+
+import { IS_BROWSER, IS_TAURI } from '@/constants'
 
 const { files, common } = useI18n()
 const dismissed = useLocalStorage('safari-banner-dismissed', false)

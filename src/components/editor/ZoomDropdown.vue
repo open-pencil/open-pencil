@@ -10,10 +10,11 @@ import {
 import { nextTick, ref, watch } from 'vue'
 
 import { useEditorCommands, useI18n, formatShortcut } from '@open-pencil/vue'
-import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
-import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+
 import { useEditorStore } from '@/app/editor/active-store'
 import { appMenuShortcut, appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
+import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
 
 const store = useEditorStore()
 const { getCommand } = useEditorCommands()

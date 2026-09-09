@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, useSlots } from 'vue'
 import { tv, type VariantProps } from 'tailwind-variants'
+import { computed, useSlots } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
 import placeholderTheme from '@/theme/feedback/placeholder'

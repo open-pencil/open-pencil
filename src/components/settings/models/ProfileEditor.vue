@@ -1,19 +1,21 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
+import { ref } from 'vue'
+
+import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
+
+import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
-import AppCombobox from '@/components/ui/select/AppCombobox.vue'
+import { AppConfirmationDialog } from '@/components/ui/dialog'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
-import { AppConfirmationDialog } from '@/components/ui/dialog'
-import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
-import type { AIProviderID } from '@open-pencil/core/constants'
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials } = useI18n()

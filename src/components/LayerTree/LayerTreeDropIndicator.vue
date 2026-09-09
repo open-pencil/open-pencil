@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
-import { useLayerTreeUI } from './ui'
+import type { LayerDragInstruction } from '@open-pencil/vue'
 
 import layerTreeTheme from '@/theme/layer-tree'
 
-import type { LayerDragInstruction } from '@open-pencil/vue'
+import { useLayerTreeUI } from './ui'
 
 const { active, instruction, level, indent } = defineProps<{
   active: boolean

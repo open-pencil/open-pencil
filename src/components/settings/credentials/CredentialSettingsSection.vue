@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { useI18n } from '@open-pencil/vue'
 import { IS_TAURI } from '@open-pencil/core/constants'
+import { useI18n } from '@open-pencil/vue'
+
 import { useCredentialSettings } from '@/app/settings/credentials/preferences/use'
-import AppButton from '@/components/ui/button/AppButton.vue'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSectionHeader from '@/components/settings/layout/SettingsSectionHeader.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { credentials } = useI18n()
 const { busy, paused, failed, checkFailed, remembered, retry, retryCheck } = useCredentialSettings()

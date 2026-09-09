@@ -2,12 +2,12 @@
 import { tv } from 'tailwind-variants'
 
 import { colorToCSS } from '@open-pencil/core/color'
+import { useI18n } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/overlay/Tip.vue'
 import { initials } from '@/app/shell/ui'
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import collaborationTheme from '@/theme/collaboration'
-import { useI18n } from '@open-pencil/vue'
 
 const collab = useCollabPanelContext()
 const { common, collaboration: collaborationMessages } = useI18n()

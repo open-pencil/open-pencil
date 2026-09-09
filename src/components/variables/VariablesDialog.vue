@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { watch, type Component } from 'vue'
-import { tv } from 'tailwind-variants'
+import { FlexRender } from '@tanstack/vue-table'
 import { templateRef } from '@vueuse/core'
 import {
   ContextMenuContent,
@@ -22,23 +21,23 @@ import {
   TabsRoot,
   TabsTrigger
 } from 'reka-ui'
-import { FlexRender } from '@tanstack/vue-table'
-
-import { variablesAddTestId, vTestId, useI18n, useVariablesEditor } from '@open-pencil/vue'
-
+import { tv } from 'tailwind-variants'
+import { watch, type Component } from 'vue'
 import IconHash from '~icons/lucide/hash'
 import IconPalette from '~icons/lucide/palette'
 import IconToggleLeft from '~icons/lucide/toggle-left'
 import IconType from '~icons/lucide/type'
 import IconX from '~icons/lucide/x'
-import ColorInput from '@/components/ColorPicker/ColorInput.vue'
-import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
-import { AppDialogRoot } from '@/components/ui/dialog'
-import { useMenuUI } from '@/components/ui/menu/menu'
-import variableTableTheme from '@/theme/variable-table'
 
 import type { VariableType } from '@open-pencil/scene-graph'
+import { variablesAddTestId, vTestId, useI18n, useVariablesEditor } from '@open-pencil/vue'
+
+import ColorInput from '@/components/ColorPicker/ColorInput.vue'
+import { AppDialogRoot } from '@/components/ui/dialog'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import { useMenuUI } from '@/components/ui/menu/menu'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import variableTableTheme from '@/theme/variable-table'
 
 const open = defineModel<boolean>('open', { default: false })
 const menuCls = useMenuUI({ content: 'w-40', item: 'justify-start gap-2' })

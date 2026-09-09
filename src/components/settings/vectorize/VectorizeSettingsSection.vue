@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'
-
 import { ref } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
 import { vectorizeProviderID } from '@/app/editor/vectorize'
+import { useVectorizeSettings } from '@/app/editor/vectorize/settings/use'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -7,6 +6,7 @@ import {
   DropdownMenuRoot,
   DropdownMenuTrigger
 } from 'reka-ui'
+import { ref, watch } from 'vue'
 
 import { useInputUI } from '@/components/ui/input/input'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'

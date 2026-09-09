@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import { useClipboard, useDebounceFn } from '@vueuse/core'
-import { computed, defineAsyncComponent, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed, defineAsyncComponent, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 
 import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
 
-import {
-  commitDesignJSXSession,
-  createDesignJSXEditSession,
-  previewDesignJSX,
-  resetDesignJSXPreview,
-  type DesignJSXEditSession
-} from '@/app/code/live-preview'
 import {
   commitDOMCodeSession,
   createDOMCodeSession,
@@ -20,11 +13,18 @@ import {
   resetDOMCodePreview,
   type DOMCodeSession
 } from '@/app/code/dom-preview'
+import {
+  commitDesignJSXSession,
+  createDesignJSXEditSession,
+  previewDesignJSX,
+  resetDesignJSXPreview,
+  type DesignJSXEditSession
+} from '@/app/code/live-preview'
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import statusTheme from '@/theme/feedback/status'
 
 const CodeEditor = defineAsyncComponent(() => import('@/components/code-editor/CodeEditor.vue'))

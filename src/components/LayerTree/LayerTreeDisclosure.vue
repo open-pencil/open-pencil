@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
-
-import { useLayerTreeUI } from './ui'
+import { computed } from 'vue'
 
 import layerTreeTheme from '@/theme/layer-tree'
+
+import { useLayerTreeUI } from './ui'
 
 const { expanded, visible } = defineProps<{
   expanded: boolean

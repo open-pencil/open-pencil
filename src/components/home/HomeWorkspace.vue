@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 
 import { useDocumentWorkspace, useI18n } from '@open-pencil/vue'
 

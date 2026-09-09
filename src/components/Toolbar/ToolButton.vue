@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
-
-import toolbarTheme from '@/theme/toolbar'
-
+import { computed } from 'vue'
 import type { Component } from 'vue'
+
 import type { ToolbarUI } from '@/components/Toolbar/types'
+import toolbarTheme from '@/theme/toolbar'
 
 interface ToolButtonProps {
   icon: Component

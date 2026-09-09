@@ -2,17 +2,17 @@
 import { useObjectUrl } from '@vueuse/core'
 import { computed, ref, shallowRef, watch } from 'vue'
 
-import AppSelect from '@/components/ui/select/AppSelect.vue'
+import { useExport, useI18n } from '@open-pencil/vue'
+import type { ExportFormatId } from '@open-pencil/vue'
+
+import { useEditorStore } from '@/app/editor/active-store'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
-import { useEditorStore } from '@/app/editor/active-store'
-import { useExport, useI18n } from '@open-pencil/vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import { CHECKERBOARD_BACKGROUND } from '@/theme/paint/checkerboard'
-
-import type { ExportFormatId } from '@open-pencil/vue'
 
 const editorStore = useEditorStore()
 const { panels } = useI18n()

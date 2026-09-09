@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Primitive, RovingFocusItem, ToggleGroupItem } from 'reka-ui'
+import { computed } from 'vue'
 
 import { useSegmentedControl } from '#vue/primitives/SegmentedControl/context'
 import type {

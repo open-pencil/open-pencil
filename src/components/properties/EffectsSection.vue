@@ -1,23 +1,22 @@
 <script setup lang="ts">
+import type { Effect, Fill } from '@open-pencil/scene-graph'
 import { useEffectsControls, useI18n } from '@open-pencil/vue'
 
 import ColorInput from '@/components/ColorPicker/ColorInput.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
-import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
-import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import {
   commitDiscretePropertyListChange,
   useBlendModeOptions
 } from '@/components/properties/blend-mode/use'
+import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
+import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
-import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
-
-import type { Effect, Fill } from '@open-pencil/scene-graph'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const effectsCtx = useEffectsControls()
 const { panels } = useI18n()

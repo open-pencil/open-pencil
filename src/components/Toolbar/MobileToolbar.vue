@@ -1,24 +1,23 @@
 <script setup lang="ts">
-import { tv } from 'tailwind-variants'
 import { AnimatePresence, motion } from 'motion-v'
-
+import { tv } from 'tailwind-variants'
 import IconChevronLeft from '~icons/lucide/chevron-left'
 import IconChevronRight from '~icons/lucide/chevron-right'
 
+import type { EditorToolDef } from '@open-pencil/core/editor'
+import { getToolbarToolSelection, toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
+import type { Tool } from '@open-pencil/vue'
+
+import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
-import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
-import toolbarTheme from '@/theme/toolbar'
-import { getToolbarToolSelection, toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
-
-import type { Tool } from '@open-pencil/vue'
-import type { EditorToolDef } from '@open-pencil/core/editor'
 import type {
   ToolbarActionItem,
   ToolbarUI,
   ToolIconMap,
   ToolLabels
 } from '@/components/Toolbar/types'
+import toolbarTheme from '@/theme/toolbar'
 
 const {
   tools,

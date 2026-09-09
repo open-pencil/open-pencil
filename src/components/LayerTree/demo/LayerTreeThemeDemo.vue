@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import type { LayerNode } from '@open-pencil/vue'
+
 import LayerTreeNodeRow from '../LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from '../LayerTreeRenameRow.vue'
-import { provideLayerTreeUI } from '../ui'
-
-import type { LayerNode } from '@open-pencil/vue'
 import type { LayerRenameControls, LayerTreeChrome, LayerTreeItemActions } from '../types'
+import { provideLayerTreeUI } from '../ui'
 
 provideLayerTreeUI(() => undefined)
 

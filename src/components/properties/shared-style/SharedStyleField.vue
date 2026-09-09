@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { SharedStyleKind } from '@open-pencil/scene-graph'
 import { MIXED, useI18n, useSharedStyleBinding } from '@open-pencil/vue'
 
-import AppSelect from '@/components/ui/select/AppSelect.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
-
-import type { SharedStyleKind } from '@open-pencil/scene-graph'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 interface SharedStyleFieldProps {
   kind: SharedStyleKind

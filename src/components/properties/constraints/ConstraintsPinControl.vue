@@ -1,18 +1,17 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
 import { constraintPins, useI18n } from '@open-pencil/vue'
-
-import Tip from '@/components/ui/overlay/Tip.vue'
-import constraintsTheme from '@/theme/constraints'
-
 import type {
   ConstraintsControlActions,
   ConstraintAxis,
   ConstraintEdge,
   ConstraintValue
 } from '@open-pencil/vue'
+
+import Tip from '@/components/ui/overlay/Tip.vue'
+import constraintsTheme from '@/theme/constraints'
 
 type PinPosition = keyof (typeof constraintsTheme)['variants']['pinPosition']
 type PinItem = {

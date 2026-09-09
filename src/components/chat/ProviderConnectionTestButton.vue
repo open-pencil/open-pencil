@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
-import statusTheme from '@/theme/feedback/status'
-
 import type { ProviderConnectionTestFailureReason } from '@/app/ai/chat/connection-test'
+import statusTheme from '@/theme/feedback/status'
 
 interface ProviderConnectionTestButtonProps {
   status: 'idle' | 'testing' | 'success' | 'error'

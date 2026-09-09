@@ -16,8 +16,8 @@ import IconSquaresIntersect from '~icons/lucide/squares-intersect'
 import { editorCommandMetadata, formatShortcut, useEditorCommands, useI18n } from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/overlay/Tip.vue'
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { getCommand, runCommand } = useEditorCommands()
 const { commands } = useI18n()

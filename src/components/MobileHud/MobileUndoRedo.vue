@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import Tip from '@/components/ui/overlay/Tip.vue'
-import { useMobileHudContext } from '@/components/MobileHud/context'
 import { useI18n } from '@open-pencil/vue'
+
+import { useMobileHudContext } from '@/components/MobileHud/context'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { commands } = useI18n()
 

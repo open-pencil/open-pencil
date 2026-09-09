@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { VNode } from 'vue'
 import type { ClassValue } from 'tailwind-variants'
+import type { VNode } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
 import type { PanelFieldGroupTheme } from '@/theme/panel/field-group'

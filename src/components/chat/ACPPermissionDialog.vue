@@ -6,6 +6,7 @@ import {
   AlertDialogTitle
 } from 'reka-ui'
 import { computed } from 'vue'
+
 import { acpPermissionOptionTestId, useI18n, vTestId } from '@open-pencil/vue'
 
 import {
@@ -70,8 +71,7 @@ function handleDismiss() {
     <pre
       v-if="toolInput"
       class="mt-2 max-h-32 overflow-auto rounded bg-input p-2 text-[10px] text-muted"
-      >{{ toolInput }}</pre
-    >
+      >{{ toolInput }}</pre>
 
     <div class="mt-4 flex flex-col gap-2">
       <AlertDialogAction

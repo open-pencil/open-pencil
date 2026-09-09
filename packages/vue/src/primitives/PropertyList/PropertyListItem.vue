@@ -1,8 +1,10 @@
 <script setup lang="ts" generic="K extends PropertyListKey">
-import { computed } from 'vue'
 import { Primitive } from 'reka-ui'
+import { computed } from 'vue'
+import type { Component, VNode } from 'vue'
 
 import { usePropertyListPart } from '#vue/primitives/PropertyList/context'
+
 import type {
   PropertyListItemActions,
   PropertyListItemFor,
@@ -10,8 +12,6 @@ import type {
   PropertyListKey,
   PropertyListPatchFor
 } from './types'
-
-import type { Component, VNode } from 'vue'
 
 const {
   propKey,

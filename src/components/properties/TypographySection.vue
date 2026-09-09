@@ -3,21 +3,21 @@ import { computed } from 'vue'
 
 import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
+import { loadFont } from '@/app/editor/fonts'
+import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
 import FontSettingsPopover from '@/components/FontSettings/FontSettingsPopover.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
-import { loadFont } from '@/app/editor/fonts'
-import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { panels, menu } = useI18n()
 const fontLoader = { load: loadFont }

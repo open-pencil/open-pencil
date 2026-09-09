@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { appPreferences, updateCanvasRenderingMode } from '@/app/settings/preferences/store'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSectionHeader from '@/components/settings/layout/SettingsSectionHeader.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { rendering } = useI18n()
 const hasURLOverride = appRuntimeConfig.sceneRendererOverride

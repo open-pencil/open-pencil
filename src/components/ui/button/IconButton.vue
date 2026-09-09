@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, normalizeClass, useAttrs } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed, normalizeClass, useAttrs } from 'vue'
 
+import Tip from '@/components/ui/overlay/Tip.vue'
 import theme from '@/theme/button/icon-button'
 import type { ControlSize } from '@/theme/control'
-import Tip from '@/components/ui/overlay/Tip.vue'
 
 const {
   active = false,

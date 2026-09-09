@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import toolbarTheme from '@/theme/toolbar'
 import { vTestId } from '@open-pencil/vue'
 
 import type { ToolbarActionItem, ToolbarUI } from '@/components/Toolbar/types'
+import toolbarTheme from '@/theme/toolbar'
 
 const { actions, testPrefix, ui } = defineProps<{
   actions: ToolbarActionItem[]

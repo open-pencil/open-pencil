@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { Fill } from '@open-pencil/scene-graph'
+
 import type { FillRootSlots } from './types'
 import { useFill } from './useFill'
-
-import type { Fill } from '@open-pencil/scene-graph'
 
 const { fill } = defineProps<{ fill: Fill }>()
 const emit = defineEmits<{ update: [fill: Fill] }>()

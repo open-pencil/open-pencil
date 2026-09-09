@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { MaskType } from '@open-pencil/scene-graph'
 import { useI18n, useMask } from '@open-pencil/vue'
 
-import AppSelect from '@/components/ui/select/AppSelect.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-
-import type { MaskType } from '@open-pencil/scene-graph'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { panels } = useI18n()
 const { active, maskType, setMaskType } = useMask()

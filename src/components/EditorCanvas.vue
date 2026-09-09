@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch, type Component } from 'vue'
-import {
-  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
-  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
-} from '@open-pencil/core/constants'
 import {
   ContextMenuPortal,
   ContextMenuRoot,
@@ -12,7 +7,16 @@ import {
   PopoverPortal,
   PopoverRoot
 } from 'reka-ui'
+import { computed, onUnmounted, ref, watch, type Component } from 'vue'
+import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
+import IconLucidePanelLeft from '~icons/lucide/panel-left'
+import IconLucidePanelRight from '~icons/lucide/panel-right'
+import IconLucidePanelTop from '~icons/lucide/panel-top'
 
+import {
+  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_X,
+  AUTO_LAYOUT_PADDING_EDITOR_OFFSET_Y
+} from '@open-pencil/core/constants'
 import {
   toolCursor,
   useCanvas,
@@ -21,19 +25,17 @@ import {
   useCanvasVirtualReference,
   useTextEdit
 } from '@open-pencil/vue'
+
 import { useCollabInjected } from '@/app/collab/use'
 import { useEditorStore } from '@/app/editor/active-store'
-import { appRuntimeConfig } from '@/app/runtime/config'
 import { useCanvasCollaborationAwareness } from '@/app/editor/canvas/collaboration-awareness'
 import { createCanvasContextSelection } from '@/app/editor/canvas/context-selection'
-import IconLucidePanelBottom from '~icons/lucide/panel-bottom'
-import IconLucidePanelLeft from '~icons/lucide/panel-left'
-import IconLucidePanelRight from '~icons/lucide/panel-right'
-import IconLucidePanelTop from '~icons/lucide/panel-top'
+import { appRuntimeConfig } from '@/app/runtime/config'
+import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
+
+import CanvasMenu from './canvas/CanvasMenu.vue'
 import CanvasLabelEditor from './canvas/labels/CanvasLabelEditor.vue'
 import { canvasLabelPresentation } from './canvas/labels/presentation'
-import CanvasMenu from './canvas/CanvasMenu.vue'
-import PreparationOverlay from '@/components/preparation/canvas/Overlay.vue'
 import NumberField from './inputs/NumberField.vue'
 
 const { paneId } = defineProps<{

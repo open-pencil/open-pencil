@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import { colorToHexRaw } from '@open-pencil/core/color'
+import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 import {
   applySolidStrokeColor,
   BindableValueRoot,
@@ -11,12 +13,12 @@ import {
   useOkHCL,
   useStrokeControls
 } from '@open-pencil/vue'
+import type { BindableValueActions } from '@open-pencil/vue'
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
+import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
-import PaintField from '@/components/properties/paint/PaintField.vue'
-import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import {
   applyPaintMutation,
   cancelPaintMutation,
@@ -24,21 +26,18 @@ import {
   paintBindingTargets
 } from '@/components/properties/paint/binding'
 import { createStrokeOkhclAdapter } from '@/components/properties/paint/okhcl'
+import PaintField from '@/components/properties/paint/PaintField.vue'
+import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
-import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
-import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import Tip from '@/components/ui/overlay/Tip.vue'
+import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
-
-import { colorToHexRaw } from '@open-pencil/core/color'
-import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { BindableValueActions } from '@open-pencil/vue'
 
 const strokeCtx = useStrokeControls()
 const { advancedActive, cap, join, miterLimit } = strokeCtx

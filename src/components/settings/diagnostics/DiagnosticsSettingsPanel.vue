@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useI18n, SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue'
 import { computed, ref } from 'vue'
-import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
+
+import { useI18n, SegmentedControlItem, SegmentedControlRoot } from '@open-pencil/vue'
 
 import { diagnostics, summarizeDiagnosticEvent } from '@/app/diagnostics'
 import {
@@ -9,9 +9,10 @@ import {
   pruneDiagnostics,
   useDiagnosticsSettings
 } from '@/app/diagnostics/settings'
+import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
 import { toast } from '@/app/shell/ui'
-import { AppConfirmationDialog } from '@/components/ui/dialog'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import { AppConfirmationDialog } from '@/components/ui/dialog'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { common, diagnostics: diagnosticMessages } = useI18n()

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { useMCPConnectionSettings } from '@/app/integrations/mcp/settings/use'
-
-import { useI18n } from '@open-pencil/vue'
 import { ref } from 'vue'
 
+import { useI18n } from '@open-pencil/vue'
+
 import { mcpConnectionSettings } from '@/app/integrations/mcp'
+import { useMCPConnectionSettings } from '@/app/integrations/mcp/settings/use'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
+import { AppConfirmationDialog } from '@/components/ui/dialog'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
-import { AppConfirmationDialog } from '@/components/ui/dialog'
 
 const { automation, common, credentials } = useI18n()
 const editing = ref(false)

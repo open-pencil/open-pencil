@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends string | number">
-import { tv } from 'tailwind-variants'
 import {
   SelectContent,
   SelectItem,
@@ -13,10 +12,11 @@ import {
   SelectValue,
   SelectViewport
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
 
+import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/select/app'
 import type { AppSelectTheme } from '@/theme/select/app'
-import type { ComponentUI } from '@/components/ui/types'
 
 interface AppSelectProps<TValue extends string | number> {
   label?: string

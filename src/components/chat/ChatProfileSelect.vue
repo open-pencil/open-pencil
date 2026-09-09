@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import {
   SelectContent,
   SelectGroup,
@@ -12,6 +11,7 @@ import {
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
+import { computed, ref } from 'vue'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
-
 import { computed } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
+import { useModelRoleAssignments } from '@/app/ai/models/settings/assignments'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { ai } = useI18n()

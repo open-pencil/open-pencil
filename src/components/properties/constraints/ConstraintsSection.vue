@@ -1,16 +1,15 @@
 <script setup lang="ts">
+import { tv } from 'tailwind-variants'
 import { computed } from 'vue'
 
+import type { ConstraintType } from '@open-pencil/scene-graph'
 import { ConstraintsControlRoot, MIXED, useI18n } from '@open-pencil/vue'
 
 import ConstraintsPinControl from '@/components/properties/constraints/ConstraintsPinControl.vue'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 import constraintsTheme from '@/theme/constraints'
-import { tv } from 'tailwind-variants'
-
-import type { ConstraintType } from '@open-pencil/scene-graph'
 
 const { panels } = useI18n()
 const styles = tv(constraintsTheme)()

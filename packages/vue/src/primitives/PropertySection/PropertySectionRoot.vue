@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, getCurrentInstance, ref } from 'vue'
 import { CollapsibleRoot } from 'reka-ui'
+import { computed, getCurrentInstance, ref } from 'vue'
 
 import { providePropertySection } from '#vue/primitives/PropertySection/context'
 import type {

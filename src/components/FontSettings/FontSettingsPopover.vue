@@ -2,14 +2,15 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { onMounted, ref } from 'vue'
 
-import { isTauri } from '@/app/tauri/env'
-import { useFontSettings } from '@/components/FontSettings/use'
 import { WEB_FONT_PROVIDER_IDS, WEB_FONT_PROVIDER_LABELS } from '@open-pencil/core/text'
 import type { WebFontProviderId } from '@open-pencil/core/text'
 import { useI18n } from '@open-pencil/vue'
-import Tip from '@/components/ui/overlay/Tip.vue'
+
+import { isTauri } from '@/app/tauri/env'
+import { useFontSettings } from '@/components/FontSettings/use'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { fonts, common } = useI18n()
 const cls = usePopoverUI({ content: 'isolate z-[51] w-80 p-3' })

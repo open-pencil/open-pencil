@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { colorToHexRaw } from '@open-pencil/core/color'
+import type { Fill } from '@open-pencil/scene-graph'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import {
   BindableValueRoot,
   useColorBindingProvider,
@@ -6,35 +9,31 @@ import {
   useI18n,
   useOkHCL
 } from '@open-pencil/vue'
+import type { BindableValueActions } from '@open-pencil/vue'
 
 import FillPicker from '@/components/fill-picker/FillPicker.vue'
+import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
+import {
+  commitDiscretePropertyListChange,
+  useBlendModeOptions
+} from '@/components/properties/blend-mode/use'
+import { fillLabel } from '@/components/properties/fill-label'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
-import PaintField from '@/components/properties/paint/PaintField.vue'
-import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import {
   applyPaintMutation,
   cancelPaintMutation,
   commitPaintMutation,
   paintBindingTargets
 } from '@/components/properties/paint/binding'
-import { fillLabel } from '@/components/properties/fill-label'
 import { createFillOkhclAdapter } from '@/components/properties/paint/okhcl'
-import {
-  commitDiscretePropertyListChange,
-  useBlendModeOptions
-} from '@/components/properties/blend-mode/use'
+import PaintField from '@/components/properties/paint/PaintField.vue'
+import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
-import VariableBindingPicker from '@/components/properties/binding/VariableBindingPicker.vue'
-import AppSelect from '@/components/ui/select/AppSelect.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
-
-import { colorToHexRaw } from '@open-pencil/core/color'
-import type { Fill } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { BindableValueActions } from '@open-pencil/vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const fillCtx = useFillControls()
 const okhcl = useOkHCL()

@@ -11,11 +11,11 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
-import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
-import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
-import AppTextarea from '@/components/ui/input/AppTextarea.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import AppInput from '@/components/ui/input/AppInput.vue'
+import AppTextarea from '@/components/ui/input/AppTextarea.vue'
+import AppCheckbox from '@/components/ui/toggle/AppCheckbox.vue'
 
 const editor = useEditorStore()
 const service = useLibraryService()

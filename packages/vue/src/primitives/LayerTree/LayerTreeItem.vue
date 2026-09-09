@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 
 import { useLayerTree } from '#vue/primitives/LayerTree/context'
-
 import type { LayerNode } from '#vue/primitives/LayerTree/context'
 
 const { node, level, hasChildren } = defineProps<{

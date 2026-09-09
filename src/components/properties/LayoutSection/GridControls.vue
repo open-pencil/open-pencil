@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import AppSelect from '@/components/ui/select/AppSelect.vue'
-import NumberField from '@/components/inputs/NumberField.vue'
-import IconButton from '@/components/ui/button/IconButton.vue'
+import type { GridTrackSizing } from '@open-pencil/scene-graph'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
+import NumberField from '@/components/inputs/NumberField.vue'
 import type { GridTrackProp } from '@/components/properties/LayoutSection/types'
-import type { GridTrackSizing } from '@open-pencil/scene-graph'
+import IconButton from '@/components/ui/button/IconButton.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const ctx = useLayoutControlsContext()
 

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { tv } from 'tailwind-variants'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
+
+import { colorToCSS } from '@open-pencil/core/color'
 
 import { initials } from '@/app/shell/ui'
-import { colorToCSS } from '@open-pencil/core/color'
 import { useMobileHudContext } from '@/components/MobileHud/context'
 import collaborationTheme from '@/theme/collaboration'
 

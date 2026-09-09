@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useScrollFollowing } from './transcript/useScrollFollowing'
-import IconButton from '@/components/ui/button/IconButton.vue'
-import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import type { ChatStatus, UIMessage } from 'ai'
+import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
+import { computed, ref } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
-import ChatMessage from './ChatMessage.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+
+import ChatMessage from './ChatMessage.vue'
+import { useScrollFollowing } from './transcript/useScrollFollowing'
 
 const {
   messages,

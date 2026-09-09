@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { inputValue, useColorModel } from '@open-pencil/vue'
 
 import { BindingPill } from '@/components/ui/binding'
-
-import type { Color } from '@open-pencil/scene-graph/primitives'
 
 const { color, resolvedColor, variableName, label } = defineProps<{
   color: Color

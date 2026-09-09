@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
 import type { ControlSize } from '@/theme/control'
 import theme from '@/theme/input/input'

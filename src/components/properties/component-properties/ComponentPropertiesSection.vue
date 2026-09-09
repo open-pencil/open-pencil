@@ -3,12 +3,12 @@ import { computed } from 'vue'
 
 import { MIXED, useComponentProperties, useI18n } from '@open-pencil/vue'
 
-import ComponentPropertyTextField from './ComponentPropertyTextField.vue'
-
-import AppSelect from '@/components/ui/select/AppSelect.vue'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
+import AppSelect from '@/components/ui/select/AppSelect.vue'
+import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+
+import ComponentPropertyTextField from './ComponentPropertyTextField.vue'
 
 const { active, controls, setValue } = useComponentProperties()
 const { panels } = useI18n()

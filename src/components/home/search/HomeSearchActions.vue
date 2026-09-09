@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { nextTick, watch } from 'vue'
 import { templateRef } from '@vueuse/core'
+import { nextTick, watch } from 'vue'
 
 import { useI18n, useViewportKind } from '@open-pencil/vue'
 

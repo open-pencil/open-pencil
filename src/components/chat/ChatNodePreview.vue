@@ -2,9 +2,10 @@
 import { useObjectUrl } from '@vueuse/core'
 import { shallowRef, watch } from 'vue'
 
-import { renderNodesToImage } from '@open-pencil/core/io'
-import type { ReferencedNode } from '@/app/ai/chat/context'
 import type { Editor } from '@open-pencil/core/editor'
+import { renderNodesToImage } from '@open-pencil/core/io'
+
+import type { ReferencedNode } from '@/app/ai/chat/context'
 
 const { editor, node } = defineProps<{ editor: Editor; node: ReferencedNode }>()
 const blob = shallowRef<Blob | null>(null)

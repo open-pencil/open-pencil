@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useTextareaAutosize } from '@vueuse/core'
+import type { ChatStatus } from 'ai'
 import { TooltipProvider } from 'reka-ui'
 import { computed, ref } from 'vue'
-import type { ChatStatus } from 'ai'
+
 import { useI18n } from '@open-pencil/vue'
+
 import IconButton from '@/components/ui/button/IconButton.vue'
 import InputGroup from '@/components/ui/input/InputGroup.vue'
 const { status, disabled = false } = defineProps<{ status: ChatStatus; disabled?: boolean }>()

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 import type { Fill, Variable } from '@open-pencil/scene-graph'
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
 import type { BindingProvider, BindingTarget } from '#vue/controls/binding-provider/types'
 import BindableValueRoot from '#vue/primitives/BindableValue/BindableValueRoot.vue'
 import ChannelSliderRoot from '#vue/primitives/ChannelSlider/ChannelSliderRoot.vue'

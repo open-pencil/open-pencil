@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 
 import { MIXED } from '#vue/controls/node-props/use'
-
 import NumberFieldInput from '#vue/primitives/NumberField/NumberFieldInput.vue'
 import NumberFieldRoot from '#vue/primitives/NumberField/NumberFieldRoot.vue'
 import NumberFieldValue from '#vue/primitives/NumberField/NumberFieldValue.vue'
