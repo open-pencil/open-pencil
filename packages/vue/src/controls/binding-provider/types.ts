@@ -18,7 +18,7 @@ export interface BindingProvider<V = unknown> {
   filterVariables(term: string): Variable[]
   getBound(target: BindingTarget): Variable | undefined
   getState(targets: BindingTarget[]): BindingState
-  resolve(variableId: string): V | undefined
+  resolve(variableId: string, target?: BindingTarget): V | undefined
   bind(target: BindingTarget, variableId: string): void
   unbind(target: BindingTarget): void
   create?(target: BindingTarget, value: V, name: string): void

@@ -57,7 +57,10 @@ function setNumberVariableValue(editor: Editor, variableId: string, value: numbe
 export function useNumberBindingProvider() {
   return useOpenPencilBindingProvider<number>({
     type: 'FLOAT',
-    resolve: (editor, variableId) => editor.resolveNumberVariable(variableId),
+    resolve: (editor, variableId, target) =>
+      target
+        ? editor.graph.resolveNumberVariableForNode(target.nodeId, variableId)
+        : editor.resolveNumberVariable(variableId),
     create: createAndBindNumberVariable,
     setValue: setNumberVariableValue
   })

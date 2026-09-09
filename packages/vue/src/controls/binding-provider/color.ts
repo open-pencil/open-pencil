@@ -61,7 +61,10 @@ export function setColorVariableValue(editor: Editor, variableId: string, value:
 export function useColorBindingProvider() {
   return useOpenPencilBindingProvider<Color>({
     type: 'COLOR',
-    resolve: (editor, variableId) => editor.resolveColorVariable(variableId),
+    resolve: (editor, variableId, target) =>
+      target
+        ? editor.graph.resolveColorVariableForNode(target.nodeId, variableId)
+        : editor.resolveColorVariable(variableId),
     create: createAndBindColorVariable,
     setValue: setColorVariableValue
   })

@@ -59,7 +59,7 @@ const variable = computed(() => {
 const resolvedValue = computed(() => {
   void provider.revision?.value
   const current = variable.value
-  return current ? provider.resolve(current.id) : undefined
+  return current ? provider.resolve(current.id, targets.value[0]) : undefined
 })
 const variables = computed(() => {
   void provider.revision?.value
