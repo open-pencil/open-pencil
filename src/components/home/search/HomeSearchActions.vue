@@ -19,6 +19,7 @@ function focusSearch(onCleanup: (cleanup: () => void) => void): void {
   if (isMobile.value || activeTab.value?.kind !== 'home') return
   const tabId = activeTab.value.id
   const previousFocus = document.activeElement
+  if (previousFocus instanceof HTMLElement && previousFocus.closest('[role="tablist"]')) return
   let cancelled = false
   onCleanup(() => {
     cancelled = true
