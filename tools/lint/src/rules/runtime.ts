@@ -39,6 +39,13 @@ const noDirectStorageAccess = {
     return {
       Identifier(node) {
         if (node.name !== 'localStorage' && node.name !== 'sessionStorage') return
+        const parent = node.parent
+        if (
+          parent.type === 'Property' &&
+          parent.key === node &&
+          !parent.computed
+        )
+          return
         reportStorage(node, node.name)
       }
     }
