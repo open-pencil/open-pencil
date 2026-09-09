@@ -48,7 +48,7 @@ const visibleSizeLimits = computed(() =>
 </script>
 
 <template>
-  <PanelGrid :columns="2">
+  <PanelGrid :columns="1">
     <SizeAxisField axis="width" icon="W" :label="panels.width" />
     <SizeAxisField axis="height" icon="H" :label="panels.height" />
   </PanelGrid>
