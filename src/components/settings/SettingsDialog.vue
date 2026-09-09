@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { DialogClose } from 'reka-ui'
-import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue'
-import { IS_TAURI } from '@open-pencil/core/constants'
-
-import { browserCredentialsRemembered, appCredentialServices } from '@/app/settings/credentials/app'
-import { setRememberCredentials } from '@/app/settings/credentials/media'
 import { settingsDialogOpen, settingsDialogSection } from '@/app/settings/dialog'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
@@ -17,29 +12,12 @@ import StockPhotoKeysSection from '@/components/settings/provider/StockPhotoKeys
 import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import VectorizeSettingsSection from '@/components/settings/vectorize/VectorizeSettingsSection.vue'
-import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 
-const { credentials, settings, common } = useI18n()
+const { settings, common } = useI18n()
 function onOpenChange(open: boolean): void {
   settingsDialogOpen.value = open
 }
-
-const rememberCredentials = computed({
-  get: () => browserCredentialsRemembered.value,
-  set: (remembered: boolean) => {
-    void setRememberCredentials(remembered)
-  }
-})
-
-const credentialBackendLabel = computed(() => {
-  void browserCredentialsRemembered.value
-  if (appCredentialServices.manager.backend === 'native') return credentials.value.backendNative
-  if (appCredentialServices.manager.backend === 'browser') {
-    return credentials.value.backendBrowser
-  }
-  return credentials.value.backendMemory
-})
 
 const navigationClass =
   'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
@@ -173,23 +151,7 @@ const navigationClass =
       </div>
     </div>
 
-    <AppDialogFooter :ui="{ footer: 'justify-between' }">
-      <div class="mr-auto flex items-center gap-2">
-        <AppSwitch
-          v-if="!IS_TAURI"
-          v-model="rememberCredentials"
-          :label="credentials.remember"
-          data-test-id="settings-remember-credentials"
-        />
-        <div>
-          <p v-if="!IS_TAURI" class="text-[10px] text-surface">
-            {{ credentials.remember }}
-          </p>
-          <p class="text-[10px] text-muted" data-test-id="settings-credential-backend">
-            {{ credentials.storage({ backend: credentialBackendLabel }) }}
-          </p>
-        </div>
-      </div>
+    <AppDialogFooter>
       <DialogClose as-child>
         <button
           type="button"

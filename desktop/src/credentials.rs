@@ -1,6 +1,14 @@
+use std::sync::Mutex;
+use tauri::Emitter;
+
+// Serialize all native operations, including temporary process-wide macOS UI suppression.
+static CREDENTIAL_ACCESS: Mutex<Option<CredentialErrorCode>> = Mutex::new(None);
+
+#[cfg(not(feature = "native-test"))]
 use keyring::{Entry, Error as KeyringError};
 use serde::{Deserialize, Serialize};
 
+#[cfg(not(feature = "native-test"))]
 const CREDENTIAL_SERVICE: &str = "net.dannote.open-pencil.credentials";
 const AVAILABILITY_ACCOUNT: &str = "v1:system:default:availability";
 const MAX_SEGMENT_LENGTH: usize = 64;
@@ -56,6 +64,9 @@ enum BackendError {
 }
 
 trait CredentialBackend {
+    fn exists(&self, account: &str) -> Result<bool, BackendError> {
+        self.read(account).map(|value| value.is_some())
+    }
     fn read(&self, account: &str) -> Result<Option<String>, BackendError>;
     fn write(&self, account: &str, value: &str) -> Result<(), BackendError>;
     fn remove(&self, account: &str) -> Result<(), BackendError>;
@@ -63,13 +74,31 @@ trait CredentialBackend {
 
 struct NativeCredentialBackend;
 
+#[cfg(not(feature = "native-test"))]
 impl NativeCredentialBackend {
     fn entry(account: &str) -> Result<Entry, BackendError> {
         Entry::new(CREDENTIAL_SERVICE, account).map_err(map_keyring_error)
     }
 }
 
+#[cfg(not(feature = "native-test"))]
 impl CredentialBackend for NativeCredentialBackend {
+    #[cfg(target_os = "macos")]
+    fn exists(&self, account: &str) -> Result<bool, BackendError> {
+        use security_framework::item::{ItemClass, ItemSearchOptions};
+        match ItemSearchOptions::new()
+            .class(ItemClass::generic_password())
+            .service(CREDENTIAL_SERVICE)
+            .account(account)
+            .load_attributes(true)
+            .load_data(false)
+            .search()
+        {
+            Ok(items) => Ok(!items.is_empty()),
+            Err(error) if error.code() == -25300 => Ok(false),
+            Err(_) => Err(BackendError::Locked),
+        }
+    }
     fn read(&self, account: &str) -> Result<Option<String>, BackendError> {
         match Self::entry(account)?.get_password() {
             Ok(value) => Ok(Some(value)),
@@ -92,6 +121,7 @@ impl CredentialBackend for NativeCredentialBackend {
     }
 }
 
+#[cfg(not(feature = "native-test"))]
 fn map_keyring_error(error: KeyringError) -> BackendError {
     match error {
         KeyringError::NoStorageAccess(_) => BackendError::Locked,
@@ -100,6 +130,91 @@ fn map_keyring_error(error: KeyringError) -> BackendError {
         | KeyringError::PlatformFailure(_) => BackendError::Unavailable,
         _ => BackendError::Failed,
     }
+}
+
+#[cfg(feature = "native-test")]
+static TEST_CREDENTIALS: std::sync::LazyLock<Mutex<std::collections::HashMap<String, String>>> =
+    std::sync::LazyLock::new(|| Mutex::new(std::collections::HashMap::new()));
+
+#[cfg(feature = "native-test")]
+impl CredentialBackend for NativeCredentialBackend {
+    fn read(&self, account: &str) -> Result<Option<String>, BackendError> {
+        Ok(TEST_CREDENTIALS
+            .lock()
+            .map_err(|_| BackendError::Failed)?
+            .get(account)
+            .cloned())
+    }
+    fn write(&self, account: &str, value: &str) -> Result<(), BackendError> {
+        // Reserved fixture value in the memory-only native-test backend.
+        if value == "open-pencil-native-test-denied" {
+            return Err(BackendError::Locked);
+        }
+        TEST_CREDENTIALS
+            .lock()
+            .map_err(|_| BackendError::Failed)?
+            .insert(account.to_owned(), value.to_owned());
+        Ok(())
+    }
+    fn remove(&self, account: &str) -> Result<(), BackendError> {
+        TEST_CREDENTIALS
+            .lock()
+            .map_err(|_| BackendError::Failed)?
+            .remove(account);
+        Ok(())
+    }
+}
+
+fn access_state() -> std::sync::MutexGuard<'static, Option<CredentialErrorCode>> {
+    CREDENTIAL_ACCESS.lock().unwrap_or_else(|error| {
+        let mut state = error.into_inner();
+        // A backend panic may interrupt bookkeeping; require explicit retry.
+        state.get_or_insert(CredentialErrorCode::Failed);
+        CREDENTIAL_ACCESS.clear_poison();
+        state
+    })
+}
+
+fn reset_access_state() {
+    *access_state() = None;
+}
+
+fn credential_operation<T>(
+    interactive: bool,
+    operation: impl FnOnce() -> Result<T, CredentialError>,
+) -> Result<T, CredentialError> {
+    let mut denied = access_state();
+    if interactive {
+        if let Some(code) = *denied {
+            return Err(CredentialError {
+                code,
+                message: "Credential access is paused; retry explicitly from Settings",
+            });
+        }
+    }
+    #[cfg(all(target_os = "macos", not(feature = "native-test")))]
+    let _interaction = if !interactive {
+        Some(
+            security_framework::os::macos::keychain::SecKeychain::disable_user_interaction()
+                .map_err(|_| public_error(BackendError::Unavailable))?,
+        )
+    } else {
+        None
+    };
+    let result = operation();
+    if interactive
+        && result.as_ref().is_err_and(|error| {
+            matches!(
+                error.code,
+                CredentialErrorCode::Locked
+                    | CredentialErrorCode::Unavailable
+                    | CredentialErrorCode::Failed
+            )
+        })
+    {
+        *denied = result.as_ref().err().map(|error| error.code);
+    }
+    result
 }
 
 fn validate_segment(value: &str) -> bool {
@@ -176,15 +291,34 @@ fn remove_with(
 }
 
 #[tauri::command]
+pub async fn credential_access_paused() -> Result<bool, CredentialError> {
+    tauri::async_runtime::spawn_blocking(|| Ok(access_state().is_some()))
+        .await
+        .map_err(|_| public_error(BackendError::Failed))?
+}
+
+#[tauri::command]
+pub async fn credential_retry_access() -> Result<(), CredentialError> {
+    tauri::async_runtime::spawn_blocking(|| {
+        reset_access_state();
+        Ok(())
+    })
+    .await
+    .map_err(|_| public_error(BackendError::Failed))?
+}
+
+#[tauri::command]
 pub async fn credential_store_availability() -> Result<CredentialStoreAvailability, CredentialError>
 {
     tauri::async_runtime::spawn_blocking(|| {
-        match NativeCredentialBackend.read(AVAILABILITY_ACCOUNT) {
-            Ok(_) => Ok(CredentialStoreAvailability::Available),
-            Err(BackendError::Locked) => Ok(CredentialStoreAvailability::Locked),
-            Err(BackendError::Unavailable) => Ok(CredentialStoreAvailability::Unavailable),
-            Err(error) => Err(public_error(error)),
-        }
+        credential_operation(false, || {
+            match NativeCredentialBackend.exists(AVAILABILITY_ACCOUNT) {
+                Ok(_) => Ok(CredentialStoreAvailability::Available),
+                Err(BackendError::Locked) => Ok(CredentialStoreAvailability::Locked),
+                Err(BackendError::Unavailable) => Ok(CredentialStoreAvailability::Unavailable),
+                Err(error) => Err(public_error(error)),
+            }
+        })
     })
     .await
     .map_err(|_| public_error(BackendError::Failed))?
@@ -195,9 +329,14 @@ pub async fn credential_status(
     reference: CredentialRef,
 ) -> Result<CredentialStatus, CredentialError> {
     tauri::async_runtime::spawn_blocking(move || {
-        match read_with(&NativeCredentialBackend, &reference) {
-            Ok(Some(_)) => Ok(CredentialStatus::Configured),
-            Ok(None) => Ok(CredentialStatus::Missing),
+        match credential_operation(false, || {
+            let account = account_for(&reference)?;
+            NativeCredentialBackend
+                .exists(&account)
+                .map_err(public_error)
+        }) {
+            Ok(true) => Ok(CredentialStatus::Configured),
+            Ok(false) => Ok(CredentialStatus::Missing),
             Err(CredentialError {
                 code: CredentialErrorCode::Locked,
                 ..
@@ -213,30 +352,49 @@ pub async fn credential_status(
     .map_err(|_| public_error(BackendError::Failed))?
 }
 
+async fn interactive_operation<T: Send + 'static>(
+    app: tauri::AppHandle,
+    operation: impl FnOnce() -> Result<T, CredentialError> + Send + 'static,
+) -> Result<T, CredentialError> {
+    let result =
+        tauri::async_runtime::spawn_blocking(move || credential_operation(true, operation))
+            .await
+            .map_err(|_| public_error(BackendError::Failed))?;
+    if let Err(error) = app.emit("credential-access-changed", ()) {
+        eprintln!("Could not notify credential access change: {error}");
+    }
+    result
+}
+
 #[tauri::command]
-pub async fn credential_read(reference: CredentialRef) -> Result<Option<String>, CredentialError> {
-    tauri::async_runtime::spawn_blocking(move || read_with(&NativeCredentialBackend, &reference))
-        .await
-        .map_err(|_| public_error(BackendError::Failed))?
+pub async fn credential_read(
+    app: tauri::AppHandle,
+    reference: CredentialRef,
+) -> Result<Option<String>, CredentialError> {
+    interactive_operation(app, move || read_with(&NativeCredentialBackend, &reference)).await
 }
 
 #[tauri::command]
 pub async fn credential_write(
+    app: tauri::AppHandle,
     reference: CredentialRef,
     value: String,
 ) -> Result<(), CredentialError> {
-    tauri::async_runtime::spawn_blocking(move || {
+    interactive_operation(app, move || {
         write_with(&NativeCredentialBackend, &reference, &value)
     })
     .await
-    .map_err(|_| public_error(BackendError::Failed))?
 }
 
 #[tauri::command]
-pub async fn credential_remove(reference: CredentialRef) -> Result<(), CredentialError> {
-    tauri::async_runtime::spawn_blocking(move || remove_with(&NativeCredentialBackend, &reference))
-        .await
-        .map_err(|_| public_error(BackendError::Failed))?
+pub async fn credential_remove(
+    app: tauri::AppHandle,
+    reference: CredentialRef,
+) -> Result<(), CredentialError> {
+    interactive_operation(app, move || {
+        remove_with(&NativeCredentialBackend, &reference)
+    })
+    .await
 }
 
 #[cfg(test)]
@@ -271,6 +429,87 @@ mod tests {
                 .remove(account);
             Ok(())
         }
+    }
+
+    fn reset_access() {
+        reset_access_state();
+    }
+
+    static ACCESS_TEST_LOCK: Mutex<()> = Mutex::new(());
+
+    #[test]
+    fn backend_panic_pauses_access_and_explicit_retry_recovers() {
+        let _guard = ACCESS_TEST_LOCK.lock().unwrap();
+        reset_access();
+        let panic = std::panic::catch_unwind(|| {
+            let _: Result<(), CredentialError> =
+                credential_operation(true, || panic!("test backend panic"));
+        });
+        assert!(panic.is_err());
+        assert!(CREDENTIAL_ACCESS.is_poisoned());
+        assert!(access_state().is_some());
+        assert!(!CREDENTIAL_ACCESS.is_poisoned());
+        let called = std::cell::Cell::new(false);
+        assert!(credential_operation(true, || {
+            called.set(true);
+            Ok(())
+        })
+        .is_err());
+        assert!(!called.get());
+        assert!(credential_operation(false, || Ok(())).is_ok());
+        reset_access_state();
+        assert!(credential_operation(true, || Ok(())).is_ok());
+    }
+
+    #[test]
+    fn concurrent_calls_do_not_repeat_an_interactive_failure() {
+        let _guard = ACCESS_TEST_LOCK.lock().unwrap();
+        reset_access();
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        std::thread::scope(|scope| {
+            for _ in 0..8 {
+                scope.spawn(|| {
+                    let _: Result<(), CredentialError> = credential_operation(true, || {
+                        calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                        Err(public_error(BackendError::Locked))
+                    });
+                });
+            }
+        });
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        assert!(credential_operation(false, || Ok(())).is_ok());
+        reset_access();
+    }
+
+    #[test]
+    fn denied_access_blocks_queued_operations_until_explicit_retry() {
+        let _guard = ACCESS_TEST_LOCK.lock().unwrap();
+        reset_access();
+        let failure: Result<(), CredentialError> =
+            credential_operation(true, || Err(public_error(BackendError::Locked)));
+        assert!(failure.is_err());
+        let called = std::cell::Cell::new(false);
+        let blocked = credential_operation(true, || {
+            called.set(true);
+            Ok(())
+        });
+        assert!(blocked.is_err());
+        assert!(!called.get());
+        reset_access();
+        assert!(credential_operation(true, || Ok(())).is_ok());
+    }
+
+    #[cfg(feature = "native-test")]
+    #[test]
+    fn native_test_credentials_are_process_memory_only() {
+        let backend = NativeCredentialBackend;
+        backend.write("test-memory", "disposable").unwrap();
+        assert_eq!(
+            backend.read("test-memory").unwrap(),
+            Some("disposable".to_owned())
+        );
+        backend.remove("test-memory").unwrap();
+        assert_eq!(backend.read("test-memory").unwrap(), None);
     }
 
     fn reference() -> CredentialRef {

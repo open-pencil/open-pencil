@@ -1,5 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "net.dannote.open-pencil.native-test",
   "build": {
     "beforeBuildCommand": "bun run generate:tauri-menu && vite build --mode native-test"
   },
@@ -7,6 +8,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
+        "incognito": true,
         "title": "OpenPencil Native Test",
         "width": 1280,
         "height": 800,

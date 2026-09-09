@@ -3263,6 +3263,7 @@ dependencies = [
  "font-kit",
  "keyring",
  "reqwest 0.12.28",
+ "security-framework",
  "serde",
  "serde_json",
  "tauri",

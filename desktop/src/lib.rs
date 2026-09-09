@@ -8,7 +8,7 @@ mod menu_events;
 mod window;
 
 use credentials::{
-    credential_read, credential_remove, credential_status, credential_store_availability,
+    credential_access_paused, credential_retry_access, credential_read, credential_remove, credential_status, credential_store_availability,
     credential_write,
 };
 use fig_container::build_fig_file;
@@ -142,6 +142,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             build_fig_file,
             credential_read,
+            credential_access_paused,
+            credential_retry_access,
             credential_remove,
             credential_status,
             credential_store_availability,

@@ -1,5 +1,7 @@
 import { strict as assert } from 'node:assert'
 
+import { invokeNative } from '#tests/helpers/tauri/invoke'
+
 function settingsOpen(): Promise<boolean> {
   return browser.execute(() =>
     Boolean(document.querySelector('[data-test-id="app-settings-dialog"]'))
@@ -33,10 +35,7 @@ describe('native preferences', () => {
       async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
       { timeout: 30_000, timeoutMsg: 'OpenPencil editor did not initialize' }
     )
-    const initial = await browser.execute(async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
-      return invoke<boolean>('native_menu_checked', { id: 'snap-objects' })
-    })
+    const initial = await invokeNative<boolean>('native_menu_checked', { id: 'snap-objects' })
     assert.equal(initial, true)
 
     await browser.executeAsync((done) => {
@@ -47,10 +46,7 @@ describe('native preferences', () => {
         setTimeout(done, 200)
       })
     })
-    const updated = await browser.execute(async () => {
-      const { invoke } = await import('@tauri-apps/api/core')
-      return invoke<boolean>('native_menu_checked', { id: 'snap-objects' })
-    })
+    const updated = await invokeNative<boolean>('native_menu_checked', { id: 'snap-objects' })
     assert.equal(updated, false)
   })
 })

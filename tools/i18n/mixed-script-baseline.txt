@@ -219,3 +219,8 @@ zh-cn:updates.upToDate
 
 ja:ai.copyACPLog
 zh-cn:ai.copyACPLog
+
+ja:credentials.settingsTitle
+ja:credentials.rememberDevice
+zh-cn:credentials.settingsTitle
+zh-cn:credentials.rememberDevice

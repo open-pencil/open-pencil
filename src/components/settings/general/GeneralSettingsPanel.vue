@@ -7,6 +7,7 @@ import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
+import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
 import RenderingSettingsSection from '@/components/settings/general/RenderingSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSectionHeader from '@/components/settings/layout/SettingsSectionHeader.vue'
@@ -130,6 +131,7 @@ const snapToPixelGrid = computed({
 
     <p class="text-[10px] text-muted">{{ settings.temporaryDisableSnappingHint }}</p>
 
+    <CredentialSettingsSection />
     <RenderingSettingsSection />
   </section>
 </template>

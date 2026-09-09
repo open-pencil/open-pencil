@@ -9,6 +9,8 @@ import {
   type CredentialStoreAvailability
 } from '@/app/settings/credentials/types'
 
+import { invalidateNativeCredentialAccess } from './access-state'
+
 type NativeCredentialError = {
   code?: CredentialErrorCode
   message?: string
@@ -46,6 +48,10 @@ export class NativeCredentialStore implements CredentialStore {
         nativeError.code ?? 'failed',
         nativeError.message ?? 'System credential operation failed'
       )
+    } finally {
+      if (['credential_read', 'credential_write', 'credential_remove'].includes(command)) {
+        invalidateNativeCredentialAccess()
+      }
     }
   }
 }
