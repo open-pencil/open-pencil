@@ -349,10 +349,9 @@ const noSiblingDomainPrefixedFiles = createProgramFilenameRule({
     if (parts.length < 2) return false
 
     const prefix = parts[0]
-    const suffix = parts.at(-1)
+    // Suffixes describe control kinds (page-list, color-input), not necessarily ownership.
     let domain: string | null = null
     if (existsSync(`${dir}${prefix}`)) domain = prefix
-    else if (suffix && existsSync(`${dir}${suffix}`)) domain = suffix
     if (!domain) return false
 
     const filename = file.slice(dir.length)

@@ -74,6 +74,18 @@ async function runRule(ruleName: string, source: string, filename: string): Prom
   return reports
 }
 
+test('domain naming uses ownership prefixes, not control-kind suffixes', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'open-pencil-domains-'))
+  temporaryDirectories.push(directory)
+  await mkdir(join(directory, 'list'))
+  expect(
+    await runRule('no-sibling-domain-prefixed-files', '', join(directory, 'page-list.ts'))
+  ).toBe(0)
+  expect(
+    await runRule('no-sibling-domain-prefixed-files', '', join(directory, 'list-actions.ts'))
+  ).toBe(1)
+})
+
 function ruleDiagnostics(diagnostics: Diagnostic[], rule: string): Diagnostic[] {
   return diagnostics.filter((diagnostic) => diagnostic.code === `open-pencil(${rule})`)
 }

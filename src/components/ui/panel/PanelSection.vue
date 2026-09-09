@@ -23,7 +23,7 @@ export interface PanelSectionSlots {
 
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
-import { computed, getCurrentInstance } from 'vue'
+import { getCurrentInstance } from 'vue'
 
 import {
   PropertySectionActions,
@@ -49,7 +49,7 @@ const controlled = vnodeProps ? Object.hasOwn(vnodeProps, 'open') : false
 const emit = defineEmits<{ 'update:open': [open: boolean] }>()
 const slots = defineSlots<PanelSectionSlots>()
 
-const styles = computed(() => tv(theme)({ actions: Boolean(slots.actions) }))
+const styles = tv(theme)()
 </script>
 
 <template>

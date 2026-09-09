@@ -15,7 +15,7 @@ import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@ope
 
 import { useMenuUI } from '@/components/ui/menu/menu'
 import Tip from '@/components/ui/overlay/Tip.vue'
-import pageListTheme from '@/theme/list/page'
+import pageListTheme from '@/theme/page-list'
 
 type PageItem = Pick<SceneNode, 'id' | 'name' | 'childIds'>
 

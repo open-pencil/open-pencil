@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { nextTick, watch } from 'vue'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useViewportKind } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
 import { useLibraryManager } from '@/components/libraries/useLibraryManager'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
+import {
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot
+} from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
+import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
+import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
+import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
+import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { initialSection = 'browse' } = defineProps<{
@@ -16,6 +28,7 @@ const { initialSection = 'browse' } = defineProps<{
 const open = defineModel<boolean>({ required: true })
 const editor = useEditorStore()
 const service = useLibraryService()
+const { isMobile } = useViewportKind()
 const { panels, common } = useI18n()
 
 async function openPublish() {
@@ -38,6 +51,10 @@ const {
 watch(open, (isOpen) => {
   if (isOpen) section.value = initialSection
 })
+function selectSource(value: string) {
+  if (value === 'local' || value === 'storage') void setSource(value)
+}
+
 function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
   const initialInstanceId = group.instanceIds[0]
   if (!initialInstanceId) return
@@ -48,9 +65,6 @@ function reviewUpdate(group: (typeof visibleUpdateGroups.value)[number]) {
     initialInstanceId
   })
 }
-
-const navigationClass =
-  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
 </script>
 
 <template>
@@ -61,99 +75,76 @@ const navigationClass =
       :close-label="common.close"
     >
       <template #actions>
-        <button
-          type="button"
-          class="ml-auto text-xs text-component hover:underline"
-          @click="openPublish"
-        >
+        <AppButton color="primary" variant="link" class="ml-auto" @click="openPublish">
           {{ panels.publishLibrary }}
-        </button>
+        </AppButton>
       </template>
     </AppDialogHeader>
-    <div class="flex min-h-0 flex-1">
-      <nav class="w-40 shrink-0 border-r border-border p-2" :aria-label="panels.manageLibraries">
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="section === 'browse' ? 'active' : 'inactive'"
-          @click="section = 'browse'"
-        >
-          <icon-lucide-library class="size-3.5" /> {{ panels.browseLibraries }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="section === 'updates' ? 'active' : 'inactive'"
-          @click="section = 'updates'"
-        >
-          <icon-lucide-refresh-cw class="size-3.5" /> {{ panels.libraryUpdates }}
-          <span
-            v-if="visibleUpdateGroups.length"
-            class="ml-auto rounded-full bg-accent px-1.5 text-[10px] text-white"
-            >{{ visibleUpdateGroups.length }}</span
+    <AppTabsRoot v-model="section" :orientation="isMobile ? 'horizontal' : 'vertical'">
+      <AppTabsList :label="panels.manageLibraries">
+        <AppTabsTrigger value="browse">
+          <template #leading><icon-lucide-library class="size-3.5" /></template>
+          {{ panels.browseLibraries }}
+        </AppTabsTrigger>
+        <AppTabsTrigger value="updates">
+          <template #leading><icon-lucide-refresh-cw class="size-3.5" /></template>
+          {{ panels.libraryUpdates }}
+          <template v-if="visibleUpdateGroups.length" #trailing>
+            <span class="rounded-full bg-accent px-1.5 text-[10px] text-white">{{
+              visibleUpdateGroups.length
+            }}</span>
+          </template>
+        </AppTabsTrigger>
+      </AppTabsList>
+      <AppTabsContent value="browse" as-child>
+        <AppDialogBody>
+          <SegmentedControl
+            required
+            class="mb-4"
+            :model-value="service.catalogSource"
+            :label="panels.browseLibraries"
+            :options="[
+              { value: 'local', label: panels.localLibraries },
+              { value: 'storage', label: panels.storageLibraries }
+            ]"
+            @update:model-value="selectSource"
+          />
+          <div
+            v-for="library in service.summaries.value"
+            :key="library.libraryId"
+            class="flex items-center gap-3 border-b border-border py-3"
           >
-        </button>
-      </nav>
-      <section v-if="section === 'browse'" class="min-h-0 flex-1 overflow-y-auto p-4">
-        <div class="mb-4 flex gap-1">
-          <button
-            type="button"
-            class="rounded px-2 py-1 text-xs data-[active=true]:bg-hover"
-            :data-active="service.catalogSource === 'local'"
-            @click="setSource('local')"
-          >
-            {{ panels.localLibraries }}
-          </button>
-          <button
-            type="button"
-            class="rounded px-2 py-1 text-xs data-[active=true]:bg-hover"
-            :data-active="service.catalogSource === 'storage'"
-            @click="setSource('storage')"
-          >
-            {{ panels.storageLibraries }}
-          </button>
-        </div>
-        <div
-          v-for="library in service.summaries.value"
-          :key="library.libraryId"
-          class="flex items-center gap-3 border-b border-border py-3"
-        >
-          <icon-lucide-library class="size-4 text-component" />
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-xs text-surface">{{ library.name }}</p>
-            <p class="text-[10px] text-muted">
-              {{ panels.libraryAssetCount({ count: library.assetCount }) }}
-            </p>
+            <icon-lucide-library class="size-4 text-component" />
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-xs text-surface">{{ library.name }}</p>
+              <p class="text-[10px] text-muted">
+                {{ panels.libraryAssetCount({ count: library.assetCount }) }}
+              </p>
+            </div>
+            <IconButton
+              v-if="editor.graph.enabledLibraries.get(library.libraryId)?.enabled"
+              :label="panels.preferLibrary"
+              @click="preferLibrary(library.libraryId)"
+            >
+              <icon-lucide-star class="size-4" />
+            </IconButton>
+            <AppButton variant="outline" @click="toggleLibrary(library.libraryId)">
+              {{
+                editor.graph.enabledLibraries.get(library.libraryId)?.enabled
+                  ? panels.disableLibrary
+                  : panels.enableLibrary
+              }}
+            </AppButton>
           </div>
-          <button
-            v-if="editor.graph.enabledLibraries.get(library.libraryId)?.enabled"
-            type="button"
-            class="text-muted hover:text-component"
-            :aria-label="panels.preferLibrary"
-            @click="preferLibrary(library.libraryId)"
-          >
-            <icon-lucide-star class="size-4" />
-          </button>
-          <button
-            type="button"
-            class="rounded border border-border px-2 py-1 text-xs"
-            @click="toggleLibrary(library.libraryId)"
-          >
-            {{
-              editor.graph.enabledLibraries.get(library.libraryId)?.enabled
-                ? panels.disableLibrary
-                : panels.enableLibrary
-            }}
-          </button>
-        </div>
-        <AppPlaceholder
-          v-if="!loading && service.summaries.value.length === 0"
-          :label="panels.noLibraries"
-          size="compact"
-        />
-      </section>
-      <section v-else class="flex min-h-0 flex-1 flex-col">
-        <div class="min-h-0 flex-1 overflow-y-auto p-4">
+          <AppPlaceholder
+            v-if="!loading && service.summaries.value.length === 0"
+            :label="panels.noLibraries"
+            size="compact"
+          />
+        </AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="updates" class="flex flex-col overflow-hidden">
+        <AppDialogBody>
           <h3 class="mb-3 text-sm font-semibold text-surface">{{ panels.libraryUpdates }}</h3>
           <div
             v-for="asset in visibleUpdateGroups"
@@ -169,33 +160,28 @@ const navigationClass =
                 </p>
               </button>
             </div>
-            <button
-              type="button"
-              class="rounded border border-border px-3 py-1 text-xs"
-              :disabled="applying !== null"
-              @click="updateAsset(asset)"
-            >
+            <AppButton variant="outline" :disabled="applying !== null" @click="updateAsset(asset)">
               {{ panels.updateLibraryAsset }}
-            </button>
+            </AppButton>
           </div>
           <AppPlaceholder
             v-if="visibleUpdateGroups.length === 0"
             :label="panels.noLibraryUpdates"
             size="compact"
           />
-        </div>
+        </AppDialogBody>
         <AppDialogFooter :ui="{ footer: 'justify-between' }">
           <AppSwitch v-model="showAllPages" :label="panels.showUpdatesForAllPages" />
-          <button
-            type="button"
-            class="rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-50"
+          <AppButton
+            color="primary"
+            variant="solid"
             :disabled="visibleUpdateGroups.length === 0 || applying !== null"
             @click="updateAll"
           >
             {{ panels.updateAll }}
-          </button>
+          </AppButton>
         </AppDialogFooter>
-      </section>
-    </div>
+      </AppTabsContent>
+    </AppTabsRoot>
   </AppDialogRoot>
 </template>

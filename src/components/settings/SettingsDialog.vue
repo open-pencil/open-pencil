@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DialogClose } from 'reka-ui'
 
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useViewportKind } from '@open-pencil/vue'
 
 import { settingsDialogOpen, settingsDialogSection } from '@/app/settings/dialog'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
@@ -14,15 +14,23 @@ import StockPhotoKeysSection from '@/components/settings/provider/StockPhotoKeys
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
 import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import VectorizeSettingsSection from '@/components/settings/vectorize/VectorizeSettingsSection.vue'
-import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import AppButton from '@/components/ui/button/AppButton.vue'
+import {
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+  AppDialogRoot
+} from '@/components/ui/dialog'
+import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
+import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
+import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
+import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
 
+const { isMobile } = useViewportKind()
 const { settings, common } = useI18n()
 function onOpenChange(open: boolean): void {
   settingsDialogOpen.value = open
 }
-
-const navigationClass =
-  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-hover hover:text-surface data-[state=active]:bg-hover data-[state=active]:text-surface'
 </script>
 
 <template>
@@ -39,129 +47,85 @@ const navigationClass =
       :close-label="common.close"
     />
 
-    <div class="flex min-h-0 flex-1">
-      <nav class="w-40 shrink-0 border-r border-border p-2" :aria-label="settings.title">
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="settingsDialogSection === 'general' ? 'active' : 'inactive'"
-          data-test-id="settings-section-general"
-          @click="settingsDialogSection = 'general'"
-        >
-          <icon-lucide-settings class="size-3.5" />
+    <AppTabsRoot
+      v-model="settingsDialogSection"
+      :orientation="isMobile ? 'horizontal' : 'vertical'"
+    >
+      <AppTabsList :label="settings.title">
+        <AppTabsTrigger value="general" data-test-id="settings-section-general">
+          <template #leading><icon-lucide-settings class="size-3.5" /></template>
           {{ settings.general }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="settingsDialogSection === 'ai' ? 'active' : 'inactive'"
-          data-test-id="settings-section-ai"
-          @click="settingsDialogSection = 'ai'"
-        >
-          <icon-lucide-sparkles class="size-3.5" />
+        </AppTabsTrigger>
+        <AppTabsTrigger value="ai" data-test-id="settings-section-ai">
+          <template #leading><icon-lucide-sparkles class="size-3.5" /></template>
           {{ settings.aiAndAgents }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="settingsDialogSection === 'usage' ? 'active' : 'inactive'"
-          data-test-id="settings-section-usage"
-          @click="settingsDialogSection = 'usage'"
-        >
-          <icon-lucide-chart-no-axes-combined class="size-3.5" />
+        </AppTabsTrigger>
+        <AppTabsTrigger value="usage" data-test-id="settings-section-usage">
+          <template #leading><icon-lucide-chart-no-axes-combined class="size-3.5" /></template>
           {{ settings.usage }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="settingsDialogSection === 'diagnostics' ? 'active' : 'inactive'"
-          data-test-id="settings-section-diagnostics"
-          @click="settingsDialogSection = 'diagnostics'"
-        >
-          <icon-lucide-activity class="size-3.5" />
+        </AppTabsTrigger>
+        <AppTabsTrigger value="diagnostics" data-test-id="settings-section-diagnostics">
+          <template #leading><icon-lucide-activity class="size-3.5" /></template>
           {{ settings.diagnostics }}
-        </button>
-
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="settingsDialogSection === 'mcp' ? 'active' : 'inactive'"
-          data-test-id="settings-section-mcp"
-          @click="settingsDialogSection = 'mcp'"
-        >
-          <icon-lucide-plug class="size-3.5" />
+        </AppTabsTrigger>
+        <AppTabsTrigger value="mcp" data-test-id="settings-section-mcp">
+          <template #leading><icon-lucide-plug class="size-3.5" /></template>
           {{ settings.automation }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="settingsDialogSection === 'media' ? 'active' : 'inactive'"
-          data-test-id="settings-section-media"
-          @click="settingsDialogSection = 'media'"
-        >
-          <icon-lucide-image class="size-3.5" />
+        </AppTabsTrigger>
+        <AppTabsTrigger value="media" data-test-id="settings-section-media">
+          <template #leading><icon-lucide-image class="size-3.5" /></template>
           {{ settings.media }}
-        </button>
-        <button
-          type="button"
-          :class="navigationClass"
-          :data-state="settingsDialogSection === 'storage' ? 'active' : 'inactive'"
-          data-test-id="settings-section-storage"
-          @click="settingsDialogSection = 'storage'"
-        >
-          <icon-lucide-cloud class="size-3.5" />
+        </AppTabsTrigger>
+        <AppTabsTrigger value="storage" data-test-id="settings-section-storage">
+          <template #leading><icon-lucide-cloud class="size-3.5" /></template>
           {{ settings.storage }}
-        </button>
-      </nav>
+        </AppTabsTrigger>
+      </AppTabsList>
 
-      <div class="min-h-0 flex-1 overflow-y-auto p-4">
-        <GeneralSettingsPanel v-if="settingsDialogSection === 'general'" />
-
-        <section
-          v-else-if="settingsDialogSection === 'ai'"
-          class="flex h-full flex-col"
-          data-test-id="settings-ai-panel"
-        >
-          <ModelsPanel />
-          <ChatSettingsSection />
-        </section>
-
-        <UsageSettingsPanel v-else-if="settingsDialogSection === 'usage'" />
-
-        <DiagnosticsSettingsPanel v-else-if="settingsDialogSection === 'diagnostics'" />
-
-        <section
-          v-else-if="settingsDialogSection === 'mcp'"
-          class="flex flex-col"
-          data-test-id="settings-mcp-panel"
-        >
-          <MCPSettingsPanel />
-          <MCPConnectionsSection />
-        </section>
-
-        <section
-          v-else-if="settingsDialogSection === 'media'"
-          class="flex flex-col gap-2.5"
-          data-test-id="settings-media-panel"
-        >
-          <h3 class="text-xs font-semibold text-surface">{{ settings.media }}</h3>
-          <StockPhotoKeysSection />
-          <VectorizeSettingsSection />
-        </section>
-
-        <StorageSettingsPanel v-else />
-      </div>
-    </div>
+      <AppTabsContent value="general" as-child>
+        <AppDialogBody><GeneralSettingsPanel /></AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="ai" as-child>
+        <AppDialogBody>
+          <section class="flex h-full flex-col" data-test-id="settings-ai-panel">
+            <ModelsPanel />
+            <ChatSettingsSection />
+          </section>
+        </AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="usage" as-child>
+        <AppDialogBody><UsageSettingsPanel /></AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="diagnostics" as-child>
+        <AppDialogBody><DiagnosticsSettingsPanel /></AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="mcp" as-child>
+        <AppDialogBody>
+          <section class="flex flex-col" data-test-id="settings-mcp-panel">
+            <MCPSettingsPanel />
+            <MCPConnectionsSection />
+          </section>
+        </AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="media" as-child>
+        <AppDialogBody>
+          <section class="flex flex-col gap-2.5" data-test-id="settings-media-panel">
+            <h3 class="text-xs font-semibold text-surface">{{ settings.media }}</h3>
+            <StockPhotoKeysSection />
+            <VectorizeSettingsSection />
+          </section>
+        </AppDialogBody>
+      </AppTabsContent>
+      <AppTabsContent value="storage" as-child>
+        <AppDialogBody><StorageSettingsPanel /></AppDialogBody>
+      </AppTabsContent>
+    </AppTabsRoot>
 
     <AppDialogFooter>
       <DialogClose as-child>
-        <button
-          type="button"
-          class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
-          data-test-id="app-settings-done"
-        >
+        <AppButton color="primary" variant="solid" data-test-id="app-settings-done">
           {{ common.done }}
-        </button>
+        </AppButton>
       </DialogClose>
     </AppDialogFooter>
   </AppDialogRoot>
