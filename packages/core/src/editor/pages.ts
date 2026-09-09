@@ -4,9 +4,11 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import {
+  requiresFigReaderSession,
   canUseFigPopulationWorker,
   createFigPopulationWorker
 } from '#core/kiwi/fig/population/client'
+import { recoverReaderPage } from '#core/kiwi/fig/session/recovery'
 import { computeAllLayouts } from '#core/layout'
 import { fontManager } from '#core/text/fonts'
 import { collectGraphFontRequirements } from '#core/text/requirements'
@@ -70,6 +72,9 @@ export function createPageActions(ctx: EditorContext) {
     if (workerResult !== null) return workerResult
     worker?.terminate()
     populationWorkerInstance = undefined
+    if (requiresFigReaderSession(ctx.graph)) {
+      return recoverReaderPage(ctx.graph, pageId)
+    }
     return populateLazyFigImportRoots(ctx.graph, [pageId])
   }
 

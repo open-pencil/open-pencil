@@ -1,3 +1,4 @@
+import type { FigSessionCheckpoint } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 
 import type { FigImportOptions } from '#core/kiwi/fig/import'
@@ -41,12 +42,18 @@ export type FigSessionRequest =
 
 export type FigSessionResponse =
   | { type: 'page-manifest'; pages: FigPageManifestEntry[] }
-  | { type: 'graph'; graph?: SerializedSceneGraph; error?: string }
+  | {
+      type: 'graph'
+      graph?: SerializedSceneGraph
+      checkpoint?: FigSessionCheckpoint
+      error?: string
+    }
   | {
       type: 'population-result'
       requestId: string
       baseRevision: number
       populated: boolean
+      checkpoint?: FigSessionCheckpoint
       delta: FigPopulationDelta
     }
   | { type: 'population-error'; requestId?: string; error: string }

@@ -5,6 +5,33 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 import { createPopulationWorkerClient } from '#core/kiwi/fig/population/client'
 import type { FigSessionPopulateRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
 
+test('aborting a population request terminates its transport and ignores late results', async () => {
+  const graph = new SceneGraph()
+  let terminated = false
+  const port = {
+    onmessage: null as ((event: MessageEvent<FigSessionResponse>) => void) | null,
+    postMessage: () => undefined,
+    start: () => undefined,
+    close: () => undefined
+  }
+  const worker = {
+    terminate: () => {
+      terminated = true
+    },
+    postMessage: () => undefined,
+    onerror: null,
+    onmessage: null
+  }
+  const client = createPopulationWorkerClient(graph, worker, port)
+  const controller = new AbortController()
+  const pending = client.populate(graph.getPages()[0].id, controller.signal)
+  controller.abort()
+  await expect(pending).rejects.toThrow('Aborted')
+  expect(terminated).toBe(true)
+  expect(await client.populate(graph.getPages()[0].id)).toBeNull()
+  client.terminate()
+})
+
 for (const mutation of ['local-child', 'reorder', 'wrong-revision'] as const) {
   test(`rejects population deltas after ${mutation}`, async () => {
     const graph = new SceneGraph()

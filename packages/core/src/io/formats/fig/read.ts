@@ -11,6 +11,7 @@ import {
 } from '#core/kiwi/fig/population/client'
 import { createFigSessionWorker } from '#core/kiwi/fig/session/client'
 import type { FigSessionOpenRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
+import { registerReaderRecovery } from '#core/kiwi/fig/session/recovery'
 import { randomHex } from '#core/random'
 
 export interface ParseFigFileOptions {
@@ -72,7 +73,9 @@ function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Prom
         const graph = deserializeSceneGraph(e.data.graph)
         if (options.populate === 'first-page') {
           cleanupAbort()
-          registerFigPopulationWorker(graph, worker, channel.port1)
+          if (!e.data.checkpoint) throw new Error('Missing reader checkpoint')
+          registerReaderRecovery(graph, buffer.slice(0), e.data.checkpoint)
+          registerFigPopulationWorker(graph, worker, channel.port1, true)
           registerOriginalArchiveRequest(
             graph,
             () =>

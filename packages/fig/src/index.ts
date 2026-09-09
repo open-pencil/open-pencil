@@ -1,6 +1,8 @@
 export {
   materializeDocument,
   materializeFigArchive,
+  type FigSessionCheckpoint,
+  type FigSessionResume,
   createFigDocumentSession,
   type DocumentAssemblyOptions
 } from './document/materialize'

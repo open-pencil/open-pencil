@@ -230,7 +230,29 @@ Observers run after the page is marked loaded. Notification failures raise
 `CommittedGraphEventError` with `committed=true`; callers must not interpret that as rollback.
 Queued events continue to be attempted, but nanoevents may stop remaining listeners of the
 same event when a listener throws. Reentrant loading of another page from a committed event
-is tested. App/worker lifecycle integration and large-document session performance are pending.
+is tested. The session worker now opens/populates through the replacement reader backend.
+Other parse entry points and final old-reader removal remain pending.
+
+### Worker recovery checkpoints
+
+Initial graph and successful page responses carry a checkpoint; the client advances recovery
+state only after accepting the matching revision/delta. Stale responses do not mark pages
+loaded. Original archive bytes are retained separately for recovery and released with session
+ownership. Recovery reconstructs source interpretation and attaches to the existing edited
+graph, preserving node identities and the editor's undo manager.
+
+Checkpoints contain source-to-node IDs, loaded-page IDs, and component topology addressed by
+full source-identity paths. They do not contain duplicated occurrence property payloads.
+Restore rejects missing/duplicate paths, mismatched component identities, and invalid roots.
+The measured Gold first-page checkpoint shrank from about 3.58 MB to 174 KB; reconstruction
+adds work at recovery time. These are diagnostic measurements, not performance guarantees.
+
+Later-loaded instances reconcile supported live component-field edits, retaining imported
+explicit overrides. Nested precedence and undo/redo are tested. Component child addition,
+deletion, or reordering is currently rejected before loading another page: structural recovery
+is not implemented. This limitation blocks complete production readiness; it is not a legacy
+fallback. Checkpoint delivery for large documents and all frontend lifecycle paths still need
+acceptance coverage.
 
 ## Remaining acceptance gaps
 

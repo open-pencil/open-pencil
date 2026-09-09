@@ -53,6 +53,23 @@ test('new-reader page loads transfer through the worker delta contract', async (
   receiver.updateNode(existingComponent.id, { name: 'Receiver edit' })
   const localInstance = receiver.createInstance(existingComponent.id, pageId)
   if (!localInstance) throw new Error('Missing locally created instance')
+  const recoveryGraph = deserializeSceneGraph(serializeSceneGraph(receiver))
+  const recoveredComponent = recoveryGraph.getNode(existingComponent.id)
+  const resumed = createFigDocumentSession(
+    bytes.buffer as ArrayBuffer,
+    {},
+    {
+      graph: recoveryGraph,
+      checkpoint: structuredClone(session.checkpoint())
+    }
+  )
+  resumed.loadPage(resumed.pages[1].id)
+  expect(recoveredComponent?.name).toBe('Receiver edit')
+  expect(recoveryGraph.getNode(existingComponent.id)).toBe(recoveredComponent)
+  expect([...recoveryGraph.getAllNodes()].filter((node) => node.type === 'COMPONENT')).toHaveLength(
+    1
+  )
+  expect(recoveryGraph.instanceIndex.get(existingComponent.id)?.has(localInstance.id)).toBe(true)
   const secondJournal = installFigMutationJournal(session.graph)
   try {
     session.loadPage(session.pages[1].id)

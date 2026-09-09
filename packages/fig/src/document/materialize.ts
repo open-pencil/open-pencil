@@ -2,6 +2,7 @@ import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, type SceneNode } from '@open-pencil/scene-graph'
 
 import type { InstanceOccurrence, InterpretInstanceOptions } from '../instance-overrides/interpret'
+import { reconcileLiveComponentEdits } from '../instance-overrides/live-component-edits'
 import { materializeInstance } from '../instance-overrides/materialize-instance'
 import {
   linkInstanceSourceChildren,
@@ -10,7 +11,13 @@ import {
 } from '../instance-overrides/source-children'
 import { nodeChangeToProps } from '../node-change'
 import type { BindingReferenceDiagnostic } from './binding-references'
-import { linkComponentPropertyValues } from './component-values'
+import {
+  checkpointComponent,
+  restoreComponentCheckpoint,
+  type ComponentCheckpoint
+} from './component/checkpoint'
+import { assertComponentStructureCurrent } from './component/structure'
+import { linkComponentPropertyValues } from './component/values'
 import { applyDocumentLayoutBindings } from './layout-bindings'
 import { loadPageTransaction } from './load-transaction'
 import { createArchiveDocumentReader, createDocumentReader } from './read'
@@ -48,15 +55,64 @@ export interface AssemblyState {
   savedSizeNodes: Set<string>
 }
 
+export interface FigSessionCheckpoint {
+  sources: Array<[string, string]>
+  componentIds: Array<[string, string]>
+  savedSizeNodeIds: string[]
+  loadedPageIds: string[]
+  components: Array<[string, ComponentCheckpoint]>
+}
+
+export interface FigSessionResume {
+  graph: SceneGraph
+  checkpoint: FigSessionCheckpoint
+}
+
+function restoreAssemblyState(
+  resume: FigSessionResume,
+  reader: ReturnType<typeof createDocumentReader>,
+  options: DocumentAssemblyOptions
+): AssemblyState {
+  const { graph, checkpoint } = resume
+  const components = new Map<string, MaterializedComponentOccurrence>()
+  for (const [id, entry] of checkpoint.components) {
+    components.set(id, restoreComponentCheckpoint(graph, reader.readComponent(id, options), entry))
+  }
+  return {
+    graph,
+    components,
+    sources: new Map(checkpoint.sources),
+    componentIds: new Map(checkpoint.componentIds),
+    savedSizeNodes: new Set(checkpoint.savedSizeNodeIds)
+  }
+}
+
 export function createFigDocumentSession(
   bytes: ArrayBuffer,
-  options: DocumentAssemblyOptions = {}
+  options: DocumentAssemblyOptions = {},
+  resume?: FigSessionResume
 ) {
   const archive = createArchiveDocumentReader(bytes, new Set())
   const sessionOptions = { ...options, images: options.images ?? new Map(archive.images) }
-  const state = materializeReader(archive.reader, archive.blobs, sessionOptions)
-  const loaded = new Set<string>()
+  const state = resume
+    ? restoreAssemblyState(resume, archive.reader, sessionOptions)
+    : materializeReader(archive.reader, archive.blobs, sessionOptions)
+  state.graph.figKiwiVersion = archive.figKiwiVersion
+  state.graph.figSchemaDeflated = archive.figSchemaDeflated
+  const loaded = new Set<string>(resume?.checkpoint.loadedPageIds)
   return {
+    checkpoint(): FigSessionCheckpoint {
+      return structuredClone({
+        sources: [...state.sources],
+        componentIds: [...state.componentIds],
+        savedSizeNodeIds: [...state.savedSizeNodes],
+        loadedPageIds: [...loaded],
+        components: [...state.components].map(([id, component]) => [
+          id,
+          checkpointComponent(component)
+        ])
+      } satisfies FigSessionCheckpoint)
+    },
     graph: state.graph,
     graphPageId(sourcePageId: string): string | undefined {
       return archive.reader.pages.some((page) => page.id === sourcePageId)
@@ -66,6 +122,7 @@ export function createFigDocumentSession(
     pages: archive.reader.pages,
     loadPage(id: string): void {
       if (loaded.has(id)) return
+      assertComponentStructureCurrent(state.graph, state.components)
       const reader = archive.reader.selectPages(new Set([id]))
       loadPageTransaction(state, reader.dependencyClosure, () => {
         materializeReader(reader, archive.blobs, sessionOptions, state)
@@ -174,6 +231,7 @@ function materializeReader(
         )
         rememberDerivedSizes(materialized.nodes)
         linkInstanceSourceChildren(child, materialized, components)
+        if (previous) reconcileLiveComponentEdits(graph, materialized)
         sources.set(child.sourceId, materialized.root.id)
       } else if (child.mainComponentId === null && child.properties.type !== 'SYMBOL')
         populateInstances(child)

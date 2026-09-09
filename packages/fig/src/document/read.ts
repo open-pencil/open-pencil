@@ -23,6 +23,8 @@ export function createDocumentReader(source: readonly NodeChange[], pageIds?: Re
 export function createArchiveDocumentReader(bytes: ArrayBuffer, pageIds?: ReadonlySet<string>) {
   const parsed = parseFigBuffer(bytes)
   return {
+    figKiwiVersion: parsed.figKiwiVersion,
+    figSchemaDeflated: parsed.figSchemaDeflated,
     reader: createReader(parsed.nodeChanges, 'transfer', pageIds),
     blobs: parsed.blobs,
     images: parsed.images
@@ -78,7 +80,12 @@ function createScopedReader(
     })
     .map((page) => {
       if (!page.guid) throw new Error('Page has no GUID')
-      return { id: guidToString(page.guid), name: page.name ?? '' }
+      return {
+        id: guidToString(page.guid),
+        name: page.name ?? '',
+        position: page.parentIndex?.position ?? null,
+        internalOnly: page.internalOnly === true
+      }
     })
   const knownPageIds = new Set(pages.map((page) => page.id))
   return {

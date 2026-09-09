@@ -1,7 +1,7 @@
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 
-import { componentDependencies } from './component-dependencies'
+import { componentDependencies } from './component/dependencies'
 import { createResourceResolver } from './resource-reference'
 
 export interface SceneDependencyClosure {

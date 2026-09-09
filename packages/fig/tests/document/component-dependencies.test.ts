@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { componentDependencies } from '#fig/document/component-dependencies'
+import { componentDependencies } from '#fig/document/component/dependencies'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
