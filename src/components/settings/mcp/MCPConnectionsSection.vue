@@ -6,8 +6,10 @@ import { useI18n } from '@open-pencil/vue'
 import { mcpConnectionSettings } from '@/app/integrations/mcp'
 import { useMCPConnectionSettings } from '@/app/integrations/mcp/settings/use'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 import AppInput from '@/components/ui/input/AppInput.vue'
+import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { automation, common, credentials } = useI18n()
@@ -43,13 +45,9 @@ async function remove() {
           </h3>
           <p class="text-[10px] text-muted">{{ automation.connectionEditorDescription }}</p>
         </div>
-        <button
-          type="button"
-          class="text-[10px] text-muted hover:text-surface"
-          @click="editing = false"
-        >
+        <AppButton size="xs" @click="editing = false">
           {{ common.back }}
-        </button>
+        </AppButton>
       </div>
 
       <label class="flex flex-col gap-1 text-[10px] text-muted">
@@ -94,22 +92,19 @@ async function remove() {
 
       <p v-if="error" class="text-[10px] text-danger" role="alert">{{ error }}</p>
       <div class="flex items-center justify-between">
-        <button
+        <AppButton
           v-if="draft.id"
-          type="button"
-          class="text-[10px] text-danger hover:underline"
+          size="xs"
+          color="error"
+          variant="link"
           @click="deleteOpen = true"
         >
           {{ automation.deleteConnection }}
-        </button>
+        </AppButton>
         <span v-else />
-        <button
-          type="button"
-          class="rounded bg-accent px-2.5 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90"
-          @click="save"
-        >
+        <AppButton color="primary" variant="solid" @click="save">
           {{ common.save }}
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -119,33 +114,27 @@ async function remove() {
           <h3 class="text-xs font-semibold text-surface">{{ automation.connections }}</h3>
           <p class="text-[10px] text-muted">{{ automation.connectionsDescription }}</p>
         </div>
-        <button
-          type="button"
-          class="flex items-center gap-1 rounded bg-panel px-2 py-1 text-[10px] text-surface hover:bg-hover"
-          @click="startAdd"
-        >
-          <icon-lucide-plus class="size-3" />
+        <AppButton size="xs" variant="soft" @click="startAdd">
+          <template #leading><icon-lucide-plus class="size-3" /></template>
           {{ automation.addConnection }}
-        </button>
+        </AppButton>
       </div>
       <div v-if="mcpConnectionSettings.connections.length" class="flex flex-col gap-1.5">
-        <button
+        <AppActionRow
           v-for="connection in mcpConnectionSettings.connections"
           :key="connection.id"
-          type="button"
-          class="flex items-center gap-2 rounded border border-border bg-panel-field px-3 py-2 text-left hover:bg-panel-field-hover"
           @click="startEdit(connection.id)"
         >
-          <icon-lucide-plug class="size-3.5 text-muted" />
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-[11px] font-medium text-surface">{{ connection.name }}</p>
-            <p class="truncate text-[10px] text-muted">{{ connection.transport.url }}</p>
-          </div>
-          <span class="text-[9px] text-muted">
-            {{ connection.enabled ? common.enabled : common.disabled }}
-          </span>
-          <icon-lucide-chevron-right class="size-3.5 text-muted" />
-        </button>
+          <template #leading><icon-lucide-plug class="size-3.5" /></template>
+          {{ connection.name }}
+          <template #description>{{ connection.transport.url }}</template>
+          <template #trailing>
+            <span class="text-[9px]">{{
+              connection.enabled ? common.enabled : common.disabled
+            }}</span>
+            <icon-lucide-chevron-right class="size-3.5" />
+          </template>
+        </AppActionRow>
       </div>
       <p v-else class="rounded border border-dashed border-border p-3 text-[10px] text-muted">
         {{ automation.noConnections }}

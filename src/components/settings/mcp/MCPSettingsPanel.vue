@@ -14,6 +14,7 @@ import {
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { isTauri } from '@/app/tauri/env'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
@@ -106,23 +107,23 @@ const {
             </p>
           </div>
           <div class="flex shrink-0 gap-1.5">
-            <button
+            <AppButton
               v-if="mcpRootDirectory"
-              type="button"
-              class="rounded border border-border px-2 py-1 text-[10px] text-muted hover:bg-hover hover:text-surface"
+              size="xs"
+              variant="outline"
               @click="mcpRootDirectory = ''"
             >
               {{ automation.useDefaultRoot }}
-            </button>
-            <button
+            </AppButton>
+            <AppButton
               v-if="isTauri()"
-              type="button"
-              class="rounded border border-border px-2 py-1 text-[10px] text-surface hover:bg-hover"
+              size="xs"
+              variant="outline"
               data-test-id="settings-mcp-root-directory"
               @click="chooseRootDirectory"
             >
               {{ automation.chooseRootDirectory }}
-            </button>
+            </AppButton>
           </div>
         </div>
         <p class="mt-1.5 text-[10px] leading-relaxed text-muted">
@@ -151,14 +152,15 @@ const {
             }}
           </p>
         </div>
-        <button
+        <AppButton
           v-if="disabledMCPTools.length"
-          type="button"
-          class="text-[10px] text-accent hover:underline"
+          size="xs"
+          color="primary"
+          variant="link"
           @click="enableAllTools"
         >
           {{ automation.enableAllTools }}
-        </button>
+        </AppButton>
       </div>
 
       <div class="border-b border-border p-2">
@@ -220,9 +222,9 @@ const {
     </div>
 
     <div>
-      <button
-        type="button"
-        class="rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+      <AppButton
+        color="primary"
+        variant="solid"
         :disabled="mcpRuntime.status === 'starting' || mcpRuntime.externallyManaged"
         data-test-id="settings-mcp-restart"
         @click="restart"
@@ -234,7 +236,7 @@ const {
               ? automation.externallyManaged
               : automation.restart
         }}
-      </button>
+      </AppButton>
     </div>
   </section>
 </template>

@@ -4,6 +4,7 @@ import { computed, nextTick, ref, watch, useTemplateRef } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import {
   AppDialogBody,
   AppDialogFooter,
@@ -93,27 +94,15 @@ function submit() {
             />
           </label>
           <div class="flex flex-wrap gap-1">
-            <button
-              type="button"
-              class="cursor-pointer rounded border border-border px-1.5 py-1 text-[11px] text-surface hover:bg-hover"
-              @click="insertToken('$&')"
-            >
+            <AppButton size="xs" variant="outline" @click="insertToken('$&')">
               {{ rename.currentName }}
-            </button>
-            <button
-              type="button"
-              class="cursor-pointer rounded border border-border px-1.5 py-1 text-[11px] text-surface hover:bg-hover"
-              @click="insertToken('$n')"
-            >
+            </AppButton>
+            <AppButton size="xs" variant="outline" @click="insertToken('$n')">
               {{ rename.numberAscending }}
-            </button>
-            <button
-              type="button"
-              class="cursor-pointer rounded border border-border px-1.5 py-1 text-[11px] text-surface hover:bg-hover"
-              @click="insertToken('$N')"
-            >
+            </AppButton>
+            <AppButton size="xs" variant="outline" @click="insertToken('$N')">
               {{ rename.numberDescending }}
-            </button>
+            </AppButton>
           </div>
           <label v-if="showStartNumber" class="flex items-center gap-2 text-xs text-muted">
             <span class="flex-1">
@@ -133,21 +122,12 @@ function submit() {
       </div>
     </AppDialogBody>
     <AppDialogFooter>
-      <button
-        type="button"
-        class="h-8 cursor-pointer rounded px-3 text-xs font-medium text-surface hover:bg-hover"
-        @click="store.state.renameSelectionOpen = false"
-      >
+      <AppButton size="md" @click="store.state.renameSelectionOpen = false">
         {{ common.cancel }}
-      </button>
-      <button
-        type="button"
-        :disabled="!canSubmit"
-        class="h-8 cursor-pointer rounded bg-accent px-3 text-xs font-medium text-white disabled:cursor-default disabled:opacity-40"
-        @click="submit"
-      >
+      </AppButton>
+      <AppButton size="md" color="primary" variant="solid" :disabled="!canSubmit" @click="submit">
         {{ rename.title }}
-      </button>
+      </AppButton>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>

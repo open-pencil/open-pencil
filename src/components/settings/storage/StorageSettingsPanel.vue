@@ -8,6 +8,7 @@ import { useNotificationMessages } from '@/app/i18n/notifications'
 import { useStorageSettings } from '@/app/integrations/storage/settings/use'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 const { storage, settings, credentials, common } = useI18n()
@@ -100,43 +101,43 @@ const {
           class="min-w-0 flex-1"
           @enter="saveCredential(field.id)"
         />
-        <button
+        <AppButton
           v-if="credentialDrafts[field.id]?.trim()"
-          type="button"
-          class="rounded bg-hover px-2 text-[10px] text-surface hover:bg-active"
+          size="xs"
+          variant="soft"
           @click="saveCredential(field.id)"
         >
           {{ common.save }}
-        </button>
-        <button
+        </AppButton>
+        <AppButton
           v-else-if="credentialStatuses[field.id] === 'configured'"
-          type="button"
-          class="rounded px-2 text-[10px] text-muted hover:bg-hover hover:text-surface"
+          size="xs"
           @click="clearCredential(field.id)"
         >
           {{ common.clear }}
-        </button>
+        </AppButton>
       </div>
     </div>
 
-    <button
-      type="button"
-      class="mt-1 rounded bg-accent px-3 py-1.5 text-[11px] font-medium text-white hover:bg-accent/90 disabled:opacity-50"
-      :disabled="busy"
-      data-test-id="settings-storage-test"
-      @click="testConnection"
-    >
-      {{ common.testConnection }}
-    </button>
+    <div class="mt-1 flex flex-wrap items-center gap-2">
+      <AppButton
+        color="primary"
+        variant="solid"
+        :disabled="busy"
+        data-test-id="settings-storage-test"
+        @click="testConnection"
+      >
+        {{ common.testConnection }}
+      </AppButton>
 
-    <button
-      type="button"
-      class="rounded border border-border px-3 py-1.5 text-[11px] font-medium text-surface hover:bg-hover disabled:text-muted disabled:opacity-50"
-      :disabled="!configured"
-      data-test-id="settings-storage-open-workspace"
-      @click="openWorkspace"
-    >
-      {{ storage.openWorkspace }}
-    </button>
+      <AppButton
+        variant="outline"
+        :disabled="!configured"
+        data-test-id="settings-storage-open-workspace"
+        @click="openWorkspace"
+      >
+        {{ storage.openWorkspace }}
+      </AppButton>
+    </div>
   </section>
 </template>

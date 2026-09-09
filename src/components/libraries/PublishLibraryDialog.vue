@@ -11,6 +11,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
@@ -213,16 +214,13 @@ async function publish() {
       <p v-if="error" role="alert" class="text-xs text-danger">{{ error }}</p>
     </form>
     <AppDialogFooter>
-      <button
-        type="button"
-        class="h-8 rounded-md px-3 text-xs text-muted hover:bg-hover"
-        @click="publishLibraryDialogOpen = false"
-      >
+      <AppButton size="md" @click="publishLibraryDialogOpen = false">
         {{ panels.cancel }}
-      </button>
-      <button
-        type="button"
-        class="h-8 rounded-md bg-accent px-4 text-xs font-medium text-white hover:bg-accent/90 disabled:opacity-50"
+      </AppButton>
+      <AppButton
+        size="md"
+        color="primary"
+        variant="solid"
         :disabled="
           publishing ||
           loading ||
@@ -233,7 +231,7 @@ async function publish() {
         @click="publish"
       >
         {{ publishing ? panels.publishingLibrary : panels.publishLibrary }}
-      </button>
+      </AppButton>
     </AppDialogFooter>
   </AppDialogRoot>
 </template>
