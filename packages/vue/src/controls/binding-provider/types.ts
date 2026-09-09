@@ -11,6 +11,14 @@ export interface BindingTarget {
   path: string
 }
 
+export interface BindingValueEdit<V> {
+  /** Stable identity of the variable and storage location being edited. */
+  key: string
+  value: V
+  restore?(): void
+  set(value: V): void
+}
+
 export interface BindingProvider<V = unknown> {
   /** Optional reactive revision consumed by BindableValueRoot. */
   revision?: Readonly<Ref<unknown>>
@@ -22,7 +30,8 @@ export interface BindingProvider<V = unknown> {
   bind(target: BindingTarget, variableId: string): void
   unbind(target: BindingTarget): void
   create?(target: BindingTarget, value: V, name: string): void
-  setValue?(variableId: string, value: V): void
+  prepareEdit?(variableId: string, target: BindingTarget): BindingValueEdit<V> | undefined
+  setValue?(variableId: string, value: V, target?: BindingTarget): void
   runBatch?<T>(label: string, action: () => T): T
   beginBatch?(label: string): void
   commitBatch?(): void

@@ -5,6 +5,8 @@ import type { VariableCollection } from '@open-pencil/scene-graph'
 import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
 
+import { prepareModeEdit } from './mode-edit'
+
 const FALLBACK_NUMBER_VARIABLE_NAME = 'New number'
 
 function numberCollection(editor: Editor): VariableCollection {
@@ -46,11 +48,21 @@ export function createAndBindNumberVariable(
   editor.bindVariable(target.nodeId, target.path, id)
 }
 
-function setNumberVariableValue(editor: Editor, variableId: string, value: number) {
+export function setNumberVariableValue(
+  editor: Editor,
+  variableId: string,
+  value: number,
+  target?: BindingTarget
+) {
   const variable = editor.getVariable(variableId)
   if (!variable) return
   const collection = editor.getCollection(variable.collectionId)
   if (!collection) return
+  if (target) {
+    const modeId = editor.graph.getNodeVariableModeId(target.nodeId, collection.id)
+    editor.updateVariableValue(variableId, modeId, value)
+    return
+  }
   for (const mode of collection.modes) editor.updateVariableValue(variableId, mode.modeId, value)
 }
 
@@ -61,6 +73,10 @@ export function useNumberBindingProvider() {
       target
         ? editor.graph.resolveNumberVariableForNode(target.nodeId, variableId)
         : editor.resolveNumberVariable(variableId),
+    prepareEdit: (editor, id, target) =>
+      prepareModeEdit(editor, id, target, () =>
+        editor.graph.resolveNumberVariableForNode(target.nodeId, id)
+      ),
     create: createAndBindNumberVariable,
     setValue: setNumberVariableValue
   })

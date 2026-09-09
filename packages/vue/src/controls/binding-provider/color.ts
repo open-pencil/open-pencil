@@ -6,6 +6,8 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
 
+import { prepareModeEdit } from './mode-edit'
+
 const FALLBACK_COLOR_VARIABLE_NAME = 'New color'
 
 function colorCollection(editor: Editor): VariableCollection {
@@ -49,11 +51,21 @@ export function createAndBindColorVariable(
   editor.bindVariable(target.nodeId, target.path, id)
 }
 
-export function setColorVariableValue(editor: Editor, variableId: string, value: Color) {
+export function setColorVariableValue(
+  editor: Editor,
+  variableId: string,
+  value: Color,
+  target?: BindingTarget
+) {
   const variable = editor.getVariable(variableId)
   if (!variable) return
   const collection = editor.getCollection(variable.collectionId)
   if (!collection) return
+  if (target) {
+    const modeId = editor.graph.getNodeVariableModeId(target.nodeId, collection.id)
+    editor.updateVariableValue(variableId, modeId, structuredClone(value))
+    return
+  }
   for (const mode of collection.modes)
     editor.updateVariableValue(variableId, mode.modeId, structuredClone(value))
 }
@@ -65,6 +77,10 @@ export function useColorBindingProvider() {
       target
         ? editor.graph.resolveColorVariableForNode(target.nodeId, variableId)
         : editor.resolveColorVariable(variableId),
+    prepareEdit: (editor, id, target) =>
+      prepareModeEdit(editor, id, target, () =>
+        editor.graph.resolveColorVariableForNode(target.nodeId, id)
+      ),
     create: createAndBindColorVariable,
     setValue: setColorVariableValue
   })

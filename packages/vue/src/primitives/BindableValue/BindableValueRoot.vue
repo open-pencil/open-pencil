@@ -1,8 +1,10 @@
 <script setup lang="ts" generic="V">
 import { computed, onBeforeUnmount, ref } from 'vue'
 
+import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
 import { useBindingProvider } from '#vue/controls/binding-provider/context'
 import type {
+  BindingValueEdit,
   BindingMutationSource,
   BindingProvider,
   BindingTarget
@@ -76,7 +78,8 @@ const stateAttrs = computed<BindableValueStateAttrs>(() => ({
 let interactionActive = false
 let detachedForInteraction = false
 let bindingSnapshot = new Map<BindingTarget, string>()
-let resolvedSnapshot: V | undefined
+let valueEdits: BindingValueEdit<V>[] = []
+let interactionPolicy = policy.value
 
 function runImmediate(label: string, action: () => void) {
   if (provider.runBatch) provider.runBatch(label, action)
@@ -123,7 +126,7 @@ function snapshotBindings() {
   bindingSnapshot = new Map()
   for (const target of targets.value) {
     const current = provider.getBound(target)
-    if (current) bindingSnapshot.set(target, current.id)
+    if (current) bindingSnapshot.set({ ...target }, current.id)
   }
 }
 
@@ -136,18 +139,28 @@ function beginMutation(source: BindingMutationSource): boolean {
     !startedUnbound &&
     !startedMixed &&
     policy.value === 'edit-variable' &&
-    (!variable.value || !provider.setValue)
+    !provider.setValue &&
+    !provider.prepareEdit
   ) {
     return false
   }
 
+  interactionPolicy = policy.value
+  valueEdits = []
+  if (interactionPolicy === 'edit-variable' && !startedUnbound) {
+    const edits = prepareBindingEdits(provider, targets.value)
+    if (!edits) return false
+    valueEdits = edits
+  }
   interactionActive = true
   void source
   if (!startedUnbound) snapshotBindings()
-  resolvedSnapshot = resolvedValue.value
   if (supportsInteractionBatch) beginProviderBatch(batchLabel)
 
-  if (startedMixed || (!startedUnbound && policy.value === 'detach-on-edit')) {
+  if (
+    interactionPolicy !== 'edit-variable' &&
+    (startedMixed || (!startedUnbound && interactionPolicy === 'detach-on-edit'))
+  ) {
     detachedForInteraction = true
     for (const target of targets.value) provider.unbind(target)
   }
@@ -155,10 +168,9 @@ function beginMutation(source: BindingMutationSource): boolean {
 }
 
 function applyValue(nextValue: V): boolean {
-  if (policy.value !== 'edit-variable' || !interactionActive) return false
-  const current = variable.value
-  if (!current || !provider.setValue) return false
-  provider.setValue(current.id, nextValue)
+  if (interactionPolicy !== 'edit-variable' || !interactionActive || !valueEdits.length)
+    return false
+  for (const edit of valueEdits) edit.set(nextValue)
   return true
 }
 
@@ -166,7 +178,7 @@ function resetInteraction() {
   interactionActive = false
   detachedForInteraction = false
   bindingSnapshot.clear()
-  resolvedSnapshot = undefined
+  valueEdits = []
 }
 
 function commitMutation() {
@@ -178,13 +190,11 @@ function commitMutation() {
 function restoreWithoutRollback() {
   if (detachedForInteraction) {
     for (const [target, variableId] of bindingSnapshot) provider.bind(target, variableId)
-  } else if (
-    policy.value === 'edit-variable' &&
-    variable.value &&
-    resolvedSnapshot !== undefined &&
-    provider.setValue
-  ) {
-    provider.setValue(variable.value.id, resolvedSnapshot)
+  } else if (interactionPolicy === 'edit-variable') {
+    for (const edit of valueEdits) {
+      if (edit.restore) edit.restore()
+      else edit.set(edit.value)
+    }
   }
 }
 

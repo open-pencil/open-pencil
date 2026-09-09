@@ -5,6 +5,7 @@ import type { Editor } from '@open-pencil/core/editor'
 import type { Variable, VariableType } from '@open-pencil/scene-graph'
 
 import type {
+  BindingValueEdit,
   BindingProvider,
   BindingState,
   BindingTarget
@@ -16,7 +17,12 @@ export interface OpenPencilBindingProviderOptions<V> {
   type: VariableType
   resolve(editor: Editor, variableId: string, target?: BindingTarget): V | undefined
   create?(editor: Editor, target: BindingTarget, value: V, name: string): void
-  setValue?(editor: Editor, variableId: string, value: V): void
+  prepareEdit?(
+    editor: Editor,
+    variableId: string,
+    target: BindingTarget
+  ): BindingValueEdit<V> | undefined
+  setValue?(editor: Editor, variableId: string, value: V, target?: BindingTarget): void
 }
 
 export function createOpenPencilBindingProvider<V>(
@@ -66,8 +72,11 @@ export function createOpenPencilBindingProvider<V>(
     create: options.create
       ? (target, value, name) => options.create?.(editor, target, value, name)
       : undefined,
+    prepareEdit: options.prepareEdit
+      ? (variableId, target) => options.prepareEdit?.(editor, variableId, target)
+      : undefined,
     setValue: options.setValue
-      ? (variableId, value) => options.setValue?.(editor, variableId, value)
+      ? (variableId, value, target) => options.setValue?.(editor, variableId, value, target)
       : undefined,
     runBatch: (label, action) => editor.undo.runBatch(label, action),
     beginBatch: (label) => editor.undo.beginBatch(label),

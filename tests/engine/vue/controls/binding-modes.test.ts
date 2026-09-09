@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test'
 
 import { createEditor } from '@open-pencil/core/editor'
 
+import { setNumberVariableValue } from '#vue/controls/binding-provider/number'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 
 test('binding resolution uses node modes and reports mixed resolved values', () => {
@@ -19,6 +20,7 @@ test('binding resolution uses node modes and reports mixed resolved values', () 
   const targets = [a, b].map((node) => ({ nodeId: node.id, path: 'width' }))
   const provider = createOpenPencilBindingProvider(editor, {
     type: 'FLOAT',
+    setValue: setNumberVariableValue,
     resolve: (e, id, target) =>
       target ? e.graph.resolveNumberVariableForNode(target.nodeId, id) : e.resolveNumberVariable(id)
   })
@@ -27,4 +29,7 @@ test('binding resolution uses node modes and reports mixed resolved values', () 
   expect(provider.resolve(variable.id, targets[1])).toBe(24)
   expect(provider.getState(targets)).toBe('mixed')
   expect(provider.getState(targets.slice(0, 1))).toBe('bound')
+  provider.setValue?.(variable.id, 32, targets[1])
+  expect(provider.resolve(variable.id, targets[0])).toBe(8)
+  expect(provider.resolve(variable.id, targets[1])).toBe(32)
 })
