@@ -7,6 +7,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useTabsStore, createHomeTab } from '@/app/tabs'
 import PreparationIndicator from '@/components/preparation/tab/Indicator.vue'
+import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import tabBarTheme from '@/theme/tab-bar'
 
@@ -48,24 +49,30 @@ function onClose(e: MouseEvent, tabId: string) {
     :class="baseStyles.root()"
   >
     <TabsList :class="baseStyles.list()">
-      <TabsTrigger
+      <div
         v-for="tab in tabs"
         :key="tab.id"
-        :value="tab.id"
-        data-test-id="tabbar-tab"
-        :class="tabBarStyles({ active: tab.isActive }).trigger()"
-        :data-active="tab.isActive || undefined"
+        data-slot="tab-item"
+        :class="tabBarStyles({ active: tab.isActive }).item()"
         @mousedown="onMiddleClick($event, tab.id, tab.isHome)"
       >
-        <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
-        <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
-        <icon-lucide-file v-else :class="baseStyles.icon()" />
-        <span :class="baseStyles.label()">{{ tab.isHome ? files.newTab : tab.name }}</span>
+        <TabsTrigger
+          :value="tab.id"
+          data-test-id="tabbar-tab"
+          :class="tabBarStyles({ active: tab.isActive }).trigger()"
+          :data-active="tab.isActive || undefined"
+        >
+          <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
+          <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
+          <icon-lucide-file v-else :class="baseStyles.icon()" />
+          <span :class="baseStyles.label()">{{ tab.isHome ? files.newTab : tab.name }}</span>
+        </TabsTrigger>
         <Tip
           v-if="!tab.isHome || tabs.length > 1"
           :label="files.closeTab({ name: tab.isHome ? files.newTab : tab.name })"
         >
           <button
+            type="button"
             data-test-id="tabbar-close"
             :class="tabBarStyles({ active: tab.isActive }).close()"
             :data-active="tab.isActive || undefined"
@@ -76,17 +83,10 @@ function onClose(e: MouseEvent, tabId: string) {
             <icon-lucide-x :class="baseStyles.closeIcon()" />
           </button>
         </Tip>
-      </TabsTrigger>
+      </div>
     </TabsList>
-    <Tip :label="files.newTab">
-      <button
-        data-test-id="tabbar-new"
-        :class="baseStyles.newAction()"
-        :aria-label="files.newTab"
-        @click="createNewTab"
-      >
-        <icon-lucide-plus :class="baseStyles.newIcon()" />
-      </button>
-    </Tip>
+    <IconButton :label="files.newTab" size="md" data-test-id="tabbar-new" @click="createNewTab">
+      <icon-lucide-plus :class="baseStyles.newIcon()" />
+    </IconButton>
   </TabsRoot>
 </template>
