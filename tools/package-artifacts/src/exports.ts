@@ -1,3 +1,4 @@
+import type { PackageTarget } from './schemas'
 import type { PackageDiagnostic, PackageManifest } from './types'
 
 export interface ExportTarget {
@@ -29,7 +30,10 @@ function exportCondition(path: string[]): string | null {
   )
 }
 
-export function collectExportTargets(value: unknown, path: string[] = []): ExportTarget[] {
+export function collectExportTargets(
+  value: PackageTarget | undefined,
+  path: string[] = []
+): ExportTarget[] {
   if (typeof value === 'string') {
     return [{ condition: exportCondition(path), field: exportField(path), target: value }]
   }

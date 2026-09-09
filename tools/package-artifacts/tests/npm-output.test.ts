@@ -43,6 +43,6 @@ test('npm pack parser ignores unrelated npm fields', () => {
 test('tarball manifest identity errors include archive context', () => {
   expect(() => parsePackageManifest('{', 'archive.tgz')).toThrow('archive.tgz: invalid JSON')
   expect(() => parsePackageManifest('{"name":3}', 'archive.tgz')).toThrow(
-    'archive.tgz: package name and version'
+    'archive.tgz: invalid package manifest'
   )
 })

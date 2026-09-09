@@ -7,7 +7,8 @@ import {
   discoverPublicPackages,
   orderPackagesByDependencies,
   parseNpmPack,
-  parseJSONObject,
+  isRegistryNotFound,
+  validateRegistryVersion,
   readPackageManifest,
   runCommand,
   type WorkspacePackage
@@ -59,24 +60,16 @@ export async function prepareReleasePackages(root: string): Promise<void> {
 async function packageIsPublished(pkg: WorkspacePackage, root: string): Promise<boolean> {
   const specifier = `${pkg.manifest.name}@${pkg.manifest.version}`
   try {
-    await runCommand({
+    const result = await runCommand({
       command: 'npm',
       args: ['view', specifier, 'version', '--json', '--registry', NPM_RELEASE_POLICY.registry],
       cwd: root,
       timeoutMs: 30_000
     })
+    validateRegistryVersion(result.stdout, pkg.manifest.version)
     return true
   } catch (error) {
-    if (error instanceof CommandError) {
-      try {
-        const response = parseJSONObject(error.stdout, 'npm view')
-        const detail = response.error
-        if (detail && typeof detail === 'object' && 'code' in detail && detail.code === 'E404')
-          return false
-      } catch {
-        throw error
-      }
-    }
+    if (error instanceof CommandError && isRegistryNotFound(error.stdout)) return false
     throw error
   }
 }

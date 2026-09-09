@@ -1,28 +1,8 @@
-// eslint-disable-next-line open-pencil/no-mixed-case-acronym-identifiers -- Upstream pkg-types export name.
-import type { PackageJson as PackageJSON } from 'pkg-types'
+import type * as v from 'valibot'
 
-export interface PackageManifest
-  extends
-    Pick<
-      PackageJSON,
-      | 'private'
-      | 'files'
-      | 'main'
-      | 'types'
-      | 'bin'
-      | 'scripts'
-      | 'dependencies'
-      | 'devDependencies'
-      | 'peerDependencies'
-      | 'optionalDependencies'
-    >,
-    Record<string, unknown> {
-  name: string
-  version: string
-  exports?: unknown
-  imports?: unknown
-  publishConfig?: Record<string, unknown>
-}
+import type { packageManifestSchema } from './schemas'
+
+export type PackageManifest = v.InferOutput<typeof packageManifestSchema>
 
 export interface WorkspacePackage {
   directory: string

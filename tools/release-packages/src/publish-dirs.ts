@@ -55,7 +55,7 @@ export function publishPackageJSON(source: PackageManifest, coreVersion: string)
 
   for (const field of PACKAGE_FIELDS) {
     const dependencies = json[field]
-    if (!dependencies || typeof dependencies !== 'object' || Array.isArray(dependencies)) continue
+    if (!dependencies) continue
     for (const [name, version] of Object.entries(dependencies)) {
       if (version.startsWith('workspace:')) dependencies[name] = `^${coreVersion}`
     }

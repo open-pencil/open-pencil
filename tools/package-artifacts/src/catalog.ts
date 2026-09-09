@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { readPackageJSON } from 'pkg-types'
 
 import { readPackageManifest } from './manifest'
+import { parseWorkspace } from './schemas'
 import type { PackageManifest, WorkspacePackage } from './types'
 
 const DEPENDENCY_FIELDS = [
@@ -15,8 +16,7 @@ export async function discoverPublicPackages(root: string): Promise<WorkspacePac
   const rootManifest = await readPackageJSON(join(root, 'package.json'))
   const packages: WorkspacePackage[] = []
 
-  const workspaces = rootManifest.workspaces ?? []
-  if (!Array.isArray(workspaces)) throw new Error('Expected an array of workspace directories')
+  const { workspaces } = parseWorkspace(rootManifest, root)
   for (const directory of workspaces) {
     const raw = await readPackageJSON(join(root, directory, 'package.json'))
     if (raw.private === true) continue
@@ -43,7 +43,7 @@ export function orderPackagesByDependencies(packages: WorkspacePackage[]): Works
     temporary.add(name)
     for (const field of DEPENDENCY_FIELDS) {
       const dependencies = pkg.manifest[field]
-      if (!dependencies || typeof dependencies !== 'object' || Array.isArray(dependencies)) continue
+      if (!dependencies) continue
       for (const dependencyName of Object.keys(dependencies).sort()) {
         const dependency = packageByName.get(dependencyName)
         if (dependency) visit(dependency, [...path, name])
