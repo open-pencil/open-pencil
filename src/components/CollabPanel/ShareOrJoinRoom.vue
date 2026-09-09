@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 const collab = useCollabPanelContext()
@@ -16,15 +17,18 @@ const collab = useCollabPanelContext()
     />
   </div>
 
-  <button
+  <AppButton
+    size="md"
+    color="primary"
+    variant="solid"
+    class="mb-3 w-full"
     data-test-id="collab-share-file"
-    class="mb-3 flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded border-none bg-accent text-xs font-medium text-white hover:bg-accent/90 disabled:opacity-50"
     :disabled="!collab.nameDraft.trim()"
     @click="collab.share"
   >
-    <icon-lucide-share-2 class="size-3.5" />
+    <template #leading><icon-lucide-share-2 class="size-3.5" /></template>
     {{ collab.messages.shareThisFile }}
-  </button>
+  </AppButton>
 
   <div class="mb-2 flex items-center gap-2">
     <div class="h-px flex-1 bg-border" />
@@ -40,13 +44,14 @@ const collab = useCollabPanelContext()
       class="min-w-0 flex-1"
       @enter="collab.join"
     />
-    <button
+    <AppButton
+      color="primary"
+      variant="solid"
       data-test-id="collab-join-room-button"
-      class="flex h-7 cursor-pointer items-center rounded border-none bg-accent px-3 text-xs text-white hover:bg-accent/90 disabled:opacity-50"
       :disabled="!collab.joinInput.trim() || !collab.nameDraft.trim()"
       @click="collab.join"
     >
       Join
-    </button>
+    </AppButton>
   </div>
 </template>

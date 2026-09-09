@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import type { ProviderConnectionTestFailureReason } from '@/app/ai/chat/connection-test'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import statusTheme from '@/theme/feedback/status'
 
 interface ProviderConnectionTestButtonProps {
@@ -54,19 +55,16 @@ const statusStyles = computed(() => tv(statusTheme)({ tone: resultTone.value }))
 
 <template>
   <div class="flex flex-col gap-1">
-    <button
-      type="button"
+    <AppButton
+      variant="outline"
       data-test-id="provider-test-connection"
-      class="rounded border border-panel bg-panel px-2 py-1 text-[11px] font-medium text-surface hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
-      :disabled="isTesting || disabled"
+      :loading="isTesting"
+      :disabled="disabled"
       @click="emit('test')"
     >
-      <span class="inline-flex items-center justify-center gap-1.5">
-        <icon-lucide-loader-2 v-if="isTesting" class="size-3 animate-spin" />
-        <icon-lucide-plug-zap v-else class="size-3" />
-        {{ isTesting ? common.testingConnection : common.testConnection }}
-      </span>
-    </button>
+      <template #leading><icon-lucide-plug-zap class="size-3" /></template>
+      {{ isTesting ? common.testingConnection : common.testConnection }}
+    </AppButton>
 
     <p
       v-if="resultMessage"

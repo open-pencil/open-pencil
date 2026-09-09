@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 const collab = useCollabPanelContext()
@@ -22,13 +23,16 @@ const collab = useCollabPanelContext()
     />
   </div>
 
-  <button
+  <AppButton
+    size="md"
+    color="primary"
+    variant="solid"
+    class="w-full"
     data-test-id="collab-join-button"
-    class="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded border-none bg-accent text-xs font-medium text-white hover:bg-accent/90 disabled:opacity-50"
     :disabled="!collab.nameDraft.trim()"
     @click="collab.join"
   >
-    <icon-lucide-users class="size-3.5" />
+    <template #leading><icon-lucide-users class="size-3.5" /></template>
     Join room
-  </button>
+  </AppButton>
 </template>

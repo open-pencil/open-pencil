@@ -2,6 +2,7 @@
 import { useI18n } from '@open-pencil/vue'
 
 import { openSettingsDialog } from '@/app/settings/dialog'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 
 const { ai } = useI18n()
@@ -13,14 +14,15 @@ const { ai } = useI18n()
       <icon-lucide-sparkles class="size-5" />
     </template>
     <template #action>
-      <button
-        type="button"
+      <AppButton
+        color="primary"
+        variant="solid"
+        class="w-full"
         data-test-id="provider-setup-open-settings"
-        class="w-full rounded bg-accent py-1.5 text-xs font-medium text-white hover:bg-accent/90"
         @click="openSettingsDialog('ai')"
       >
         {{ ai.openProviderSettings }}
-      </button>
+      </AppButton>
     </template>
   </AppPlaceholder>
 </template>
