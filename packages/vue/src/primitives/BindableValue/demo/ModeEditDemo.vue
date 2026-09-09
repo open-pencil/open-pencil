@@ -44,10 +44,14 @@ function changeTargets() {
 }
 function values() {
   void revision.value
-  return JSON.stringify(editor.getVariable(variable.id)?.valuesByMode)
+  return JSON.stringify(editor.getVariable(variable.id)?.valuesByMode ?? null)
 }
 function undo() {
   editor.undo.undo()
+  revision.value++
+}
+function removeVariable() {
+  editor.graph.variables.delete(variable.id)
   revision.value++
 }
 function refresh(action: () => unknown) {
@@ -58,7 +62,7 @@ function refresh(action: () => unknown) {
 
 <template>
   <BindableValueRoot
-    v-slot="{ actions }"
+    v-slot="{ actions, state, bindingId }"
     :provider="provider"
     :targets="targets"
     :value="8"
@@ -72,6 +76,10 @@ function refresh(action: () => unknown) {
       <button @click="refresh(actions.cancelMutation)">Cancel</button>
       <button @click="actions.commitMutation()">Commit</button>
       <button @click="undo">Undo</button>
+      <button @click="removeVariable">Remove variable definition</button>
+      <button @click="refresh(actions.unbind)">Detach</button>
+      <output aria-label="Binding state">{{ state }}</output>
+      <output aria-label="Binding identity">{{ bindingId }}</output>
       <output aria-label="Mode values">{{ values() }}</output>
     </div>
   </BindableValueRoot>

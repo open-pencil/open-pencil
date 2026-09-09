@@ -148,7 +148,10 @@ function onToggleSides(activeNode: SceneNode | null) {
               <PaintValue
                 :color="stroke.color"
                 :resolved-color="binding.resolvedValue"
-                :variable-name="binding.variable?.name"
+                :variable-name="binding.variable?.name ?? binding.bindingId"
+                :unavailable-label="
+                  binding.state === 'unresolved' ? panels.unresolvedVariable : undefined
+                "
                 :label="panels.stroke"
                 @update="
                   updateStrokeColor(

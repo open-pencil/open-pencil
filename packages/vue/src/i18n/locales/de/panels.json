@@ -351,5 +351,6 @@
   "strokeSettings": "Kontureinstellungen",
   "strokeDashLength": "Strich",
   "strokeDashGap": "Lücke",
-  "lineHeightMode": "Zeilenhöhenmodus"
+  "lineHeightMode": "Zeilenhöhenmodus",
+  "unresolvedVariable": "Variablenwert nicht verfügbar"
 }

@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 
 import type { Variable } from '@open-pencil/scene-graph'
 
-export type BindingState = 'unbound' | 'bound' | 'mixed'
+export type BindingState = 'unbound' | 'bound' | 'mixed' | 'unresolved'
 export type BoundEditPolicy = 'detach-on-edit' | 'readonly-when-bound' | 'edit-variable'
 export type BindingMutationSource = 'edit' | 'scrub' | 'step'
 
@@ -24,6 +24,7 @@ export interface BindingProvider<V = unknown> {
   revision?: Readonly<Ref<unknown>>
   listVariables(): Variable[]
   filterVariables(term: string): Variable[]
+  getBindingId(target: BindingTarget): string | undefined
   getBound(target: BindingTarget): Variable | undefined
   getState(targets: BindingTarget[]): BindingState
   resolve(variableId: string, target?: BindingTarget): V | undefined

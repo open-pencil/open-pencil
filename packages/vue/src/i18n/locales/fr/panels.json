@@ -351,5 +351,6 @@
   "strokeSettings": "Paramètres du contour",
   "strokeDashLength": "Tiret",
   "strokeDashGap": "Espacement",
-  "lineHeightMode": "Mode de hauteur de ligne"
+  "lineHeightMode": "Mode de hauteur de ligne",
+  "unresolvedVariable": "Valeur de variable indisponible"
 }

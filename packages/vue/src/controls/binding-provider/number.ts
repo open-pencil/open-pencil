@@ -6,6 +6,7 @@ import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/ope
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
 
 import { prepareModeEdit } from './mode-edit'
+import { resolveEffectiveBindingValue } from './resolution'
 
 const FALLBACK_NUMBER_VARIABLE_NAME = 'New number'
 
@@ -48,17 +49,19 @@ export function createAndBindNumberVariable(
   editor.bindVariable(target.nodeId, target.path, id)
 }
 
+function resolveNumber(editor: Editor, id: string, target?: BindingTarget) {
+  const value = target
+    ? resolveEffectiveBindingValue(editor, id, target)
+    : editor.resolveNumberVariable(id)
+  return typeof value === 'number' ? value : undefined
+}
+
 export function useNumberBindingProvider() {
   return useOpenPencilBindingProvider<number>({
     type: 'FLOAT',
-    resolve: (editor, variableId, target) =>
-      target
-        ? editor.graph.resolveNumberVariableForNode(target.nodeId, variableId)
-        : editor.resolveNumberVariable(variableId),
+    resolve: resolveNumber,
     prepareEdit: (editor, id, target) =>
-      prepareModeEdit(editor, id, target, () =>
-        editor.graph.resolveNumberVariableForNode(target.nodeId, id)
-      ),
+      prepareModeEdit(editor, id, target, () => resolveNumber(editor, id, target)),
     create: createAndBindNumberVariable
   })
 }

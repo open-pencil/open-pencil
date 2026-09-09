@@ -7,6 +7,7 @@ import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/ope
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
 
 import { prepareModeEdit } from './mode-edit'
+import { resolveEffectiveBindingValue } from './resolution'
 
 const FALLBACK_COLOR_VARIABLE_NAME = 'New color'
 
@@ -51,17 +52,19 @@ export function createAndBindColorVariable(
   editor.bindVariable(target.nodeId, target.path, id)
 }
 
+function resolveColor(editor: Editor, id: string, target?: BindingTarget) {
+  const value = target
+    ? resolveEffectiveBindingValue(editor, id, target)
+    : editor.resolveColorVariable(id)
+  return value && typeof value === 'object' && 'r' in value ? value : undefined
+}
+
 export function useColorBindingProvider() {
   return useOpenPencilBindingProvider<Color>({
     type: 'COLOR',
-    resolve: (editor, variableId, target) =>
-      target
-        ? editor.graph.resolveColorVariableForNode(target.nodeId, variableId)
-        : editor.resolveColorVariable(variableId),
+    resolve: resolveColor,
     prepareEdit: (editor, id, target) =>
-      prepareModeEdit(editor, id, target, () =>
-        editor.graph.resolveColorVariableForNode(target.nodeId, id)
-      ),
+      prepareModeEdit(editor, id, target, () => resolveColor(editor, id, target)),
     create: createAndBindColorVariable
   })
 }

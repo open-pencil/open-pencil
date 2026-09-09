@@ -56,10 +56,11 @@ const state = computed(() => {
 })
 const variable = computed(() => {
   const target = targets.value[0]
-  return state.value === 'bound' && target ? provider.getBound(target) : undefined
+  return state.value !== 'mixed' && target ? provider.getBound(target) : undefined
 })
 const resolvedValue = computed(() => {
   void provider.revision?.value
+  if (state.value === 'unresolved') return undefined
   const current = variable.value
   return current ? provider.resolve(current.id, targets.value[0]) : undefined
 })
@@ -68,6 +69,7 @@ const variables = computed(() => {
   return provider.filterVariables(searchTerm.value)
 })
 const stateAttrs = computed<BindableValueStateAttrs>(() => ({
+  'data-unresolved': state.value === 'unresolved' ? '' : undefined,
   'data-unbound': state.value === 'unbound' ? '' : undefined,
   'data-bound': state.value === 'bound' ? '' : undefined,
   'data-mixed': state.value === 'mixed' ? '' : undefined,
@@ -125,13 +127,14 @@ function setSearchTerm(term: string) {
 function snapshotBindings() {
   bindingSnapshot = new Map()
   for (const target of targets.value) {
-    const current = provider.getBound(target)
-    if (current) bindingSnapshot.set({ ...target }, current.id)
+    const id = provider.getBindingId(target)
+    if (id) bindingSnapshot.set({ ...target }, id)
   }
 }
 
 function beginMutation(source: BindingMutationSource): boolean {
   if (interactionActive) return true
+  if (state.value === 'unresolved') return false
   const startedUnbound = state.value === 'unbound'
   const startedMixed = state.value === 'mixed'
   if (!startedUnbound && !startedMixed && policy.value === 'readonly-when-bound') return false
@@ -217,6 +220,7 @@ const actions: BindableValueActions<V> = {
 
 const slotProps = computed<BindableValueSlotProps<V>>(() => ({
   state: state.value,
+  bindingId: targets.value[0] ? provider.getBindingId(targets.value[0]) : undefined,
   variable: variable.value,
   resolvedValue: resolvedValue.value,
   policy: policy.value,

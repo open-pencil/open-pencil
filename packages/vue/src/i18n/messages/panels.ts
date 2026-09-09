@@ -225,6 +225,7 @@ export const panelMessageDefaults = {
   addPage: 'Add page',
   toggleVisibility: 'Toggle visibility',
   independentCornerRadii: 'Independent corner radii',
+  unresolvedVariable: 'Variable value unavailable',
   detachVariable: 'Detach variable',
   applyVariable: 'Apply variable',
   noVariablesFound: 'No variables found',

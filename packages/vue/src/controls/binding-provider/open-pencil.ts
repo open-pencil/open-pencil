@@ -13,6 +13,8 @@ import type {
 import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
+import { resolveEffectiveBindingValue } from './resolution'
+
 export interface OpenPencilBindingProviderOptions<V> {
   type: VariableType
   resolve(editor: Editor, variableId: string, target?: BindingTarget): V | undefined
@@ -50,12 +52,22 @@ export function createOpenPencilBindingProvider<V>(
         (target) => editor.getNode(target.nodeId)?.boundVariables[target.path] ?? undefined
       )
     )
+    const unresolved = targets.some((target) => {
+      const id = editor.getNode(target.nodeId)?.boundVariables[target.path]
+      return (
+        id !== undefined &&
+        (resolveEffectiveBindingValue(editor, id, target) === undefined ||
+          options.resolve(editor, id, target) === undefined)
+      )
+    })
+    if (unresolved) return 'unresolved'
     if (variableIds.size > 1) return 'mixed'
     if (variableIds.has(undefined)) return 'unbound'
     const values = targets.map((target) => {
       const id = editor.getNode(target.nodeId)?.boundVariables[target.path]
       return id ? options.resolve(editor, id, target) : undefined
     })
+    if (values.some((value) => value === undefined)) return 'unresolved'
     return values.every((value) => isEqual(value, values[0])) ? 'bound' : 'mixed'
   }
 
@@ -63,6 +75,7 @@ export function createOpenPencilBindingProvider<V>(
     revision,
     listVariables: variables,
     filterVariables,
+    getBindingId: (target) => editor.getNode(target.nodeId)?.boundVariables[target.path],
     getBound,
     getState,
     resolve: (variableId, target) => options.resolve(editor, variableId, target),

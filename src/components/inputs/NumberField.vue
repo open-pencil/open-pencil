@@ -22,6 +22,7 @@ export interface NumberFieldProps {
   sensitivity?: number
   placeholder?: string
   disabled?: boolean
+  inheritBinding?: boolean
   bound?: boolean
   editPolicy?: NumberFieldEditPolicy
   ui?: NumberFieldUI
@@ -58,6 +59,7 @@ const {
   sensitivity,
   placeholder,
   disabled,
+  inheritBinding = true,
   bound,
   editPolicy,
   ui
@@ -90,6 +92,7 @@ defineOptions({ inheritAttrs: false })
     :placeholder="placeholder ?? panels.mixed"
     :aria-label="accessibleLabel"
     :disabled="disabled"
+    :inherit-binding="inheritBinding"
     :bound="bound"
     :edit-policy="editPolicy"
     @update:model-value="emit('update:modelValue', $event)"

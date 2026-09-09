@@ -351,5 +351,6 @@
   "strokeSettings": "Ustawienia obrysu",
   "strokeDashLength": "Kreska",
   "strokeDashGap": "Odstęp",
-  "lineHeightMode": "Tryb wysokości wiersza"
+  "lineHeightMode": "Tryb wysokości wiersza",
+  "unresolvedVariable": "Wartość zmiennej jest niedostępna"
 }

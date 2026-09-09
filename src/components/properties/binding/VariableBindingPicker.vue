@@ -159,7 +159,7 @@ defineOptions({ inheritAttrs: false })
 
         <div :class="styles.pickerFooter" data-slot="footer">
           <AppButton
-            v-if="picker.state === 'bound'"
+            v-if="picker.state !== 'unbound'"
             size="xs"
             class="w-full justify-start"
             data-slot="action"

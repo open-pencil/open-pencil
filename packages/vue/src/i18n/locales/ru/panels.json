@@ -351,5 +351,6 @@
   "strokeSettings": "Настройки обводки",
   "strokeDashLength": "Штрих",
   "strokeDashGap": "Промежуток",
-  "lineHeightMode": "Режим межстрочного интервала"
+  "lineHeightMode": "Режим межстрочного интервала",
+  "unresolvedVariable": "Значение переменной недоступно"
 }

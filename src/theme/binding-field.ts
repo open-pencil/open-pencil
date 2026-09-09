@@ -27,6 +27,7 @@ const bindingFieldTheme = {
       bound: {
         trigger: 'text-component opacity-100'
       },
+      unresolved: { trigger: 'text-error opacity-100', pill: 'text-error' },
       mixed: {}
     },
     open: {

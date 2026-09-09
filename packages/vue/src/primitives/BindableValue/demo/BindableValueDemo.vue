@@ -58,6 +58,7 @@ const provider: BindingProvider<number> = {
   listVariables: () => variables,
   filterVariables: (term) =>
     variables.filter((variable) => variable.name.toLowerCase().includes(term.toLowerCase())),
+  getBindingId: (target) => bindings.value[key(target)],
   getBound: (target) => variables.find((variable) => variable.id === bindings.value[key(target)]),
   getState(targets): BindingState {
     const ids = new Set(targets.map((target) => bindings.value[key(target)]))

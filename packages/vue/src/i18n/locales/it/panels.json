@@ -351,5 +351,6 @@
   "strokeSettings": "Impostazioni del tratto",
   "strokeDashLength": "Trattino",
   "strokeDashGap": "Spazio",
-  "lineHeightMode": "Modalità altezza riga"
+  "lineHeightMode": "Modalità altezza riga",
+  "unresolvedVariable": "Valore della variabile non disponibile"
 }

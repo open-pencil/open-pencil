@@ -4,6 +4,7 @@ import { createEditor } from '@open-pencil/core/editor'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
+import { resolveEffectiveBindingValue } from '#vue/controls/binding-provider/resolution'
 
 test('binding resolution uses node modes and reports mixed resolved values', () => {
   const editor = createEditor()
@@ -37,4 +38,25 @@ test('binding resolution uses node modes and reports mixed resolved values', () 
   edit.set(32)
   expect(provider.resolve(variable.id, targets[0])).toBe(8)
   expect(provider.resolve(variable.id, targets[1])).toBe(32)
+
+  const aliasCollection = editor.graph.createCollection('Alias values')
+  editor.graph.addMode(aliasCollection.id, 'alternate', 'Alternate')
+  const alias = editor.graph.createVariable('Alias', 'FLOAT', aliasCollection.id, 4)
+  editor.updateVariableValue(alias.id, 'alternate', 64)
+  editor.graph.updateNode(b.id, {
+    variableModes: { [collection.id]: 'large', [aliasCollection.id]: 'alternate' }
+  })
+  editor.updateVariableValue(variable.id, 'large', { aliasId: alias.id })
+  expect(resolveEffectiveBindingValue(editor, variable.id, target)).toBe(64)
+  editor.updateVariableValue(alias.id, 'alternate', { aliasId: variable.id })
+  expect(resolveEffectiveBindingValue(editor, variable.id, target)).toBeUndefined()
+
+  delete variable.valuesByMode.large
+  expect(provider.getState(targets.slice(1))).toBe('unresolved')
+  editor.updateVariableValue(variable.id, 'large', { aliasId: 'missing-alias' })
+  expect(provider.getState(targets.slice(1))).toBe('unresolved')
+  editor.graph.variables.delete(variable.id)
+  expect(provider.getBindingId(target)).toBe(variable.id)
+  expect(provider.getBound(target)).toBeUndefined()
+  expect(provider.getState(targets)).toBe('unresolved')
 })

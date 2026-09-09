@@ -27,6 +27,7 @@ export interface BindableValueRootProps<V = unknown> {
 }
 
 export interface BindableValueStateAttrs {
+  'data-unresolved'?: ''
   'data-unbound'?: ''
   'data-bound'?: ''
   'data-mixed'?: ''
@@ -50,6 +51,8 @@ export interface BindableValueActions<V = unknown> {
 
 export interface BindableValueSlotProps<V = unknown> {
   state: BindingState
+  /** Stored identity remains available when the variable has been deleted. */
+  bindingId: string | undefined
   variable: Variable | undefined
   resolvedValue: V | undefined
   policy: BoundEditPolicy
