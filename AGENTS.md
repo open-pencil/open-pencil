@@ -120,6 +120,8 @@ Use Conventional Commits (`feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `bu
 
 ## Code conventions
 
+- Use Valibot for first-party runtime validation. Keep Zod at upstream SDK integration boundaries that require it, such as MCP tool registration; do not maintain parallel first-party schemas in both libraries.
+
 - Put code and tests in the established owning domain; inspect nearby structure before adding files.
 - `bun run check:arch` enforces boundaries: use public workspace exports, keep Core framework-neutral, keep app services out of views/shared UI, and keep property-panel internals scoped to that panel.
 - Tests belong in `tests/e2e/**/*.spec.ts` (browser UI/visual), `tests/figma/**/*.spec.ts` (Figma automation), `tests/engine/**/*.test.ts` (engine/unit), `tests/helpers/**` (shared helpers), or an established package-local test location. Mirror source domains where practical and test behavior/contracts, not source text. Never commit temporary/profile specs.
