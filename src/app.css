@@ -51,6 +51,8 @@
   --color-warning-text: #fde68a;
   --color-warning-action: #fcd34d;
   --color-success: #4ade80;
+  --color-primary: #60a5fa;
+  --color-inverted: #1f2328;
   --color-error: #f87171;
   --color-error-bg: rgb(248 113 113 / 0.1);
   --color-error-border: rgb(248 113 113 / 0.4);
@@ -81,6 +83,8 @@ html[data-theme='light'] {
   --color-border: #d8dce3;
   --color-hover: #eef1f5;
   --color-accent: #2563eb;
+  --color-primary: #2563eb;
+  --color-inverted: #ffffff;
   --color-surface: #1f2328;
   --color-muted: #6b7280;
   --color-input: #ffffff;

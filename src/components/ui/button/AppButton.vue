@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed, normalizeClass, useAttrs, type HTMLAttributes } from 'vue'
 
 import {
   useAppButtonUI,
@@ -17,8 +17,10 @@ const {
   disabled = false,
   loading = false,
   type = 'button',
+  class: className,
   ui
 } = defineProps<{
+  class?: HTMLAttributes['class']
   color?: AppButtonColor
   variant?: AppButtonVariant
   size?: AppButtonSize
@@ -31,7 +33,15 @@ const {
 
 defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
-const styles = computed(() => useAppButtonUI({ color, variant, size, shape, ui }))
+const styles = computed(() =>
+  useAppButtonUI({
+    color,
+    variant,
+    size,
+    shape,
+    ui: { ...ui, base: [ui?.base, normalizeClass(className)].filter(Boolean).join(' ') }
+  })
+)
 const isDisabled = computed(() => disabled || loading)
 </script>
 
