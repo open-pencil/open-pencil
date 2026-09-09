@@ -350,5 +350,7 @@
   "individualPadding": "Relleno individual",
   "strokeSettings": "Ajustes de trazo",
   "strokeDashLength": "Guion",
-  "strokeDashGap": "Espacio"
+  "strokeDashGap": "Espacio",
+  "lineHeightMode": "Modo de altura de línea",
+  "unresolvedVariable": "Valor de variable no disponible"
 }

@@ -46,6 +46,7 @@ const boundColor: Color = { r: 0.65, g: 0.3, b: 0.95, a: 1 }
 const provider: BindingProvider<Color> = {
   listVariables: () => [variable],
   filterVariables: () => [variable],
+  getBindingId: () => variable.id,
   getBound: () => variable,
   getState: () => 'bound',
   resolve: (variableId) => (variableId === variable.id ? boundColor : undefined),

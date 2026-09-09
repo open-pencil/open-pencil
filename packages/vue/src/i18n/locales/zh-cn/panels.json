@@ -350,5 +350,7 @@
   "individualPadding": "独立内边距",
   "strokeSettings": "描边设置",
   "strokeDashLength": "虚线",
-  "strokeDashGap": "间距"
+  "strokeDashGap": "间距",
+  "lineHeightMode": "行高模式",
+  "unresolvedVariable": "变量值不可用"
 }

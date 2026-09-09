@@ -86,6 +86,15 @@ test('domain naming uses ownership prefixes, not control-kind suffixes', async (
   ).toBe(1)
 })
 
+test('storage rule permits data keys but rejects storage access', async () => {
+  const rule = 'no-direct-storage-access'
+  const diagnostics = await lint(
+    `const state = {localStorage: []}; localStorage.clear(); window.sessionStorage.clear(); const value = {localStorage};`,
+    { [`open-pencil/${rule}`]: 'error' }
+  )
+  expect(ruleDiagnostics(diagnostics, rule)).toHaveLength(3)
+})
+
 function ruleDiagnostics(diagnostics: Diagnostic[], rule: string): Diagnostic[] {
   return diagnostics.filter((diagnostic) => diagnostic.code === `open-pencil(${rule})`)
 }

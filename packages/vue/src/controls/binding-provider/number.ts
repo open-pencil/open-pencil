@@ -5,6 +5,9 @@ import type { VariableCollection } from '@open-pencil/scene-graph'
 import { useOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import type { BindingTarget } from '#vue/controls/binding-provider/types'
 
+import { prepareModeEdit } from './mode-edit'
+import { resolveEffectiveBindingValue } from './resolution'
+
 const FALLBACK_NUMBER_VARIABLE_NAME = 'New number'
 
 function numberCollection(editor: Editor): VariableCollection {
@@ -46,19 +49,19 @@ export function createAndBindNumberVariable(
   editor.bindVariable(target.nodeId, target.path, id)
 }
 
-function setNumberVariableValue(editor: Editor, variableId: string, value: number) {
-  const variable = editor.getVariable(variableId)
-  if (!variable) return
-  const collection = editor.getCollection(variable.collectionId)
-  if (!collection) return
-  for (const mode of collection.modes) editor.updateVariableValue(variableId, mode.modeId, value)
+function resolveNumber(editor: Editor, id: string, target?: BindingTarget) {
+  const value = target
+    ? resolveEffectiveBindingValue(editor, id, target)
+    : editor.resolveNumberVariable(id)
+  return typeof value === 'number' ? value : undefined
 }
 
 export function useNumberBindingProvider() {
   return useOpenPencilBindingProvider<number>({
     type: 'FLOAT',
-    resolve: (editor, variableId) => editor.resolveNumberVariable(variableId),
-    create: createAndBindNumberVariable,
-    setValue: setNumberVariableValue
+    resolve: resolveNumber,
+    prepareEdit: (editor, id, target) =>
+      prepareModeEdit(editor, id, target, () => resolveNumber(editor, id, target)),
+    create: createAndBindNumberVariable
   })
 }

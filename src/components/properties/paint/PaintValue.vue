@@ -6,9 +6,10 @@ import { inputValue, useColorModel } from '@open-pencil/vue'
 
 import { BindingPill } from '@/components/ui/binding'
 
-const { color, resolvedColor, variableName, label } = defineProps<{
+const { color, resolvedColor, variableName, unavailableLabel, label } = defineProps<{
   color: Color
   resolvedColor?: Color
+  unavailableLabel?: string
   variableName?: string
   label: string
 }>()
@@ -24,10 +25,11 @@ const tooltip = computed(() => (variableName ? `${variableName} · #${model.hex.
 
 <template>
   <BindingPill
-    v-if="variableName"
+    v-if="variableName || unavailableLabel"
     class="min-w-0 flex-1"
-    :label="variableName"
-    :tooltip="tooltip"
+    :label="variableName ?? unavailableLabel ?? label"
+    :unresolved="!!unavailableLabel"
+    :tooltip="unavailableLabel ?? tooltip"
   />
   <input
     v-else

@@ -58,6 +58,7 @@ const provider: BindingProvider<number> = {
   listVariables: () => variables,
   filterVariables: (term) =>
     variables.filter((variable) => variable.name.toLowerCase().includes(term.toLowerCase())),
+  getBindingId: (target) => bindings.value[key(target)],
   getBound: (target) => variables.find((variable) => variable.id === bindings.value[key(target)]),
   getState(targets): BindingState {
     const ids = new Set(targets.map((target) => bindings.value[key(target)]))
@@ -76,10 +77,22 @@ const provider: BindingProvider<number> = {
     bindings.value[key(target)] = undefined
     revision.value++
   },
-  setValue(variableId, value) {
+  prepareEdit(variableId) {
     const variable = variables.find((item) => item.id === variableId)
-    if (variable) variable.valuesByMode.default = value
-    revision.value++
+    const value = variable?.valuesByMode.default
+    if (!variable || typeof value !== 'number') return undefined
+    return {
+      key: variableId,
+      value,
+      set(next: number) {
+        variable.valuesByMode.default = next
+        revision.value++
+      },
+      restore() {
+        variable.valuesByMode.default = value
+        revision.value++
+      }
+    }
   },
   create(target, value, name) {
     const id = `created:${name}`

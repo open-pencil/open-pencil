@@ -84,10 +84,18 @@ defineOptions({ inheritAttrs: false })
       <template v-if="$slots.icon" #icon>
         <slot name="icon" />
       </template>
-      <template v-if="binding.variable" #bound>
+      <template v-if="$slots.display" #display="display">
+        <slot name="display" v-bind="display" />
+      </template>
+      <template v-if="binding.variable || binding.state === 'unresolved'" #bound>
         <BindingPill
-          :label="binding.variable.name"
-          :tooltip="bindingTooltip(binding.variable.name, binding.resolvedValue)"
+          :unresolved="binding.state === 'unresolved'"
+          :label="binding.variable?.name ?? binding.bindingId ?? panels.unresolvedVariable"
+          :tooltip="
+            binding.state === 'unresolved'
+              ? panels.unresolvedVariable
+              : bindingTooltip(binding.variable?.name ?? '', binding.resolvedValue)
+          "
         />
       </template>
       <template #suffix>

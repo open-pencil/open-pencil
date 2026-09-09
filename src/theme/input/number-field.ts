@@ -10,9 +10,10 @@ const numberFieldTheme = {
       'flex shrink-0 items-center justify-center self-stretch px-[5px] text-muted select-none [&>*]:pointer-events-none',
     field:
       'min-w-0 flex-1 cursor-text border-none bg-transparent pr-1.5 font-[inherit] text-[11px] text-surface outline-none',
-    display: 'flex flex-1 items-center truncate overflow-hidden text-[11px] select-none',
+    display: 'flex min-w-0 flex-1 items-center overflow-hidden text-[11px] select-none',
     mixed: 'flex-1 text-muted',
-    value: 'flex-1 text-surface',
+    value: 'min-w-0 flex-1 truncate text-surface',
+    trailing: 'flex shrink-0 items-center self-stretch',
     suffix: 'shrink-0 pr-1.5 text-muted'
   },
   variants: {

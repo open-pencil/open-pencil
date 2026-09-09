@@ -17,13 +17,9 @@ const bindingFieldTheme = {
     pickerItemIndicator: 'flex size-3 shrink-0 items-center justify-center text-component',
     pickerEmpty: 'px-2 py-3 text-center text-[11px] text-muted',
     pickerFooter: 'border-t border-border p-1',
-    pickerAction:
-      'flex h-6 w-full cursor-pointer items-center gap-2 rounded border-0 bg-transparent px-2 text-left text-[11px] text-muted outline-none hover:bg-hover hover:text-surface focus-visible:border-panel-focus',
     createForm: 'flex items-center gap-1.5 p-1',
     createInput:
-      'h-6 min-w-0 flex-1 rounded border border-transparent bg-panel-field px-2 text-[11px] text-surface outline-none placeholder:text-muted focus:border-panel-focus',
-    createSubmit:
-      'h-6 shrink-0 rounded border border-transparent bg-panel-field px-2 text-[11px] text-surface outline-none hover:bg-panel-field-hover focus-visible:border-panel-focus disabled:cursor-not-allowed disabled:opacity-50'
+      'h-6 min-w-0 flex-1 rounded border border-transparent bg-panel-field px-2 text-[11px] text-surface outline-none placeholder:text-muted focus:border-panel-focus'
   },
   variants: {
     state: {
@@ -31,6 +27,7 @@ const bindingFieldTheme = {
       bound: {
         trigger: 'text-component opacity-100'
       },
+      unresolved: { trigger: 'text-error opacity-100', pill: 'text-error' },
       mixed: {}
     },
     open: {

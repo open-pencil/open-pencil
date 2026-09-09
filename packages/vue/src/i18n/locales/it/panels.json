@@ -350,5 +350,7 @@
   "individualPadding": "Spaziatura interna individuale",
   "strokeSettings": "Impostazioni del tratto",
   "strokeDashLength": "Trattino",
-  "strokeDashGap": "Spazio"
+  "strokeDashGap": "Spazio",
+  "lineHeightMode": "Modalità altezza riga",
+  "unresolvedVariable": "Valore della variabile non disponibile"
 }

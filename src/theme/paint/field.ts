@@ -4,7 +4,7 @@ export default {
     preview: 'flex shrink-0 items-center pl-1',
     value: 'flex min-w-0 flex-1 items-center pl-1.5 pr-1',
     divider: 'h-4 w-px shrink-0 bg-muted/40',
-    opacity: 'h-full w-12 flex-none shrink-0',
+    opacity: 'h-full w-14 flex-none shrink-0',
     binding: 'flex shrink-0 items-center pr-0.5'
   }
 } as const

@@ -23,6 +23,7 @@ export interface NumberFieldProps {
   sensitivity?: number
   placeholder?: string
   disabled?: boolean
+  inheritBinding?: boolean
   bound?: boolean
   editPolicy?: NumberFieldEditPolicy
   ui?: NumberFieldUI
@@ -61,6 +62,7 @@ const {
   sensitivity,
   placeholder,
   disabled,
+  inheritBinding = true,
   bound,
   editPolicy,
   ui
@@ -93,6 +95,7 @@ defineOptions({ inheritAttrs: false })
     :placeholder="placeholder ?? panels.mixed"
     :aria-label="accessibleLabel"
     :disabled="disabled"
+    :inherit-binding="inheritBinding"
     :bound="bound"
     :edit-policy="editPolicy"
     @update:model-value="emit('update:modelValue', $event)"
@@ -118,14 +121,16 @@ defineOptions({ inheritAttrs: false })
         actions.startScrub($event)
       "
     >
-      <span :class="styles.leading({ class: ui?.leading })">
+      <span
+        v-if="editing || !slots.bound || rootAttrs['data-bound'] === undefined"
+        :class="styles.leading({ class: ui?.leading })"
+      >
         <slot name="icon">
           <span v-if="icon" class="text-[11px] leading-none">{{ icon }}</span>
         </slot>
         <span v-if="label" class="text-[11px] leading-none">{{ label }}</span>
       </span>
       <NumberFieldInput :class="styles.field({ class: ui?.field })" />
-      <slot v-if="editing" name="suffix" />
       <NumberFieldValue :class="styles.display({ class: ui?.display })">
         <template #default="display">
           <slot name="display" v-bind="display">
@@ -141,9 +146,18 @@ defineOptions({ inheritAttrs: false })
               <span v-if="suffix" :class="styles.suffix({ class: ui?.suffix })">{{ suffix }}</span>
             </template>
           </slot>
-          <slot name="suffix" />
         </template>
       </NumberFieldValue>
+      <span v-if="editing && suffix" :class="styles.suffix({ class: ui?.suffix })">{{
+        suffix
+      }}</span>
+      <span
+        v-if="slots.suffix"
+        data-slot="trailing"
+        :class="styles.trailing({ class: ui?.trailing })"
+      >
+        <slot name="suffix" />
+      </span>
     </div>
   </NumberFieldRoot>
 </template>

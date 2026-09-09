@@ -124,7 +124,10 @@ function updateSolidColor(
                   v-if="fill.type === 'SOLID'"
                   :color="fill.color"
                   :resolved-color="binding.resolvedValue"
-                  :variable-name="binding.variable?.name"
+                  :variable-name="binding.variable?.name ?? binding.bindingId"
+                  :unavailable-label="
+                    binding.state === 'unresolved' ? panels.unresolvedVariable : undefined
+                  "
                   :label="panels.fill"
                   @update="
                     updateSolidColor(binding.actions, flush, fill, $event, (next) =>

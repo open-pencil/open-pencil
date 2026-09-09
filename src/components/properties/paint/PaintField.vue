@@ -48,6 +48,7 @@ const styles = computed(() => tv(paintFieldTheme)())
     </div>
     <div :class="styles.divider({ class: ui?.divider })" data-slot="divider" />
     <NumberField
+      :inherit-binding="false"
       :class="styles.opacity({ class: ui?.opacity })"
       :aria-label="opacityLabel"
       suffix="%"

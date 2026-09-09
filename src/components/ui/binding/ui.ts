@@ -31,9 +31,7 @@ export function useBindingFieldUI(options: BindingFieldUIOptions = {}, ui?: Bind
     pickerItemIndicator: styles.pickerItemIndicator({ class: ui?.pickerItemIndicator }),
     pickerEmpty: styles.pickerEmpty({ class: ui?.pickerEmpty }),
     pickerFooter: styles.pickerFooter({ class: ui?.pickerFooter }),
-    pickerAction: styles.pickerAction({ class: ui?.pickerAction }),
     createForm: styles.createForm({ class: ui?.createForm }),
-    createInput: styles.createInput({ class: ui?.createInput }),
-    createSubmit: styles.createSubmit({ class: ui?.createSubmit })
+    createInput: styles.createInput({ class: ui?.createInput })
   }
 }

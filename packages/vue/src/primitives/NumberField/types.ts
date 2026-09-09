@@ -23,6 +23,8 @@ export interface NumberFieldRootProps {
   /** Prevents editing, scrubbing, and keyboard stepping. */
   disabled?: boolean
   /** Marks the value as controlled by an external binding. */
+  /** Consume the enclosing BindableValue context. Disable for independent sibling values. */
+  inheritBinding?: boolean
   bound?: boolean
   /** Mutation policy used when the value is bound. */
   editPolicy?: NumberFieldEditPolicy

@@ -137,6 +137,8 @@ export const panelMessageDefaults = {
   fontFamily: 'Font family',
   fontWeight: 'Font weight',
   fontSize: 'Font size',
+  lineHeightMode: 'Line height mode',
+  unresolvedVariable: 'Variable value unavailable',
   lineHeight: 'Line height',
   letterSpacing: 'Letter spacing',
   textAlignment: 'Text alignment',

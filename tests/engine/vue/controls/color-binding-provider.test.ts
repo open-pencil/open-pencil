@@ -3,10 +3,8 @@ import { describe, expect, test } from 'bun:test'
 import { createEditor } from '@open-pencil/core/editor'
 import type { Color, Fill } from '@open-pencil/scene-graph'
 
-import {
-  createAndBindColorVariable,
-  setColorVariableValue
-} from '#vue/controls/binding-provider/color'
+import { createAndBindColorVariable } from '#vue/controls/binding-provider/color'
+import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 
 const fill: Fill = {
   type: 'SOLID',
@@ -47,7 +45,7 @@ describe('color binding provider helpers', () => {
     expect(variableId ? editor.resolveColorVariable(variableId) : undefined).toEqual(fill.color)
   })
 
-  test('reuses a color collection and updates every mode with structured colors', () => {
+  test('reuses a color collection and edits only the captured mode', () => {
     const { editor, node } = setup()
     const collection = editor.graph.createCollection('Product colors')
     editor.graph.addMode(collection.id, 'dark', 'Dark')
@@ -64,10 +62,18 @@ describe('color binding provider helpers', () => {
     const variableId = editor.getNode(node.id)?.boundVariables['fills/0/color']
     if (!variableId) throw new Error('Expected color binding')
     const next: Color = { r: 0.9, g: 0.1, b: 0.3, a: 0.75 }
-    setColorVariableValue(editor, variableId, next)
+    const edit = prepareModeEdit(
+      editor,
+      variableId,
+      { nodeId: node.id, path: 'fills/0/color' },
+      () => editor.graph.resolveColorVariableForNode(node.id, variableId)
+    )
+    if (!edit) throw new Error('No edit')
+    edit.set(next)
 
     const variable = editor.getVariable(variableId)
     expect(variable).toBeDefined()
-    for (const mode of collection.modes) expect(variable?.valuesByMode[mode.modeId]).toEqual(next)
+    expect(variable?.valuesByMode[collection.defaultModeId]).toEqual(next)
+    expect(variable?.valuesByMode.dark).toEqual(fill.color)
   })
 })

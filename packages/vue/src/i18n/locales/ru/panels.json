@@ -350,5 +350,7 @@
   "individualPadding": "Отступы по сторонам",
   "strokeSettings": "Настройки обводки",
   "strokeDashLength": "Штрих",
-  "strokeDashGap": "Промежуток"
+  "strokeDashGap": "Промежуток",
+  "lineHeightMode": "Режим межстрочного интервала",
+  "unresolvedVariable": "Значение переменной недоступно"
 }

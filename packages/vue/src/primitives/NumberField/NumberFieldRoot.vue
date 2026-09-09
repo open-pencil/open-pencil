@@ -31,6 +31,7 @@ const {
   max = Infinity,
   step = 1,
   sensitivity = 1,
+  inheritBinding = true,
   placeholder = 'Mixed',
   ariaLabel,
   disabled: disabledProp = false,
@@ -40,7 +41,8 @@ const {
 const emit = defineEmits<NumberFieldRootEmits>()
 defineSlots<NumberFieldRootSlots>()
 
-const binding = useOptionalBindableValue<number>()
+const enclosingBinding = useOptionalBindableValue<number>()
+const binding = inheritBinding ? enclosingBinding : undefined
 const editing = ref(false)
 const scrubbing = ref(false)
 const draftValue = ref('')
@@ -54,11 +56,14 @@ const numericValue = computed(() => {
   if (binding?.state.value === 'bound' && typeof resolved === 'number') return resolved
   return typeof modelValue === 'number' ? modelValue : 0
 })
-const displayValue = computed(() =>
-  isMixed.value ? '' : String(normalizeNumberValue(numericValue.value))
-)
+const displayValue = computed(() => {
+  if (binding?.state.value === 'unresolved') return '—'
+  return isMixed.value ? '' : String(normalizeNumberValue(numericValue.value))
+})
 const disabled = computed(() => disabledProp)
-const bound = computed(() => (binding ? binding.state.value === 'bound' : boundProp))
+const bound = computed(() =>
+  binding ? binding.state.value === 'bound' || binding.state.value === 'unresolved' : boundProp
+)
 const effectiveEditPolicy = computed<NumberFieldEditPolicy>(() => {
   if (!binding) return editPolicy
   if (binding.policy.value === 'readonly-when-bound') return 'readonly'
@@ -80,6 +85,7 @@ let scrubTarget: Element | undefined
 let scrubPointerId: number | undefined
 
 function canMutate(): boolean {
+  if (binding?.state.value === 'unresolved') return false
   return !disabled.value && !(bound.value && effectiveEditPolicy.value === 'readonly')
 }
 

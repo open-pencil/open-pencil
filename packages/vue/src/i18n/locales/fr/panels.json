@@ -350,5 +350,7 @@
   "individualPadding": "Marges intérieures individuelles",
   "strokeSettings": "Paramètres du contour",
   "strokeDashLength": "Tiret",
-  "strokeDashGap": "Espacement"
+  "strokeDashGap": "Espacement",
+  "lineHeightMode": "Mode de hauteur de ligne",
+  "unresolvedVariable": "Valeur de variable indisponible"
 }

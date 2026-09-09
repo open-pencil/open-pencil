@@ -6,6 +6,7 @@ import type { BindingFieldUI } from './ui'
 export interface BindingPillProps {
   label: string
   tooltip?: string
+  unresolved?: boolean
   disabled?: boolean
   derived?: boolean
   class?: HTMLAttributes['class']
@@ -22,6 +23,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 const {
   label,
   tooltip,
+  unresolved = false,
   disabled = false,
   derived = false,
   class: className,
@@ -30,7 +32,7 @@ const {
 
 const styles = computed(() =>
   useBindingFieldUI(
-    { state: 'bound', disabled, derived },
+    { state: unresolved ? 'unresolved' : 'bound', disabled, derived },
     { ...ui, pill: [ui?.pill, normalizeClass(className)].filter(Boolean).join(' ') }
   )
 )
@@ -43,6 +45,8 @@ defineOptions({ inheritAttrs: false })
     <span
       v-bind="$attrs"
       :class="styles.pill"
+      :data-unresolved="unresolved ? '' : undefined"
+      :aria-label="unresolved ? `${label}: ${tooltip}` : undefined"
       :data-disabled="disabled ? '' : undefined"
       :data-derived="derived ? '' : undefined"
       data-slot="pill"

@@ -350,5 +350,7 @@
   "individualPadding": "Individueller Innenabstand",
   "strokeSettings": "Kontureinstellungen",
   "strokeDashLength": "Strich",
-  "strokeDashGap": "Lücke"
+  "strokeDashGap": "Lücke",
+  "lineHeightMode": "Zeilenhöhenmodus",
+  "unresolvedVariable": "Variablenwert nicht verfügbar"
 }
