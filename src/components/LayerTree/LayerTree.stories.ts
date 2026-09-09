@@ -2,9 +2,10 @@ import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 
 import LayerTreeThemeDemo from './demo/LayerTreeThemeDemo.vue'
+import LayerTreeVirtualizedDemo from './demo/LayerTreeVirtualizedDemo.vue'
 
 const meta = {
-  title: 'Design System/Editor/Layer Tree',
+  title: 'Editor/Layer Tree',
   component: LayerTreeThemeDemo,
   tags: ['autodocs'],
   parameters: {
@@ -15,10 +16,19 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof LayerTreeThemeDemo>
+} satisfies Meta<{ adjacent?: boolean }>
 
 export default meta
-type Story = StoryObj<typeof meta>
+type Story = StoryObj<{ adjacent?: boolean }>
+
+export const Virtualized: Story = {
+  render: () => ({
+    components: { LayerTreeVirtualizedDemo },
+    template: '<LayerTreeVirtualizedDemo />'
+  })
+}
+
+export const AdjacentRows: Story = { args: { adjacent: true } }
 
 export const StateMatrix: Story = {
   play: async ({ canvasElement }) => {

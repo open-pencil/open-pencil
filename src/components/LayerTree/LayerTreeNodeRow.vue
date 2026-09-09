@@ -10,6 +10,7 @@ import layerTreeTheme from '@/theme/layer-tree'
 import LayerTreeActions from './LayerTreeActions.vue'
 import LayerTreeDisclosure from './LayerTreeDisclosure.vue'
 import LayerTreeDropIndicator from './LayerTreeDropIndicator.vue'
+import LayerTreeRowShell from './LayerTreeRowShell.vue'
 import type { LayerTreeChrome, LayerTreeItemActions } from './types'
 import { useLayerTreeUI } from './ui'
 
@@ -32,6 +33,8 @@ const ui = useLayerTreeUI()
 const layerTree = tv(layerTreeTheme)
 const styles = computed(() =>
   layerTree({
+    expanded,
+    actionsVisible: node.locked || !node.visible,
     selected,
     focused: chrome.focused,
     dragging: chrome.draggingId === node.id,
@@ -44,7 +47,8 @@ const styles = computed(() =>
 </script>
 
 <template>
-  <div
+  <LayerTreeRowShell
+    :pad-left="padLeft"
     data-test-id="layers-item"
     data-slot="row"
     :data-selected="selected || undefined"
@@ -57,11 +61,15 @@ const styles = computed(() =>
         : undefined
     "
     :class="styles.row({ class: ui?.row })"
-    :style="{ paddingLeft: padLeft }"
     @dblclick="emit('renameStart', node.id, node.name)"
   >
     <LayerTreeDisclosure
       :expanded="expanded"
+      :label="node.name"
+      :ui="{
+        disclosure: styles.disclosure({ class: ui?.disclosure }),
+        placeholder: styles.disclosurePlaceholder({ class: ui?.disclosurePlaceholder })
+      }"
       :visible="hasChildren"
       @toggle="actions.toggleExpand"
     />
@@ -71,7 +79,14 @@ const styles = computed(() =>
 
     <LayerTreeActions
       :node="node"
-      :selected="selected"
+      :ui="{
+        actions: styles.actions({ class: ui?.actions }),
+        action: styles.action({ class: ui?.action }),
+        lockIcon: layerTree({ actionActive: node.locked }).actionIcon({ class: ui?.actionIcon }),
+        visibilityIcon: layerTree({ actionActive: !node.visible }).actionIcon({
+          class: ui?.actionIcon
+        })
+      }"
       @toggle-lock="actions.toggleLock"
       @toggle-visibility="actions.toggleVisibility"
     />
@@ -82,5 +97,5 @@ const styles = computed(() =>
       :level="level"
       :indent="chrome.indent"
     />
-  </div>
+  </LayerTreeRowShell>
 </template>

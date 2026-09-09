@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const { adjacent = false } = defineProps<{ adjacent?: boolean }>()
 import type { LayerNode } from '@open-pencil/vue'
 
 import LayerTreeNodeRow from '../LayerTreeNodeRow.vue'
@@ -58,6 +59,7 @@ const states = [
     selected: true,
     chrome: chrome({ focused: true })
   },
+  { label: 'Hover neighbor', node: node('Hover neighbor'), selected: false, chrome: chrome() },
   {
     label: 'Selected unfocused',
     node: node('Selected unfocused'),
@@ -113,7 +115,7 @@ const states = [
     <div class="mb-2 text-[11px] font-semibold tracking-wider text-muted uppercase">
       Layer Tree states
     </div>
-    <div class="space-y-1">
+    <div :class="adjacent ? 'space-y-0' : 'space-y-1'">
       <div v-for="state in states" :key="state.label" :aria-label="state.label">
         <LayerTreeNodeRow
           :node="state.node"

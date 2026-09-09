@@ -8,6 +8,7 @@ import { nodeIcon } from '@/app/editor/icons'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import LayerTreeDisclosure from './LayerTreeDisclosure.vue'
+import LayerTreeRowShell from './LayerTreeRowShell.vue'
 import type { LayerRenameControls, LayerTreeItemActions } from './types'
 import { useLayerTreeUI } from './ui'
 
@@ -31,12 +32,17 @@ watch(renameInput, (input) => {
 </script>
 
 <template>
-  <div
+  <LayerTreeRowShell
+    :pad-left="padLeft"
     data-slot="rename-row"
     :class="styles.renameRow({ class: ui?.renameRow })"
-    :style="{ paddingLeft: padLeft }"
   >
     <LayerTreeDisclosure
+      :label="node.name"
+      :ui="{
+        disclosure: styles.disclosure({ class: ui?.disclosure }),
+        placeholder: styles.disclosurePlaceholder({ class: ui?.disclosurePlaceholder })
+      }"
       :expanded="expanded"
       :visible="hasChildren"
       @toggle="actions.toggleExpand"
@@ -56,5 +62,5 @@ watch(renameInput, (input) => {
       @blur="renameControls.commit(node.id, $event)"
       @keydown.stop="renameControls.onKeydown"
     />
-  </div>
+  </LayerTreeRowShell>
 </template>

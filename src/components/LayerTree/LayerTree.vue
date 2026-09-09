@@ -21,6 +21,7 @@ import { useEditorStore } from '@/app/editor/active-store'
 import layerTreeTheme from '@/theme/layer-tree'
 
 import CanvasMenu from '../canvas/CanvasMenu.vue'
+import { LAYER_TREE_ROW_HEIGHT } from './geometry'
 import LayerTreeNodeRow from './LayerTreeNodeRow.vue'
 import LayerTreeRenameRow from './LayerTreeRenameRow.vue'
 import { provideLayerTreeUI } from './ui'
@@ -167,7 +168,7 @@ function onFocusOut(event: FocusEvent, actions: LayerTreeRootActions) {
           >
             <TreeVirtualizer
               v-slot="{ item, virtualizer }"
-              :estimate-size="24"
+              :estimate-size="LAYER_TREE_ROW_HEIGHT"
               :text-content="layerTextContent"
             >
               <template v-if="registerVirtualizer(scope.actions, virtualizer)">

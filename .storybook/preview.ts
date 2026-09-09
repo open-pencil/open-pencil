@@ -32,6 +32,36 @@ const preview: Preview = {
   ],
   parameters: {
     layout: 'fullscreen',
+    options: {
+      storySort: {
+        order: [
+          'Design System',
+          [
+            'Actions',
+            ['Button', 'Icon Button'],
+            'Inputs',
+            ['Combobox', 'Segmented Control'],
+            'Navigation',
+            ['Tabs'],
+            'Lists',
+            ['Action Row'],
+            'Paint',
+            ['Fill Swatch'],
+            'Overlays',
+            ['Dialog'],
+            'Feedback',
+            ['Placeholder'],
+            'Layout',
+            ['Panel Foundation']
+          ],
+          'Editor',
+          ['Navigation', 'Layer Tree', 'Properties'],
+          'Chat',
+          ['Markdown', 'Message', 'Attachments'],
+          '*'
+        ]
+      }
+    },
     controls: {
       matchers: {
         color: /(background|color)$/i,
