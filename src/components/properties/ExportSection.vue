@@ -7,6 +7,7 @@ import type { ExportFormatId } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import PanelItemRow from '@/components/ui/panel/PanelItemRow.vue'
@@ -153,15 +154,17 @@ watch(previewKey, updatePreview, { flush: 'post' })
       </template>
     </PanelItemRow>
 
-    <button
+    <AppButton
       v-if="activeSettings.length > 0"
+      color="primary"
+      variant="solid"
       data-test-id="export-button"
-      class="mt-1.5 w-full cursor-pointer truncate rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-default disabled:opacity-50"
+      class="mt-1.5 w-full"
       :disabled="exporting"
       @click="doExport"
     >
-      {{ panels.export }} {{ activeName }}
-    </button>
+      <span class="truncate">{{ panels.export }} {{ activeName }}</span>
+    </AppButton>
 
     <Tip v-if="activeSettings.length > 0" :label="panels.toggleExportPreview">
       <button
