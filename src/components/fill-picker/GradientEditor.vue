@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import IconButton from '@/components/ui/IconButton.vue'
 import { tv } from 'tailwind-variants'
 
-import AppSelect from '@/components/ui/AppSelect.vue'
-import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
-import NumberField from '@/components/inputs/NumberField.vue'
-import fillPickerTheme from '@/theme/fill-picker'
 import { colorToCSS } from '@open-pencil/core/color'
+import type { Fill } from '@open-pencil/scene-graph'
 import {
   GradientEditorRoot,
   GradientEditorBar,
@@ -15,7 +11,11 @@ import {
   useI18n
 } from '@open-pencil/vue'
 
-import type { Fill } from '@open-pencil/scene-graph'
+import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
+import NumberField from '@/components/inputs/NumberField.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import fillPickerTheme from '@/theme/fill-picker'
 
 const { fill } = defineProps<{ fill: Fill }>()
 const emit = defineEmits<{ update: [fill: Fill] }>()

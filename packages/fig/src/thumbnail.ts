@@ -62,7 +62,7 @@ function findThumbnailEntry(
 ): ThumbnailEntry | null {
   const data = view(central)
   const decoder = new TextDecoder()
-  for (let offset = 0; offset + 46 <= central.byteLength; ) {
+  for (let offset = 0; offset + 46 <= central.byteLength;) {
     if (data.getUint32(offset, true) !== CENTRAL_SIGNATURE) return null
     const method = data.getUint16(offset + 10, true)
     const compressedSize = data.getUint32(offset + 20, true)

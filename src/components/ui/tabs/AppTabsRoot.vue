@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { normalizeClass, type HTMLAttributes } from 'vue'
 import { TabsRoot } from 'reka-ui'
+import { normalizeClass, type HTMLAttributes } from 'vue'
+
 import { tabs } from '@/theme/tabs/tabs'
 
 const {

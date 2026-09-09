@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { Primitive } from 'reka-ui'
-
-import { useOptionalBindableValue } from '#vue/primitives/BindableValue/context'
-import type { FillSwatchProps, FillSwatchSlots } from './types'
-import { fillCategory, fillIsTransparent, fillSwatchBackground } from './useFill'
+import { computed } from 'vue'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
+
+import { useOptionalBindableValue } from '#vue/primitives/BindableValue/context'
+
+import type { FillSwatchProps, FillSwatchSlots } from './types'
+import { fillCategory, fillIsTransparent, fillSwatchBackground } from './useFill'
 
 const { fill, label, as = 'span', asChild = false } = defineProps<FillSwatchProps>()
 defineSlots<FillSwatchSlots>()

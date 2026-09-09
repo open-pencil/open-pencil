@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { tv } from 'tailwind-variants'
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
+import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import type { CanvasSplitNode } from '@/app/editor/panes/split-tree'

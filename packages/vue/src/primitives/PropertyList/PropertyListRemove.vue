@@ -1,8 +1,9 @@
 <script setup lang="ts" generic="K extends PropertyListKey">
-import { computed } from 'vue'
 import { Primitive } from 'reka-ui'
+import { computed } from 'vue'
 
 import { usePropertyListPart } from '#vue/primitives/PropertyList/context'
+
 import type { PropertyListKey, PropertyListPartProps } from './types'
 
 const {

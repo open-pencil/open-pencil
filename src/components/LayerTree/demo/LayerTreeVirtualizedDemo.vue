@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { TreeRoot, TreeItem, TreeVirtualizer } from 'reka-ui'
+import { TreeItem, TreeRoot, TreeVirtualizer } from 'reka-ui'
 import { reactive, ref } from 'vue'
-import type { LayerNode } from '@open-pencil/vue'
+
 import { useInlineRename } from '@open-pencil/vue'
-import LayerTreeRenameRow from '../LayerTreeRenameRow.vue'
+import type { LayerNode } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/AppButton.vue'
-import LayerTreeNodeRow from '../LayerTreeNodeRow.vue'
+
 import { LAYER_TREE_ROW_HEIGHT } from '../geometry'
+import LayerTreeNodeRow from '../LayerTreeNodeRow.vue'
+import LayerTreeRenameRow from '../LayerTreeRenameRow.vue'
 import { provideLayerTreeUI } from '../ui'
 
 interface DemoNode extends LayerNode {

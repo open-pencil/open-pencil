@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import HudButton from '@/components/mobile-hud/HudButton.vue'
-import { tv } from 'tailwind-variants'
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
+import { tv } from 'tailwind-variants'
+
+import { colorToCSS } from '@open-pencil/core/color'
 
 import { initials } from '@/app/shell/ui'
-import { colorToCSS } from '@open-pencil/core/color'
+import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
+import AppButton from '@/components/ui/AppButton.vue'
 import collaborationTheme from '@/theme/collaboration'
 
 const hud = useMobileHudContext()

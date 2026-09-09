@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import { useStorageSettings } from '@/app/integrations/storage/settings/use'
-
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+
 import { useI18n } from '@open-pencil/vue'
 
 import { useNotificationMessages } from '@/app/i18n/notifications'
-
+import { useStorageSettings } from '@/app/integrations/storage/settings/use'
 import { settingsDialogOpen } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 
 const { storage, settings, credentials, common } = useI18n()

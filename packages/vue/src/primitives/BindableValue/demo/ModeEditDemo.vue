@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+
 import { createEditor } from '@open-pencil/core/editor'
-import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
+
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
+import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import BindableValueRoot from '#vue/primitives/BindableValue/BindableValueRoot.vue'
 
 const editor = createEditor()

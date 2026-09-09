@@ -3,9 +3,9 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 import type { OkHCLControls } from '@open-pencil/vue'
 
 import ColorAreaControl from '@/components/color-picker-panel/ColorAreaControl.vue'
+import { provideColorPickerPanel } from '@/components/color-picker-panel/context'
 import FormatControls from '@/components/color-picker-panel/FormatControls.vue'
 import HueAlphaSliders from '@/components/color-picker-panel/HueAlphaSliders.vue'
-import { provideColorPickerPanel } from '@/components/color-picker-panel/context'
 
 const { color, okhcl = null } = defineProps<{
   color: Color

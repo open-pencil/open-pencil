@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from '@open-pencil/vue'
+import type { LayerNode } from '@open-pencil/vue'
 
 import Tip from '../ui/Tip.vue'
-
-import type { LayerNode } from '@open-pencil/vue'
 
 const { node, ui } = defineProps<{
   node: LayerNode

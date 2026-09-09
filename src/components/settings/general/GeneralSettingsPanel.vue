@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+
 import { type Locale, useI18n } from '@open-pencil/vue'
 
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
-import AppSelect from '@/components/ui/AppSelect.vue'
-import AppSwitch from '@/components/ui/AppSwitch.vue'
 import RenderingSettingsSection from '@/components/settings/general/RenderingSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsSectionHeader from '@/components/settings/layout/SettingsSectionHeader.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
+import AppSwitch from '@/components/ui/AppSwitch.vue'
 
 const { availableLocales, locale, localeLabels, menu, recovery, setLocale, settings } = useI18n()
 

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
 import { computed, reactive, ref, watch } from 'vue'
 
 import { useI18n, useVariantAuthoring } from '@open-pencil/vue'
 
+import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import IconButton from '@/components/ui/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'

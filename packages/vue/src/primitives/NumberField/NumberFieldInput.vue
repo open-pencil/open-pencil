@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
 import { templateRef } from '@vueuse/core'
+import { computed, watchEffect } from 'vue'
 
 import { useNumberField } from '#vue/primitives/NumberField/context'
 

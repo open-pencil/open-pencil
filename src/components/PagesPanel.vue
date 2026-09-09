@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import IconButton from '@/components/ui/IconButton.vue'
-import { ref, watch, type ComponentPublicInstance } from 'vue'
 import { templateRef } from '@vueuse/core'
-import { tv } from 'tailwind-variants'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -10,10 +7,13 @@ import {
   ContextMenuRoot,
   ContextMenuTrigger
 } from 'reka-ui'
+import { tv } from 'tailwind-variants'
+import { ref, watch, type ComponentPublicInstance } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
 
+import IconButton from '@/components/ui/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu'
 import pageListTheme from '@/theme/list/page'
 

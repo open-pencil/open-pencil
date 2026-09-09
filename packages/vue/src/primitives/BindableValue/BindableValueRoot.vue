@@ -1,8 +1,8 @@
 <script setup lang="ts" generic="V">
 import { computed, onBeforeUnmount, ref } from 'vue'
 
-import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
 import { useBindingProvider } from '#vue/controls/binding-provider/context'
+import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
 import type {
   BindingValueEdit,
   BindingMutationSource,

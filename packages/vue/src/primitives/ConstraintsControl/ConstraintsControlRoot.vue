@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useConstraints } from '#vue/controls/constraints/use'
-
 import type {
   ConstraintsControlActions,
   ConstraintsControlRootSlots

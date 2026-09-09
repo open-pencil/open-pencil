@@ -1,21 +1,23 @@
 <script setup lang="ts">
-import IconButton from '@/components/ui/IconButton.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import { ref } from 'vue'
 import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
+import { ref } from 'vue'
+
+import type { AIProviderID } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
+
+import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
 import ProviderConnectionTestButton from '@/components/chat/ProviderConnectionTestButton.vue'
 import ProviderSelect from '@/components/settings/provider-select/ProviderSelect.vue'
 import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppCombobox from '@/components/ui/AppCombobox.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
-import { useModelProfileEditor } from '@/app/ai/models/settings/profile-editor/use'
-import type { AIProviderID } from '@open-pencil/core/constants'
+import IconButton from '@/components/ui/IconButton.vue'
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials } = useI18n()

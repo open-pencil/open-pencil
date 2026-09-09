@@ -2,8 +2,8 @@
 import { colorToCSS } from '@open-pencil/core/color'
 import { fromPercent, toPercent, useI18n } from '@open-pencil/vue'
 
-import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'
+import OkhclChannelSlider from '@/components/color-picker-panel/OkhclChannelSlider.vue'
 
 const ctx = useColorPickerPanelContext()
 const { panels } = useI18n()

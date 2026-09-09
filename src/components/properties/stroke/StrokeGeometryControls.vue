@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { isStrokeCapValue, MIXED, useI18n, useStrokeControls } from '@open-pencil/vue'
+
 import NumberField from '@/components/inputs/NumberField.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'

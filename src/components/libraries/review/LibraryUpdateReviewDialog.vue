@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import IconButton from '@/components/ui/IconButton.vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { computed, ref, shallowRef, watch } from 'vue'
 
 import { createLibraryUpdatePreview, type LibraryUpdatePreview } from '@open-pencil/core/library'
 import { useI18n } from '@open-pencil/vue'
 
-import { notificationMessages } from '@/app/i18n/notifications'
-
 import { useEditorStore } from '@/app/editor/active-store'
+import { notificationMessages } from '@/app/i18n/notifications'
 import { closeLibraryReview, libraryReviewRequest, useLibraryService } from '@/app/libraries'
 import { toast } from '@/app/shell/ui'
 import LibraryComparisonPreview from '@/components/libraries/review/LibraryComparisonPreview.vue'
-import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import { AppDialogFooter, AppDialogHeader, AppDialogRoot } from '@/components/ui/dialog'
+import IconButton from '@/components/ui/IconButton.vue'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 
 const editor = useEditorStore()
 const service = useLibraryService()

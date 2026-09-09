@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AIModelProfile } from '@/app/ai/models'
-
 import { chatProfileTheme } from '@/theme/chat/profile'
 
 const { profile, metadata } = defineProps<{

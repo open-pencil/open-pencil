@@ -3,10 +3,10 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import AppCombobox from '@/components/ui/AppCombobox.vue'
 import { useAIChat } from '@/app/ai/chat/use'
 import { modelPickerOptions } from '@/app/ai/models/picker/options'
 import { useProviderModelCatalog } from '@/app/ai/models/use-provider-model-catalog'
+import AppCombobox from '@/components/ui/AppCombobox.vue'
 
 const { modelID, providerDef, providerID } = useAIChat()
 const { ai, common } = useI18n()

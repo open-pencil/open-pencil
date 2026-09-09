@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, normalizeClass, useAttrs } from 'vue'
+
 import type { Fill } from '@open-pencil/scene-graph'
 
 import FillSwatch from '@/components/ui/FillSwatch.vue'

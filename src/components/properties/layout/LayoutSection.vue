@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { LayoutControlsRoot, useI18n } from '@open-pencil/vue'
 
-import LayoutFlowControl from '@/components/properties/layout/LayoutFlowControl.vue'
 import ClipContentControl from '@/components/properties/layout/ClipContentControl.vue'
 import FlexControls from '@/components/properties/layout/flex/FlexControls.vue'
 import GridControls from '@/components/properties/layout/grid/GridControls.vue'
-import IconButton from '@/components/ui/IconButton.vue'
+import LayoutFlowControl from '@/components/properties/layout/LayoutFlowControl.vue'
 import PaddingControls from '@/components/properties/layout/padding/PaddingControls.vue'
 import SizeControls from '@/components/properties/layout/size/SizeControls.vue'
 import TextResizingControl from '@/components/properties/layout/TextResizingControl.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 
 const { panels } = useI18n()

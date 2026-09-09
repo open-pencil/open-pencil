@@ -20,8 +20,8 @@ export interface PanelItemRowSlots {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
 import itemRowTheme from '@/theme/panel/item-row'
 

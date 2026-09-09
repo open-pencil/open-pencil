@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from '@open-pencil/vue'
+
 import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
-import { useI18n } from '@open-pencil/vue'
 
 const { commands } = useI18n()
 

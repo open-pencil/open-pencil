@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { normalizeClass, useAttrs, useSlots, useTemplateRef, type HTMLAttributes } from 'vue'
 import { Primitive } from 'reka-ui'
 import { tv } from 'tailwind-variants'
+import { normalizeClass, useAttrs, useSlots, useTemplateRef, type HTMLAttributes } from 'vue'
 
 import type { ControlSize } from '@/theme/control'
 import theme, { inputAdornment } from '@/theme/input'

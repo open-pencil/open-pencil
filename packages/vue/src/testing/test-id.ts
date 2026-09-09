@@ -47,7 +47,7 @@ function cssEscape(value: string): string {
 function cssEscapeFallback(value: string): string {
   let escaped = ''
 
-  for (let index = 0; index < value.length; ) {
+  for (let index = 0; index < value.length;) {
     const codePoint = value.codePointAt(index)
     if (codePoint === undefined) {
       break

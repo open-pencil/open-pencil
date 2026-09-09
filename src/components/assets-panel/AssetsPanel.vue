@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useObjectUrl } from '@vueuse/core'
-import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -10,22 +9,23 @@ import {
   DialogClose,
   DialogTitle
 } from 'reka-ui'
+import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { createDefaultNode } from '@open-pencil/scene-graph/node-defaults'
 import { useI18n } from '@open-pencil/vue'
 
-import { nodeIcon } from '@/app/editor/icons'
 import { useEditorStore } from '@/app/editor/active-store'
+import { nodeIcon } from '@/app/editor/icons'
 import { useLibraryService } from '@/app/libraries'
 import { openExternalLink } from '@/app/shell/ui'
-import LibraryManagerDialog from '@/components/libraries/LibraryManagerDialog.vue'
-import { useLibraryEntry } from '@/components/libraries/useLibraryEntry'
 import AssetThumbnail from '@/components/assets-panel/AssetThumbnail.vue'
 import { findAssetPage } from '@/components/assets-panel/page'
+import LibraryManagerDialog from '@/components/libraries/LibraryManagerDialog.vue'
+import { useLibraryEntry } from '@/components/libraries/useLibraryEntry'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
-import AppButton from '@/components/ui/AppButton.vue'
 import { AppDialogRoot, useDialogUI } from '@/components/ui/dialog'
 import { useMenuUI } from '@/components/ui/menu'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'

@@ -17,7 +17,6 @@ export interface VariableBindingPickerProps {
 </script>
 
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
 import {
   ComboboxAnchor,
   ComboboxContent,
@@ -32,8 +31,9 @@ import { computed, nextTick, ref, watch } from 'vue'
 
 import { BindableValuePicker, useBindableValue } from '@open-pencil/vue'
 
-import Tip from '@/components/ui/Tip.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import { BindingTrigger, useBindingFieldUI } from '@/components/ui/binding'
+import Tip from '@/components/ui/Tip.vue'
 
 const {
   triggerLabel,

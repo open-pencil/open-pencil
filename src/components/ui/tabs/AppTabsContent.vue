@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { normalizeClass, type HTMLAttributes } from 'vue'
 import { TabsContent } from 'reka-ui'
+import { normalizeClass, type HTMLAttributes } from 'vue'
+
 import { tabs } from '@/theme/tabs/tabs'
 
 // Inactive panels unmount, matching settings' previous v-if lifecycle.

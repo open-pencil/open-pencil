@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import IconButton from '@/components/ui/IconButton.vue'
-import { computed } from 'vue'
 import { useEventListener } from '@vueuse/core'
+import { DialogDescription, DialogTitle, VisuallyHidden } from 'reka-ui'
+import { computed } from 'vue'
+import Search from '~icons/lucide/search'
+import X from '~icons/lucide/x'
+
 import {
   CommandPaletteRoot,
   shortcutPlatform,
   useCommandMessages,
   useCommonMessages
 } from '@open-pencil/vue'
-import { DialogDescription, DialogTitle, VisuallyHidden } from 'reka-ui'
 
-import Search from '~icons/lucide/search'
-import X from '~icons/lucide/x'
-
-import { IS_BROWSER } from '@/constants'
 import { useAppMenu } from '@/app/shell/menu/app-menu'
 import AppDialogRoot from '@/components/ui/dialog/AppDialogRoot.vue'
+import IconButton from '@/components/ui/IconButton.vue'
+import { IS_BROWSER } from '@/constants'
+
 import { useCommandPaletteUI } from './ui'
 
 const { commandGroups: groups } = useAppMenu()

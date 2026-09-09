@@ -18,8 +18,8 @@ export interface BindingTriggerProps extends PrimitiveProps {
 </script>
 
 <script setup lang="ts">
-import { computed, normalizeClass } from 'vue'
 import { Primitive } from 'reka-ui'
+import { computed, normalizeClass } from 'vue'
 
 import { useBindingFieldUI } from '@/components/ui/binding/ui'
 

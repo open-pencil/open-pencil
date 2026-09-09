@@ -22,8 +22,8 @@ export interface PaintFieldSlots {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
 import NumberField from '@/components/inputs/NumberField.vue'
 import paintFieldTheme from '@/theme/paint/field'

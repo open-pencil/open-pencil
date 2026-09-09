@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { VNode } from 'vue'
 import type { ClassValue } from 'tailwind-variants'
+import type { VNode } from 'vue'
 
 import type { ComponentUI } from '@/components/ui/types'
 import type { PanelSectionTheme } from '@/theme/panel/section'
@@ -22,8 +22,9 @@ export interface PanelSectionSlots {
 </script>
 
 <script setup lang="ts">
-import { getCurrentInstance } from 'vue'
 import { tv } from 'tailwind-variants'
+import { getCurrentInstance } from 'vue'
+
 import {
   PropertySectionActions,
   PropertySectionContent,

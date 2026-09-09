@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { SliderRoot } from 'reka-ui'
+import { computed } from 'vue'
 
 import { provideChannelSlider } from '#vue/primitives/ChannelSlider/context'
 import type {

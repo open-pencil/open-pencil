@@ -1,32 +1,31 @@
 <script setup lang="ts">
-import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
+import type { Chat } from '@ai-sdk/vue'
 import { refAutoReset, useClipboard } from '@vueuse/core'
+import type { UIMessage } from 'ai'
+import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport } from 'reka-ui'
 import { computed, markRaw, shallowRef, nextTick, ref, watch } from 'vue'
 
+import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import { useI18n } from '@open-pencil/vue'
+
 import { getACPDebugText, clearACPDebugLog, hasACPDebugEntries } from '@/app/ai/acp/transport'
-import { copyChatLog } from '@/app/ai/debug'
+import { clearMessageAttachments } from '@/app/ai/attachment/presentation/store'
 import { clearVisibleMessageText } from '@/app/ai/chat/presentation'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
-import { clearMessageAttachments } from '@/app/ai/attachment/presentation/store'
+import { useAIChat } from '@/app/ai/chat/use'
+import { copyChatLog } from '@/app/ai/debug'
 import { clearToolLogEntries, didHitStepLimit } from '@/app/ai/tools'
-import { activeTab } from '@/app/tabs'
 import { getActiveEditorStore } from '@/app/editor/active-store'
+import { useNotificationMessages } from '@/app/i18n/notifications'
+import { openSettingsDialog } from '@/app/settings/dialog'
+import { toast } from '@/app/shell/ui'
+import { activeTab } from '@/app/tabs'
 import ACPPermissionDialog from '@/components/chat/ACPPermissionDialog.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatMessage from '@/components/chat/ChatMessage.vue'
-import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
-import AppButton from '@/components/ui/AppButton.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
-import { useAIChat } from '@/app/ai/chat/use'
-import { toast } from '@/app/shell/ui'
-import { openSettingsDialog } from '@/app/settings/dialog'
-import { useI18n } from '@open-pencil/vue'
-
-import { useNotificationMessages } from '@/app/i18n/notifications'
-
-import type { Chat } from '@ai-sdk/vue'
-import type { UIMessage } from 'ai'
-import type { JSONObject } from '@open-pencil/scene-graph/primitives'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 
 const IS_DEV = import.meta.env.DEV
 

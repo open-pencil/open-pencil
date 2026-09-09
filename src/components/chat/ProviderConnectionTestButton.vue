@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
-import statusTheme from '@/theme/status'
-
 import type { ProviderConnectionTestFailureReason } from '@/app/ai/chat/connection-test'
+import AppButton from '@/components/ui/AppButton.vue'
+import statusTheme from '@/theme/status'
 
 interface ProviderConnectionTestButtonProps {
   status: 'idle' | 'testing' | 'success' | 'error'

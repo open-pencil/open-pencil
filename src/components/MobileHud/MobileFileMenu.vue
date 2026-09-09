@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import HudButton from '@/components/mobile-hud/HudButton.vue'
-import { useMenuMessages } from '@open-pencil/vue'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -9,8 +7,11 @@ import {
   DropdownMenuTrigger
 } from 'reka-ui'
 
-import { menu, useMenuUI } from '@/components/ui/menu'
+import { useMenuMessages } from '@open-pencil/vue'
+
+import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
+import { menu, useMenuUI } from '@/components/ui/menu'
 
 const menuMessages = useMenuMessages()
 const hud = useMobileHudContext()

@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useEditor, useI18n } from '@open-pencil/vue'
-import type { SceneNode } from '@open-pencil/scene-graph'
 import {
   SelectRoot,
   SelectTrigger,
@@ -11,6 +8,11 @@ import {
   SelectItem,
   SelectItemText
 } from 'reka-ui'
+import { computed } from 'vue'
+
+import type { SceneNode } from '@open-pencil/scene-graph'
+import { useEditor, useI18n } from '@open-pencil/vue'
+
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import { useSelectUI } from '@/components/ui/select'
 

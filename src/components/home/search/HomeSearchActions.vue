@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import AppInput from '@/components/ui/AppInput.vue'
-import AppButton from '@/components/ui/AppButton.vue'
-import { nextTick, watch } from 'vue'
 import { templateRef } from '@vueuse/core'
+import { nextTick, watch } from 'vue'
 
 import { useI18n, useViewportKind } from '@open-pencil/vue'
 
 import { openFileDialog } from '@/app/shell/menu/use'
 import { activeTab } from '@/app/tabs'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppInput from '@/components/ui/AppInput.vue'
 
 const emit = defineEmits<{ 'new-document': [] }>()
 const query = defineModel<string>({ required: true })

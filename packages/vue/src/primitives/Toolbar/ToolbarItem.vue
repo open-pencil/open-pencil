@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useToolbar } from '#vue/primitives/Toolbar/context'
-
 import type { Tool } from '@open-pencil/core/editor'
+
+import { useToolbar } from '#vue/primitives/Toolbar/context'
 
 const { tool } = defineProps<{
   tool: Tool

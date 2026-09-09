@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import AppActionRow from '@/components/ui/list/AppActionRow.vue'
-import { useModelSettings } from '@/app/ai/models/settings/use'
-
 import { ref } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
+import { useModelSettings } from '@/app/ai/models/settings/use'
 import ProfileEditor from '@/components/settings/models/ProfileEditor.vue'
 import RoleAssignments from '@/components/settings/models/RoleAssignments.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppActionRow from '@/components/ui/list/AppActionRow.vue'
 
 const { ai, collaboration, common } = useI18n()
 const editing = ref(false)

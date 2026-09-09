@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
+
 import { documentEntry } from '@/theme/home/document-entry'
 
 const {

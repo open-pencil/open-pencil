@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv, type VariantProps } from 'tailwind-variants'
+import { computed } from 'vue'
 
-import theme from '@/theme/input-group'
 import type { ComponentUI } from '@/components/ui/types'
+import theme from '@/theme/input-group'
 
 const inputGroup = tv(theme)
 type InputGroupVariants = VariantProps<typeof inputGroup>

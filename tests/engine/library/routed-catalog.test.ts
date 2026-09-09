@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import 'fake-indexeddb/auto'
+
 import { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'

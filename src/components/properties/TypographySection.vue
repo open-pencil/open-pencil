@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import { computed } from 'vue'
 
 import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
 
+import { loadFont } from '@/app/editor/fonts'
+import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 import FontPicker from '@/components/font-picker/FontPicker.vue'
 import FontSettingsPopover from '@/components/FontSettings/FontSettingsPopover.vue'
 import NumberField from '@/components/inputs/NumberField.vue'
 import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import AppSelect from '@/components/ui/AppSelect.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
@@ -17,8 +19,6 @@ import PanelGrid from '@/components/ui/panel/PanelGrid.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 import Tip from '@/components/ui/Tip.vue'
-import { loadFont } from '@/app/editor/fonts'
-import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
 
 const { panels, menu } = useI18n()
 const fontLoader = { load: loadFont }

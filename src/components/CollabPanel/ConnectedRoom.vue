@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
 import { selectTarget } from '@open-pencil/vue'
-import AppInput from '@/components/ui/AppInput.vue'
+
 import { useCollabPanelContext } from '@/components/CollabPanel/context'
+import AppButton from '@/components/ui/AppButton.vue'
+import AppInput from '@/components/ui/AppInput.vue'
 
 const collab = useCollabPanelContext()
 </script>

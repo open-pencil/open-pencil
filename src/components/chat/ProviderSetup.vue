@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { openSettingsDialog } from '@/app/settings/dialog'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 
 const { ai } = useI18n()

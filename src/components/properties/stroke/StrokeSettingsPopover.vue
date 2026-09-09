@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent, PopoverClose } from 'reka-ui'
-import { useI18n } from '@open-pencil/vue'
+
 import type { Stroke } from '@open-pencil/scene-graph'
+import { useI18n } from '@open-pencil/vue'
+
 import AppButton from '@/components/ui/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/popover'
+
 import StrokeDashControls from './StrokeDashControls.vue'
 import StrokeGeometryControls from './StrokeGeometryControls.vue'
 

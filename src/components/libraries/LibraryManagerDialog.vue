@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import IconButton from '@/components/ui/IconButton.vue'
 import { nextTick, watch } from 'vue'
 
 import { useI18n, useViewportKind } from '@open-pencil/vue'
@@ -8,11 +6,7 @@ import { useI18n, useViewportKind } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import { openLibraryReview, openPublishLibraryDialog, useLibraryService } from '@/app/libraries'
 import { useLibraryManager } from '@/components/libraries/useLibraryManager'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
-import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
-import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import {
@@ -21,6 +15,12 @@ import {
   AppDialogHeader,
   AppDialogRoot
 } from '@/components/ui/dialog'
+import IconButton from '@/components/ui/IconButton.vue'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
+import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
+import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
+import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
 
 const { initialSection = 'browse' } = defineProps<{
   initialSection?: 'browse' | 'updates'

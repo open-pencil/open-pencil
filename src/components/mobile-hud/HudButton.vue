@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, normalizeClass, type HTMLAttributes } from 'vue'
+
 import AppButton from '@/components/ui/AppButton.vue'
 import { hudButton } from '@/theme/mobile/hud-button'
 

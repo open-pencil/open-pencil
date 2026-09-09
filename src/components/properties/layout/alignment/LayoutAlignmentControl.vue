@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, normalizeClass, ref, type HTMLAttributes } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed, normalizeClass, ref, type HTMLAttributes } from 'vue'
+
 import type { LayoutAlign, LayoutCounterAlign } from '@open-pencil/scene-graph'
+
 import layoutAlignmentTheme from '@/theme/layout-alignment'
 
 const {

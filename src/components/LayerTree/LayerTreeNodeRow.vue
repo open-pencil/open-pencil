@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
+
+import type { LayerNode } from '@open-pencil/vue'
 
 import { COMPONENT_TYPES, nodeIcon } from '@/app/editor/icons'
-import LayerTreeRowShell from './LayerTreeRowShell.vue'
+import layerTreeTheme from '@/theme/layer-tree'
+
 import LayerTreeActions from './LayerTreeActions.vue'
 import LayerTreeDisclosure from './LayerTreeDisclosure.vue'
 import LayerTreeDropIndicator from './LayerTreeDropIndicator.vue'
-import { useLayerTreeUI } from './ui'
-
-import layerTreeTheme from '@/theme/layer-tree'
-
-import type { LayerNode } from '@open-pencil/vue'
+import LayerTreeRowShell from './LayerTreeRowShell.vue'
 import type { LayerTreeChrome, LayerTreeItemActions } from './types'
+import { useLayerTreeUI } from './ui'
 
 const { node, level, hasChildren, selected, padLeft, expanded, actions, chrome } = defineProps<{
   node: LayerNode

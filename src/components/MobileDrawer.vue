@@ -1,16 +1,13 @@
 <script setup lang="ts">
 import { useElementSize, useWindowSize } from '@vueuse/core'
-import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { motion } from 'motion-v'
 import type { PanInfo } from 'motion-v'
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { computed, ref } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
-import ChatPanel from './ChatPanel.vue'
-import CodePanel from './CodePanel.vue'
-import DesignPanel from './DesignPanel.vue'
-import LayerTree from './LayerTree/LayerTree.vue'
-import PagesPanel from './PagesPanel.vue'
+import { useEditorStore } from '@/app/editor/active-store'
 import {
   DRAWER_SPRING_DAMPING,
   DRAWER_SPRING_STIFFNESS,
@@ -19,7 +16,12 @@ import {
   SWIPE_THRESHOLD,
   SWIPE_VELOCITY_THRESHOLD
 } from '@/constants'
-import { useEditorStore } from '@/app/editor/active-store'
+
+import ChatPanel from './ChatPanel.vue'
+import CodePanel from './CodePanel.vue'
+import DesignPanel from './DesignPanel.vue'
+import LayerTree from './LayerTree/LayerTree.vue'
+import PagesPanel from './PagesPanel.vue'
 
 type Snap = 'closed' | 'half' | 'full'
 type DrawerTab = 'layers' | 'design' | 'code' | 'ai'

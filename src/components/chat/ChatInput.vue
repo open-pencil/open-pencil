@@ -3,20 +3,19 @@ import { useTextareaAutosize } from '@vueuse/core'
 import { TooltipProvider } from 'reka-ui'
 import { computed, ref } from 'vue'
 
+import { ACP_AGENTS } from '@open-pencil/core/constants'
 import { useI18n, useSelectionState } from '@open-pencil/vue'
 
-import ChatNodePreview from '@/components/chat/ChatNodePreview.vue'
-import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
-import { useAttachmentDrafts } from '@/components/chat/input/useAttachments'
-import IconButton from '@/components/ui/IconButton.vue'
-import InputGroup from '@/components/ui/InputGroup.vue'
 import { MAX_IMAGE_ATTACHMENTS } from '@/app/ai/attachment/image/types'
 import type { ChatSubmission } from '@/app/ai/chat/submission/types'
 import { useAIChat } from '@/app/ai/chat/use'
 import { designModelProfile } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
-
-import { ACP_AGENTS } from '@open-pencil/core/constants'
+import ChatNodePreview from '@/components/chat/ChatNodePreview.vue'
+import ChatProfileSelect from '@/components/chat/ChatProfileSelect.vue'
+import { useAttachmentDrafts } from '@/components/chat/input/useAttachments'
+import IconButton from '@/components/ui/IconButton.vue'
+import InputGroup from '@/components/ui/InputGroup.vue'
 
 const { providerID, providerDef, modelID, customModelID } = useAIChat()
 const { editor, selectedIds } = useSelectionState()

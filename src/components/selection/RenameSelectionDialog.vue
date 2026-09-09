@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
 import { computed, nextTick, ref, watch, useTemplateRef } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import AppButton from '@/components/ui/AppButton.vue'
 import {
   AppDialogBody,
   AppDialogFooter,

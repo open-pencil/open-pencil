@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import IconButton from '@/components/ui/IconButton.vue'
-import { computed } from 'vue'
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
+import { computed } from 'vue'
 
+import { useI18n } from '@open-pencil/vue'
+
+import { useTabsStore, createHomeTab } from '@/app/tabs'
 import PreparationIndicator from '@/components/preparation/tab/Indicator.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import Tip from '@/components/ui/Tip.vue'
 import tabBarTheme from '@/theme/tab-bar'
-import { useTabsStore, createHomeTab } from '@/app/tabs'
-import { useI18n } from '@open-pencil/vue'
 
 const { files } = useI18n()
 

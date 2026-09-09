@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import { useMCPSettings } from '@/app/automation/mcp/settings/use'
-
 import { computed } from 'vue'
+
 import { useI18n } from '@open-pencil/vue'
 
 import {
@@ -14,7 +12,9 @@ import {
   setMCPToolEnabled
 } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
+import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { isTauri } from '@/app/tauri/env'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 

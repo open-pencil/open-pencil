@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { useAttrs } from 'vue'
 
+import type { Color } from '@open-pencil/scene-graph/primitives'
 import { ColorInputRoot, inputValue } from '@open-pencil/vue'
+import type { OkHCLControls } from '@open-pencil/vue'
 
 import ColorPicker from '@/components/ColorPicker/ColorPicker.vue'
-
-import type { Color } from '@open-pencil/scene-graph/primitives'
-import type { OkHCLControls } from '@open-pencil/vue'
 
 defineOptions({ inheritAttrs: false })
 

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { DialogClose } from 'reka-ui'
 import { computed } from 'vue'
-import { useI18n, useViewportKind } from '@open-pencil/vue'
+
 import { IS_TAURI } from '@open-pencil/core/constants'
+import { useI18n, useViewportKind } from '@open-pencil/vue'
 
 import { browserCredentialsRemembered, appCredentialServices } from '@/app/settings/credentials/app'
 import { setRememberCredentials } from '@/app/settings/credentials/media'
@@ -13,13 +14,9 @@ import MCPConnectionsSection from '@/components/settings/mcp/MCPConnectionsSecti
 import MCPSettingsPanel from '@/components/settings/mcp/MCPSettingsPanel.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import StockPhotoKeysSection from '@/components/settings/provider/StockPhotoKeysSection.vue'
-import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
+import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import VectorizeSettingsSection from '@/components/settings/vectorize/VectorizeSettingsSection.vue'
-import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
-import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
-import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
-import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppSwitch from '@/components/ui/AppSwitch.vue'
 import {
@@ -28,6 +25,10 @@ import {
   AppDialogHeader,
   AppDialogRoot
 } from '@/components/ui/dialog'
+import AppTabsContent from '@/components/ui/tabs/AppTabsContent.vue'
+import AppTabsList from '@/components/ui/tabs/AppTabsList.vue'
+import AppTabsRoot from '@/components/ui/tabs/AppTabsRoot.vue'
+import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
 
 const { isMobile } = useViewportKind()
 const { credentials, settings, common } = useI18n()

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import { providePropertyList } from '#vue/primitives/PropertyList/context'
+
 import type {
   PropertyListActions,
   PropertyListIdentity,

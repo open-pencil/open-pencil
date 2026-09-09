@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import IconButton from '@/components/ui/IconButton.vue'
-import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
-import { computed, ref, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 
 import { useDocumentWorkspace, useI18n, useViewportKind } from '@open-pencil/vue'
 
@@ -25,7 +22,10 @@ import { openSettingsDialog } from '@/app/settings/dialog'
 import { openFileFromPath } from '@/app/shell/menu/use'
 import { createStorageWorkspaceSource } from '@/app/storage/workspace/source'
 import { openStorageDocumentInNewTab } from '@/app/tabs'
+import DocumentEntry from '@/components/home/document/DocumentEntry.vue'
 import HomeSearchActions from '@/components/home/search/HomeSearchActions.vue'
+import AppButton from '@/components/ui/AppButton.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 import SegmentedControl from '@/components/ui/SegmentedControl.vue'
 
 const emit = defineEmits<{ 'new-document': [] }>()

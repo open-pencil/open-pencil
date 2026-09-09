@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
-import { computed, ref } from 'vue'
 import {
   SelectContent,
   SelectGroup,
@@ -13,6 +11,7 @@ import {
   SelectTrigger,
   SelectViewport
 } from 'reka-ui'
+import { computed, ref } from 'vue'
 
 import { AI_PROVIDERS } from '@open-pencil/core/constants'
 import { useI18n } from '@open-pencil/vue'
@@ -26,6 +25,7 @@ import {
 import type { AIModelProfile, AIModelProfileId } from '@/app/ai/models'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import ChatProfileItem from '@/components/chat/ChatProfileItem.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import { useSelectUI } from '@/components/ui/select'
 import { chatProfileTheme } from '@/theme/chat/profile'
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, normalizeClass, useAttrs } from 'vue'
+
 import { actionRow } from '@/theme/list/action-row'
 
 const { disabled, ui } = defineProps<{

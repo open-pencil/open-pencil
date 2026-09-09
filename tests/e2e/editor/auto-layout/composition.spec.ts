@@ -28,28 +28,24 @@ for (const theme of ['light', 'dark']) {
     await expect(section).toHaveScreenshot(`auto-layout-fixed-${theme}.png`)
     await page.evaluate(
       (id) =>
-        window.openPencil
-          ?.getStore?.()
-          .updateNode(id, {
-            primaryAxisAlign: 'SPACE_BETWEEN',
-            paddingTop: 12,
-            paddingRight: 16,
-            paddingBottom: 24,
-            paddingLeft: 32
-          }),
+        window.openPencil?.getStore?.().updateNode(id, {
+          primaryAxisAlign: 'SPACE_BETWEEN',
+          paddingTop: 12,
+          paddingRight: 16,
+          paddingBottom: 24,
+          paddingLeft: 32
+        }),
       id
     )
     await expect(section).toHaveScreenshot(`auto-layout-auto-asymmetric-${theme}.png`)
     await page.evaluate(
       (id) =>
-        window.openPencil
-          ?.getStore?.()
-          .updateNode(id, {
-            layoutMode: 'HORIZONTAL',
-            layoutWrap: 'WRAP',
-            primaryAxisAlign: 'MIN',
-            counterAxisSpacing: 8
-          }),
+        window.openPencil?.getStore?.().updateNode(id, {
+          layoutMode: 'HORIZONTAL',
+          layoutWrap: 'WRAP',
+          primaryAxisAlign: 'MIN',
+          counterAxisSpacing: 8
+        }),
       id
     )
     await expect(section).toHaveScreenshot(`auto-layout-wrap-${theme}.png`)

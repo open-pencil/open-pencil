@@ -1,14 +1,13 @@
 <script setup lang="ts">
+import { useClipboard } from '@vueuse/core'
 import { ToastProvider, ToastRoot, ToastDescription, ToastViewport, ToastClose } from 'reka-ui'
 
-import { useClipboard } from '@vueuse/core'
-
-import Tip from '@/components/ui/Tip.vue'
-import { toast } from '@/app/shell/ui'
-import { useToastUI } from '@/components/ui/toast'
-
-import type { ToastVariant } from '@/components/ui/toast'
 import { useI18n } from '@open-pencil/vue'
+
+import { toast } from '@/app/shell/ui'
+import Tip from '@/components/ui/Tip.vue'
+import { useToastUI } from '@/components/ui/toast'
+import type { ToastVariant } from '@/components/ui/toast'
 
 const { copy, copied } = useClipboard({ copiedDuring: 1500 })
 const { common, settings } = useI18n()

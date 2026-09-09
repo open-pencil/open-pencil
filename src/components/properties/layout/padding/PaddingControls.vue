@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import VariableNumberField from '@/components/properties/VariableNumberField.vue'
-import IconButton from '@/components/ui/IconButton.vue'
 import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
 
 import type { PaddingProp } from '@/components/properties/layout/types'
+import VariableNumberField from '@/components/properties/VariableNumberField.vue'
+import IconButton from '@/components/ui/IconButton.vue'
 
 const ctx = useLayoutControlsContext()
 const { panels } = useI18n()

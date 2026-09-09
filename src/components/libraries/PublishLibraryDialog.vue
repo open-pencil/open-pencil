@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppButton from '@/components/ui/AppButton.vue'
 import { computed, ref, watch } from 'vue'
 
 import type { LibraryAssetChange } from '@open-pencil/core/library'
@@ -12,6 +11,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { publishLibraryDialogOpen, useLibraryService } from '@/app/libraries'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppCheckbox from '@/components/ui/AppCheckbox.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppPlaceholder from '@/components/ui/AppPlaceholder.vue'
