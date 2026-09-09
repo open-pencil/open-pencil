@@ -43,6 +43,7 @@
 
 ### Fixed
 
+- Show automatic line height explicitly and restore Auto with an undoable mode change, including removal of variable bindings.
 - Resolve bound field values using each layer’s variable mode and show mixed values when selected layers resolve differently.
 - Display letter spacing in pixels to match rendered and variable-bound values, and keep numeric-field units and binding actions clear of truncated variable names.
 - Keep home search comfortably sized on mobile and cancel pending desktop search focus when leaving the home tab.

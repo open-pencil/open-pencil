@@ -350,5 +350,6 @@
   "individualPadding": "個別のパディング",
   "strokeSettings": "線の設定",
   "strokeDashLength": "破線",
-  "strokeDashGap": "間隔"
+  "strokeDashGap": "間隔",
+  "lineHeightMode": "行の高さモード"
 }

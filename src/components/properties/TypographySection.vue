@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import LineHeightField from '@/components/properties/typography/LineHeightField.vue'
 import { computed } from 'vue'
 
 import { TypographyControlsRoot, useI18n } from '@open-pencil/vue'
@@ -113,21 +114,11 @@ function featureEnabled(features: Array<{ tag: string; enabled: boolean }>, tag:
 
       <PanelGrid :columns="2" class="mb-3">
         <PanelFieldGroup :label="panels.lineHeight">
-          <VariableNumberField
-            :model-value="
-              ctx.node.value.lineHeight ?? Math.round((ctx.node.value.fontSize || 14) * 1.2)
-            "
-            :aria-label="panels.lineHeight"
-            :min="0"
-            :node-id="ctx.node.value.id"
-            binding-path="lineHeight"
-            @update:model-value="ctx.actions.updateProp('lineHeight', $event)"
-            @commit="(v: number, p: number) => ctx.actions.commitProp('lineHeight', v, p)"
-          >
-            <template #icon>
-              <icon-lucide-baseline class="size-3" />
-            </template>
-          </VariableNumberField>
+          <LineHeightField
+            :node="ctx.node.value"
+            @update="ctx.actions.updateProp('lineHeight', $event)"
+            @commit="(v, p) => ctx.actions.commitProp('lineHeight', v, p)"
+          />
         </PanelFieldGroup>
         <PanelFieldGroup :label="panels.letterSpacing">
           <VariableNumberField

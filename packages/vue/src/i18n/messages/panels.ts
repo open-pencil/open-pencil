@@ -138,6 +138,7 @@ export const panelMessageDefaults = {
   fontWeight: 'Font weight',
   fontSize: 'Font size',
   lineHeight: 'Line height',
+  lineHeightMode: 'Line height mode',
   letterSpacing: 'Letter spacing',
   textAlignment: 'Text alignment',
   verticalTextAlignment: 'Vertical text alignment',

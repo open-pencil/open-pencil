@@ -84,6 +84,9 @@ defineOptions({ inheritAttrs: false })
       <template v-if="$slots.icon" #icon>
         <slot name="icon" />
       </template>
+      <template v-if="$slots.display" #display="display">
+        <slot name="display" v-bind="display" />
+      </template>
       <template v-if="binding.variable" #bound>
         <BindingPill
           :label="binding.variable.name"

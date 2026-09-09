@@ -350,5 +350,6 @@
   "individualPadding": "Relleno individual",
   "strokeSettings": "Ajustes de trazo",
   "strokeDashLength": "Guion",
-  "strokeDashGap": "Espacio"
+  "strokeDashGap": "Espacio",
+  "lineHeightMode": "Modo de altura de línea"
 }

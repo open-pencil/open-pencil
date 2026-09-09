@@ -350,5 +350,6 @@
   "individualPadding": "Indywidualne dopełnienie",
   "strokeSettings": "Ustawienia obrysu",
   "strokeDashLength": "Kreska",
-  "strokeDashGap": "Odstęp"
+  "strokeDashGap": "Odstęp",
+  "lineHeightMode": "Tryb wysokości wiersza"
 }
