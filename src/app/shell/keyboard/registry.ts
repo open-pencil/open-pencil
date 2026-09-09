@@ -8,7 +8,7 @@ import type { EditorCommandId } from '@open-pencil/vue'
 import { requestRenameSelection } from '@/app/editor/selection/rename-dialog'
 import { TOOL_SHORTCUTS } from '@/app/editor/session'
 import { openSettingsDialog } from '@/app/settings/dialog'
-import { isEditing } from '@/app/shell/keyboard/focus'
+import { isButtonActivation, isEditing } from '@/app/shell/keyboard/focus'
 import { bindSpaceHandTool } from '@/app/shell/keyboard/space-tool'
 import type {
   KeyboardShortcutOptions,
@@ -75,6 +75,7 @@ function hasOpenDismissableLayer() {
 
 function shouldIgnoreShortcut(event: KeyboardEvent, options: KeyboardShortcutOptions) {
   return (
+    isButtonActivation(event) ||
     hasOpenDismissableLayer() ||
     originatedInOverlay(event) ||
     isEditing(event) ||

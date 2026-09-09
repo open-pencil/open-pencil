@@ -5,7 +5,9 @@ import { tv } from 'tailwind-variants'
 import { colorToCSS } from '@open-pencil/core/color'
 
 import { initials } from '@/app/shell/ui'
+import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
+import AppButton from '@/components/ui/button/AppButton.vue'
 import collaborationTheme from '@/theme/collaboration'
 
 const hud = useMobileHudContext()
@@ -20,10 +22,9 @@ function peerAvatarClass(following: boolean) {
 <template>
   <PopoverRoot v-if="hud.collabState.connected">
     <PopoverTrigger as-child>
-      <button :class="styles.presenceTrigger()">
-        <span :class="styles.presenceDot()" />
-        <span class="text-xs text-surface">Online: {{ hud.onlineCount }}</span>
-      </button>
+      <HudButton :label="`Online: ${hud.onlineCount}`">
+        <template #leading><span :class="styles.presenceDot()" /></template>
+      </HudButton>
     </PopoverTrigger>
     <PopoverPortal>
       <PopoverContent
@@ -70,9 +71,9 @@ function peerAvatarClass(following: boolean) {
           </div>
         </div>
 
-        <button :class="styles.disconnect()" @click="hud.disconnect">
+        <AppButton variant="outline" class="mt-3 w-full" @click="hud.disconnect">
           {{ hud.messages.disconnect }}
-        </button>
+        </AppButton>
       </PopoverContent>
     </PopoverPortal>
   </PopoverRoot>

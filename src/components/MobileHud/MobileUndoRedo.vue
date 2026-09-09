@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from '@open-pencil/vue'
 
+import HudButton from '@/components/mobile-hud/HudButton.vue'
 import { useMobileHudContext } from '@/components/MobileHud/context'
-import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { commands } = useI18n()
 
@@ -11,21 +11,11 @@ const hud = useMobileHudContext()
 
 <template>
   <div class="flex gap-1.5">
-    <Tip :label="commands.undo">
-      <button
-        class="flex size-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-panel/70 shadow-md backdrop-blur-xl select-none active:bg-hover"
-        @click="hud.undo"
-      >
-        <icon-lucide-undo-2 class="size-3.5 text-surface" />
-      </button>
-    </Tip>
-    <Tip :label="commands.redo">
-      <button
-        class="flex size-8 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-panel/70 shadow-md backdrop-blur-xl select-none active:bg-hover"
-        @click="hud.redo"
-      >
-        <icon-lucide-redo-2 class="size-3.5 text-surface" />
-      </button>
-    </Tip>
+    <HudButton icon-only :label="commands.undo" @click="hud.undo">
+      <icon-lucide-undo-2 class="size-3.5" />
+    </HudButton>
+    <HudButton icon-only :label="commands.redo" @click="hud.redo">
+      <icon-lucide-redo-2 class="size-3.5" />
+    </HudButton>
   </div>
 </template>

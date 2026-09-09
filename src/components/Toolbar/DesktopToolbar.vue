@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ToolbarRoot } from 'reka-ui'
+
 import type { EditorToolDef } from '@open-pencil/core/editor'
 import {
   getToolbarToolSelection,
@@ -31,7 +33,7 @@ const emit = defineEmits<{
 
 <template>
   <div class="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center">
-    <div
+    <ToolbarRoot
       data-test-id="toolbar"
       class="flex gap-0.5 rounded-xl bg-panel p-1 shadow-[0_8px_30px_rgb(0_0_0/0.4)]"
     >
@@ -65,6 +67,6 @@ const emit = defineEmits<{
           </Tip>
         </ToolbarItem>
       </template>
-    </div>
+    </ToolbarRoot>
   </div>
 </template>

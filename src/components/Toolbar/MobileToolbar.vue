@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AnimatePresence, motion } from 'motion-v'
+import { ToolbarRoot } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import IconChevronLeft from '~icons/lucide/chevron-left'
 import IconChevronRight from '~icons/lucide/chevron-right'
@@ -91,93 +92,96 @@ function navigationClass(disabled: boolean) {
       <IconChevronLeft :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
     </motion.button>
 
-    <motion.div
-      layout
-      data-test-id="mobile-toolbar-container"
-      class="relative flex h-11 items-center overflow-hidden rounded-[8px] border border-border bg-panel px-2 shadow-lg"
-      :transition="{ layout: { type: 'spring', damping: 30, stiffness: 500 } }"
-    >
-      <AnimatePresence mode="popLayout" :custom="slideDirection">
-        <motion.div
-          v-if="mobileCategory === 0"
-          key="tools"
-          data-test-id="mobile-toolbar-tools"
-          class="flex gap-0.5"
-          :variants="slideVariants"
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          :transition="{ duration: 0.15 }"
-        >
-          <template v-for="tool in tools" :key="tool.key">
-            <ToolFlyout
-              v-if="tool.flyout && tool.flyout.length > 1"
-              mobile
-              :tool="tool"
-              :active-tool="activeTool"
-              :selected-tool="getToolbarToolSelection(tool, activeTool, flyoutSelections)"
-              :tool-icons="toolIcons"
-              :tool-labels="toolLabels"
-              :tool-shortcuts="toolShortcuts"
-              :ui="ui"
-              @select="emit('setTool', $event)"
-            />
-
-            <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
-              <ToolButton
+    <ToolbarRoot as-child>
+      <motion.div
+        layout
+        data-test-id="mobile-toolbar-container"
+        class="relative flex h-11 items-center overflow-hidden rounded-[8px] border border-border bg-panel px-2 shadow-lg"
+        :transition="{ layout: { type: 'spring', damping: 30, stiffness: 500 } }"
+      >
+        <AnimatePresence mode="popLayout" :custom="slideDirection">
+          <motion.div
+            v-if="mobileCategory === 0"
+            key="tools"
+            data-test-id="mobile-toolbar-tools"
+            class="flex gap-0.5"
+            :variants="slideVariants"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            :transition="{ duration: 0.15 }"
+          >
+            <template v-for="tool in tools" :key="tool.key">
+              <ToolFlyout
+                v-if="tool.flyout && tool.flyout.length > 1"
                 mobile
-                :data-test-id="toolbarToolTestId(tool.key, true)"
-                :icon="toolIcons[tool.key]"
-                :active="
-                  active ||
-                  getToolbarToolSelection(tool, activeTool, flyoutSelections) === activeTool
-                "
+                :tool="tool"
+                :active-tool="activeTool"
+                :selected-tool="getToolbarToolSelection(tool, activeTool, flyoutSelections)"
+                :tool-icons="toolIcons"
+                :tool-labels="toolLabels"
+                :tool-shortcuts="toolShortcuts"
                 :ui="ui"
-                @click="actions.select"
+                @select="emit('setTool', $event)"
               />
-            </ToolbarItem>
-          </template>
-        </motion.div>
 
-        <motion.div
-          v-else-if="mobileCategory === 1"
-          key="edit"
-          data-test-id="mobile-toolbar-edit"
-          class="flex gap-0.5"
-          :variants="slideVariants"
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          :transition="{ duration: 0.15 }"
-        >
-          <ToolbarActionGroup
-            :actions="editActions"
-            :ui="ui"
-            test-prefix="mobile-toolbar"
-            @action="emit('action', $event)"
-          />
-        </motion.div>
+              <ToolbarItem v-else v-slot="{ active, actions }" :tool="tool.key">
+                <ToolButton
+                  mobile
+                  :data-test-id="toolbarToolTestId(tool.key, true)"
+                  :icon="toolIcons[tool.key]"
+                  :label="toolLabels[tool.key]"
+                  :active="
+                    active ||
+                    getToolbarToolSelection(tool, activeTool, flyoutSelections) === activeTool
+                  "
+                  :ui="ui"
+                  @click="actions.select"
+                />
+              </ToolbarItem>
+            </template>
+          </motion.div>
 
-        <motion.div
-          v-else
-          key="arrange"
-          data-test-id="mobile-toolbar-arrange"
-          class="flex gap-0.5"
-          :variants="slideVariants"
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          :transition="{ duration: 0.15 }"
-        >
-          <ToolbarActionGroup
-            :actions="arrangeActions"
-            :ui="ui"
-            test-prefix="mobile-toolbar"
-            @action="emit('action', $event)"
-          />
-        </motion.div>
-      </AnimatePresence>
-    </motion.div>
+          <motion.div
+            v-else-if="mobileCategory === 1"
+            key="edit"
+            data-test-id="mobile-toolbar-edit"
+            class="flex gap-0.5"
+            :variants="slideVariants"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            :transition="{ duration: 0.15 }"
+          >
+            <ToolbarActionGroup
+              :actions="editActions"
+              :ui="ui"
+              test-prefix="mobile-toolbar"
+              @action="emit('action', $event)"
+            />
+          </motion.div>
+
+          <motion.div
+            v-else
+            key="arrange"
+            data-test-id="mobile-toolbar-arrange"
+            class="flex gap-0.5"
+            :variants="slideVariants"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            :transition="{ duration: 0.15 }"
+          >
+            <ToolbarActionGroup
+              :actions="arrangeActions"
+              :ui="ui"
+              test-prefix="mobile-toolbar"
+              @action="emit('action', $event)"
+            />
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </ToolbarRoot>
 
     <motion.button
       data-test-id="mobile-toolbar-next"

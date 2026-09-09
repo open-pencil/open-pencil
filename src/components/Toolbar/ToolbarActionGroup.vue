@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ToolbarButton } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
 import { vTestId } from '@open-pencil/vue'
@@ -20,7 +21,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <button
+  <ToolbarButton
+    :aria-label="item.label"
     v-for="item in actions"
     :key="item.label"
     v-test-id="`${testPrefix}-${item.label.toLowerCase()}`"
@@ -28,5 +30,5 @@ const emit = defineEmits<{
     @click="emit('action', item)"
   >
     <component :is="item.icon" :class="styles.actionIcon({ class: ui?.actionIcon })" />
-  </button>
+  </ToolbarButton>
 </template>

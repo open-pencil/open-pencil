@@ -6,6 +6,12 @@ function isEditableTarget(target: EventTarget | null | undefined): boolean {
   )
 }
 
+export function isButtonActivation(event: KeyboardEvent): boolean {
+  if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return false
+  if (event.code !== 'Enter' && event.code !== 'Space') return false
+  return event.composedPath().some((target) => target instanceof HTMLButtonElement)
+}
+
 export function isEditing(event: Event) {
   return event.composedPath().some(isEditableTarget)
 }
