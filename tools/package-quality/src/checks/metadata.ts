@@ -1,5 +1,4 @@
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import {
   discoverPublicPackages,
@@ -34,12 +33,4 @@ export function formatPackageDiagnostics(diagnostics: PackageDiagnostic[]): stri
   return diagnostics
     .map(({ packageName, field, message }) => `${packageName}: ${field} ${message}`)
     .join('\n')
-}
-
-if (import.meta.main) {
-  const diagnostics = await validatePackageMetadata(
-    fileURLToPath(new URL('../../../..', import.meta.url))
-  )
-  if (diagnostics.length > 0) throw new Error(formatPackageDiagnostics(diagnostics))
-  console.log('Package metadata is publish-safe.')
 }

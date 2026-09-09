@@ -1,18 +1,12 @@
-import { fileURLToPath } from 'node:url'
-
-import { runCommand } from '@open-pencil/package-artifacts'
-
 import { publicPackageDirs } from '../packages'
+import { runPackageChecks } from './run'
 
-const root = fileURLToPath(new URL('../../../..', import.meta.url))
-
-for (const packageDir of await publicPackageDirs()) {
-  await runCommand({
-    command: 'bun',
-    args: ['attw', '--pack', packageDir, '--profile', 'esm-only', '--format', 'ascii'],
-    cwd: root,
-    timeoutMs: 60_000
-  })
+export async function checkTypes(root: string): Promise<void> {
+  await runPackageChecks(
+    (await publicPackageDirs(root)).map((packageDir) => ({
+      command: 'bun',
+      args: ['attw', '--pack', packageDir, '--profile', 'esm-only', '--format', 'ascii'],
+      cwd: root
+    }))
+  )
 }
-
-console.log('ATTW package type-resolution checks passed.')

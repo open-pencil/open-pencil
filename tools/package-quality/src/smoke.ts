@@ -1,7 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { discoverPublicPackages, orderPackagesByDependencies } from '@open-pencil/package-artifacts'
 
@@ -25,10 +24,4 @@ export async function verifyPackedPackages(root: string): Promise<void> {
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true })
   }
-}
-
-if (import.meta.main) {
-  const root = fileURLToPath(new URL('../../..', import.meta.url))
-  await verifyPackedPackages(root)
-  console.log('Raw npm archive inspection and Bun-packed Node/Bun consumer verification passed.')
 }

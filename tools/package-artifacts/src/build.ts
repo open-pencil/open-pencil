@@ -2,6 +2,7 @@ import { join } from 'node:path'
 
 import { discoverPublicPackages, orderPackagesByDependencies } from './catalog'
 import { runCommand } from './process'
+import { resolveWorkspaceRoot } from './root'
 import type { WorkspacePackage } from './types'
 
 export interface BuildPublicPackagesOptions {
@@ -30,5 +31,5 @@ export async function buildPublicPackages(
 }
 
 if (import.meta.main) {
-  await buildPublicPackages(process.cwd(), { log: console.log })
+  await buildPublicPackages(await resolveWorkspaceRoot(process.cwd()), { log: console.log })
 }
