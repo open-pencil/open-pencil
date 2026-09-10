@@ -413,22 +413,56 @@ export function applyPadding(node: SceneNode, padding: PenNode['padding'], ctx?:
   node.paddingLeft = resolved
 }
 
-export function parseSize(value: number | string | undefined, fallback: number, ctx?: VarContext) {
-  if (value === undefined) return { value: fallback, sizing: 'FIXED' as LayoutSizing }
-  if (typeof value === 'number') return { value, sizing: 'FIXED' as LayoutSizing }
-  const sizing = /^(fill_container|fit_content|hug_content)(?:\(([^)]+)\))?$/.exec(value)
-  if (sizing) {
-    const fallbackValue = sizing.at(2)
-    const parsedFallback = fallbackValue === undefined ? fallback : Number(fallbackValue)
-    return {
-      value: Number.isFinite(parsedFallback) ? parsedFallback : fallback,
-      sizing: sizing[1] === 'fill_container' ? ('FILL' as LayoutSizing) : ('HUG' as LayoutSizing)
-    }
+interface ParsedSize {
+  value: number
+  sizing: LayoutSizing
+  /** Fallback used only when fit_content(N) has no children. */
+  fitContentFallback?: number
+}
+
+function parseParameterizedFallback(value: string, behavior: string): number | undefined {
+  const prefix = `${behavior}(`
+  if (!value.startsWith(prefix) || !value.endsWith(')')) return
+
+  const rawFallback = value.slice(prefix.length, -1).trim()
+  if (rawFallback === '') return
+
+  const parsedFallback = Number(rawFallback)
+  return Number.isFinite(parsedFallback) ? parsedFallback : undefined
+}
+
+function parseSizingBehavior(value: string, fallback: number): ParsedSize | undefined {
+  if (value === 'fill_container') return { value: fallback, sizing: 'FILL' }
+  if (value === 'fit_content') return { value: fallback, sizing: 'HUG' }
+
+  // Older generated .pen files used hug_content as an alias for fit_content.
+  if (value === 'hug_content') return { value: fallback, sizing: 'HUG' }
+
+  const fillFallback = parseParameterizedFallback(value, 'fill_container')
+  if (fillFallback !== undefined) return { value: fillFallback, sizing: 'FILL' }
+
+  const fitFallback =
+    parseParameterizedFallback(value, 'fit_content') ??
+    parseParameterizedFallback(value, 'hug_content')
+  if (fitFallback !== undefined) {
+    return { value: fitFallback, sizing: 'HUG', fitContentFallback: fitFallback }
   }
-  if (isVarRef(value) && ctx)
-    return { value: ctx.resolveNumber(value), sizing: 'FIXED' as LayoutSizing }
+}
+
+export function parseSize(
+  value: number | string | undefined,
+  fallback: number,
+  ctx?: VarContext
+): ParsedSize {
+  if (value === undefined) return { value: fallback, sizing: 'FIXED' }
+  if (typeof value === 'number') return { value, sizing: 'FIXED' }
+
+  const behavior = parseSizingBehavior(value, fallback)
+  if (behavior) return behavior
+
+  if (isVarRef(value) && ctx) return { value: ctx.resolveNumber(value), sizing: 'FIXED' }
   const parsed = Number(value)
-  return { value: Number.isFinite(parsed) ? parsed : fallback, sizing: 'FIXED' as LayoutSizing }
+  return { value: Number.isFinite(parsed) ? parsed : fallback, sizing: 'FIXED' }
 }
 
 export function mapLayoutMode(pen: PenNode): LayoutMode {

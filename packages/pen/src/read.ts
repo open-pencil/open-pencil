@@ -233,6 +233,9 @@ function createSceneNode(
   const overrides = buildBaseOverrides(pen)
   overrides.width = w.value
   overrides.height = h.value
+  const hasChildren = (pen.children?.length ?? 0) > 0
+  if (!hasChildren && w.fitContentFallback !== undefined) overrides.minWidth = w.fitContentFallback
+  if (!hasChildren && h.fitContentFallback !== undefined) overrides.minHeight = h.fitContentFallback
 
   const parentLayout = graph.getNode(parentId)?.layoutMode ?? 'NONE'
   if (layout !== 'NONE') {

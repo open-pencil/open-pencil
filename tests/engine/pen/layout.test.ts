@@ -76,6 +76,47 @@ describe('parsePenFile — Pen layout defaults (#564)', () => {
     })
   })
 
+  test('uses the parameterized fit-content value when a frame has no content', () => {
+    const graph = parseLayoutDocument([
+      {
+        id: 'empty',
+        type: 'frame',
+        width: 'fit_content(240)',
+        height: 'fit_content(120)'
+      }
+    ])
+
+    expect(graph.getNode('empty')).toMatchObject({
+      layoutMode: 'HORIZONTAL',
+      primaryAxisSizing: 'HUG',
+      counterAxisSizing: 'HUG',
+      width: 240,
+      height: 120,
+      minWidth: 240,
+      minHeight: 120
+    })
+  })
+
+  test('ignores the parameterized fallback when content determines the size', () => {
+    const graph = parseLayoutDocument([
+      {
+        id: 'content-frame',
+        type: 'frame',
+        width: 'fit_content(240)',
+        height: 'fit_content(120)',
+        padding: 10,
+        children: [{ id: 'content', type: 'frame', width: 20, height: 30 }]
+      }
+    ])
+
+    expect(graph.getNode('content-frame')).toMatchObject({
+      width: 40,
+      height: 50,
+      minWidth: null,
+      minHeight: null
+    })
+  })
+
   test('keeps explicit freeform frames out of auto-layout', () => {
     const graph = parseLayoutDocument([
       {
@@ -94,4 +135,19 @@ describe('parseSize — Pen sizing fallbacks (#564)', () => {
   test('preserves parameterized fill-container fallback values', () => {
     expect(parseSize('fill_container(900)', 100)).toEqual({ value: 900, sizing: 'FILL' })
   })
+
+  test('preserves parameterized fit-content fallback metadata', () => {
+    expect(parseSize('fit_content(900)', 100)).toEqual({
+      value: 900,
+      sizing: 'HUG',
+      fitContentFallback: 900
+    })
+  })
+
+  test.each(['fit_content()', 'fit_content(nope)', 'fit_content(100)garbage'])(
+    'rejects malformed sizing behavior %s',
+    (value) => {
+      expect(parseSize(value, 100)).toEqual({ value: 100, sizing: 'FIXED' })
+    }
+  )
 })
