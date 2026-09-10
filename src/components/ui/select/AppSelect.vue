@@ -34,7 +34,11 @@ const styles = tv(theme)()
 
 <template>
   <SelectRoot v-model="modelValue">
+    <SelectTrigger v-if="$slots.trigger" as-child>
+      <slot name="trigger" />
+    </SelectTrigger>
     <SelectTrigger
+      v-else
       v-bind="$attrs"
       :class="styles.trigger({ class: ui?.trigger })"
       :aria-label="label"

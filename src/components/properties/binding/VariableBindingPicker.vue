@@ -119,8 +119,8 @@ defineOptions({ inheritAttrs: false })
       <ComboboxContent
         v-if="picker.open"
         position="popper"
-        side="left"
-        align="center"
+        side="bottom"
+        align="end"
         :side-offset="8"
         :collision-padding="8"
         :class="styles.pickerContent"

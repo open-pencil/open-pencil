@@ -29,7 +29,7 @@ import { createFillOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintField from '@/components/properties/paint/PaintField.vue'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
-import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import { useSharedStylePicker } from '@/components/properties/shared-style/useSharedStylePicker'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import PanelFieldGroup from '@/components/ui/panel/PanelFieldGroup.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
@@ -40,6 +40,13 @@ const okhcl = useOkHCL()
 const colorProvider = useColorBindingProvider()
 const { panels, common } = useI18n()
 const blendModeOptions = useBlendModeOptions()
+const {
+  visible: stylesVisible,
+  hasStyle,
+  value: styleValue,
+  options: styleOptions,
+  update: updateStyle
+} = useSharedStylePicker('fill')
 
 function displayFill(fill: Fill, resolvedColor: Color | undefined): Fill {
   return fill.type === 'SOLID' && resolvedColor ? { ...fill, color: resolvedColor } : fill
@@ -75,12 +82,32 @@ function updateSolidColor(
   >
     <PanelSection :label="panels.fill" :empty="!isMixed && items.length === 0">
       <template #actions>
+        <AppSelect
+          v-if="stylesVisible && !hasStyle"
+          :model-value="styleValue"
+          :options="styleOptions"
+          @update:model-value="updateStyle"
+        >
+          <template #trigger>
+            <IconButton :label="panels.fillStyle" data-property="fill-style"
+              ><icon-lucide-layout-grid class="size-3.5"
+            /></IconButton>
+          </template>
+        </AppSelect>
         <IconButton :label="panels.addFill" @click="actions.add({ ...fillCtx.defaultFill })">
           <icon-lucide-plus class="size-3.5" />
         </IconButton>
       </template>
 
-      <SharedStyleField kind="fill" :label="panels.fillStyle" />
+      <AppSelect
+        v-if="stylesVisible && hasStyle"
+        :model-value="styleValue"
+        :options="styleOptions"
+        :label="panels.fillStyle"
+        data-property="fill-style"
+        class="mb-1.5"
+        @update:model-value="updateStyle"
+      />
 
       <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedFillsHelp }}</p>
 

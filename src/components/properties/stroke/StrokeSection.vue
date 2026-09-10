@@ -27,12 +27,19 @@ import { createStrokeOkhclAdapter } from '@/components/properties/paint/okhcl'
 import PaintField from '@/components/properties/paint/PaintField.vue'
 import PaintValue from '@/components/properties/paint/PaintValue.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
-import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import { useSharedStylePicker } from '@/components/properties/shared-style/useSharedStylePicker'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatchTrigger from '@/components/ui/paint/FillSwatchTrigger.vue'
 import PanelSection from '@/components/ui/panel/PanelSection.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
+const {
+  visible: stylesVisible,
+  hasStyle,
+  value: styleValue,
+  options: styleOptions,
+  update: updateStyle
+} = useSharedStylePicker('stroke')
 
 import StrokeSettingsPopover from './StrokeSettingsPopover.vue'
 
@@ -90,12 +97,32 @@ function onToggleSides(activeNode: SceneNode | null) {
   >
     <PanelSection :label="panels.stroke" :empty="!isMixed && items.length === 0">
       <template #actions>
+        <AppSelect
+          v-if="stylesVisible && !hasStyle"
+          :model-value="styleValue"
+          :options="styleOptions"
+          @update:model-value="updateStyle"
+        >
+          <template #trigger>
+            <IconButton :label="panels.strokeStyle" data-property="stroke-style"
+              ><icon-lucide-layout-grid class="size-3.5"
+            /></IconButton>
+          </template>
+        </AppSelect>
         <IconButton :label="panels.addStroke" @click="actions.add(strokeCtx.defaultStroke)">
           <icon-lucide-plus class="size-3.5" />
         </IconButton>
       </template>
 
-      <SharedStyleField kind="stroke" :label="panels.strokeStyle" />
+      <AppSelect
+        v-if="stylesVisible && hasStyle"
+        :model-value="styleValue"
+        :options="styleOptions"
+        :label="panels.strokeStyle"
+        data-property="stroke-style"
+        class="mb-1.5"
+        @update:model-value="updateStyle"
+      />
 
       <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedStrokesHelp }}</p>
 
