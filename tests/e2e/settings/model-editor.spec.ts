@@ -30,6 +30,32 @@ test('model editing keeps the Settings shell stable and isolates the form', asyn
   expect(await dialog.boundingBox()).toEqual(before)
 })
 
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test(`model editing restores focus across repeated transitions with ${reducedMotion} motion`, async ({
+    page
+  }) => {
+    await page.emulateMedia({ reducedMotion })
+    await page.setViewportSize({ width: 900, height: 700 })
+    await page.goto('/?test')
+    await new CanvasHelper(page).waitForInit()
+    await page.getByTestId('app-settings-trigger').click()
+    await page.getByTestId('settings-section-ai').click()
+    const dialog = page.getByTestId('app-settings-dialog')
+    if (reducedMotion === 'reduce') await expect(dialog).toHaveCSS('animation-name', 'none')
+    const add = page.getByTestId('settings-add-model')
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await add.click()
+      const editor = page.getByTestId('settings-model-editor')
+      await expect(editor.locator('input').first()).toBeFocused()
+      await editor.getByRole('button', { name: 'Cancel', exact: true }).click()
+      await expect(add).toBeFocused()
+      await expect(dialog.getByRole('tabpanel')).toHaveCount(1)
+    }
+    await page.getByTestId('app-settings-done').click()
+    await expect(dialog).not.toBeVisible()
+  })
+}
+
 test('page rows keep the same compact height while renaming', async ({ page }) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()

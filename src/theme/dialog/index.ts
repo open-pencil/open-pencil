@@ -1,5 +1,5 @@
 const dialogMotion =
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-180 data-[state=open]:ease-out data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-120 data-[state=closed]:ease-in motion-reduce:animate-none'
+  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-180 data-[state=open]:ease-out data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-120 data-[state=closed]:ease-in motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none'
 
 export default {
   slots: {
