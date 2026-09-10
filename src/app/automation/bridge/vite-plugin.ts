@@ -102,13 +102,24 @@ export async function readDevMCPConfiguration(request: IncomingMessage): Promise
 
 export async function waitForAutomationHealth(
   browserURL: string,
-  fetcher: typeof fetch = fetch
+  fetcher: typeof fetch = fetch,
+  options: { authToken?: string | null; assertRunning?: () => void } = {}
 ): Promise<void> {
   const healthURL = `${browserURL.replace(/^ws/, 'http')}/health`
   for (let attempt = 0; attempt < CHILD_HEALTH_ATTEMPTS; attempt++) {
+    options.assertRunning?.()
     try {
-      const response = await fetcher(healthURL)
-      if (response.ok) return
+      const response = await fetcher(healthURL, {
+        signal: AbortSignal.timeout(2000),
+        headers: options.authToken ? { Authorization: `Bearer ${options.authToken}` } : undefined
+      })
+      if (response.ok) {
+        const authenticated =
+          !options.authToken ||
+          Array.isArray(((await response.json()) as { tools?: unknown }).tools)
+        options.assertRunning?.()
+        if (authenticated) return
+      }
     } catch (error) {
       if (attempt === CHILD_HEALTH_ATTEMPTS - 1) {
         console.warn(`[MCP] Health check failed at ${healthURL}`, error)
@@ -231,7 +242,14 @@ export function automationPlugin(
       if (child === spawned) child = null
     })
 
-    await waitForAutomationHealth(options.browserURL)
+    await waitForAutomationHealth(options.browserURL, fetch, {
+      authToken: configuration.authenticationEnabled ? authToken : null,
+      assertRunning() {
+        if (child !== spawned || spawned.exitCode !== null || spawned.signalCode !== null) {
+          throw new Error('MCP child exited before becoming ready')
+        }
+      }
+    })
   }
 
   async function restartChild(nextConfiguration: DevMCPConfiguration): Promise<void> {

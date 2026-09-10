@@ -100,6 +100,39 @@ describe('MCP Vite development server', () => {
     ])
   })
 
+  test('does not accept an unrelated healthy endpoint during authenticated startup', async () => {
+    let requests = 0
+    await waitForAutomationHealth(
+      'ws://localhost:7682',
+      async (_input, init) => {
+        expect(new Headers(init?.headers).get('authorization')).toBe('Bearer test-owned-token')
+        requests++
+        return Response.json(requests === 1 ? { status: 'ok' } : { status: 'no_app', tools: [] })
+      },
+      { authToken: 'test-owned-token' }
+    )
+    expect(requests).toBe(2)
+  })
+
+  test('rejects a failed child before probing another endpoint', async () => {
+    let requested = false
+    await expect(
+      waitForAutomationHealth(
+        'ws://localhost:7682',
+        async () => {
+          requested = true
+          return new Response(null)
+        },
+        {
+          assertRunning() {
+            throw new Error('child exited')
+          }
+        }
+      )
+    ).rejects.toThrow('child exited')
+    expect(requested).toBe(false)
+  })
+
   test('classifies malformed and oversized configuration requests', async () => {
     const malformed = Readable.from(['{'])
     const malformedError = await readDevMCPConfiguration(malformed as never).catch(

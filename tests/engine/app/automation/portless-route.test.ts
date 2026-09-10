@@ -12,6 +12,15 @@ describe('Portless MCP routing', () => {
     })
   })
 
+  test('uses the requested app origin and an isolated fixed-port runtime', () => {
+    expect(devAutomationRoute(undefined, 7682, 'http://localhost:1482')).toEqual({
+      browserURL: 'ws://127.0.0.1:7682',
+      corsOrigin: 'http://localhost:1482',
+      portlessServiceName: null,
+      runtimeId: 'localhost-7682'
+    })
+  })
+
   test('derives a sibling MCP service for the main checkout', () => {
     expect(devAutomationRoute('https://open-pencil.localhost', 7600)).toEqual({
       browserURL: 'wss://mcp.open-pencil.localhost',
