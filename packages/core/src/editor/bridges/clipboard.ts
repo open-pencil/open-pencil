@@ -7,8 +7,8 @@ type SelectionActions = ReturnType<typeof createSelectionActions>
 export function createClipboardBridge(clipboard: ClipboardActions, selection: SelectionActions) {
   return {
     duplicateSelected: () => clipboard.duplicateSelected(selection.getSelectedNodes()),
-    writeCopyData: (data: DataTransfer) =>
-      clipboard.writeCopyData(data, selection.getSelectedNodes()),
+    prepareCopy: () => clipboard.prepareCopy(selection.getSelectedNodes()),
+    pasteSnapshot: clipboard.pasteSnapshot,
     pasteFromHTML: clipboard.pasteFromHTML,
     deleteSelected: clipboard.deleteSelected,
     storeImage: clipboard.storeImage,

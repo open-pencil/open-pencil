@@ -15,7 +15,6 @@ export function createInitialAppEditorState(pageId: string): AppEditorState {
     panelMode: 'design',
     actionToast: null,
     mobileDrawerSnap: 'closed',
-    clipboardHTML: '',
     autosaveEnabled: false,
     cursorCanvasX: null,
     cursorCanvasY: null,
@@ -35,7 +34,6 @@ export type AppEditorState = EditorState & {
   panelMode: 'layers' | 'design'
   actionToast: string | null
   mobileDrawerSnap: 'closed' | 'half' | 'full'
-  clipboardHTML: string
   autosaveEnabled: boolean
   cursorCanvasX: number | null
   cursorCanvasY: number | null

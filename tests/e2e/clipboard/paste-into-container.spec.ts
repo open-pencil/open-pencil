@@ -53,9 +53,7 @@ function copyAndPaste() {
   return editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const data = new DataTransfer()
-    await store.writeCopyData(data)
-    const html = data.getData('text/html')
+    const { html } = await store.prepareCopy()
     if (html) await store.pasteFromHTML(html)
   })
 }
@@ -83,9 +81,7 @@ test('paste into selected frame places node as child', async () => {
     if (!rect) throw new Error('Rectangle not found')
     store.select([rect.id])
 
-    const data = new DataTransfer()
-    await store.writeCopyData(data)
-    const html = data.getData('text/html')
+    const { html } = await store.prepareCopy()
 
     const frame = [...store.graph.nodes.values()].find((n) => n.name === 'Container')
     if (!frame) throw new Error('Container not found')
@@ -119,9 +115,7 @@ test('paste with child selected places node as sibling in parent frame', async (
       if (!rect) throw new Error('Rectangle not found')
       store.select([rect.id])
 
-      const data = new DataTransfer()
-      await store.writeCopyData(data)
-      const html = data.getData('text/html')
+      const { html } = await store.prepareCopy()
 
       store.select([cid])
       if (html) await store.pasteFromHTML(html)
@@ -145,9 +139,7 @@ test('paste with no selection places on page', async () => {
   await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const data = new DataTransfer()
-    await store.writeCopyData(data)
-    const html = data.getData('text/html')
+    const { html } = await store.prepareCopy()
     store.clearSelection()
     if (html) await store.pasteFromHTML(html)
   })

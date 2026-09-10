@@ -1,4 +1,4 @@
-import copy, { type Options as ClipboardCopyOptions } from 'copy-to-clipboard'
+import copy from 'copy-to-clipboard'
 
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
@@ -7,9 +7,9 @@ import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
 import {
   clearInMemoryClipboardHTML,
   getInMemoryClipboardHTML,
-  setInMemoryClipboardHTML
+  setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
-import { createClipboardTransfer } from '@/app/editor/clipboard/system/transfer'
+import { pasteClipboardHTML } from '@/app/editor/clipboard/paste'
 import type {
   BrowserClipboardIO,
   BrowserClipboardReadResult,
@@ -17,38 +17,32 @@ import type {
   SystemClipboard
 } from '@/app/editor/clipboard/system/types'
 
-function clipboardItem(payload: ClipboardPayload): ClipboardItem | undefined {
-  if (typeof Blob === 'undefined' || typeof ClipboardItem === 'undefined') return undefined
-  const itemData: Record<string, Blob> = {}
-  if (payload.html) itemData['text/html'] = new Blob([payload.html], { type: 'text/html' })
-  if (payload.plainText) {
-    itemData['text/plain'] = new Blob([payload.plainText], { type: 'text/plain' })
-  }
-  return new ClipboardItem(itemData)
-}
-
 function populateLegacyClipboard(data: DataTransfer, payload: ClipboardPayload): void {
   if (payload.html) data.setData('text/html', payload.html)
   if (payload.plainText) data.setData('text/plain', payload.plainText)
 }
 
-function customizeClipboardPayload(
-  payload: ClipboardPayload
-): NonNullable<ClipboardCopyOptions['onCopy']> {
-  return (data) => {
-    if (typeof DataTransfer !== 'undefined' && data instanceof DataTransfer) {
-      populateLegacyClipboard(data, payload)
-      return undefined
+async function writeBrowserClipboard(payload: Promise<ClipboardPayload>): Promise<boolean> {
+  let ready: ClipboardPayload | undefined
+  const prepared = payload.then((value) => {
+    ready = value
+    return value
+  })
+  // The library starts the async Clipboard API write within the user gesture.
+  // Its synchronous fallback may only use a payload that has actually completed.
+  return copy('', {
+    format: 'text/html',
+    onCopy: (data) => {
+      if (typeof DataTransfer !== 'undefined' && data instanceof DataTransfer) {
+        if (!ready) throw new Error('Clipboard payload is not ready for synchronous copying')
+        populateLegacyClipboard(data, ready)
+        return undefined
+      }
+      return new ClipboardItem({
+        'text/html': prepared.then((value) => new Blob([value.html], { type: 'text/html' })),
+        'text/plain': prepared.then((value) => new Blob([value.plainText], { type: 'text/plain' }))
+      })
     }
-    return clipboardItem(payload)
-  }
-}
-
-async function writeBrowserClipboard(payload: ClipboardPayload): Promise<boolean> {
-  const text = payload.html || payload.plainText
-  return copy(text, {
-    format: payload.html ? 'text/html' : 'text/plain',
-    onCopy: customizeClipboardPayload(payload)
   })
 }
 
@@ -79,17 +73,15 @@ const browserClipboardIO: BrowserClipboardIO = {
 
 async function copySelection(store: EditorStore, io: BrowserClipboardIO): Promise<boolean> {
   try {
-    const transfer = createClipboardTransfer()
-    await store.writeCopyData(transfer)
-    const payload: ClipboardPayload = {
-      html: transfer.getData('text/html'),
-      plainText: transfer.getData('text/plain')
-    }
+    if (store.state.selectedIds.size === 0) return false
+    const prepared = store.prepareCopy()
+    const writing = io.write(prepared)
+    const [payload, written] = await Promise.all([prepared, writing])
     if (!payload.html && !payload.plainText) return false
-    if (payload.html) setInMemoryClipboardHTML(payload.html, payload.plainText)
-    else clearInMemoryClipboardHTML()
+    if (written && payload.html) setInMemoryClipboardPayload(payload)
+    else if (!written) clearInMemoryClipboardHTML()
 
-    return await io.write(payload)
+    return written
   } catch (error) {
     console.warn('Browser clipboard copy failed', error)
     return false
@@ -104,7 +96,7 @@ async function pasteSelection(
   const result = await io.readHTML()
   if (result.available) {
     if (result.html && isDesignClipboardHTML(result.html)) {
-      await store.pasteFromHTML(result.html, cursorPos)
+      await pasteClipboardHTML(store, result.html, cursorPos)
       return true
     }
     return false
@@ -112,7 +104,7 @@ async function pasteSelection(
 
   const memoryHTML = getInMemoryClipboardHTML()
   if (memoryHTML && isDesignClipboardHTML(memoryHTML)) {
-    await store.pasteFromHTML(memoryHTML, cursorPos)
+    await pasteClipboardHTML(store, memoryHTML, cursorPos)
     return true
   }
 

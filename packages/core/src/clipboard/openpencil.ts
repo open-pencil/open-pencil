@@ -6,6 +6,7 @@ import {
   serializeInstanceOverrideState,
   setInstanceOverride,
   type InstanceOverrideState,
+  type GeometryPath,
   type SceneGraph,
   type SceneNode,
   type SerializedInstanceOverrideState
@@ -13,6 +14,7 @@ import {
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import { decodeBase64, encodeBase64 } from '#core/bytes'
+import type { ClipboardSnapshot } from '#core/editor/clipboard/copy'
 
 interface SerializedClipboardNode extends JSONObject {
   overrides?: Record<string, unknown>
@@ -23,10 +25,7 @@ interface SerializedClipboardNode extends JSONObject {
 
 type ClipboardNode = SceneNode & { children?: ClipboardNode[] }
 
-export interface OpenPencilClipboardData {
-  nodes: Array<SceneNode & { children?: SceneNode[] }>
-  images: Map<string, Uint8Array>
-}
+export type OpenPencilClipboardData = Pick<ClipboardSnapshot, 'nodes' | 'images'>
 
 export function parseOpenPencilClipboard(html: string): OpenPencilClipboardData | null {
   const match = html.match(/<!--\(openpencil\)(.*?)\(\/openpencil\)-->/s)
@@ -75,6 +74,19 @@ function legacyInstanceOverrides(
   return state
 }
 
+function restoreGeometry(paths: unknown): GeometryPath[] {
+  if (!Array.isArray(paths)) return []
+  return paths.map(
+    (path: GeometryPath & { commandsBlob: Uint8Array | Record<string, number> }) => ({
+      ...path,
+      commandsBlob:
+        path.commandsBlob instanceof Uint8Array
+          ? path.commandsBlob
+          : Uint8Array.from(Object.values(path.commandsBlob))
+    })
+  )
+}
+
 function restoreNodeData(nodes: SerializedClipboardNode[]): ClipboardNode[] {
   return nodes.map((node) => {
     const { children, instanceOverrides, overrides, textPicture, ...rest } = node
@@ -84,6 +96,8 @@ function restoreNodeData(nodes: SerializedClipboardNode[]): ClipboardNode[] {
       : legacyInstanceOverrides(nodeId, overrides)
     return {
       ...rest,
+      fillGeometry: restoreGeometry(rest.fillGeometry),
+      strokeGeometry: restoreGeometry(rest.strokeGeometry),
       instanceOverrides: overrideState,
       textPicture: typeof textPicture === 'string' ? decodeBase64(textPicture) : textPicture,
       ...(children ? { children: restoreNodeData(children) } : {})
