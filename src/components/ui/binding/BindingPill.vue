@@ -46,7 +46,7 @@ defineOptions({ inheritAttrs: false })
       v-bind="$attrs"
       :class="styles.pill"
       :data-unresolved="unresolved ? '' : undefined"
-      :aria-label="unresolved ? `${label}: ${tooltip}` : undefined"
+      :aria-label="unresolved ? (tooltip ? `${label}: ${tooltip}` : label) : undefined"
       :data-disabled="disabled ? '' : undefined"
       :data-derived="derived ? '' : undefined"
       data-slot="pill"

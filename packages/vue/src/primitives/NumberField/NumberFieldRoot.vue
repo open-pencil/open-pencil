@@ -321,7 +321,11 @@ const rootAttrs = computed<NumberFieldRootAttrs>(() => ({
   ...stateAttrs.value,
   role: editing.value ? undefined : 'spinbutton',
   tabindex: rootTabindex.value,
-  'aria-valuenow': editing.value || isMixed.value ? undefined : numericValue.value,
+  'aria-valuenow':
+    editing.value || isMixed.value || binding?.state.value === 'unresolved'
+      ? undefined
+      : numericValue.value,
+  'aria-readonly': binding?.state.value === 'unresolved' ? true : undefined,
   'aria-valuemin': !editing.value && Number.isFinite(min) ? min : undefined,
   'aria-valuemax': !editing.value && Number.isFinite(max) ? max : undefined,
   'aria-disabled': !editing.value && disabled.value ? 'true' : undefined,
