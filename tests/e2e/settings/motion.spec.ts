@@ -3,16 +3,32 @@ import { expect, test } from '@playwright/test'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
 for (const appearance of [undefined, null, { animations: 'invalid' }]) {
-  test(`normalizes legacy animation preferences ${JSON.stringify(appearance)}`, async ({
-    page
-  }) => {
-    await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await page.addInitScript((appearance) => {
-      localStorage.setItem('open-pencil:preferences:v1', JSON.stringify({ version: 1, appearance }))
-    }, appearance)
-    await page.goto('/?test')
-    await new CanvasHelper(page).waitForInit()
-    await expect(page.locator('html')).toHaveAttribute('data-motion', 'full')
+  test.describe(`legacy animation preferences ${JSON.stringify(appearance)}`, () => {
+    test.use({
+      storageState: async ({ baseURL }, use) => {
+        if (!baseURL) throw new Error('Browser test baseURL is required')
+        await use({
+          cookies: [],
+          origins: [
+            {
+              origin: new URL(baseURL).origin,
+              localStorage: [
+                {
+                  name: 'open-pencil:preferences:v1',
+                  value: JSON.stringify({ version: 1, appearance })
+                }
+              ]
+            }
+          ]
+        })
+      }
+    })
+    test('normalizes the preference', async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' })
+      await page.goto('/?test')
+      await new CanvasHelper(page).waitForInit()
+      await expect(page.locator('html')).toHaveAttribute('data-motion', 'full')
+    })
   })
 }
 
