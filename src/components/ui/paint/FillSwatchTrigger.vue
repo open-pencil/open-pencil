@@ -23,16 +23,16 @@ const {
 }>()
 defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
-const forwardedAttrs = computed(() => {
+function forwardedAttrs() {
   const { class: _class, ...rest } = attrs
   return rest
-})
+}
 const styles = computed(() => fillSwatchTrigger({ size }))
 </script>
 
 <template>
   <button
-    v-bind="forwardedAttrs"
+    v-bind="forwardedAttrs()"
     type="button"
     :aria-label="label"
     :disabled="disabled"

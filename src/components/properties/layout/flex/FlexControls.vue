@@ -38,6 +38,7 @@ const alignmentCells = computed(() => {
   <div class="mt-2">
     <label class="mb-1 block text-[11px] text-muted">{{ panels.direction }}</label>
     <AppSelect
+      :label="panels.direction"
       :model-value="ctx.layoutDirection"
       :options="[
         { value: 'AUTO', label: panels.auto },

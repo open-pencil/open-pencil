@@ -349,6 +349,6 @@
   "alpha": "アルファ",
   "individualPadding": "個別のパディング",
   "strokeSettings": "線の設定",
-  "strokeDashLength": "破線",
+  "strokeDashLength": "破線の長さ",
   "strokeDashGap": "間隔"
 }

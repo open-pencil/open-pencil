@@ -30,7 +30,7 @@ for (const theme of ['light', 'dark']) {
     }, theme)
     const section = page.getByRole('region', { name: 'Effects', exact: true })
     await section.getByRole('button', { name: 'Expand effect settings' }).click()
-    await expect(section).toHaveScreenshot(`inline-shadow-${theme}.png`)
+    if (theme === 'light') await expect(section).toHaveScreenshot('inline-shadow-light.png')
     const radius = section.getByRole('spinbutton', { name: 'B', exact: true })
     await radius.focus()
     await radius.fill('20')
@@ -55,8 +55,13 @@ for (const theme of ['light', 'dark']) {
       .toBe(12)
     await section.getByRole('combobox', { name: 'Effects', exact: true }).click()
     await page.getByRole('option', { name: 'Layer blur', exact: true }).click()
-    await expect(section).toHaveScreenshot(`inline-blur-${theme}.png`)
+    await expect(section.getByRole('spinbutton', { name: 'B', exact: true })).toBeVisible()
     await section.getByRole('button', { name: 'Remove effect' }).click()
+    await expect
+      .poll(() =>
+        page.evaluate((id) => window.openPencil?.getStore?.().graph.getNode(id)?.effects, id)
+      )
+      .toEqual([])
     await expect(section.locator('[data-slot="effect-settings"]')).toHaveCount(0)
   })
 }

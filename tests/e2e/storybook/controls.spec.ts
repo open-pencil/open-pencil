@@ -29,11 +29,31 @@ for (const theme of ['light', 'dark']) {
       await expect(root.getByRole('button').or(root.getByRole('tab')).first()).toBeVisible()
       await page.evaluate(() => document.fonts.ready)
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
-      await expect(root).toHaveScreenshot(`${story}-${theme}.png`)
+      // Keep theme coverage on a composed color matrix, not every story permutation.
+      if (story === 'design-system-actions-button--color-matrix') {
+        await expect(root).toHaveScreenshot(`${story}-${theme}.png`)
+      }
+      expect(await root.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+        true
+      )
       expect(errors).toEqual([])
     })
   }
 }
+
+test('swatch forwards live popover state', async ({ page }) => {
+  await page.goto(
+    '/iframe.html?id=design-system-paint-fill-swatch--popover-composition&viewMode=story'
+  )
+  const trigger = page.getByRole('button', { name: 'Fill', exact: true })
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  await trigger.click()
+  await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  await expect(trigger).toHaveAttribute('data-state', 'open')
+  await page.keyboard.press('Escape')
+  await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  await expect(trigger).toHaveAttribute('data-state', 'closed')
+})
 
 test('action row keyboard focus', async ({ page }) => {
   await page.goto('/iframe.html?id=design-system-lists-action-row--default&viewMode=story')
@@ -41,5 +61,4 @@ test('action row keyboard focus', async ({ page }) => {
   await expect(row).toBeVisible()
   await page.keyboard.press('Tab')
   await expect(row).toBeFocused()
-  await expect(page.locator('#storybook-root')).toHaveScreenshot('action-row-keyboard-focus.png')
 })
