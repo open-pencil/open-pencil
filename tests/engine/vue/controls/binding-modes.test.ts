@@ -4,6 +4,7 @@ import { createEditor } from '@open-pencil/core/editor'
 
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
+import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
 import { resolveEffectiveBindingValue } from '#vue/controls/binding-provider/resolution'
 
 test('binding resolution uses node modes and reports mixed resolved values', () => {
@@ -59,4 +60,14 @@ test('binding resolution uses node modes and reports mixed resolved values', () 
   expect(provider.getBindingId(target)).toBe(variable.id)
   expect(provider.getBound(target)).toBeUndefined()
   expect(provider.getState(targets)).toBe('unresolved')
+  provider.unbind(target)
+  expect(provider.getState(targets)).toBe('mixed')
+  expect(prepareBindingEdits(provider, targets)).toBeUndefined()
+  const other = editor.graph.createVariable('Other', 'FLOAT', collection.id, 12)
+  provider.bind(target, other.id)
+  editor.graph.variables.delete(other.id)
+  expect(provider.getState(targets)).toBe('mixed')
+  expect(prepareBindingEdits(provider, targets)).toBeUndefined()
+  expect(provider.getBindingId(targets[0] ?? target)).toBe(variable.id)
+  expect(provider.getBindingId(target)).toBe(other.id)
 })

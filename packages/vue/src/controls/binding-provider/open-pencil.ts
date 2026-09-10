@@ -52,6 +52,9 @@ export function createOpenPencilBindingProvider<V>(
         (target) => editor.getNode(target.nodeId)?.boundVariables[target.path] ?? undefined
       )
     )
+    // Identity takes precedence: an explicit mixed edit can detach the selection.
+    // edit-variable still requires every bound destination to prepare successfully.
+    if (variableIds.size > 1) return 'mixed'
     const unresolved = targets.some((target) => {
       const id = editor.getNode(target.nodeId)?.boundVariables[target.path]
       return (
@@ -61,7 +64,6 @@ export function createOpenPencilBindingProvider<V>(
       )
     })
     if (unresolved) return 'unresolved'
-    if (variableIds.size > 1) return 'mixed'
     if (variableIds.has(undefined)) return 'unbound'
     const values = targets.map((target) => {
       const id = editor.getNode(target.nodeId)?.boundVariables[target.path]

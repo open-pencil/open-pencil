@@ -5,6 +5,35 @@ import { createEditor } from '@open-pencil/core/editor'
 import { prepareModeEdit } from '#vue/controls/binding-provider/mode-edit'
 import { createOpenPencilBindingProvider } from '#vue/controls/binding-provider/open-pencil'
 import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
+import { resolveEffectiveBindingValue } from '#vue/controls/binding-provider/resolution'
+
+test('editing an alias captures the bound mode without mutating its shared source', () => {
+  const editor = createEditor()
+  const page = editor.graph.getPages()[0]
+  if (!page) throw new Error('No page')
+  const collection = editor.graph.createCollection('Tokens')
+  const source = editor.graph.createVariable('Shared', 'FLOAT', collection.id, 8)
+  const alias = editor.graph.createVariable('Local', 'FLOAT', collection.id, 0)
+  const original = { aliasId: source.id }
+  editor.updateVariableValue(alias.id, collection.defaultModeId, original)
+  const node = editor.graph.createNode('RECTANGLE', page.id, {})
+  const target = { nodeId: node.id, path: 'width' }
+  const edit = prepareModeEdit<number>(editor, alias.id, target, () => {
+    const value = resolveEffectiveBindingValue(editor, alias.id, target)
+    return typeof value === 'number' ? value : undefined
+  })
+  if (!edit) throw new Error('No edit')
+  expect(edit.value).toBe(8)
+  editor.undo.runBatch('Edit local token', () => edit.set(16))
+  expect(editor.getVariable(alias.id)?.valuesByMode[collection.defaultModeId]).toBe(16)
+  expect(editor.getVariable(source.id)?.valuesByMode[collection.defaultModeId]).toBe(8)
+  editor.undo.undo()
+  expect(editor.getVariable(alias.id)?.valuesByMode[collection.defaultModeId]).toEqual(original)
+  edit.set(24)
+  edit.restore()
+  expect(editor.getVariable(alias.id)?.valuesByMode[collection.defaultModeId]).toEqual(original)
+  expect(editor.getVariable(source.id)?.valuesByMode[collection.defaultModeId]).toBe(8)
+})
 
 test('prepared edits retain modes after targets change and undo atomically', () => {
   const editor = createEditor()

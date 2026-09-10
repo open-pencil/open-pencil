@@ -3,6 +3,9 @@ import type { Color } from '@open-pencil/scene-graph'
 
 import type { BindingTarget, BindingValueEdit } from './types'
 
+/** Edit the directly bound variable's mode, not a shared alias source.
+ * Capturing the raw value lets cancel and Undo restore an alias exactly.
+ */
 export function prepareModeEdit<V extends number | Color>(
   editor: Editor,
   variableId: string,
