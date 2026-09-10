@@ -63,6 +63,28 @@ function patch(index: number, changes: Partial<LayoutGrid>, label = 'Edit layout
   )
 }
 
+type NumericGridField = 'count' | 'gutterSize' | 'sectionSize' | 'offset'
+
+function updateNumber(index: number, key: NumericGridField, value: number) {
+  const node = selectedNode.value
+  if (!node) return
+  editor.updateNode(node.id, {
+    layoutGrids: grids.value.map((grid, i) => (i === index ? { ...grid, [key]: value } : grid))
+  })
+}
+
+function commitNumber(index: number, key: NumericGridField, previous: number) {
+  const node = selectedNode.value
+  if (!node) return
+  editor.commitNodeUpdate(
+    node.id,
+    {
+      layoutGrids: grids.value.map((grid, i) => (i === index ? { ...grid, [key]: previous } : grid))
+    },
+    'Edit layout guide'
+  )
+}
+
 function gridPattern(grid: LayoutGrid): 'COLUMNS' | 'ROWS' | 'GRID' {
   if (grid.pattern) return grid.pattern
   return grid.axis === 'Y' ? 'ROWS' : 'COLUMNS'
@@ -108,7 +130,8 @@ function isGrid(grid: LayoutGrid): boolean {
               :model-value="grid.count ?? grid.numSections ?? 1"
               :min="1"
               :aria-label="panels.gridCount"
-              @update:model-value="patch(index, { count: $event })"
+              @update:model-value="updateNumber(index, 'count', $event)"
+              @commit="(_value, previous) => commitNumber(index, 'count', previous)"
             />
           </PanelFieldGroup>
           <PanelFieldGroup v-if="!isGrid(grid)" :label="panels.gridGutter">
@@ -116,7 +139,8 @@ function isGrid(grid: LayoutGrid): boolean {
               :model-value="grid.gutterSize ?? 0"
               :min="0"
               :aria-label="panels.gridGutter"
-              @update:model-value="patch(index, { gutterSize: $event })"
+              @update:model-value="updateNumber(index, 'gutterSize', $event)"
+              @commit="(_value, previous) => commitNumber(index, 'gutterSize', previous)"
             />
           </PanelFieldGroup>
           <PanelFieldGroup v-if="isGrid(grid)" :label="panels.gridSectionSize">
@@ -124,14 +148,16 @@ function isGrid(grid: LayoutGrid): boolean {
               :model-value="grid.sectionSize ?? 0"
               :min="1"
               :aria-label="panels.gridSectionSize"
-              @update:model-value="patch(index, { sectionSize: $event })"
+              @update:model-value="updateNumber(index, 'sectionSize', $event)"
+              @commit="(_value, previous) => commitNumber(index, 'sectionSize', previous)"
             />
           </PanelFieldGroup>
           <PanelFieldGroup :label="panels.gridMargin">
             <NumberField
               :model-value="grid.offset ?? 0"
               :aria-label="panels.gridMargin"
-              @update:model-value="patch(index, { offset: $event })"
+              @update:model-value="updateNumber(index, 'offset', $event)"
+              @commit="(_value, previous) => commitNumber(index, 'offset', previous)"
             />
           </PanelFieldGroup>
         </PanelGrid>

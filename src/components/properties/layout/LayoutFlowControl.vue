@@ -18,6 +18,20 @@ const layoutModes = computed<Array<{ value: LayoutMode; label: string }>>(() => 
   { value: 'GRID', label: panels.value.layoutGrid }
 ])
 
+function toggleWrap() {
+  const node = ctx.node
+  const enabling = node.layoutWrap !== 'WRAP'
+  ctx.editor.updateNodeWithUndo(
+    node.id,
+    {
+      layoutWrap: enabling ? 'WRAP' : 'NO_WRAP',
+      primaryAxisAlign:
+        enabling && node.primaryAxisAlign === 'SPACE_BETWEEN' ? 'MIN' : node.primaryAxisAlign
+    },
+    'Toggle layout wrap'
+  )
+}
+
 function setLayoutMode(mode: string) {
   ctx.editor.setLayoutMode(ctx.node.id, mode as LayoutMode)
 }
@@ -51,7 +65,7 @@ function setLayoutMode(mode: string) {
         :label="panels.layoutWrap"
         size="xs"
         :active="ctx.node.layoutWrap === 'WRAP'"
-        @click="ctx.updateProp('layoutWrap', ctx.node.layoutWrap === 'WRAP' ? 'NO_WRAP' : 'WRAP')"
+        @click="toggleWrap"
       >
         <icon-lucide-wrap-text class="size-3.5" />
       </IconButton>
