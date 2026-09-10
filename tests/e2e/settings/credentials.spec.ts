@@ -210,7 +210,10 @@ test('remembered browser credentials survive reload and clear centrally', async 
   await page.getByTestId('settings-section-ai').click()
   await page.locator('[data-model-id]').first().click()
   await page.getByTestId('provider-settings-clear-key').click()
-  await page.getByRole('button', { name: 'Back' }).click()
+  await page
+    .getByTestId('settings-model-editor')
+    .getByRole('button', { name: 'Cancel', exact: true })
+    .click()
   await page.getByTestId('settings-section-general').click()
   await remember.click()
   await page.getByTestId('app-settings-done').click()

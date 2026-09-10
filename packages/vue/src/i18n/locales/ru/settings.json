@@ -19,5 +19,8 @@
   "diagnostics": "Диагностика",
   "media": "Медиа",
   "automation": "MCP и автоматизация",
-  "storage": "Облачное хранилище"
+  "storage": "Облачное хранилище",
+  "animations": "Анимации",
+  "animationsSystem": "Как в системе",
+  "animationsOff": "Выключены"
 }

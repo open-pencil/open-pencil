@@ -78,13 +78,15 @@ const { arrivedState, resumeFollowing } = useScrollFollowing(
             AI
           </div>
           <div class="flex items-center gap-1 py-2">
-            <span class="size-1.5 animate-bounce rounded-full bg-muted" />
             <span
-              class="size-1.5 animate-bounce rounded-full bg-muted"
+              class="size-1.5 animate-bounce motion-reduce:animate-none rounded-full bg-muted"
+            />
+            <span
+              class="size-1.5 animate-bounce motion-reduce:animate-none rounded-full bg-muted"
               :style="{ animationDelay: '150ms' }"
             />
             <span
-              class="size-1.5 animate-bounce rounded-full bg-muted"
+              class="size-1.5 animate-bounce motion-reduce:animate-none rounded-full bg-muted"
               :style="{ animationDelay: '300ms' }"
             />
           </div>

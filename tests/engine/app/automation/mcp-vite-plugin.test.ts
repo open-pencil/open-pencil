@@ -100,6 +100,50 @@ describe('MCP Vite development server', () => {
     ])
   })
 
+  test('health probes do not send credentials', async () => {
+    await waitForAutomationHealth('ws://localhost:7682', async (_input, init) => {
+      expect(new Headers(init?.headers).has('authorization')).toBe(false)
+      return new Response(null)
+    })
+  })
+
+  test('propagates child exit while the request is in flight', async () => {
+    let running = true
+    await expect(
+      waitForAutomationHealth(
+        'ws://localhost:7682',
+        async () => {
+          running = false
+          return new Response(null)
+        },
+        {
+          assertRunning() {
+            if (!running) throw new Error('child exited in flight')
+          }
+        }
+      )
+    ).rejects.toThrow('child exited in flight')
+  })
+
+  test('rejects a failed child before probing another endpoint', async () => {
+    let requested = false
+    await expect(
+      waitForAutomationHealth(
+        'ws://localhost:7682',
+        async () => {
+          requested = true
+          return new Response(null)
+        },
+        {
+          assertRunning() {
+            throw new Error('child exited')
+          }
+        }
+      )
+    ).rejects.toThrow('child exited')
+    expect(requested).toBe(false)
+  })
+
   test('classifies malformed and oversized configuration requests', async () => {
     const malformed = Readable.from(['{'])
     const malformedError = await readDevMCPConfiguration(malformed as never).catch(

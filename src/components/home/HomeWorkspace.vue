@@ -277,7 +277,11 @@ function formattedDate(updatedAt: string): string {
           class="grid grid-cols-1 gap-x-5 gap-y-6 sm:grid-cols-[repeat(auto-fill,minmax(200px,1fr))]"
           :aria-label="storage.loadingWorkspace"
         >
-          <div v-for="index in 3" :key="index" class="min-w-0 animate-pulse">
+          <div
+            v-for="index in 3"
+            :key="index"
+            class="min-w-0 animate-pulse motion-reduce:animate-none"
+          >
             <div class="aspect-video rounded-lg border border-border bg-panel-field" />
             <div class="mt-2 h-3 w-2/3 rounded bg-panel-field" />
             <div class="mt-1.5 h-2.5 w-1/3 rounded bg-panel-field" />

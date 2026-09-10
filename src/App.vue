@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue'
 import { useEventListener } from '@vueuse/core'
+import { MotionConfig } from 'motion-v'
 import { TooltipProvider } from 'reka-ui'
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
 import { toast } from '@/app/shell/ui'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater'
@@ -24,7 +26,10 @@ const { updates, locale } = useI18n()
 
 useHead({
   titleTemplate: (title) => (title ? `${title} — OpenPencil` : 'OpenPencil'),
-  htmlAttrs: { lang: locale }
+  htmlAttrs: {
+    lang: locale,
+    'data-motion': computed(() => (animationsEnabled.value ? 'full' : 'off'))
+  }
 })
 
 provideEditor(store)
@@ -41,14 +46,16 @@ onMounted(() => {
 </script>
 
 <template>
-  <TooltipProvider :delay-duration="400">
-    <AppShell>
-      <RouterView />
-    </AppShell>
-    <SettingsDialog />
-    <RecoveryDialog />
-    <PublishLibraryDialog />
-    <LibraryUpdateReviewDialog />
-    <AppToast />
-  </TooltipProvider>
+  <MotionConfig :reduced-motion="animationsEnabled ? 'never' : 'always'">
+    <TooltipProvider :delay-duration="400">
+      <AppShell>
+        <RouterView />
+      </AppShell>
+      <SettingsDialog />
+      <RecoveryDialog />
+      <PublishLibraryDialog />
+      <LibraryUpdateReviewDialog />
+      <AppToast />
+    </TooltipProvider>
+  </MotionConfig>
 </template>

@@ -17,6 +17,21 @@ bun run test              # Run tests, compare against baselines
 bun run test:update       # Regenerate baseline screenshots
 ```
 
+### Server ownership and worktrees
+
+The canonical `playwright.config.ts` starts Vite from the current checkout and waits for its HTTP URL. Vite starts and stops its MCP companion. Server reuse is off by default and always off in CI, so a test run cannot silently attach to another checkout on the default port.
+
+Defaults are app port `1420` and MCP port `7600`. For concurrent worktrees, choose a free, distinct pair:
+
+```sh
+OPENPENCIL_TEST_PORT=1482 OPENPENCIL_TEST_MCP_PORT=7682 \
+  bunx playwright test tests/e2e/settings --project=openpencil
+```
+
+The configuration passes the app origin and MCP port to Vite; the companion receives matching CORS configuration and a port-specific socket/discovery directory. Port conflicts fail rather than silently selecting another endpoint. Do not reuse ports across concurrent runs.
+
+For intentional local debugging against an already-running matching server, set `OPENPENCIL_TEST_REUSE_SERVER=1`. Do not use reuse for baseline comparisons: HTTP readiness does not establish checkout identity. Start a matching custom-port preview with `OPENPENCIL_DEV_ORIGIN=http://localhost:1482 OPENPENCIL_DEV_MCP_PORT=7682 bun run dev --port 1482`. Portless remains the preferred interactive worktree preview workflow, separate from managed fixed-port tests.
+
 ### How It Works
 
 1. Tests load the editor in a headless browser

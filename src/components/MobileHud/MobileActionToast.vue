@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { useMobileHudContext } from '@/components/MobileHud/context'
+import { feedbackTransition } from '@/theme/motion/styles'
 
 const hud = useMobileHudContext()
 </script>
 
 <template>
-  <Transition
-    enter-active-class="animate-in fade-in duration-150"
-    leave-active-class="animate-out fade-out duration-200"
-  >
+  <Transition v-bind="feedbackTransition">
     <div
       v-if="hud.actionToast"
       :key="hud.actionToast"

@@ -546,7 +546,7 @@ async function insertSelectedAsset() {
             <div v-else class="text-center">
               <icon-lucide-loader-2
                 v-if="previewLoading"
-                class="mx-auto size-5 animate-spin text-muted"
+                class="mx-auto size-5 animate-spin motion-reduce:animate-none text-muted"
               />
               <component
                 v-else

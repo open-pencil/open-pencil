@@ -8,6 +8,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
+import { useMotionTransition } from '@/app/shell/motion/transitions'
 import {
   DRAWER_SPRING_DAMPING,
   DRAWER_SPRING_STIFFNESS,
@@ -106,11 +107,11 @@ function onPanEnd(_e: PointerEvent, info: PanInfo) {
   targetHeight.value = snapHeight(snap.value)
 }
 
-const drawerTransition = {
-  type: 'spring' as const,
+const drawerTransition = useMotionTransition({
+  type: 'spring',
   stiffness: DRAWER_SPRING_STIFFNESS,
   damping: DRAWER_SPRING_DAMPING
-}
+})
 </script>
 
 <template>

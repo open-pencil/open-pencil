@@ -58,7 +58,8 @@ function removeSelectedGuide() {
 }
 
 const menuCls = useMenuUI({
-  content: 'min-w-56 shadow-[0_8px_30px_rgb(0_0_0/0.4)] animate-in fade-in zoom-in-95',
+  content:
+    'min-w-56 shadow-[0_8px_30px_rgb(0_0_0/0.4)] animate-in fade-in zoom-in-95 motion-reduce:animate-none',
   separator: 'my-1'
 })
 const componentMenu = menu({ tone: 'component' })

@@ -1,6 +1,9 @@
 import { i18n } from '#vue/i18n/create'
 
 export const settingsMessageDefaults = {
+  animations: 'Animations',
+  animationsSystem: 'Follow system',
+  animationsOff: 'Off',
   title: 'Settings',
   description: 'Manage integrations and app preferences.',
   general: 'General',

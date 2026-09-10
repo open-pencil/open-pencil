@@ -3,6 +3,23 @@
 @import 'vue-stream-markdown/index.css' layer(components);
 @import './theme/chat/markdown.css';
 
+@custom-variant motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    &:where(:root:not([data-motion='off']), :root:not([data-motion='off']) *) {
+      @slot;
+    }
+  }
+}
+
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @slot;
+  }
+  &:where([data-motion='off'], [data-motion='off'] *) {
+    @slot;
+  }
+}
+
 @utility scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;

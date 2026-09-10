@@ -19,5 +19,8 @@
   "diagnostics": "診断",
   "media": "メディア",
   "automation": "MCP と自動化",
-  "storage": "クラウドストレージ"
+  "storage": "クラウドストレージ",
+  "animations": "アニメーション",
+  "animationsSystem": "システム設定に従う",
+  "animationsOff": "オフ"
 }

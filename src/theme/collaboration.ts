@@ -23,7 +23,7 @@ const collaborationTheme = {
       idle: { shareButton: 'bg-accent text-white hover:bg-accent/90' },
       joining: {
         shareButton:
-          'animate-pulse border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]'
+          'animate-pulse motion-reduce:animate-none border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]'
       },
       connected: {
         shareButton:

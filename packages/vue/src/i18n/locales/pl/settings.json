@@ -19,5 +19,8 @@
   "diagnostics": "Diagnostyka",
   "media": "Media",
   "automation": "MCP i automatyzacja",
-  "storage": "Przechowywanie w chmurze"
+  "storage": "Przechowywanie w chmurze",
+  "animations": "Animacje",
+  "animationsSystem": "Zgodnie z systemem",
+  "animationsOff": "Wyłączone"
 }

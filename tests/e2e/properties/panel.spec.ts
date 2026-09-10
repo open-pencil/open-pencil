@@ -42,17 +42,41 @@ test('appearance fields share control height and show variable actions', async (
   await expect(applyVariable).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
 
   await applyVariable.click()
-  const search = editor.page.getByPlaceholder('Search')
+  const search = editor.page.locator('input[data-slot="search"]')
   const picker = editor.page.locator('[data-slot=content]').filter({ has: search })
   await expect(picker).toBeVisible()
   const triggerBox = expectDefined(await applyVariable.boundingBox(), 'variable trigger bounds')
   const pickerBox = expectDefined(await picker.boundingBox(), 'variable picker bounds')
-  expect(pickerBox.x + pickerBox.width).toBeLessThan(triggerBox.x)
-  expect(
-    Math.abs(pickerBox.y + pickerBox.height / 2 - (triggerBox.y + triggerBox.height / 2))
-  ).toBeLessThan(4)
+  await expect(picker).toHaveAttribute('data-side', 'bottom')
+  expect(pickerBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height)
+  expect(Math.abs(pickerBox.x + pickerBox.width - (triggerBox.x + triggerBox.width))).toBeLessThan(
+    4
+  )
   await search.press('Escape')
 
+  // Move the anchor near the bottom without changing its actual panel layout.
+  const viewport = editor.page.viewportSize()
+  if (!viewport) throw new Error('Viewport unavailable')
+  await editor.page.setViewportSize({
+    width: viewport.width,
+    height: Math.ceil(triggerBox.y + triggerBox.height + 24)
+  })
+  try {
+    await applyVariable.click()
+    await expect(picker).toHaveAttribute('data-side', 'top')
+    const flipped = expectDefined(await picker.boundingBox(), 'flipped picker bounds')
+    const anchor = expectDefined(await applyVariable.boundingBox(), 'edge trigger bounds')
+    expect(flipped.y).toBeGreaterThanOrEqual(8)
+    expect(flipped.y + flipped.height).toBeLessThanOrEqual(anchor.y)
+    await search.press('Escape')
+  } finally {
+    await editor.page.setViewportSize(viewport)
+  }
+})
+
+test('paint fields retain editable color and opacity widths', async () => {
+  await editor.canvas.clearCanvas()
+  await editor.canvas.drawRect(200, 200, 80, 80)
   const fillItem = propertyItems(editor.page, 'fills').first()
   const paintField = fillItem.locator('[data-slot="paint-field"]')
   await expect(paintField).toHaveCSS('height', '24px')

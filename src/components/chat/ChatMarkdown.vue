@@ -6,6 +6,7 @@ import { IS_BROWSER } from '@open-pencil/core/constants'
 
 import { createMarkdownHardenOptions, markdownExtensions } from '@/app/shell/markdown/config'
 import { markdownRenderKey, type MarkdownSurface } from '@/app/shell/markdown/state'
+import { animationsEnabled } from '@/app/shell/motion'
 import { resolvedAppTheme } from '@/app/shell/theme'
 import InlineCode from '@/components/chat/markdown/InlineCode.vue'
 import { chatMarkdownTheme } from '@/theme/chat/markdown'
@@ -36,6 +37,7 @@ const renderKey = computed(() => markdownRenderKey({ mode, surface }))
       :components="markdownComponents"
       :content="content"
       :is-dark="isDark"
+      :enable-animate="animationsEnabled"
       :mode="mode"
       :extensions="markdownExtensions"
       :harden-options="hardenOptions"

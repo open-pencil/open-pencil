@@ -7,6 +7,14 @@
 
 .chat-markdown {
   --shiki-dark-bg: var(--color-input);
+
+  &[data-chat-markdown-mode='streaming'] {
+    [data-stream-markdown='li'],
+    [data-stream-markdown='code-block'],
+    [data-stream-markdown='code-line'] {
+      @apply animate-in fade-in duration-200 motion-reduce:animate-none;
+    }
+  }
   @apply text-[11px] leading-4;
 
   [data-stream-markdown='blockquote'],

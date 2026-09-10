@@ -37,7 +37,7 @@ const progressSteps = computed(() => Math.round(progressValue.value ?? 0))
         >
           <ProgressIndicator
             v-if="progressValue === null"
-            class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] rounded-full bg-surface/25"
+            class="h-full w-2/5 animate-[slide_1s_ease-in-out_infinite] motion-reduce:animate-none rounded-full bg-surface/25"
           />
           <div v-else class="flex h-full w-full">
             <span

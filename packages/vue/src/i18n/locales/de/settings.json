@@ -19,5 +19,8 @@
   "diagnostics": "Diagnose",
   "media": "Medien",
   "automation": "MCP & Automatisierung",
-  "storage": "Cloud-Speicher"
+  "storage": "Cloud-Speicher",
+  "animations": "Animationen",
+  "animationsSystem": "Systemeinstellung",
+  "animationsOff": "Aus"
 }

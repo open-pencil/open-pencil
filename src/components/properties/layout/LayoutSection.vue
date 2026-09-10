@@ -38,7 +38,9 @@ const CONTAINER_TYPES = ['FRAME', 'COMPONENT', 'COMPONENT_SET', 'INSTANCE']
         </template>
 
         <LayoutFlowControl v-if="CONTAINER_TYPES.includes(ctx.node.type)" />
-        <div class="mt-2 mb-1 text-[11px] text-muted">{{ panels.dimensions }}</div>
+        <div v-if="ctx.node.type !== 'TEXT'" class="mt-2 mb-1 text-[11px] text-muted">
+          {{ panels.dimensions }}
+        </div>
         <TextResizingControl v-if="ctx.node.type === 'TEXT'" />
         <SizeControls />
         <ClipContentControl
