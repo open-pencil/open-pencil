@@ -16,6 +16,7 @@ for (const custom of [false, true]) {
       const { default: AppSelect } = await import(selectPath)
       const { default: IconButton } = await import(buttonPath)
       const value = ref('first')
+      const disabled = ref(false)
       const host = document.createElement('div')
       host.dataset.slot = 'select-contract-fixture'
       document.body.append(host)
@@ -24,6 +25,8 @@ for (const custom of [false, true]) {
           AppSelect,
           {
             modelValue: value.value,
+            disabled: disabled.value,
+            'data-command': 'choose-test-style',
             'onUpdate:modelValue': (next: string) => {
               value.value = next
             },
@@ -39,6 +42,9 @@ for (const custom of [false, true]) {
       app.mount(host)
       return {
         value: () => value.value,
+        disable: () => {
+          disabled.value = true
+        },
         dispose() {
           app.unmount()
           host.remove()
@@ -61,6 +67,11 @@ for (const custom of [false, true]) {
       await page.keyboard.press('Escape')
       await expect(trigger).toBeFocused()
       if (!custom) await expect(trigger).toHaveText('Second')
+      await expect(trigger).toHaveAttribute('data-command', 'choose-test-style')
+      await fixture.evaluate((state) => state.disable())
+      await expect(trigger).toBeDisabled()
+      await trigger.dispatchEvent('click')
+      await expect(page.getByRole('option')).toHaveCount(0)
     } finally {
       await fixture.evaluate((state) => state.dispose())
       await fixture.dispose()
