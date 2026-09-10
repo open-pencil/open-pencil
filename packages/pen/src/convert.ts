@@ -422,10 +422,10 @@ interface ParsedSize {
 
 function parseParameterizedFallback(value: string, behavior: string): number | undefined {
   const prefix = `${behavior}(`
-  if (!value.startsWith(prefix) || !value.endsWith(')')) return
+  if (!value.startsWith(prefix) || !value.endsWith(')')) return undefined
 
   const rawFallback = value.slice(prefix.length, -1).trim()
-  if (rawFallback === '') return
+  if (rawFallback === '') return undefined
 
   const parsedFallback = Number(rawFallback)
   return Number.isFinite(parsedFallback) ? parsedFallback : undefined
@@ -447,6 +447,7 @@ function parseSizingBehavior(value: string, fallback: number): ParsedSize | unde
   if (fitFallback !== undefined) {
     return { value: fitFallback, sizing: 'HUG', fitContentFallback: fitFallback }
   }
+  return undefined
 }
 
 export function parseSize(
