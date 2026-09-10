@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-test('streaming lists and code lines animate only when inserted', async ({ page }) => {
+test('streaming lists and code lines fade in and respect reduced motion and settled state', async ({
+  page
+}) => {
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   const fixture = await page.evaluateHandle(async () => {
