@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { DialogClose } from 'reka-ui'
+import { ref } from 'vue'
 
 import { useI18n, useViewportKind } from '@open-pencil/vue'
 
@@ -28,7 +29,13 @@ import AppTabsTrigger from '@/components/ui/tabs/AppTabsTrigger.vue'
 
 const { isMobile } = useViewportKind()
 const { settings, common } = useI18n()
+const editingModel = ref(false)
+function onSectionChange(section: string | number): void {
+  if (editingModel.value) return
+  settingsDialogSection.value = section as typeof settingsDialogSection.value
+}
 function onOpenChange(open: boolean): void {
+  if (!open && editingModel.value) return
   settingsDialogOpen.value = open
 }
 </script>
@@ -45,13 +52,15 @@ function onOpenChange(open: boolean): void {
       :heading="settings.title"
       :description="settings.description"
       :close-label="common.close"
+      :show-close="!editingModel"
     />
 
     <AppTabsRoot
-      v-model="settingsDialogSection"
+      :model-value="settingsDialogSection"
+      @update:model-value="onSectionChange"
       :orientation="isMobile ? 'horizontal' : 'vertical'"
     >
-      <AppTabsList :label="settings.title">
+      <AppTabsList :label="settings.title" :inert="editingModel || undefined">
         <AppTabsTrigger value="general" data-test-id="settings-section-general">
           <template #leading><icon-lucide-settings class="size-3.5" /></template>
           {{ settings.general }}
@@ -88,8 +97,9 @@ function onOpenChange(open: boolean): void {
       <AppTabsContent value="ai" as-child>
         <AppDialogBody>
           <section class="flex h-full flex-col" data-test-id="settings-ai-panel">
-            <ModelsPanel />
-            <ChatSettingsSection />
+            <ModelsPanel v-model:editing="editingModel">
+              <ChatSettingsSection />
+            </ModelsPanel>
           </section>
         </AppDialogBody>
       </AppTabsContent>
@@ -121,7 +131,7 @@ function onOpenChange(open: boolean): void {
       </AppTabsContent>
     </AppTabsRoot>
 
-    <AppDialogFooter>
+    <AppDialogFooter v-if="!editingModel || settingsDialogSection !== 'ai'">
       <DialogClose as-child>
         <AppButton color="primary" variant="solid" data-test-id="app-settings-done">
           {{ common.done }}

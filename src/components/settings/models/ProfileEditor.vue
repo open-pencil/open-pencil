@@ -12,7 +12,6 @@ import ProviderSettingsField from '@/components/settings/provider/ProviderSettin
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import IconButton from '@/components/ui/button/IconButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
@@ -71,10 +70,7 @@ async function remove() {
 
 <template>
   <div class="flex min-h-0 flex-1 flex-col" data-test-id="settings-model-editor">
-    <div class="flex items-center gap-2 border-b border-border pb-3">
-      <IconButton :label="common.back" @click="emit('done')">
-        <icon-lucide-arrow-left class="size-3.5" />
-      </IconButton>
+    <div class="flex shrink-0 items-center gap-2 border-b border-border pb-3">
       <div>
         <h3 class="text-xs font-semibold text-surface">
           {{ profileId ? ai.editModel : ai.addModel }}
