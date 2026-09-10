@@ -232,6 +232,8 @@ Keep responsibilities distinct: engine tests cover state contracts, Playwright b
 
 ### Animations
 
+Motion policy lives in `src/app/shell/motion/`: resolve persisted System/Off preference and OS reduction once. The root `data-motion` attribute and the app's Tailwind `motion-safe`/`motion-reduce` variants represent this effective policy, including portalled content. Store-free presets/treatments live in `src/theme/motion/`; compose them into owning themes. Use the policy-aware Motion adapters for shared or feature-specific transitions rather than repeating preference conditionals in components. Keep what moves, geometry, and genuinely feature-specific spring values local.
+
 - Use Tailwind transitions and `tw-animate-css` for simple visual state changes and enter/exit animations. Use the existing `motion-v` dependency for gesture-driven motion, coordinated layout changes, and springs; do not add another animation library.
 - Use Reka state attributes and measured CSS variables for collapsibles. The utilities are `animate-collapsible-down` and `animate-collapsible-up`; keep padding and borders inside the animated height wrapper so they do not snap during collapse.
 - Respect `prefers-reduced-motion` in both CSS and Motion. Disable or simplify nonessential motion while preserving state changes and interaction feedback.

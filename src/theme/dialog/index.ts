@@ -1,12 +1,11 @@
-const dialogMotion =
-  'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:duration-180 data-[state=open]:ease-out data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-120 data-[state=closed]:ease-in motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none'
+import { motionStyles } from '@/theme/motion/styles'
 
 export default {
   slots: {
-    overlay: `fixed inset-0 z-40 bg-black/50 ${dialogMotion}`,
+    overlay: ['fixed inset-0 z-40 bg-black/50', motionStyles.overlay],
     content: [
       'fixed top-1/2 left-1/2 z-50 flex max-h-[min(90vh,48rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-panel shadow-[0_8px_30px_rgb(0_0_0/0.4)] outline-none data-[state=open]:zoom-in-98 data-[state=closed]:zoom-out-98',
-      dialogMotion
+      motionStyles.overlay
     ],
     header: 'flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-3',
     heading: 'min-w-0',

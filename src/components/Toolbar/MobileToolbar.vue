@@ -9,6 +9,8 @@ import type { EditorToolDef } from '@open-pencil/core/editor'
 import { getToolbarToolSelection, toolbarToolTestId, ToolbarItem } from '@open-pencil/vue'
 import type { Tool } from '@open-pencil/vue'
 
+import { animationsEnabled } from '@/app/shell/motion'
+import { useMotionTransitions } from '@/app/shell/motion/transitions'
 import ToolbarActionGroup from '@/components/Toolbar/ToolbarActionGroup.vue'
 import ToolButton from '@/components/Toolbar/ToolButton.vue'
 import ToolFlyout from '@/components/Toolbar/ToolFlyout.vue'
@@ -60,6 +62,8 @@ const emit = defineEmits<{
   action: [item: ToolbarActionItem]
 }>()
 
+const { quick: itemTransition, layout: layoutTransition } = useMotionTransitions()
+
 const slideVariants = {
   initial: (dir: unknown) => ({ opacity: 0, x: (dir as number) * 20 }),
   animate: { opacity: 1, x: 0 },
@@ -86,7 +90,7 @@ function navigationClass(disabled: boolean) {
       :data-disabled="!hasPrev || undefined"
       :class="navigationClass(!hasPrev)"
       :animate="{ opacity: hasPrev ? 1 : 0 }"
-      :transition="{ duration: 0.15 }"
+      :transition="itemTransition"
       @click="emit('prev')"
     >
       <IconChevronLeft :class="styles.navigationIcon({ class: ui?.navigationIcon })" />
@@ -94,10 +98,10 @@ function navigationClass(disabled: boolean) {
 
     <ToolbarRoot as-child>
       <motion.div
-        layout
+        :layout="animationsEnabled"
         data-test-id="mobile-toolbar-container"
         class="relative flex h-11 items-center overflow-hidden rounded-[8px] border border-border bg-panel px-2 shadow-lg"
-        :transition="{ layout: { type: 'spring', damping: 30, stiffness: 500 } }"
+        :transition="layoutTransition"
       >
         <AnimatePresence mode="popLayout" :custom="slideDirection">
           <motion.div
@@ -109,7 +113,7 @@ function navigationClass(disabled: boolean) {
             initial="initial"
             animate="animate"
             exit="exit"
-            :transition="{ duration: 0.15 }"
+            :transition="itemTransition"
           >
             <template v-for="tool in tools" :key="tool.key">
               <ToolFlyout
@@ -151,7 +155,7 @@ function navigationClass(disabled: boolean) {
             initial="initial"
             animate="animate"
             exit="exit"
-            :transition="{ duration: 0.15 }"
+            :transition="itemTransition"
           >
             <ToolbarActionGroup
               :actions="editActions"
@@ -170,7 +174,7 @@ function navigationClass(disabled: boolean) {
             initial="initial"
             animate="animate"
             exit="exit"
-            :transition="{ duration: 0.15 }"
+            :transition="itemTransition"
           >
             <ToolbarActionGroup
               :actions="arrangeActions"
@@ -189,7 +193,7 @@ function navigationClass(disabled: boolean) {
       :data-disabled="!hasNext || undefined"
       :class="navigationClass(!hasNext)"
       :animate="{ opacity: hasNext ? 1 : 0 }"
-      :transition="{ duration: 0.15 }"
+      :transition="itemTransition"
       @click="emit('next')"
     >
       <IconChevronRight :class="styles.navigationIcon({ class: ui?.navigationIcon })" />

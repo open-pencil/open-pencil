@@ -8,6 +8,7 @@ import {
   type AppButtonSize,
   type AppButtonVariant
 } from '@/theme/button/button'
+import { motionStyles } from '@/theme/motion/styles'
 
 const {
   color = 'neutral',
@@ -56,7 +57,7 @@ const isDisabled = computed(() => disabled || loading)
     :class="styles.base"
   >
     <span v-if="loading" data-slot="loading-icon" :class="styles.icon">
-      <icon-lucide-loader-2 class="animate-spin" />
+      <icon-lucide-loader-2 :class="motionStyles.spinner" />
     </span>
     <span v-else-if="$slots.leading" data-slot="leading-icon" :class="styles.icon">
       <slot name="leading" />

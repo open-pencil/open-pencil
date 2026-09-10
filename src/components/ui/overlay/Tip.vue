@@ -5,6 +5,7 @@ import type { ComponentPublicInstance } from 'vue'
 import { computed, nextTick, ref, watch } from 'vue'
 
 import { useTooltipUI } from '@/components/ui/overlay/tooltip'
+import { motionStyles } from '@/theme/motion/styles'
 
 const TOOLTIP_OPEN_DELAY_MS = 400
 const TOOLTIP_SIDE_OFFSET = 4
@@ -13,7 +14,7 @@ const TOOLTIP_CLAIM_EVENT = 'open-pencil:tooltip-claim'
 
 type TooltipSide = 'top' | 'bottom' | 'left' | 'right'
 
-const cls = useTooltipUI({ content: 'animate-in zoom-in-95 fade-in' })
+const cls = useTooltipUI({ content: motionStyles.popup })
 
 const {
   asChild = false,

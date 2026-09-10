@@ -123,6 +123,7 @@ fr:panels.radialGradient
 fr:panels.rotation
 fr:panels.saturation
 fr:panels.variables
+fr:settings.animations
 fr:settings.diagnostics
 fr:settings.notifications
 fr:storage.bucket

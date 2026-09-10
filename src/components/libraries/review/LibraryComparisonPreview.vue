@@ -34,5 +34,5 @@ watch(
 
 <template>
   <img v-if="url" :src="url" :alt="alt" class="max-h-[60vh] max-w-[80%] object-contain" />
-  <icon-lucide-loader-2 v-else class="size-5 animate-spin text-muted" />
+  <icon-lucide-loader-2 v-else class="size-5 animate-spin motion-reduce:animate-none text-muted" />
 </template>

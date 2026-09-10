@@ -6,6 +6,7 @@ import { type Locale, useI18n } from '@open-pencil/vue'
 import { recoveryEnabled, setRecoveryEnabled } from '@/app/document/recovery/preferences'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { appPreferences } from '@/app/settings/preferences/store'
+import { animationPreference } from '@/app/shell/motion'
 import CredentialSettingsSection from '@/components/settings/credentials/CredentialSettingsSection.vue'
 import RenderingSettingsSection from '@/components/settings/general/RenderingSettingsSection.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
@@ -65,6 +66,21 @@ const snapToPixelGrid = computed({
         />
       </label>
     </div>
+
+    <SettingsGroup>
+      <label class="flex items-center justify-between gap-4 px-3 py-2.5">
+        <span class="text-xs text-surface">{{ settings.animations }}</span>
+        <AppSelect
+          v-model="animationPreference"
+          :label="settings.animations"
+          :options="[
+            { value: 'system', label: settings.animationsSystem },
+            { value: 'off', label: settings.animationsOff }
+          ]"
+          class="w-44"
+        />
+      </label>
+    </SettingsGroup>
 
     <SettingsSectionHeader>
       {{ recovery.settingsTitle }}

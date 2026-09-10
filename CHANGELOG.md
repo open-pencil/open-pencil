@@ -36,6 +36,7 @@
 
 ### Changed
 
+- Choose whether interface animations follow the system motion preference or stay off, with live updates and a persistent override.
 - Put unbound fill and stroke style pickers in section headers, preserve applied and missing style rows, and remove the redundant Dimensions heading for text layers.
 - Open variable pickers below their trigger when space permits, flipping above near the viewport edge.
 - Keep AI chat preferences with the model overview and edit models in a fixed-size Settings pane with explicit Save and Cancel actions.

@@ -19,5 +19,8 @@
   "diagnostics": "诊断",
   "media": "媒体",
   "automation": "MCP 与自动化",
-  "storage": "云存储"
+  "storage": "云存储",
+  "animations": "动画",
+  "animationsSystem": "跟随系统",
+  "animationsOff": "关闭"
 }

@@ -19,5 +19,8 @@
   "diagnostics": "Diagnóstico",
   "media": "Multimedia",
   "automation": "MCP y automatización",
-  "storage": "Almacenamiento en la nube"
+  "storage": "Almacenamiento en la nube",
+  "animations": "Animaciones",
+  "animationsSystem": "Seguir al sistema",
+  "animationsOff": "Desactivadas"
 }

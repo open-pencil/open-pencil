@@ -118,7 +118,7 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
                 >
                   <icon-lucide-loader-circle
                     v-if="toolState(part) === 'pending'"
-                    class="size-3 animate-spin"
+                    class="size-3 animate-spin motion-reduce:animate-none"
                   />
                   <icon-lucide-check v-else-if="toolState(part) === 'done'" class="size-3" />
                   <icon-lucide-triangle-alert v-else class="size-3" />
