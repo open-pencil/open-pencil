@@ -26,7 +26,7 @@ test('shapes flyout opens', async () => {
 test('Polygon tool creates POLYGON node', async () => {
   await editor.page.getByTestId(toolbarFlyoutItemTestId('POLYGON')).click()
   await expect(editor.page.getByTestId(toolbarToolTestId('POLYGON'))).toHaveAttribute(
-    'data-active',
+    'aria-pressed',
     'true'
   )
   await editor.canvas.drag(300, 200, 400, 300)
@@ -50,9 +50,9 @@ test('Star tool creates STAR node', async () => {
 
 test('shape flyout remembers its selection independently of the active tool', async () => {
   await editor.canvas.pressKey('f')
-  await expect(editor.page.getByTestId(toolbarToolTestId('STAR'))).not.toHaveAttribute(
-    'data-active',
-    'true'
+  await expect(editor.page.getByTestId(toolbarToolTestId('STAR'))).toHaveAttribute(
+    'aria-pressed',
+    'false'
   )
 
   await editor.page.getByTestId(toolbarFlyoutTestId('RECTANGLE')).click()
@@ -134,7 +134,7 @@ test('Frame flyout shows Frame and Section items', async () => {
   const frameButton = editor.page.getByTestId(toolbarToolTestId('FRAME'))
   const frameOptions = editor.page.getByTestId(toolbarFlyoutTestId('FRAME'))
 
-  await expect(frameButton).toHaveAttribute('data-active', 'true')
+  await expect(frameButton).toHaveAttribute('aria-pressed', 'true')
   await expect(frameOptions).not.toHaveAttribute('data-active', 'true')
   await expect(frameOptions).toHaveAttribute('data-state', 'closed')
 

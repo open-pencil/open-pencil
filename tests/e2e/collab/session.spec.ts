@@ -119,6 +119,30 @@ async function connect(peer: Peer) {
   }, ROOM_ID)
 }
 
+test('mobile presence popover returns focus and disconnects the peer', async ({ browser }) => {
+  const relay = await startRelay()
+  let peer: Peer | null = null
+  try {
+    peer = await createPeer(browser, 'Mobile', relay.url)
+    await peer.page.setViewportSize({ width: 390, height: 844 })
+    await connect(peer)
+    const trigger = peer.page.getByRole('button', { name: 'Online: 1', exact: true })
+    await expect(trigger).toBeVisible()
+    await trigger.focus()
+    await trigger.press('Enter')
+    await expect(peer.page.getByRole('button', { name: 'Disconnect', exact: true })).toBeVisible()
+    await peer.page.keyboard.press('Escape')
+    await expect(trigger).toBeFocused()
+    await trigger.press('Space')
+    await peer.page.getByRole('button', { name: 'Disconnect', exact: true }).click()
+    await expect(trigger).toHaveCount(0)
+    expect(collaborationErrors(peer)).toEqual([])
+  } finally {
+    await peer?.context.close()
+    await relay.close()
+  }
+})
+
 test('two browser peers synchronize editing, awareness, departure, and reconnect', async ({
   browser
 }) => {

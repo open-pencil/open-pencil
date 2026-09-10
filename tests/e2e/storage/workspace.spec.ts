@@ -82,7 +82,10 @@ test('configured storage lists previews through ranges before opening the docume
 
   await page.goto('/storage?test')
   const canvas = new CanvasHelper(page)
+  await canvas.waitForInit()
+  await page.keyboard.press('ControlOrMeta+KeyN')
   await page.getByRole('button', { name: 'Settings' }).last().click()
+  await page.getByTestId('settings-section-storage').click()
   await page.getByLabel('Endpoint').fill('https://s3.example.com')
   await page.getByLabel('Bucket').fill('designs')
 
@@ -96,15 +99,17 @@ test('configured storage lists previews through ranges before opening the docume
   }
 
   await page.getByTestId('settings-storage-open-workspace').click()
-  await expect(page.getByTestId('storage-workspace')).toBeVisible()
-  await expect(page.getByText('Remote design')).toBeVisible()
-  const preview = page.locator('[data-document-id="remote-1"] img')
+  await expect(page.getByTestId('recent-files-home')).toBeVisible()
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  const entry = page.getByRole('button', { name: /Remote design/ })
+  await expect(entry).toBeVisible()
+  const preview = entry.locator('img')
   await expect(preview).toBeVisible()
   await expect(preview).toHaveAttribute('src', /^blob:/)
   expect(rangeGets).toBe(3)
   expect(fullDocumentGets).toBe(0)
 
-  await page.locator('[data-document-id="remote-1"]').click()
+  await entry.click()
   await expect(page).toHaveURL(/\/$/)
   await canvas.waitForInit()
   await expect(page.getByText('Remote design').first()).toBeVisible()
@@ -113,11 +118,14 @@ test('configured storage lists previews through ranges before opening the docume
 
 test('storage workspace directs unconfigured users to Settings', async ({ page }) => {
   await page.goto('/storage?test')
+  await new CanvasHelper(page).waitForInit()
+  await page.keyboard.press('ControlOrMeta+KeyN')
 
-  await expect(page.getByTestId('storage-workspace')).toBeVisible()
+  await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect(page.getByText('Configure storage before using this workspace.')).toBeVisible()
-  await expect(page.getByTestId('storage-new-document')).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'New design', exact: true })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Settings' }).last().click()
+  await page.getByTestId('settings-section-storage').click()
   await expect(page.getByTestId('settings-storage-panel')).toBeVisible()
 })
