@@ -37,7 +37,7 @@ const cls = computed(() =>
 </script>
 
 <template>
-  <Tip :label="label" :side="side" :disabled="disabled || !label">
+  <Tip as-child :label="label" :side="side" :disabled="disabled || !label">
     <button
       v-bind="buttonAttrs"
       data-slot="icon-button"
