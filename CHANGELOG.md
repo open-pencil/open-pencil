@@ -36,6 +36,7 @@
 
 ### Changed
 
+- Keep pixel-grid rounding invisible while showing alignment guides only for real geometry, objects, and canvas/layout guides.
 - Copy selections as Figma-compatible clipboard data while preserving typed geometry, text sizing, images, components, variables, modes, and shared styles for lossless in-app paste.
 - Choose whether interface animations follow the system motion preference or stay off, with live updates and a persistent override.
 - Put unbound fill and stroke style pickers in section headers, preserve applied and missing style rows, and remove the redundant Dimensions heading for text layers.

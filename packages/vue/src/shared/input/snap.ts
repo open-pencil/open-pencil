@@ -17,29 +17,13 @@ export function computePixelGridSnap(bounds: Rect, threshold: number): PixelSnap
   const roundedY = Math.round(bounds.y)
   const dx = roundedX - bounds.x
   const dy = roundedY - bounds.y
-  const guides: SnapGuide[] = []
-  if (Math.abs(dx) < threshold) {
-    guides.push({
-      axis: 'x',
-      position: roundedX,
-      from: bounds.y,
-      to: bounds.y + bounds.height
-    })
-  }
-  if (Math.abs(dy) < threshold) {
-    guides.push({
-      axis: 'y',
-      position: roundedY,
-      from: bounds.x,
-      to: bounds.x + bounds.width
-    })
-  }
   return {
     delta: {
       x: Math.abs(dx) < threshold ? dx : 0,
       y: Math.abs(dy) < threshold ? dy : 0
     },
-    guides
+    // Pixel rounding is not alignment with another object or an explicit guide.
+    guides: []
   }
 }
 
