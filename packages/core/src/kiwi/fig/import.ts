@@ -23,6 +23,7 @@ import type {
 } from '@open-pencil/scene-graph'
 
 import { BLACK } from '#core/constants'
+import { linkImportedInstanceChildren } from '#core/kiwi/fig/import-linkage'
 import { setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 
 type AssetRef = { key: string; version?: string }
@@ -586,14 +587,13 @@ export function importNodeChanges(
     })
   }
 
+  // Link imported instance children after population so linkage operates on the final tree state.
+  linkImportedInstanceChildren(graph)
+
   if (activeRootIds)
     rememberLazyFigImportContext(graph, changeMap, guidToNodeId, blobs, activeRootIds)
 
   setVariableColorResolver(null)
-
-  if (graph.getPages(true).length === 0) {
-    graph.addPage('Page 1')
-  }
-
+  if (graph.getPages(true).length === 0) graph.addPage('Page 1')
   return graph
 }

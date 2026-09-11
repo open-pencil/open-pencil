@@ -12,6 +12,8 @@ import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/c
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { linkImportedInstanceChildren } from '#core/kiwi/fig/import-linkage'
+
 import { decodeBase64, decodeBase64Text, encodeBase64, encodeBase64Text } from './bytes'
 import { shapeTextForClipboard } from './canvas/text/clipboard'
 import {
@@ -297,6 +299,19 @@ export function importClipboardNodes(
   }
 
   detachOrphanedInstances(created, graph)
+
+  // Link pasted instance children so a later component sync does not re-clone them.
+  // Pasted Figma instances can carry serialized children with componentId: null, and
+  // syncChildren's name+type fallback cannot match renamed children. Scoped to the
+  // freshly pasted instances so pre-existing, user-modified instances in the target
+  // document are never re-linked. Non-INSTANCE children are only stamped when
+  // componentId is missing; sub-instance sourceComponentId overrides are re-stamped
+  // with the positional component child (same value as the .fig import path).
+  const pastedInstanceIds = new Set<string>()
+  for (const ourId of created.values()) {
+    if (graph.getNode(ourId)?.type === 'INSTANCE') pastedInstanceIds.add(ourId)
+  }
+  if (pastedInstanceIds.size > 0) linkImportedInstanceChildren(graph, pastedInstanceIds)
 
   return createdIds
 }
