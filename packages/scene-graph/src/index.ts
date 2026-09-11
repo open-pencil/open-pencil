@@ -84,6 +84,10 @@ export function generateId(): string {
   return `0:${nextLocalID++}`
 }
 
+export function changesAffectLayout(changes: Partial<SceneNode>): boolean {
+  return Object.keys(changes).some((key) => SceneGraph.LAYOUT_AFFECTING_KEYS.has(key))
+}
+
 export class SceneGraph {
   nodes = new Map<string, SceneNode>()
   images = new Map<string, Uint8Array>()
@@ -427,7 +431,7 @@ export class SceneGraph {
 
     // Only clear absPosCache when layout-affecting properties change.
     // Fills, strokes, effects, plugin data changes do NOT affect absolute position.
-    const affectsLayout = Object.keys(changes).some((k) => SceneGraph.LAYOUT_AFFECTING_KEYS.has(k))
+    const affectsLayout = changesAffectLayout(changes)
     if (affectsLayout) this.absPosCache.clear()
     if (
       node.type === 'INSTANCE' &&

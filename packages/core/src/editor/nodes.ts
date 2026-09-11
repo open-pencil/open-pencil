@@ -1,6 +1,10 @@
 import { pick } from 'es-toolkit/object'
 
-import { styleDetachmentChanges, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  changesAffectLayout,
+  styleDetachmentChanges,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 import { createLayoutModeActions } from './layout-mode'
 import { createNudgeActions } from './nudge'
@@ -34,7 +38,7 @@ export function createNodeActions(ctx: EditorContext) {
       ...pathTextEditChanges(node, changes)
     })
     ctx.graph.updateNode(id, nextChanges)
-    ctx.runLayoutForNode(id)
+    if (changesAffectLayout(nextChanges)) ctx.runLayoutForNode(id)
   }
 
   function updateNodeWithUndo(id: string, changes: Partial<SceneNode>, label = 'Update') {
@@ -50,17 +54,18 @@ export function createNodeActions(ctx: EditorContext) {
       node,
       Object.keys(nextChanges) as (keyof SceneNode)[]
     ) as Partial<SceneNode>
+    const needsLayout = changesAffectLayout(nextChanges)
     ctx.graph.updateNode(id, nextChanges)
-    ctx.runLayoutForNode(id)
+    if (needsLayout) ctx.runLayoutForNode(id)
     ctx.undo.push({
       label,
       forward: () => {
         ctx.graph.updateNode(id, nextChanges)
-        ctx.runLayoutForNode(id)
+        if (needsLayout) ctx.runLayoutForNode(id)
       },
       inverse: () => {
         ctx.graph.updateNode(id, previous)
-        ctx.runLayoutForNode(id)
+        if (needsLayout) ctx.runLayoutForNode(id)
       }
     })
     ctx.requestRender()
