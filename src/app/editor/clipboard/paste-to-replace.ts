@@ -1,6 +1,7 @@
 import type { EditorStore } from '@/app/editor/active-store'
 import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
 import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
+import { pasteClipboardHTML } from '@/app/editor/clipboard/paste'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { toast } from '@/app/shell/ui'
 import { readTauriClipboardText } from '@/app/tauri/clipboard'
@@ -47,7 +48,7 @@ export async function pasteClipboardToReplace(store: EditorStore) {
       toast.error(notificationMessages.get().clipboardMissingDesignData)
       return
     }
-    await store.pasteFromHTML(html, undefined, { replaceSelection: true })
+    await pasteClipboardHTML(store, html, undefined, { replaceSelection: true })
   } catch (error) {
     console.warn('Paste to replace failed', error)
     toast.error(notificationMessages.get().clipboardAccessBlocked)

@@ -4,7 +4,10 @@ import { extractImageFilesFromClipboard } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/active-store'
 import { getInMemoryClipboardHTML } from '@/app/editor/clipboard/memory'
+import { pasteClipboardHTML } from '@/app/editor/clipboard/paste'
+import { browserSystemClipboard } from '@/app/editor/clipboard/system/browser'
 import { tauriSystemClipboard } from '@/app/editor/clipboard/system/tauri'
+import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
 import { hasDocumentTextSelection, isEditing } from '@/app/shell/keyboard/focus'
 import { isTauri } from '@/app/tauri/env'
 
@@ -15,10 +18,11 @@ function cursorPosition(store: EditorStore) {
 
 export async function copyAndDeleteSelection(
   store: EditorStore,
-  clipboardData: DataTransfer
+  clipboard: SystemClipboard = browserSystemClipboard
 ): Promise<boolean> {
   try {
-    await store.writeCopyData(clipboardData)
+    const selectedIds = new Set(store.state.selectedIds)
+    if (!(await clipboard.copy(store)) || !selectionMatches(store, selectedIds)) return false
     store.deleteSelected()
     return true
   } catch (error) {
@@ -42,7 +46,7 @@ export function bindEditorClipboard(store: EditorStore) {
       void tauriSystemClipboard.copy(store)
       return
     }
-    if (e.clipboardData) void store.writeCopyData(e.clipboardData)
+    void browserSystemClipboard.copy(store)
   })
 
   useEventListener(window, 'cut', (e: ClipboardEvent) => {
@@ -56,7 +60,7 @@ export function bindEditorClipboard(store: EditorStore) {
       })
       return
     }
-    if (e.clipboardData) void copyAndDeleteSelection(store, e.clipboardData)
+    void copyAndDeleteSelection(store)
   })
 
   useEventListener(window, 'paste', (e: ClipboardEvent) => {
@@ -75,7 +79,7 @@ export function bindEditorClipboard(store: EditorStore) {
 
     const html = e.clipboardData?.getData('text/html') ?? ''
     if (html) {
-      void store.pasteFromHTML(html, cursorPos)
+      void pasteClipboardHTML(store, html, cursorPos)
       return
     }
 
@@ -86,7 +90,7 @@ export function bindEditorClipboard(store: EditorStore) {
 
     const memoryHTML = getInMemoryClipboardHTML()
     if (memoryHTML) {
-      void store.pasteFromHTML(memoryHTML, cursorPos)
+      void pasteClipboardHTML(store, memoryHTML, cursorPos)
     }
   })
 }

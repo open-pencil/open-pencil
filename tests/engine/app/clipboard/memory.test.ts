@@ -63,7 +63,7 @@ describe('in-memory clipboard', () => {
     })
     store.select([rect.id])
 
-    const write = mock(async (_payload: ClipboardPayload) => true)
+    const write = mock(async (_payload: Promise<ClipboardPayload>) => true)
     const clipboard = createBrowserSystemClipboard({
       write,
       readHTML: async () => ({ available: false })
@@ -72,10 +72,129 @@ describe('in-memory clipboard', () => {
 
     expect(success).toBe(true)
     expect(write).toHaveBeenCalledTimes(1)
-    const payload = write.mock.calls[0]?.[0]
+    const payload = await write.mock.calls[0]?.[0]
     expect(payload?.html).toBeDefined()
     expect(payload?.plainText).toBeDefined()
     expect(hasInMemoryClipboardHTML()).toBe(true)
+  })
+
+  test('starts the writer before serialization completes', async () => {
+    const store = createEditorStore()
+    store.select([store.graph.createNode('RECTANGLE', store.state.currentPageId).id])
+    const prepared = Promise.withResolvers<ClipboardPayload>()
+    store.prepareCopy = () => prepared.promise
+    let writerStarted = false
+    const clipboard = createBrowserSystemClipboard({
+      write: async (payload) => {
+        writerStarted = true
+        await payload
+        return true
+      },
+      readHTML: async () => ({ available: false })
+    })
+    const copying = clipboard.copy(store)
+    expect(writerStarted).toBe(true)
+    prepared.resolve({ html: '<p>Prepared</p>', plainText: 'Prepared' })
+    expect(await copying).toBe(true)
+  })
+
+  test('reports serialization failure without deleting or claiming success', async () => {
+    const store = createEditorStore()
+    const node = store.graph.createNode('RECTANGLE', store.state.currentPageId)
+    store.select([node.id])
+    store.prepareCopy = async () => {
+      throw new Error('Encoding failed')
+    }
+    const clipboard = createBrowserSystemClipboard({
+      write: async (payload) => {
+        await payload
+        return true
+      },
+      readHTML: async () => ({ available: false })
+    })
+    expect(await executeClipboardCommand(store, 'cut', undefined, clipboard)).toBe(false)
+    expect(store.graph.getNode(node.id)).toBeDefined()
+  })
+
+  test('matching internal snapshots preserve geometry buffers and text sizing', async () => {
+    const store = createEditorStore()
+    const node = store.graph.createNode('TEXT', store.state.currentPageId, {
+      name: 'Snapshot source',
+      text: 'Hello',
+      textAutoResize: 'WIDTH_AND_HEIGHT',
+      fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: new Uint8Array([0, 1, 2, 3]) }]
+    })
+    store.select([node.id])
+    expect(await memoryClipboard.copy(store)).toBe(true)
+    expect(await memoryClipboard.paste(store)).toBe(true)
+    const pasted = store.graph.getNode([...store.state.selectedIds][0])
+    expect(pasted?.id).not.toBe(node.id)
+    expect(pasted?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+    expect(pasted?.fillGeometry[0].commandsBlob).toBeInstanceOf(Uint8Array)
+    expect(pasted?.fillGeometry[0].commandsBlob).toEqual(node.fillGeometry[0].commandsBlob)
+    expect(pasted?.fillGeometry[0].commandsBlob).not.toBe(node.fillGeometry[0].commandsBlob)
+  })
+
+  test('mobile clipboard shares the typed snapshot across editor sessions', async () => {
+    const source = createEditorStore()
+    const node = source.graph.createNode('TEXT', source.state.currentPageId, {
+      name: 'Mobile source',
+      text: 'Hello',
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    source.select([node.id])
+    expect(await source.mobileCopy()).toBe(true)
+    const target = createEditorStore()
+    await target.mobilePaste()
+    const pasted = target.graph.getNode([...target.state.selectedIds][0])
+    expect(pasted?.name).toBe('Mobile source')
+    expect(pasted?.textAutoResize).toBe('WIDTH_AND_HEIGHT')
+  })
+
+  test('does not use a stale snapshot for different valid clipboard HTML', async () => {
+    const source = createEditorStore()
+    const original = source.graph.createNode('TEXT', source.state.currentPageId, {
+      name: 'Snapshot only',
+      textAutoResize: 'WIDTH_AND_HEIGHT'
+    })
+    source.select([original.id])
+    expect(await memoryClipboard.copy(source)).toBe(true)
+    const staleHTML = getInMemoryClipboardHTML()
+    const external = createEditorStore()
+    const rectangle = external.graph.createNode('RECTANGLE', external.state.currentPageId, {
+      name: 'External'
+    })
+    external.select([rectangle.id])
+    const differentHTML = (await external.prepareCopy()).html
+    expect(differentHTML).not.toBe(staleHTML)
+    const target = createEditorStore()
+    await target.pasteFromHTML(differentHTML)
+    expect([...target.state.selectedIds].map((id) => target.graph.getNode(id)?.name)).toEqual([
+      'External'
+    ])
+  })
+
+  test('failed writes clear the previous in-memory snapshot', async () => {
+    const first = createEditorStore()
+    const firstNode = first.graph.createNode('RECTANGLE', first.state.currentPageId, {
+      name: 'Successful'
+    })
+    first.select([firstNode.id])
+    expect(await memoryClipboard.copy(first)).toBe(true)
+    expect(getInMemoryClipboardHTML()).not.toBe('')
+    const second = createEditorStore()
+    second.select([
+      second.graph.createNode('RECTANGLE', second.state.currentPageId, { name: 'Failed' }).id
+    ])
+    const failing = createBrowserSystemClipboard({
+      write: async (payload) => {
+        await payload
+        return false
+      },
+      readHTML: async () => ({ available: false })
+    })
+    expect(await failing.copy(second)).toBe(false)
+    expect(getInMemoryClipboardHTML()).toBe('')
   })
 
   test('browser clipboard returns false when its writer fails', async () => {
@@ -216,7 +335,7 @@ describe('in-memory clipboard', () => {
     expect(store.graph.getNode(rect.id)).toBeUndefined()
   })
 
-  test('executeClipboardCommand paste forwards cursorPos to store.pasteFromHTML', async () => {
+  test('executeClipboardCommand paste forwards cursorPos to the matching snapshot', async () => {
     const store = createEditorStore()
     const pageId = store.state.currentPageId
     const rect = store.graph.createNode('RECTANGLE', pageId, {
@@ -230,10 +349,10 @@ describe('in-memory clipboard', () => {
     await executeClipboardCommand(store, 'copy', undefined, memoryClipboard)
 
     let receivedCursorPos: Vector | undefined
-    const originalPaste = store.pasteFromHTML.bind(store)
-    store.pasteFromHTML = async (html, cursorPos, options) => {
+    const originalPaste = store.pasteSnapshot.bind(store)
+    store.pasteSnapshot = async (snapshot, cursorPos, options) => {
       receivedCursorPos = cursorPos
-      return originalPaste(html, cursorPos, options)
+      return originalPaste(snapshot, cursorPos, options)
     }
 
     const cursorPos: Vector = { x: 150, y: 250 }

@@ -2,6 +2,14 @@ import type { ClipboardPayload } from '@/app/editor/clipboard/system/types'
 
 let memoryClipboard: ClipboardPayload = { html: '', plainText: '' }
 
+export function setInMemoryClipboardPayload(payload: ClipboardPayload): void {
+  memoryClipboard = payload
+}
+
+export function matchingClipboardSnapshot(html: string) {
+  return html && html === memoryClipboard.html ? memoryClipboard.snapshot : undefined
+}
+
 export function setInMemoryClipboardHTML(html: string, plainText = ''): void {
   memoryClipboard = { html, plainText }
 }

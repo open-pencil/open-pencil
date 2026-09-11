@@ -242,6 +242,7 @@ Motion policy lives in `src/app/shell/motion/`: resolve persisted System/Off pre
 
 ## File format
 
+- Figma clipboard envelope encoding, decoding, bounds, and SceneGraph import conversion belong to `@open-pencil/fig/clipboard`. Core prepares runtime fonts/text and owns editor placement/history; browser/Tauri adapters own system clipboard I/O. Do not add platform clipboard APIs to Fig.
 - Kiwi schema/runtime/codec/container helpers live in `@open-pencil/kiwi`; complete archive parsing and SceneGraph conversion live in `@open-pencil/fig`; Core owns format-neutral orchestration, runtime fonts/workers, and thumbnails.
 - Vector networks use the reverse-engineered `vectorNetworkBlob`; codecs live under `packages/core/src/vector/` and types in Scene Graph.
 - File System Access APIs are browser APIs, not Tauri-only. Keep Safari download fallback and defer `revokeObjectURL`.

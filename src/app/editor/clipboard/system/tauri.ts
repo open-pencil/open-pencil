@@ -5,9 +5,9 @@ import { isDesignClipboardHTML } from '@/app/editor/clipboard/html'
 import {
   clearInMemoryClipboardHTML,
   getInMemoryClipboardHTML,
-  setInMemoryClipboardHTML
+  setInMemoryClipboardPayload
 } from '@/app/editor/clipboard/memory'
-import { createClipboardTransfer } from '@/app/editor/clipboard/system/transfer'
+import { pasteClipboardHTML } from '@/app/editor/clipboard/paste'
 import type { SystemClipboard } from '@/app/editor/clipboard/system/types'
 import {
   readTauriClipboardText,
@@ -19,14 +19,12 @@ import { isTauri } from '@/app/tauri/env'
 async function copySelection(store: EditorStore): Promise<boolean> {
   if (!isTauri()) return false
   try {
-    const transfer = createClipboardTransfer()
-    await store.writeCopyData(transfer)
-    const html = transfer.getData('text/html')
-    const plainText = transfer.getData('text/plain')
+    const payload = await store.prepareCopy()
+    const { html, plainText } = payload
     if (!html && !plainText) return false
     if (html) {
       await writeTauriClipboardHTML(html, plainText)
-      setInMemoryClipboardHTML(html, plainText)
+      setInMemoryClipboardPayload(payload)
     } else {
       await writeTauriClipboardText(plainText)
       clearInMemoryClipboardHTML()
@@ -43,12 +41,12 @@ async function pasteSelection(store: EditorStore, cursorPos?: Vector): Promise<b
   try {
     const text = await readTauriClipboardText()
     if (text && isDesignClipboardHTML(text)) {
-      await store.pasteFromHTML(text, cursorPos)
+      await pasteClipboardHTML(store, text, cursorPos)
       return true
     }
     const matchingMemoryHTML = getInMemoryClipboardHTML(text ?? '')
     if (matchingMemoryHTML && isDesignClipboardHTML(matchingMemoryHTML)) {
-      await store.pasteFromHTML(matchingMemoryHTML, cursorPos)
+      await pasteClipboardHTML(store, matchingMemoryHTML, cursorPos)
       return true
     }
     return false

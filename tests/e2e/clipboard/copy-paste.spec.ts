@@ -28,9 +28,7 @@ test('copy + paste via store duplicates a shape', async () => {
   await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const data = new DataTransfer()
-    await store.writeCopyData(data)
-    const html = data.getData('text/html')
+    const { html } = await store.prepareCopy()
     if (html) await store.pasteFromHTML(html)
   })
   await editor.canvas.waitForRender()
@@ -99,11 +97,10 @@ test('cut removes original', async () => {
   expect(await getPageChildCount()).toBe(1)
 
   // Cut via store
-  await editor.page.evaluate(() => {
+  await editor.page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
-    const data = new DataTransfer()
-    store.writeCopyData(data)
+    await store.prepareCopy()
     store.deleteSelected()
   })
   await editor.canvas.waitForRender()
