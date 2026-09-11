@@ -47,6 +47,30 @@ describe('appearance control state', () => {
     expect(state.showIndependentCorners.value).toBe(true)
   })
 
+  test('collapses equal independent corners when they share one binding', () => {
+    const node = rectangle()
+    node.independentCorners = true
+    node.boundVariables = {
+      topLeftRadius: 'radius',
+      topRightRadius: 'radius',
+      bottomRightRadius: 'radius',
+      bottomLeftRadius: 'radius'
+    }
+    expect(appearanceState(node).showIndependentCorners.value).toBe(false)
+  })
+
+  test('keeps equal independent corners expanded for distinct bindings', () => {
+    const node = rectangle()
+    node.independentCorners = true
+    node.boundVariables = {
+      topLeftRadius: 'radius-a',
+      topRightRadius: 'radius-b',
+      bottomRightRadius: 'radius-a',
+      bottomLeftRadius: 'radius-a'
+    }
+    expect(appearanceState(node).showIndependentCorners.value).toBe(true)
+  })
+
   test('expands imported unequal corners when the explicit flag is stale', () => {
     const node = rectangle()
     node.independentCorners = false

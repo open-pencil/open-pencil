@@ -10,7 +10,7 @@ import {
 } from '@/components/properties/blend-mode/use'
 import PropertyItemRow from '@/components/properties/item-list/PropertyItemRow.vue'
 import PropertyListRoot from '@/components/properties/PropertyListRoot.vue'
-import SharedStyleField from '@/components/properties/shared-style/SharedStyleField.vue'
+import { useSharedStylePicker } from '@/components/properties/shared-style/useSharedStylePicker'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import FillSwatch from '@/components/ui/paint/FillSwatch.vue'
@@ -21,6 +21,13 @@ import AppSelect from '@/components/ui/select/AppSelect.vue'
 const effectsCtx = useEffectsControls()
 const { panels } = useI18n()
 const blendModeOptions = useBlendModeOptions()
+const {
+  visible: stylesVisible,
+  hasStyle,
+  value: styleValue,
+  options: styleOptions,
+  update: updateStyle
+} = useSharedStylePicker('effect')
 
 function effectPreview(effect: Effect): Fill {
   return {
@@ -40,6 +47,17 @@ function effectPreview(effect: Effect): Fill {
   >
     <PanelSection :label="panels.effects" :empty="!isMixed && items.length === 0">
       <template #actions>
+        <AppSelect
+          v-if="stylesVisible && !hasStyle"
+          :model-value="styleValue"
+          :options="styleOptions"
+          @update:model-value="updateStyle"
+        >
+          <template #trigger
+            ><IconButton :label="panels.effectStyle" data-property="effect-style"
+              ><icon-lucide-layout-grid class="size-3.5" /></IconButton
+          ></template>
+        </AppSelect>
         <IconButton
           :label="panels.addEffect"
           @click="actions.add(effectsCtx.createDefaultEffect())"
@@ -48,7 +66,15 @@ function effectPreview(effect: Effect): Fill {
         </IconButton>
       </template>
 
-      <SharedStyleField kind="effect" :label="panels.effectStyle" />
+      <AppSelect
+        v-if="stylesVisible && hasStyle"
+        :model-value="styleValue"
+        :options="styleOptions"
+        :label="panels.effectStyle"
+        data-property="effect-style"
+        class="mb-1.5"
+        @update:model-value="updateStyle"
+      />
 
       <p v-if="isMixed" class="text-[11px] text-muted">{{ panels.mixedEffectsHelp }}</p>
 

@@ -26,6 +26,16 @@ type AppearanceActionOptions = AppearanceStateOptions & {
   editor: Editor
 }
 
+function cornersHaveEquivalentBindings(node: SceneNode): boolean {
+  const first = node.boundVariables.topLeftRadius
+  if (!first) return false
+  return [
+    node.boundVariables.topRightRadius,
+    node.boundVariables.bottomRightRadius,
+    node.boundVariables.bottomLeftRadius
+  ].every((id) => id === first)
+}
+
 function hasUnequalCorners(node: SceneNode) {
   return !(
     node.topLeftRadius === node.topRightRadius &&
@@ -48,7 +58,10 @@ export function createAppearanceState({ node, nodes, isMulti, merged }: Appearan
   const showIndependentCorners = computed(() => {
     if (isMulti.value) return false
     const selected = node.value
-    return selected ? selected.independentCorners || hasUnequalCorners(selected) : false
+    return selected
+      ? hasUnequalCorners(selected) ||
+          (selected.independentCorners && !cornersHaveEquivalentBindings(selected))
+      : false
   })
 
   const cornerRadiusValue = computed(() => {
