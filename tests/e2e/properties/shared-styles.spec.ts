@@ -113,7 +113,8 @@ async function targetStyles(id = targetId) {
 test('unbound paint styles use one header action without redundant field labels', async () => {
   for (const [section, label] of [
     ['Fill', 'Fill style'],
-    ['Stroke', 'Stroke style']
+    ['Stroke', 'Stroke style'],
+    ['Effects', 'Effect style']
   ]) {
     const panel = propertySection(page, section)
     await expect(panel.getByRole('combobox', { name: label })).toHaveCount(1)
@@ -129,7 +130,7 @@ test('applies fill, stroke, effect, and grid styles from local definitions', asy
   await chooseStyle('Effects', 'Effect style', 'Effects/Card')
   await chooseStyle('Layout guide', 'Grid style', 'Grid/12 columns')
   await expect(propertySection(page, 'Fill')).toHaveScreenshot('fill-applied-style.png')
-  await expect(propertySection(page, 'Stroke')).toHaveScreenshot('stroke-applied-style.png')
+  await expect(propertySection(page, 'Effects')).toHaveScreenshot('effects-applied-style.png')
 
   expect(await targetStyles()).toMatchObject({
     fillStyleId: '1:100',
