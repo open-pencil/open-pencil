@@ -72,14 +72,16 @@ describe('importClipboardNodes: paste linkage scoping', () => {
     expect(inst.childIds[0]).toBe(badge.id)
     expect(inst.childIds[1]).toBe(instItem1.id)
 
-    // A later sync links instItem1 by name+type (fallback) and leaves badge alone.
+    // A later sync preserves both ambiguous same-type children and clones the
+    // missing component child rather than risking data loss.
     graph.syncInstances(comp.id)
     expect(badge.name).toBe('Badge')
     expect(badge.componentId).toBeNull()
-    expect(instItem1.componentId).toBe(compItem1.id)
-    expect(inst.childIds.length).toBe(2) // no duplication
-    expect(inst.childIds[0]).toBe(instItem1.id) // mapped sorts first
-    expect(inst.childIds[1]).toBe(badge.id) // unmapped extra sorts last
+    expect(instItem1.componentId).toBeNull()
+    const mapped = graph.getChildren(inst.id).filter((child) => child.componentId === compItem1.id)
+    expect(mapped).toHaveLength(1)
+    expect(inst.childIds.length).toBe(3)
+    expect(inst.childIds).toEqual(expect.arrayContaining([badge.id, instItem1.id, mapped[0].id]))
   })
 
   it('links pasted instances but not pre-existing instances in the same paste', () => {

@@ -261,6 +261,29 @@ describe('instance synchronization regressions from review triage', () => {
     expect(labelB.text).toBe('B-changed')
   })
 
+  test('same-name extra beside a renamed imported child remains untouched', () => {
+    const graph = new SceneGraph()
+    const page = graph.addPage('Page')
+    const component = graph.createNode('COMPONENT', page.id, { name: 'List' })
+    const row = graph.createNode('FRAME', component.id, { name: 'Row', width: 100 })
+    const instance = graph.createNode('INSTANCE', page.id, {
+      name: 'List',
+      componentId: component.id
+    })
+    const extra = graph.createNode('FRAME', instance.id, { name: 'Row', width: 20 })
+    const renamed = graph.createNode('FRAME', instance.id, { name: 'Row v2', width: 100 })
+
+    graph.syncInstances(component.id)
+
+    expect(extra.width).toBe(20)
+    expect(extra.componentId).toBeNull()
+    expect(renamed.name).toBe('Row v2')
+    expect(renamed.componentId).toBeNull()
+    const mapped = graph.getChildren(instance.id).filter((child) => child.componentId === row.id)
+    expect(mapped).toHaveLength(1)
+    expect(mapped[0]?.id).not.toBe(extra.id)
+  })
+
   // V2+V3: extra unmatched instance child is not co-opted by positional or type-only fallback.
   test('extra unmatched instance child is not co-opted or renamed by fallback matching', () => {
     const graph = new SceneGraph()

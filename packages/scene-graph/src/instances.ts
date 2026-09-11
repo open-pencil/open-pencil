@@ -151,6 +151,14 @@ function matchFallbackChildren(
   usedInstChildIds: Set<string>
 ): void {
   const fallbackByType = new Map<SceneNode['type'], Map<string, SceneNode[]>>()
+  const unmatchedComponentCount = new Map<SceneNode['type'], number>()
+  for (const compChildId of compParent.childIds) {
+    if (instChildMap.has(compChildId)) continue
+    const child = graph.nodes.get(compChildId)
+    if (child) {
+      unmatchedComponentCount.set(child.type, (unmatchedComponentCount.get(child.type) ?? 0) + 1)
+    }
+  }
   for (const childId of instParent.childIds) {
     const child = graph.nodes.get(childId)
     if (!child || usedInstChildIds.has(child.id)) continue
@@ -169,7 +177,13 @@ function matchFallbackChildren(
     if (instChildMap.has(compChildId)) continue
     const compChild = graph.nodes.get(compChildId)
     if (!compChild) continue
-    const match = fallbackByType.get(compChild.type)?.get(compChild.name)?.shift()
+    const candidatesByName = fallbackByType.get(compChild.type)
+    const candidateCount = [...(candidatesByName?.values() ?? [])].reduce(
+      (count, queue) => count + queue.length,
+      0
+    )
+    if (candidateCount > (unmatchedComponentCount.get(compChild.type) ?? 0)) continue
+    const match = candidatesByName?.get(compChild.name)?.shift()
     if (!match) continue
     instChildMap.set(compChildId, match)
     usedInstChildIds.add(match.id)
