@@ -160,6 +160,7 @@
     "@iconify-json/lucide": "^1.2.123",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "@open-pencil/mcp": "workspace:*",
+    "@oxlint/plugins": "1.57.0",
     "@playwright/test": "^1.62.1",
     "@storybook/addon-a11y": "^10.5.8",
     "@storybook/addon-docs": "^10.5.8",

@@ -5,12 +5,7 @@ import { dirname, join, resolve } from 'node:path'
 
 import lintPlugin from '#lint/plugin.ts'
 import { normalizedFilename } from '#lint/support/context.ts'
-
-interface Diagnostic {
-  code: string
-  filename: string
-  message: string
-}
+import type { Diagnostic } from '#lint/support/lint-test.ts'
 
 interface LintResult {
   diagnostics: Diagnostic[]

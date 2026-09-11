@@ -414,9 +414,30 @@
     "typescript/restrict-plus-operands": "error",
     "unicorn/prefer-includes": "error",
     "no-loop-func": "error",
-    "typescript/no-dynamic-delete": "error"
+    "typescript/no-dynamic-delete": "error",
+    "open-pencil/no-module-mocking": "error",
+    "open-pencil/no-reduce-accumulator-copy": "error",
+    "open-pencil/no-widen-then-assert": "error"
   },
   "overrides": [
+    {
+      "files": [
+        "tools/lint/src/rules/quality/widen-then-assert.ts",
+        "tools/lint/src/support/dictionary-types.ts"
+      ],
+      "rules": {
+        "complexity": "off"
+      }
+    },
+    {
+      "files": [
+        "tools/lint/src/support/lexical-type-parameters.ts",
+        "tools/lint/src/support/type-alias-resolution.ts"
+      ],
+      "rules": {
+        "open-pencil/no-broad-double-cast": "off"
+      }
+    },
     {
       "files": [
         "tools/lint/src/**/*.ts",
