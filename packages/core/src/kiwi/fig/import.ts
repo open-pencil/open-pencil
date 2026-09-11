@@ -8,6 +8,7 @@ import {
   getOpenPencilPluginValue,
   guidToString,
   importCanvasGuides,
+  linkImportedInstanceChildren,
   nodeChangeToProps,
   shouldImportTextAsAutoSize,
   sortChildren,
@@ -23,7 +24,6 @@ import type {
 } from '@open-pencil/scene-graph'
 
 import { BLACK } from '#core/constants'
-import { linkImportedInstanceChildren } from '#core/kiwi/fig/import-linkage'
 import { setLazyFigImportContext } from '#core/kiwi/fig/lazy-import'
 
 type AssetRef = { key: string; version?: string }

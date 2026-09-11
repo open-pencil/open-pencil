@@ -150,26 +150,30 @@ function matchFallbackChildren(
   instChildMap: Map<string, SceneNode>,
   usedInstChildIds: Set<string>
 ): void {
-  const unmatchedCompChildIds = compParent.childIds.filter((id) => !instChildMap.has(id))
-  const unmatchedInstChildren = instParent.childIds
-    .map((id) => graph.nodes.get(id))
-    .filter((n): n is SceneNode => n !== undefined && !usedInstChildIds.has(n.id))
+  const fallbackByType = new Map<SceneNode['type'], Map<string, SceneNode[]>>()
+  for (const childId of instParent.childIds) {
+    const child = graph.nodes.get(childId)
+    if (!child || usedInstChildIds.has(child.id)) continue
+    let byName = fallbackByType.get(child.type)
+    if (!byName) {
+      byName = new Map()
+      fallbackByType.set(child.type, byName)
+    }
+    const queue = byName.get(child.name)
+    if (queue) queue.push(child)
+    else byName.set(child.name, [child])
+  }
 
-  if (unmatchedCompChildIds.length === 0 || unmatchedInstChildren.length === 0) return
-
-  // Match by name and type with forward (FIFO) iteration to preserve sibling order.
-  for (const compChildId of unmatchedCompChildIds) {
+  // Match by name and type with FIFO queues to preserve sibling order in linear time.
+  for (const compChildId of compParent.childIds) {
+    if (instChildMap.has(compChildId)) continue
     const compChild = graph.nodes.get(compChildId)
     if (!compChild) continue
-    const matchIdx = unmatchedInstChildren.findIndex(
-      (instChild) => instChild.type === compChild.type && instChild.name === compChild.name
-    )
-    if (matchIdx !== -1) {
-      const [instChild] = unmatchedInstChildren.splice(matchIdx, 1)
-      instChildMap.set(compChildId, instChild)
-      usedInstChildIds.add(instChild.id)
-      linkMatchedChild(overrides, instParentId, instChild, compChildId)
-    }
+    const match = fallbackByType.get(compChild.type)?.get(compChild.name)?.shift()
+    if (!match) continue
+    instChildMap.set(compChildId, match)
+    usedInstChildIds.add(match.id)
+    linkMatchedChild(overrides, instParentId, match, compChildId)
   }
 }
 
@@ -183,31 +187,18 @@ function sortInstanceChildren(
   const orderMap = new Map<string, number>()
   for (let i = 0; i < compChildOrder.length; i++) orderMap.set(compChildOrder[i], i)
 
-  // Children whose resolved mapping (sourceComponentId override, else componentId)
-  // is one of this component's children sort in component order; children with no
-  // such mapping (e.g. imported extras or user-added nodes inside the instance)
-  // sort to the END rather than the front, keeping their relative order among
-  // themselves. This keeps component children in canonical order instead of yanking
-  // unmapped extras to the front on every sync.
-  instParent.childIds.sort((a, b) => {
-    const nodeA = graph.nodes.get(a)
-    const nodeB = graph.nodes.get(b)
-    const sourceA = nodeA
-      ? getInstanceOverride(overrides, instParentId, nodeA.id, 'sourceComponentId')
+  const ranks = new Map<string, number>()
+  for (let index = 0; index < instParent.childIds.length; index++) {
+    const childId = instParent.childIds[index]
+    const node = graph.nodes.get(childId)
+    const source = node
+      ? getInstanceOverride(overrides, instParentId, node.id, 'sourceComponentId')
       : undefined
-    const sourceB = nodeB
-      ? getInstanceOverride(overrides, instParentId, nodeB.id, 'sourceComponentId')
-      : undefined
-
-    const mappedA = typeof sourceA === 'string' ? sourceA : nodeA?.componentId
-    const mappedB = typeof sourceB === 'string' ? sourceB : nodeB?.componentId
-    const idxA = mappedA ? (orderMap.get(mappedA) ?? -1) : -1
-    const idxB = mappedB ? (orderMap.get(mappedB) ?? -1) : -1
-    if (idxA === -1 && idxB === -1) return 0
-    if (idxA === -1) return 1
-    if (idxB === -1) return -1
-    return idxA - idxB
-  })
+    const mapped = typeof source === 'string' ? source : node?.componentId
+    const componentIndex = mapped ? orderMap.get(mapped) : undefined
+    ranks.set(childId, componentIndex ?? compChildOrder.length + index)
+  }
+  instParent.childIds.sort((left, right) => (ranks.get(left) ?? 0) - (ranks.get(right) ?? 0))
 }
 
 /** True when syncing `compParentId` into `instParentId` would form a cycle. */

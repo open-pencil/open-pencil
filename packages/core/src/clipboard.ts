@@ -4,6 +4,7 @@ import { populateAndApplyOverrides } from '@open-pencil/fig/instance-overrides'
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
 import {
   nodeChangeToProps,
+  linkImportedInstanceChildren,
   shouldImportTextAsAutoSize,
   sortChildren
 } from '@open-pencil/fig/node-change'
@@ -11,8 +12,6 @@ import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/
 import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-
-import { linkImportedInstanceChildren } from '#core/kiwi/fig/import-linkage'
 
 import { decodeBase64, decodeBase64Text, encodeBase64, encodeBase64Text } from './bytes'
 import { shapeTextForClipboard } from './canvas/text/clipboard'

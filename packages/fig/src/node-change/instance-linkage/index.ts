@@ -67,11 +67,15 @@ function linkSubtree(
   // without stable keys, and for legacy files without overrideKey).
   const remainingComp = compChildren.filter((c) => !linkedComp.has(c.id))
   const remainingInst = instChildren.filter((c) => !linkedInst.has(c.id))
-  const count = Math.min(remainingComp.length, remainingInst.length)
-  for (let i = 0; i < count; i++) {
+  // Positional evidence is safe only when every remaining slot has a matching type.
+  // Otherwise preserve all unmatched instance children and let sync clone missing ones.
+  const compatible =
+    remainingComp.length === remainingInst.length &&
+    remainingComp.every((child, index) => child.type === remainingInst[index]?.type)
+  if (!compatible) return
+  for (let i = 0; i < remainingComp.length; i++) {
     const compChild = remainingComp[i]
     const instChild = remainingInst[i]
-    if (compChild.type !== instChild.type) continue
     linkPair(compChild, instChild)
   }
 }

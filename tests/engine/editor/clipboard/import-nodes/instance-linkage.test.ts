@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
-import { importClipboardNodes, SceneGraph } from '@open-pencil/core'
+import { importClipboardNodes } from '@open-pencil/core'
 import type { NodeChange } from '@open-pencil/core'
+import { linkImportedInstanceChildren } from '@open-pencil/fig/node-change'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { getNodeOrThrow } from '#tests/helpers/assert'
 
@@ -85,9 +87,7 @@ describe('importClipboardNodes: instance child linkage', () => {
     expect(instChild.height).toBe(50)
   })
 
-  it('does not mis-link an extra same-type child inserted before a renamed serialized child (overrideKey)', async () => {
-    const { linkImportedInstanceChildren } = await import('#core/kiwi/fig/import-linkage')
-    const { SceneGraph } = await import('@open-pencil/scene-graph')
+  it('does not mis-link an extra same-type child inserted before a renamed serialized child (overrideKey)', () => {
     const graph = new SceneGraph()
     const page = graph.addPage('Test')
 
@@ -134,5 +134,26 @@ describe('importClipboardNodes: instance child linkage', () => {
     // Extra sorts to the end, mapped child first.
     expect(inst.childIds[0]).toBe(renamed.id)
     expect(inst.childIds[1]).toBe(extra.id)
+  })
+
+  it('leaves ambiguous positional children unmapped when cardinality differs', () => {
+    const graph = new SceneGraph()
+    const page = graph.addPage('Test')
+    const component = graph.createNode('COMPONENT', page.id, { name: 'Card' })
+    graph.createNode('FRAME', component.id, { name: 'Header' })
+    const instance = graph.createNode('INSTANCE', page.id, {
+      name: 'Card',
+      componentId: component.id
+    })
+    const extra = graph.createNode('FRAME', instance.id, { name: 'Badge' })
+    const serialized = graph.createNode('FRAME', instance.id, { name: 'Header v2' })
+
+    linkImportedInstanceChildren(graph, new Set([instance.id]))
+
+    expect(extra.componentId).toBeNull()
+    expect(serialized.componentId).toBeNull()
+    graph.syncInstances(component.id)
+    expect(instance.childIds).toHaveLength(3)
+    expect(instance.childIds).toEqual(expect.arrayContaining([extra.id, serialized.id]))
   })
 })
