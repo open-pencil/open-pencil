@@ -8,6 +8,7 @@ import {
   getOpenPencilPluginValue,
   guidToString,
   importCanvasGuides,
+  linkImportedInstanceChildren,
   nodeChangeToProps,
   shouldImportTextAsAutoSize,
   sortChildren,
@@ -586,14 +587,13 @@ export function importNodeChanges(
     })
   }
 
+  // Link imported instance children after population so linkage operates on the final tree state.
+  linkImportedInstanceChildren(graph)
+
   if (activeRootIds)
     rememberLazyFigImportContext(graph, changeMap, guidToNodeId, blobs, activeRootIds)
 
   setVariableColorResolver(null)
-
-  if (graph.getPages(true).length === 0) {
-    graph.addPage('Page 1')
-  }
-
+  if (graph.getPages(true).length === 0) graph.addPage('Page 1')
   return graph
 }
