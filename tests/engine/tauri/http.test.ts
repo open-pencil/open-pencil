@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test'
 
 import {
-  createTauriFetch,
   tauriFetch,
   type ProxyHttpRequest,
   type ProxyHttpResponse
@@ -54,12 +53,6 @@ describe('tauriFetch', () => {
         headers: [{ name: 'x-open-pencil', value: 'ok' }],
         body: [...new TextEncoder().encode('OK')]
       }
-    })
-
-    const response = await createTauriFetch({ timeoutMs: 15_000 })('https://example.test/check', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '{"ok":true}'
     })
 
     if (!captured) throw new Error('Expected proxy_http_request to be invoked')

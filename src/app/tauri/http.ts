@@ -1,4 +1,3 @@
-import type { FetchFunction } from '@/app/http/types'
 
 export interface ProxyHttpHeader {
   name: string
@@ -74,9 +73,6 @@ export interface TauriFetchOptions {
   maxResponseBytes?: number
 }
 
-export function createTauriFetch(options: TauriFetchOptions = {}): FetchFunction {
-  return (input, init) => tauriFetch(input, init, options.maxResponseBytes, options.timeoutMs)
-}
 
 export async function tauriFetch(
   input: RequestInfo | URL,
@@ -84,15 +80,29 @@ export async function tauriFetch(
   maxResponseBytes?: number,
   timeoutMs?: number
 ): Promise<Response> {
+  const url = typeof input === 'string' ? input : (input instanceof URL ? input.href : input.url);
+
+  if (url.startsWith('http://ipc.localhost') || url.startsWith('https://ipc.localhost') || url.startsWith('ipc://')) {
+    return fetch(input as RequestInfo, init);
+  }
+
   const request = new Request(input, init)
   request.signal.throwIfAborted()
   const { invoke } = await import('@tauri-apps/api/core')
   request.signal.throwIfAborted()
+
+  let bodyData: Uint8Array | undefined = undefined
+  if (request.body != null) {
+    const buffer = await request.arrayBuffer()
+    request.signal.throwIfAborted()
+    bodyData = new Uint8Array(buffer)
+  }
+
   const payload: ProxyHttpRequest = {
     url: request.url,
     method: request.method,
     headers: headersToProxyHeaders(request.headers),
-    body: request.body == null ? undefined : [...new Uint8Array(await request.arrayBuffer())],
+    body: bodyData ? Array.from(bodyData) : undefined,
     max_response_bytes: maxResponseBytes,
     follow_redirects: request.redirect === 'follow',
     timeout_ms: timeoutMs
