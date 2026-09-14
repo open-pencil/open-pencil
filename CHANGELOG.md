@@ -8,6 +8,7 @@
 
 ### Added
 
+- Preview designs progressively on the canvas as direct AI providers stream JSX, without saving partial designs or adding intermediate undo steps.
 - Bind Design JSX spacing, sizing, corners, and typography directly to numeric document variables.
 - Define component properties and assign instance values in Design JSX using stable property IDs.
 - Save AI conversations and attachment previews locally, switch between chats, rename or delete them, and browse saved transcripts across documents. Choose whether reasoning stays collapsed, expands while thinking, or stays expanded, with animated disclosure controls that respect reduced motion.

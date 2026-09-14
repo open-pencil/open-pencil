@@ -1,3 +1,4 @@
+import { finishRenderPlacement, resolveRenderPlacement } from '#core/design-jsx/placement'
 import { defineTool } from '#core/tools/schema'
 
 export const render = defineTool({
@@ -22,33 +23,10 @@ export const render = defineTool({
   execute: async (figma, args) => {
     const { renderJSX } = await import('#core/design-jsx/render.js')
 
-    let parentId = args.parent_id ?? figma.currentPageId
-    let replaceIndex = -1
-
-    if (args.replace_id) {
-      const target = figma.graph.getNode(args.replace_id)
-      if (target?.parentId) {
-        parentId = target.parentId
-        const parent = figma.graph.getNode(parentId)
-        if (parent) {
-          replaceIndex = parent.childIds.indexOf(args.replace_id)
-        }
-      }
-    }
-
-    const results = await renderJSX(figma.graph, args.jsx, {
-      parentId,
-      x: args.x,
-      y: args.y
-    })
+    const placement = resolveRenderPlacement(figma.graph, args, figma.currentPageId)
+    const results = await renderJSX(figma.graph, args.jsx, placement)
+    finishRenderPlacement(figma.graph, results, placement)
     const result = results[0]
-
-    if (args.replace_id && replaceIndex >= 0) {
-      figma.graph.reorderChild(result.id, parentId, replaceIndex)
-      figma.graph.deleteNode(args.replace_id)
-    } else if (args.insert_index !== undefined) {
-      figma.graph.reorderChild(result.id, parentId, args.insert_index)
-    }
 
     const response: {
       id: string

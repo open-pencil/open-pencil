@@ -175,6 +175,8 @@
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",
     "@iconify/utils": "^3.1.4",
+    "@lezer/common": "^1.5.2",
+    "@lezer/javascript": "^1.5.4",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/kiwi": "workspace:*",
     "@open-pencil/pen": "workspace:*",
@@ -187,6 +189,7 @@
     "dedent": "^1.7.2",
     "destr": "^2.0.5",
     "diff": "^8.0.4",
+    "entities": "^8.0.0",
     "es-toolkit": "^1.51.0",
     "expr-eval": "^2.0.2",
     "fflate": "^0.8.3",

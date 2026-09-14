@@ -64,6 +64,7 @@ export interface PendingFontNode {
 
 import type { EffectRasterCacheEntry } from './renderer/effect-raster-cache'
 import { TiledSceneController } from './renderer/tiles'
+import type { TransientCanvasPreview } from './renderer/transient-previews'
 import type { RenderOverlays, RulerTheme } from './renderer/types'
 
 export class SkiaRenderer {
@@ -96,6 +97,7 @@ export class SkiaRenderer {
     | undefined
   pendingFontNodes = new Map<string, PendingFontNode>()
   textPictureGenerations = new Map<string, { data: Uint8Array; generation: number }>()
+  readonly transientPreviews = new Map<string, TransientCanvasPreview>()
   imageCache = new Map<string, CKImage>()
   vectorPathCache = new Map<string, Path[]>()
   vectorStrokePathCache = new Map<string, Path[]>()

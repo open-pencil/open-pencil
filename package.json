@@ -138,6 +138,7 @@
     "motion-v": "^2.4.0",
     "nanostores": "^1.5.0",
     "opentype.js": "^2.0.0",
+    "partial-json": "^0.1.7",
     "reka-ui": "^2.10.3",
     "svg2pdf.js": "^2.7.0",
     "tailwind-merge": "^3.6.0",

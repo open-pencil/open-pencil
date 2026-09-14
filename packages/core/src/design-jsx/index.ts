@@ -73,6 +73,20 @@ export {
   type DesignJSXPropertyDefinition
 } from './schema'
 export { transformDesignJSXExpression } from './transform'
+export { recordJSXPreview } from './streaming/picture'
+export { stageJSXPreview, type StagedJSXPreview } from './streaming/stage'
+export {
+  resolveRenderPlacement,
+  finishRenderPlacement,
+  type RenderPlacementInput,
+  type RenderPlacement
+} from './placement'
+export {
+  createStreamingJSXParser,
+  type JSXPreviewNode,
+  type JSXPreviewPending,
+  type JSXPreviewSnapshot
+} from './streaming'
 
 export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from '#core/io/formats/jsx'
 export { JSX_REFERENCE, AUTHORING_EXAMPLES, type AuthoringExample } from './reference'

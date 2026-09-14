@@ -1,6 +1,12 @@
 import { Chat } from '@ai-sdk/vue'
-import { DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
-import type { ChatTransport, FinishReason, LanguageModel, UIMessage } from 'ai'
+import { createUIMessageStream, DirectChatTransport, stepCountIs, ToolLoopAgent } from 'ai'
+import type {
+  ChatTransport,
+  FinishReason,
+  LanguageModel,
+  UIMessage,
+  ToolExecutionOptions
+} from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'
 
@@ -12,6 +18,7 @@ import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { buildReasoningProviderOptions, type AIProviderOptions } from '@/app/ai/chat/reasoning'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
+import { createCanvasJSXPreview } from '@/app/ai/preview/canvas'
 import { MAX_AGENT_STEPS, createAITools, recordStep, resetRunSteps } from '@/app/ai/tools'
 import {
   recordChatCompleted,
@@ -83,6 +90,13 @@ export function createToolLoopTransport({
   onError
 }: ToolLoopTransportOptions) {
   const tools = createAITools(store)
+  const preview = createCanvasJSXPreview(store)
+  const renderTool = tools.render
+  renderTool.onInputStart = ({ toolCallId, abortSignal }) => preview.start(toolCallId, abortSignal)
+  renderTool.onInputDelta = ({ toolCallId, inputTextDelta }) =>
+    preview.delta(toolCallId, inputTextDelta)
+  renderTool.onInputAvailable = ({ toolCallId }: ToolExecutionOptions<unknown>) =>
+    preview.finish(toolCallId)
   const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
     ? ANTHROPIC_CACHE_CONTROL
     : undefined
@@ -99,6 +113,7 @@ export function createToolLoopTransport({
     maxOutputTokens,
     providerOptions,
     prepareCall: (options) => {
+      preview.clear()
       resetRunSteps(store)
       return {
         ...options,
@@ -106,7 +121,9 @@ export function createToolLoopTransport({
         providerOptions
       }
     },
+    onFinish: () => preview.clear(),
     onStepFinish: ({ usage }) => {
+      preview.clear()
       recordStep(store)
       recordModelStepCompleted({
         provider: providerID,
@@ -119,15 +136,27 @@ export function createToolLoopTransport({
     }
   })
 
-  return resumableTransport(
-    new DirectChatTransport({
-      agent,
-      onError: (error) => {
-        onError?.(error)
-        return 'The provider rejected the request.'
-      }
-    }) as ChatTransport<UIMessage>
-  )
+  function handleError(error: unknown): string {
+    preview.clear()
+    onError?.(error)
+    return 'The provider rejected the request.'
+  }
+  const transport = new DirectChatTransport({
+    agent,
+    onError: handleError
+  }) as ChatTransport<UIMessage>
+  return resumableTransport({
+    reconnectToStream: (options) => transport.reconnectToStream(options),
+    async sendMessages(options) {
+      // DirectChatTransport handles error chunks, but not a rejected underlying stream.
+      return createUIMessageStream<UIMessage>({
+        execute: async ({ writer }) => {
+          writer.merge(await transport.sendMessages(options))
+        },
+        onError: handleError
+      })
+    }
+  })
 }
 
 export function createChatSessionManager({

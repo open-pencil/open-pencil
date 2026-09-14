@@ -9,6 +9,7 @@ import { emitNavigationTrace } from '#core/profiler'
 
 import { drawChromePass, drawLabelPass, drawOverlayPass } from './overlay-pass'
 import { renderSceneBacking, updateSceneBackingPreviewState } from './retained-backing'
+import { hasTransientPreviews, renderPageWithPreviews } from './transient-previews'
 
 export function renderSceneToCanvas(
   r: SkiaRenderer,
@@ -101,6 +102,7 @@ function scenePictureMissReason(
   hasPositionPreview: boolean
 ): string {
   if (hasPositionPreview) return 'position-preview'
+  if (hasTransientPreviews(r, graph)) return 'transient-preview'
   if (sceneContentDependsOnOverlay(overlays)) return 'volatile-overlay'
   if (!r.scenePicture) return 'missing-picture'
   if (graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion)
@@ -177,7 +179,8 @@ export function render(
   const hasPositionPreview =
     graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion &&
     sceneVersion === r.scenePictureVersion
-  const requiresUncachedSceneRender = hasPositionPreview || sceneContentDependsOnOverlay(overlays)
+  const requiresUncachedSceneRender =
+    hasPositionPreview || sceneContentDependsOnOverlay(overlays) || hasTransientPreviews(r, graph)
 
   const canUsePicture = canUseScenePicture(r, graph, sceneVersion, requiresUncachedSceneRender)
   const cacheMissReason = scenePictureMissReason(
@@ -326,6 +329,7 @@ function renderPageChildren(
   graph: SceneGraph,
   overlays: RenderOverlays
 ): void {
+  if (renderPageWithPreviews(r, canvas, graph, overlays)) return
   const pageNode = graph.getNode(r.pageId ?? graph.rootId)
   if (!pageNode) return
   for (const childId of pageNode.childIds) {

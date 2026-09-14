@@ -12,6 +12,7 @@ function deletable<T>() {
 function createRenderer() {
   const renderer: Partial<SkiaRenderer> = {
     destroyed: false,
+    transientPreviews: new Map(),
     imageCache: new Map(),
     vectorPathCache: new Map(),
     vectorStrokePathCache: new Map(),

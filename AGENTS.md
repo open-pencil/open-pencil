@@ -74,7 +74,7 @@ App dialogs compose the Reka-backed components under `src/components/ui/dialog/`
 
 ## Git worktrees and development servers
 
-Prefer `dev:portless`, especially in worktrees. It assigns branch-specific app and `mcp.open-pencil` sibling URLs with isolated runtime discovery. Use fixed-port `dev` only for Playwright, Tauri, and Dev Container flows.
+Prefer `dev:portless`, especially in worktrees. It assigns branch-specific app and `mcp.open-pencil` sibling URLs with isolated runtime discovery. Use fixed-port `dev` only for Playwright, Tauri, and Dev Container flows. For isolated Playwright runs, set `OPENPENCIL_TEST_PORT` and `OPENPENCIL_TEST_MCP_PORT`. Reusing an existing server requires `OPENPENCIL_TEST_REUSE_SERVER=1`.
 
 Browser tests use the canonical `playwright.config.ts`; do not create task-specific config copies or server runners. Managed runs must start the intended checkout, with server reuse explicitly opted into only for local development, never baseline comparisons or CI. Isolate the app URL and MCP endpoint, CORS origin, socket, and discovery path together. Playwright owns Vite; the existing Vite automation plugin owns MCP startup and cleanup; browser fixtures own interactions, not server processes. See `packages/docs/development/testing.md` for configuration and commands.
 
