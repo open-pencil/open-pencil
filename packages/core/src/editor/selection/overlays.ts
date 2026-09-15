@@ -38,8 +38,10 @@ export function createSelectionOverlayActions(ctx: EditorContext) {
     ctx.requestRepaint()
   }
 
-  function setRotationPreview(preview: { nodeId: string; angle: number } | null) {
+  function setRotationPreview(preview: typeof ctx.state.rotationPreview) {
+    if (preview === null && ctx.state.rotationPreview === null) return
     ctx.state.rotationPreview = preview
+    ctx.emitEditorEvent('rotation:preview-changed', preview)
     ctx.requestRepaint()
   }
 

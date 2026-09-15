@@ -1,5 +1,8 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import type { RenderOverlays } from '#core/canvas/renderer'
+import { createSceneGeometry } from '#core/geometry'
+
 export interface CachedSection {
   nodeId: string
   absX: number
@@ -35,14 +38,18 @@ function collectVisibleLabels<
   graph: SceneGraph,
   viewport: Viewport,
   cachedItems: T[],
-  metadata: (cached: T) => U
+  metadata: (cached: T) => U,
+  preview: RenderOverlays['rotationPreview']
 ): Array<{ node: SceneNode; absX: number; absY: number } & U> {
   const result: Array<{ node: SceneNode; absX: number; absY: number } & U> = []
+  const geometry = createSceneGeometry(graph, preview)
   for (const cached of cachedItems) {
     const node = graph.getNode(cached.nodeId)
-    if (!node || !isInViewport(cached.absX, cached.absY, node.width, node.height, viewport))
-      continue
-    result.push({ node, absX: cached.absX, absY: cached.absY, ...metadata(cached) })
+    if (!node) continue
+    const bounds = geometry.bounds(node)
+    if (!isInViewport(bounds.x, bounds.y, bounds.width, bounds.height, viewport)) continue
+    const origin = geometry.toWorld(node, { x: 0, y: 0 })
+    result.push({ node, absX: origin.x, absY: origin.y, ...metadata(cached) })
   }
   return result
 }
@@ -83,20 +90,34 @@ export class LabelCache {
 
   getSections(
     graph: SceneGraph,
-    viewport: Viewport
+    viewport: Viewport,
+    preview?: RenderOverlays['rotationPreview']
   ): Array<{ node: SceneNode; absX: number; absY: number; nested: boolean }> {
-    return collectVisibleLabels(graph, viewport, this.sections, (cached) => ({
-      nested: cached.nested
-    }))
+    return collectVisibleLabels(
+      graph,
+      viewport,
+      this.sections,
+      (cached) => ({
+        nested: cached.nested
+      }),
+      preview
+    )
   }
 
   getComponents(
     graph: SceneGraph,
-    viewport: Viewport
+    viewport: Viewport,
+    preview?: RenderOverlays['rotationPreview']
   ): Array<{ node: SceneNode; absX: number; absY: number; inside: boolean }> {
-    return collectVisibleLabels(graph, viewport, this.components, () => ({
-      inside: false
-    }))
+    return collectVisibleLabels(
+      graph,
+      viewport,
+      this.components,
+      () => ({
+        inside: false
+      }),
+      preview
+    )
   }
 
   getAllSections(): readonly CachedSection[] {
@@ -114,16 +135,10 @@ export class LabelCache {
     const pageNode = graph.getNode(pageId ?? graph.rootId)
     if (!pageNode) return
 
-    this.walkChildren(graph, pageNode.id, 0, 0, false)
+    this.walkChildren(graph, pageNode.id, false)
   }
 
-  private walkChildren(
-    graph: SceneGraph,
-    parentId: string,
-    ox: number,
-    oy: number,
-    insideSection: boolean
-  ): void {
+  private walkChildren(graph: SceneGraph, parentId: string, insideSection: boolean): void {
     const parent = graph.getNode(parentId)
     if (!parent) return
     const parentType = parent.type
@@ -131,21 +146,26 @@ export class LabelCache {
     for (const childId of parent.childIds) {
       const child = graph.getNode(childId)
       if (!child || !child.visible) continue
-      const ax = ox + child.x
-      const ay = oy + child.y
 
       if (child.type === 'SECTION') {
-        this.sections.push({ nodeId: childId, absX: ax, absY: ay, nested: insideSection })
-        this.walkChildren(graph, childId, ax, ay, true)
+        const origin = graph.getAbsolutePosition(childId)
+        this.sections.push({
+          nodeId: childId,
+          absX: origin.x,
+          absY: origin.y,
+          nested: insideSection
+        })
+        this.walkChildren(graph, childId, true)
       } else if (LABEL_TYPES.has(child.type)) {
         if (COMPONENT_LABEL_PARENT_TYPES.has(parentType)) {
-          this.components.push({ nodeId: childId, absX: ax, absY: ay, parentType })
+          const origin = graph.getAbsolutePosition(childId)
+          this.components.push({ nodeId: childId, absX: origin.x, absY: origin.y, parentType })
         }
         if (child.childIds.length > 0) {
-          this.walkChildren(graph, childId, ax, ay, insideSection)
+          this.walkChildren(graph, childId, insideSection)
         }
       } else if (child.childIds.length > 0) {
-        this.walkChildren(graph, childId, ax, ay, insideSection)
+        this.walkChildren(graph, childId, insideSection)
       }
     }
   }

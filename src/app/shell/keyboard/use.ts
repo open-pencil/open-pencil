@@ -18,7 +18,7 @@ export function useKeyboard() {
   const store = useEditorStore()
   const { isMobile } = useViewportKind()
   const { runCommand, setOpacityTarget } = useEditorCommands()
-  const activeElement = useActiveElement()
+  const activeElement = useActiveElement({ triggerOnRemoval: true })
   const inputFocused = computed(() => isInputElement(activeElement.value))
 
   const actions = createKeyboardActions({

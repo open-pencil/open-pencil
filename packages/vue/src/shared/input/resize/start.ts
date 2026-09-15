@@ -8,7 +8,14 @@ export function tryStartResize(cx: number, cy: number, editor: Editor): DragResi
   for (const id of editor.state.selectedIds) {
     const node = editor.graph.getNode(id)
     if (!node || node.locked) continue
-    const handleResult = getHitHandleByMatrix(cx, cy, node, editor.graph, editor.renderer?.zoom)
+    const handleResult = getHitHandleByMatrix(
+      cx,
+      cy,
+      node,
+      editor.graph,
+      editor.renderer?.zoom,
+      editor.state.rotationPreview
+    )
     if (handleResult) {
       const snap = createResizeSnapshot(node)
       return {

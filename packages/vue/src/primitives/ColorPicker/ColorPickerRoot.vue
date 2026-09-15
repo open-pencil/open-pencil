@@ -5,6 +5,8 @@ import { computed } from 'vue'
 import { colorToCSS } from '@open-pencil/core/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
+
 export interface ColorPickerUI {
   content?: string
   swatch?: string
@@ -27,6 +29,10 @@ const emit = defineEmits<{
 }>()
 
 const swatchBg = computed(() => colorToCSS(color))
+const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
+  emit('cancel')
+  emit('openChange', false)
+})
 
 function cancelFromEscape(event: KeyboardEvent) {
   event.stopPropagation()
@@ -35,7 +41,7 @@ function cancelFromEscape(event: KeyboardEvent) {
 </script>
 
 <template>
-  <PopoverRoot @update:open="emit('openChange', $event)">
+  <PopoverRoot v-model:open="popupOpen" @update:open="emit('openChange', $event)">
     <PopoverTrigger as-child>
       <slot name="trigger" :style="{ background: swatchBg }">
         <button
@@ -47,7 +53,7 @@ function cancelFromEscape(event: KeyboardEvent) {
       </slot>
     </PopoverTrigger>
 
-    <PopoverPortal>
+    <PopoverPortal v-if="portalActive">
       <PopoverContent
         :class="ui?.content"
         :side-offset="4"

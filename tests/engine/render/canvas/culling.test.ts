@@ -1,9 +1,12 @@
 import { describe, expect, mock, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
+import Matrix, { type Mat3 } from '@open-pencil/scene-graph/matrix'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { renderNode } from '#core/canvas/scene'
+
+import { expectDefined } from '#tests/helpers/assert'
 
 function pageId(graph: SceneGraph) {
   return graph.getPages()[0].id
@@ -14,6 +17,7 @@ function createCanvas() {
     save: mock(() => undefined),
     restore: mock(() => undefined),
     translate: mock(() => undefined),
+    concat: mock((_matrix: Mat3) => undefined),
     rotate: mock(() => undefined),
     scale: mock(() => undefined),
     saveLayer: mock(() => undefined),
@@ -119,6 +123,29 @@ describe('canvas culling', () => {
     expect(renderer._culledCount).toBe(0)
   })
 
+  test('culling follows an ancestor rotation preview before the graph commits', () => {
+    const graph = new SceneGraph()
+    const instance = graph.createNode('INSTANCE', pageId(graph), {
+      x: 1000,
+      y: 1000,
+      width: 100,
+      height: 800
+    })
+    const connector = graph.createNode('VECTOR', instance.id, {
+      x: 0,
+      y: 700,
+      width: 100,
+      height: 20
+    })
+    const { renderer, rendered } = createRenderer()
+    renderer.worldViewport = { x: 700, y: 1300, w: 300, h: 300 }
+    renderNode(renderer, createCanvas(), graph, instance.id, {
+      rotationPreview: { nodeId: instance.id, angle: 90 }
+    })
+    expect(rendered).toContain(connector.id)
+    expect(instance.rotation).toBe(0)
+  })
+
   test('applies reflection before rotation like the scene transform matrix', () => {
     const graph = new SceneGraph()
     const vector = graph.createNode('VECTOR', pageId(graph), {
@@ -130,12 +157,14 @@ describe('canvas culling', () => {
     const { renderer } = createRenderer()
     renderer.worldViewport = { x: -100, y: -100, w: 300, h: 300 }
     const canvas = createCanvas()
-    const transformOrder: string[] = []
-    canvas.scale = mock(() => transformOrder.push('scale'))
-    canvas.rotate = mock(() => transformOrder.push('rotate'))
-
     renderNode(renderer, canvas, graph, vector.id, {})
 
-    expect(transformOrder).toEqual(['scale', 'rotate'])
+    const matrix = expectDefined(canvas.concat.mock.calls[0]?.[0], 'drawing transform')
+    const start = Matrix.mapPoint(matrix, { x: 0, y: 0 })
+    const end = Matrix.mapPoint(matrix, { x: 100, y: 50 })
+    expect(start.x).toBeCloseTo(25, 9)
+    expect(start.y).toBeCloseTo(-25, 9)
+    expect(end.x).toBeCloseTo(75, 9)
+    expect(end.y).toBeCloseTo(75, 9)
   })
 })

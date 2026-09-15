@@ -38,7 +38,8 @@ export function renderFromEditorState(
   viewportHeight: number,
   showRulers = true,
   dpr = 1,
-  layer: RenderLayer = 'full'
+  layer: RenderLayer = 'full',
+  interactive = false
 ): void {
   r.dpr = dpr
   r.panX = state.panX
@@ -80,7 +81,8 @@ export function renderFromEditorState(
       autoLayoutHover: state.autoLayoutHover
     },
     state.sceneVersion,
-    layer
+    layer,
+    interactive
   )
 }
 
@@ -127,6 +129,27 @@ function canUseScenePicture(
   )
 }
 
+function getSceneRenderPolicy(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  overlays: RenderOverlays,
+  sceneVersion: number,
+  interactive: boolean
+) {
+  const hasPositionPreview =
+    graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion &&
+    sceneVersion === r.scenePictureVersion
+  const requiresUncachedSceneRender =
+    interactive || hasPositionPreview || sceneContentDependsOnOverlay(overlays)
+  return {
+    requiresUncachedSceneRender,
+    canUsePicture: canUseScenePicture(r, graph, sceneVersion, requiresUncachedSceneRender),
+    cacheMissReason: interactive
+      ? 'active-edit'
+      : scenePictureMissReason(r, graph, overlays, sceneVersion, hasPositionPreview)
+  }
+}
+
 const now = typeof performance !== 'undefined' ? () => performance.now() : () => 0
 
 function measure<T>(fn: () => T): { value: T; duration: number } {
@@ -141,7 +164,8 @@ export function render(
   selectedIds: Set<string>,
   overlays: RenderOverlays = {},
   sceneVersion = -1,
-  layer: RenderLayer = 'full'
+  layer: RenderLayer = 'full',
+  interactive = false
 ): void {
   emitNavigationTrace('render:start', {
     layer,
@@ -174,21 +198,19 @@ export function render(
   }
   updateSceneBackingPreviewState(r, layer)
 
-  const hasPositionPreview =
-    graph.positionPreviewVersion !== r.scenePicturePositionPreviewVersion &&
-    sceneVersion === r.scenePictureVersion
-  const requiresUncachedSceneRender = hasPositionPreview || sceneContentDependsOnOverlay(overlays)
-
-  const canUsePicture = canUseScenePicture(r, graph, sceneVersion, requiresUncachedSceneRender)
-  const cacheMissReason = scenePictureMissReason(
+  const { requiresUncachedSceneRender, canUsePicture, cacheMissReason } = getSceneRenderPolicy(
     r,
     graph,
     overlays,
     sceneVersion,
-    hasPositionPreview
+    interactive
   )
 
   if (layer !== 'overlays') {
+    if (requiresUncachedSceneRender) {
+      r.sceneBackingNeedsCrispRender = false
+      r.tiledScenePending = false
+    }
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
 
@@ -218,14 +240,12 @@ export function render(
       renderedScene = true
       p.setScenePictureMode('hit', tiled.covered ? 'tiled' : 'tiled-fallback')
     }
-    if (
-      !renderedScene &&
-      layer === 'scene' &&
-      !requiresUncachedSceneRender &&
-      renderSceneBacking(r, canvas, graph, sceneVersion)
-    ) {
-      renderedScene = true
-      p.setScenePictureMode('hit', 'backing')
+    if (!renderedScene && layer === 'scene' && !requiresUncachedSceneRender) {
+      const presentation = renderSceneBacking(r, canvas, graph, sceneVersion)
+      if (presentation) {
+        renderedScene = true
+        p.setScenePictureMode('hit', presentation)
+      }
     }
     if (!renderedScene) {
       canvas.translate(r.panX, r.panY)
@@ -250,7 +270,7 @@ export function render(
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
     r.labelCache.update(graph, r.pageId, sceneVersion, graph.positionPreviewVersion)
-    drawLabelPass(r, canvas, graph)
+    drawLabelPass(r, canvas, graph, overlays)
     canvas.restore()
 
     canvas.save()

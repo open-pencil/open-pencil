@@ -11,8 +11,15 @@ import type {
 } from '@open-pencil/scene-graph'
 
 import { encodeBase64 } from '#core/bytes'
+import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { geometryBlobToPath } from '#core/vector'
+
+const MAX_GLYPH_SILHOUETTES = 512
+
+export function createGlyphSilhouetteCache(): ResourceCache<string, Path> {
+  return new ResourceCache({ maxEntries: MAX_GLYPH_SILHOUETTES, dispose: (path) => path.delete() })
+}
 
 interface DecorationRange {
   x1: number
@@ -271,7 +278,7 @@ function getGlyphSilhouette(
   const blob = glyph.commandsBlob
   const relativeWeight = stroke.weight / glyph.fontSize
   const key = `${encodeBase64(blob)}:${relativeWeight.toFixed(5)}`
-  const cached = r.glyphSilhouetteCache.get(key)
+  const cached = r.glyphSilhouetteCache.peek(key)
   if (cached) return { path: cached, cached: true }
 
   const base = geometryBlobToPath(r.ck, blob, 'NONZERO')
@@ -294,12 +301,8 @@ function getGlyphSilhouette(
   base.delete()
   stroked?.delete()
   outline.delete()
-  // ponytail: crude bound — a live stroke-weight drag mints a key per tick;
-  // wholesale clear beats an LRU here since rebuild is cheap.
-  if (r.glyphSilhouetteCache.size >= 512) {
-    for (const path of r.glyphSilhouetteCache.values()) path.delete()
-    r.glyphSilhouetteCache.clear()
-  }
+  // Preserve reset-at-capacity for stroke-weight sweeps; the cache owns path disposal.
+  if (r.glyphSilhouetteCache.size >= MAX_GLYPH_SILHOUETTES) r.glyphSilhouetteCache.clear()
   r.glyphSilhouetteCache.set(key, merged)
   return { path: merged, cached: true }
 }

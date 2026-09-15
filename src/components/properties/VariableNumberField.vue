@@ -39,6 +39,7 @@ const {
 const emit = defineEmits<{
   'update:modelValue': [value: number]
   commit: [value: number, previous: number]
+  cancel: []
 }>()
 
 const { panels, common } = useI18n()
@@ -84,6 +85,7 @@ defineOptions({ inheritAttrs: false })
       :aria-label="accessibleLabel"
       @update:model-value="emit('update:modelValue', $event)"
       @commit="(value: number, previous: number) => emit('commit', value, previous)"
+      @cancel="emit('cancel')"
     >
       <template v-if="$slots.icon" #icon>
         <slot name="icon" />

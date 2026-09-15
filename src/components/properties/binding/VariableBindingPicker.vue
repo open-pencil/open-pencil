@@ -29,7 +29,7 @@ import {
 } from 'reka-ui'
 import { computed, nextTick, ref, watch } from 'vue'
 
-import { BindableValuePicker, useBindableValue } from '@open-pencil/vue'
+import { BindableValuePicker, useBindableValue, useRetainedPopup } from '@open-pencil/vue'
 
 import { BindingTrigger, useBindingFieldUI } from '@/components/ui/binding'
 import AppButton from '@/components/ui/button/AppButton.vue'
@@ -50,6 +50,7 @@ const {
 } = defineProps<VariableBindingPickerProps>()
 
 const binding = useBindableValue<unknown>()
+const { portalActive } = useRetainedPopup(binding.open)
 const creating = ref(false)
 const createName = ref('')
 const createInput = ref<HTMLInputElement | null>(null)
@@ -115,7 +116,7 @@ defineOptions({ inheritAttrs: false })
       </Tip>
     </ComboboxAnchor>
 
-    <ComboboxPortal>
+    <ComboboxPortal v-if="portalActive">
       <ComboboxContent
         v-if="picker.open"
         position="popper"

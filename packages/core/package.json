@@ -26,6 +26,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./geometry": {
+      "types": "./dist/geometry/index.d.ts",
+      "import": "./dist/geometry/index.js",
+      "default": "./dist/geometry/index.js"
+    },
     "./color": {
       "types": "./dist/color/index.d.ts",
       "import": "./dist/color/index.js",

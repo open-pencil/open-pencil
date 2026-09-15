@@ -10,6 +10,11 @@ export interface RenderContentVersion {
 }
 
 export interface SceneBackingGeometry {
+  /** Viewport translation at rasterization, before adding integer-device-pixel overscan. */
+  anchorPanX: number
+  anchorPanY: number
+  marginDeviceX: number
+  marginDeviceY: number
   panX: number
   panY: number
   zoom: number

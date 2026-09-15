@@ -18,7 +18,7 @@ import {
 } from '#vue/canvas/vector-input/input'
 import { resolveAutoLayoutHover } from '#vue/shared/input/auto-layout-hover'
 import { createClickCounter } from '#vue/shared/input/click-count'
-import { handleDrawMove, handleDrawUp } from '#vue/shared/input/draw'
+import { handleDrawMove } from '#vue/shared/input/draw'
 import { handleMoveMove, handleMoveUp } from '#vue/shared/input/move'
 import { setupPanZoom } from '#vue/shared/input/pan-zoom'
 import { applyResize, commitResizePreview } from '#vue/shared/input/resize'
@@ -343,7 +343,7 @@ export function useCanvasInput(
     }
 
     if (d.type === 'draw') {
-      handleDrawMove(d, cx, cy, e.shiftKey, editor)
+      handleDrawMove(d, cx, cy, e.shiftKey)
       return
     }
 
@@ -376,12 +376,12 @@ export function useCanvasInput(
       return
     } else if (d.type === 'rotate') {
       const preview = editor.state.rotationPreview
-      if (preview) {
+      if (preview?.nodeId === d.nodeId && preview.angle !== d.origRotation) {
         editor.updateNode(d.nodeId, { rotation: preview.angle })
         editor.commitRotation(d.nodeId, d.origRotation)
       }
-      editor.setRotationPreview(null)
-    } else if (d.type === 'draw') handleDrawUp(d, editor)
+      if (editor.state.rotationPreview === preview) editor.setRotationPreview(null)
+    } else if (d.type === 'draw') d.commit()
     else if (d.type === 'marquee') editor.setMarquee(null)
 
     drag.value = null
@@ -397,6 +397,16 @@ export function useCanvasInput(
   }
 
   function cancelPointerInteraction() {
+    if (drag.value?.type === 'rotate') {
+      const rotation = drag.value
+      drag.value = null
+      if (editor.state.rotationPreview?.nodeId === rotation.nodeId) editor.setRotationPreview(null)
+    }
+    if (drag.value?.type === 'draw') {
+      const drawing = drag.value
+      drag.value = null
+      drawing.cancel()
+    }
     if (
       drag.value?.type === 'edit-node' ||
       drag.value?.type === 'edit-handle' ||
@@ -444,6 +454,18 @@ export function useCanvasInput(
     if (!guideInput.deleteSelected(event)) updateModifier(event.code, true)
   })
   useEventListener(window, 'keyup', (event) => updateModifier(event.code, false))
+  useEventListener(
+    window,
+    'keydown',
+    (event) => {
+      if (event.code !== 'Escape' || event.isComposing || !isEnabled()) return
+      if (drag.value?.type !== 'draw' && drag.value?.type !== 'rotate') return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      cancelPointerInteraction()
+    },
+    { capture: true }
+  )
   useEventListener(window, 'blur', () => {
     resetMeasurementModifiers()
     cancelPointerInteraction()
@@ -466,12 +488,28 @@ export function useCanvasInput(
     { capture: true }
   )
 
+  const stopRotationListener = editor.onEditorEvent('rotation:preview-changed', (preview) => {
+    if (drag.value?.type === 'rotate' && preview?.nodeId !== drag.value.nodeId)
+      cancelPointerInteraction()
+  })
   const stopToolListener = editor.onEditorEvent('tool:changed', () => {
     if (!isEnabled()) return
     editor.setMeasurementMode('off')
     cancelPointerInteraction()
   })
-  onScopeDispose(stopToolListener)
+  const stopPreviewListeners = (
+    ['selection:changed', 'page:changed', 'graph:replaced'] as const
+  ).map((event) =>
+    editor.onEditorEvent(event, () => {
+      if (drag.value?.type === 'draw' || drag.value?.type === 'rotate') cancelPointerInteraction()
+    })
+  )
+  onScopeDispose(() => {
+    stopRotationListener()
+    stopToolListener()
+    for (const stop of stopPreviewListeners) stop()
+    cancelPointerInteraction()
+  })
 
   setupPanZoom(canvasRef, editor, drag, onMouseDown, onMouseMove, onMouseUp)
   return {
@@ -487,10 +525,8 @@ export function useCanvasInput(
     cancelAutoLayoutPaddingEdit,
     cleanupInteractions() {
       cancelAutoLayoutPaddingEdit()
-      drag.value = null
-      cursorOverride.value = null
+      cancelPointerInteraction()
       pointerInside.value = false
-      clearTransientInteractionFeedback()
       resetMeasurementModifiers()
     }
   }

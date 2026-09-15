@@ -4,7 +4,33 @@ export type NativeLayerFixture = {
   third: string
 }
 
+// Home has an editor store too, but no mounted canvas or text-input session.
+async function ensureNativeEditorReady(): Promise<void> {
+  await browser.waitUntil(
+    async () => browser.execute(() => Boolean(window.openPencil?.getStore?.())),
+    { timeout: 30_000, timeoutMsg: 'OpenPencil store did not initialize' }
+  )
+  await browser.execute(() => {
+    const store = window.openPencil?.getStore?.()
+    if (document.querySelector('canvas') && store?.textEditor) return
+    const newDesign = [...document.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === 'New design'
+    )
+    // Setup only: input assertions still use WebDriver after the document is ready.
+    newDesign?.click()
+  })
+  await browser.waitUntil(
+    async () =>
+      browser.execute(() => {
+        const store = window.openPencil?.getStore?.()
+        return Boolean(document.querySelector('canvas') && store?.textEditor)
+      }),
+    { timeout: 30_000, timeoutMsg: 'Native canvas and text editor did not initialize' }
+  )
+}
+
 export async function createNativeLayerFixture(): Promise<NativeLayerFixture> {
+  await ensureNativeEditorReady()
   return browser.execute(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil editor is not ready')
@@ -59,6 +85,7 @@ export async function readNativeEditorSnapshot(): Promise<NativeEditorSnapshot> 
 }
 
 export async function createNativeTextFixture(text = ''): Promise<string> {
+  await ensureNativeEditorReady()
   return browser.execute((initialText) => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil editor is not ready')

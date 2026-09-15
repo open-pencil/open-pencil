@@ -1,3 +1,4 @@
+import { isEqual } from 'es-toolkit'
 import { pick } from 'es-toolkit/object'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -193,6 +194,7 @@ export function createUndoActions(ctx: EditorContext) {
       node,
       Object.keys(restoredPrevious) as (keyof SceneNode)[]
     ) as Partial<SceneNode>
+    if (isEqual(current, restoredPrevious)) return
     ctx.undo.push({
       label,
       forward: () => {

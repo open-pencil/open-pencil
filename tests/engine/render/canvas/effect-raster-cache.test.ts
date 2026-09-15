@@ -2,13 +2,9 @@ import { describe, expect, mock, test } from 'bun:test'
 
 import {
   canCacheEffectRaster,
-  clearEffectRasterCache,
-  deleteEffectRaster,
-  deleteEffectRasterDependencies,
+  EffectRasterCache,
   effectRasterScale,
   effectRasterScaleMatches,
-  installEffectRaster,
-  touchEffectRaster,
   type EffectRasterCacheEntry
 } from '#core/canvas/renderer/effect-raster-cache'
 
@@ -44,46 +40,46 @@ describe('effect raster cache', () => {
   })
 
   test('replaces entries and disposes native images', () => {
-    const cache = new Map<string, EffectRasterCacheEntry>()
+    const cache = new EffectRasterCache()
     const first = entry(100)
     const second = entry(100)
-    installEffectRaster(cache, 'node', first)
-    installEffectRaster(cache, 'node', second)
+    cache.set('node', first)
+    cache.set('node', second)
     expect(first.image.delete).toHaveBeenCalledTimes(1)
     expect(cache.get('node')).toBe(second)
 
-    deleteEffectRaster(cache, 'node')
+    cache.delete('node')
     expect(second.image.delete).toHaveBeenCalledTimes(1)
     expect(cache.size).toBe(0)
   })
 
   test('invalidates an owning raster when a geometry dependency changes', () => {
-    const cache = new Map<string, EffectRasterCacheEntry>()
+    const cache = new EffectRasterCache()
     const parent = { ...entry(100), dependencyIds: ['child'] }
-    installEffectRaster(cache, 'parent', parent)
+    cache.set('parent', parent)
 
-    deleteEffectRasterDependencies(cache, 'child')
+    cache.deleteDependencies('child')
 
     expect(parent.image.delete).toHaveBeenCalledTimes(1)
     expect(cache.has('parent')).toBe(false)
   })
 
   test('evicts least-recently-used entries within the pixel budget', () => {
-    const cache = new Map<string, EffectRasterCacheEntry>()
+    const cache = new EffectRasterCache()
     const first = entry(12_000_000)
     const second = entry(8_000_000)
     const third = entry(8_000_000)
-    installEffectRaster(cache, 'first', first)
-    installEffectRaster(cache, 'second', second)
-    expect(touchEffectRaster(cache, 'first')).toBe(first)
-    installEffectRaster(cache, 'third', third)
+    cache.set('first', first)
+    cache.set('second', second)
+    expect(cache.get('first')).toBe(first)
+    cache.set('third', third)
 
     expect(second.image.delete).toHaveBeenCalledTimes(1)
     expect(cache.has('second')).toBe(false)
     expect(cache.has('first')).toBe(true)
     expect(cache.has('third')).toBe(true)
 
-    clearEffectRasterCache(cache)
+    cache.clear()
     expect(first.image.delete).toHaveBeenCalledTimes(1)
     expect(third.image.delete).toHaveBeenCalledTimes(1)
   })

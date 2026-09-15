@@ -1,5 +1,6 @@
 <script setup lang="ts" generic="V">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { watchImmediate } from '@vueuse/core'
+import { computed, onBeforeUnmount, onDeactivated, ref } from 'vue'
 
 import { useBindingProvider } from '#vue/controls/binding-provider/context'
 import { prepareBindingEdits } from '#vue/controls/binding-provider/prepare-edits'
@@ -9,6 +10,7 @@ import type {
   BindingProvider,
   BindingTarget
 } from '#vue/controls/binding-provider/types'
+import { useRetainedActivity } from '#vue/lifecycle/retention/context'
 import { provideBindableValue } from '#vue/primitives/BindableValue/context'
 import type {
   BindableValueActions,
@@ -29,6 +31,7 @@ const {
 
 defineSlots<BindableValueRootSlots<V>>()
 
+const retainedActivity = useRetainedActivity()
 const injectedProvider = useBindingProvider<V>()
 const resolvedProvider = providerProp ?? injectedProvider
 if (!resolvedProvider) {
@@ -133,18 +136,15 @@ function snapshotBindings() {
 }
 
 function beginMutation(source: BindingMutationSource): boolean {
+  if (retainedActivity?.value === false) return false
   if (interactionActive) return true
   if (state.value === 'unresolved') return false
   const startedUnbound = state.value === 'unbound'
   const startedMixed = state.value === 'mixed'
-  if (!startedUnbound && !startedMixed && policy.value === 'readonly-when-bound') return false
-  if (
-    !startedUnbound &&
-    !startedMixed &&
-    policy.value === 'edit-variable' &&
-    !provider.prepareEdit
-  ) {
-    return false
+  const startedBound = !startedUnbound && !startedMixed
+  if (startedBound) {
+    if (policy.value === 'readonly-when-bound') return false
+    if (policy.value === 'edit-variable' && !provider.prepareEdit) return false
   }
 
   interactionPolicy = policy.value
@@ -248,7 +248,20 @@ const context: BindableValueContext<V> = {
 }
 
 provideBindableValue(context)
+function deactivate() {
+  cancelMutation()
+  closePicker()
+}
+
+watchImmediate(
+  () => retainedActivity?.value ?? true,
+  (active) => {
+    if (!active) deactivate()
+  },
+  { flush: 'sync' }
+)
 onBeforeUnmount(cancelMutation)
+onDeactivated(deactivate)
 </script>
 
 <template>

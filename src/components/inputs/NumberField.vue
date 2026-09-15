@@ -77,6 +77,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: number]
   'editing-change': [editing: boolean]
   commit: [value: number, previous: number]
+  cancel: []
   invalid: [expression: string, reason: NumberExpressionError]
   'detach-request': [source: 'edit' | 'scrub' | 'step']
 }>()
@@ -100,6 +101,7 @@ defineOptions({ inheritAttrs: false })
     :edit-policy="editPolicy"
     @update:model-value="emit('update:modelValue', $event)"
     @commit="(val: number, prev: number) => emit('commit', val, prev)"
+    @cancel="emit('cancel')"
     @invalid="
       (expression: string, reason: NumberExpressionError) => emit('invalid', expression, reason)
     "

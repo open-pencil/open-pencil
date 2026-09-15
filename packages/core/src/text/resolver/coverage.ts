@@ -32,6 +32,21 @@ export interface MissingGlyphOccurrence {
   utf16Start: number
 }
 
+export function missingGlyphsByScript(
+  occurrences: readonly MissingGlyphOccurrence[],
+  languageAt?: (utf16Start: number) => string | null
+): Map<FontFallbackScript, string[]> {
+  const groups = new Map<FontFallbackScript, string[]>()
+  for (const { character, utf16Start } of occurrences) {
+    const script = fontFallbackScriptForCharacter(character, languageAt?.(utf16Start))
+    if (!script) continue
+    const characters = groups.get(script) ?? []
+    characters.push(character)
+    groups.set(script, characters)
+  }
+  return groups
+}
+
 export function missingGlyphOccurrences(
   text: string,
   lines: readonly ObservedShapedLine[],

@@ -11,7 +11,7 @@ import {
 import { computed } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useEditor, useI18n } from '@open-pencil/vue'
+import { useEditor, useI18n, useRetainedPopup } from '@open-pencil/vue'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import { useSelectUI } from '@/components/ui/select/select'
@@ -19,6 +19,7 @@ import { useSelectUI } from '@/components/ui/select/select'
 const { node } = defineProps<{ node: SceneNode }>()
 const emit = defineEmits<{ update: [value: number]; commit: [value: number, previous: number] }>()
 const editor = useEditor()
+const { open: popupOpen, portalActive } = useRetainedPopup()
 const { panels } = useI18n()
 const automatic = computed(() => node.lineHeight == null && !node.boundVariables.lineHeight)
 const value = computed(() => node.lineHeight ?? Math.round((node.fontSize || 14) * 1.2))
@@ -51,14 +52,18 @@ function setMode(mode: string) {
       ><span class="min-w-0 flex-1 truncate text-surface">{{ panels.auto }}</span></template
     >
     <template #after-variable>
-      <SelectRoot :model-value="automatic ? 'AUTO' : 'FIXED'" @update:model-value="setMode">
+      <SelectRoot
+        v-model:open="popupOpen"
+        :model-value="automatic ? 'AUTO' : 'FIXED'"
+        @update:model-value="setMode"
+      >
         <SelectTrigger
           :aria-label="panels.lineHeightMode"
           class="flex shrink-0 items-center self-stretch px-1 text-muted"
           @pointerdown.stop
           ><icon-lucide-chevron-down class="size-3"
         /></SelectTrigger>
-        <SelectPortal>
+        <SelectPortal v-if="portalActive">
           <SelectContent position="popper" :side-offset="4" :class="menu.content">
             <SelectViewport>
               <SelectItem value="AUTO" :class="menu.item"

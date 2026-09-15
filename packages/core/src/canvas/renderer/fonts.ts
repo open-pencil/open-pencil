@@ -11,7 +11,30 @@ import {
 } from '#core/constants'
 import { fontManager } from '#core/text/fonts'
 import { prepareGraphFonts } from '#core/text/prepare'
-import type { FontResolutionSnapshot } from '#core/text/resolver'
+import {
+  fontCoverageDemand,
+  fontResolver,
+  missingGlyphsByScript,
+  type MissingGlyphOccurrence,
+  type FontResolutionSnapshot
+} from '#core/text/resolver'
+
+export function resolveLabelFontCoverage(
+  r: Pick<SkiaRenderer, 'isDestroyed' | 'onFontResolutionSettled'>,
+  missing: readonly MissingGlyphOccurrence[],
+  resolver = fontResolver
+): void {
+  if (r.isDestroyed()) return
+  for (const [script, characters] of missingGlyphsByScript(missing)) {
+    const demand = fontCoverageDemand(script, characters)
+    const state = resolver.state(demand).state
+    if (state === 'loaded') resolver.exhaust(demand)
+    else if (state === 'idle' || state === 'loading') {
+      // No fake TEXT node: the shared settlement callback refreshes font generation and repaints.
+      void resolver.demand(demand, r.onFontResolutionSettled)
+    }
+  }
+}
 
 export function syncFontGeneration(r: SkiaRenderer): void {
   r.fontGeneration = fontManager.generation()

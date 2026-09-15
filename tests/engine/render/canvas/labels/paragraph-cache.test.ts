@@ -28,6 +28,10 @@ describe('label paragraph cache', () => {
 
       cache.measure(ck, provider, 'Primitives', 12, 200, ck.BLACK, 1)
       expect(cache.size()).toBe(1)
+      const semibold = cache.measure(ck, provider, 'Primitives', 12, 200, ck.BLACK, 1, 600)
+      expect(semibold).not.toBe(metrics)
+      expect(cache.measure(ck, provider, 'Primitives', 12, 200, ck.BLACK, 1, 600)).toBe(semibold)
+      expect(cache.size()).toBe(2)
       cache.measure(ck, provider, 'Primitives', 12, 200, ck.BLACK, 2)
       expect(cache.size()).toBe(1)
     } finally {

@@ -30,6 +30,10 @@ function scriptCharRegex(script: FontFallbackScript): RegExp {
   }
 }
 
+export function textHasFallbackScript(text: string): boolean {
+  return ARABIC_CHAR_RE.test(text) || CJK_CHAR_RE.test(text)
+}
+
 export function fontFallbackScriptForCharacter(
   char: string,
   language?: string | null

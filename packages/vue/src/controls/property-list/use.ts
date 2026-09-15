@@ -5,7 +5,6 @@ import type { SceneNode } from '@open-pencil/scene-graph'
 import { useNodeProps } from '#vue/controls/node-props/use'
 import { useUndoBatch } from '#vue/controls/undo-batch/use'
 import { useEditor } from '#vue/editor/context'
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
 import type {
   PropertyListActions,
   PropertyListItemFor,
@@ -24,22 +23,13 @@ function moveItem<T>(items: T[], fromIndex: number, toIndex: number): T[] {
 
 export function useEditorPropertyList<K extends PropertyListKey>(propKey: K) {
   const editor = useEditor()
-  const { isArrayMixed } = useNodeProps()
-  const batch = useUndoBatch(editor.undo)
-  const selectedNodes = useSceneComputed(() => {
-    void editor.state.sceneVersion
-    return editor.getSelectedNodes()
-  })
-  const activeNode = useSceneComputed<SceneNode | null>(() => {
-    void editor.state.sceneVersion
-    return selectedNodes.value[0] ?? null
-  })
+  const { isArrayMixed, nodes: selectedNodes, activeNode } = useNodeProps()
+  const batch = useUndoBatch(editor.undo, editor.beginInteractiveEdit)
   const selectedNodeIds = computed(() => selectedNodes.value.map((node) => node.id))
   const isMulti = computed(() => selectedNodes.value.length > 1)
   const active = computed(() => selectedNodes.value.length > 0)
   const isMixed = computed(() => isArrayMixed(propKey))
-  const items = useSceneComputed<PropertyListItemFor<K>[]>(() => {
-    void editor.state.sceneVersion
+  const items = computed<PropertyListItemFor<K>[]>(() => {
     if (isMixed.value) return []
     return (activeNode.value?.[propKey] ?? []) as PropertyListItemFor<K>[]
   })

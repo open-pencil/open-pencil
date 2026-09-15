@@ -1,14 +1,21 @@
-import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { expect, test } from '#tests/e2e/fixtures'
+import { CanvasHelper } from '#tests/helpers/canvas'
+import { trackFontModuleResources } from '#tests/helpers/fonts/runtime'
 
-const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
-
-async function expectCanvas(name: string): Promise<void> {
-  await editor.canvas.waitForRender()
-  editor.canvas.assertNoErrors()
-  expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot(`${name}.png`)
+async function expectCanvas(canvas: CanvasHelper, name: string): Promise<void> {
+  await canvas.waitForRender()
+  canvas.assertNoErrors()
+  expect(await canvas.screenshotCanvasRegion()).toMatchSnapshot(`${name}.png`)
 }
 
-test('first edit replaces baked missing-font glyphs with visible live substitution', async () => {
+test('first edit replaces baked missing-font glyphs with visible live substitution', async ({
+  page
+}) => {
+  await trackFontModuleResources(page)
+  await page.goto('/?test&no-chrome&no-rulers')
+  const editor = { page, canvas: new CanvasHelper(page) }
+  await editor.canvas.waitForInit()
+  await editor.canvas.clearCanvas()
   const textId = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store?.renderer) throw new Error('OpenPencil renderer not initialized')
@@ -52,13 +59,13 @@ test('first edit replaces baked missing-font glyphs with visible live substituti
     const node = store?.graph.getNode(id)
     return node ? store?.renderer?.nodeFontReadiness(node) === 'substituted' : false
   }, textId)
-  await expectCanvas('missing-font-baked-before-edit')
+  await expectCanvas(editor.canvas, 'missing-font-baked-before-edit')
 
   await editor.page.keyboard.press('Enter')
   const textarea = editor.page.locator('textarea[aria-hidden="true"]')
   await textarea.fill('!')
   await textarea.dispatchEvent('input')
-  await expectCanvas('missing-font-live-substitution-after-first-edit')
+  await expectCanvas(editor.canvas, 'missing-font-live-substitution-after-first-edit')
 
   const edited = await editor.page.evaluate((id) => {
     const store = window.openPencil?.getStore?.()
@@ -81,5 +88,5 @@ test('first edit replaces baked missing-font glyphs with visible live substituti
 
   await editor.page.keyboard.press('Escape')
   await editor.canvas.undo()
-  await expectCanvas('missing-font-substitution-after-undo')
+  await expectCanvas(editor.canvas, 'missing-font-substitution-after-undo')
 })

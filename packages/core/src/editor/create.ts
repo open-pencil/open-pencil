@@ -65,6 +65,7 @@ export function createEditor(options?: EditorOptions) {
   let _ck: CanvasKit | null = null
   let _renderer: SkiaRenderer | null = null
   const _renderers = new Set<SkiaRenderer>()
+  const interactiveEdits = new Set<symbol>()
   let _textEditor: TextEditor | null = null
   const events: Emitter<EditorEvents> = createNanoEvents()
   const stopFontResolutionEvents = fontResolver.subscribe((event, snapshot) => {
@@ -111,6 +112,16 @@ export function createEditor(options?: EditorOptions) {
       renderVersion: state.renderVersion,
       sceneVersion: state.sceneVersion
     })
+  }
+
+  /** Track an actual live edit independently of history batching. Release is idempotent. */
+  function beginInteractiveEdit() {
+    const token = Symbol('interactive-edit')
+    interactiveEdits.add(token)
+    requestRepaint()
+    return () => {
+      if (interactiveEdits.delete(token)) requestRepaint()
+    }
   }
 
   function setNavigationPhase(phase: EditorState['navigation']['phase'], inputAt = 0) {
@@ -192,6 +203,8 @@ export function createEditor(options?: EditorOptions) {
     getTextEditor: () => _textEditor,
     requestRender,
     requestRepaint,
+    beginInteractiveEdit,
+    onEditorEvent,
     emitEditorEvent,
     setSelectedIds,
     setActiveTool,
@@ -242,6 +255,7 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function replaceGraph(newGraph: SceneGraph) {
+    nodes.cancelNodePreviews()
     _graph = newGraph
     subscribeToGraph()
     const previousPageId = state.currentPageId
@@ -263,6 +277,8 @@ export function createEditor(options?: EditorOptions) {
   }
 
   function dispose() {
+    nodes.cancelNodePreviews()
+    interactiveEdits.clear()
     stopFontResolutionEvents()
     unsubscribeFromGraph()
   }
@@ -295,6 +311,8 @@ export function createEditor(options?: EditorOptions) {
     ...graphReads,
 
     // Lifecycle
+    beginInteractiveEdit,
+    isInteractiveEditing: () => interactiveEdits.size > 0,
     requestRender,
     requestRepaint,
     onEditorEvent,

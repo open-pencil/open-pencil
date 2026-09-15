@@ -31,6 +31,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
           binding-path="paddingLeft"
           @update:model-value="ctx.setHorizontalPadding"
           @commit="ctx.commitHorizontalPadding"
+          @cancel="ctx.cancelPreview"
         >
           <template #icon>
             <icon-lucide-separator-vertical class="size-3.5" />
@@ -44,6 +45,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
           binding-path="paddingTop"
           @update:model-value="ctx.setVerticalPadding"
           @commit="ctx.commitVerticalPadding"
+          @cancel="ctx.cancelPreview"
         >
           <template #icon>
             <icon-lucide-separator-horizontal class="size-3.5" />
@@ -61,6 +63,7 @@ const paddingSides: Array<{ prop: PaddingProp; icon: string }> = [
           :binding-path="side.prop"
           @update:model-value="ctx.updateProp(side.prop, $event)"
           @commit="(v: number, p: number) => ctx.commitProp(side.prop, v, p)"
+          @cancel="ctx.cancelPreview"
         >
           <template #icon>
             <icon-lucide-panel-top v-if="side.icon === 'top'" class="size-3.5" />

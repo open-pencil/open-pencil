@@ -1,5 +1,7 @@
 import type { Image as CKImage } from 'canvaskit-wasm'
 
+import { ResourceCache } from '#core/cache/resource'
+
 export interface EffectRasterCacheEntry {
   image: CKImage
   left: number
@@ -20,6 +22,22 @@ const EFFECT_RASTER_SCALE_STEP = 0.25
 const MIN_REUSABLE_SCALE_RATIO = 0.85
 const MAX_REUSABLE_SCALE_RATIO = 1.25
 
+export class EffectRasterCache extends ResourceCache<string, EffectRasterCacheEntry> {
+  constructor(maxPixels = MAX_EFFECT_RASTER_CACHE_PIXELS) {
+    super({
+      maxWeight: maxPixels,
+      weight: (entry) => entry.pixels,
+      dispose: (entry) => entry.image.delete()
+    })
+  }
+
+  deleteDependencies(nodeId: string): void {
+    for (const [ownerId, entry] of this) {
+      if (entry.dependencyIds.includes(nodeId)) this.delete(ownerId)
+    }
+  }
+}
+
 export function effectRasterScale(targetScale: number): number {
   const quantized = Math.ceil(targetScale / EFFECT_RASTER_SCALE_STEP) * EFFECT_RASTER_SCALE_STEP
   return Math.min(MAX_EFFECT_RASTER_SCALE, Math.max(MIN_EFFECT_RASTER_SCALE, quantized))
@@ -36,60 +54,4 @@ export function canCacheEffectRaster(width: number, height: number, scale: numbe
     height > 0 &&
     Math.ceil(width * scale) * Math.ceil(height * scale) <= MAX_EFFECT_RASTER_ENTRY_PIXELS
   )
-}
-
-export function installEffectRaster(
-  cache: Map<string, EffectRasterCacheEntry>,
-  nodeId: string,
-  entry: EffectRasterCacheEntry
-): void {
-  const previous = cache.get(nodeId)
-  previous?.image.delete()
-  cache.delete(nodeId)
-  cache.set(nodeId, entry)
-
-  let pixels = 0
-  for (const value of cache.values()) pixels += value.pixels
-  while (pixels > MAX_EFFECT_RASTER_CACHE_PIXELS) {
-    const oldest = cache.entries().next().value
-    if (!oldest) break
-    const [oldestId, oldestEntry] = oldest
-    cache.delete(oldestId)
-    oldestEntry.image.delete()
-    pixels -= oldestEntry.pixels
-  }
-}
-
-export function touchEffectRaster(
-  cache: Map<string, EffectRasterCacheEntry>,
-  nodeId: string
-): EffectRasterCacheEntry | null {
-  const entry = cache.get(nodeId)
-  if (!entry) return null
-  cache.delete(nodeId)
-  cache.set(nodeId, entry)
-  return entry
-}
-
-export function deleteEffectRaster(
-  cache: Map<string, EffectRasterCacheEntry>,
-  nodeId: string
-): void {
-  const entry = cache.get(nodeId)
-  entry?.image.delete()
-  cache.delete(nodeId)
-}
-
-export function deleteEffectRasterDependencies(
-  cache: Map<string, EffectRasterCacheEntry>,
-  nodeId: string
-): void {
-  for (const [ownerId, entry] of cache) {
-    if (entry.dependencyIds.includes(nodeId)) deleteEffectRaster(cache, ownerId)
-  }
-}
-
-export function clearEffectRasterCache(cache: Map<string, EffectRasterCacheEntry>): void {
-  for (const entry of cache.values()) entry.image.delete()
-  cache.clear()
 }

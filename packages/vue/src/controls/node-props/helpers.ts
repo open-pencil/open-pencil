@@ -4,7 +4,7 @@ import type { ComputedRef } from 'vue'
 import type { Editor } from '@open-pencil/core/editor'
 import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
 
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
+import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
 
 export const MIXED = Symbol('mixed')
 export type MixedValue<T> = T | typeof MIXED
@@ -54,14 +54,7 @@ export function areArrayItemsEqual(a: ArrayItem, b: ArrayItem): boolean {
 type ArrayPropKey = 'fills' | 'strokes' | 'effects'
 
 export function createNodePropSelectionState(store: Editor) {
-  const node = useSceneComputed(() => {
-    void store.state.sceneVersion
-    return store.getSelectedNode() ?? null
-  })
-  const nodes = useSceneComputed(() => {
-    void store.state.sceneVersion
-    return store.getSelectedNodes()
-  })
+  const { node, nodes } = useSelectedNodeState(store)
   const isMulti = computed(() => nodes.value.length > 1)
   const active = computed(() => node.value !== null || isMulti.value)
   const activeNode = computed(() => node.value ?? (nodes.value[0] as SceneNode | undefined) ?? null)

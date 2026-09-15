@@ -13,7 +13,13 @@ import IconCopyX from '~icons/lucide/copy-x'
 import IconListCollapse from '~icons/lucide/list-collapse'
 import IconSquaresIntersect from '~icons/lucide/squares-intersect'
 
-import { editorCommandMetadata, formatShortcut, useEditorCommands, useI18n } from '@open-pencil/vue'
+import {
+  editorCommandMetadata,
+  formatShortcut,
+  useEditorCommands,
+  useI18n,
+  useRetainedPopup
+} from '@open-pencil/vue'
 import type { EditorCommandId } from '@open-pencil/vue'
 
 import { menuItem, useMenuUI } from '@/components/ui/menu/menu'
@@ -21,6 +27,7 @@ import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { getCommand, runCommand } = useEditorCommands()
 const { commands } = useI18n()
+const { open: popupOpen, portalActive } = useRetainedPopup()
 
 const operations = [
   { id: 'selection.booleanUnion', icon: IconCombine },
@@ -35,7 +42,7 @@ const itemCls = menuItem({ justify: 'between' })
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <DropdownMenuRoot v-model:open="popupOpen">
     <Tip :label="commands.booleanOperations">
       <DropdownMenuTrigger as-child>
         <button
@@ -47,7 +54,7 @@ const itemCls = menuItem({ justify: 'between' })
         </button>
       </DropdownMenuTrigger>
     </Tip>
-    <DropdownMenuPortal>
+    <DropdownMenuPortal v-if="portalActive">
       <DropdownMenuContent align="end" side="bottom" :side-offset="4" :class="menuCls.content">
         <DropdownMenuItem
           v-for="operation in operations"

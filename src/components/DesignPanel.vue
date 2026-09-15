@@ -23,6 +23,7 @@ import LayoutGridSection from './properties/layout/guides/LayoutGridSection.vue'
 import LayoutSection from './properties/layout/LayoutSection.vue'
 import MaskSection from './properties/MaskSection.vue'
 import PageSection from './properties/PageSection.vue'
+import RetainedPanel from './properties/panel/RetainedPanel.vue'
 import PositionSection from './properties/PositionSection.vue'
 import SelectionActionsControl from './properties/SelectionActionsControl.vue'
 import StrokeSection from './properties/stroke/StrokeSection.vue'
@@ -100,82 +101,84 @@ const { panels } = useI18n()
     <ExportSection />
   </div>
 
-  <!-- Single selection -->
-  <div
-    v-else-if="node"
-    data-test-id="design-panel-single"
-    class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
-  >
-    <PanelHeader :component="isComponentType">
-      <template #icon>
-        <Tip :label="node.type">
-          <span role="img" :aria-label="node.type" class="contents">
-            <component :is="selectedIcon" class="size-3.5" />
-          </span>
-        </Tip>
-      </template>
-      <span role="heading" aria-level="2">{{ node.name }}</span>
-      <template #actions>
-        <InstanceUpdateAction
-          v-if="node.type === 'INSTANCE'"
-          :node="node"
-          :editor="store"
-          :service="libraryService"
-          @review="openSelectedInstanceReview"
-        />
-        <SelectionActionsControl />
-      </template>
-    </PanelHeader>
-
-    <!-- Component actions -->
+  <!-- Single selection: retain one paused subtree while frame presets are shown. -->
+  <RetainedPanel :active="activeTool !== 'FRAME' && multiCount === 1 && !!node">
     <div
-      v-if="node.type === 'INSTANCE'"
-      class="flex flex-col gap-1 border-b border-border px-3 py-2"
+      v-if="node"
+      data-test-id="design-panel-single"
+      class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
     >
-      <button
-        type="button"
-        class="rounded bg-component/10 px-2 py-1 text-left text-[11px] text-component hover:bg-component/20"
-        @click="goToMainComponent.run()"
+      <PanelHeader :component="isComponentType">
+        <template #icon>
+          <Tip :label="node.type">
+            <span role="img" :aria-label="node.type" class="contents">
+              <component :is="selectedIcon" class="size-3.5" />
+            </span>
+          </Tip>
+        </template>
+        <span role="heading" aria-level="2">{{ node.name }}</span>
+        <template #actions>
+          <InstanceUpdateAction
+            v-if="node.type === 'INSTANCE'"
+            :node="node"
+            :editor="store"
+            :service="libraryService"
+            @review="openSelectedInstanceReview"
+          />
+          <SelectionActionsControl />
+        </template>
+      </PanelHeader>
+
+      <!-- Component actions -->
+      <div
+        v-if="node.type === 'INSTANCE'"
+        class="flex flex-col gap-1 border-b border-border px-3 py-2"
       >
-        {{ panels.goToMainComponent }}
-      </button>
-      <button
-        type="button"
-        class="rounded px-2 py-1 text-left text-[11px] text-muted hover:bg-hover"
-        @click="detachInstance.run()"
-      >
-        {{ panels.detachInstance }}
-      </button>
+        <button
+          type="button"
+          class="rounded bg-component/10 px-2 py-1 text-left text-[11px] text-component hover:bg-component/20"
+          @click="goToMainComponent.run()"
+        >
+          {{ panels.goToMainComponent }}
+        </button>
+        <button
+          type="button"
+          class="rounded px-2 py-1 text-left text-[11px] text-muted hover:bg-hover"
+          @click="detachInstance.run()"
+        >
+          {{ panels.detachInstance }}
+        </button>
+      </div>
+
+      <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
+      <VariantAuthoringSection
+        v-if="
+          node.type === 'COMPONENT_SET' ||
+          (node.type === 'COMPONENT' &&
+            node.parentId &&
+            store.graph.getNode(node.parentId)?.type === 'COMPONENT_SET')
+        "
+      />
+
+      <FramePresetSelect v-if="node.type === 'FRAME'" />
+
+      <PositionSection />
+      <ConstraintsSection />
+      <LayoutSection />
+      <AppearanceSection />
+      <MaskSection />
+      <TypographySection v-if="node.type === 'TEXT'" />
+      <FillSection />
+      <StrokeSection />
+      <LayoutGridSection v-if="supportsLayoutGuides" />
+      <EffectsSection />
+
+      <ExportSection />
     </div>
-
-    <ComponentPropertiesSection v-if="node.type === 'INSTANCE'" />
-    <VariantAuthoringSection
-      v-if="
-        node.type === 'COMPONENT_SET' ||
-        (node.type === 'COMPONENT' &&
-          node.parentId &&
-          store.graph.getNode(node.parentId)?.type === 'COMPONENT_SET')
-      "
-    />
-
-    <FramePresetSelect v-if="node.type === 'FRAME'" />
-
-    <PositionSection />
-    <ConstraintsSection />
-    <LayoutSection />
-    <AppearanceSection />
-    <MaskSection />
-    <TypographySection v-if="node.type === 'TEXT'" />
-    <FillSection />
-    <StrokeSection />
-    <LayoutGridSection v-if="supportsLayoutGuides" />
-    <EffectsSection />
-
-    <ExportSection />
-  </div>
+  </RetainedPanel>
 
   <div
-    v-else
+    v-if="activeTool !== 'FRAME' && multiCount <= 1 && !node"
     data-test-id="design-panel-empty"
     class="scrollbar-thin flex-1 overflow-x-hidden overflow-y-auto pb-4"
   >

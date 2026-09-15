@@ -41,7 +41,8 @@ export function useLayout() {
     commitHorizontalPadding,
     setVerticalPadding,
     commitVerticalPadding,
-    toggleIndividualPadding
+    toggleIndividualPadding,
+    cancelPaddingPreview
   } = createPaddingActions(editor, node)
 
   const layoutActions = createLayoutActions({ editor, node, isInAutoLayout })
@@ -65,6 +66,10 @@ export function useLayout() {
     hasUniformPadding,
     hasSymmetricPadding,
     trackSizingOptions: createTrackSizingOptions(panels.value),
+    cancelPreview: () => {
+      cancelPaddingPreview()
+      layoutActions.cancelPreview()
+    },
     updateProp: layoutActions.updateProp,
     updateSizeLimit: layoutActions.updateSizeLimit,
     setSizeLimitToCurrent: layoutActions.setSizeLimitToCurrent,

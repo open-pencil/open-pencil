@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 
 import { WEB_FONT_PROVIDER_IDS, WEB_FONT_PROVIDER_LABELS } from '@open-pencil/core/text'
 import type { WebFontProviderId } from '@open-pencil/core/text'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useRetainedPopup } from '@open-pencil/vue'
 
 import { isTauri } from '@/app/tauri/env'
-import { useFontSettings } from '@/components/FontSettings/use'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
 import Tip from '@/components/ui/overlay/Tip.vue'
+
+import { useFontSettings } from './use'
 
 const { fonts, common } = useI18n()
 const cls = usePopoverUI({ content: 'isolate z-[51] w-80 p-3' })
@@ -27,7 +28,7 @@ const primaryButton = {
 }
 const showDownloadedFonts = isTauri()
 const webFontProviderIds = WEB_FONT_PROVIDER_IDS
-const popoverOpen = ref(false)
+const { open: popoverOpen, portalActive } = useRetainedPopup()
 
 const {
   accessState,
@@ -80,7 +81,7 @@ onMounted(() => {
       </PopoverTrigger>
     </Tip>
 
-    <PopoverPortal>
+    <PopoverPortal v-if="portalActive">
       <PopoverContent
         data-test-id="font-settings-panel"
         side="left"

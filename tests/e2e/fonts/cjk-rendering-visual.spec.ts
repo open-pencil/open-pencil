@@ -6,8 +6,13 @@ import type { FontManager } from '#core/text/fonts'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
+import { mockFontsource } from '#tests/helpers/fonts/fontsource'
+import { trackFontModuleResources } from '#tests/helpers/fonts/runtime'
 
 async function openEditor(page: Page): Promise<CanvasHelper> {
+  await trackFontModuleResources(page)
+  // These tests install fixture fonts explicitly; remote arrivals must not race those fixtures.
+  await mockFontsource(page, [])
   await page.goto('/?test&no-chrome&no-rulers')
   const canvas = new CanvasHelper(page)
   await canvas.waitForInit()

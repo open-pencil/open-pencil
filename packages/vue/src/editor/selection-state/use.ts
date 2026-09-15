@@ -1,8 +1,7 @@
 import { computed } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-
 import { useEditor } from '#vue/editor/context'
+import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 /**
@@ -18,7 +17,7 @@ export function useSelectionState() {
 
   const hasSelection = computed(() => selectedIds.value.size > 0)
 
-  const selectedNode = useSceneComputed<SceneNode | null>(() => editor.getSelectedNode() ?? null)
+  const { node: selectedNode } = useSelectedNodeState(editor)
 
   const selectedCount = computed(() => selectedIds.value.size)
 

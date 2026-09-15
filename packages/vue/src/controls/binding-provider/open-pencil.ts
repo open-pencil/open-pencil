@@ -33,6 +33,16 @@ export function createOpenPencilBindingProvider<V>(
 ): BindingProvider<V> {
   const { contains } = useFilter({ sensitivity: 'base' })
   const variables = () => editor.getVariablesByType(options.type)
+  const interactiveEdits: Array<() => void> = []
+
+  function finishBatch(commit: boolean) {
+    try {
+      if (commit) editor.undo.commitBatch()
+      else editor.undo.rollbackBatch()
+    } finally {
+      interactiveEdits.pop()?.()
+    }
+  }
 
   function filterVariables(term: string): Variable[] {
     if (!term) return variables()
@@ -90,9 +100,12 @@ export function createOpenPencilBindingProvider<V>(
       ? (variableId, target) => options.prepareEdit?.(editor, variableId, target)
       : undefined,
     runBatch: (label, action) => editor.undo.runBatch(label, action),
-    beginBatch: (label) => editor.undo.beginBatch(label),
-    commitBatch: () => editor.undo.commitBatch(),
-    rollbackBatch: () => editor.undo.rollbackBatch()
+    beginBatch: (label) => {
+      editor.undo.beginBatch(label)
+      interactiveEdits.push(editor.beginInteractiveEdit())
+    },
+    commitBatch: () => finishBatch(true),
+    rollbackBatch: () => finishBatch(false)
   }
 }
 

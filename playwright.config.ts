@@ -66,6 +66,7 @@ export default defineConfig({
       testMatch: [
         '**/*.webkit.spec.ts',
         '**/design/panel.spec.ts',
+        '**/design/retained-panel.spec.ts',
         '**/export/basic.spec.ts',
         '**/fonts/settings.spec.ts'
       ],

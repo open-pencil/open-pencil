@@ -16,13 +16,18 @@ function measurementVisible(overlays: RenderOverlays): boolean {
   )
 }
 
-export function drawLabelPass(r: SkiaRenderer, canvas: Canvas, graph: SceneGraph): void {
+export function drawLabelPass(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  overlays?: RenderOverlays
+): void {
   const profiler = r.profiler
   profiler.beginPhase('render:sectionTitles')
-  r.drawSectionTitles(canvas, graph)
+  r.drawSectionTitles(canvas, graph, overlays)
   profiler.endPhase('render:sectionTitles')
   profiler.beginPhase('render:componentLabels')
-  r.drawComponentLabels(canvas, graph)
+  r.drawComponentLabels(canvas, graph, overlays)
   profiler.endPhase('render:componentLabels')
 }
 
@@ -38,8 +43,8 @@ export function drawOverlayPass(
     measuring || overlays.hoveredNodeId === overlays.nodeEditState?.nodeId
       ? null
       : overlays.hoveredNodeId
-  r.drawHoverHighlight(canvas, graph, hoveredNodeId)
-  r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId)
+  r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
+  r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   r.profiler.beginPhase('render:selection')
   r.drawSelection(canvas, graph, selectedIds, overlays)
   if (measuring) r.drawMeasurements(canvas, graph, selectedIds, overlays.hoveredNodeId)

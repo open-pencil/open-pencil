@@ -1,6 +1,6 @@
 import { ROTATION_SNAP_DEGREES } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import { getAbsolutePositionFull } from '@open-pencil/scene-graph/coordinate'
+import { createSceneGeometry } from '@open-pencil/core/geometry'
 
 import {
   hitTestCornerRotationByMatrix,
@@ -25,22 +25,32 @@ export function tryStartRotation(
   const node = editor.graph.getNode(id)
   if (!node || node.locked) return false
 
-  const abs = getAbsolutePositionFull(node, editor.graph)
+  const geometry = createSceneGeometry(editor.graph, editor.state.rotationPreview)
+  const center = geometry.rotationOrigin(node)
 
   const zoom = editor.renderer?.zoom ?? 1
   const hitsRotationHandle =
-    hitTestTopRotationHandleByMatrix(cx, cy, node, editor.graph, zoom) ||
-    hitTestCornerRotationByMatrix(cx, cy, node, editor.graph, zoom)
+    hitTestTopRotationHandleByMatrix(
+      cx,
+      cy,
+      node,
+      editor.graph,
+      zoom,
+      editor.state.rotationPreview
+    ) ||
+    hitTestCornerRotationByMatrix(cx, cy, node, editor.graph, zoom, editor.state.rotationPreview)
   if (!hitsRotationHandle) return false
-  const startAngle = Math.atan2(cy - abs.centerY, cx - abs.centerX) * (180 / Math.PI)
+  const startAngle = Math.atan2(cy - center.y, cx - center.x) * (180 / Math.PI)
   setDrag({
     type: 'rotate',
     nodeId: id,
-    centerX: abs.centerX,
-    centerY: abs.centerY,
+    centerX: center.x,
+    centerY: center.y,
     startAngle,
-    origRotation: node.rotation
+    origRotation: geometry.node(node).rotation,
+    rotationDirection: geometry.rotationDirection(node)
   })
+  editor.setRotationPreview({ nodeId: id, angle: geometry.node(node).rotation })
   return true
 }
 
@@ -53,7 +63,7 @@ export function handleRotateMove(
 ) {
   const currentAngle = Math.atan2(sy - d.centerY, sx - d.centerX) * (180 / Math.PI)
   const delta = normalizeRotation(currentAngle - d.startAngle)
-  let rotation = d.origRotation + delta
+  let rotation = d.origRotation + delta * d.rotationDirection
 
   if (shiftKey) {
     rotation = Math.round(rotation / ROTATION_SNAP_DEGREES) * ROTATION_SNAP_DEGREES

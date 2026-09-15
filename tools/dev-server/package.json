@@ -1,0 +1,8 @@
+{
+  "name": "@open-pencil/dev-server-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests"
+  }
+}

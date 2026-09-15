@@ -4,6 +4,10 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
+import {
+  EffectRasterCache,
+  type EffectRasterCacheEntry
+} from '#core/canvas/renderer/effect-raster-cache'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -76,6 +80,48 @@ function differingChannels(a: Uint8Array, b: Uint8Array, tolerance: number): num
 }
 
 describe('retained effect raster integration', () => {
+  test('rejected rasters remain alive through drawing and are then disposed', () => {
+    class RejectingCache extends EffectRasterCache {
+      last: EffectRasterCacheEntry | null = null
+      override set(key: string, entry: EffectRasterCacheEntry): boolean {
+        this.last = entry
+        return super.set(key, entry)
+      }
+    }
+    const { graph, pageId } = createEffectGraph('DROP_SHADOW')
+    const retained = new SkiaRenderer(
+      ck,
+      expectDefined(ck.MakeSurface(256, 192), 'retained surface')
+    )
+    const transient = new SkiaRenderer(
+      ck,
+      expectDefined(ck.MakeSurface(256, 192), 'transient surface')
+    )
+    const rejected = new RejectingCache(0)
+    transient.effectRasterCache = rejected
+    for (const renderer of [retained, transient]) {
+      renderer.viewportWidth = 256
+      renderer.viewportHeight = 192
+      renderer.pageId = pageId
+      renderer.pageColor = { r: 1, g: 1, b: 1, a: 1 }
+      renderer.zoom = 1
+      renderer.dpr = 1
+    }
+    try {
+      const pixels = renderPixels(transient, graph)
+      const center = (90 * 256 + 90) * 4
+      expect(pixels[center]).toBeLessThan(200)
+      expect(pixels[center + 3]).toBe(255)
+      expect(pixels).toEqual(renderPixels(retained, graph))
+      expect(rejected.size).toBe(0)
+      expect(rejected.last?.image.isDeleted()).toBe(true)
+      expect(retained.effectRasterCache.size).toBe(1)
+    } finally {
+      transient.destroy()
+      retained.destroy()
+    }
+  })
+
   test('settled drop-shadow backing closely matches direct rendering', () => {
     const { graph, pageId } = createEffectGraph('DROP_SHADOW')
     const directSurface = expectDefined(ck.MakeSurface(256, 192), 'direct surface')

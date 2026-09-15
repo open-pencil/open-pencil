@@ -3,7 +3,7 @@ import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka
 import { tv } from 'tailwind-variants'
 
 import type { Fill } from '@open-pencil/scene-graph'
-import { applySolidFillColor, FillRoot, useI18n } from '@open-pencil/vue'
+import { applySolidFillColor, FillRoot, useI18n, useRetainedPopup } from '@open-pencil/vue'
 import type { OkHCLControls } from '@open-pencil/vue'
 
 import ColorPickerPanel from '@/components/color-picker-panel/ColorPickerPanel.vue'
@@ -34,6 +34,10 @@ const emit = defineEmits<{
   openChange: [open: boolean]
   cancel: []
 }>()
+const { open: popupOpen, portalActive } = useRetainedPopup(undefined, () => {
+  emit('cancel')
+  emit('openChange', false)
+})
 const cls = usePopoverUI({ content: 'w-60 p-2' })
 const { panels } = useI18n()
 
@@ -45,7 +49,7 @@ function cancelFromEscape(event: KeyboardEvent) {
 
 <template>
   <FillRoot :fill="fill" @update="emit('update', $event)" v-slot="root">
-    <PopoverRoot @update:open="emit('openChange', $event)">
+    <PopoverRoot v-model:open="popupOpen" @update:open="emit('openChange', $event)">
       <PopoverTrigger as-child>
         <button
           type="button"
@@ -62,7 +66,7 @@ function cancelFromEscape(event: KeyboardEvent) {
         </button>
       </PopoverTrigger>
 
-      <PopoverPortal>
+      <PopoverPortal v-if="portalActive">
         <PopoverContent
           :class="cls.content"
           :side-offset="4"

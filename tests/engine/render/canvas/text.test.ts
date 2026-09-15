@@ -232,36 +232,39 @@ describe('renderText', () => {
     expect(canvas.drawParagraph).toHaveBeenCalledTimes(1)
   })
 
-  test('keeps derived path-text glyphs when its face is finalized as substituted', () => {
-    const base = createMockRenderer()
-    const r = createMockRenderer({
-      nodeFontReadiness: mock(() => 'substituted'),
-      ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
-    })
-    const canvas = createMockCanvas()
-    const node = textNode({
-      fontFamily: 'Missing Path Font',
-      textPathData: {
-        network: { vertices: [], segments: [], regions: [] },
-        normalizedSize: { x: 100, y: 20 },
-        tValue: 0,
-        forward: true
-      },
-      derivedTextGlyphs: [
-        {
-          commandsBlob: new Uint8Array(),
-          x: 0,
-          y: 0,
-          rotation: 0,
-          fontSize: 12
-        }
-      ]
-    })
+  test.each(['ready', 'substituted'] as const)(
+    'keeps derived path-text glyphs when its face is %s',
+    (readiness) => {
+      const base = createMockRenderer()
+      const r = createMockRenderer({
+        nodeFontReadiness: mock(() => readiness),
+        ck: { ...base.ck, FillType: { EvenOdd: 0, Winding: 1 } }
+      })
+      const canvas = createMockCanvas()
+      const node = textNode({
+        fontFamily: 'Missing Path Font',
+        textPathData: {
+          network: { vertices: [], segments: [], regions: [] },
+          normalizedSize: { x: 100, y: 20 },
+          tValue: 0,
+          forward: true
+        },
+        derivedTextGlyphs: [
+          {
+            commandsBlob: new Uint8Array(),
+            x: 0,
+            y: 0,
+            rotation: 0,
+            fontSize: 12
+          }
+        ]
+      })
 
-    renderText(r, canvas as never, node)
+      renderText(r, canvas as never, node)
 
-    expect(r.buildParagraph).not.toHaveBeenCalled()
-  })
+      expect(r.buildParagraph).not.toHaveBeenCalled()
+    }
+  )
   test('uses baked text pictures after font resolution is exhausted', () => {
     const r = createMockRenderer({ nodeFontReadiness: mock(() => 'exhausted') })
     const canvas = createMockCanvas()

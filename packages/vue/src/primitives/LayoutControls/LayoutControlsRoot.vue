@@ -8,6 +8,7 @@ import type { LayoutControlsRootSlots } from '#vue/primitives/LayoutControls/typ
 const ctx = useLayout()
 defineSlots<LayoutControlsRootSlots>()
 const actions = {
+  cancelPreview: ctx.cancelPreview,
   updateProp: ctx.updateProp,
   updateSizeLimit: ctx.updateSizeLimit,
   setSizeLimitToCurrent: ctx.setSizeLimitToCurrent,

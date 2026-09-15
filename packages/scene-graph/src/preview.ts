@@ -1,6 +1,8 @@
-import { invalidateTextCaches } from './text-picture'
+import { textCacheInvalidationChanges } from './text-picture'
 import type { SceneNode } from './types'
 import { normalizeVectorNetwork } from './vector-network'
+
+export type NodePreviewObserver = (node: SceneNode, changes: Partial<SceneNode>) => void
 
 type PreviewGraph = {
   nodes: Map<string, SceneNode>
@@ -48,7 +50,8 @@ const LAYOUT_AFFECTING_KEYS = new Set<string>([
 export function updateNodePreview(
   graph: PreviewGraph,
   id: string,
-  changes: Partial<SceneNode>
+  changes: Partial<SceneNode>,
+  beforeUpdate?: NodePreviewObserver
 ): Partial<SceneNode> | null {
   const node = graph.nodes.get(id)
   if (!node) return null
@@ -60,10 +63,17 @@ export function updateNodePreview(
   }
   const affectsLayout = Object.keys(changes).some((key) => LAYOUT_AFFECTING_KEYS.has(key))
   if (affectsLayout) graph.clearAbsPosCache()
-  if (node.type === 'TEXT') invalidateTextCaches(node, changes)
-  const normalizedChanges = changes.vectorNetwork
-    ? { ...changes, vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork) }
-    : changes
+  let normalizedChanges = changes
+  if (node.type === 'TEXT') {
+    normalizedChanges = { ...textCacheInvalidationChanges(node, changes), ...changes }
+  }
+  if (changes.vectorNetwork) {
+    normalizedChanges = {
+      ...normalizedChanges,
+      vectorNetwork: normalizeVectorNetwork(changes.vectorNetwork)
+    }
+  }
+  beforeUpdate?.(node, normalizedChanges)
   graph.positionPreviewVersion++
   Object.assign(node, normalizedChanges)
   return normalizedChanges

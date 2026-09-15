@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useObjectUrl } from '@vueuse/core'
-import { computed, ref, shallowRef, watch } from 'vue'
+import { tryOnScopeDispose, useObjectUrl } from '@vueuse/core'
+import { computed, onActivated, onDeactivated, ref, shallowRef, watch } from 'vue'
 
-import { useExport, useI18n } from '@open-pencil/vue'
+import { useExport, useI18n, useRetainedActivity } from '@open-pencil/vue'
 import type { ExportFormatId } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
@@ -44,6 +44,19 @@ const previewBlob = shallowRef<Blob | null>(null)
 const previewURL = useObjectUrl(previewBlob)
 const showPreview = ref(false)
 const exporting = ref(false)
+const retainedActivity = useRetainedActivity()
+let previewVersion = 0
+
+function clearPreview() {
+  previewVersion++
+  previewBlob.value = null
+}
+
+onDeactivated(clearPreview)
+tryOnScopeDispose(clearPreview)
+onActivated(() => {
+  void updatePreview()
+})
 
 const PREVIEW_WIDTH = 480
 
@@ -73,7 +86,11 @@ async function doExport() {
 }
 
 async function updatePreview() {
-  if (!showPreview.value) return
+  const version = ++previewVersion
+  if (retainedActivity?.value === false || !showPreview.value) {
+    previewBlob.value = null
+    return
+  }
 
   const ids =
     activeTarget.value === 'selection'
@@ -92,6 +109,7 @@ async function updatePreview() {
   }
   const scale = maxW > 0 ? Math.min(PREVIEW_WIDTH / maxW, 2) : 1
   const data = await editorStore.renderExportImage(ids, scale, 'PNG')
+  if (version !== previewVersion) return
   previewBlob.value = data ? new Blob([data], { type: 'image/png' }) : null
 }
 

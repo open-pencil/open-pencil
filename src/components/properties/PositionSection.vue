@@ -88,6 +88,7 @@ function handleAlign(
             :model-value="xValue"
             @update:model-value="actions.updateProp('x', $event)"
             @commit="(v: number, p: number) => actions.commitProp('x', v, p)"
+            @cancel="actions.cancelProp('x')"
           />
         </Tip>
         <Tip :label="panels.yAxis">
@@ -98,6 +99,7 @@ function handleAlign(
             :model-value="yValue"
             @update:model-value="actions.updateProp('y', $event)"
             @commit="(v: number, p: number) => actions.commitProp('y', v, p)"
+            @cancel="actions.cancelProp('y')"
           />
         </Tip>
       </PanelGrid>
@@ -112,6 +114,7 @@ function handleAlign(
             :min="1"
             @update:model-value="actions.updateProp('width', $event)"
             @commit="(v: number, p: number) => actions.commitProp('width', v, p)"
+            @cancel="actions.cancelProp('width')"
           />
         </Tip>
         <Tip :label="panels.height">
@@ -123,6 +126,7 @@ function handleAlign(
             :min="1"
             @update:model-value="actions.updateProp('height', $event)"
             @commit="(v: number, p: number) => actions.commitProp('height', v, p)"
+            @cancel="actions.cancelProp('height')"
           />
         </Tip>
       </PanelGrid>
@@ -138,6 +142,7 @@ function handleAlign(
             :max="360"
             @update:model-value="actions.updateProp('rotation', $event)"
             @commit="(v: number, p: number) => actions.commitProp('rotation', v, p)"
+            @cancel="actions.cancelProp('rotation')"
           >
             <template #icon>
               <icon-lucide-rotate-cw class="size-3" />

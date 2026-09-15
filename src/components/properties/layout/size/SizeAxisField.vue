@@ -11,7 +11,7 @@ import {
 } from 'reka-ui'
 
 import type { LayoutSizing } from '@open-pencil/scene-graph'
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n, useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
 import type { SizeLimitProp } from '@open-pencil/vue'
 
 import type { SizeAxisFieldProps } from '@/components/properties/layout/size/types'
@@ -24,6 +24,7 @@ type SizeSelectValue = LayoutSizing | `add-${SizeLimitProp}` | `remove-${SizeLim
 const { axis, icon, label } = defineProps<SizeAxisFieldProps>()
 
 const ctx = useLayoutControlsContext()
+const { open: popupOpen, portalActive } = useRetainedPopup()
 const { panels } = useI18n()
 const selectUI = useSelectUI({ item: 'rounded py-1.5 pr-2 pl-6 text-xs' })
 
@@ -84,9 +85,11 @@ function handleSelect(value: SizeSelectValue) {
       :binding-path="axis"
       @update:model-value="ctx.updateAxisSize(axis, $event)"
       @commit="(value: number, previous: number) => ctx.commitAxisSize(axis, value, previous)"
+      @cancel="ctx.cancelPreview"
     >
       <template #after-variable>
         <SelectRoot
+          v-model:open="popupOpen"
           :model-value="sizing()"
           @update:model-value="handleSelect($event as SizeSelectValue)"
         >
@@ -99,7 +102,7 @@ function handleSelect(value: SizeSelectValue) {
             <span v-if="sizingLabel()">{{ sizingLabel() }}</span>
             <icon-lucide-chevron-down class="size-3" />
           </SelectTrigger>
-          <SelectPortal>
+          <SelectPortal v-if="portalActive">
             <SelectContent
               position="popper"
               align="start"

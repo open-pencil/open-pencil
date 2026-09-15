@@ -24,6 +24,17 @@ function tile(x: number): RenderedTile {
 }
 
 describe('tile image cache', () => {
+  test('disposes rejected tiles without returning a deleted image', () => {
+    const cache = new TileImageCache(1)
+    const oversized = tile(0)
+    expect(cache.install(oversized, 1)).toBeNull()
+    expect(oversized.image.delete).toHaveBeenCalledTimes(1)
+    expect(cache.size()).toBe(0)
+    expect(cache.byteSize()).toBe(0)
+    cache.clear()
+    expect(oversized.image.delete).toHaveBeenCalledTimes(1)
+  })
+
   test('replaces native images and reports memory', () => {
     const cache = new TileImageCache()
     const first = tile(0)

@@ -4,6 +4,7 @@ import type { useLayout } from '#vue/controls/layout/use'
 
 type LayoutContext = ShallowUnwrapRef<ReturnType<typeof useLayout>>
 type LayoutActionKey =
+  | 'cancelPreview'
   | 'updateProp'
   | 'updateSizeLimit'
   | 'setSizeLimitToCurrent'

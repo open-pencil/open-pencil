@@ -1,63 +1,41 @@
 import type { Canvas } from 'canvaskit-wasm'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getWorldMatrix } from '@open-pencil/scene-graph/coordinate'
-import { rotatedCorners } from '@open-pencil/scene-graph/geometry'
+import { computeBounds, rotatedCorners } from '@open-pencil/scene-graph/geometry'
 import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
-import { HANDLE_HALF_SIZE, SELECTION_DASH_ALPHA } from '#core/constants'
 import {
-  fitTextPathBoxToGlyphs,
-  getTextPathData,
-  pathTextSelectionBand,
-  pointAtArc,
-  sampleTextPath
-} from '#core/text/path'
-
-function getNodeTransformChain(graph: SceneGraph, node: SceneNode): SceneNode[] {
-  const chain: SceneNode[] = []
-  let current = node
-
-  for (;;) {
-    chain.unshift(current)
-    if (!current.parentId) break
-    const parent = graph.getNode(current.parentId)
-    if (!parent || parent.id === graph.rootId || parent.type === 'CANVAS') break
-    current = parent
-  }
-
-  return chain
-}
+  HANDLE_HALF_SIZE,
+  ROTATION_HANDLE_DISTANCE,
+  SELECTION_DASH_ALPHA,
+  SECTION_HOVER_STROKE_WIDTH
+} from '#core/constants'
+import {
+  createSceneGeometry,
+  viewportMatrix,
+  selectionPath,
+  rotationHandleLayout,
+  type RotationHandleLayout,
+  type RotationPreview
+} from '#core/geometry'
+import { pathTextSelectionBand, pointAtArc } from '#core/text/path'
 
 export function drawHoverHighlight(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
-  hoveredNodeId?: string | null
+  hoveredNodeId?: string | null,
+  preview?: RotationPreview | null
 ): void {
-  if (!hoveredNodeId) return
-  const node = graph.getNode(hoveredNodeId)
+  const node = hoveredNodeId ? graph.getNode(hoveredNodeId) : undefined
   if (!node) return
-
-  r.auxStroke.setStrokeWidth(1 / r.zoom)
+  r.auxStroke.setStrokeWidth((node.type === 'SECTION' ? SECTION_HOVER_STROKE_WIDTH : 1) / r.zoom)
   r.auxStroke.setColor(r.isComponentType(node.type) ? r.compColor() : r.selColor())
   r.auxStroke.setPathEffect(null)
-
-  const chain = getNodeTransformChain(graph, node)
-
   canvas.save()
-  canvas.translate(r.panX, r.panY)
-  canvas.scale(r.zoom, r.zoom)
-
-  for (const item of chain) {
-    canvas.translate(item.x, item.y)
-    if (item.rotation !== 0) {
-      canvas.rotate(item.rotation, item.width / 2, item.height / 2)
-    }
-  }
-
+  canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
   r.strokeNodeShape(canvas, node, r.auxStroke)
   canvas.restore()
 }
@@ -66,31 +44,24 @@ export function drawEnteredContainer(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
-  enteredContainerId?: string | null
+  enteredContainerId?: string | null,
+  preview?: RotationPreview | null
 ): void {
-  if (!enteredContainerId) return
-  const node = graph.getNode(enteredContainerId)
+  const node = enteredContainerId ? graph.getNode(enteredContainerId) : undefined
   if (!node) return
-
-  const abs = graph.getAbsolutePosition(node.id)
-  const sx = abs.x * r.zoom + r.panX
-  const sy = abs.y * r.zoom + r.panY
-
-  r.auxStroke.setStrokeWidth(1)
+  const dash = r.ck.PathEffect.MakeDash([4 / r.zoom, 4 / r.zoom], 0)
+  r.auxStroke.setStrokeWidth(1 / r.zoom)
   r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
-  r.auxStroke.setPathEffect(r.ck.PathEffect.MakeDash([4, 4], 0))
-
+  r.auxStroke.setPathEffect(dash)
   canvas.save()
-  canvas.translate(sx, sy)
-  if (node.rotation !== 0) {
-    const cx = (node.width / 2) * r.zoom
-    const cy = (node.height / 2) * r.zoom
-    canvas.rotate(node.rotation, cx, cy)
+  try {
+    canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
+    canvas.drawRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.auxStroke)
+  } finally {
+    canvas.restore()
+    r.auxStroke.setPathEffect(null)
+    dash.delete()
   }
-  canvas.drawRect(r.ck.LTRBRect(0, 0, node.width * r.zoom, node.height * r.zoom), r.auxStroke)
-  canvas.restore()
-
-  r.auxStroke.setPathEffect(null)
 }
 
 /** Single-node selection overlay: path-text curve/band for imported TEXT_PATH,
@@ -106,6 +77,7 @@ function drawSingleSelection(
   const node = graph.getNode(id)
   if (!node) return
 
+  const preview = overlays.rotationPreview
   // Imported text-on-path node → path curve overlay. The cheap two-field check
   // is the gate; drawTextPathSelection re-checks the retained data and falls
   // back to the plain rectangle if it can't be sampled.
@@ -120,13 +92,12 @@ function drawSingleSelection(
   r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
   r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
-  const rotation =
-    overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
+  const rotation = node.rotation
   if (isPathText) {
-    drawTextPathSelection(r, canvas, node, rotation, graph)
+    drawTextPathSelection(r, canvas, node, rotation, graph, preview)
     if (!editing) r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
   } else {
-    r.drawNodeSelection(canvas, node, rotation, graph)
+    r.drawNodeSelection(canvas, node, rotation, graph, preview)
     r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
   }
   r.selectionPaint.setColor(r.selColor())
@@ -141,8 +112,9 @@ export function drawSelection(
 ): void {
   if (selectedIds.size === 0) return
   const nodeEditId = overlays.nodeEditState?.nodeId ?? null
+  const preview = overlays.rotationPreview
 
-  r.drawParentFrameOutlines(canvas, graph, selectedIds)
+  r.drawParentFrameOutlines(canvas, graph, selectedIds, preview)
 
   if (selectedIds.size === 1) {
     const id = [...selectedIds][0]
@@ -157,21 +129,21 @@ export function drawSelection(
 
     const useComponentColor = r.isComponentType(node.type)
     r.selectionPaint.setColor(useComponentColor ? r.compColor() : r.selColor())
-    r.selectionPaint.setStrokeWidth(1)
+    r.selectionPaint.setStrokeWidth(1 / r.zoom)
 
-    const rotation =
-      overlays.rotationPreview?.nodeId === id ? overlays.rotationPreview.angle : node.rotation
-    r.drawNodeOutline(canvas, node, rotation, graph)
+    const rotation = node.rotation
+    r.drawNodeOutline(canvas, node, rotation, graph, preview)
   }
 
   r.selectionPaint.setColor(r.selColor())
+  r.selectionPaint.setStrokeWidth(1)
 
   const nodes = [...selectedIds]
     .filter((id) => id !== nodeEditId)
     .map((id) => graph.getNode(id))
     .filter((n): n is SceneNode => n !== undefined)
   if (nodes.length === 0) return
-  r.drawGroupBounds(canvas, nodes, graph)
+  r.drawGroupBounds(canvas, nodes, graph, preview)
 
   r.drawSelectionLabels(canvas, graph, selectedIds, overlays)
 }
@@ -182,9 +154,13 @@ function withNodeBounds(
   node: SceneNode,
   rotation: number,
   graph: SceneGraph,
-  draw: (x1: number, y1: number, x2: number, y2: number) => void
+  draw: (x1: number, y1: number, x2: number, y2: number) => void,
+  preview?: RotationPreview | null
 ): void {
-  const worldMatrix = getWorldMatrix({ ...node, rotation }, graph)
+  const worldMatrix = createSceneGeometry(
+    graph,
+    preview ?? { nodeId: node.id, angle: rotation }
+  ).worldMatrix(node)
 
   canvas.save()
   canvas.translate(r.panX, r.panY)
@@ -207,82 +183,98 @@ function drawTextPathSelection(
   canvas: Canvas,
   node: SceneNode,
   rotation: number,
-  graph: SceneGraph
+  graph: SceneGraph,
+  preview?: RotationPreview | null
 ): void {
-  const data = getTextPathData(node)
-  // Prefer the box fit to the glyph baselines; fall back to textPathBox when
-  // there are no glyphs to fit against.
-  const box =
-    (data &&
-      node.textPathBox &&
-      fitTextPathBoxToGlyphs(data, node.textPathBox, node.derivedTextGlyphs)) ??
-    node.textPathBox
-  // Eligibility gated data/box, but sampleTextPath can still fail (bad vertex /
-  // zero length) — any null falls back to the standard rectangle, no throw.
-  const sampled = data && box ? sampleTextPath(data, box) : null
-  if (!data || !box || !sampled) {
-    r.drawNodeSelection(canvas, node, rotation, graph)
+  const pathGeometry = selectionPath(node)
+  if (!pathGeometry) {
+    r.drawNodeSelection(canvas, node, rotation, graph, preview)
     return
   }
 
-  withNodeBounds(r, canvas, node, rotation, graph, () => {
-    // Figma-style selection band: a filled ribbon that hugs the lettering along
-    // the path (replaces the flat, path-blind text-edit selection rects).
-    const bandPoly = pathTextSelectionBand(data, box, node.derivedTextGlyphs, sampled)
-    if (bandPoly && bandPoly.length >= 6) {
-      const band = new r.ck.PathBuilder()
-      band.moveTo(bandPoly[0], bandPoly[1])
-      for (let i = 2; i < bandPoly.length; i += 2) band.lineTo(bandPoly[i], bandPoly[i + 1])
-      band.close()
-      const immutableBand = band.detachAndDelete()
-      r.auxFill.setColor(r.selColor(0.16))
-      canvas.drawPath(immutableBand, r.auxFill)
+  const { data, box, sampled } = pathGeometry
+  withNodeBounds(
+    r,
+    canvas,
+    node,
+    rotation,
+    graph,
+    () => {
+      // Figma-style selection band: a filled ribbon that hugs the lettering along
+      // the path (replaces the flat, path-blind text-edit selection rects).
+      const bandPoly = pathTextSelectionBand(data, box, node.derivedTextGlyphs, sampled)
+      if (bandPoly && bandPoly.length >= 6) {
+        const band = new r.ck.PathBuilder()
+        band.moveTo(bandPoly[0], bandPoly[1])
+        for (let i = 2; i < bandPoly.length; i += 2) band.lineTo(bandPoly[i], bandPoly[i + 1])
+        band.close()
+        const immutableBand = band.detachAndDelete()
+        r.auxFill.setColor(r.selColor(0.16))
+        canvas.drawPath(immutableBand, r.auxFill)
+        r.auxStroke.setStrokeWidth(1 / r.zoom)
+        r.auxStroke.setColor(r.selColor())
+        r.auxStroke.setPathEffect(null)
+        canvas.drawPath(immutableBand, r.auxStroke)
+        immutableBand.delete()
+      }
+
+      // Faint dashed bounds + resize/rotate handles from the fitted path box.
       r.auxStroke.setStrokeWidth(1 / r.zoom)
-      r.auxStroke.setColor(r.selColor())
-      r.auxStroke.setPathEffect(null)
-      canvas.drawPath(immutableBand, r.auxStroke)
-      immutableBand.delete()
-    }
+      r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
+      // MakeDash allocates a WASM PathEffect the JS GC won't reclaim; this runs
+      // every repaint while a TEXT_PATH node is selected, so free it explicitly.
+      const dash = r.ck.PathEffect.MakeDash([4 / r.zoom, 4 / r.zoom], 0)
+      r.auxStroke.setPathEffect(dash)
+      canvas.drawRect(
+        r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height),
+        r.auxStroke
+      )
+      r.auxStroke.setPathEffect(null) // auxStroke is shared — never leave a dash effect on it.
+      dash.delete()
+      drawBoundsHandles(
+        r,
+        canvas,
+        box.x,
+        box.y,
+        box.x + box.width,
+        box.y + box.height,
+        rotationHandleLayout(node, createSceneGeometry(graph, preview), r.zoom, {
+          x: box.x,
+          y: box.y,
+          width: box.x + box.width - box.x,
+          height: box.y + box.height - box.y
+        })
+      )
 
-    // Faint dashed bounds + resize/rotate handles from the fitted path box.
-    r.auxStroke.setStrokeWidth(1 / r.zoom)
-    r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
-    // MakeDash allocates a WASM PathEffect the JS GC won't reclaim; this runs
-    // every repaint while a TEXT_PATH node is selected, so free it explicitly.
-    const dash = r.ck.PathEffect.MakeDash([4 / r.zoom, 4 / r.zoom], 0)
-    r.auxStroke.setPathEffect(dash)
-    canvas.drawRect(r.ck.LTRBRect(box.x, box.y, box.x + box.width, box.y + box.height), r.auxStroke)
-    r.auxStroke.setPathEffect(null) // auxStroke is shared — never leave a dash effect on it.
-    dash.delete()
-    drawBoundsHandles(r, canvas, box.x, box.y, box.x + box.width, box.y + box.height)
+      // The path curve itself, sampled from the headless path metrics only for drawing.
+      const path = new r.ck.PathBuilder()
+      const overlaySteps = Math.max(64, Math.min(1024, Math.ceil(sampled.length)))
+      const first = pointAtArc(sampled, 0)
+      path.moveTo(first.x, first.y)
+      for (let index = 1; index <= overlaySteps; index++) {
+        const point = pointAtArc(sampled, (sampled.length * index) / overlaySteps)
+        path.lineTo(point.x, point.y)
+      }
+      if (sampled.closed) path.close()
+      const immutablePath = path.detachAndDelete()
+      canvas.drawPath(immutablePath, r.selectionPaint)
+      immutablePath.delete()
 
-    // The path curve itself, sampled from the headless path metrics only for drawing.
-    const path = new r.ck.PathBuilder()
-    const overlaySteps = Math.max(64, Math.min(1024, Math.ceil(sampled.length)))
-    const first = pointAtArc(sampled, 0)
-    path.moveTo(first.x, first.y)
-    for (let index = 1; index <= overlaySteps; index++) {
-      const point = pointAtArc(sampled, (sampled.length * index) / overlaySteps)
-      path.lineTo(point.x, point.y)
-    }
-    if (sampled.closed) path.close()
-    const immutablePath = path.detachAndDelete()
-    canvas.drawPath(immutablePath, r.selectionPaint)
-    immutablePath.delete()
+      // Center crosshair at the fitted path box center (screen-constant size).
+      const cx = box.x + box.width / 2
+      const cy = box.y + box.height / 2
+      const arm = (HANDLE_HALF_SIZE * 2) / r.zoom
+      canvas.drawLine(cx - arm, cy, cx + arm, cy, r.selectionPaint)
+      canvas.drawLine(cx, cy - arm, cx, cy + arm, r.selectionPaint)
 
-    // Center crosshair at the fitted path box center (screen-constant size).
-    const cx = box.x + box.width / 2
-    const cy = box.y + box.height / 2
-    const arm = (HANDLE_HALF_SIZE * 2) / r.zoom
-    canvas.drawLine(cx - arm, cy, cx + arm, cy, r.selectionPaint)
-    canvas.drawLine(cx, cy - arm, cx, cy + arm, r.selectionPaint)
-
-    // Start-point marker on the curve at textPathStart.tValue (arc fraction).
-    // forward only flips travel direction, which the display-only marker ignores.
-    const s = Math.min(Math.max(data.tValue, 0), 1) * sampled.length
-    const start = pointAtArc(sampled, s)
-    drawHandle(r, canvas, start.x, start.y)
-  })
+      // Start-point marker on the curve at textPathStart.tValue (arc fraction).
+      // forward only flips travel direction, which the display-only marker ignores.
+      const s = Math.min(Math.max(data.tValue, 0), 1) * sampled.length
+      const start = pointAtArc(sampled, s)
+      drawHandle(r, canvas, start.x, start.y)
+    },
+    preview
+  )
 }
 
 function drawBoundsHandles(
@@ -291,7 +283,8 @@ function drawBoundsHandles(
   minX: number,
   minY: number,
   maxX: number,
-  maxY: number
+  maxY: number,
+  stalk: RotationHandleLayout
 ): void {
   r.drawHandle(canvas, minX, minY)
   r.drawHandle(canvas, maxX, minY)
@@ -299,9 +292,8 @@ function drawBoundsHandles(
   r.drawHandle(canvas, maxX, maxY)
   const midX = (minX + maxX) / 2
   const midY = (minY + maxY) / 2
-  const rotationHandleY = minY - 24 / r.zoom
-  canvas.drawLine(midX, minY, midX, rotationHandleY, r.selectionPaint)
-  r.drawHandle(canvas, midX, rotationHandleY)
+  canvas.drawLine(stalk.edge.x, stalk.edge.y, stalk.handle.x, stalk.handle.y, r.selectionPaint)
+  r.drawHandle(canvas, stalk.handle.x, stalk.handle.y)
   r.drawHandle(canvas, midX, minY)
   r.drawHandle(canvas, midX, maxY)
   r.drawHandle(canvas, minX, midY)
@@ -314,12 +306,21 @@ function drawSelectionRect(
   node: SceneNode,
   rotation: number,
   graph: SceneGraph,
-  afterDraw?: (x1: number, y1: number, x2: number, y2: number) => void
+  afterDraw?: (x1: number, y1: number, x2: number, y2: number) => void,
+  preview?: RotationPreview | null
 ): void {
-  withNodeBounds(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
-    canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
-    afterDraw?.(x1, y1, x2, y2)
-  })
+  withNodeBounds(
+    r,
+    canvas,
+    node,
+    rotation,
+    graph,
+    (x1, y1, x2, y2) => {
+      canvas.drawRect(r.ck.LTRBRect(x1, y1, x2, y2), r.selectionPaint)
+      afterDraw?.(x1, y1, x2, y2)
+    },
+    preview
+  )
 }
 
 export function drawNodeSelection(
@@ -327,18 +328,41 @@ export function drawNodeSelection(
   canvas: Canvas,
   node: SceneNode,
   rotation: number,
-  graph: SceneGraph
+  graph: SceneGraph,
+  preview?: RotationPreview | null
 ): void {
-  drawSelectionRect(r, canvas, node, rotation, graph, (x1, y1, x2, y2) => {
-    drawBoundsHandles(r, canvas, x1, y1, x2, y2)
-  })
+  drawSelectionRect(
+    r,
+    canvas,
+    node,
+    rotation,
+    graph,
+    (x1, y1, x2, y2) => {
+      drawBoundsHandles(
+        r,
+        canvas,
+        x1,
+        y1,
+        x2,
+        y2,
+        rotationHandleLayout(node, createSceneGeometry(graph, preview), r.zoom, {
+          x: x1,
+          y: y1,
+          width: x2 - x1,
+          height: y2 - y1
+        })
+      )
+    },
+    preview
+  )
 }
 
 export function drawParentFrameOutlines(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
-  selectedIds: Set<string>
+  selectedIds: Set<string>,
+  preview?: RotationPreview | null
 ): void {
   const drawn = new Set<string>()
   for (const id of selectedIds) {
@@ -354,9 +378,7 @@ export function drawParentFrameOutlines(
 
     drawn.add(parent.id)
 
-    const world = getWorldMatrix(parent, graph)
-    const view = Matrix.multiply(Matrix.translated(r.panX, r.panY), Matrix.scaled(r.zoom, r.zoom))
-    const m = Matrix.multiply(view, world)
+    const m = createSceneGeometry(graph, preview).screenMatrix(parent, r)
 
     const pts = Matrix.mapPoints(m, [
       0,
@@ -387,50 +409,31 @@ export function drawNodeOutline(
   canvas: Canvas,
   node: SceneNode,
   rotation: number,
-  graph: SceneGraph
+  graph: SceneGraph,
+  preview?: RotationPreview | null
 ): void {
-  drawSelectionRect(r, canvas, node, rotation, graph)
+  drawSelectionRect(r, canvas, node, rotation, graph, undefined, preview)
 }
 
 export function drawGroupBounds(
   r: SkiaRenderer,
   canvas: Canvas,
   nodes: SceneNode[],
-  graph: SceneGraph
+  graph: SceneGraph,
+  preview?: RotationPreview | null
 ): void {
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-
-  for (const n of nodes) {
-    const abs = graph.getAbsolutePosition(n.id)
-    if (n.rotation !== 0) {
-      const corners = r.getRotatedCorners(n, abs)
-      for (const c of corners) {
-        minX = Math.min(minX, c.x)
-        minY = Math.min(minY, c.y)
-        maxX = Math.max(maxX, c.x)
-        maxY = Math.max(maxY, c.y)
-      }
-    } else {
-      const x1 = abs.x * r.zoom + r.panX
-      const y1 = abs.y * r.zoom + r.panY
-      const x2 = (abs.x + n.width) * r.zoom + r.panX
-      const y2 = (abs.y + n.height) * r.zoom + r.panY
-      minX = Math.min(minX, x1)
-      minY = Math.min(minY, y1)
-      maxX = Math.max(maxX, x2)
-      maxY = Math.max(maxY, y2)
-    }
-  }
-
+  const geometry = createSceneGeometry(graph, preview)
+  const bounds = computeBounds(nodes.map(geometry.bounds))
+  const [minX, minY, maxX, maxY] = Matrix.mapPoints(viewportMatrix(r), [
+    bounds.x,
+    bounds.y,
+    bounds.x + bounds.width,
+    bounds.y + bounds.height
+  ])
   r.auxStroke.setStrokeWidth(1)
   r.auxStroke.setColor(r.selColor(SELECTION_DASH_ALPHA))
   r.auxStroke.setPathEffect(null)
-
   canvas.drawRect(r.ck.LTRBRect(minX, minY, maxX, maxY), r.auxStroke)
-
   drawBoundsHandlesScreenSpace(r, canvas, minX, minY, maxX, maxY)
 }
 
@@ -476,7 +479,7 @@ function drawBoundsHandlesScreenSpace(
   drawHandleScreenSpace(r, canvas, maxX, maxY)
   const midX = (minX + maxX) / 2
   const midY = (minY + maxY) / 2
-  const rotationHandleY = minY - 24
+  const rotationHandleY = minY - ROTATION_HANDLE_DISTANCE
   canvas.drawLine(midX, minY, midX, rotationHandleY, r.selectionPaint)
   drawHandleScreenSpace(r, canvas, midX, rotationHandleY)
   drawHandleScreenSpace(r, canvas, midX, minY)

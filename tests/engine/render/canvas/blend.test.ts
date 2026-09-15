@@ -37,6 +37,7 @@ function createCanvas() {
     save: mock(() => undefined),
     restore: mock(() => undefined),
     translate: mock(() => undefined),
+    concat: mock(() => undefined),
     saveLayer: mock(() => undefined),
     drawRRect: mock(() => undefined)
   }

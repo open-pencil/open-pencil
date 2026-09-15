@@ -23,6 +23,7 @@
     "paths": {
       "#authoring-reference/*": ["./tools/authoring-reference/src/*"],
       "#ci/*": ["./tools/ci/src/*"],
+      "#vite-config/*": ["./vite/*"],
       "@/*": [
         "./src/*"
       ],

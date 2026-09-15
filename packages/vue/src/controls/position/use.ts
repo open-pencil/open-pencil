@@ -1,10 +1,10 @@
 import { computed } from 'vue'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
+import type { NumericNodeProperty } from '@open-pencil/scene-graph'
 
+import { useNodeProps } from '#vue/controls/node-props/use'
 import { usePropScrub } from '#vue/controls/prop-scrub/use'
 import { useEditor } from '#vue/editor/context'
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 /**
  * Returns position-related state and actions for the current selection.
@@ -15,10 +15,7 @@ import { useSceneComputed } from '#vue/internal/scene-computed/use'
 export function usePosition() {
   const editor = useEditor()
 
-  const nodes = useSceneComputed(() => editor.getSelectedNodes())
-  const node = useSceneComputed<SceneNode | null>(() => editor.getSelectedNode() ?? null)
-  const active = computed(() => nodes.value.length > 0)
-  const isMulti = computed(() => nodes.value.length > 1)
+  const { nodes, node, active, isMulti, prop } = useNodeProps()
   const ids = computed(() => nodes.value.map((n) => n.id))
 
   const x = computed(() => node.value?.x ?? 0)
@@ -27,14 +24,22 @@ export function usePosition() {
   const height = computed(() => node.value?.height ?? 0)
   const rotation = computed(() => Math.round(node.value?.rotation ?? 0))
 
-  const { updateProp: _updateProp, commitProp: _commitProp } = usePropScrub(editor)
+  const {
+    updateProp: _updateProp,
+    commitProp: _commitProp,
+    cancelProp: _cancelProp
+  } = usePropScrub(editor)
 
-  function updateProp(key: string, value: number) {
+  function updateProp(key: NumericNodeProperty, value: number) {
     _updateProp(nodes.value, key, value)
   }
 
-  function commitProp(key: string, value: number, previous: number) {
+  function commitProp(key: NumericNodeProperty, value: number, previous: number) {
     _commitProp(nodes.value, key, value, previous)
+  }
+
+  function cancelProp(key: NumericNodeProperty) {
+    _cancelProp(nodes.value, key)
   }
 
   function align(axis: 'horizontal' | 'vertical', pos: 'min' | 'center' | 'max') {
@@ -55,6 +60,7 @@ export function usePosition() {
     node,
     active,
     isMulti,
+    prop,
     ids,
     x,
     y,
@@ -63,6 +69,7 @@ export function usePosition() {
     rotation,
     updateProp,
     commitProp,
+    cancelProp,
     align,
     flip,
     rotate

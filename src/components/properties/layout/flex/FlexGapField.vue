@@ -11,13 +11,14 @@ import {
 } from 'reka-ui'
 import { computed, ref } from 'vue'
 
-import { useI18n, useLayoutControlsContext } from '@open-pencil/vue'
+import { useI18n, useLayoutControlsContext, useRetainedPopup } from '@open-pencil/vue'
 
 import VariableNumberField from '@/components/properties/VariableNumberField.vue'
 import { useSelectUI } from '@/components/ui/select/select'
 
 const { axis = 'primary' } = defineProps<{ axis?: 'primary' | 'counter' }>()
 const ctx = useLayoutControlsContext()
+const { open: popupOpen, portalActive } = useRetainedPopup()
 const { panels } = useI18n()
 const anchor = ref<HTMLElement | null>(null)
 const prop = computed(() => (axis === 'primary' ? 'itemSpacing' : 'counterAxisSpacing'))
@@ -34,7 +35,11 @@ function setMode(value: string) {
 </script>
 
 <template>
-  <SelectRoot :model-value="auto ? 'AUTO' : 'FIXED'" @update:model-value="setMode">
+  <SelectRoot
+    v-model:open="popupOpen"
+    :model-value="auto ? 'AUTO' : 'FIXED'"
+    @update:model-value="setMode"
+  >
     <div ref="anchor" class="min-w-0">
       <div
         v-if="auto"
@@ -66,6 +71,7 @@ function setMode(value: string) {
         :binding-path="prop"
         @update:model-value="ctx.updateProp(prop, $event)"
         @commit="(value, previous) => ctx.commitProp(prop, value, previous)"
+        @cancel="ctx.cancelPreview"
       >
         <template #icon>
           <icon-lucide-align-horizontal-space-between v-if="horizontal" class="size-3.5" />
@@ -84,7 +90,7 @@ function setMode(value: string) {
         </template>
       </VariableNumberField>
     </div>
-    <SelectPortal v-if="allowAuto">
+    <SelectPortal v-if="allowAuto && portalActive">
       <SelectContent position="popper" align="start" :side-offset="4" :class="menu.content">
         <SelectViewport class="p-0.5">
           <SelectItem

@@ -3,6 +3,7 @@ import { pick } from 'es-toolkit/object'
 import { styleDetachmentChanges, type SceneNode } from '@open-pencil/scene-graph'
 
 import { createLayoutModeActions } from './layout-mode'
+import { createNodePreviewActions } from './node-preview'
 import { createNudgeActions } from './nudge'
 import { textAutoResizeChanges } from './text/auto-resize'
 import { pathTextEditChanges } from './text/path-edit'
@@ -87,6 +88,7 @@ export function createNodeActions(ctx: EditorContext) {
 
   return {
     updateNode,
+    ...createNodePreviewActions(ctx, updateNode),
     updateNodeWithUndo,
     setOpacity,
     ...layoutModeActions,

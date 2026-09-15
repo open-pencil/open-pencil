@@ -26,7 +26,7 @@ test('creates and resizes a frame with presets', async () => {
   let frame = await getSelectedNode(editor.page)
   expect(frame).toMatchObject({ type: 'FRAME', name: 'iPhone Air', width: 420, height: 912 })
   await expect(editor.page.getByTestId(toolbarToolTestId('SELECT'))).toHaveAttribute(
-    'data-active',
+    'aria-pressed',
     'true'
   )
 

@@ -2,7 +2,7 @@
 import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent, PopoverClose } from 'reka-ui'
 
 import type { Stroke } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useRetainedPopup } from '@open-pencil/vue'
 
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { usePopoverUI } from '@/components/ui/overlay/popover'
@@ -13,6 +13,7 @@ import StrokeGeometryControls from './StrokeGeometryControls.vue'
 const { stroke } = defineProps<{ stroke?: Stroke }>()
 const emit = defineEmits<{ patch: [changes: Partial<Stroke>] }>()
 const { panels, common } = useI18n()
+const { open: popupOpen, portalActive } = useRetainedPopup()
 const styles = usePopoverUI({
   content: 'w-64 max-w-[calc(100vw-1rem)]',
   header: 'flex items-center justify-between border-b border-border px-3 py-2',
@@ -21,13 +22,13 @@ const styles = usePopoverUI({
 </script>
 
 <template>
-  <PopoverRoot>
+  <PopoverRoot v-model:open="popupOpen">
     <PopoverTrigger as-child>
       <AppButton :aria-label="panels.strokeSettings" data-property="stroke-settings">
         <icon-lucide-sliders-horizontal class="size-3.5" />
       </AppButton>
     </PopoverTrigger>
-    <PopoverPortal>
+    <PopoverPortal v-if="portalActive">
       <PopoverContent
         side="left"
         align="start"

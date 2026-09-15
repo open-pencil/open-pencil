@@ -1,9 +1,10 @@
 import { expect, test, useEditorSetupWithClear } from '#tests/e2e/fixtures'
+import { probeParagraphBuilds } from '#tests/helpers/canvas/text-preparation'
 
 const editor = useEditorSetupWithClear('/?test&no-chrome&no-rulers')
 
 test('text case vertical alignment and ending truncation', async () => {
-  await editor.page.evaluate(() => {
+  const previewId = await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const pageId = store.state.currentPageId
@@ -68,11 +69,52 @@ test('text case vertical alignment and ending truncation', async () => {
       textAlignHorizontal: 'JUSTIFIED'
     })
 
+    const preview = store.graph.createNode('RECTANGLE', pageId, { x: -10000, width: 1, height: 1 })
     store.clearSelection()
     store.requestRender()
+    return preview.id
   })
   await editor.canvas.waitForRender()
   await editor.page.waitForTimeout(300)
   editor.canvas.assertNoErrors()
   expect(await editor.canvas.screenshotCanvasRegion()).toMatchSnapshot('typography-depth.png')
+
+  // Compare cold and warm text on the same direct-render path, not retained vs direct rasterization.
+  await editor.page.evaluate((id) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store?.renderer) throw new Error('Renderer unavailable')
+    store.renderer.textPreparationCache.clear()
+    store.graph.updateNodePreview(id, { x: -10004 })
+    store.requestRepaint()
+  }, previewId)
+  await editor.canvas.waitForRender()
+  const reference = await editor.canvas.screenshotCanvasRegion()
+  const preparations = await probeParagraphBuilds(editor.page)
+  try {
+    for (let step = 0; step < 3; step++) {
+      await editor.page.evaluate(
+        ({ id, x }) => {
+          const store = window.openPencil?.getStore?.()
+          if (!store) throw new Error('Editor unavailable')
+          store.graph.updateNodePreview(id, { x })
+          store.requestRepaint()
+        },
+        { id: previewId, x: -10001 - step }
+      )
+      await editor.canvas.waitForRender()
+    }
+    const actual = await editor.canvas.screenshotCanvasRegion()
+    if (!actual.equals(reference)) {
+      await test.info().attach('cold-text', { body: reference, contentType: 'image/png' })
+      await test.info().attach('warm-text', { body: actual, contentType: 'image/png' })
+    }
+    expect(actual.equals(reference)).toBe(true)
+    expect(await preparations.evaluate((probe) => probe.count())).toBe(0)
+  } finally {
+    try {
+      await preparations.evaluate((probe) => probe.restore())
+    } finally {
+      await preparations.dispose()
+    }
+  }
 })

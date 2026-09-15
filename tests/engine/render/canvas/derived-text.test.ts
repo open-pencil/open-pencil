@@ -45,6 +45,32 @@ function squareCommandsBlob(): Uint8Array {
 }
 
 describe('derived text rendering', () => {
+  test('glyph silhouettes are disposed by cache clearing and renderer destruction', () => {
+    const renderer = new SkiaRenderer(
+      ck,
+      expectDefined(ck.MakeSurface(8, 8), 'glyph cache surface')
+    )
+    const first = new ck.Path()
+    const second = new ck.Path()
+    let disposedByRenderer = false
+    try {
+      renderer.glyphSilhouetteCache.set('first', first)
+      expect(renderer.glyphSilhouetteCache.peek('first')).toBe(first)
+      renderer.glyphSilhouetteCache.clear()
+      expect(first.isDeleted()).toBe(true)
+      renderer.glyphSilhouetteCache.set('second', second)
+    } finally {
+      try {
+        renderer.destroy()
+        disposedByRenderer = second.isDeleted()
+      } finally {
+        if (!first.isDeleted()) first.delete()
+        if (!second.isDeleted()) second.delete()
+      }
+    }
+    expect(disposedByRenderer).toBe(true)
+  })
+
   test('snaps Figma glyph baselines to device pixels', () => {
     expect(snapDerivedGlyphBaseline(47.45454406738281)).toBe(47)
     expect(snapDerivedGlyphBaseline(15.090909004211426)).toBe(15)
@@ -356,6 +382,66 @@ describe('derived text rendering', () => {
 })
 
 describe('rotated derived glyphs (text-on-path)', () => {
+  test('paints the curved glyph placement on the first render with an already loaded exact font', async () => {
+    const graph = new SceneGraph()
+    const page = expectDefined(graph.getPages()[0], 'page')
+    const text = graph.createNode('TEXT', page.id, {
+      width: 200,
+      height: 200,
+      text: 'x',
+      fontFamily: 'Inter',
+      textPathData: {
+        network: { vertices: [], segments: [], regions: [] },
+        normalizedSize: { x: 200, y: 200 },
+        tValue: 0,
+        forward: true
+      },
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, opacity: 1, visible: true }],
+      derivedTextGlyphs: [
+        {
+          commandsBlob: squareCommandsBlob(),
+          x: 50,
+          y: 50,
+          fontSize: 20,
+          rotation: -Math.PI / 2
+        }
+      ]
+    })
+    const renderer = new SkiaRenderer(ck, expectDefined(ck.MakeSurface(1, 1), 'surface'))
+    try {
+      await renderer.loadFonts()
+      expect(renderer.nodeFontReadiness(text)).toBe('ready')
+      const png = expectDefined(
+        renderNodesToImage(ck, renderer, graph, page.id, [text.id], {
+          scale: 1,
+          format: 'PNG'
+        }),
+        'png'
+      )
+      const image = expectDefined(ck.MakeImageFromEncoded(png), 'image')
+      try {
+        const pixels = expectDefined(
+          image.readPixels(0, 0, {
+            alphaType: ck.AlphaType.Unpremul,
+            colorType: ck.ColorType.RGBA_8888,
+            colorSpace: ck.ColorSpace.SRGB,
+            width: image.width(),
+            height: image.height()
+          }),
+          'pixels'
+        )
+        const alphaAt = (x: number, y: number) => pixels[(y * image.width() + x) * 4 + 3]
+        // Font-space Y inversion and the stored rotation place the square at [50, 70]².
+        expect(alphaAt(60, 60)).toBe(255)
+        expect(alphaAt(10, 10)).toBe(0)
+      } finally {
+        image.delete()
+      }
+    } finally {
+      renderer.destroy()
+    }
+  })
+
   test('hasRotatedDerivedGlyphs detects non-zero rotation', () => {
     expect(
       hasRotatedDerivedGlyphs({

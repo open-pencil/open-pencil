@@ -14,7 +14,7 @@ export function startTextDraw(
   const nodeId = editor.createShape('TEXT', cx, cy, 0, 0)
   editor.graph.updateNode(nodeId, { text: '' })
   editor.select([nodeId])
-  setDrag({ type: 'draw', startX: cx, startY: cy, nodeId })
+  setDrag(createDraw(editor, nodeId, cx, cy))
 }
 
 export function startShapeDraw(
@@ -29,16 +29,10 @@ export function startShapeDraw(
   editor.undo.beginBatch('Create shape')
   const nodeId = editor.createShape(nodeType, cx, cy, 0, 0)
   editor.select([nodeId])
-  setDrag({ type: 'draw', startX: cx, startY: cy, nodeId })
+  setDrag(createDraw(editor, nodeId, cx, cy))
 }
 
-export function handleDrawMove(
-  d: DragDraw,
-  cx: number,
-  cy: number,
-  shiftKey: boolean,
-  editor: Editor
-) {
+export function handleDrawMove(d: DragDraw, cx: number, cy: number, shiftKey: boolean) {
   let w = cx - d.startX
   let h = cy - d.startY
 
@@ -48,7 +42,7 @@ export function handleDrawMove(
     h = Math.sign(h) * size
   }
 
-  editor.updateNode(d.nodeId, {
+  d.update({
     x: w < 0 ? d.startX + w : d.startX,
     y: h < 0 ? d.startY + h : d.startY,
     width: Math.abs(w),
@@ -56,23 +50,67 @@ export function handleDrawMove(
   })
 }
 
-export function handleDrawUp(d: DragDraw, editor: Editor) {
-  const node = editor.graph.getNode(d.nodeId)
-  if (node?.type === 'TEXT') {
-    const isPointText = node.width < 2 && node.height < 2
-    editor.updateNode(d.nodeId, {
-      width: isPointText ? DEFAULT_TEXT_WIDTH : node.width,
-      height: isPointText ? DEFAULT_TEXT_HEIGHT : node.height,
-      textAutoResize: isPointText ? 'WIDTH_AND_HEIGHT' : 'NONE'
-    })
-  } else if (node && node.width < 2 && node.height < 2) {
-    editor.updateNode(d.nodeId, { width: 100, height: 100 })
+function createDraw(editor: Editor, nodeId: string, startX: number, startY: number): DragDraw {
+  const graph = editor.graph
+  const preview = editor.beginNodePreview('Draw dimensions')
+  let finished = false
+
+  function cancel() {
+    if (finished) return
+    finished = true
+    preview.cancel()
+    // Never replay an old document's creation undo against a replacement graph.
+    if (editor.graph === graph) editor.undo.rollbackBatch()
   }
-  if (node?.type === 'SECTION') {
-    editor.adoptNodesIntoSection(node.id)
+
+  function commit() {
+    if (finished) return
+    if (preview.closed || editor.graph !== graph) {
+      cancel()
+      return
+    }
+    finished = true
+    const node = graph.getNode(nodeId)
+    try {
+      if (node?.type === 'TEXT') {
+        const isPointText = node.width < 2 && node.height < 2
+        preview.update(nodeId, {
+          width: isPointText ? DEFAULT_TEXT_WIDTH : node.width,
+          height: isPointText ? DEFAULT_TEXT_HEIGHT : node.height,
+          textAutoResize: isPointText ? 'WIDTH_AND_HEIGHT' : 'NONE'
+        })
+      } else if (node && node.width < 2 && node.height < 2) {
+        preview.update(nodeId, { width: 100, height: 100 })
+      }
+      preview.commit()
+      if (node?.type === 'SECTION') editor.adoptNodesIntoSection(node.id)
+      editor.undo.commitBatch()
+    } catch (error) {
+      preview.cancel()
+      editor.undo.rollbackBatch()
+      throw error
+    }
+    editor.setTool('SELECT')
+    if (node?.type === 'TEXT') editor.startTextEditing(node.id)
   }
-  editor.commitResize(d.nodeId, { x: d.startX, y: d.startY, width: 0, height: 0 })
-  editor.undo.commitBatch()
-  editor.setTool('SELECT')
-  if (node?.type === 'TEXT') editor.startTextEditing(node.id)
+
+  // Creation itself is already an edit: avoid rebuilding the backing on the first held frame.
+  try {
+    preview.update(nodeId, { x: startX, y: startY })
+  } catch (error) {
+    cancel()
+    throw error
+  }
+
+  return {
+    type: 'draw',
+    startX,
+    startY,
+    nodeId,
+    update: (changes) => {
+      if (!finished) preview.update(nodeId, changes)
+    },
+    commit,
+    cancel
+  }
 }

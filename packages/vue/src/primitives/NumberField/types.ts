@@ -35,6 +35,8 @@ export interface NumberFieldRootEmits {
   (event: 'update:modelValue', value: number): void
   /** Emitted once after a changed interaction is committed. */
   (event: 'commit', value: number, previous: number): void
+  /** Emitted after restoring a cancelled or invalid interaction. */
+  (event: 'cancel'): void
   /** Emitted when the inline editing state changes. */
   (event: 'editing-change', editing: boolean): void
   /** Emitted when a committed expression cannot be evaluated. */

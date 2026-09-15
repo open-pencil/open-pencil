@@ -98,7 +98,8 @@ export function createCanvasSurfaceManager({
       canvasRef.value?.clientWidth ?? 0,
       canvasRef.value?.clientHeight ?? 0,
       shouldShowRulers(),
-      options?.layer ?? 'full'
+      options?.layer ?? 'full',
+      editor.isInteractiveEditing()
     )
     renderLoop.markRendered()
     acknowledgePresentation()

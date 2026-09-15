@@ -2,7 +2,7 @@ import type { SceneGraph, SceneNode } from './index'
 import Matrix, { type Mat3 } from './matrix'
 import type { Rect, Vector } from './primitives'
 
-export function getWorldMatrix(node: SceneNode, graph: SceneGraph): Mat3 {
+export function getWorldMatrix(node: SceneNode, graph: Pick<SceneGraph, 'getNode'>): Mat3 {
   const chain: SceneNode[] = []
   let current: SceneNode | undefined = node
 
@@ -22,7 +22,7 @@ export function getWorldMatrix(node: SceneNode, graph: SceneGraph): Mat3 {
   return matrix
 }
 
-export function getAxisAlignedWorldBounds(node: SceneNode, graph: SceneGraph) {
+export function getAxisAlignedWorldBounds(node: SceneNode, graph: Pick<SceneGraph, 'getNode'>) {
   const matrix = getWorldMatrix(node, graph)
   const points = Matrix.mapPoints(matrix, [
     0,
@@ -121,36 +121,25 @@ export function getAbsolutePositionFull(node: SceneNode, graph: SceneGraph) {
     centerY
   }
 }
-export function getNodeLocalMatrix(n: SceneNode) {
-  const rad = (n.rotation * Math.PI) / 180
+/** Lines retain their origin pivot; other shapes rotate around their center. */
+export function getNodeRotationOrigin(node: SceneNode): Vector {
+  return node.type === 'LINE' ? { x: 0, y: 0 } : { x: node.width / 2, y: node.height / 2 }
+}
 
-  const cx = n.width / 2
-  const cy = n.height / 2
-
-  const sx = n.flipX ? -1 : 1
-  const sy = n.flipY ? -1 : 1
-
-  let m = Matrix.identity()
-
-  // local translation (relative to parent)
-  m = Matrix.multiply(m, Matrix.translated(n.x, n.y))
-
-  // pivot to center
-  m = Matrix.multiply(m, Matrix.translated(cx, cy))
-
+/** Position can be applied separately by renderers before setting up local opacity layers. */
+export function getNodeLocalMatrix(n: SceneNode, position: Vector = n) {
+  let matrix = Matrix.translated(position.x, position.y)
   if (n.flipX || n.flipY) {
-    m = Matrix.multiply(m, Matrix.scaled(sx, sy))
+    matrix = Matrix.multiply(
+      matrix,
+      Matrix.scaled(n.flipX ? -1 : 1, n.flipY ? -1 : 1, n.width / 2, n.height / 2)
+    )
   }
-
-  // rotate around center
   if (n.rotation) {
-    m = Matrix.multiply(m, Matrix.rotated(rad, 0, 0))
+    const pivot = getNodeRotationOrigin(n)
+    matrix = Matrix.multiply(matrix, Matrix.rotated((n.rotation * Math.PI) / 180, pivot.x, pivot.y))
   }
-
-  // pivot back
-  m = Matrix.multiply(m, Matrix.translated(-cx, -cy))
-
-  return m
+  return matrix
 }
 export function getNodeWorldBounds(node: SceneNode) {
   const m = getNodeLocalMatrix(node)
@@ -187,7 +176,11 @@ export function getNodeWorldBounds(node: SceneNode) {
  * or the visible handles are ~25px off and unclickable. Defaults to full node
  * bounds.
  */
-export function getWorldHandles(node: SceneNode, graph: SceneGraph, localRect?: Rect) {
+export function getWorldHandles(
+  node: SceneNode,
+  graph: Pick<SceneGraph, 'getNode'>,
+  localRect?: Rect
+) {
   const matrix = getWorldMatrix(node, graph)
 
   const x0 = localRect?.x ?? 0

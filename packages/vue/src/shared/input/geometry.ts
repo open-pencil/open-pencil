@@ -1,10 +1,14 @@
 import { CORNER_ROTATE_ZONE, HANDLE_HIT_RADIUS } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
-import { fitTextPathBoxToGlyphs, getTextPathData, sampleTextPath } from '@open-pencil/core/text'
+import {
+  createSceneGeometry,
+  selectionHandleRect,
+  rotationHandleLayout,
+  type SceneGeometry,
+  type RotationPreview
+} from '@open-pencil/core/geometry'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { getAbsoluteRotation, getWorldHandles } from '@open-pencil/scene-graph/coordinate'
-import { degToRad } from '@open-pencil/scene-graph/geometry'
-import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
+import type { Vector } from '@open-pencil/scene-graph/primitives'
 
 import resizeCursorSVG from '#vue/shared/assets/resize-cursor.svg?raw'
 import rotateCursorSVG from '#vue/shared/assets/rotate-cursor.svg?raw'
@@ -26,22 +30,13 @@ export function canvasToLocalPoint(
   editor: Editor
 ): { lx: number; ly: number } {
   const node = editor.graph.getNode(scopeId)
-  if (!node) return { lx: cx, ly: cy }
-  const abs = editor.graph.getAbsolutePosition(scopeId)
-  let dx = cx - abs.x
-  let dy = cy - abs.y
-  if (node.rotation !== 0) {
-    const hw = node.width / 2
-    const hh = node.height / 2
-    const rad = degToRad(-node.rotation)
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-    const rx = dx - hw
-    const ry = dy - hh
-    dx = rx * cos - ry * sin + hw
-    dy = rx * sin + ry * cos + hh
-  }
-  return { lx: dx, ly: dy }
+  const point = node
+    ? createSceneGeometry(editor.graph, editor.state.rotationPreview).toLocal(node, {
+        x: cx,
+        y: cy
+      })
+    : null
+  return { lx: point?.x ?? cx, ly: point?.y ?? cy }
 }
 
 export function hitTestInEditorScope(
@@ -142,7 +137,11 @@ export function unrotate(
   }
 }
 
-function getCursorAngleFromHandle(handle: HandlePosition, rotation: number): number {
+function getCursorAngleFromHandle(
+  handle: HandlePosition,
+  node: SceneNode,
+  geometry: SceneGeometry
+): number {
   const map: Record<HandlePosition, [number, number]> = {
     nw: [1, 1],
     ne: [-1, 1],
@@ -157,29 +156,10 @@ function getCursorAngleFromHandle(handle: HandlePosition, rotation: number): num
 
   const [bx, by] = map[handle]
 
-  const baseAngle = (Math.atan2(by, bx) * 180) / Math.PI
-
-  const angle = baseAngle - rotation
+  const direction = geometry.direction(node, { x: bx, y: by })
+  const angle = (Math.atan2(direction.y, direction.x) * 180) / Math.PI
 
   return (angle + 360) % 360
-}
-
-/**
- * Node-local box the selection handles are drawn on. For imported text-on-path
- * the overlay draws its bounds/handles on the glyph-fitted path box (see
- * drawTextPathSelection), not node bounds — mirror that exact decision so the
- * hit-test lands on the visible handles instead of ~25px inside them. Returns
- * undefined (→ full node bounds) for every other node and for the same
- * fallbacks the overlay takes (no path data / unsamplable path).
- */
-function selectionHandleRect(node: SceneNode): Rect | undefined {
-  if (node.textPathData === null || !node.textPathBox) return undefined
-  const data = getTextPathData(node)
-  const box =
-    (data && fitTextPathBoxToGlyphs(data, node.textPathBox, node.derivedTextGlyphs)) ??
-    node.textPathBox
-  if (!data || !sampleTextPath(data, box)) return undefined
-  return box
 }
 
 export function getHitHandleByMatrix(
@@ -187,16 +167,16 @@ export function getHitHandleByMatrix(
   cy: number,
   node: SceneNode,
   graph: SceneGraph,
-  zoom = 1
+  zoom = 1,
+  preview?: RotationPreview | null
 ): {
   handle: HandlePosition
   rotation: number
 } | null {
-  const handles = getWorldHandles(node, graph, selectionHandleRect(node))
+  const geometry = createSceneGeometry(graph, preview)
+  const handles = geometry.handles(node, selectionHandleRect(node))
 
   const CORNER_R = HANDLE_HIT_RADIUS / zoom
-
-  const rotation = getAbsoluteRotation(node, graph)
   for (const [key, p] of Object.entries(handles)) {
     const handleKey = key as HandlePosition
 
@@ -204,7 +184,7 @@ export function getHitHandleByMatrix(
     const dy = cy - p.y
 
     if (dx * dx + dy * dy <= CORNER_R * CORNER_R) {
-      const angle = getCursorAngleFromHandle(handleKey, rotation)
+      const angle = getCursorAngleFromHandle(handleKey, node, geometry)
 
       return {
         handle: handleKey,
@@ -220,18 +200,11 @@ export function hitTestTopRotationHandleByMatrix(
   cy: number,
   node: SceneNode,
   graph: SceneGraph,
-  zoom: number = 1
+  zoom: number = 1,
+  preview?: RotationPreview | null
 ): boolean {
-  const handles = getWorldHandles(node, graph, selectionHandleRect(node))
-  const rotation = getAbsoluteRotation(node, graph)
-  const topMidX = (handles.nw.x + handles.ne.x) / 2
-  const topMidY = (handles.nw.y + handles.ne.y) / 2
-  const distance = 24 / zoom
-  const rad = degToRad(rotation - 90)
-  const handle = {
-    x: topMidX + Math.cos(rad) * distance,
-    y: topMidY + Math.sin(rad) * distance
-  }
+  const geometry = createSceneGeometry(graph, preview)
+  const handle = geometry.toWorld(node, rotationHandleLayout(node, geometry, zoom).handle)
   const radius = HANDLE_HIT_RADIUS / zoom
   const dx = cx - handle.x
   const dy = cy - handle.y
@@ -243,9 +216,13 @@ export function hitTestCornerRotationByMatrix(
   cy: number,
   node: SceneNode,
   graph: SceneGraph,
-  zoom: number = 1
+  zoom: number = 1,
+  preview?: RotationPreview | null
 ): CornerPosition | null {
-  const handles = getWorldHandles(node, graph, selectionHandleRect(node))
+  const geometry = createSceneGeometry(graph, preview)
+  const handles = geometry.handles(node, selectionHandleRect(node))
+  const pointer = geometry.toLocal(node, { x: cx, y: cy })
+  if (!pointer) return null
 
   const HANDLE_R = HANDLE_HIT_RADIUS / zoom
   const ROTATE_R = CORNER_ROTATE_ZONE / zoom
@@ -258,8 +235,10 @@ export function hitTestCornerRotationByMatrix(
   ]
 
   for (const { key, p } of corners) {
-    const dx = cx - p.x
-    const dy = cy - p.y
+    const local = geometry.toLocal(node, p)
+    if (!local) continue
+    const dx = pointer.x - local.x
+    const dy = pointer.y - local.y
     const d = Math.hypot(dx, dy)
 
     if (d > HANDLE_R && d <= ROTATE_R) {
@@ -283,8 +262,6 @@ export function hitTestCornerRotationByMatrix(
   return null
 }
 
-const CORNER_BASE_ANGLES: Record<CornerPosition, number> = { nw: 0, ne: 90, se: 180, sw: 270 }
-
 const rotationCursorCache = new Map<number, string>()
 
 export function buildRotationCursor(angleDeg: number): string {
@@ -307,8 +284,17 @@ export function buildRotationCursor(angleDeg: number): string {
   return cached
 }
 
-export function cornerRotationCursor(corner: CornerPosition, nodeRotation = 0): string {
-  return buildRotationCursor(CORNER_BASE_ANGLES[corner] - nodeRotation)
+export function cornerRotationCursor(
+  corner: CornerPosition,
+  node: SceneNode,
+  graph: SceneGraph,
+  preview?: RotationPreview | null
+): string {
+  const direction = createSceneGeometry(graph, preview).direction(node, {
+    x: corner === 'nw' || corner === 'sw' ? -1 : 1,
+    y: corner === 'nw' || corner === 'ne' ? -1 : 1
+  })
+  return buildRotationCursor((Math.atan2(direction.y, direction.x) * 180) / Math.PI + 135)
 }
 
 export function buildResizeCursor(angleDeg: number): string {

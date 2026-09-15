@@ -41,15 +41,25 @@ export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set([
  * two invalidation rules cannot drift. Glyphs are kept when the caller
  * replaces them in the same update (resize supplies scaled copies).
  */
-export function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode>): void {
+export function textCacheInvalidationChanges(
+  node: SceneNode,
+  changes: Partial<SceneNode>
+): Partial<SceneNode> {
+  const invalidated: Partial<SceneNode> = {}
   const keys = Object.keys(changes)
-  if (node.textPicture && keys.some((key) => TEXT_PICTURE_KEYS.has(key))) node.textPicture = null
+  if (node.textPicture && keys.some((key) => TEXT_PICTURE_KEYS.has(key)))
+    invalidated.textPicture = null
   const glyphsInvalidated = keys.some((key) => GLYPH_AFFECTING_KEYS.has(key))
   // A successful path-text edit supplies reflowed glyphs in `changes`. Every
   // other mutation path must drop stale baked glyphs and path identity rather
   // than pair new text/style with old visible outlines.
   if (node.derivedTextGlyphs && glyphsInvalidated && !changes.derivedTextGlyphs) {
-    node.derivedTextGlyphs = null
-    node.textPathData = null
+    invalidated.derivedTextGlyphs = null
+    invalidated.textPathData = null
   }
+  return invalidated
+}
+
+export function invalidateTextCaches(node: SceneNode, changes: Partial<SceneNode>): void {
+  Object.assign(node, textCacheInvalidationChanges(node, changes))
 }

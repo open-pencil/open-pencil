@@ -616,6 +616,11 @@ export interface Variable {
   version?: string
 }
 
+/** Scalar numeric node fields accepted by numeric property controls. */
+export type NumericNodeProperty = {
+  [K in keyof SceneNode]-?: SceneNode[K] extends number ? K : never
+}[keyof SceneNode]
+
 export interface VariableCollectionMode {
   modeId: string
   name: string

@@ -15,6 +15,7 @@ import {
 } from 'reka-ui'
 import { nextTick } from 'vue'
 
+import { useRetainedPopup } from '#vue/lifecycle/retention/popup'
 import type { FontPickerUI } from '#vue/primitives/FontPicker/types'
 import {
   useFontPicker,
@@ -51,6 +52,7 @@ const { searchTerm, open, filtered, loading, accessState, requestAccess, select 
   localFontAccess,
   onSelect: (family) => emit('select', family)
 })
+const { portalActive } = useRetainedPopup(open)
 </script>
 
 <template>
@@ -74,7 +76,7 @@ const { searchTerm, open, filtered, loading, accessState, requestAccess, select 
       </ComboboxTrigger>
     </ComboboxAnchor>
 
-    <ComboboxPortal>
+    <ComboboxPortal v-if="portalActive">
       <ComboboxContent
         :side-offset="2"
         align="start"

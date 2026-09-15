@@ -15,12 +15,11 @@ describe('axis-aligned world bounds', () => {
       rotation: 90
     })
 
-    expect(getAxisAlignedWorldBounds(node, graph)).toEqual({
-      x: 125,
-      y: 75,
-      width: 50,
-      height: 100
-    })
+    const bounds = getAxisAlignedWorldBounds(node, graph)
+    expect(bounds.x).toBeCloseTo(125, 10)
+    expect(bounds.y).toBeCloseTo(75, 10)
+    expect(bounds.width).toBeCloseTo(50, 10)
+    expect(bounds.height).toBeCloseTo(100, 10)
   })
 
   test('includes transformed ancestors', () => {
@@ -40,11 +39,11 @@ describe('axis-aligned world bounds', () => {
       height: 20
     })
 
-    expect(getAxisAlignedWorldBounds(child, graph)).toEqual({
-      x: 250,
-      y: 120,
-      width: 20,
-      height: 40
-    })
+    // Equivalent pivot compositions can differ by a few floating-point ULPs.
+    const bounds = getAxisAlignedWorldBounds(child, graph)
+    expect(bounds.x).toBeCloseTo(250, 10)
+    expect(bounds.y).toBeCloseTo(120, 10)
+    expect(bounds.width).toBeCloseTo(20, 10)
+    expect(bounds.height).toBeCloseTo(40, 10)
   })
 })

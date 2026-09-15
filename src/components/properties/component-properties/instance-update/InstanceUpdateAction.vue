@@ -9,7 +9,7 @@ import {
 import { toRef } from 'vue'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
-import { useI18n } from '@open-pencil/vue'
+import { useI18n, useRetainedPopup } from '@open-pencil/vue'
 
 import type { EditorStore } from '@/app/editor/session'
 import type { LibraryService } from '@/app/libraries'
@@ -24,6 +24,7 @@ const { node, editor, service } = defineProps<{
 }>()
 const emit = defineEmits<{ review: [] }>()
 const { panels } = useI18n()
+const { open: popupOpen, portalActive } = useRetainedPopup()
 const menu = useMenuUI({ content: 'min-w-48' })
 const { available, updating, updateSelectedInstance } = useInstanceUpdate(
   toRef(() => node),
@@ -33,7 +34,7 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
 </script>
 
 <template>
-  <DropdownMenuRoot v-if="available">
+  <DropdownMenuRoot v-if="available" v-model:open="popupOpen">
     <Tip :label="panels.updateSelectedInstance">
       <DropdownMenuTrigger as-child>
         <button
@@ -50,7 +51,7 @@ const { available, updating, updateSelectedInstance } = useInstanceUpdate(
         </button>
       </DropdownMenuTrigger>
     </Tip>
-    <DropdownMenuPortal>
+    <DropdownMenuPortal v-if="portalActive">
       <DropdownMenuContent align="end" side="bottom" :side-offset="4" :class="menu.content">
         <DropdownMenuItem
           data-test-id="instance-update-selected"

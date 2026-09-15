@@ -1,5 +1,7 @@
 import type { Image as CKImage } from 'canvaskit-wasm'
 
+import { ResourceCache } from '#core/cache/resource'
+
 import { tileKeyString, tileWorldSize, type TileKey, type TileWorldBounds } from './geometry'
 import type { RenderedTile } from './render'
 
@@ -14,29 +16,31 @@ export interface CachedTile {
 const DEFAULT_MAX_TILE_BYTES = 128 * 1024 * 1024
 
 export class TileImageCache {
-  private readonly entries = new Map<string, CachedTile>()
-  private bytes = 0
+  private readonly entries: ResourceCache<string, CachedTile>
   private clock = 0
 
-  constructor(private readonly maxBytes = DEFAULT_MAX_TILE_BYTES) {}
+  constructor(maxBytes = DEFAULT_MAX_TILE_BYTES) {
+    this.entries = new ResourceCache({
+      maxWeight: maxBytes,
+      weight: (entry) => entry.bytes,
+      dispose: (entry) => entry.image.delete()
+    })
+  }
 
   get(key: TileKey): CachedTile | null {
     const id = tileKeyString(key)
     const entry = this.entries.get(id)
     if (!entry) return null
     entry.lastUsed = ++this.clock
-    this.entries.delete(id)
-    this.entries.set(id, entry)
     return entry
   }
 
   getIfPresent(key: TileKey): CachedTile | null {
-    return this.entries.get(tileKeyString(key)) ?? null
+    return this.entries.peek(tileKeyString(key)) ?? null
   }
 
-  install(tile: RenderedTile, contentGeneration: number): CachedTile {
+  install(tile: RenderedTile, contentGeneration: number): CachedTile | null {
     const id = tileKeyString(tile.key)
-    this.delete(id)
     const entry: CachedTile = {
       key: tile.key,
       image: tile.image,
@@ -44,9 +48,10 @@ export class TileImageCache {
       lastUsed: ++this.clock,
       bytes: tile.image.width() * tile.image.height() * 4
     }
-    this.entries.set(id, entry)
-    this.bytes += entry.bytes
-    this.evict()
+    if (!this.entries.set(id, entry)) {
+      entry.image.delete()
+      return null
+    }
     return entry
   }
 
@@ -73,7 +78,7 @@ export class TileImageCache {
         entry.contentGeneration = contentGeneration
         continue
       }
-      this.delete(id)
+      this.entries.delete(id)
       invalidated++
     }
     return invalidated
@@ -84,9 +89,7 @@ export class TileImageCache {
   }
 
   clear(): void {
-    for (const entry of this.entries.values()) entry.image.delete()
     this.entries.clear()
-    this.bytes = 0
   }
 
   size(): number {
@@ -94,22 +97,6 @@ export class TileImageCache {
   }
 
   byteSize(): number {
-    return this.bytes
-  }
-
-  private delete(id: string): void {
-    const entry = this.entries.get(id)
-    if (!entry) return
-    entry.image.delete()
-    this.bytes -= entry.bytes
-    this.entries.delete(id)
-  }
-
-  private evict(): void {
-    while (this.bytes > this.maxBytes) {
-      const oldest = this.entries.keys().next().value
-      if (typeof oldest !== 'string') break
-      this.delete(oldest)
-    }
+    return this.entries.weight
   }
 }

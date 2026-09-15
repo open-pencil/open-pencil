@@ -18,6 +18,8 @@ import {
 import { tv } from 'tailwind-variants'
 import { computed, ref } from 'vue'
 
+import { useRetainedPopup } from '@open-pencil/vue'
+
 import type { ComponentUI } from '@/components/ui/types'
 import theme from '@/theme/select/combobox'
 import type { AppComboboxTheme } from '@/theme/select/combobox'
@@ -58,6 +60,7 @@ const {
 const modelValue = defineModel<string>({ required: true })
 const open = ref(false)
 const searchTerm = ref('')
+const { portalActive } = useRetainedPopup(open, () => updateOpen(false))
 const styles = tv(theme)()
 
 const selectedOption = computed(() => options.find((option) => option.value === modelValue.value))
@@ -123,7 +126,7 @@ function updateOpen(value: boolean): void {
       </ComboboxTrigger>
     </ComboboxAnchor>
 
-    <ComboboxPortal>
+    <ComboboxPortal v-if="portalActive">
       <ComboboxContent
         position="popper"
         :side-offset="2"

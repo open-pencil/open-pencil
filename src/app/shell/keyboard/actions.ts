@@ -57,6 +57,10 @@ export function createKeyboardActions({
   }
 
   function escapeOrDeselect() {
+    if (store.state.rotationPreview) {
+      store.setRotationPreview(null)
+      return
+    }
     if (store.state.nodeEditState) {
       store.exitNodeEditMode(true)
       return

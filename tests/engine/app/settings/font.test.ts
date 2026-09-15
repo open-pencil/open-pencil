@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { useFontSettings, type FontSettingsActions } from '@/components/FontSettings/use'
+import { useFontSettings, type FontSettingsActions } from '@/components/font-settings/use'
 
 function actions(overrides: Partial<FontSettingsActions> = {}): FontSettingsActions {
   let accessState: ReturnType<FontSettingsActions['localFontAccessState']> = 'prompt'

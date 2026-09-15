@@ -7,11 +7,13 @@ import type {
   LayoutAlign,
   LayoutCounterAlign,
   LayoutSizing,
+  NumericNodeProperty,
   SceneNode
 } from '@open-pencil/scene-graph'
 
+import { useNodePreview } from '#vue/controls/node-preview/use'
+import { useSelectedNodeState } from '#vue/editor/selection-state/nodes'
 import type { useI18n } from '#vue/i18n'
-import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 export type AlignCell = { primary: LayoutAlign; counter: LayoutCounterAlign }
 
@@ -56,7 +58,7 @@ export function createLayoutSelectionState(
   editor: Editor,
   panels: ReturnType<typeof useI18n>['panels']
 ) {
-  const node = useSceneComputed<SceneNode | null>(() => editor.getSelectedNode() ?? null)
+  const { node } = useSelectedNodeState(editor)
   const layoutDirection = computed<SceneNode['layoutDirection']>(
     () => node.value?.layoutDirection ?? 'AUTO'
   )
@@ -114,6 +116,7 @@ export function createGridTrackActions(editor: Editor, node: ComputedRef<SceneNo
 
 export function createPaddingActions(editor: Editor, node: ComputedRef<SceneNode | null>) {
   const showIndividualPadding = ref(false)
+  const preview = useNodePreview(editor)
 
   const hasUniformPadding = computed(() => {
     const n = node.value
@@ -133,30 +136,24 @@ export function createPaddingActions(editor: Editor, node: ComputedRef<SceneNode
 
   function setHorizontalPadding(v: number) {
     if (!node.value) return
-    editor.updateNode(node.value.id, { paddingLeft: v, paddingRight: v })
-  }
-
-  function commitHorizontalPadding(_value: number, previous: number) {
-    if (!node.value) return
-    editor.commitNodeUpdate(
-      node.value.id,
-      { paddingLeft: previous, paddingRight: previous } satisfies Partial<SceneNode>,
+    preview.update(
+      [node.value.id],
+      { paddingLeft: v, paddingRight: v },
       'Change horizontal padding'
     )
   }
 
-  function setVerticalPadding(v: number) {
-    if (!node.value) return
-    editor.updateNode(node.value.id, { paddingTop: v, paddingBottom: v })
+  function commitHorizontalPadding(_value: number, _previous: number) {
+    preview.commit()
   }
 
-  function commitVerticalPadding(_value: number, previous: number) {
+  function setVerticalPadding(v: number) {
     if (!node.value) return
-    editor.commitNodeUpdate(
-      node.value.id,
-      { paddingTop: previous, paddingBottom: previous } satisfies Partial<SceneNode>,
-      'Change vertical padding'
-    )
+    preview.update([node.value.id], { paddingTop: v, paddingBottom: v }, 'Change vertical padding')
+  }
+
+  function commitVerticalPadding(_value: number, _previous: number) {
+    preview.commit()
   }
 
   function toggleIndividualPadding() {
@@ -164,6 +161,7 @@ export function createPaddingActions(editor: Editor, node: ComputedRef<SceneNode
   }
 
   return {
+    cancelPaddingPreview: preview.cancel,
     showIndividualPadding,
     hasUniformPadding,
     hasSymmetricPadding,
@@ -213,13 +211,15 @@ export function createLayoutActions({
   node: ComputedRef<SceneNode | null>
   isInAutoLayout: ComputedRef<boolean>
 }) {
-  function updateProp(key: string, value: number | string) {
-    if (node.value) editor.updateNode(node.value.id, { [key]: value })
+  const preview = useNodePreview(editor)
+
+  function updateProp(key: NumericNodeProperty, value: number) {
+    if (node.value) preview.update([node.value.id], { [key]: value }, `Change ${key}`)
   }
 
   function updateSizeLimit(prop: SizeLimitProp, value: number) {
     if (!node.value) return
-    editor.updateNode(node.value.id, { [prop]: value })
+    preview.update([node.value.id], { [prop]: value }, `Change ${prop}`)
   }
 
   function setSizeLimitToCurrent(prop: SizeLimitProp) {
@@ -229,9 +229,8 @@ export function createLayoutActions({
     editor.updateNodeWithUndo(n.id, { [prop]: Math.round(value) }, `Set ${prop}`)
   }
 
-  function commitSizeLimit(prop: SizeLimitProp, _value: number, previous: number) {
-    if (!node.value) return
-    editor.commitNodeUpdate(node.value.id, { [prop]: previous }, `Change ${prop}`)
+  function commitSizeLimit(_prop: SizeLimitProp, _value: number, _previous: number) {
+    preview.commit()
   }
 
   function addSizeLimit(prop: SizeLimitProp) {
@@ -246,14 +245,8 @@ export function createLayoutActions({
     editor.updateNodeWithUndo(node.value.id, { [prop]: null }, `Remove ${prop}`)
   }
 
-  function commitProp(key: string, _value: number | string, previous: number | string) {
-    if (node.value) {
-      editor.commitNodeUpdate(
-        node.value.id,
-        { [key]: previous } as Partial<SceneNode>,
-        `Change ${key}`
-      )
-    }
+  function commitProp(_key: NumericNodeProperty, _value: number, _previous: number) {
+    preview.commit()
   }
 
   function setAxisSizing(axis: LayoutAxis, sizing: LayoutSizing) {
@@ -273,13 +266,13 @@ export function createLayoutActions({
       axis === 'width'
         ? widthSizingForNode(n, isInAutoLayout.value)
         : heightSizingForNode(n, isInAutoLayout.value)
-    if (sizing !== 'FIXED') setAxisSizing(axis, 'FIXED')
-    editor.updateNode(n.id, { [axis]: value })
+    const sizingPatch =
+      sizing !== 'FIXED' ? axisSizingPatchForNode(n, axis, 'FIXED', isInAutoLayout.value) : {}
+    preview.update([n.id], { ...sizingPatch, [axis]: value }, `Change ${axis}`)
   }
 
-  function commitAxisSize(axis: LayoutAxis, _value: number, previous: number) {
-    const n = node.value
-    if (n) editor.commitNodeUpdate(n.id, { [axis]: previous }, `Change ${axis}`)
+  function commitAxisSize(_axis: LayoutAxis, _value: number, _previous: number) {
+    preview.commit()
   }
 
   function setAlignment(primary: LayoutAlign, counter: LayoutCounterAlign) {
@@ -311,6 +304,7 @@ export function createLayoutActions({
   }
 
   return {
+    cancelPreview: preview.cancel,
     updateProp,
     updateSizeLimit,
     setSizeLimitToCurrent,

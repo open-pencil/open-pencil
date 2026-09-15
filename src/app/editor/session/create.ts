@@ -62,7 +62,10 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     editor.subscribeToGraph()
   }
 
-  const { selectedNodes, selectedNode, layerTree } = createEditorComputedRefs(editor, state)
+  const { selectedNodes, selectedNode, layerTree, disposeSelection } = createEditorComputedRefs(
+    editor,
+    state
+  )
   const preparationEvents = createEditorPreparationEvents()
   const preparationLifecycle = new Map<
     number,
@@ -215,7 +218,11 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     setSplitSizes: panes.setSplitSizes,
 
     // App-specific overrides and additions
-    ...modules
+    ...modules,
+    dispose() {
+      disposeSelection()
+      modules.dispose()
+    }
   }
 
   defineEditorStoreAccessors(store, editor)

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { createRenderer, defineComponent, h, type ComponentPublicInstance } from 'vue'
+import { defineComponent, h, type ComponentPublicInstance } from 'vue'
 
 import {
   useDocumentWorkspace,
@@ -8,11 +8,7 @@ import {
   type DocumentWorkspaceSource
 } from '@open-pencil/vue'
 
-type HostNode = {
-  children: HostNode[]
-  parent: HostNode | null
-  text: string
-}
+import { createTestRenderer, hostNode } from '#tests/helpers/vue/renderer'
 
 type Deferred<Value> = {
   promise: Promise<Value>
@@ -32,58 +28,7 @@ function deferred<Value>(): Deferred<Value> {
   }
 }
 
-function hostNode(text = ''): HostNode {
-  return { children: [], parent: null, text }
-}
-
-const renderer = createRenderer<HostNode, HostNode>({
-  patchProp() {
-    return undefined
-  },
-  insert(child, parent, anchor) {
-    child.parent = parent
-    const index = anchor ? parent.children.indexOf(anchor) : -1
-    if (index < 0) parent.children.push(child)
-    else parent.children.splice(index, 0, child)
-  },
-  remove(child) {
-    const parent = child.parent
-    if (!parent) return
-    const index = parent.children.indexOf(child)
-    if (index !== -1) parent.children.splice(index, 1)
-    child.parent = null
-  },
-  createElement() {
-    return hostNode()
-  },
-  createText: hostNode,
-  createComment: hostNode,
-  setText(node, text) {
-    node.text = text
-  },
-  setElementText(node, text) {
-    node.text = text
-  },
-  parentNode(node) {
-    return node.parent
-  },
-  nextSibling(node) {
-    const parent = node.parent
-    if (!parent) return null
-    return parent.children[parent.children.indexOf(node) + 1] ?? null
-  },
-  querySelector() {
-    return null
-  },
-  setScopeId() {
-    return undefined
-  },
-  insertStaticContent(content, parent, anchor) {
-    const node = hostNode(content)
-    this.insert(node, parent, anchor)
-    return [node, node]
-  }
-})
+const renderer = createTestRenderer()
 
 type Workspace = ReturnType<typeof useDocumentWorkspace<DocumentWorkspaceItem>>
 

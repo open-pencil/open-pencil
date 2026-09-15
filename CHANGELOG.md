@@ -51,7 +51,7 @@
 - Match page-list density to the layer tree and add subtle, reduced-motion-aware dialog transitions.
 - Fade in streaming Markdown list items and code lines without animating completed responses.
 - Vertically center shaped section titles and allow renaming a section by double-clicking its canvas label.
-- Load supported online fonts before revealing imported pages, preserve substituted text during editing, and shape canvas labels with bundled Inter typography.
+- Load supported online fonts before revealing imported pages, preserve substituted text during editing, and shape canvas labels with Inter typography and shared Arabic/CJK font fallback.
 - Complete translated app, accessibility, font, color, file, clipboard, collaboration, chat, vectorization, storage, recovery, component-library, and connection feedback across supported locales, and synchronize document language with the selected locale.
 - Separate local MCP server controls, browser WebMCP access, and remote connections in Settings, with inline searchable tool permissions.
 - Show translated field errors, hints, and consistent contextual alerts in Settings forms, focus the first invalid field on submission, and explain missing requirements instead of silently disabling Save or Test.
@@ -59,6 +59,9 @@
 
 ### Fixed
 
+- Keep newly created and edited objects visible during zoom instead of replaying outdated scene content.
+- Keep property fields and paint previews live during editing, rotated selection labels readable and aligned, and object edges stable when previews settle.
+- Show compact bordered section labels with inset nested titles and clearer hover feedback.
 - Keep Undo and Redo commands available as edit history changes, without requiring another scene edit.
 - Avoid recursive desktop HTTP proxy requests when font downloads intercept Tauri IPC traffic.
 - Keep FIT image fills proportional, centered, and fully visible without stretching or cropped edges.
@@ -113,6 +116,8 @@
 
 ### Performance
 
+- Reduce pauses after repeated frame creation without leaving hidden property edits or popups active.
+- Reduce repeated text shaping and scene invalidation while moving and resizing objects, and reuse fitting canvas labels during zoom.
 - Reduce unnecessary layout work after automation and Figma API edits by updating only affected layers and containers.
 - Keep rapid trackpad zoom reversals and effect-heavy document navigation responsive by cancelling obsolete reconstruction and reusing safe raster snapshots.
 - Show the FIG page list from a lightweight Kiwi scan before materializing the full document.

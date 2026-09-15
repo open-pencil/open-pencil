@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { MIXED, useNodeProps } from '#vue/controls/node-props/use'
+import { MIXED } from '#vue/controls/node-props/use'
+import { usePosition } from '#vue/controls/position/use'
 
 const {
   updateProp,
   commitProp,
+  cancelProp,
   node,
-  nodes,
+  ids,
+  align,
+  flip,
+  rotate,
   isMulti,
   active,
-  prop: multiProp,
-  store
-} = useNodeProps()
+  prop: multiProp
+} = usePosition()
 
 const xValue = computed(() =>
   isMulti.value ? multiProp('x').value : Math.round(node.value?.x ?? 0)
@@ -25,23 +29,10 @@ const hValue = multiProp('height')
 const rotationValue = computed(() =>
   isMulti.value ? multiProp('rotation').value : Math.round(node.value?.rotation ?? 0)
 )
-const ids = computed(() => nodes.value.map((n) => n.id))
-
-function align(axis: 'horizontal' | 'vertical', pos: 'min' | 'center' | 'max') {
-  store.alignNodes(ids.value, axis, pos)
-}
-
-function flip(axis: 'horizontal' | 'vertical') {
-  store.flipNodes(ids.value, axis)
-}
-
-function rotate(degrees: number) {
-  store.rotateNodes(ids.value, degrees)
-}
-
 const actions = {
   updateProp,
   commitProp,
+  cancelProp,
   align,
   flip,
   rotate

@@ -48,7 +48,8 @@ test('NumberField commits arithmetic and relative expressions', async () => {
 
 test('NumberField invalid input and Escape restore the previous value', async () => {
   const field = xField()
-  const before = await numericFieldValue(field)
+  // Cancellation restores the exact graph coordinate, not its rounded display value.
+  const before = expectDefined((await getSelectedNode(editor.page))?.x, 'original x')
 
   let input = await editField(field)
   await input.fill('77')
@@ -80,6 +81,30 @@ test('NumberField Arrow keys honor Shift and Alt multipliers', async () => {
 
   expect((await getSelectedNode(editor.page))?.x).toBe(before + 10.9)
   editor.canvas.assertNoErrors()
+})
+
+test('mixed numeric edits cancel per-node values and commit zero in one undo step', async () => {
+  await editor.canvas.drawRect(300, 100, 80, 80)
+  await editor.canvas.selectAll()
+  const values = () =>
+    editor.page.evaluate(() =>
+      window.openPencil
+        ?.getStore?.()
+        .getSelectedNodes()
+        .map((node) => node.x)
+    )
+  const original = await values()
+  let input = await editField(xField())
+  await input.fill('77')
+  expect(await values()).toEqual([77, 77])
+  await input.press('Escape')
+  expect(await values()).toEqual(original)
+  input = await editField(xField())
+  await input.fill('0')
+  await input.press('Enter')
+  expect(await values()).toEqual([0, 0])
+  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  expect(await values()).toEqual(original)
 })
 
 test('NumberField exposes mixed state through canonical data attributes', async () => {

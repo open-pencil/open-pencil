@@ -66,6 +66,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
       :min="0"
       @update:model-value="ctx.updateProp('gridColumnGap', $event)"
       @commit="(v: number, p: number) => ctx.commitProp('gridColumnGap', v, p)"
+      @cancel="ctx.cancelPreview"
     >
       <template #icon>
         <icon-lucide-move-horizontal class="size-3" />
@@ -76,6 +77,7 @@ function defaultTrackValue(sizing: GridTrackSizing): number {
       :min="0"
       @update:model-value="ctx.updateProp('gridRowGap', $event)"
       @commit="(v: number, p: number) => ctx.commitProp('gridRowGap', v, p)"
+      @cancel="ctx.cancelPreview"
     >
       <template #icon>
         <icon-lucide-move-vertical class="size-3" />
