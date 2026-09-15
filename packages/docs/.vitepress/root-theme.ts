@@ -11,6 +11,7 @@ import {
 import type { DefaultTheme } from 'vitepress'
 
 export const rootThemeConfig = (): DefaultTheme.Config => ({
+  logo: { light: '/brand/mark.svg', dark: '/brand/mark-dark.svg', alt: 'OpenPencil' },
   search: { provider: 'local' },
 
   nav: [

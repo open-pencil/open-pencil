@@ -30,11 +30,12 @@ const meta = {
 } satisfies Meta<{ fill: Fill; label: string }>
 
 export default meta
-export const Default: StoryObj<typeof meta> = {}
-export const Transparent: StoryObj<typeof meta> = {
+type Story = StoryObj<Omit<typeof meta, 'component'>>
+export const Default: Story = {}
+export const Transparent: Story = {
   args: { fill: { ...fill, color: { ...fill.color, a: 0.35 } } }
 }
-export const Gradient: StoryObj<typeof meta> = {
+export const Gradient: Story = {
   args: {
     fill: {
       ...fill,
@@ -46,10 +47,10 @@ export const Gradient: StoryObj<typeof meta> = {
     }
   }
 }
-export const ImagePlaceholder: StoryObj<typeof meta> = {
+export const ImagePlaceholder: Story = {
   args: { fill: { ...fill, type: 'IMAGE', imageHash: 'unavailable-preview' } }
 }
-export const PopoverComposition: StoryObj<typeof meta> = {
+export const PopoverComposition: Story = {
   name: 'Picker Trigger',
   render: (args) => ({
     components: { FillSwatchTrigger, PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent },

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <path data-part="body" fill="#087F79" fill-rule="evenodd" d="M94 28H149C183 28 205 50 205 84V97C205 131 183 153 149 153H115V188H67V55C67 40 79 28 94 28ZM115 65V116H146C159 116 167 108 167 95V86C167 73 159 65 146 65Z"/>
+  <path data-part="wood" fill="#EFB444" d="M67 188H115L91 228Z"/>
+  <path data-part="graphite" fill="#202B2D" d="M82 213H100L91 228Z"/>
+</svg>

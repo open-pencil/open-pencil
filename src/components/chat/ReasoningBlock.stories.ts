@@ -29,7 +29,7 @@ const meta = {
   })
 } satisfies Meta<Args>
 export default meta
-type Story = StoryObj<typeof meta>
+type Story = StoryObj<Omit<typeof meta, 'component'>>
 export const Collapsed: Story = {}
 export const Expanded: Story = { args: { display: 'expanded' } }
 export const WhileThinking: Story = { args: { display: 'while-thinking', streaming: true } }

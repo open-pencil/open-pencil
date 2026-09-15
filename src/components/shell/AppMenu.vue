@@ -36,6 +36,8 @@ import {
   updateMenuChecked
 } from '@/app/shell/menu/entry'
 import { appMenuShortcutLabel } from '@/app/shell/menu/shortcut'
+import { resolvedAppTheme } from '@/app/shell/theme'
+import BrandMark from '@/components/brand/BrandMark.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppShortcutText from '@/components/ui/menu/AppShortcutText.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
@@ -61,7 +63,7 @@ const subMenuCls = useMenuUI({ content: 'min-w-44' })
 <template>
   <div class="shrink-0 border-b border-border">
     <div class="flex items-center gap-2 px-2 py-1.5">
-      <img data-test-id="app-logo" src="/favicon-32.png" class="size-4" alt="OpenPencil" />
+      <BrandMark data-test-id="app-logo" :appearance="resolvedAppTheme" />
       <input
         v-if="editingName"
         ref="nameInput"

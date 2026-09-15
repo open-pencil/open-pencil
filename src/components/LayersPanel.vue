@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import AppMenu from '@/components/Shell/AppMenu.vue'
+import AppMenu from '@/components/shell/AppMenu.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 import splitterTheme from '@/theme/splitter'
 

@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./tarball": "./src/tarball.ts"
+    "./tarball": "./src/tarball.ts",
+    "./workspace": "./src/workspace/root.ts"
   },
   "scripts": {
     "test": "bun test tests"

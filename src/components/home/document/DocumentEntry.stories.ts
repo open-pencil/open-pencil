@@ -15,9 +15,10 @@ const meta = {
 } satisfies Meta<{ name: string; metadata: string; view: 'grid' | 'list'; disabled?: boolean }>
 
 export default meta
-export const Default: StoryObj<typeof meta> = {}
-export const List: StoryObj<typeof meta> = { args: { view: 'list' } }
-export const LongName: StoryObj<typeof meta> = {
+type Story = StoryObj<Omit<typeof meta, 'component'>>
+export const Default: Story = {}
+export const List: Story = { args: { view: 'list' } }
+export const LongName: Story = {
   args: { name: 'A deliberately long document name that must stay inside the document card' }
 }
-export const Disabled: StoryObj<typeof meta> = { args: { disabled: true } }
+export const Disabled: Story = { args: { disabled: true } }

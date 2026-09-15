@@ -154,6 +154,10 @@ PR titles use Conventional Commits because GitHub uses them as merge subjects. T
 - Component domains use lowercase/kebab-case folders; Vue files stay PascalCase and component composables camelCase. Do not add new PascalCase app folders or root-level base controls; migrate old ones when touched.
 - Non-component folders/files use lowercase or kebab-case except standard entrypoints. Group multi-file domains in subfolders instead of repeated sibling prefixes (`selection/container.ts`, not `selection-container.ts`).
 
+### Brand assets
+
+Canonical brand artwork lives in `assets/brand/`: the main mark and an optical micro master. `tools/brand/` derives web/docs/native icons locally with RealFaviconGenerator and Tauri; generated assets are ignored, not committed. Vite/VitePress configs prepare their own targets, and Tauri dev/build hooks prepare native icons. Direct Cargo checks must run `bun run generate:icons --target desktop` first. Keep the app manifest in `vite/pwa.ts`, use `BrandMark` for in-app branding, and never symlink web assets to desktop icons. See `assets/brand/README.md` for commands and output ownership.
+
 ### Repo tools and scripts
 
 Private tooling belongs under `tools/<domain>/{src,tests}`, with kebab-case domains and focused tests. `scripts/` may contain only tiny compatibility entrypoints; put real workflow, release, architecture, package, or visual tooling in `tools/`.

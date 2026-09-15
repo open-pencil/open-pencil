@@ -148,6 +148,9 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
+      - name: Validate generated brand assets
+        run: bun run check:icons
+
       - name: Validate translations
         run: bun run check:i18n
 
@@ -212,6 +215,9 @@ jobs:
 
       - name: Typecheck native interaction tests
         run: bun run check:native-test
+
+      - name: Generate native brand assets
+        run: bun run generate:icons --target desktop
 
       - name: Compile native-test Tauri feature
         run: cargo check --manifest-path desktop/Cargo.toml --features native-test

@@ -18,8 +18,8 @@ import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vu
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
 import RecoveryDialog from '@/components/recovery/RecoveryDialog.vue'
 import SettingsDialog from '@/components/settings/SettingsDialog.vue'
-import AppShell from '@/components/Shell/AppShell.vue'
-import AppToast from '@/components/Shell/AppToast.vue'
+import AppShell from '@/components/shell/AppShell.vue'
+import AppToast from '@/components/shell/AppToast.vue'
 
 const store = useEditorStore()
 const { updates, locale } = useI18n()

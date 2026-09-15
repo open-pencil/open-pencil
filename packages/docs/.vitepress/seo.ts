@@ -19,7 +19,10 @@ export const LOCALES: Record<string, { hreflang: string; ogLocale: string; prefi
 }
 
 export const siteHead: [string, Record<string, string>][] = [
-  ['link', { rel: 'icon', type: 'image/png', href: '/favicon.png' }],
+  ['link', { rel: 'icon', href: '/favicon.ico', sizes: 'any' }],
+  ['link', { rel: 'icon', type: 'image/png', href: '/brand/favicon-96x96.png', sizes: '96x96' }],
+  ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/favicon.svg' }],
+  ['link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }],
   ['link', { rel: 'alternate', type: 'text/plain', title: 'llms.txt', href: '/llms.txt' }],
   ['link', { rel: 'alternate', type: 'text/plain', title: 'llms-full.txt', href: '/llms-full.txt' }],
   ['meta', { property: 'og:type', content: 'website' }],

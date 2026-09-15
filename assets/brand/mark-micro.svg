@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <path data-part="body" fill="#087F79" fill-rule="evenodd" d="M5 1H9C12.1 1 14 2.9 14 6S12.1 11 9 11H6V13H3V3C3 1.9 3.9 1 5 1ZM6 4V8H9C10.3 8 11 7.3 11 6S10.3 4 9 4Z"/>
+  <path data-part="wood" fill="#EFB444" d="M3 13H6L4.5 15.5Z"/>
+</svg>

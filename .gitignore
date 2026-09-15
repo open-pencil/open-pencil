@@ -49,6 +49,17 @@ storybook-static/
 /desktop/*.key
 !/desktop/*.key.pub
 
+# Generated from assets/brand by tools/brand (never hand-edit these outputs)
+/.cache/brand/
+/.cache/brand.lock/
+/public/brand/
+/public/favicon.ico
+/public/apple-touch-icon.png
+/packages/docs/public/brand/
+/packages/docs/public/favicon.ico
+/packages/docs/public/apple-touch-icon.png
+/desktop/icons/
+
 # Copied from node_modules at build time
 public/canvaskit.wasm
 public/canvaskit-webgpu/

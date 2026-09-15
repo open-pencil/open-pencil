@@ -2,7 +2,7 @@ import { join, resolve } from 'node:path'
 
 import { findWorkspaceDir, readPackageJSON } from 'pkg-types'
 
-import { parseWorkspace } from './schema'
+import { parseWorkspace } from './schema.ts'
 
 /** Resolve once at CLI boundaries; nearest lockfile keeps nested Git worktrees isolated. */
 export async function resolveWorkspaceRoot(start: string, explicitRoot?: string): Promise<string> {

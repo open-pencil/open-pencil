@@ -15,6 +15,7 @@
     "preview": "vitepress preview"
   },
   "devDependencies": {
+    "@open-pencil/brand-tools": "workspace:*",
     "@shikijs/vitepress-twoslash": "^4.4.3",
     "@tailwindcss/vite": "^4.3.3",
     "vitepress": "^2.0.0-alpha.19",

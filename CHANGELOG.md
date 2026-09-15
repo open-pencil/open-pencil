@@ -40,6 +40,7 @@
 
 ### Changed
 
+- Refresh the OpenPencil mark across the editor, documentation, browser tabs, installed web apps, and desktop icons, with small-size and dark-background adaptations.
 - Explore editable component, typography, and paint comparisons in the demo, with the original examples preserved on a reference page.
 - Use compact desktop Home search actions with consistent responsive layout and control sizing.
 - Keep pixel-grid rounding invisible while showing alignment guides only for real geometry, objects, and canvas/layout guides.

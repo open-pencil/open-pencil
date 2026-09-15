@@ -8,7 +8,9 @@ import { useEditorStore } from '@/app/editor/active-store'
 import { appRuntimeConfig } from '@/app/runtime/config'
 import { loadEditorLayout, saveEditorLayout } from '@/app/shell/layout-storage'
 import { appMenuShortcut } from '@/app/shell/menu/shortcut'
+import { resolvedAppTheme } from '@/app/shell/theme'
 import { activeTab } from '@/app/tabs'
+import BrandMark from '@/components/brand/BrandMark.vue'
 import CanvasSplitRoot from '@/components/canvas/CanvasSplitRoot.vue'
 import CollabPanel from '@/components/CollabPanel/CollabPanel.vue'
 import EditorCanvas from '@/components/EditorCanvas.vue'
@@ -98,7 +100,7 @@ const horizontalSplitterStyles = tv(splitterTheme)({ direction: 'horizontal' })
         v-if="!isMobile"
         class="absolute top-7 left-7 z-10 flex items-center gap-2 rounded-lg border border-border bg-panel px-2 py-1 shadow-sm"
       >
-        <img src="/favicon-32.png" class="size-4" alt="OpenPencil" />
+        <BrandMark :appearance="resolvedAppTheme" />
         <span data-test-id="editor-document-name" class="text-xs text-surface">{{
           store.state.documentName
         }}</span>
