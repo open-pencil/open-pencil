@@ -80,6 +80,8 @@ export async function resolveAPIKey(): Promise<string | null> {
 export async function setAPIKey(key: string): Promise<void> {
   const reference = designCredentialReference()
   if (!reference) return
+  // Migrate first so clearing also removes a value that only exists in legacy storage.
+  await initializeCredentialMigration()
   const value = key.trim()
   if (value) await appCredentialServices.manager.set(reference, value)
   else await appCredentialServices.manager.clear(reference)

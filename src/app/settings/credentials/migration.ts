@@ -82,8 +82,16 @@ export async function migrateLegacyCredentials(
   return true
 }
 
-export async function initializeCredentialMigration(): Promise<boolean> {
-  const storage = browserCredentialStorage()
+let migrationInFlight: Promise<boolean> | null = null
+
+export async function initializeCredentialMigration(
+  storage = browserCredentialStorage()
+): Promise<boolean> {
   if (!storage) return true
-  return migrateLegacyCredentials(storage, appCredentialStore)
+  if (!migrationInFlight) {
+    migrationInFlight = migrateLegacyCredentials(storage, appCredentialStore).finally(() => {
+      migrationInFlight = null
+    })
+  }
+  return migrationInFlight
 }

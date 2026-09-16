@@ -3,6 +3,7 @@ import { describe, expect, test } from 'bun:test'
 import { MemoryCredentialStore } from '@/app/settings/credentials/memory'
 import {
   hasLegacyCredential,
+  initializeCredentialMigration,
   migrateLegacyCredentials,
   PEXELS_CREDENTIAL,
   providerCredentialRef
@@ -42,6 +43,15 @@ class UnavailableCredentialStore extends MemoryCredentialStore {
   }
 }
 
+class CountingStorage extends TestStorage {
+  scans = 0
+
+  override key(index: number): string | null {
+    this.scans++
+    return super.key(index)
+  }
+}
+
 describe('legacy credential migration', () => {
   test('recognizes pending credentials without migrating or removing them', () => {
     const storage = new TestStorage()
@@ -54,6 +64,19 @@ describe('legacy credential migration', () => {
     expect(storage.getItem('open-pencil:ai-key:openrouter')).toBe('pending-key')
     storage.setItem('open-pencil:credential-migration', '1')
     expect(hasLegacyCredential(providerCredentialRef('openrouter'), storage)).toBe(false)
+  })
+
+  test('concurrent migrations share one in-flight run', async () => {
+    const storage = new CountingStorage()
+    storage.setItem('open-pencil:pexels-api-key', 'legacy-pexels-key')
+
+    await Promise.all([
+      initializeCredentialMigration(storage),
+      initializeCredentialMigration(storage)
+    ])
+
+    expect(storage.scans).toBe(storage.length)
+    expect(storage.getItem('open-pencil:pexels-api-key')).toBeNull()
   })
 
   test('verifies encrypted destinations before removing plaintext keys', async () => {
@@ -78,5 +101,17 @@ describe('legacy credential migration', () => {
 
     expect(await migrateLegacyCredentials(storage, new UnavailableCredentialStore())).toBeFalse()
     expect(storage.getItem('open-pencil:ai-key:openrouter')).toBe('keep-me')
+  })
+
+  test('clearing after migration removes a legacy-only credential for good', async () => {
+    const storage = new TestStorage()
+    const store = new MemoryCredentialStore()
+    storage.setItem('open-pencil:pexels-api-key', 'legacy-pexels-key')
+
+    expect(await migrateLegacyCredentials(storage, store)).toBeTrue()
+    await store.remove(PEXELS_CREDENTIAL)
+
+    expect(hasLegacyCredential(PEXELS_CREDENTIAL, storage)).toBeFalse()
+    expect(await store.read(PEXELS_CREDENTIAL)).toBeNull()
   })
 })
