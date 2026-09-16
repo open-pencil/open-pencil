@@ -12,7 +12,9 @@ import { resolveLanguageModelID } from '@/app/ai/chat/model'
 import { buildReasoningProviderOptions, type AIProviderOptions } from '@/app/ai/chat/reasoning'
 import SYSTEM_PROMPT from '@/app/ai/chat/system-prompt'
 import { createAIModelRuntime, resolveModelConnectionAPIKey } from '@/app/ai/models'
-import { MAX_AGENT_STEPS, createAITools, recordStep, resetRunSteps } from '@/app/ai/tools'
+import { createAITools, recordStep, resetRunSteps } from '@/app/ai/tools'
+import { enabledAIToolDefinitions } from '@/app/ai/tools/catalog'
+import { aiToolOverrides } from '@/app/ai/tools/preferences'
 import {
   recordChatCompleted,
   recordChatFailed,
@@ -21,6 +23,7 @@ import {
 import type { getActiveEditorStore } from '@/app/editor/active-store'
 
 import { resumableTransport } from './history/continuation'
+import { maxAgentSteps } from './preferences'
 
 type EditorStore = ReturnType<typeof getActiveEditorStore>
 
@@ -95,13 +98,19 @@ export function createToolLoopTransport({
     model,
     instructions: SYSTEM_PROMPT,
     tools,
-    stopWhen: stepCountIs(MAX_AGENT_STEPS),
     maxOutputTokens,
     providerOptions,
     prepareCall: (options) => {
-      resetRunSteps(store)
+      const stepLimit = maxAgentSteps.value
+      const enabledNames = new Set(
+        enabledAIToolDefinitions(aiToolOverrides.value).map((tool) => tool.name)
+      )
+      resetRunSteps(store, stepLimit)
       return {
         ...options,
+        stopWhen: stepCountIs(stepLimit),
+        // Keep the full catalog for validating history; offer only enabled tools to this request.
+        tools: Object.fromEntries(Object.entries(tools).filter(([name]) => enabledNames.has(name))),
         maxOutputTokens,
         providerOptions
       }

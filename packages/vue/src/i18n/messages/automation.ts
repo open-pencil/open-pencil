@@ -3,6 +3,22 @@ import { params } from '@nanostores/i18n'
 import { i18n } from '#vue/i18n/create'
 
 export const automationMessageDefaults = {
+  toolsTab: 'Tools',
+  connectionsTab: 'Connections',
+  viewLabel: 'Automation view',
+  toolAccess: 'Tool access',
+  toolAccessDescription:
+    'Configure design tools independently for built-in AI and the local MCP server.',
+  toolAccessTarget: 'Configure tool access for',
+  builtInAI: 'Built-in AI',
+  localMCP: 'Local MCP',
+  restoreToolDefaults: 'Restore defaults',
+  aiToolAccessDescription:
+    'Choose tools for direct AI model connections. ACP and Pi agents use MCP access instead.',
+  mcpToolAccessDescription:
+    'Choose tools advertised by the local server to connected agents and clients.',
+  aiToolsNotice:
+    'Changes apply to your next message. Tool switches are not a sandbox: enabled script tools can still perform other design operations.',
   localServer: 'Local server',
   webmcpDescription:
     'Let browser agents use this document directly, without a local MCP server or bearer token. Local server settings do not apply here.',
@@ -55,7 +71,7 @@ export const automationMessageDefaults = {
   tools: 'Available tools',
   toolsEnabled: params('{enabled} of {total} enabled'),
   enableAllTools: 'Enable all',
-  searchTools: 'Search MCP tools',
+  searchTools: 'Search tools',
   readOnlyTools: 'Read-only tools',
   sideEffectTools: 'Tools with side effects',
   toolsRestartNotice:

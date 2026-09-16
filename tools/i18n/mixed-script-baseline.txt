@@ -1,3 +1,4 @@
+ja:ai.maxAgentStepsHint
 ja:ai.apiKey
 ja:ai.apiType
 ja:ai.baseURL
@@ -45,7 +46,10 @@ ja:automation.noConnections
 ja:automation.restart
 ja:automation.rootDirectory
 ja:automation.rootDirectoryDescription
-ja:automation.searchTools
+ja:automation.toolAccessDescription
+ja:automation.builtInAI
+ja:automation.localMCP
+ja:automation.aiToolAccessDescription
 ja:automation.serverURL
 ja:automation.toolsRestartNotice
 ja:code.copyJSXReference
@@ -107,7 +111,6 @@ ja:settings.invalidURL
 ja:settings.modelIDHint
 ja:settings.baseURLHint
 ja:settings.aiAndAgents
-ja:settings.automation
 ja:settings.temporaryDisableSnappingHint
 ja:storage.accessKeyID
 ja:storage.copyCors
@@ -118,6 +121,7 @@ ja:updates.downloading
 ja:updates.installed
 ja:updates.unavailable
 ja:updates.upToDate
+zh-cn:ai.maxAgentStepsHint
 zh-cn:ai.apiKey
 zh-cn:ai.apiType
 zh-cn:ai.baseURL
@@ -165,7 +169,10 @@ zh-cn:automation.noConnections
 zh-cn:automation.restart
 zh-cn:automation.rootDirectory
 zh-cn:automation.rootDirectoryDescription
-zh-cn:automation.searchTools
+zh-cn:automation.toolAccessDescription
+zh-cn:automation.builtInAI
+zh-cn:automation.localMCP
+zh-cn:automation.aiToolAccessDescription
 zh-cn:automation.serverURL
 zh-cn:automation.toolsRestartNotice
 zh-cn:code.copyJSXReference
@@ -224,7 +231,6 @@ zh-cn:rendering.urlOverride
 zh-cn:settings.invalidURL
 zh-cn:settings.baseURLHint
 zh-cn:settings.aiAndAgents
-zh-cn:settings.automation
 zh-cn:settings.temporaryDisableSnappingHint
 zh-cn:storage.accessKeyID
 zh-cn:storage.copyCors

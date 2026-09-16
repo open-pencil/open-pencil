@@ -4,24 +4,17 @@ import { computed } from 'vue'
 
 import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue'
 
-import {
-  configurableMCPTools,
-  disabledMCPTools,
-  mcpAuthenticationEnabled,
-  mcpRootDirectory
-} from '@/app/automation/mcp/preferences'
+import { mcpAuthenticationEnabled, mcpRootDirectory } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
+import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
 import { isTauri } from '@/app/tauri/env'
-import SettingsDisclosure from '@/components/settings/layout/SettingsDisclosure.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
-
-import MCPToolAccessPanel from './MCPToolAccessPanel.vue'
 
 const automation = useAutomationMessages()
 const common = useCommonMessages()
@@ -99,18 +92,11 @@ const { restart, chooseRootDirectory } = useMCPSettings()
       </div>
     </SettingsGroup>
     <AppAlert v-if="mcpRuntime.error" tone="error" :heading="mcpRuntime.error" />
-    <SettingsDisclosure>
-      <template #label>{{ automation.tools }}</template>
-      <MCPToolAccessPanel v-model:disabled-tools="disabledMCPTools" :tools="configurableMCPTools">
-        <template #footer>
-          {{
-            mcpRuntime.externallyManaged
-              ? automation.externalRestartNotice
-              : automation.toolsRestartNotice
-          }}
-        </template>
-      </MCPToolAccessPanel>
-    </SettingsDisclosure>
+    <div>
+      <AppButton variant="link" @click="openToolAccessSettings('mcp')">{{
+        automation.toolAccess
+      }}</AppButton>
+    </div>
     <div>
       <AppButton
         color="primary"

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+
+- Configure built-in AI and local MCP tool access independently on the Automation settings page, including optional extended AI tools, searchable read-only and side-effect groups, and per-target defaults (#584).
+- Set the built-in AI's maximum steps per message in Chat settings, with consistent stopping and remaining-step warnings (#573).
+
 ## 0.15.0 — 2026-09-16
 
 ### Breaking changes

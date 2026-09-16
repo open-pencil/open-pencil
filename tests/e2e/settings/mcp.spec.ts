@@ -5,10 +5,11 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 async function selectMCPSection(page: Page, mobile: boolean) {
   if (mobile) {
     await page.getByRole('combobox', { name: 'Settings', exact: true }).click()
-    await page.getByRole('option', { name: 'MCP & automation', exact: true }).click()
+    await page.getByRole('option', { name: 'Automation', exact: true }).click()
   } else {
     await page.getByTestId('settings-section-mcp').click()
   }
+  await page.getByRole('button', { name: 'Connections', exact: true }).click()
 }
 
 for (const viewport of [
@@ -25,11 +26,11 @@ for (const viewport of [
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
     await selectMCPSection(page, viewport.width < 640)
     await expect(page.getByRole('heading', { name: 'Local server', exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Available tools', exact: true }).click()
-    const search = page.getByRole('searchbox', { name: 'Search MCP tools' })
+    await page.getByRole('button', { name: 'Tool access', exact: true }).click()
+    const search = page.getByRole('searchbox', { name: 'Search tools' })
     await search.fill('no-such-mcp-tool')
     await expect(page.getByText('No tools match your search.', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: 'Available tools', exact: true }).click()
+    await selectMCPSection(page, viewport.width < 640)
     const access = page.getByRole('combobox', { name: 'Browser agent access' })
     await expect(access).toHaveText('Off')
     await access.click()
@@ -91,11 +92,11 @@ test('MCP connection forms validate, retain invalid drafts and reset dirty state
   await expect(name).toHaveValue('')
   await expect(name).toHaveAttribute('aria-invalid', 'false')
   await name.fill('Temporary')
-  await page.getByTestId('settings-section-general').click()
+  await page.getByRole('button', { name: 'Tools', exact: true }).click()
   await expect(page.getByRole('alertdialog')).toBeVisible()
   await page.getByRole('button', { name: 'Keep editing', exact: true }).click()
   await name.fill('')
-  await page.getByTestId('settings-section-general').click()
+  await page.getByRole('button', { name: 'Tools', exact: true }).click()
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
   await selectMCPSection(page, false)
   await page.getByRole('button', { name: 'Add connection', exact: true }).click()

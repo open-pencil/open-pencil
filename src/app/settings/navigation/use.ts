@@ -54,8 +54,12 @@ export function provideSettingsNavigation() {
   return navigation
 }
 
+export function useSettingsNavigation() {
+  return inject(navigationKey, null)
+}
+
 export function useSettingsFormGuard(form: SettingsFormGuard, when?: Readonly<Ref<boolean>>) {
-  const navigation = inject(navigationKey, null)
+  const navigation = useSettingsNavigation()
   if (!navigation) return
   watch(
     () => when?.value ?? true,

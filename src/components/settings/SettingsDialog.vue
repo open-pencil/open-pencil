@@ -12,11 +12,11 @@ import {
   type SettingsSection
 } from '@/app/settings/dialog'
 import { provideSettingsNavigation } from '@/app/settings/navigation/use'
+import AutomationSettingsPanel from '@/components/settings/automation/AutomationSettingsPanel.vue'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
-import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
 import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
@@ -144,7 +144,7 @@ function onOpenChange(open: boolean): void {
         <SettingsPage><DiagnosticsSettingsPanel /></SettingsPage>
       </AppTabsContent>
       <AppTabsContent value="mcp" as-child>
-        <MCPWorkspacePanel />
+        <AutomationSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="media" as-child>
         <MediaSettingsPanel />

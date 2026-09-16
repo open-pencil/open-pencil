@@ -5,7 +5,7 @@ import { ref } from 'vue'
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 import { useAutomationMessages } from '@open-pencil/vue'
 
-import MCPToolAccessPanel from './MCPToolAccessPanel.vue'
+import ToolAccessList from './ToolAccessList.vue'
 
 const tools: ToolDescriptor[] = Array.from({ length: 80 }, (_, index) => ({
   name: `inspect_component_${index + 1}`,
@@ -17,10 +17,10 @@ const tools: ToolDescriptor[] = Array.from({ length: 80 }, (_, index) => ({
   enabled: true
 }))
 const meta = {
-  title: 'Settings/MCP/Tool access',
+  title: 'Settings/Automation/Tool access',
   args: { tools, disabledTools: [], externallyManaged: false },
   render: (args) => ({
-    components: { MCPToolAccessPanel },
+    components: { ToolAccessList },
     setup: () => ({
       args,
       disabled: ref([...args.disabledTools]),
@@ -28,9 +28,9 @@ const meta = {
     }),
     template: `
       <div class="flex h-96 max-w-lg bg-panel">
-        <MCPToolAccessPanel :tools="args.tools" v-model:disabled-tools="disabled">
+        <ToolAccessList :tools="args.tools" v-model:disabled-tools="disabled" @reset="disabled = []">
           <template #footer>{{ args.externallyManaged ? automation.externalRestartNotice : automation.toolsRestartNotice }}</template>
-        </MCPToolAccessPanel>
+        </ToolAccessList>
       </div>`
   })
 } satisfies Meta<{ tools: ToolDescriptor[]; disabledTools: string[]; externallyManaged: boolean }>
@@ -51,7 +51,7 @@ export const ToggleAccess: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByRole('switch', { name: 'inspect_component_1' }))
     await expect(canvas.getByText('79 of 80 enabled')).toBeVisible()
-    await userEvent.click(canvas.getByRole('button', { name: 'Enable all' }))
+    await userEvent.click(canvas.getByRole('button', { name: 'Restore defaults' }))
     await expect(canvas.getByText('80 of 80 enabled')).toBeVisible()
   }
 }

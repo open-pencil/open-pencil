@@ -49,6 +49,7 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
+  await page.getByRole('button', { name: 'Connections', exact: true }).click()
   const section = page.getByTestId('app-settings-dialog')
   await section.getByRole('button', { name: 'Add connection' }).click()
   await section.getByLabel('Connection name').fill('GitHub')
@@ -71,6 +72,7 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
+  await page.getByRole('button', { name: 'Connections', exact: true }).click()
   await expect(section).toContainText('https://example.com/mcp')
   await expect(section).toContainText('Enabled')
   await section.getByRole('button', { name: /GitHub/ }).click()
@@ -122,6 +124,7 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
+  await page.getByRole('button', { name: 'Connections', exact: true }).click()
 
   const authentication = page.getByTestId('settings-mcp-authentication')
   await expect(authentication).toHaveAttribute('data-state', 'checked')
@@ -130,32 +133,29 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
+  await page.getByRole('button', { name: 'Connections', exact: true }).click()
   await expect(authentication).toHaveAttribute('data-state', 'unchecked')
   await authentication.click()
 
-  await page.getByRole('button', { name: 'Available tools', exact: true }).click()
-  const search = page.getByTestId('settings-mcp-tool-search')
+  await page.getByRole('button', { name: 'Tool access', exact: true }).click()
+  const search = page.getByRole('searchbox', { name: 'Search tools' })
   await search.fill('create_shape')
   await expect(search).toHaveValue('create_shape')
-  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toBeVisible()
-  await expect(page.getByTestId('settings-mcp-tool-get_page_tree')).toBeHidden()
+  const createShape = page.getByRole('switch', { name: 'create_shape', exact: true })
+  await expect(createShape).toBeVisible()
+  await expect(page.getByRole('switch', { name: 'get_page_tree', exact: true })).toBeHidden()
 
-  await page.getByTestId('settings-mcp-tool-create_shape').click()
+  await createShape.click()
   await page.reload()
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
-  await page.getByRole('button', { name: 'Available tools', exact: true }).click()
-  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toHaveAttribute(
-    'data-state',
-    'unchecked'
-  )
+  await page.getByRole('button', { name: 'Connections', exact: true }).click()
+  await page.getByRole('button', { name: 'Tool access', exact: true }).click()
+  await expect(createShape).toHaveAttribute('data-state', 'unchecked')
 
-  await page.getByRole('button', { name: 'Enable all' }).click()
-  await expect(page.getByTestId('settings-mcp-tool-create_shape')).toHaveAttribute(
-    'data-state',
-    'checked'
-  )
+  await page.getByRole('button', { name: 'Restore defaults' }).click()
+  await expect(createShape).toHaveAttribute('data-state', 'checked')
 })
 
 test('model library keeps reusable profiles and role assignments', async ({ page }) => {

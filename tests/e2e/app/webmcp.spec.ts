@@ -51,6 +51,7 @@ test('native WebMCP discovery, editing, validation and undo', async ({ page, bro
     expect(frames.size).toBe(0)
     await page.getByTestId('app-settings-trigger').click()
     await page.getByTestId('settings-section-mcp').click()
+    await page.getByRole('button', { name: 'Connections', exact: true }).click()
     const access = page.getByRole('combobox', { name: 'Browser agent access' })
     await expect(access).toHaveText('Off')
     await access.click()

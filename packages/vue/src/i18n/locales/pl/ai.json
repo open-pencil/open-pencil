@@ -1,4 +1,7 @@
 {
+  "maxAgentSteps": "Maksymalna liczba kroków na wiadomość",
+  "maxAgentStepsHint": "Tylko dla wbudowanej AI; ACP i Pi zarządzają własnymi limitami. Zapis po naciśnięciu Enter lub opuszczeniu pola, obowiązuje od następnej wiadomości. Wyższe limity mogą zwiększyć koszt.",
+  "maxAgentStepsRange": "Wpisz liczbę całkowitą od {min} do {max}.",
   "connectionTestSuccess": "Połączono pomyślnie. Model jest dostępny.",
   "connectionTestMissingAPIKey": "Wprowadź klucz API przed rozpoczęciem testu.",
   "connectionTestMissingBaseURL": "Wprowadź bazowy adres URL przed rozpoczęciem testu.",

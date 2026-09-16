@@ -1,4 +1,7 @@
 {
+  "maxAgentSteps": "Máximo de pasos por mensaje",
+  "maxAgentStepsHint": "Solo para la IA integrada; ACP y Pi controlan sus propios límites. Se guarda al pulsar Enter o salir del campo y se aplica al siguiente mensaje. Un límite mayor puede aumentar el coste.",
+  "maxAgentStepsRange": "Introduce un número entero entre {min} y {max}.",
   "connectionTestSuccess": "Conexión correcta. Se puede acceder al modelo.",
   "connectionTestMissingAPIKey": "Introduce una clave API antes de probar.",
   "connectionTestMissingBaseURL": "Introduce una URL base antes de probar.",

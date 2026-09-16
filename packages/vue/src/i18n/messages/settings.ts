@@ -24,7 +24,7 @@ export const settingsMessageDefaults = {
   usage: 'Usage',
   diagnostics: 'Diagnostics',
   media: 'Media',
-  automation: 'MCP & automation',
+  automation: 'Automation',
   edit: 'Edit',
   configured: 'Configured',
   notConfigured: 'Not configured',

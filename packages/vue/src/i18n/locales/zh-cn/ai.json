@@ -1,4 +1,7 @@
 {
+  "maxAgentSteps": "每条消息的最大步骤数",
+  "maxAgentStepsHint": "仅适用于内置 AI；ACP 和 Pi 使用各自的限制。按 Enter 或离开输入框时保存，从下一条消息开始生效。提高上限可能增加费用。",
+  "maxAgentStepsRange": "请输入 {min} 到 {max} 之间的整数。",
   "connectionTestSuccess": "连接成功。模型可访问。",
   "connectionTestMissingAPIKey": "请在测试前输入 API 密钥。",
   "connectionTestMissingBaseURL": "请在测试前输入基础 URL。",
