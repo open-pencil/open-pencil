@@ -18,7 +18,10 @@ import {
   refreshMediaCredentials,
   credentialPersistenceRevision
 } from '@/app/settings/credentials/media'
-import { initializeCredentialMigration } from '@/app/settings/credentials/migration'
+import {
+  hasLegacyCredential,
+  initializeCredentialMigration
+} from '@/app/settings/credentials/migration'
 import type { CredentialRef, CredentialStatus } from '@/app/settings/credentials/types'
 
 export const providerID = designProviderID
@@ -46,7 +49,8 @@ export const isConfigured = computed(() => {
 })
 
 async function refreshStatus(reference: CredentialRef): Promise<CredentialStatus> {
-  return appCredentialServices.manager.status(reference)
+  const status = await appCredentialServices.manager.status(reference)
+  return status === 'missing' && hasLegacyCredential(reference) ? 'configured' : status
 }
 
 function designCredentialReference(): CredentialRef | null {
@@ -60,13 +64,15 @@ export async function refreshAIProviderStatus(): Promise<void> {
   apiKeyStatus.value = reference ? await refreshStatus(reference) : 'missing'
 }
 
-export const credentialsReady = initializeCredentialMigration().then(async () => {
-  await Promise.all([refreshAIProviderStatus(), refreshMediaCredentials()])
-  return undefined
-})
+// Startup checks metadata only. Secret migration/resolution belongs to explicit provider use.
+export const credentialsReady = Promise.all([
+  refreshAIProviderStatus(),
+  refreshMediaCredentials()
+]).then(() => undefined)
 
 export async function resolveAPIKey(): Promise<string | null> {
   await credentialsReady
+  await initializeCredentialMigration()
   const reference = designCredentialReference()
   return reference ? appCredentialServices.resolver.resolve(reference) : null
 }

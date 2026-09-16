@@ -1,7 +1,7 @@
 import { AI_PROVIDERS, type AIProviderID } from '@open-pencil/core/constants'
 
 import { appCredentialStore } from '@/app/settings/credentials/app'
-import { credentialRef } from '@/app/settings/credentials/reference'
+import { credentialKey, credentialRef } from '@/app/settings/credentials/reference'
 import { browserCredentialStorage } from '@/app/settings/credentials/storage'
 import type { CredentialRef, CredentialStore } from '@/app/settings/credentials/types'
 
@@ -46,6 +46,18 @@ function legacyCredentials(storage: Storage): LegacyCredential[] {
   }
 
   return credentials
+}
+
+export function hasLegacyCredential(
+  reference: CredentialRef,
+  storage = browserCredentialStorage()
+): boolean {
+  if (!storage || storage.getItem(MIGRATION_VERSION_KEY) === MIGRATION_VERSION) return false
+  return legacyCredentials(storage).some(
+    (entry) =>
+      credentialKey(entry.reference) === credentialKey(reference) &&
+      Boolean(storage.getItem(entry.storageKey)?.trim())
+  )
 }
 
 export async function migrateLegacyCredentials(

@@ -18,6 +18,7 @@ import {
   recordChatFailed,
   recordModelStepCompleted
 } from '@/app/diagnostics/events'
+import type { AIDiagnosticContext } from '@/app/diagnostics/events/ai'
 import type { getActiveEditorStore } from '@/app/editor/active-store'
 
 import { resumableTransport } from './history/continuation'
@@ -41,6 +42,7 @@ export type ToolLoopTransportOptions = {
   maxOutputTokens: number
   reasoningEffort: string
   onError?: (error: unknown) => void
+  diagnosticContext?: AIDiagnosticContext
 }
 
 const ANTHROPIC_CACHE_CONTROL = {
@@ -80,9 +82,10 @@ export function createToolLoopTransport({
   effectiveModelID,
   maxOutputTokens,
   reasoningEffort,
-  onError
+  onError,
+  diagnosticContext = {}
 }: ToolLoopTransportOptions) {
-  const tools = createAITools(store)
+  const tools = createAITools(store, diagnosticContext)
   const cacheProviderOptions = supportsAnthropicCaching(providerID, effectiveModelID)
     ? ANTHROPIC_CACHE_CONTROL
     : undefined
@@ -108,14 +111,17 @@ export function createToolLoopTransport({
     },
     onStepFinish: ({ usage }) => {
       recordStep(store)
-      recordModelStepCompleted({
-        provider: providerID,
-        model: effectiveModelID,
-        inputTokens: usage.inputTokens ?? null,
-        outputTokens: usage.outputTokens ?? null,
-        cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? null,
-        cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? null
-      })
+      recordModelStepCompleted(
+        {
+          provider: providerID,
+          model: effectiveModelID,
+          inputTokens: usage.inputTokens ?? null,
+          outputTokens: usage.outputTokens ?? null,
+          cacheReadTokens: usage.inputTokenDetails.cacheReadTokens ?? null,
+          cacheWriteTokens: usage.inputTokenDetails.cacheWriteTokens ?? null
+        },
+        diagnosticContext
+      )
     }
   })
 
@@ -152,19 +158,22 @@ export function createChatSessionManager({
     activeProviderError ??= error
   }
 
-  function handleChatFinish({
-    finishReason,
-    isAbort,
-    isDisconnect,
-    isError
-  }: {
-    finishReason?: FinishReason
-    isAbort: boolean
-    isDisconnect: boolean
-    isError: boolean
-  }): void {
+  function handleChatFinish(
+    context: AIDiagnosticContext,
+    {
+      finishReason,
+      isAbort,
+      isDisconnect,
+      isError
+    }: {
+      finishReason?: FinishReason
+      isAbort: boolean
+      isDisconnect: boolean
+      isError: boolean
+    }
+  ): void {
     if (!isAbort && !isDisconnect && !isError) {
-      recordChatCompleted({ finishReason: finishReason ?? null })
+      recordChatCompleted({ finishReason: finishReason ?? null }, context)
     }
   }
 
@@ -226,7 +235,7 @@ export function createChatSessionManager({
     return transport as ChatTransport<UIMessage>
   }
 
-  async function createTransport(store: EditorStore) {
+  async function createTransport(store: EditorStore, diagnosticContext: AIDiagnosticContext) {
     if (overrideTransport) return overrideTransport()
 
     await destroyAgentTransports()
@@ -246,7 +255,8 @@ export function createChatSessionManager({
       }),
       maxOutputTokens: runtime.role.profile.maxOutputTokens,
       reasoningEffort: runtime.role.profile.reasoningEffort ?? '',
-      onError: captureProviderError
+      onError: captureProviderError,
+      diagnosticContext
     })
   }
 
@@ -264,22 +274,32 @@ export function createChatSessionManager({
 
     if (!chat || transportDirty || currentChatStore !== store) {
       const messages = initialMessages ?? currentChatMessages.get(store)
+      const diagnosticContext: AIDiagnosticContext = { sessionId, runId: crypto.randomUUID() }
       let transport: ChatTransport<UIMessage>
       if (isACPProvider.value) transport = await createActiveACPTransport()
       else if (isHarnessProvider.value) transport = await createActiveHarnessTransport(sessionId)
-      else transport = await createTransport(store)
+      else transport = await createTransport(store, diagnosticContext)
       chat = new Chat<UIMessage>({
-        transport,
+        transport: {
+          sendMessages: (options) => {
+            diagnosticContext.runId = crypto.randomUUID()
+            return transport.sendMessages(options)
+          },
+          reconnectToStream: (options) => transport.reconnectToStream(options)
+        },
         messages,
         onError: (error) => {
           const reportedError = activeProviderError ?? error
           activeProviderError = null
           failure.value = classifyAIChatError(reportedError)
-          recordChatFailed({
-            errorName: reportedError instanceof Error ? reportedError.name : 'unknown'
-          })
+          recordChatFailed(
+            {
+              errorName: reportedError instanceof Error ? reportedError.name : 'unknown'
+            },
+            diagnosticContext
+          )
         },
-        onFinish: handleChatFinish
+        onFinish: (event) => handleChatFinish(diagnosticContext, event)
       })
       currentChatStore = store
       transportDirty = false

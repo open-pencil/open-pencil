@@ -1,19 +1,15 @@
 <script setup lang="ts">
 import type { Chat } from '@ai-sdk/vue'
-import { useClipboard } from '@vueuse/core'
 import type { UIMessage } from 'ai'
-import { computed, markRaw, ref, shallowRef, watch } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import { getACPDebugText, hasACPDebugEntries } from '@/app/ai/acp/transport'
 import { chatDocumentId } from '@/app/ai/chat/history/document'
 import { useChatSubmission } from '@/app/ai/chat/submission/use'
 import { useAIChat } from '@/app/ai/chat/use'
-import { copyChatLog } from '@/app/ai/debug'
 import { didHitStepLimit } from '@/app/ai/tools'
 import { getActiveEditorStore } from '@/app/editor/active-store'
-import { useNotificationMessages } from '@/app/i18n/notifications'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { toast } from '@/app/shell/ui'
 import { activeTab } from '@/app/tabs'
@@ -23,12 +19,8 @@ import ChatInput from '@/components/chat/ChatInput.vue'
 import ChatTranscript from '@/components/chat/ChatTranscript.vue'
 import ProviderSetup from '@/components/chat/ProviderSetup.vue'
 
-const IS_DEV = import.meta.env.DEV
-
 const { isConfigured, ensureChat, history, chatFailure, clearChatFailure } = useAIChat()
-const { copy } = useClipboard()
 const { ai } = useI18n()
-const notifications = useNotificationMessages()
 
 const chat = shallowRef<Chat<UIMessage> | null>(null)
 const submission = useChatSubmission({
@@ -47,19 +39,10 @@ const submission = useChatSubmission({
 })
 
 let viewGeneration = 0
-const initialGeneration = ++viewGeneration
-void ensureChat()
-  .then((c) => {
-    if (c && initialGeneration === viewGeneration) chat.value = markRaw(c)
-    return undefined
-  })
-  .catch((error: unknown) => {
-    toast.error(
-      notifications.value.chatInitializationFailed({
-        error: error instanceof Error ? error.message : String(error)
-      })
-    )
-  })
+// Restoring local history must not open a provider connection or read credentials.
+void history.initialize().catch(() => {
+  toast.error(ai.value.chatHistoryFailed)
+})
 
 const messages = computed(() => chat.value?.messages ?? history.messages.value)
 const historyOptions = computed(() => {
@@ -82,8 +65,6 @@ async function historyAction(action: () => Promise<unknown>) {
     await action()
     if (generation !== viewGeneration) return
     chat.value = null
-    const next = await ensureChat()
-    if (generation === viewGeneration) chat.value = next ? markRaw(next) : null
   } catch {
     toast.error(ai.value.chatHistoryFailed)
   }
@@ -159,9 +140,6 @@ watch(
     chat.value = null
     try {
       await history.initialize()
-      if (generation !== viewGeneration) return
-      const nextChat = await ensureChat()
-      if (generation === viewGeneration) chat.value = nextChat ? markRaw(nextChat) : null
     } catch {
       if (generation === viewGeneration) toast.error(ai.value.chatHistoryFailed)
     }
@@ -171,36 +149,12 @@ watch(
 function handleStop() {
   submission.stop()
 }
-
-const diagnosticNotice = ref('')
-async function copyDiagnostics(operation: () => Promise<void>) {
-  diagnosticNotice.value = ''
-  try {
-    await operation()
-    diagnosticNotice.value = ai.value.diagnosticCopied
-  } catch {
-    diagnosticNotice.value = ai.value.diagnosticCopyFailed
-  }
-}
-async function handleCopyDebug() {
-  await copyDiagnostics(() => copyChatLog(messages.value, chatFailure.value))
-}
-
-async function handleCopyACPLog() {
-  const text = getACPDebugText()
-  if (!text) return
-  await copyDiagnostics(() => copy(text))
-}
 </script>
 
 <template>
   <div data-test-id="chat-panel" class="flex min-w-0 flex-1 flex-col overflow-hidden select-text">
     <ChatHistory
       :saved="history.conversations.value.some((row) => row.id === history.current.value?.id)"
-      :debug="true"
-      :acp-debug="IS_DEV && hasACPDebugEntries()"
-      @copy-debug="handleCopyDebug"
-      @copy-a-c-p-debug="handleCopyACPLog"
       :conversations="historyOptions"
       :selected-id="history.current.value?.id"
       :disabled="history.busy.value"
@@ -209,9 +163,6 @@ async function handleCopyACPLog() {
       @rename="renameConversation"
       @delete="historyAction(() => history.remove($event))"
     />
-    <p v-if="diagnosticNotice" role="status" class="px-3 py-2 text-xs text-muted">
-      {{ diagnosticNotice }}
-    </p>
     <p v-if="history.storageError.value" role="alert" class="px-3 py-2 text-xs text-red-400">
       {{ ai.chatStorageFailed }}
     </p>

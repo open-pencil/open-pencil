@@ -3,12 +3,22 @@ import { ref } from 'vue'
 import { setPexelsAPIKey, setUnsplashAccessKey } from '@open-pencil/core/tools'
 
 import { appCredentialServices } from './app'
-import { initializeCredentialMigration, PEXELS_CREDENTIAL, UNSPLASH_CREDENTIAL } from './migration'
+import {
+  hasLegacyCredential,
+  initializeCredentialMigration,
+  PEXELS_CREDENTIAL,
+  UNSPLASH_CREDENTIAL
+} from './migration'
 import { setAppCredentialPersistence } from './persistence'
 import type { CredentialRef, CredentialStatus } from './types'
 export const credentialPersistenceRevision = ref(0)
 async function refreshStatus(reference: CredentialRef): Promise<CredentialStatus> {
-  return appCredentialServices.manager.status(reference)
+  const status = await appCredentialServices.manager.status(reference)
+  return status === 'missing' && hasLegacyCredential(reference) ? 'configured' : status
+}
+async function resolveMediaCredential(reference: CredentialRef): Promise<string | null> {
+  await initializeCredentialMigration()
+  return appCredentialServices.resolver.resolve(reference)
 }
 export const pexelsKeyStatus = ref<CredentialStatus>('missing')
 export const unsplashKeyStatus = ref<CredentialStatus>('missing')
@@ -20,14 +30,10 @@ export async function refreshMediaCredentials(): Promise<void> {
   pexelsKeyStatus.value = pexelsStatus
   unsplashKeyStatus.value = unsplashStatus
   setPexelsAPIKey(
-    pexelsStatus === 'configured'
-      ? await appCredentialServices.resolver.resolve(PEXELS_CREDENTIAL)
-      : null
+    pexelsStatus === 'configured' ? () => resolveMediaCredential(PEXELS_CREDENTIAL) : null
   )
   setUnsplashAccessKey(
-    unsplashStatus === 'configured'
-      ? await appCredentialServices.resolver.resolve(UNSPLASH_CREDENTIAL)
-      : null
+    unsplashStatus === 'configured' ? () => resolveMediaCredential(UNSPLASH_CREDENTIAL) : null
   )
 }
 export async function setPexelsKey(key: string): Promise<void> {
@@ -35,14 +41,14 @@ export async function setPexelsKey(key: string): Promise<void> {
   if (value) await appCredentialServices.manager.set(PEXELS_CREDENTIAL, value)
   else await appCredentialServices.manager.clear(PEXELS_CREDENTIAL)
   pexelsKeyStatus.value = await refreshStatus(PEXELS_CREDENTIAL)
-  setPexelsAPIKey(value || null)
+  setPexelsAPIKey(value ? () => resolveMediaCredential(PEXELS_CREDENTIAL) : null)
 }
 export async function setUnsplashKey(key: string): Promise<void> {
   const value = key.trim()
   if (value) await appCredentialServices.manager.set(UNSPLASH_CREDENTIAL, value)
   else await appCredentialServices.manager.clear(UNSPLASH_CREDENTIAL)
   unsplashKeyStatus.value = await refreshStatus(UNSPLASH_CREDENTIAL)
-  setUnsplashAccessKey(value || null)
+  setUnsplashAccessKey(value ? () => resolveMediaCredential(UNSPLASH_CREDENTIAL) : null)
 }
 export async function setRememberCredentials(remembered: boolean): Promise<void> {
   await initializeCredentialMigration()

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { MemoryCredentialStore } from '@/app/settings/credentials/memory'
 import {
+  hasLegacyCredential,
   migrateLegacyCredentials,
   PEXELS_CREDENTIAL,
   providerCredentialRef
@@ -42,6 +43,19 @@ class UnavailableCredentialStore extends MemoryCredentialStore {
 }
 
 describe('legacy credential migration', () => {
+  test('recognizes pending credentials without migrating or removing them', () => {
+    const storage = new TestStorage()
+    storage.setItem('open-pencil:ai-key:openrouter', 'pending-key')
+    expect(hasLegacyCredential(providerCredentialRef('openrouter'), storage)).toBe(true)
+    expect(hasLegacyCredential(providerCredentialRef('anthropic'), storage)).toBe(false)
+    expect(
+      hasLegacyCredential(providerCredentialRef('openrouter', 'another-profile'), storage)
+    ).toBe(false)
+    expect(storage.getItem('open-pencil:ai-key:openrouter')).toBe('pending-key')
+    storage.setItem('open-pencil:credential-migration', '1')
+    expect(hasLegacyCredential(providerCredentialRef('openrouter'), storage)).toBe(false)
+  })
+
   test('verifies encrypted destinations before removing plaintext keys', async () => {
     const storage = new TestStorage()
     const store = new MemoryCredentialStore()
