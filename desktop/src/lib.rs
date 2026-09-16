@@ -124,7 +124,8 @@ pub fn run() {
 
     #[cfg(feature = "native-test")]
     {
-        builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+        builder = builder
+            .plugin(tauri_plugin_wdio_webdriver::init());
     }
 
     #[cfg(all(
@@ -174,6 +175,12 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app, event| match event {
+            tauri::RunEvent::ExitRequested { api, code: None, .. }
+                if !_app.webview_windows().is_empty() =>
+            {
+                api.prevent_exit();
+                let _ = _app.emit("app:request-exit", ());
+            }
             #[cfg(target_os = "macos")]
             tauri::RunEvent::Opened { urls } => {
                 let paths = urls

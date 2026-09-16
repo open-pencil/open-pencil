@@ -1,4 +1,8 @@
 {
+  "unsavedChanges": "Несохранённые изменения",
+  "saveBeforeClosing": "Сохранить изменения в «{name}»?",
+  "saveBeforeClosingDescription": "Если закрыть документ без сохранения, изменения будут потеряны.",
+  "discard": "Не сохранять",
   "importLabel": "Импорт",
   "importHTMLCSS": "Импорт HTML/CSS",
   "importHTMLCSSDescription": "Вставьте HTML и, при необходимости, CSS или скомпилированный Tailwind CSS.",

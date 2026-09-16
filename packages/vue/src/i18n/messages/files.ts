@@ -12,6 +12,10 @@ export const filesMessageDefaults = {
   importToCanvas: 'Import to canvas',
   newTab: 'New tab',
   closeTab: params('Close {name}'),
+  unsavedChanges: 'Unsaved changes',
+  saveBeforeClosing: params('Save changes to “{name}”?'),
+  saveBeforeClosingDescription: 'Your changes will be discarded if you close without saving.',
+  discard: 'Don’t Save',
   clipboardImageUnavailableWeb:
     'Pasted design includes 1 image that cannot be loaded in the web app. Use the desktop app to include it.',
   clipboardImagesUnavailableWeb: params(

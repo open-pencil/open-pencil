@@ -226,7 +226,12 @@ pub fn install_app_menu<R: tauri::Runtime>(
         .item(&PredefinedMenuItem::hide_others(app, None)?)
         .item(&PredefinedMenuItem::show_all(app, None)?)
         .separator()
-        .item(&PredefinedMenuItem::quit(app, None)?)
+        .item(
+            &MenuItemBuilder::new("Quit OpenPencil")
+                .id("quit")
+                .accelerator("CmdOrCtrl+Q")
+                .build(app)?,
+        )
         .build()?;
 
     let schema_menus = build_schema_menus(app, recent_files)?;

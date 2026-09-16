@@ -10,6 +10,7 @@ const tabBarTheme = {
     close:
       'flex size-6 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded transition-opacity group-hover/tab:opacity-100 hover:bg-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-panel-focus sm:size-4',
     closeIcon: 'size-3',
+    dirtyIcon: 'size-1.5 fill-current',
     newIcon: 'size-3.5'
   },
   variants: {

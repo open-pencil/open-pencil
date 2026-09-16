@@ -29,7 +29,10 @@ export function createDocumentIOActions(
     state,
     getFilePath: sourceState.getFilePath,
     getFileHandle: sourceState.getFileHandle,
-    setSavedVersion: sourceState.setSavedVersion,
+    setSavedVersion: (version) => {
+      sourceState.setSavedVersion(version)
+      sourceActions.markDocumentSaved()
+    },
     preparationController
   })
   const { startWatchingFile, stopWatchingFile } = createFileWatcher({
@@ -86,6 +89,7 @@ export function createDocumentIOActions(
     openFigFile,
     openDOMFile,
     importDOMText,
+    hasUnsavedChanges: sourceActions.hasUnsavedChanges,
     saveFigFile: sourceActions.saveFigFile,
     saveFigFileAs: sourceActions.saveFigFileAs
   }

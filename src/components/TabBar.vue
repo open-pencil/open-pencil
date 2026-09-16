@@ -61,11 +61,17 @@ function onClose(e: MouseEvent, tabId: string) {
           data-test-id="tabbar-tab"
           :class="tabBarStyles({ active: tab.isActive }).trigger()"
           :data-active="tab.isActive || undefined"
+          :data-dirty="tab.isDirty || undefined"
         >
           <icon-lucide-house v-if="tab.isHome" :class="baseStyles.icon()" />
           <PreparationIndicator v-else-if="tab.isPreparing" :progress="tab.preparationProgress" />
           <icon-lucide-file v-else :class="baseStyles.icon()" />
           <span :class="baseStyles.label()">{{ tab.isHome ? files.newTab : tab.name }}</span>
+          <Tip v-if="tab.isDirty" :label="files.unsavedChanges">
+            <span role="img" :aria-label="files.unsavedChanges">
+              <icon-lucide-circle :class="baseStyles.dirtyIcon()" />
+            </span>
+          </Tip>
         </TabsTrigger>
         <Tip
           v-if="!tab.isHome || tabs.length > 1"

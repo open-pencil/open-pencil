@@ -1,4 +1,8 @@
 {
+  "unsavedChanges": "Ungespeicherte Änderungen",
+  "saveBeforeClosing": "Änderungen an „{name}“ speichern?",
+  "saveBeforeClosingDescription": "Wenn du ohne Speichern schließt, werden deine Änderungen verworfen.",
+  "discard": "Nicht speichern",
   "importLabel": "Importieren",
   "importHTMLCSS": "HTML/CSS importieren",
   "importHTMLCSSDescription": "HTML sowie optionales CSS oder kompiliertes Tailwind-CSS einfügen.",
