@@ -10,11 +10,6 @@ export const aiMessageDefaults = {
   reasoningWhileThinking: 'Expand while thinking',
   reasoningExpanded: 'Expanded by default',
   continueChat: 'Continue',
-  copyACPLog: 'Copy ACP log',
-  diagnosticCopied: 'Diagnostic log copied.',
-  diagnosticCopyFailed:
-    'Could not copy the diagnostic log. Check clipboard permissions and try again.',
-  copyDiagnosticLog: 'Copy diagnostic log',
   searchChats: 'Search conversations…',
   chatScope: 'Conversation scope',
   thisDocument: 'This document',

@@ -15,11 +15,20 @@ const modelStepSchema = v.object({
 
 const chatCompletedSchema = v.object({ finishReason: v.nullable(v.string()) })
 const chatFailedSchema = v.object({ errorName: v.string() })
+const toolCompletedSchema = v.object({
+  tool: v.string(),
+  durationMs: v.number(),
+  mutates: v.boolean(),
+  failed: v.boolean()
+})
+
+export type AIDiagnosticContext = Pick<DiagnosticEvent, 'sessionId' | 'runId'>
 
 function recordAIEvent(
-  name: 'model.step.completed' | 'chat.completed' | 'chat.failed',
+  name: 'model.step.completed' | 'chat.completed' | 'chat.failed' | 'tool.completed',
   attributes: Record<string, DiagnosticValue>,
-  schema: v.GenericSchema
+  schema: v.GenericSchema,
+  context: AIDiagnosticContext = {}
 ): void {
   const parsed = v.safeParse(schema, attributes)
   if (!parsed.success) {
@@ -29,6 +38,7 @@ function recordAIEvent(
   if (name === 'model.step.completed' && !isUsageEnabled()) return
   const output = parsed.output as Record<string, DiagnosticValue>
   recordDiagnostic({
+    ...context,
     category: 'ai',
     level: name === 'chat.failed' ? 'error' : 'info',
     name,
@@ -36,14 +46,30 @@ function recordAIEvent(
   } satisfies Omit<DiagnosticEvent, 'id' | 'timestamp'>)
 }
 
-export function recordModelStepCompleted(input: v.InferOutput<typeof modelStepSchema>): void {
-  recordAIEvent('model.step.completed', input, modelStepSchema)
+export function recordModelStepCompleted(
+  input: v.InferOutput<typeof modelStepSchema>,
+  context?: AIDiagnosticContext
+): void {
+  recordAIEvent('model.step.completed', input, modelStepSchema, context)
 }
 
-export function recordChatCompleted(input: v.InferOutput<typeof chatCompletedSchema>): void {
-  recordAIEvent('chat.completed', input, chatCompletedSchema)
+export function recordChatCompleted(
+  input: v.InferOutput<typeof chatCompletedSchema>,
+  context?: AIDiagnosticContext
+): void {
+  recordAIEvent('chat.completed', input, chatCompletedSchema, context)
 }
 
-export function recordChatFailed(input: v.InferOutput<typeof chatFailedSchema>): void {
-  recordAIEvent('chat.failed', input, chatFailedSchema)
+export function recordChatFailed(
+  input: v.InferOutput<typeof chatFailedSchema>,
+  context?: AIDiagnosticContext
+): void {
+  recordAIEvent('chat.failed', input, chatFailedSchema, context)
+}
+
+export function recordToolCompleted(
+  input: v.InferOutput<typeof toolCompletedSchema>,
+  context?: AIDiagnosticContext
+): void {
+  recordAIEvent('tool.completed', input, toolCompletedSchema, context)
 }

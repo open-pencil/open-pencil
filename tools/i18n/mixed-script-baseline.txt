@@ -236,8 +236,6 @@ zh-cn:updates.installed
 zh-cn:updates.unavailable
 zh-cn:updates.upToDate
 
-ja:ai.copyACPLog
-zh-cn:ai.copyACPLog
 
 ja:credentials.rememberDevice
 zh-cn:credentials.rememberDevice

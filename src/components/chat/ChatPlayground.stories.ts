@@ -53,7 +53,6 @@ const meta = {
           </fieldset>
           <section aria-label="Chat preview" :data-narrow="args.narrow" class="flex h-[620px] w-[420px] max-w-full flex-col overflow-hidden rounded-xl border border-border bg-panel data-[narrow=true]:w-[300px]">
             <ChatHistory
-              :debug="true"
               :saved="hasSavedConversation"
               :conversations="conversationOptions"
               :selected-id="selectedId"
