@@ -31,6 +31,6 @@ test('Get API key links to the provider key page', async ({ configuredChat: chat
 
   await expect(chat.page.getByRole('link', { name: 'Get API key' })).toHaveAttribute(
     'href',
-    /^https:\/\//
+    'https://openrouter.ai/keys'
   )
 })
