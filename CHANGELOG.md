@@ -6,6 +6,7 @@
 
 - Configure built-in AI and local MCP tool access independently on a Tool access page, including optional extended AI tools, searchable read-only and side-effect groups, and per-target defaults (#584).
 - Set the built-in AI's maximum steps per message in Chat settings, with consistent stopping and remaining-step warnings (#573).
+- Choose a custom number for diagnostics retention or the AI step limit instead of only the offered presets.
 
 ### Fixed
 

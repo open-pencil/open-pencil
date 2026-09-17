@@ -3,23 +3,21 @@ import { computed } from 'vue'
 
 import { useI18n } from '@open-pencil/vue'
 
-import { reasoningDisplay } from '@/app/ai/chat/preferences'
-import { useChatStepLimit } from '@/app/ai/chat/settings/step-limit'
+import { maxAgentSteps, reasoningDisplay } from '@/app/ai/chat/preferences'
 import { AGENT_STEP_LIMIT_MIN, AGENT_STEP_LIMIT_MAX } from '@/app/ai/chat/step-limit'
 import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
-import ProviderSettingsField from '@/components/settings/provider/ProviderSettingsField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import AppInput from '@/components/ui/input/AppInput.vue'
+import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
 const { ai, settings } = useI18n()
+const stepPresets = [25, 50, 100, 200]
 const limitMessage = computed(() =>
   ai.value.maxAgentStepsRange({ min: AGENT_STEP_LIMIT_MIN, max: AGENT_STEP_LIMIT_MAX })
 )
-const { maxSteps, errors, commit } = useChatStepLimit(limitMessage)
 const options = computed(() => [
   { value: 'collapsed' as const, label: ai.value.reasoningCollapsed },
   { value: 'while-thinking' as const, label: ai.value.reasoningWhileThinking },
@@ -47,23 +45,17 @@ const options = computed(() => [
         }}</AppButton>
       </SettingsRow>
     </SettingsGroup>
-    <ProviderSettingsField
-      v-slot="{ control }"
-      :label="ai.maxAgentSteps"
-      :hint="ai.maxAgentStepsHint"
-      :error="errors.maxSteps"
-    >
-      <AppInput
-        v-model="maxSteps"
-        v-bind="control"
-        type="number"
+    <div class="flex flex-col gap-1">
+      <PresetNumberField
+        v-model:number="maxAgentSteps"
+        :presets="stepPresets"
         :min="AGENT_STEP_LIMIT_MIN"
         :max="AGENT_STEP_LIMIT_MAX"
-        :step="1"
-        class="w-full sm:w-52"
-        @change="commit()"
-        @enter="commit()"
+        :label="ai.maxAgentSteps"
+        :custom-label="ai.maxAgentStepsCustom"
+        :range-message="limitMessage"
       />
-    </ProviderSettingsField>
+      <p class="text-[11px] leading-relaxed text-muted">{{ ai.maxAgentStepsHint }}</p>
+    </div>
   </SettingsSection>
 </template>

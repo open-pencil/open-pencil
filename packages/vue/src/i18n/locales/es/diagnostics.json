@@ -30,5 +30,7 @@
   "clearDescription": "Esto elimina del dispositivo los eventos de diagnóstico almacenados localmente.",
   "cleared": "Diagnóstico borrado.",
   "copied": "Diagnóstico copiado al portapapeles.",
-  "copyFailed": "No se pudo copiar el diagnóstico al portapapeles."
+  "copyFailed": "No se pudo copiar el diagnóstico al portapapeles.",
+  "retentionCustom": "Personalizado…",
+  "retentionRange": "Introduce un número entero entre {min} y {max}."
 }

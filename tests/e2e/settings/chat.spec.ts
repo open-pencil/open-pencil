@@ -1,53 +1,59 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
+
+async function openChatSettings(page: Page) {
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
+  await page.getByTestId('settings-section-ai').click()
+}
+
+async function reloadAndOpenChatSettings(page: Page) {
+  await page.reload()
+  await new CanvasHelper(page).waitForInit()
+  await openChatSettings(page)
+}
 
 test('chat step limit validates, persists and preserves reasoning preferences', async ({
   page
 }) => {
   await page.goto('/?test')
-  const canvas = new CanvasHelper(page)
-  await canvas.waitForInit()
-  async function openChatSettings() {
-    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+,' : 'Control+,')
-    await page.getByRole('tab', { name: 'AI & agents', exact: true }).click()
-  }
-  await openChatSettings()
-  const limit = page.getByRole('spinbutton', { name: 'Maximum steps per message' })
-  await expect(limit).toHaveValue('50')
+  await new CanvasHelper(page).waitForInit()
+  await openChatSettings(page)
+  const limit = page.getByRole('combobox', { name: 'Maximum steps per message' })
+  await expect(limit).toHaveText('50')
+  // The numeric field only appears behind the custom option.
+  await expect(page.getByRole('spinbutton', { name: 'Maximum steps per message' })).toHaveCount(0)
+  await limit.click()
+  await page.getByRole('option', { name: 'Custom…' }).click()
+
+  const custom = page.getByRole('spinbutton', { name: 'Maximum steps per message' })
   for (const invalid of ['', '0', '1.5', '1001']) {
-    await limit.fill(invalid)
-    await limit.press('Enter')
-    await expect(limit).toHaveAttribute('aria-invalid', 'true')
-    await expect(limit).toHaveAccessibleDescription(/Enter a whole number from 1 to 1000/)
+    await custom.fill(invalid)
+    await custom.press('Enter')
+    await expect(custom).toHaveAttribute('aria-invalid', 'true')
+    await expect(custom).toHaveAccessibleDescription(/Enter a whole number from 1 to 1000/)
   }
-  await limit.fill('200')
-  await limit.press('Enter')
-  await expect(limit).toHaveAttribute('aria-invalid', 'false')
+
+  await custom.fill('137')
+  await custom.press('Enter')
+  await expect(custom).toHaveAttribute('aria-invalid', 'false')
+
   const reasoning = page.getByRole('combobox', { name: 'Reasoning display' })
   await reasoning.click()
   await page.getByRole('option', { name: 'Expanded by default', exact: true }).click()
-  await page.reload()
-  await canvas.waitForInit()
-  await openChatSettings()
-  await expect(limit).toHaveValue('200')
+
+  await reloadAndOpenChatSettings(page)
+  // A value outside the presets keeps the custom option selected.
+  await expect(limit).toHaveText('Custom…')
+  await expect(page.getByRole('spinbutton', { name: 'Maximum steps per message' })).toHaveValue(
+    '137'
+  )
   await expect(reasoning).toHaveText('Expanded by default')
-  await limit.fill('125')
-  await limit.blur()
-  await expect(limit).toHaveAttribute('aria-invalid', 'false')
-  await reasoning.click()
-  await page.keyboard.press('Escape')
-  await page.reload()
-  await canvas.waitForInit()
-  await openChatSettings()
-  await expect(limit).toHaveValue('125')
-  await expect(reasoning).toHaveText('Expanded by default')
-  // An invalid draft must not overwrite the last valid saved preference.
-  await limit.fill('0')
-  await limit.press('Enter')
-  await expect(limit).toHaveAttribute('aria-invalid', 'true')
-  await page.reload()
-  await canvas.waitForInit()
-  await openChatSettings()
-  await expect(limit).toHaveValue('125')
+
+  // A preset commits without revealing the field, and an invalid draft is not saved.
+  await limit.click()
+  await page.getByRole('option', { name: '200', exact: true }).click()
+  await expect(limit).toHaveText('200')
+  await reloadAndOpenChatSettings(page)
+  await expect(limit).toHaveText('200')
 })

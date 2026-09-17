@@ -150,5 +150,6 @@
   "reasoningCollapsed": "Свёрнуто по умолчанию",
   "reasoningWhileThinking": "Разворачивать во время размышлений",
   "reasoningExpanded": "Развёрнуто по умолчанию",
-  "jumpToLatest": "К последнему сообщению"
+  "jumpToLatest": "К последнему сообщению",
+  "maxAgentStepsCustom": "Своё значение…"
 }

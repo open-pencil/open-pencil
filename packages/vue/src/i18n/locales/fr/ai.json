@@ -150,5 +150,6 @@
   "reasoningCollapsed": "Replié par défaut",
   "reasoningWhileThinking": "Déplier pendant le raisonnement",
   "reasoningExpanded": "Déplié par défaut",
-  "jumpToLatest": "Aller au dernier message"
+  "jumpToLatest": "Aller au dernier message",
+  "maxAgentStepsCustom": "Personnalisé…"
 }

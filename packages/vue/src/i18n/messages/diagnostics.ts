@@ -22,6 +22,8 @@ export const diagnosticsMessageDefaults = {
   mcpFailed: 'MCP connection failed',
   technicalEvent: 'Technical event',
   retention: 'Diagnostics retention',
+  retentionCustom: 'Custom…',
+  retentionRange: params('Enter a whole number from {min} to {max}.'),
   retentionDescription: 'Keep up to this many recent events locally.',
   description:
     'Store technical events locally to help troubleshoot OpenPencil. Prompts, design content, credentials, and API keys are excluded.',

@@ -150,5 +150,6 @@
   "reasoningCollapsed": "Standardmäßig eingeklappt",
   "reasoningWhileThinking": "Beim Nachdenken ausklappen",
   "reasoningExpanded": "Standardmäßig ausgeklappt",
-  "jumpToLatest": "Zum neuesten Beitrag"
+  "jumpToLatest": "Zum neuesten Beitrag",
+  "maxAgentStepsCustom": "Eigener Wert…"
 }

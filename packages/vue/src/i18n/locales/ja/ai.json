@@ -150,5 +150,6 @@
   "reasoningCollapsed": "既定で折りたたむ",
   "reasoningWhileThinking": "思考中に展開",
   "reasoningExpanded": "既定で展開",
-  "jumpToLatest": "最新へ移動"
+  "jumpToLatest": "最新へ移動",
+  "maxAgentStepsCustom": "カスタム…"
 }

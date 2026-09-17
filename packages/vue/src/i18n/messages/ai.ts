@@ -6,6 +6,7 @@ export const aiMessageDefaults = {
   jumpToLatest: 'Jump to latest',
   chatSettings: 'Chat',
   maxAgentSteps: 'Maximum steps per message',
+  maxAgentStepsCustom: 'Custom…',
   maxAgentStepsHint:
     'For built-in AI only; ACP and Pi control their own limits. Saved on Enter or when you leave the field, and applied to the next message. Higher limits can increase cost.',
   maxAgentStepsRange: params('Enter a whole number from {min} to {max}.'),

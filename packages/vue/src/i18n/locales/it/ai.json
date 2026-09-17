@@ -150,5 +150,6 @@
   "reasoningCollapsed": "Compresso per impostazione predefinita",
   "reasoningWhileThinking": "Espandi durante il ragionamento",
   "reasoningExpanded": "Espanso per impostazione predefinita",
-  "jumpToLatest": "Vai all’ultimo messaggio"
+  "jumpToLatest": "Vai all’ultimo messaggio",
+  "maxAgentStepsCustom": "Personalizzato…"
 }

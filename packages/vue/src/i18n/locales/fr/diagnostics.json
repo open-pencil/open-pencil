@@ -30,5 +30,7 @@
   "clearDescription": "Cette action supprime de cet appareil les événements de diagnostic stockés localement.",
   "cleared": "Diagnostics effacés.",
   "copied": "Diagnostics copiés dans le presse-papiers.",
-  "copyFailed": "Impossible de copier les diagnostics dans le presse-papiers."
+  "copyFailed": "Impossible de copier les diagnostics dans le presse-papiers.",
+  "retentionCustom": "Personnalisé…",
+  "retentionRange": "Saisissez un nombre entier entre {min} et {max}."
 }

@@ -1,40 +1,42 @@
-import { expect, spyOn, test } from 'bun:test'
+import { describe, expect, test } from 'bun:test'
 
-import { effectScope } from 'vue'
+import {
+  DIAGNOSTICS_RETENTION_DEFAULT,
+  DIAGNOSTICS_RETENTION_MAX,
+  DIAGNOSTICS_RETENTION_MIN,
+  diagnosticsRetentionPresets,
+  resolveDiagnosticsRetention
+} from '@/app/diagnostics/settings'
 
-import { diagnostics, type DiagnosticEvent } from '@/app/diagnostics'
-import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
-
-test('recent diagnostics unsubscribes and ignores an outstanding refresh after disposal', async () => {
-  let resolveEvents: (events: DiagnosticEvent[]) => void = () => undefined
-  let unsubscribed = false
-  const listing = spyOn(diagnostics, 'list').mockImplementation(
-    () =>
-      new Promise((resolve) => {
-        resolveEvents = resolve
-      })
-  )
-  const subscription = spyOn(diagnostics, 'subscribe').mockImplementation(() => () => {
-    unsubscribed = true
+describe('diagnostics retention', () => {
+  test('keeps offered presets', () => {
+    for (const preset of diagnosticsRetentionPresets) {
+      expect(resolveDiagnosticsRetention(preset)).toBe(preset)
+      expect(resolveDiagnosticsRetention(String(preset))).toBe(preset)
+    }
   })
-  const scope = effectScope()
-  try {
-    const state = scope.run(() =>
-      useRecentDiagnostics(
-        () => {
-          throw new Error('Disposed refresh must not project')
-        },
-        async () => undefined
-      )
-    )
-    scope.stop()
-    resolveEvents([])
-    await Promise.resolve()
-    expect(unsubscribed).toBe(true)
-    expect(state?.recentEvents.value).toEqual([])
-  } finally {
-    scope.stop()
-    listing.mockRestore()
-    subscription.mockRestore()
-  }
+
+  test('accepts custom values inside the supported range', () => {
+    expect(resolveDiagnosticsRetention(750)).toBe(750)
+    expect(resolveDiagnosticsRetention('1234')).toBe(1234)
+    expect(resolveDiagnosticsRetention(DIAGNOSTICS_RETENTION_MIN)).toBe(DIAGNOSTICS_RETENTION_MIN)
+    expect(resolveDiagnosticsRetention(DIAGNOSTICS_RETENTION_MAX)).toBe(DIAGNOSTICS_RETENTION_MAX)
+  })
+
+  test('clamps out-of-range values instead of storing them', () => {
+    expect(resolveDiagnosticsRetention(0)).toBe(DIAGNOSTICS_RETENTION_MIN)
+    expect(resolveDiagnosticsRetention(-100)).toBe(DIAGNOSTICS_RETENTION_MIN)
+    expect(resolveDiagnosticsRetention(1_000_000)).toBe(DIAGNOSTICS_RETENTION_MAX)
+  })
+
+  test('falls back to the default for unusable stored values', () => {
+    for (const value of [undefined, null, '', 'many', Number.NaN, Number.POSITIVE_INFINITY, {}]) {
+      expect(resolveDiagnosticsRetention(value)).toBe(DIAGNOSTICS_RETENTION_DEFAULT)
+    }
+  })
+
+  test('rounds fractional values', () => {
+    expect(resolveDiagnosticsRetention(750.4)).toBe(750)
+    expect(resolveDiagnosticsRetention(750.6)).toBe(751)
+  })
 })

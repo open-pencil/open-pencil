@@ -150,5 +150,6 @@
   "reasoningCollapsed": "默认折叠",
   "reasoningWhileThinking": "思考时展开",
   "reasoningExpanded": "默认展开",
-  "jumpToLatest": "跳转到最新消息"
+  "jumpToLatest": "跳转到最新消息",
+  "maxAgentStepsCustom": "自定义…"
 }

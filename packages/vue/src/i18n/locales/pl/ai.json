@@ -150,5 +150,6 @@
   "reasoningCollapsed": "Domyślnie zwinięte",
   "reasoningWhileThinking": "Rozwijaj podczas rozumowania",
   "reasoningExpanded": "Domyślnie rozwinięte",
-  "jumpToLatest": "Przejdź do najnowszej wiadomości"
+  "jumpToLatest": "Przejdź do najnowszej wiadomości",
+  "maxAgentStepsCustom": "Własna wartość…"
 }

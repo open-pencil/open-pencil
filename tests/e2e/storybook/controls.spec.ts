@@ -18,6 +18,7 @@ const stories = [
   'design-system-paint-fill-swatch--image-placeholder',
   'design-system-navigation-tabs--constrained-labels',
   'design-system-disclosure-collapsible--collapsed',
+  'design-system-inputs-preset-number--custom-selected',
   'settings-tool-access-list--mixed-access',
   'settings-mcp-failure-alert--all-reasons'
 ]

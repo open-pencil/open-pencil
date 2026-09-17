@@ -150,5 +150,6 @@
   "reasoningCollapsed": "Contraído por defecto",
   "reasoningWhileThinking": "Expandir al razonar",
   "reasoningExpanded": "Expandido por defecto",
-  "jumpToLatest": "Ir al último mensaje"
+  "jumpToLatest": "Ir al último mensaje",
+  "maxAgentStepsCustom": "Personalizado…"
 }
