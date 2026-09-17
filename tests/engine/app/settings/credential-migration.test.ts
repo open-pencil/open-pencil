@@ -79,6 +79,22 @@ describe('legacy credential migration', () => {
     expect(storage.getItem('open-pencil:pexels-api-key')).toBeNull()
   })
 
+  test('concurrent migrations of distinct sources both complete', async () => {
+    const mediaStorage = new TestStorage()
+    const providerStorage = new TestStorage()
+    mediaStorage.setItem('open-pencil:pexels-api-key', 'legacy-pexels-key')
+    providerStorage.setItem('open-pencil:ai-key:anthropic', 'legacy-anthropic-key')
+
+    const results = await Promise.all([
+      initializeCredentialMigration(mediaStorage),
+      initializeCredentialMigration(providerStorage)
+    ])
+
+    expect(results).toEqual([true, true])
+    expect(mediaStorage.getItem('open-pencil:pexels-api-key')).toBeNull()
+    expect(providerStorage.getItem('open-pencil:ai-key:anthropic')).toBeNull()
+  })
+
   test('verifies encrypted destinations before removing plaintext keys', async () => {
     const storage = new TestStorage()
     const store = new MemoryCredentialStore()

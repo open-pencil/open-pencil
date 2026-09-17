@@ -82,16 +82,29 @@ export async function migrateLegacyCredentials(
   return true
 }
 
-let migrationInFlight: Promise<boolean> | null = null
+const migrationsInFlight = new WeakMap<Storage, Promise<boolean>>()
+let migrationQueue: Promise<void> = Promise.resolve()
+
+/** Migrations share one destination store, so distinct sources must not interleave. */
+function enqueueMigration(storage: Storage): Promise<boolean> {
+  const migration = migrationQueue.then(() => migrateLegacyCredentials(storage, appCredentialStore))
+  migrationQueue = migration.then(
+    () => undefined,
+    () => undefined
+  )
+  return migration
+}
 
 export async function initializeCredentialMigration(
   storage = browserCredentialStorage()
 ): Promise<boolean> {
   if (!storage) return true
-  if (!migrationInFlight) {
-    migrationInFlight = migrateLegacyCredentials(storage, appCredentialStore).finally(() => {
-      migrationInFlight = null
+  let migration = migrationsInFlight.get(storage)
+  if (!migration) {
+    migration = enqueueMigration(storage).finally(() => {
+      migrationsInFlight.delete(storage)
     })
+    migrationsInFlight.set(storage, migration)
   }
-  return migrationInFlight
+  return migration
 }
