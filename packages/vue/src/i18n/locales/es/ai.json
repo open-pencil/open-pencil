@@ -96,6 +96,7 @@
   "latest": "Nuevo",
   "customModelID": "ID de modelo personalizado",
   "customModel": "Modelo personalizado…",
+  "customModelGroup": "Modelo personalizado",
   "advancedModelSettings": "Ajustes avanzados",
   "outputLimit": "Límite de salida",
   "outputLimitAutomatic": "Recomendación automática",

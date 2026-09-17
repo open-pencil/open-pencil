@@ -42,16 +42,20 @@ export function useProfileModelSelection(
   })
   const modelOptions = computed(() => {
     const options = modelPickerOptions(availableModels.value, providerDef.value.models, ai.value)
-    if (providerDef.value.supportsCustomModel) {
-      options.push({
-        value: CUSTOM_MODEL_VALUE,
-        label: ai.value.customModel,
-        description: '',
-        meta: undefined,
-        group: ai.value.customModel
-      })
+    if (!providerDef.value.supportsCustomModel) return options
+    // Keep the custom entry after the curated picks and ahead of the long tail, so it stays
+    // reachable in the picker's capped result list.
+    const customOption = {
+      value: CUSTOM_MODEL_VALUE,
+      label: ai.value.customModel,
+      description: '',
+      meta: undefined,
+      group: ai.value.customModelGroup
     }
-    return options
+    const group = ai.value.recommendedModels
+    const insertAt = options.findIndex((option) => option.group !== group)
+    if (insertAt === -1) return [...options, customOption]
+    return [...options.slice(0, insertAt), customOption, ...options.slice(insertAt)]
   })
   const selectedModelValue = computed(() =>
     customModelSelected.value ? CUSTOM_MODEL_VALUE : draft.modelID

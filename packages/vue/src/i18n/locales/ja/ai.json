@@ -96,6 +96,7 @@
   "latest": "新着",
   "customModelID": "カスタムモデル ID",
   "customModel": "カスタムモデル…",
+  "customModelGroup": "カスタムモデル",
   "advancedModelSettings": "詳細設定",
   "outputLimit": "出力上限",
   "outputLimitAutomatic": "自動推奨値",

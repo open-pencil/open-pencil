@@ -5,6 +5,7 @@ export interface ModelPickerLabels {
   latestModels: string
   allModels: string
   latest: string
+  customModelGroup: string
 }
 
 const LATEST_MODEL_COUNT = 8

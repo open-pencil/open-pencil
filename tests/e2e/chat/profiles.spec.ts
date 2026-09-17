@@ -25,26 +25,12 @@ test('OpenRouter accepts a custom model ID from Settings', async ({ configuredCh
   await expect(chat.profileTrigger).toContainText('Claude Sonnet')
 })
 
-test('Get API key opens the provider URL', async ({ configuredChat: chat }) => {
+test('Get API key links to the provider key page', async ({ configuredChat: chat }) => {
   await chat.page.getByTestId('provider-settings-trigger').click()
   await chat.page.locator('[data-model-id]').first().click()
-  await chat.page.getByTestId('provider-settings-clear-key').click()
-  await chat.page.getByRole('button', { name: 'Back' }).click()
-  await chat.page.getByTestId('app-settings-done').click()
-  await chat.page.getByTestId('provider-setup-open-settings').click()
-  await chat.page.locator('[data-model-id]').first().click()
-  await chat.page.getByTestId('settings-model-provider').click()
-  await chat.page.getByRole('option', { name: 'OpenRouter' }).click()
 
-  const openedURLs: string[] = []
-  await chat.page.exposeFunction('mockWindowOpen', (url: string) => openedURLs.push(url))
-  await chat.page.evaluate(() => {
-    window.open = (url: string | URL) => {
-      window.mockWindowOpen?.(String(url))
-      return null
-    }
-  })
-  await chat.page.getByRole('button', { name: 'Get API key →' }).click()
-
-  await expect(() => expect(openedURLs[0]).toMatch(/^https:\/\//)).toPass()
+  await expect(chat.page.getByRole('link', { name: 'Get API key' })).toHaveAttribute(
+    'href',
+    'https://openrouter.ai/keys'
+  )
 })
