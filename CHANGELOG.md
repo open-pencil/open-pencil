@@ -19,6 +19,7 @@
 - Mark unsaved documents and ask whether to save before closing a tab, the desktop window, or the application, rather than relying on recovery alone.
 - Defer AI provider connections and system credential reads until you send a message or use a connected feature, so opening documents and browsing chat history no longer trigger unexpected credential prompts.
 - Point Homebrew installation instructions to the official `openpencil` cask and document separate CLI installation.
+- Let the desktop app use an MCP server you started yourself by allowing the app's own origin by default, instead of requiring `OPENPENCIL_MCP_CORS_ORIGIN`.
 
 ## 0.15.0 — 2026-09-16
 

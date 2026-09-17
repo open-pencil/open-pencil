@@ -2,6 +2,7 @@
 import { resolveMCPRoot } from '#mcp/root'
 import { startServer } from '#mcp/server'
 import { readToolPolicyFromEnv } from '#mcp/tool/policy'
+import { resolveCORSOrigins } from '#mcp/transport/origins'
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.stdout.write(
@@ -21,7 +22,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
       `  OPENPENCIL_MCP_ROOT          Allowed directory for file-scoped tools (default: home directory on Windows, current working directory elsewhere)\n` +
       `  OPENPENCIL_MCP_EVAL           Set to 1 to enable the eval tool\n` +
       `  OPENPENCIL_MCP_DISABLED_TOOLS Comma-separated tool names to omit\n` +
-      `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origin\n` +
+      `  OPENPENCIL_MCP_CORS_ORIGIN   Allowed CORS origins, comma-separated.\n` +
+      `                               Defaults to the desktop app origin, since the app\n` +
+      `                               webview is the only view that calls this server.\n` +
       `  OPENPENCIL_MCP_APP_TIMEOUT_MS  If set, close the server and remove its discovery\n` +
       `                               file after no app is attached for this many ms. The\n` +
       `                               grace period starts at startup and after disconnects.\n` +
@@ -94,7 +97,7 @@ const handle = await startServer({
     }
     return trimmed
   })(),
-  corsOrigin: process.env.OPENPENCIL_MCP_CORS_ORIGIN?.trim() || null,
+  corsOrigin: resolveCORSOrigins(process.env.OPENPENCIL_MCP_CORS_ORIGIN),
   appAttachTimeoutMs
 })
 
