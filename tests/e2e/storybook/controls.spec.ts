@@ -17,7 +17,7 @@ const stories = [
   'design-system-paint-fill-swatch--gradient',
   'design-system-paint-fill-swatch--image-placeholder',
   'design-system-navigation-tabs--constrained-labels',
-  'settings-automation-tool-access--mixed-access'
+  'settings-tool-access-list--mixed-access'
 ]
 
 for (const theme of ['light', 'dark']) {

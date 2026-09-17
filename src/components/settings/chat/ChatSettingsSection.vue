@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAutomationMessages, useI18n } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue'
 
 import { reasoningDisplay } from '@/app/ai/chat/preferences'
 import { useChatStepLimit } from '@/app/ai/chat/settings/step-limit'
@@ -15,8 +15,7 @@ import AppButton from '@/components/ui/button/AppButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 
-const { ai } = useI18n()
-const automation = useAutomationMessages()
+const { ai, settings } = useI18n()
 const limitMessage = computed(() =>
   ai.value.maxAgentStepsRange({ min: AGENT_STEP_LIMIT_MIN, max: AGENT_STEP_LIMIT_MAX })
 )
@@ -42,9 +41,9 @@ const options = computed(() => [
       </SettingsRow>
     </SettingsGroup>
     <SettingsGroup>
-      <SettingsRow :label="automation.toolAccess">
+      <SettingsRow :label="settings.toolAccess">
         <AppButton size="xs" variant="outline" @click="openToolAccessSettings('ai')">{{
-          automation.toolAccess
+          settings.toolAccess
         }}</AppButton>
       </SettingsRow>
     </SettingsGroup>

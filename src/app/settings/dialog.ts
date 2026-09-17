@@ -6,6 +6,7 @@ export type SettingsSection =
   | 'usage'
   | 'diagnostics'
   | 'mcp'
+  | 'tools'
   | 'media'
   | 'storage'
 

@@ -1,3 +1,4 @@
+de:ai.chatSettings
 de:ai.completions
 de:ai.harnessThinkingMinimal
 de:ai.modelAgentConnection
@@ -38,6 +39,7 @@ de:panels.position
 de:panels.radialGradient
 de:panels.radius
 de:panels.textCaseOriginal
+de:settings.mcp
 de:storage.bucket
 de:storage.providerAmazonS3
 de:storage.providerBackblaze
@@ -49,6 +51,7 @@ de:tools.polygon
 de:tools.text
 de:variableTypes.boolean
 de:variableTypes.text
+es:ai.chatSettings
 es:ai.completions
 es:ai.responses
 es:ai.toolError
@@ -73,6 +76,7 @@ es:panels.textCaseOriginal
 es:panels.variables
 es:rendering.experimental
 es:settings.general
+es:settings.mcp
 es:storage.bucket
 es:storage.providerAmazonS3
 es:storage.providerBackblaze
@@ -126,6 +130,7 @@ fr:panels.saturation
 fr:panels.variables
 fr:settings.animations
 fr:settings.diagnostics
+fr:settings.mcp
 fr:settings.notifications
 fr:storage.bucket
 fr:storage.providerAmazonS3
@@ -135,6 +140,7 @@ fr:tools.ellipse
 fr:tools.rectangle
 fr:tools.section
 fr:variables.modes
+it:ai.chatSettings
 it:ai.completions
 it:ai.responses
 it:code.editorDesignLabel
@@ -156,6 +162,7 @@ it:panels.framePresetCategorySocialMedia
 it:panels.framePresetCategoryTablet
 it:panels.layout
 it:rendering.settingsTitle
+it:settings.mcp
 it:settings.media
 it:storage.bucket
 it:storage.endpoint
@@ -172,6 +179,7 @@ ja:panels.colorFormatHsl
 ja:panels.colorFormatOkhcl
 ja:panels.colorFormatRgb
 ja:panels.framePresetCategoryFigmaCommunity
+ja:settings.mcp
 ja:storage.providerAmazonS3
 ja:storage.providerBackblaze
 ja:storage.providerR2
@@ -196,6 +204,7 @@ pl:panels.design
 pl:panels.framePresetCategoryFigmaCommunity
 pl:panels.framePresetCategoryTablet
 pl:panels.kerning
+pl:settings.mcp
 pl:settings.media
 pl:storage.providerAmazonS3
 pl:storage.providerBackblaze
@@ -213,6 +222,7 @@ ru:panels.colorFormatHsl
 ru:panels.colorFormatOkhcl
 ru:panels.colorFormatRgb
 ru:panels.framePresetCategoryFigmaCommunity
+ru:settings.mcp
 ru:storage.providerAmazonS3
 ru:storage.providerBackblaze
 ru:storage.providerR2
@@ -229,10 +239,7 @@ zh-cn:panels.colorFormatOkhcl
 zh-cn:panels.colorFormatRgb
 zh-cn:panels.framePresetCategoryFigmaCommunity
 zh-cn:panels.maskTypeAlpha
+zh-cn:settings.mcp
 zh-cn:storage.providerAmazonS3
 zh-cn:storage.providerBackblaze
 zh-cn:storage.providerR2
-
-de:ai.chatSettings
-es:ai.chatSettings
-it:ai.chatSettings

@@ -5,11 +5,10 @@ import { CanvasHelper } from '#tests/helpers/canvas'
 async function selectMCPSection(page: Page, mobile: boolean) {
   if (mobile) {
     await page.getByRole('combobox', { name: 'Settings', exact: true }).click()
-    await page.getByRole('option', { name: 'Automation', exact: true }).click()
+    await page.getByRole('option', { name: 'MCP', exact: true }).click()
   } else {
     await page.getByTestId('settings-section-mcp').click()
   }
-  await page.getByRole('button', { name: 'Connections', exact: true }).click()
 }
 
 for (const viewport of [
@@ -92,11 +91,11 @@ test('MCP connection forms validate, retain invalid drafts and reset dirty state
   await expect(name).toHaveValue('')
   await expect(name).toHaveAttribute('aria-invalid', 'false')
   await name.fill('Temporary')
-  await page.getByRole('button', { name: 'Tools', exact: true }).click()
+  await page.getByTestId('settings-section-tools').click()
   await expect(page.getByRole('alertdialog')).toBeVisible()
   await page.getByRole('button', { name: 'Keep editing', exact: true }).click()
   await name.fill('')
-  await page.getByRole('button', { name: 'Tools', exact: true }).click()
+  await page.getByTestId('settings-section-tools').click()
   await expect(page.getByRole('alertdialog')).toHaveCount(0)
   await selectMCPSection(page, false)
   await page.getByRole('button', { name: 'Add connection', exact: true }).click()

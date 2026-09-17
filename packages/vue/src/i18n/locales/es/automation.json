@@ -1,8 +1,4 @@
 {
-  "toolsTab": "Herramientas",
-  "connectionsTab": "Conexiones",
-  "viewLabel": "Sección de automatización",
-  "toolAccess": "Acceso a herramientas",
   "toolAccessDescription": "Configura las herramientas de diseño por separado para la IA integrada y el servidor MCP local.",
   "toolAccessTarget": "Configurar el acceso a herramientas para",
   "builtInAI": "IA integrada",

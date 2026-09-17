@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { configurableAITools } from '@/app/ai/tools/catalog'
 import { aiToolOverrides, disabledAITools } from '@/app/ai/tools/preferences'
 import { configurableMCPTools, disabledMCPTools } from '@/app/automation/mcp/preferences'
-import { openAutomationSettings } from '@/app/automation/settings/navigation'
+import { openSettingsDialog } from '@/app/settings/dialog'
 
 import type { ToolAccessTarget } from '../types'
 
@@ -11,7 +11,7 @@ const target = ref<ToolAccessTarget>('ai')
 
 export function openToolAccessSettings(value: ToolAccessTarget) {
   target.value = value
-  openAutomationSettings('tools')
+  openSettingsDialog('tools')
 }
 
 export function useToolAccessSettings() {

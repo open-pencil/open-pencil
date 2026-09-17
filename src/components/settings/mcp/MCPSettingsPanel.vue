@@ -2,7 +2,7 @@
 import { useClipboard } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue'
+import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue'
 
 import { mcpAuthenticationEnabled, mcpRootDirectory } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
@@ -17,6 +17,7 @@ import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const automation = useAutomationMessages()
+const settings = useSettingsMessages()
 const common = useCommonMessages()
 const { copy, copied } = useClipboard()
 const statusMessage = computed(
@@ -94,7 +95,7 @@ const { restart, chooseRootDirectory } = useMCPSettings()
     <AppAlert v-if="mcpRuntime.error" tone="error" :heading="mcpRuntime.error" />
     <div>
       <AppButton variant="link" @click="openToolAccessSettings('mcp')">{{
-        automation.toolAccess
+        settings.toolAccess
       }}</AppButton>
     </div>
     <div>

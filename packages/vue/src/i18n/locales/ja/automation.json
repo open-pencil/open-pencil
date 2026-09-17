@@ -1,8 +1,4 @@
 {
-  "toolsTab": "ツール",
-  "connectionsTab": "接続",
-  "viewLabel": "自動化セクション",
-  "toolAccess": "ツールへのアクセス",
   "toolAccessDescription": "内蔵 AI とローカル MCP サーバーのデザインツールを個別に設定します。",
   "toolAccessTarget": "ツールアクセスの設定対象",
   "builtInAI": "内蔵 AI",

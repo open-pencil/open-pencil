@@ -49,7 +49,6 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
-  await page.getByRole('button', { name: 'Connections', exact: true }).click()
   const section = page.getByTestId('app-settings-dialog')
   await section.getByRole('button', { name: 'Add connection' }).click()
   await section.getByLabel('Connection name').fill('GitHub')
@@ -72,7 +71,6 @@ test('MCP connections keep bearer tokens out of ordinary settings', async ({ pag
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
-  await page.getByRole('button', { name: 'Connections', exact: true }).click()
   await expect(section).toContainText('https://example.com/mcp')
   await expect(section).toContainText('Enabled')
   await section.getByRole('button', { name: /GitHub/ }).click()
@@ -124,7 +122,6 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
 
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
-  await page.getByRole('button', { name: 'Connections', exact: true }).click()
 
   const authentication = page.getByTestId('settings-mcp-authentication')
   await expect(authentication).toHaveAttribute('data-state', 'checked')
@@ -133,7 +130,6 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
-  await page.getByRole('button', { name: 'Connections', exact: true }).click()
   await expect(authentication).toHaveAttribute('data-state', 'unchecked')
   await authentication.click()
 
@@ -150,7 +146,6 @@ test('MCP automation settings filter and persist tool availability', async ({ pa
   await canvas.waitForInit()
   await page.getByTestId('app-settings-trigger').click()
   await page.getByTestId('settings-section-mcp').click()
-  await page.getByRole('button', { name: 'Connections', exact: true }).click()
   await page.getByRole('button', { name: 'Tool access', exact: true }).click()
   await expect(createShape).toHaveAttribute('data-state', 'unchecked')
 

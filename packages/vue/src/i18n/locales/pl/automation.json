@@ -1,8 +1,4 @@
 {
-  "toolsTab": "Narzędzia",
-  "connectionsTab": "Połączenia",
-  "viewLabel": "Sekcja automatyzacji",
-  "toolAccess": "Dostęp do narzędzi",
   "toolAccessDescription": "Skonfiguruj narzędzia projektowe osobno dla wbudowanej AI i lokalnego serwera MCP.",
   "toolAccessTarget": "Skonfiguruj dostęp do narzędzi dla",
   "builtInAI": "Wbudowana AI",

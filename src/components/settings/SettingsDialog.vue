@@ -12,14 +12,15 @@ import {
   type SettingsSection
 } from '@/app/settings/dialog'
 import { provideSettingsNavigation } from '@/app/settings/navigation/use'
-import AutomationSettingsPanel from '@/components/settings/automation/AutomationSettingsPanel.vue'
 import ChatSettingsSection from '@/components/settings/chat/ChatSettingsSection.vue'
 import DiagnosticsSettingsPanel from '@/components/settings/diagnostics/DiagnosticsSettingsPanel.vue'
 import GeneralSettingsPanel from '@/components/settings/general/GeneralSettingsPanel.vue'
 import SettingsPage from '@/components/settings/layout/SettingsPage.vue'
+import MCPWorkspacePanel from '@/components/settings/mcp/MCPWorkspacePanel.vue'
 import MediaSettingsPanel from '@/components/settings/media/MediaSettingsPanel.vue'
 import ModelsPanel from '@/components/settings/models/ModelsPanel.vue'
 import StorageSettingsPanel from '@/components/settings/storage/StorageSettingsPanel.vue'
+import ToolAccessSettingsPanel from '@/components/settings/tool-access/ToolAccessSettingsPanel.vue'
 import UsageSettingsPanel from '@/components/settings/usage/UsageSettingsPanel.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import {
@@ -46,7 +47,8 @@ const sections = computed(
       { value: 'ai', label: settings.value.aiAndAgents },
       { value: 'usage', label: settings.value.usage },
       { value: 'diagnostics', label: settings.value.diagnostics },
-      { value: 'mcp', label: settings.value.automation },
+      { value: 'mcp', label: settings.value.mcp },
+      { value: 'tools', label: settings.value.toolAccess },
       { value: 'media', label: settings.value.media },
       { value: 'storage', label: settings.value.storage }
     ] satisfies { value: SettingsSection; label: string }[]
@@ -115,7 +117,11 @@ function onOpenChange(open: boolean): void {
         </AppTabsTrigger>
         <AppTabsTrigger value="mcp" data-test-id="settings-section-mcp">
           <template #leading><icon-lucide-plug class="size-3.5" /></template>
-          {{ settings.automation }}
+          {{ settings.mcp }}
+        </AppTabsTrigger>
+        <AppTabsTrigger value="tools" data-test-id="settings-section-tools">
+          <template #leading><icon-lucide-sliders-horizontal class="size-3.5" /></template>
+          {{ settings.toolAccess }}
         </AppTabsTrigger>
         <AppTabsTrigger value="media" data-test-id="settings-section-media">
           <template #leading><icon-lucide-image class="size-3.5" /></template>
@@ -144,7 +150,10 @@ function onOpenChange(open: boolean): void {
         <SettingsPage><DiagnosticsSettingsPanel /></SettingsPage>
       </AppTabsContent>
       <AppTabsContent value="mcp" as-child>
-        <AutomationSettingsPanel />
+        <MCPWorkspacePanel />
+      </AppTabsContent>
+      <AppTabsContent value="tools" as-child>
+        <ToolAccessSettingsPanel />
       </AppTabsContent>
       <AppTabsContent value="media" as-child>
         <MediaSettingsPanel />

@@ -1,8 +1,4 @@
 {
-  "toolsTab": "Werkzeuge",
-  "connectionsTab": "Verbindungen",
-  "viewLabel": "Automatisierungsbereich",
-  "toolAccess": "Werkzeugzugriff",
   "toolAccessDescription": "Designwerkzeuge für die integrierte KI und den lokalen MCP-Server getrennt konfigurieren.",
   "toolAccessTarget": "Werkzeugzugriff konfigurieren für",
   "builtInAI": "Integrierte KI",

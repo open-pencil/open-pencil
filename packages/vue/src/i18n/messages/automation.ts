@@ -3,10 +3,6 @@ import { params } from '@nanostores/i18n'
 import { i18n } from '#vue/i18n/create'
 
 export const automationMessageDefaults = {
-  toolsTab: 'Tools',
-  connectionsTab: 'Connections',
-  viewLabel: 'Automation view',
-  toolAccess: 'Tool access',
   toolAccessDescription:
     'Configure design tools independently for built-in AI and the local MCP server.',
   toolAccessTarget: 'Configure tool access for',

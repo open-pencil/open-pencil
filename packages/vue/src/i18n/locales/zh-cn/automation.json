@@ -1,8 +1,4 @@
 {
-  "toolsTab": "工具",
-  "connectionsTab": "连接",
-  "viewLabel": "自动化分区",
-  "toolAccess": "工具访问权限",
   "toolAccessDescription": "分别配置内置 AI 和本地 MCP 服务器的设计工具。",
   "toolAccessTarget": "配置工具访问权限的对象",
   "builtInAI": "内置 AI",
