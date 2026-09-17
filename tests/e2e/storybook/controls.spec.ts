@@ -17,6 +17,7 @@ const stories = [
   'design-system-paint-fill-swatch--gradient',
   'design-system-paint-fill-swatch--image-placeholder',
   'design-system-navigation-tabs--constrained-labels',
+  'design-system-disclosure-collapsible--collapsed',
   'settings-tool-access-list--mixed-access'
 ]
 
