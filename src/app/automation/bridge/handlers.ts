@@ -3,6 +3,7 @@ import type { FigmaAPI } from '@open-pencil/core/figma-api'
 import { createAutomationEvalHandler } from '@/app/automation/bridge/eval-handler'
 import { handleExport, handleExportJSX } from '@/app/automation/bridge/export-handlers'
 import {
+  handleCloseFile,
   handleNewDocument,
   handleOpenFile,
   handleSaveFile
@@ -37,6 +38,7 @@ export function createAutomationCommandHandlers(makeFigma: FigmaFactory) {
     export_jsx: handleExportJSX,
     selection: handleSelection,
     save_file: handleSaveFile,
+    close_file: handleCloseFile,
     new_document: handleNewDocument,
     open_file: handleOpenFile
   }

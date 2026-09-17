@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- Classify MCP `open_file` and `close_file` operations as read-only hints, and close opened document tabs through the new `close_file` tool with the usual unsaved-change prompt.
 - Mark unsaved documents and ask whether to save before closing a tab, the desktop window, or the application, rather than relying on recovery alone.
 - Defer AI provider connections and system credential reads until you send a message or use a connected feature, so opening documents and browsing chat history no longer trigger unexpected credential prompts.
 - Point Homebrew installation instructions to the official `openpencil` cask and document separate CLI installation.

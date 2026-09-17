@@ -5,7 +5,7 @@ import {
 } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
 import { openFileFromPath } from '@/app/shell/menu/use'
-import { createTab, getActiveStore, openFileInNewTab } from '@/app/tabs'
+import { closeTab, createTab, getActiveStore, getTabById, openFileInNewTab } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 export async function handleSaveFile(target: AutomationTarget, args: unknown): Promise<unknown> {
@@ -29,6 +29,11 @@ export async function ensureTauriParentDirectory(path: string): Promise<void> {
   const dir = await dirname(path)
   if (dir === path) return
   await mkdir(dir, { recursive: true })
+}
+
+export async function handleCloseFile(target: AutomationTarget, _args: unknown): Promise<unknown> {
+  await closeTab(target.documentId)
+  return { ok: true, result: { closed: getTabById(target.documentId) === undefined } }
 }
 
 export async function handleNewDocument(

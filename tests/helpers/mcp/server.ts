@@ -214,6 +214,10 @@ async function handleMockCommand(
     return {}
   }
 
+  if (command === 'close_file') {
+    return { closed: true }
+  }
+
   return executeRPCCommand(graph, command, args ?? {})
 }
 

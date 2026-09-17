@@ -143,6 +143,7 @@ Endpoints are available over both active transports:
 5. **Modify** — `set_fill`, `set_stroke`, `set_layout`, `update_node`, `set_effects`
 6. **Structure** — `reparent_node`, `group_nodes`, `clone_node`, `delete_node`
 7. **Save** — `save_file` to write back to `.fig`
+8. **Close** — `close_file` to close an open document tab; it prompts to save unsaved changes.
 
 Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
@@ -165,6 +166,7 @@ OpenPencil currently registers 100+ shared design tools, plus MCP-only document 
 | Tool | Description |
 |------|-------------|
 | `open_file` | Open a `.fig` file for editing |
+| `close_file` | Close an open document tab, prompting to save unsaved changes |
 | `save_file` | Save the current document to a `.fig` file |
 | `new_document` | Create a new empty document |
 | `list_documents` | List open app documents/tabs and their pages |
