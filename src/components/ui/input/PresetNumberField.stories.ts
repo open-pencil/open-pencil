@@ -78,7 +78,8 @@ async function chooseCustom(canvasElement: HTMLElement) {
   const canvas = within(canvasElement)
   await userEvent.click(canvas.getByRole('combobox', { name: LABEL }))
   await userEvent.click(within(document.body).getByRole('option', { name: 'Custom…' }))
-  return canvas.getByRole('spinbutton', { name: LABEL })
+  // The revealed field is named after the control plus the custom option.
+  return canvas.getByRole('spinbutton', { name: `${LABEL}: Custom…` })
 }
 
 /** Choosing the escape hatch reveals a field seeded from the current value. */
@@ -102,6 +103,37 @@ export const RejectsOutOfRange: Story = {
     await expect(field).toHaveAttribute('aria-invalid', 'true')
     await expect(canvas.getByText('Enter a whole number from 1 to 1000.')).toBeVisible()
     await expect(canvas.getByTestId('committed')).toHaveTextContent('Committed value: 50')
+  }
+}
+
+/** A value replaced from outside the control switches to custom mode. */
+export const FollowsExternalValue: Story = {
+  render: (args) => ({
+    components: { PresetNumberField },
+    setup: () => {
+      const value = ref(args.initial)
+      return { args, value }
+    },
+    template: `
+      <div class="flex max-w-md flex-col gap-2 bg-panel p-4 text-surface">
+        <PresetNumberField
+          v-model:number="value"
+          :presets="args.presets"
+          :min="args.min"
+          :max="args.max"
+          :label="args.label"
+          :custom-label="args.customLabel"
+          :range-message="args.rangeMessage"
+        />
+        <button type="button" @click="value = 137">Set externally</button>
+      </div>`
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.queryByRole('spinbutton')).toBeNull()
+    await userEvent.click(canvas.getByRole('button', { name: 'Set externally' }))
+    const field = canvas.getByRole('spinbutton', { name: `${LABEL}: Custom…` })
+    await expect(field).toHaveValue(137)
   }
 }
 

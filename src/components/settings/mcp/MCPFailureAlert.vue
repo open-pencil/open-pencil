@@ -72,11 +72,13 @@ const detail = computed(() =>
   EXPLAINED_REASONS.has(failure.code) ? null : failure.detail?.trim() || null
 )
 
-function copyDetails(): void {
+async function copyDetails(): Promise<void> {
   const payload = [`code=${failure.code}`, failure.detail ? `detail=${failure.detail}` : null]
     .filter(Boolean)
     .join('\n')
-  copy(payload)
+  // VueUse falls back to a legacy write and never rejects, so awaiting the write
+  // is what keeps the confirmation honest.
+  await copy(payload)
   toast.info(automation.value.mcpFailureCopied)
 }
 </script>

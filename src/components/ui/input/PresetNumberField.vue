@@ -87,10 +87,10 @@ const options = computed(() => [
 
 /** Selecting a preset again, or a value arriving from elsewhere, exits custom mode. */
 watch(value, (next) => {
-  if (presets.includes(next)) {
-    custom.value = false
-    invalid.value = false
-  }
+  // Follow the model in both directions: a non-preset value arriving from the
+  // owner must reveal the field instead of leaving the select without a match.
+  custom.value = !presets.includes(next)
+  invalid.value = false
   draft.value = String(next)
 })
 

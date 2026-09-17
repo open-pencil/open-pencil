@@ -30,7 +30,16 @@ for (const theme of ['light', 'dark']) {
       page.on('pageerror', (error) => errors.push(error.message))
       await page.goto(`/iframe.html?id=${story}&viewMode=story&globals=theme:${theme}`)
       const root = page.locator('#storybook-root')
-      await expect(root.getByRole('button').or(root.getByRole('tab')).first()).toBeVisible()
+      // Stories exercise different primitive families, so assert that an
+      // interactive control rendered rather than one specific family.
+      await expect(
+        root
+          .getByRole('button')
+          .or(root.getByRole('tab'))
+          .or(root.getByRole('combobox'))
+          .or(root.getByRole('spinbutton'))
+          .first()
+      ).toBeVisible()
       await page.evaluate(() => document.fonts.ready)
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme)
       // Keep theme coverage on a composed color matrix, not every story permutation.
