@@ -22,6 +22,7 @@
     "tools/authoring-reference",
     "tools/package-quality",
     "tools/release-packages",
+    "tools/tauri-menu",
     "tools/visual-oracles"
   ],
   "type": "module",
