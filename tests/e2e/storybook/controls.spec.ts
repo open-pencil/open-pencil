@@ -18,7 +18,8 @@ const stories = [
   'design-system-paint-fill-swatch--image-placeholder',
   'design-system-navigation-tabs--constrained-labels',
   'design-system-disclosure-collapsible--collapsed',
-  'settings-tool-access-list--mixed-access'
+  'settings-tool-access-list--mixed-access',
+  'settings-mcp-failure-alert--all-reasons'
 ]
 
 for (const theme of ['light', 'dark']) {
