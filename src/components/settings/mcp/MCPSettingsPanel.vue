@@ -75,7 +75,8 @@ const failureDetail = computed(() => {
   const failure = mcpRuntime.failure
   if (!failure) return null
   const code = failure.code
-  if (code === 'not-installed' || code === 'rejected') return null
+  // These reasons already carry their detail in the translated guidance.
+  if (code === 'not-installed' || code === 'rejected' || code === 'unreachable') return null
   return failure.detail?.trim() || null
 })
 const detailsOpen = ref(false)
