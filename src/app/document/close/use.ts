@@ -54,9 +54,11 @@ export function useDocumentCloseProtection() {
     await Promise.all([
       window
         .onCloseRequested((event) => {
-          if (approved) return
+          // Always intercept: Tauri destroys the window implicitly when a handler returns
+          // without preventing, which would bypass the prompt after approval.
           event.preventDefault()
-          void requestClose(() => window.close())
+          if (approved) return
+          void requestClose(() => window.destroy())
         })
         .then(registerCleanup),
       listen('app:request-exit', () => {
