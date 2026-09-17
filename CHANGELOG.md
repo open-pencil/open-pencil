@@ -11,6 +11,7 @@
 - Mark unsaved documents and ask whether to save before closing a tab, the desktop window, or the application, rather than relying on recovery alone.
 - Defer AI provider connections and system credential reads until you send a message or use a connected feature, so opening documents and browsing chat history no longer trigger unexpected credential prompts.
 - Point Homebrew installation instructions to the official `openpencil` cask and document separate CLI installation.
+- Reach the custom model option in the model picker for providers with large model catalogs instead of requiring a search for it.
 
 ## 0.15.0 — 2026-09-16
 
