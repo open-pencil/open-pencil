@@ -11,7 +11,7 @@ Wenn Sie ein eigenes Produkt auf OpenPencil aufbauen möchten, lesen Sie den Ber
 Fertige Versionen für macOS, Windows und Linux finden Sie auf der [Release-Seite](https://github.com/open-pencil/open-pencil/releases/latest).
 
 | Plattform | Datei |
-|-----------|-------|
+| --------------------- | -------------------- |
 | macOS (Apple Silicon) | `.dmg` (aarch64) |
 | macOS (Intel) | `.dmg` (x64) |
 | Windows (x64) | `.msi` / `.exe` |
@@ -21,10 +21,17 @@ Fertige Versionen für macOS, Windows und Linux finden Sie auf der [Release-Seit
 ## Installation unter macOS mit Homebrew
 
 ```sh
-brew install open-pencil/tap/open-pencil
+brew install --cask openpencil
 ```
 
-Der Befehl installiert die aktuelle signierte Version für Macs mit Apple Silicon oder Intel-Prozessor. Der Homebrew Tap wird bei jedem Release aktualisiert.
+Der Befehl installiert die signierte App für Macs mit Apple Silicon oder Intel-Prozessor aus dem [offiziellen Homebrew-Katalog](https://formulae.brew.sh/cask/openpencil). Updates werden von Homebrew geprüft und können später als GitHub-Releases erscheinen. Bis dahin steht der [direkte Download](https://github.com/open-pencil/open-pencil/releases/latest) bereit. Die CLI wird separat installiert: `npm install -g @open-pencil/cli`.
+
+Wenn du den archivierten eigenen Tap verwendet hast, wechsle so:
+
+```sh
+brew uninstall open-pencil/tap/open-pencil
+brew install --cask openpencil
+```
 
 ## Aus dem Quellcode erstellen
 
@@ -52,7 +59,7 @@ Der Editor ist anschließend unter `http://localhost:1420` erreichbar.
 ### Befehle
 
 | Befehl | Zweck |
-|--------|-------|
+| ------------------------------- | --------------------------------------------------------------------------------------- |
 | `bun run dev` | Entwicklungsserver mit HMR starten |
 | `bun run build` | Produktionsversion erstellen |
 | `bun run check` | oxlint und Typprüfung mit tsgo ausführen |

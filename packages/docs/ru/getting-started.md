@@ -11,7 +11,7 @@ OpenPencil работает прямо в браузере и не требуе�
 Готовые версии для macOS, Windows и Linux опубликованы на [странице релизов](https://github.com/open-pencil/open-pencil/releases/latest).
 
 | Платформа | Файл |
-|----------|------|
+| --------------------- | -------------------- |
 | macOS (Apple Silicon) | `.dmg` (aarch64) |
 | macOS (Intel) | `.dmg` (x64) |
 | Windows (x64) | `.msi` / `.exe` |
@@ -21,10 +21,17 @@ OpenPencil работает прямо в браузере и не требуе�
 ## Установка в macOS через Homebrew
 
 ```sh
-brew install open-pencil/tap/open-pencil
+brew install --cask openpencil
 ```
 
-Команда устанавливает последнюю подписанную версию для компьютеров Mac с Apple Silicon или процессором Intel. Homebrew tap обновляется при каждом релизе.
+Команда устанавливает подписанное приложение для Mac с Apple Silicon или Intel из [официального каталога Homebrew](https://formulae.brew.sh/cask/openpencil). Обновления проходят проверку в Homebrew и могут появляться позже релизов на GitHub. До обновления каталога используйте [прямую загрузку](https://github.com/open-pencil/open-pencil/releases/latest). CLI устанавливается отдельно: `npm install -g @open-pencil/cli`.
+
+Если вы использовали архивный собственный tap, перейдите так:
+
+```sh
+brew uninstall open-pencil/tap/open-pencil
+brew install --cask openpencil
+```
 
 ## Сборка из исходного кода
 
@@ -52,7 +59,7 @@ bun run dev
 ### Команды
 
 | Команда | Назначение |
-|---------|------------|
+| ------------------------------- | -------------------------------------------------------------------- |
 | `bun run dev` | Запустить сервер разработки с HMR |
 | `bun run build` | Собрать версию для публикации |
 | `bun run check` | Запустить oxlint и проверку типов с помощью tsgo |

@@ -8,13 +8,13 @@ description: Drzewo obiektów, wyszukiwanie według nazwy i typu oraz właściwo
 CLI pozwala analizować dokumenty projektu bez uruchamiania edytora. Te same polecenia działają z otwartą aplikacją komputerową, jeśli nie podasz pliku.
 
 ::: tip Instalacja
+
 ```sh
 npm install -g @open-pencil/cli
 # albo
 bun add -g @open-pencil/cli
-# albo
-brew install open-pencil/tap/open-pencil
 ```
+
 :::
 
 ## Informacje ogólne

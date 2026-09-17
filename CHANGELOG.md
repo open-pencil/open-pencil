@@ -11,6 +11,7 @@
 
 - Explain why the local MCP server did not start — a missing `@open-pencil/mcp` install, a denied command, an early exit, a rejected local connection, or an unreachable address — with translated guidance and collapsible technical details instead of one generic health failure.
 - Find a globally installed `@open-pencil/mcp` when the desktop app is launched from the system shell, by searching the common global binary directories that a graphical launch omits from `PATH`.
+- Point Homebrew installation instructions to the official `openpencil` cask and document separate CLI installation.
 
 ## 0.15.0 — 2026-09-16
 

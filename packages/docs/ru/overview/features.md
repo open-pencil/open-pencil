@@ -115,7 +115,7 @@ openpencil eval design.fig -c "..."     # Figma Plugin API
 **Веб-приложение:** [app.openpencil.dev](https://app.openpencil.dev), установка как PWA и интерфейс для сенсорных экранов.
 
 ```sh
-brew install open-pencil/tap/open-pencil
+brew install --cask openpencil
 ```
 
 ## Резервная загрузка Google Fonts

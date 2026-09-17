@@ -8,11 +8,13 @@ description: Browse node trees, search by name or type, and dig into properties 
 The CLI lets you explore design documents without opening the editor. Every command also works on the live app — just omit the file argument.
 
 ::: tip Install
+
 ```sh
 npm install -g @open-pencil/cli
 # or
-brew install open-pencil/tap/open-pencil
+bun add -g @open-pencil/cli
 ```
+
 :::
 
 ## Document Info

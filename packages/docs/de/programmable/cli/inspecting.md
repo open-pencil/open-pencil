@@ -8,13 +8,13 @@ description: Dokumentbaum, Objekte, Seiten und Variablen über die CLI lesen.
 Die CLI liest `.fig`-Dateien, ohne den Editor zu öffnen. Läuft die Desktop-App, kann der Dateiname entfallen; die CLI verwendet dann RPC für das geöffnete Dokument.
 
 ::: tip Installation
+
 ```sh
 npm install -g @open-pencil/cli
 # oder
 bun add -g @open-pencil/cli
-# oder
-brew install open-pencil/tap/open-pencil
 ```
+
 :::
 
 ## Dokumentinformationen

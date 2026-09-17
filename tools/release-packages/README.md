@@ -32,6 +32,20 @@ sha256sum --check SHA256SUMS
 
 Each release asset, including `SHA256SUMS`, also has its own attestation. For a pinned audit, pass the independently obtained workflow commit to `--signer-digest`; compare the attested manifest's source commit with the immutable tag. Do not treat an unverified manifest as trusted configuration.
 
+## Homebrew distribution
+
+The macOS app is distributed through the [official `openpencil` cask](https://formulae.brew.sh/cask/openpencil): `brew install --cask openpencil`. This installs the desktop app, not the separately published npm CLI.
+
+Homebrew's BrewTestBot automatically proposes version bumps for this cask (its tooling currently reports a roughly three-hour cadence). Homebrew owns review and merge timing; publishing our GitHub release does not immediately update the cask. Do not add parallel bump-PR automation or push to the archived `open-pencil/homebrew-tap` repository.
+
+After each release:
+
+1. Check the official cask version and search `Homebrew/homebrew-cask` for an existing `openpencil` bump PR.
+2. Check that both architecture hashes match the attested release manifest. Follow the bot's PR through upstream review; do not report the cask as updated until it merges.
+3. If an update is delayed or fails, investigate the upstream bot/PR and follow Homebrew's current contribution policy rather than bypassing autobump restrictions. Direct GitHub downloads and the app updater remain available in the meantime.
+
+The old `HOMEBREW_TAP_TOKEN` workflow secret is no longer used and can be removed after the obsolete workflow is retired. Revoking the underlying token is a separate credential-owner action if it is shared elsewhere.
+
 ## Failure and recovery
 
 - There are explicit job/build/startup/command deadlines. Native builds do not silently retry or upload partial release outputs.
