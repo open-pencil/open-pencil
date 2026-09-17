@@ -65,5 +65,22 @@
   "noMatchingTools": "Nessuno strumento corrisponde alla ricerca.",
   "connectionNameHint": "Usa un nome univoco di massimo 80 caratteri. Il nome open-pencil è riservato.",
   "connectionNameInvalid": "Scegli un nome univoco di massimo 80 caratteri, diverso da open-pencil.",
-  "serverURLHint": "Usa HTTPS. HTTP è consentito solo per localhost o un indirizzo di loopback. Non includere credenziali nell’URL."
+  "serverURLHint": "Usa HTTPS. HTTP è consentito solo per localhost o un indirizzo di loopback. Non includere credenziali nell’URL.",
+  "mcpFailureNotInstalled": "L’automazione MCP non è installata",
+  "mcpFailureNotInstalledHint": "Installa {package} a livello globale con il gestore di pacchetti, poi riavvia OpenPencil.",
+  "mcpFailurePermission": "OpenPencil non può avviare il server MCP",
+  "mcpFailurePermissionHint": "Il sistema ha negato il comando. Reinstalla OpenPencil con i permessi di shell o avvia il server manualmente.",
+  "mcpFailureExited": "Il server MCP si è arrestato durante l’avvio",
+  "mcpFailureExitedHint": "Il processo è terminato prima di essere pronto.",
+  "mcpFailureTimeout": "Il server MCP non ha risposto in tempo",
+  "mcpFailureTimeoutHint": "Non è diventato pronto entro il tempo di avvio.",
+  "mcpFailureRejected": "Il server MCP ha rifiutato la connessione locale",
+  "mcpFailureRejectedHint": "Riavvia il server MCP per emettere un nuovo token.",
+  "mcpFailureMalformed": "Il server MCP ha restituito una risposta inattesa",
+  "mcpFailureMalformedHint": "Le versioni dell’app e del server potrebbero non coincidere. Aggiorna entrambe e riavvia OpenPencil.",
+  "mcpFailureUnreachable": "Il server MCP non è raggiungibile",
+  "mcpFailureUnreachableHint": "Nessuno risponde su {endpoint}. Libera l’indirizzo e avvia il server.",
+  "mcpFailureUnknown": "Impossibile avviare il server MCP",
+  "mcpFailureUnknownHint": "Avvialo di nuovo o controlla i dettagli tecnici qui sotto.",
+  "mcpFailureDetails": "Dettagli"
 }

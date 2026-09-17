@@ -65,5 +65,22 @@
   "noMatchingTools": "検索に一致するツールはありません。",
   "connectionNameHint": "80 文字以内の重複しない名前を使用してください。open-pencil は予約済みです。",
   "connectionNameInvalid": "open-pencil 以外の、80 文字以内で重複しない名前を選んでください。",
-  "serverURLHint": "HTTPS を使用してください。HTTP は localhost またはループバックアドレスでのみ使用できます。URL に認証情報を含めないでください。"
+  "serverURLHint": "HTTPS を使用してください。HTTP は localhost またはループバックアドレスでのみ使用できます。URL に認証情報を含めないでください。",
+  "mcpFailureNotInstalled": "MCP 自動化がインストールされていません",
+  "mcpFailureNotInstalledHint": "パッケージマネージャーで {package} をグローバルにインストールし、OpenPencil を再起動してください。",
+  "mcpFailurePermission": "OpenPencil が MCP サーバーを起動できません",
+  "mcpFailurePermissionHint": "システムがコマンドを拒否しました。シェル権限を含めて OpenPencil を再インストールするか、サーバーを手動で起動してください。",
+  "mcpFailureExited": "起動中に MCP サーバーが停止しました",
+  "mcpFailureExitedHint": "準備完了になる前にプロセスが終了しました。",
+  "mcpFailureTimeout": "MCP サーバーが時間内に応答しませんでした",
+  "mcpFailureTimeoutHint": "起動タイムアウト内に準備完了になりませんでした。",
+  "mcpFailureRejected": "MCP サーバーがローカル接続を拒否しました",
+  "mcpFailureRejectedHint": "MCP サーバーを再起動して新しいトークンを発行してください。",
+  "mcpFailureMalformed": "MCP サーバーが予期しない応答を返しました",
+  "mcpFailureMalformedHint": "アプリとサーバーのバージョンが一致していない可能性があります。両方を更新して OpenPencil を再起動してください。",
+  "mcpFailureUnreachable": "MCP サーバーに到達できません",
+  "mcpFailureUnreachableHint": "{endpoint} で応答がありません。アドレスを解放してからサーバーを起動してください。",
+  "mcpFailureUnknown": "MCP サーバーを起動できませんでした",
+  "mcpFailureUnknownHint": "もう一度起動するか、以下の技術的な詳細を確認してください。",
+  "mcpFailureDetails": "詳細"
 }

@@ -26,6 +26,8 @@ function setup(overrides: Partial<MCPRuntimeDependencies> = {}) {
     },
     readHealth: async () => ({ status: 'ok', version: '0.14.0', tools: [descriptor()] }),
     setToolDescriptors: (tools) => catalogs.push(tools),
+    getStartupFailure: () => null,
+    getHealthFailure: () => null,
     spawn: async () => ({
       authToken: 'token',
       managed: true,
@@ -81,8 +83,45 @@ describe('MCP runtime service', () => {
 
     expect(result.ok).toBe(false)
     expect(service.state.status).toBe('error')
-    expect(service.state.error).toContain('did not become healthy')
+    expect(service.state.failure).toEqual({ code: 'unreachable', detail: expect.any(String) })
     expect(calls).toEqual(['disconnect-server'])
+  })
+
+  test('surfaces why the server could not start instead of a generic message', async () => {
+    const { service } = setup({
+      spawn: async () => null,
+      readHealth: async () => null,
+      getStartupFailure: () => ({ code: 'not-installed', detail: '@open-pencil/mcp@0.15.0' })
+    })
+
+    await service.start(getStore)
+
+    expect(service.state.failure).toEqual({
+      code: 'not-installed',
+      detail: '@open-pencil/mcp@0.15.0'
+    })
+  })
+
+  test('distinguishes a rejected token from a missing server', async () => {
+    const { service } = setup({
+      readHealth: async () => null,
+      getHealthFailure: () => ({ code: 'rejected', detail: 'HTTP 401' })
+    })
+
+    await service.start(getStore)
+
+    expect(service.state.failure).toEqual({ code: 'rejected', detail: 'HTTP 401' })
+  })
+
+  test('reports an unexpected health payload', async () => {
+    const { service } = setup({
+      readHealth: async () => null,
+      getHealthFailure: () => ({ code: 'malformed', detail: 'HTTP 200' })
+    })
+
+    await service.start(getStore)
+
+    expect(service.state.failure).toEqual({ code: 'malformed', detail: 'HTTP 200' })
   })
 
   test('clears local runtime state even when server shutdown fails', async () => {

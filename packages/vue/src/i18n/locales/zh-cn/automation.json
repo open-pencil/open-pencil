@@ -65,5 +65,22 @@
   "noMatchingTools": "没有与搜索匹配的工具。",
   "connectionNameHint": "使用不超过 80 个字符的唯一名称。open-pencil 为保留名称。",
   "connectionNameInvalid": "请选择不超过 80 个字符且不是 open-pencil 的唯一名称。",
-  "serverURLHint": "请使用 HTTPS。仅 localhost 或回环地址允许使用 HTTP。请勿在 URL 中包含凭据。"
+  "serverURLHint": "请使用 HTTPS。仅 localhost 或回环地址允许使用 HTTP。请勿在 URL 中包含凭据。",
+  "mcpFailureNotInstalled": "MCP 自动化未安装",
+  "mcpFailureNotInstalledHint": "请使用包管理器全局安装 {package}，然后重启 OpenPencil。",
+  "mcpFailurePermission": "OpenPencil 无法启动 MCP 服务器",
+  "mcpFailurePermissionHint": "系统拒绝了该命令。请重新安装 OpenPencil 以包含其命令行权限，或手动启动服务器。",
+  "mcpFailureExited": "MCP 服务器在启动过程中停止",
+  "mcpFailureExitedHint": "进程在就绪前已退出。",
+  "mcpFailureTimeout": "MCP 服务器未及时响应",
+  "mcpFailureTimeoutHint": "未在启动超时时间内就绪。",
+  "mcpFailureRejected": "MCP 服务器拒绝了本地连接",
+  "mcpFailureRejectedHint": "重启 MCP 服务器以签发新的令牌。",
+  "mcpFailureMalformed": "MCP 服务器返回了意外的响应",
+  "mcpFailureMalformedHint": "应用与服务器版本可能不一致。请同时更新并重启 OpenPencil。",
+  "mcpFailureUnreachable": "无法访问 MCP 服务器",
+  "mcpFailureUnreachableHint": "{endpoint} 上没有任何服务在监听。请释放该地址，然后启动服务器。",
+  "mcpFailureUnknown": "无法启动 MCP 服务器",
+  "mcpFailureUnknownHint": "请重新启动，或查看下方的技术细节。",
+  "mcpFailureDetails": "详细信息"
 }

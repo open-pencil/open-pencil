@@ -65,5 +65,22 @@
   "noMatchingTools": "По вашему запросу инструменты не найдены.",
   "connectionNameHint": "Укажите уникальное название длиной до 80 символов. Название open-pencil зарезервировано.",
   "connectionNameInvalid": "Выберите уникальное название длиной до 80 символов, отличное от open-pencil.",
-  "serverURLHint": "Используйте HTTPS. HTTP разрешён только для localhost или адреса обратной петли. Не включайте учётные данные в URL."
+  "serverURLHint": "Используйте HTTPS. HTTP разрешён только для localhost или адреса обратной петли. Не включайте учётные данные в URL.",
+  "mcpFailureNotInstalled": "Автоматизация MCP не установлена",
+  "mcpFailureNotInstalledHint": "Установите {package} глобально через менеджер пакетов и перезапустите OpenPencil.",
+  "mcpFailurePermission": "OpenPencil не может запустить MCP-сервер",
+  "mcpFailurePermissionHint": "Система отклонила команду. Переустановите OpenPencil с правами оболочки или запустите сервер вручную.",
+  "mcpFailureExited": "MCP-сервер остановился при запуске",
+  "mcpFailureExitedHint": "Процесс завершился до готовности.",
+  "mcpFailureTimeout": "MCP-сервер не ответил вовремя",
+  "mcpFailureTimeoutHint": "Он не стал готовым за отведённое время.",
+  "mcpFailureRejected": "MCP-сервер отклонил локальное подключение",
+  "mcpFailureRejectedHint": "Перезапустите MCP-сервер, чтобы выпустить новый токен.",
+  "mcpFailureMalformed": "MCP-сервер вернул неожиданный ответ",
+  "mcpFailureMalformedHint": "Версии приложения и сервера могут не совпадать. Обновите оба и перезапустите OpenPencil.",
+  "mcpFailureUnreachable": "MCP-сервер недоступен",
+  "mcpFailureUnreachableHint": "По адресу {endpoint} никто не отвечает. Освободите адрес и запустите сервер.",
+  "mcpFailureUnknown": "MCP-сервер не удалось запустить",
+  "mcpFailureUnknownHint": "Запустите его снова или посмотрите технические подробности ниже.",
+  "mcpFailureDetails": "Подробности"
 }

@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { getAutomationAuthToken, spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
+import {
+  getAutomationAuthToken,
+  getAutomationHealthFailure,
+  getAutomationStartupFailure,
+  readAutomationHealth,
+  spawnMCPIfNeeded
+} from '@/app/automation/mcp/spawn'
 
 import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
@@ -21,6 +27,41 @@ afterEach(async () => {
   Reflect.deleteProperty(globalThis, 'window')
   Reflect.deleteProperty(globalThis, 'navigator')
   Reflect.deleteProperty(globalThis, 'location')
+})
+
+describe('MCP health probe diagnostics', () => {
+  test('records a rejected token separately from an unreachable server', async () => {
+    installTauriMockWindow()
+    const reject = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 401 }))
+
+    await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({ code: 'rejected', detail: 'HTTP 401' })
+
+    reject.mockRejectedValue(new Error('connection refused'))
+    await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({
+      code: 'unreachable',
+      detail: expect.any(String)
+    })
+  })
+
+  test('records an unexpected health payload and clears the failure on success', async () => {
+    installTauriMockWindow()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ unexpected: true }), { status: 200 }))
+
+    await expect(readAutomationHealth()).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({ code: 'malformed', detail: 'HTTP 200' })
+
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ status: 'ok', version: '0.0.0-test' }), { status: 200 })
+    )
+    await expect(readAutomationHealth()).resolves.toMatchObject({ status: 'ok' })
+    expect(getAutomationHealthFailure()).toBeNull()
+  })
 })
 
 describe('Tauri MCP spawning', () => {
@@ -56,6 +97,7 @@ describe('Tauri MCP spawning', () => {
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('MCP server exited before startup completed')
+    expect(getAutomationStartupFailure()).toMatchObject({ code: 'exited' })
   })
 
   test('retains unexpected spawn errors for MCP-dependent features', async () => {
@@ -77,6 +119,7 @@ describe('Tauri MCP spawning', () => {
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('shell permission denied')
+    expect(getAutomationStartupFailure()).toMatchObject({ code: 'permission-denied' })
   })
 
   test('retains a language-independent missing executable diagnostic', async () => {
@@ -97,6 +140,7 @@ describe('Tauri MCP spawning', () => {
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('MCP automation is not installed')
+    expect(getAutomationStartupFailure()).toMatchObject({ code: 'not-installed' })
   })
 
   test('spawns MCP server with shell plugin when health check is missing', async () => {

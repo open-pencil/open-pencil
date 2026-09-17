@@ -65,5 +65,22 @@
   "noMatchingTools": "Aucun outil ne correspond à votre recherche.",
   "connectionNameHint": "Utilisez un nom unique de 80 caractères maximum. Le nom open-pencil est réservé.",
   "connectionNameInvalid": "Choisissez un nom unique de 80 caractères maximum, différent de open-pencil.",
-  "serverURLHint": "Utilisez HTTPS. HTTP n’est autorisé que pour localhost ou une adresse de bouclage. N’incluez pas d’identifiants dans l’URL."
+  "serverURLHint": "Utilisez HTTPS. HTTP n’est autorisé que pour localhost ou une adresse de bouclage. N’incluez pas d’identifiants dans l’URL.",
+  "mcpFailureNotInstalled": "L’automatisation MCP n’est pas installée",
+  "mcpFailureNotInstalledHint": "Installez {package} globalement avec votre gestionnaire de paquets, puis redémarrez OpenPencil.",
+  "mcpFailurePermission": "OpenPencil ne peut pas démarrer le serveur MCP",
+  "mcpFailurePermissionHint": "Le système a refusé la commande. Réinstallez OpenPencil avec ses permissions de shell ou démarrez le serveur manuellement.",
+  "mcpFailureExited": "Le serveur MCP s’est arrêté au démarrage",
+  "mcpFailureExitedHint": "Le processus s’est terminé avant d’être prêt.",
+  "mcpFailureTimeout": "Le serveur MCP n’a pas répondu à temps",
+  "mcpFailureTimeoutHint": "Il n’était pas prêt dans le délai de démarrage.",
+  "mcpFailureRejected": "Le serveur MCP a refusé la connexion locale",
+  "mcpFailureRejectedHint": "Redémarrez le serveur MCP pour émettre un nouveau jeton.",
+  "mcpFailureMalformed": "Le serveur MCP a renvoyé une réponse inattendue",
+  "mcpFailureMalformedHint": "Les versions de l’application et du serveur peuvent différer. Mettez à jour les deux et redémarrez OpenPencil.",
+  "mcpFailureUnreachable": "Le serveur MCP est injoignable",
+  "mcpFailureUnreachableHint": "Rien n’écoute sur {endpoint}. Libérez l’adresse puis démarrez le serveur.",
+  "mcpFailureUnknown": "Le serveur MCP n’a pas pu démarrer",
+  "mcpFailureUnknownHint": "Relancez-le ou consultez les détails techniques ci-dessous.",
+  "mcpFailureDetails": "Détails"
 }

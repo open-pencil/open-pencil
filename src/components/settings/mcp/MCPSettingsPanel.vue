@@ -4,6 +4,7 @@ import { computed } from 'vue'
 
 import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue'
 
+import type { MCPFailureCode } from '@/app/automation/mcp/failure'
 import { mcpAuthenticationEnabled, mcpRootDirectory } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
@@ -31,6 +32,50 @@ const statusMessage = computed(
     })[mcpRuntime.status]
 )
 const { restart, chooseRootDirectory } = useMCPSettings()
+
+/** Translated copy for each startup reason; the technical detail stays secondary. */
+const failureCopy = computed(() => {
+  const failure = mcpRuntime.failure
+  if (!failure) return null
+  const messages = automation.value
+  const copy: Record<MCPFailureCode, { heading: string; description: string }> = {
+    'not-installed': {
+      heading: messages.mcpFailureNotInstalled,
+      description: messages.mcpFailureNotInstalledHint({ package: failure.detail ?? 'MCP package' })
+    },
+    'permission-denied': {
+      heading: messages.mcpFailurePermission,
+      description: messages.mcpFailurePermissionHint
+    },
+    exited: { heading: messages.mcpFailureExited, description: messages.mcpFailureExitedHint },
+    timeout: { heading: messages.mcpFailureTimeout, description: messages.mcpFailureTimeoutHint },
+    rejected: {
+      heading: messages.mcpFailureRejected,
+      description: messages.mcpFailureRejectedHint
+    },
+    malformed: {
+      heading: messages.mcpFailureMalformed,
+      description: messages.mcpFailureMalformedHint
+    },
+    unreachable: {
+      heading: messages.mcpFailureUnreachable,
+      description: messages.mcpFailureUnreachableHint({
+        endpoint: failure.detail ?? mcpRuntime.endpoint
+      })
+    },
+    unknown: { heading: messages.mcpFailureUnknown, description: messages.mcpFailureUnknownHint }
+  }
+  return copy[failure.code]
+})
+
+/** Only non-actionable reasons (exit/timeout/unknown) carry technical output. */
+const failureDetail = computed(() => {
+  const failure = mcpRuntime.failure
+  if (!failure) return null
+  const code = failure.code
+  if (code === 'not-installed' || code === 'rejected') return null
+  return failure.detail?.trim() || null
+})
 </script>
 
 <template>
@@ -92,7 +137,19 @@ const { restart, chooseRootDirectory } = useMCPSettings()
         </div>
       </div>
     </SettingsGroup>
-    <AppAlert v-if="mcpRuntime.error" tone="error" :heading="mcpRuntime.error" />
+    <AppAlert
+      v-if="failureCopy"
+      tone="error"
+      :heading="failureCopy.heading"
+      :description="failureCopy.description"
+    />
+    <div v-if="failureDetail" class="flex flex-col gap-1">
+      <p class="text-xs font-medium text-muted">{{ automation.mcpFailureDetails }}</p>
+      <pre
+        class="max-h-40 overflow-auto rounded border border-border bg-input p-2 font-mono text-xs whitespace-pre-wrap text-muted"
+        data-test-id="settings-mcp-failure-detail"
+        >{{ failureDetail }}</pre>
+    </div>
     <div>
       <AppButton variant="link" @click="openToolAccessSettings('mcp')">{{
         settings.toolAccess

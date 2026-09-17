@@ -15,6 +15,29 @@ export const automationMessageDefaults = {
     'Choose tools advertised by the local server to connected agents and clients.',
   aiToolsNotice:
     'Changes apply to your next message. Tool switches are not a sandbox: enabled script tools can still perform other design operations.',
+  mcpFailureNotInstalled: 'MCP automation is not installed',
+  mcpFailureNotInstalledHint: params(
+    'Install {package} globally with your package manager, then restart OpenPencil.'
+  ),
+  mcpFailurePermission: 'OpenPencil cannot start the MCP server',
+  mcpFailurePermissionHint:
+    'The system denied the command. Reinstall OpenPencil with its shell permissions, or start the server manually.',
+  mcpFailureExited: 'MCP server stopped during startup',
+  mcpFailureExitedHint: 'The process exited before it became ready.',
+  mcpFailureTimeout: 'MCP server did not respond in time',
+  mcpFailureTimeoutHint: 'It did not become ready within the startup timeout.',
+  mcpFailureRejected: 'MCP server rejected the local connection',
+  mcpFailureRejectedHint: 'Restart the MCP server to issue a new token.',
+  mcpFailureMalformed: 'MCP server returned an unexpected response',
+  mcpFailureMalformedHint:
+    'The configured version and the running server may not match. Update both and restart OpenPencil.',
+  mcpFailureUnreachable: 'MCP server is not reachable',
+  mcpFailureUnreachableHint: params(
+    'Nothing is listening at {endpoint}. Check that the address is free, then start the server.'
+  ),
+  mcpFailureUnknown: 'MCP server could not start',
+  mcpFailureUnknownHint: 'Start it again, or check the diagnostic details below.',
+  mcpFailureDetails: 'Details',
   localServer: 'Local server',
   webmcpDescription:
     'Let browser agents use this document directly, without a local MCP server or bearer token. Local server settings do not apply here.',

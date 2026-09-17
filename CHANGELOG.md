@@ -7,6 +7,10 @@
 - Configure built-in AI and local MCP tool access independently on a Tool access page, including optional extended AI tools, searchable read-only and side-effect groups, and per-target defaults (#584).
 - Set the built-in AI's maximum steps per message in Chat settings, with consistent stopping and remaining-step warnings (#573).
 
+### Fixed
+
+- Explain why the local MCP server did not start — a missing `@open-pencil/mcp` install, a denied command, an early exit, a rejected local connection, or an unreachable address — with translated guidance and technical details instead of one generic health failure.
+
 ## 0.15.0 — 2026-09-16
 
 ### Breaking changes

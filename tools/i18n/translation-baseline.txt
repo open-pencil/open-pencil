@@ -6,6 +6,7 @@ de:ai.modelCapabilityVisionShort
 de:ai.modelName
 de:ai.modelRoleVision
 de:ai.responses
+de:automation.mcpFailureDetails
 de:automation.port
 de:automation.status
 de:automation.version
