@@ -4,10 +4,6 @@ use tauri::Emitter;
 use tauri::Manager;
 
 pub fn handle_menu_event<R: tauri::Runtime>(app: &tauri::AppHandle<R>, event_id: &str) {
-    if event_id == "quit" {
-        let _ = app.emit("app:request-exit", ());
-        return;
-    }
     #[cfg(debug_assertions)]
     if event_id == "dev-tools" {
         if let Some(window) = app.get_webview_window("main") {
