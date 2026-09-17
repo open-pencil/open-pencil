@@ -21,6 +21,7 @@ test('Cancel retains the dirty document and recovery does not mark it saved', as
   await page.getByTestId('tabbar-close').click()
   const dialog = page.getByRole('alertdialog', { name: /Save changes to/ })
   await expect(dialog).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Save', exact: true })).toBeFocused()
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
   await expect(dialog).not.toBeVisible()
   await expect(page.getByRole('img', { name: 'Unsaved changes' })).toBeVisible()

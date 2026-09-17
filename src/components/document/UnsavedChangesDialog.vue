@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue'
-import { nextTick, useTemplateRef, watch } from 'vue'
+import { useFocus } from '@vueuse/core'
+import { useTemplateRef } from 'vue'
 
 import { commonMessages, filesMessages } from '@open-pencil/vue'
 
@@ -15,12 +16,9 @@ const files = useStore(filesMessages)
 const common = useStore(commonMessages)
 const saveButton = useTemplateRef('saveButton')
 
-// Escape cancels, so focus the primary action instead of relying on an implicit default.
-watch(closePrompt, async (prompt) => {
-  if (!prompt) return
-  await nextTick()
-  saveButton.value?.$el?.focus({ preventScroll: true })
-})
+// The dialog mounts on open, so focusing the primary action when the target appears keeps
+// Return on Save while Escape still cancels.
+useFocus(saveButton, { initialValue: true, preventScroll: true })
 
 function updateOpen(open: boolean) {
   if (!open) answerClosePrompt('cancel')
