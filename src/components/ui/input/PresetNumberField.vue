@@ -127,7 +127,7 @@ function commitDraft(): void {
         :max="max"
         :step="1"
         :disabled="disabled"
-        :aria-label="label"
+        :aria-label="`${label}: ${customLabel}`"
         :aria-invalid="invalid"
         :aria-describedby="invalid ? errorID : undefined"
         :state="invalid ? 'invalid' : 'idle'"

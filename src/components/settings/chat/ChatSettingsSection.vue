@@ -37,6 +37,21 @@ const options = computed(() => [
           :ui="{ trigger: 'w-full sm:w-52' }"
         />
       </SettingsRow>
+      <SettingsRow
+        :label="ai.maxAgentSteps"
+        :description="ai.maxAgentStepsHint"
+        class="max-sm:flex-col max-sm:items-stretch"
+      >
+        <PresetNumberField
+          v-model:number="maxAgentSteps"
+          :presets="stepPresets"
+          :min="AGENT_STEP_LIMIT_MIN"
+          :max="AGENT_STEP_LIMIT_MAX"
+          :label="ai.maxAgentSteps"
+          :custom-label="ai.maxAgentStepsCustom"
+          :range-message="limitMessage"
+        />
+      </SettingsRow>
     </SettingsGroup>
     <SettingsGroup>
       <SettingsRow :label="settings.toolAccess">
@@ -45,17 +60,5 @@ const options = computed(() => [
         }}</AppButton>
       </SettingsRow>
     </SettingsGroup>
-    <div class="flex flex-col gap-1">
-      <PresetNumberField
-        v-model:number="maxAgentSteps"
-        :presets="stepPresets"
-        :min="AGENT_STEP_LIMIT_MIN"
-        :max="AGENT_STEP_LIMIT_MAX"
-        :label="ai.maxAgentSteps"
-        :custom-label="ai.maxAgentStepsCustom"
-        :range-message="limitMessage"
-      />
-      <p class="text-[11px] leading-relaxed text-muted">{{ ai.maxAgentStepsHint }}</p>
-    </div>
   </SettingsSection>
 </template>

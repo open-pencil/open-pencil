@@ -19,14 +19,20 @@ test('chat step limit validates, persists and preserves reasoning preferences', 
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   await openChatSettings(page)
-  const limit = page.getByRole('combobox', { name: 'Maximum steps per message' })
+  // The control must sit in a row that names it; an accessible name alone left
+  // it unlabeled in the panel.
+  const row = page
+    .locator('[data-slot="settings-row"]')
+    .filter({ hasText: 'Maximum steps per message' })
+  await expect(row).toContainText('For built-in AI only')
+  const limit = row.getByRole('combobox', { name: 'Maximum steps per message' })
   await expect(limit).toHaveText('50')
   // The numeric field only appears behind the custom option.
-  await expect(page.getByRole('spinbutton', { name: 'Maximum steps per message' })).toHaveCount(0)
+  await expect(row.getByRole('spinbutton')).toHaveCount(0)
   await limit.click()
   await page.getByRole('option', { name: 'Custom…' }).click()
 
-  const custom = page.getByRole('spinbutton', { name: 'Maximum steps per message' })
+  const custom = row.getByRole('spinbutton', { name: /Maximum steps per message/ })
   for (const invalid of ['', '0', '1.5', '1001']) {
     await custom.fill(invalid)
     await custom.press('Enter')
@@ -45,7 +51,7 @@ test('chat step limit validates, persists and preserves reasoning preferences', 
   await reloadAndOpenChatSettings(page)
   // A value outside the presets keeps the custom option selected.
   await expect(limit).toHaveText('Custom…')
-  await expect(page.getByRole('spinbutton', { name: 'Maximum steps per message' })).toHaveValue(
+  await expect(row.getByRole('spinbutton', { name: /Maximum steps per message/ })).toHaveValue(
     '137'
   )
   await expect(reasoning).toHaveText('Expanded by default')

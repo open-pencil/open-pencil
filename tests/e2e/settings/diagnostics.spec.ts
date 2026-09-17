@@ -19,13 +19,17 @@ test('diagnostics retention offers presets and accepts a bounded custom value', 
   await page.goto('/?test')
   await new CanvasHelper(page).waitForInit()
   await openDiagnostics(page)
-  const retention = page.getByRole('combobox', { name: 'Diagnostics retention' })
+  const row = page
+    .locator('[data-slot="settings-row"]')
+    .filter({ hasText: 'Diagnostics retention' })
+  await expect(row).toContainText('Keep up to this many recent events locally.')
+  const retention = row.getByRole('combobox', { name: 'Diagnostics retention' })
   await expect(retention).toHaveText('500')
 
   // A custom value is validated against the supported range before it is kept.
   await retention.click()
   await page.getByRole('option', { name: 'Custom…' }).click()
-  const custom = page.getByRole('spinbutton', { name: 'Diagnostics retention' })
+  const custom = row.getByRole('spinbutton', { name: /Diagnostics retention/ })
   await custom.fill('10')
   await custom.press('Enter')
   await expect(custom).toHaveAttribute('aria-invalid', 'true')
@@ -37,7 +41,7 @@ test('diagnostics retention offers presets and accepts a bounded custom value', 
 
   await reloadAndOpenDiagnostics(page)
   await expect(retention).toHaveText('Custom…')
-  await expect(page.getByRole('spinbutton', { name: 'Diagnostics retention' })).toHaveValue('750')
+  await expect(row.getByRole('spinbutton', { name: /Diagnostics retention/ })).toHaveValue('750')
 
   // Presets remain one click and persist without revealing the field.
   await retention.click()
@@ -45,5 +49,5 @@ test('diagnostics retention offers presets and accepts a bounded custom value', 
   await expect(retention).toHaveText('1000')
   await reloadAndOpenDiagnostics(page)
   await expect(retention).toHaveText('1000')
-  await expect(page.getByRole('spinbutton', { name: 'Diagnostics retention' })).toHaveCount(0)
+  await expect(row.getByRole('spinbutton')).toHaveCount(0)
 })

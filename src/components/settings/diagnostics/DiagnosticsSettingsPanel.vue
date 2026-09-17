@@ -14,6 +14,7 @@ import {
 import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
 import { toast } from '@/app/shell/ui'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
@@ -90,13 +91,11 @@ async function exportDiagnostics() {
         >
         <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
       </label>
-      <div class="flex items-center justify-between gap-4 px-3 py-2.5">
-        <span
-          ><span class="block text-xs text-surface">{{ diagnosticMessages.retention }}</span
-          ><span class="block text-[10px] text-muted">{{
-            diagnosticMessages.retentionDescription
-          }}</span></span
-        >
+      <SettingsRow
+        :label="diagnosticMessages.retention"
+        :description="diagnosticMessages.retentionDescription"
+        class="max-sm:flex-col max-sm:items-stretch"
+      >
         <PresetNumberField
           v-model:number="retentionValue"
           :presets="diagnosticsRetentionPresets"
@@ -112,7 +111,7 @@ async function exportDiagnostics() {
           "
           @commit="commitRetention"
         />
-      </div>
+      </SettingsRow>
     </SettingsGroup>
     <SettingsGroup v-if="recentEvents.length">
       <div
