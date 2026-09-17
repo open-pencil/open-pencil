@@ -9,8 +9,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuPortal,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator
+  DropdownMenuItem
 } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 import { computed, nextTick, ref, watch } from 'vue'
@@ -28,24 +27,18 @@ const {
   conversations,
   selectedId,
   disabled = false,
-  saved = false,
-  debug = false,
-  acpDebug = false
+  saved = false
 } = defineProps<{
   conversations: { id: string; title: string; documentName: string; available: boolean }[]
   selectedId?: string
   disabled?: boolean
   saved?: boolean
-  debug?: boolean
-  acpDebug?: boolean
 }>()
 const emit = defineEmits<{
   select: [id: string]
   create: []
   rename: [id: string, title: string]
   delete: [id: string]
-  copyDebug: []
-  copyACPDebug: []
 }>()
 const { ai } = useI18n()
 const triggerClass = tv(iconButtonTheme)({ size: 'sm' })
@@ -189,13 +182,6 @@ function closeMenu(event: Event) {
             <DropdownMenuItem :class="item" @select="rename">{{ ai.renameChat }}</DropdownMenuItem>
             <DropdownMenuItem :class="item" @select="confirmDelete">{{
               ai.deleteChat
-            }}</DropdownMenuItem>
-            <DropdownMenuSeparator v-if="debug" class="my-1 border-t border-border" />
-            <DropdownMenuItem v-if="debug" :class="item" @select="emit('copyDebug')">{{
-              ai.copyDiagnosticLog
-            }}</DropdownMenuItem>
-            <DropdownMenuItem v-if="acpDebug" :class="item" @select="emit('copyACPDebug')">{{
-              ai.copyACPLog
             }}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenuPortal>

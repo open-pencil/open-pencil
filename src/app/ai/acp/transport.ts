@@ -19,46 +19,12 @@ import { spawnACPProcess } from './process'
 
 type TauriChild = Awaited<ReturnType<typeof spawnACPProcess>>['child']
 
-interface ACPDebugEntry {
-  ts: number
-  type: string
-  data: unknown
-}
-
 interface ACPSession {
   connection: ClientSideConnection
   sessionId: string
   child: TauriChild
   onUpdate: ((params: SessionNotification) => void) | null
   dead: boolean
-}
-
-const MAX_LOG_AGE_MS = 5 * 60 * 1000
-const IS_DEV = import.meta.env.DEV
-
-const acpDebugLog: ACPDebugEntry[] = []
-
-function pruneOldEntries() {
-  const cutoff = Date.now() - MAX_LOG_AGE_MS
-  while (acpDebugLog.length > 0 && acpDebugLog[0].ts < cutoff) {
-    acpDebugLog.shift()
-  }
-}
-
-export function getACPDebugText(): string {
-  pruneOldEntries()
-  return acpDebugLog
-    .map((e) => `[${new Date(e.ts).toISOString()}] ${e.type}\n${JSON.stringify(e.data, null, 2)}`)
-    .join('\n\n---\n\n')
-}
-
-export function clearACPDebugLog() {
-  acpDebugLog.length = 0
-}
-
-export function hasACPDebugEntries(): boolean {
-  pruneOldEntries()
-  return acpDebugLog.length > 0
 }
 
 function isMissingCommandError(message: string): boolean {
@@ -170,13 +136,6 @@ export class ACPChatTransport implements ChatTransport<UIMessage> {
 
         session.onUpdate = (params) => {
           if (closed) return
-          if (IS_DEV) {
-            acpDebugLog.push({
-              ts: Date.now(),
-              type: params.update.sessionUpdate,
-              data: params.update
-            })
-          }
           const result = mapUpdate(params.update, textId, textStarted)
           for (const chunk of result.chunks) {
             controller.enqueue(chunk)

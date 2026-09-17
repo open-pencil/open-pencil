@@ -1,7 +1,10 @@
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
 
-test('keeps an unsaved document recoverable after its tab closes', async ({ browser, baseURL }) => {
+test('keeps recovery independent from cancelling an unsaved-document close', async ({
+  browser,
+  baseURL
+}) => {
   const context = await browser.newContext({ baseURL })
   const page = await context.newPage()
   await page.goto('/')
@@ -14,12 +17,15 @@ test('keeps an unsaved document recoverable after its tab closes', async ({ brow
     const id = store.createShape('RECTANGLE', 120, 120, 240, 140)
     await store.persistRecoveryNow()
     store.updateNode(id, { name: 'Retained recovery rectangle' })
+    await store.persistRecoveryNow()
   })
 
   await page.keyboard.press('ControlOrMeta+t')
   await expect(page.getByTestId('tabbar-tab')).toHaveCount(2)
   await page.locator('[data-slot="tab-item"]').first().getByTestId('tabbar-close').click()
-  await expect(page.getByTestId('tabbar-tab')).toHaveCount(1)
+  await expect(page.getByRole('alertdialog', { name: /Save changes to/ })).toBeVisible()
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(page.getByTestId('tabbar-tab')).toHaveCount(2)
   await expect(page.getByTestId('recent-files-home')).toBeVisible()
   await expect
     .poll(() =>
@@ -39,6 +45,7 @@ test('keeps an unsaved document recoverable after its tab closes', async ({ brow
     )
     .toBe(1)
 
+  page.once('dialog', (dialog) => dialog.accept())
   await page.reload()
   await expect(page.getByRole('alertdialog', { name: 'Recover unsaved work' })).toBeVisible()
   await page.getByRole('button', { name: 'Restore' }).click()

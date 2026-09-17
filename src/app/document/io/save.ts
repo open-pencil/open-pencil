@@ -60,13 +60,15 @@ export function createSaveActions({
       const { data, version } = await buildVersionedFigFile()
       const wrote = await writeFile(data, version)
       if (wrote && !storageBinding) setSourceIdentity({ handle: fileHandle, path: filePath })
-    } else if (downloadName) {
+      return wrote
+    }
+    if (downloadName) {
       const { data, version } = await buildVersionedFigFile()
       downloadBlob(new Uint8Array(data), downloadName, 'application/octet-stream')
       await onDownloadSuccess?.(version)
-    } else {
-      await saveFigFileAs()
+      return true
     }
+    return saveFigFileAs()
   }
 
   async function saveFigFileAs() {
@@ -74,35 +76,38 @@ export function createSaveActions({
 
     if (IS_TAURI) {
       const path = await chooseTauriFigSavePath()
-      if (!path) return
+      if (!path) return false
       setStorageBinding(null)
       setFilePath(path)
       setFileHandle(null)
       state.documentName = documentNameFromFigPath(path)
-      if (await writeFile(data, version)) setSourceIdentity({ handle: null, path })
+      const wrote = await writeFile(data, version)
+      if (wrote) setSourceIdentity({ handle: null, path })
       startWatchingFile()
-      return
+      return wrote
     }
 
     if (window.showSaveFilePicker) {
       const handle = await chooseBrowserFigSaveHandle()
-      if (!handle) return
+      if (!handle) return false
       setStorageBinding(null)
       setFileHandle(handle)
       setFilePath(null)
       state.documentName = documentNameFromFigPath(handle.name)
-      if (await writeFile(data, version)) setSourceIdentity({ handle, path: null })
+      const wrote = await writeFile(data, version)
+      if (wrote) setSourceIdentity({ handle, path: null })
       startWatchingFile()
-      return
+      return wrote
     }
 
     const filename = prompt(filesMessages.get().saveAsPrompt, getDownloadName() ?? 'Untitled.fig')
-    if (!filename) return
+    if (!filename) return false
     setStorageBinding(null)
     setDownloadName(filename)
     state.documentName = documentNameFromFigPath(filename)
     downloadBlob(new Uint8Array(data), filename, 'application/octet-stream')
     await onDownloadSuccess?.(version)
+    return true
   }
 
   return { saveFigFile, saveFigFileAs, writeFile }

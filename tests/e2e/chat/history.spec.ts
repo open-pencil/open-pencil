@@ -29,7 +29,7 @@ test('multiple conversations preserve messages and manual titles', async ({
   if (!triggerBox || !menuBox) throw new Error('Missing menu geometry')
   expect(Math.abs(menuBox.x + menuBox.width - triggerBox.x - triggerBox.width)).toBeLessThan(2)
   expect(Math.abs(menuBox.y - triggerBox.y - triggerBox.height - 6)).toBeLessThan(2)
-  await expect(page.getByRole('menuitem', { name: 'Copy diagnostic log' })).toBeVisible()
+  await expect(page.getByRole('menuitem')).toHaveText(['Rename', 'Delete'])
   await page.getByRole('menuitem', { name: 'Rename', exact: true }).click()
   await page.getByRole('textbox', { name: 'Conversation title' }).fill('First design')
   await page.getByRole('button', { name: 'Save', exact: true }).click()

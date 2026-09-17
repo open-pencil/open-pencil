@@ -1,5 +1,6 @@
 import { useI18n } from '@open-pencil/vue'
 
+import { requestAppExit } from '@/app/document/close/exit'
 import { openSettingsDialog } from '@/app/settings/dialog'
 import { setSnappingPreference } from '@/app/settings/preferences/apply'
 import { syncNativeSnappingMenu } from '@/app/settings/preferences/native-menu'
@@ -20,8 +21,10 @@ function shellMenuIds(entries: readonly AppMenuEntry[]): string[] {
 
 export const SHELL_MENU_IDS = new Set([
   ...APP_MENU_SCHEMA.flatMap((group) => shellMenuIds(group.items)),
-  // The macOS application menu is native-only and is not part of the shared schema.
-  'check-updates'
+  // The macOS application menu is native-only; its custom entries come from
+  // APP_MENU_APP_ITEMS while the OS-predefined ones stay in Rust.
+  'check-updates',
+  'quit'
 ])
 
 export function useShellMenu() {
@@ -53,7 +56,8 @@ export function useShellMenu() {
     'theme-light': () => setTheme('light'),
     'theme-dark': () => setTheme('dark'),
     'theme-auto': () => setTheme('auto'),
-    'check-updates': () => void checkForAppUpdate({ messages: updates })
+    'check-updates': () => void checkForAppUpdate({ messages: updates }),
+    quit: () => void requestAppExit()
   }
 
   useNativeMenuEvents((id) => actions[id]?.())

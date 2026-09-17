@@ -1,4 +1,8 @@
 {
+  "unsavedChanges": "Niezapisane zmiany",
+  "saveBeforeClosing": "Zapisać zmiany w „{name}”?",
+  "saveBeforeClosingDescription": "Jeśli zamkniesz dokument bez zapisywania, zmiany zostaną utracone.",
+  "discard": "Nie zapisuj",
   "importLabel": "Importuj",
   "importHTMLCSS": "Importuj HTML/CSS",
   "importHTMLCSSDescription": "Wklej HTML oraz opcjonalnie CSS lub skompilowany CSS Tailwind.",

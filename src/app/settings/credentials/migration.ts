@@ -1,7 +1,7 @@
 import { AI_PROVIDERS, type AIProviderID } from '@open-pencil/core/constants'
 
 import { appCredentialStore } from '@/app/settings/credentials/app'
-import { credentialRef } from '@/app/settings/credentials/reference'
+import { credentialKey, credentialRef } from '@/app/settings/credentials/reference'
 import { browserCredentialStorage } from '@/app/settings/credentials/storage'
 import type { CredentialRef, CredentialStore } from '@/app/settings/credentials/types'
 
@@ -48,6 +48,18 @@ function legacyCredentials(storage: Storage): LegacyCredential[] {
   return credentials
 }
 
+export function hasLegacyCredential(
+  reference: CredentialRef,
+  storage = browserCredentialStorage()
+): boolean {
+  if (!storage || storage.getItem(MIGRATION_VERSION_KEY) === MIGRATION_VERSION) return false
+  return legacyCredentials(storage).some(
+    (entry) =>
+      credentialKey(entry.reference) === credentialKey(reference) &&
+      Boolean(storage.getItem(entry.storageKey)?.trim())
+  )
+}
+
 export async function migrateLegacyCredentials(
   storage: Storage,
   store: CredentialStore
@@ -70,8 +82,29 @@ export async function migrateLegacyCredentials(
   return true
 }
 
-export async function initializeCredentialMigration(): Promise<boolean> {
-  const storage = browserCredentialStorage()
+const migrationsInFlight = new WeakMap<Storage, Promise<boolean>>()
+let migrationQueue: Promise<void> = Promise.resolve()
+
+/** Migrations share one destination store, so distinct sources must not interleave. */
+function enqueueMigration(storage: Storage): Promise<boolean> {
+  const migration = migrationQueue.then(() => migrateLegacyCredentials(storage, appCredentialStore))
+  migrationQueue = migration.then(
+    () => undefined,
+    () => undefined
+  )
+  return migration
+}
+
+export async function initializeCredentialMigration(
+  storage = browserCredentialStorage()
+): Promise<boolean> {
   if (!storage) return true
-  return migrateLegacyCredentials(storage, appCredentialStore)
+  let migration = migrationsInFlight.get(storage)
+  if (!migration) {
+    migration = enqueueMigration(storage).finally(() => {
+      migrationsInFlight.delete(storage)
+    })
+    migrationsInFlight.set(storage, migration)
+  }
+  return migration
 }

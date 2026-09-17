@@ -10,6 +10,8 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { setOpenPencilStore } from '@/app/browser-bridge'
 import { describeDiagnosticError, recordStorageFailure } from '@/app/diagnostics'
+import { confirmAllDocuments } from '@/app/document/close/all'
+import { requestDocumentClose } from '@/app/document/close/prompt'
 import { readFigDocument } from '@/app/document/io/fig'
 import { applyImportedDocument } from '@/app/document/io/imported-document'
 import type { DocumentSourceIdentity } from '@/app/document/io/types'
@@ -64,6 +66,7 @@ export const allTabs = computed(() =>
     id: t.id,
     name: t.store.state.documentName,
     isHome: t.kind === 'home',
+    isDirty: t.kind === 'document' && t.store.hasUnsavedChanges(),
     isPreparing: t.store.state.preparation !== null,
     preparationProgress: t.store.state.preparation?.progress ?? null,
     isActive: t.id === activeTabId.value
@@ -154,11 +157,16 @@ export async function closeTab(tabId: string): Promise<void> {
 
   const closingTab = tabsRef.value[idx]
   if (closingTab.kind === 'home' && tabsRef.value.length === 1) return
+  const choice = await requestDocumentClose(closingTab.store, closingTab.store.state.documentName)
+  if (choice === 'cancel') return
+  if (choice === 'discard') await closingTab.store.discardRecovery()
+  else await closingTab.store.persistRecoveryNow()
+  if (!tabsRef.value.includes(closingTab)) return
+  if (choice !== 'discard' && closingTab.store.hasUnsavedChanges()) return
   const wasActive = activeTabId.value === tabId
   coverThumbnailListeners.get(closingTab.store)?.()
   coverThumbnailListeners.delete(closingTab.store)
   closingTab.store.preparationController.dispose()
-  await closingTab.store.persistRecoveryNow()
   closingTab.store.dispose()
   tabsRef.value = tabsRef.value.filter((t) => t.id !== tabId)
 
@@ -537,6 +545,12 @@ export async function restoreRecoverySnapshot(id: string): Promise<void> {
   } finally {
     if (succeeded) load.complete()
   }
+}
+
+export function prepareForClose(): Promise<boolean> {
+  return confirmAllDocuments(() =>
+    tabsRef.value.filter((tab) => tab.kind === 'document').map((tab) => tab.store)
+  )
 }
 
 export async function prepareForReload(): Promise<void> {

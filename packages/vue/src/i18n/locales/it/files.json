@@ -1,4 +1,8 @@
 {
+  "unsavedChanges": "Modifiche non salvate",
+  "saveBeforeClosing": "Salvare le modifiche a «{name}»?",
+  "saveBeforeClosingDescription": "Se chiudi senza salvare, le modifiche andranno perse.",
+  "discard": "Non salvare",
   "importLabel": "Importa",
   "importHTMLCSS": "Importa HTML/CSS",
   "importHTMLCSSDescription": "Incolla HTML con CSS facoltativo o CSS Tailwind compilato.",

@@ -1,12 +1,13 @@
 import { tool } from 'ai'
 
 import { registerComponentCatalog, isAtomicTool, toolsToAI } from '@open-pencil/core/tools'
-import type { StepBudget, ToolLogEntry } from '@open-pencil/core/tools'
+import type { StepBudget } from '@open-pencil/core/tools'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
 import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { executeAtomicEditorTool } from '@/app/automation/execution/editor'
+import { recordToolCompleted, type AIDiagnosticContext } from '@/app/diagnostics/events/ai'
 import { getActiveEditorStore } from '@/app/editor/active-store'
 import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
@@ -15,8 +16,8 @@ import { useLibraryService } from '@/app/libraries'
 import { aiToolDefinitions } from './catalog'
 
 class RunState {
-  toolLog: ToolLogEntry[] = []
   currentSteps = 0
+  /** Captured for the message in progress; settings changes apply to the next one. */
   maxSteps = DEFAULT_AGENT_STEPS
 
   resetSteps(maxSteps: number): void {
@@ -26,11 +27,6 @@ class RunState {
 
   hitLimit(): boolean {
     return this.currentSteps >= this.maxSteps
-  }
-
-  clear(): void {
-    this.toolLog = []
-    this.currentSteps = 0
   }
 }
 
@@ -45,10 +41,6 @@ function getRunState(store?: EditorStore): RunState {
   return created
 }
 
-export function getToolLogEntries(store?: EditorStore): ToolLogEntry[] {
-  return getRunState(store).toolLog
-}
-
 export function recordStep(store?: EditorStore): void {
   getRunState(store).currentSteps++
 }
@@ -61,11 +53,7 @@ export function didHitStepLimit(store?: EditorStore): boolean {
   return getRunState(store).hitLimit()
 }
 
-export function clearToolLogEntries(store?: EditorStore): void {
-  getRunState(store).clear()
-}
-
-export function createAITools(store: EditorStore) {
+export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnosticContext) {
   let beforeSnapshot: Map<string, SceneNode> | null = null
   const runState = getRunState(store)
   const libraryService = useLibraryService()
@@ -115,7 +103,15 @@ export function createAITools(store: EditorStore) {
         }
       },
       onToolLog: (entry) => {
-        runState.toolLog.push(entry)
+        recordToolCompleted(
+          {
+            tool: entry.tool,
+            durationMs: entry.durationMs,
+            mutates: entry.mutates,
+            failed: Boolean(entry.error)
+          },
+          diagnosticContext
+        )
       },
       getStepBudget: (): StepBudget => ({
         current: runState.currentSteps,

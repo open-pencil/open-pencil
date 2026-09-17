@@ -15,7 +15,6 @@ ja:ai.connectionTestMissingBaseURL
 ja:ai.connectionTestMissingModel
 ja:ai.connectionTestModelNotFound
 ja:ai.connectionTestNetworkFailed
-ja:ai.copyACPLog
 ja:ai.customModelID
 ja:ai.getProviderAPIKey
 ja:ai.maxAgentStepsHint
@@ -152,7 +151,6 @@ zh-cn:ai.connectionTestMissingBaseURL
 zh-cn:ai.connectionTestMissingModel
 zh-cn:ai.connectionTestModelNotFound
 zh-cn:ai.connectionTestNetworkFailed
-zh-cn:ai.copyACPLog
 zh-cn:ai.customModelID
 zh-cn:ai.getProviderAPIKey
 zh-cn:ai.maxAgentStepsHint

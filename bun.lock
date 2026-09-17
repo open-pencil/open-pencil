@@ -449,6 +449,13 @@
         "valibot": "^1.4.2",
       },
     },
+    "tools/tauri-menu": {
+      "name": "@open-pencil/tauri-menu-tools",
+      "devDependencies": {
+        "@open-pencil/package-artifacts": "workspace:*",
+        "@open-pencil/vue": "workspace:*",
+      },
+    },
     "tools/visual-oracles": {
       "name": "@open-pencil/visual-oracle-tools",
       "dependencies": {
@@ -1335,6 +1342,8 @@
     "@open-pencil/release-packages": ["@open-pencil/release-packages@workspace:tools/release-packages"],
 
     "@open-pencil/scene-graph": ["@open-pencil/scene-graph@workspace:packages/scene-graph"],
+
+    "@open-pencil/tauri-menu-tools": ["@open-pencil/tauri-menu-tools@workspace:tools/tauri-menu"],
 
     "@open-pencil/visual-oracle-tools": ["@open-pencil/visual-oracle-tools@workspace:tools/visual-oracles"],
 

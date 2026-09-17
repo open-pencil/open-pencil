@@ -1,4 +1,8 @@
 {
+  "unsavedChanges": "未保存の変更",
+  "saveBeforeClosing": "「{name}」の変更を保存しますか？",
+  "saveBeforeClosingDescription": "保存せずに閉じると、変更は失われます。",
+  "discard": "保存しない",
   "importLabel": "インポート",
   "importHTMLCSS": "HTML/CSSをインポート",
   "importHTMLCSSDescription": "HTMLと、必要に応じてCSSまたはコンパイル済みTailwind CSSを貼り付けます。",

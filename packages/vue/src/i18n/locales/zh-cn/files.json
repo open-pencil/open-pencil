@@ -1,4 +1,8 @@
 {
+  "unsavedChanges": "未保存的更改",
+  "saveBeforeClosing": "保存对“{name}”的更改吗？",
+  "saveBeforeClosingDescription": "如果不保存就关闭，更改将丢失。",
+  "discard": "不保存",
   "importLabel": "导入",
   "importHTMLCSS": "导入 HTML/CSS",
   "importHTMLCSSDescription": "粘贴 HTML，并可选择添加 CSS 或编译后的 Tailwind CSS。",

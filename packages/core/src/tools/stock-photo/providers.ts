@@ -64,9 +64,15 @@ function pickPexelsSize(src: PexelsPhoto['src'], targetDim: number): string {
   return src.original
 }
 
-let pexelsAPIKey: string | null = null
+type CredentialSource = string | null | (() => Promise<string | null>)
 
-export function setPexelsAPIKey(key: string | null): void {
+async function resolveCredential(source: CredentialSource): Promise<string | null> {
+  return typeof source === 'function' ? source() : source
+}
+
+let pexelsAPIKey: CredentialSource = null
+
+export function setPexelsAPIKey(key: CredentialSource): void {
   pexelsAPIKey = key
   if (key) {
     registerStockPhotoProvider(pexelsProvider)
@@ -77,11 +83,12 @@ export function setPexelsAPIKey(key: string | null): void {
 const pexelsProvider: StockPhotoProvider = {
   name: 'pexels',
   async search(query, { perPage, orientation, targetDim }) {
-    if (!pexelsAPIKey) throw new Error('Pexels API key not configured')
+    const key = await resolveCredential(pexelsAPIKey)
+    if (!key) throw new Error('Pexels API key not configured')
     const response = await ofetch.raw<{ photos: PexelsPhoto[] }>(
       'https://api.pexels.com/v1/search',
       {
-        headers: { Authorization: pexelsAPIKey },
+        headers: { Authorization: key },
         ignoreResponseError: true,
         query: { query, per_page: perPage, orientation },
         retry: 0
@@ -99,9 +106,9 @@ const pexelsProvider: StockPhotoProvider = {
   }
 }
 
-let unsplashAccessKey: string | null = null
+let unsplashAccessKey: CredentialSource = null
 
-export function setUnsplashAccessKey(key: string | null): void {
+export function setUnsplashAccessKey(key: CredentialSource): void {
   unsplashAccessKey = key
   if (key) {
     registerStockPhotoProvider(unsplashProvider)
@@ -127,13 +134,14 @@ function pickUnsplashSize(urls: UnsplashPhoto['urls'], targetDim: number): strin
 const unsplashProvider: StockPhotoProvider = {
   name: 'unsplash',
   async search(query, { perPage, orientation }) {
-    if (!unsplashAccessKey) throw new Error('Unsplash access key not configured')
+    const key = await resolveCredential(unsplashAccessKey)
+    if (!key) throw new Error('Unsplash access key not configured')
     const orient = orientation === 'square' ? 'squarish' : orientation
     const response = await ofetch.raw<{ results: UnsplashPhoto[] }>(
       'https://api.unsplash.com/search/photos',
       {
         headers: {
-          Authorization: `Client-ID ${unsplashAccessKey}`,
+          Authorization: `Client-ID ${key}`,
           'Accept-Version': 'v1'
         },
         ignoreResponseError: true,

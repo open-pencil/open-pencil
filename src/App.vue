@@ -7,6 +7,7 @@ import { computed, onMounted } from 'vue'
 
 import { provideEditor, useI18n } from '@open-pencil/vue'
 
+import { useDocumentCloseProtection } from '@/app/document/close/use'
 import { useEditorStore } from '@/app/editor/active-store'
 import { animationsEnabled } from '@/app/shell/motion'
 import { useAppTheme } from '@/app/shell/theme'
@@ -14,6 +15,7 @@ import { toast } from '@/app/shell/ui'
 import { scheduleStartupUpdateCheck } from '@/app/shell/updater'
 import { kickSyncEngine } from '@/app/storage/sync'
 import { prepareForReload } from '@/app/tabs'
+import UnsavedChangesDialog from '@/components/document/UnsavedChangesDialog.vue'
 import PublishLibraryDialog from '@/components/libraries/PublishLibraryDialog.vue'
 import LibraryUpdateReviewDialog from '@/components/libraries/review/LibraryUpdateReviewDialog.vue'
 import RecoveryDialog from '@/components/recovery/RecoveryDialog.vue'
@@ -34,6 +36,7 @@ useHead({
 
 provideEditor(store)
 useAppTheme()
+useDocumentCloseProtection()
 useEventListener(window, 'pagehide', () => {
   void prepareForReload()
 })
@@ -53,6 +56,7 @@ onMounted(() => {
       </AppShell>
       <SettingsDialog />
       <RecoveryDialog />
+      <UnsavedChangesDialog />
       <PublishLibraryDialog />
       <LibraryUpdateReviewDialog />
       <AppToast />
