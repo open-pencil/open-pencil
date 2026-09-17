@@ -68,9 +68,7 @@ function onClose(e: MouseEvent, tabId: string) {
           <icon-lucide-file v-else :class="baseStyles.icon()" />
           <span :class="baseStyles.label()">{{ tab.isHome ? files.newTab : tab.name }}</span>
           <Tip v-if="tab.isDirty" :label="files.unsavedChanges">
-            <span role="img" :aria-label="files.unsavedChanges">
-              <icon-lucide-circle :class="baseStyles.dirtyIcon()" />
-            </span>
+            <span role="img" :aria-label="files.unsavedChanges" :class="baseStyles.dirtyDot()" />
           </Tip>
         </TabsTrigger>
         <Tip
