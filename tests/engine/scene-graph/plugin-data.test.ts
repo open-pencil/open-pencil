@@ -13,6 +13,7 @@ import {
 import { deduplicateNodeChangePluginData } from '#core/kiwi'
 
 import { expectDefined } from '#tests/helpers/assert'
+import { parseFixture } from '#tests/helpers/fig-fixtures'
 
 function doc(): NodeChange {
   return {
@@ -119,11 +120,9 @@ describe('plugin data', () => {
   })
 
   test('preserves plugin relaunch data from imported fig files', async () => {
-    await initCodec()
-    const bytes = new Uint8Array(await Bun.file('./tests/fixtures/material3.fig').arrayBuffer())
-    const graph = await parseFigFile(
-      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
-    )
+    // Relaunch data lives on the imported node changes themselves, so the
+    // small fixture without instance population is enough to cover it.
+    const graph = await parseFixture('gold-preview.fig', { populate: 'none' })
     const nodeWithRelaunch = [...graph.getAllNodes()].find(
       (node) => node.pluginRelaunchData.length > 0
     )

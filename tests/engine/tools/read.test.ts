@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { FigmaAPI } from '@open-pencil/core'
+import { DEFAULT_FONT_FAMILY, FigmaAPI, fontManager } from '@open-pencil/core'
 
 import { getTool, setupToolTest, type ALL_TOOLS, type ToolResult } from '#tests/helpers/tools'
 
@@ -130,12 +130,18 @@ describe('get_font_status', () => {
       }>
     }
 
+    // The tool reads the process-wide font manager. A missing family is
+    // 'unresolved' in a pristine process and 'substituted' by the default font
+    // once any earlier suite in the shard has loaded it; both are issues.
+    const defaultLoaded = fontManager.loadedFontSource(DEFAULT_FONT_FAMILY, 'Regular') !== null
+
     expect(result.faithful).toBe(false)
     expect(result.issues).toEqual([
       expect.objectContaining({
         family: 'Unavailable Sans',
         style: 'Regular',
-        status: 'unresolved',
+        status: defaultLoaded ? 'substituted' : 'unresolved',
+        substituteFamily: defaultLoaded ? DEFAULT_FONT_FAMILY : null,
         nodeIds: [text.id]
       })
     ])

@@ -61,6 +61,15 @@ interface MCPLookup {
 // port forever while still allowing brief renderer reloads (issue #488).
 const MCP_APP_ATTACH_TIMEOUT_MS = 30_000
 
+/** Delays used while a spawned server comes up; tests shorten them. */
+export interface MCPStartupTiming {
+  /** How long to watch for the child exiting before polling its health. */
+  earlyExitMs: number
+  /** Delay before each of the health polls after spawning. */
+  healthPollMs: number
+}
+const DEFAULT_STARTUP_TIMING: MCPStartupTiming = { earlyExitMs: 250, healthPollMs: 1000 }
+
 let runtimeAutomationAuthToken: string | null = DEV_AUTOMATION_AUTH_TOKEN
 let runtimeAutomationStartupError: Error | null = null
 let runtimeAutomationStartupFailure: MCPFailure | null = null
@@ -413,7 +422,7 @@ async function configureDevMCP(): Promise<AutomationServerHandle> {
   return { disconnect: noop, authToken, managed: true }
 }
 
-async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
+async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationServerHandle | null> {
   runtimeAutomationStartupError = null
   runtimeAutomationStartupFailure = null
   if (import.meta.env.DEV) return configureDevMCP()
@@ -474,7 +483,10 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   } catch (error) {
     return rememberStartupError(error)
   }
-  const earlyExit = await Promise.race([childClosed, promiseTimeout(250).then(() => null)])
+  const earlyExit = await Promise.race([
+    childClosed,
+    promiseTimeout(timing.earlyExitMs).then(() => null)
+  ])
   if (earlyExit) {
     const details = startupStderr.trim()
     return rememberStartupError(
@@ -484,7 +496,7 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
       )
     )
   }
-  const health = await pollHealth(5, 1000, authToken)
+  const health = await pollHealth(5, timing.healthPollMs, authToken)
 
   if (health) {
     try {
@@ -528,9 +540,11 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   )
 }
 
-export async function spawnMCPIfNeeded(): Promise<AutomationServerHandle | null> {
+export async function spawnMCPIfNeeded(
+  timing: MCPStartupTiming = DEFAULT_STARTUP_TIMING
+): Promise<AutomationServerHandle | null> {
   try {
-    return await startMCPIfNeeded()
+    return await startMCPIfNeeded(timing)
   } catch (error) {
     return rememberStartupError(error)
   }

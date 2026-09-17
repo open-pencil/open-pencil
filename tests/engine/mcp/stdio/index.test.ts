@@ -46,7 +46,7 @@ async function createStdioClient(socketPath: string, authToken: string | null) {
     env.OPENPENCIL_MCP_AUTH_TOKEN = authToken
   }
   const transport = new StdioClientTransport({
-    command: 'bun',
+    command: process.execPath,
     args: ['packages/mcp/src/stdio.ts'],
     env,
     stderr: 'pipe'
@@ -324,7 +324,9 @@ describe('MCP stdio readiness without an open document', () => {
       socketPath: isUnix ? join(SOCKET_DIR, 'mcp-no-document.sock') : null,
       authToken: NO_DOCUMENT_AUTH_TOKEN,
       enableEval: false,
-      mcpRoot: null
+      mcpRoot: null,
+      // No app ever registers; the default 10 s wait only slows the assertion.
+      appWaitTimeoutMs: 50
     })
 
     let client: Client | undefined

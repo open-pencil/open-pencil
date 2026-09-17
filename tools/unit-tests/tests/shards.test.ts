@@ -9,12 +9,17 @@ import {
   unitTestGroupNames
 } from '../src/shards'
 
-test('every engine test belongs to exactly one shard', async () => {
-  const discovered = await Array.fromAsync(
-    new Bun.Glob('tests/engine/**/*.test.ts').scan({
-      cwd: fileURLToPath(new URL('../../..', import.meta.url))
-    })
-  )
+const REPO_ROOT = fileURLToPath(new URL('../../..', import.meta.url))
+
+async function discover(pattern: string): Promise<string[]> {
+  return Array.fromAsync(new Bun.Glob(pattern).scan({ cwd: REPO_ROOT }))
+}
+
+test('every engine and package-local test belongs to exactly one shard', async () => {
+  const discovered = [
+    ...(await discover('tests/engine/**/*.test.ts')),
+    ...(await discover('packages/*/tests/**/*.test.ts'))
+  ].filter((file) => !file.startsWith('packages/harness/'))
   const paths = pathsForUnitTestGroup('all')
   const invalidAssignments = discovered.flatMap((file) => {
     const owners = paths.filter((path) => file.startsWith(`${path}/`))
@@ -24,6 +29,26 @@ test('every engine test belongs to exactly one shard', async () => {
   expect(discovered.length).toBeGreaterThan(0)
   expect(invalidAssignments).toEqual([])
   expect((await listUnitTests('all', { includeHeavy: true })).sort()).toEqual(discovered.sort())
+})
+
+test('canonical destinations are registered before they hold files', async () => {
+  const paths = pathsForUnitTestGroup('all')
+  expect(paths).toContain('tests/app')
+  expect(paths).toContain('tests/integration')
+  for (const owner of [
+    'core',
+    'scene-graph',
+    'vue',
+    'fig',
+    'kiwi',
+    'dom-css',
+    'pen',
+    'cli',
+    'mcp'
+  ]) {
+    expect(paths).toContain(`packages/${owner}/tests`)
+  }
+  await expect(listUnitTests('all')).resolves.toBeArray()
 })
 
 test('quick and explicit heavy tests partition the full engine suite', async () => {
@@ -38,6 +63,7 @@ test('quick and explicit heavy tests partition the full engine suite', async () 
 test('unit test groups cover all declared shards', () => {
   expect(unitTestGroupNames()).toContain('all')
   expect(pathsForUnitTestGroup('dom')).toContain('tests/engine/dom-css')
+  expect(pathsForUnitTestGroup('fig')).toContain('packages/fig/tests')
   expect(pathsForUnitTestGroup('all')).toContain('tests/engine/io')
 })
 

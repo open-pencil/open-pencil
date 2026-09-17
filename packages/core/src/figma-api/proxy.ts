@@ -21,6 +21,8 @@ import { assertNodeEditable } from '#core/editor/capabilities'
 
 import { installBasicNodeProxyAccessors } from './accessors/basic'
 import { installLayoutNodeProxyAccessors } from './accessors/layout'
+import { installStrokeNodeProxyAccessors } from './accessors/strokes'
+import { installTextNodeProxyAccessors } from './accessors/text'
 import { installVariableModeNodeProxyAccessors } from './accessors/variables'
 import {
   installVectorNodeProxyAccessors,
@@ -33,7 +35,6 @@ import type { FigmaFontName } from './fonts'
 import { getPageBackgrounds, setPageBackgrounds } from './page-backgrounds'
 import * as PluginData from './plugin-data'
 import { nodeProxyToJSON } from './serialization'
-import { setFirstStrokeAlign, setFirstStrokeWeight, setIndependentStrokeWeight } from './strokes'
 import * as TextProxy from './text'
 import * as Traversal from './traversal'
 import type { FigmaTransform } from './types'
@@ -123,6 +124,33 @@ export class FigmaNodeProxy {
   declare readonly explicitVariableModes: Readonly<Record<string, string>>
   declare readonly resolvedVariableModes: Readonly<Record<string, string>>
 
+  declare strokeWeight: number
+  declare strokeAlign: string
+  declare dashPattern: readonly number[]
+  declare strokeCap: string
+  declare strokeJoin: string
+  declare strokeMiterLimit: number
+  declare strokeTopWeight: number
+  declare strokeBottomWeight: number
+  declare strokeLeftWeight: number
+  declare strokeRightWeight: number
+
+  declare characters: string
+  declare fontSize: number
+  declare fontName: FigmaFontName
+  declare fontWeight: number
+  declare textAlignHorizontal: string
+  declare textAlignVertical: string
+  declare textDirection: string
+  declare textAutoResize: string
+  declare letterSpacing: number
+  declare lineHeight: number | null
+  declare textCase: string
+  declare textDecoration: string
+  declare maxLines: number | null
+  declare textTruncation: string
+  declare autoRename: boolean
+
   constructor(id: string, graph: SceneGraph, api: NodeProxyHost) {
     this[INTERNAL_ID] = id
     this[INTERNAL_GRAPH] = graph
@@ -148,234 +176,6 @@ export class FigmaNodeProxy {
     const n = this[INTERNAL_GRAPH].getNode(this[INTERNAL_ID])
     if (!n) throw new Error(`Node ${this[INTERNAL_ID]} has been removed`)
     return n
-  }
-
-  // --- Stroke details ---
-
-  get strokeWeight(): number {
-    const s = this._raw().strokes
-    return s.length > 0 ? s[0].weight : 0
-  }
-
-  set strokeWeight(v: number) {
-    setFirstStrokeWeight(this[INTERNAL_GRAPH], this._raw(), v)
-  }
-
-  get strokeAlign(): string {
-    const s = this._raw().strokes
-    return s.length > 0 ? s[0].align : 'INSIDE'
-  }
-
-  set strokeAlign(v: string) {
-    setFirstStrokeAlign(this[INTERNAL_GRAPH], this._raw(), v)
-  }
-
-  get dashPattern(): readonly number[] {
-    return Object.freeze([...this._raw().dashPattern])
-  }
-
-  set dashPattern(v: readonly number[]) {
-    this._update({ dashPattern: [...v] })
-  }
-
-  get strokeCap(): string {
-    return this._raw().strokeCap
-  }
-
-  set strokeCap(v: string) {
-    const strokeCap = v as SceneNode['strokeCap']
-    const node = this._raw()
-    this._update({
-      strokeCap,
-      strokes: node.strokes.map((stroke) => ({ ...stroke, cap: strokeCap }))
-    })
-  }
-
-  get strokeJoin(): string {
-    return this._raw().strokeJoin
-  }
-
-  set strokeJoin(v: string) {
-    const strokeJoin = v as SceneNode['strokeJoin']
-    const node = this._raw()
-    this._update({
-      strokeJoin,
-      strokes: node.strokes.map((stroke) => ({ ...stroke, join: strokeJoin }))
-    })
-  }
-
-  get strokeMiterLimit(): number {
-    return this._raw().strokeMiterLimit
-  }
-
-  set strokeMiterLimit(v: number) {
-    this._update({ strokeMiterLimit: v })
-  }
-
-  get strokeTopWeight(): number {
-    return this._raw().borderTopWeight
-  }
-
-  set strokeTopWeight(v: number) {
-    setIndependentStrokeWeight(this[INTERNAL_GRAPH], this[INTERNAL_ID], 'borderTopWeight', v)
-  }
-
-  get strokeBottomWeight(): number {
-    return this._raw().borderBottomWeight
-  }
-
-  set strokeBottomWeight(v: number) {
-    setIndependentStrokeWeight(this[INTERNAL_GRAPH], this[INTERNAL_ID], 'borderBottomWeight', v)
-  }
-
-  get strokeLeftWeight(): number {
-    return this._raw().borderLeftWeight
-  }
-
-  set strokeLeftWeight(v: number) {
-    setIndependentStrokeWeight(this[INTERNAL_GRAPH], this[INTERNAL_ID], 'borderLeftWeight', v)
-  }
-
-  get strokeRightWeight(): number {
-    return this._raw().borderRightWeight
-  }
-
-  set strokeRightWeight(v: number) {
-    setIndependentStrokeWeight(this[INTERNAL_GRAPH], this[INTERNAL_ID], 'borderRightWeight', v)
-  }
-
-  // --- Text ---
-
-  get characters(): string {
-    return this._raw().text
-  }
-
-  set characters(v: string) {
-    this._update({ text: v })
-  }
-
-  get fontSize(): number {
-    return this._raw().fontSize
-  }
-
-  set fontSize(v: number) {
-    this._update({ fontSize: v })
-  }
-
-  get fontName(): FigmaFontName {
-    return TextProxy.getFontName(this._raw())
-  }
-
-  set fontName(v: FigmaFontName) {
-    TextProxy.setFontName(this[INTERNAL_GRAPH], this[INTERNAL_ID], v)
-  }
-
-  get fontWeight(): number {
-    return this._raw().fontWeight
-  }
-
-  set fontWeight(v: number) {
-    this._update({ fontWeight: v })
-  }
-
-  get textAlignHorizontal(): string {
-    return this._raw().textAlignHorizontal
-  }
-
-  set textAlignHorizontal(v: string) {
-    this._update({
-      textAlignHorizontal: v as SceneNode['textAlignHorizontal']
-    })
-  }
-
-  get textDirection(): string {
-    return this._raw().textDirection
-  }
-
-  set textDirection(v: string) {
-    this._update({
-      textDirection: v as SceneNode['textDirection']
-    })
-  }
-
-  get textAlignVertical(): string {
-    return this._raw().textAlignVertical
-  }
-
-  set textAlignVertical(v: string) {
-    this._update({
-      textAlignVertical: v as SceneNode['textAlignVertical']
-    })
-  }
-
-  get textAutoResize(): string {
-    return this._raw().textAutoResize
-  }
-
-  set textAutoResize(v: string) {
-    this._update({
-      textAutoResize: v as SceneNode['textAutoResize']
-    })
-  }
-
-  get letterSpacing(): number {
-    return this._raw().letterSpacing
-  }
-
-  set letterSpacing(v: number) {
-    this._update({ letterSpacing: v })
-  }
-
-  get lineHeight(): number | null {
-    return this._raw().lineHeight
-  }
-
-  set lineHeight(v: number | null) {
-    this._update({ lineHeight: v })
-  }
-
-  get textCase(): string {
-    return this._raw().textCase
-  }
-
-  set textCase(v: string) {
-    this._update({ textCase: v as SceneNode['textCase'] })
-  }
-
-  get textDecoration(): string {
-    return this._raw().textDecoration
-  }
-
-  set textDecoration(v: string) {
-    this._update({
-      textDecoration: v as SceneNode['textDecoration']
-    })
-  }
-
-  get maxLines(): number | null {
-    return this._raw().maxLines
-  }
-
-  set maxLines(v: number | null) {
-    this._update({ maxLines: v })
-  }
-
-  get textTruncation(): string {
-    return this._raw().textTruncation
-  }
-
-  set textTruncation(v: string) {
-    this._update({
-      textTruncation: v as SceneNode['textTruncation']
-    })
-  }
-
-  get autoRename(): boolean {
-    return this._raw().autoRename
-  }
-
-  set autoRename(v: boolean) {
-    this._update({ autoRename: v })
   }
 
   insertCharacters(start: number, characters: string): void {
@@ -599,6 +399,8 @@ const proxyInternals = {
   api: INTERNAL_API
 }
 
+installStrokeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
+installTextNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installLayoutNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installVariableModeNodeProxyAccessors(FigmaNodeProxy.prototype, proxyInternals)
 installComponentPropertyAccessors(FigmaNodeProxy.prototype, proxyInternals)

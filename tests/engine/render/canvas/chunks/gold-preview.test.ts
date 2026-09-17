@@ -1,22 +1,19 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
 
-import { initCodec, parseFigFile } from '@open-pencil/core'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { RenderChunkIndex } from '#core/canvas/renderer/chunks'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
 
-let graph: Awaited<ReturnType<typeof parseFigFile>>
+let graph: SceneGraph
 
 beforeAll(async () => {
-  await initCodec()
-  const bytes = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
-  graph = await parseFigFile(bytes.buffer as ArrayBuffer, { populate: 'all' })
+  graph = (await sharedGoldPreviewFixture()).graph
 }, 60_000)
 
 test('gold-preview render chunks stay bounded and spatial queries stay selective', () => {

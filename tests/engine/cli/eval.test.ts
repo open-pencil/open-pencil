@@ -17,7 +17,7 @@ async function run(
   args: string[],
   stdin?: string
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn(['bun', CLI, ...args], {
+  const proc = Bun.spawn([process.execPath, CLI, ...args], {
     stdout: 'pipe',
     stderr: 'pipe',
     stdin: stdin ? Buffer.from(stdin) : undefined
@@ -139,7 +139,7 @@ heavy('eval CLI', () => {
   })
 
   test('stdin reads code from pipe', async () => {
-    const proc = Bun.spawn(['bun', CLI, 'eval', FIXTURE, '--stdin'], {
+    const proc = Bun.spawn([process.execPath, CLI, 'eval', FIXTURE, '--stdin'], {
       stdout: 'pipe',
       stderr: 'pipe',
       stdin: 'pipe'

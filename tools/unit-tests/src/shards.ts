@@ -1,42 +1,66 @@
+import { existsSync } from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
+/**
+ * Unit test shards, keyed by owning package or application area.
+ *
+ * Each group lists the owner's canonical test home from
+ * `packages/docs/development/testing.md` (`packages/<owner>/tests`,
+ * `tests/app`, `tests/integration`) together with the `tests/engine/**`
+ * directories it still owns, so a file is discovered from either place and a
+ * move needs no shard change. A path that does not exist yet contributes no
+ * files. `render` is Core-owned but
+ * sharded separately because canvas suites parse large fixtures.
+ */
 export const UNIT_TEST_GROUPS = {
   app: [
+    'tests/app',
+    'tests/integration',
     'tests/engine/acp',
     'tests/engine/app',
-    'tests/engine/cli',
     'tests/engine/collab',
     'tests/engine/tauri'
   ],
-  dom: ['tests/engine/dom-css', 'tests/engine/color', 'tests/engine/icons', 'tests/engine/pen'],
-  editor: [
+  cli: ['packages/cli/tests', 'tests/engine/cli'],
+  core: [
+    'packages/core/tests',
     'tests/engine/clipboard',
+    'tests/engine/color',
     'tests/engine/core',
     'tests/engine/editor',
-    'tests/engine/hit-test',
-    'tests/engine/snap'
-  ],
-  fig: ['tests/engine/figma', 'tests/engine/io', 'tests/engine/kiwi'],
-  render: ['tests/engine/geometry', 'tests/engine/layout', 'tests/engine/render'],
-  scene: [
-    'tests/engine/bytes',
+    'tests/engine/icons',
+    'tests/engine/layout',
     'tests/engine/library',
     'tests/engine/lint',
+    'tests/engine/profiler',
+    'tests/engine/text',
+    'tests/engine/tools',
+    'tests/engine/vector'
+  ],
+  dom: ['packages/dom-css/tests', 'packages/pen/tests', 'tests/engine/dom-css', 'tests/engine/pen'],
+  fig: [
+    'packages/fig/tests',
+    'packages/kiwi/tests',
+    'tests/engine/bytes',
+    'tests/engine/figma',
+    'tests/engine/io',
+    'tests/engine/kiwi'
+  ],
+  mcp: ['packages/mcp/tests', 'tests/engine/mcp'],
+  render: ['tests/engine/render'],
+  'scene-graph': [
+    'packages/scene-graph/tests',
+    'tests/engine/geometry',
+    'tests/engine/hit-test',
     'tests/engine/random',
     'tests/engine/scene-graph',
-    'tests/engine/text'
+    'tests/engine/snap'
   ],
-  vue: [
-    'tests/engine/mcp',
-    'tests/engine/profiler',
-    'tests/engine/tools',
-    'tests/engine/vector',
-    'tests/engine/vue'
-  ]
+  vue: ['packages/vue/tests', 'tests/engine/vue']
 } as const
 
 export type UnitTestGroup = keyof typeof UNIT_TEST_GROUPS | 'all'
@@ -90,6 +114,7 @@ async function listTestFiles(paths: string[]): Promise<string[]> {
 
 async function listTestFilesInPath(path: string): Promise<string[]> {
   const absolutePath = resolve(REPO_ROOT, path)
+  if (!existsSync(absolutePath)) return []
   const entries = await readdir(absolutePath, { withFileTypes: true })
   const files = await Promise.all(
     entries.map(async (entry) => {

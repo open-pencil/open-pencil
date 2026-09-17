@@ -285,12 +285,13 @@ describe('BrowserRpcBridge reconnection', () => {
   test('sendRPC rejects after timeout when browser never connects', async () => {
     const bridge = createBrowserRPCBridge({
       authToken: AUTH_TOKEN,
-      onConnectionChange: () => undefined
+      onConnectionChange: () => undefined,
+      appWaitTimeoutMs: 50
     })
 
     // No browser registered — sendRPC rejects with APP_NOT_CONNECTED.
     await expect(bridge.sendRPC(RPC_BODY)).rejects.toThrow('OpenPencil app is not connected')
-  }, 12_000)
+  })
 
   test('response from non-browser WebSocket is ignored (ws guard)', async () => {
     // Set up two independent WS pairs: one for the browser, one for a

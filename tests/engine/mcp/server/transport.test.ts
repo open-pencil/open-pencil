@@ -272,7 +272,8 @@ describe('MCP WebSocket stdio bridge routing', () => {
       socketPath: testSocketPath(),
       authToken: 'bridge-test-token',
       enableEval: false,
-      mcpRoot: null
+      mcpRoot: null,
+      appWaitTimeoutMs: 50
     })
 
     let clientWs: WebSocket | undefined

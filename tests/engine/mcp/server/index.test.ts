@@ -131,6 +131,15 @@ test('MCP exposure exclusions apply to both descriptors and registered tools', a
   }
 })
 
+describe('startServer option validation', () => {
+  test('rejects an app wait timeout that is not a safe non-negative integer', async () => {
+    await expect(startServer({ appWaitTimeoutMs: -1 })).rejects.toThrow(RangeError)
+    await expect(startServer({ appWaitTimeoutMs: 1.5 })).rejects.toThrow(
+      'appWaitTimeoutMs must be a safe integer'
+    )
+  })
+})
+
 describe('MCP server', () => {
   let client: Client
   let graph: SceneGraph

@@ -230,8 +230,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        group: [app, dom, editor, fig, render, scene, vue]
-    name: Engine tests — ${{ matrix.group }}
+        group: [app, cli, core, dom, fig, mcp, render, scene-graph, vue]
+    name: Unit tests — ${{ matrix.group }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -240,21 +240,14 @@ jobs:
       - uses: ./.github/actions/setup-bun
         with:
           lfs: 'true'
+          # Quick shards read only the small fixtures; heavy-tests.yml pulls the large .fig corpora.
+          lfs-include: tests/fixtures/gold-preview.fig,tests/fixtures/circle-text.fig,tests/fixtures/fonts/*
 
       - name: Build shared Core test dependency
         run: bun --filter @open-pencil/core build
 
-      - name: Run ${{ matrix.group }} engine tests
-        shell: bash
-        run: |
-          mapfile -t test_files < <(bun tools/unit-tests/src/list.ts "${{ matrix.group }}")
-          if [ "${#test_files[@]}" -eq 0 ]; then
-            echo "No tests found for shard ${{ matrix.group }}"
-            exit 0
-          fi
-          bun test "${test_files[@]}"
-        env:
-          BUN_HEAVY_TESTS: 'false'
+      - name: Run ${{ matrix.group }} unit tests
+        run: bun tools/unit-tests/src/run.ts "${{ matrix.group }}"
 
   result:
     name: CI result

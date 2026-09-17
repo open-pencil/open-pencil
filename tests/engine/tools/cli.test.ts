@@ -11,7 +11,7 @@ const FIXTURE = repoPath('tests/fixtures/gold-preview.fig')
 async function evalCode(
   code: string
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn(['bun', CLI, 'eval', FIXTURE, '--code', code, '--json'], {
+  const proc = Bun.spawn([process.execPath, CLI, 'eval', FIXTURE, '--code', code, '--json'], {
     stdout: 'pipe',
     stderr: 'pipe'
   })

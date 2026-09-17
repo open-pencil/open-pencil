@@ -11,6 +11,10 @@ inputs:
     description: Pull Git LFS files before installing dependencies.
     required: false
     default: 'false'
+  lfs-include:
+    description: Comma-separated `git lfs pull --include` patterns. Empty pulls every LFS object.
+    required: false
+    default: ''
 
   cache-save:
     description: Save the dependency cache; set false for other jobs sharing the same cache key.
@@ -27,10 +31,17 @@ runs:
     - name: Pull LFS files
       if: inputs.lfs == 'true'
       shell: bash
+      env:
+        LFS_INCLUDE: ${{ inputs.lfs-include }}
       run: |
         git lfs install --force
-        git lfs pull
-        head -c 4 tests/fixtures/material3.fig | xxd
+        if [ -n "$LFS_INCLUDE" ]; then
+          git lfs pull --include="$LFS_INCLUDE"
+        else
+          git lfs pull
+          head -c 4 tests/fixtures/material3.fig | xxd
+        fi
+        head -c 4 tests/fixtures/gold-preview.fig | xxd
 
     - uses: oven-sh/setup-bun@v2
       with:

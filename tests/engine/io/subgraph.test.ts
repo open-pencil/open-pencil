@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
 
 import { exportFigFile, extractExportGraph, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
 
 describe('export subgraph extraction', () => {
   test('page extraction keeps the source root and page descendants', () => {
@@ -93,13 +94,8 @@ describe('export subgraph extraction', () => {
 
   test('fig export preserves imported instance symbol overrides and guids', async () => {
     await initCodec()
-    const fixture = new Uint8Array(readFileSync('tests/fixtures/gold-preview.fig'))
-    const graph = await parseFigFile(
-      fixture.buffer.slice(
-        fixture.byteOffset,
-        fixture.byteOffset + fixture.byteLength
-      ) as ArrayBuffer
-    )
+    // exportFigFile clones its source, so the shared read-only parse is safe.
+    const { graph } = await sharedGoldPreviewFixture()
     const exported = await exportFigFile(graph)
     const parsed = parseFigBuffer(exported.buffer as ArrayBuffer)
     const input = parsed.nodeChanges.find(

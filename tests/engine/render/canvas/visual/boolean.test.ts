@@ -35,7 +35,7 @@ function countCellColoredPixels(
 describe('boolean visual matrix', () => {
   test('generates a non-empty visual fixture for supported shape cases', async () => {
     const proc = Bun.spawnSync({
-      cmd: ['bun', 'tests/engine/render/canvas/visual/boolean-matrix.ts'],
+      cmd: [process.execPath, 'tests/engine/render/canvas/visual/boolean-matrix.ts'],
       stdout: 'pipe',
       stderr: 'pipe'
     })

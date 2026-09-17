@@ -2,14 +2,14 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { type Fill, type SceneNode } from '@open-pencil/core'
 
-import { parseGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
 
 setDefaultTimeout(60_000)
 
 let allNodes: SceneNode[]
 
 beforeAll(async () => {
-  const fixture = await parseGoldPreviewFixture()
+  const fixture = await sharedGoldPreviewFixture()
   allNodes = fixture.allNodes
 })
 

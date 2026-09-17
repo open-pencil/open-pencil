@@ -150,7 +150,7 @@ PR titles use Conventional Commits because GitHub uses them as merge subjects. T
 
 - Put code and tests in the established owning domain; inspect nearby structure before adding files.
 - `bun run check:arch` enforces boundaries: use public workspace exports, keep Core framework-neutral, keep app services out of views/shared UI, and keep property-panel internals scoped to that panel.
-- Follow the canonical [testing architecture](packages/docs/development/testing.md): package-local tests mirror source domains; central app tests mirror `src/app/**`; central integration requires a genuinely cross-owner contract. E2E follows user workflows; native and Figma acceptance remain explicit exceptions. Existing `tests/engine/**` domains migrate together with runner discovery—do not create competing homes or undiscovered suites. Owner-local helpers/fixtures stay local; only genuinely shared support is central. Specs use domain drivers/probes, not scattered Window/store traversal or unrestricted evaluator wrappers. Test contracts, not source text; never commit temporary/profile specs.
+- Follow the canonical [testing architecture](packages/docs/development/testing.md): package-local tests mirror source domains; central app tests mirror `src/app/**`; central integration requires a genuinely cross-owner contract. E2E follows user workflows; native and Figma acceptance remain explicit exceptions. Existing `tests/engine/**` domains migrate together with runner discovery—`tools/unit-tests/src/shards.ts` lists each owner's canonical home and its current `tests/engine` directories, so a move is a `git mv` plus imports; do not create competing homes or undiscovered suites. Owner-local helpers/fixtures stay local; only genuinely shared support is central. Specs use domain drivers/probes, not scattered Window/store traversal or unrestricted evaluator wrappers. Test contracts, not source text; never commit temporary/profile specs.
 
 ### File and folder naming
 
@@ -255,7 +255,7 @@ Keep responsibilities distinct: engine tests cover state contracts, Playwright b
 - Section/frame title text never scales — render at fixed font size, ellipsize to fit
 - Rulers are rendered on the canvas (not DOM), with selection range badges that don't overlap tick numbers
 - Remote cursors: Figma-style colored arrows with white border + name pill, rendered in screen space
-- Pixel-affecting renderer features need committed visual coverage, not just mock/geometry assertions. Add or update a Playwright canvas snapshot for changes to fills, gradients, images, blend modes, masks, boolean geometry, corners, strokes, shadows, blur, text rendering, or demo showcase scenes. Use targeted snapshot updates such as `bun run test tests/e2e/canvas/renderer-visuals.spec.ts --update-snapshots` and then rerun the same test without `--update-snapshots`.
+- Pixel-affecting renderer features need committed visual coverage, not just mock/geometry assertions. Add or update a Playwright canvas snapshot for changes to fills, gradients, images, blend modes, masks, boolean geometry, corners, strokes, shadows, blur, text rendering, or demo showcase scenes. Use targeted snapshot updates such as `bun run test tests/e2e/canvas/fill-modes-visual.spec.ts --update-snapshots` and then rerun the same test without `--update-snapshots`.
 
 ## Scene graph
 

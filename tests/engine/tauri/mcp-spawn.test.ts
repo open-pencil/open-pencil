@@ -213,7 +213,7 @@ describe('Tauri MCP spawning', () => {
       return null
     })
 
-    const handle = await spawnMCPIfNeeded()
+    const handle = await spawnMCPIfNeeded({ earlyExitMs: 5, healthPollMs: 5 })
     await expect(getAutomationAuthToken()).resolves.toBe('discovery-token')
     onEvent?.({ event: 'Stderr', payload: [119, 97, 114, 110] })
     handle?.disconnect()

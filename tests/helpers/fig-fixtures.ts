@@ -67,6 +67,22 @@ export async function parseGoldPreviewFixture(): Promise<{
   return { graph, allNodes: collectAllNodes(graph) }
 }
 
+let sharedGoldPreview: ReturnType<typeof parseGoldPreviewFixture> | null = null
+
+/**
+ * The fully populated `gold-preview.fig` graph, parsed once per process.
+ *
+ * Populating its ~38k instance children costs about 3 s and 700 MB, and a
+ * shard runs every file in one Bun process, so read-only suites share the
+ * result instead of paying that per file. Treat the graph as immutable: a
+ * test that creates, updates, deletes or lays out nodes must call
+ * `parseGoldPreviewFixture()` for its own copy.
+ */
+export function sharedGoldPreviewFixture(): ReturnType<typeof parseGoldPreviewFixture> {
+  sharedGoldPreview ??= parseGoldPreviewFixture()
+  return sharedGoldPreview
+}
+
 const LFS_POINTER_PREFIX = 'version https://git-lfs'
 
 /**

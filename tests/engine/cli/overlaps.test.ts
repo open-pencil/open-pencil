@@ -34,7 +34,7 @@ async function makeTwoPageFixture(): Promise<string> {
 }
 
 async function run(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const proc = Bun.spawn(['bun', CLI, ...args], {
+  const proc = Bun.spawn([process.execPath, CLI, ...args], {
     stdout: 'pipe',
     stderr: 'pipe'
   })

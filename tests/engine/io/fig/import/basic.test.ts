@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/core'
 
-import { parseGoldPreviewFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
+import { sharedGoldPreviewFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
 
 setDefaultTimeout(60_000)
 
@@ -10,7 +10,7 @@ let parsed: SceneGraph
 let allNodes: SceneNode[]
 
 beforeAll(async () => {
-  const fixture = await parseGoldPreviewFixture()
+  const fixture = await sharedGoldPreviewFixture()
   parsed = fixture.graph
   allNodes = fixture.allNodes
 })

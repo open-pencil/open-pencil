@@ -1,7 +1,6 @@
 import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
-import { readFileSync } from 'node:fs'
 
-import { initCodec, parseFigFile } from '@open-pencil/core'
+import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { initCanvasKit } from '#cli/headless'
 import { SkiaRenderer } from '#core/canvas'
@@ -15,19 +14,17 @@ import {
 } from '#core/canvas/renderer/tiles'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { repoPath } from '#tests/helpers/paths'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)
 
-let graph: Awaited<ReturnType<typeof parseFigFile>>
+let graph: SceneGraph
 let ck: Awaited<ReturnType<typeof initCanvasKit>>
 
 beforeAll(async () => {
   ck = await initCanvasKit()
-  await initCodec()
-  const bytes = readFileSync(repoPath('tests/fixtures/gold-preview.fig'))
-  graph = await parseFigFile(bytes.buffer as ArrayBuffer, { populate: 'all' })
+  graph = (await sharedGoldPreviewFixture()).graph
 }, 60_000)
 
 test('renders one gold-preview tile from a selective chunk query', () => {

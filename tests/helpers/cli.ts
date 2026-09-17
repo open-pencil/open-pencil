@@ -9,7 +9,9 @@ export interface CLICommandResult {
 }
 
 export async function runOpenPencilCLI(args: string[]): Promise<CLICommandResult> {
-  const proc = Bun.spawn(['bun', CLI, ...args], {
+  // Run the CLI with the Bun that runs the tests, not whatever `bun` PATH
+  // resolves to in the child's cwd (version shims can differ or fail there).
+  const proc = Bun.spawn([process.execPath, CLI, ...args], {
     stdout: 'pipe',
     stderr: 'pipe'
   })

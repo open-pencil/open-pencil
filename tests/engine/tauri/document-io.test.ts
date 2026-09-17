@@ -13,7 +13,7 @@ afterEach(async () => {
 
 describe('Tauri document IO helpers', () => {
   test('reads reload source bytes through plugin-fs', async () => {
-    const fixture = await Bun.file('tests/fixtures/gold-preview.fig').arrayBuffer()
+    const fixture = await Bun.file('tests/fixtures/circle-text.fig').arrayBuffer()
     await mockTauriIPC((cmd, args) => {
       expect(cmd).toBe('plugin:fs|read_file')
       expect(args).toEqual({ path: '/tmp/document.fig', options: undefined })
