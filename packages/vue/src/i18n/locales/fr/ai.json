@@ -87,6 +87,7 @@
   "modelID": "ID du modèle",
   "customModelID": "ID du modèle personnalisé",
   "customModel": "Modèle personnalisé…",
+  "customModelGroup": "Modèle personnalisé",
   "advancedModelSettings": "Paramètres avancés",
   "outputLimit": "Limite de sortie",
   "outputLimitAutomatic": "Recommandation automatique",

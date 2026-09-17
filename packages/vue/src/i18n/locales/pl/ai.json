@@ -87,6 +87,7 @@
   "modelID": "ID modelu",
   "customModelID": "Identyfikator modelu niestandardowego",
   "customModel": "Model niestandardowy…",
+  "customModelGroup": "Własny model",
   "advancedModelSettings": "Ustawienia zaawansowane",
   "outputLimit": "Limit wyjścia",
   "outputLimitAutomatic": "Automatyczna rekomendacja",

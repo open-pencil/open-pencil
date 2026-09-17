@@ -93,6 +93,7 @@
   "latest": "新",
   "customModelID": "自定义模型 ID",
   "customModel": "自定义模型…",
+  "customModelGroup": "自定义模型",
   "advancedModelSettings": "高级设置",
   "outputLimit": "输出限制",
   "outputLimitAutomatic": "自动建议",

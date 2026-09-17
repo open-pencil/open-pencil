@@ -87,6 +87,7 @@
   "modelID": "ID модели",
   "customModelID": "ID пользовательской модели",
   "customModel": "Пользовательская модель…",
+  "customModelGroup": "Своя модель",
   "advancedModelSettings": "Расширенные настройки",
   "outputLimit": "Лимит вывода",
   "outputLimitAutomatic": "Автоматическая рекомендация",
