@@ -82,5 +82,7 @@
   "mcpFailureUnreachableHint": "{endpoint} で応答がありません。アドレスを解放してからサーバーを起動してください。",
   "mcpFailureUnknown": "MCP サーバーを起動できませんでした",
   "mcpFailureUnknownHint": "もう一度起動するか、以下の技術的な詳細を確認してください。",
-  "mcpFailureDetails": "詳細"
+  "mcpFailureDetails": "詳細",
+  "mcpFailureCopy": "詳細をコピー",
+  "mcpFailureCopied": "技術的な詳細をコピーしました。"
 }

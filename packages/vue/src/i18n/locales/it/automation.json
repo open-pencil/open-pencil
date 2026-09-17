@@ -82,5 +82,7 @@
   "mcpFailureUnreachableHint": "Nessuno risponde su {endpoint}. Libera l’indirizzo e avvia il server.",
   "mcpFailureUnknown": "Impossibile avviare il server MCP",
   "mcpFailureUnknownHint": "Avvialo di nuovo o controlla i dettagli tecnici qui sotto.",
-  "mcpFailureDetails": "Dettagli"
+  "mcpFailureDetails": "Dettagli",
+  "mcpFailureCopy": "Copia dettagli",
+  "mcpFailureCopied": "Dettagli tecnici copiati."
 }

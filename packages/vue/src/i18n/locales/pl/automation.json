@@ -82,5 +82,7 @@
   "mcpFailureUnreachableHint": "Pod adresem {endpoint} nikt nie nasłuchuje. Zwolnij adres i uruchom serwer.",
   "mcpFailureUnknown": "Nie udało się uruchomić serwera MCP",
   "mcpFailureUnknownHint": "Uruchom go ponownie lub sprawdź szczegóły techniczne poniżej.",
-  "mcpFailureDetails": "Szczegóły"
+  "mcpFailureDetails": "Szczegóły",
+  "mcpFailureCopy": "Kopiuj szczegóły",
+  "mcpFailureCopied": "Skopiowano szczegóły techniczne."
 }

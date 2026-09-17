@@ -82,5 +82,7 @@
   "mcpFailureUnreachableHint": "{endpoint} 上没有任何服务在监听。请释放该地址，然后启动服务器。",
   "mcpFailureUnknown": "无法启动 MCP 服务器",
   "mcpFailureUnknownHint": "请重新启动，或查看下方的技术细节。",
-  "mcpFailureDetails": "详细信息"
+  "mcpFailureDetails": "详细信息",
+  "mcpFailureCopy": "复制详细信息",
+  "mcpFailureCopied": "已复制技术细节。"
 }

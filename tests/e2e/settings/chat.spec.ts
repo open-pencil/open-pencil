@@ -33,6 +33,8 @@ test('chat step limit validates, persists and preserves reasoning preferences', 
   await expect(limit).toHaveValue('200')
   await expect(reasoning).toHaveText('Expanded by default')
   await limit.fill('125')
+  await limit.blur()
+  await expect(limit).toHaveAttribute('aria-invalid', 'false')
   await reasoning.click()
   await page.keyboard.press('Escape')
   await page.reload()

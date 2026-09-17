@@ -75,7 +75,8 @@ describe('Tauri MCP spawning', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd, args) => {
-      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
       if (cmd === 'plugin:shell|spawn') {
@@ -110,7 +111,8 @@ describe('Tauri MCP spawning', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd) => {
-      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
       if (cmd === 'plugin:shell|spawn') throw new Error('shell permission denied')
@@ -134,13 +136,18 @@ describe('Tauri MCP spawning', () => {
     await mockTauriIPC((cmd) => {
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'mcp_executable_available') return false
+      if (cmd === 'mcp_lookup')
+        return { available: false, path: null, searched: ['/usr/local/bin', '/mock/home/.bun/bin'] }
       return null
     })
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('MCP automation is not installed')
-    expect(getAutomationStartupFailure()).toMatchObject({ code: 'not-installed' })
+    expect(getAutomationStartupFailure()).toMatchObject({
+      code: 'not-installed',
+      // The searched directories let a report show where the app looked.
+      detail: expect.stringContaining('/mock/home/.bun/bin')
+    })
   })
 
   test('spawns MCP server with shell plugin when health check is missing', async () => {
@@ -170,7 +177,8 @@ describe('Tauri MCP spawning', () => {
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
-      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:shell|spawn') {
         expect(args).toMatchObject({
           program: 'openpencil-mcp-http',

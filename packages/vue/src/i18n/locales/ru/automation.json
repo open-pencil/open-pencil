@@ -82,5 +82,7 @@
   "mcpFailureUnreachableHint": "По адресу {endpoint} никто не отвечает. Освободите адрес и запустите сервер.",
   "mcpFailureUnknown": "MCP-сервер не удалось запустить",
   "mcpFailureUnknownHint": "Запустите его снова или посмотрите технические подробности ниже.",
-  "mcpFailureDetails": "Подробности"
+  "mcpFailureDetails": "Подробности",
+  "mcpFailureCopy": "Копировать подробности",
+  "mcpFailureCopied": "Технические подробности скопированы."
 }

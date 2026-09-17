@@ -49,6 +49,12 @@ const noop = () => undefined
 const MAX_STARTUP_STDERR_LENGTH = 8_192
 const MCP_EXECUTABLE = 'openpencil-mcp-http'
 const MCP_PACKAGE_NAME = '@open-pencil/mcp'
+
+interface MCPLookup {
+  available: boolean
+  path: string | null
+  searched: string[]
+}
 // While no app is attached, the spawned server waits this long for a register
 // or reconnect before closing itself and removing its discovery file. This
 // prevents a server that outlives a crashed/reloaded app from squatting the
@@ -82,10 +88,10 @@ function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error))
 }
 
-function missingMCPError(): Error {
+function missingMCPError(searched: string[] = []): Error {
   return new MCPStartupError(
     `MCP automation is not installed. Install @open-pencil/mcp@${APP_VERSION} globally with your package manager, then restart OpenPencil.`,
-    mcpFailure('not-installed', `${MCP_PACKAGE_NAME}@${APP_VERSION}`)
+    mcpFailure('not-installed', [MCP_PACKAGE_NAME, ...searched].join(' · '))
   )
 }
 
@@ -401,7 +407,7 @@ async function configureDevMCP(): Promise<AutomationServerHandle> {
   if (!health)
     throw new MCPStartupError(
       'Development MCP server did not become healthy',
-      mcpFailure('timeout')
+      mcpFailure('timeout', `${DEV_AUTOMATION_HTTP_URL}/health`)
     )
   runtimeAutomationAuthToken = authToken
   return { disconnect: noop, authToken, managed: true }
@@ -419,8 +425,8 @@ async function startMCPIfNeeded(): Promise<AutomationServerHandle | null> {
   }
 
   const { invoke } = await import('@tauri-apps/api/core')
-  const executableAvailable = await invoke<boolean>('mcp_executable_available')
-  if (!executableAvailable) return rememberStartupError(missingMCPError())
+  const lookup = await invoke<MCPLookup>('mcp_lookup')
+  if (!lookup.available) return rememberStartupError(missingMCPError(lookup.searched))
 
   const authToken = mcpAuthenticationEnabled.value ? randomHex(32) : null
   // Cache only after MCP startup is confirmed healthy.

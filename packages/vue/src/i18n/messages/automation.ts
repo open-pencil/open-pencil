@@ -38,6 +38,8 @@ export const automationMessageDefaults = {
   mcpFailureUnknown: 'MCP server could not start',
   mcpFailureUnknownHint: 'Start it again, or check the diagnostic details below.',
   mcpFailureDetails: 'Details',
+  mcpFailureCopy: 'Copy details',
+  mcpFailureCopied: 'Diagnostic details copied.',
   localServer: 'Local server',
   webmcpDescription:
     'Let browser agents use this document directly, without a local MCP server or bearer token. Local server settings do not apply here.',

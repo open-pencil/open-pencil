@@ -46,9 +46,109 @@ fn set_recent_files(app: tauri::AppHandle, paths: Vec<String>) -> Result<(), Str
     install_app_menu(&app, &paths).map_err(|error| error.to_string())
 }
 
+/// Name of the MCP entry point installed by `@open-pencil/mcp`.
+const MCP_EXECUTABLE: &str = "openpencil-mcp-http";
+/// Bound on the directories reported back to the settings diagnostics.
+const MAX_REPORTED_SEARCH_DIRS: usize = 12;
+
+/// Directories that commonly hold a globally installed Node/Bun CLI.
+///
+/// GUI launches inherit launchd's minimal `PATH`, so a package installed by
+/// npm, Bun, Volta, or Homebrew can be invisible even though the user's shell
+/// finds it. `fix_path_env::fix()` reads the login shell first; these entries
+/// cover managers that only modify an interactive rc file.
+fn mcp_candidate_dirs() -> Vec<PathBuf> {
+    let mut dirs: Vec<PathBuf> = Vec::new();
+    if let Some(home) = std::env::var_os("HOME").map(PathBuf::from) {
+        dirs.push(home.join(".bun/bin"));
+        dirs.push(home.join(".local/bin"));
+        dirs.push(home.join(".npm-global/bin"));
+        dirs.push(home.join(".volta/bin"));
+        dirs.push(home.join("n/bin"));
+        dirs.push(home.join(".local/share/mise/shims"));
+    }
+    #[cfg(target_os = "macos")]
+    {
+        dirs.push(PathBuf::from("/opt/homebrew/bin"));
+        dirs.push(PathBuf::from("/usr/local/bin"));
+        dirs.push(PathBuf::from("/opt/local/bin"));
+    }
+    #[cfg(target_os = "linux")]
+    {
+        dirs.push(PathBuf::from("/usr/local/bin"));
+        dirs.push(PathBuf::from("/home/linuxbrew/.linuxbrew/bin"));
+    }
+    #[cfg(windows)]
+    {
+        if let Some(appdata) = std::env::var_os("APPDATA").map(PathBuf::from) {
+            dirs.push(appdata.join("npm"));
+        }
+    }
+    dirs
+}
+
+fn push_unique_dir(dirs: &mut Vec<String>, dir: String) {
+    if !dirs.contains(&dir) {
+        dirs.push(dir);
+    }
+}
+
+/// Existing candidate directories, most specific first, for diagnostics.
+fn mcp_search_dirs() -> Vec<PathBuf> {
+    mcp_candidate_dirs()
+        .into_iter()
+        .filter(|dir| dir.is_dir())
+        .collect()
+}
+
+/// Append candidate directories that the current process `PATH` is missing.
+fn augment_path(path: &str, candidates: &[PathBuf]) -> String {
+    let mut entries: Vec<PathBuf> = std::env::split_paths(path).collect();
+    for candidate in candidates {
+        if candidate.is_dir() && !entries.contains(candidate) {
+            entries.push(candidate.clone());
+        }
+    }
+    std::env::join_paths(entries)
+        .map(|joined| joined.to_string_lossy().into_owned())
+        .unwrap_or_else(|_| path.to_string())
+}
+
+/// Make globally installed CLIs visible to `which` and to spawned children.
+fn augment_mcp_path() {
+    let current = std::env::var("PATH").unwrap_or_default();
+    let next = augment_path(&current, &mcp_candidate_dirs());
+    if next != current {
+        std::env::set_var("PATH", next);
+    }
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct McpLookup {
+    available: bool,
+    path: Option<String>,
+    /// Existing directories that were searched, for diagnostics.
+    searched: Vec<String>,
+}
+
 #[tauri::command]
-fn mcp_executable_available() -> bool {
-    which::which("openpencil-mcp-http").is_ok()
+fn mcp_lookup() -> McpLookup {
+    let resolved = which::which(MCP_EXECUTABLE).ok();
+    let path = resolved.as_ref().map(|p| p.display().to_string());
+    let mut searched: Vec<String> = Vec::new();
+    if let Some(dir) = resolved.as_ref().and_then(|p| p.parent()) {
+        push_unique_dir(&mut searched, dir.display().to_string());
+    }
+    for dir in mcp_search_dirs() {
+        push_unique_dir(&mut searched, dir.display().to_string());
+    }
+    searched.truncate(MAX_REPORTED_SEARCH_DIRS);
+    McpLookup {
+        available: resolved.is_some(),
+        path,
+        searched,
+    }
 }
 
 fn file_association_path(path: PathBuf) -> Option<PathBuf> {
@@ -119,6 +219,7 @@ fn startup_open_paths() -> Vec<PathBuf> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let _ = fix_path_env::fix();
+    augment_mcp_path();
 
     let mut builder = tauri::Builder::default();
 
@@ -148,7 +249,7 @@ pub fn run() {
             credential_status,
             credential_store_availability,
             credential_write,
-            mcp_executable_available,
+            mcp_lookup,
             list_system_fonts,
             load_system_font,
             proxy_http_request,
@@ -194,4 +295,45 @@ pub fn run() {
             }
             _ => {}
         });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn augment_path_appends_missing_candidates_once() {
+        let temp = std::env::temp_dir();
+        let current = std::env::join_paths([
+            PathBuf::from("/open-pencil-first"),
+            temp.clone(),
+            PathBuf::from("/open-pencil-second"),
+        ])
+        .expect("join path list");
+
+        let candidates = vec![temp.clone(), PathBuf::from("/open-pencil-nonexistent")];
+        let entries: Vec<PathBuf> = std::env::split_paths(&augment_path(
+            &current.to_string_lossy(),
+            &candidates,
+        ))
+        .collect();
+
+        // Existing entries keep their order, the candidate is appended once,
+        // and a missing directory is not invented.
+        assert_eq!(
+            entries,
+            vec![
+                PathBuf::from("/open-pencil-first"),
+                temp.clone(),
+                PathBuf::from("/open-pencil-second"),
+            ]
+        );
+    }
+
+    #[test]
+    fn augment_path_keeps_an_existing_path_when_nothing_changes() {
+        let current = std::env::var("PATH").unwrap_or_default();
+        let augmented = augment_path(&current, &[]);
+        assert_eq!(augmented, current);
+    }
 }

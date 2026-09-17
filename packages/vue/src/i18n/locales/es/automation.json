@@ -82,5 +82,7 @@
   "mcpFailureUnreachableHint": "Nada escucha en {endpoint}. Libera la dirección e inicia el servidor.",
   "mcpFailureUnknown": "No se pudo iniciar el servidor MCP",
   "mcpFailureUnknownHint": "Vuelve a iniciarlo o revisa los detalles técnicos de abajo.",
-  "mcpFailureDetails": "Detalles"
+  "mcpFailureDetails": "Detalles",
+  "mcpFailureCopy": "Copiar detalles",
+  "mcpFailureCopied": "Detalles técnicos copiados."
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useClipboard } from '@vueuse/core'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue'
 
@@ -9,11 +9,13 @@ import { mcpAuthenticationEnabled, mcpRootDirectory } from '@/app/automation/mcp
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
 import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
+import { toast } from '@/app/shell/ui'
 import { isTauri } from '@/app/tauri/env'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
@@ -76,6 +78,17 @@ const failureDetail = computed(() => {
   if (code === 'not-installed' || code === 'rejected') return null
   return failure.detail?.trim() || null
 })
+const detailsOpen = ref(false)
+
+function copyFailureDetails(): void {
+  const failure = mcpRuntime.failure
+  if (!failure) return
+  const payload = [`code=${failure.code}`, failure.detail ? `detail=${failure.detail}` : null]
+    .filter(Boolean)
+    .join('\n')
+  copy(payload)
+  toast.info(automation.value.mcpFailureCopied)
+}
 </script>
 
 <template>
@@ -142,20 +155,44 @@ const failureDetail = computed(() => {
       tone="error"
       :heading="failureCopy.heading"
       :description="failureCopy.description"
-    />
-    <div v-if="failureDetail" class="flex flex-col gap-1">
-      <p class="text-xs font-medium text-muted">{{ automation.mcpFailureDetails }}</p>
-      <pre
-        class="max-h-40 overflow-auto rounded border border-border bg-input p-2 font-mono text-xs whitespace-pre-wrap text-muted"
-        data-test-id="settings-mcp-failure-detail"
-        >{{ failureDetail }}</pre>
-    </div>
+      data-test-id="settings-mcp-failure"
+    >
+      <template v-if="failureDetail" #details>
+        <AppCollapsible
+          v-model:open="detailsOpen"
+          :label="automation.mcpFailureDetails"
+          :ui="{ trigger: 'text-muted hover:text-surface', content: 'mt-1' }"
+          data-test-id="settings-mcp-failure-details"
+        >
+          <pre
+            class="max-h-40 overflow-auto rounded border border-border bg-input p-2 font-mono text-[11px] whitespace-pre-wrap text-muted"
+            data-test-id="settings-mcp-failure-detail"
+            >{{ failureDetail }}</pre>
+        </AppCollapsible>
+      </template>
+      <template #actions>
+        <AppButton size="xs" variant="outline" @click="copyFailureDetails">{{
+          automation.mcpFailureCopy
+        }}</AppButton>
+        <AppButton
+          size="xs"
+          variant="outline"
+          :disabled="mcpRuntime.externallyManaged"
+          :loading="mcpRuntime.status === 'starting' || mcpRuntime.checking"
+          @click="restart"
+          >{{
+            mcpRuntime.externallyManaged ? automation.externallyManaged : automation.restart
+          }}</AppButton
+        >
+      </template>
+    </AppAlert>
     <div>
       <AppButton variant="link" @click="openToolAccessSettings('mcp')">{{
         settings.toolAccess
       }}</AppButton>
     </div>
-    <div>
+    <!-- The failure alert carries its own restart action. -->
+    <div v-if="!failureCopy">
       <AppButton
         color="primary"
         variant="solid"
