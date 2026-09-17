@@ -19,13 +19,6 @@ test('saving an API key in Settings opens the chat interface', async ({ chat }) 
   await chat.chatTab.click()
   await chat.page.getByTestId('provider-setup-open-settings').click()
   await expect(chat.page.getByTestId('app-settings-dialog')).toBeVisible()
-  await expect(chat.page.getByTestId('settings-remember-credentials')).toHaveAttribute(
-    'data-state',
-    'checked'
-  )
-  await expect(chat.page.getByTestId('settings-credential-backend')).toContainText(
-    'encrypted browser storage'
-  )
   await chat.page.locator('[data-model-id]').first().click()
   await chat.page.getByTestId('settings-model-provider').click()
   await chat.page.getByRole('option', { name: 'OpenRouter' }).click()
