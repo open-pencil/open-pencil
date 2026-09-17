@@ -409,3 +409,15 @@ export const APP_MENU_SCHEMA = [
     ]
   }
 ] satisfies AppMenuGroupSchema[]
+
+/**
+ * Custom entries in the macOS application menu.
+ *
+ * Placement stays in Rust because the OS-predefined items (About, Services, Hide)
+ * sit between them. Only the labels and accelerators are shared here.
+ */
+export const APP_MENU_APP_ITEMS = [
+  { id: 'about', label: 'About OpenPencil' },
+  { id: 'check-updates', label: 'Check for Updates…' },
+  { id: 'quit', label: 'Quit OpenPencil', shortcut: 'MOD+Q' }
+] satisfies AppMenuActionItem[]

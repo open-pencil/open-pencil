@@ -26,6 +26,31 @@ struct MenuEntry {
     sub: Vec<MenuEntry>,
 }
 
+#[cfg(target_os = "macos")]
+#[derive(Deserialize)]
+struct AppMenuItem {
+    label: String,
+    accelerator: Option<String>,
+}
+
+/// Generated from `APP_MENU_APP_ITEMS`; placement stays here because the
+/// OS-predefined items sit between these entries.
+#[cfg(target_os = "macos")]
+#[derive(Deserialize)]
+struct AppMenuFile {
+    about: AppMenuItem,
+    #[serde(rename = "check-updates")]
+    check_updates: AppMenuItem,
+    quit: AppMenuItem,
+}
+
+#[cfg(target_os = "macos")]
+fn app_menu_file() -> tauri::Result<AppMenuFile> {
+    Ok(serde_json::from_str(include_str!(
+        "../generated/app-menu.json"
+    ))?)
+}
+
 fn build_submenu<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     label: &str,
@@ -208,31 +233,34 @@ pub fn install_app_menu<R: tauri::Runtime>(
     recent_files: &[String],
 ) -> tauri::Result<()> {
     #[cfg(target_os = "macos")]
-    let app_menu = SubmenuBuilder::new(app, "OpenPencil")
-        .item(&PredefinedMenuItem::about(
-            app,
-            Some("About OpenPencil"),
-            None,
-        )?)
-        .item(
-            &MenuItemBuilder::new("Check for Updates…")
-                .id("check-updates")
-                .build(app)?,
-        )
-        .separator()
-        .item(&PredefinedMenuItem::services(app, None)?)
-        .separator()
-        .item(&PredefinedMenuItem::hide(app, None)?)
-        .item(&PredefinedMenuItem::hide_others(app, None)?)
-        .item(&PredefinedMenuItem::show_all(app, None)?)
-        .separator()
-        .item(
-            &MenuItemBuilder::new("Quit OpenPencil")
-                .id("quit")
-                .accelerator("CmdOrCtrl+Q")
-                .build(app)?,
-        )
-        .build()?;
+    let app_menu = {
+        let items = app_menu_file()?;
+        let mut check_updates =
+            MenuItemBuilder::new(&items.check_updates.label).id("check-updates");
+        if let Some(accelerator) = &items.check_updates.accelerator {
+            check_updates = check_updates.accelerator(accelerator);
+        }
+        let mut quit = MenuItemBuilder::new(&items.quit.label).id("quit");
+        if let Some(accelerator) = &items.quit.accelerator {
+            quit = quit.accelerator(accelerator);
+        }
+        SubmenuBuilder::new(app, tauri::Manager::package_info(app).name.clone())
+            .item(&PredefinedMenuItem::about(
+                app,
+                Some(&items.about.label),
+                None,
+            )?)
+            .item(&check_updates.build(app)?)
+            .separator()
+            .item(&PredefinedMenuItem::services(app, None)?)
+            .separator()
+            .item(&PredefinedMenuItem::hide(app, None)?)
+            .item(&PredefinedMenuItem::hide_others(app, None)?)
+            .item(&PredefinedMenuItem::show_all(app, None)?)
+            .separator()
+            .item(&quit.build(app)?)
+            .build()?
+    };
 
     let schema_menus = build_schema_menus(app, recent_files)?;
     let mut builder = MenuBuilder::new(app);

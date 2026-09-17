@@ -21,7 +21,8 @@ function shellMenuIds(entries: readonly AppMenuEntry[]): string[] {
 
 export const SHELL_MENU_IDS = new Set([
   ...APP_MENU_SCHEMA.flatMap((group) => shellMenuIds(group.items)),
-  // The macOS application menu is native-only and is not part of the shared schema.
+  // The macOS application menu is native-only; its custom entries come from
+  // APP_MENU_APP_ITEMS while the OS-predefined ones stay in Rust.
   'check-updates',
   'quit'
 ])
