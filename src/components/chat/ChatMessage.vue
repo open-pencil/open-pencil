@@ -15,6 +15,7 @@ import AttachmentList from '@/components/chat/attachment/AttachmentList.vue'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
 import ReasoningBlock from '@/components/chat/ReasoningBlock.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
+import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 import { classifyToolState } from './tool-state'
 
@@ -142,7 +143,7 @@ function partKey(part: UIMessagePart<UIDataTypes, UITools>, index: number): stri
               </CollapsibleTrigger>
               <CollapsibleContent
                 v-if="toolState(part) !== 'pending'"
-                class="data-[state=closed]:collapsible-up data-[state=open]:collapsible-down overflow-hidden text-[10px]"
+                :class="[collapsibleContentMotion, 'text-[10px]']"
               >
                 <pre class="mt-1 overflow-x-auto rounded bg-input p-2 text-muted">{{
                   part.state === 'output-error' && part.errorText

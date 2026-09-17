@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue'
 
 import type { ReasoningDisplay } from '@/app/settings/preferences/store'
 import ChatMarkdown from '@/components/chat/ChatMarkdown.vue'
+import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 const {
   display = 'collapsed',
@@ -84,10 +85,7 @@ function updateOpen(value: boolean): void {
         aria-hidden="true"
       />
     </CollapsibleTrigger>
-    <CollapsibleContent
-      data-slot="chat-reasoning-content"
-      class="motion-safe:data-[state=closed]:animate-collapsible-up motion-safe:data-[state=open]:animate-collapsible-down animation-duration-150 overflow-hidden"
-    >
+    <CollapsibleContent data-slot="chat-reasoning-content" :class="collapsibleContentMotion">
       <div class="border-t border-border px-2 py-1.5 text-[11px] leading-relaxed text-muted">
         <ChatMarkdown :content="text" :mode="markdownMode" surface="reasoning" />
       </div>

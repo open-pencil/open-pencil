@@ -1,5 +1,12 @@
 import { tv } from 'tailwind-variants'
 
+/**
+ * Shared content treatment for every collapsible, including the call sites that
+ * keep their own header shape and drive Reka directly.
+ */
+export const collapsibleContentMotion =
+  'overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up duration-180 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none'
+
 export const collapsibleTheme = {
   slots: {
     root: '',
@@ -11,8 +18,7 @@ export const collapsibleTheme = {
     actions: 'shrink-0',
     // Padding and borders belong to the slot inside this wrapper so they cannot
     // snap while the measured height animates.
-    content:
-      'overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up duration-180 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none'
+    content: collapsibleContentMotion
   }
 } as const
 

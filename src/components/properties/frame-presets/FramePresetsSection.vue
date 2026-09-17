@@ -5,6 +5,7 @@ import { useI18n } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { FRAME_PRESET_CATEGORIES, type FramePreset } from '@/app/editor/frame-presets'
+import { collapsibleContentMotion } from '@/theme/collapsible/collapsible'
 
 const store = useEditorStore()
 const { panels } = useI18n()
@@ -40,20 +41,23 @@ function createFrame(preset: FramePreset) {
         <span class="min-w-0 flex-1 truncate">{{ panels[category.labelKey] }}</span>
       </CollapsibleTrigger>
 
-      <CollapsibleContent class="pb-1.5">
-        <button
-          v-for="preset in category.presets"
-          :key="preset.id"
-          type="button"
-          :data-frame-preset="preset.id"
-          class="flex h-7 w-full items-center gap-2 px-7 text-left text-[11px] text-surface hover:bg-hover"
-          @click="createFrame(preset)"
-        >
-          <span class="min-w-0 flex-1 truncate">{{ preset.name }}</span>
-          <span class="shrink-0 tabular-nums text-muted">
-            {{ preset.width }} × {{ preset.height }}
-          </span>
-        </button>
+      <CollapsibleContent :class="collapsibleContentMotion">
+        <!-- Padding stays inside the animated wrapper so it cannot snap. -->
+        <div class="pb-1.5">
+          <button
+            v-for="preset in category.presets"
+            :key="preset.id"
+            type="button"
+            :data-frame-preset="preset.id"
+            class="flex h-7 w-full items-center gap-2 px-7 text-left text-[11px] text-surface hover:bg-hover"
+            @click="createFrame(preset)"
+          >
+            <span class="min-w-0 flex-1 truncate">{{ preset.name }}</span>
+            <span class="shrink-0 tabular-nums text-muted">
+              {{ preset.width }} × {{ preset.height }}
+            </span>
+          </button>
+        </div>
       </CollapsibleContent>
     </CollapsibleRoot>
   </section>
