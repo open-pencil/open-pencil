@@ -50,11 +50,11 @@ const styles = computed(() => {
       >
         <slot>{{ description }}</slot>
       </div>
-      <div v-if="slots.actions" :class="styles.actions" data-slot="alert-actions">
-        <slot name="actions" />
-      </div>
       <div v-if="slots.details" :class="styles.details" data-slot="alert-details">
         <slot name="details" />
+      </div>
+      <div v-if="slots.actions" :class="styles.actions" data-slot="alert-actions">
+        <slot name="actions" />
       </div>
     </div>
   </div>
