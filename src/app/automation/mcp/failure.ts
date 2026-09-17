@@ -1,4 +1,18 @@
 /**
+ * Name of the entry point installed by `@open-pencil/mcp`.
+ *
+ * Kept here rather than in the spawner so Settings can render the install
+ * instruction without importing the spawning code.
+ */
+export const MCP_PACKAGE_NAME = '@open-pencil/mcp'
+
+const APP_VERSION =
+  typeof __OPENPENCIL_APP_VERSION__ === 'string' ? __OPENPENCIL_APP_VERSION__ : '0.0.0-test'
+
+/** Exact package spec a user should install to match this app. */
+export const MCP_INSTALL_TARGET = `${MCP_PACKAGE_NAME}@${APP_VERSION}`
+
+/**
  * Why the local MCP server is unavailable.
  *
  * Codes stay in the domain so Settings can render translated, actionable copy.

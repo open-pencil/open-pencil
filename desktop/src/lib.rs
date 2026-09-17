@@ -303,31 +303,41 @@ mod tests {
 
     #[test]
     fn augment_path_appends_missing_candidates_once() {
-        let temp = std::env::temp_dir();
-        let current = std::env::join_paths([
-            PathBuf::from("/open-pencil-first"),
-            temp.clone(),
-            PathBuf::from("/open-pencil-second"),
-        ])
-        .expect("join path list");
+        let current_dir = std::env::temp_dir();
+        let appended_dir = std::env::temp_dir().join("open-pencil-appended");
+        std::fs::create_dir_all(&appended_dir).expect("create candidate dir");
 
-        let candidates = vec![temp.clone(), PathBuf::from("/open-pencil-nonexistent")];
-        let entries: Vec<PathBuf> = std::env::split_paths(&augment_path(
-            &current.to_string_lossy(),
-            &candidates,
-        ))
-        .collect();
+        let current =
+            std::env::join_paths([PathBuf::from("/open-pencil-first"), current_dir.clone()])
+                .expect("join path list");
+        let candidates = vec![current_dir.clone(), appended_dir.clone()];
+        let entries: Vec<PathBuf> =
+            std::env::split_paths(&augment_path(&current.to_string_lossy(), &candidates)).collect();
 
-        // Existing entries keep their order, the candidate is appended once,
-        // and a missing directory is not invented.
+        // Existing entries keep their order and the missing candidate is
+        // appended once, at the end.
         assert_eq!(
             entries,
             vec![
                 PathBuf::from("/open-pencil-first"),
-                temp.clone(),
-                PathBuf::from("/open-pencil-second"),
+                current_dir,
+                appended_dir.clone(),
             ]
         );
+
+        let _ = std::fs::remove_dir(&appended_dir);
+    }
+
+    #[test]
+    fn augment_path_ignores_candidates_that_do_not_exist() {
+        let current =
+            std::env::join_paths([PathBuf::from("/open-pencil-only")]).expect("join path list");
+        let augmented = augment_path(
+            &current.to_string_lossy(),
+            &[PathBuf::from("/open-pencil-nonexistent")],
+        );
+
+        assert!(!augmented.contains("nonexistent"));
     }
 
     #[test]

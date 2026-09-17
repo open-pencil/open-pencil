@@ -4,7 +4,11 @@ import { computed, ref } from 'vue'
 
 import { useAutomationMessages } from '@open-pencil/vue'
 
-import type { MCPFailure, MCPFailureCode } from '@/app/automation/mcp/failure'
+import {
+  MCP_INSTALL_TARGET,
+  type MCPFailure,
+  type MCPFailureCode
+} from '@/app/automation/mcp/failure'
 import { toast } from '@/app/shell/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
@@ -28,11 +32,10 @@ const detailsOpen = ref(false)
 /** Translated copy for each reason; the technical detail stays secondary. */
 const copy$ = computed(() => {
   const messages = automation.value
-  const packageName = failure.detail ?? 'MCP package'
   const map: Record<MCPFailureCode, { heading: string; description: string }> = {
     'not-installed': {
       heading: messages.mcpFailureNotInstalled,
-      description: messages.mcpFailureNotInstalledHint({ package: packageName })
+      description: messages.mcpFailureNotInstalledHint({ package: MCP_INSTALL_TARGET })
     },
     'permission-denied': {
       heading: messages.mcpFailurePermission,
@@ -63,11 +66,7 @@ const copy$ = computed(() => {
  * Reasons whose cause already appears in the guidance, so repeating the same
  * value under Details would only add noise.
  */
-const EXPLAINED_REASONS: ReadonlySet<MCPFailureCode> = new Set([
-  'not-installed',
-  'rejected',
-  'unreachable'
-])
+const EXPLAINED_REASONS: ReadonlySet<MCPFailureCode> = new Set(['rejected', 'unreachable'])
 
 const detail = computed(() =>
   EXPLAINED_REASONS.has(failure.code) ? null : failure.detail?.trim() || null

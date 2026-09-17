@@ -14,7 +14,13 @@ import { resolvePlatformCommand } from '@/app/tauri/command'
 import { isTauri } from '@/app/tauri/env'
 
 import { DEV_MCP_RESTART_PATH, type DevMCPConfiguration } from './dev-control'
-import { classifySpawnFailure, mcpFailure, MCPStartupError, type MCPFailure } from './failure'
+import {
+  classifySpawnFailure,
+  mcpFailure,
+  MCP_INSTALL_TARGET,
+  MCPStartupError,
+  type MCPFailure
+} from './failure'
 import { disabledMCPTools, mcpAuthenticationEnabled, mcpRootDirectory } from './preferences'
 
 export interface AutomationHealth {
@@ -48,7 +54,6 @@ const APP_VERSION =
 const noop = () => undefined
 const MAX_STARTUP_STDERR_LENGTH = 8_192
 const MCP_EXECUTABLE = 'openpencil-mcp-http'
-const MCP_PACKAGE_NAME = '@open-pencil/mcp'
 
 interface MCPLookup {
   available: boolean
@@ -99,8 +104,10 @@ function toError(error: unknown): Error {
 
 function missingMCPError(searched: string[] = []): Error {
   return new MCPStartupError(
-    `MCP automation is not installed. Install @open-pencil/mcp@${APP_VERSION} globally with your package manager, then restart OpenPencil.`,
-    mcpFailure('not-installed', [MCP_PACKAGE_NAME, ...searched].join(' · '))
+    `MCP automation is not installed. Install ${MCP_INSTALL_TARGET} globally with your package manager, then restart OpenPencil.`,
+    searched.length > 0
+      ? mcpFailure('not-installed', searched.join(', '))
+      : mcpFailure('not-installed')
   )
 }
 
@@ -281,8 +288,12 @@ export async function readAutomationHealth(
       signal: AbortSignal.timeout(1000)
     })
     if (!res.ok) {
-      // A running server that rejects our bearer token is not a missing server.
-      runtimeAutomationHealthFailure = mcpFailure('rejected', `HTTP ${res.status}`)
+      // A running server that refuses our token needs a new token; any other
+      // status means we are not talking to the server we expect.
+      const rejectsCredentials = res.status === 401 || res.status === 403
+      runtimeAutomationHealthFailure = rejectsCredentials
+        ? mcpFailure('rejected', `HTTP ${res.status}`)
+        : mcpFailure('malformed', `HTTP ${res.status}`)
       return null
     }
     const health = parseAutomationHealth(await res.json())
@@ -492,7 +503,12 @@ async function startMCPIfNeeded(timing: MCPStartupTiming): Promise<AutomationSer
     return rememberStartupError(
       new MCPStartupError(
         `MCP server exited before startup completed (code ${earlyExit.code ?? 'null'}, signal ${earlyExit.signal ?? 'null'})${details ? `: ${details}` : '.'}`,
-        mcpFailure('exited', details)
+        mcpFailure(
+          'exited',
+          [`code=${earlyExit.code ?? 'null'}`, `signal=${earlyExit.signal ?? 'null'}`, details]
+            .filter(Boolean)
+            .join(' ')
+        )
       )
     )
   }

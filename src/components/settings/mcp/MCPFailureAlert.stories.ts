@@ -7,7 +7,10 @@ import MCPFailureAlert from './MCPFailureAlert.vue'
 
 /** One representative failure per reason, mirroring what each path records. */
 const reasons: Record<MCPFailureCode, MCPFailure> = {
-  'not-installed': { code: 'not-installed', detail: '@open-pencil/mcp@0.15.0' },
+  'not-installed': {
+    code: 'not-installed',
+    detail: '/opt/homebrew/bin, /usr/local/bin, /Users/you/.bun/bin'
+  },
   'permission-denied': {
     code: 'permission-denied',
     detail: 'shell command openpencil-mcp-http not allowed by ACL'

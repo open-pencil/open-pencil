@@ -39,6 +39,10 @@ describe('MCP health probe diagnostics', () => {
     await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
     expect(getAutomationHealthFailure()).toEqual({ code: 'rejected', detail: 'HTTP 401' })
 
+    reject.mockResolvedValue(new Response('', { status: 500 }))
+    await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({ code: 'malformed', detail: 'HTTP 500' })
+
     reject.mockRejectedValue(new Error('connection refused'))
     await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
     expect(getAutomationHealthFailure()).toEqual({
@@ -98,7 +102,10 @@ describe('Tauri MCP spawning', () => {
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('MCP server exited before startup completed')
-    expect(getAutomationStartupFailure()).toMatchObject({ code: 'exited' })
+    expect(getAutomationStartupFailure()).toMatchObject({
+      code: 'exited',
+      detail: expect.stringContaining('code=')
+    })
   })
 
   test('retains unexpected spawn errors for MCP-dependent features', async () => {
