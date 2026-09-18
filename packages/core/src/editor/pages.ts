@@ -2,6 +2,7 @@ import { limitAsync } from 'es-toolkit/promise'
 
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { getPageColor, setPageBackgrounds } from '#core/figma-api/page-backgrounds'
 import { populateLazyFigImportRoots } from '#core/kiwi/fig/lazy-import'
 import {
   canUseFigPopulationWorker,
@@ -41,6 +42,14 @@ function throwIfAborted(signal?: AbortSignal): void {
 const MAX_CONCURRENT_FONT_LOADS = 4
 export function createPageActions(ctx: EditorContext) {
   const pageViewportStore = createPageViewportStore(ctx)
+  function syncPageColor() {
+    ctx.state.pageColor = getPageColor(ctx.graph.getNode(ctx.state.currentPageId))
+  }
+  syncPageColor()
+  ctx.onEditorEvent('graph:replaced', syncPageColor)
+  ctx.onEditorEvent('node:updated', (id, changes) => {
+    if (id === ctx.state.currentPageId && changes.source) syncPageColor()
+  })
   let populationWorkerInstance: ReturnType<typeof createFigPopulationWorker> | undefined
   let populationWorkerGeneration = 0
   let pageSwitchGeneration = 0
@@ -229,7 +238,12 @@ export function createPageActions(ctx: EditorContext) {
   }
 
   function setPageColor(color: Color) {
-    ctx.state.pageColor = color
+    const page = ctx.graph.getNode(ctx.state.currentPageId)
+    if (!page) return
+    setPageBackgrounds(ctx.graph, page, [
+      { type: 'SOLID', color: { ...color }, opacity: 1, visible: true, blendMode: 'NORMAL' }
+    ])
+    syncPageColor()
     ctx.requestRender()
   }
 
