@@ -21,8 +21,13 @@ export interface OkHCLPayload {
 }
 
 const toRGB = converter('rgb')
+const toP3 = converter('p3')
 const toOkHCL = converter('oklch')
 const toDisplayableRGB = toGamut('rgb', 'oklch')
+const toDisplayableP3 = toGamut('p3', 'oklch')
+
+/** Colour spaces a document's stored numbers can be in. */
+export type OkHCLColorSpace = 'srgb' | 'display-p3'
 const OKHCL_PLUGIN_KEY = 'okhcl'
 
 function clampUnit(value: number): number {
@@ -45,17 +50,26 @@ function normalizeOkHCLColor(color: OkHCLColor): OkHCLColor {
   }
 }
 
-export function okhclToRGBA(color: OkHCLColor): Color {
+/** Coordinates in `colorSpace`, so callers can store colours in the document's profile. */
+export function okhclToRGBA(color: OkHCLColor, colorSpace: OkHCLColorSpace = 'srgb'): Color {
   const normalized = normalizeOkHCLColor(color)
-  const rgb = toRGB(
-    toDisplayableRGB({
-      mode: 'oklch',
-      l: normalized.l,
-      c: normalized.c,
-      h: normalized.h,
-      alpha: normalized.a
+  const oklch = {
+    mode: 'oklch' as const,
+    l: normalized.l,
+    c: normalized.c,
+    h: normalized.h,
+    alpha: normalized.a
+  }
+  if (colorSpace === 'display-p3') {
+    const p3 = toP3(toDisplayableP3(oklch))
+    return normalizeColor({
+      r: p3.r,
+      g: p3.g,
+      b: p3.b,
+      a: p3.alpha ?? normalized.a
     })
-  )
+  }
+  const rgb = toRGB(toDisplayableRGB(oklch))
   return normalizeColor({
     r: rgb.r,
     g: rgb.g,
@@ -64,14 +78,13 @@ export function okhclToRGBA(color: OkHCLColor): Color {
   })
 }
 
-export function rgbaToOkHCL(color: Color): OkHCLColor {
-  const oklch = toOkHCL({
-    mode: 'rgb',
-    r: color.r,
-    g: color.g,
-    b: color.b,
-    alpha: color.a
-  })
+/** Reads `color` as coordinates in `colorSpace`, the inverse of {@link okhclToRGBA}. */
+export function rgbaToOkHCL(color: Color, colorSpace: OkHCLColorSpace = 'srgb'): OkHCLColor {
+  const oklch = toOkHCL(
+    colorSpace === 'display-p3'
+      ? { mode: 'p3', r: color.r, g: color.g, b: color.b, alpha: color.a }
+      : { mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a }
+  )
   return normalizeOkHCLColor({
     h: oklch.h ?? 0,
     c: oklch.c,
@@ -140,12 +153,13 @@ function filterOkHCLPayloads(
 export function setNodeFillOkHCL(
   node: SceneNode,
   index: number,
-  color: OkHCLColor
+  color: OkHCLColor,
+  colorSpace: OkHCLColorSpace = 'srgb'
 ): Partial<SceneNode> {
   const fills = node.fills.map(copyFill)
   if (index < 0 || index >= fills.length) throw new Error(`Fill ${index} not found`)
   const fill = fills[index]
-  const rgba = okhclToRGBA(color)
+  const rgba = okhclToRGBA(color, colorSpace)
   fills[index] = {
     ...fill,
     color: rgba,
@@ -168,12 +182,13 @@ export function setNodeFillOkHCL(
 export function setNodeStrokeOkHCL(
   node: SceneNode,
   index: number,
-  color: OkHCLColor
+  color: OkHCLColor,
+  colorSpace: OkHCLColorSpace = 'srgb'
 ): Partial<SceneNode> {
   const strokes = node.strokes.map(copyStroke)
   if (index < 0 || index >= strokes.length) throw new Error(`Stroke ${index} not found`)
   const stroke = strokes[index]
-  const rgba = okhclToRGBA(color)
+  const rgba = okhclToRGBA(color, colorSpace)
   strokes[index] = {
     ...stroke,
     color: rgba,

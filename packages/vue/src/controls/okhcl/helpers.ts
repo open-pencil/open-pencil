@@ -8,7 +8,7 @@ import {
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
 } from '@open-pencil/core/color'
-import type { OkHCLColor } from '@open-pencil/core/color'
+import type { OkHCLColor, OkHCLColorSpace } from '@open-pencil/core/color'
 import { BLACK } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 import type { SceneNode } from '@open-pencil/scene-graph'
@@ -29,19 +29,26 @@ export function getStrokeOkHCLColor(node: SceneNode | null, index: number): OkHC
   return node ? (getStrokeOkHCL(node, index)?.color ?? null) : null
 }
 
-function fallbackFillOkHCL(node: SceneNode, index: number) {
-  return getFillOkHCLColor(node, index) ?? rgbaToOkHCL(node.fills[index]?.color ?? BLACK)
+function fallbackFillOkHCL(node: SceneNode, index: number, colorSpace: OkHCLColorSpace) {
+  return (
+    getFillOkHCLColor(node, index) ?? rgbaToOkHCL(node.fills[index]?.color ?? BLACK, colorSpace)
+  )
 }
 
-function fallbackStrokeOkHCL(node: SceneNode, index: number) {
-  return getStrokeOkHCLColor(node, index) ?? rgbaToOkHCL(node.strokes[index]?.color ?? BLACK)
+function fallbackStrokeOkHCL(node: SceneNode, index: number, colorSpace: OkHCLColorSpace) {
+  return (
+    getStrokeOkHCLColor(node, index) ?? rgbaToOkHCL(node.strokes[index]?.color ?? BLACK, colorSpace)
+  )
 }
 
 export function createOkHCLActions(editor: Editor) {
+  // Colours are stored in the document's profile, so both directions use it.
+  const colorSpace = () => editor.graph.documentColorSpace
+
   function ensureFillOkHCL(node: SceneNode, index: number) {
     editor.updateNodeWithUndo(
       node.id,
-      setNodeFillOkHCL(node, index, fallbackFillOkHCL(node, index)),
+      setNodeFillOkHCL(node, index, fallbackFillOkHCL(node, index, colorSpace()), colorSpace()),
       'Update fill color model'
     )
   }
@@ -49,25 +56,25 @@ export function createOkHCLActions(editor: Editor) {
   function ensureStrokeOkHCL(node: SceneNode, index: number) {
     editor.updateNodeWithUndo(
       node.id,
-      setNodeStrokeOkHCL(node, index, fallbackStrokeOkHCL(node, index)),
+      setNodeStrokeOkHCL(node, index, fallbackStrokeOkHCL(node, index, colorSpace()), colorSpace()),
       'Update stroke color model'
     )
   }
 
   function updateFillOkHCL(node: SceneNode, index: number, patch: Partial<OkHCLColor>) {
-    const current = fallbackFillOkHCL(node, index)
+    const current = fallbackFillOkHCL(node, index, colorSpace())
     editor.updateNodeWithUndo(
       node.id,
-      setNodeFillOkHCL(node, index, { ...current, ...patch }),
+      setNodeFillOkHCL(node, index, { ...current, ...patch }, colorSpace()),
       'Change fill OkHCL'
     )
   }
 
   function updateStrokeOkHCL(node: SceneNode, index: number, patch: Partial<OkHCLColor>) {
-    const current = fallbackStrokeOkHCL(node, index)
+    const current = fallbackStrokeOkHCL(node, index, colorSpace())
     editor.updateNodeWithUndo(
       node.id,
-      setNodeStrokeOkHCL(node, index, { ...current, ...patch }),
+      setNodeStrokeOkHCL(node, index, { ...current, ...patch }, colorSpace()),
       'Change stroke OkHCL'
     )
   }

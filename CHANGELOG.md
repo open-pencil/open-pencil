@@ -17,6 +17,7 @@
 
 ### Fixed
 
+- Store colours edited in the colour picker in the document's colour profile, so the values a Display-P3 document keeps and exports match the profile it declares.
 - Classify MCP `open_file` and `close_file` operations as read-only hints, and close opened document tabs through the new `close_file` tool with the usual unsaved-change prompt.
 - Animate the AI chat tool-call disclosure, which expanded and collapsed without motion because its animation classes were misspelled.
 - Explain why the local MCP server did not start — a missing `@open-pencil/mcp` install, a denied command, an early exit, a rejected local connection, or an unreachable address — with translated guidance and collapsible technical details instead of one generic health failure.

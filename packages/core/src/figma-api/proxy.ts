@@ -348,7 +348,9 @@ export class FigmaNodeProxy {
   }
 
   setFillOkHCL(color: OkHCLColor, index = 0): void {
-    this._update(setNodeFillOkHCL(this._raw(), index, color))
+    this._update(
+      setNodeFillOkHCL(this._raw(), index, color, this[INTERNAL_GRAPH].documentColorSpace)
+    )
   }
 
   getStrokeOkHCL(index = 0): OkHCLPayload | null {
@@ -356,7 +358,9 @@ export class FigmaNodeProxy {
   }
 
   setStrokeOkHCL(color: OkHCLColor, index = 0): void {
-    this._update(setNodeStrokeOkHCL(this._raw(), index, color))
+    this._update(
+      setNodeStrokeOkHCL(this._raw(), index, color, this[INTERNAL_GRAPH].documentColorSpace)
+    )
   }
 
   // --- Serialization ---
