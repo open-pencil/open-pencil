@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { CanvasHelper } from '#tests/helpers/canvas'
-import { selectDemoReferencePage } from '#tests/helpers/demo'
+import { waitForDemo } from '#tests/helpers/demo'
 
 async function dragSlider(
   page: Parameters<typeof test>[0]['page'],
@@ -25,15 +25,21 @@ async function dragSlider(
 async function selectDemoCard(page: Parameters<typeof test>[0]['page'], canvas: CanvasHelper) {
   await page.goto('/demo')
   await canvas.waitForInit()
-  await selectDemoReferencePage(page)
+  await waitForDemo(page)
 
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
     const nodes = Array.from(store.graph.nodes.values())
     const card =
       nodes.find((node) => node.name === 'Card' && node.type === 'COMPONENT') ??
       nodes.find((node) => node.name === 'Card')
+    // The card lives on whichever page the demo keeps its component library on.
+    let owner = card
+    while (owner && owner.type !== 'CANVAS') {
+      owner = owner.parentId ? store.graph.getNode(owner.parentId) : undefined
+    }
+    if (owner && owner.id !== store.state.currentPageId) await store.switchPage(owner.id)
     if (!card)
       throw new Error(
         `Card not found. Available: ${nodes

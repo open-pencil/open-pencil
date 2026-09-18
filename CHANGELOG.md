@@ -10,7 +10,9 @@
 
 ### Changed
 
+- Create new documents with the sRGB colour profile, so Display P3 is reserved for documents that declare it.
 - Export diagnostics from Settings only. AI requests and tool activity now carry conversation and request identifiers, while chat no longer offers a separate diagnostic log or includes transcript content.
+- Replace the demo's legacy reference page with a component library on the first page, including component sets, linked instances, component properties, and the variable collections.
 
 ### Fixed
 
@@ -20,9 +22,19 @@
 - Find a globally installed `@open-pencil/mcp` when the desktop app is launched from the system shell, by searching the common global binary directories that a graphical launch omits from `PATH`.
 - Mark unsaved documents and ask whether to save before closing a tab, the desktop window, or the application, rather than relying on recovery alone.
 - Defer AI provider connections and system credential reads until you send a message or use a connected feature, so opening documents and browsing chat history no longer trigger unexpected credential prompts.
+- Save and recover documents whose text uses disabled numeric, fraction, or small-caps OpenType features, which previously failed to write a `.fig` file.
+- Update instance text properties on the canvas while typing, with grouped undo for rapid edits.
+- Keep Display-P3 documents rendering correctly in wide gamut where the browser supports it and in sRGB elsewhere, fixing the black rectangles and incorrect blend colors, with a dismissible notice when wide gamut is unavailable.
+- Convert colours between a document's colour profile and the display's, so a Display-P3 document no longer looks different on an sRGB display than on a wide-gamut one.
 - Point Homebrew installation instructions to the official `openpencil` cask and document separate CLI installation.
 - Let the desktop app use an MCP server you started yourself by allowing the app's own origin by default, instead of requiring `OPENPENCIL_MCP_CORS_ORIGIN`.
 - Reach the custom model option in the model picker for providers with large model catalogs instead of requiring a search for it.
+- Show the standard canvas loading overlay and tab indicator while the demo document is generated, instead of an empty canvas.
+
+### Performance
+
+- Reduce editor pauses while generating recovery snapshots and exporting text-heavy `.fig` documents.
+- Recompute layout only for the pages an edit affects, instead of every page, when editing a component or its instances.
 
 ## 0.15.0 — 2026-09-16
 

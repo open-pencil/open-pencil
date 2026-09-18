@@ -14,7 +14,7 @@ async function openDemo(page: Page) {
 test.use({ viewport: { width: 1200, height: 1300 } })
 
 for (const [name, snapshot] of [
-  ['01 · Components & variables', 'demo-announcements'],
+  ['01 · Components & variables', 'demo-components-and-variables'],
   ['02 · Typography', 'demo-typography'],
   ['03 · Paint & effects', 'demo-paint']
 ] as const) {
@@ -47,6 +47,61 @@ for (const [name, snapshot] of [
     })
   })
 }
+
+test('demo generation reports canvas preparation until the document is ready', async ({ page }) => {
+  const canvas = new CanvasHelper(page)
+  await page.goto('/demo?no-chrome&no-rulers')
+  const loader = page.getByTestId('canvas-loading')
+  await expect(loader).toBeVisible()
+  await expect(loader).toContainText(
+    /Preparing layers|Resolving fonts|Computing layout|Preparing canvas/
+  )
+  await canvas.waitForInit()
+  await waitForDemo(page)
+  await expect(loader).toBeHidden()
+})
+
+test('an abandoned demo build leaves the document as it was', async ({ page }) => {
+  const canvas = new CanvasHelper(page)
+  await page.goto('/demo?no-chrome&no-rulers')
+
+  const documentState = () =>
+    page.evaluate(() => {
+      const store = window.openPencil?.getStore?.()
+      const pages = store.graph.getPages()
+      return {
+        pages: pages.length,
+        name: pages[0]?.name ?? null,
+        children: pages[0] ? store.graph.getChildren(pages[0].id).length : -1,
+        collections: store.graph.variableCollections.size,
+        preparing: store.state.preparation !== null
+      }
+    })
+
+  await page.waitForFunction(
+    () => window.openPencil?.getStore?.()?.state.preparation?.kind === 'demo-load'
+  )
+  const pristine = await documentState()
+  // Wait until generation has touched the document (it has added its extra pages), so the
+  // interruption exercises the rollback rather than a build that never started mutating.
+  await page.waitForFunction(() => {
+    const store = window.openPencil?.getStore?.()
+    return store?.state.preparation?.kind === 'demo-load' && store.graph.getPages().length > 1
+  })
+  await page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    await store.switchPage(store.graph.getPages()[0].id)
+  })
+
+  // The abandoned build must roll its pages, sections, and variables back.
+  await expect
+    .poll(async () => {
+      const state = await documentState()
+      return state.preparing ? null : state
+    })
+    .toEqual({ ...pristine, preparing: false })
+  canvas.assertNoErrors()
+})
 
 test('demo completion preserves a document replaced during its final page switch', async ({
   page

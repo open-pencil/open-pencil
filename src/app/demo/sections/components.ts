@@ -1,253 +1,452 @@
-import { DEMO_COLORS, gradient, solid, thinStroke } from '@/app/demo/colors'
-import { makeComponent } from '@/app/demo/helpers'
-import type { EditorStore } from '@/app/editor/session'
+import {
+  Component,
+  ComponentSet,
+  Ellipse,
+  Frame,
+  Instance,
+  Rectangle,
+  Text,
+  linearGradient,
+  renderTree
+} from '@open-pencil/core/design-jsx'
+import type { TreeNode } from '@open-pencil/core/design-jsx'
+import type { ComponentPropertyDefinition, SceneGraph, Vector } from '@open-pencil/scene-graph'
 
-export function createComponentsSection(store: EditorStore) {
-  const { graph } = store
+import { createArtworkTile, createExampleColumn } from './example'
 
-  const compSectionId = store.createShape('SECTION', 60, 60, 920, 540)
-  graph.updateNode(compSectionId, { name: 'Components' })
+const INK = '#172554'
+const MUTED = '#536487'
+const ACCENT = '#4F46E5'
+const TILE = '#EEF2FF'
+const SURFACE = '#FFFFFF'
+const BORDER = '#DCE3F5'
 
-  const btnId = store.createShape('FRAME', 32, 76, 120, 40, compSectionId)
-  graph.updateNode(btnId, {
-    name: 'Button/Primary',
-    fills: [],
-    strokes: [],
-    clipsContent: false
-  })
-  const btnSurfaceId = store.createShape('FRAME', 0, 0, 120, 40, btnId)
-  graph.updateNode(btnSurfaceId, {
-    name: 'Surface',
-    cornerRadius: 8,
-    fills: [solid(DEMO_COLORS.blue)],
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'HUG',
-    counterAxisSizing: 'HUG',
-    primaryAxisAlign: 'CENTER',
-    counterAxisAlign: 'CENTER',
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 20,
-    paddingRight: 20
-  })
-  const btnTextId = store.createShape('TEXT', 0, 0, 80, 20, btnSurfaceId)
-  graph.updateNode(btnTextId, {
+const text = { font: 'Inter', color: INK }
+const label = { ...text, size: 12, color: MUTED }
+const caption = { ...label, size: 10 }
+
+export const COMPONENT_PROPERTIES = {
+  buttonLabel: {
+    id: 'demo-button-label',
     name: 'Label',
-    text: 'Get Started',
-    fontSize: 14,
-    fontWeight: 600,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.white)]
-  })
-  const btnCompId = makeComponent(store, [btnId])
-
-  const btn2Id = store.createShape('FRAME', 216, 76, 100, 40, compSectionId)
-  graph.updateNode(btn2Id, {
-    name: 'Button/Secondary',
-    fills: [],
-    strokes: [],
-    clipsContent: false
-  })
-  const btn2SurfaceId = store.createShape('FRAME', 0, 0, 100, 40, btn2Id)
-  graph.updateNode(btn2SurfaceId, {
-    name: 'Surface',
-    cornerRadius: 8,
-    fills: [solid(DEMO_COLORS.white)],
-    strokes: thinStroke(DEMO_COLORS.gray200),
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'HUG',
-    counterAxisSizing: 'HUG',
-    primaryAxisAlign: 'CENTER',
-    counterAxisAlign: 'CENTER',
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 20,
-    paddingRight: 20
-  })
-  const btn2TextId = store.createShape('TEXT', 0, 0, 60, 20, btn2SurfaceId)
-  graph.updateNode(btn2TextId, {
-    name: 'Label',
-    text: 'Cancel',
-    fontSize: 14,
-    fontWeight: 500,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.black)]
-  })
-  const btn2CompId = makeComponent(store, [btn2Id])
-
-  store.select([btnCompId, btn2CompId])
-  store.createComponentSetFromComponents()
-  const buttonSetId = [...store.state.selectedIds][0]
-  graph.updateNode(buttonSetId, { x: 32, y: 44, width: 400, height: 136, fills: [] })
-  graph.updateNode(btnCompId, { x: 40, y: 64 })
-  graph.updateNode(btn2CompId, { x: 224, y: 64 })
-
-  const chipId = store.createShape('FRAME', 500, 72, 80, 28, compSectionId)
-  graph.updateNode(chipId, {
-    name: 'Tag',
-    cornerRadius: 14,
-    fills: [solid({ r: 0.93, g: 0.94, b: 1, a: 1 })],
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'HUG',
-    counterAxisSizing: 'HUG',
-    primaryAxisAlign: 'CENTER',
-    counterAxisAlign: 'CENTER',
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingLeft: 12,
-    paddingRight: 12
-  })
-  const chipTextId = store.createShape('TEXT', 0, 0, 56, 16, chipId)
-  graph.updateNode(chipTextId, {
-    name: 'Label',
-    text: 'Design',
-    fontSize: 12,
-    fontWeight: 500,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.indigo)]
-  })
-  makeComponent(store, [chipId])
-
-  const avatarId = store.createShape('ELLIPSE', 640, 68, 40, 40, compSectionId)
-  graph.updateNode(avatarId, {
-    name: 'Avatar',
-    fills: [
-      gradient([
-        { color: DEMO_COLORS.purple, position: 0 },
-        { color: DEMO_COLORS.blue, position: 1 }
-      ])
-    ]
-  })
-  const avatarCompId = makeComponent(store, [avatarId])
-  graph.updateNode(avatarCompId, { name: 'Avatar' })
-
-  const cardId = store.createShape('FRAME', 32, 216, 280, 160, compSectionId)
-  graph.updateNode(cardId, {
-    name: 'Card',
-    cornerRadius: 12,
-    fills: [solid(DEMO_COLORS.white)],
-    strokes: thinStroke(DEMO_COLORS.gray200),
-    layoutMode: 'VERTICAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'FIXED',
-    itemSpacing: 8,
-    paddingTop: 20,
-    paddingBottom: 20,
-    paddingLeft: 20,
-    paddingRight: 20
-  })
-  const cardTitleId = store.createShape('TEXT', 0, 0, 240, 22, cardId)
-  graph.updateNode(cardTitleId, {
+    type: 'TEXT',
+    defaultValue: 'Get started'
+  },
+  cardTitle: {
+    id: 'demo-card-title',
     name: 'Title',
-    text: 'Analytics Overview',
-    fontSize: 16,
-    fontWeight: 600,
-    textAutoResize: 'HEIGHT',
-    layoutAlignSelf: 'STRETCH',
-    fills: [solid(DEMO_COLORS.black)]
-  })
-  const cardDescId = store.createShape('TEXT', 0, 0, 240, 36, cardId)
-  graph.updateNode(cardDescId, {
+    type: 'TEXT',
+    defaultValue: 'Analytics overview'
+  },
+  cardDescription: {
+    id: 'demo-card-description',
     name: 'Description',
-    text: 'Track your key metrics and performance indicators in real time.',
-    fontSize: 13,
-    fontWeight: 400,
-    textAutoResize: 'HEIGHT',
-    layoutAlignSelf: 'STRETCH',
-    fills: [solid(DEMO_COLORS.gray500)]
-  })
-  const cardBarBg = store.createShape('RECTANGLE', 0, 0, 240, 8, cardId)
-  graph.updateNode(cardBarBg, {
-    name: 'Progress BG',
-    cornerRadius: 4,
-    fills: [solid(DEMO_COLORS.gray100)]
-  })
-  const cardBar = store.createShape('RECTANGLE', 0, 0, 168, 8, cardId)
-  graph.updateNode(cardBar, {
-    name: 'Progress',
-    cornerRadius: 4,
-    fills: [
-      gradient([
-        { color: DEMO_COLORS.blue, position: 0 },
-        { color: DEMO_COLORS.teal, position: 1 }
-      ])
-    ]
-  })
-  makeComponent(store, [cardId])
-
-  const inputId = store.createShape('FRAME', 344, 216, 240, 40, compSectionId)
-  graph.updateNode(inputId, {
-    name: 'Input',
-    cornerRadius: 8,
-    fills: [solid(DEMO_COLORS.white)],
-    strokes: thinStroke(DEMO_COLORS.gray200),
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'FIXED',
-    counterAxisSizing: 'HUG',
-    primaryAxisAlign: 'MIN',
-    counterAxisAlign: 'CENTER',
-    paddingTop: 10,
-    paddingBottom: 10,
-    paddingLeft: 12,
-    paddingRight: 12
-  })
-  const inputPlaceholder = store.createShape('TEXT', 0, 0, 200, 18, inputId)
-  graph.updateNode(inputPlaceholder, {
-    name: 'Placeholder',
-    text: 'Search...',
-    fontSize: 14,
-    fontWeight: 400,
-    textAutoResize: 'HEIGHT',
-    layoutAlignSelf: 'STRETCH',
-    fills: [solid(DEMO_COLORS.gray500)]
-  })
-  makeComponent(store, [inputId])
-
-  const badgeId = store.createShape('FRAME', 344, 284, 48, 24, compSectionId)
-  graph.updateNode(badgeId, {
-    name: 'Badge',
-    cornerRadius: 12,
-    fills: [solid({ r: 0.93, g: 1, b: 0.95, a: 1 })],
-    layoutMode: 'HORIZONTAL',
-    primaryAxisSizing: 'HUG',
-    counterAxisSizing: 'HUG',
-    primaryAxisAlign: 'CENTER',
-    counterAxisAlign: 'CENTER',
-    itemSpacing: 4,
-    paddingTop: 4,
-    paddingBottom: 4,
-    paddingLeft: 8,
-    paddingRight: 8
-  })
-  const badgeDot = store.createShape('ELLIPSE', 0, 0, 6, 6, badgeId)
-  graph.updateNode(badgeDot, {
-    name: 'Dot',
-    fills: [solid(DEMO_COLORS.green)]
-  })
-  const badgeText = store.createShape('TEXT', 0, 0, 28, 14, badgeId)
-  graph.updateNode(badgeText, {
+    type: 'TEXT',
+    defaultValue: 'Track your key metrics and performance indicators in real time.'
+  },
+  badgeLabel: {
+    id: 'demo-badge-label',
     name: 'Label',
-    text: 'Live',
-    fontSize: 11,
-    fontWeight: 600,
-    textAutoResize: 'WIDTH_AND_HEIGHT',
-    fills: [solid(DEMO_COLORS.green)]
-  })
-  const badgeCompId = makeComponent(store, [badgeId])
+    type: 'TEXT',
+    defaultValue: 'Live'
+  },
+  badgeDot: {
+    id: 'demo-badge-dot',
+    name: 'Show dot',
+    type: 'BOOLEAN',
+    defaultValue: 'true'
+  }
+} satisfies Record<string, ComponentPropertyDefinition>
 
-  const swatches = [
-    { name: 'Blue', color: DEMO_COLORS.blue, x: 32 },
-    { name: 'Indigo', color: DEMO_COLORS.indigo, x: 88 },
-    { name: 'Purple', color: DEMO_COLORS.purple, x: 144 },
-    { name: 'Green', color: DEMO_COLORS.green, x: 200 },
-    { name: 'Teal', color: DEMO_COLORS.teal, x: 256 },
-    { name: 'Orange', color: DEMO_COLORS.orange, x: 312 },
-    { name: 'Red', color: DEMO_COLORS.red, x: 368 }
-  ]
-  for (const swatch of swatches) {
-    const id = store.createShape('ELLIPSE', swatch.x, 460, 44, 44, compSectionId)
-    graph.updateNode(id, { name: swatch.name, fills: [solid(swatch.color)] })
+interface ComponentExample {
+  title: string
+  caption: string
+}
+
+const EXAMPLE_GROUPS: readonly { title: string; examples: readonly ComponentExample[] }[] = [
+  {
+    title: '01 / ACTIONS · ONE BUTTON, TWO VARIANTS',
+    examples: [
+      { title: 'Primary', caption: 'Filled with the accent variable.' },
+      { title: 'Secondary', caption: 'Outline treatment for lower emphasis.' }
+    ]
+  },
+  {
+    title: '02 / IDENTITY · AVATAR, BADGE, TAG',
+    examples: [
+      { title: 'Avatar', caption: 'Gradient identity mark.' },
+      { title: 'Badge', caption: 'Status label with a live dot.' },
+      { title: 'Tag', caption: 'Quiet category chip.' }
+    ]
+  },
+  {
+    title: '03 / SURFACES · CARD AND INPUT',
+    examples: [
+      { title: 'Card', caption: 'Titled surface with a progress bar.' },
+      { title: 'Input', caption: 'Search field with a placeholder.' }
+    ]
+  }
+]
+
+export async function createComponentsSection(
+  graph: SceneGraph,
+  parentId: string,
+  options: Partial<Vector> = {}
+) {
+  const root = await renderTree(
+    graph,
+    Frame({
+      name: 'Components',
+      flex: 'col',
+      w: 1056,
+      h: 'hug',
+      p: 32,
+      gap: 32,
+      bg: SURFACE,
+      children: [
+        Text({
+          ...text,
+          size: 20,
+          weight: 600,
+          children: 'One library. Every screen stays in sync.'
+        })
+      ]
+    }),
+    { parentId, ...options }
+  )
+
+  // Instance slots come first so the sources below can fill them afterwards.
+  const slots: Record<string, string> = {}
+  for (const group of EXAMPLE_GROUPS) {
+    const groupFrame = await renderTree(
+      graph,
+      Frame({
+        name: group.title,
+        flex: 'col',
+        w: 'fill',
+        h: 'hug',
+        gap: 16,
+        children: [Text({ ...label, children: group.title })]
+      }),
+      { parentId: root.id }
+    )
+    const row = await renderTree(
+      graph,
+      Frame({ name: 'Linked instances', flex: 'row', w: 'fill', h: 'hug', gap: 24 }),
+      { parentId: groupFrame.id }
+    )
+    for (const example of group.examples) {
+      const column = await renderTree(
+        graph,
+        createExampleColumn({
+          title: example.title,
+          caption: example.caption,
+          artwork: createArtworkTile(`${example.title} / artwork`, { padding: 24, center: true })
+        }),
+        { parentId: row.id }
+      )
+      const artworkId = graph.getNode(column.id)?.childIds[0]
+      if (!artworkId) throw new Error(`Missing component example artwork for ${example.title}`)
+      slots[example.title] = artworkId
+    }
   }
 
-  return { btnCompId, badgeCompId }
+  const sources = await renderTree(
+    graph,
+    Frame({
+      name: '04 / SOURCES · EDIT THESE TO UPDATE EVERY EXAMPLE',
+      flex: 'col',
+      w: 'fill',
+      h: 'hug',
+      gap: 16,
+      children: [Text({ ...label, children: '04 / SOURCES · EDIT THESE TO UPDATE EVERY EXAMPLE' })]
+    }),
+    { parentId: root.id }
+  )
+  const sourceRow = async (name: string) => {
+    const row = await renderTree(
+      graph,
+      Frame({ name, flex: 'row', w: 'fill', h: 'hug', gap: 24, items: 'start' }),
+      { parentId: sources.id }
+    )
+    return row.id
+  }
+  const controlsRow = await sourceRow('Component sources / controls')
+  const surfacesRow = await sourceRow('Component sources / identity and surfaces')
+  const sourceTile = async (name: string, hint: string, rowId: string) => {
+    const tile = await renderTree(
+      graph,
+      Frame({
+        name,
+        flex: 'col',
+        w: 'fill',
+        h: 'hug',
+        p: 20,
+        gap: 12,
+        items: 'center',
+        rounded: 12,
+        bg: TILE,
+        children: [
+          Frame({
+            name: `${name} / source`,
+            flex: 'row',
+            w: 'fill',
+            h: 'hug',
+            p: 16,
+            justify: 'center',
+            items: 'center'
+          }),
+          Text({ ...caption, children: hint })
+        ]
+      }),
+      { parentId: rowId }
+    )
+    const artworkId = graph.getNode(tile.id)?.childIds[0]
+    if (!artworkId) throw new Error(`Missing source artwork for ${name}`)
+    return artworkId
+  }
+
+  const buttonVariant = (variant: string, fill: string, color: string, outline: boolean) =>
+    Component({
+      name: `Variant=${variant}`,
+      properties: [COMPONENT_PROPERTIES.buttonLabel],
+      flex: 'row',
+      px: 20,
+      py: 10,
+      rounded: 8,
+      justify: 'center',
+      items: 'center',
+      bg: fill,
+      stroke: outline ? BORDER : undefined,
+      strokeWidth: outline ? 1 : undefined,
+      children: [
+        Text({
+          ...text,
+          name: 'Label',
+          size: 14,
+          weight: 600,
+          color,
+          children: COMPONENT_PROPERTIES.buttonLabel.defaultValue,
+          propertyRefs: [{ propertyId: COMPONENT_PROPERTIES.buttonLabel.id, field: 'TEXT' }]
+        })
+      ]
+    })
+  const buttonSet = await renderTree(
+    graph,
+    ComponentSet({
+      name: 'Button',
+      flex: 'row',
+      w: 'hug',
+      h: 'hug',
+      gap: 16,
+      children: [
+        buttonVariant('Primary', ACCENT, SURFACE, false),
+        buttonVariant('Secondary', SURFACE, INK, true)
+      ]
+    }),
+    { parentId: await sourceTile('Button variants', 'Two variants of one set.', controlsRow) }
+  )
+  const variantIds = graph.getNode(buttonSet.id)?.childIds ?? []
+
+  const avatar = await renderTree(
+    graph,
+    Component({
+      name: 'Avatar',
+      flex: 'row',
+      w: 48,
+      h: 48,
+      justify: 'center',
+      items: 'center',
+      rounded: 24,
+      fills: [
+        linearGradient([
+          ['#7C3AED', 0],
+          ['#3B82F6', 1]
+        ])
+      ]
+    }),
+    { parentId: await sourceTile('Avatar', 'Gradient identity mark.', controlsRow) }
+  )
+
+  const badge = await renderTree(
+    graph,
+    Component({
+      name: 'Badge',
+      properties: [COMPONENT_PROPERTIES.badgeDot, COMPONENT_PROPERTIES.badgeLabel],
+      flex: 'row',
+      gap: 4,
+      px: 8,
+      py: 4,
+      rounded: 12,
+      justify: 'center',
+      items: 'center',
+      bg: '#ECFDF5',
+      children: [
+        Ellipse({
+          name: 'Dot',
+          w: 6,
+          h: 6,
+          bg: '#22C55E',
+          propertyRefs: [{ propertyId: COMPONENT_PROPERTIES.badgeDot.id, field: 'VISIBLE' }]
+        }),
+        Text({
+          ...text,
+          name: 'Label',
+          size: 11,
+          weight: 600,
+          color: '#16A34A',
+          children: COMPONENT_PROPERTIES.badgeLabel.defaultValue,
+          propertyRefs: [{ propertyId: COMPONENT_PROPERTIES.badgeLabel.id, field: 'TEXT' }]
+        })
+      ]
+    }),
+    { parentId: await sourceTile('Badge', 'Label plus a toggleable dot.', controlsRow) }
+  )
+
+  const tag = await renderTree(
+    graph,
+    Component({
+      name: 'Tag',
+      flex: 'row',
+      px: 12,
+      py: 4,
+      rounded: 14,
+      justify: 'center',
+      items: 'center',
+      bg: TILE,
+      children: [Text({ ...text, size: 12, weight: 500, color: ACCENT, children: 'Design' })]
+    }),
+    { parentId: await sourceTile('Tag', 'Quiet category chip.', surfacesRow) }
+  )
+
+  const card = await renderTree(
+    graph,
+    Component({
+      name: 'Card',
+      properties: [COMPONENT_PROPERTIES.cardTitle, COMPONENT_PROPERTIES.cardDescription],
+      flex: 'col',
+      w: 280,
+      h: 'hug',
+      p: 20,
+      gap: 8,
+      rounded: 12,
+      bg: SURFACE,
+      stroke: BORDER,
+      strokeWidth: 1,
+      children: [
+        Text({
+          ...text,
+          name: 'Title',
+          w: 'fill',
+          size: 16,
+          weight: 600,
+          children: COMPONENT_PROPERTIES.cardTitle.defaultValue,
+          propertyRefs: [{ propertyId: COMPONENT_PROPERTIES.cardTitle.id, field: 'TEXT' }]
+        }),
+        Text({
+          ...text,
+          name: 'Description',
+          w: 'fill',
+          size: 13,
+          lineHeight: 18,
+          color: MUTED,
+          children: COMPONENT_PROPERTIES.cardDescription.defaultValue,
+          propertyRefs: [{ propertyId: COMPONENT_PROPERTIES.cardDescription.id, field: 'TEXT' }]
+        }),
+        Rectangle({ name: 'Progress track', w: 'fill', h: 8, rounded: 4, bg: '#EEF0F6' }),
+        Rectangle({
+          name: 'Progress',
+          w: 168,
+          h: 8,
+          rounded: 4,
+          fills: [
+            linearGradient([
+              ['#3B82F6', 0],
+              ['#14B8A6', 1]
+            ])
+          ]
+        })
+      ]
+    }),
+    { parentId: await sourceTile('Card', 'Titled surface with progress.', surfacesRow) }
+  )
+
+  const input = await renderTree(
+    graph,
+    Component({
+      name: 'Input',
+      flex: 'row',
+      w: 240,
+      px: 12,
+      py: 10,
+      rounded: 8,
+      items: 'center',
+      bg: SURFACE,
+      stroke: BORDER,
+      strokeWidth: 1,
+      children: [
+        Text({
+          ...text,
+          name: 'Placeholder',
+          w: 'fill',
+          size: 14,
+          color: MUTED,
+          children: 'Search…'
+        })
+      ]
+    }),
+    { parentId: await sourceTile('Input', 'Search field with placeholder.', surfacesRow) }
+  )
+
+  const place = async (name: string, node: TreeNode) => {
+    const artworkId = slots[name]
+    if (!artworkId) throw new Error(`Missing component example slot for ${name}`)
+    return renderTree(graph, node, { parentId: artworkId })
+  }
+
+  const primaryId = variantIds[0]
+  const secondaryId = variantIds[1]
+  if (!primaryId || !secondaryId) throw new Error('Button variants were not created')
+  await place('Primary', Instance({ of: primaryId }))
+  await place(
+    'Secondary',
+    Instance({
+      of: secondaryId,
+      properties: { [COMPONENT_PROPERTIES.buttonLabel.id]: 'Cancel' }
+    })
+  )
+  await place('Avatar', Instance({ of: avatar.id }))
+  await place(
+    'Badge',
+    Instance({
+      of: badge.id,
+      properties: { [COMPONENT_PROPERTIES.badgeLabel.id]: 'Live' }
+    })
+  )
+  await place('Tag', Instance({ of: tag.id }))
+  await place(
+    'Card',
+    Instance({
+      of: card.id,
+      properties: {
+        [COMPONENT_PROPERTIES.cardTitle.id]: 'Analytics overview',
+        [COMPONENT_PROPERTIES.cardDescription.id]: 'Every value here is a component property.'
+      }
+    })
+  )
+  await place('Input', Instance({ of: input.id }))
+
+  await renderTree(
+    graph,
+    Text({
+      ...label,
+      w: 'fill',
+      lineHeight: 18,
+      children:
+        'Edit any source below and every linked instance above updates. Text and visibility stay editable per instance.'
+    }),
+    { parentId: root.id }
+  )
+
+  return { rootId: root.id }
 }

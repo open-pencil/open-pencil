@@ -1,36 +1,41 @@
 import { describe, expect, test } from 'bun:test'
 
-import { createStandaloneShapes } from '@/app/demo/sections/standalone'
+import { createTypographySection } from '@/app/demo/typography/section'
 import { createEditorStore } from '@/app/editor/session'
 
 describe('demo document', () => {
-  test('showcases imported OpenType and text decoration features', () => {
+  test('showcases OpenType features and native text decorations', async () => {
     const store = createEditorStore()
+    const page = store.graph.addPage('Typography')
 
-    createStandaloneShapes(store)
+    await createTypographySection(store.graph, page.id)
 
     const nodes = [...store.graph.getAllNodes()]
-    const ligatures = nodes.find((node) => node.name === 'Ligatures')
-    const rawTags = nodes.find((node) => node.name === 'Raw')
-    const wavy = nodes.find((node) => node.name === 'Wavy')
-    const dotted = nodes.find((node) => node.name === 'Dotted')
+    const sample = (name: string) =>
+      nodes.find((node) => node.name === name && node.type === 'TEXT')
 
-    expect(ligatures?.fontFeatures).toEqual([{ tag: 'LIGA', enabled: false }])
-    expect(rawTags?.fontFeatures).toEqual([
-      { tag: 'DLIG', enabled: true },
-      { tag: 'KERN', enabled: false }
+    expect(sample('Discretionary ligatures / DLIG ON')?.fontFeatures).toEqual([
+      { tag: 'DLIG', enabled: true }
     ])
-    expect(wavy).toMatchObject({
+    expect(sample('Discretionary ligatures / DLIG OFF')?.fontFeatures).toEqual([
+      { tag: 'DLIG', enabled: false }
+    ])
+    expect(sample('Tabular and proportional figures / TNUM ON · PNUM OFF')?.fontFeatures).toEqual([
+      { tag: 'TNUM', enabled: true },
+      { tag: 'PNUM', enabled: false }
+    ])
+
+    expect(sample('Wavy underline')).toMatchObject({
       textDecoration: 'UNDERLINE',
       textDecorationStyle: 'WAVY',
       textDecorationThickness: 1.6
     })
-    expect(wavy?.textDecorationFills[0]?.type).toBe('SOLID')
-    expect(dotted).toMatchObject({
+    expect(sample('Wavy underline')?.textDecorationFills[0]?.type).toBe('SOLID')
+    expect(sample('Dotted underline')).toMatchObject({
       textDecoration: 'UNDERLINE',
       textDecorationStyle: 'DOTTED',
       textDecorationThickness: 2
     })
-    expect(dotted?.textDecorationFills[0]?.type).toBe('SOLID')
+    expect(sample('Dotted underline')?.textDecorationFills[0]?.type).toBe('SOLID')
   })
 })

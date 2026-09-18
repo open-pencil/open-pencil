@@ -4,6 +4,7 @@
   "progressiveTiled": "Progressives Rendering",
   "progressiveTiledDescription": "Aktualisiert große Zeichenflächen beim Navigieren in kleineren Kacheln.",
   "reloadRequired": "Lade OpenPencil neu, um diese Änderung anzuwenden.",
+  "wideGamutUnavailable": "Dieses Display oder dieser Browser kann Display-P3-Farben nicht darstellen, daher zeigt die Zeichenfläche sie in sRGB an. Das Dokument behält seinen Farbraum.",
   "urlOverride": "Der Renderer dieser Sitzung wird durch einen URL-Parameter gesteuert. Deine gespeicherte Einstellung gilt, sobald der Parameter entfernt wird.",
   "experimental": "Experimentell"
 }

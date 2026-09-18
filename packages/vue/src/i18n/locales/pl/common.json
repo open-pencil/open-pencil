@@ -36,5 +36,6 @@
   "unsupported": "Nieobsługiwane",
   "tokens": "tokenów",
   "clear": "Wyczyść",
-  "dismiss": "Zamknij"
+  "dismiss": "Zamknij",
+  "browserSupport": "Sprawdź obsługę w przeglądarkach"
 }

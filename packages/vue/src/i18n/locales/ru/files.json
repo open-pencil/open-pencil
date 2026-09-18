@@ -25,7 +25,5 @@
   "newDesign": "Новый дизайн",
   "noMatchingFiles": "Нет файлов по запросу «{query}».",
   "saveAsPrompt": "Сохранить как:",
-  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться.",
-  "useChrome": "Использовать Chrome",
-  "orEdgeForFullSupport": "или Edge для полной поддержки."
+  "browserFileAPINotSupported": "Ваш браузер не поддерживает API локальных файлов. Вместо сохранения на месте файлы будут скачиваться."
 }

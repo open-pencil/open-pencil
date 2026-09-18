@@ -25,7 +25,5 @@
   "newDesign": "新しいデザイン",
   "noMatchingFiles": "「{query}」に一致するファイルはありません。",
   "saveAsPrompt": "名前を付けて保存：",
-  "browserFileAPINotSupported": "このブラウザはローカルファイルAPIに対応していません。ファイルは同じ場所に保存されず、ダウンロードされます。",
-  "useChrome": "Chromeを使用",
-  "orEdgeForFullSupport": "またはEdgeを使用するとすべての機能を利用できます。"
+  "browserFileAPINotSupported": "このブラウザはローカルファイルAPIに対応していません。ファイルは同じ場所に保存されず、ダウンロードされます。"
 }

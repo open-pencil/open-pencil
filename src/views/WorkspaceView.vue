@@ -21,11 +21,12 @@ import {
   tabCount
 } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
+import ColorSpaceBanner from '@/components/canvas/ColorSpaceBanner.vue'
 import CommandPalette from '@/components/commands/CommandPalette.vue'
 import EditorWorkspace from '@/components/editor/EditorWorkspace.vue'
+import FileApiBanner from '@/components/FileApiBanner.vue'
 import FontStatusBanner from '@/components/font-status/FontStatusBanner.vue'
 import HomeWorkspace from '@/components/home/HomeWorkspace.vue'
-import SafariBanner from '@/components/SafariBanner.vue'
 import RenameSelectionDialog from '@/components/selection/RenameSelectionDialog.vue'
 import TabBar from '@/components/TabBar.vue'
 
@@ -103,7 +104,8 @@ onUnmounted(() => {
 
 <template>
   <div data-test-id="editor-root" class="flex h-screen w-screen flex-col">
-    <SafariBanner />
+    <FileApiBanner />
+    <ColorSpaceBanner />
     <FontStatusBanner />
     <RenameSelectionDialog />
     <CommandPalette />

@@ -83,6 +83,7 @@ export function createColorSpaceActions(ctx: EditorContext) {
     }
 
     ctx.graph.documentColorSpace = colorSpace
+    ctx.emitEditorEvent('document:color-space-changed', colorSpace)
     ctx.requestRender()
   }
 

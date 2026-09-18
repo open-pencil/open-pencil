@@ -36,5 +36,6 @@
   "unsupported": "No compatible",
   "tokens": "tokens",
   "clear": "Limpiar",
-  "dismiss": "Descartar"
+  "dismiss": "Descartar",
+  "browserSupport": "Consultar compatibilidad"
 }

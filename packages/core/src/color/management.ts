@@ -22,7 +22,7 @@ export interface ResolvedRenderColor {
   clipped: boolean
 }
 
-const DEFAULT_COLOR_SPACE: RenderColorSpace = 'display-p3'
+const DEFAULT_COLOR_SPACE: RenderColorSpace = 'srgb'
 
 const toRGB = converter('rgb')
 const toP3 = converter('p3')
@@ -40,6 +40,32 @@ function normalizeOkLCH(color: OkHCLColor) {
     h: hue < 0 ? hue + 360 : hue,
     alpha: Math.max(0, Math.min(1, color.a ?? 1))
   }
+}
+
+/**
+ * Numbers are stored in the document's profile, so painting into a surface with a different
+ * profile has to convert them. Same profile means no work, which is the common case.
+ */
+function convertComponents(color: Color, from: RenderColorSpace, to: RenderColorSpace): Color {
+  if (from === to) return color
+  const source =
+    from === 'display-p3'
+      ? { mode: 'p3' as const, r: color.r, g: color.g, b: color.b, alpha: color.a }
+      : { mode: 'rgb' as const, r: color.r, g: color.g, b: color.b, alpha: color.a }
+  const converted = to === 'display-p3' ? toP3(source) : toRGB(source)
+  return normalizeColor({
+    r: converted.r,
+    g: converted.g,
+    b: converted.b,
+    a: converted.alpha ?? color.a
+  })
+}
+
+function isOutsideGamut(color: Color, space: RenderColorSpace): boolean {
+  if (space === 'display-p3') {
+    return !isDisplayableP3({ mode: 'p3', r: color.r, g: color.g, b: color.b, alpha: color.a })
+  }
+  return !isDisplayableRGB({ mode: 'rgb', r: color.r, g: color.g, b: color.b, alpha: color.a })
 }
 
 function resolveTargetSpace(options?: ColorPreviewOptions): RenderColorSpace {
@@ -77,12 +103,12 @@ export function resolveOkHCLForPreview(
   if (targetSpace === 'display-p3') {
     const clipped = !isDisplayableP3(oklch)
     const p3 = toP3(toDisplayableP3(oklch))
-    const rgb = toRGB({ mode: 'p3', r: p3.r, g: p3.g, b: p3.b, alpha: p3.alpha ?? oklch.alpha })
+    // P3 coordinates, because the caller asked for a P3 target.
     const resolved = normalizeColor({
-      r: rgb.r,
-      g: rgb.g,
-      b: rgb.b,
-      a: rgb.alpha ?? oklch.alpha
+      r: p3.r,
+      g: p3.g,
+      b: p3.b,
+      a: p3.alpha ?? oklch.alpha
     })
 
     return {
@@ -128,14 +154,15 @@ export function resolveRGBAForPreview(
   color: Color,
   options?: ColorPreviewOptions
 ): ResolvedRenderColor {
-  const resolved = normalizeColor(color)
-  const targetSpace = resolveTargetSpace(options)
+  const documentColorSpace = options?.documentColorSpace ?? DEFAULT_COLOR_SPACE
+  const targetSpace = options?.colorSpace ?? documentColorSpace
+  const resolved = convertComponents(normalizeColor(color), documentColorSpace, targetSpace)
   return {
     color: resolved,
     cssColor: formatCSSForTarget(resolved, targetSpace),
     sourceSpace: 'srgb',
     targetSpace,
-    clipped: false
+    clipped: targetSpace !== documentColorSpace && isOutsideGamut(resolved, targetSpace)
   }
 }
 

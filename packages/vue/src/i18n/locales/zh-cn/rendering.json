@@ -4,6 +4,7 @@
   "progressiveTiled": "渐进式渲染",
   "progressiveTiledDescription": "导航时将大型画布分成较小的图块进行更新。",
   "reloadRequired": "重新加载 OpenPencil 以应用此更改。",
+  "wideGamutUnavailable": "此显示器或浏览器无法显示 Display-P3 颜色，因此画布以 sRGB 预览。文档的色彩空间保持不变.",
   "urlOverride": "当前会话的渲染器由 URL 参数控制。移除该参数后将应用已保存的偏好设置。",
   "experimental": "实验性功能"
 }

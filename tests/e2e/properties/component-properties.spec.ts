@@ -93,6 +93,29 @@ test.afterAll(async () => {
   await page.close()
 })
 
+test('updates text while typing and undoes a burst as one edit', async () => {
+  const text = propertySection(page, 'Component properties').getByRole('textbox', { name: 'Label' })
+  const before = await canvas.screenshotCanvas()
+  await text.fill('Live')
+  await expect(text).toBeFocused()
+  await expect.poll(instanceState).toMatchObject({ label: 'Live' })
+  await expect.poll(async () => (await canvas.screenshotCanvas()).equals(before)).toBe(false)
+  await text.blur()
+
+  await text.focus()
+  await text.pressSequentially(' typing')
+  await expect(text).toBeFocused()
+  await expect.poll(instanceState).toMatchObject({ label: 'Live typing' })
+  await text.press('Enter')
+  await text.blur()
+  await canvas.pressKey('Meta+z')
+  await expect.poll(instanceState).toMatchObject({ label: 'Live' })
+  await expect(text).toHaveValue('Live')
+  await canvas.pressKey('Meta+z')
+  await expect.poll(instanceState).toMatchObject({ label: 'Default label' })
+  await expect(text).toHaveValue('Default label')
+})
+
 test('renders and applies all component property control types', async () => {
   const section = propertySection(page, 'Component properties')
   await expect(section).toBeVisible()
@@ -147,6 +170,18 @@ test('batches compatible mixed selection and undo', async () => {
   await canvas.waitForRender()
   expect(await instanceState(instanceId)).toMatchObject({ badgeVisible: false })
   expect(await instanceState(secondId)).toMatchObject({ badgeVisible: true })
+
+  const text = propertySection(page, 'Component properties').getByRole('textbox', { name: 'Label' })
+  const originalLabels = [(await instanceState())?.label, (await instanceState(secondId))?.label]
+  await text.fill('Shared text')
+  await expect(text).toBeFocused()
+  await expect.poll(instanceState).toMatchObject({ label: 'Shared text' })
+  await expect.poll(() => instanceState(secondId)).toMatchObject({ label: 'Shared text' })
+  await text.blur()
+  await canvas.pressKey('Meta+z')
+  await expect
+    .poll(async () => [(await instanceState())?.label, (await instanceState(secondId))?.label])
+    .toEqual(originalLabels)
 
   await page.evaluate((id) => {
     const store = window.openPencil?.getStore?.()

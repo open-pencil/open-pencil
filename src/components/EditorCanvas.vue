@@ -80,7 +80,10 @@ useCanvas(sceneCanvasRef, store, {
   getRenderState,
   onViewportResize,
   onPresented: ({ sceneVersion }) =>
-    store.preparationController.acknowledgePresentation(sceneVersion)
+    store.preparationController.acknowledgePresentation(sceneVersion),
+  onPresentation: (colorSpace) => {
+    store.state.canvasPresentation = colorSpace
+  }
 })
 const { hitTestSectionTitle, hitTestComponentLabel, hitTestFrameTitle } = useCanvas(
   canvasRef,

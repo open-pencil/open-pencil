@@ -6,6 +6,7 @@ export type EditorPreparationKind =
   | 'page-switch'
   | 'font-retry'
   | 'dom-import'
+  | 'demo-load'
 
 export type EditorPreparationPhase =
   | 'reading'

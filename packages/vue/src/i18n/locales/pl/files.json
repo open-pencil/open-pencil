@@ -25,7 +25,5 @@
   "newDesign": "Nowy projekt",
   "noMatchingFiles": "Brak plików pasujących do „{query}”.",
   "saveAsPrompt": "Zapisz jako:",
-  "browserFileAPINotSupported": "Twoja przeglądarka nie obsługuje interfejsu API plików lokalnych. Pliki będą pobierane zamiast zapisywane w bieżącym miejscu.",
-  "useChrome": "Użyj Chrome",
-  "orEdgeForFullSupport": "lub Edge, aby uzyskać pełną obsługę."
+  "browserFileAPINotSupported": "Twoja przeglądarka nie obsługuje interfejsu API plików lokalnych. Pliki będą pobierane zamiast zapisywane w bieżącym miejscu."
 }

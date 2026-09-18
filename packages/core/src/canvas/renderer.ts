@@ -3,7 +3,7 @@ import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
 import { decodeBase64 } from '#core/bytes'
-import type { ResolvedRenderColor } from '#core/color/management'
+import type { RenderColorSpace, ResolvedRenderColor } from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
   SELECTION_COLOR,
@@ -127,6 +127,8 @@ export class SkiaRenderer {
   navigationGeneration = 0
   tiledSceneEnabled = false
   tracksSceneSettlement = true
+  /** Colour space this renderer's surface presents; colours convert into it when painting. */
+  presentationColorSpace: RenderColorSpace = 'srgb'
   tiledScenePending = false
   tiledSceneCovered = false
   lastSceneViewport: { panX: number; panY: number; zoom: number } | null = null
@@ -663,11 +665,17 @@ export class SkiaRenderer {
     node: SceneNode,
     graph: SceneGraph
   ): ResolvedRenderColor {
-    return RenderColors.resolveFillColorInfo(fill, fillIndex, node, graph)
+    return RenderColors.resolveFillColorInfo(
+      fill,
+      fillIndex,
+      node,
+      graph,
+      this.presentationColorSpace
+    )
   }
 
   resolveFillColor(fill: Fill, fillIndex: number, node: SceneNode, graph: SceneGraph): Color {
-    return RenderColors.resolveFillColor(fill, fillIndex, node, graph)
+    return RenderColors.resolveFillColor(fill, fillIndex, node, graph, this.presentationColorSpace)
   }
 
   resolveStrokeColorInfo(
@@ -676,7 +684,13 @@ export class SkiaRenderer {
     node: SceneNode,
     graph: SceneGraph
   ): ResolvedRenderColor {
-    return RenderColors.resolveStrokeColorInfo(stroke, strokeIndex, node, graph)
+    return RenderColors.resolveStrokeColorInfo(
+      stroke,
+      strokeIndex,
+      node,
+      graph,
+      this.presentationColorSpace
+    )
   }
 
   resolveStrokeColor(
@@ -685,7 +699,13 @@ export class SkiaRenderer {
     node: SceneNode,
     graph: SceneGraph
   ): Color {
-    return RenderColors.resolveStrokeColor(stroke, strokeIndex, node, graph)
+    return RenderColors.resolveStrokeColor(
+      stroke,
+      strokeIndex,
+      node,
+      graph,
+      this.presentationColorSpace
+    )
   }
 
   screenToCanvas(sx: number, sy: number): Vector {

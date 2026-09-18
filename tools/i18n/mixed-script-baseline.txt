@@ -87,8 +87,6 @@ ja:files.clipboardImagesFetchFailed
 ja:files.importFailed
 ja:files.importHTMLCSS
 ja:files.importHTMLCSSDescription
-ja:files.orEdgeForFullSupport
-ja:files.useChrome
 ja:fonts.downloadFallbackPacksDescription
 ja:media.getPexelsAPIKey
 ja:media.getUnsplashAccessKey
@@ -120,6 +118,7 @@ ja:recovery.dialogDescription
 ja:rendering.reloadRequired
 ja:rendering.settingsDescription
 ja:rendering.urlOverride
+ja:rendering.wideGamutUnavailable
 ja:settings.aiAndAgents
 ja:settings.baseURLHint
 ja:settings.invalidURL
@@ -222,8 +221,6 @@ zh-cn:files.clipboardImagesFetchFailed
 zh-cn:files.importFailed
 zh-cn:files.importHTMLCSS
 zh-cn:files.importHTMLCSSDescription
-zh-cn:files.orEdgeForFullSupport
-zh-cn:files.useChrome
 zh-cn:fonts.downloadFallbackPacksDescription
 zh-cn:media.getPexelsAPIKey
 zh-cn:media.getUnsplashAccessKey
@@ -254,6 +251,7 @@ zh-cn:recovery.dialogDescription
 zh-cn:rendering.reloadRequired
 zh-cn:rendering.settingsDescription
 zh-cn:rendering.urlOverride
+zh-cn:rendering.wideGamutUnavailable
 zh-cn:settings.aiAndAgents
 zh-cn:settings.baseURLHint
 zh-cn:settings.invalidURL

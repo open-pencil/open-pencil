@@ -36,5 +36,6 @@
   "unsupported": "Non supportato",
   "tokens": "token",
   "clear": "Cancella",
-  "dismiss": "Chiudi"
+  "dismiss": "Chiudi",
+  "browserSupport": "Verifica il supporto"
 }

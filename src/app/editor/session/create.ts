@@ -66,6 +66,17 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     editor,
     state
   )
+  // Mirror the document color space into app state so UI can react to it.
+  const syncDocumentColorSpace = () => {
+    state.documentColorSpace = editor.graph.documentColorSpace
+  }
+  syncDocumentColorSpace()
+  const stopColorSpaceSync = editor.onEditorEvent(
+    'document:color-space-changed',
+    syncDocumentColorSpace
+  )
+  editor.onEditorEvent('graph:replaced', syncDocumentColorSpace)
+
   const preparationEvents = createEditorPreparationEvents()
   const preparationLifecycle = new Map<
     number,
@@ -220,6 +231,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     // App-specific overrides and additions
     ...modules,
     dispose() {
+      stopColorSpaceSync()
       disposeSelection()
       modules.dispose()
     }

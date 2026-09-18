@@ -27,6 +27,10 @@ Each item in `controls` contains:
 `active` is true only when every selected node is an instance and each instance exposes the same
 ordered property IDs and types. Compatible multi-selection changes are grouped into one undo entry.
 
+For live text inputs, call `setTextValue(propertyId, value)` on each model update and `flush()` on
+blur or Enter. Text appears immediately, while rapid changes share an undo entry. Batches also finish
+after an idle pause, a selection/page change, or scope disposal. `setValue()` remains a discrete edit.
+
 Text and boolean properties update the referenced instance descendant. Instance-swap properties
 replace the referenced nested instance. Variant changes swap the main component and then reapply
 non-variant assignments, so custom labels, visibility, and nested swaps survive the change and its
