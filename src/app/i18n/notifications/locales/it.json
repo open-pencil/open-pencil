@@ -21,5 +21,10 @@
   "nodeID": "ID nodo",
   "nodeIDs": "ID nodi",
   "xPath": "XPath",
-  "xPaths": "XPath"
+  "xPaths": "XPath",
+  "deepLinkLocateFile": "Individua «{file}» per seguire questo link.",
+  "deepLinkPickerDismissed": "Link annullato: non è stato scelto alcun file.",
+  "deepLinkCancelled": "Link annullato: era atteso un file che termina con «{file}».",
+  "deepLinkNodeNotFound": "Il livello «{node}» non è stato trovato in «{file}».",
+  "openQueuedFilesFailed": "Impossibile aprire i file passati a OpenPencil: {error}"
 }

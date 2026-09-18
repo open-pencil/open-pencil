@@ -1,3 +1,5 @@
+import type { DefaultTheme } from 'vitepress'
+
 import { EN, EN_PROG } from './labels.ts'
 import { sdkSidebar } from './sdk-sidebar.ts'
 import {
@@ -5,10 +7,8 @@ import {
   guideSidebar,
   programmableSidebar,
   referenceSidebar,
-  userGuideSidebar,
+  userGuideSidebar
 } from './sidebars.ts'
-
-import type { DefaultTheme } from 'vitepress'
 
 export const rootThemeConfig = (): DefaultTheme.Config => ({
   logo: { light: '/brand/mark.svg', dark: '/brand/mark-dark.svg', alt: 'OpenPencil' },
@@ -21,7 +21,7 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     { text: 'SDK', link: '/programmable/sdk/' },
     { text: 'Reference', link: '/reference/keyboard-shortcuts' },
     { text: 'Development', link: '/development/contributing' },
-    { text: 'Open App', link: 'https://app.openpencil.dev' },
+    { text: 'Open App', link: 'https://app.openpencil.dev' }
   ],
 
   sidebar: {
@@ -30,16 +30,19 @@ export const rootThemeConfig = (): DefaultTheme.Config => ({
     '/programmable/': programmableSidebar('', EN_PROG),
     '/reference/': referenceSidebar('', 'Reference', EN),
     '/development/': developmentSidebar('', 'Development', EN),
-    '/': guideSidebar('', EN),
+    '/': guideSidebar('', EN)
   },
 
-  socialLinks: [{ icon: 'github', link: 'https://github.com/open-pencil/open-pencil' }],
+  socialLinks: [
+    { icon: 'github', link: 'https://github.com/open-pencil/open-pencil' },
+    { icon: 'discord', link: 'https://discord.gg/4wXc9fuZfm', ariaLabel: 'Discord' }
+  ],
 
   editLink: {
-    pattern: 'https://github.com/open-pencil/open-pencil/edit/main/packages/docs/:path',
+    pattern: 'https://github.com/open-pencil/open-pencil/edit/master/packages/docs/:path'
   },
 
   footer: {
-    message: 'Released under the MIT License.',
-  },
+    message: 'Released under the MIT License.'
+  }
 })

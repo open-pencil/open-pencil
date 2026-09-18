@@ -159,7 +159,7 @@
     },
     "packages/cli": {
       "name": "@open-pencil/cli",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "bin": {
         "openpencil": "./bin/openpencil.js",
       },
@@ -178,7 +178,7 @@
     },
     "packages/core": {
       "name": "@open-pencil/core",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": {
         "@chenglou/pretext": "^0.0.7",
         "@iconify/utils": "^3.1.4",
@@ -242,7 +242,7 @@
     },
     "packages/dom-css": {
       "name": "@open-pencil/dom-css",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": {
         "@acemir/cssom": "^0.9.31",
         "parse5": "^8.0.1",
@@ -262,7 +262,7 @@
     },
     "packages/fig": {
       "name": "@open-pencil/fig",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": {
         "es-toolkit": "^1.51.0",
         "fflate": "^0.8.3",
@@ -280,7 +280,7 @@
     },
     "packages/harness": {
       "name": "@open-pencil/harness",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "bin": {
         "openpencil-harness": "./dist/stdio.mjs",
       },
@@ -296,7 +296,7 @@
     },
     "packages/kiwi": {
       "name": "@open-pencil/kiwi",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": {
         "fflate": "^0.8.3",
         "fzstd": "^0.1.1",
@@ -309,7 +309,7 @@
     },
     "packages/mcp": {
       "name": "@open-pencil/mcp",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "bin": {
         "openpencil-mcp": "./dist/stdio.mjs",
         "openpencil-mcp-http": "./dist/index.mjs",
@@ -331,7 +331,7 @@
     },
     "packages/pen": {
       "name": "@open-pencil/pen",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": {
         "culori": "^4.0.2",
       },
@@ -347,7 +347,7 @@
     },
     "packages/scene-graph": {
       "name": "@open-pencil/scene-graph",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": {
         "es-toolkit": "^1.51.0",
         "nanoevents": "^9.1.0",
@@ -361,7 +361,7 @@
     },
     "packages/vue": {
       "name": "@open-pencil/vue",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": {
         "@atlaskit/pragmatic-drag-and-drop": "^1.8.1",
         "@atlaskit/pragmatic-drag-and-drop-hitbox": "^1.2.0",

@@ -1,5 +1,11 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Ask a question
+    url: https://github.com/open-pencil/open-pencil/discussions/categories/q-a
+    about: Usage and setup questions get answered in Discussions Q&A.
+  - name: Chat on Discord
+    url: https://discord.gg/4wXc9fuZfm
+    about: Talk to maintainers and other users in the OpenPencil Community server.
   - name: Report a security vulnerability
     url: https://github.com/open-pencil/open-pencil/security/advisories/new
     about: Please report security vulnerabilities privately instead of opening a public issue.

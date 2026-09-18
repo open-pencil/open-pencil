@@ -4,8 +4,9 @@ import {
   type AutomationTarget
 } from '@/app/automation/bridge/target'
 import { resolveBrowserFileURL } from '@/app/document/io/browser'
+import { openBrowserFileFromURL } from '@/app/shell/menu/files'
 import { openFileFromPath } from '@/app/shell/menu/use'
-import { closeTab, createTab, getActiveStore, getTabById, openFileInNewTab } from '@/app/tabs'
+import { closeTab, createTab, getActiveStore, getTabById } from '@/app/tabs'
 import { isTauri } from '@/app/tauri/env'
 
 export async function handleSaveFile(target: AutomationTarget, args: unknown): Promise<unknown> {
@@ -58,12 +59,9 @@ export async function handleOpenFile(_target: AutomationTarget, args: unknown): 
   if (isTauri()) {
     await openFileFromPath(path)
   } else {
-    const resourceURL = resolveBrowserFileURL(path)
-    const response = await fetch(resourceURL)
-    if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`)
-    const name = resourceURL.pathname.split('/').pop() ?? 'file.fig'
-    const file = new File([await response.blob()], name)
-    await openFileInNewTab(file, undefined, resourceURL.href)
+    // Same fetch, cap and format check as every other browser open: an automation client
+    // is not more trusted than a link.
+    await openBrowserFileFromURL(resolveBrowserFileURL(path))
   }
   const target = resolveAutomationTarget(getActiveStore(), undefined)
   return responseWithTarget({ ok: true, result: { opened: true } }, target)

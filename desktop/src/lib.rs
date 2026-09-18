@@ -1,4 +1,5 @@
 mod credentials;
+mod deep_link;
 mod fig_container;
 mod fonts;
 mod http;
@@ -11,6 +12,7 @@ use credentials::{
     credential_access_paused, credential_retry_access, credential_read, credential_remove, credential_status, credential_store_availability,
     credential_write,
 };
+use deep_link::path_matches_suffix;
 use fig_container::build_fig_file;
 use fonts::{list_system_fonts, load_system_font};
 use http::proxy_http_request;
@@ -28,6 +30,13 @@ use window::show_main_window;
 #[derive(Clone, serde::Serialize)]
 struct PendingOpenFile {
     path: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    node: Option<String>,
+    /// Which producer queued this entry: a `openpencil://` link (true) or a file
+    /// association / argv path (false). The frontend cannot tell them apart from
+    /// the path alone — a canonicalized Windows path is verbatim (`\\?\C:\…`).
+    #[serde(rename = "deepLink")]
+    deep_link: bool,
 }
 
 struct PendingOpen(Mutex<Vec<PendingOpenFile>>);
@@ -186,17 +195,7 @@ fn open_paths_from_args(args: Vec<String>, cwd: &Path) -> Vec<PathBuf> {
         .collect()
 }
 
-fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<PathBuf>) {
-    let files = paths
-        .into_iter()
-        .filter_map(|path| {
-            let _ = app.fs_scope().allow_file(&path);
-            Some(PendingOpenFile {
-                path: path.to_string_lossy().into_owned(),
-            })
-        })
-        .collect::<Vec<_>>();
-
+fn queue_pending<R: tauri::Runtime>(app: &tauri::AppHandle<R>, files: Vec<PendingOpenFile>) {
     if files.is_empty() {
         return;
     }
@@ -209,6 +208,49 @@ fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<Pat
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_focus();
     }
+}
+
+fn queue_open_paths<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<PathBuf>) {
+    let files = paths
+        .into_iter()
+        .map(|path| {
+            let _ = app.fs_scope().allow_file(&path);
+            PendingOpenFile {
+                path: path.to_string_lossy().into_owned(),
+                node: None,
+                deep_link: false,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    queue_pending(app, files);
+}
+
+/// The scheme filter is load-bearing: on macOS the plugin forwards every
+/// `RunEvent::Opened` URL here, including the `file://` URLs of a double-clicked
+/// document, which `queue_open_paths` already handles.
+///
+/// Relative paths from a link are deliberately not passed through
+/// `fs_scope().allow_file`: the frontend resolves them against open tabs or the
+/// file picker and allows the resolved absolute path there.
+fn queue_deep_links<R: tauri::Runtime>(app: &tauri::AppHandle<R>, urls: Vec<url::Url>) {
+    let files: Vec<PendingOpenFile> = urls
+        .iter()
+        .filter(|url| url.scheme() == "openpencil")
+        .filter_map(|url| match deep_link::parse_open_url(url) {
+            Ok(open) => Some(PendingOpenFile {
+                path: open.file,
+                node: open.node,
+                deep_link: true,
+            }),
+            Err(error) => {
+                eprintln!("[deep-link] refused {url}: {error:?}");
+                None
+            }
+        })
+        .collect();
+
+    queue_pending(app, files);
 }
 
 fn startup_open_paths() -> Vec<PathBuf> {
@@ -238,6 +280,8 @@ pub fn run() {
         }));
     }
 
+    builder = builder.plugin(tauri_plugin_deep_link::init());
+
     builder
         .manage(PendingOpen(Mutex::new(Vec::new())))
         .invoke_handler(tauri::generate_handler![
@@ -250,6 +294,7 @@ pub fn run() {
             credential_store_availability,
             credential_write,
             mcp_lookup,
+            path_matches_suffix,
             list_system_fonts,
             load_system_font,
             proxy_http_request,
@@ -270,6 +315,41 @@ pub fn run() {
         })
         .setup(|app| {
             queue_open_paths(app.handle(), startup_open_paths());
+
+            use tauri_plugin_deep_link::DeepLinkExt;
+            // On macOS the plugin turns `RunEvent::Opened` into this callback, so every
+            // link that arrives while the app runs is handled here; the cold-start link
+            // arrives before this closure and is drained from `current` below. The
+            // `Opened` arm further down keeps handling file URLs.
+            let handle = app.handle().clone();
+            app.deep_link().on_open_url(move |event| {
+                queue_deep_links(&handle, event.urls());
+            });
+            #[cfg(any(windows, target_os = "linux"))]
+            {
+                if let Err(error) = app.deep_link().register_all() {
+                    eprintln!("[deep-link] register_all failed: {error}");
+                }
+            }
+            // Every desktop platform can deliver the launch link before this closure
+            // runs, which means before the listener above exists, and the plugin's
+            // `deep-link://new-url` emit then reaches nobody:
+            //
+            // - Windows / Linux: the link is argv, and the plugin parses it in its own
+            //   setup (`handle_cli_arguments`).
+            // - macOS: AppKit delivers the GetURL event *before* the app's setup. Traced
+            //   on a cold `open openpencil://…`: `RunEvent::Opened` at T+0.085 s, this
+            //   closure at T+0.342 s, and `on_open_url` never fired.
+            //
+            // In all three cases the URL survives only in the plugin's `current`, so it
+            // is read here. No link can be queued twice: `RunEvent::Opened` is dispatched
+            // on the main thread, the same thread this closure runs on, so a link cannot
+            // arrive between the registration above and this read — anything later goes
+            // to `on_open_url` and is no longer in `current` by the time it is read.
+            if let Ok(Some(urls)) = app.deep_link().get_current() {
+                queue_deep_links(app.handle(), urls);
+            }
+
             Ok(install_app_menu(app.handle(), &[])?)
         })
         .build(tauri::generate_context!())
