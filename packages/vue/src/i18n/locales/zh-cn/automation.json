@@ -30,6 +30,8 @@
   "version": "版本",
   "authentication": "要求身份验证",
   "authenticationDescription": "使用 Bearer 令牌保护本地 MCP 端点。仅在可信设备上禁用。重启服务器以应用更改。",
+  "followAgent": "跟随智能体",
+  "followAgentDescription": "让画布聚焦于 MCP 工具使用的页面或图层，以便你跟随智能体的工作。",
   "rootDirectory": "MCP 根目录",
   "rootDirectoryDefault": "服务器默认目录",
   "chooseRootDirectory": "选择文件夹",

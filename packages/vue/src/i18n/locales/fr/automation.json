@@ -30,6 +30,8 @@
   "version": "Version",
   "authentication": "Exiger une authentification",
   "authenticationDescription": "Protégez le point de terminaison MCP local avec un jeton Bearer. Désactivez-le uniquement sur une machine de confiance. Redémarrez le serveur pour appliquer les modifications.",
+  "followAgent": "Suivre l’agent",
+  "followAgentDescription": "Garder le canevas centré sur la page ou les calques utilisés par les outils MCP afin de suivre le travail de l’agent.",
   "rootDirectory": "Répertoire racine MCP",
   "rootDirectoryDefault": "Dossier par défaut du serveur",
   "chooseRootDirectory": "Choisir un dossier",
