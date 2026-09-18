@@ -1,6 +1,7 @@
 import { Frame, Text, renderTree } from '@open-pencil/core/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createArtworkTile, createExampleColumn } from '../sections/example'
 import { createPaintGroups } from './samples'
 
 export function createPaintSection(graph: SceneGraph, parentId: string) {
@@ -34,27 +35,12 @@ export function createPaintSection(graph: SceneGraph, parentId: string) {
                 h: 'hug',
                 gap: 24,
                 children: group.examples.map((example) =>
-                  Frame({
-                    name: example.title,
-                    flex: 'col',
-                    w: 'fill',
-                    h: 'hug',
-                    gap: 8,
-                    children: [
-                      Frame({
-                        name: `${example.title} / artwork`,
-                        flex: 'row',
-                        w: 'fill',
-                        h: 'hug',
-                        p: 16,
-                        justify: 'center',
-                        rounded: 12,
-                        bg: '#EEF2FF',
-                        children: example.artwork
-                      }),
-                      Text({ ...text, size: 14, weight: 600, children: example.title }),
-                      Text({ ...label, w: 'fill', lineHeight: 18, children: example.caption })
-                    ]
+                  createExampleColumn({
+                    title: example.title,
+                    caption: example.caption,
+                    artwork: createArtworkTile(`${example.title} / artwork`, {
+                      children: [example.artwork]
+                    })
                   })
                 )
               })

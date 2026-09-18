@@ -53,27 +53,48 @@ async function getSelectedCount(): Promise<number> {
 
 test('demo layers visible in panel', async () => {
   const names = await getLayerNames()
+  expect(names).toContain('Announcement system')
   expect(names).toContain('Components')
-  expect(names).toContain('App Preview')
 })
 
 test('clicking a node inside a frame does not reparent it', async () => {
-  const beforeTree = await getSceneTree()
-  const section = beforeTree.children.find((c) => c.name === 'App Preview')
-  const dashboard = section?.children.find((c) => c.name === 'Dashboard')
-  expect(dashboard).toBeTruthy()
-  const sidebarBefore = dashboard?.children.find((c) => c.name === 'Sidebar')
-  expect(sidebarBefore).toBeTruthy()
+  const target = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const nodes = [...store.graph.nodes.values()]
+    const root = nodes.find((node) => node.name === 'Announcement system')
+    const nested = nodes.find((node) => node.name === 'Source components')
+    if (!root || !nested?.parentId) throw new Error('Demo announcement structure not found')
+    const origin = store.graph.getAbsolutePosition(nested.id)
+    return {
+      id: nested.id,
+      parentId: nested.parentId,
+      rootId: root.id,
+      x: (origin.x + nested.width / 2) * store.state.zoom + store.state.panX,
+      y: (origin.y + nested.height / 2) * store.state.zoom + store.state.panY
+    }
+  })
 
-  // Click inside the App Preview section area
-  await editor.canvas.click(350, 310)
+  // Click inside the nested frame hierarchy.
+  await editor.canvas.click(target.x, target.y)
   await editor.canvas.waitForRender()
 
-  // Sidebar should still be a child of Dashboard
-  const afterTree = await getSceneTree()
-  const afterSection = afterTree.children.find((c) => c.name === 'App Preview')
-  const afterDashboard = afterSection?.children.find((c) => c.name === 'Dashboard')
-  expect(afterDashboard?.children.find((c) => c.name === 'Sidebar')).toBeTruthy()
+  const after = await editor.page.evaluate(
+    ({ id, rootId }) => {
+      const store = window.openPencil?.getStore?.()
+      if (!store) throw new Error('OpenPencil store not initialized')
+      return {
+        parentId: store.graph.getNode(id)?.parentId ?? null,
+        rootParentId: store.graph.getNode(rootId)?.parentId ?? null,
+        pageId: store.state.currentPageId
+      }
+    },
+    { id: target.id, rootId: target.rootId }
+  )
+
+  // The clicked node and its section must keep their place in the hierarchy.
+  expect(after.parentId).toBe(target.parentId)
+  expect(after.rootParentId).toBe(after.pageId)
 
   editor.canvas.assertNoErrors()
 })

@@ -12,6 +12,7 @@
 
 - Create new documents with the sRGB colour profile, so Display P3 is reserved for documents that declare it.
 - Export diagnostics from Settings only. AI requests and tool activity now carry conversation and request identifiers, while chat no longer offers a separate diagnostic log or includes transcript content.
+- Replace the demo's legacy reference page with a component library on the first page, including component sets, linked instances, component properties, and the variable collections.
 
 ### Fixed
 
@@ -27,6 +28,7 @@
 - Point Homebrew installation instructions to the official `openpencil` cask and document separate CLI installation.
 - Let the desktop app use an MCP server you started yourself by allowing the app's own origin by default, instead of requiring `OPENPENCIL_MCP_CORS_ORIGIN`.
 - Reach the custom model option in the model picker for providers with large model catalogs instead of requiring a search for it.
+- Show the standard canvas loading overlay and tab indicator while the demo document is generated, instead of an empty canvas.
 
 ### Performance
 
