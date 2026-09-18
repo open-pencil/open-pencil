@@ -38,14 +38,21 @@ describe('native preferences', () => {
     const initial = await invokeNative<boolean>('native_menu_checked', { id: 'snap-objects' })
     assert.equal(initial, true)
 
-    await browser.executeAsync((done) => {
-      const toggle = document.querySelector<HTMLElement>('[data-test-id="app-settings-trigger"]')
-      toggle?.click()
-      requestAnimationFrame(() => {
-        document.querySelector<HTMLElement>('[data-test-id="settings-snap-objects"]')?.click()
-        setTimeout(done, 200)
-      })
+    await browser.keys([process.platform === 'darwin' ? 'Meta' : 'Control', ','])
+    await browser.waitUntil(settingsOpen, {
+      timeout: 10_000,
+      timeoutMsg: 'Settings did not open for the snapping checkmark test'
     })
+    // Spec files share one app process, so select the section this test needs
+    // instead of assuming the dialog opened on it.
+    await (await $('[data-test-id="settings-section-general"]')).click()
+    await (await $('[data-test-id="settings-snap-objects"]')).waitForDisplayed({ timeout: 10_000 })
+    await (await $('[data-test-id="settings-snap-objects"]')).click()
+    await browser.waitUntil(
+      async () =>
+        (await invokeNative<boolean>('native_menu_checked', { id: 'snap-objects' })) === false,
+      { timeout: 5_000, timeoutMsg: 'Native snapping checkmark did not follow the preference' }
+    )
     const updated = await invokeNative<boolean>('native_menu_checked', { id: 'snap-objects' })
     assert.equal(updated, false)
   })
