@@ -36,5 +36,6 @@
   "unsupported": "非対応",
   "tokens": "トークン",
   "clear": "クリア",
-  "dismiss": "閉じる"
+  "dismiss": "閉じる",
+  "browserSupport": "ブラウザーの対応状況を確認"
 }

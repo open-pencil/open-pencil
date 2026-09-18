@@ -14,6 +14,7 @@ const styles = computed(() => {
     content: theme.content({ class: ui?.content }),
     heading: theme.heading({ class: ui?.heading }),
     description: theme.description({ class: ui?.description }),
+    details: theme.details({ class: ui?.details }),
     actions: theme.actions({ class: ui?.actions })
   }
 })
@@ -48,6 +49,9 @@ const styles = computed(() => {
         data-slot="alert-description"
       >
         <slot>{{ description }}</slot>
+      </div>
+      <div v-if="slots.details" :class="styles.details" data-slot="alert-details">
+        <slot name="details" />
       </div>
       <div v-if="slots.actions" :class="styles.actions" data-slot="alert-actions">
         <slot name="actions" />

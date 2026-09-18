@@ -1,6 +1,7 @@
 import type { CanvasKit } from 'canvaskit-wasm'
 
 import type {
+  DocumentColorSpace,
   SceneGraph,
   SceneGraphEvents,
   SceneNode,
@@ -123,6 +124,7 @@ export interface EditorEvents extends SceneGraphEvents {
   'render:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
   'repaint:requested': (versions: { renderVersion: number; sceneVersion: number }) => void
   'graph:replaced': (graph: SceneGraph) => void
+  'document:color-space-changed': (colorSpace: DocumentColorSpace) => void
   'history:changed': () => void
   'selection:changed': (selectedIds: string[], previousIds: string[]) => void
   'rotation:preview-changed': (preview: RotationPreview | null) => void

@@ -30,5 +30,7 @@
   "clearDescription": "这会从此设备中删除本地保存的诊断事件。",
   "cleared": "诊断数据已清除。",
   "copied": "诊断数据已复制到剪贴板。",
-  "copyFailed": "无法将诊断数据复制到剪贴板。"
+  "copyFailed": "无法将诊断数据复制到剪贴板。",
+  "retentionCustom": "自定义…",
+  "retentionRange": "请输入 {min} 到 {max} 之间的整数。"
 }

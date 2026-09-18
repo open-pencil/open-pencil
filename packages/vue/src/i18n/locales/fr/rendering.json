@@ -4,6 +4,7 @@
   "progressiveTiled": "Rendu progressif",
   "progressiveTiledDescription": "Actualise les grands canevas par petites tuiles pendant la navigation.",
   "reloadRequired": "Rechargez OpenPencil pour appliquer cette modification.",
+  "wideGamutUnavailable": "Cet écran ou ce navigateur ne peut pas afficher les couleurs Display-P3 ; le canevas les prévisualise donc en sRGB. Le document conserve son espace colorimétrique.",
   "urlOverride": "Le rendu de cette session est contrôlé par un paramètre d’URL. Votre préférence enregistrée s’appliquera après sa suppression.",
   "experimental": "Expérimental"
 }

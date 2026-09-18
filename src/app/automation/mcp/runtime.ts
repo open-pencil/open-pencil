@@ -4,11 +4,14 @@ import { connectAutomation } from '@/app/automation/bridge/server'
 import type { EditorStore } from '@/app/editor/active-store'
 import { isTauri } from '@/app/tauri/env'
 
+import { mcpFailure, type MCPFailure } from './failure'
 import { setMCPToolDescriptors } from './preferences'
 import {
   type AutomationHealth,
   type AutomationServerHandle,
   readAutomationHealth,
+  getAutomationHealthFailure,
+  getAutomationStartupFailure,
   getMCPServerURL,
   spawnMCPIfNeeded
 } from './spawn'
@@ -19,7 +22,8 @@ export interface MCPRuntimeState {
   status: MCPRuntimeStatus
   endpoint: string
   version: string | null
-  error: string | null
+  /** Structured reason the server is unavailable; Settings renders translated copy. */
+  failure: MCPFailure | null
   checking: boolean
   externallyManaged: boolean
 }
@@ -32,6 +36,33 @@ export interface MCPRuntimeDependencies {
   readHealth: (authToken?: string | null) => Promise<AutomationHealth | null>
   setToolDescriptors: (tools: NonNullable<AutomationHealth['tools']>) => void
   spawn: () => Promise<AutomationServerHandle | null>
+  /** Diagnostics for the most recent spawn/health attempt. */
+  getStartupFailure: () => MCPFailure | null
+  getHealthFailure: () => MCPFailure | null
+}
+
+/**
+ * Turn a failed startup into the reason the user can act on. The spawn layer
+ * records the real cause; without it every failure reads as one generic message.
+ */
+function describeStartupFailure(
+  dependencies: MCPRuntimeDependencies,
+  spawned: AutomationServerHandle | null
+): MCPFailure {
+  const startupFailure = dependencies.getStartupFailure()
+  if (!spawned && startupFailure) return startupFailure
+
+  const healthFailure = dependencies.getHealthFailure()
+  if (healthFailure?.code === 'rejected' || healthFailure?.code === 'malformed') {
+    return healthFailure
+  }
+  if (startupFailure) return startupFailure
+  return mcpFailure('unreachable', getMCPServerURL())
+}
+
+/** Technical summary for logs; the UI renders translated copy from the code. */
+function failureDetail(failure: MCPFailure): string {
+  return failure.detail ? `${failure.code}: ${failure.detail}` : failure.code
 }
 
 function toError(error: unknown): Error {
@@ -43,7 +74,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     status: 'idle',
     endpoint: getMCPServerURL(),
     version: null,
-    error: null,
+    failure: null,
     checking: false,
     externallyManaged: false
   })
@@ -66,7 +97,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     state.version = health.version ?? null
     dependencies.setToolDescriptors(health.tools ?? [])
     state.status = 'running'
-    state.error = null
+    state.failure = null
   }
 
   async function refreshOperation(): Promise<MCPRuntimeResult> {
@@ -84,7 +115,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     } catch (error) {
       const runtimeError = toError(error)
       state.status = 'error'
-      state.error = runtimeError.message
+      state.failure = mcpFailure('unreachable', runtimeError.message)
       return { ok: false, error: runtimeError }
     } finally {
       state.checking = false
@@ -106,27 +137,38 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
 
   async function startOperation(): Promise<MCPRuntimeResult> {
     state.status = 'starting'
-    state.error = null
+    state.failure = null
     state.externallyManaged = false
+    let failure: MCPFailure | null = null
+    let thrown: Error | null = null
     try {
       server = await dependencies.spawn()
       const health = await dependencies.readHealth(server?.authToken)
-      if (!health) throw new Error('MCP server did not become healthy')
-      state.externallyManaged = server?.managed === false
-      if (activeStore && dependencies.canConnect()) {
-        disconnectAutomation = dependencies.connect(activeStore, server?.authToken ?? null)
+      if (health) {
+        state.externallyManaged = server?.managed === false
+        if (activeStore && dependencies.canConnect()) {
+          disconnectAutomation = dependencies.connect(activeStore, server?.authToken ?? null)
+        }
+        applyHealth(health)
+        return { ok: true }
       }
-      applyHealth(health)
-      return { ok: true }
+      failure = describeStartupFailure(dependencies, server)
     } catch (error) {
-      const runtimeError = toError(error)
-      const disconnectError = await disconnectCurrentServer()
-      state.status = 'error'
-      state.error = disconnectError
-        ? `${runtimeError.message}. Cleanup failed: ${disconnectError.message}`
-        : runtimeError.message
-      console.warn('[MCP]', runtimeError)
-      return { ok: false, error: runtimeError }
+      thrown = toError(error)
+      failure = describeStartupFailure(dependencies, server)
+    }
+
+    const disconnectError = await disconnectCurrentServer()
+    const detail = failureDetail(failure)
+    state.status = 'error'
+    state.failure = failure
+    if (thrown) console.warn('[MCP]', detail, thrown)
+    else console.warn('[MCP]', detail)
+    return {
+      ok: false,
+      error: disconnectError
+        ? new Error(`${detail}. Cleanup failed: ${disconnectError.message}`)
+        : new Error(detail)
     }
   }
 
@@ -135,7 +177,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
     if (releaseStore) activeStore = null
     state.status = disconnectError ? 'error' : 'stopped'
     state.version = null
-    state.error = disconnectError?.message ?? null
+    state.failure = disconnectError ? mcpFailure('unknown', disconnectError.message) : null
     state.externallyManaged = false
     dependencies.setToolDescriptors([])
     return disconnectError ? { ok: false, error: disconnectError } : { ok: true }
@@ -156,7 +198,7 @@ export function createMCPRuntimeService(dependencies: MCPRuntimeDependencies) {
         if (!activeStore) {
           const error = new Error('Editor is not ready')
           state.status = 'error'
-          state.error = error.message
+          state.failure = null
           return { ok: false, error } as MCPRuntimeResult
         }
         return startOperation()
@@ -169,7 +211,9 @@ const appMCPRuntime = createMCPRuntimeService({
   canConnect: () => import.meta.env.DEV || isTauri(),
   readHealth: readAutomationHealth,
   setToolDescriptors: setMCPToolDescriptors,
-  spawn: spawnMCPIfNeeded
+  spawn: spawnMCPIfNeeded,
+  getStartupFailure: getAutomationStartupFailure,
+  getHealthFailure: getAutomationHealthFailure
 })
 
 export const mcpRuntime = appMCPRuntime.state

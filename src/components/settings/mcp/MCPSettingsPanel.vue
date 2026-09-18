@@ -2,28 +2,23 @@
 import { useClipboard } from '@vueuse/core'
 import { computed } from 'vue'
 
-import { useAutomationMessages, useCommonMessages } from '@open-pencil/vue'
+import { useAutomationMessages, useCommonMessages, useSettingsMessages } from '@open-pencil/vue'
 
-import {
-  configurableMCPTools,
-  disabledMCPTools,
-  mcpAuthenticationEnabled,
-  mcpRootDirectory
-} from '@/app/automation/mcp/preferences'
+import { mcpAuthenticationEnabled, mcpRootDirectory } from '@/app/automation/mcp/preferences'
 import { mcpRuntime } from '@/app/automation/mcp/runtime'
 import { useMCPSettings } from '@/app/automation/mcp/settings/use'
+import { openToolAccessSettings } from '@/app/automation/tool-access/settings/use'
 import { isTauri } from '@/app/tauri/env'
-import SettingsDisclosure from '@/components/settings/layout/SettingsDisclosure.vue'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
 import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
-import AppAlert from '@/components/ui/feedback/AppAlert.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
-import MCPToolAccessPanel from './MCPToolAccessPanel.vue'
+import MCPFailureAlert from './MCPFailureAlert.vue'
 
 const automation = useAutomationMessages()
+const settings = useSettingsMessages()
 const common = useCommonMessages()
 const { copy, copied } = useClipboard()
 const statusMessage = computed(
@@ -98,20 +93,20 @@ const { restart, chooseRootDirectory } = useMCPSettings()
         </div>
       </div>
     </SettingsGroup>
-    <AppAlert v-if="mcpRuntime.error" tone="error" :heading="mcpRuntime.error" />
-    <SettingsDisclosure>
-      <template #label>{{ automation.tools }}</template>
-      <MCPToolAccessPanel v-model:disabled-tools="disabledMCPTools" :tools="configurableMCPTools">
-        <template #footer>
-          {{
-            mcpRuntime.externallyManaged
-              ? automation.externalRestartNotice
-              : automation.toolsRestartNotice
-          }}
-        </template>
-      </MCPToolAccessPanel>
-    </SettingsDisclosure>
+    <MCPFailureAlert
+      v-if="mcpRuntime.failure"
+      :failure="mcpRuntime.failure"
+      :restarting="mcpRuntime.status === 'starting' || mcpRuntime.checking"
+      :externally-managed="mcpRuntime.externallyManaged"
+      @restart="restart"
+    />
     <div>
+      <AppButton variant="link" @click="openToolAccessSettings('mcp')">{{
+        settings.toolAccess
+      }}</AppButton>
+    </div>
+    <!-- The failure alert carries its own restart action. -->
+    <div v-if="!mcpRuntime.failure">
       <AppButton
         color="primary"
         variant="solid"

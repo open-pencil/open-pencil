@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 
-import { ref } from 'vue'
+import { effectScope, nextTick, ref } from 'vue'
 
 import type { ToolDescriptor } from '@open-pencil/mcp/tools'
 
-import { useMCPToolAccess } from '@/app/automation/mcp/settings/tool-access'
+import { useToolAccess } from '@/app/automation/tool-access/settings/list'
 
 function catalog() {
   return ref<ToolDescriptor[]>([
@@ -38,7 +38,7 @@ function catalog() {
 test('tool counts and mixed states follow the controlled model and catalog', () => {
   const tools = catalog()
   const disabled = ref(['inspect_a', 'unavailable_tool'])
-  const access = useMCPToolAccess(tools, disabled)
+  const access = useToolAccess(tools, disabled)
   expect(access.enabledCount.value).toBe(2)
   expect(access.inspectionEnabled.value).toBe(true)
   expect(access.inspectionState.value).toBe('mixed')
@@ -60,7 +60,7 @@ test('tool counts and mixed states follow the controlled model and catalog', () 
 test('search filters presentation without changing category membership or access', () => {
   const tools = catalog()
   const disabled = ref<string[]>([])
-  const access = useMCPToolAccess(tools, disabled)
+  const access = useToolAccess(tools, disabled)
   access.search.value = '  VARIABLES '
   expect(access.visibleTools.value.map((tool) => tool.name)).toEqual(['inspect_b'])
   access.inspectionEnabled.value = false
@@ -68,4 +68,25 @@ test('search filters presentation without changing category membership or access
   expect(access.enabledCount.value).toBe(1)
   access.search.value = 'no-match'
   expect(access.visibleTools.value).toEqual([])
+})
+
+test('groups project filtered tools and search reopens collapsed groups', async () => {
+  const scope = effectScope()
+  try {
+    const access = scope.run(() => useToolAccess(catalog(), ref<string[]>([])))
+    if (!access) throw new Error('Missing tool-access scope')
+    expect(access.groups.value.map((group) => [group.effect, group.tools.length])).toEqual([
+      ['read', 2],
+      ['write', 1]
+    ])
+    access.expanded.value = { read: false, write: false }
+    access.search.value = 'variables'
+    await nextTick()
+    expect(access.expanded.value).toEqual({ read: true, write: true })
+    expect(access.groups.value[0]?.tools.map((tool) => tool.name)).toEqual(['inspect_b'])
+    access.setGroupEnabled('read', false)
+    expect(access.enabledCount.value).toBe(1)
+  } finally {
+    scope.stop()
+  }
 })

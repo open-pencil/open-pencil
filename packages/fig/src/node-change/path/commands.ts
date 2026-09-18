@@ -14,12 +14,32 @@ const CMD_MOVE_TO = 1
 const CMD_LINE_TO = 2
 const CMD_CUBIC_TO = 4
 
+function commandByteLength(type: string): number {
+  switch (type) {
+    case 'M':
+    case 'L':
+      return 1 + 2 * Float32Array.BYTES_PER_ELEMENT
+    case 'C':
+    case 'Q':
+      return 1 + 6 * Float32Array.BYTES_PER_ELEMENT
+    case 'Z':
+      return 1
+    default:
+      return 0
+  }
+}
+
 export function encodePathCommandsBlob(commands: OutlineCommand[], scale = 1): Uint8Array {
-  const bytes: number[] = []
+  const byteLength = commands.reduce(
+    (length, command) => length + commandByteLength(command.type),
+    0
+  )
+  const bytes = new Uint8Array(byteLength)
+  const view = new DataView(bytes.buffer)
+  let offset = 0
   const pushFloat = (value: number | undefined) => {
-    const buf = new ArrayBuffer(4)
-    new DataView(buf).setFloat32(0, (value ?? 0) / scale, true)
-    bytes.push(...new Uint8Array(buf))
+    view.setFloat32(offset, (value ?? 0) / scale, true)
+    offset += Float32Array.BYTES_PER_ELEMENT
   }
   const negY = (v: number | undefined) => (v === undefined ? undefined : -v)
 
@@ -29,21 +49,21 @@ export function encodePathCommandsBlob(commands: OutlineCommand[], scale = 1): U
   for (const command of commands) {
     switch (command.type) {
       case 'M':
-        bytes.push(CMD_MOVE_TO)
+        bytes[offset++] = CMD_MOVE_TO
         pushFloat(command.x)
         pushFloat(negY(command.y))
         curX = command.x ?? 0
         curY = command.y ?? 0
         break
       case 'L':
-        bytes.push(CMD_LINE_TO)
+        bytes[offset++] = CMD_LINE_TO
         pushFloat(command.x)
         pushFloat(negY(command.y))
         curX = command.x ?? 0
         curY = command.y ?? 0
         break
       case 'C':
-        bytes.push(CMD_CUBIC_TO)
+        bytes[offset++] = CMD_CUBIC_TO
         pushFloat(command.x1)
         pushFloat(negY(command.y1))
         pushFloat(command.x2)
@@ -58,7 +78,7 @@ export function encodePathCommandsBlob(commands: OutlineCommand[], scale = 1): U
         const qy1 = command.y1 ?? 0
         const qx = command.x ?? 0
         const qy = command.y ?? 0
-        bytes.push(CMD_CUBIC_TO)
+        bytes[offset++] = CMD_CUBIC_TO
         pushFloat(curX + (2 / 3) * (qx1 - curX))
         pushFloat(negY(curY + (2 / 3) * (qy1 - curY)))
         pushFloat(qx + (2 / 3) * (qx1 - qx))
@@ -70,12 +90,12 @@ export function encodePathCommandsBlob(commands: OutlineCommand[], scale = 1): U
         break
       }
       case 'Z':
-        bytes.push(CMD_CLOSE)
+        bytes[offset++] = CMD_CLOSE
         break
     }
   }
 
-  return new Uint8Array(bytes)
+  return bytes
 }
 
 /**

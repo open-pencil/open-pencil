@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { CollapsibleContent, CollapsibleRoot, CollapsibleTrigger } from 'reka-ui'
 import { computed, ref, useTemplateRef } from 'vue'
 
 import type { AIProviderID } from '@open-pencil/core/constants'
@@ -18,12 +17,12 @@ import ProviderSettingsField from '@/components/settings/provider/ProviderSettin
 import ProviderSettingsInput from '@/components/settings/provider/ProviderSettingsInput.vue'
 import ProviderSettingsKeyField from '@/components/settings/provider/ProviderSettingsKeyField.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppCollapsible from '@/components/ui/collapsible/AppCollapsible.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppCombobox from '@/components/ui/select/AppCombobox.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
-import { settingsDisclosureMotion } from '@/theme/settings/disclosure'
 const { profileId } = defineProps<{ profileId?: string }>()
 const emit = defineEmits<{ done: []; deleted: [] }>()
 const { ai, common, credentials, settings } = useI18n()
@@ -238,96 +237,91 @@ async function remove() {
             />
           </template>
 
-          <CollapsibleRoot
+          <AppCollapsible
             v-if="!isACP"
             v-model:open="advancedOpen"
-            class="rounded border border-border"
+            :ui="{
+              root: 'rounded border border-border',
+              trigger: 'px-2.5 py-2 text-[11px] text-muted hover:text-surface',
+              icon: 'size-3'
+            }"
           >
-            <CollapsibleTrigger
-              class="flex w-full items-center gap-2 px-2.5 py-2 text-left text-[11px] text-muted hover:text-surface"
-            >
-              <icon-lucide-chevron-right
-                class="size-3 transition-transform [[data-state=open]>&]:rotate-90"
-              />
-              {{ ai.advancedModelSettings }}
-            </CollapsibleTrigger>
-            <CollapsibleContent :class="settingsDisclosureMotion">
-              <div class="flex flex-col gap-3 border-t border-border p-2.5">
-                <div>
-                  <p class="text-[11px] font-medium text-surface">{{ ai.modelCapabilities }}</p>
-                  <p class="mt-0.5 text-[10px] text-muted">
-                    {{ knownModel ? ai.modelCapabilitiesDetected : ai.modelCapabilitiesManual }}
-                  </p>
+            <template #label>{{ ai.advancedModelSettings }}</template>
+            <div class="flex flex-col gap-3 border-t border-border p-2.5">
+              <div>
+                <p class="text-[11px] font-medium text-surface">{{ ai.modelCapabilities }}</p>
+                <p class="mt-0.5 text-[10px] text-muted">
+                  {{ knownModel ? ai.modelCapabilitiesDetected : ai.modelCapabilitiesManual }}
+                </p>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-[11px] text-muted">{{ ai.modelCapabilityTools }}</span>
+                  <span v-if="knownModel" class="text-[10px] text-surface">
+                    {{
+                      knownCapabilities.includes('tools') ? common.supported : common.unsupported
+                    }}
+                  </span>
+                  <AppSwitch v-else v-model="toolsEnabled" :label="ai.modelCapabilityTools" />
                 </div>
-
-                <div class="flex flex-col gap-2">
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[11px] text-muted">{{ ai.modelCapabilityTools }}</span>
-                    <span v-if="knownModel" class="text-[10px] text-surface">
-                      {{
-                        knownCapabilities.includes('tools') ? common.supported : common.unsupported
-                      }}
-                    </span>
-                    <AppSwitch v-else v-model="toolsEnabled" :label="ai.modelCapabilityTools" />
-                  </div>
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[11px] text-muted">{{ ai.modelCapabilityVision }}</span>
-                    <span v-if="knownModel" class="text-[10px] text-surface">
-                      {{
-                        knownCapabilities.includes('vision') ? common.supported : common.unsupported
-                      }}
-                    </span>
-                    <AppSwitch v-else v-model="visionEnabled" :label="ai.modelCapabilityVision" />
-                  </div>
-                </div>
-
-                <ProviderSettingsField v-if="isHarness" :label="ai.harnessThinkingLevel">
-                  <AppSelect
-                    v-model="draft.harnessThinkingLevel"
-                    :label="ai.harnessThinkingLevel"
-                    :options="[
-                      { value: 'off', label: ai.harnessThinkingOff },
-                      { value: 'minimal', label: ai.harnessThinkingMinimal },
-                      { value: 'low', label: ai.harnessThinkingLow },
-                      { value: 'medium', label: ai.harnessThinkingMedium },
-                      { value: 'high', label: ai.harnessThinkingHigh },
-                      { value: 'xhigh', label: ai.harnessThinkingExtraHigh }
-                    ]"
-                  />
-                </ProviderSettingsField>
-
-                <ProviderSettingsField v-if="isHarness" :label="ai.harnessToolPermissions">
-                  <AppSelect
-                    v-model="draft.harnessPermissionMode"
-                    :label="ai.harnessToolPermissions"
-                    :options="[
-                      { value: 'allow-reads', label: ai.harnessPermissionReads },
-                      { value: 'allow-edits', label: ai.harnessPermissionEdits },
-                      { value: 'allow-all', label: ai.harnessPermissionAll }
-                    ]"
-                  />
-                </ProviderSettingsField>
-
-                <ProviderSettingsField v-if="supportsReasoningEffort" :label="ai.reasoningEffort">
-                  <ProviderSettingsInput
-                    v-model="draft.reasoningEffort"
-                    :aria-label="ai.reasoningEffort"
-                    :placeholder="ai.reasoningEffortPlaceholder"
-                  />
-                  <p class="mt-1 text-[10px] text-muted">{{ ai.reasoningEffortDescription }}</p>
-                </ProviderSettingsField>
-
-                <div class="border-t border-border pt-2.5">
-                  <p class="text-[11px] font-medium text-surface">{{ ai.outputLimit }}</p>
-                  <p class="mt-0.5 text-[10px] text-muted">
-                    {{ ai.outputLimitAutomatic }} ·
-                    {{ outputTokenRecommendation.toLocaleString() }}
-                    {{ common.tokens }}
-                  </p>
+                <div class="flex items-center justify-between gap-3">
+                  <span class="text-[11px] text-muted">{{ ai.modelCapabilityVision }}</span>
+                  <span v-if="knownModel" class="text-[10px] text-surface">
+                    {{
+                      knownCapabilities.includes('vision') ? common.supported : common.unsupported
+                    }}
+                  </span>
+                  <AppSwitch v-else v-model="visionEnabled" :label="ai.modelCapabilityVision" />
                 </div>
               </div>
-            </CollapsibleContent>
-          </CollapsibleRoot>
+
+              <ProviderSettingsField v-if="isHarness" :label="ai.harnessThinkingLevel">
+                <AppSelect
+                  v-model="draft.harnessThinkingLevel"
+                  :label="ai.harnessThinkingLevel"
+                  :options="[
+                    { value: 'off', label: ai.harnessThinkingOff },
+                    { value: 'minimal', label: ai.harnessThinkingMinimal },
+                    { value: 'low', label: ai.harnessThinkingLow },
+                    { value: 'medium', label: ai.harnessThinkingMedium },
+                    { value: 'high', label: ai.harnessThinkingHigh },
+                    { value: 'xhigh', label: ai.harnessThinkingExtraHigh }
+                  ]"
+                />
+              </ProviderSettingsField>
+
+              <ProviderSettingsField v-if="isHarness" :label="ai.harnessToolPermissions">
+                <AppSelect
+                  v-model="draft.harnessPermissionMode"
+                  :label="ai.harnessToolPermissions"
+                  :options="[
+                    { value: 'allow-reads', label: ai.harnessPermissionReads },
+                    { value: 'allow-edits', label: ai.harnessPermissionEdits },
+                    { value: 'allow-all', label: ai.harnessPermissionAll }
+                  ]"
+                />
+              </ProviderSettingsField>
+
+              <ProviderSettingsField v-if="supportsReasoningEffort" :label="ai.reasoningEffort">
+                <ProviderSettingsInput
+                  v-model="draft.reasoningEffort"
+                  :aria-label="ai.reasoningEffort"
+                  :placeholder="ai.reasoningEffortPlaceholder"
+                />
+                <p class="mt-1 text-[10px] text-muted">{{ ai.reasoningEffortDescription }}</p>
+              </ProviderSettingsField>
+
+              <div class="border-t border-border pt-2.5">
+                <p class="text-[11px] font-medium text-surface">{{ ai.outputLimit }}</p>
+                <p class="mt-0.5 text-[10px] text-muted">
+                  {{ ai.outputLimitAutomatic }} ·
+                  {{ outputTokenRecommendation.toLocaleString() }}
+                  {{ common.tokens }}
+                </p>
+              </div>
+            </div>
+          </AppCollapsible>
 
           <SettingsSaveFeedback :error="saveError" :result="saveResult" />
         </fieldset>

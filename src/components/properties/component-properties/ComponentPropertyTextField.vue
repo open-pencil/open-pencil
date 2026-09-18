@@ -1,31 +1,22 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-
 import { MIXED, type MixedValue } from '@open-pencil/vue'
 
 import AppInput from '@/components/ui/input/AppInput.vue'
 
 const { value, label } = defineProps<{ value: MixedValue<string>; label: string }>()
-const emit = defineEmits<{ commit: [value: string] }>()
-const draft = ref('')
-
-watch(
-  () => value,
-  (next) => {
-    draft.value = next === MIXED ? '' : next
-  },
-  { immediate: true }
-)
+const emit = defineEmits<{ update: [value: string]; commit: [] }>()
 </script>
 
 <template>
   <AppInput
-    v-model="draft"
+    :model-value="value === MIXED ? '' : value"
     tone="panel"
     size="sm"
     :state="value === MIXED ? 'mixed' : 'idle'"
     :placeholder="value === MIXED ? '—' : undefined"
     :aria-label="label"
-    @change="emit('commit', draft)"
+    @update:model-value="emit('update', String($event))"
+    @blur="emit('commit')"
+    @enter="emit('commit')"
   />
 </template>

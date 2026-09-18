@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, test, vi } from 'bun:test'
 
-import { getAutomationAuthToken, spawnMCPIfNeeded } from '@/app/automation/mcp/spawn'
+import {
+  getAutomationAuthToken,
+  getAutomationHealthFailure,
+  getAutomationStartupFailure,
+  readAutomationHealth,
+  spawnMCPIfNeeded
+} from '@/app/automation/mcp/spawn'
 
 import { clearTauriMocks, installTauriMockWindow, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 
@@ -23,6 +29,45 @@ afterEach(async () => {
   Reflect.deleteProperty(globalThis, 'location')
 })
 
+describe('MCP health probe diagnostics', () => {
+  test('records a rejected token separately from an unreachable server', async () => {
+    installTauriMockWindow()
+    const reject = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 401 }))
+
+    await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({ code: 'rejected', detail: 'HTTP 401' })
+
+    reject.mockResolvedValue(new Response('', { status: 500 }))
+    await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({ code: 'malformed', detail: 'HTTP 500' })
+
+    reject.mockRejectedValue(new Error('connection refused'))
+    await expect(readAutomationHealth('stale-token')).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({
+      code: 'unreachable',
+      detail: expect.any(String)
+    })
+  })
+
+  test('records an unexpected health payload and clears the failure on success', async () => {
+    installTauriMockWindow()
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ unexpected: true }), { status: 200 }))
+
+    await expect(readAutomationHealth()).resolves.toBeNull()
+    expect(getAutomationHealthFailure()).toEqual({ code: 'malformed', detail: 'HTTP 200' })
+
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ status: 'ok', version: '0.0.0-test' }), { status: 200 })
+    )
+    await expect(readAutomationHealth()).resolves.toMatchObject({ status: 'ok' })
+    expect(getAutomationHealthFailure()).toBeNull()
+  })
+})
+
 describe('Tauri MCP spawning', () => {
   test('retains an early startup failure for MCP-dependent features', async () => {
     installTauriMockWindow()
@@ -34,7 +79,8 @@ describe('Tauri MCP spawning', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd, args) => {
-      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
       if (cmd === 'plugin:shell|spawn') {
@@ -56,6 +102,10 @@ describe('Tauri MCP spawning', () => {
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('MCP server exited before startup completed')
+    expect(getAutomationStartupFailure()).toMatchObject({
+      code: 'exited',
+      detail: expect.stringContaining('code=')
+    })
   })
 
   test('retains unexpected spawn errors for MCP-dependent features', async () => {
@@ -68,7 +118,8 @@ describe('Tauri MCP spawning', () => {
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 404 }))
     await mockTauriIPC((cmd) => {
-      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
       if (cmd === 'plugin:shell|spawn') throw new Error('shell permission denied')
@@ -77,6 +128,7 @@ describe('Tauri MCP spawning', () => {
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('shell permission denied')
+    expect(getAutomationStartupFailure()).toMatchObject({ code: 'permission-denied' })
   })
 
   test('retains a language-independent missing executable diagnostic', async () => {
@@ -91,12 +143,18 @@ describe('Tauri MCP spawning', () => {
     await mockTauriIPC((cmd) => {
       if (cmd === 'plugin:path|resolve_directory') return '/mock/home'
       if (cmd === 'plugin:fs|exists') return false
-      if (cmd === 'mcp_executable_available') return false
+      if (cmd === 'mcp_lookup')
+        return { available: false, path: null, searched: ['/usr/local/bin', '/mock/home/.bun/bin'] }
       return null
     })
 
     expect(await spawnMCPIfNeeded()).toBeNull()
     expect(getAutomationAuthToken()).rejects.toThrow('MCP automation is not installed')
+    expect(getAutomationStartupFailure()).toMatchObject({
+      code: 'not-installed',
+      // The searched directories let a report show where the app looked.
+      detail: expect.stringContaining('/mock/home/.bun/bin')
+    })
   })
 
   test('spawns MCP server with shell plugin when health check is missing', async () => {
@@ -126,7 +184,8 @@ describe('Tauri MCP spawning', () => {
     const calls: Array<{ cmd: string; args: unknown }> = []
     await mockTauriIPC((cmd, args) => {
       calls.push({ cmd, args })
-      if (cmd === 'mcp_executable_available') return true
+      if (cmd === 'mcp_lookup')
+        return { available: true, path: '/mock/bin/openpencil-mcp-http', searched: ['/mock/bin'] }
       if (cmd === 'plugin:shell|spawn') {
         expect(args).toMatchObject({
           program: 'openpencil-mcp-http',

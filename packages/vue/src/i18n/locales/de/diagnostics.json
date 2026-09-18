@@ -30,5 +30,7 @@
   "clearDescription": "Dadurch werden lokal gespeicherte Diagnosedaten von diesem Gerät entfernt.",
   "cleared": "Diagnosedaten gelöscht.",
   "copied": "Diagnosedaten in die Zwischenablage kopiert.",
-  "copyFailed": "Diagnosedaten konnten nicht in die Zwischenablage kopiert werden."
+  "copyFailed": "Diagnosedaten konnten nicht in die Zwischenablage kopiert werden.",
+  "retentionCustom": "Eigener Wert…",
+  "retentionRange": "Gib eine ganze Zahl von {min} bis {max} ein."
 }

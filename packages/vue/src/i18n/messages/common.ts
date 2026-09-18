@@ -38,7 +38,8 @@ export const commonMessageDefaults = {
   unsupported: 'Not supported',
   tokens: 'tokens',
   clear: 'Clear',
-  dismiss: 'Dismiss'
+  dismiss: 'Dismiss',
+  browserSupport: 'Check browser support'
 } as const
 
 export const commonMessages = i18n('common', commonMessageDefaults)

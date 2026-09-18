@@ -36,9 +36,7 @@ export const filesMessageDefaults = {
   noMatchingFiles: params('No files match “{query}”.'),
   saveAsPrompt: 'Save as:',
   browserFileAPINotSupported:
-    "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place.",
-  useChrome: 'Use Chrome',
-  orEdgeForFullSupport: 'or Edge for full support.'
+    "Your browser doesn't support the local file API. Files will be downloaded instead of saved in place."
 } as const
 
 export const filesMessages = i18n('files', filesMessageDefaults)

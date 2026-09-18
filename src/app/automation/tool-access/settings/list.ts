@@ -1,9 +1,9 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 
-import type { ToolDescriptor, ToolEffect } from '@open-pencil/mcp/tools'
+import type { ToolAccessEntry } from '../types'
 
 /** Tool access is derived from the catalog and one controlled disabled-name model. */
-export function useMCPToolAccess(tools: Readonly<Ref<ToolDescriptor[]>>, disabled: Ref<string[]>) {
+export function useToolAccess(tools: Readonly<Ref<ToolAccessEntry[]>>, disabled: Ref<string[]>) {
   const search = ref('')
   const disabledNames = computed(() => new Set(disabled.value))
   const enabledCount = computed(() => tools.value.filter(isEnabled).length)
@@ -15,7 +15,7 @@ export function useMCPToolAccess(tools: Readonly<Ref<ToolDescriptor[]>>, disable
     )
   })
 
-  function isEnabled(tool: ToolDescriptor) {
+  function isEnabled(tool: ToolAccessEntry) {
     return !disabledNames.value.has(tool.name)
   }
 
@@ -28,7 +28,7 @@ export function useMCPToolAccess(tools: Readonly<Ref<ToolDescriptor[]>>, disable
     disabled.value = [...next]
   }
 
-  function category(effect: ToolEffect) {
+  function category(effect: ToolAccessEntry['effect']) {
     const members = computed(() => tools.value.filter((tool) => tool.effect === effect))
     const count = computed(() => members.value.filter(isEnabled).length)
     return {
@@ -40,23 +40,41 @@ export function useMCPToolAccess(tools: Readonly<Ref<ToolDescriptor[]>>, disable
             enabled
           )
       }),
-      state: computed(() =>
+      state: computed<'mixed' | 'idle'>(() =>
         count.value > 0 && count.value < members.value.length ? 'mixed' : 'idle'
       )
     }
   }
 
-  const { enabled: inspectionEnabled, state: inspectionState } = category('read')
-  const { enabled: modificationEnabled, state: modificationState } = category('write')
+  const inspection = category('read')
+  const modification = category('write')
+  const expanded = ref({ read: true, write: true })
+  watch(search, () => {
+    expanded.value = { read: true, write: true }
+  })
+  const categories = { read: inspection, write: modification }
+  const groups = computed(() =>
+    (['read', 'write'] as const).map((effect) => ({
+      effect,
+      enabled: categories[effect].enabled.value,
+      state: categories[effect].state.value,
+      tools: visibleTools.value.filter((tool) => tool.effect === effect)
+    }))
+  )
 
   return {
     search,
     visibleTools,
     enabledCount,
-    inspectionEnabled,
-    inspectionState,
-    modificationEnabled,
-    modificationState,
+    groups,
+    expanded,
+    inspectionEnabled: inspection.enabled,
+    inspectionState: inspection.state,
+    modificationEnabled: modification.enabled,
+    modificationState: modification.state,
+    setGroupEnabled: (effect: ToolAccessEntry['effect'], enabled: boolean) => {
+      categories[effect].enabled.value = enabled
+    },
     isEnabled,
     setToolEnabled: (name: string, enabled: boolean) => setEnabled([name], enabled)
   }

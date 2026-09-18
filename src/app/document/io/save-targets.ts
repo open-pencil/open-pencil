@@ -1,3 +1,5 @@
+import { pickBrowserSaveFile } from '@/app/document/io/capability'
+
 export async function chooseTauriFigSavePath() {
   const { save } = await import('@tauri-apps/plugin-dialog')
   return save({
@@ -7,9 +9,8 @@ export async function chooseTauriFigSavePath() {
 }
 
 export async function chooseBrowserFigSaveHandle() {
-  if (!window.showSaveFilePicker) return null
   try {
-    return await window.showSaveFilePicker({
+    return await pickBrowserSaveFile({
       suggestedName: 'Untitled.fig',
       types: [
         {

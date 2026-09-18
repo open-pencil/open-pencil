@@ -1,4 +1,7 @@
 {
+  "maxAgentSteps": "Maximale Schritte pro Nachricht",
+  "maxAgentStepsHint": "Nur für die integrierte KI; ACP und Pi verwalten eigene Limits. Mit Enter oder beim Verlassen des Feldes gespeichert und ab der nächsten Nachricht angewendet. Höhere Limits können die Kosten erhöhen.",
+  "maxAgentStepsRange": "Gib eine ganze Zahl von {min} bis {max} ein.",
   "connectionTestSuccess": "Verbindung erfolgreich. Das Modell ist erreichbar.",
   "connectionTestMissingAPIKey": "Gib vor dem Testen einen API-Schlüssel ein.",
   "connectionTestMissingBaseURL": "Gib vor dem Testen eine Basis-URL ein.",
@@ -144,5 +147,6 @@
   "reasoningCollapsed": "Standardmäßig eingeklappt",
   "reasoningWhileThinking": "Beim Nachdenken ausklappen",
   "reasoningExpanded": "Standardmäßig ausgeklappt",
-  "jumpToLatest": "Zum neuesten Beitrag"
+  "jumpToLatest": "Zum neuesten Beitrag",
+  "maxAgentStepsCustom": "Eigener Wert…"
 }

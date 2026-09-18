@@ -25,7 +25,5 @@
   "newDesign": "Nuovo design",
   "noMatchingFiles": "Nessun file corrisponde a «{query}».",
   "saveAsPrompt": "Salva con nome:",
-  "browserFileAPINotSupported": "Il browser non supporta l’API dei file locali. I file verranno scaricati anziché salvati nella posizione corrente.",
-  "useChrome": "Usa Chrome",
-  "orEdgeForFullSupport": "o Edge per il supporto completo."
+  "browserFileAPINotSupported": "Il browser non supporta l’API dei file locali. I file verranno scaricati anziché salvati nella posizione corrente."
 }

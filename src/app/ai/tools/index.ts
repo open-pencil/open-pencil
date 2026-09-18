@@ -1,15 +1,10 @@
 import { tool } from 'ai'
 
-import {
-  CORE_TOOLS,
-  EXTENDED_TOOLS,
-  registerComponentCatalog,
-  isAtomicTool,
-  toolsToAI
-} from '@open-pencil/core/tools'
+import { registerComponentCatalog, isAtomicTool, toolsToAI } from '@open-pencil/core/tools'
 import type { StepBudget } from '@open-pencil/core/tools'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { DEFAULT_AGENT_STEPS, resolveAgentStepLimit } from '@/app/ai/chat/step-limit'
 import { makeFigmaFromStore } from '@/app/automation/bridge/figma-factory'
 import { executeAtomicEditorTool } from '@/app/automation/execution/editor'
 import { recordToolCompleted, type AIDiagnosticContext } from '@/app/diagnostics/events/ai'
@@ -18,17 +13,20 @@ import type { EditorStore } from '@/app/editor/active-store'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 import { useLibraryService } from '@/app/libraries'
 
-export const MAX_AGENT_STEPS = 50
+import { aiToolDefinitions } from './catalog'
 
 class RunState {
   currentSteps = 0
+  /** Captured for the message in progress; settings changes apply to the next one. */
+  maxSteps = DEFAULT_AGENT_STEPS
 
-  resetSteps(): void {
+  resetSteps(maxSteps: number): void {
     this.currentSteps = 0
+    this.maxSteps = resolveAgentStepLimit(maxSteps)
   }
 
   hitLimit(): boolean {
-    return this.currentSteps >= MAX_AGENT_STEPS
+    return this.currentSteps >= this.maxSteps
   }
 }
 
@@ -47,8 +45,8 @@ export function recordStep(store?: EditorStore): void {
   getRunState(store).currentSteps++
 }
 
-export function resetRunSteps(store?: EditorStore): void {
-  getRunState(store).resetSteps()
+export function resetRunSteps(store: EditorStore, maxSteps: number): void {
+  getRunState(store).resetSteps(maxSteps)
 }
 
 export function didHitStepLimit(store?: EditorStore): boolean {
@@ -63,12 +61,7 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
   registerComponentCatalog(store.graph, libraryService)
 
   return toolsToAI(
-    [
-      ...CORE_TOOLS,
-      ...EXTENDED_TOOLS.filter((def) =>
-        ['get_components', 'list_libraries', 'insert_library_component'].includes(def.name)
-      )
-    ],
+    aiToolDefinitions,
     {
       getFigma: () => makeFigmaFromStore(store),
       executeTool: async (def, figma, args) => {
@@ -122,7 +115,7 @@ export function createAITools(store: EditorStore, diagnosticContext?: AIDiagnost
       },
       getStepBudget: (): StepBudget => ({
         current: runState.currentSteps,
-        max: MAX_AGENT_STEPS
+        max: runState.maxSteps
       })
     },
     { tool }

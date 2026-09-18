@@ -36,5 +36,6 @@
   "unsupported": "Non pris en charge",
   "tokens": "jetons",
   "clear": "Effacer",
-  "dismiss": "Ignorer"
+  "dismiss": "Ignorer",
+  "browserSupport": "Vérifier la compatibilité"
 }

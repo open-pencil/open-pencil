@@ -5,27 +5,24 @@ import { useI18n } from '@open-pencil/vue'
 
 import { diagnostics, summarizeDiagnosticEvent } from '@/app/diagnostics'
 import {
-  diagnosticsRetentionOptions,
+  DIAGNOSTICS_RETENTION_MAX,
+  DIAGNOSTICS_RETENTION_MIN,
+  diagnosticsRetentionPresets,
   pruneDiagnostics,
   useDiagnosticsSettings
 } from '@/app/diagnostics/settings'
 import { useRecentDiagnostics } from '@/app/diagnostics/settings/recent'
 import { toast } from '@/app/shell/ui'
 import SettingsGroup from '@/components/settings/layout/SettingsGroup.vue'
+import SettingsRow from '@/components/settings/layout/SettingsRow.vue'
 import SettingsSection from '@/components/settings/layout/SettingsSection.vue'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import { AppConfirmationDialog } from '@/components/ui/dialog'
-import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
+import PresetNumberField from '@/components/ui/input/PresetNumberField.vue'
 import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 const { common, diagnostics: diagnosticMessages } = useI18n()
 const clearOpen = ref(false)
-const retentionOptions = computed(() =>
-  diagnosticsRetentionOptions.value.map((value) => ({
-    value: String(value),
-    label: String(value)
-  }))
-)
 
 const {
   diagnosticsEnabled,
@@ -40,17 +37,18 @@ const { recentEvents } = useRecentDiagnostics(
   refreshDiagnosticsStats
 )
 
-const retentionValue = computed<string>({
-  get: () => String(diagnosticsRetention.value),
+const retentionValue = computed({
+  get: () => diagnosticsRetention.value,
   set: (value) => {
-    const parsed = Number(value)
-    if (parsed === 100 || parsed === 500 || parsed === 1000) {
-      diagnosticsRetention.value = parsed
-      void pruneDiagnostics(parsed)
-      void refreshDiagnosticsStats()
-    }
+    diagnosticsRetention.value = value
   }
 })
+
+/** Retention is a stored policy change, so pruning follows the committed value. */
+async function commitRetention(value: number): Promise<void> {
+  await pruneDiagnostics(value)
+  await refreshDiagnosticsStats()
+}
 
 async function clearDiagnostics() {
   await diagnostics.clear()
@@ -93,20 +91,27 @@ async function exportDiagnostics() {
         >
         <AppSwitch v-model="usageEnabled" :label="diagnosticMessages.usageHistory" />
       </label>
-      <div class="flex items-center justify-between gap-4 px-3 py-2.5">
-        <span
-          ><span class="block text-xs text-surface">{{ diagnosticMessages.retention }}</span
-          ><span class="block text-[10px] text-muted">{{
-            diagnosticMessages.retentionDescription
-          }}</span></span
-        >
-        <SegmentedControl
-          v-model="retentionValue"
-          :options="retentionOptions"
+      <SettingsRow
+        :label="diagnosticMessages.retention"
+        :description="diagnosticMessages.retentionDescription"
+        class="max-sm:flex-col max-sm:items-stretch"
+      >
+        <PresetNumberField
+          v-model:number="retentionValue"
+          :presets="diagnosticsRetentionPresets"
+          :min="DIAGNOSTICS_RETENTION_MIN"
+          :max="DIAGNOSTICS_RETENTION_MAX"
           :label="diagnosticMessages.retention"
-          required
+          :custom-label="diagnosticMessages.retentionCustom"
+          :range-message="
+            diagnosticMessages.retentionRange({
+              min: DIAGNOSTICS_RETENTION_MIN,
+              max: DIAGNOSTICS_RETENTION_MAX
+            })
+          "
+          @commit="commitRetention"
         />
-      </div>
+      </SettingsRow>
     </SettingsGroup>
     <SettingsGroup v-if="recentEvents.length">
       <div

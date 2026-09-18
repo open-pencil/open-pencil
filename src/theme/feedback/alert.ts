@@ -5,7 +5,8 @@ const alertTheme = {
     content: 'min-w-0 flex-1',
     heading: 'font-medium leading-relaxed',
     description: 'mt-1 leading-relaxed text-surface',
-    actions: 'mt-3 flex flex-wrap items-center gap-2'
+    details: 'mt-2',
+    actions: 'mt-2 flex flex-wrap items-center gap-2'
   },
   variants: {
     tone: {

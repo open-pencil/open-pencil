@@ -1,4 +1,7 @@
 {
+  "maxAgentSteps": "メッセージごとの最大ステップ数",
+  "maxAgentStepsHint": "内蔵 AI のみが対象です。ACP と Pi は独自の上限を使用します。Enter キーまたは入力欄から移動したときに保存され、次のメッセージから適用されます。上限を増やすと費用が増える場合があります。",
+  "maxAgentStepsRange": "{min} から {max} までの整数を入力してください。",
   "connectionTestSuccess": "接続しました。モデルにアクセスできます。",
   "connectionTestMissingAPIKey": "テストする前にAPIキーを入力してください。",
   "connectionTestMissingBaseURL": "テストする前にベースURLを入力してください。",
@@ -144,5 +147,6 @@
   "reasoningCollapsed": "既定で折りたたむ",
   "reasoningWhileThinking": "思考中に展開",
   "reasoningExpanded": "既定で展開",
-  "jumpToLatest": "最新へ移動"
+  "jumpToLatest": "最新へ移動",
+  "maxAgentStepsCustom": "カスタム…"
 }

@@ -1,3 +1,4 @@
+import type { Editor } from '@open-pencil/core/editor'
 import type {
   ComponentPropertyDefinition,
   ComponentPropertyType,
@@ -60,4 +61,18 @@ export function instanceSwapOptions(
     options.push({ value, label: value, missing: true })
   }
   return options
+}
+
+export function variantOptions(
+  editor: Editor,
+  instance: SceneNode,
+  propertyName: string
+): ComponentPropertyOption[] {
+  return editor
+    .getVariantOptionAvailability(instance.id, propertyName)
+    .map(({ value, available }) => ({
+      value,
+      label: value,
+      disabled: !available
+    }))
 }

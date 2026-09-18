@@ -1,5 +1,18 @@
+import { figmaSchema } from '@open-pencil/kiwi/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { FontFeature } from '@open-pencil/scene-graph'
+
+/**
+ * `toggledOn/OffOTFeatures` are typed as `OpenTypeFeature[]`, so only tags Figma's schema
+ * can encode belong there. Everything else has to map to a typed text field, or the encoder
+ * rejects the tag and the whole `.fig` export fails.
+ */
+const OT_FEATURE_TAGS: ReadonlySet<string> = new Set(
+  (
+    figmaSchema.definitions.find((definition) => definition.name === 'OpenTypeFeature')?.fields ??
+    []
+  ).map((field) => field.name)
+)
 
 const BOOLEAN_FEATURES = [
   ['fontVariantCommonLigatures', 'LIGA'],
@@ -76,7 +89,8 @@ function applyFontFeatureToKiwi(
   tag: string,
   enabled: boolean,
   toggledOn: string[],
-  toggledOff: string[]
+  toggledOff: string[],
+  clearedAxes: Map<string, 'NORMAL'>
 ): void {
   const booleanField = BOOLEAN_FEATURE_EXPORT[tag]
   if (booleanField) {
@@ -85,10 +99,21 @@ function applyFontFeatureToKiwi(
   }
 
   const enumField = ENUM_FEATURE_EXPORT[tag]
-  if (enabled && enumField) {
-    nc[enumField.field] = enumField.value
+  if (enumField) {
+    // Each axis holds one value, so a disabled toggle clears it to the neutral value rather
+    // than inventing the opposite. An enabled tag for the same axis wins over a disabled one,
+    // because text such as "TNUM on, PNUM off" describes that one state.
+    if (enabled) {
+      nc[enumField.field] = enumField.value
+      clearedAxes.delete(enumField.field)
+    } else if (nc[enumField.field] === undefined) {
+      clearedAxes.set(enumField.field, 'NORMAL')
+    }
     return
   }
+
+  // A tag the schema cannot express is dropped rather than written as an invalid enum member.
+  if (!OT_FEATURE_TAGS.has(tag)) return
 
   if (enabled) toggledOn.push(tag)
   else toggledOff.push(tag)
@@ -97,10 +122,20 @@ function applyFontFeatureToKiwi(
 export function applyFontFeaturesToKiwi(nc: NodeChange, features: FontFeature[]): void {
   const toggledOn: string[] = []
   const toggledOff: string[] = []
+  // Applied after the loop so a later enabled tag can cancel a pending clear.
+  const clearedAxes = new Map<string, 'NORMAL'>()
 
   for (const feature of features) {
-    applyFontFeatureToKiwi(nc, feature.tag.toUpperCase(), feature.enabled, toggledOn, toggledOff)
+    applyFontFeatureToKiwi(
+      nc,
+      feature.tag.toUpperCase(),
+      feature.enabled,
+      toggledOn,
+      toggledOff,
+      clearedAxes
+    )
   }
+  for (const field of clearedAxes.keys()) nc[field] = 'NORMAL'
 
   if (toggledOn.length > 0) nc.toggledOnOTFeatures = toggledOn
   if (toggledOff.length > 0) nc.toggledOffOTFeatures = toggledOff

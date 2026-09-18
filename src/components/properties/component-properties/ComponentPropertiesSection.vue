@@ -10,7 +10,7 @@ import AppSwitch from '@/components/ui/toggle/AppSwitch.vue'
 
 import ComponentPropertyTextField from './ComponentPropertyTextField.vue'
 
-const { active, controls, setValue } = useComponentProperties()
+const { active, controls, setValue, setTextValue, flush } = useComponentProperties()
 const { panels } = useI18n()
 const componentSectionUI = { title: 'text-component' }
 
@@ -48,7 +48,8 @@ const sectionLabel = computed(() =>
           :value="control.value"
           :label="control.name"
           :data-property="control.id"
-          @commit="setValue(control.id, $event)"
+          @update="setTextValue(control.id, $event)"
+          @commit="flush"
         />
         <div v-else-if="control.type === 'BOOLEAN'" class="flex h-field items-center">
           <AppSwitch

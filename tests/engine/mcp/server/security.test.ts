@@ -11,6 +11,7 @@ import { SceneGraph } from '@open-pencil/scene-graph'
 
 import { startServer } from '#mcp/server'
 import type { DiscoveryInfo } from '#mcp/transport/discovery'
+import { DESKTOP_APP_ORIGINS, parseCORSOrigins, resolveCORSOrigins } from '#mcp/transport/origins'
 
 import {
   connectMockBrowser,
@@ -66,6 +67,62 @@ describe('MCP server CORS', () => {
     } finally {
       await handle.close()
     }
+  })
+
+  test('allows the desktop app origin when several origins are configured', async () => {
+    const handle = await startServer({
+      httpPort: 0,
+      withTcp: true,
+      socketPath: testSocketPath(),
+      authToken: TEST_AUTH_TOKEN,
+      corsOrigin: DESKTOP_APP_ORIGINS,
+      enableEval: false,
+      mcpRoot: null
+    })
+    const httpPort = handle.httpPort
+    if (!httpPort) {
+      await handle.close()
+      throw new Error('withTcp: true did not produce an HTTP port')
+    }
+
+    try {
+      const preflight = (origin: string) =>
+        fetch(`http://127.0.0.1:${httpPort}/health`, {
+          method: 'OPTIONS',
+          headers: {
+            origin,
+            'access-control-request-method': 'GET',
+            'access-control-request-headers': 'authorization'
+          }
+        })
+
+      // The app webview calls the server from its own origin with no extra setup.
+      for (const origin of DESKTOP_APP_ORIGINS) {
+        const response = await preflight(origin)
+        expect(response.headers.get('access-control-allow-origin')).toBe(origin)
+      }
+      // An unrelated site is not granted access.
+      const foreign = await preflight('https://example.com')
+      expect(foreign.headers.get('access-control-allow-origin')).toBeNull()
+    } finally {
+      await handle.close()
+    }
+  })
+})
+
+describe('MCP CORS origin configuration', () => {
+  test('defaults to the desktop app origin when nothing is configured', () => {
+    expect(resolveCORSOrigins(undefined)).toEqual(DESKTOP_APP_ORIGINS)
+    expect(resolveCORSOrigins('   ')).toEqual(DESKTOP_APP_ORIGINS)
+    expect(resolveCORSOrigins(',')).toEqual(DESKTOP_APP_ORIGINS)
+  })
+
+  test('accepts a comma-separated override', () => {
+    expect(parseCORSOrigins('https://a.example, https://b.example')).toEqual([
+      'https://a.example',
+      'https://b.example'
+    ])
+    expect(resolveCORSOrigins('https://one.example')).toEqual(['https://one.example'])
   })
 })
 

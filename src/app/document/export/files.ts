@@ -11,6 +11,7 @@ import { renderNodesToImage } from '@open-pencil/core/io/formats/raster'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import type { ExportOptions } from '@/app/document/export/types'
+import { pickBrowserSaveFile, supportsFileSystemAccess } from '@/app/document/io/capability'
 import { isTauri } from '@/app/tauri/env'
 
 type ExportData = string | ArrayBuffer | Uint8Array
@@ -158,9 +159,9 @@ export async function saveExportedFile(
     return
   }
 
-  if (window.showSaveFilePicker) {
+  if (supportsFileSystemAccess()) {
     try {
-      const handle = await window.showSaveFilePicker({
+      const handle = await pickBrowserSaveFile({
         suggestedName: fileName,
         types: [
           {
@@ -169,9 +170,11 @@ export async function saveExportedFile(
           }
         ]
       })
-      const writable = await handle.createWritable()
-      await writable.write(new Uint8Array(data))
-      await writable.close()
+      if (handle) {
+        const writable = await handle.createWritable()
+        await writable.write(new Uint8Array(data))
+        await writable.close()
+      }
       return
     } catch (e) {
       if ((e as Error).name === 'AbortError') return

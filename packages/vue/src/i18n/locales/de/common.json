@@ -36,5 +36,6 @@
   "unsupported": "Nicht unterstützt",
   "tokens": "Token",
   "clear": "Löschen",
-  "dismiss": "Schließen"
+  "dismiss": "Schließen",
+  "browserSupport": "Browser-Unterstützung prüfen"
 }

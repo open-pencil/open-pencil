@@ -36,5 +36,6 @@
   "unsupported": "不支持",
   "tokens": "token",
   "clear": "清除",
-  "dismiss": "关闭"
+  "dismiss": "关闭",
+  "browserSupport": "查看浏览器支持情况"
 }

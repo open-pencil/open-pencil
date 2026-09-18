@@ -25,7 +25,5 @@
   "newDesign": "Neues Design",
   "noMatchingFiles": "Keine Dateien entsprechen „{query}“.",
   "saveAsPrompt": "Speichern unter:",
-  "browserFileAPINotSupported": "Dein Browser unterstützt die lokale Datei-API nicht. Dateien werden heruntergeladen, statt direkt gespeichert zu werden.",
-  "useChrome": "Chrome verwenden",
-  "orEdgeForFullSupport": "oder Edge für vollständige Unterstützung."
+  "browserFileAPINotSupported": "Dein Browser unterstützt die lokale Datei-API nicht. Dateien werden heruntergeladen, statt direkt gespeichert zu werden."
 }
