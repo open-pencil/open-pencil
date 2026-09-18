@@ -1,9 +1,12 @@
 import { populateAndApplyOverrides } from '@open-pencil/fig/instance-overrides'
 import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { withFigVariableColorResolver } from '#core/kiwi/fig/variable-color-resolver'
+
 export interface LazyFigImportContext {
-  changeMap: Map<string, InstanceNodeChange>
+  changeMap: Map<string, NodeChange>
   guidToNodeId: Map<string, string>
   blobs: Uint8Array[]
   populatedRootIds: Set<string>
@@ -28,14 +31,16 @@ function applyPopulation(
   context: LazyFigImportContext,
   rootIds?: string[]
 ): void {
-  graph.preserveSourceMetadataDuring(() => {
-    populateAndApplyOverrides(
-      graph,
-      context.changeMap,
-      context.guidToNodeId,
-      context.blobs,
-      rootIds
-    )
+  withFigVariableColorResolver(context.changeMap, () => {
+    graph.preserveSourceMetadataDuring(() => {
+      populateAndApplyOverrides(
+        graph,
+        context.changeMap as Map<string, InstanceNodeChange>,
+        context.guidToNodeId,
+        context.blobs,
+        rootIds
+      )
+    })
   })
   const populatedRootIds = rootIds ?? graph.getPages(true).map((page) => page.id)
   for (const id of populatedRootIds) context.populatedRootIds.add(id)

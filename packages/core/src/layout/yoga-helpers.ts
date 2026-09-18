@@ -24,6 +24,32 @@ export function configureAbsoluteChild(yogaChild: YogaNode, child: SceneNode): v
   yogaChild.setHeight(child.height)
 }
 
+export function configureNonTextLeaf(
+  yogaChild: YogaNode,
+  child: SceneNode,
+  isRow: boolean,
+  stretchCross: boolean
+): void {
+  const w = child.width
+  const h = child.height
+
+  if (child.layoutGrow > 0) {
+    yogaChild.setFlexGrow(child.layoutGrow)
+    if (!stretchCross) {
+      if (isRow) yogaChild.setHeight(h)
+      else yogaChild.setWidth(w)
+    }
+  } else {
+    if (isRow) {
+      yogaChild.setWidth(w)
+      if (!stretchCross) yogaChild.setHeight(h)
+    } else {
+      yogaChild.setHeight(h)
+      if (!stretchCross) yogaChild.setWidth(w)
+    }
+  }
+}
+
 export function applyMinMaxConstraints(yogaNode: YogaNode, node: SceneNode): void {
   if (node.minWidth != null) yogaNode.setMinWidth(node.minWidth)
   if (node.maxWidth != null) yogaNode.setMaxWidth(node.maxWidth)

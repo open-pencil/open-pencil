@@ -1,4 +1,4 @@
-import type { InstanceNodeChange } from '@open-pencil/fig/instance-overrides'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 import type { EnabledLibraryBinding, SceneNode } from '@open-pencil/scene-graph'
 
@@ -6,7 +6,7 @@ import { getLazyFigImportContext, setLazyFigImportContext } from '#core/kiwi/fig
 import type { PortableSceneGraphData } from '#core/kiwi/fig/parse/portable-data'
 
 export interface SerializedLazyFigImportContext {
-  changeMap: Array<[string, InstanceNodeChange]>
+  changeMap: Array<[string, NodeChange]>
   guidToNodeId: Array<[string, string]>
   blobs: Uint8Array[]
   populatedRootIds: string[]
