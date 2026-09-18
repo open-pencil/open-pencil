@@ -10,6 +10,8 @@ import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 import { executeAtomicEditorTool } from '@/app/automation/execution/editor'
+import { followAgentActivity } from '@/app/automation/mcp/follow-agent'
+import { mcpFollowAgent } from '@/app/automation/mcp/preferences'
 import { ensureGraphFonts } from '@/app/editor/fonts'
 import { useLibraryService } from '@/app/libraries'
 
@@ -78,6 +80,7 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
       store.requestRender()
       store.flashNodes(extractNodeIds(result))
     }
+    if (mcpFollowAgent.value) await followAgentActivity(target, toolName, toolArgs, result)
     return { ok: true, result }
   }
 }

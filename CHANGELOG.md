@@ -10,6 +10,7 @@
 
 ### Changed
 
+- Optionally follow MCP agent activity in the canvas by focusing the pages and layers used for inspection, selection, and export.
 - Create new documents with the sRGB colour profile, so Display P3 is reserved for documents that declare it.
 - Export diagnostics from Settings only. AI requests and tool activity now carry conversation and request identifiers, while chat no longer offers a separate diagnostic log or includes transcript content.
 - Replace the demo's legacy reference page with a component library on the first page, including component sets, linked instances, component properties, and the variable collections.
