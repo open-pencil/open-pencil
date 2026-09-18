@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
+import { createEditor } from '#core/editor/create'
 import {
   applyFigPopulationDelta,
   buildFigPopulationDelta,
@@ -9,6 +10,35 @@ import {
 } from '#core/kiwi/fig/population/delta'
 
 describe('FIG population deltas', () => {
+  test('does not resynchronize resolved imported text as a component edit', async () => {
+    const source = new SceneGraph()
+    const page = source.getPages()[0]
+    const component = source.createNode('COMPONENT', page.id)
+    const label = source.createNode('TEXT', component.id, { text: 'Área' })
+    const instance = source.createNode('INSTANCE', page.id, { componentId: component.id })
+    const target = new SceneGraph()
+    target.rootId = source.rootId
+    target.nodes = structuredClone(source.nodes)
+    const editor = createEditor({ graph: target })
+    const journal = installFigMutationJournal(source)
+    source.populateInstanceChildren(instance.id, component.id, 'fig-import')
+    const clone = source.getChildren(instance.id)[0]
+    source.updateNode(clone.id, { text: 'Cadastro' })
+    source.updateNode(label.id, { width: 120 })
+    journal.stop()
+    try {
+      applyFigPopulationDelta(target, buildFigPopulationDelta(source, journal, [page.id]))
+      await Promise.resolve()
+      expect(target.getNode(clone.id)?.text).toBe('Cadastro')
+      // Ordinary component edits still synchronize after the population scope exits.
+      target.updateNode(label.id, { text: 'Edited' })
+      await Promise.resolve()
+      expect(target.getNode(clone.id)?.text).toBe('Edited')
+    } finally {
+      editor.dispose()
+    }
+  })
+
   test('captures created, updated, and deleted nodes', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

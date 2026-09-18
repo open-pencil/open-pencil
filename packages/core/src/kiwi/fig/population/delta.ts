@@ -122,7 +122,7 @@ export function buildFigPopulationDelta(
 }
 
 export function applyFigPopulationDelta(graph: SceneGraph, delta: FigPopulationDelta): void {
-  graph.preserveSourceMetadataDuring(() => {
+  graph.applyImportedStateDuring(() => {
     for (const [, node] of delta.created) {
       graph.createNodeWithId(node.id, node.type, node.parentId, node)
     }

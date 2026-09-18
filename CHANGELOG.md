@@ -13,6 +13,7 @@
 
 ### Changed
 
+- Optionally follow MCP agent activity in the canvas by focusing the pages and layers used for inspection, selection, and export.
 - Create new documents with the sRGB colour profile, so Display P3 is reserved for documents that declare it.
 - Export diagnostics from Settings only, with a retention count you choose. AI requests and tool activity now carry conversation and request identifiers, while chat no longer offers a separate diagnostic log or includes transcript content.
 - Replace the demo's legacy reference page with a component library on the first page, including component sets, linked instances, component properties, and the variable collections, and show the standard canvas loading overlay and tab indicator while it is generated instead of an empty canvas.
@@ -22,6 +23,9 @@
 - Store colours edited in the colour picker in the document's colour profile, and convert them on the way to the display, so a Display-P3 document no longer looks different on an sRGB display than on a wide-gamut one.
 - Keep Display-P3 documents rendering correctly in wide gamut where the browser supports it and in sRGB elsewhere, fixing the black rectangles and incorrect blend colours, with a dismissible notice when wide gamut is unavailable.
 - Classify MCP `open_file` and `close_file` operations as read-only hints, and close opened document tabs through the new `close_file` tool with the usual unsaved-change prompt.
+- Preserve nested component text and icon assignments when populating a page independently of its source components.
+- Keep fixed-size text from collapsing and clipping beside smaller siblings in Hug auto-layout containers.
+- Display imported Figma page backgrounds and preserve page background edits when switching pages and saving documents.
 - Let the desktop app use an MCP server you started yourself by allowing the app's own origin by default, instead of requiring `OPENPENCIL_MCP_CORS_ORIGIN`.
 - Explain why the local MCP server did not start — a missing `@open-pencil/mcp` install, a denied command, an early exit, or an unreachable address — with translated guidance, and find a globally installed server when the desktop app is launched from the system shell.
 - Animate the AI chat tool-call disclosure, which expanded and collapsed without motion because its animation classes were misspelled.

@@ -7,7 +7,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
  * itself an unpopulated instance, populate the source first so cloned
  * children are complete.
  */
-function collectSubtreeIds(graph: SceneGraph, rootIds: Iterable<string>): Set<string> {
+function collectPopulationIds(graph: SceneGraph, rootIds: Iterable<string>): Set<string> {
   const result = new Set<string>()
   const queue = [...rootIds]
   let index = 0
@@ -17,7 +17,10 @@ function collectSubtreeIds(graph: SceneGraph, rootIds: Iterable<string>): Set<st
     if (result.has(id)) continue
     result.add(id)
     const node = graph.getNode(id)
-    if (node) queue.push(...node.childIds)
+    if (node) {
+      queue.push(...node.childIds)
+      if (node.componentId) queue.push(node.componentId)
+    }
   }
   return result
 }
@@ -73,6 +76,9 @@ export function populateInstances(
     const node = graph.getNode(nodeId)
     if (!node) continue
     queue.push(...node.childIds)
+    // Source instances carry assignments and symbol overrides needed by these clones.
+    // Include only the reachable component dependencies, not their entire pages.
+    if (node.componentId) queue.push(node.componentId)
   }
-  return collectSubtreeIds(graph, rootIds)
+  return collectPopulationIds(graph, rootIds)
 }
