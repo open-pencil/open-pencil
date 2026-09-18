@@ -12,6 +12,15 @@ const capability: TauriCapabilities = {
   'tauri:options': { application: appBinary }
 }
 
+// Keep the spawned MCP server's discovery file out of the user's application
+// support directory. It stays inside the home directory because the app only
+// accepts a server-reported path within it.
+process.env.OPENPENCIL_MCP_DISCOVERY_PATH = join(
+  process.env.HOME ?? root,
+  '.openpencil-native-test',
+  'mcp.json'
+)
+
 export const config: WebdriverIO.Config = {
   runner: 'local',
   tsConfigPath: join(root, 'tests', 'e2e', 'native', 'tsconfig.json'),
