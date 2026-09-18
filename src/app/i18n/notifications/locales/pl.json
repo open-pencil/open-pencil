@@ -21,5 +21,10 @@
   "nodeID": "ID węzła",
   "nodeIDs": "ID węzłów",
   "xPath": "XPath",
-  "xPaths": "XPath"
+  "xPaths": "XPath",
+  "deepLinkLocateFile": "Wskaż „{file}”, aby otworzyć ten link.",
+  "deepLinkPickerDismissed": "Link anulowany: nie wybrano żadnego pliku.",
+  "deepLinkCancelled": "Link anulowany: oczekiwano pliku kończącego się na „{file}”.",
+  "deepLinkNodeNotFound": "Nie znaleziono warstwy „{node}” w „{file}”.",
+  "openQueuedFilesFailed": "Nie udało się otworzyć plików przekazanych do OpenPencil: {error}"
 }

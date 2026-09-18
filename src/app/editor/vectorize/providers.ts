@@ -1,6 +1,7 @@
 import { encodeBase64 } from '@open-pencil/core/bytes'
 import { IS_TAURI } from '@open-pencil/core/constants'
 
+import { readBoundedBody } from '@/app/document/io/browser'
 import { tauriFetch } from '@/app/tauri/http'
 
 import {
@@ -115,40 +116,7 @@ async function readBoundedResponse(
   maxBytes: number,
   sizeError: string
 ): Promise<string> {
-  const contentLength = Number(response.headers.get('content-length'))
-  if (Number.isFinite(contentLength) && contentLength > maxBytes) {
-    throw new Error(sizeError)
-  }
-  if (!response.body) {
-    const bytes = new Uint8Array(await response.arrayBuffer())
-    if (bytes.byteLength > maxBytes) throw new Error(sizeError)
-    return new TextDecoder().decode(bytes)
-  }
-
-  const reader = response.body.getReader()
-  const chunks: Uint8Array[] = []
-  let totalBytes = 0
-  try {
-    let result = await reader.read()
-    while (!result.done) {
-      totalBytes += result.value.byteLength
-      if (totalBytes > maxBytes) throw new Error(sizeError)
-      chunks.push(result.value)
-      result = await reader.read()
-    }
-  } catch (error) {
-    await reader.cancel().catch(() => undefined)
-    throw error
-  } finally {
-    reader.releaseLock()
-  }
-
-  const bytes = new Uint8Array(totalBytes)
-  let offset = 0
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset)
-    offset += chunk.byteLength
-  }
+  const bytes = await readBoundedBody(response, maxBytes, { sizeError })
   return new TextDecoder().decode(bytes)
 }
 

@@ -145,10 +145,12 @@ function activateTab(tab: Tab) {
   setOpenPencilStore(tab.store)
 }
 
-export function switchTab(tabId: string) {
+/** Activates the tab. False when no tab carries that id, so callers can tell a no-op apart. */
+export function switchTab(tabId: string): boolean {
   const tab = tabsRef.value.find((t) => t.id === tabId)
-  if (!tab) return
+  if (!tab) return false
   activateTab(tab)
+  return true
 }
 
 export async function closeTab(tabId: string): Promise<void> {

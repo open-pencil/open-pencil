@@ -1,5 +1,7 @@
 # Contributing
 
+Questions and ideas go to [GitHub Discussions](https://github.com/open-pencil/open-pencil/discussions) or [Discord](https://discord.gg/4wXc9fuZfm); open an issue for a reproducible bug.
+
 ## Setup
 
 ```bash

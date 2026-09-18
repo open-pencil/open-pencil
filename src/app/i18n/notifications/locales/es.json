@@ -21,5 +21,10 @@
   "nodeID": "ID de nodo",
   "nodeIDs": "ID de nodos",
   "xPath": "XPath",
-  "xPaths": "XPaths"
+  "xPaths": "XPaths",
+  "deepLinkLocateFile": "Localiza «{file}» para seguir este enlace.",
+  "deepLinkPickerDismissed": "Enlace cancelado: no se eligió ningún archivo.",
+  "deepLinkCancelled": "Enlace cancelado: se esperaba un archivo que terminara en «{file}».",
+  "deepLinkNodeNotFound": "No se encontró la capa «{node}» en «{file}».",
+  "openQueuedFilesFailed": "No se pudieron abrir los archivos entregados a OpenPencil: {error}"
 }

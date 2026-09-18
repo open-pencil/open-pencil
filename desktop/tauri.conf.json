@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OpenPencil",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "identifier": "net.dannote.open-pencil",
   "build": {
     "beforeDevCommand": "bun run generate:icons --target desktop && bun run generate:tauri-menu && bun run dev",
@@ -51,11 +51,22 @@
         "rank": "Alternate"
       }
     ],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "linux/main.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "linux/main.desktop"
+      }
+    },
     "macOS": {
       "signingIdentity": "Developer ID Application: Danila Poyarkov (N7D7M3Q3CD)"
     }
   },
   "plugins": {
+    "deep-link": {
+      "desktop": { "schemes": ["openpencil"] }
+    },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4QzBCRjBFNzhFNEVEMDEKUldRQjdlUjREci9BV0hLaEJPeG5tRXdsWkhQWFdEa0VxcEtNR1o1S2VJeGlKU1VDTldQTi9wYncK",
       "endpoints": ["https://github.com/open-pencil/open-pencil/releases/latest/download/latest.json"],

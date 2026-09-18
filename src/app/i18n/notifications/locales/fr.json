@@ -21,5 +21,10 @@
   "nodeID": "ID de nœud",
   "nodeIDs": "ID de nœuds",
   "xPath": "XPath",
-  "xPaths": "XPaths"
+  "xPaths": "XPaths",
+  "deepLinkLocateFile": "Localisez « {file} » pour suivre ce lien.",
+  "deepLinkPickerDismissed": "Lien annulé : aucun fichier n’a été choisi.",
+  "deepLinkCancelled": "Lien annulé : un fichier se terminant par « {file} » était attendu.",
+  "deepLinkNodeNotFound": "Le calque « {node} » est introuvable dans « {file} ».",
+  "openQueuedFilesFailed": "Impossible d’ouvrir les fichiers transmis à OpenPencil : {error}"
 }

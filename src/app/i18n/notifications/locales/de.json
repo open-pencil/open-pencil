@@ -21,5 +21,10 @@
   "nodeID": "Knoten-ID",
   "nodeIDs": "Knoten-IDs",
   "xPath": "XPath",
-  "xPaths": "XPaths"
+  "xPaths": "XPaths",
+  "deepLinkLocateFile": "Wähle „{file}“, um diesem Link zu folgen.",
+  "deepLinkPickerDismissed": "Link abgebrochen: Es wurde keine Datei ausgewählt.",
+  "deepLinkCancelled": "Link abgebrochen: Erwartet wurde eine Datei mit der Endung „{file}“.",
+  "deepLinkNodeNotFound": "Ebene „{node}“ wurde in „{file}“ nicht gefunden.",
+  "openQueuedFilesFailed": "Die an OpenPencil übergebenen Dateien konnten nicht geöffnet werden: {error}"
 }
