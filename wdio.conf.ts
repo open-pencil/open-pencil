@@ -1,3 +1,4 @@
+import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -16,7 +17,7 @@ const capability: TauriCapabilities = {
 // support directory. It stays inside the home directory because the app only
 // accepts a server-reported path within it.
 process.env.OPENPENCIL_MCP_DISCOVERY_PATH = join(
-  process.env.HOME ?? root,
+  homedir(),
   '.openpencil-native-test',
   'mcp.json'
 )
