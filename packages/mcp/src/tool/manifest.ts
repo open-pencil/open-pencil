@@ -61,9 +61,9 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
           {
             name: 'open_file',
             description: 'Open a .fig or .pen file from inside the configured MCP root.',
-            effect: 'write',
+            effect: 'read',
             availability: 'filesystem',
-            capabilities: ['filesystem:read', 'document:write'],
+            capabilities: ['filesystem:read', 'document:read'],
             enabled: true
           } satisfies ToolDescriptor,
           {
@@ -77,6 +77,14 @@ export function createToolDescriptors(filesystemEnabled: boolean): ToolDescripto
           } satisfies ToolDescriptor
         ]
       : []),
+    {
+      name: 'close_file',
+      description: 'Close an open document tab, prompting to save unsaved changes.',
+      effect: 'read',
+      availability: 'default',
+      capabilities: ['document:read'],
+      enabled: true
+    },
     {
       name: 'get_codegen_prompt',
       description:

@@ -204,6 +204,7 @@ The CLI defaults the filesystem root to the home directory on Windows and the cu
 4. **Modify** — `render`, `batch_update`, `update_node`, `set_fill`, `set_layout`, `create_shape`, `import_svg`, etc.
 5. **Navigate** — after creating or editing visible canvas content, call `select_nodes` and `viewport_zoom_to_fit { id }` (or `node_bounds` + `viewport_set`) so the user can see the result in the running editor.
 6. **Save/export** — `save_file`, `export_image`, `export_svg`, `export_pdf`, or CLI `export`.
+7. **Close** — `close_file { document_id }` closes a document tab after the workflow; it prompts to save unsaved changes.
 
 ### Browser-native WebMCP (experimental)
 

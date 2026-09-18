@@ -264,6 +264,34 @@ export function registerTools(mcpServer: McpServer, options: RegisterToolsOption
   }
 
   register(
+    'close_file',
+    {
+      description: 'Close an open document tab, prompting to save unsaved changes.',
+      inputSchema: v.object({ ...automationTargetSchema })
+    },
+    async (args: { document_id?: string; page_id?: string }) => {
+      try {
+        const { target } = splitAutomationTarget(args)
+        const result = await sendRPC({ command: 'close_file', args: target })
+        const res = result as {
+          ok?: boolean
+          result?: { closed?: boolean }
+          target?: unknown
+          error?: string
+        }
+        if (res.ok === false) return fail(new Error(res.error))
+        const response: { closed: boolean; target?: unknown } = {
+          closed: res.result?.closed === true
+        }
+        if (res.target) response.target = res.target
+        return ok(response)
+      } catch (e) {
+        return fail(e)
+      }
+    }
+  )
+
+  register(
     'get_codegen_prompt',
     {
       description:
