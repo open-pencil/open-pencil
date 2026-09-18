@@ -83,6 +83,9 @@ export const automationMessageDefaults = {
   authentication: 'Require authentication',
   authenticationDescription:
     'Protect the localhost MCP endpoint with a bearer token. Disable only on a trusted machine. Restart the server to apply changes.',
+  followAgent: 'Follow agent',
+  followAgentDescription:
+    'Keep the canvas focused on the page or layers used by MCP tools, so you can follow the agent’s work.',
   rootDirectory: 'MCP root directory',
   rootDirectoryDefault: 'Server default directory',
   chooseRootDirectory: 'Choose folder',
