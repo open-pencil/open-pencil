@@ -34,6 +34,7 @@
 
 ### Performance
 
+- Compute layout only for the scope a command needs, so listing pages, reporting fonts, and exporting a single layer no longer lay out the whole document.
 - Reduce editor pauses while generating recovery snapshots and exporting text-heavy `.fig` documents.
 - Recompute layout only for the pages an edit affects, instead of every page, when editing a component or its instances.
 

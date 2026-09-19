@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { defineCommand } from 'citty'
 
 import { bold, fmtList, ok } from '#cli/format'
-import { loadDocument, populateWholeDocument } from '#cli/headless'
+import { ensureDocumentLayout, loadDocument, populateWholeDocument } from '#cli/headless'
 import { FileSystemLibraryCatalog } from '#cli/library/catalog'
 
 const list = defineCommand({
@@ -51,6 +51,7 @@ const publish = defineCommand({
   },
   async run({ args }) {
     const graph = await loadDocument(resolve(args.file))
+    ensureDocumentLayout(graph)
     populateWholeDocument(graph)
     const revision = await new FileSystemLibraryCatalog(args.root).publishRevision({
       libraryId: args.id,

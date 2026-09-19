@@ -3,7 +3,7 @@ import { defineCommand } from 'citty'
 import { allRules, createLinter, presets, type LintMessage } from '@open-pencil/core/lint'
 
 import { bold, dim, fail, fmtList, ok } from '#cli/format'
-import { loadDocument } from '#cli/headless'
+import { ensureDocumentLayout, loadDocument } from '#cli/headless'
 
 function formatSeverity(severity: LintMessage['severity']) {
   if (severity === 'error') return fail('error')
@@ -62,6 +62,8 @@ export default defineCommand({
     }
 
     const graph = await loadDocument(args.file)
+    // Lint reads geometry, so it needs current layout.
+    ensureDocumentLayout(graph)
     const rules = args.rule ? (Array.isArray(args.rule) ? args.rule : [args.rule]) : undefined
     const result = createLinter({ preset: args.preset, rules }).lintGraph(graph)
 
