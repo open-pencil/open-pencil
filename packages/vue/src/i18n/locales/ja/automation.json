@@ -30,6 +30,8 @@
   "version": "バージョン",
   "authentication": "認証を要求",
   "authenticationDescription": "ローカル MCP エンドポイントを Bearer トークンで保護します。信頼できる端末でのみ無効にしてください。変更を反映するにはサーバーを再起動します。",
+  "followAgent": "エージェントを追跡",
+  "followAgentDescription": "MCPツールが使用するページまたはレイヤーにキャンバスのフォーカスを合わせ、エージェントの作業を追跡できるようにします。",
   "rootDirectory": "MCP ルートディレクトリ",
   "rootDirectoryDefault": "サーバーの既定ディレクトリ",
   "chooseRootDirectory": "フォルダーを選択",
