@@ -76,6 +76,7 @@ export function materializeComponentClosure(
   // A property default can point back to its own definition without forming a cyclic
   // occurrence tree. Drain these edges after effective expansion, not on its call stack.
   for (const dependency of propertyDependencies) ensure(dependency)
-  linkComponentPropertyValues(graph, ids, existingNodeIds)
+  const materialized = [...graph.nodes.values()].filter((node) => !existingNodeIds.has(node.id))
+  linkComponentPropertyValues(graph, ids, materialized)
   return Object.assign(components, { externalPreferredKeys })
 }

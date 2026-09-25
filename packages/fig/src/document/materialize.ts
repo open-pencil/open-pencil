@@ -55,6 +55,8 @@ export interface AssemblyState {
   components: Map<string, MaterializedComponentOccurrence>
   componentIds: Map<string, string>
   savedSizeNodes: Set<string>
+  /** Component property types by definition id, carried across page loads. */
+  definitionTypes?: Map<string, string>
 }
 
 export interface FigSessionCheckpoint {
@@ -136,6 +138,15 @@ export function createFigDocumentSession(
   }
 }
 
+/** Definition types already in the graph; only needed once, or after a resume. */
+function seedDefinitionTypes(graph: SceneGraph): Map<string, string> {
+  const types = new Map<string, string>()
+  for (const node of graph.getAllNodes())
+    for (const definition of node.componentPropertyDefinitions)
+      types.set(definition.id, definition.type)
+  return types
+}
+
 function createAssemblyState(
   reader: ReturnType<typeof createDocumentReader>,
   options: DocumentAssemblyOptions
@@ -167,8 +178,8 @@ function materializeReader(
   }
   const pages = reader.pages.map((page) => reader.readPage(page.id, options))
   const plan = reader.planComponents(pages, options)
-  const { graph, sources, components, savedSizeNodes, componentIds } =
-    previous ?? createAssemblyState(reader, options)
+  const state = previous ?? createAssemblyState(reader, options)
+  const { graph, sources, components, savedSizeNodes, componentIds } = state
   const existingNodeIds = new Set(graph.nodes.keys())
   const layoutScales = new Map<string, number>()
   const rememberDerivedSizes = (nodes: ReadonlyMap<InstanceOccurrence, SceneNode>): void => {
@@ -267,11 +278,15 @@ function materializeReader(
       if (id && sources.has(id)) node[field] = sources.get(id) ?? id
     }
   }
-  linkComponentPropertyValues(graph, sources, existingNodeIds)
+  // These passes used to scan the whole graph and skip what was already there, so loading a
+  // page re-visited every node materialized by the pages before it.
+  const materialized = [...graph.nodes.values()].filter((node) => !existingNodeIds.has(node.id))
+  state.definitionTypes ??= seedDefinitionTypes(graph)
+  linkComponentPropertyValues(graph, sources, materialized, state.definitionTypes)
   graph.preserveSourceMetadataDuring(() => {
-    resolveVariantPropertyValues(graph, existingNodeIds)
-    applyDocumentLayoutBindings(graph, savedSizeNodes, existingNodeIds, layoutScales)
-    applyDocumentPaintBindings(graph, existingNodeIds)
+    resolveVariantPropertyValues(graph, materialized)
+    applyDocumentLayoutBindings(graph, savedSizeNodes, materialized, layoutScales)
+    applyDocumentPaintBindings(graph, materialized)
   })
   return { graph, sources, components, componentIds, savedSizeNodes }
 }

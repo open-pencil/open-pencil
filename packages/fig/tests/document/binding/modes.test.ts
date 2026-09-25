@@ -17,7 +17,7 @@ test('saved occurrence dimensions win over unscaled bindings without blocking sp
     itemSpacing: 15,
     boundVariables: { width: variable.id, height: variable.id, itemSpacing: variable.id }
   })
-  applyDocumentLayoutBindings(graph, new Set([node.id]))
+  applyDocumentLayoutBindings(graph, new Set([node.id]), [node])
   expect(node.width).toBe(14.253506660461426)
   expect(node.height).toBe(14.253506660461426)
   expect(node.itemSpacing).toBe(16)

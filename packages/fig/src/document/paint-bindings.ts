@@ -3,10 +3,9 @@ import { copyFills, copyStrokes, type SceneGraph, type SceneNode } from '@open-p
 /** Resolve bound paint colors only after occurrence hierarchy and modes are available. */
 export function applyDocumentPaintBindings(
   graph: SceneGraph,
-  existingNodeIds: ReadonlySet<string>
+  materialized: readonly SceneNode[]
 ): void {
-  for (const node of graph.getAllNodes()) {
-    if (existingNodeIds.has(node.id)) continue
+  for (const node of materialized) {
     // Most nodes bind nothing, so neither the entry array nor the change object is built
     // until a paint binding is actually found.
     let changes: Partial<SceneNode> | undefined
