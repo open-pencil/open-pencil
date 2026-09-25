@@ -1,13 +1,11 @@
 import { afterEach, describe, expect, test } from 'bun:test'
-import { execFile } from 'node:child_process'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
-import { promisify } from 'node:util'
+import { join } from 'node:path'
+
+import { createTarGzip } from 'nanotar'
 
 import { inspectTarball, packageBinTargets, packageExportTargetPaths } from '../src/tarball'
-
-const execFileAsync = promisify(execFile)
 
 describe('tarball metadata', () => {
   test('normalizes string and named binaries', () => {
@@ -50,16 +48,17 @@ describe('inspectTarball', () => {
     )
   })
 
+  /** Build the archive in-process, so the test never depends on a tar executable. */
   async function createTarball(files: Record<string, string>): Promise<string> {
     const root = await mkdtemp(join(tmpdir(), 'open-pencil-tarball-'))
     temporaryDirectories.push(root)
-    for (const [file, text] of Object.entries(files)) {
-      const path = join(root, 'package', file)
-      await mkdir(dirname(path), { recursive: true })
-      await writeFile(path, text)
-    }
     const tarball = join(root, 'package.tgz')
-    await execFileAsync('tar', ['-czf', tarball, '-C', root, 'package'])
+    await writeFile(
+      tarball,
+      await createTarGzip(
+        Object.entries(files).map(([file, data]) => ({ name: `package/${file}`, data }))
+      )
+    )
     return tarball
   }
 
