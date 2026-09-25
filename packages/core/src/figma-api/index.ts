@@ -21,6 +21,7 @@ import type { RasterExportFormat } from '#core/io/formats/raster'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
 
 import { combineComponentsAsVariants, exposeInstanceSwap } from './components'
+import { containerRectInParent } from './container-bounds'
 import type {
   FigmaBooleanOperationNode,
   FigmaComponentNode,
@@ -206,7 +207,12 @@ export class FigmaAPI implements NodeProxyHost {
     index?: number
   ): FigmaGroupNode {
     const parentId = this._nodeId(parent)
-    const groupNode = this.graph.createNode('GROUP', parentId)
+    const nodeIds = nodes.map((node) => this._nodeId(node))
+    const groupNode = this.graph.createNode(
+      'GROUP',
+      parentId,
+      nodeIds.length > 0 ? containerRectInParent(this.graph, nodeIds, parentId) : undefined
+    )
     for (const n of nodes) {
       this.graph.reparentNode(this._nodeId(n), groupNode.id)
     }
@@ -370,14 +376,10 @@ export class FigmaAPI implements NodeProxyHost {
   ): FigmaBooleanOperationNode {
     if (nodes.length < 2) throw new Error('Need at least 2 nodes for boolean operation')
     const parentId = this._nodeId(parent)
-    const first = this.graph.getNode(this._nodeId(nodes[0]))
-    if (!first) throw new Error('Node not found')
+    const nodeIds = nodes.map((node) => this._nodeId(node))
     const group = this.graph.createNode('BOOLEAN_OPERATION', parentId, {
       name: `Boolean ${operation.toLowerCase()}`,
-      x: first.x,
-      y: first.y,
-      width: first.width,
-      height: first.height,
+      ...containerRectInParent(this.graph, nodeIds, parentId),
       booleanOperation: operation
     })
     for (const node of nodes) {
