@@ -66,6 +66,7 @@
     "@hono/node-server": "^1.19.17",
     "@modelcontextprotocol/server": "^2.0.0",
     "@open-pencil/core": "workspace:*",
+    "@open-pencil/scene-graph": "workspace:*",
     "@valibot/to-json-schema": "^1.8.0",
     "hono": "^4.13.2",
     "package-manager-detector": "^1.8.0",
