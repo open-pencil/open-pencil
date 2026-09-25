@@ -9,7 +9,7 @@ if (
   typeof mod.effectiveFigmaRawNodeFields !== 'function' ||
   typeof mod.parseFigBuffer !== 'function' ||
   typeof mod.writeFigArchive !== 'function' ||
-  typeof instanceOverrides.populateAndApplyOverrides !== 'function' ||
+  typeof instanceOverrides.interpretInstance !== 'function' ||
   typeof nodeChange.convertLineHeight !== 'function' ||
   typeof nodeChange.sceneNodeToKiwi !== 'function'
 ) {

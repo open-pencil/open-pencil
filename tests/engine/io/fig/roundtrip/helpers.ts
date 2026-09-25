@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/core'
 import type { ComponentPropertyDefinition } from '@open-pencil/scene-graph'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
@@ -13,16 +15,12 @@ export interface Mismatch {
 export interface FixtureSpec {
   file: string
   fileSize: number
-  nodeCount: number
-  nodeTypes: Record<string, number>
   schemaSize: number
   thumbnailSize: number
   thumbnailWidth: number
   thumbnailHeight: number
   imageCount: number
   figKiwiVersion: number
-  g1ExportSize: number
-  g2ExportSize: number
 }
 
 export interface VerifierContext {
@@ -97,11 +95,12 @@ function sameNodeReferences(
     a.length === b.length &&
     a.every((value, index) => {
       const other = b[index]
-      return (
-        other !== undefined &&
-        (sameNodeReference(ctx, value, other) ||
-          (!ctx.aGraph.getNode(value) && !ctx.bGraph.getNode(other) && value === other))
-      )
+      if (other === undefined) return false
+      if (sameNodeReference(ctx, value, other)) return true
+      if (ctx.aGraph.getNode(value) || ctx.bGraph.getNode(other)) return false
+      // Preferred choices may be retained external asset keys rather than graph nodes.
+      // A missing runtime/source GUID must not be accepted as an external asset.
+      return !/^\d+:\d+$/.test(value) && value === other
     })
   )
 }
@@ -145,7 +144,7 @@ function verifyComponentPropertyDefinitions(ctx: VerifierContext): boolean {
       preferredValues: otherPreferredValues,
       ...otherRest
     } = other
-    if (JSON.stringify(rest) !== JSON.stringify(otherRest)) return false
+    if (!isEqual(rest, otherRest)) return false
 
     if (definition.type !== 'INSTANCE_SWAP') return defaultValue === otherDefaultValue
     return (
@@ -219,6 +218,15 @@ export const SCENE_VERIFIERS = new Map<string, Verifier>([
       return ctx.a === 'VARIANT' && ctx.b === 'TEXT'
     }
   ],
+  ...(['fillStyleId', 'strokeStyleId', 'textStyleId', 'effectStyleId', 'gridStyleId'] as const).map(
+    (field): [string, Verifier] => [
+      field,
+      (ctx) =>
+        typeof ctx.a === 'string' &&
+        typeof ctx.b === 'string' &&
+        sameNodeReference(ctx, ctx.a, ctx.b)
+    ]
+  ),
   ['componentPropertyDefinitions', verifyComponentPropertyDefinitions],
   ['componentPropertyAssignments', verifyComponentPropertyAssignments]
 ])
@@ -239,7 +247,7 @@ function verifyAEntries(
     if (aliasA?.guid) {
       const found = bEntries.find((entryB) => {
         const aliasB = entryB.variableData?.value?.alias
-        return aliasB?.guid && JSON.stringify(aliasB.guid) === JSON.stringify(aliasA.guid)
+        return aliasB?.guid && isEqual(aliasB.guid, aliasA.guid)
       })
       if (!found) {
         ctx.errors.push({
@@ -250,17 +258,18 @@ function verifyAEntries(
       }
     }
     if (aliasA?.assetRef) {
-      const found = bEntries.find((entryB) => {
+      const matches = bEntries.filter((entryB) => {
         const aliasB = entryB.variableData?.value?.alias
-        return (
-          aliasB?.assetRef && JSON.stringify(aliasB.assetRef) === JSON.stringify(aliasA.assetRef)
-        )
+        return aliasB?.assetRef && isEqual(aliasB.assetRef, aliasA.assetRef)
       })
-      if (found && found.variableField !== entryA.variableField) {
+      if (
+        matches.length > 0 &&
+        !matches.some((entryB) => entryB.variableField === entryA.variableField)
+      ) {
         ctx.errors.push({
           path: ctx.path,
           key: ctx.key,
-          message: `library variable field mismatch: expected ${entryA.variableField}, got ${found.variableField}`
+          message: `library variable field missing: ${entryA.variableField}`
         })
       }
     }
@@ -283,7 +292,7 @@ function verifyBEntries(
     if (aliasB?.guid) {
       const found = aEntries.find((entryA) => {
         const aliasA = entryA.variableData?.value?.alias
-        return aliasA?.guid && JSON.stringify(aliasA.guid) === JSON.stringify(aliasB.guid)
+        return aliasA?.guid && isEqual(aliasA.guid, aliasB.guid)
       })
       if (!found) {
         ctx.errors.push({
@@ -339,16 +348,16 @@ function verifyVarAlias(a: unknown, b: unknown): boolean {
   const bGuid = bAlias?.guid
   const aRef = aAlias?.assetRef
   const bRef = bAlias?.assetRef
-  if (aGuid && bGuid) return JSON.stringify(aGuid) === JSON.stringify(bGuid)
+  if (aGuid && bGuid) return isEqual(aGuid, bGuid)
   if ((aRef && bGuid) || (aGuid && bRef)) return true
-  if (aRef && bRef) return JSON.stringify(aRef) === JSON.stringify(bRef)
+  if (aRef && bRef) return isEqual(aRef, bRef)
   return false
 }
 
 /** Verifier that defaults undefined values and compares strictly. */
 function defaultEqual(defaultVal: unknown): Verifier {
   return (ctx) => {
-    if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+    if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
     const aVal = ctx.a === undefined ? defaultVal : ctx.a
     const bVal = ctx.b === undefined ? defaultVal : ctx.b
     return aVal === bVal
@@ -359,12 +368,16 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'letterSpacing',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const g1raw = ctx.b as JSONObject | undefined
       const node = ctx.aNodes.get(ctx.path)
       if (!node || node.fontSize == null) return true
       const expected = node.letterSpacing
-      const actual = g1raw?.value as number | undefined
+      const value = g1raw?.value
+      let actual = typeof value === 'number' ? value : undefined
+      if (actual !== undefined && g1raw?.units === 'PERCENT') {
+        actual = (actual * node.fontSize) / 100
+      }
       if (expected != null && actual != null && Math.abs(expected - actual) > 0.05) {
         ctx.errors.push({
           path: ctx.path,
@@ -378,7 +391,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'lineHeight',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const g1raw = ctx.b as JSONObject | undefined
       const node = ctx.aNodes.get(ctx.path)
       if (!node || node.lineHeight == null) return true
@@ -390,7 +403,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'variableConsumptionMap',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const ga = ctx.a as VariableConsumptionMapShape | undefined
       const gb = ctx.b as VariableConsumptionMapShape | undefined
       verifyVariableConsumption(ga, gb, ctx)
@@ -400,7 +413,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'parameterConsumptionMap',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       return true
     }
   ],
@@ -412,14 +425,14 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'componentPropDefs',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       return verifyComponentPropDefs(ctx.a, ctx.b)
     }
   ],
   [
     'derivedTextData',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       return verifyDerivedTextData(ctx)
     }
   ],
@@ -427,7 +440,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'indentationLevel',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const aVal = ctx.a === undefined ? 0 : ctx.a
       const bVal = ctx.b === undefined ? 0 : ctx.b
       return aVal === bVal
@@ -436,7 +449,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'sourceDirectionality',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const aVal = ctx.a === undefined ? 'AUTO' : ctx.a
       const bVal = ctx.b === undefined ? 'AUTO' : ctx.b
       return aVal === bVal
@@ -445,7 +458,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'listStartOffset',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const aVal = ctx.a === undefined ? 0 : ctx.a
       const bVal = ctx.b === undefined ? 0 : ctx.b
       return aVal === bVal
@@ -454,7 +467,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'isFirstLineOfList',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const aVal = ctx.a === undefined ? false : ctx.a
       const bVal = ctx.b === undefined ? false : ctx.b
       return aVal === bVal
@@ -463,7 +476,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'directionality',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const aVal = ctx.a === undefined ? 'AUTO' : ctx.a
       const bVal = ctx.b === undefined ? 'AUTO' : ctx.b
       return aVal === bVal
@@ -472,7 +485,7 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'directionalityIntent',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const aVal = ctx.a === undefined ? 'AUTO' : ctx.a
       const bVal = ctx.b === undefined ? 'AUTO' : ctx.b
       return aVal === bVal
@@ -481,14 +494,14 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'fontVersion',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       return ctx.b === '' || ctx.a === ctx.b
     }
   ],
   [
     'postscript',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       return ctx.b === '' || ctx.a === ctx.b
     }
   ],
@@ -496,14 +509,14 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'textUserLayoutVersion',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
-      return (ctx.a === 3 || ctx.a === 4 || ctx.a === 5) && ctx.b === 4
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
+      return ctx.a === ctx.b || ((ctx.a === 3 || ctx.a === 4 || ctx.a === 5) && ctx.b === 4)
     }
   ],
   [
     'blendMode',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       const aVal = ctx.a === undefined ? 'NORMAL' : ctx.a
       const bVal = ctx.b === undefined ? 'NORMAL' : ctx.b
       return aVal === bVal
@@ -515,14 +528,14 @@ export const RAW_VERIFIERS = new Map<string, Verifier>([
   [
     'colorVar',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       return verifyVarAlias(ctx.a, ctx.b)
     }
   ],
   [
     'opacityVar',
     (ctx) => {
-      if (isIdempotent(ctx)) return JSON.stringify(ctx.a) === JSON.stringify(ctx.b)
+      if (isIdempotent(ctx)) return isEqual(ctx.a, ctx.b)
       return verifyVarAlias(ctx.a, ctx.b)
     }
   ]

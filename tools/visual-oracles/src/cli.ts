@@ -20,6 +20,11 @@ const main = defineCommand({
       'tools/visual-oracles/src/operations/export-fixtures.ts'
     ),
     analyze: () => import('./commands/analyze').then((module) => module.default),
+    'activate-tab': operationCommand(
+      'activate-tab',
+      'Bring a Figma desktop tab to the front by title before an oracle capture',
+      'tools/visual-oracles/src/operations/activate-tab.ts'
+    ),
     'update-report': operationCommand(
       'update-report',
       'Update the visual comparison report',

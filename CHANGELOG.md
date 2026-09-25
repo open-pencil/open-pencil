@@ -16,9 +16,14 @@
 
 ### Fixed
 
+- Export the instance overrides you make in OpenPencil to `.fig` beyond text and fill colour — strokes, size, padding and spacing, sizing modes, text styles, visibility, name, opacity, and variable bindings, including the variable bound to an overridden fill — addressed through nested instances so Figma applies each one to the right layer.
 - Show what to update instead of a blank window when the browser or system WebView is too old, naming the detected macOS, Safari, Chrome, Edge, Firefox, WebKitGTK, or WebView2 version and linking a prefilled bug report, and explain a failed start the same way (#744).
 - Start on macOS 13 with WebKit older than Safari 17.4, which previously failed with `Promise.withResolvers is not a function` (#744).
 - Evaluate the `**` operator in the AI and MCP `calc` tool, which its own description advertised but which the tool rejected. `calc` now accepts exactly the arithmetic it documents — `+ - * / % **`, parentheses and `min max floor ceil round abs sqrt pow` — and no longer evaluates undocumented expressions such as `random()`, factorials, trigonometry, strings, arrays, or property access.
+
+### Performance
+
+- Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, and each page resolves only the layers it adds instead of rescanning the whole document. A 33-page file loads about a fifth quicker, and pages after the first in a 121-page library load about twice as fast.
 
 ### Security
 

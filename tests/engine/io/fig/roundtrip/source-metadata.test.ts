@@ -81,8 +81,14 @@ describe('fig roundtrip source metadata', () => {
       { axis: 'Y', offset: 84 }
     ])
 
-    expect(changes.get('4:4812')?.parentIndex?.position).toBe('~~~~~~~~~~1')
-    expect(changes.get('4:4813')?.parentIndex?.position).toBe('~~~~~~~~~~3')
+    // Export generates a consistent sequence rather than mixing saved and generated keys.
+    const firstPosition = changes.get('4:4812')?.parentIndex?.position
+    const secondPosition = changes.get('4:4813')?.parentIndex?.position
+    expect(typeof firstPosition).toBe('string')
+    expect(typeof secondPosition).toBe('string')
+    if (firstPosition === undefined || secondPosition === undefined)
+      throw new Error('Missing exported sibling positions')
+    expect(firstPosition < secondPosition).toBe(true)
   })
 
   test('edited imported nodes export current geometry and paints', async () => {

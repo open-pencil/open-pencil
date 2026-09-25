@@ -7,9 +7,10 @@ import {
   SceneGraph,
   type SceneNode
 } from '@open-pencil/core'
+import { populateFigPage } from '@open-pencil/core/io/formats/fig'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { collectAllNodes, countByType } from '#tests/helpers/fig-traversal'
+import { collectAllNodes, countByType } from '#tests/helpers/fig/traversal'
 
 setDefaultTimeout(60_000)
 
@@ -221,7 +222,10 @@ describe('roundtrip: export → re-import', () => {
     const internal = allPages.find((p) => p.internalOnly)
     expect(internal).toBeDefined()
     expect(internal?.name).toBe('Internal Only Canvas')
-    expect(reImported.getChildren(internal?.id ?? '').length).toBe(1)
+    if (!internal) throw new Error('Missing internal page')
+    // Internal content is retained but expanded only when explicitly requested.
+    expect(populateFigPage(reImported, internal.id)).toBe(true)
+    expect(reImported.getChildren(internal.id).length).toBe(1)
   })
 
   test('preserves node count', () => {

@@ -514,6 +514,9 @@ function configureTextLeaf(
       const cached = cache.get(cacheKey)
       if (cached) return cached
 
+      if (constraintW === child.width && (child.derivedTextGlyphs?.length ?? 0) > 0) {
+        return { width: constraintW, height: child.height }
+      }
       const measured = getTextMeasurer()?.(child, constraintW)
       const result = {
         width: constraintW,

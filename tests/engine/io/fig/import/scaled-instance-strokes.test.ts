@@ -1,9 +1,46 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { canvas, doc, node } from './legacy/helpers'
+
+for (const uniformScale of [false, true]) {
+  test(`uses recorded uniform scale rather than root stroke weight (scaled=${uniformScale})`, () => {
+    const guid = (localID: number) => ({ sessionID: 1, localID })
+    const { graph, sources } = materializeDocument([
+      { guid: guid(0), type: 'DOCUMENT' },
+      { guid: guid(1), type: 'CANVAS', parentIndex: { guid: guid(0), position: '!' } },
+      {
+        guid: guid(2),
+        type: 'SYMBOL',
+        parentIndex: { guid: guid(1), position: '!' },
+        size: { x: 24, y: 24 }
+      },
+      {
+        guid: guid(3),
+        type: 'VECTOR',
+        parentIndex: { guid: guid(2), position: '!' },
+        size: { x: 4, y: 8 },
+        strokeWeight: 2,
+        strokePaints: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 } }],
+        horizontalConstraint: 'SCALE',
+        verticalConstraint: 'SCALE'
+      },
+      {
+        guid: guid(4),
+        type: 'INSTANCE',
+        parentIndex: { guid: guid(1), position: '"' },
+        size: { x: 16, y: 16 },
+        strokeWeight: 2 / 3,
+        symbolData: { symbolID: guid(2), uniformScaleFactor: uniformScale ? 2 / 3 : 1 }
+      }
+    ])
+    const id = sources.get('1:4')
+    if (!id) throw new Error('Missing instance')
+    expect(graph.getChildren(id)[0].strokes[0].weight).toBeCloseTo(uniformScale ? 4 / 3 : 2)
+  })
+}
 
 function pointGeometry(x: number, y: number): Uint8Array {
   const bytes = new Uint8Array(9)
@@ -20,7 +57,7 @@ describe('fig import scaled instance strokes', () => {
     const vectorGuid = { sessionID: 1, localID: 11 }
     const instanceGuid = { sessionID: 1, localID: 20 }
 
-    const graph = importNodeChanges(
+    const graph = materializeDocument(
       [
         doc(),
         canvas(),
@@ -52,9 +89,8 @@ describe('fig import scaled instance strokes', () => {
         } as Partial<NodeChange>)
       ],
       [],
-      undefined,
-      { populate: 'all' }
-    )
+      { derivedBounds: true }
+    ).graph
 
     const instance = Array.from(graph.getAllNodes()).find(
       (sceneNode) => sceneNode.name === 'INSTANCE_20'
@@ -68,7 +104,7 @@ describe('fig import scaled instance strokes', () => {
   test('does not scale explicit derived vector geometry twice', () => {
     const componentGuid = { sessionID: 1, localID: 21 }
     const vectorGuid = { sessionID: 1, localID: 22 }
-    const graph = importNodeChanges(
+    const graph = materializeDocument(
       [
         doc(),
         canvas(),
@@ -97,9 +133,8 @@ describe('fig import scaled instance strokes', () => {
         } as Partial<NodeChange>)
       ],
       [pointGeometry(12, 12), pointGeometry(6, 6)],
-      undefined,
-      { populate: 'all' }
-    )
+      { derivedBounds: true }
+    ).graph
 
     const instance = Array.from(graph.getAllNodes()).find(
       (sceneNode) => sceneNode.name === 'INSTANCE_23'
@@ -116,11 +151,11 @@ describe('fig import scaled instance strokes', () => {
     expect(view.getFloat32(5, true)).toBe(6)
   })
 
-  test('applies explicit instance stroke scale to scaled vectors', () => {
+  test('applies the explicit uniform scale to inherited vector strokes', () => {
     const componentGuid = { sessionID: 1, localID: 30 }
     const vectorGuid = { sessionID: 1, localID: 31 }
 
-    const graph = importNodeChanges(
+    const graph = materializeDocument(
       [
         doc(),
         canvas(),
@@ -148,13 +183,12 @@ describe('fig import scaled instance strokes', () => {
         node('INSTANCE', 40, 1, {
           size: { x: 16, y: 16 },
           strokeWeight: 2 / 3,
-          symbolData: { symbolID: componentGuid }
+          symbolData: { symbolID: componentGuid, uniformScaleFactor: 2 / 3 }
         } as Partial<NodeChange>)
       ],
       [],
-      undefined,
-      { populate: 'all' }
-    )
+      { derivedBounds: true }
+    ).graph
 
     const instance = Array.from(graph.getAllNodes()).find(
       (sceneNode) => sceneNode.name === 'INSTANCE_40'

@@ -41,6 +41,7 @@ import {
 } from './strokes'
 import { withTextParagraph } from './text'
 import {
+  canDrawSavedText,
   drawDerivedText,
   drawReflowedPathTextSilhouettes,
   isReflowedPathText
@@ -923,6 +924,10 @@ function drawResolvedPathText(
   )
 }
 
+function drawSavedText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): boolean {
+  return canDrawSavedText(node, fill) && drawDerivedText(r, canvas, node)
+}
+
 export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fill?: Fill): void {
   const text = node.text
   if (!text) return
@@ -932,6 +937,10 @@ export function renderText(r: SkiaRenderer, canvas: Canvas, node: SceneNode, fil
     canvas.clipRect(r.ck.LTRBRect(0, 0, node.width, node.height), r.ck.ClipOp.Intersect, false)
   }
 
+  if (drawSavedText(r, canvas, node, fill)) {
+    canvas.restore()
+    return
+  }
   const fontReadiness = r.nodeFontReadiness(node)
   if (fontReadiness === 'pending') {
     canvas.restore()

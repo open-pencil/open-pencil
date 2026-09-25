@@ -13,10 +13,10 @@ describe('importClipboardNodes: instance child linkage', () => {
     const page = graph.addPage('Test')
     const pageId = page.id
 
-    // Component with one FRAME child, plus an INSTANCE referencing it that carries a
-    // SERIALIZED child (as Figma exports instances with their instantiated subtree).
-    // The instance child is renamed ('Header v2') — exactly the case the sync-time
-    // name+type fallback cannot match, so paste-time linkage is required.
+    // Component with one FRAME child, plus an INSTANCE referencing it whose child is
+    // renamed through a saved name override, the way Figma records it. The reader
+    // expands the child from the component and links it, so the rename cannot defeat
+    // a later sync.
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
       {
@@ -48,15 +48,12 @@ describe('importClipboardNodes: instance child linkage', () => {
         name: 'Card',
         size: { x: 200, y: 60 },
         transform: { m00: 1, m01: 0, m02: 300, m10: 0, m11: 1, m12: 0 },
-        symbolData: { symbolID: { sessionID: 1, localID: 10 } }
-      },
-      {
-        guid: { sessionID: 2, localID: 21 },
-        parentIndex: { guid: { sessionID: 2, localID: 20 }, position: '!' },
-        type: 'FRAME',
-        name: 'Header v2',
-        size: { x: 200, y: 40 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+        symbolData: {
+          symbolID: { sessionID: 1, localID: 10 },
+          symbolOverrides: [
+            { guidPath: { guids: [{ sessionID: 1, localID: 11 }] }, name: 'Header v2' }
+          ]
+        }
       }
     ] as NodeChange[]
 
@@ -73,8 +70,7 @@ describe('importClipboardNodes: instance child linkage', () => {
     expect(instance.componentId).toBe(component.id)
     expect(instance.childIds).toHaveLength(1)
 
-    // Paste-time linkage: the serialized instance child is stamped with its component
-    // child's id — name-independent (positional + type), so renames do not defeat it.
+    // The expanded child carries the override and its component child's id.
     const instChild = getNodeOrThrow(graph, instance.childIds[0])
     expect(instChild.name).toBe('Header v2')
     expect(instChild.componentId).toBe(compChild.id)

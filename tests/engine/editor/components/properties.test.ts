@@ -65,6 +65,10 @@ describe('component property actions', () => {
     editor.undo.undo()
     const restored = childByName(editor, instance.id, 'Icon A')
     expect(restored?.componentId).toBe(iconA.id)
+    editor.undo.redo()
+    expect(childByName(editor, instance.id, 'Icon B')?.componentId).toBe(iconB.id)
+    editor.undo.undo()
+    expect(childByName(editor, instance.id, 'Icon A')?.componentId).toBe(iconA.id)
     expect(restored?.childIds.map((id) => editor.graph.getNode(id)?.name)).toEqual(['A shape'])
   })
 

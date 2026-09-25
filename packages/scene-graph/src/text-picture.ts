@@ -1,3 +1,6 @@
+import { isEqual } from 'es-toolkit/predicate'
+
+import { TEXT_SHAPING_FIELDS, TEXT_LAYOUT_FIELDS } from './fields/text'
 import type { SceneNode } from './types'
 
 /**
@@ -5,36 +8,14 @@ import type { SceneNode } from './types'
  * because wrapping/layout depends on the box.
  */
 export const TEXT_PICTURE_KEYS: ReadonlySet<string> = new Set([
-  'text',
-  'fontSize',
-  'fontFamily',
-  'fontWeight',
-  'italic',
-  'textAlignHorizontal',
-  'textDirection',
-  'textAlignVertical',
-  'lineHeight',
-  'letterSpacing',
+  ...TEXT_SHAPING_FIELDS,
   'textDecoration',
-  'textCase',
-  'styleRuns',
   'fills',
   'width',
   'height'
 ])
 
-export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set([
-  'text',
-  'fontSize',
-  'fontFamily',
-  'fontWeight',
-  'italic',
-  'textDirection',
-  'lineHeight',
-  'letterSpacing',
-  'textCase',
-  'styleRuns'
-])
+export const GLYPH_AFFECTING_KEYS: ReadonlySet<string> = new Set(TEXT_SHAPING_FIELDS)
 
 /**
  * Shared by SceneGraph.updateNode and updateNodePreview (drag hot path) so the
@@ -46,16 +27,27 @@ export function textCacheInvalidationChanges(
   changes: Partial<SceneNode>
 ): Partial<SceneNode> {
   const invalidated: Partial<SceneNode> = {}
-  const keys = Object.keys(changes)
+  const keys = Object.keys(changes).filter(
+    (key) => !isEqual(node[key as keyof SceneNode], changes[key as keyof SceneNode])
+  )
   if (node.textPicture && keys.some((key) => TEXT_PICTURE_KEYS.has(key)))
     invalidated.textPicture = null
-  const glyphsInvalidated = keys.some((key) => GLYPH_AFFECTING_KEYS.has(key))
+  const glyphsInvalidated =
+    keys.some((key) => GLYPH_AFFECTING_KEYS.has(key)) ||
+    TEXT_LAYOUT_FIELDS.some((key) => keys.includes(key))
+  if (glyphsInvalidated && !('derivedLayout' in changes)) invalidated.derivedLayout = null
   // A successful path-text edit supplies reflowed glyphs in `changes`. Every
   // other mutation path must drop stale baked glyphs and path identity rather
   // than pair new text/style with old visible outlines.
   if (node.derivedTextGlyphs && glyphsInvalidated && !changes.derivedTextGlyphs) {
-    invalidated.derivedTextGlyphs = null
-    invalidated.textPathData = null
+    // Path-text resize supplies transformed glyphs through the resize workflow. A raw box
+    // preview keeps them until that workflow commits or an actual shaping edit occurs.
+    const onlyPathBoxResize =
+      !!node.textPathData && keys.every((key) => key === 'width' || key === 'height')
+    if (!onlyPathBoxResize) {
+      invalidated.derivedTextGlyphs = null
+      invalidated.textPathData = null
+    }
   }
   return invalidated
 }

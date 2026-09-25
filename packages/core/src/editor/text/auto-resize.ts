@@ -1,35 +1,16 @@
-import type { SceneNode } from '@open-pencil/scene-graph'
+import { TEXT_METRIC_FIELDS, type SceneNode } from '@open-pencil/scene-graph'
 
 import { estimateTextSize, getTextMeasurer } from '#core/layout/text-measurement'
 
 export const TEXT_AUTO_RESIZE_KEYS = new Set<keyof SceneNode>([
-  'text',
-  'fontSize',
-  'fontFamily',
-  'fontWeight',
-  'italic',
+  ...TEXT_METRIC_FIELDS,
   'lineHeight',
-  'letterSpacing',
-  'styleRuns',
-  'fontVariations',
-  'fontFeatures',
   'textAutoResize',
   'width',
   'maxLines'
 ])
 
-const TEXT_AUTO_WIDTH_KEYS = new Set<keyof SceneNode>([
-  'text',
-  'fontSize',
-  'fontFamily',
-  'fontWeight',
-  'italic',
-  'letterSpacing',
-  'styleRuns',
-  'fontVariations',
-  'fontFeatures',
-  'textAutoResize'
-])
+const TEXT_AUTO_WIDTH_KEYS = new Set<keyof SceneNode>([...TEXT_METRIC_FIELDS, 'textAutoResize'])
 
 export function hasTextAutoResizeChange(changes: Partial<SceneNode>): boolean {
   return Object.keys(changes).some((key) => TEXT_AUTO_RESIZE_KEYS.has(key as keyof SceneNode))

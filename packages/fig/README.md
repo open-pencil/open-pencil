@@ -19,6 +19,12 @@ Current ownership:
 - SceneGraph-to-`NodeChange` export conversion with an explicit glyph-outline runtime service
 - Package-local archive, conversion, instance, export, and dist smoke tests
 
+## Architecture documentation
+
+Start with [the package docs](./docs/README.md) for the source model, instance evaluation,
+materialization, document sessions, export, and validation contracts. The replacement is
+complete only when every consumer is migrated and the old reader is deleted.
+
 Planned ownership:
 
 - Oracle-backed `.fig` fixtures

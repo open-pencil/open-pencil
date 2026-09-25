@@ -2,9 +2,8 @@ import { promiseTimeout } from '@vueuse/core'
 import { shallowRef, computed, triggerRef } from 'vue'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import { findFigThumbnailPageId } from '@open-pencil/core/io/formats/fig'
+import { findFigThumbnailPageId, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { renderThumbnail } from '@open-pencil/core/io/formats/raster'
-import { populateLazyFigImportRoots } from '@open-pencil/core/kiwi'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -215,7 +214,7 @@ async function readFigForTab(file: File, signal?: AbortSignal): Promise<SceneGra
   if (firstPageId) computeAllLayouts(imported, firstPageId)
   const coverPageId = findFigThumbnailPageId(imported.getPages())
   if (coverPageId && coverPageId !== firstPageId) {
-    populateLazyFigImportRoots(imported, [coverPageId])
+    populateFigPage(imported, coverPageId)
     computeAllLayouts(imported, coverPageId)
   }
   return imported

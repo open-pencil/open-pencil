@@ -47,27 +47,12 @@ const SPECS: FixtureSpec[] = [
   {
     file: 'tests/fixtures/gold-preview.fig',
     fileSize: 550091,
-    nodeCount: 38323,
-    nodeTypes: {
-      FRAME: 4006,
-      GROUP: 519,
-      ROUNDED_RECTANGLE: 3752,
-      VECTOR: 14221,
-      ELLIPSE: 24,
-      INSTANCE: 11144,
-      TEXT: 3260,
-      POLYGON: 94,
-      COMPONENT: 1293,
-      COMPONENT_SET: 10
-    },
     schemaSize: 25036,
     thumbnailSize: 23810,
     thumbnailWidth: 400,
     thumbnailHeight: 239,
     imageCount: 3,
-    figKiwiVersion: 101,
-    g1ExportSize: 498456,
-    g2ExportSize: 498456
+    figKiwiVersion: 101
   }
 ]
 
@@ -499,19 +484,33 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(isZstdCompressed(g0Chunks[1])).toBe(true)
     })
 
-    test('G0 node count', async () => {
+    test('G0 is one connected tree with unique child ownership', async () => {
       await g0Ready
-      expect(g0.size).toBe(spec.nodeCount)
+      const visited = new Set<string>()
+      const pending = [g0Graph.rootId]
+      while (pending.length) {
+        const id = pending.pop()
+        if (!id) throw new Error('Missing traversal ID')
+        expect(visited.has(id), `duplicate or cyclic child ${id}`).toBe(false)
+        visited.add(id)
+        const node = g0Graph.getNode(id)
+        if (!node) throw new Error(`Missing graph node ${id}`)
+        for (const childId of node.childIds) {
+          expect(g0Graph.getNode(childId)?.parentId).toBe(node.id)
+          pending.push(childId)
+        }
+      }
+      expect(visited.size).toBe(g0Graph.nodes.size)
+      expect(g0.size).toBeGreaterThan(0)
     })
 
-    test('G0 node type distribution', async () => {
+    test('G0 instances reference real component definitions', async () => {
       await g0Ready
-      const typeCounts = new Map<string, number>()
-      for (const node of g0.values()) {
-        typeCounts.set(node.type, (typeCounts.get(node.type) ?? 0) + 1)
-      }
-      for (const [type, count] of Object.entries(spec.nodeTypes)) {
-        expect(typeCounts.get(type) ?? 0, `node type ${type}`).toBe(count)
+      const instances = [...g0.values()].filter((node) => node.type === 'INSTANCE')
+      expect(instances.length).toBeGreaterThan(0)
+      for (const instance of instances) {
+        expect(instance.componentId).not.toBeNull()
+        expect(g0Graph.getNode(instance.componentId ?? '')?.type).toBe('COMPONENT')
       }
     })
 
@@ -522,14 +521,33 @@ function verifyFixture(spec: FixtureSpec): void {
       expect(g1Chunks[0].byteLength).toBe(g0Chunks[0].byteLength)
     })
 
-    test('G1 export size', async () => {
+    test('G1 unedited export preserves the original archive bytes', async () => {
       await ensureG1()
-      expect(g1Export.byteLength).toBe(spec.g1ExportSize)
+      expect(g1Export).toEqual(new Uint8Array(g0Bytes))
     })
 
-    test('G2 export size', async () => {
+    test('G2 unedited export remains byte-identical', async () => {
       await ensureG2()
-      expect(g2Export.byteLength).toBe(spec.g2ExportSize)
+      expect(g2Export).toEqual(g1Export)
+    })
+
+    test('edited export re-encodes the document without mutating unloaded source pages', async () => {
+      await g0Ready
+      const edited = await parseFigFile(g0Bytes.slice(0), { populate: 'first-page' })
+      const page = edited.getPages()[0]
+      const name = `${page.name} (edited)`
+      edited.updateNode(page.id, { name })
+      const before = structuredClone([...edited.nodes])
+      const bytes = await exportFigFile(edited)
+      expect(bytes).not.toEqual(new Uint8Array(g0Bytes))
+      expect([...edited.nodes]).toEqual(before)
+      const reopened = await parseFigFile(bytes.slice().buffer as ArrayBuffer)
+      expect(reopened.getPages()[0].name).toBe(name)
+      expect(reopened.figSchemaDeflated).toEqual(edited.figSchemaDeflated)
+      // Unreferenced internal style definitions are outside the reader's reachable closure.
+      const visibleCount = (nodes: Map<string, SceneNode>) =>
+        [...nodes.values()].filter((node) => !node.sharedStyleType).length
+      expect(visibleCount(buildPathMap(reopened))).toBe(visibleCount(g0))
     })
 
     test('G0->G1 node count', async () => {

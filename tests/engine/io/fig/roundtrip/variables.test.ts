@@ -10,7 +10,7 @@ import {
 } from '@open-pencil/core'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { parseFixture } from '#tests/helpers/fig-fixtures'
+import { parseFixture } from '#tests/helpers/fig/fixtures'
 import { runsHeavyTests } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(60_000)
@@ -57,6 +57,50 @@ describe('variable roundtrip', () => {
     expect(strVar).toBeDefined()
     expect(expectDefined(strVar, 'strVar').type).toBe('STRING')
     expect(Object.values(strVar.valuesByMode)[0]).toBe('Hello')
+  })
+
+  test('an instance fill override keeps its own variable alias across export → re-import', async () => {
+    await initCodec()
+    const graph = new SceneGraph()
+    const col = graph.createCollection('Schemes')
+    const onSurface = graph.createVariable('On Surface', 'COLOR', col.id, {
+      r: 0.11,
+      g: 0.1,
+      b: 0.12,
+      a: 1
+    })
+    const onSurfaceVariant = graph.createVariable('On Surface Variant', 'COLOR', col.id, {
+      r: 0.29,
+      g: 0.27,
+      b: 0.31,
+      a: 1
+    })
+    const page = graph.getPages()[0]
+    const component = graph.createNode('COMPONENT', page.id, { name: 'Icon' })
+    const icon = graph.createNode('RECTANGLE', component.id, {
+      name: 'icon',
+      width: 24,
+      height: 24,
+      fills: [
+        { type: 'SOLID', color: { r: 0.11, g: 0.1, b: 0.12, a: 1 }, opacity: 1, visible: true }
+      ]
+    })
+    graph.bindVariable(icon.id, 'fills/0/color', onSurface.id)
+    const instance = graph.createInstance(component.id, page.id)
+    const instanceIcon = expectDefined(graph.getChildren(instance.id)[0], 'instance icon')
+    graph.bindVariable(instanceIcon.id, 'fills/0/color', onSurfaceVariant.id)
+
+    const reimported = await parseFigFile((await exportFigFile(graph)).buffer as ArrayBuffer)
+    const nameOf = (id: string | undefined) => reimported.variables.get(id ?? '')?.name
+    const nodes = [...reimported.getAllNodes()]
+    const componentIcon = nodes.find(
+      (n) => n.name === 'icon' && n.parentId === nodes.find((c) => c.type === 'COMPONENT')?.id
+    )
+    const pastedInstance = nodes.find((n) => n.type === 'INSTANCE')
+    const pastedIcon = reimported.getChildren(expectDefined(pastedInstance, 'instance').id)[0]
+    expect(nameOf(componentIcon?.boundVariables['fills/0/color'])).toBe('On Surface')
+    expect(nameOf(pastedIcon?.boundVariables['fills/0/color'])).toBe('On Surface Variant')
+    expect(pastedIcon?.fills[0]?.color.r).toBeCloseTo(0.29, 2)
   })
 
   test('variable bindings survive export → re-import', async () => {

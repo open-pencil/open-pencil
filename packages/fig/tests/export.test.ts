@@ -17,6 +17,15 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
     expect([0, 93, 94, 188].map(fractionalPosition)).toEqual(['!', '~', '~!', '~~!'])
   })
 
+  test('exports one ordering scheme when preserved and generated siblings are mixed', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const node = graph.createNode('RECTANGLE', page.id)
+    node.source.orderKey = 'z'
+    const change = sceneNodeToKiwi(node, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [])
+    expect(change[0]?.parentIndex?.position).toBe(fractionalPosition(0))
+  })
+
   test('reuses an export-scoped component property definition index', () => {
     const graph = new SceneGraph()
     const page = graph.getPages()[0]

@@ -1,9 +1,7 @@
-import { parseFigBuffer } from '@open-pencil/fig'
 import type { FigPageManifestEntry } from '@open-pencil/kiwi/fig'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { IS_BROWSER } from '#core/constants'
-import { importNodeChanges } from '#core/kiwi/fig/import'
 import { deserializeSceneGraph } from '#core/kiwi/fig/parse/transfer'
 import {
   registerFigPopulationWorker,
@@ -11,6 +9,8 @@ import {
 } from '#core/kiwi/fig/population/client'
 import { createFigSessionWorker } from '#core/kiwi/fig/session/client'
 import type { FigSessionOpenRequest, FigSessionResponse } from '#core/kiwi/fig/session/protocol'
+import { openReaderSession } from '#core/kiwi/fig/session/reader'
+import { registerReaderRecovery, registerReaderSession } from '#core/kiwi/fig/session/recovery'
 import { randomHex } from '#core/random'
 
 export interface ParseFigFileOptions {
@@ -19,18 +19,19 @@ export interface ParseFigFileOptions {
   signal?: AbortSignal
 }
 
+class ReaderSemanticError extends Error {
+  override name = 'ReaderSemanticError'
+}
+
 function parseFigFileSync(buffer: ArrayBuffer, options: ParseFigFileOptions = {}): SceneGraph {
-  const {
-    nodeChanges,
-    blobs,
-    images: imageEntries,
-    figKiwiVersion,
-    figSchemaDeflated
-  } = parseFigBuffer(buffer, options.onPages)
-  const graph = importNodeChanges(nodeChanges, blobs, new Map(imageEntries), options)
-  graph.figKiwiVersion = figKiwiVersion
-  graph.figSchemaDeflated = figSchemaDeflated
-  return graph
+  options.signal?.throwIfAborted()
+  const reader = openReaderSession(buffer, options.populate)
+  options.onPages?.(reader.pages)
+  options.signal?.throwIfAborted()
+  const bytes = buffer.slice(0)
+  registerReaderSession(bytes, reader.session, reader.diagnostics)
+  registerOriginalArchiveRequest(reader.graph, async () => new Uint8Array(bytes.slice(0)))
+  return reader.graph
 }
 
 function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Promise<SceneGraph> {
@@ -65,13 +66,15 @@ function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Prom
         cleanupAbort()
         channel.port1.close()
         worker.terminate()
-        reject(new Error(e.data.error ?? 'Worker failed to parse .fig file'))
+        reject(new ReaderSemanticError(e.data.error ?? 'Worker failed to parse .fig file'))
         return
       }
       try {
         const graph = deserializeSceneGraph(e.data.graph)
-        if (options.populate === 'first-page') {
+        if (options.populate === 'first-page' || options.populate === 'none') {
           cleanupAbort()
+          if (!e.data.checkpoint) throw new Error('Missing reader checkpoint')
+          registerReaderRecovery(graph, buffer.slice(0), e.data.checkpoint)
           registerFigPopulationWorker(graph, worker, channel.port1)
           registerOriginalArchiveRequest(
             graph,
@@ -125,11 +128,9 @@ export async function parseFigFile(
     try {
       return await parseViaWorker(buffer, options)
     } catch (error) {
-      if (options.signal?.aborted) throw error
+      if (options.signal?.aborted || error instanceof ReaderSemanticError) throw error
       console.warn('Worker parsing failed, falling back to main thread:', error)
-      const graph = parseFigFileSync(copy, options)
-      registerOriginalArchiveRequest(graph, async () => new Uint8Array(copy.slice(0)))
-      return graph
+      return parseFigFileSync(copy, options)
     }
   }
   options.signal?.throwIfAborted()

@@ -1,0 +1,24 @@
+[
+  {
+    "component": "6:5",
+    "instance": "6:7",
+    "horizontal": "MAX",
+    "child": {
+      "x": 180,
+      "y": 10,
+      "width": 10,
+      "height": 100
+    }
+  },
+  {
+    "component": "6:9",
+    "instance": "6:11",
+    "horizontal": "STRETCH",
+    "child": {
+      "x": 10,
+      "y": 10,
+      "width": 180,
+      "height": 100
+    }
+  }
+]

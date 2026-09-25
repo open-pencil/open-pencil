@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { canvas, doc, node } from '../helpers'
 
@@ -25,7 +25,7 @@ describe('fig-import: component set detection', () => {
         name: 'State=Hover'
       } as NodeChange
     ]
-    const graph = importNodeChanges(changes, [])
+    const graph = materializeDocument(changes, []).graph
     const page = graph.getPages()[0]
     const set = graph.getChildren(page.id)[0]
     expect(set.type).toBe('COMPONENT_SET')
@@ -38,7 +38,7 @@ describe('fig-import: component set detection', () => {
 
   test('FRAME without componentPropDefs stays FRAME', () => {
     const changes: NodeChange[] = [doc(), canvas(), node('FRAME', 10, 1, { name: 'Regular Frame' })]
-    const graph = importNodeChanges(changes, [])
+    const graph = materializeDocument(changes, []).graph
     const page = graph.getPages()[0]
     const frame = graph.getChildren(page.id)[0]
     expect(frame.type).toBe('FRAME')

@@ -1,4 +1,11 @@
-import { getNodeLocalMatrix, getWorldMatrix, type SceneNode } from '@open-pencil/scene-graph'
+import {
+  getNodeLocalMatrix,
+  getWorldMatrix,
+  TRANSFORM_FIELDS as NODE_TRANSFORM_FIELDS,
+  findInstanceAncestor,
+  rescaleNodeTree,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { assertNodeEditable } from '#core/editor/capabilities'
@@ -6,15 +13,15 @@ import {
   graph,
   nodeId,
   raw,
+  updateNode,
   type NodeProxyInternals,
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 import type { NodeProxyHost } from '#core/figma-api/proxy'
 import { computeAbsoluteRenderBounds } from '#core/figma-api/render-bounds'
-import { rescaleNodeTree } from '#core/figma-api/rescale'
 import type { FigmaTransform } from '#core/figma-api/types'
 
-const TRANSFORM_FIELDS = new Set(['x', 'y', 'rotation', 'flipX', 'flipY'])
+const TRANSFORM_FIELDS: ReadonlySet<string> = new Set(NODE_TRANSFORM_FIELDS)
 
 function assertEditable(target: ProxyThis, internals: NodeProxyInternals): void {
   assertNodeEditable(graph(target, internals), nodeId(target, internals))
@@ -61,8 +68,7 @@ export function installBasicNodeProxyAccessors(
         return raw(this, internals).name
       },
       set(this: ProxyThis, value: string) {
-        assertEditable(this, internals)
-        graph(this, internals).updateNode(nodeId(this, internals), { name: value })
+        updateNode(this, internals, { name: value })
       }
     },
     removed: {
@@ -148,15 +154,18 @@ export function installBasicNodeProxyAccessors(
 
   Object.assign(prototype, {
     resize(this: ProxyThis, width: number, height: number): void {
-      assertEditable(this, internals)
-      graph(this, internals).updateNode(nodeId(this, internals), { width, height })
+      updateNode(this, internals, { width, height })
     },
     resizeWithoutConstraints(this: ProxyThis, width: number, height: number): void {
       ;(this as { resize(width: number, height: number): void }).resize(width, height)
     },
     rescale(this: ProxyThis, scale: number): void {
       assertEditable(this, internals)
-      rescaleNodeTree(graph(this, internals), nodeId(this, internals), scale)
+      const scene = graph(this, internals)
+      const node = raw(this, internals)
+      if (node.parentId && findInstanceAncestor(scene, node.parentId))
+        throw new Error('This property cannot be overridden in an instance: size')
+      rescaleNodeTree(scene, node.id, scale)
     }
   })
 }

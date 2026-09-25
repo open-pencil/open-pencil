@@ -1,0 +1,24 @@
+{
+  "reopened": {
+    "id": "1:12",
+    "width": 33.5,
+    "height": 7,
+    "children": [
+      {
+        "width": 13.5,
+        "left": 6,
+        "binding": {
+          "paddingLeft": {
+            "type": "VARIABLE_ALIAS",
+            "id": "VariableID:0:7"
+          }
+        }
+      }
+    ]
+  },
+  "token": {
+    "width": 35.5,
+    "nestedWidth": 15.5,
+    "left": 8
+  }
+}

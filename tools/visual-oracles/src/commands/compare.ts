@@ -8,12 +8,12 @@ export default defineCommand({
     node: operationCommand(
       'node',
       'Compare one Figma node or clipboard selection',
-      'tools/visual-oracles/src/operations/compare-node.ts'
+      'tools/visual-oracles/src/operations/compare/node.ts'
     ),
     document: operationCommand(
       'document',
       'Compare exact imported-document targets from a manifest',
-      'tools/visual-oracles/src/operations/compare-document.ts'
+      'tools/visual-oracles/src/operations/compare/document.ts'
     )
   }
 })

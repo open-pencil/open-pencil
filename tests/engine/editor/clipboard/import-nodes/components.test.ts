@@ -185,12 +185,13 @@ describe('importClipboardNodes: components', () => {
     expect(children[0].name).toBe('Path')
     expect(children[0].type).toBe('VECTOR')
 
-    // Component should NOT exist as a visible node
-    for (const node of graph.getAllNodes()) {
-      if (node.type === 'COMPONENT' && node.name === 'Icon') {
-        throw new Error('Internal component should not be pasted as visible node')
-      }
-    }
+    // Retain definitions on hidden dependency pages; never select them as pasted roots.
+    const definition = [...graph.getAllNodes()].find(
+      (node) => node.type === 'COMPONENT' && node.name === 'Icon'
+    )
+    expect(definition).toBeDefined()
+    expect(graph.getNode(definition?.parentId ?? '')?.internalOnly).toBe(true)
+    expect(created).not.toContain(definition?.id)
   })
 
   it('detaches orphaned instances to FRAME when component is missing', () => {
@@ -238,7 +239,7 @@ describe('importClipboardNodes: components', () => {
     const button = children[0]
     expect(button.type).toBe('FRAME')
     expect(button.name).toBe('Button')
-    expect(button.componentId).toBe('')
+    expect(button.componentId).toBeNull()
     expect(button.fills).toHaveLength(1)
     expect(button.fills[0].color.b).toBe(1)
     expect(button.cornerRadius).toBe(8)

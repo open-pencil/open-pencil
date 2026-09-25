@@ -22,7 +22,7 @@ export const runtimeScenarios: RuntimeScenario[] = [
   },
   {
     name: 'FIG instance override API',
-    code: "const { populateAndApplyOverrides } = await import('@open-pencil/fig/instance-overrides'); if (typeof populateAndApplyOverrides !== 'function') throw new Error('Fig instance override subpath failed')"
+    code: "const { interpretInstance, materializeInstance } = await import('@open-pencil/fig/instance-overrides'); if (typeof interpretInstance !== 'function' || typeof materializeInstance !== 'function') throw new Error('Fig instance override subpath failed')"
   },
   {
     name: 'SceneGraph package',

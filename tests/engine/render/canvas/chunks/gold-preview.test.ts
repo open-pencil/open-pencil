@@ -5,7 +5,7 @@ import type { SceneGraph } from '@open-pencil/scene-graph'
 import { RenderChunkIndex } from '#core/canvas/renderer/chunks'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)

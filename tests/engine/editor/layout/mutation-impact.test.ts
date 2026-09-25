@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { createLayoutRunner } from '#core/editor/layout-runner'
+import { createLayoutRunner } from '#core/layout/mutations'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id

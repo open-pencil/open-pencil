@@ -2,13 +2,12 @@ import { beforeAll, describe, expect, test } from 'bun:test'
 
 import {
   exportFigFile,
-  importNodeChanges,
   initCodec,
   parseFigFile,
   SceneGraph,
   type NodeChange
 } from '@open-pencil/core'
-import { effectiveFigmaRawNodeFields, parseFigBuffer } from '@open-pencil/fig'
+import { effectiveFigmaRawNodeFields, parseFigBuffer, materializeDocument } from '@open-pencil/fig'
 import { MAX_EXPORT_SCALE } from '@open-pencil/scene-graph'
 
 function decodeExport(bytes: Uint8Array) {
@@ -79,7 +78,7 @@ describe('fig roundtrip export settings', () => {
   })
 
   test('maps native Figma PNG content-scale settings when plugin data is absent', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       frame({
@@ -94,7 +93,7 @@ describe('fig roundtrip export settings', () => {
           }
         ]
       })
-    ])
+    ]).graph
     const importedFrame = [...graph.getAllNodes()].find(
       (node) => node.name === 'Export settings frame'
     )
@@ -119,13 +118,13 @@ describe('fig roundtrip export settings', () => {
 
   test('does not resurrect native export settings after the user clears all rows', async () => {
     // Imported node carries NATIVE export settings (no plugin override).
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       frame({
         exportSettings: [{ imageType: 'PNG', constraint: { type: 'CONTENT_SCALE', value: 2 } }]
       })
-    ])
+    ]).graph
     const node = [...graph.getAllNodes()].find((n) => n.name === 'Export settings frame')
     if (!node) throw new Error('imported frame not found')
     expect(node.exportSettings).toEqual([{ scale: 2, format: 'png' }])
@@ -142,13 +141,13 @@ describe('fig roundtrip export settings', () => {
   })
 
   test('clamps an out-of-range native export scale at the import boundary', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       frame({
         exportSettings: [{ imageType: 'PNG', constraint: { type: 'CONTENT_SCALE', value: 999999 } }]
       })
-    ])
+    ]).graph
     const node = [...graph.getAllNodes()].find((n) => n.name === 'Export settings frame')
     expect(node?.exportSettings).toEqual([{ scale: MAX_EXPORT_SCALE, format: 'png' }])
   })

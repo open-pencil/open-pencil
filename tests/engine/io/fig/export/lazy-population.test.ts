@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
 import { exportFigFile, initCodec, parseFigFile } from '@open-pencil/core'
-import {
-  getLazyFigImportContext,
-  setLazyFigImportContext
-} from '@open-pencil/core/kiwi/fig/lazy-import'
 import { cloneSceneGraphForFigExport } from '@open-pencil/core/kiwi/fig/parse/transfer'
 import { SceneGraph, setInstanceOverride } from '@open-pencil/scene-graph'
 
@@ -17,12 +13,6 @@ function lazyExportGraph() {
   const instance = graph.createNode('INSTANCE', secondPage.id, {
     name: 'Button instance',
     componentId: component.id
-  })
-  setLazyFigImportContext(graph, {
-    changeMap: new Map(),
-    guidToNodeId: new Map(),
-    blobs: [],
-    populatedRootIds: new Set([firstPage.id])
   })
   return { graph, secondPage, instance }
 }
@@ -49,24 +39,16 @@ describe('FIG population export lifecycle', () => {
     const { graph } = lazyExportGraph()
     const image = new Uint8Array([1, 2, 3])
     graph.images.set('image', image)
-    const context = getLazyFigImportContext(graph)
-    expect(context).toBeDefined()
 
     const clone = cloneSceneGraphForFigExport(graph)
-    const cloneContext = getLazyFigImportContext(clone)
     const firstPage = graph.getPages()[0]
     clone.getNode(firstPage.id)?.childIds.push('export-only')
-    cloneContext?.populatedRootIds.add('export-only')
 
     expect(graph.getNode(firstPage.id)?.childIds).not.toContain('export-only')
-    expect(context?.populatedRootIds).not.toContain('export-only')
     expect(clone.images.get('image')).toBe(image)
-    expect(cloneContext?.changeMap).toBe(context?.changeMap)
-    expect(cloneContext?.guidToNodeId).toBe(context?.guidToNodeId)
-    expect(cloneContext?.blobs).toBe(context?.blobs)
   })
 
-  test('exports all remaining lazy pages after a partial visit', async () => {
+  test('exports an unexpanded native instance without mutating its live children', async () => {
     await initCodec()
     const { graph, instance } = lazyExportGraph()
     expect(graph.getChildren(instance.id)).toHaveLength(0)

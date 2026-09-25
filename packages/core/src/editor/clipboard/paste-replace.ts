@@ -8,6 +8,12 @@ import { computeAllLayouts } from '#core/layout'
 import { deleteIds, type DeletedEntry, recreateSnapshots, restoreDeletedEntries } from './history'
 import { collectSubtrees, snapshotSubtree } from './subtree-history'
 
+export interface PasteHistoryOperation {
+  capture: () => void
+  undo: () => void
+  redo: () => void
+}
+
 type CenterNodesAt = (nodeIds: string[], cx: number, cy: number) => void
 
 export function selectedReplacementTargets(ctx: EditorContext) {
@@ -38,21 +44,28 @@ function pushPasteReplaceUndo(
   ctx: EditorContext,
   created: string[],
   deleted: DeletedEntry[],
-  prevSelection: Set<string>
+  prevSelection: Set<string>,
+  operation?: PasteHistoryOperation
 ) {
   const createdSnapshots = collectSubtrees(ctx.graph, created)
   const pageId = ctx.state.currentPageId
+  operation?.capture()
   ctx.undo.push({
     label: 'Paste to replace',
     forward: () => {
-      for (const { id } of deleted) ctx.graph.deleteNode(id)
-      recreateSnapshots(ctx, createdSnapshots, pageId)
-      reorderCreatedAtReplacementIndex(ctx, created, deleted)
+      ctx.graph.withBufferedEvents(() => {
+        // Restore first: validation or insertion failure must not delete the original targets.
+        if (operation) operation.redo()
+        else recreateSnapshots(ctx, createdSnapshots, pageId)
+        for (const { id } of deleted) ctx.graph.deleteNode(id)
+        reorderCreatedAtReplacementIndex(ctx, created, deleted)
+      })
       computeAllLayouts(ctx.graph, pageId)
       ctx.setSelectedIds(new Set(created))
     },
     inverse: () => {
-      deleteIds(ctx, created)
+      if (operation) operation.undo()
+      else deleteIds(ctx, created)
       restoreDeletedEntries(ctx, deleted)
       computeAllLayouts(ctx.graph, pageId)
       ctx.setSelectedIds(prevSelection)
@@ -65,7 +78,8 @@ export function replaceTargetsWithCreated(
   centerNodesAt: CenterNodesAt,
   created: string[],
   targets: SceneNode[],
-  prevSelection: Set<string>
+  prevSelection: Set<string>,
+  operation?: PasteHistoryOperation
 ) {
   if (created.length === 0 || targets.length === 0) return false
   const deleted = targets.map((node) => {
@@ -89,6 +103,6 @@ export function replaceTargetsWithCreated(
   for (const { id } of deleted) ctx.graph.deleteNode(id)
   computeAllLayouts(ctx.graph, ctx.state.currentPageId)
   ctx.setSelectedIds(new Set(created))
-  pushPasteReplaceUndo(ctx, created, deleted, prevSelection)
+  pushPasteReplaceUndo(ctx, created, deleted, prevSelection, operation)
   return true
 }

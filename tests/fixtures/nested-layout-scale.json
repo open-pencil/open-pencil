@@ -1,0 +1,920 @@
+{
+  "ids": {
+    "page": "293726:2919",
+    "inner": "293726:2920",
+    "outer": "293726:2922",
+    "nested": "293726:2923",
+    "instance": "293726:2925"
+  },
+  "before": [
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2919
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 0,
+          "localID": 0
+        },
+        "position": "~!"
+      },
+      "type": "CANVAS",
+      "name": "Temporary scale contract probe",
+      "visible": true,
+      "opacity": 1,
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "backgroundOpacity": 1,
+      "backgroundColor": {
+        "r": 0.11764705926179886,
+        "g": 0.11764705926179886,
+        "b": 0.11764705926179886,
+        "a": 1
+      },
+      "isPageDivider": false,
+      "backgroundEnabled": true
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2920
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2919
+        },
+        "position": "!"
+      },
+      "type": "SYMBOL",
+      "name": "Inner",
+      "userFacingVersion": "293726:37",
+      "isSymbolPublishable": true,
+      "sharedSymbolVersion": "293726:37",
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 40,
+        "y": 28
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 6,
+      "stackHorizontalPadding": 10,
+      "stackVerticalPadding": 4,
+      "stackPaddingRight": 10,
+      "stackPaddingBottom": 4,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2921
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2920
+        },
+        "position": "!"
+      },
+      "type": "ROUNDED_RECTANGLE",
+      "name": "Rectangle",
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 20,
+        "y": 20
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 10,
+        "m10": 0,
+        "m11": 1,
+        "m12": 4
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 0.8509804010391235,
+            "g": 0.8509804010391235,
+            "b": 0.8509804010391235,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": true,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 0.8509804010391235,
+            "c1": 0.8509804010391235,
+            "c2": 0.8509804010391235,
+            "c3": 1
+          }
+        }
+      ],
+      "fillGeometry": [
+        {
+          "windingRule": "NONZERO",
+          "commandsBlob": 0,
+          "styleID": 0
+        }
+      ]
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2922
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2919
+        },
+        "position": "\""
+      },
+      "type": "SYMBOL",
+      "name": "Outer",
+      "userFacingVersion": "293726:46",
+      "isSymbolPublishable": true,
+      "sharedSymbolVersion": "293726:46",
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 60,
+        "y": 14
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 8,
+      "stackHorizontalPadding": 20,
+      "stackPaddingRight": 20,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2923
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2922
+        },
+        "position": "!"
+      },
+      "type": "INSTANCE",
+      "name": "Inner",
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293726,
+          "localID": 2920
+        },
+        "symbolOverrides": [],
+        "uniformScaleFactor": 0.5
+      },
+      "derivedSymbolData": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 293726,
+                "localID": 2921
+              }
+            ]
+          },
+          "fillGeometry": [
+            {
+              "windingRule": "NONZERO",
+              "commandsBlob": 1,
+              "styleID": 0
+            }
+          ]
+        }
+      ],
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 20,
+        "y": 14
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 20,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 0.5,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 3,
+      "stackHorizontalPadding": 5,
+      "stackVerticalPadding": 2,
+      "stackPaddingRight": 5,
+      "stackPaddingBottom": 2,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "derivedSymbolDataLayoutVersion": 3,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2925
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2919
+        },
+        "position": "#"
+      },
+      "type": "INSTANCE",
+      "name": "Scaled outer",
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293726,
+          "localID": 2922
+        },
+        "symbolOverrides": [
+          {
+            "name": "Scaled outer",
+            "guidPath": {
+              "guids": [
+                {
+                  "sessionID": 293726,
+                  "localID": 2922
+                }
+              ]
+            },
+            "size": {
+              "x": 60,
+              "y": 14
+            }
+          }
+        ],
+        "uniformScaleFactor": 0.5
+      },
+      "derivedSymbolData": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 293726,
+                "localID": 2923
+              },
+              {
+                "sessionID": 293726,
+                "localID": 2921
+              }
+            ]
+          },
+          "fillGeometry": [
+            {
+              "windingRule": "NONZERO",
+              "commandsBlob": 2,
+              "styleID": 0
+            }
+          ]
+        }
+      ],
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 30,
+        "y": 7
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 0.5,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 4,
+      "stackHorizontalPadding": 10,
+      "stackPaddingRight": 10,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "derivedSymbolDataLayoutVersion": 3,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    }
+  ],
+  "edited": [
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2919
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 0,
+          "localID": 0
+        },
+        "position": "~!"
+      },
+      "type": "CANVAS",
+      "name": "Temporary scale contract probe",
+      "visible": true,
+      "opacity": 1,
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "backgroundOpacity": 1,
+      "backgroundColor": {
+        "r": 0.11764705926179886,
+        "g": 0.11764705926179886,
+        "b": 0.11764705926179886,
+        "a": 1
+      },
+      "isPageDivider": false,
+      "backgroundEnabled": true
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2920
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2919
+        },
+        "position": "!"
+      },
+      "type": "SYMBOL",
+      "name": "Inner",
+      "userFacingVersion": "293726:37",
+      "isSymbolPublishable": true,
+      "sharedSymbolVersion": "293726:37",
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 40,
+        "y": 28
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 6,
+      "stackHorizontalPadding": 10,
+      "stackVerticalPadding": 4,
+      "stackPaddingRight": 10,
+      "stackPaddingBottom": 4,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2921
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2920
+        },
+        "position": "!"
+      },
+      "type": "ROUNDED_RECTANGLE",
+      "name": "Rectangle",
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 20,
+        "y": 20
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 10,
+        "m10": 0,
+        "m11": 1,
+        "m12": 4
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 0.8509804010391235,
+            "g": 0.8509804010391235,
+            "b": 0.8509804010391235,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": true,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 0.8509804010391235,
+            "c1": 0.8509804010391235,
+            "c2": 0.8509804010391235,
+            "c3": 1
+          }
+        }
+      ],
+      "fillGeometry": [
+        {
+          "windingRule": "NONZERO",
+          "commandsBlob": 0,
+          "styleID": 0
+        }
+      ]
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2922
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2919
+        },
+        "position": "\""
+      },
+      "type": "SYMBOL",
+      "name": "Outer",
+      "userFacingVersion": "293726:46",
+      "isSymbolPublishable": true,
+      "sharedSymbolVersion": "293726:46",
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 60,
+        "y": 14
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 8,
+      "stackHorizontalPadding": 20,
+      "stackPaddingRight": 20,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2923
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2922
+        },
+        "position": "!"
+      },
+      "type": "INSTANCE",
+      "name": "Inner",
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293726,
+          "localID": 2920
+        },
+        "symbolOverrides": [],
+        "uniformScaleFactor": 0.5
+      },
+      "derivedSymbolData": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 293726,
+                "localID": 2921
+              }
+            ]
+          },
+          "fillGeometry": [
+            {
+              "windingRule": "NONZERO",
+              "commandsBlob": 1,
+              "styleID": 0
+            }
+          ]
+        }
+      ],
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 20,
+        "y": 14
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 20,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 0.5,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 3,
+      "stackHorizontalPadding": 5,
+      "stackVerticalPadding": 2,
+      "stackPaddingRight": 5,
+      "stackPaddingBottom": 2,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "derivedSymbolDataLayoutVersion": 3,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    },
+    {
+      "guid": {
+        "sessionID": 293726,
+        "localID": 2925
+      },
+      "phase": "CREATED",
+      "parentIndex": {
+        "guid": {
+          "sessionID": 293726,
+          "localID": 2919
+        },
+        "position": "#"
+      },
+      "type": "INSTANCE",
+      "name": "Scaled outer",
+      "symbolData": {
+        "symbolID": {
+          "sessionID": 293726,
+          "localID": 2922
+        },
+        "symbolOverrides": [
+          {
+            "name": "Scaled outer",
+            "guidPath": {
+              "guids": [
+                {
+                  "sessionID": 293726,
+                  "localID": 2922
+                }
+              ]
+            },
+            "size": {
+              "x": 75,
+              "y": 14
+            },
+            "stackHorizontalPadding": 26
+          },
+          {
+            "guidPath": {
+              "guids": [
+                {
+                  "sessionID": 293726,
+                  "localID": 2923
+                }
+              ]
+            },
+            "stackHorizontalPadding": 14
+          }
+        ],
+        "uniformScaleFactor": 0.5
+      },
+      "derivedSymbolData": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 293726,
+                "localID": 2923
+              }
+            ]
+          },
+          "size": {
+            "x": 14.5,
+            "y": 7
+          },
+          "transform": {
+            "m00": 1,
+            "m01": 0,
+            "m02": 13,
+            "m10": 0,
+            "m11": 1,
+            "m12": 0
+          }
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 293726,
+                "localID": 2923
+              },
+              {
+                "sessionID": 293726,
+                "localID": 2921
+              }
+            ]
+          },
+          "transform": {
+            "m00": 1,
+            "m01": 0,
+            "m02": 7,
+            "m10": 0,
+            "m11": 1,
+            "m12": 1
+          },
+          "fillGeometry": [
+            {
+              "windingRule": "NONZERO",
+              "commandsBlob": 2,
+              "styleID": 0
+            }
+          ]
+        }
+      ],
+      "visible": true,
+      "opacity": 1,
+      "size": {
+        "x": 37.5,
+        "y": 7
+      },
+      "transform": {
+        "m00": 1,
+        "m01": 0,
+        "m02": 0,
+        "m10": 0,
+        "m11": 1,
+        "m12": 0
+      },
+      "strokeWeight": 0.5,
+      "strokeAlign": "INSIDE",
+      "strokeJoin": "MITER",
+      "fillPaints": [
+        {
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "opacity": 1,
+          "visible": false,
+          "blendMode": "NORMAL",
+          "authoredColor": {
+            "space": "DEFAULT",
+            "c0": 1,
+            "c1": 1,
+            "c2": 1,
+            "c3": 1
+          }
+        }
+      ],
+      "bordersTakeSpace": true,
+      "stackMode": "HORIZONTAL",
+      "stackSpacing": 4,
+      "stackHorizontalPadding": 13,
+      "stackPaddingRight": 10,
+      "stackLayoutVersion": 1,
+      "frameMaskDisabled": true,
+      "derivedSymbolDataLayoutVersion": 3,
+      "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE"
+    }
+  ],
+  "blobs": [
+    "AQAAAAAAAAAAAgAAoEEAAAAAAgAAoEEAAKBBAgAAAAAAAKBBAgAAAAAAAAAAAA==",
+    "AQAAAAAAAAAAAgAAIEEAAAAAAgAAIEEAACBBAgAAAAAAACBBAgAAAAAAAAAAAA==",
+    "AQAAAAAAAAAAAgAAoEAAAAAAAgAAoEAAAKBAAgAAAAAAAKBAAgAAAAAAAAAAAA=="
+  ]
+}

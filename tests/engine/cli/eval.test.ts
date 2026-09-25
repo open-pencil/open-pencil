@@ -42,6 +42,31 @@ heavy('eval CLI', () => {
     expect(stdout.length).toBeGreaterThan(0)
   })
 
+  test('variable API edits reflow layout before returning eval results', async () => {
+    const { stdout, exitCode } = await run([
+      'eval',
+      FIXTURE,
+      '--json',
+      '--code',
+      `
+        const collection = figma.createVariableCollection('Eval spacing');
+        const variable = figma.createVariable('Padding', 'FLOAT', collection.id, 10);
+        const frame = figma.createFrame();
+        frame.layoutMode = 'HORIZONTAL';
+        frame.primaryAxisSizingMode = 'AUTO';
+        frame.counterAxisSizingMode = 'AUTO';
+        const child = figma.createRectangle();
+        child.resize(5, 5);
+        frame.appendChild(child);
+        figma.bindVariable(frame.id, 'paddingLeft', variable.id);
+        figma.setVariableValue(variable.id, collection.defaultModeId, 20);
+        return { padding: frame.paddingLeft, width: frame.width, childX: child.x };
+      `
+    ])
+    expect(exitCode).toBe(0)
+    expect(JSON.parse(stdout)).toEqual({ padding: 20, width: 25, childX: 20 })
+  })
+
   test('returns primitive number', async () => {
     const { stdout, exitCode } = await run(['eval', FIXTURE, '--code', 'return 42'])
     expect(exitCode).toBe(0)

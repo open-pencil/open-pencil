@@ -9,6 +9,20 @@ import {
   type ProxyThis
 } from '#core/figma-api/accessor-utils'
 
+function styleReference(
+  internals: NodeProxyInternals,
+  field: 'fillStyleId' | 'strokeStyleId' | 'effectStyleId' | 'gridStyleId'
+): PropertyDescriptor {
+  return {
+    get(this: ProxyThis): string {
+      return raw(this, internals)[field] ?? ''
+    },
+    set(this: ProxyThis, value: string) {
+      updateNode(this, internals, { [field]: value || null })
+    }
+  }
+}
+
 export function installVisualNodeProxyAccessors(
   prototype: object,
   internals: NodeProxyInternals,
@@ -52,6 +66,11 @@ export function installVisualNodeProxyAccessors(
         })
       }
     },
+    // Applied shared styles, as Figma exposes them; an assignment inside an instance is an override.
+    fillStyleId: styleReference(internals, 'fillStyleId'),
+    strokeStyleId: styleReference(internals, 'strokeStyleId'),
+    effectStyleId: styleReference(internals, 'effectStyleId'),
+    gridStyleId: styleReference(internals, 'gridStyleId'),
     opacity: {
       get(this: ProxyThis): number {
         return raw(this, internals).opacity

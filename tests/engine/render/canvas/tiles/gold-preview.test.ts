@@ -14,7 +14,7 @@ import {
 } from '#core/canvas/renderer/tiles'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 import { HEAVY_TEST_TIMEOUT_MS } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(HEAVY_TEST_TIMEOUT_MS)

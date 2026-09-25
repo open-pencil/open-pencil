@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { canvas, doc, node } from '../helpers'
 
 describe('fig-import: multiple fills', () => {
   test('solid + gradient stacked', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('RECTANGLE', 10, 1, {
@@ -31,7 +31,7 @@ describe('fig-import: multiple fills', () => {
           }
         ] as NodeChange['fillPaints']
       })
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.fills).toHaveLength(2)
     expect(n.fills[0].type).toBe('SOLID')

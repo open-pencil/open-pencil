@@ -331,6 +331,8 @@ export interface TextPathData {
 }
 
 export interface DerivedTextGlyph {
+  /** UTF-16 source-text cluster start, when supplied by the shaping source. */
+  firstCharacter?: number
   commandsBlob: Uint8Array
   x: number
   y: number
@@ -560,6 +562,12 @@ export interface SceneNode {
   variantPropSpecs: VariantPropSpec[]
 
   boundVariables: Record<string, string>
+  /** Multipliers from bound numeric values to this occurrence's scene units. */
+  variableBindingScales: Partial<Record<string, number>>
+  /** Numeric units for new declarations owned by this node's occurrence scope. */
+  variableAssignmentScales: Partial<Record<string, number>>
+  /** Explicit coordinate scale relative to the containing component definition. */
+  componentScale: number
   variableModes: VariableModeMap
   exportSettings: ExportSetting[]
 

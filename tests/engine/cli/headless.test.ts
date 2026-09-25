@@ -56,31 +56,27 @@ describe('headless CLI lazy .fig preparation', () => {
   test('populates only the requested tree page', async () => {
     const graph = await createLazyFixture()
     const page1Instance = pageInstance(graph, 'Page 1')
-    const page2Instance = pageInstance(graph, 'Page 2')
 
     expect(page1Instance ? graph.getChildren(page1Instance.id) : []).toHaveLength(1)
-    expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(0)
+    expect(pageInstance(graph, 'Page 2')).toBeUndefined()
 
     prepareDocumentForRPC(graph, 'tree', { page: 'Page 2' })
 
+    const page2Instance = pageInstance(graph, 'Page 2')
     expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(1)
   })
 
   test('populates all pages for document-wide searches', async () => {
     const graph = await createLazyFixture()
-    const page2Instance = pageInstance(graph, 'Page 2')
-
+    expect(pageInstance(graph, 'Page 2')).toBeUndefined()
     prepareDocumentForRPC(graph, 'find', {})
-
+    const page2Instance = pageInstance(graph, 'Page 2')
     expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(1)
   })
 
   test('keeps page listings lazy', async () => {
     const graph = await createLazyFixture()
-    const page2Instance = pageInstance(graph, 'Page 2')
-
     prepareDocumentForRPC(graph, 'pages')
-
-    expect(page2Instance ? graph.getChildren(page2Instance.id) : []).toHaveLength(0)
+    expect(pageInstance(graph, 'Page 2')).toBeUndefined()
   })
 })

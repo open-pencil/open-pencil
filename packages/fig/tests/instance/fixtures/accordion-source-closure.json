@@ -1,0 +1,6094 @@
+[
+  {
+    "guid": {
+      "sessionID": 4,
+      "localID": 482
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "position": "!"
+    },
+    "type": "FRAME",
+    "name": "H3 AccordionTrigger",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "VERTICAL",
+    "stackChildAlignSelf": "STRETCH",
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"button\",\"attr\":{\"id\":\"radix-:r4:\"}}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858416,
+      "createdAt": 1725829928
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 4,
+      "localID": 483
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 91
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Text",
+    "styleIdForText": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 5
+      }
+    },
+    "fontSize": 16,
+    "textAlignVertical": "CENTER",
+    "lineHeight": {
+      "value": 24,
+      "units": "PIXELS"
+    },
+    "fontName": {
+      "family": "Geist",
+      "style": "Regular",
+      "postscript": "Geist-Regular"
+    },
+    "textData": {
+      "characters": "Is it accessible?",
+      "lines": [
+        {
+          "lineType": "PLAIN",
+          "styleId": 0,
+          "indentationLevel": 0,
+          "sourceDirectionality": "AUTO",
+          "listStartOffset": 0,
+          "isFirstLineOfList": false
+        }
+      ]
+    },
+    "derivedTextData": {
+      "layoutSize": {
+        "x": 424,
+        "y": 24
+      },
+      "baselines": [
+        {
+          "position": {
+            "x": 0,
+            "y": 17.600000381469727
+          },
+          "width": 117.28125,
+          "lineY": 3.814697322468419e-7,
+          "lineHeight": 24,
+          "lineAscent": 14,
+          "firstCharacter": 0,
+          "endCharacter": 17
+        }
+      ],
+      "glyphs": [
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 0,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 0,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 4.3125,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 1,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 12.796875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 2,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 22,
+          "position": {
+            "x": 16.796875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 3,
+          "advance": 0.24400001764297485,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 20.0625,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 4,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 26.375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 5,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 24,
+          "position": {
+            "x": 30.375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 6,
+          "advance": 0.5700000524520874,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 25,
+          "position": {
+            "x": 39.34375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 7,
+          "advance": 0.5520000457763672,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 25,
+          "position": {
+            "x": 48.09375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 8,
+          "advance": 0.5520000457763672,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 56.84375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 9,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 65.84375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 10,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 74.25,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 11,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 22,
+          "position": {
+            "x": 82.421875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 12,
+          "advance": 0.24400001764297485,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 27,
+          "position": {
+            "x": 85.921875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 13,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 28,
+          "position": {
+            "x": 95.40625,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 14,
+          "advance": 0.2840000092983246,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 99.796875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 15,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 29,
+          "position": {
+            "x": 108.234375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 16,
+          "advance": 0.5649999976158142,
+          "rotation": 0
+        }
+      ],
+      "fontMetaData": [
+        {
+          "key": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": ""
+          },
+          "fontLineHeight": 1.2400000095367432,
+          "fontDigest": {
+            "0": 154,
+            "1": 83,
+            "2": 21,
+            "3": 9,
+            "4": 228,
+            "5": 231,
+            "6": 104,
+            "7": 233,
+            "8": 16,
+            "9": 45,
+            "10": 17,
+            "11": 245,
+            "12": 215,
+            "13": 210,
+            "14": 147,
+            "15": 227,
+            "16": 240,
+            "17": 77,
+            "18": 156,
+            "19": 100
+          },
+          "fontStyle": "NORMAL",
+          "fontWeight": 400
+        }
+      ],
+      "truncationStartIndex": -1,
+      "truncatedHeight": -1,
+      "logicalIndexToCharacterOffsetMap": [
+        0, 4.3125, 12.796875, 16.796875, 20.0625, 26.375, 30.375, 39.34375, 48.09375, 56.84375,
+        65.84375, 74.25, 82.421875, 85.921875, 95.40625, 99.796875, 108.234375
+      ],
+      "derivedLines": [
+        {
+          "directionality": "LTR"
+        }
+      ]
+    },
+    "fontVariantCommonLigatures": true,
+    "fontVariantContextualLigatures": true,
+    "letterSpacing": {
+      "value": 0,
+      "units": "PERCENT"
+    },
+    "fontVersion": "",
+    "textUserLayoutVersion": 4,
+    "hyperlink": {},
+    "fontVariations": [],
+    "textBidiVersion": 1,
+    "emojiImageSet": "APPLE",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 424,
+      "y": 24
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 16
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "OUTSIDE",
+    "strokeJoin": "MITER",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.035100001841783524,
+          "g": 0.035100001841783524,
+          "b": 0.042899999767541885,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 57
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "stackChildPrimaryGrow": 1,
+    "autoRename": false,
+    "textTracking": 0,
+    "textAutoResize": "HEIGHT",
+    "variableConsumptionMap": {
+      "entries": []
+    },
+    "parameterConsumptionMap": {
+      "entries": []
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 91
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 4,
+        "localID": 482
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Button",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "HORIZONTAL",
+    "stackSpacing": 307,
+    "stackVerticalPadding": 16,
+    "stackPrimarySizing": "FIXED",
+    "stackPrimaryAlignItems": "SPACE_BETWEEN",
+    "stackCounterAlignItems": "CENTER",
+    "stackPaddingBottom": 16,
+    "stackChildAlignSelf": "STRETCH",
+    "frameMaskDisabled": true,
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE",
+    "variableConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_TOP"
+        },
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "parameterConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_TOP"
+        },
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858416,
+      "createdAt": 1725829928
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 94
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 94,
+        "localID": 5467
+      },
+      "position": "I=OOOOOOOOOOOOOOOOOOOP#}}}}}}}f"
+    },
+    "type": "SYMBOL",
+    "name": "Chevron Down",
+    "userFacingVersion": "184:887",
+    "isSymbolPublishable": true,
+    "sharedSymbolVersion": "184:887",
+    "sectionStatusInfo": {
+      "status": "NONE",
+      "lastUpdateUnixTimestamp": 1725828300,
+      "prevStatus": "NONE"
+    },
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 24,
+      "y": 24
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 484,
+      "m10": 0,
+      "m11": 1,
+      "m12": 164
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": false,
+        "blendMode": "NORMAL"
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 35,
+        "styleID": 0
+      }
+    ],
+    "frameMaskDisabled": false,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728562470,
+      "createdAt": 1725828300
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 95
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 91
+      },
+      "position": "%"
+    },
+    "type": "INSTANCE",
+    "name": "Chevron Down",
+    "userFacingVersion": "7:0",
+    "componentPropRefs": [
+      {
+        "defID": {
+          "sessionID": 206,
+          "localID": 1
+        },
+        "componentPropNodeField": "OVERRIDDEN_SYMBOL_ID"
+      }
+    ],
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 93
+              }
+            ]
+          },
+          "strokePaints": [
+            {
+              "type": "SOLID",
+              "color": {
+                "r": 0.035100001841783524,
+                "g": 0.035100001841783524,
+                "b": 0.042899999767541885,
+                "a": 1
+              },
+              "opacity": 1,
+              "visible": true,
+              "blendMode": "NORMAL",
+              "colorVar": {
+                "value": {
+                  "alias": {
+                    "guid": {
+                      "sessionID": 4,
+                      "localID": 57
+                    }
+                  }
+                },
+                "dataType": "ALIAS",
+                "resolvedDataType": "COLOR"
+              }
+            }
+          ]
+        },
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 94
+              }
+            ]
+          },
+          "size": {
+            "x": 16,
+            "y": 16
+          },
+          "proportionsConstrained": true
+        }
+      ],
+      "uniformScaleFactor": 1
+    },
+    "derivedSymbolData": [
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "size": {
+          "x": 9.333333969116211,
+          "y": 5.333333492279053
+        },
+        "transform": {
+          "m00": 1,
+          "m01": 0,
+          "m02": 3.3333332538604736,
+          "m10": 0,
+          "m11": 1,
+          "m12": 5.333333492279053
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      }
+    ],
+    "propsAreBubbled": true,
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 16,
+      "y": 16
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 424,
+      "m10": 0,
+      "m11": 1,
+      "m12": 20
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": false,
+        "blendMode": "NORMAL"
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 37,
+        "styleID": 0
+      }
+    ],
+    "proportionsConstrained": true,
+    "frameMaskDisabled": false,
+    "derivedSymbolDataLayoutVersion": 1,
+    "parameterConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "propRefValue": {
+                "defId": {
+                  "sessionID": 206,
+                  "localID": 1
+                }
+              }
+            },
+            "dataType": "PROP_REF",
+            "resolvedDataType": "SYMBOL_ID"
+          },
+          "variableField": "OVERRIDDEN_SYMBOL_ID"
+        }
+      ]
+    },
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1725830095,
+      "createdAt": 1725829928
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 156
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 250
+      },
+      "position": "!"
+    },
+    "type": "SYMBOL",
+    "name": "State=Closed",
+    "userFacingVersion": "206:15",
+    "isSymbolPublishable": true,
+    "sharedSymbolVersion": "206:15",
+    "componentPropDefs": [
+      {
+        "id": {
+          "sessionID": 206,
+          "localID": 1
+        },
+        "parentPropDefId": {
+          "sessionID": 206,
+          "localID": 0
+        }
+      }
+    ],
+    "variantPropSpecs": [
+      {
+        "propDefId": {
+          "sessionID": 3479705717,
+          "localID": 100804006
+        },
+        "value": "Closed"
+      }
+    ],
+    "sectionStatusInfo": {
+      "status": "NONE",
+      "lastUpdateUnixTimestamp": 1725829928,
+      "prevStatus": "NONE"
+    },
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 20,
+      "m10": 0,
+      "m11": 1,
+      "m12": 20
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "strokePaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.8941176533699036,
+          "g": 0.8941176533699036,
+          "b": 0.9058823585510254,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 72
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 38,
+        "styleID": 0
+      }
+    ],
+    "strokeGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 39,
+        "styleID": 0
+      }
+    ],
+    "borderBottomWeight": 1,
+    "borderStrokeWeightsIndependent": true,
+    "horizontalConstraint": "STRETCH",
+    "stackMode": "VERTICAL",
+    "prototypeInteractions": [
+      {
+        "id": {
+          "sessionID": 11,
+          "localID": 87
+        },
+        "event": {
+          "interactionType": "ON_CLICK"
+        },
+        "actions": [
+          {
+            "transitionNodeID": {
+              "sessionID": 7,
+              "localID": 251
+            },
+            "transitionType": "SMART_ANIMATE",
+            "transitionDuration": 0.30000001192092896,
+            "easingType": "OUT_CUBIC",
+            "connectionType": "INTERNAL_NODE",
+            "navigationType": "SWAP_STATE",
+            "easingFunction": [0, 0, 0.5799999833106995, 1],
+            "transitionResetVideoPosition": false
+          }
+        ],
+        "isDeleted": false,
+        "stateManagementVersion": 1
+      }
+    ],
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"div\"}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858544,
+      "createdAt": 1725829928
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 163
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "position": "%"
+    },
+    "type": "INSTANCE",
+    "name": "AccordionItem",
+    "userFacingVersion": "7:2",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "variableConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          },
+          "parameterConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    },
+    "derivedSymbolData": [
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 4,
+              "localID": 483
+            }
+          ]
+        },
+        "size": {
+          "x": 424,
+          "y": 24
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 91
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 56
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 95
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 37,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 95
+            },
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 213
+            }
+          ]
+        },
+        "size": {
+          "x": 443.800048828125,
+          "y": 36
+        }
+      }
+    ],
+    "propsAreBubbled": true,
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "strokePaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.8941176533699036,
+          "g": 0.8941176533699036,
+          "b": 0.9058823585510254,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 72
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 38,
+        "styleID": 0
+      }
+    ],
+    "strokeGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 39,
+        "styleID": 0
+      }
+    ],
+    "borderBottomWeight": 1,
+    "borderStrokeWeightsIndependent": true,
+    "stackMode": "VERTICAL",
+    "prototypeInteractions": [
+      {
+        "id": {
+          "sessionID": 11,
+          "localID": 87
+        },
+        "event": {
+          "interactionType": "ON_CLICK"
+        },
+        "actions": [
+          {
+            "transitionNodeID": {
+              "sessionID": 7,
+              "localID": 251
+            },
+            "transitionType": "SMART_ANIMATE",
+            "transitionDuration": 0.30000001192092896,
+            "easingType": "OUT_CUBIC",
+            "connectionType": "INTERNAL_NODE",
+            "navigationType": "SWAP_STATE",
+            "easingFunction": [0, 0, 0.5799999833106995, 1],
+            "transitionResetVideoPosition": false
+          }
+        ],
+        "isDeleted": false,
+        "stateManagementVersion": 1
+      }
+    ],
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"div\"}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "derivedSymbolDataLayoutVersion": 1,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858569,
+      "createdAt": 1725829969
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 169
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "position": "&"
+    },
+    "type": "INSTANCE",
+    "name": "AccordionItem",
+    "userFacingVersion": "7:2",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "textData": {
+            "characters": "Is it styled?",
+            "lines": [
+              {
+                "lineType": "PLAIN",
+                "styleId": 0,
+                "indentationLevel": 0,
+                "sourceDirectionality": "AUTO",
+                "listStartOffset": 0,
+                "isFirstLineOfList": false
+              }
+            ]
+          },
+          "variableConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          },
+          "parameterConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    },
+    "derivedSymbolData": [
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 4,
+              "localID": 483
+            }
+          ]
+        },
+        "derivedTextData": {
+          "layoutSize": {
+            "x": 424,
+            "y": 24
+          },
+          "baselines": [
+            {
+              "position": {
+                "x": 0,
+                "y": 17.600000381469727
+              },
+              "width": 85.28125,
+              "lineY": 3.814697322468419e-7,
+              "lineHeight": 24,
+              "lineAscent": 14,
+              "firstCharacter": 0,
+              "endCharacter": 13
+            }
+          ],
+          "glyphs": [
+            {
+              "commandsBlob": 19,
+              "position": {
+                "x": 0,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 0,
+              "advance": 0.27000001072883606,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 20,
+              "position": {
+                "x": 4.3125,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 1,
+              "advance": 0.5300000309944153,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 21,
+              "position": {
+                "x": 12.796875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 2,
+              "advance": 0.25,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 22,
+              "position": {
+                "x": 16.796875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 3,
+              "advance": 0.24400001764297485,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 23,
+              "position": {
+                "x": 20.0625,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 4,
+              "advance": 0.39500001072883606,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 21,
+              "position": {
+                "x": 26.375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 5,
+              "advance": 0.25,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 20,
+              "position": {
+                "x": 30.375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 6,
+              "advance": 0.5300000309944153,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 23,
+              "position": {
+                "x": 38.375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 7,
+              "advance": 0.39500001072883606,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 40,
+              "position": {
+                "x": 44.6875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 8,
+              "advance": 0.5370000004768372,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 28,
+              "position": {
+                "x": 53.28125,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 9,
+              "advance": 0.2840000092983246,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 26,
+              "position": {
+                "x": 57.671875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 10,
+              "advance": 0.5670000314712524,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 41,
+              "position": {
+                "x": 66.671875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 11,
+              "advance": 0.5980000495910645,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 29,
+              "position": {
+                "x": 76.234375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 12,
+              "advance": 0.5649999976158142,
+              "rotation": 0
+            }
+          ],
+          "fontMetaData": [
+            {
+              "key": {
+                "family": "Geist",
+                "style": "Regular",
+                "postscript": ""
+              },
+              "fontLineHeight": 1.2400000095367432,
+              "fontDigest": {
+                "0": 154,
+                "1": 83,
+                "2": 21,
+                "3": 9,
+                "4": 228,
+                "5": 231,
+                "6": 104,
+                "7": 233,
+                "8": 16,
+                "9": 45,
+                "10": 17,
+                "11": 245,
+                "12": 215,
+                "13": 210,
+                "14": 147,
+                "15": 227,
+                "16": 240,
+                "17": 77,
+                "18": 156,
+                "19": 100
+              },
+              "fontStyle": "NORMAL",
+              "fontWeight": 400
+            }
+          ],
+          "truncationStartIndex": -1,
+          "truncatedHeight": -1,
+          "logicalIndexToCharacterOffsetMap": [
+            0, 4.3125, 12.796875, 16.796875, 20.0625, 26.375, 30.375, 38.375, 44.6875, 53.28125,
+            57.671875, 66.671875, 76.234375
+          ],
+          "derivedLines": [
+            {
+              "directionality": "LTR"
+            }
+          ]
+        },
+        "size": {
+          "x": 424,
+          "y": 24
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 91
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 56
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 95
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 37,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 95
+            },
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 213
+            }
+          ]
+        },
+        "size": {
+          "x": 443.800048828125,
+          "y": 36
+        }
+      }
+    ],
+    "propsAreBubbled": true,
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 56
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "strokePaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.8941176533699036,
+          "g": 0.8941176533699036,
+          "b": 0.9058823585510254,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 72
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 38,
+        "styleID": 0
+      }
+    ],
+    "strokeGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 39,
+        "styleID": 0
+      }
+    ],
+    "borderBottomWeight": 1,
+    "borderStrokeWeightsIndependent": true,
+    "stackMode": "VERTICAL",
+    "prototypeInteractions": [
+      {
+        "id": {
+          "sessionID": 11,
+          "localID": 87
+        },
+        "event": {
+          "interactionType": "ON_CLICK"
+        },
+        "actions": [
+          {
+            "transitionNodeID": {
+              "sessionID": 7,
+              "localID": 251
+            },
+            "transitionType": "SMART_ANIMATE",
+            "transitionDuration": 0.30000001192092896,
+            "easingType": "OUT_CUBIC",
+            "connectionType": "INTERNAL_NODE",
+            "navigationType": "SWAP_STATE",
+            "easingFunction": [0, 0, 0.5799999833106995, 1],
+            "transitionResetVideoPosition": false
+          }
+        ],
+        "isDeleted": false,
+        "stateManagementVersion": 1
+      }
+    ],
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"div\"}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "derivedSymbolDataLayoutVersion": 1,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858569,
+      "createdAt": 1725829969
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 175
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "position": "'"
+    },
+    "type": "INSTANCE",
+    "name": "AccordionItem",
+    "userFacingVersion": "7:2",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "textData": {
+            "characters": "Is it animated?",
+            "lines": [
+              {
+                "lineType": "PLAIN",
+                "styleId": 0,
+                "indentationLevel": 0,
+                "sourceDirectionality": "AUTO",
+                "listStartOffset": 0,
+                "isFirstLineOfList": false
+              }
+            ]
+          },
+          "variableConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          },
+          "parameterConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    },
+    "derivedSymbolData": [
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 4,
+              "localID": 483
+            }
+          ]
+        },
+        "derivedTextData": {
+          "layoutSize": {
+            "x": 424,
+            "y": 24
+          },
+          "baselines": [
+            {
+              "position": {
+                "x": 0,
+                "y": 17.600000381469727
+              },
+              "width": 108.28125,
+              "lineY": 3.814697322468419e-7,
+              "lineHeight": 24,
+              "lineAscent": 14,
+              "firstCharacter": 0,
+              "endCharacter": 15
+            }
+          ],
+          "glyphs": [
+            {
+              "commandsBlob": 19,
+              "position": {
+                "x": 0,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 0,
+              "advance": 0.27000001072883606,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 20,
+              "position": {
+                "x": 4.3125,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 1,
+              "advance": 0.5300000309944153,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 21,
+              "position": {
+                "x": 12.796875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 2,
+              "advance": 0.25,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 22,
+              "position": {
+                "x": 16.796875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 3,
+              "advance": 0.24400001764297485,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 23,
+              "position": {
+                "x": 20.0625,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 4,
+              "advance": 0.39500001072883606,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 21,
+              "position": {
+                "x": 26.375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 5,
+              "advance": 0.25,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 24,
+              "position": {
+                "x": 30.375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 6,
+              "advance": 0.5700000524520874,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 42,
+              "position": {
+                "x": 39.421875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 7,
+              "advance": 0.581000030040741,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 22,
+              "position": {
+                "x": 48.71875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 8,
+              "advance": 0.24400001764297485,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 43,
+              "position": {
+                "x": 52.390625,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 9,
+              "advance": 0.8770000338554382,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 24,
+              "position": {
+                "x": 66.265625,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 10,
+              "advance": 0.5700000524520874,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 23,
+              "position": {
+                "x": 74.59375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 11,
+              "advance": 0.39500001072883606,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 26,
+              "position": {
+                "x": 80.671875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 12,
+              "advance": 0.5670000314712524,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 41,
+              "position": {
+                "x": 89.671875,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 13,
+              "advance": 0.5980000495910645,
+              "rotation": 0
+            },
+            {
+              "commandsBlob": 29,
+              "position": {
+                "x": 99.234375,
+                "y": 17.600000381469727
+              },
+              "fontSize": 16,
+              "firstCharacter": 14,
+              "advance": 0.5649999976158142,
+              "rotation": 0
+            }
+          ],
+          "fontMetaData": [
+            {
+              "key": {
+                "family": "Geist",
+                "style": "Regular",
+                "postscript": ""
+              },
+              "fontLineHeight": 1.2400000095367432,
+              "fontDigest": {
+                "0": 154,
+                "1": 83,
+                "2": 21,
+                "3": 9,
+                "4": 228,
+                "5": 231,
+                "6": 104,
+                "7": 233,
+                "8": 16,
+                "9": 45,
+                "10": 17,
+                "11": 245,
+                "12": 215,
+                "13": 210,
+                "14": 147,
+                "15": 227,
+                "16": 240,
+                "17": 77,
+                "18": 156,
+                "19": 100
+              },
+              "fontStyle": "NORMAL",
+              "fontWeight": 400
+            }
+          ],
+          "truncationStartIndex": -1,
+          "truncatedHeight": -1,
+          "logicalIndexToCharacterOffsetMap": [
+            0, 4.3125, 12.796875, 16.796875, 20.0625, 26.375, 30.375, 39.421875, 48.71875,
+            52.390625, 66.265625, 74.59375, 80.671875, 89.671875, 99.234375
+          ],
+          "derivedLines": [
+            {
+              "directionality": "LTR"
+            }
+          ]
+        },
+        "size": {
+          "x": 424,
+          "y": 24
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 91
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 56
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 95
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 37,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 95
+            },
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 213
+            }
+          ]
+        },
+        "size": {
+          "x": 443.800048828125,
+          "y": 36
+        }
+      }
+    ],
+    "propsAreBubbled": true,
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 112
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "strokePaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.8941176533699036,
+          "g": 0.8941176533699036,
+          "b": 0.9058823585510254,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 72
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 38,
+        "styleID": 0
+      }
+    ],
+    "strokeGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 39,
+        "styleID": 0
+      }
+    ],
+    "borderBottomWeight": 1,
+    "borderStrokeWeightsIndependent": true,
+    "stackMode": "VERTICAL",
+    "prototypeInteractions": [
+      {
+        "id": {
+          "sessionID": 11,
+          "localID": 87
+        },
+        "event": {
+          "interactionType": "ON_CLICK"
+        },
+        "actions": [
+          {
+            "transitionNodeID": {
+              "sessionID": 7,
+              "localID": 251
+            },
+            "transitionType": "SMART_ANIMATE",
+            "transitionDuration": 0.30000001192092896,
+            "easingType": "OUT_CUBIC",
+            "connectionType": "INTERNAL_NODE",
+            "navigationType": "SWAP_STATE",
+            "easingFunction": [0, 0, 0.5799999833106995, 1],
+            "transitionResetVideoPosition": false
+          }
+        ],
+        "isDeleted": false,
+        "stateManagementVersion": 1
+      }
+    ],
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"div\"}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "derivedSymbolDataLayoutVersion": 1,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858569,
+      "createdAt": 1725829969
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 186
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 428
+      },
+      "position": "&@#"
+    },
+    "type": "SYMBOL",
+    "name": "Accordion",
+    "userFacingVersion": "206:352",
+    "isSymbolPublishable": true,
+    "sharedSymbolVersion": "206:352",
+    "sectionStatusInfo": {
+      "status": "NONE",
+      "lastUpdateUnixTimestamp": 1725829969,
+      "prevStatus": "NONE"
+    },
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 168
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 690,
+      "m10": 0,
+      "m11": 1,
+      "m12": 254
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "horizontalConstraint": "CENTER",
+    "stackMode": "VERTICAL",
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"div\"}",
+        "key": "f2w-data"
+      }
+    ],
+    "verticalConstraint": "CENTER",
+    "frameMaskDisabled": true,
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE",
+    "symbolLinks": [
+      {
+        "uri": "https://ui.shadcn.com/docs/components/accordion"
+      }
+    ],
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858575,
+      "createdAt": 1725829969
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 212
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 156
+      },
+      "position": "\""
+    },
+    "type": "FRAME",
+    "name": "Div AccordionContent",
+    "visible": false,
+    "opacity": 1,
+    "size": {
+      "x": 443.79998779296875,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 56
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "VERTICAL",
+    "stackChildAlignSelf": "STRETCH",
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"button\",\"attr\":{\"id\":\"radix-:r4:\"}}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1725830448,
+      "createdAt": 1725830352
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 213
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 212
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Div",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 443.800048828125,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "HORIZONTAL",
+    "stackSpacing": 307,
+    "stackPrimarySizing": "FIXED",
+    "stackPrimaryAlignItems": "SPACE_BETWEEN",
+    "stackCounterAlignItems": "CENTER",
+    "stackPaddingBottom": 16,
+    "stackChildAlignSelf": "STRETCH",
+    "frameMaskDisabled": true,
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE",
+    "variableConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 64
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "parameterConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 64
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1725830416,
+      "createdAt": 1725830352
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 214
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 213
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Yes. It adheres to the WAI-ARIA design pattern.",
+    "styleIdForText": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 100
+      }
+    },
+    "fontSize": 16,
+    "textAlignVertical": "CENTER",
+    "lineHeight": {
+      "value": 24,
+      "units": "PIXELS"
+    },
+    "fontName": {
+      "family": "Geist",
+      "style": "Medium",
+      "postscript": "Geist-Medium"
+    },
+    "textData": {
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "lines": [
+        {
+          "lineType": "PLAIN",
+          "styleId": 0,
+          "indentationLevel": 0,
+          "sourceDirectionality": "AUTO",
+          "listStartOffset": 0,
+          "isFirstLineOfList": false
+        }
+      ]
+    },
+    "derivedTextData": {
+      "layoutSize": {
+        "x": 443.800048828125,
+        "y": 20
+      },
+      "baselines": [
+        {
+          "position": {
+            "x": 0,
+            "y": 14.899999618530273
+          },
+          "width": 301.423828125,
+          "lineY": -3.814697322468419e-7,
+          "lineHeight": 20,
+          "lineAscent": 12,
+          "firstCharacter": 0,
+          "endCharacter": 47
+        }
+      ],
+      "glyphs": [
+        {
+          "commandsBlob": 44,
+          "position": {
+            "x": 0,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 0,
+          "advance": 0.6300000548362732,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 8.12109375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 1,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 15.99609375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 2,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 45,
+          "position": {
+            "x": 23.419921875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 3,
+          "advance": 0.2070000171661377,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 26.318359375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 4,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 29.818359375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 5,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 33.03125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 6,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 38.5546875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 7,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 24,
+          "position": {
+            "x": 42.0546875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 8,
+          "advance": 0.5700000524520874,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 41,
+          "position": {
+            "x": 49.90234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 9,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 46,
+          "position": {
+            "x": 57.9140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 10,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 65.84375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 11,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 47,
+          "position": {
+            "x": 73.71875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 12,
+          "advance": 0.38200002908706665,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 78.640625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 13,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 86.515625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 14,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 93.939453125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 15,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 97.439453125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 16,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 48,
+          "position": {
+            "x": 102.7578125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 17,
+          "advance": 0.5790000557899475,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 110.865234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 18,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 114.365234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 19,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 46,
+          "position": {
+            "x": 119.888671875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 20,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 127.818359375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 21,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 135.76171875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 22,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 49,
+          "position": {
+            "x": 139.26171875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 23,
+          "advance": 0.9110000729560852,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 50,
+          "position": {
+            "x": 151.033203125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 24,
+          "advance": 0.6700000166893005,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 160.412109375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 25,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 51,
+          "position": {
+            "x": 164.185546875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 26,
+          "advance": 0.42500001192092896,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 50,
+          "position": {
+            "x": 170.1328125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 27,
+          "advance": 0.6700000166893005,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 30,
+          "position": {
+            "x": 179.51171875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 28,
+          "advance": 0.6720000505447388,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 188.91796875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 29,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 50,
+          "position": {
+            "x": 192.69140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 30,
+          "advance": 0.6700000166893005,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 202.0703125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 31,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 41,
+          "position": {
+            "x": 205.5703125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 32,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 213.9375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 33,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 221.8125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 34,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 22,
+          "position": {
+            "x": 228.962890625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 35,
+          "advance": 0.24400001764297485,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 31,
+          "position": {
+            "x": 232.380859375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 36,
+          "advance": 0.597000002861023,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 42,
+          "position": {
+            "x": 240.734375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 37,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 248.869140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 38,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 52,
+          "position": {
+            "x": 252.369140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 39,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 24,
+          "position": {
+            "x": 260.736328125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 40,
+          "advance": 0.5700000524520874,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 53,
+          "position": {
+            "x": 268.0234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 41,
+          "advance": 0.6970000267028809,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 277.580078125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 43,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 47,
+          "position": {
+            "x": 285.455078125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 44,
+          "advance": 0.38200002908706665,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 42,
+          "position": {
+            "x": 290.390625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 45,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 45,
+          "position": {
+            "x": 298.525390625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 46,
+          "advance": 0.2070000171661377,
+          "rotation": 0
+        }
+      ],
+      "fontMetaData": [
+        {
+          "key": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": ""
+          },
+          "fontLineHeight": 1.2400000095367432,
+          "fontDigest": {
+            "0": 154,
+            "1": 83,
+            "2": 21,
+            "3": 9,
+            "4": 228,
+            "5": 231,
+            "6": 104,
+            "7": 233,
+            "8": 16,
+            "9": 45,
+            "10": 17,
+            "11": 245,
+            "12": 215,
+            "13": 210,
+            "14": 147,
+            "15": 227,
+            "16": 240,
+            "17": 77,
+            "18": 156,
+            "19": 100
+          },
+          "fontStyle": "NORMAL",
+          "fontWeight": 400
+        }
+      ],
+      "truncationStartIndex": -1,
+      "truncatedHeight": -1,
+      "logicalIndexToCharacterOffsetMap": [
+        0, 8.12109375, 15.99609375, 23.419921875, 26.318359375, 29.818359375, 33.03125, 38.5546875,
+        42.0546875, 49.90234375, 57.9140625, 65.84375, 73.71875, 78.640625, 86.515625, 93.939453125,
+        97.439453125, 102.7578125, 110.865234375, 114.365234375, 119.888671875, 127.818359375,
+        135.76171875, 139.26171875, 151.033203125, 160.412109375, 164.185546875, 170.1328125,
+        179.51171875, 188.91796875, 192.69140625, 202.0703125, 205.5703125, 213.9375, 221.8125,
+        228.962890625, 232.380859375, 240.734375, 248.869140625, 252.369140625, 260.736328125,
+        268.0234375, 272.8017578125, 277.580078125, 285.455078125, 290.390625, 298.525390625
+      ],
+      "derivedLines": [
+        {
+          "directionality": "LTR"
+        }
+      ]
+    },
+    "fontVariantCommonLigatures": true,
+    "fontVariantContextualLigatures": true,
+    "letterSpacing": {
+      "value": 0,
+      "units": "PERCENT"
+    },
+    "fontVersion": "",
+    "textUserLayoutVersion": 4,
+    "hyperlink": {},
+    "fontVariations": [],
+    "textBidiVersion": 1,
+    "emojiImageSet": "APPLE",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 443.800048828125,
+      "y": 20
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "OUTSIDE",
+    "strokeJoin": "MITER",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.035100001841783524,
+          "g": 0.035100001841783524,
+          "b": 0.042899999767541885,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 57
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "stackChildPrimaryGrow": 1,
+    "autoRename": true,
+    "textTracking": 0,
+    "textAutoResize": "HEIGHT"
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 251
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 250
+      },
+      "position": "\""
+    },
+    "type": "SYMBOL",
+    "name": "State=Open",
+    "userFacingVersion": "206:16",
+    "isSymbolPublishable": true,
+    "sharedSymbolVersion": "206:16",
+    "componentPropDefs": [
+      {
+        "id": {
+          "sessionID": 206,
+          "localID": 2
+        },
+        "parentPropDefId": {
+          "sessionID": 206,
+          "localID": 0
+        }
+      }
+    ],
+    "variantPropSpecs": [
+      {
+        "propDefId": {
+          "sessionID": 3479705717,
+          "localID": 100804006
+        },
+        "value": "Open"
+      }
+    ],
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 92
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 20,
+      "m10": 0,
+      "m11": 1,
+      "m12": 96
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "strokePaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.8941176533699036,
+          "g": 0.8941176533699036,
+          "b": 0.9058823585510254,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 72
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 56,
+        "styleID": 0
+      }
+    ],
+    "strokeGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 57,
+        "styleID": 0
+      }
+    ],
+    "borderBottomWeight": 1,
+    "borderStrokeWeightsIndependent": true,
+    "horizontalConstraint": "STRETCH",
+    "stackMode": "VERTICAL",
+    "prototypeInteractions": [
+      {
+        "id": {
+          "sessionID": 11,
+          "localID": 88
+        },
+        "event": {
+          "interactionType": "ON_CLICK"
+        },
+        "actions": [
+          {
+            "transitionNodeID": {
+              "sessionID": 7,
+              "localID": 156
+            },
+            "transitionType": "SMART_ANIMATE",
+            "transitionDuration": 0.30000001192092896,
+            "easingType": "OUT_CUBIC",
+            "connectionType": "INTERNAL_NODE",
+            "navigationType": "SWAP_STATE",
+            "easingFunction": [0, 0, 0.5799999833106995, 1]
+          }
+        ],
+        "isDeleted": false,
+        "stateManagementVersion": 1
+      }
+    ],
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"div\"}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1734433457,
+      "createdAt": 1725830427
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 252
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 251
+      },
+      "position": "!"
+    },
+    "type": "FRAME",
+    "name": "H3",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "VERTICAL",
+    "stackChildAlignSelf": "STRETCH",
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"button\",\"attr\":{\"id\":\"radix-:r4:\"}}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1734433457,
+      "createdAt": 1725830427
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 253
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 252
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Button",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 56
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "HORIZONTAL",
+    "stackSpacing": 307,
+    "stackVerticalPadding": 16,
+    "stackPrimarySizing": "FIXED",
+    "stackPrimaryAlignItems": "SPACE_BETWEEN",
+    "stackCounterAlignItems": "CENTER",
+    "stackPaddingBottom": 16,
+    "stackChildAlignSelf": "STRETCH",
+    "frameMaskDisabled": true,
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE",
+    "variableConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_TOP"
+        },
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "parameterConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_TOP"
+        },
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 55
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1734433457,
+      "createdAt": 1725830427
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 254
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 253
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Text",
+    "styleIdForText": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 5
+      }
+    },
+    "fontSize": 16,
+    "textAlignVertical": "CENTER",
+    "lineHeight": {
+      "value": 24,
+      "units": "PIXELS"
+    },
+    "fontName": {
+      "family": "Geist",
+      "style": "Regular",
+      "postscript": "Geist-Regular"
+    },
+    "textData": {
+      "characters": "Is it accessible?",
+      "lines": [
+        {
+          "lineType": "PLAIN",
+          "styleId": 0,
+          "indentationLevel": 0,
+          "sourceDirectionality": "AUTO",
+          "listStartOffset": 0,
+          "isFirstLineOfList": false
+        }
+      ]
+    },
+    "derivedTextData": {
+      "layoutSize": {
+        "x": 424,
+        "y": 24
+      },
+      "baselines": [
+        {
+          "position": {
+            "x": 0,
+            "y": 17.600000381469727
+          },
+          "width": 117.28125,
+          "lineY": 3.814697322468419e-7,
+          "lineHeight": 24,
+          "lineAscent": 14,
+          "firstCharacter": 0,
+          "endCharacter": 17
+        }
+      ],
+      "glyphs": [
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 0,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 0,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 4.3125,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 1,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 12.796875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 2,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 22,
+          "position": {
+            "x": 16.796875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 3,
+          "advance": 0.24400001764297485,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 20.0625,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 4,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 26.375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 5,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 24,
+          "position": {
+            "x": 30.375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 6,
+          "advance": 0.5700000524520874,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 25,
+          "position": {
+            "x": 39.34375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 7,
+          "advance": 0.5520000457763672,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 25,
+          "position": {
+            "x": 48.09375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 8,
+          "advance": 0.5520000457763672,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 56.84375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 9,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 65.84375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 10,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 74.25,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 11,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 22,
+          "position": {
+            "x": 82.421875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 12,
+          "advance": 0.24400001764297485,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 27,
+          "position": {
+            "x": 85.921875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 13,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 28,
+          "position": {
+            "x": 95.40625,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 14,
+          "advance": 0.2840000092983246,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 99.796875,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 15,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 29,
+          "position": {
+            "x": 108.234375,
+            "y": 17.600000381469727
+          },
+          "fontSize": 16,
+          "firstCharacter": 16,
+          "advance": 0.5649999976158142,
+          "rotation": 0
+        }
+      ],
+      "fontMetaData": [
+        {
+          "key": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": ""
+          },
+          "fontLineHeight": 1.2400000095367432,
+          "fontDigest": {
+            "0": 154,
+            "1": 83,
+            "2": 21,
+            "3": 9,
+            "4": 228,
+            "5": 231,
+            "6": 104,
+            "7": 233,
+            "8": 16,
+            "9": 45,
+            "10": 17,
+            "11": 245,
+            "12": 215,
+            "13": 210,
+            "14": 147,
+            "15": 227,
+            "16": 240,
+            "17": 77,
+            "18": 156,
+            "19": 100
+          },
+          "fontStyle": "NORMAL",
+          "fontWeight": 400
+        }
+      ],
+      "truncationStartIndex": -1,
+      "truncatedHeight": -1,
+      "logicalIndexToCharacterOffsetMap": [
+        0, 4.3125, 12.796875, 16.796875, 20.0625, 26.375, 30.375, 39.34375, 48.09375, 56.84375,
+        65.84375, 74.25, 82.421875, 85.921875, 95.40625, 99.796875, 108.234375
+      ],
+      "derivedLines": [
+        {
+          "directionality": "LTR"
+        }
+      ]
+    },
+    "fontVariantCommonLigatures": true,
+    "fontVariantContextualLigatures": true,
+    "letterSpacing": {
+      "value": 0,
+      "units": "PERCENT"
+    },
+    "fontVersion": "",
+    "textUserLayoutVersion": 4,
+    "hyperlink": {},
+    "fontVariations": [],
+    "textBidiVersion": 1,
+    "emojiImageSet": "APPLE",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 424,
+      "y": 24
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 16
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "OUTSIDE",
+    "strokeJoin": "MITER",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.035100001841783524,
+          "g": 0.035100001841783524,
+          "b": 0.042899999767541885,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 57
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "stackChildPrimaryGrow": 1,
+    "autoRename": false,
+    "textTracking": 0,
+    "textAutoResize": "HEIGHT",
+    "variableConsumptionMap": {
+      "entries": []
+    },
+    "parameterConsumptionMap": {
+      "entries": []
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 255
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 253
+      },
+      "position": "%"
+    },
+    "type": "INSTANCE",
+    "name": "Chevron Down",
+    "userFacingVersion": "7:0",
+    "componentPropRefs": [
+      {
+        "defID": {
+          "sessionID": 206,
+          "localID": 2
+        },
+        "componentPropNodeField": "OVERRIDDEN_SYMBOL_ID"
+      }
+    ],
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "symbolOverrides": [
+        {
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 94
+              }
+            ]
+          },
+          "size": {
+            "x": 16,
+            "y": 16
+          },
+          "proportionsConstrained": true
+        }
+      ],
+      "uniformScaleFactor": 1
+    },
+    "derivedSymbolData": [
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "size": {
+          "x": 9.333333969116211,
+          "y": 5.333333492279053
+        },
+        "transform": {
+          "m00": 1,
+          "m01": 0,
+          "m02": 3.3333332538604736,
+          "m10": 0,
+          "m11": 1,
+          "m12": 5.333333492279053
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      }
+    ],
+    "propsAreBubbled": true,
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 16,
+      "y": 16
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 424,
+      "m10": 0,
+      "m11": 1,
+      "m12": 20
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 1,
+          "g": 1,
+          "b": 1,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": false,
+        "blendMode": "NORMAL"
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "NONZERO",
+        "commandsBlob": 37,
+        "styleID": 0
+      }
+    ],
+    "proportionsConstrained": true,
+    "frameMaskDisabled": false,
+    "derivedSymbolDataLayoutVersion": 1,
+    "parameterConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "propRefValue": {
+                "defId": {
+                  "sessionID": 206,
+                  "localID": 2
+                }
+              }
+            },
+            "dataType": "PROP_REF",
+            "resolvedDataType": "SYMBOL_ID"
+          },
+          "variableField": "OVERRIDDEN_SYMBOL_ID"
+        }
+      ]
+    },
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1734433457,
+      "createdAt": 1725830427
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 256
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 251
+      },
+      "position": "\""
+    },
+    "type": "FRAME",
+    "name": "Div",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 56
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "VERTICAL",
+    "stackChildAlignSelf": "STRETCH",
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"button\",\"attr\":{\"id\":\"radix-:r4:\"}}",
+        "key": "f2w-data"
+      }
+    ],
+    "frameMaskDisabled": true,
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858423,
+      "createdAt": 1725830427
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 257
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 256
+      },
+      "position": "!O"
+    },
+    "type": "FRAME",
+    "name": "Div",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 36
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": -0.000030517578125,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "stackMode": "HORIZONTAL",
+    "stackSpacing": 307,
+    "stackPrimarySizing": "FIXED",
+    "stackPrimaryAlignItems": "SPACE_BETWEEN",
+    "stackCounterAlignItems": "CENTER",
+    "stackPaddingBottom": 16,
+    "stackChildAlignSelf": "STRETCH",
+    "frameMaskDisabled": true,
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE",
+    "variableConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 64
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "parameterConsumptionMap": {
+      "entries": [
+        {
+          "variableData": {
+            "value": {
+              "alias": {
+                "guid": {
+                  "sessionID": 7,
+                  "localID": 64
+                }
+              }
+            },
+            "dataType": "ALIAS",
+            "resolvedDataType": "FLOAT"
+          },
+          "variableField": "STACK_PADDING_BOTTOM"
+        }
+      ]
+    },
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728858423,
+      "createdAt": 1725830427
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 258
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 257
+      },
+      "position": "#"
+    },
+    "type": "TEXT",
+    "name": "Text",
+    "styleIdForText": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 100
+      }
+    },
+    "fontSize": 14,
+    "textAlignVertical": "CENTER",
+    "lineHeight": {
+      "value": 20,
+      "units": "PIXELS"
+    },
+    "fontName": {
+      "family": "Geist",
+      "style": "Regular",
+      "postscript": "Geist-Regular"
+    },
+    "textData": {
+      "characters": "Yes. It adheres to the WAI-ARIA design pattern.",
+      "lines": [
+        {
+          "lineType": "PLAIN",
+          "styleId": 0,
+          "indentationLevel": 0,
+          "sourceDirectionality": "AUTO",
+          "listStartOffset": 0,
+          "isFirstLineOfList": false
+        }
+      ]
+    },
+    "derivedTextData": {
+      "layoutSize": {
+        "x": 440,
+        "y": 20
+      },
+      "baselines": [
+        {
+          "position": {
+            "x": 0,
+            "y": 14.899999618530273
+          },
+          "width": 301.423828125,
+          "lineY": -3.814697322468419e-7,
+          "lineHeight": 20,
+          "lineAscent": 12,
+          "firstCharacter": 0,
+          "endCharacter": 47
+        }
+      ],
+      "glyphs": [
+        {
+          "commandsBlob": 44,
+          "position": {
+            "x": 0,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 0,
+          "advance": 0.6300000548362732,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 8.12109375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 1,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 15.99609375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 2,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 45,
+          "position": {
+            "x": 23.419921875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 3,
+          "advance": 0.2070000171661377,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 26.318359375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 4,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 29.818359375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 5,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 33.03125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 6,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 38.5546875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 7,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 24,
+          "position": {
+            "x": 42.0546875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 8,
+          "advance": 0.5700000524520874,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 41,
+          "position": {
+            "x": 49.90234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 9,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 46,
+          "position": {
+            "x": 57.9140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 10,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 65.84375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 11,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 47,
+          "position": {
+            "x": 73.71875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 12,
+          "advance": 0.38200002908706665,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 78.640625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 13,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 86.515625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 14,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 93.939453125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 15,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 97.439453125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 16,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 48,
+          "position": {
+            "x": 102.7578125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 17,
+          "advance": 0.5790000557899475,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 110.865234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 18,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 23,
+          "position": {
+            "x": 114.365234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 19,
+          "advance": 0.39500001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 46,
+          "position": {
+            "x": 119.888671875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 20,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 127.818359375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 21,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 135.76171875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 22,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 49,
+          "position": {
+            "x": 139.26171875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 23,
+          "advance": 0.9110000729560852,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 50,
+          "position": {
+            "x": 151.033203125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 24,
+          "advance": 0.6700000166893005,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 160.412109375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 25,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 51,
+          "position": {
+            "x": 164.185546875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 26,
+          "advance": 0.42500001192092896,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 50,
+          "position": {
+            "x": 170.1328125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 27,
+          "advance": 0.6700000166893005,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 30,
+          "position": {
+            "x": 179.51171875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 28,
+          "advance": 0.6720000505447388,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 19,
+          "position": {
+            "x": 188.91796875,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 29,
+          "advance": 0.27000001072883606,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 50,
+          "position": {
+            "x": 192.69140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 30,
+          "advance": 0.6700000166893005,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 202.0703125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 31,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 41,
+          "position": {
+            "x": 205.5703125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 32,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 213.9375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 33,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 20,
+          "position": {
+            "x": 221.8125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 34,
+          "advance": 0.5300000309944153,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 22,
+          "position": {
+            "x": 228.962890625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 35,
+          "advance": 0.24400001764297485,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 31,
+          "position": {
+            "x": 232.380859375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 36,
+          "advance": 0.597000002861023,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 42,
+          "position": {
+            "x": 240.734375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 37,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 21,
+          "position": {
+            "x": 248.869140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 38,
+          "advance": 0.25,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 52,
+          "position": {
+            "x": 252.369140625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 39,
+          "advance": 0.5980000495910645,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 24,
+          "position": {
+            "x": 260.736328125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 40,
+          "advance": 0.5700000524520874,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 53,
+          "position": {
+            "x": 268.0234375,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 41,
+          "advance": 0.6970000267028809,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 26,
+          "position": {
+            "x": 277.580078125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 43,
+          "advance": 0.5670000314712524,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 47,
+          "position": {
+            "x": 285.455078125,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 44,
+          "advance": 0.38200002908706665,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 42,
+          "position": {
+            "x": 290.390625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 45,
+          "advance": 0.581000030040741,
+          "rotation": 0
+        },
+        {
+          "commandsBlob": 45,
+          "position": {
+            "x": 298.525390625,
+            "y": 14.899999618530273
+          },
+          "fontSize": 14,
+          "firstCharacter": 46,
+          "advance": 0.2070000171661377,
+          "rotation": 0
+        }
+      ],
+      "fontMetaData": [
+        {
+          "key": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": ""
+          },
+          "fontLineHeight": 1.2400000095367432,
+          "fontDigest": {
+            "0": 154,
+            "1": 83,
+            "2": 21,
+            "3": 9,
+            "4": 228,
+            "5": 231,
+            "6": 104,
+            "7": 233,
+            "8": 16,
+            "9": 45,
+            "10": 17,
+            "11": 245,
+            "12": 215,
+            "13": 210,
+            "14": 147,
+            "15": 227,
+            "16": 240,
+            "17": 77,
+            "18": 156,
+            "19": 100
+          },
+          "fontStyle": "NORMAL",
+          "fontWeight": 400
+        }
+      ],
+      "truncationStartIndex": -1,
+      "truncatedHeight": -1,
+      "logicalIndexToCharacterOffsetMap": [
+        0, 8.12109375, 15.99609375, 23.419921875, 26.318359375, 29.818359375, 33.03125, 38.5546875,
+        42.0546875, 49.90234375, 57.9140625, 65.84375, 73.71875, 78.640625, 86.515625, 93.939453125,
+        97.439453125, 102.7578125, 110.865234375, 114.365234375, 119.888671875, 127.818359375,
+        135.76171875, 139.26171875, 151.033203125, 160.412109375, 164.185546875, 170.1328125,
+        179.51171875, 188.91796875, 192.69140625, 202.0703125, 205.5703125, 213.9375, 221.8125,
+        228.962890625, 232.380859375, 240.734375, 248.869140625, 252.369140625, 260.736328125,
+        268.0234375, 272.8017578125, 277.580078125, 285.455078125, 290.390625, 298.525390625
+      ],
+      "derivedLines": [
+        {
+          "directionality": "LTR"
+        }
+      ]
+    },
+    "fontVariantCommonLigatures": true,
+    "fontVariantContextualLigatures": true,
+    "letterSpacing": {
+      "value": 0,
+      "units": "PERCENT"
+    },
+    "fontVersion": "",
+    "textUserLayoutVersion": 4,
+    "hyperlink": {},
+    "fontVariations": [],
+    "textBidiVersion": 1,
+    "emojiImageSet": "APPLE",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 20
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 0,
+      "m10": 0,
+      "m11": 1,
+      "m12": 0
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "OUTSIDE",
+    "strokeJoin": "MITER",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.035100001841783524,
+          "g": 0.035100001841783524,
+          "b": 0.042899999767541885,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 57
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "stackChildPrimaryGrow": 1,
+    "autoRename": false,
+    "textTracking": 0,
+    "textAutoResize": "HEIGHT",
+    "variableConsumptionMap": {
+      "entries": []
+    },
+    "parameterConsumptionMap": {
+      "entries": []
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 7,
+      "localID": 283
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 408
+      },
+      "position": "!"
+    },
+    "type": "INSTANCE",
+    "name": "Accordion",
+    "userFacingVersion": "7:126",
+    "symbolData": {
+      "symbolID": {
+        "sessionID": 7,
+        "localID": 186
+      },
+      "symbolOverrides": [
+        {
+          "overriddenSymbolID": {
+            "sessionID": 7,
+            "localID": 251
+          },
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 163
+              }
+            ]
+          }
+        },
+        {
+          "styleIdForText": {
+            "guid": {
+              "sessionID": 4294967295,
+              "localID": 4294967295
+            }
+          },
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 163
+              },
+              {
+                "sessionID": 7,
+                "localID": 254
+              }
+            ]
+          },
+          "fontSize": 16,
+          "lineHeight": {
+            "value": 24,
+            "units": "PIXELS"
+          },
+          "fontName": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": "Geist-Regular"
+          },
+          "fontVariantCommonLigatures": true,
+          "fontVariantContextualLigatures": true,
+          "letterSpacing": {
+            "value": 0,
+            "units": "PERCENT"
+          },
+          "fontVersion": "",
+          "fontVariations": [],
+          "textTracking": 0,
+          "variableConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          },
+          "parameterConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          }
+        },
+        {
+          "styleIdForText": {
+            "guid": {
+              "sessionID": 4294967295,
+              "localID": 4294967295
+            }
+          },
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 163
+              },
+              {
+                "sessionID": 7,
+                "localID": 258
+              }
+            ]
+          },
+          "fontSize": 14,
+          "lineHeight": {
+            "value": 20,
+            "units": "PIXELS"
+          },
+          "fontName": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": "Geist-Regular"
+          },
+          "fontVariantCommonLigatures": true,
+          "fontVariantContextualLigatures": true,
+          "letterSpacing": {
+            "value": 0,
+            "units": "PERCENT"
+          },
+          "fontVersion": "",
+          "fontVariations": [],
+          "textTracking": 0,
+          "variableConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 138
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 147
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "LINE_HEIGHT"
+              }
+            ]
+          },
+          "parameterConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 138
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 147
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "LINE_HEIGHT"
+              }
+            ]
+          }
+        },
+        {
+          "styleIdForText": {
+            "guid": {
+              "sessionID": 4294967295,
+              "localID": 4294967295
+            }
+          },
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 169
+              },
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "fontSize": 16,
+          "lineHeight": {
+            "value": 24,
+            "units": "PIXELS"
+          },
+          "fontName": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": "Geist-Regular"
+          },
+          "fontVariantCommonLigatures": true,
+          "fontVariantContextualLigatures": true,
+          "letterSpacing": {
+            "value": 0,
+            "units": "PERCENT"
+          },
+          "fontVersion": "",
+          "fontVariations": [],
+          "textTracking": 0,
+          "variableConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          },
+          "parameterConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          }
+        },
+        {
+          "styleIdForText": {
+            "guid": {
+              "sessionID": 4294967295,
+              "localID": 4294967295
+            }
+          },
+          "guidPath": {
+            "guids": [
+              {
+                "sessionID": 7,
+                "localID": 175
+              },
+              {
+                "sessionID": 4,
+                "localID": 483
+              }
+            ]
+          },
+          "fontSize": 16,
+          "lineHeight": {
+            "value": 24,
+            "units": "PIXELS"
+          },
+          "fontName": {
+            "family": "Geist",
+            "style": "Regular",
+            "postscript": "Geist-Regular"
+          },
+          "fontVariantCommonLigatures": true,
+          "fontVariantContextualLigatures": true,
+          "letterSpacing": {
+            "value": 0,
+            "units": "PERCENT"
+          },
+          "fontVersion": "",
+          "fontVariations": [],
+          "textTracking": 0,
+          "variableConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          },
+          "parameterConsumptionMap": {
+            "entries": [
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 128
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "STRING"
+                },
+                "variableField": "FONT_FAMILY"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "fontStyleValue": {
+                      "asFloat": {
+                        "value": {
+                          "alias": {
+                            "guid": {
+                              "sessionID": 7,
+                              "localID": 145
+                            }
+                          }
+                        },
+                        "dataType": "ALIAS",
+                        "resolvedDataType": "FLOAT"
+                      }
+                    }
+                  },
+                  "dataType": "FONT_STYLE",
+                  "resolvedDataType": "FONT_STYLE"
+                },
+                "variableField": "FONT_STYLE"
+              },
+              {
+                "variableData": {
+                  "value": {
+                    "alias": {
+                      "guid": {
+                        "sessionID": 7,
+                        "localID": 136
+                      }
+                    }
+                  },
+                  "dataType": "ALIAS",
+                  "resolvedDataType": "FLOAT"
+                },
+                "variableField": "FONT_SIZE"
+              }
+            ]
+          }
+        }
+      ],
+      "uniformScaleFactor": 1
+    },
+    "derivedSymbolData": [
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 163
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 92
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 56,
+            "styleID": 0
+          }
+        ],
+        "strokeGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 57,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 163
+            },
+            {
+              "sessionID": 7,
+              "localID": 253
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 56
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 163
+            },
+            {
+              "sessionID": 7,
+              "localID": 254
+            }
+          ]
+        },
+        "size": {
+          "x": 424,
+          "y": 24
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 163
+            },
+            {
+              "sessionID": 7,
+              "localID": 255
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 37,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 163
+            },
+            {
+              "sessionID": 7,
+              "localID": 255
+            },
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 163
+            },
+            {
+              "sessionID": 7,
+              "localID": 257
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 36
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 163
+            },
+            {
+              "sessionID": 7,
+              "localID": 258
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 20
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 169
+            }
+          ]
+        },
+        "transform": {
+          "m00": 1,
+          "m01": 0,
+          "m02": 0,
+          "m10": 0,
+          "m11": 1,
+          "m12": 92
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 38,
+            "styleID": 0
+          }
+        ],
+        "strokeGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 39,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 169
+            },
+            {
+              "sessionID": 4,
+              "localID": 483
+            }
+          ]
+        },
+        "size": {
+          "x": 424,
+          "y": 24
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 169
+            },
+            {
+              "sessionID": 7,
+              "localID": 91
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 56
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 169
+            },
+            {
+              "sessionID": 7,
+              "localID": 95
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 37,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 169
+            },
+            {
+              "sessionID": 7,
+              "localID": 95
+            },
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 175
+            }
+          ]
+        },
+        "transform": {
+          "m00": 1,
+          "m01": 0,
+          "m02": 0,
+          "m10": 0,
+          "m11": 1,
+          "m12": 148
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 38,
+            "styleID": 0
+          }
+        ],
+        "strokeGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 39,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 175
+            },
+            {
+              "sessionID": 4,
+              "localID": 483
+            }
+          ]
+        },
+        "size": {
+          "x": 424,
+          "y": 24
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 175
+            },
+            {
+              "sessionID": 7,
+              "localID": 91
+            }
+          ]
+        },
+        "size": {
+          "x": 440,
+          "y": 56
+        }
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 175
+            },
+            {
+              "sessionID": 7,
+              "localID": 95
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "NONZERO",
+            "commandsBlob": 37,
+            "styleID": 0
+          }
+        ]
+      },
+      {
+        "guidPath": {
+          "guids": [
+            {
+              "sessionID": 7,
+              "localID": 175
+            },
+            {
+              "sessionID": 7,
+              "localID": 95
+            },
+            {
+              "sessionID": 94,
+              "localID": 5438
+            }
+          ]
+        },
+        "fillGeometry": [
+          {
+            "windingRule": "ODD",
+            "commandsBlob": 36,
+            "styleID": 0
+          }
+        ]
+      }
+    ],
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 440,
+      "y": 204
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 100,
+      "m10": 0,
+      "m11": 1,
+      "m12": 100
+    },
+    "strokeWeight": 1,
+    "strokeAlign": "INSIDE",
+    "strokeJoin": "MITER",
+    "horizontalConstraint": "CENTER",
+    "stackMode": "VERTICAL",
+    "pluginData": [
+      {
+        "pluginID": "",
+        "value": "{\"tag\":\"div\"}",
+        "key": "f2w-data"
+      }
+    ],
+    "verticalConstraint": "CENTER",
+    "frameMaskDisabled": true,
+    "derivedSymbolDataLayoutVersion": 1,
+    "stackCounterSizing": "RESIZE_TO_FIT_WITH_IMPLICIT_SIZE",
+    "symbolLinks": [
+      {
+        "uri": "https://ui.shadcn.com/docs/components/accordion"
+      }
+    ],
+    "editInfo": {
+      "userId": "369886839823206492",
+      "lastEditedAt": 1728849298,
+      "createdAt": 1725830659
+    }
+  },
+  {
+    "guid": {
+      "sessionID": 94,
+      "localID": 5438
+    },
+    "phase": "CREATED",
+    "parentIndex": {
+      "guid": {
+        "sessionID": 7,
+        "localID": 94
+      },
+      "position": "\""
+    },
+    "type": "VECTOR",
+    "name": "Icon",
+    "visible": true,
+    "opacity": 1,
+    "size": {
+      "x": 14,
+      "y": 8
+    },
+    "transform": {
+      "m00": 1,
+      "m01": 0,
+      "m02": 5,
+      "m10": 0,
+      "m11": 1,
+      "m12": 8
+    },
+    "strokeWeight": 2,
+    "strokeAlign": "CENTER",
+    "strokeCap": "ROUND",
+    "strokeJoin": "ROUND",
+    "fillPaints": [
+      {
+        "type": "SOLID",
+        "color": {
+          "r": 0.035100001841783524,
+          "g": 0.035100001841783524,
+          "b": 0.042899999767541885,
+          "a": 1
+        },
+        "opacity": 1,
+        "visible": true,
+        "blendMode": "NORMAL",
+        "colorVar": {
+          "value": {
+            "alias": {
+              "guid": {
+                "sessionID": 4,
+                "localID": 57
+              }
+            }
+          },
+          "dataType": "ALIAS",
+          "resolvedDataType": "COLOR"
+        }
+      }
+    ],
+    "fillGeometry": [
+      {
+        "windingRule": "ODD",
+        "commandsBlob": 928,
+        "styleID": 0
+      }
+    ],
+    "horizontalConstraint": "SCALE",
+    "verticalConstraint": "SCALE",
+    "vectorData": {
+      "vectorNetworkBlob": 927,
+      "normalizedSize": {
+        "x": 14,
+        "y": 8
+      }
+    }
+  }
+]

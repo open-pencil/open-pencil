@@ -3,7 +3,10 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#visual/manifest": "./src/document/manifest.ts"
+    "#visual/manifest": "./src/document/manifest.ts",
+    "#visual/capture-scene": "./src/document/capture-scene.ts",
+    "#visual/path-diagnostics": "./src/document/path-diagnostics.ts",
+    "#visual/scene-oracle": "./src/document/scene-oracle.ts"
   },
   "scripts": {
     "test": "bun test tests"

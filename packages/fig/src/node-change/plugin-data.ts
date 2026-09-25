@@ -1,3 +1,5 @@
+import { omit } from 'es-toolkit/object'
+
 import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/kiwi/fig/codec'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
@@ -12,7 +14,11 @@ import {
 import type { Rect } from '@open-pencil/scene-graph/primitives'
 
 import { readEffectiveFigmaRawField } from '../source-metadata'
-import { resolveVariableConsumptionEntry } from './variable-bindings'
+import {
+  resolveVariableConsumptionEntry,
+  variableConsumptionEntries,
+  VARIABLE_BINDING_FIELDS_INVERSE
+} from './variable-bindings'
 
 export const OPEN_PENCIL_PLUGIN_ID = 'open-pencil'
 export const TEXT_DIRECTION_PLUGIN_KEY = 'textDirection'
@@ -116,12 +122,19 @@ function parseBoundVariablesPluginValue(value: string | null): Record<string, st
 }
 
 export function extractBoundVariables(nc: NodeChange): Record<string, string> {
-  const bindings = parseBoundVariablesPluginValue(
+  let bindings = parseBoundVariablesPluginValue(
     getOpenPencilPluginValue(nc, BOUND_VARIABLES_PLUGIN_KEY)
   )
-  for (const entry of nc.variableConsumptionMap?.entries ?? []) {
+  for (const entry of variableConsumptionEntries(nc)) {
     const binding = resolveVariableConsumptionEntry(entry)
     if (binding) bindings[binding.field] = binding.variableId
+    else if (
+      entry.variableField &&
+      !['ALIAS', 'EXPRESSION'].includes(entry.variableData?.dataType ?? '')
+    ) {
+      const field = VARIABLE_BINDING_FIELDS_INVERSE[entry.variableField]
+      if (field) bindings = omit(bindings, [field])
+    }
   }
   nc.fillPaints?.forEach((paint, i) => {
     const variableGuid =

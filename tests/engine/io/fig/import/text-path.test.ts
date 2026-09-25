@@ -10,7 +10,7 @@ import { exportFigFile } from '#core/io/formats/fig/export'
 import { encodeVectorNetworkBlob } from '#core/vector'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig-fixtures'
+import { loadFigFixture } from '#tests/helpers/fig/fixtures'
 
 /** exportFigFile returns a Uint8Array; parseFigBuffer takes an ArrayBuffer. */
 function reparse(out: Uint8Array) {

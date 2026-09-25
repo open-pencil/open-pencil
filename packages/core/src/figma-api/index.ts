@@ -18,6 +18,7 @@ import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
 import { IS_BROWSER } from '#core/constants'
 import type { RasterExportFormat } from '#core/io/formats/raster'
+import { reconcileVariableLayouts } from '#core/layout/variables'
 import { documentFontStatus, type DocumentFontStatus } from '#core/text/font/status'
 
 import { combineComponentsAsVariants, exposeInstanceSwap } from './components'
@@ -337,7 +338,8 @@ export class FigmaAPI implements NodeProxyHost {
   setVariableValue(variableId: string, modeId: string, value: VariableValue): void {
     const variable = this.graph.variables.get(variableId)
     if (!variable) throw new Error(`Variable "${variableId}" not found`)
-    variable.valuesByMode[modeId] = value
+    variable.valuesByMode[modeId] = structuredClone(value)
+    reconcileVariableLayouts(this.graph)
   }
 
   deleteVariable(id: string): void {
@@ -354,10 +356,12 @@ export class FigmaAPI implements NodeProxyHost {
 
   bindVariable(nodeId: string, field: string, variableId: string): void {
     this.graph.bindVariable(nodeId, field, variableId)
+    reconcileVariableLayouts(this.graph)
   }
 
   unbindVariable(nodeId: string, field: string): void {
     this.graph.unbindVariable(nodeId, field)
+    reconcileVariableLayouts(this.graph)
   }
 
   // --- Boolean Operations ---

@@ -6,7 +6,7 @@ import { exportFigFile } from '#core/io/formats/fig/export'
 import { calibratePathTextLayout, getTextPathData, reflowPathTextGlyphs } from '#core/text/path'
 
 import { expectDefined } from '#tests/helpers/assert'
-import { loadFigFixture } from '#tests/helpers/fig-fixtures'
+import { loadFigFixture } from '#tests/helpers/fig/fixtures'
 
 const LOCAL_CIRCLE_TEXT = 'tests/fixtures/circle-text.fig'
 

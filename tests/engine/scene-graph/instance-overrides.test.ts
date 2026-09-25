@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 
-import { importNodeChanges, type NodeChange } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 import { expectDefined } from '#tests/helpers/assert'
 
@@ -16,7 +17,7 @@ function nc(
   name: string,
   extra: Record<string, unknown> = {}
 ): NodeChange {
-  return {
+  const record = {
     guid: { sessionID, localID },
     parentIndex: {
       guid: { sessionID: parentSessionID, localID: parentLocalID },
@@ -31,6 +32,9 @@ function nc(
     transform: ID,
     ...extra
   } as NodeChange
+  if (type === 'DOCUMENT') Reflect.deleteProperty(record, 'parentIndex')
+  if (type === 'COMPONENT') record.type = 'SYMBOL'
+  return record
 }
 
 function guid(s: number, l: number) {
@@ -66,7 +70,12 @@ function swapOverrideFixture(opts?: { customName?: string }): NodeChange[] {
     // Button component containing an Icon instance pointing to IconA
     nc(0, 30, 'COMPONENT', 0, 1, 'Button'),
     nc(0, 31, 'INSTANCE', 0, 30, opts?.customName ?? 'IconA', {
-      symbolData: { symbolID: guid(0, 10) }
+      symbolData: {
+        symbolID: guid(0, 10),
+        symbolOverrides: opts?.customName
+          ? [{ guidPath: { guids: [guid(0, 10)] }, name: opts.customName }]
+          : []
+      }
     }),
 
     // Visible-page instance of Button with a swap override: Icon→IconB
@@ -86,7 +95,7 @@ function swapOverrideFixture(opts?: { customName?: string }): NodeChange[] {
 
 describe('instance swap overrides', () => {
   test('swap override renames icon and reclones children', () => {
-    const graph = importNodeChanges(swapOverrideFixture())
+    const graph = materializeDocument(swapOverrideFixture()).graph
     const page = expectDefined(
       graph.getPages().find((p) => p.name === 'Page1'),
       'Page1'
@@ -104,7 +113,7 @@ describe('instance swap overrides', () => {
   })
 
   test('swap override preserves user-given name', () => {
-    const graph = importNodeChanges(swapOverrideFixture({ customName: 'MyCustomIcon' }))
+    const graph = materializeDocument(swapOverrideFixture({ customName: 'MyCustomIcon' })).graph
     const page = expectDefined(
       graph.getPages().find((p) => p.name === 'Page1'),
       'Page1'
@@ -145,7 +154,7 @@ describe('instance swap overrides', () => {
       })
     ]
 
-    const graph = importNodeChanges(nodes)
+    const graph = materializeDocument(nodes).graph
     const page = expectDefined(
       graph.getPages().find((p) => p.name === 'Page1'),
       'Page1'
@@ -180,7 +189,7 @@ describe('instance swap overrides', () => {
       })
     ]
 
-    const graph = importNodeChanges(nodes)
+    const graph = materializeDocument(nodes).graph
     const page = expectDefined(
       graph.getPages().find((p) => p.name === 'Page1'),
       'Page1'
@@ -247,7 +256,7 @@ describe('instance swap overrides', () => {
       })
     ]
 
-    const graph = importNodeChanges(nodes)
+    const graph = materializeDocument(nodes).graph
     const page = expectDefined(
       graph.getPages().find((p) => p.name === 'Page1'),
       'Page1'

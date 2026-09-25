@@ -1,4 +1,9 @@
-import type { SceneGraph, SceneGraphEvents, SceneNode } from '@open-pencil/scene-graph'
+import {
+  TRANSFORM_FIELDS,
+  type SceneGraph,
+  type SceneGraphEvents,
+  type SceneNode
+} from '@open-pencil/scene-graph'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 
@@ -28,14 +33,7 @@ const TILED_CHUNK_TOPOLOGY_KEYS = new Set<keyof SceneNode>([
   'maskType'
 ])
 
-const NODE_PICTURE_STABLE_PREVIEW_KEYS = new Set<keyof SceneNode>([
-  'x',
-  'y',
-  'rotation',
-  'flipX',
-  'flipY',
-  'parentId'
-])
+const NODE_PICTURE_STABLE_PREVIEW_KEYS = new Set<keyof SceneNode>([...TRANSFORM_FIELDS, 'parentId'])
 
 export type RendererInvalidation = {
   geometryCache: boolean

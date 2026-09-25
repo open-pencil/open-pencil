@@ -1,11 +1,18 @@
 /* eslint-disable max-lines -- SceneGraph exposes a stable facade over domain modules */
 export * from './mutation-impact'
+export * from './variables/bindings'
+export { rescaleNodeTree, scaleNodeChanges } from './scaling'
+import { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'
+export { TRANSFORM_FIELDS, SIZE_FIELDS } from './fields/geometry'
+export { TEXT_METRIC_FIELDS, TEXT_SHAPING_FIELDS, TEXT_LAYOUT_FIELDS } from './fields/text'
+export * from './transfer'
 export * from './instance-overrides'
 export * from './images'
 export * from './components/properties'
 export * from './copy'
 export {
   copyInstanceComponentProps,
+  findInstanceAncestor,
   hasInstanceOverride,
   INSTANCE_SYNC_FIELDS,
   INSTANCE_SYNC_PROPS,
@@ -34,9 +41,9 @@ export { default as TransformMatrix } from './matrix'
 export type { Mat3 } from './matrix'
 export { UndoManager, type UndoEntry, type UndoManagerOptions } from './undo'
 
-import { createNanoEvents } from 'nanoevents'
-
 import { removeStaleBindings } from './bindings'
+export { CommittedGraphEventError } from './buffered-events'
+import { BufferedSceneEmitter } from './buffered-events'
 import { cloneNodeProps } from './copy'
 import { bindNodeEvents } from './events'
 import * as HitTest from './hit-test'
@@ -52,8 +59,6 @@ import { normalizeVectorNetwork } from './vector-network'
 export type { GUID, Color, Size, Vector } from './primitives'
 export * from './types'
 
-import type { Emitter } from 'nanoevents'
-
 import { getAbsolutePosition } from './coordinate'
 import type { Color, Rect, Vector } from './primitives'
 import type {
@@ -61,7 +66,6 @@ import type {
   EnabledLibraryBinding,
   NodeType,
   SceneGraphEventHandlers,
-  SceneGraphEvents,
   SceneNode,
   SourceMetadata,
   Variable,
@@ -110,7 +114,7 @@ export class SceneGraph {
   figSchemaDeflated: Uint8Array | null = null
   documentColorSpace: DocumentColorSpace = 'srgb'
   enabledLibraries = new Map<string, EnabledLibraryBinding>()
-  readonly emitter: Emitter<SceneGraphEvents> = createNanoEvents()
+  readonly emitter = new BufferedSceneEmitter()
   private absPosCache = new Map<string, Vector>()
   private previewMutationDepth = 0
   private previewObservers: NodePreviewObserver[] = []
@@ -328,6 +332,11 @@ export class SceneGraph {
     this.emitter.emit('node:created', node)
     return node
   }
+  /** Publish synchronous graph events only after the supplied mutation succeeds. */
+  withBufferedEvents<T>(action: () => T): T {
+    return this.emitter.batch(action)
+  }
+
   createNode(type: NodeType, parentId: string, overrides: Partial<SceneNode> = {}): SceneNode {
     const node = createDefaultNode(() => this.generateNodeId(), type, overrides)
     this.nodes.get(parentId)?.childIds.push(node.id)
@@ -350,13 +359,8 @@ export class SceneGraph {
   static GLYPH_AFFECTING_KEYS: ReadonlySet<string> = GLYPH_AFFECTING_KEYS
 
   static LAYOUT_AFFECTING_KEYS: ReadonlySet<string> = new Set([
-    'x',
-    'y',
-    'width',
-    'height',
-    'rotation',
-    'flipX',
-    'flipY',
+    ...TRANSFORM_FIELDS,
+    ...SIZE_FIELDS,
     'layoutMode',
     'layoutDirection',
     'itemSpacing',
@@ -481,7 +485,7 @@ export class SceneGraph {
       }
     }
     if (node.type === 'TEXT') invalidateTextCaches(node, changes)
-    if (this.sourceMetadataPreservationDepth === 0) {
+    if (this.sourceMetadataPreservationDepth === 0 && !this.isApplyingLayout) {
       markSourceFieldsEdited(node, Object.keys(changes))
     }
     if (changes.vectorNetwork) {

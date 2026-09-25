@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { canvas, doc, node } from './helpers'
 
 describe('fig-import: effects', () => {
   test('drop shadow', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('RECTANGLE', 10, 1, {
@@ -21,7 +21,7 @@ describe('fig-import: effects', () => {
           }
         ] as NodeChange['effects']
       })
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.effects).toHaveLength(1)
     expect(n.effects[0].type).toBe('DROP_SHADOW')
@@ -30,7 +30,7 @@ describe('fig-import: effects', () => {
   })
 
   test('inner shadow', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('RECTANGLE', 10, 1, {
@@ -45,7 +45,7 @@ describe('fig-import: effects', () => {
           }
         ] as NodeChange['effects']
       })
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.effects[0].type).toBe('INNER_SHADOW')
   })

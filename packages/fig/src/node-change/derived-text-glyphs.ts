@@ -18,6 +18,7 @@ export function convertFigmaDerivedTextGlyphs(
         x: glyph.position.x,
         y: glyph.position.y,
         fontSize: glyph.fontSize,
+        firstCharacter: glyph.firstCharacter,
         rotation: glyph.rotation
       }
     })

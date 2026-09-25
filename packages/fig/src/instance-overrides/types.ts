@@ -1,8 +1,5 @@
 import type { GUID, NodeChange, VariableConsumptionEntry } from '@open-pencil/kiwi/fig/codec'
-import type { SceneGraph } from '@open-pencil/scene-graph'
 import type { Matrix, Vector } from '@open-pencil/scene-graph/primitives'
-
-import type { ProtectionMap } from './patches'
 
 export interface VariableConsumptionMapFields {
   variableConsumptionMap?: { entries?: VariableConsumptionEntry[] }
@@ -18,8 +15,33 @@ export interface SymbolOverride extends VariableConsumptionMapFields {
 export type SymbolOverrideFields = VariableConsumptionMapFields
 
 export interface SymbolData {
+  uniformScaleFactor?: number
   symbolID?: GUID
   symbolOverrides?: SymbolOverride[]
+}
+
+/** The Kiwi codec types only `symbolID`; the remaining symbol fields are read through here. */
+export function symbolDataOf(record: NodeChange): SymbolData | undefined {
+  return record.symbolData as SymbolData | undefined
+}
+
+export function symbolOverridesOf(record: NodeChange): readonly SymbolOverride[] {
+  return symbolDataOf(record)?.symbolOverrides ?? []
+}
+
+export function uniformScaleOf(record: NodeChange): number {
+  return symbolDataOf(record)?.uniformScaleFactor ?? 1
+}
+
+/** A record's saved override payloads are partial records; visit the record and all of them. */
+export function forEachOverrideRecord(
+  record: NodeChange,
+  visit: (record: NodeChange, override?: SymbolOverride) => void,
+  override?: SymbolOverride
+): void {
+  visit(record, override)
+  for (const nested of symbolOverridesOf(record))
+    forEachOverrideRecord(nested as NodeChange, visit, nested)
 }
 
 export interface ComponentPropRef {
@@ -68,62 +90,4 @@ export interface ComponentPropDef {
   name?: string
   initialValue?: ComponentPropValue
   type?: number
-}
-
-export interface InstanceNodeChange {
-  type?: string
-  name?: string
-  guid?: GUID
-  parentIndex?: { guid?: GUID }
-  transform?: Matrix
-  size?: Vector
-  overrideKey?: GUID
-  symbolData?: SymbolData
-  componentPropRefs?: ComponentPropRef[]
-  componentPropAssignments?: ComponentPropAssignment[]
-  componentPropDefs?: ComponentPropDef[]
-  styleType?: string
-  fillPaints?: NodeChange['fillPaints']
-  strokePaints?: NodeChange['strokePaints']
-  fillGeometry?: NodeChange['fillGeometry']
-  strokeGeometry?: NodeChange['strokeGeometry']
-  strokeWeight?: number
-  derivedSymbolData?: DerivedSymbolOverride[]
-  key?: string
-  version?: string
-  userFacingVersion?: string
-  variableDataValues?: NodeChange['variableDataValues']
-}
-
-/**
- * Shared state for override resolution.
- *
- * Built once in `populateAndApplyOverrides` and threaded through all
- * sub-functions. Avoids closure-based coupling (a single 700-line
- * function) while keeping the shared maps accessible.
- */
-export interface OverrideContext {
-  graph: SceneGraph
-  changeMap: Map<string, InstanceNodeChange>
-  guidToNodeId: Map<string, string>
-  blobs: Uint8Array[]
-
-  overrideKeyToGuid: Map<string, string>
-  assetRefToGuid: Map<string, string>
-  nodeIdToGuid: Map<string, string>
-  propDefaults: Map<string, ComponentPropValue>
-  propNames: Map<string, string>
-  componentPropRefsMap?: Map<string, ComponentPropRef[]>
-  componentPropAssignmentsMap?: Map<string, ComponentPropAssignment[]>
-  preComputedRoot: Map<string, string>
-  preComputedClones: Map<string, string[]>
-  componentIdRoot: Map<string, string>
-  swappedInstances: Set<string>
-  protectedFields: ProtectionMap
-  /** Nodes whose kiwi NC has explicit property values (cornerRadius, visibility, etc.) */
-  kiwiPropertyNodes: Set<string>
-  /** Nodes whose Figma-derived geometry should not be overwritten by clone propagation. */
-  geometryOverrideNodes: Set<string>
-  /** When set, apply/populate expensive instance work only inside these already-imported nodes. */
-  activeNodeIds?: Set<string>
 }

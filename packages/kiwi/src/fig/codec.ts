@@ -258,6 +258,10 @@ export interface VariableAnyValue {
   colorValue?: Color
   alias?: { guid?: GUID; assetRef?: { key: string; version?: string } }
   symbolIdValue?: { guid?: GUID }
+  expressionValue?: {
+    expressionFunction?: string
+    expressionArguments?: VariableDataEntry[]
+  }
 }
 
 export interface VariableDataEntry {

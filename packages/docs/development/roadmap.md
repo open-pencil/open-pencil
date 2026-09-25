@@ -285,7 +285,7 @@ These are parsed or visible in Figma docs and most likely to cause visible diffe
 | Source edit tracking         | `packages/scene-graph/src/source-metadata.ts`                                                                  |
 | `.fig` metadata policy       | `packages/fig/src/source-metadata.ts`                                                                           |
 | Kiwi import mapping          | `packages/fig/src/node-change/convert.ts`                                                                       |
-| Kiwi export mapping          | `packages/fig/src/node-change/export-node.ts`, `packages/fig/src/node-change/serialize.ts`                    |
+| Kiwi export mapping          | `packages/fig/src/node-change/export/node.ts`, `packages/fig/src/node-change/serialize.ts`                    |
 | Kiwi schema                  | `packages/kiwi/src/fig/schema/fig.kiwi`, `tests/engine/io/fig/import/schema-coverage.test.ts`                   |
 | Renderer dispatch            | `packages/core/src/canvas/scene.ts`                                                                            |
 | Fills / images / gradients   | `packages/core/src/canvas/fills.ts`                                                                            |

@@ -45,6 +45,69 @@ function squareCommandsBlob(): Uint8Array {
 }
 
 describe('derived text rendering', () => {
+  test('uses run alpha and inherited paint at saved cluster positions', () => {
+    const graph = new SceneGraph()
+    const page = graph.getPages()[0]
+    const text = graph.createNode('TEXT', page.id, {
+      text: 'ffiX',
+      width: 40,
+      height: 20,
+      fontSize: 10,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 1, a: 1 }, opacity: 1, visible: true }],
+      styleRuns: [
+        {
+          start: 0,
+          length: 3,
+          style: {
+            fills: [
+              { type: 'SOLID', color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.5, visible: true }
+            ]
+          }
+        }
+      ],
+      derivedTextGlyphs: [
+        { commandsBlob: squareCommandsBlob(), x: 0, y: 10, fontSize: 10, firstCharacter: 0 },
+        { commandsBlob: squareCommandsBlob(), x: 20, y: 10, fontSize: 10, firstCharacter: 3 }
+      ]
+    })
+    const surface = expectDefined(ck.MakeSurface(1, 1), 'surface')
+    const renderer = new SkiaRenderer(ck, surface)
+    renderer.nodeFontReadiness = () => {
+      throw new Error('Saved text must not depend on font readiness')
+    }
+    try {
+      const png = expectDefined(
+        renderNodesToImage(ck, renderer, graph, page.id, [text.id], {
+          scale: 1,
+          format: 'PNG',
+          trimTransparent: false
+        }),
+        'png'
+      )
+      const image = expectDefined(ck.MakeImageFromEncoded(png), 'image')
+      try {
+        const pixels = expectDefined(
+          image.readPixels(0, 0, {
+            alphaType: ck.AlphaType.Unpremul,
+            colorType: ck.ColorType.RGBA_8888,
+            colorSpace: ck.ColorSpace.SRGB,
+            width: image.width(),
+            height: image.height()
+          }),
+          'pixels'
+        )
+        const at = (x: number, y: number) =>
+          Array.from(pixels.slice((y * image.width() + x) * 4, (y * image.width() + x) * 4 + 4))
+        expect(at(5, 5)).toEqual([255, 0, 0, 128])
+        expect(at(25, 5)).toEqual([0, 0, 255, 255])
+      } finally {
+        image.delete()
+      }
+    } finally {
+      renderer.destroy()
+    }
+  })
+
   test('glyph silhouettes are disposed by cache clearing and renderer destruction', () => {
     const renderer = new SkiaRenderer(
       ck,

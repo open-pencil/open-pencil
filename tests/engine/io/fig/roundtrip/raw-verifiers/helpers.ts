@@ -1,3 +1,5 @@
+import { isEqual } from 'es-toolkit/predicate'
+
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import type { VerifierContext } from '../helpers'
@@ -196,7 +198,7 @@ function verifySingleComponentPropDef(
   aDef: Record<string, unknown>,
   bDef: Record<string, unknown>
 ): boolean {
-  if (JSON.stringify(aDef.id) !== JSON.stringify(bDef.id)) return false
+  if (!isEqual(aDef.id, bDef.id)) return false
   if (aDef.name !== bDef.name) return false
   if (!isComponentPropTypeEquivalent(aDef.type, bDef.type)) return false
 

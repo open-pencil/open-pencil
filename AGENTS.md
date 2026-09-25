@@ -263,6 +263,7 @@ Keep responsibilities distinct: engine tests cover state contracts, Playwright b
 ## Scene graph
 
 - Nodes live in a flat `Map<string, SceneNode>`; runtime hierarchy uses `parentId` and `childIds`.
+- Numeric binding conversions live in format-neutral `variableBindingScales`, alongside `boundVariables`. Preserve them when cloning/transferring nodes. Editor and Figma API variable actions share binding/layout reconciliation under Core's `layout/`; changing a token or mode must not merely repaint stale numeric geometry.
 - Frames do not clip by default.
 - Sort children geometrically before creating auto-layout. Dragging outside a frame reparents; groups preserve child world positions.
 - Layer trees must react to reparenting rather than retaining stale child references.
@@ -272,6 +273,7 @@ Keep responsibilities distinct: engine tests cover state contracts, Playwright b
 - Component types use `#9747ff`.
 - Instance children map to component children through `componentId`; runtime overrides use structured `InstanceOverrideState` (`self` and `descendants` maps).
 - Component edits must propagate through editor/component sync—never hand-copy properties in app UI. Use Scene Graph copy helpers for nested values.
+- SceneGraph `componentScale` records occurrence coordinates explicitly; synchronization converts source/target units without inferring ratios from dimensions. Shared rescaling lives under `packages/scene-graph/src/scaling/`; Core's Figma API delegates there. Binding declaration units and existing binding conversions remain separate metadata.
 
 ## Layout
 
@@ -326,7 +328,8 @@ Motion policy lives in `src/app/shell/motion/`: resolve persisted System/Off pre
 
 ## File format
 
-- Figma clipboard envelope encoding, decoding, bounds, and SceneGraph import conversion belong to `@open-pencil/fig/clipboard`. Core prepares runtime fonts/text and owns editor placement/history; browser/Tauri adapters own system clipboard I/O. Do not add platform clipboard APIs to Fig.
+- Figma clipboard envelope encoding, decoding, bounds, and image embedding belong to `@open-pencil/fig/clipboard`; pasted records are interpreted through the same reader as documents (`materializeFigFragment`) from `packages/core/src/clipboard/fig-import.ts`, never a separate population path. Core prepares runtime fonts/text and owns editor placement/history; browser/Tauri adapters own system clipboard I/O. Do not add platform clipboard APIs to Fig.
+- `.fig` import has one reader (`@open-pencil/fig` document sessions) for synchronous parsing, the worker, page population, recovery, export, and paste. The reader skips and reports records Figma retains after deletions (`readerDiagnostics(graph)`); a swap whose replacement is missing still fails.
 - Kiwi schema/runtime/codec/container helpers live in `@open-pencil/kiwi`; complete archive parsing and SceneGraph conversion live in `@open-pencil/fig`; Core owns format-neutral orchestration, runtime fonts/workers, and thumbnails.
 - Vector networks use the reverse-engineered `vectorNetworkBlob`; codecs live under `packages/core/src/vector/` and types in Scene Graph.
 - File System Access APIs are browser APIs, not Tauri-only. Keep Safari download fallback and defer `revokeObjectURL`.

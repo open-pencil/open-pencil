@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
@@ -40,14 +40,14 @@ describe('fig-import: auto-layout alignment', () => {
   })
 
   test('maps SPACE_EVENLY kiwi primary alignment to Figma space-between', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('FRAME', 10, 1, {
         stackMode: 'HORIZONTAL',
         stackPrimaryAlignItems: 'SPACE_EVENLY'
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.primaryAxisAlign).toBe('SPACE_BETWEEN')
   })

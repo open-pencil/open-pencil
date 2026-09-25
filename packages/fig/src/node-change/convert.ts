@@ -4,6 +4,7 @@ import {
   DEFAULT_STROKE_MITER_LIMIT,
   styleToWeight
 } from '@open-pencil/scene-graph'
+import { createDefaultSourceMetadata } from '@open-pencil/scene-graph/node-defaults'
 import { parseVariantName } from '@open-pencil/scene-graph/variant-name'
 /* eslint-disable max-lines -- kiwi↔scene conversion helpers are tightly coupled */
 
@@ -71,6 +72,7 @@ import type {
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 export { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
+import { numericVariableAssignmentScales, sourceVariableBindingScales } from './variable-bindings'
 export { VARIABLE_BINDING_FIELDS, VARIABLE_BINDING_FIELDS_INVERSE } from './variable-bindings'
 
 interface FigVariableModeMap {
@@ -452,7 +454,11 @@ function convertLayoutProps(
 > &
   Partial<Pick<SceneNode, 'derivedLayout'>> {
   const layoutMode = mapStackMode(nc.stackMode)
-  const primaryAxisSizing = mapStackSizing(nc.stackPrimarySizing)
+  const primaryAxisSizing =
+    nc.stackPrimarySizing === undefined &&
+    (layoutMode === 'HORIZONTAL' || layoutMode === 'VERTICAL')
+      ? 'HUG'
+      : mapStackSizing(nc.stackPrimarySizing)
   const counterAxisSizing = mapStackSizing(nc.stackCounterSizing)
   const derivedLayout = visibleContainerDerivedLayout(
     nc,
@@ -502,6 +508,14 @@ function styleRefId(value: unknown): string | null {
   if (!value || typeof value !== 'object' || !('guid' in value)) return null
   const guid = value.guid
   if (!guid || typeof guid !== 'object') return null
+  // Kiwi's all-ones GUID denotes an explicitly cleared style reference.
+  if (
+    'sessionID' in guid &&
+    'localID' in guid &&
+    guid.sessionID === 0xffffffff &&
+    guid.localID === 0xffffffff
+  )
+    return null
   return guidToString(guid as GUID)
 }
 
@@ -595,25 +609,10 @@ function resolveNodeType(nc: NodeChange): NodeType | 'DOCUMENT' | 'VARIABLE' {
   return nodeType
 }
 
-function nearlyEqualSize(a: number | undefined, b: number | undefined): boolean {
-  return Math.abs((a ?? 0) - (b ?? 0)) <= 0.5
-}
-
-export function shouldImportTextAsAutoSize(
-  nc: NodeChange,
-  parentNc: NodeChange | undefined
-): boolean {
-  if (nc.type !== 'TEXT' || nc.textAutoResize !== 'NONE') return false
-  if (parentNc?.stackMode !== 'HORIZONTAL' && parentNc?.stackMode !== 'VERTICAL') return false
-  if (!nc.textData?.characters) return false
-  const layoutSize = nc.derivedTextData?.layoutSize
-  if (!layoutSize || !nc.size) return false
-  return nearlyEqualSize(layoutSize.x, nc.size.x) && nearlyEqualSize(layoutSize.y, nc.size.y)
-}
-
 export function nodeChangeToProps(
   nc: NodeChange,
-  blobs: Uint8Array[]
+  blobs: Uint8Array[],
+  metadata: 'source' | 'occurrence' = 'source'
 ): Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } {
   const nodeType = resolveNodeType(nc)
 
@@ -623,11 +622,13 @@ export function nodeChangeToProps(
   const props: Partial<SceneNode> & { nodeType: NodeType | 'DOCUMENT' | 'VARIABLE' } = {
     nodeType,
     name: nc.name ?? nodeType,
-    source: extractSourceMetadata(nc, blobs),
+    source:
+      metadata === 'source' ? extractSourceMetadata(nc, blobs) : extractOccurrenceMetadata(nc),
     ...convertFigmaTransformProps(nc),
     opacity: nc.opacity ?? 1,
     visible: nc.visible ?? true,
     locked: nc.locked ?? false,
+    internalOnly: nc.internalOnly === true || sharedStyleType(nc.styleType) !== null,
     blendMode: (nc.blendMode as Fill['blendMode']) ?? 'PASS_THROUGH',
     booleanOperation: mapBooleanOperation(nc),
     fills: convertFills(nc.fillPaints),
@@ -664,6 +665,8 @@ export function nodeChangeToProps(
     expanded: true,
     autoRename: (nc.autoRename ?? true) as boolean,
     boundVariables: extractBoundVariables(nc),
+    variableAssignmentScales: numericVariableAssignmentScales(),
+    variableBindingScales: sourceVariableBindingScales(nc),
     variableModes: extractVariableModes(nc),
     exportSettings: extractExportSettings(nc),
     pluginData: extractPluginData(nc),
@@ -671,7 +674,7 @@ export function nodeChangeToProps(
     pluginRelaunchData: extractPluginRelaunchData(nc),
     clipsContent: nc.frameMaskDisabled === false && nc.resizeToFit !== true,
     componentId: extractSymbolId(nc),
-    componentPropertyDefinitions: extractComponentPropertyDefs(nc),
+    componentPropertyDefinitions: nodeType === 'INSTANCE' ? [] : extractComponentPropertyDefs(nc),
     componentPropertyReferences: extractComponentPropertyRefs(nc),
     componentPropertyAssignments: extractComponentPropertyAssignments(nc),
     componentPropertyValues: extractComponentPropertyValues(nc),
@@ -940,6 +943,12 @@ function extractFigmaLayoutMetadata(nc: NodeChange): SceneNode['source']['fig'][
     bordersTakeSpace: nc.bordersTakeSpace as boolean | undefined,
     stackReverseZIndex: nc.stackReverseZIndex as boolean | undefined
   }
+}
+
+function extractOccurrenceMetadata(nc: NodeChange): SceneNode['source'] {
+  const source = createDefaultSourceMetadata()
+  source.fig.layout = extractFigmaLayoutMetadata(nc)
+  return source
 }
 
 function extractSourceMetadata(nc: NodeChange, blobs: Uint8Array[]): SceneNode['source'] {

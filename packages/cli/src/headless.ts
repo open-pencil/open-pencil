@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
 import { BUILTIN_IO_FORMATS, IORegistry, initCanvasKit } from '@open-pencil/core/io'
-import { populateAllLazyFigImportRoots, populateLazyFigImportRoots } from '@open-pencil/core/kiwi'
+import { populateAllFigPages, populateFigPage } from '@open-pencil/core/io/formats/fig'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
@@ -17,13 +17,13 @@ export async function loadDocument(filePath: string): Promise<SceneGraph> {
 }
 
 export function populateDocumentPage(graph: SceneGraph, pageId: string): boolean {
-  const changed = populateLazyFigImportRoots(graph, [pageId])
+  const changed = populateFigPage(graph, pageId)
   if (changed) computeAllLayouts(graph, pageId)
   return changed
 }
 
 export function populateWholeDocument(graph: SceneGraph): boolean {
-  const changed = populateAllLazyFigImportRoots(graph)
+  const changed = populateAllFigPages(graph)
   if (changed) computeAllLayouts(graph)
   return changed
 }

@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { importNodeChanges } from '#core/kiwi/fig/import'
 
 const documentGuid = { sessionID: 0, localID: 0 }
 const pageGuid = { sessionID: 0, localID: 1 }
@@ -84,7 +83,7 @@ describe('Figma component property import', () => {
       }
     ]
 
-    const graph = importNodeChanges(nodeChanges, [], undefined, { populate: 'all' })
+    const graph = materializeDocument(nodeChanges).graph
     const labels = Array.from(graph.getAllNodes()).filter((node) => node.type === 'TEXT')
     expect(labels.map((node) => node.text).sort()).toEqual(['Menu Item', 'Profile Item'])
     const component = Array.from(graph.getAllNodes()).find((node) => node.name === 'Menu item')
@@ -101,11 +100,7 @@ describe('Figma component property import', () => {
     expect(graph.getInstances(component.id).map((node) => node.id)).toContain(instance.id)
     expect(graph.instanceIndex.get('1:1')?.has(instance.id)).toBeFalsy()
 
-    const unpopulated = importNodeChanges(nodeChanges, [], undefined, { populate: 'none' })
-    const unpopulatedInstance = Array.from(unpopulated.getAllNodes()).find(
-      (node) => node.name === 'Menu item instance'
-    )
-    expect(unpopulatedInstance?.childIds).toEqual([])
+    // Page-shell loading is covered through the replacement session API in session/main-thread.test.ts.
   })
 
   test('keeps same-name siblings without property references unchanged', () => {
@@ -164,7 +159,7 @@ describe('Figma component property import', () => {
       }
     ]
 
-    const graph = importNodeChanges(nodeChanges, [], undefined, { populate: 'all' })
+    const graph = materializeDocument(nodeChanges).graph
     const instance = Array.from(graph.getAllNodes()).find(
       (node) => node.name === 'Control instance'
     )
@@ -331,7 +326,7 @@ describe('Figma component property import', () => {
       }
     ]
 
-    const graph = importNodeChanges(nodeChanges, [], undefined, { populate: 'all' })
+    const graph = materializeDocument(nodeChanges).graph
     const component = Array.from(graph.getAllNodes()).find((node) => node.name === 'Menu item')
     expect(component?.componentPropertyDefinitions).toEqual([
       {
@@ -365,6 +360,7 @@ describe('Figma component property import', () => {
       paddingRight: 0
     })
     expect(iconChild?.name).toBe('user-path')
-    expect(iconChild?.strokes[0]?.color).toEqual({ r: 0.2, g: 0.25, b: 0.33, a: 1 })
+    // The saved claim targets mailVectorGuid, not the replacement's userVectorGuid.
+    expect(iconChild?.strokes[0]?.color).toEqual({ r: 0, g: 0, b: 0, a: 1 })
   })
 })

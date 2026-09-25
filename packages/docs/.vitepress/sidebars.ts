@@ -111,6 +111,7 @@ export const developmentSidebar = (
       { text: 'Contributing', link: `${prefix}/development/contributing` },
       { text: 'Testing', link: `${prefix}/development/testing` },
       { text: labels.architecture, link: `${prefix}/development/architecture` },
+      { text: '.fig Reader Architecture', link: '/development/fig-reader' },
       { text: labels.techStack, link: `${prefix}/development/tech-stack` },
       ...(!prefix
         ? [

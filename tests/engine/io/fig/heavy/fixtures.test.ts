@@ -1,78 +1,78 @@
-import { beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
+import { afterAll, beforeAll, expect, setDefaultTimeout, test } from 'bun:test'
 
 import { SceneGraph, type SceneNode } from '@open-pencil/core'
+import { populateFigPage } from '@open-pencil/core/io/formats/fig'
 
-import { parseFixture, VALID_NODE_TYPES } from '#tests/helpers/fig-fixtures'
-import { collectAllNodes } from '#tests/helpers/fig-traversal'
+import { releaseFigPopulationWorker } from '#core/kiwi/fig/population/client'
+
+import { parseFixture, VALID_NODE_TYPES } from '#tests/helpers/fig/fixtures'
+import { collectAllNodes } from '#tests/helpers/fig/traversal'
 import { heavy } from '#tests/helpers/test-utils'
 
 setDefaultTimeout(180_000)
 
-heavy('parse heavy .fig files', () => {
-  let material3: SceneGraph
-  let nuxtui: SceneGraph
-  let material3Nodes: SceneNode[]
-  let nuxtUINodes: SceneNode[]
+for (const { file, sourcePageId } of [
+  { file: 'material3.fig', sourcePageId: '55141:14173' }, // Checkboxes
+  { file: 'nuxtui.fig', sourcePageId: '69:12607' } // Button
+]) {
+  heavy(`incremental heavy fixture: ${file}`, () => {
+    let graph: SceneGraph
+    let initialContentCount: number
+    let pageIds: string[]
+    let selectedPageId: string
+    let nodes: SceneNode[]
 
-  beforeAll(async () => {
-    material3 = await parseFixture('material3.fig', { populate: 'none' })
-    nuxtui = await parseFixture('nuxtui.fig', { populate: 'none' })
-    material3Nodes = collectAllNodes(material3)
-    nuxtUINodes = collectAllNodes(nuxtui)
-  })
+    beforeAll(async () => {
+      graph = await parseFixture(file, { populate: 'none' })
+      pageIds = graph.getPages().map((page) => page.id)
+      initialContentCount = collectAllNodes(graph).length
+      const page = graph.getPages().find((candidate) => candidate.source.id === sourcePageId)
+      if (!page) throw new Error(`Missing fixture page ${sourcePageId}`)
+      selectedPageId = page.id
+      expect(populateFigPage(graph, selectedPageId)).toBe(true)
+      nodes = collectAllNodes(graph)
+    })
 
-  test('material3.fig parses with pages and nodes', () => {
-    expect(material3).toBeInstanceOf(SceneGraph)
-    expect(material3.getPages().length).toBeGreaterThan(0)
-    expect(material3Nodes.length).toBeGreaterThan(0)
-  })
+    afterAll(() => {
+      if (graph) releaseFigPopulationWorker(graph)
+    })
 
-  test('nuxtui.fig parses with pages and nodes', () => {
-    expect(nuxtui).toBeInstanceOf(SceneGraph)
-    expect(nuxtui.getPages().length).toBeGreaterThan(0)
-    expect(nuxtUINodes.length).toBeGreaterThan(0)
-  })
+    test('none creates page shells without eagerly expanding content', () => {
+      expect(graph).toBeInstanceOf(SceneGraph)
+      expect(pageIds.length).toBeGreaterThan(1)
+      expect(initialContentCount).toBe(0)
+    })
 
-  test('material3: contains COMPONENT nodes', () => {
-    expect(material3Nodes.some((n) => n.type === 'COMPONENT')).toBe(true)
-  })
+    test('selected-page loading preserves shell identities and is idempotent', () => {
+      expect(graph.getPages().map((page) => page.id)).toEqual(pageIds)
+      expect(graph.getChildren(selectedPageId).length).toBeGreaterThan(0)
+      expect(nodes.length).toBeGreaterThan(0)
+      expect(populateFigPage(graph, selectedPageId)).toBe(false)
+      expect(collectAllNodes(graph).map((node) => node.id)).toEqual(nodes.map((node) => node.id))
+      // Getting started / Welcome are not dependencies of these selected component pages.
+      expect(graph.getChildren(pageIds[0])).toHaveLength(0)
+    })
 
-  test('material3: no unmapped node types', () => {
-    const invalid = material3Nodes.filter((n) => !VALID_NODE_TYPES.has(n.type))
-    expect(invalid.map((n) => `${n.name}: ${n.type}`)).toEqual([])
-  })
+    test('materializes instances with actual component definitions', () => {
+      const instances = nodes.filter((node) => node.type === 'INSTANCE')
+      expect(instances.length).toBeGreaterThan(0)
+      for (const instance of instances) {
+        expect(instance.componentId).not.toBeNull()
+        expect(graph.getNode(instance.componentId ?? '')?.type).toBe('COMPONENT')
+      }
+    })
 
-  test('nuxtui: no unmapped node types', () => {
-    const invalid = nuxtUINodes.filter((n) => !VALID_NODE_TYPES.has(n.type))
-    expect(invalid.map((n) => `${n.name}: ${n.type}`)).toEqual([])
-  })
-
-  test('material3: fills have valid colors', () => {
-    for (const n of material3Nodes) {
-      for (const fill of n.fills) {
-        if (fill.type === 'SOLID') {
-          const { r, g, b, a } = fill.color
-          expect(r).toBeGreaterThanOrEqual(0)
-          expect(r).toBeLessThanOrEqual(1)
-          expect(g).toBeGreaterThanOrEqual(0)
-          expect(g).toBeLessThanOrEqual(1)
-          expect(b).toBeGreaterThanOrEqual(0)
-          expect(b).toBeLessThanOrEqual(1)
-          expect(a).toBeGreaterThanOrEqual(0)
-          expect(a).toBeLessThanOrEqual(1)
+    test('populated content uses supported types and valid solid colors', () => {
+      expect(nodes.length).toBeGreaterThan(0)
+      expect(nodes.filter((node) => !VALID_NODE_TYPES.has(node.type))).toEqual([])
+      const solids = nodes.flatMap((node) => node.fills).filter((fill) => fill.type === 'SOLID')
+      expect(solids.length).toBeGreaterThan(0)
+      for (const fill of solids) {
+        for (const channel of [fill.color.r, fill.color.g, fill.color.b, fill.color.a]) {
+          expect(channel).toBeGreaterThanOrEqual(0)
+          expect(channel).toBeLessThanOrEqual(1)
         }
       }
-    }
+    })
   })
-
-  test('nuxtui: fills have valid colors', () => {
-    for (const n of nuxtUINodes) {
-      for (const fill of n.fills) {
-        if (fill.type === 'SOLID') {
-          expect(fill.color.r).toBeGreaterThanOrEqual(0)
-          expect(fill.color.r).toBeLessThanOrEqual(1)
-        }
-      }
-    }
-  })
-})
+}

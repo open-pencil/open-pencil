@@ -6,7 +6,7 @@ import { parseFigBuffer } from '@open-pencil/fig'
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { sharedGoldPreviewFixture } from '#tests/helpers/fig-fixtures'
+import { sharedGoldPreviewFixture } from '#tests/helpers/fig/fixtures'
 
 describe('export subgraph extraction', () => {
   test('page extraction keeps the source root and page descendants', () => {

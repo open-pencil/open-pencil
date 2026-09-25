@@ -39,20 +39,15 @@ describe('text rendering invalidation keys', () => {
       'lineHeight',
       'letterSpacing',
       'textCase',
+      'fontVariations',
+      'fontFeatures',
+      'textAlignHorizontal',
+      'textAlignVertical',
       'styleRuns'
     ]) {
       expect(keys.has(k)).toBe(true)
     }
-    for (const k of [
-      'x',
-      'y',
-      'width',
-      'height',
-      'fills',
-      'textAlignHorizontal',
-      'textAlignVertical',
-      'textDecoration'
-    ]) {
+    for (const k of ['x', 'y', 'width', 'height', 'fills', 'textDecoration']) {
       expect(keys.has(k)).toBe(false)
     }
   })

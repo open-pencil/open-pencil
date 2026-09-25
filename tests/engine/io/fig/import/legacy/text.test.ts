@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 
 import { canvas, doc, node } from './helpers'
 
 describe('fig-import: text properties', () => {
   test('text auto resize', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('TEXT', 10, 1, {
@@ -15,7 +15,7 @@ describe('fig-import: text properties', () => {
         textAlignHorizontal: 'CENTER',
         textAutoResize: 'WIDTH_AND_HEIGHT'
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.textAutoResize).toBe('WIDTH_AND_HEIGHT')
     expect(n.textAlignHorizontal).toBe('CENTER')
@@ -23,7 +23,7 @@ describe('fig-import: text properties', () => {
 
   test('imports derived glyph geometry for Figma text rendering', () => {
     const glyphBlob = new Uint8Array([0])
-    const graph = importNodeChanges(
+    const graph = materializeDocument(
       [
         doc(),
         canvas(),
@@ -46,11 +46,12 @@ describe('fig-import: text properties', () => {
         } as Partial<NodeChange>)
       ],
       [glyphBlob]
-    )
+    ).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.derivedTextGlyphs).toEqual([
       {
         commandsBlob: glyphBlob,
+        firstCharacter: 0,
         x: 2,
         y: 8,
         fontSize: 14,
@@ -68,7 +69,7 @@ describe('fig-import: text properties', () => {
   })
 
   test('uses derived line metrics for imported Figma text rendering', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('TEXT', 10, 1, {
@@ -90,13 +91,13 @@ describe('fig-import: text properties', () => {
           ]
         }
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const n = graph.getChildren(graph.getPages()[0].id)[0]
     expect(n.lineHeight).toBe(16.94)
   })
 
   test('applies shared text style refs', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('TEXT', 20, 1, {
@@ -113,12 +114,12 @@ describe('fig-import: text properties', () => {
         textDecoration: 'UNDERLINE',
         styleIdForText: { guid: { sessionID: 1, localID: 20 } }
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const styled = graph
       .getChildren(graph.getPages()[0].id)
       .find((node) => node.text === 'Styled text')
     expect(styled?.fontSize).toBe(16)
-    expect(styled?.textStyleId).toBe('1:20')
+    expect(graph.getNode(styled?.textStyleId ?? '')?.name).toBe('Body style')
     expect(styled?.fontWeight).toBe(400)
     expect(styled?.lineHeight).toBe(24)
     expect(styled?.textDecoration).toBe('NONE')
@@ -127,7 +128,7 @@ describe('fig-import: text properties', () => {
   })
 
   test('applies shared fill style refs', () => {
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       doc(),
       canvas(),
       node('ROUNDED_RECTANGLE', 30, 1, {
@@ -155,11 +156,11 @@ describe('fig-import: text properties', () => {
         ],
         styleIdForFill: { guid: { sessionID: 1, localID: 30 } }
       } as Partial<NodeChange>)
-    ])
+    ]).graph
     const styled = graph
       .getChildren(graph.getPages()[0].id)
       .find((node) => node.name === 'ROUNDED_RECTANGLE_10')
-    expect(styled?.fillStyleId).toBe('1:30')
+    expect(graph.getNode(styled?.fillStyleId ?? '')?.name).toBe('slate/900')
     expect(styled?.fills[0]?.color).toEqual({
       r: 0.05882352963089943,
       g: 0.09019608050584793,
@@ -181,14 +182,14 @@ describe('fig-import: text properties', () => {
     ] as const
 
     for (const [style, expected] of cases) {
-      const graph = importNodeChanges([
+      const graph = materializeDocument([
         doc(),
         canvas(),
         node('TEXT', 10, 1, {
           textData: { characters: 'X' },
           fontName: { family: 'Inter', style }
         } as Partial<NodeChange>)
-      ])
+      ]).graph
       const n = graph.getChildren(graph.getPages()[0].id)[0]
       expect(n.fontWeight).toBe(expected)
     }

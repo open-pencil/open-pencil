@@ -19,12 +19,7 @@ type StyleSource = Pick<
   | 'fillPaints'
   | 'effects'
   | 'layoutGrids'
-  | 'fontSize'
-  | 'fontName'
-  | 'lineHeight'
-  | 'letterSpacing'
-  | 'textDecoration'
-  | 'textCase'
+  | (typeof TEXT_STYLE_FIELDS)[number]
 >
 
 type StyleChangeMap = ReadonlyMap<string, Partial<StyleSource>>

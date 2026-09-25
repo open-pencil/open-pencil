@@ -115,8 +115,8 @@ describe('importClipboardNodes: paste linkage scoping', () => {
       componentId: null
     })
 
-    // Paste a component 'Card' (FRAME child 'Header') plus an INSTANCE of it with a
-    // serialized renamed child 'Header v2' — the pasted instance MUST be linked.
+    // Paste a component 'Card' (FRAME child 'Header') plus an INSTANCE of it whose child
+    // is renamed through a saved override — the pasted instance MUST be linked.
     const nodeChanges = [
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', name: 'Doc' },
       {
@@ -148,22 +148,19 @@ describe('importClipboardNodes: paste linkage scoping', () => {
         name: 'Card',
         size: { x: 200, y: 60 },
         transform: { m00: 1, m01: 0, m02: 300, m10: 0, m11: 1, m12: 0 },
-        symbolData: { symbolID: { sessionID: 4, localID: 40 } }
-      },
-      {
-        guid: { sessionID: 4, localID: 43 },
-        parentIndex: { guid: { sessionID: 4, localID: 42 }, position: '!' },
-        type: 'FRAME',
-        name: 'Header v2',
-        size: { x: 200, y: 40 },
-        transform: { m00: 1, m01: 0, m02: 0, m10: 0, m11: 1, m12: 0 }
+        symbolData: {
+          symbolID: { sessionID: 4, localID: 40 },
+          symbolOverrides: [
+            { guidPath: { guids: [{ sessionID: 4, localID: 41 }] }, name: 'Header v2' }
+          ]
+        }
       }
     ] as NodeChange[]
 
     const created = importClipboardNodes(nodeChanges, graph, page.id)
     expect(created).toHaveLength(2)
 
-    // Pasted instance IS linked (positional + type, name-independent).
+    // Pasted instance IS linked, and the override keeps the child's name.
     const pastedInst = getNodeByType(graph, created, 'INSTANCE')
     const pastedComp = getNodeByType(graph, created, 'COMPONENT')
     if (!pastedInst || !pastedComp) throw new Error('pasted instance/component missing')

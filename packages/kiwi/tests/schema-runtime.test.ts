@@ -20,6 +20,16 @@ interface RuntimeMessage {
     | RuntimeMessage[]
 }
 
+test('rejects malformed byte fields without corrupting buffer length', () => {
+  const buffer = new ByteBuffer()
+  expect(() => Reflect.apply(buffer.writeByteArray, buffer, [{ 0: 42 }])).toThrow(
+    'Expected byte array'
+  )
+  expect(buffer.length).toBe(0)
+  buffer.writeByteArray(new Uint8Array([42]))
+  expect(buffer.toUint8Array()).toEqual(new Uint8Array([1, 42]))
+})
+
 const schemaText = `
 package Example;
 

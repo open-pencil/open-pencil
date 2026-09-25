@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { importNodeChanges } from '@open-pencil/core'
+import { materializeDocument } from '@open-pencil/fig'
 import { applyStyleRefsToFields } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
@@ -21,7 +21,7 @@ describe('fig import style refs', () => {
       blendMode: 'NORMAL' as const
     }
     const parentIndex = { guid: { sessionID: 0, localID: 1 }, position: '!' }
-    const graph = importNodeChanges([
+    const graph = materializeDocument([
       { guid: { sessionID: 0, localID: 0 }, type: 'DOCUMENT', phase: 'CREATED' },
       {
         guid: { sessionID: 0, localID: 1 },
@@ -62,7 +62,7 @@ describe('fig import style refs', () => {
         name: 'Fallback target',
         styleIdForFill: { assetRef: { key: 'purple-light' } }
       }
-    ] as NodeChange[])
+    ] as NodeChange[]).graph
 
     const nodes = [...graph.getAllNodes()]
     expect(nodes.find((node) => node.name === 'Versioned target')?.fills).toEqual([versionedPaint])

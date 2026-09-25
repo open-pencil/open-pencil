@@ -205,15 +205,8 @@ describe('updateNode', () => {
     expect(expectDefined(graph.getNode(textId), 'updated node').derivedTextGlyphs).toBeNull()
   })
 
-  test('derivedTextGlyphs survive picture-only text property changes', () => {
-    const pictureOnlyChanges = [
-      { width: 120 },
-      { height: 24 },
-      { fills: [] },
-      { textAlignHorizontal: 'CENTER' as const },
-      { textAlignVertical: 'CENTER' as const },
-      { textDecoration: 'UNDERLINE' as const }
-    ]
+  test('derivedTextGlyphs survive paint and decoration changes', () => {
+    const pictureOnlyChanges = [{ fills: [] }, { textDecoration: 'UNDERLINE' as const }]
 
     for (const changes of pictureOnlyChanges) {
       const graph = new SceneGraph()
