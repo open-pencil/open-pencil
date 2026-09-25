@@ -17,6 +17,22 @@ describe('Tailwind JSX structure', () => {
     )
   })
 
+  test('backslashes and line breaks in names use string literals', () => {
+    const graph = makeGraph()
+    const backslash = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'a\\b',
+      width: 8,
+      height: 8
+    })
+    const lines = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'two\nlines',
+      width: 8,
+      height: 8
+    })
+    expect(tw(graph, backslash.id)).toStartWith('<div data-name={"a\\\\b"} className=')
+    expect(tw(graph, lines.id)).toStartWith('<div data-name={"two\\nlines"} className=')
+  })
+
   test('basic rectangle — div with w/h', () => {
     const graph = makeGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), {

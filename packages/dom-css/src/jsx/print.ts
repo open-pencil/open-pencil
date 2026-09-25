@@ -17,11 +17,12 @@ interface JSXNode {
 const JSX_ATTRIBUTE_NAMES: Record<string, string> = { class: 'className', for: 'htmlFor' }
 
 /**
- * JSX attribute strings end at `"` and decode `&` entities; JSX text also treats braces
- * and angle brackets as syntax and trims whitespace at line edges. Anything else is
- * written as a string literal, which the printer escapes.
+ * JSX attribute strings end at `"`, decode `&` entities, and keep backslashes literally,
+ * so the printer's escapes for backslashes and line breaks would change the value. JSX
+ * text also treats braces and angle brackets as syntax and trims whitespace at line
+ * edges. Anything else is written as a string literal, which the printer escapes.
  */
-const LITERAL_ATTRIBUTE = /^[^"&]*$/
+const LITERAL_ATTRIBUTE = /^[^"&\\\r\n]*$/
 const LITERAL_TEXT = /^[^{}<>&\n]*$/
 
 const identifier = (name: string): JSXNode => ({ type: 'JSXIdentifier', name })
