@@ -8,6 +8,7 @@ import { designDocumentToSceneGraph, type ToSceneGraphOptions } from './to-scene
 import type { CSSComputeOptions, DesignDocument } from './types'
 
 export { Fragment, jsx, jsxs } from './jsx/core'
+export { designDocumentToTailwindJSX, sceneNodesToTailwindJSX } from './jsx/print'
 export type { JSXChild, JSXElementProps, JSXStyleInput, JSXTag } from './jsx/core'
 
 export interface BrowserToDesignDocumentOptions extends BrowserCSSRuntimeOptions {

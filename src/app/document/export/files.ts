@@ -78,7 +78,6 @@ export function getExportOptions(format: IOFormatAdapter, options?: ExportOption
   if (format.exportOptions?.scale) {
     return { scale: options?.scale ?? 1, quality: options?.quality }
   }
-  if (format.id === 'jsx') return { format: options?.jsxFormat ?? 'openpencil' }
   return undefined
 }
 
