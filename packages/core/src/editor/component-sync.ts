@@ -78,7 +78,9 @@ export function createComponentSyncScheduler(
   }
 
   function scheduleComponentSync(nodeId: string) {
-    if (isFlushingComponentSync) return
+    // Import/materialization has already resolved component overrides. These updates
+    // are not authored component edits and must not reset instances to their defaults.
+    if (isFlushingComponentSync || getGraph().isApplyingImportedState) return
     if (!pendingComponentSync) {
       pendingComponentSync = new Set()
       queueMicrotask(flushComponentSync)

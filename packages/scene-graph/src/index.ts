@@ -115,6 +115,7 @@ export class SceneGraph {
   private previewMutationDepth = 0
   private previewObservers: NodePreviewObserver[] = []
   private sourceMetadataPreservationDepth = 0
+  private importedStateApplicationDepth = 0
   private layoutMutationDepth = 0
   positionPreviewVersion = 0
   instanceIndex = new Map<string, Set<string>>()
@@ -406,6 +407,23 @@ export class SceneGraph {
       this.sourceMetadataPreservationDepth--
     }
   }
+  get isPreservingSourceMetadata(): boolean {
+    return this.sourceMetadataPreservationDepth > 0
+  }
+
+  applyImportedStateDuring(fn: () => void): void {
+    this.importedStateApplicationDepth++
+    try {
+      this.preserveSourceMetadataDuring(fn)
+    } finally {
+      this.importedStateApplicationDepth--
+    }
+  }
+
+  get isApplyingImportedState(): boolean {
+    return this.importedStateApplicationDepth > 0
+  }
+
   withLayoutMutations(fn: () => void): void {
     this.layoutMutationDepth++
     try {

@@ -30,6 +30,14 @@ export function getPageBackgrounds(page: SceneNode): readonly Fill[] {
   return Object.freeze(copyFills(fills))
 }
 
+/** Project the supported visible solid page paint into editor view state. */
+export function getPageColor(page: SceneNode | undefined): Color {
+  const paint =
+    page && getPageBackgrounds(page).find((fill) => fill.visible && fill.type === 'SOLID')
+  if (!paint) return { ...CANVAS_BG_COLOR }
+  return { ...paint.color, a: paint.color.a * paint.opacity }
+}
+
 export function setPageBackgrounds(
   graph: SceneGraph,
   page: SceneNode,
