@@ -10,7 +10,10 @@ import { inspectTarball, type TarballDiagnostic } from '@open-pencil/package-art
 import { installPackedPackages } from './install'
 import { evaluateRuntime, type RuntimeName } from './runtime'
 
-export type RuntimeOutcome = 'fails' | 'imports'
+/** A runtime must import the fixture, or fail with output matching the pattern. */
+export type RuntimeExpectation = 'imports' | { failsWith: RegExp }
+/** What a runtime did: imported, or failed with this output. */
+export type RuntimeObservation = 'imports' | { failed: string }
 
 export interface PackagingGuard {
   /** The `exports["."].bun` target of the fixture manifest. */
@@ -20,13 +23,13 @@ export interface PackagingGuard {
   /** Manifest `files` entries; the real `npm pack` decides what they ship. */
   files: string[]
   name: string
-  /** Which runtimes must import the installed fixture and which must fail. */
-  runtimes: Record<RuntimeName, RuntimeOutcome>
+  /** Which runtimes must import the installed fixture and how the others must fail. */
+  runtimes: Record<RuntimeName, RuntimeExpectation>
 }
 
 export interface PackagingGuardObservation {
   diagnostics: Array<Pick<TarballDiagnostic, 'field' | 'message'>>
-  runtimes: Record<RuntimeName, RuntimeOutcome>
+  runtimes: Record<RuntimeName, RuntimeObservation>
 }
 
 const FIXTURE_NAME = '@fixture/resolution'
@@ -67,14 +70,14 @@ export const packagingGuards: PackagingGuard[] = [
     files: ['dist', 'src/index.ts'],
     bunTarget: './src/index.ts',
     diagnostics: [],
-    runtimes: { node: 'imports', bun: 'fails' }
+    runtimes: { node: 'imports', bun: { failsWith: /Cannot find module '#fixture\/value'/ } }
   },
   {
     name: 'a source-only Bun condition is reported before it breaks consumers',
     files: ['dist'],
     bunTarget: './src/index.ts',
     diagnostics: [{ field: 'exports["."].bun', message: 'target is missing (./src/index.ts)' }],
-    runtimes: { node: 'imports', bun: 'fails' }
+    runtimes: { node: 'imports', bun: { failsWith: /Cannot find module '@fixture\/resolution'/ } }
   }
 ]
 
@@ -92,13 +95,29 @@ export function packagingGuardMismatches(
     )
   }
   for (const runtime of RUNTIMES) {
-    if (guard.runtimes[runtime] !== observed.runtimes[runtime]) {
-      mismatches.push(
-        `${guard.name}: expected ${runtime} to ${guard.runtimes[runtime] === 'imports' ? 'import' : 'fail'} but it ${observed.runtimes[runtime] === 'imports' ? 'imported' : 'failed'}`
-      )
-    }
+    const mismatch = runtimeMismatch(guard.runtimes[runtime], observed.runtimes[runtime])
+    if (mismatch) mismatches.push(`${guard.name}: ${runtime} ${mismatch}`)
   }
   return mismatches
+}
+
+function firstLine(output: string): string {
+  return output.trim().split('\n')[0] ?? ''
+}
+
+function runtimeMismatch(
+  expected: RuntimeExpectation,
+  observed: RuntimeObservation
+): string | undefined {
+  if (expected === 'imports') {
+    return observed === 'imports'
+      ? undefined
+      : `should import but failed: ${firstLine(observed.failed)}`
+  }
+  if (observed === 'imports') return `should fail with ${expected.failsWith} but imported`
+  return expected.failsWith.test(observed.failed)
+    ? undefined
+    : `should fail with ${expected.failsWith} but failed with: ${firstLine(observed.failed)}`
 }
 
 function fixtureManifest(guard: PackagingGuard): string {
@@ -143,12 +162,14 @@ async function packFixture(packageDirectory: string, artifacts: string): Promise
   return join(artifacts, parseNpmPack(packed.stdout).filename)
 }
 
-async function observeRuntime(runtime: RuntimeName, consumer: string): Promise<RuntimeOutcome> {
+async function observeRuntime(runtime: RuntimeName, consumer: string): Promise<RuntimeObservation> {
   try {
     await evaluateRuntime(runtime, FIXTURE_IMPORT, consumer)
     return 'imports'
   } catch (error) {
-    if (error instanceof CommandError && !error.timedOut) return 'fails'
+    if (error instanceof CommandError && !error.timedOut) {
+      return { failed: error.stderr.trim() || error.message }
+    }
     throw error
   }
 }
