@@ -403,7 +403,7 @@ const ERROR_PATTERNS = [
   /no color/i,
   /collapses/i,
   /no fill and no stroke/i,
-  /dark on dark/i,
+  /below WCAG AA/i,
   /Touch target too small/i,
   /Nested Text/i
 ]
