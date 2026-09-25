@@ -2,6 +2,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 
+import { isEqual } from 'es-toolkit'
+
 import { CommandError, parseNpmPack, runCommand } from '@open-pencil/package-artifacts'
 import { inspectTarball, type TarballDiagnostic } from '@open-pencil/package-artifacts/tarball'
 
@@ -82,13 +84,11 @@ export function packagingGuardMismatches(
   observed: PackagingGuardObservation
 ): string[] {
   const mismatches: string[] = []
-  const expectedDiagnostics = guard.diagnostics.map(({ field, message }) => `${field} ${message}`)
-  const observedDiagnostics = observed.diagnostics.map(
-    ({ field, message }) => `${field} ${message}`
-  )
-  if (expectedDiagnostics.join('\n') !== observedDiagnostics.join('\n')) {
+  if (!isEqual(guard.diagnostics, observed.diagnostics)) {
+    const describe = (diagnostics: PackagingGuardObservation['diagnostics']) =>
+      diagnostics.map(({ field, message }) => `${field} ${message}`).join(', ')
     mismatches.push(
-      `${guard.name}: expected diagnostics [${expectedDiagnostics.join(', ')}] but the inspector reported [${observedDiagnostics.join(', ')}]`
+      `${guard.name}: expected diagnostics [${describe(guard.diagnostics)}] but the inspector reported [${describe(observed.diagnostics)}]`
     )
   }
   for (const runtime of RUNTIMES) {

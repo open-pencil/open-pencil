@@ -2,6 +2,9 @@
   "name": "@open-pencil/package-artifacts",
   "private": true,
   "type": "module",
+  "imports": {
+    "#package-artifacts/*": "./src/*.ts"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./tarball": "./src/tarball.ts",

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { packagingGuardMismatches, packagingGuards } from '../src/smoke/guards'
+import { packagingGuardMismatches, packagingGuards } from '#package-quality/smoke/guards'
 
 const sourceOnlyGuard = packagingGuards.find(({ name }) =>
   name.startsWith('a source-only Bun condition')

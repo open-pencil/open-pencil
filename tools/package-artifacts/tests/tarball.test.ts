@@ -3,9 +3,12 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import {
+  inspectTarball,
+  packageBinTargets,
+  packageExportTargetPaths
+} from '#package-artifacts/tarball'
 import { createTarGzip } from 'nanotar'
-
-import { inspectTarball, packageBinTargets, packageExportTargetPaths } from '../src/tarball'
 
 describe('tarball metadata', () => {
   test('normalizes string and named binaries', () => {
