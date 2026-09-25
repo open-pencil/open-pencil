@@ -42,7 +42,7 @@ function removeFill(index: number) {
 
 function toggleFill(index: number) {
   const fill = fills.value[index]
-  if (fill) fill.visible = !fill.visible
+  fill.visible = !fill.visible
 }
 </script>
 

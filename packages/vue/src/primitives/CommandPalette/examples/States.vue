@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import CommandPaletteRoot from './CommandPaletteRoot.vue'
-import type { CommandPaletteGroup } from './types'
+import CommandPaletteRoot from '#vue/primitives/CommandPalette/CommandPaletteRoot.vue'
+import type { CommandPaletteGroup } from '#vue/primitives/CommandPalette/types'
 
 const selected = ref('')
 const selectedLabels = ref<string[]>([])

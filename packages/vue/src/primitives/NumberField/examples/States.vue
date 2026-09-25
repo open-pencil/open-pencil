@@ -35,15 +35,11 @@ const bound = ref<number | symbol>(8)
       >
         <div
           v-bind="attrs"
-          data-story-control
           class="flex h-[26px] w-56 items-center overflow-hidden rounded border border-transparent bg-[var(--vp-c-bg-alt)] text-xs outline-none focus-within:border-[var(--vp-c-brand-1)]"
           @pointerdown="!editing && actions.startScrub($event)"
         >
           <NumberFieldLeading class="px-2 text-[var(--vp-c-text-2)]">W</NumberFieldLeading>
-          <NumberFieldInput
-            data-test-id="interactive-number-input"
-            class="min-w-0 flex-1 border-0 bg-transparent outline-none"
-          />
+          <NumberFieldInput class="min-w-0 flex-1 border-0 bg-transparent outline-none" />
           <NumberFieldValue class="min-w-0 flex-1 truncate" />
           <NumberFieldUnit class="pr-1 text-[var(--vp-c-text-2)]">px</NumberFieldUnit>
           <NumberFieldTrailing

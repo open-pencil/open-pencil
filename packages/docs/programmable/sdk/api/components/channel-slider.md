@@ -4,7 +4,7 @@ description: Accessible scalar channel slider for OkHCL controls.
 ---
 
 <script setup lang="ts">
-import ColorFillDemo from '#vue/primitives/Fill/demo/ColorFillDemo.vue'
+import FillStates from '#vue/primitives/Fill/examples/States.vue'
 import { data } from './channel-slider.data'
 </script>
 
@@ -14,7 +14,7 @@ import { data } from './channel-slider.data'
 Slider while accepting an arbitrary scalar channel. OpenPencil uses it only for OkHCL channels;
 standard RGB, HSL, and HSB controls should use Reka `ColorSlider` directly.
 
-<ColorFillDemo />
+<FillStates />
 
 ## Anatomy
 

@@ -8,6 +8,8 @@ export const updatesMessageDefaults = {
   available: params('OpenPencil {version} is available.'),
   installPrompt: 'Download and install it now? The app will restart after the update is installed.',
   downloading: params('Downloading OpenPencil {version}'),
+  downloadProgress: params('{percent}% · {downloaded} of {total}'),
+  downloadProgressUnknown: params('{downloaded} downloaded'),
   installedTitle: 'Update installed',
   installed: params('OpenPencil {version} was installed{size}. Restarting now.'),
   unavailable: 'Updates are not available yet. Publish a signed release with latest.json first.',

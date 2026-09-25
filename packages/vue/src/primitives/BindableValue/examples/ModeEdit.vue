@@ -9,7 +9,7 @@ import BindableValueRoot from '#vue/primitives/BindableValue/BindableValueRoot.v
 
 const editor = createEditor()
 const page = editor.graph.getPages()[0]
-if (!page) throw new Error('Missing demo page')
+if (!page) throw new Error('Missing example page')
 const collection = editor.graph.createCollection('Spacing')
 editor.graph.addMode(collection.id, 'large', 'Large')
 editor.graph.addMode(collection.id, 'untouched', 'Untouched')

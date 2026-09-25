@@ -5,12 +5,11 @@ import { reactive, ref } from 'vue'
 import { useInlineRename } from '@open-pencil/vue'
 import type { LayerNode } from '@open-pencil/vue'
 
+import { LAYER_TREE_ROW_HEIGHT } from '@/components/LayerTree/geometry'
+import LayerTreeNodeRow from '@/components/LayerTree/LayerTreeNodeRow.vue'
+import LayerTreeRenameRow from '@/components/LayerTree/LayerTreeRenameRow.vue'
+import { provideLayerTreeUI } from '@/components/LayerTree/ui'
 import AppButton from '@/components/ui/button/AppButton.vue'
-
-import { LAYER_TREE_ROW_HEIGHT } from '../geometry'
-import LayerTreeNodeRow from '../LayerTreeNodeRow.vue'
-import LayerTreeRenameRow from '../LayerTreeRenameRow.vue'
-import { provideLayerTreeUI } from '../ui'
 
 interface DemoNode extends LayerNode {
   children?: DemoNode[]
@@ -39,7 +38,7 @@ function resolveNode(id: unknown): DemoNode {
   const node = items
     .flatMap((item) => [item, ...(item.children ?? [])])
     .find((item) => item.id === id)
-  if (!node) throw new Error('Unknown demo node')
+  if (!node) throw new Error('Unknown tree node')
   return node
 }
 

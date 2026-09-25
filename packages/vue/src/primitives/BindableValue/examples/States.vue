@@ -20,7 +20,7 @@ const variables: Variable[] = [
     id: 'space/md',
     name: 'Space/md',
     type: 'FLOAT',
-    collectionId: 'demo',
+    collectionId: 'example',
     valuesByMode: { default: 16 },
     description: '',
     hiddenFromPublishing: false
@@ -29,7 +29,7 @@ const variables: Variable[] = [
     id: 'space/lg',
     name: 'Space/lg',
     type: 'FLOAT',
-    collectionId: 'demo',
+    collectionId: 'example',
     valuesByMode: { default: 24 },
     description: '',
     hiddenFromPublishing: false
@@ -65,10 +65,10 @@ const provider: BindingProvider<number> = {
     if (ids.size > 1) return 'mixed'
     return ids.has(undefined) ? 'unbound' : 'bound'
   },
-  resolve: (variableId) =>
-    variables.find((variable) => variable.id === variableId)?.valuesByMode.default as
-      | number
-      | undefined,
+  resolve: (variableId) => {
+    const value = variables.find((variable) => variable.id === variableId)?.valuesByMode.default
+    return typeof value === 'number' ? value : undefined
+  },
   bind(target, variableId) {
     bindings.value[key(target)] = variableId
     revision.value++
@@ -100,7 +100,7 @@ const provider: BindingProvider<number> = {
       id,
       name,
       type: 'FLOAT',
-      collectionId: 'demo',
+      collectionId: 'example',
       valuesByMode: { default: value },
       description: '',
       hiddenFromPublishing: false

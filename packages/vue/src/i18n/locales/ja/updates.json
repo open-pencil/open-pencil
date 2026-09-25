@@ -4,6 +4,8 @@
   "available": "OpenPencil のバージョン {version} が利用可能です。",
   "installPrompt": "今すぐダウンロードしてインストールしますか？インストール後、アプリが再起動します。",
   "downloading": "OpenPencil {version} をダウンロード中",
+  "downloadProgress": "{percent}% · {downloaded} / {total}",
+  "downloadProgressUnknown": "{downloaded} をダウンロード済み",
   "installedTitle": "アップデート完了",
   "installed": "OpenPencil のバージョン {version} がインストールされました{size}。再起動しています...",
   "unavailable": "アップデートはまだ利用できません。まず、latest.json を含む署名付きバージョンを公開してください。",

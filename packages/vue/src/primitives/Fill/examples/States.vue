@@ -32,12 +32,12 @@ const gradient: Fill = {
 }
 const editableFill = ref<Fill>(structuredClone(solid))
 const chroma = ref(0.16)
-const target: BindingTarget[] = [{ nodeId: 'demo', path: 'fills/0/color' }]
+const target: BindingTarget[] = [{ nodeId: 'example', path: 'fills/0/color' }]
 const variable: Variable = {
   id: 'color/brand',
   name: 'Color/Brand',
   type: 'COLOR',
-  collectionId: 'demo',
+  collectionId: 'example',
   valuesByMode: { default: { r: 0.65, g: 0.3, b: 0.95, a: 1 } },
   description: '',
   hiddenFromPublishing: false

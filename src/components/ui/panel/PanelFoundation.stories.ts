@@ -4,16 +4,17 @@ import { expect, userEvent, within } from 'storybook/test'
 import { ref } from 'vue'
 import MoreIcon from '~icons/lucide/ellipsis'
 import EyeIcon from '~icons/lucide/eye'
+import LayoutPanelTopIcon from '~icons/lucide/layout-panel-top'
 import LinkIcon from '~icons/lucide/link'
 import RotateIcon from '~icons/lucide/rotate-ccw'
 import SquareIcon from '~icons/lucide/square'
 
+import AppButton from '@/components/ui/button/AppButton.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import AppInput from '@/components/ui/input/AppInput.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import SegmentedControl from '@/components/ui/select/SegmentedControl.vue'
 
-import PanelSelectionDemo from './demo/PanelSelectionDemo.vue'
 import PanelFieldGroup from './PanelFieldGroup.vue'
 import PanelGrid from './PanelGrid.vue'
 import PanelHeader from './PanelHeader.vue'
@@ -36,7 +37,28 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const SelectionTransition: Story = {
-  render: () => ({ components: { PanelSelectionDemo }, template: '<PanelSelectionDemo />' })
+  render: () => ({
+    components: { AppButton, IconButton, LayoutPanelTopIcon, PanelSection },
+    setup() {
+      const container = ref(false)
+      return { container }
+    },
+    template: `
+      <div class="w-72 bg-panel text-surface">
+        <AppButton @click="container = !container">Switch selection</AppButton>
+        <PanelSection :label="container ? 'Auto layout' : 'Layout'">
+          <template v-if="container" #actions>
+            <IconButton label="Remove auto layout" active>
+              <LayoutPanelTopIcon class="size-3.5" />
+            </IconButton>
+          </template>
+          <p class="text-xs text-muted">
+            {{ container ? 'Frame selection' : 'Rectangle selection' }}
+          </p>
+        </PanelSection>
+      </div>
+    `
+  })
 }
 
 export const StateMatrix: Story = {

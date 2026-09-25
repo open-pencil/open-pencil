@@ -1,11 +1,16 @@
 <script setup lang="ts">
-const { adjacent = false } = defineProps<{ adjacent?: boolean }>()
 import type { LayerNode } from '@open-pencil/vue'
 
-import LayerTreeNodeRow from '../LayerTreeNodeRow.vue'
-import LayerTreeRenameRow from '../LayerTreeRenameRow.vue'
-import type { LayerRenameControls, LayerTreeChrome, LayerTreeItemActions } from '../types'
-import { provideLayerTreeUI } from '../ui'
+import LayerTreeNodeRow from '@/components/LayerTree/LayerTreeNodeRow.vue'
+import LayerTreeRenameRow from '@/components/LayerTree/LayerTreeRenameRow.vue'
+import type {
+  LayerRenameControls,
+  LayerTreeChrome,
+  LayerTreeItemActions
+} from '@/components/LayerTree/types'
+import { provideLayerTreeUI } from '@/components/LayerTree/ui'
+
+const { adjacent = false } = defineProps<{ adjacent?: boolean }>()
 
 provideLayerTreeUI(() => undefined)
 
