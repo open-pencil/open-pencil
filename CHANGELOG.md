@@ -19,7 +19,7 @@
 
 ### Performance
 
-- Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, which cuts about a fifth off the load time of a large file.
+- Open multi-page `.fig` documents faster: the archive is indexed once rather than once for every page, and each page resolves only the layers it adds instead of rescanning the whole document. A 33-page file loads about a fifth quicker, and pages after the first in a 121-page library load about twice as fast.
 
 ### Security
 
