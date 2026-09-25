@@ -19,6 +19,7 @@
       "#dom-css/*": ["./src/*"],
       "@open-pencil/dom-css": ["./src/index.ts"],
       "@open-pencil/dom-css/browser": ["./src/browser.ts"],
+      "@open-pencil/dom-css/export": ["./src/export.ts"],
       "@open-pencil/dom-css/jsx-runtime": ["./src/jsx/runtime.ts"],
       "@open-pencil/dom-css/jsx-dev-runtime": ["./src/jsx/dev-runtime.ts"]
     }

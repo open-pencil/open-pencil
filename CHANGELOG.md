@@ -5,11 +5,12 @@
 ### Breaking changes
 
 - The desktop app now requires macOS 13 or later; the web app supports Chrome 111, Edge 111, Firefox 128, and Safari 16.4 or later.
-- `sceneNodeToJSX` and `selectionToJSX` in `@open-pencil/core` produce only OpenPencil JSX, and `JSXFormat` and `JSXExportOptions` are removed. For Tailwind JSX, use `sceneNodesToTailwindJSX(graph, nodeIds)` from `@open-pencil/dom-css` or `@open-pencil/dom-css/browser`.
+- `sceneNodeToJSX` and `selectionToJSX` in `@open-pencil/core` produce only OpenPencil JSX, and `JSXFormat` and `JSXExportOptions` are removed. For Tailwind JSX, use `sceneNodesToTailwindJSX(graph, nodeIds)` from `@open-pencil/dom-css` or the browser-safe `@open-pencil/dom-css/export`.
 - Color conversion and management and text/layout direction helpers moved from `@open-pencil/core/color` and `@open-pencil/core/text` to `@open-pencil/scene-graph/color` and `@open-pencil/scene-graph/text-direction`, and `@open-pencil/core/bytes` is removed in favor of `js-base64`; the `@open-pencil/core` root exports are unchanged. `@open-pencil/dom-css` no longer requires `@open-pencil/core`, and `exportHTMLBundle` takes a font resolver in `fonts` instead of `'assets'`; pass one built on `exportWebFontFaceAssets` from `@open-pencil/core/text/web-font/assets` to keep font files in standalone exports.
 
 ### Added
 
+- Export HTML and Tailwind JSX from the app's export options and through the IO registry, and export Tailwind JSX from the CLI with `-f tailwind-jsx` (`-f jsx --style tailwind` still works). HTML export of a single layer now includes the layer itself, as other formats do.
 - Choose PPTX in the Export panel's format list, alongside PNG, JPG, WEBP, SVG, and PDF.
 
 ### Changed

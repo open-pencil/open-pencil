@@ -1,7 +1,7 @@
 import { fromUint8Array } from 'js-base64'
 
 import { selectionToJSX, type RasterExportFormat } from '@open-pencil/core/io'
-import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/browser'
+import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/export'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 

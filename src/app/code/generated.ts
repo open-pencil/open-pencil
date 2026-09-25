@@ -1,5 +1,5 @@
 import { selectionToJSX } from '@open-pencil/core/design-jsx'
-import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/browser'
+import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/export'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'

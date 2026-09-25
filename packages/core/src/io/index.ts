@@ -9,7 +9,9 @@ export {
   jpgFormat,
   webpFormat,
   svgFormat,
-  jsxFormat
+  jsxFormat,
+  htmlFormat,
+  tailwindJSXFormat
 } from './formats'
 export { exportFigFile, parseFigFile, readFigFile, type ParseFigFileOptions } from './formats/fig'
 export { parsePenFile, readPenFile } from '@open-pencil/pen'
@@ -51,7 +53,9 @@ export type {
   ReadDocumentResult,
   ExportTarget,
   ExportRequest,
+  ExportAsset,
   ExportResult,
+  HTMLExportOptions,
   IOContext,
   FigWriteOptions,
   RasterExportOptions,

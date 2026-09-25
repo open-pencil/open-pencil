@@ -11,6 +11,7 @@ import type {
   ExportRequest,
   ExportResult,
   FigWriteOptions,
+  HTMLExportOptions,
   IOContext,
   IOFormatAdapter,
   RasterExportOptions,
@@ -368,6 +369,77 @@ export const jsxFormat: IOFormatAdapter<'jsx'> = {
   }
 }
 
+export const htmlFormat: IOFormatAdapter<'html'> = {
+  id: 'html',
+  label: 'HTML',
+  role: 'derived-export',
+  category: 'code',
+  extensions: ['html'],
+  mimeTypes: ['text/html'],
+  support: {
+    exportDocument: true,
+    exportPage: true,
+    exportSelection: true,
+    exportNode: true
+  },
+  exportOptions: {
+    scale: false,
+    quality: false
+  },
+  async exportContent(request, options?: HTMLExportOptions) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const { renderNodesToHTML } = await import('./formats/html')
+    const { html, assets } = await renderNodesToHTML(
+      request.graph,
+      target.nodeIds,
+      options,
+      request.fileName
+    )
+    return {
+      format: 'html',
+      mimeType: 'text/html',
+      extension: 'html',
+      data: html,
+      encoding: 'utf8',
+      assets
+    }
+  }
+}
+
+export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
+  id: 'tailwind-jsx',
+  label: 'Tailwind JSX',
+  role: 'derived-export',
+  category: 'code',
+  extensions: ['jsx'],
+  mimeTypes: ['text/plain', 'text/jsx'],
+  support: {
+    exportDocument: true,
+    exportPage: true,
+    exportSelection: true,
+    exportNode: true
+  },
+  exportOptions: {
+    scale: false,
+    quality: false
+  },
+  async exportContent(request) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const { sceneNodesToTailwindJSX } = await import('@open-pencil/dom-css/export')
+    const data = sceneNodesToTailwindJSX(request.graph, target.nodeIds)
+    if (!data) throw new Error('Nothing to export')
+    return {
+      format: 'tailwind-jsx',
+      mimeType: 'text/plain',
+      extension: 'jsx',
+      data,
+      encoding: 'utf8'
+    }
+  }
+}
+
 export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
@@ -377,7 +449,9 @@ export const BUILTIN_IO_FORMATS = [
   svgFormat,
   pdfFormat,
   pptxFormat,
-  jsxFormat
+  jsxFormat,
+  tailwindJSXFormat,
+  htmlFormat
 ] as const satisfies readonly IOFormatAdapter[]
 
 export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']

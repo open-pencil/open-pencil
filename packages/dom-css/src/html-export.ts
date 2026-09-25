@@ -1,4 +1,4 @@
-import { CSSFontFaceRule } from '@acemir/cssom'
+import type { CSSFontFaceRule } from '@acemir/cssom'
 import { isValid, toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
@@ -192,7 +192,7 @@ async function compileTailwindClasses(classNames: string[]): Promise<string> {
   if (classNames.length === 0) return ''
   const [{ compile }, { readFile }] = await Promise.all([
     import('tailwindcss'),
-    import('node:fs/promises')
+    import(/* @vite-ignore */ 'node:fs/promises')
   ])
   const [themeCSS, utilitiesCSS] = await Promise.all([
     readFile(new URL(import.meta.resolve('tailwindcss/theme.css')), 'utf8'),
@@ -240,8 +240,8 @@ function fontSourceValue(asset: WebFontFaceAsset): string {
   )
 }
 
-function fontFaceCSS(asset: WebFontFaceAsset): string {
-  const rule = new CSSFontFaceRule()
+function fontFaceCSS(FontFaceRule: typeof CSSFontFaceRule, asset: WebFontFaceAsset): string {
+  const rule = new FontFaceRule()
   rule.style.setProperty('font-family', JSON.stringify(asset.family))
   rule.style.setProperty('src', fontSourceValue(asset))
   rule.style.setProperty('font-weight', serializeFontWeight(asset.weight))
@@ -261,8 +261,15 @@ async function fontFaceAssets(
   if (options.fonts === 'none' || options.assets !== 'external') return { css: '', files: [] }
   const requests = new Map<string, WebFontFaceRequest>()
   for (const child of document.children) collectFontRequests(child, requests)
-  const assets = await options.fonts([...requests.values()], `${options.assetBasePath}/fonts`)
-  return { css: assets.map(fontFaceCSS).join(''), files: assets }
+  // Loaded only when fonts ship as files; the CSS object model is not bundled for browsers.
+  const [assets, cssom] = await Promise.all([
+    options.fonts([...requests.values()], `${options.assetBasePath}/fonts`),
+    import('@acemir/cssom')
+  ])
+  return {
+    css: assets.map((asset) => fontFaceCSS(cssom.CSSFontFaceRule, asset)).join(''),
+    files: assets
+  }
 }
 
 function dataImageParts(value: string): { mime: string; base64: string } | undefined {

@@ -81,12 +81,28 @@ export interface SVGExportOptions {
   colorSpace?: RenderColorSpace
 }
 
+/** A file written next to an export's main file, at a path relative to it. */
+export interface ExportAsset {
+  path: string
+  content: IOData
+}
+
 export interface ExportResult {
   format: string
   mimeType: string
   extension: string
   data: IOData
   encoding?: IOTextEncoding
+  /** Extra files the main file refers to, such as external images and fonts. */
+  assets?: ExportAsset[]
+}
+
+export interface HTMLExportOptions {
+  html?: 'fragment' | 'standalone'
+  style?: 'inline' | 'tailwind'
+  assets?: 'inline' | 'external'
+  /** `assets` ships web fonts with external assets. */
+  fonts?: 'assets' | 'none'
 }
 
 export interface IOFormatSupport {
