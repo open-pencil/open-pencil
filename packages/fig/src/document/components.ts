@@ -16,9 +16,10 @@ export interface ComponentConstruction {
 export function planComponentConstruction(
   changes: readonly NodeChange[],
   roots: readonly InstanceOccurrence[],
-  readComponent: (id: string) => InstanceOccurrence
+  readComponent: (id: string) => InstanceOccurrence,
+  index?: ReadonlyMap<string, NodeChange>
 ): ComponentConstruction[] {
-  const sources = indexRecords(changes)
+  const sources = index ?? indexRecords(changes)
   const pageComponents = new Map<string, InstanceOccurrence>()
   const indexPageComponents = (node: InstanceOccurrence): void => {
     if (node.mainComponentId !== null) return

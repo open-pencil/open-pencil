@@ -10,8 +10,11 @@ interface LinkedPropertyDefinition {
 }
 
 /** Resolve definition inheritance only within the source node's ancestry. */
-export function inheritComponentPropertyDefinitions(changes: readonly NodeChange[]): void {
-  const sources = indexRecords(changes)
+export function inheritComponentPropertyDefinitions(
+  changes: readonly NodeChange[],
+  index?: ReadonlyMap<string, NodeChange>
+): void {
+  const sources = index ?? indexRecords(changes)
   const pending = new Set<NodeChange>()
   const complete = new Set<NodeChange>()
   const resolve = (node: NodeChange): void => {

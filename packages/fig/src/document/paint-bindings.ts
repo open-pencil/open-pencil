@@ -7,14 +7,19 @@ export function applyDocumentPaintBindings(
 ): void {
   for (const node of graph.getAllNodes()) {
     if (existingNodeIds.has(node.id)) continue
-    const changes: Partial<SceneNode> = {}
-    for (const [field, id] of Object.entries(node.boundVariables)) {
+    // Most nodes bind nothing, so neither the entry array nor the change object is built
+    // until a paint binding is actually found.
+    let changes: Partial<SceneNode> | undefined
+    for (const field in node.boundVariables) {
+      if (!field.endsWith('/color')) continue
       const match = /^(fills|strokes)\/(\d+)\/color$/.exec(field)
       if (!match) continue
+      const id = node.boundVariables[field]
       const kind = match[1] === 'fills' ? 'fills' : 'strokes'
       const index = Number(match[2])
       const color = graph.resolveColorVariableForNode(node.id, id)
       if (!color || !node[kind][index]) continue
+      changes ??= {}
       if (kind === 'fills') {
         changes.fills ??= copyFills(node.fills)
         changes.fills[index].color = { ...color }
@@ -23,6 +28,6 @@ export function applyDocumentPaintBindings(
         changes.strokes[index].color = { ...color }
       }
     }
-    if (Object.keys(changes).length) graph.updateNode(node.id, changes)
+    if (changes) graph.updateNode(node.id, changes)
   }
 }

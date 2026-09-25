@@ -17,9 +17,10 @@ export function linkComponentPropertyValues(
   }
   for (const node of graph.getAllNodes()) {
     if (existingNodeIds.has(node.id)) continue
-    for (const [propertyId, value] of Object.entries(node.componentPropertyAssignments)) {
+    // for-in skips the entry array that most nodes, which assign nothing, never need.
+    for (const propertyId in node.componentPropertyAssignments) {
       if (definitions.get(propertyId) !== 'INSTANCE_SWAP') continue
-      const target = sources.get(value)
+      const target = sources.get(node.componentPropertyAssignments[propertyId])
       if (target) node.componentPropertyAssignments[propertyId] = target
     }
   }
