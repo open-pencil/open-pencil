@@ -41,6 +41,7 @@ import { cloneNodeProps } from './copy'
 import { bindNodeEvents } from './events'
 import * as HitTest from './hit-test'
 import * as Instances from './instances'
+import Matrix, { type Mat3 } from './matrix'
 import { CONTAINER_TYPES, createDefaultNode } from './node-defaults'
 import { updateNodePreview, type NodePreviewObserver } from './preview'
 import { styleDetachmentChanges } from './shared-styles'
@@ -54,7 +55,13 @@ export * from './types'
 
 import type { Emitter } from 'nanoevents'
 
-import { getAbsolutePosition } from './coordinate'
+import {
+  getAbsolutePosition,
+  getNodeLocalMatrix,
+  getWorldMatrix,
+  isTranslationOnly,
+  localTransformFromWorld
+} from './coordinate'
 import type { Color, Rect, Vector } from './primitives'
 import type {
   DocumentColorSpace,
@@ -507,12 +514,8 @@ export class SceneGraph {
     const oldParentId = node.parentId
     this.absPosCache.clear()
 
-    const absPos = this.getAbsolutePosition(nodeId)
-    const newParentNode = this.nodes.get(newParentId)
-    const newParentAbs =
-      newParentId === this.rootId || newParentNode?.type === 'CANVAS'
-        ? { x: 0, y: 0 }
-        : this.getAbsolutePosition(newParentId)
+    const oldParentWorld = this.parentWorldMatrix(oldParent)
+    const newParentWorld = this.parentWorldMatrix(newParent)
 
     if (oldParent) {
       oldParent.childIds = oldParent.childIds.filter((cid) => cid !== nodeId)
@@ -521,10 +524,21 @@ export class SceneGraph {
     node.parentId = newParentId
     newParent.childIds.push(nodeId)
 
-    node.x = absPos.x - newParentAbs.x
-    node.y = absPos.y - newParentAbs.y
+    if (isTranslationOnly(oldParentWorld) && isTranslationOnly(newParentWorld)) {
+      node.x += oldParentWorld[2] - newParentWorld[2]
+      node.y += oldParentWorld[5] - newParentWorld[5]
+    } else {
+      const world = Matrix.multiply(oldParentWorld, getNodeLocalMatrix(node))
+      const local = localTransformFromWorld(node, world, newParentWorld)
+      if (local) Object.assign(node, local)
+    }
 
     this.emitter.emit('node:reparented', nodeId, oldParentId, newParentId)
+  }
+
+  private parentWorldMatrix(parent: SceneNode | undefined): Mat3 {
+    if (!parent || parent.id === this.rootId) return Matrix.identity()
+    return getWorldMatrix(parent, this)
   }
 
   reorderChild(nodeId: string, parentId: string, insertIndex: number): void {

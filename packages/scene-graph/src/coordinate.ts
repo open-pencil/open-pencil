@@ -224,3 +224,31 @@ export function getWorldHandles(
     w: { x: pts[14], y: pts[15] }
   }
 }
+
+type LocalTransform = Pick<SceneNode, 'x' | 'y' | 'rotation' | 'flipX' | 'flipY'>
+
+/**
+ * Local transform that draws `node` with the given world matrix once it sits under a parent
+ * whose world matrix is `parentWorld`. Keeps the node's own `flipX` when the matrix allows it.
+ */
+export function localTransformFromWorld(
+  node: SceneNode,
+  world: Mat3,
+  parentWorld: Mat3
+): LocalTransform | null {
+  const parentInverse = Matrix.invert(parentWorld)
+  if (!parentInverse) return null
+  const local = Matrix.multiply(parentInverse, world)
+  const [a, b, , c, d] = local
+  const sx = node.flipX ? -1 : 1
+  const sy = a * d - b * c < 0 ? -sx : sx
+  let rotation = (Math.atan2(sy * c, sx * a) * 180) / Math.PI
+  if (Math.abs(rotation) < 1e-9) rotation = 0
+  const transform = { rotation, flipX: sx < 0, flipY: sy < 0 }
+  const origin = getNodeLocalMatrix({ ...node, ...transform }, { x: 0, y: 0 })
+  return { ...transform, x: local[2] - origin[2], y: local[5] - origin[5] }
+}
+
+export function isTranslationOnly(matrix: Mat3): boolean {
+  return matrix[0] === 1 && matrix[1] === 0 && matrix[3] === 0 && matrix[4] === 1
+}
