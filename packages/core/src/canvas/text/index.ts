@@ -203,9 +203,13 @@ function canObserveGlyphCoverage(r: FontReadinessRenderer): r is TextRenderer {
 export function nodeFontReadiness(r: FontReadinessRenderer, node: SceneNode): NodeFontReadiness {
   if (node.type !== 'TEXT') return 'ready'
   const faces = requiredFacesReadiness(r, node)
-  if (faces !== 'ready') return faces
-  if (!node.text || !canObserveGlyphCoverage(r)) return 'ready'
-  return observedGlyphReadiness(r, node)
+  if (faces === 'pending' || faces === 'exhausted') return faces
+  if (!node.text || !canObserveGlyphCoverage(r)) return faces
+  const glyphs = observedGlyphReadiness(r, node)
+  // Substituted text still needs script fallbacks (for example CJK) for glyphs the substitute
+  // lacks, but stays visible when none can be found.
+  if (faces === 'substituted') return glyphs === 'pending' ? 'pending' : 'substituted'
+  return glyphs
 }
 
 export function isNodeFontLoaded(r: FontReadinessRenderer, node: SceneNode): boolean {
