@@ -1,9 +1,9 @@
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
+import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
 
-import { decodeBase64 } from '#core/bytes'
-import type { RenderColorSpace, ResolvedRenderColor } from '#core/color/management'
 /* eslint-disable max-lines -- SkiaRenderer facade owns CanvasKit state and delegates domain drawing */
 import {
   SELECTION_COLOR,

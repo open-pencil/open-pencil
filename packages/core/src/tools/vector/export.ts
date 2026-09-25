@@ -1,6 +1,7 @@
 import * as v from 'valibot'
 
-import { encodeBase64 } from '#core/bytes'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
+
 import type { RasterExportFormat } from '#core/io/formats/raster'
 import { toolNumber } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'

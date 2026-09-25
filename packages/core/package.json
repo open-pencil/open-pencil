@@ -31,11 +31,6 @@
       "import": "./dist/geometry/index.js",
       "default": "./dist/geometry/index.js"
     },
-    "./color": {
-      "types": "./dist/color/index.d.ts",
-      "import": "./dist/color/index.js",
-      "default": "./dist/color/index.js"
-    },
     "./text": {
       "types": "./dist/text/index.d.ts",
       "import": "./dist/text/index.js",
@@ -137,12 +132,6 @@
       "import": "./dist/clipboard.js",
       "default": "./dist/clipboard.js"
     },
-    "./bytes": {
-      "bun": "./src/bytes/index.ts",
-      "types": "./dist/bytes/index.d.ts",
-      "import": "./dist/bytes/index.js",
-      "default": "./dist/bytes/index.js"
-    },
     "./constants": {
       "types": "./dist/constants.d.ts",
       "import": "./dist/constants.js",
@@ -180,6 +169,7 @@
   "dependencies": {
     "@chenglou/pretext": "^0.0.7",
     "@iconify/utils": "^3.1.4",
+    "@open-pencil/dom-css": "workspace:*",
     "@open-pencil/fig": "workspace:*",
     "@open-pencil/kiwi": "workspace:*",
     "@open-pencil/pen": "workspace:*",

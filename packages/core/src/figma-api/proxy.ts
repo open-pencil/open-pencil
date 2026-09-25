@@ -8,15 +8,15 @@ import type {
   Effect,
   LayoutMode
 } from '@open-pencil/scene-graph'
-import type { Rect } from '@open-pencil/scene-graph/primitives'
-
 import {
   getFillOkHCL,
   getStrokeOkHCL,
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
-} from '#core/color/okhcl'
-import type { OkHCLColor, OkHCLPayload } from '#core/color/okhcl'
+} from '@open-pencil/scene-graph/color'
+import type { OkHCLColor, OkHCLPayload } from '@open-pencil/scene-graph/color'
+import type { Rect } from '@open-pencil/scene-graph/primitives'
+
 import { assertNodeEditable } from '#core/editor/capabilities'
 
 import { installBasicNodeProxyAccessors } from './accessors/basic'

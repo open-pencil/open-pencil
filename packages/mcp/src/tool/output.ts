@@ -1,7 +1,7 @@
 import { lstat, mkdir, readlink, realpath, writeFile } from 'node:fs/promises'
 import { dirname, basename, isAbsolute, join, parse, resolve, sep as osSep } from 'node:path'
 
-import { decodeBase64 } from '@open-pencil/core/bytes'
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { ok } from '#mcp/result'
 import type { MCPResult } from '#mcp/result'

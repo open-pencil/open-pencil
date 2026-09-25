@@ -6,6 +6,7 @@
 
 - The desktop app now requires macOS 13 or later; the web app supports Chrome 111, Edge 111, Firefox 128, and Safari 16.4 or later.
 - `sceneNodeToJSX` and `selectionToJSX` in `@open-pencil/core` produce only OpenPencil JSX, and `JSXFormat` and `JSXExportOptions` are removed. For Tailwind JSX, use `sceneNodesToTailwindJSX(graph, nodeIds)` from `@open-pencil/dom-css` or `@open-pencil/dom-css/browser`.
+- Color conversion and management, base64 helpers, and text/layout direction helpers moved from `@open-pencil/core/color`, `@open-pencil/core/bytes`, and `@open-pencil/core/text` to `@open-pencil/scene-graph/color`, `@open-pencil/scene-graph/bytes`, and `@open-pencil/scene-graph/text-direction`; the `@open-pencil/core` root exports are unchanged. `@open-pencil/dom-css` no longer requires `@open-pencil/core`, and `exportHTMLBundle` takes a font resolver in `fonts` instead of `'assets'`; pass one built on `exportWebFontFaceAssets` from `@open-pencil/core/text/web-font/assets` to keep font files in standalone exports.
 
 ### Added
 

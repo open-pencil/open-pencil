@@ -8,12 +8,12 @@ Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also 
 
 Bun workspace packages:
 
-- `scene-graph` — framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, and hit testing.
+- `scene-graph` — framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing, and the shared primitives formats need: color conversion and color management, base64 bytes, and text/layout direction.
 - `pen` — Pencil.dev `.pen` model, parser, and SceneGraph adapter.
 - `kiwi` — SceneGraph-independent Kiwi schema/runtime, codecs, containers, and parse helpers.
 - `fig` — `.fig` archives, SceneGraph conversion, metadata policy, and component/instance interpretation.
-- `core` — renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and document I/O; depends on scene-graph, pen, kiwi, and fig, and keeps browser DOM out.
-- `dom-css` — DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters.
+- `core` — renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and document I/O; depends on scene-graph and the format packages (pen, kiwi, fig, dom-css), and keeps browser DOM out.
+- `dom-css` — DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters; depends only on scene-graph, and takes engine services such as web-font resolution as injected options.
 - `vue` — headless Vue 3 SDK primitives and composables; the root app is one consumer.
 - `cli` — headless `.fig` inspection, export, and linting with `citty` and `agentfmt`.
 - `mcp` — stdio and Hono HTTP MCP server reusing Core tools.

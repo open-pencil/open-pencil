@@ -9,8 +9,8 @@ import {
   SceneGraph
 } from '@open-pencil/core'
 import type { SceneNode } from '@open-pencil/core'
-import { encodeBase64 } from '@open-pencil/core/bytes'
 import { getInstanceOverride, setInstanceOverride } from '@open-pencil/scene-graph'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { expectDefined } from '#tests/helpers/assert'
 

@@ -1,6 +1,6 @@
-import { encodeBase64 } from '@open-pencil/core/bytes'
 import { selectionToJSX, type RasterExportFormat } from '@open-pencil/core/io'
 import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/browser'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 

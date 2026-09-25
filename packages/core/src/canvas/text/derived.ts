@@ -9,8 +9,8 @@ import type {
   StyleRun,
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
-import { encodeBase64 } from '#core/bytes'
 import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { geometryBlobToPath } from '#core/vector'

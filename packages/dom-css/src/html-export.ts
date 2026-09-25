@@ -1,22 +1,44 @@
 import { CSSFontFaceRule } from '@acemir/cssom'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
-import { decodeBase64 } from '@open-pencil/core/bytes'
-import { normalizeFontFamily } from '@open-pencil/core/text'
-import {
-  exportWebFontFaceAssets,
-  type WebFontFaceAsset,
-  type WebFontFaceRequest
-} from '@open-pencil/core/text/web-font/assets'
+import { normalizeFontFamily } from '@open-pencil/scene-graph'
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { mergeClassNames, serializeHTML, splitWhitespace } from './serialize'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from './types'
+
+/** A font face the exported text uses. */
+export interface WebFontFaceRequest {
+  family: string
+  weight: number
+  style?: 'normal' | 'italic'
+}
+
+/** A font file to ship next to the page, described as an `@font-face` rule. */
+export interface WebFontFaceAsset {
+  family: string
+  weight: string | number | [number, number]
+  style: string
+  display?: string
+  stretch?: string
+  unicodeRange?: string[]
+  format: 'woff2' | 'woff' | 'opentype' | 'truetype'
+  path: string
+  content: Uint8Array
+}
+
+/** Finds font files for the requested faces; paths start with `assetBasePath`. */
+export type WebFontFaceResolver = (
+  fonts: WebFontFaceRequest[],
+  assetBasePath: string
+) => Promise<WebFontFaceAsset[]>
 
 export interface ExportHTMLBundleOptions {
   html?: 'fragment' | 'standalone'
   style?: 'inline' | 'tailwind'
   assets?: 'inline' | 'external'
-  fonts?: 'assets' | 'none'
+  /** Resolves font files to include with external assets; `none` includes no fonts. */
+  fonts?: 'none' | WebFontFaceResolver
   assetBasePath?: string
 }
 
@@ -239,11 +261,8 @@ async function fontFaceAssets(
   if (options.fonts === 'none' || options.assets !== 'external') return { css: '', files: [] }
   const requests = new Map<string, WebFontFaceRequest>()
   for (const child of document.children) collectFontRequests(child, requests)
-  const result = await exportWebFontFaceAssets({
-    fonts: [...requests.values()],
-    assetBasePath: `${options.assetBasePath}/fonts`
-  })
-  return { css: result.assets.map(fontFaceCSS).join(''), files: result.assets }
+  const assets = await options.fonts([...requests.values()], `${options.assetBasePath}/fonts`)
+  return { css: assets.map(fontFaceCSS).join(''), files: assets }
 }
 
 function dataImageParts(value: string): { mime: string; base64: string } | undefined {

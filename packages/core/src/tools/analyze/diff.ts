@@ -3,8 +3,8 @@ import { createTwoFilesPatch } from 'diff'
 import * as v from 'valibot'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { colorToHex, parseColor } from '@open-pencil/scene-graph/color'
 
-import { colorToHex, parseColor } from '#core/color'
 import type { FigmaAPI } from '#core/figma-api'
 import { toolNumber, nodeIdInput, nodeComparisonInput } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'

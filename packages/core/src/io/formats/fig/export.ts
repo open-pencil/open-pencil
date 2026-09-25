@@ -13,9 +13,9 @@ import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
-import { decodeBase64 } from '#core/bytes'
 import type { SkiaRenderer } from '#core/canvas'
 import { CANVAS_BG_COLOR, IS_BROWSER, IS_TAURI } from '#core/constants'
 import { applyEnabledLibrariesPluginData } from '#core/io/formats/fig/library-metadata'

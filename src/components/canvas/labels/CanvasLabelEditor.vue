@@ -2,7 +2,7 @@
 import type { ReferenceElement } from 'reka-ui'
 import { PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
 
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { CanvasLabelEdit } from '@open-pencil/vue'
 
 import type { CanvasLabelPresentation } from '@/components/canvas/labels/presentation'

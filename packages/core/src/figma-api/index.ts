@@ -7,12 +7,12 @@ import type {
   VariableType,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { decodeBase64, encodeBase64 } from '@open-pencil/scene-graph/bytes'
 import { copyFills, copyStrokes, copyEffects } from '@open-pencil/scene-graph/copy'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { decodeBase64, encodeBase64 } from '#core/bytes'
 import type { SkiaRenderer } from '#core/canvas'
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'

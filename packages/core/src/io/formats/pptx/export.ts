@@ -2,8 +2,7 @@ import type PptxGenJS from 'pptxgenjs'
 
 import type { Fill, Mat3, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { TransformMatrix, getWorldMatrix } from '@open-pencil/scene-graph'
-
-import { encodeBase64 } from '#core/bytes'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import {
   hasUnsupportedTransform,

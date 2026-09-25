@@ -1,5 +1,5 @@
-import { encodeBase64 } from '@open-pencil/core/bytes'
 import { IS_TAURI } from '@open-pencil/core/constants'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { readBoundedBody } from '@/app/document/io/browser'
 import { tauriFetch } from '@/app/tauri/http'

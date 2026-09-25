@@ -1,4 +1,3 @@
-import { decodeBase64 } from '@open-pencil/core/bytes'
 import {
   SceneGraph,
   type Fill,
@@ -6,6 +5,7 @@ import {
   type SceneNode,
   type Stroke
 } from '@open-pencil/scene-graph'
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 import { TRANSPARENT } from '@open-pencil/scene-graph/constants'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 

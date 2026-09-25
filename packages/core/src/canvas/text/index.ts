@@ -9,11 +9,11 @@ import type {
 } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
+import { resolveRGBAForPreview } from '@open-pencil/scene-graph/color'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
-import { resolveRGBAForPreview } from '#core/color/management'
 import { DEFAULT_FONT_FAMILY, DEFAULT_FONT_SIZE } from '#core/constants'
 import { transformTextCase } from '#core/text/case'
-import { resolveNodeTextDirection } from '#core/text/direction'
 import { fontManager, weightToStyle } from '#core/text/fonts'
 import {
   fontCoverageDemand,

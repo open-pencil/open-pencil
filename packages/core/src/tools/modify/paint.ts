@@ -1,9 +1,9 @@
 import * as v from 'valibot'
 
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Matrix } from '@open-pencil/scene-graph/primitives'
 
-import { decodeBase64 } from '#core/bytes'
-import { parseColor } from '#core/color'
 import { BLACK } from '#core/constants'
 import { toolNumber, nodeIdInput } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'

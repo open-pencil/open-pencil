@@ -11,9 +11,9 @@ import {
   type SceneNode,
   type SerializedInstanceOverrideState
 } from '@open-pencil/scene-graph'
+import { decodeBase64, encodeBase64 } from '@open-pencil/scene-graph/bytes'
 import type { JSONObject } from '@open-pencil/scene-graph/primitives'
 
-import { decodeBase64, encodeBase64 } from '#core/bytes'
 import type { ClipboardSnapshot } from '#core/editor/clipboard/copy'
 
 interface SerializedClipboardNode extends JSONObject {

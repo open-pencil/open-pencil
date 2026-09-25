@@ -1,7 +1,7 @@
-import { encodeBase64 } from '@open-pencil/core/bytes'
-import { resolveNodeTextDirection } from '@open-pencil/core/text'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import {
   cssColor,

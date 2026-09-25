@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
 import type { CharacterStyleOverride, SceneNode } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
-import { parseColor } from '#core/color'
 import { styleToWeight } from '#core/text/fonts'
 import { applyStyleToRange } from '#core/text/style-runs'
 import { toolNumber, nodeIdInput } from '#core/tools/input'

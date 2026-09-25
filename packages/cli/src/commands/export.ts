@@ -3,14 +3,15 @@ import { basename, dirname, extname, join, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
 
-import { decodeBase64 } from '@open-pencil/core/bytes'
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
+import { exportWebFontFaceAssets } from '@open-pencil/core/text/web-font/assets'
 import {
   exportHTMLBundle,
   sceneNodesToTailwindJSX,
   sceneGraphToDesignDocument,
   type ExportHTMLBundleOptions
 } from '@open-pencil/dom-css'
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
@@ -172,7 +173,11 @@ async function exportHTMLFromFile(
     html: args.html as ExportHTMLBundleOptions['html'],
     style: args.css as ExportHTMLBundleOptions['style'],
     assets: args.assets as ExportHTMLBundleOptions['assets'],
-    fonts: args.fonts as ExportHTMLBundleOptions['fonts'],
+    fonts:
+      args.fonts === 'assets'
+        ? async (fonts, assetBasePath) =>
+            (await exportWebFontFaceAssets({ fonts, assetBasePath })).assets
+        : 'none',
     assetBasePath
   })
   await writeHTMLFiles(output, bundle)

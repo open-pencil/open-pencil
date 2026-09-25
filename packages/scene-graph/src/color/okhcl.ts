@@ -1,9 +1,8 @@
 import { converter, toGamut } from 'culori'
 
-import type { SceneNode } from '@open-pencil/scene-graph'
-import { copyFill, copyStroke } from '@open-pencil/scene-graph/copy'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-
+import { copyFill, copyStroke } from '../copy'
+import type { Color } from '../primitives'
+import type { SceneNode } from '../types'
 import { normalizeColor } from './normalize'
 
 export interface OkHCLColor {

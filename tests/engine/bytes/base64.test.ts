@@ -5,7 +5,7 @@ import {
   decodeBase64Text,
   encodeBase64,
   encodeBase64Text
-} from '@open-pencil/core/bytes'
+} from '@open-pencil/scene-graph/bytes'
 
 describe('Base64 byte helpers', () => {
   test('encode and decode empty and binary data', () => {

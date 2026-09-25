@@ -2,9 +2,9 @@ import { expect } from 'bun:test'
 
 import { unzipSync } from 'fflate'
 
-import { decodeBase64 } from '@open-pencil/core/bytes'
 import type { Fill, Stroke } from '@open-pencil/scene-graph'
 import { SceneGraph } from '@open-pencil/scene-graph'
+import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 // 1x1 transparent PNG — stub rasterizer output so unit tests avoid CanvasKit.
 export const TINY_PNG = decodeBase64(

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { colorToHexRaw } from '@open-pencil/core/color'
 import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { colorToHexRaw } from '@open-pencil/scene-graph/color'
 import {
   applySolidStrokeColor,
   BindableValueRoot,

@@ -1,7 +1,7 @@
 import type { BlendMode, Effect } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { parseColor } from '#core/color'
 import { TRANSPARENT } from '#core/constants'
 
 export type EffectColor = string | Color

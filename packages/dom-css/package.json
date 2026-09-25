@@ -62,7 +62,6 @@
     "provenance": true
   },
   "peerDependencies": {
-    "@open-pencil/core": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*"
   },
   "devDependencies": {

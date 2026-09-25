@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useI18n } from '@open-pencil/vue'
 
 import { initials } from '@/app/shell/ui'

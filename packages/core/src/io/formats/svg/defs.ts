@@ -1,10 +1,12 @@
 import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
+import {
+  colorToHex,
+  colorToDisplayCSS,
+  getDefaultRenderColorSpace,
+  type RenderColorSpace
+} from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { encodeBase64 } from '#core/bytes'
-import { colorToHex } from '#core/color'
-import { colorToDisplayCSS, getDefaultRenderColorSpace } from '#core/color/management'
-import type { RenderColorSpace } from '#core/color/management'
 
 import { svg, type SVGNode } from './node'
 import { round } from './paths'

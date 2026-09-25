@@ -1,4 +1,3 @@
-import { decodeBase64, encodeBase64 } from '@open-pencil/core/bytes'
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
@@ -14,6 +13,7 @@ import type {
   SerializedComponentLibraryRevision,
   StoredLibraryLatestManifest
 } from '@open-pencil/core/library'
+import { decodeBase64, encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 

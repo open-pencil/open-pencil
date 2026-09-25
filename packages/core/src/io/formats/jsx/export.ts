@@ -1,7 +1,7 @@
 import type { SceneGraph, SceneNode, NodeType } from '@open-pencil/scene-graph'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import { DEFAULT_FONT_FAMILY } from '#core/constants'
-import { resolveNodeTextDirection } from '#core/text/direction'
 
 import {
   collectCornerRadii,
