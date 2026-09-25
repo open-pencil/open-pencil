@@ -17,6 +17,18 @@ function tw(graph: SceneGraph, nodeId: string) {
 }
 
 describe('Tailwind JSX export', () => {
+  test('layer names cannot add attributes', () => {
+    const graph = makeGraph()
+    const node = graph.createNode('RECTANGLE', pageId(graph), {
+      name: 'a" onClick={alert(1)} x="',
+      width: 100,
+      height: 48
+    })
+    expect(tw(graph, node.id)).toStartWith(
+      '<div data-name={"a\\" onClick={alert(1)} x=\\""} className='
+    )
+  })
+
   test('basic rectangle — div with w/h', () => {
     const graph = makeGraph()
     const node = graph.createNode('RECTANGLE', pageId(graph), {

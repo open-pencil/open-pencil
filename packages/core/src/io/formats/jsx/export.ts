@@ -308,9 +308,10 @@ function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: J
 
   if (format === 'tailwind') {
     const classes = collectTailwindClasses(node, graph)
-    const nameAttr = node.name && node.name !== node.type ? ` data-name="${node.name}"` : ''
-    const classAttr = classes.length > 0 ? ` className="${classes.join(' ')}"` : ''
-    attrsStr = `${nameAttr}${classAttr}`.trim()
+    const attrs: [string, string][] = []
+    if (node.name && node.name !== node.type) attrs.push(['data-name', node.name])
+    if (classes.length > 0) attrs.push(['className', classes.join(' ')])
+    attrsStr = attrs.map(([k, v]) => formatProp(k, v)).join(' ')
   } else {
     const props = collectProps(node, graph)
     attrsStr = props.map(([k, v]) => formatProp(k, v)).join(' ')
