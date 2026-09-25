@@ -64,6 +64,44 @@
         0% { transform: translateX(-100%); }
         100% { transform: translateX(350%); }
       }
+      /* Pre-boot support notice; the app CSS never loads when it shows. */
+      #boot-notice {
+        box-sizing: border-box;
+        min-height: 100vh;
+        padding: 48px 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        max-width: 560px;
+        margin: 0 auto;
+        text-align: center;
+        color: rgb(var(--loader-fg));
+        background: var(--loader-bg);
+        font: 14px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      #boot-notice img { width: 40px; height: 40px; margin-bottom: 8px; }
+      #boot-notice h1 { margin: 0; font-size: 18px; font-weight: 600; }
+      #boot-notice p { margin: 0; color: rgba(var(--loader-fg), 0.75); }
+      #boot-notice nav { margin-top: 8px; color: rgba(var(--loader-fg), 0.45); }
+      #boot-notice a { color: rgb(var(--loader-fg)); text-underline-offset: 3px; }
+      #boot-notice details { margin-top: 16px; max-width: 100%; color: rgba(var(--loader-fg), 0.6); }
+      #boot-notice summary { cursor: pointer; }
+      #boot-notice pre {
+        margin: 8px 0 0;
+        padding: 12px;
+        max-height: 40vh;
+        overflow: auto;
+        text-align: left;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 12px;
+        border-radius: 6px;
+        background: rgba(var(--loader-fg), 0.06);
+        user-select: text;
+        -webkit-user-select: text;
+      }
     </style>
   </head>
 

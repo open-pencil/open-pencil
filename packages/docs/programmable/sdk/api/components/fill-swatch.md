@@ -4,7 +4,6 @@ description: Binding-aware semantic preview for solid, gradient, and image fills
 ---
 
 <script setup lang="ts">
-import ColorFillDemo from '#vue/primitives/Fill/demo/ColorFillDemo.vue'
 import { data } from './fill-swatch.data'
 </script>
 

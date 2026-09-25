@@ -4,6 +4,8 @@
   "available": "OpenPencil {version} ist verfügbar.",
   "installPrompt": "Jetzt herunterladen und installieren? Die App wird nach der Installation neu gestartet.",
   "downloading": "OpenPencil {version} wird heruntergeladen",
+  "downloadProgress": "{percent} % · {downloaded} von {total}",
+  "downloadProgressUnknown": "{downloaded} heruntergeladen",
   "installedTitle": "Update installiert",
   "installed": "OpenPencil {version} wurde installiert{size}. Neustart jetzt.",
   "unavailable": "Updates sind noch nicht verfügbar. Veröffentliche zuerst ein signiertes Release mit latest.json.",

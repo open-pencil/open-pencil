@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import PropertyPrimitivesDemo from './demo/PropertyPrimitivesDemo.vue'
+import PropertyPrimitivesStates from './examples/States.vue'
 
 const meta = {
   title: 'Vue SDK/Primitives/Property Primitives',
-  component: PropertyPrimitivesDemo,
+  component: PropertyPrimitivesStates,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -15,7 +15,7 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof PropertyPrimitivesDemo>
+} satisfies Meta<typeof PropertyPrimitivesStates>
 
 export default meta
 type Story = StoryObj<typeof meta>

@@ -12,6 +12,8 @@ interface UpdaterMessages {
   available: (params: { version: string }) => string
   installPrompt: string
   downloading: (params: { version: string }) => string
+  downloadProgress: (params: { percent: number; downloaded: string; total: string }) => string
+  downloadProgressUnknown: (params: { downloaded: string }) => string
   installedTitle: string
   installed: (params: { version: string; size: string }) => string
   unavailable: string
@@ -76,15 +78,37 @@ async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
 
     let downloaded = 0
     let contentLength: number | undefined
-    toast.info(t.downloading({ version: update.version }))
+    const progressToast = toast.startProgress(t.downloading({ version: update.version }))
+    let reportedLabel = ''
 
-    await update.downloadAndInstall((event) => {
-      if (event.event === 'Started') {
-        contentLength = event.data.contentLength
-        return
-      }
-      if (event.event === 'Progress') downloaded += event.data.chunkLength
-    })
+    // Skip chunks that leave the displayed percentage and rounded byte counts
+    // unchanged. This deduplicates labels; it is not a fixed-rate throttle.
+    const reportProgress = () => {
+      const label = downloadProgressLabel(t, downloaded, contentLength)
+      if (label === reportedLabel) return
+      reportedLabel = label
+      progressToast.update({
+        progressLabel: label,
+        progress: contentLength ? { value: downloaded, max: contentLength } : { value: downloaded }
+      })
+    }
+
+    try {
+      await update.downloadAndInstall((event) => {
+        if (event.event === 'Started') {
+          contentLength = event.data.contentLength
+          reportProgress()
+          return
+        }
+        if (event.event === 'Progress') {
+          downloaded += event.data.chunkLength
+          reportProgress()
+        }
+      })
+    } finally {
+      // Dismissed on failure too: a toast with a progress bar never expires on its own.
+      progressToast.dismiss()
+    }
 
     const sizeLabel = contentLength
       ? ` (${formatBytes(downloaded)} of ${formatBytes(contentLength)})`
@@ -108,6 +132,21 @@ async function runUpdateCheck(silent: boolean, messages: Ref<UpdaterMessages>) {
 
 function isMissingUpdateManifestError(message: string) {
   return message.toLowerCase().includes('valid release json')
+}
+
+function downloadProgressLabel(
+  messages: UpdaterMessages,
+  downloaded: number,
+  contentLength?: number
+) {
+  if (!contentLength)
+    return messages.downloadProgressUnknown({ downloaded: formatBytes(downloaded) })
+  const percent = Math.min(100, Math.max(0, Math.round((downloaded / contentLength) * 100)))
+  return messages.downloadProgress({
+    percent,
+    downloaded: formatBytes(downloaded),
+    total: formatBytes(contentLength)
+  })
 }
 
 function formatBytes(bytes: number) {

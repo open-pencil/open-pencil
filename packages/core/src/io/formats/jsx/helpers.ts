@@ -50,8 +50,15 @@ export function escapeJSXText(text: string): string {
   return text.replace(/[{}<>&]/g, (c) => JSX_ENTITY[c])
 }
 
+/**
+ * JSX attribute strings end at `"` and decode `&` entities, so other strings become
+ * expression containers with a JavaScript string literal.
+ */
+const LITERAL_ATTRIBUTE = /^[^"&]*$/
+
 export function formatProp(key: string, value: unknown): string {
-  if (typeof value === 'string') return `${key}="${value}"`
+  if (typeof value === 'string')
+    return LITERAL_ATTRIBUTE.test(value) ? `${key}="${value}"` : `${key}={${JSON.stringify(value)}}`
   if (typeof value === 'number') return `${key}={${value}}`
   if (typeof value === 'boolean') return value ? key : `${key}={false}`
   return `${key}={${JSON.stringify(value)}}`

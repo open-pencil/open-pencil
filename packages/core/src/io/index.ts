@@ -2,6 +2,7 @@ export { IORegistry } from './registry'
 export { extractExportGraph } from './subgraph'
 export {
   BUILTIN_IO_FORMATS,
+  type BuiltinIOFormatId,
   figFormat,
   penFormat,
   pngFormat,

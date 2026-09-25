@@ -38,6 +38,7 @@ font-kit = "0.14.3"
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", branch = "dev" }
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+tauri-plugin-os = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-deep-link = "2"
 keyring = "4.1.5"

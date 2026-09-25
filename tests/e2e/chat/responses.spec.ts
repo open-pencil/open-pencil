@@ -38,11 +38,11 @@ test('authentication errors explain the cause and link to Settings', async ({
 }) => {
   await chat.submit('Trigger expired key error')
 
-  const toast = chat.page.getByTestId('toast-item').filter({
+  const toast = chat.page.locator('[data-slot="toast"]').filter({
     hasText: 'Your provider API key is invalid or expired. Replace it in Settings.'
   })
   await expect(toast).toBeVisible()
-  await expect(chat.page.getByTestId('toast-item')).toHaveCount(1)
+  await expect(chat.page.locator('[data-slot="toast"]')).toHaveCount(1)
   await toast.getByRole('button', { name: 'Open settings' }).click()
   await expect(chat.page.getByTestId('app-settings-dialog')).toBeVisible()
 })
@@ -50,7 +50,7 @@ test('authentication errors explain the cause and link to Settings', async ({
 test('transport errors show a safe localized toast', async ({ configuredChat: chat }) => {
   await chat.submit('Trigger missing agent error')
   await expect(
-    chat.page.getByTestId('toast-item').filter({
+    chat.page.locator('[data-slot="toast"]').filter({
       hasText: 'The model request failed. Check the provider settings and try again.'
     })
   ).toBeVisible()

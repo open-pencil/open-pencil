@@ -31,6 +31,7 @@ import {
   loadCachedRecentFileThumbnail,
   rememberRecentStorageDocument
 } from '@/app/recent-files'
+import { createDeferred } from '@/app/runtime/deferred'
 import { toast } from '@/app/shell/ui'
 import { getLocalCanvasStore } from '@/app/storage/local-store'
 import { seedStorageCanvasFromRemote } from '@/app/storage/sync/persist'
@@ -430,7 +431,7 @@ export async function openFileInNewTab(
       subject: file.name
     })
 
-    const completion = Promise.withResolvers<undefined>()
+    const completion = createDeferred<undefined>()
     void completion.promise.catch(() => undefined)
     const pendingOpen = { completion: completion.promise, identity, store }
     fileOpenCoordinator.add(pendingOpen)

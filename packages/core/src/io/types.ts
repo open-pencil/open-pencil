@@ -109,8 +109,8 @@ export interface IOFormatExportOptions {
   colorSpace?: boolean
 }
 
-export interface IOFormatAdapter {
-  id: string
+export interface IOFormatAdapter<Id extends string = string> {
+  id: Id
   label: string
   role: IOFormatRole
   category: IOFormatCategory

@@ -4,7 +4,7 @@ import { computed } from 'vue'
 
 import { banner, type BannerProps } from './banner'
 
-const { storageKey, testId, ui } = defineProps<BannerProps>()
+const { storageKey, ui } = defineProps<BannerProps>()
 
 const dismissed = storageKey ? useLocalStorage(storageKey, false) : null
 const styles = computed(() => {
@@ -18,11 +18,11 @@ const styles = computed(() => {
 </script>
 
 <template>
-  <div v-if="!dismissed" :data-test-id="testId" :class="styles.root">
+  <div v-if="!dismissed" :class="styles.root" data-slot="banner" role="status">
     <span :class="styles.content"><slot /></span>
     <button
       v-if="storageKey"
-      :data-test-id="testId ? `${testId}-dismiss` : undefined"
+      data-slot="banner-dismiss"
       :class="styles.dismiss"
       @click="dismissed = true"
     >

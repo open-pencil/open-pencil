@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'bun:test'
 import { ref } from 'vue'
 
 import { spawnACPProcess } from '@/app/ai/acp/process'
+import { toast } from '@/app/shell/ui'
 import { checkForAppUpdate } from '@/app/shell/updater'
 
 import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
@@ -10,6 +11,7 @@ import { clearTauriMocks, mockTauriIPC } from '#tests/helpers/tauri/mocks'
 afterEach(async () => {
   await clearTauriMocks()
   vi.restoreAllMocks()
+  for (const entry of toast.toasts.value) toast.remove(entry.id)
   Reflect.deleteProperty(globalThis, 'window')
   Reflect.deleteProperty(globalThis, 'navigator')
 })
@@ -118,6 +120,16 @@ describe('Tauri updater helper', () => {
     available: ({ version }: { version: string }) => `Version ${version}`,
     installPrompt: 'Install now?',
     downloading: ({ version }: { version: string }) => `Downloading ${version}`,
+    downloadProgress: ({
+      percent,
+      downloaded,
+      total
+    }: {
+      percent: number
+      downloaded: string
+      total: string
+    }) => `${percent}% of ${total} (${downloaded})`,
+    downloadProgressUnknown: ({ downloaded }: { downloaded: string }) => `${downloaded} downloaded`,
     installedTitle: 'Installed',
     installed: ({ version, size }: { version: string; size: string }) =>
       `Installed ${version}${size}`,
@@ -179,5 +191,41 @@ describe('Tauri updater helper', () => {
       buttons: 'OkCancel'
     })
     expect(calls[2]?.args).toMatchObject({ rid: 9 })
+  })
+
+  test('reports download progress once and clears the toast on failure', async () => {
+    await mockTauriIPC((cmd, args) => {
+      if (cmd === 'plugin:updater|check') {
+        return {
+          rid: 9,
+          currentVersion: '0.11.8',
+          version: '0.11.9',
+          date: null,
+          body: 'Release notes',
+          rawJson: '{}'
+        }
+      }
+      if (cmd === 'plugin:dialog|message') {
+        const options = args as { buttons?: string }
+        if (options.buttons === 'OkCancel') return 'Ok'
+      }
+      if (cmd === 'plugin:updater|download_and_install') {
+        const onEvent = (args as { onEvent: { onmessage: (event: unknown) => void } }).onEvent
+        onEvent.onmessage({ event: 'Started', data: { contentLength: 4 } })
+        onEvent.onmessage({ event: 'Progress', data: { chunkLength: 2 } })
+        expect(toast.toasts.value).toHaveLength(1)
+        expect(toast.toasts.value[0]?.progress).toEqual({ value: 2, max: 4 })
+        expect(toast.toasts.value[0]?.progressLabel).toBe('50% of 4 B (2 B)')
+        throw new Error('download interrupted')
+      }
+      return null
+    })
+
+    await checkForAppUpdate({ messages })
+
+    // The failed progress toast must not linger: it never expires on its own.
+    expect(toast.toasts.value.map((entry) => entry.message)).toEqual([
+      'Failed: download interrupted'
+    ])
   })
 })

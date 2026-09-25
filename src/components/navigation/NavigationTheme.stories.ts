@@ -1,11 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
 
-import NavigationThemeDemo from './demo/NavigationThemeDemo.vue'
+import NavigationStates from './examples/States.vue'
 
 const meta = {
   title: 'Design System/Editor/Navigation',
-  component: NavigationThemeDemo,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -13,8 +12,9 @@ const meta = {
         component: 'Page list, Layers/Assets segmented tabs, and document TabBar theme states.'
       }
     }
-  }
-} satisfies Meta<typeof NavigationThemeDemo>
+  },
+  component: NavigationStates
+} satisfies Meta<typeof NavigationStates>
 
 export default meta
 type Story = StoryObj<typeof meta>

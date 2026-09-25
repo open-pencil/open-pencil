@@ -1,5 +1,6 @@
 import {
   EXPORT_FORMATS,
+  EXPORT_FORMAT_OPTIONS,
   EXPORT_SCALES,
   MAX_EXPORT_SCALE,
   MIN_EXPORT_SCALE,
@@ -12,7 +13,7 @@ import { useEditor } from '#vue/editor/context'
 import { useSceneComputed } from '#vue/internal/scene-computed/use'
 
 export type { ExportFormatId, ExportSetting } from '@open-pencil/scene-graph'
-export type { ExportPanelTarget } from '#vue/document/export/helpers'
+export type { ExportFormatOption, ExportPanelTarget } from '#vue/document/export/helpers'
 
 export function useExport() {
   const editor = useEditor()
@@ -30,6 +31,7 @@ export function useExport() {
     minScale: MIN_EXPORT_SCALE,
     clampExportScale,
     formats: EXPORT_FORMATS,
+    formatOptions: EXPORT_FORMAT_OPTIONS,
     formatSupportsScale,
     ...targetState,
     ...settingActions
