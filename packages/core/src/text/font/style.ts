@@ -45,20 +45,4 @@ export function chooseLocalFontMatch<T extends FontFamilyStyle>(
   return undefined
 }
 
-export function isVariableFont(data: ArrayBuffer): boolean {
-  if (data.byteLength < 12) return false
-  const view = new DataView(data)
-  const numTables = view.getUint16(4)
-  for (let i = 0; i < numTables && 12 + i * 16 + 4 <= data.byteLength; i++) {
-    const tag = String.fromCharCode(
-      view.getUint8(12 + i * 16),
-      view.getUint8(12 + i * 16 + 1),
-      view.getUint8(12 + i * 16 + 2),
-      view.getUint8(12 + i * 16 + 3)
-    )
-    if (tag === 'fvar') return true
-  }
-  return false
-}
-
 export { weightToFigmaStyle } from '@open-pencil/fig/node-change'
