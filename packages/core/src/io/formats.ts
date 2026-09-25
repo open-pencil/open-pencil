@@ -93,8 +93,8 @@ async function renderRaster(
   })
 }
 
-function rasterFormat(format: RasterExportFormat): IOFormatAdapter {
-  const extension = format === 'JPG' ? 'jpg' : format.toLowerCase()
+function rasterFormat<F extends RasterExportFormat>(format: F): IOFormatAdapter<Lowercase<F>> {
+  const extension = format.toLowerCase() as Lowercase<F>
   let mimeType = 'image/png'
   if (format === 'JPG') mimeType = 'image/jpeg'
   else if (format === 'WEBP') mimeType = 'image/webp'
@@ -138,7 +138,7 @@ function rasterFormat(format: RasterExportFormat): IOFormatAdapter {
   }
 }
 
-export const figFormat: IOFormatAdapter = {
+export const figFormat: IOFormatAdapter<'fig'> = {
   id: 'fig',
   label: 'OpenPencil Document',
   role: 'native-document',
@@ -198,7 +198,7 @@ export const figFormat: IOFormatAdapter = {
   }
 }
 
-export const penFormat: IOFormatAdapter = {
+export const penFormat: IOFormatAdapter<'pen'> = {
   id: 'pen',
   label: 'Pencil Document',
   role: 'interchange-document',
@@ -222,7 +222,7 @@ export const pngFormat = rasterFormat('PNG')
 export const jpgFormat = rasterFormat('JPG')
 export const webpFormat = rasterFormat('WEBP')
 
-export const svgFormat: IOFormatAdapter = {
+export const svgFormat: IOFormatAdapter<'svg'> = {
   id: 'svg',
   label: 'SVG',
   role: 'derived-export',
@@ -255,7 +255,7 @@ export const svgFormat: IOFormatAdapter = {
   }
 }
 
-export const pdfFormat: IOFormatAdapter = {
+export const pdfFormat: IOFormatAdapter<'pdf'> = {
   id: 'pdf',
   label: 'PDF',
   role: 'derived-export',
@@ -300,7 +300,7 @@ function resolvePPTXExportNodes(
   return { pageId: pages[0].id, nodeIds: pages.flatMap((page) => page.childIds) }
 }
 
-export const pptxFormat: IOFormatAdapter = {
+export const pptxFormat: IOFormatAdapter<'pptx'> = {
   id: 'pptx',
   label: 'PowerPoint',
   role: 'derived-export',
@@ -335,7 +335,7 @@ export const pptxFormat: IOFormatAdapter = {
   }
 }
 
-export const jsxFormat: IOFormatAdapter = {
+export const jsxFormat: IOFormatAdapter<'jsx'> = {
   id: 'jsx',
   label: 'JSX',
   role: 'derived-export',
@@ -370,7 +370,7 @@ export const jsxFormat: IOFormatAdapter = {
   }
 }
 
-export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
+export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
   pngFormat,
@@ -380,4 +380,6 @@ export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
   pdfFormat,
   pptxFormat,
   jsxFormat
-]
+] as const satisfies readonly IOFormatAdapter[]
+
+export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']

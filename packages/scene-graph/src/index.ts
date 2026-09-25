@@ -21,6 +21,7 @@ export {
   type InstanceOverrideState
 } from './instance-overrides'
 export * from './snap'
+export * from './export-format'
 export * from './export-scale'
 export * from './coordinate'
 export * from './constants'

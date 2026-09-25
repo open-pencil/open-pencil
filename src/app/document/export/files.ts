@@ -74,25 +74,21 @@ export function getExportBaseName(graph: SceneGraph, target: ExportRequest['targ
   return 'Export'
 }
 
-export function getExportOptions(formatId: string, options?: ExportOptions): unknown {
-  if (formatId === 'png' || formatId === 'jpg' || formatId === 'webp') {
-    return {
-      format: formatId.toUpperCase(),
-      scale: options?.scale ?? 1,
-      quality: options?.quality
-    }
+export function getExportOptions(format: IOFormatAdapter, options?: ExportOptions): unknown {
+  if (format.exportOptions?.scale) {
+    return { scale: options?.scale ?? 1, quality: options?.quality }
   }
-  if (formatId === 'jsx') return { format: options?.jsxFormat ?? 'openpencil' }
+  if (format.id === 'jsx') return { format: options?.jsxFormat ?? 'openpencil' }
   return undefined
 }
 
 export function getExportFileName(
   baseName: string,
-  formatId: string,
+  format: IOFormatAdapter,
   extension: string,
   options?: ExportOptions
 ): string {
-  return formatId === 'png' || formatId === 'jpg' || formatId === 'webp'
+  return format.exportOptions?.scale
     ? `${baseName}@${options?.scale ?? 1}x.${extension}`
     : `${baseName}.${extension}`
 }

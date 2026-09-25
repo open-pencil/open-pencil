@@ -12,7 +12,7 @@ It manages:
 - export settings rows
 - selected node ids
 - export name labeling
-- supported scales and formats
+- supported scales and formats (`formats` ids and labeled `formatOptions`)
 
 ## Usage
 
@@ -30,6 +30,7 @@ const {
   nodeName,
   scales,
   formats,
+  formatOptions,
   addSetting,
   updateScale,
   updateFormat,
@@ -48,7 +49,7 @@ exportState.addSetting()
 
 ```ts
 exportState.updateScale(0, 2)
-exportState.updateFormat(0, 'WEBP')
+exportState.updateFormat(0, 'webp')
 ```
 
 ## Related APIs
