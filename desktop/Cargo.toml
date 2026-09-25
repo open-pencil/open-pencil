@@ -51,3 +51,7 @@ security-framework = "3"
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
+[patch.crates-io]
+# font-kit 0.14.3 reports stale weights for macOS font collection faces (Menlo, Helvetica Neue,
+# Avenir Next), so their Bold and Medium styles fail to load. Drop once the fix is released upstream.
+font-kit = { git = "https://github.com/open-pencil/font-kit", rev = "b24e797" }

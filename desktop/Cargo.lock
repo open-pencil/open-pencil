@@ -767,8 +767,7 @@ dependencies = [
 [[package]]
 name = "core-text"
 version = "20.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9d2790b5c08465d49f8dc05c8bcae9fea467855947db39b0f8145c091aaced5"
+source = "git+https://github.com/open-pencil/core-foundation-rs?rev=196b43f#196b43f59e97ffb51df4101cf4caee9f5b76dbb6"
 dependencies = [
  "core-foundation 0.9.4",
  "core-graphics 0.23.2",
@@ -1400,8 +1399,7 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 [[package]]
 name = "font-kit"
 version = "0.14.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c7e611d49285d4c4b2e1727b72cf05353558885cc5252f93707b845dfcaf3d3"
+source = "git+https://github.com/open-pencil/font-kit?rev=b24e797#b24e79711c189f61ea0ceca5e1f7c00da8f02a4a"
 dependencies = [
  "bitflags 2.13.1",
  "byteorder",
