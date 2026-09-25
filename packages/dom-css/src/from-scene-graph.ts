@@ -307,4 +307,17 @@ export function sceneGraphToDesignDocument(
   }
 }
 
+/** Project one node, including its own box, instead of the children of a root. */
+export function sceneNodeToDesignDocument(
+  graph: SceneGraph,
+  nodeId: string,
+  includeSourceIds = true
+): DesignDocument {
+  const node = graph.getNode(nodeId)
+  const projected = node
+    ? sceneNodeToDesignNode(graph, node, { rootId: nodeId, includeSourceIds })
+    : null
+  return { type: 'document', sourceGraph: graph, children: projected ? [projected] : [] }
+}
+
 export type { SceneGraphToDesignOptions as ToDesignDocumentOptions }

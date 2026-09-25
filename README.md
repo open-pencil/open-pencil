@@ -80,7 +80,7 @@ openpencil query design.fig "//SECTION//TEXT"                       # Text insid
 
 ### Export
 
-Render to PNG, JPG, WEBP, SVG, PDF, PPTX, HTML, JSX, or `.fig` — or export selections/pages as `.fig` and convert whole documents between supported formats:
+Render to PNG, JPG, WEBP, SVG, PDF, PPTX, HTML, JSX, Storybook stories, or `.fig` — or export selections/pages as `.fig` and convert whole documents between supported formats:
 
 ```sh
 openpencil export design.fig                           # PNG
@@ -89,6 +89,7 @@ openpencil export design.fig -f fig --page "Page 1"   # Export a page as .fig
 openpencil export design.fig -f jsx --style tailwind   # Tailwind JSX
 openpencil export design.fig -f html --css tailwind    # Tailwind HTML fragment
 openpencil export design.fig -f html --html standalone --assets external # HTML + assets
+openpencil export design.fig -f storybook --framework vue # Storybook stories per component
 openpencil convert design.pen output.fig               # Convert between document formats
 openpencil import page.html --css styles.css -o page.fig # HTML/CSS → editable .fig
 ```

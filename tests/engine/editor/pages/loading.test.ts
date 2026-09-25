@@ -136,3 +136,32 @@ test('page viewport cleanup remains independent from app preparation state', () 
 
   expect(() => editor.clearPageViewports()).not.toThrow()
 })
+
+test('loading page nodes for a lookup does not supersede a page switch in progress', async () => {
+  const graph = new SceneGraph()
+  const firstPage = graph.getPages()[0]
+  if (!firstPage) throw new Error('Expected default page')
+  const target = graph.addPage('Target')
+  const searched = graph.addPage('Searched')
+  graph.createNode('TEXT', target.id, { text: 'Loading', fontFamily: 'Loader Test' })
+  let release: (() => void) | null = null
+  const fontReady = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const editor = createEditor({
+    graph,
+    skipInitialGraphSetup: true,
+    loadFont: async () => {
+      await fontReady
+      return null
+    }
+  })
+
+  const switching = editor.switchPage(target.id)
+  await Promise.resolve()
+  await editor.loadPageNodes(searched.id)
+  release?.()
+  await switching
+
+  expect(editor.state.currentPageId).toBe(target.id)
+})

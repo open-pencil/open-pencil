@@ -151,3 +151,69 @@ describe('parseSize — Pen sizing fallbacks (#564)', () => {
     }
   )
 })
+
+describe('parsePenFile — text without a width', () => {
+  function hugButton(text: PenNode) {
+    const graph = parseLayoutDocument([
+      { id: 'button', name: 'button', type: 'frame', padding: [12, 24], children: [text] }
+    ])
+    const nodes = graph.getAllNodes()
+    return {
+      button: nodes.find((node) => node.type === 'FRAME' && node.name === 'button'),
+      label: nodes.find((node) => node.type === 'TEXT')
+    }
+  }
+
+  test('sizes auto-width text from its content instead of a placeholder', () => {
+    const { button, label } = hugButton({
+      id: 'label',
+      name: 'label',
+      type: 'text',
+      content: 'Button',
+      fontSize: 18
+    })
+
+    expect(label?.width).toBeGreaterThan(0)
+    expect(label?.width).toBeLessThan(200)
+    expect(button?.width).toBeLessThan(250)
+  })
+
+  test('gives fixed-width text, even a single glyph, a non-zero width', () => {
+    for (const content of ['A', 'Label']) {
+      const { label } = hugButton({
+        id: 'label',
+        name: 'label',
+        type: 'text',
+        content,
+        fontSize: 18,
+        textGrowth: 'fixed-width'
+      })
+      expect(label?.width).toBeGreaterThan(0)
+      expect(label?.width).toBeLessThan(200)
+    }
+  })
+
+  test('keeps empty text without a width at zero', () => {
+    const { label } = hugButton({ id: 'label', name: 'label', type: 'text', content: '' })
+    expect(label?.width).toBe(0)
+  })
+
+  test('keeps an explicit zero width', () => {
+    const graph = parsePenFile(
+      JSON.stringify({
+        version: '2.17',
+        children: [
+          {
+            id: 'label',
+            name: 'label',
+            type: 'text',
+            content: 'A',
+            width: 0,
+            textGrowth: 'fixed-width'
+          }
+        ]
+      } satisfies PenDocument)
+    )
+    expect(graph.getAllNodes().find((node) => node.type === 'TEXT')?.width).toBe(0)
+  })
+})

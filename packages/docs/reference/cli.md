@@ -90,7 +90,7 @@ openpencil variables [file] [options]
 
 ## export
 
-Export to PNG, JPG, WEBP, SVG, JSX, HTML, or `.fig`.
+Export to PNG, JPG, WEBP, SVG, JSX, HTML, `.fig`, or Storybook stories.
 
 ```sh
 openpencil export [file] [options]
@@ -98,17 +98,21 @@ openpencil export [file] [options]
 
 | Option | Alias | Description |
 |--------|-------|-------------|
-| `--format` | `-f` | `png` (default), `jpg`, `webp`, `svg`, `jsx`, `html`, `fig` |
-| `--output` | `-o` | Output file path (default: `<name>.<format>`) |
+| `--format` | `-f` | `png` (default), `jpg`, `webp`, `svg`, `jsx`, `html`, `fig`, `storybook` |
+| `--output` | `-o` | Output file path (default: `<name>.<format>`); a directory for `storybook` (default: `<name>-stories`) |
 | `--scale` | `-s` | Export scale (default: 1) |
 | `--quality` | `-q` | Quality 0–100, JPG/WEBP only (default: 90) |
-| `--page` | | Page name (default: first page) |
+| `--page` | | Page name (default: first page; `fig`, `pptx`, and `storybook` default to every page) |
 | `--node` | | Node ID to export (default: all top-level nodes) |
 | `--style` | | JSX style: `openpencil` (default), `tailwind` |
 | `--html` | | HTML mode: `fragment` (default), `standalone` |
 | `--css` | | HTML CSS output: `inline` (default), `tailwind` |
 | `--assets` | | Standalone HTML assets: `inline` (default), `external` |
 | `--fonts` | | Standalone HTML font output: `assets`, `none` (default) |
+| `--framework` | | Storybook framework: `react` (default), `vue`, `html` |
+| `--design-images` | | Storybook: render a PNG per variant for the Design panel (default: on; `--no-design-images` to skip) |
+| `--watch` | | Storybook: re-export whenever the document is saved |
+| `--beside` | | Storybook: write each document's stories into the document's own folder; the file argument can then be several files or a quoted glob |
 | `--thumbnail` | | Export page thumbnail instead of full render |
 | `--width` | | Thumbnail width (default: 1920) |
 | `--height` | | Thumbnail height (default: 1080) |

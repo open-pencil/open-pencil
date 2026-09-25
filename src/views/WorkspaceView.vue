@@ -108,8 +108,9 @@ function stripWebLinkParams(): void {
 }
 
 /** The action both link handlers take; see `focusNodesByName`. */
-function selectNodeByName(name: string): boolean {
-  return focusNodesByName(getActiveStore(), name)
+async function selectNodeByName(name: string): Promise<boolean> {
+  // A search the user overtook by switching pages is not a missing layer.
+  return (await focusNodesByName(getActiveStore(), name)) !== 'missing'
 }
 
 async function openPendingAssociatedFiles(): Promise<void> {
