@@ -22,3 +22,16 @@ export interface DownloadedFontCache {
 }
 
 export type HostFontLoader = (family: string, style: string) => Promise<ArrayBuffer | null>
+
+/** Why an installed face could not be loaded, when the host can tell. */
+export type FontUnavailableReason = 'unsupported-format'
+
+/** Thrown by a {@link HostFontLoader} for an installed face whose outlines cannot be drawn. */
+export class UnsupportedFontFormatError extends Error {
+  readonly reason: FontUnavailableReason = 'unsupported-format'
+
+  constructor(family: string, style: string) {
+    super(`Font outlines are in an unsupported format: ${family} ${style}`)
+    this.name = 'UnsupportedFontFormatError'
+  }
+}

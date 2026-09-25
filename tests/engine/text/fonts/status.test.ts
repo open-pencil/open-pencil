@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
 import { FontManager, SceneGraph, documentFontStatus } from '@open-pencil/core'
+import { UnsupportedFontFormatError } from '@open-pencil/core/text'
 
 function pageId(graph: SceneGraph): string {
   return graph.getPages()[0].id
@@ -27,6 +28,7 @@ describe('documentFontStatus', () => {
           status: 'available',
           source: 'bundled',
           substituteFamily: null,
+          reason: null,
           nodeIds: [expect.any(String)],
           nodeNames: ['Title']
         }
@@ -56,6 +58,7 @@ describe('documentFontStatus', () => {
         status: 'substituted',
         source: null,
         substituteFamily: 'Inter',
+        reason: null,
         nodeIds: [node.id],
         nodeNames: ['Unavailable label']
       }
@@ -89,6 +92,7 @@ describe('documentFontStatus', () => {
         status: 'substituted',
         source: null,
         substituteFamily: 'Example Sans',
+        reason: null,
         nodeIds: [node.id],
         nodeNames: ['Mixed text']
       },
@@ -98,9 +102,45 @@ describe('documentFontStatus', () => {
         status: 'unresolved',
         source: null,
         substituteFamily: null,
+        reason: null,
         nodeIds: [node.id],
         nodeNames: ['Mixed text']
       }
     ])
+  })
+
+  test('reports why the host could not load an installed face until it loads', async () => {
+    const graph = new SceneGraph()
+    const manager = new FontManager()
+    manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
+    let drawable = false
+    manager.setHostFontLoader(async (family, style) => {
+      if (!drawable) throw new UnsupportedFontFormatError(family, style)
+      return new ArrayBuffer(8)
+    })
+    const node = graph.createNode('TEXT', pageId(graph), {
+      name: 'Chinese label',
+      text: '按钮',
+      fontFamily: 'PingFang SC',
+      fontWeight: 400
+    })
+
+    expect(await manager.loadLocalFont('PingFang SC', 'Regular')).toBeNull()
+    expect(documentFontStatus(graph, pageId(graph), manager).issues).toEqual([
+      {
+        family: 'PingFang SC',
+        style: 'Regular',
+        status: 'substituted',
+        source: null,
+        substituteFamily: 'Inter',
+        reason: 'unsupported-format',
+        nodeIds: [node.id],
+        nodeNames: ['Chinese label']
+      }
+    ])
+
+    drawable = true
+    expect(await manager.loadLocalFont('PingFang SC', 'Regular')).not.toBeNull()
+    expect(documentFontStatus(graph, pageId(graph), manager).faithful).toBe(true)
   })
 })

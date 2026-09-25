@@ -88,6 +88,7 @@ ja:files.importFailed
 ja:files.importHTMLCSS
 ja:files.importHTMLCSSDescription
 ja:fonts.downloadFallbackPacksDescription
+ja:fonts.unsupportedFormat
 ja:media.getPexelsAPIKey
 ja:media.getUnsplashAccessKey
 ja:media.pexelsAPIKey
@@ -222,6 +223,7 @@ zh-cn:files.importFailed
 zh-cn:files.importHTMLCSS
 zh-cn:files.importHTMLCSSDescription
 zh-cn:fonts.downloadFallbackPacksDescription
+zh-cn:fonts.unsupportedFormat
 zh-cn:media.getPexelsAPIKey
 zh-cn:media.getUnsplashAccessKey
 zh-cn:media.pexelsAPIKey

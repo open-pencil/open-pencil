@@ -27,6 +27,8 @@
   "expandIssues": "フォントの問題を表示",
   "collapseIssues": "フォントの問題を隠す",
   "noSubstitute": "代替フォントなし",
+  "unsupportedFormatShort": "未対応の形式",
+  "unsupportedFormat": "インストール済みですが、OpenPencil がまだ描画できない形式です",
   "settingsDesktopDescription": "システムフォント、オンラインプロバイダー、フォールバックパック、キャッシュ済みダウンロードにアクセスします。",
   "settingsBrowserDescription": "ローカルフォントへのブラウザーアクセスを許可し、オンラインフォントプロバイダーを管理します。",
   "providerEnabled": "{provider} を有効にしました。",

@@ -17,11 +17,13 @@ export * from '#core/text/font/sources'
 export * from '#core/text/font/style'
 import { fontFallbackEntry } from '#core/text/fallbacks'
 import type { FontFallbackScript } from '#core/text/fallbacks'
+import { UnsupportedFontFormatError } from '#core/text/font/sources'
 import type {
   DownloadedFontCache,
   FontFamilyOption,
   FontInfo,
   FontLoadedSource,
+  FontUnavailableReason,
   HostFontLoader,
   LocalFontAccessState
 } from '#core/text/font/sources'
@@ -43,6 +45,7 @@ const BUNDLED_FONTS: Record<string, string> = {
 export class FontManager {
   private loadedFamilies = new Map<string, ArrayBuffer>()
   private loadedFamilySources = new Map<string, FontLoadedSource>()
+  private unavailableFaces = new Map<string, FontUnavailableReason>()
   private supplementalFamilyData = new Map<string, ArrayBuffer[]>()
   private remoteCoverage = new Map<string, Set<string>>()
   private blockedNodeIds = new Set<string>()
@@ -342,6 +345,11 @@ export class FontManager {
     return this.loadedFamilySources.get(`${family}|${style}`) ?? null
   }
 
+  /** Why the host could not load an installed face, when it reported a reason. */
+  unavailableReason(family: string, style: string): FontUnavailableReason | null {
+    return this.unavailableFaces.get(`${family}|${style}`) ?? null
+  }
+
   isLoaded(family: string): boolean {
     return [...this.loadedFamilies.keys()].some((k) => k.startsWith(`${family}|`))
   }
@@ -491,9 +499,16 @@ export class FontManager {
 
   private async loadHostFont(family: string, style: string): Promise<ArrayBuffer | null> {
     if (!this.hostFontLoader) return null
+    const key = `${family}|${style}`
     try {
-      return await this.hostFontLoader(family, style)
+      const data = await this.hostFontLoader(family, style)
+      this.unavailableFaces.delete(key)
+      return data
     } catch (e) {
+      if (e instanceof UnsupportedFontFormatError) {
+        this.unavailableFaces.set(key, e.reason)
+        return null
+      }
       console.warn(`Host fallback font load failed for "${family}" ${style}:`, e)
       return null
     }

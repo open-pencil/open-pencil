@@ -27,6 +27,8 @@
   "expandIssues": "Schriftprobleme anzeigen",
   "collapseIssues": "Schriftprobleme ausblenden",
   "noSubstitute": "kein Ersatz verfügbar",
+  "unsupportedFormatShort": "nicht unterstütztes Format",
+  "unsupportedFormat": "Installiert, aber in einem Format, das OpenPencil noch nicht darstellen kann",
   "settingsDesktopDescription": "Auf Systemschriften, Online-Anbieter, Fallback-Pakete und zwischengespeicherte Downloads zugreifen.",
   "settingsBrowserDescription": "Browserzugriff auf lokale Schriften erlauben und Online-Schriftanbieter verwalten.",
   "providerEnabled": "{provider} aktiviert.",
