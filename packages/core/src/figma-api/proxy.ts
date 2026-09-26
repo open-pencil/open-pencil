@@ -222,6 +222,11 @@ export class FigmaNodeProxy {
     setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value)
   }
 
+  /** The async form Figma requires in dynamic-page mode; same result as mainComponent. */
+  async getMainComponentAsync(): Promise<FigmaNodeProxy | null> {
+    return this.mainComponent
+  }
+
   get mainComponent(): FigmaNodeProxy | null {
     const n = this._raw()
     if (!n.componentId) return null

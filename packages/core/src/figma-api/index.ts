@@ -136,6 +136,11 @@ export class FigmaAPI implements NodeProxyHost {
     return node ? this.wrapNode(id) : null
   }
 
+  /** The async lookup that Figma requires in dynamic-page mode; same result as getNodeById. */
+  async getNodeByIdAsync(id: string): Promise<FigmaNodeProxy | null> {
+    return this.getNodeById(id)
+  }
+
   // --- Node Creation ---
 
   private _createNode(type: NodeType): FigmaNodeProxy {
