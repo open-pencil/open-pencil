@@ -11,6 +11,7 @@ import type { Color, GUID, Matrix, Vector } from '@open-pencil/scene-graph/primi
 
 import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../source-metadata'
 /* eslint-disable max-lines */
+import { siblingOrderKeys } from './basics'
 import { bytesToHex } from './bytes'
 import { exportCanvasGuides } from './canvas-guides'
 import {
@@ -24,6 +25,38 @@ import {
 } from './plugin-data'
 
 export type KiwiNodeChange = NodeChange & Record<string, unknown>
+
+const siblingOrderKeyCache = new WeakMap<object, Map<string, string[]>>()
+
+/**
+ * The node's `parentIndex.position`: its imported key when that still orders it after its
+ * previous sibling, otherwise a new key between its neighbours. Falls back to the index key
+ * when the caller's child list is not the node's graph siblings.
+ */
+function exportOrderKey(
+  context: SceneNodeToKiwiContext,
+  node: SceneNode,
+  childIndex: number
+): string {
+  const parentId = node.parentId
+  const siblings = parentId
+    ? context.graph.getChildren(parentId).filter((child) => !child.internalOnly)
+    : []
+  if (!parentId || siblings[childIndex]?.id !== node.id) {
+    return node.source.orderKey ?? context.fractionalPosition(childIndex)
+  }
+  let cache = siblingOrderKeyCache.get(context)
+  if (!cache) {
+    cache = new Map()
+    siblingOrderKeyCache.set(context, cache)
+  }
+  let keys = cache.get(parentId)
+  if (!keys) {
+    keys = siblingOrderKeys(siblings.map((sibling) => sibling.source.orderKey))
+    cache.set(parentId, keys)
+  }
+  return keys[childIndex]
+}
 
 type KiwiBooleanOperation = NonNullable<NodeChange['booleanOperation']>
 
@@ -974,7 +1007,7 @@ export function sceneNodeToKiwiWithContext(
     guid,
     parentIndex: {
       guid: parentGuid,
-      position: node.source.orderKey ?? context.fractionalPosition(childIndex)
+      position: exportOrderKey(context, node, childIndex)
     },
     type: exportType,
     name: node.name,

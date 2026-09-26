@@ -52,6 +52,75 @@ export function fractionalPosition(index: number): string {
   return String.fromCharCode(TILDE).repeat(numTildes) + lastChar
 }
 
+const ORDER_KEY_MIN = 33
+const ORDER_KEY_MAX = 126
+
+/**
+ * A printable key strictly between `lo` and `hi` (either may be open), or null when none
+ * exists because `hi` is already the smallest key after `lo`.
+ */
+export function orderKeyBetween(lo: string | null, hi: string | null): string | null {
+  const low = lo ?? ''
+  let high = hi
+  let key = ''
+  for (let i = 0; ; i++) {
+    const a = i < low.length ? low.charCodeAt(i) : ORDER_KEY_MIN - 1
+    const b = high !== null && i < high.length ? high.charCodeAt(i) : ORDER_KEY_MAX + 1
+    if (a === b) {
+      key += String.fromCharCode(a)
+      continue
+    }
+    if (b - a > 1) return key + String.fromCharCode(Math.floor((a + b) / 2))
+    if (a < ORDER_KEY_MIN) return null
+    // Keep `a` here; every later character is then below `high`.
+    key += String.fromCharCode(a)
+    high = null
+  }
+}
+
+/**
+ * Order keys for siblings in their current order. Imported keys are kept while they still
+ * increase; siblings without a usable key get the index key when it fits between its
+ * neighbours, and otherwise a key between them, so no two siblings share a key.
+ */
+export function siblingOrderKeys(sourceKeys: ReadonlyArray<string | null | undefined>): string[] {
+  const keys: string[] = []
+  let prev: string | null = null
+  let pending: number[] = []
+
+  const fill = (upper: string | null): string[] | null => {
+    const filled: string[] = []
+    let lo = prev
+    for (const index of pending) {
+      const candidate = fractionalPosition(index)
+      const key =
+        (lo === null || candidate > lo) && (upper === null || candidate < upper)
+          ? candidate
+          : orderKeyBetween(lo, upper)
+      if (key === null) return null
+      filled.push(key)
+      lo = key
+    }
+    return filled
+  }
+
+  for (let index = 0; index < sourceKeys.length; index++) {
+    const key = sourceKeys[index]
+    const filled = key && (prev === null || key > prev) ? fill(key) : null
+    if (key && filled) {
+      pending.forEach((pendingIndex, i) => (keys[pendingIndex] = filled[i]))
+      keys[index] = key
+      prev = key
+      pending = []
+    } else {
+      pending.push(index)
+    }
+  }
+  const rest = fill(null) ?? []
+  pending.forEach((pendingIndex, i) => (keys[pendingIndex] = rest[i]))
+  return keys
+}
+
 export function computeExportTransform(node: SceneNode): Matrix {
   const sx = node.flipX ? -1 : 1
   const cos = Math.cos((node.rotation * Math.PI) / 180)
