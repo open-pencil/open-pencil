@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
-import { CommandError, runCommand } from '../src/process'
+import { CommandError, runCommand } from '#package-artifacts/process'
 
 describe('runCommand', () => {
   test('captures output', async () => {

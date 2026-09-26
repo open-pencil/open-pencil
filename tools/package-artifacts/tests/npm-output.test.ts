@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { parsePackageManifest } from '../src/manifest/read'
-import { parseNpmPack } from '../src/npm/pack'
+import { parsePackageManifest } from '#package-artifacts/manifest/read'
+import { parseNpmPack } from '#package-artifacts/npm/pack'
 
 test('npm pack parser validates archive names and paths', () => {
   expect(
