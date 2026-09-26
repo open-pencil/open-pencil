@@ -4,8 +4,7 @@
 use fontique::{Blob, Collection, CollectionOptions, FontInfo, FontStyle, SourceCache};
 use std::sync::{Mutex, OnceLock};
 
-/// A face is an exact match when its weight is this close to the requested one.
-const WEIGHT_TOLERANCE: f32 = 50.0;
+use super::style::named_weight;
 
 struct Catalog {
     collection: Collection,
@@ -24,7 +23,9 @@ fn with_catalog<T>(f: impl FnOnce(&mut Catalog) -> T) -> T {
             cache: SourceCache::default(),
         })
     });
-    let mut catalog = catalog.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut catalog = catalog
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     f(&mut catalog)
 }
 
@@ -55,13 +56,14 @@ pub struct Face {
     pub index: u32,
 }
 
-/// Picks the face with the requested weight and slant, or a variable face whose weight axis covers
-/// the request. Nearby static weights are not substituted, so callers can report the substitution.
+/// Picks the face listed under the requested named weight and slant, or a variable face whose
+/// weight axis covers the request. Other static weights are not substituted, so callers can report
+/// the substitution.
 pub fn choose_face(faces: &[FaceTraits], weight: f32, italic: bool) -> Option<usize> {
     let same_slant = |face: &&FaceTraits| face.italic == italic;
     faces
         .iter()
-        .position(|face| same_slant(&face) && (face.weight - weight).abs() < WEIGHT_TOLERANCE)
+        .position(|face| same_slant(&face) && named_weight(face.weight) == weight)
         .or_else(|| {
             faces.iter().position(|face| {
                 same_slant(&face)
@@ -118,7 +120,12 @@ mod tests {
 
     #[test]
     fn chooses_the_exact_weight_and_slant() {
-        let faces = [face(400.0, false), face(400.0, true), face(700.0, false), face(700.0, true)];
+        let faces = [
+            face(400.0, false),
+            face(400.0, true),
+            face(700.0, false),
+            face(700.0, true),
+        ];
         assert_eq!(choose_face(&faces, 700.0, true), Some(3));
         assert_eq!(choose_face(&faces, 400.0, false), Some(0));
     }
@@ -127,6 +134,13 @@ mod tests {
     fn does_not_substitute_a_nearby_static_weight() {
         assert_eq!(choose_face(&[face(400.0, false)], 700.0, false), None);
         assert_eq!(choose_face(&[face(400.0, true)], 400.0, false), None);
+    }
+
+    #[test]
+    fn chooses_static_faces_by_the_style_they_are_listed_under() {
+        assert_eq!(choose_face(&[face(450.0, false)], 400.0, false), Some(0));
+        assert_eq!(choose_face(&[face(450.0, false)], 500.0, false), None);
+        assert_eq!(choose_face(&[face(510.0, false)], 500.0, false), Some(0));
     }
 
     #[test]

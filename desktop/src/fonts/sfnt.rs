@@ -14,11 +14,15 @@ fn read_array<const N: usize>(reader: &mut impl Read) -> Option<[u8; N]> {
 }
 
 fn read_u16(data: &[u8], offset: usize) -> Option<u16> {
-    Some(u16::from_be_bytes(data.get(offset..offset + 2)?.try_into().ok()?))
+    Some(u16::from_be_bytes(
+        data.get(offset..offset + 2)?.try_into().ok()?,
+    ))
 }
 
 fn read_u32(data: &[u8], offset: usize) -> Option<u32> {
-    Some(u32::from_be_bytes(data.get(offset..offset + 4)?.try_into().ok()?))
+    Some(u32::from_be_bytes(
+        data.get(offset..offset + 4)?.try_into().ok()?,
+    ))
 }
 
 /// Returns font data whose first table directory is face `index`, which renderers that read only
@@ -36,7 +40,9 @@ pub fn standalone_face(data: &[u8], index: u32) -> Option<Vec<u8>> {
     let num_tables = read_u16(data, face + 4)? as usize;
     let directory = OFFSET_TABLE_SIZE + num_tables * TABLE_RECORD_SIZE;
     let mut standalone = data.to_vec();
-    standalone[..directory].copy_from_slice(data.get(face..face + directory)?);
+    standalone
+        .get_mut(..directory)?
+        .copy_from_slice(data.get(face..face + directory)?);
     Some(standalone)
 }
 
