@@ -10,7 +10,12 @@ import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
 import { applyExportFontPolicy, exportFontRoots, FONT_POLICIES } from '#cli/export-font-policy'
 import { ok, printError } from '#cli/format'
-import { loadDocument, populateDocumentPage, populateWholeDocument } from '#cli/headless'
+import {
+  ensureDocumentLayout,
+  loadDocument,
+  populateDocumentPage,
+  populateWholeDocument
+} from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
 const FORMAT_IDS = io.listExportFormats('node').map((format) => format.id)
@@ -124,16 +129,22 @@ async function writeExport(output: string, result: ExportResult) {
   if (assets.length > 0) console.log(ok(`Assets: ${assets.length} files`))
 }
 
+/** What the export covers; the width of the work follows from it. */
+type ExportScope = 'document' | 'page' | 'node'
+
+function exportScope(format: string, args: ExportArgs): ExportScope {
+  if (args.node) return 'node'
+  if ((format === 'FIG' || format === 'PPTX') && !args.page) return 'document'
+  return 'page'
+}
+
 function prepareGraphForExport(
   graph: Awaited<ReturnType<typeof loadDocument>>,
-  pageId: string,
-  format: string,
-  args: ExportArgs
-): boolean {
-  const wholeDocument = (format === 'FIG' || format === 'PPTX') && !args.page && !args.node
-  if (wholeDocument || args.node) populateWholeDocument(graph)
-  else populateDocumentPage(graph, pageId)
-  return wholeDocument
+  scope: ExportScope,
+  pageId: string
+): void {
+  if (scope === 'page') populateDocumentPage(graph, pageId)
+  else populateWholeDocument(graph)
 }
 
 async function executeFileExport(
@@ -167,6 +178,7 @@ function exportOptions(format: string, args: ExportArgs): unknown {
 async function exportFromFile(format: string, args: ExportArgs) {
   const file = requireFile(args.file)
   const graph = await loadDocument(file)
+  ensureDocumentLayout(graph)
 
   const pages = graph.getPages()
   const page = args.page ? pages.find((p) => p.name === args.page) : pages[0]
@@ -187,7 +199,9 @@ async function exportFromFile(format: string, args: ExportArgs) {
     process.exit(1)
   }
 
-  const wholeDocument = prepareGraphForExport(graph, page.id, format, args)
+  const scope = exportScope(format, args)
+  prepareGraphForExport(graph, scope, page.id)
+  const wholeDocument = scope === 'document'
 
   const target = args.node
     ? { scope: 'node' as const, nodeId: args.node }
