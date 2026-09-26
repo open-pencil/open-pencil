@@ -50,6 +50,23 @@ OpenPencil maps browser-computed DOM/CSS styles into SceneGraph fields through `
 | `white-space: nowrap` | `maxLines = 1` | Other white-space values are not mapped yet. |
 | `text-shadow` | drop shadow effect | Simple shadows only. |
 
+## Export
+
+HTML export, Tailwind HTML, and Tailwind JSX (`sceneNodesToTailwindJSX`) share one SceneGraph → CSS projection; Tailwind classes are derived from that CSS.
+
+| SceneGraph | CSS | Notes |
+|---|---|---|
+| auto layout | `display: flex`, `flex-direction`, gaps, padding | Row direction is the default and is not written. |
+| grid layout | `display: grid`, `grid-template-*`, gaps | Equal `1fr` tracks use `repeat(N, minmax(0, 1fr))`. |
+| grid child position | `grid-column`, `grid-row`, `*-start` | Spans are written before starts. |
+| `layoutGrow` in auto layout | `flex-grow: 1` | |
+| rotation | `transform: rotate()` | Rotates around the element center. |
+| drop and inner shadows | `box-shadow` | Every visible shadow, in order; inner shadows use `inset`. |
+| layer / background blur | `filter` / `backdrop-filter: blur()` | |
+| right-to-left layout or text | `direction: rtl` | |
+| section | `<section>` | |
+| colors | hex, or `rgba()` when translucent | Hex lets Tailwind match its palette. |
+
 ## Browser-oracle but not mapped yet
 
 These values are collected or covered by browser oracle tests but do not yet have a stable SceneGraph mapping:

@@ -4,8 +4,8 @@ import {
   collectExportTargets,
   concreteImportSpecifiers,
   validateManifest
-} from '../src/manifest/exports'
-import type { PackageManifest } from '../src/manifest/types'
+} from '#package-artifacts/manifest/exports'
+import type { PackageManifest } from '#package-artifacts/manifest/types'
 
 const validManifest: PackageManifest = {
   name: '@open-pencil/example',
