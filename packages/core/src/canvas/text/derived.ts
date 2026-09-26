@@ -376,7 +376,7 @@ export function drawReflowedPathTextSilhouettes(
  *                            black fills vs white strokeGeometry
  *   4. scale(fontSize,-fs) — font units → px; Y flip (font space is up-positive)
  */
-export function savedTextEligibility(node: SceneNode): boolean {
+function savedTextEligibility(node: SceneNode): boolean {
   return (
     node.styleRuns.length === 0 ||
     (node.fills.filter((paint) => paint.visible).length === 1 &&

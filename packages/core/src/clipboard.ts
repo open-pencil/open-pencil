@@ -90,22 +90,13 @@ export async function buildFigmaClipboardHTML(
   for (let i = 0; i < nodes.length; i++) {
     collectTextNodes(nodes[i])
     nodeChanges.push(
-      ...sceneNodeToKiwi(
-        nodes[i],
-        canvasGuid,
-        i,
-        localIdCounter,
-        graph,
-        blobs,
+      ...sceneNodeToKiwi(nodes[i], canvasGuid, i, localIdCounter, graph, blobs, {
         nodeIdToGuid,
         fontDigestMap,
-        variableIds,
-        undefined,
-        undefined,
+        varIdToGuid: variableIds,
         assignedGuidValues,
-        undefined,
-        modeIds
-      )
+        modeIdToGuid: modeIds
+      })
     )
   }
 
@@ -142,22 +133,13 @@ export async function buildFigmaClipboardHTML(
   for (const component of dependencies.values()) {
     collectTextNodes(component)
     nodeChanges.push(
-      ...sceneNodeToKiwi(
-        component,
-        dependencyCanvas,
-        0,
-        localIdCounter,
-        graph,
-        blobs,
+      ...sceneNodeToKiwi(component, dependencyCanvas, 0, localIdCounter, graph, blobs, {
         nodeIdToGuid,
         fontDigestMap,
-        variableIds,
-        undefined,
-        undefined,
+        varIdToGuid: variableIds,
         assignedGuidValues,
-        undefined,
-        modeIds
-      )
+        modeIdToGuid: modeIds
+      })
     )
   }
 

@@ -3,7 +3,7 @@ import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import type { Vector } from '@open-pencil/scene-graph'
 
 import { mergeVariableConsumptionMaps } from '../node-change/variable-bindings'
-import { applyDerivedEntry } from './derived-symbol-data/apply'
+import { applyDerivedEntry } from './derived-symbol-data'
 import {
   bindSourceProperties,
   componentBindings,

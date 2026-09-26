@@ -34,7 +34,7 @@ export {
 } from '@open-pencil/kiwi/fig/container'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { guidToString, stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
+import type { ComponentPropertyDefinition, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import type { GUID, JSONObject } from '@open-pencil/scene-graph/primitives'
 
 import {
@@ -510,6 +510,20 @@ function serializeVariableBindings(
   }
 }
 
+/** Identity maps and caches one document shares across every node it serializes. */
+export interface SceneNodeToKiwiOptions {
+  nodeIdToGuid?: Map<string, GUID>
+  fontDigestMap?: Map<string, Uint8Array>
+  varIdToGuid?: Map<string, GUID>
+  glyphBlobMap?: Map<string, number>
+  blobIndexByHex?: Map<string, number>
+  assignedGuidValues?: Set<string>
+  runtime?: FigNodeChangeExportRuntime
+  componentPropertyDefinitionsById?: ReadonlyMap<string, ComponentPropertyDefinition>
+  modeIdToGuid?: Map<string, GUID>
+  propertyIdToGuid?: Map<string, GUID>
+}
+
 export function sceneNodeToKiwi(
   node: SceneNode,
   parentGuid: GUID,
@@ -517,17 +531,20 @@ export function sceneNodeToKiwi(
   localIdCounter: { value: number },
   graph: SceneGraph,
   blobs: Uint8Array[],
-  nodeIdToGuid?: Map<string, GUID>,
-  fontDigestMap?: Map<string, Uint8Array>,
-  varIdToGuid?: Map<string, GUID>,
-  glyphBlobMap = new Map<string, number>(),
-  blobIndexByHex?: Map<string, number>,
-  assignedGuidValues?: Set<string>,
-  runtime: FigNodeChangeExportRuntime = EMPTY_EXPORT_RUNTIME,
-  componentPropertyDefinitionsById = buildComponentPropIndex(graph),
-  modeIdToGuid?: Map<string, GUID>,
-  propertyIdToGuid = new Map<string, GUID>()
+  options: SceneNodeToKiwiOptions = {}
 ): KiwiNodeChange[] {
+  const {
+    nodeIdToGuid,
+    fontDigestMap,
+    varIdToGuid,
+    glyphBlobMap = new Map<string, number>(),
+    blobIndexByHex,
+    assignedGuidValues,
+    runtime = EMPTY_EXPORT_RUNTIME,
+    componentPropertyDefinitionsById = buildComponentPropIndex(graph),
+    modeIdToGuid,
+    propertyIdToGuid = new Map<string, GUID>()
+  } = options
   // Raw paints retain library asset refs; effects use this map because their
   // Kiwi schema accepts only GUID-backed aliases.
   const assetRefToVarGuid = varIdToGuid ? buildAssetRefToVarGuidMap(graph, varIdToGuid) : undefined

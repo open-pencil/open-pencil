@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import { resolveDsdGeometry } from '#fig/instance-overrides/derived-symbol-data/geometry'
 import {
   resolveGeometryPaths,
   resolveStyleOverrideFills,
@@ -44,66 +43,6 @@ function quadraticCommandsBlob(): Uint8Array {
 }
 
 describe('vector geometry style fills', () => {
-  test('scales derived zero-height vector networks for dashed instance strokes', () => {
-    const graph = new SceneGraph()
-    const target = graph.createNode('VECTOR', graph.getPages()[0].id, {
-      width: 99,
-      height: 0,
-      vectorNetwork: {
-        vertices: [
-          { x: 0, y: 0 },
-          { x: 99, y: 0 }
-        ],
-        segments: [
-          {
-            start: 0,
-            end: 1,
-            tangentStart: { x: 0, y: 0 },
-            tangentEnd: { x: 0, y: 0 }
-          }
-        ],
-        regions: []
-      }
-    })
-
-    const geometry = resolveDsdGeometry({ size: { x: 421, y: 0 } }, target, [])
-
-    expect(geometry.vectorNetwork?.vertices[1]?.x).toBe(421)
-    expect(geometry.vectorNetwork?.vertices[1]?.y).toBe(0)
-  })
-
-  test('scales derived vector networks around their geometry origin', () => {
-    const graph = new SceneGraph()
-    const target = graph.createNode('VECTOR', graph.getPages()[0].id, {
-      width: 10,
-      height: 10,
-      vectorNetwork: {
-        vertices: [
-          { x: 5, y: 7 },
-          { x: 15, y: 17 }
-        ],
-        segments: [
-          {
-            start: 0,
-            end: 1,
-            tangentStart: { x: 1, y: 2 },
-            tangentEnd: { x: 3, y: 4 }
-          }
-        ],
-        regions: []
-      }
-    })
-
-    const geometry = resolveDsdGeometry({ size: { x: 20, y: 30 } }, target, [])
-
-    expect(geometry.vectorNetwork?.vertices).toEqual([
-      { x: 5, y: 7 },
-      { x: 25, y: 37 }
-    ])
-    expect(geometry.vectorNetwork?.segments[0]?.tangentStart).toEqual({ x: 2, y: 6 })
-    expect(geometry.vectorNetwork?.segments[0]?.tangentEnd).toEqual({ x: 6, y: 12 })
-  })
-
   test('resolves per-path paints without retaining transport style IDs', () => {
     const orange: Paint = {
       type: 'SOLID',
@@ -128,35 +67,6 @@ describe('vector geometry style fills', () => {
     expect(paths[0]?.fills?.[0]?.color).toEqual(orange.color)
     expect(paths[1]?.fills).toBeUndefined()
     expect(paths[0]).not.toHaveProperty('styleID')
-  })
-
-  test('resolves style fills from derived instance geometry', () => {
-    const graph = new SceneGraph()
-    const target = graph.createNode('VECTOR', graph.getPages()[0].id)
-    const geometry = resolveDsdGeometry(
-      {
-        fillGeometry: [{ windingRule: 'NONZERO', commandsBlob: 0, styleID: 3 }],
-        vectorData: {
-          styleOverrideTable: [
-            {
-              styleID: 3,
-              fillPaints: [
-                {
-                  type: 'SOLID',
-                  color: { r: 1, g: 0.32, b: 0, a: 1 },
-                  opacity: 1,
-                  visible: true
-                }
-              ]
-            }
-          ]
-        }
-      },
-      target,
-      [moveCommandsBlob(0, 0)]
-    )
-
-    expect(geometry.fillGeometry?.[0]?.fills?.[0]?.color.g).toBeCloseTo(0.32)
   })
 
   test('generates fresh style overrides when serializing current path fills', () => {

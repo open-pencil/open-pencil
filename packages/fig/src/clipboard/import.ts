@@ -5,6 +5,7 @@ import type { NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 
 import { parseFigKiwiChunks, decompressFigKiwiDataAsync } from '../node-change'
+import { isFigClipboardVisualType } from '../node-classification'
 
 function decodeBase64(value: string): Uint8Array {
   if (!isValid(value)) throw new TypeError('Invalid Base64 string')
@@ -55,35 +56,12 @@ export async function parseFigmaClipboard(
   }
 }
 
-const NON_VISUAL_TYPES = new Set([
-  'DOCUMENT',
-  'CANVAS',
-  'VARIABLE_SET',
-  'VARIABLE',
-  'VARIABLE_COLLECTION',
-  'STYLE',
-  'STYLE_SET',
-  'INTERNAL_ONLY_NODE',
-  'WIDGET',
-  'STAMP',
-  'STICKY',
-  'SHAPE_WITH_TEXT',
-  'CONNECTOR',
-  'CODE_BLOCK',
-  'TABLE_NODE',
-  'TABLE_CELL',
-  'SECTION_OVERLAY',
-  'SLIDE'
-])
-
 function isChildOfVisualNode(nc: KiwiNodeChange, parentTypes: Map<string, string>): boolean {
   const parentId = nc.parentIndex?.guid
     ? `${nc.parentIndex.guid.sessionID}:${nc.parentIndex.guid.localID}`
     : null
   return (
-    !!parentId &&
-    parentTypes.has(parentId) &&
-    !NON_VISUAL_TYPES.has(parentTypes.get(parentId) ?? '')
+    !!parentId && parentTypes.has(parentId) && isFigClipboardVisualType(parentTypes.get(parentId))
   )
 }
 
@@ -103,7 +81,7 @@ export function figmaNodesBounds(
   }
 
   for (const nc of nodeChanges) {
-    if (!nc.type || NON_VISUAL_TYPES.has(nc.type)) continue
+    if (!isFigClipboardVisualType(nc.type)) continue
     if (isChildOfVisualNode(nc, parentTypes)) continue
 
     const x = nc.transform?.m02 ?? 0

@@ -309,15 +309,17 @@ function appendInternalResources(context: InternalResourceContext): void {
         context.localIdCounter,
         graph,
         context.blobs,
-        context.nodeIdToGuid,
-        context.fontDigestMap,
-        context.varIdToGuid,
-        context.glyphBlobMap,
-        context.blobIndexByHex,
-        context.assignedGuidValues,
-        context.componentPropertyDefinitionsById,
-        context.modeIdToGuid,
-        context.propertyIdToGuid
+        {
+          nodeIdToGuid: context.nodeIdToGuid,
+          fontDigestMap: context.fontDigestMap,
+          varIdToGuid: context.varIdToGuid,
+          glyphBlobMap: context.glyphBlobMap,
+          blobIndexByHex: context.blobIndexByHex,
+          assignedGuidValues: context.assignedGuidValues,
+          componentPropertyDefinitionsById: context.componentPropertyDefinitionsById,
+          modeIdToGuid: context.modeIdToGuid,
+          propertyIdToGuid: context.propertyIdToGuid
+        }
       )
     )
   }
@@ -468,13 +470,7 @@ export async function exportFigFile(
       .filter((child) => !child.internalOnly && child.sharedStyleType === null)
     for (let i = 0; i < children.length; i++) {
       nodeChanges.push(
-        ...sceneNodeToKiwi(
-          children[i],
-          canvasGuid,
-          i,
-          localIdCounter,
-          graph,
-          blobs,
+        ...sceneNodeToKiwi(children[i], canvasGuid, i, localIdCounter, graph, blobs, {
           nodeIdToGuid,
           fontDigestMap,
           varIdToGuid,
@@ -484,7 +480,7 @@ export async function exportFigFile(
           componentPropertyDefinitionsById,
           modeIdToGuid,
           propertyIdToGuid
-        )
+        })
       )
     }
   }

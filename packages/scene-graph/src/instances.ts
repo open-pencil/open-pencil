@@ -199,22 +199,6 @@ export function hasInstanceOverride(graph: SceneGraph, nodeId: string, field: st
   return hasNodeInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field)
 }
 
-/*
- * syncInstances) won't clobber them, and — if `nodeId` sits inside an INSTANCE —
- * so the .fig exporter knows to write the diff out as a symbol override. A no-op
- * for fields outside INSTANCE_SYNC_PROPS or nodes with no INSTANCE ancestor.
- */
-export function recordInstanceOverrideValue(
-  graph: SceneGraph,
-  nodeId: string,
-  field: string,
-  value: unknown
-): void {
-  const instance = findInstanceAncestor(graph, nodeId)
-  if (!instance) return
-  setInstanceOverride(instance.instanceOverrides, instance.id, nodeId, field, value)
-  graph.updateNode(instance.id, { instanceOverrides: instance.instanceOverrides })
-}
 export function recordInstanceOverride(
   graph: SceneGraph,
   nodeId: string,

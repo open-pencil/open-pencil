@@ -1,5 +1,5 @@
-import type { InstanceOccurrence } from '../interpret'
-import type { DerivedSymbolOverride } from '../types'
+import type { InstanceOccurrence } from './interpret'
+import type { DerivedSymbolOverride } from './types'
 
 /** Copy one saved occurrence-derived record onto its target; a cache, not a claim. */
 export function applyDerivedEntry(target: InstanceOccurrence, entry: DerivedSymbolOverride): void {

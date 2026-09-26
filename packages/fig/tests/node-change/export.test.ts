@@ -39,22 +39,11 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       componentPropertyAssignments: { '1:100': 'Override' }
     })
     const serialize = (definitions?: ReturnType<typeof buildComponentPropIndex>) =>
-      sceneNodeToKiwi(
-        instance,
-        { sessionID: 1, localID: 1 },
-        0,
-        { value: 2 },
-        graph,
-        [],
-        new Map(),
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        new Set(),
-        undefined,
-        definitions
-      )[0].componentPropAssignments
+      sceneNodeToKiwi(instance, { sessionID: 1, localID: 1 }, 0, { value: 2 }, graph, [], {
+        nodeIdToGuid: new Map(),
+        assignedGuidValues: new Set(),
+        componentPropertyDefinitionsById: definitions
+      })[0].componentPropAssignments
 
     const definitions = buildComponentPropIndex(graph)
     expect(definitions.get('1:100')).toBe(component.componentPropertyDefinitions[0])
@@ -136,13 +125,11 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       { value: 2 },
       graph,
       blobs,
-      undefined,
-      new Map([['Inter|Regular', new Uint8Array([1, 2, 3])]]),
-      undefined,
-      new Map(),
-      undefined,
-      undefined,
-      runtime
+      {
+        fontDigestMap: new Map([['Inter|Regular', new Uint8Array([1, 2, 3])]]),
+        glyphBlobMap: new Map(),
+        runtime
+      }
     )
 
     expect(change.derivedTextData?.glyphs).toHaveLength(1)
@@ -202,35 +189,12 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       localIdCounter,
       graph,
       [],
-      nodeIdToGuid,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      propertyIdToGuid
+      { nodeIdToGuid, propertyIdToGuid }
     )
-    const slotChange = sceneNodeToKiwi(
-      slot,
-      componentChange.guid,
-      0,
-      localIdCounter,
-      graph,
-      [],
+    const slotChange = sceneNodeToKiwi(slot, componentChange.guid, 0, localIdCounter, graph, [], {
       nodeIdToGuid,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
       propertyIdToGuid
-    )[0]
+    })[0]
 
     expect(componentChange.componentPropDefs?.[0].id).toEqual(
       slotChange.componentPropRefs?.[0].defID
@@ -260,16 +224,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       localIdCounter,
       graph,
       [],
-      nodeIdToGuid,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      propertyIdToGuid
+      { nodeIdToGuid, propertyIdToGuid }
     )
     const [buttonChange] = sceneNodeToKiwi(
       button,
@@ -278,16 +233,7 @@ describe('@open-pencil/fig SceneGraph export policy', () => {
       localIdCounter,
       graph,
       [],
-      nodeIdToGuid,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      propertyIdToGuid
+      { nodeIdToGuid, propertyIdToGuid }
     )
 
     expect(buttonChange.componentPropDefs?.[0].initialValue).toEqual({ guidValue: iconChange.guid })

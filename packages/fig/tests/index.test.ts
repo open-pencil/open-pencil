@@ -2,7 +2,6 @@ import { beforeAll, describe, expect, it } from 'bun:test'
 
 import {
   FIG_PACKAGE_STATUS,
-  assertFigPackageReady,
   parseFigBuffer,
   readFigContainer,
   writeFigArchive,
@@ -33,7 +32,7 @@ describe('@open-pencil/fig package API', () => {
   })
 
   it('exports archive API status', () => {
-    expect(FIG_PACKAGE_STATUS).toBe('archive-api')
+    expect(FIG_PACKAGE_STATUS).toBe('document-reader')
   })
 
   it('round-trips fig-kiwi container bytes', () => {
@@ -107,9 +106,5 @@ describe('@open-pencil/fig package API', () => {
 
   it('rejects invalid fig-kiwi containers', () => {
     expect(() => readFigContainer(new Uint8Array([1, 2, 3]))).toThrow('Invalid fig-kiwi')
-  })
-
-  it('directs consumers to core for SceneGraph read/write', () => {
-    expect(() => assertFigPackageReady()).toThrow('archive/container APIs')
   })
 })

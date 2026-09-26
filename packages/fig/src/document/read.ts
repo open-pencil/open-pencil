@@ -6,7 +6,11 @@ import {
   createOccurrenceInterpreter,
   type InterpretInstanceOptions
 } from '../instance-overrides/interpret'
-import { createSourceIndex, type SourceIndex } from '../instance-overrides/source-index'
+import {
+  bySavedPosition,
+  createSourceIndex,
+  type SourceIndex
+} from '../instance-overrides/source-index'
 import { symbolOverridesOf } from '../instance-overrides/types'
 import { applyStyleRefsToFields } from '../node-change/style-refs'
 import {
@@ -124,12 +128,7 @@ function createScopedReader(
   const interpreter = createOccurrenceInterpreter(sceneChanges)
   const pages = changes
     .filter((change) => change.type === 'CANVAS')
-    .toSorted((a, b) => {
-      const left = a.parentIndex?.position ?? ''
-      const right = b.parentIndex?.position ?? ''
-      if (left === right) return 0
-      return left < right ? -1 : 1
-    })
+    .toSorted(bySavedPosition)
     .map((page) => {
       if (!page.guid) throw new Error('Page has no GUID')
       return {

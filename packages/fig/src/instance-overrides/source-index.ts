@@ -28,6 +28,14 @@ export function indexRecords(changes: readonly NodeChange[]): Map<string, NodeCh
   return sources
 }
 
+/** Saved sibling order: the fractional position string, compared as text. */
+export function bySavedPosition(a: NodeChange, b: NodeChange): number {
+  const left = a.parentIndex?.position ?? ''
+  const right = b.parentIndex?.position ?? ''
+  if (left === right) return 0
+  return left < right ? -1 : 1
+}
+
 export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
   const sources = new Map<string, NodeChange>()
   const children = new Map<string, NodeChange[]>()
@@ -42,14 +50,7 @@ export function createSourceIndex(changes: readonly NodeChange[]): SourceIndex {
     if (siblings) siblings.push(change)
     else children.set(parentId, [change])
   }
-  for (const siblings of children.values()) {
-    siblings.sort((a, b) => {
-      const left = a.parentIndex?.position ?? ''
-      const right = b.parentIndex?.position ?? ''
-      if (left === right) return 0
-      return left < right ? -1 : 1
-    })
-  }
+  for (const siblings of children.values()) siblings.sort(bySavedPosition)
   return { sources, children }
 }
 

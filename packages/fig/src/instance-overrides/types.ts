@@ -12,8 +12,6 @@ export interface SymbolOverride extends VariableConsumptionMapFields {
   componentPropAssignments?: ComponentPropAssignment[]
 }
 
-export type SymbolOverrideFields = VariableConsumptionMapFields
-
 export interface SymbolData {
   uniformScaleFactor?: number
   symbolID?: GUID

@@ -5,6 +5,7 @@
 ### Breaking changes
 
 - The desktop app now requires macOS 13 or later; the web app supports Chrome 111, Edge 111, Firefox 128, and Safari 16.4 or later.
+- `.fig` reading moved to one reader, so the previous importer's exports are gone. `importNodeChanges` (`@open-pencil/core` and `@open-pencil/core/kiwi`) and `importClipboardNodes` (`@open-pencil/fig/clipboard`) are replaced by `parseFigFile` and `parseFigmaClipboard`; `populateLazyFigImportRoots` and `populateAllLazyFigImportRoots` (`@open-pencil/core/kiwi`) are replaced by `populateFigPage` and `populateAllFigPages` on `@open-pencil/core/io/formats/fig`; `populateAndApplyOverrides` (`@open-pencil/fig/instance-overrides`) is replaced by `interpretInstance` with `materializeInstance`. `FIG_PACKAGE_STATUS` now reads `document-reader`, and `assertFigPackageReady()` is gone, because `@open-pencil/fig` reads an archive into a SceneGraph itself rather than directing callers to Core.
 
 ### Added
 
