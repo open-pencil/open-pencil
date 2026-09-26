@@ -77,6 +77,10 @@
   },
   "dependencies": {
     "@acemir/cssom": "^0.9.31",
+    "@sveltejs/acorn-typescript": "^1.0.13",
+    "acorn": "^8.18.0",
+    "dedent": "^1.7.2",
+    "es-toolkit": "^1.51.0",
     "esrap": "^2.3.11",
     "js-base64": "^3.9.3",
     "parse5": "^8.0.1",

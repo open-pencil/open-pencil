@@ -8,12 +8,20 @@ import { BUILTIN_IO_FORMATS, IORegistry, type ExportResult } from '@open-pencil/
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
-import { applyExportFontPolicy, exportFontRoots, FONT_POLICIES } from '#cli/export-font-policy'
 import { ok, printError } from '#cli/format'
-import { loadDocument, populateDocumentPage, populateWholeDocument } from '#cli/headless'
+import {
+  loadDocument,
+  populateDocumentPage,
+  populateWholeDocument,
+  requirePage
+} from '#cli/headless'
+
+import { applyExportFontPolicy, exportFontRoots, FONT_POLICIES } from './font-policy'
+import { exportStorybookFromFile } from './storybook'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
-const FORMAT_IDS = io.listExportFormats('node').map((format) => format.id)
+// Storybook writes a folder of stories, so it stays a CLI command beside the IO formats.
+const FORMAT_IDS = [...io.listExportFormats('node').map((format) => format.id), 'storybook']
 const ALL_FORMATS = new Set(FORMAT_IDS.map((id) => id.toUpperCase()))
 const FORMAT_LIST = `${FORMAT_IDS.slice(0, -1).join(', ')}, or ${FORMAT_IDS.at(-1)}`
 
@@ -26,7 +34,7 @@ const HTML_MODES = new Set(['fragment', 'standalone'])
 const HTML_ASSETS = new Set(['inline', 'external'])
 const HTML_FONTS = new Set(['assets', 'none'])
 
-interface ExportArgs {
+export interface ExportArgs {
   file?: string
   output?: string
   format: string
@@ -39,6 +47,9 @@ interface ExportArgs {
   css: string
   assets: string
   fonts: string
+  framework: string
+  'design-images': boolean
+  watch?: boolean
   'font-policy': string
   thumbnail?: boolean
   width: string
@@ -84,7 +95,13 @@ async function exportViaApp(format: string, args: ExportArgs) {
     return
   }
 
-  if (format === 'JSX' || format === 'HTML' || format === 'FIG' || format === 'PPTX') {
+  if (
+    format === 'JSX' ||
+    format === 'HTML' ||
+    format === 'FIG' ||
+    format === 'PPTX' ||
+    format === 'STORYBOOK'
+  ) {
     printError(`${format} export is only available in file mode right now.`)
     process.exit(1)
   }
@@ -167,18 +184,8 @@ function exportOptions(format: string, args: ExportArgs): unknown {
 async function exportFromFile(format: string, args: ExportArgs) {
   const file = requireFile(args.file)
   const graph = await loadDocument(file)
-
   const pages = graph.getPages()
-  const page = args.page ? pages.find((p) => p.name === args.page) : pages[0]
-  if (!page) {
-    const available = pages.map((p) => `"${p.name}"`).join(', ')
-    printError(
-      args.page
-        ? `Page "${args.page}" not found. Available pages: ${available || 'none'}.`
-        : 'Document has no pages.'
-    )
-    process.exit(1)
-  }
+  const page = requirePage(graph, args.page)
 
   const defaultName = basename(file, extname(file))
 
@@ -238,7 +245,8 @@ export default defineCommand({
     output: {
       type: 'string',
       alias: 'o',
-      description: 'Output file path (default: <name>.<format>)',
+      description:
+        'Output file path (default: <name>.<format>); for storybook, a directory (default: <name>-stories)',
       required: false
     },
     format: {
@@ -256,7 +264,8 @@ export default defineCommand({
     },
     page: {
       type: 'string',
-      description: 'Export a specific page by name (FIG defaults to the whole document)',
+      description:
+        'Export a specific page by name (FIG, PPTX, and Storybook default to the whole document)',
       required: false
     },
     node: {
@@ -288,6 +297,20 @@ export default defineCommand({
       type: 'string',
       description: 'HTML font output: assets or none (default: none)',
       default: 'none'
+    },
+    framework: {
+      type: 'string',
+      description: 'Storybook framework: react, vue, or html (default: react)',
+      default: 'react'
+    },
+    'design-images': {
+      type: 'boolean',
+      description: 'Storybook: render each variant to PNG for the Design panel (default: true)',
+      default: true
+    },
+    watch: {
+      type: 'boolean',
+      description: 'Storybook: re-export whenever the document changes'
     },
     'font-policy': {
       type: 'string',
@@ -338,6 +361,8 @@ export default defineCommand({
 
     if (isAppMode(args.file)) {
       await exportViaApp(format, args)
+    } else if (format === 'STORYBOOK') {
+      await exportStorybookFromFile(args)
     } else {
       await exportFromFile(format, args)
     }

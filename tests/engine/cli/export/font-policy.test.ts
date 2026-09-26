@@ -2,7 +2,11 @@ import { expect, test } from 'bun:test'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { FONT_POLICIES, applyExportFontPolicy, exportFontRoots } from '#cli/export-font-policy'
+import {
+  FONT_POLICIES,
+  applyExportFontPolicy,
+  exportFontRoots
+} from '#cli/commands/export/font-policy'
 
 function graphWithMissingFont(): { graph: SceneGraph; pageId: string } {
   const graph = new SceneGraph()

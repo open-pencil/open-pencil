@@ -5,7 +5,7 @@
 // redirect. Nothing else is reachable: no `http:`, no `file:`, no other extension.
 import { omit } from 'es-toolkit'
 
-import { clamp } from '@/app/document/io/deep-link'
+import { clamp, searchLinkedNode } from '@/app/document/io/deep-link'
 import { notificationMessages } from '@/app/i18n/notifications'
 import { openBrowserFileFromURL } from '@/app/shell/menu/files'
 
@@ -16,7 +16,7 @@ export interface WebOpenParams {
 
 export interface WebLinkActions {
   /** Selects the node and zooms to it. False when no node carries that name. */
-  selectByName: (name: string) => boolean
+  selectByName: (name: string) => boolean | Promise<boolean>
   notify: (message: string, level: 'info' | 'error') => void
 }
 
@@ -76,12 +76,14 @@ export async function openWebLink(
     )
     return
   }
-  if (target.node && !actions.selectByName(target.node)) {
+  if (!target.node) return
+  const search = await searchLinkedNode(actions.selectByName, target.node)
+  if ('error' in search) actions.notify(messages.operationFailed(search), 'error')
+  else if (!search.found)
     actions.notify(
       messages.deepLinkNodeNotFound({ node: clamp(target.node), file: clamp(target.file.host) }),
       'info'
     )
-  }
 }
 
 /**

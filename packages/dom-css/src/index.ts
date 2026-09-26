@@ -1,6 +1,7 @@
 import type * as DesignTypes from './types'
 
 export { exportHTMLBundle } from './html-export'
+export { exportStorybook, STORYBOOK_FRAMEWORKS } from './storybook/export'
 export { serializeHTML, serializeNode } from './serialize'
 export { createBrowserCSSRuntime, createCSSRuntime, createHeadlessCSSRuntime } from './runtime'
 export {
@@ -71,6 +72,7 @@ export type {
   WebFontFaceRequest,
   WebFontFaceResolver
 } from './html-export'
+export type { ExportStorybookOptions, StorybookFile, StorybookFramework } from './storybook/export'
 export type { SerializeHTMLOptions } from './serialize'
 export type { ToSceneGraphOptions } from './to-scene-graph'
 export type CSSComputeOptions = DesignTypes.CSSComputeOptions

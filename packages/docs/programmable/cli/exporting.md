@@ -1,11 +1,11 @@
 ---
 title: Exporting
-description: Export document content to images, PDF, PowerPoint, `.fig`, JSX, or HTML, with font-substitution policies for raster and PDF output.
+description: Export document content to images, PDF, PowerPoint, `.fig`, JSX, HTML, or Storybook stories, with font-substitution policies for raster and PDF output.
 ---
 
 # Exporting
 
-Export designs from the terminal — raster images, vectors, PDF, editable PowerPoint, `.fig` subsets, JSX code, or HTML.
+Export designs from the terminal — raster images, vectors, PDF, editable PowerPoint, `.fig` subsets, JSX code, HTML, or Storybook stories.
 
 ## Image Export
 
@@ -23,7 +23,7 @@ openpencil export design.fig -f html --css tailwind    # export an HTML fragment
 
 Options:
 
-- `-f` — format: `png`, `jpg`, `webp`, `svg`, `pdf`, `pptx`, `jsx`, `html`, `fig`
+- `-f` — format: `png`, `jpg`, `webp`, `svg`, `pdf`, `pptx`, `jsx`, `html`, `fig`, `storybook`
 - `-s` — export scale (default: `1`)
 - `-q` — quality: `0`–`100` (JPG/WEBP only)
 - `-o` — output path
@@ -88,6 +88,28 @@ Standalone Tailwind output is compiled during export; it does not depend on the 
 
 HTML export is available in file mode.
 
+## Storybook Export
+
+Generate one CSF3 `.stories.ts` file per component set or component:
+
+```sh
+openpencil export design.fig -f storybook                      # React stories in ./design-stories/
+openpencil export design.fig -f storybook --framework vue -o src/stories
+openpencil export design.fig -f storybook --framework html --page "Components"
+openpencil export design.pen -f storybook -o src/stories --watch  # re-export on every save
+```
+
+Each variant of a component set becomes a story, and its variant properties become `select` controls, so switching a control shows the matching variant. Standalone components named with slashes, such as `Button/Primary` and `Button/Secondary`, are grouped into one `Button` file with a `Variant` control. A combination the design has no variant for throws a named error in Storybook rather than showing a different variant.
+
+Stories render the component as HTML with inline styles, like `-f html`, so they need no OpenPencil runtime; `--framework` (`react`, `vue`, or `html`) only changes the wrapper and the `Meta`/`StoryObj` import from `@storybook/react-vite`, `@storybook/vue3-vite`, or `@storybook/html-vite`. Text uses the document's font families, which Storybook has to load itself. Text, boolean, and instance-swap properties are not exported yet.
+
+Stories carry `parameters.design` entries for [`@storybook/addon-designs`](https://github.com/storybookjs/addon-designs):
+
+- **OpenPencil** — when the document path is inside the current directory, an [`openpencil://` link](../index#url-scheme) that opens the document in the desktop app and selects the variant, or its component set when another layer shares the variant's name. The scheme addresses layers by name, so a story whose variant and component names are both shared by other layers gets no link.
+- **Design** — a 2× PNG of the variant, written to `<Name>.design/` next to the story and referenced with `new URL(…, import.meta.url)`, so Vite bundles it. Copy the parameter onto the story of your own component to compare the implementation with the design. `--no-design-images` skips rendering; font substitution follows `--font-policy` as in raster export.
+
+`-o` names the output directory. A `.openpencil-stories.json` manifest there records which document, as a path relative to the output directory, and which page generated each story and design image; commit it with the stories. An export replaces the files that a previous export of the same document generated there, including those of components since deleted or renamed; with `--page`, only that page's. It refuses, before changing anything, to overwrite any other file — a hand-written story, another document's, or a stray image. A one-page export whose file names shifted onto another page's stories asks for a full export instead. Without the manifest, existing stories count as someone else's, so remove them before exporting again. `--watch` keeps the command running and re-exports whenever the document is saved, so Storybook's hot reload follows the design; a save that cannot be read is reported and the watch continues. A missing `--page` or a `--font-policy strict` substitution still ends the command.
+
 ## Live App Mode
 
 Omit the file to export from the running app:
@@ -96,4 +118,4 @@ Omit the file to export from the running app:
 openpencil export -f png    # export from the current document
 ```
 
-Live app mode supports PNG, JPG, WEBP, SVG, and PDF. PowerPoint, JSX, HTML, and `.fig` exports require a file argument. File-mode thumbnail export is not currently supported.
+Live app mode supports PNG, JPG, WEBP, SVG, and PDF. PowerPoint, JSX, HTML, Storybook, and `.fig` exports require a file argument. File-mode thumbnail export is not currently supported.

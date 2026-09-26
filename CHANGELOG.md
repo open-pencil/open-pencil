@@ -10,16 +10,19 @@
 
 ### Added
 
+- Export components to Storybook with `openpencil export -f storybook`: one CSF3 story file per component set or component for React, Vue, or HTML, with a story and `select` controls per variant, a design image per variant, and an `openpencil://` link that opens the variant in OpenPencil. `--watch` re-exports on every save and removes stories of deleted components (#727).
 - Export HTML and Tailwind JSX from the app's export options and through the IO registry, and export Tailwind JSX from the CLI with `-f tailwind-jsx` (`-f jsx --style tailwind` still works). HTML export of a single layer now includes the layer itself, as other formats do.
 - Choose PPTX in the Export panel's format list, alongside PNG, JPG, WEBP, SVG, and PDF.
 
 ### Changed
 
+- `openpencil://` and web `?node=` links select the layer on another page when the current page has none, switching to that page.
 - Generate Tailwind JSX with the same class mapping as Tailwind HTML export, so both describe a design the same way, and write opaque colors as hex in HTML, CSS, and Tailwind output. `openpencil export -f jsx --style tailwind` now exports a whole page when no `--node` is given.
 - Show download progress with a percentage and transferred size while installing a desktop update, instead of an indeterminate message that lasted until the restart.
 
 ### Fixed
 
+- Size auto-width text from `.pen` files to its content in CLI exports, instead of a 10000px placeholder that stretched hugging frames in HTML and Storybook output, and keep narrow widths a `.pen` file sets explicitly instead of widening multi-character text.
 - Keep grid layouts, rotation, inner shadows, every shadow of a layer, layer and background blur, flex grow, right-to-left direction, and sections in HTML export, which previously turned grids into columns and dropped the rest.
 - Show what to update instead of a blank window when the browser or system WebView is too old, naming the detected macOS, Safari, Chrome, Edge, Firefox, WebKitGTK, or WebView2 version and linking a prefilled bug report, and explain a failed start the same way (#744).
 - Start on macOS 13 with WebKit older than Safari 17.4, which previously failed with `Promise.withResolvers is not a function` (#744).
