@@ -113,10 +113,10 @@ describe('documentFontStatus', () => {
     const graph = new SceneGraph()
     const manager = new FontManager()
     manager.markLoaded('Inter', 'Regular', new ArrayBuffer(8), 'bundled')
-    let drawable = false
+    let host: 'unsupported' | 'failed' | 'drawable' = 'unsupported'
     manager.setHostFontLoader(async (family, style) => {
-      if (!drawable) throw new UnsupportedFontFormatError(family, style)
-      return new ArrayBuffer(8)
+      if (host === 'unsupported') throw new UnsupportedFontFormatError(family, style)
+      return host === 'drawable' ? new ArrayBuffer(8) : null
     })
     const node = graph.createNode('TEXT', pageId(graph), {
       name: 'Chinese label',
@@ -139,7 +139,11 @@ describe('documentFontStatus', () => {
       }
     ])
 
-    drawable = true
+    host = 'failed'
+    expect(await manager.loadLocalFont('PingFang SC', 'Regular')).toBeNull()
+    expect(manager.unavailableReason('PingFang SC', 'Regular')).toBe('unsupported-format')
+
+    host = 'drawable'
     expect(await manager.loadLocalFont('PingFang SC', 'Regular')).not.toBeNull()
     expect(documentFontStatus(graph, pageId(graph), manager).faithful).toBe(true)
   })

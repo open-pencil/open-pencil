@@ -502,7 +502,7 @@ export class FontManager {
     const key = `${family}|${style}`
     try {
       const data = await this.hostFontLoader(family, style)
-      this.unavailableFaces.delete(key)
+      if (data) this.unavailableFaces.delete(key)
       return data
     } catch (e) {
       if (e instanceof UnsupportedFontFormatError) {
