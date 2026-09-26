@@ -1,5 +1,5 @@
 import { CSSFontFaceRule } from '@acemir/cssom'
-import { toUint8Array } from 'js-base64'
+import { isValid, toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
 import { normalizeFontFamily } from '@open-pencil/scene-graph'
@@ -270,10 +270,10 @@ function dataImageParts(value: string): { mime: string; base64: string } | undef
   const marker = ';base64,'
   const markerIndex = value.indexOf(marker)
   if (markerIndex === -1) return undefined
-  return {
-    mime: value.slice('data:'.length, markerIndex),
-    base64: value.slice(markerIndex + marker.length)
-  }
+  const base64 = value.slice(markerIndex + marker.length)
+  // Documents can come from parsed HTML; an invalid payload stays inline rather than decoding to other bytes.
+  if (!isValid(base64)) return undefined
+  return { mime: value.slice('data:'.length, markerIndex), base64 }
 }
 
 function extensionForMime(mime: string): string {
