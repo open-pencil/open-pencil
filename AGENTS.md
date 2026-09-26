@@ -8,12 +8,12 @@ Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also 
 
 Bun workspace packages:
 
-- `scene-graph` — framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, and hit testing.
+- `scene-graph` — framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing, and the shared primitives formats need: color conversion and color management, and text/layout direction.
 - `pen` — Pencil.dev `.pen` model, parser, and SceneGraph adapter.
 - `kiwi` — SceneGraph-independent Kiwi schema/runtime, codecs, containers, and parse helpers.
 - `fig` — `.fig` archives, SceneGraph conversion, metadata policy, and component/instance interpretation.
-- `core` — renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and document I/O; depends on scene-graph, pen, kiwi, and fig, and keeps browser DOM out.
-- `dom-css` — DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters.
+- `core` — renderer, layout, editor, Figma API, tools, clipboard, vector conversion, and document I/O; depends on scene-graph and the format packages (pen, kiwi, fig, dom-css), and keeps browser DOM out.
+- `dom-css` — DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters; depends only on scene-graph, and takes engine services such as web-font resolution as injected options.
 - `vue` — headless Vue 3 SDK primitives and composables; the root app is one consumer.
 - `cli` — headless `.fig` inspection, export, and linting with `citty` and `agentfmt`.
 - `mcp` — stdio and Hono HTTP MCP server reusing Core tools.
@@ -179,6 +179,7 @@ Private tooling belongs under `tools/<domain>/{src,tests}`, with kebab-case doma
 - Prefer test-runner-owned fixtures and request/route counters over browser globals. For in-page performance instrumentation, return a scoped `JSHandle` from `evaluateHandle()`; restore patched methods/listeners and dispose the handle in `finally`. Handles do not survive navigation. Assert transient DOM state with locators before the interaction ends when possible. Do not create a catch-all test Window interface or add ad-hoc counter properties to window.
 - In Bun tests, prefer injected dependencies or scoped spies with explicit cleanup. `mock.restore()` restores spies but does not undo `mock.module()` overrides; do not assume module mocks are isolated by cleanup hooks. Read the installed runner's current lifecycle/mocking docs before introducing global or module-level instrumentation.
 - Use `culori` for color conversion and existing dependencies before custom implementations.
+- Use `js-base64` directly for Base64: `fromUint8Array`/`toUint8Array` for bytes, `encode`/`decode` for text, and `isValid` before decoding input from outside (clipboard, imported files, tool arguments). Do not wrap it or use `atob`, `btoa`, or `Buffer` Base64 conversions; `open-pencil/no-hand-rolled-base64` enforces this.
 - Prefer VueUse for common browser, event, focus, clipboard, storage, and timer behavior, but keep one-shot rAF or explicit service-owned timers when clearer.
 - Components must not hold module-level mutable state. Share repeated logic/constants rather than copying it.
 - Keep Kiwi runtime changes minimal; prefer wrappers for project policy.

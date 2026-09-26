@@ -2,10 +2,9 @@ import type { CanvasKit, Paragraph } from 'canvaskit-wasm'
 
 import type { SceneNode } from '@open-pencil/scene-graph'
 import type { Rect } from '@open-pencil/scene-graph/primitives'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import type { SkiaRenderer } from '#core/canvas'
-
-import { resolveNodeTextDirection } from './direction'
 
 export interface TextCaret {
   x: number

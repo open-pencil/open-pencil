@@ -109,7 +109,7 @@ export {
   getStrokeOkHCL,
   type OkHCLColor,
   type OkHCLPayload
-} from './color/okhcl'
+} from '@open-pencil/scene-graph/color'
 export type {
   InfoResult,
   PageItem,
@@ -156,7 +156,7 @@ export {
   resolveNodeLayoutDirection,
   isLogicalTextAlignStart,
   isLogicalTextAlignEnd
-} from './text/direction'
+} from '@open-pencil/scene-graph/text-direction'
 export {
   FONT_WEIGHT_NAMES,
   FontManager,
@@ -208,7 +208,7 @@ export {
   rgba255ToColor,
   colorToFill,
   colorDistance
-} from './color'
+} from '@open-pencil/scene-graph/color'
 export {
   resolveOkHCLForPreview,
   resolveRGBAForPreview,
@@ -220,7 +220,7 @@ export {
   type ColorIntentSpace,
   type ColorPreviewOptions,
   type ResolvedRenderColor
-} from './color/management'
+} from '@open-pencil/scene-graph/color'
 export {
   vectorNetworkToPath,
   geometryBlobToPath,

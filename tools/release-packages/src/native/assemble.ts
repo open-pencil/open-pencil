@@ -4,6 +4,7 @@ import { join } from 'node:path'
 
 import { readReleaseNotes } from '#release/release-notes'
 import { isEqual } from 'es-toolkit'
+import { toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
 import { desktopAssets } from './catalog.ts'
@@ -41,7 +42,7 @@ const platforms: Record<string, { signature: string; url: string }> = {}
 
 try {
   const publicKey = join(temporary, 'key.pub')
-  await writeFile(publicKey, Buffer.from(config.plugins.updater.pubkey, 'base64'))
+  await writeFile(publicKey, toUint8Array(config.plugins.updater.pubkey))
 
   for (const [index, manifest] of manifests.entries()) {
     const directory = directories[index]
@@ -71,7 +72,7 @@ try {
 
       const signature = (await readFile(join(source, `${asset.name}.sig`), 'utf8')).trim()
       const decoded = join(temporary, `${asset.name}.minisig`)
-      await writeFile(decoded, Buffer.from(signature, 'base64'))
+      await writeFile(decoded, toUint8Array(signature))
       await verifySignature(join(source, asset.name), publicKey, decoded)
 
       for (const platform of asset.updaterKeys) {

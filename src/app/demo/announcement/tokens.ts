@@ -1,6 +1,6 @@
-import { parseColor } from '@open-pencil/core/color'
 import { defineVars } from '@open-pencil/core/design-jsx'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
 export function createAnnouncementTokens(graph: SceneGraph) {
   graph.addCollection({

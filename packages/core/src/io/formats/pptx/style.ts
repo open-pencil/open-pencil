@@ -1,8 +1,7 @@
 import type PptxGenJS from 'pptxgenjs'
 
 import type { Color, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-
-import { colorToHex } from '#core/color'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 
 /** Scene paint/effect/text style → PPT property mapping (no slide geometry). */
 

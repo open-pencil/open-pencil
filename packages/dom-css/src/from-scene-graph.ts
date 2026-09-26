@@ -1,7 +1,8 @@
-import { encodeBase64 } from '@open-pencil/core/bytes'
-import { resolveNodeTextDirection } from '@open-pencil/core/text'
+import { fromUint8Array } from 'js-base64'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import {
   cssColor,
@@ -255,7 +256,7 @@ function attrsForNode(
   if (fill?.type !== 'IMAGE' || !fill.imageHash) return attrs
   const bytes = graph.images.get(fill.imageHash)
   if (!bytes) return attrs
-  return { ...attrs, src: `data:image/png;base64,${encodeBase64(bytes)}` }
+  return { ...attrs, src: `data:image/png;base64,${fromUint8Array(bytes)}` }
 }
 
 function tagNameForNode(node: SceneNode): string {

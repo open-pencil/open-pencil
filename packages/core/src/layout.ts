@@ -11,11 +11,12 @@ import {
   type Node as YogaNode
 } from 'yoga-layout'
 
+import { resolveNodeLayoutDirection } from '@open-pencil/scene-graph/text-direction'
+
 import { applyYogaLayout } from './layout/apply'
 import { usesDetachedDerivedLayout } from './layout/derived'
 import { applyEffectiveGeneratedTextLayout } from './layout/effective-generated-text'
 import { buildGridTree, createGridChildNode } from './layout/grid'
-import { resolveNodeLayoutDirection } from './text/direction'
 export {
   estimateTextSize,
   getTextMeasurer,

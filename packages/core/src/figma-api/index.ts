@@ -1,3 +1,5 @@
+import { fromUint8Array, isValid, toUint8Array } from 'js-base64'
+
 import type {
   SceneGraph,
   SceneNode as CoreSceneNode,
@@ -12,7 +14,6 @@ import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { computeImageHash } from '@open-pencil/scene-graph/images'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
-import { decodeBase64, encodeBase64 } from '#core/bytes'
 import type { SkiaRenderer } from '#core/canvas'
 import { canMakeBooleanSourceNode } from '#core/canvas/boolean'
 import { flattenNodesToVectorProps } from '#core/canvas/flatten'
@@ -555,11 +556,12 @@ export class FigmaAPI implements NodeProxyHost {
   }
 
   base64Encode(data: Uint8Array): string {
-    return encodeBase64(data)
+    return fromUint8Array(data)
   }
 
   base64Decode(data: string): Uint8Array {
-    return decodeBase64(data)
+    if (!isValid(data)) throw new TypeError('Invalid Base64 string')
+    return toUint8Array(data)
   }
 
   notify(message: string): { cancel: () => void } {

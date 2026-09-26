@@ -1,8 +1,7 @@
 import { converter, formatCss, formatRgb, inGamut, toGamut } from 'culori'
 
-import type { DocumentColorSpace, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-
+import type { Color } from '../primitives'
+import type { DocumentColorSpace, Fill, SceneNode, Stroke } from '../types'
 import { normalizeColor } from './normalize'
 import { getFillOkHCL, getStrokeOkHCL, type OkHCLColor } from './okhcl'
 

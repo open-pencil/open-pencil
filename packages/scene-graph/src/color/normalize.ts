@@ -1,6 +1,5 @@
-import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { BLACK } from '#core/constants'
+import { BLACK } from '../constants'
+import type { Color } from '../primitives'
 
 export function normalizeColor(color?: Partial<Color>): Color {
   if (!color) return { ...BLACK }

@@ -172,6 +172,18 @@
       "bun": "./src/parse-path.ts",
       "import": "./dist/parse-path.js",
       "default": "./dist/parse-path.js"
+    },
+    "./color": {
+      "types": "./dist/color.d.ts",
+      "bun": "./src/color/index.ts",
+      "import": "./dist/color.js",
+      "default": "./dist/color.js"
+    },
+    "./text-direction": {
+      "types": "./dist/text-direction.d.ts",
+      "bun": "./src/text-direction.ts",
+      "import": "./dist/text-direction.js",
+      "default": "./dist/text-direction.js"
     }
   },
   "publishConfig": {
@@ -186,12 +198,14 @@
     "typecheck": "bunx tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "culori": "^4.0.2",
     "es-toolkit": "^1.51.0",
     "nanoevents": "^9.1.0",
     "svgpath": "^2.6.0"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
+    "@types/culori": "^4.0.1",
     "tsdown": "^0.22.14",
     "typescript": "~5.8.3"
   }

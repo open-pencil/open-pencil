@@ -2,14 +2,20 @@ import { orderBy } from 'es-toolkit/array'
 import { sumBy } from 'es-toolkit/math'
 import * as v from 'valibot'
 
+import { colorDistance, colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { colorDistance, colorToHex } from '#core/color'
-import type { ColorUsageEntry } from '#core/color/analysis'
 import { toolNumber } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
 
 import { analysisLimitInput } from './input'
+
+export interface ColorUsageEntry {
+  hex: string
+  color: Color
+  count: number
+  variableName: string | null
+}
 
 type ColorEntry = ColorUsageEntry
 

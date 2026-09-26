@@ -1,6 +1,6 @@
 import { computed, ref, toValue } from 'vue'
 
-import { colorToHexRaw, okhclToRGBA, parseColor } from '@open-pencil/core/color'
+import { colorToHexRaw, okhclToRGBA, parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import {

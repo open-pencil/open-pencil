@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
 import type { Effect } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
-import { parseColor } from '#core/color'
 import { DEFAULT_SHADOW_COLOR, TRANSPARENT } from '#core/constants'
 import { toolNumber, nodeIdInput } from '#core/tools/input'
 import { defineTool, nodeNotFound } from '#core/tools/schema'

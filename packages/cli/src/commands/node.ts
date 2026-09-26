@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 
-import { colorToHex } from '@open-pencil/core/color'
 import type { NodeResult } from '@open-pencil/core/rpc'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { appTargetOptions } from '#cli/app-target'

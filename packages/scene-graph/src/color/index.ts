@@ -4,9 +4,8 @@ export * from './okhcl'
 
 import { parse, formatHex, formatHex8, formatRgb, converter, differenceEuclidean } from 'culori'
 
-import type { Color } from '@open-pencil/scene-graph/primitives'
-
-import { BLACK } from '#core/constants'
+import { BLACK } from '../constants'
+import type { Color } from '../primitives'
 
 const toRGB = converter('rgb')
 

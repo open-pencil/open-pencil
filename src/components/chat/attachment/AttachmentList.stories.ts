@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
+import { toUint8Array } from 'js-base64'
 
 import type { AttachmentPresentation } from '@/app/ai/attachment/presentation/types'
 
@@ -7,10 +8,9 @@ import AttachmentList from './AttachmentList.vue'
 const pixel = new Blob(
   [
     Uint8Array.from(
-      atob(
+      toUint8Array(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAEAQH/69cbGAAAAABJRU5ErkJggg=='
-      ),
-      (character) => character.charCodeAt(0)
+      )
     )
   ],
   { type: 'image/png' }

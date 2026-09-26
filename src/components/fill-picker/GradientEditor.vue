@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { tv } from 'tailwind-variants'
 
-import { colorToCSS } from '@open-pencil/core/color'
 import type { Fill } from '@open-pencil/scene-graph'
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 import {
   GradientEditorRoot,
   GradientEditorBar,
