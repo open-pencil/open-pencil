@@ -25,6 +25,8 @@
 - Show Chinese, Japanese, Korean, and Arabic characters in a fallback font when the text's own font is unavailable and another font substitutes for it, instead of drawing missing-glyph boxes (#746).
 - Explain in the font issues banner when an installed font, such as PingFang on macOS 15 and later, stores outlines in a format OpenPencil cannot draw yet, instead of spending over a second trying to load each of its styles (#746).
 - Render the Medium, Semibold, Bold, and other styles of variable fonts at their named weights instead of drawing Regular or a synthetic bold.
+- Load the Bold, Medium, and other styles of macOS system fonts packaged as font collections, such as Menlo, Helvetica Neue, and Avenir Next, instead of reporting them as substituted or drawing a different style (#746).
+- Load the Medium, Semibold, Bold, and other styles of installed variable fonts such as SF Pro on macOS instead of reporting them as substituted (#752).
 
 ### Security
 
