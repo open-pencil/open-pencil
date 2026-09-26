@@ -221,7 +221,7 @@ async function exportFromFile(format: string, args: ExportArgs) {
     target,
     exportOptions(format, args),
     wholeDocument,
-    output
+    basename(output)
   )
   await writeExport(output, result)
   console.log(ok(`Target: ${targetLabel(args.page, args.node, wholeDocument)}`))

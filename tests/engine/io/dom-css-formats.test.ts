@@ -61,6 +61,21 @@ describe('HTML export format', () => {
   })
 })
 
+describe('HTML export asset paths', () => {
+  test('are relative for Windows paths too', async () => {
+    const { graph, page } = cardGraph()
+    const result = await io.exportContent(
+      'html',
+      { graph, target: { scope: 'page', pageId: page.id }, fileName: 'C:\\out\\card.html' },
+      { html: 'standalone', assets: 'external' }
+    )
+
+    const paths = (result.assets ?? []).map((asset) => asset.path)
+    expect(paths.length).toBeGreaterThan(0)
+    for (const path of paths) expect(path).toStartWith('card.assets/')
+  })
+})
+
 describe('Tailwind JSX export format', () => {
   test('is a registered export next to OpenPencil JSX', async () => {
     const { graph, card } = cardGraph()

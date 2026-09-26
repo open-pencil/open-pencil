@@ -16,10 +16,10 @@ function designDocument(graph: SceneGraph, nodeIds: string[]): DesignDocument {
   }
 }
 
-/** `card.html` keeps its external files in `card.assets/` next to it. */
+/** `card.html` keeps its external files in `card.assets/` next to it, whatever the path style. */
 function assetBasePath(fileName: string | undefined): string {
   const name = fileName
-    ?.split('/')
+    ?.split(/[\\/]/)
     .pop()
     ?.replace(/\.[^.]*$/, '')
   return `${name || 'export'}.assets`
