@@ -14,9 +14,22 @@ import type {
   HTMLExportOptions,
   IOContext,
   IOFormatAdapter,
+  IOFormatExportOptions,
+  IOFormatSupport,
   RasterExportOptions,
   SVGExportOptions
 } from './types'
+
+/** Formats that export a document, page, selection, or single node alike. */
+const EXPORT_EVERY_TARGET: IOFormatSupport = {
+  exportDocument: true,
+  exportPage: true,
+  exportSelection: true,
+  exportNode: true
+}
+
+/** Formats with a size of their own, so no export scale or quality. */
+const FIXED_SIZE_EXPORT: IOFormatExportOptions = { scale: false, quality: false }
 
 function lowerExt(name: string): string {
   const match = /\.([^.]+)$/.exec(name.toLowerCase())
@@ -153,10 +166,7 @@ export const figFormat: IOFormatAdapter<'fig'> = {
     exportSelection: true,
     exportNode: true
   },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  exportOptions: FIXED_SIZE_EXPORT,
   matchesFile(fileName) {
     return lowerExt(fileName) === 'fig'
   },
@@ -229,17 +239,8 @@ export const svgFormat: IOFormatAdapter<'svg'> = {
   category: 'vector',
   extensions: ['svg'],
   mimeTypes: ['image/svg+xml'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false,
-    colorSpace: true
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: { ...FIXED_SIZE_EXPORT, colorSpace: true },
   async exportContent(request, options?: SVGExportOptions) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -262,16 +263,8 @@ export const pdfFormat: IOFormatAdapter<'pdf'> = {
   category: 'vector',
   extensions: ['pdf'],
   mimeTypes: ['application/pdf'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -307,16 +300,8 @@ export const pptxFormat: IOFormatAdapter<'pptx'> = {
   category: 'print',
   extensions: ['pptx'],
   mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -346,10 +331,7 @@ export const jsxFormat: IOFormatAdapter<'jsx'> = {
     exportSelection: true,
     exportNode: true
   },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request): Promise<ExportResult> {
     const nodeId = ensureSingleNode(request.target)
     let data = ''
@@ -376,16 +358,8 @@ export const htmlFormat: IOFormatAdapter<'html'> = {
   category: 'code',
   extensions: ['html'],
   mimeTypes: ['text/html'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request, options?: HTMLExportOptions) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -414,16 +388,8 @@ export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
   category: 'code',
   extensions: ['jsx'],
   mimeTypes: ['text/plain', 'text/jsx'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
