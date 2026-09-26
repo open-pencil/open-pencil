@@ -37,6 +37,6 @@ Exakte Namen wie `figma.createFrame()`, `node.appendChild()`, `fontSize` und `la
 
 ## Noch nicht kompatibel
 
-Noch nicht angeboten werden unter anderem `node.exportAsync()`, `node.setBoundVariable()`, `node.detachInstance()`, `figma.combineAsVariants()` und die Stil-APIs von Figma.
+Noch nicht angeboten werden unter anderem `node.exportAsync()`, `node.setBoundVariable()`, `figma.combineAsVariants()` und die Stil-APIs von Figma.
 
 Dafür stehen je nach Aufgabe CLI-Export, Werkzeuge des Kernpakets oder direkte SceneGraph-Hilfsfunktionen zur Verfügung.

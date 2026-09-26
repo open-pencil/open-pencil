@@ -239,6 +239,14 @@ export class FigmaNodeProxy {
     return this[INTERNAL_API].wrapNode(inst.id)
   }
 
+  /** Turns this instance into a frame that keeps its current content, like Figma's. */
+  detachInstance(): FigmaNodeProxy {
+    const n = this._raw()
+    if (n.type !== 'INSTANCE') throw new Error('detachInstance() can only be called on instances')
+    this[INTERNAL_GRAPH].detachInstance(n.id)
+    return this[INTERNAL_API].wrapNode(n.id)
+  }
+
   // --- Tree ---
 
   get parent(): FigmaNodeProxy | null {

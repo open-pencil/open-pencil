@@ -171,7 +171,6 @@ These Figma APIs are not exposed as compatible helpers yet:
 
 - `node.exportAsync()`
 - `node.setBoundVariable(field, variable)`
-- `node.detachInstance()`
 - `figma.combineAsVariants(components, parent)`
 - Figma style APIs such as `figma.createPaintStyle()` / `figma.createTextStyle()`
 - Full vector boolean operation parity

@@ -110,6 +110,6 @@ Las propiedades habituales se leen y modifican mediante el objeto correspondient
 
 ## Limitaciones
 
-Aún no hay equivalentes completos para `node.exportAsync()`, `node.setBoundVariable()`, `node.detachInstance()`, `figma.combineAsVariants()`, estilos de pintura/texto y todas las operaciones booleanas vectoriales.
+Aún no hay equivalentes completos para `node.exportAsync()`, `node.setBoundVariable()`, `figma.combineAsVariants()`, estilos de pintura/texto y todas las operaciones booleanas vectoriales.
 
 Según la tarea, pueden usarse el comando de exportación, las herramientas del núcleo o las operaciones directas de SceneGraph.

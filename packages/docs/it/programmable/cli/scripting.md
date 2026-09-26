@@ -47,4 +47,4 @@ Gli identificatori esatti come `figma.currentPage`, `createFrame`, `appendChild`
 
 ## Limiti
 
-Non esistono ancora equivalenti completi per `node.exportAsync()`, `node.setBoundVariable()`, `node.detachInstance()`, `figma.combineAsVariants()`, gli stili e tutte le operazioni booleane vettoriali.
+Non esistono ancora equivalenti completi per `node.exportAsync()`, `node.setBoundVariable()`, `figma.combineAsVariants()`, gli stili e tutte le operazioni booleane vettoriali.

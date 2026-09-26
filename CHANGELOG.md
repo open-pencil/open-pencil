@@ -8,6 +8,7 @@
 
 ### Added
 
+- Detach an instance from its component with `detachInstance()` in the plugin API, as in Figma, from scripts run through `eval`.
 - Choose PPTX in the Export panel's format list, alongside PNG, JPG, WEBP, SVG, and PDF.
 
 ### Changed
