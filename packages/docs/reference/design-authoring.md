@@ -20,7 +20,7 @@ This reference describes scene creation, not React DOM output. Use the `render` 
 
 - `bg` / `fill`, `stroke`, and text `color` accept colors and supported variable references. Set colors explicitly for predictable contrast. `fills` accepts structured paints; gradient helpers include `linearGradient`, `radialGradient`, `angularGradient`, and `diamondGradient`.
 - `rounded` and `roundedTL`/`roundedTR`/`roundedBL`/`roundedBR` control corners. `strokeWidth`, `opacity`, `rotate`, and `blendMode` control appearance. `overflow="hidden"` clips content; do not hide accidental text overflow to make a broken layout appear correct.
-- `effects` accepts structured effects such as `dropShadow`, `innerShadow`, and `layerBlur`. `shadow="offsetX offsetY blur #color"` and `blur` are convenient shorthands.
+- `effects` accepts structured effects such as `dropShadow`, `innerShadow`, and `layerBlur`. `shadow="offsetX offsetY blur #color"` and `blur` are convenient shorthands. Effect helpers take `blur` or `radius` for the radius; when a JSX string is rendered, an option a paint or effect helper does not support is reported as a warning.
 - Text content belongs inside `Text`. Use `size`, `font`, `weight`, `lineHeight`, `letterSpacing`, `textAlign`, `textDecoration`, and `textCase`. Verify fonts actually load before judging dimensions; do not assume every font is available.
 - `Icon` uses an Iconify name, size, and color. Prefer icons to emoji when reliable vector output is needed. Image fills belong on appropriate leaf shapes, not containers whose children must remain visible.
 - Design JSX props are the portable authoring interface. Some CSS-style aliases are supported, but this is not a browser CSS engine; do not assume arbitrary HTML, classes, or styles work.
