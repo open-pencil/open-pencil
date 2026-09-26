@@ -4,7 +4,11 @@ import { initCodec } from '@open-pencil/kiwi/fig/codec'
 import type { GUID, NodeChange as KiwiNodeChange } from '@open-pencil/kiwi/fig/codec'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
-import { appendVariableNodeChanges } from '#core/io/formats/fig/variable-export'
+import {
+  appendVariableNodeChanges,
+  assignSharedStyleGuids,
+  assignVariableGuids
+} from '#core/io/formats/fig/variable-export'
 
 import { shapeTextForClipboard } from './canvas/text/clipboard'
 import { prepareClipboardImport } from './clipboard/fig-import'
@@ -70,23 +74,13 @@ export async function buildFigmaClipboardHTML(
   const blobs: Uint8Array[] = []
   const variableIds = new Map<string, GUID>()
   const modeIds = new Map<string, GUID>()
-  const allocateResource = (id: string, map: Map<string, GUID>) => {
-    const guid = { sessionID: 1, localID: localIdCounter.value++ }
-    map.set(id, guid)
-    assignedGuidValues.add(`1:${guid.localID}`)
-  }
-  for (const id of [...graph.variableCollections.keys(), ...graph.variables.keys()])
-    allocateResource(id, variableIds)
-  for (const collection of graph.variableCollections.values())
-    for (const mode of collection.modes) {
-      if (!modeIds.has(mode.modeId)) allocateResource(mode.modeId, modeIds)
-    }
-  for (const node of graph.getAllNodes())
-    if (node.sharedStyleType) {
-      const guid = { sessionID: 1, localID: localIdCounter.value++ }
-      nodeIdToGuid.set(node.id, guid)
-      assignedGuidValues.add(`1:${guid.localID}`)
-    }
+  assignVariableGuids(graph, localIdCounter, variableIds, modeIds, assignedGuidValues, new Set())
+  assignSharedStyleGuids(
+    [...graph.nodes.values()].filter((node) => node.sharedStyleType !== null),
+    localIdCounter,
+    nodeIdToGuid,
+    assignedGuidValues
+  )
   for (let i = 0; i < nodes.length; i++) {
     collectTextNodes(nodes[i])
     nodeChanges.push(

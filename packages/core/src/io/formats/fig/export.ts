@@ -32,7 +32,12 @@ import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 import { populateReaderExport } from '#core/kiwi/fig/session/recovery'
 
-import { appendVariableNodeChanges } from './variable-export'
+import {
+  appendVariableNodeChanges,
+  assignSharedStyleGuids,
+  assignVariableGuid,
+  assignVariableGuids
+} from './variable-export'
 
 const THUMBNAIL_1X1 = decodeBase64(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
@@ -78,59 +83,6 @@ async function renderFigThumbnail(
     (await headlessRenderThumbnail(graph, pageId, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT)) ??
     THUMBNAIL_1X1
   )
-}
-
-function assignVariableGuid(
-  id: string,
-  localIdCounter: { value: number },
-  assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
-): GUID {
-  if (/^\d+:\d+$/.test(id) && !assignedGuidValues.has(id) && !nodeSourceGuidValues.has(id)) {
-    const guid = stringToGuid(id)
-    assignedGuidValues.add(id)
-    return guid
-  }
-  const guid = { sessionID: 0, localID: localIdCounter.value++ }
-  assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
-  return guid
-}
-
-function assignVariableGuids(
-  graph: SceneGraph,
-  localIdCounter: { value: number },
-  varIdToGuid: Map<string, GUID>,
-  modeIdToGuid: Map<string, GUID>,
-  assignedGuidValues: Set<string>,
-  nodeSourceGuidValues: Set<string>
-): void {
-  for (const [colId, col] of graph.variableCollections) {
-    const colGuid = assignVariableGuid(
-      colId,
-      localIdCounter,
-      assignedGuidValues,
-      nodeSourceGuidValues
-    )
-    varIdToGuid.set(colId, colGuid)
-    for (const mode of col.modes) {
-      const modeGuid = assignVariableGuid(
-        mode.modeId,
-        localIdCounter,
-        assignedGuidValues,
-        nodeSourceGuidValues
-      )
-      modeIdToGuid.set(mode.modeId, modeGuid)
-    }
-    for (const varId of col.variableIds) {
-      const varGuid = assignVariableGuid(
-        varId,
-        localIdCounter,
-        assignedGuidValues,
-        nodeSourceGuidValues
-      )
-      varIdToGuid.set(varId, varGuid)
-    }
-  }
 }
 
 interface ComponentPropertyGuidState {
@@ -291,15 +243,12 @@ function appendInternalResources(context: InternalResourceContext): void {
   const { graph, internalCanvasGuid, nodeChanges } = context
   if (!internalCanvasGuid) return
   const sharedStyleNodes = [...graph.nodes.values()].filter((node) => node.sharedStyleType !== null)
-  for (const style of sharedStyleNodes) {
-    if (context.nodeIdToGuid.has(style.id)) continue
-    let guid: GUID
-    do {
-      guid = { sessionID: 1, localID: context.localIdCounter.value++ }
-    } while (context.assignedGuidValues.has(`${guid.sessionID}:${guid.localID}`))
-    context.nodeIdToGuid.set(style.id, guid)
-    context.assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
-  }
+  assignSharedStyleGuids(
+    sharedStyleNodes,
+    context.localIdCounter,
+    context.nodeIdToGuid,
+    context.assignedGuidValues
+  )
   for (let index = 0; index < sharedStyleNodes.length; index++) {
     nodeChanges.push(
       ...sceneNodeToKiwi(

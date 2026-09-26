@@ -1,8 +1,85 @@
 import type { GUID, NodeChange, VariableDataEntry } from '@open-pencil/kiwi/fig/codec'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
-import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
+import type { SceneGraph, SceneNode, VariableValue } from '@open-pencil/scene-graph'
 
 import { fractionalPosition, safeColor } from '#core/kiwi/fig/node-change/serialize'
+
+/**
+ * Identity allocation shared by the two writers. The document exporter and the clipboard
+ * both emit variables, modes and shared styles ahead of the nodes that reference them; when
+ * each allocated its own way the two drifted.
+ */
+export function assignVariableGuid(
+  id: string,
+  localIdCounter: { value: number },
+  assignedGuidValues: Set<string>,
+  nodeSourceGuidValues: Set<string>
+): GUID {
+  if (/^\d+:\d+$/.test(id) && !assignedGuidValues.has(id) && !nodeSourceGuidValues.has(id)) {
+    const guid = stringToGuid(id)
+    assignedGuidValues.add(id)
+    return guid
+  }
+  const guid = { sessionID: 0, localID: localIdCounter.value++ }
+  assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
+  return guid
+}
+
+export function assignVariableGuids(
+  graph: SceneGraph,
+  localIdCounter: { value: number },
+  varIdToGuid: Map<string, GUID>,
+  modeIdToGuid: Map<string, GUID>,
+  assignedGuidValues: Set<string>,
+  nodeSourceGuidValues: Set<string>
+): void {
+  for (const [colId, col] of graph.variableCollections) {
+    const colGuid = assignVariableGuid(
+      colId,
+      localIdCounter,
+      assignedGuidValues,
+      nodeSourceGuidValues
+    )
+    varIdToGuid.set(colId, colGuid)
+    for (const mode of col.modes) {
+      const modeGuid = assignVariableGuid(
+        mode.modeId,
+        localIdCounter,
+        assignedGuidValues,
+        nodeSourceGuidValues
+      )
+      modeIdToGuid.set(mode.modeId, modeGuid)
+    }
+    for (const varId of col.variableIds) {
+      const varGuid = assignVariableGuid(
+        varId,
+        localIdCounter,
+        assignedGuidValues,
+        nodeSourceGuidValues
+      )
+      varIdToGuid.set(varId, varGuid)
+    }
+  }
+}
+
+/** Shared styles live on the internal canvas and need a GUID before any node cites them. */
+export function assignSharedStyleGuids(
+  styles: readonly SceneNode[],
+  localIdCounter: { value: number },
+  nodeIdToGuid: Map<string, GUID>,
+  assignedGuidValues: Set<string>
+): void {
+  for (const style of styles) {
+    if (nodeIdToGuid.has(style.id)) continue
+    let guid: GUID
+    do {
+      guid = { sessionID: 1, localID: localIdCounter.value++ }
+    } while (assignedGuidValues.has(`${guid.sessionID}:${guid.localID}`))
+    nodeIdToGuid.set(style.id, guid)
+    assignedGuidValues.add(`${guid.sessionID}:${guid.localID}`)
+  }
+}
+
 
 function variableValueToKiwi(
   value: VariableValue,
