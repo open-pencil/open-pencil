@@ -141,6 +141,50 @@ describe('namedInstanceVariations', () => {
   })
 })
 
+describe('namedInstanceVariations with malformed fonts', () => {
+  function patched(patch: (view: DataView, tableOffset: (tag: string) => number) => void) {
+    const data = SF_PRO_LIKE.slice(0)
+    const view = new DataView(data)
+    const tableRecord = (tag: string) => {
+      for (let i = 0; i < view.getUint16(4); i++) {
+        const record = 12 + i * 16
+        const recordTag = String.fromCharCode(...new Uint8Array(data, record, 4))
+        if (recordTag === tag) return record
+      }
+      throw new Error(`Missing ${tag}`)
+    }
+    patch(view, tableRecord)
+    return data
+  }
+
+  test('skips name records that point outside the font', () => {
+    const data = patched((view, tableRecord) => {
+      const name = view.getUint32(tableRecord('name') + 8)
+      view.setUint16(name + 6 + 10, 0xfff0)
+    })
+    expect(
+      namedInstanceVariations(data, 'Condensed Medium')?.map((variation) => variation.axis)
+    ).toEqual(['wght'])
+    expect(namedInstanceVariations(data, 'Medium')).toEqual([
+      { axis: 'wdth', value: 100 },
+      { axis: 'wght', value: 510 }
+    ])
+  })
+
+  test('ignores fvar tables shorter than their header', () => {
+    const data = patched((view, tableRecord) => view.setUint32(tableRecord('fvar') + 12, 10))
+    expect(namedInstanceVariations(data, 'Medium')).toBeNull()
+  })
+
+  test('ignores fvar tables with undersized axis records', () => {
+    const data = patched((view, tableRecord) => {
+      const fvar = view.getUint32(tableRecord('fvar') + 8)
+      view.setUint16(fvar + 10, 8)
+    })
+    expect(namedInstanceVariations(data, 'Medium')).toBeNull()
+  })
+})
+
 describe('FontManager.namedInstanceVariations', () => {
   test('resolves variations from the face loaded for a style', () => {
     const manager = new FontManager()
