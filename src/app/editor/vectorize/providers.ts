@@ -1,5 +1,6 @@
+import { fromUint8Array } from 'js-base64'
+
 import { IS_TAURI } from '@open-pencil/core/constants'
-import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { readBoundedBody } from '@/app/document/io/browser'
 import { tauriFetch } from '@/app/tauri/http'
@@ -200,7 +201,7 @@ const fal: VectorizeProvider = {
         Authorization: `Key ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ image_url: `data:image/png;base64,${encodeBase64(pngBytes)}` }),
+      body: JSON.stringify({ image_url: `data:image/png;base64,${fromUint8Array(pngBytes)}` }),
       credentials: 'omit',
       redirect: 'error'
     })

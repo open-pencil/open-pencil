@@ -179,12 +179,6 @@
       "import": "./dist/color.js",
       "default": "./dist/color.js"
     },
-    "./bytes": {
-      "types": "./dist/bytes.d.ts",
-      "bun": "./src/bytes/index.ts",
-      "import": "./dist/bytes.js",
-      "default": "./dist/bytes.js"
-    },
     "./text-direction": {
       "types": "./dist/text-direction.d.ts",
       "bun": "./src/text-direction.ts",
@@ -206,7 +200,6 @@
   "dependencies": {
     "culori": "^4.0.2",
     "es-toolkit": "^1.51.0",
-    "js-base64": "^3.9.3",
     "nanoevents": "^9.1.0",
     "svgpath": "^2.6.0"
   },

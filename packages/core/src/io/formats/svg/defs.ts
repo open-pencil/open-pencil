@@ -1,5 +1,6 @@
+import { fromUint8Array } from 'js-base64'
+
 import type { Effect, Fill, SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 import {
   colorToHex,
   colorToDisplayCSS,
@@ -112,7 +113,7 @@ function createImagePattern(
   if (!data) return null
 
   const id = nextDefId(ctx, 'img')
-  const base64 = encodeBase64(data)
+  const base64 = fromUint8Array(data)
   const mime = detectImageMime(data)
 
   return {

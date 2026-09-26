@@ -1,6 +1,7 @@
 /* eslint-disable max-lines -- FIG export orchestration keeps shared GUID state in one pipeline */
 import type { CanvasKit } from 'canvaskit-wasm'
 import { deflateSync, inflateSync } from 'fflate'
+import { toUint8Array } from 'js-base64'
 
 import { compressFigDataSync } from '@open-pencil/fig'
 import {
@@ -13,7 +14,6 @@ import { initCodec, getCompiledSchema, getSchemaBytes } from '@open-pencil/kiwi/
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { decodeBinarySchema, compileSchema, ByteBuffer } from '@open-pencil/kiwi/schema-runtime'
 import type { SceneGraph, VariableValue } from '@open-pencil/scene-graph'
-import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas'
@@ -33,7 +33,7 @@ import {
 import { cloneSceneGraphForFigExport } from '#core/kiwi/fig/parse/transfer'
 import { originalFigArchive } from '#core/kiwi/fig/session/original-archive'
 
-const THUMBNAIL_1X1 = decodeBase64(
+const THUMBNAIL_1X1 = toUint8Array(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
 )
 

@@ -1,5 +1,6 @@
+import { toUint8Array } from 'js-base64'
+
 import type { SceneNode, SceneGraph, Fill, Stroke } from '@open-pencil/scene-graph'
-import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 import type { RenderColorSpace, ResolvedRenderColor } from '@open-pencil/scene-graph/color'
 import type { Color, Rect, Vector } from '@open-pencil/scene-graph/primitives'
 import type { SnapGuide } from '@open-pencil/scene-graph/snap'
@@ -745,7 +746,7 @@ export class SkiaRenderer {
       if (!dataURL.startsWith(`data:${mime}`)) return null
       const base64 = dataURL.split(',')[1]
       if (!base64) return null
-      return decodeBase64(base64)
+      return toUint8Array(base64)
     } catch (err) {
       console.warn('Raster encode fallback failed:', err)
       return null

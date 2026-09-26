@@ -1,6 +1,6 @@
+import { isValid, toUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
-import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Matrix } from '@open-pencil/scene-graph/primitives'
 
@@ -116,7 +116,8 @@ export const setImageFill = defineTool({
   execute: (figma, { id, image_data, scale_mode }) => {
     const node = figma.getNodeById(id)
     if (!node) return { error: `Node "${id}" not found` }
-    const bytes = decodeBase64(image_data)
+    if (!isValid(image_data)) return { error: 'image_data is not valid Base64' }
+    const bytes = toUint8Array(image_data)
     const image = figma.createImage(bytes)
     const mode = scale_mode
     node.fills = [

@@ -29,7 +29,6 @@ export default defineConfig({
     resize: './src/resize.ts',
     'parse-path': './src/parse-path.ts',
     color: './src/color/index.ts',
-    bytes: './src/bytes/index.ts',
     'text-direction': './src/text-direction.ts'
   },
   platform: 'neutral',

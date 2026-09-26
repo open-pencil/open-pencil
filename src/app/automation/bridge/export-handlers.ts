@@ -1,6 +1,7 @@
+import { fromUint8Array } from 'js-base64'
+
 import { selectionToJSX, type RasterExportFormat } from '@open-pencil/core/io'
 import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/browser'
-import { encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 
@@ -15,7 +16,7 @@ export async function handleExport(target: AutomationTarget, args: unknown): Pro
     (exportArgs?.format ?? 'PNG') as RasterExportFormat
   )
   if (!data) throw new Error('Export failed')
-  const base64 = encodeBase64(data)
+  const base64 = fromUint8Array(data)
   return {
     ok: true,
     result: { base64, mimeType: `image/${(exportArgs?.format ?? 'png').toLowerCase()}` }

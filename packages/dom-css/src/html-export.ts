@@ -1,8 +1,8 @@
 import { CSSFontFaceRule } from '@acemir/cssom'
+import { toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
 import { normalizeFontFamily } from '@open-pencil/scene-graph'
-import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { mergeClassNames, serializeHTML, splitWhitespace } from './serialize'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from './types'
@@ -303,7 +303,7 @@ function extractImageAssets(
     }
     const path = `${assetBasePath}/images/image-${sources.size + 1}.${extensionForMime(parts.mime)}`
     sources.set(src.value, path)
-    files.push({ path, content: decodeBase64(parts.base64) })
+    files.push({ path, content: toUint8Array(parts.base64) })
     src.value = path
   })
   return { html: serialize(fragment), files }

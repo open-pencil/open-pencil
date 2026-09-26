@@ -1,3 +1,5 @@
+import { fromUint8Array, toUint8Array } from 'js-base64'
+
 import {
   createLibraryRevision,
   deserializeLibraryRevision,
@@ -13,7 +15,6 @@ import type {
   SerializedComponentLibraryRevision,
   StoredLibraryLatestManifest
 } from '@open-pencil/core/library'
-import { decodeBase64, encodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import type { LibraryObjectStore } from '@/app/integrations/storage'
 
@@ -60,7 +61,7 @@ function encodeValue(value: unknown): unknown {
       entries: [...value].map(([key, entry]) => [encodeValue(key), encodeValue(entry)])
     }
   }
-  if (value instanceof Uint8Array) return { $bytes: encodeBase64(value) }
+  if (value instanceof Uint8Array) return { $bytes: fromUint8Array(value) }
   if (Array.isArray(value)) return value.map(encodeValue)
   if (value && typeof value === 'object') {
     const encoded = Object.fromEntries(
@@ -98,7 +99,7 @@ function decodeValue(value: unknown): unknown {
       )
     }
     if ('$bytes' in value && typeof (value as { $bytes?: unknown }).$bytes === 'string') {
-      return decodeBase64((value as { $bytes: string }).$bytes)
+      return toUint8Array((value as { $bytes: string }).$bytes)
     }
     return Object.fromEntries(
       Object.entries(value).map(([key, entry]) => [key, decodeValue(entry)])

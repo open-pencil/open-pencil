@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
+import { toUint8Array } from 'js-base64'
 
 import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
 import { exportWebFontFaceAssets } from '@open-pencil/core/text/web-font/assets'
@@ -11,7 +12,6 @@ import {
   sceneGraphToDesignDocument,
   type ExportHTMLBundleOptions
 } from '@open-pencil/dom-css'
-import { decodeBase64 } from '@open-pencil/scene-graph/bytes'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
@@ -87,7 +87,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
       printError('Nothing to export.')
       process.exit(1)
     }
-    const data = decodeBase64(result.base64)
+    const data = toUint8Array(result.base64)
     await writeAndLog(resolve(args.output ?? 'export.pdf'), data)
     return
   }
@@ -103,7 +103,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
     scale: Number(args.scale),
     format: format.toLowerCase()
   })
-  const data = decodeBase64(result.base64)
+  const data = toUint8Array(result.base64)
   const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
   await writeAndLog(resolve(args.output ?? `export.${ext}`), data)
 }
