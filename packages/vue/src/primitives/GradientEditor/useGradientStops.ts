@@ -1,7 +1,7 @@
 import { computed, ref, type Ref } from 'vue'
 
-import { colorToCSS } from '@open-pencil/core/color'
 import type { Fill, GradientStop, GradientTransform } from '@open-pencil/scene-graph'
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import { useColorModel } from '#vue/controls/color-model/use'

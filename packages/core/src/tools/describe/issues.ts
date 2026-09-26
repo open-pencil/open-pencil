@@ -1,6 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-
-import { colorDistance, colorToHex } from '#core/color'
+import { colorDistance, colorToHex } from '@open-pencil/scene-graph/color'
 
 import { detectLayoutIssues } from './layout-issues'
 import { CONTAINER_TYPES, findAncestorBackground, looksLikeButton } from './shared'

@@ -1,8 +1,8 @@
 import * as v from 'valibot'
 
 import type { VariableType, VariableValue } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
-import { parseColor } from '#core/color'
 import { defineTool } from '#core/tools/schema'
 
 function parseVariableValue(type: VariableType, value: string): VariableValue {

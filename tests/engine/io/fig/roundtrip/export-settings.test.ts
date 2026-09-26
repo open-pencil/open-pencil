@@ -67,7 +67,8 @@ describe('fig roundtrip export settings', () => {
       name: 'Exportable rect',
       exportSettings: [
         { scale: 2, format: 'png' },
-        { scale: 3, format: 'webp' }
+        { scale: 3, format: 'webp' },
+        { scale: 1, format: 'pptx' }
       ]
     })
 

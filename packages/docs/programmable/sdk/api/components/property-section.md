@@ -4,7 +4,7 @@ description: Headless collapsible anatomy for property-panel sections.
 ---
 
 <script setup lang="ts">
-import PropertyPrimitivesDemo from '#vue/primitives/PropertySection/demo/PropertyPrimitivesDemo.vue'
+import PropertySectionStates from '#vue/primitives/PropertySection/examples/States.vue'
 import { data } from './property-section.data'
 </script>
 
@@ -13,7 +13,7 @@ import { data } from './property-section.data'
 PropertySection supplies collapsible section anatomy and canonical open, empty, and disabled state
 attributes without imposing presentation.
 
-<PropertyPrimitivesDemo />
+<PropertySectionStates />
 
 ## Anatomy
 

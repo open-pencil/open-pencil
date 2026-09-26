@@ -7,7 +7,8 @@ export const getFontStatus = defineTool({
   name: 'get_font_status',
   description:
     'Report whether fonts used on the current page are faithfully available. Returns requested ' +
-    'faces, their loaded source, active substitutions, and affected nodes.',
+    'faces, their loaded source, active substitutions, why an installed face could not be ' +
+    'loaded, and affected nodes.',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },
   input: v.object({}),

@@ -1,15 +1,19 @@
-import { encodeBase64 } from '@open-pencil/core/bytes'
-import { colorToCSS } from '@open-pencil/core/color'
+import { fromUint8Array } from 'js-base64'
+
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 import { BLACK } from '@open-pencil/scene-graph/constants'
+import { resolveNodeTextDirection } from '@open-pencil/scene-graph/text-direction'
 
 import {
+  cssColor,
   dropShadowToCSS,
+  effectsToCSS,
   fillToCSS,
   sceneNodeSizeStyle,
   strokeColorToCSS,
   strokeToCSS
 } from './css-values'
+import { addGridContainer, addGridPlacement } from './grid'
 import type { DesignDocument, DesignNode, DesignStyleDeclaration } from './types'
 
 const DOM_CSS_PLUGIN_ID = 'open-pencil-dom-css'
@@ -154,7 +158,21 @@ function addImageStyle(style: DesignStyleDeclaration, node: SceneNode): void {
   if (fill.imageScaleMode === 'FILL') style['object-fit'] = 'cover'
 }
 
-function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
+/** Styles a node takes from its parent's layout, and its own rotation. */
+function addLayoutChild(
+  style: DesignStyleDeclaration,
+  node: SceneNode,
+  parent: SceneNode | undefined
+): void {
+  if (parent?.layoutMode === 'GRID') addGridPlacement(style, node)
+  else if (parent && parent.layoutMode !== 'NONE' && node.layoutGrow > 0) style['flex-grow'] = '1'
+  if (node.rotation !== 0) style.transform = `rotate(${node.rotation}deg)`
+}
+
+function styleFromSceneNode(
+  node: SceneNode,
+  parent: SceneNode | undefined
+): DesignStyleDeclaration {
   const style = sceneNodeSizeStyle(node)
   addPositioning(style, node)
   addSizeConstraints(style, node)
@@ -162,17 +180,23 @@ function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
   if (fill) style['background-color'] = fill
   addImageStyle(style, node)
   addStroke(style, node)
-  const shadow = dropShadowToCSS(node.effects[0])
-  if (shadow) style['box-shadow'] = shadow
+  Object.assign(style, effectsToCSS(node.effects))
   if (node.opacity < 1) style.opacity = String(node.opacity)
   addCornerRadii(style, node)
   if (node.clipsContent) style.overflow = 'hidden'
   const alignSelf = alignSelfToCSS(node.layoutAlignSelf)
   if (alignSelf) style['align-self'] = alignSelf
 
-  if (node.layoutMode !== 'NONE') {
+  addLayoutChild(style, node, parent)
+  if (node.layoutDirection === 'RTL') style.direction = 'rtl'
+
+  if (node.layoutMode === 'GRID') {
+    addGridContainer(style, node)
+    addPadding(style, node)
+  } else if (node.layoutMode !== 'NONE') {
     style.display = 'flex'
-    style['flex-direction'] = node.layoutMode === 'HORIZONTAL' ? 'row' : 'column'
+    // Row is the flexbox default.
+    if (node.layoutMode === 'VERTICAL') style['flex-direction'] = 'column'
     const justifyContent = justifyContentToCSS(node.primaryAxisAlign)
     const alignItems = alignItemsToCSS(node.counterAxisAlign)
     if (justifyContent) style['justify-content'] = justifyContent
@@ -185,10 +209,12 @@ function styleFromSceneNode(node: SceneNode): DesignStyleDeclaration {
   return style
 }
 
-function styleFromTextNode(node: SceneNode): DesignStyleDeclaration {
+function styleFromTextNode(node: SceneNode, parent: SceneNode | undefined): DesignStyleDeclaration {
   const style = sceneNodeSizeStyle(node)
   addPositioning(style, node)
-  style.color = fillToCSS(node.fills.at(0)) ?? colorToCSS(BLACK)
+  addLayoutChild(style, node, parent)
+  if (resolveNodeTextDirection(node) === 'RTL') style.direction = 'rtl'
+  style.color = fillToCSS(node.fills.at(0)) ?? cssColor(BLACK)
   style['font-family'] = node.fontFamily
   style['font-size'] = `${node.fontSize}px`
   style['font-weight'] = String(node.fontWeight)
@@ -230,10 +256,11 @@ function attrsForNode(
   if (fill?.type !== 'IMAGE' || !fill.imageHash) return attrs
   const bytes = graph.images.get(fill.imageHash)
   if (!bytes) return attrs
-  return { ...attrs, src: `data:image/png;base64,${encodeBase64(bytes)}` }
+  return { ...attrs, src: `data:image/png;base64,${fromUint8Array(bytes)}` }
 }
 
 function tagNameForNode(node: SceneNode): string {
+  if (node.type === 'SECTION') return 'section'
   const fill = node.fills.at(0)
   if ((fill?.type === 'IMAGE' || imageSourceURL(node)) && node.childIds.length === 0) return 'img'
   return 'div'
@@ -245,13 +272,14 @@ function sceneNodeToDesignNode(
   options: Required<SceneGraphToDesignOptions>
 ): DesignNode | null {
   if (!node.visible || node.internalOnly) return null
+  const parent = node.parentId ? graph.getNode(node.parentId) : undefined
 
   if (node.type === 'TEXT') {
     return {
       type: 'element',
       tagName: 'span',
       attrs: attrsForNode(graph, node, options.includeSourceIds),
-      inlineStyle: styleFromTextNode(node),
+      inlineStyle: styleFromTextNode(node, parent),
       sourceSceneNodeId: node.id,
       sourceSceneNode: node,
       children: [{ type: 'text', text: node.text }]
@@ -277,7 +305,7 @@ function sceneNodeToDesignNode(
     type: 'element',
     tagName: tagNameForNode(node),
     attrs: attrsForNode(graph, node, options.includeSourceIds),
-    inlineStyle: styleFromSceneNode(node),
+    inlineStyle: styleFromSceneNode(node, parent),
     sourceSceneNodeId: node.id,
     sourceSceneNode: node,
     children
@@ -305,6 +333,19 @@ export function sceneGraphToDesignDocument(
     sourceGraph: graph,
     children
   }
+}
+
+/** Project one node, including its own box, instead of the children of a root. */
+export function sceneNodeToDesignDocument(
+  graph: SceneGraph,
+  nodeId: string,
+  includeSourceIds = true
+): DesignDocument {
+  const node = graph.getNode(nodeId)
+  const projected = node
+    ? sceneNodeToDesignNode(graph, node, { rootId: nodeId, includeSourceIds })
+    : null
+  return { type: 'document', sourceGraph: graph, children: projected ? [projected] : [] }
 }
 
 export type { SceneGraphToDesignOptions as ToDesignDocumentOptions }

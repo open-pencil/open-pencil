@@ -1,5 +1,5 @@
 import type { Editor, EditorState } from '@open-pencil/core/editor'
-import type { ExportRequest, IORegistry } from '@open-pencil/core/io'
+import type { BuiltinIOFormatId, ExportRequest, IORegistry } from '@open-pencil/core/io'
 
 import {
   bundleExportFiles,
@@ -38,7 +38,7 @@ export function createDocumentExportActions(
     const format = io.getFormat(formatId)
     if (!format) throw new Error(`Unknown export format: ${formatId}`)
 
-    const exportOptions = getExportOptions(formatId, options)
+    const exportOptions = getExportOptions(format, options)
 
     const result = await io.exportContent(
       formatId,
@@ -50,7 +50,7 @@ export function createDocumentExportActions(
     const baseName = getExportBaseName(editor.graph, target)
     return {
       bytes: getExportBytes(result.data),
-      fileName: getExportFileName(baseName, formatId, result.extension, options),
+      fileName: getExportFileName(baseName, format, result.extension, options),
       format: format.label,
       ext: `.${result.extension}`,
       mime: result.mimeType
@@ -103,10 +103,7 @@ export function createDocumentExportActions(
     )
   }
 
-  async function exportSelection(
-    scale: number,
-    formatId: 'png' | 'jpg' | 'webp' | 'svg' | 'pdf' | 'pptx' | 'fig'
-  ) {
+  async function exportSelection(scale: number, formatId: BuiltinIOFormatId) {
     await exportTarget(getSelectionExportTarget(), formatId, { scale })
   }
 

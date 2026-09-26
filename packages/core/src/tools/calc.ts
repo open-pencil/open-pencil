@@ -1,15 +1,13 @@
-import ExprEval from 'expr-eval'
 import * as v from 'valibot'
 
+import { CALC_FUNCTIONS, evaluateExpression } from './calc/expression'
 import { defineTool } from './schema'
-
-const parser = new ExprEval.Parser()
 
 function evalExpr(
   expr: string
 ): { expr: string; result: number } | { expr: string; error: string } {
   try {
-    const result = parser.evaluate(expr)
+    const result = evaluateExpression(expr)
     if (!Number.isFinite(result)) {
       return { expr, error: `Produced ${String(result)}` }
     }
@@ -24,7 +22,7 @@ export const calc = defineTool({
   description:
     'Arithmetic calculator. ALWAYS use instead of mental math. ' +
     'Pass one expression or a JSON array of expressions — all evaluated in one call. ' +
-    'Supports: + - * / % ** ( ) min max floor ceil round abs sqrt pow. ' +
+    `Supports: + - * / % ** ( ) ${CALC_FUNCTIONS.join(' ')}. ` +
     'Examples: "844 - 56 - 96 - 82", \'["1440 * 8 / 12", "(952 - 16) / 2", "floor(390 * 0.6)"]\'',
   execution: { kind: 'sync', mutation: 'none' },
   exposure: { webmcp: false },

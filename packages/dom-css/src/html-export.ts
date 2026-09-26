@@ -1,22 +1,44 @@
-import { CSSFontFaceRule } from '@acemir/cssom'
+import type { CSSFontFaceRule } from '@acemir/cssom'
+import { isValid, toUint8Array } from 'js-base64'
 import { parseFragment, serialize, type DefaultTreeAdapterTypes } from 'parse5'
 
-import { decodeBase64 } from '@open-pencil/core/bytes'
-import { normalizeFontFamily } from '@open-pencil/core/text'
-import {
-  exportWebFontFaceAssets,
-  type WebFontFaceAsset,
-  type WebFontFaceRequest
-} from '@open-pencil/core/text/web-font/assets'
+import { normalizeFontFamily } from '@open-pencil/scene-graph'
 
 import { mergeClassNames, serializeHTML, splitWhitespace } from './serialize'
 import type { DesignDocument, DesignElement, DesignNode, DesignStyleDeclaration } from './types'
+
+/** A font face the exported text uses. */
+export interface WebFontFaceRequest {
+  family: string
+  weight: number
+  style?: 'normal' | 'italic'
+}
+
+/** A font file to ship next to the page, described as an `@font-face` rule. */
+export interface WebFontFaceAsset {
+  family: string
+  weight: string | number | [number, number]
+  style: string
+  display?: string
+  stretch?: string
+  unicodeRange?: string[]
+  format: 'woff2' | 'woff' | 'opentype' | 'truetype'
+  path: string
+  content: Uint8Array
+}
+
+/** Finds font files for the requested faces; paths start with `assetBasePath`. */
+export type WebFontFaceResolver = (
+  fonts: WebFontFaceRequest[],
+  assetBasePath: string
+) => Promise<WebFontFaceAsset[]>
 
 export interface ExportHTMLBundleOptions {
   html?: 'fragment' | 'standalone'
   style?: 'inline' | 'tailwind'
   assets?: 'inline' | 'external'
-  fonts?: 'assets' | 'none'
+  /** Resolves font files to include with external assets; `none` includes no fonts. */
+  fonts?: 'none' | WebFontFaceResolver
   assetBasePath?: string
 }
 
@@ -170,7 +192,7 @@ async function compileTailwindClasses(classNames: string[]): Promise<string> {
   if (classNames.length === 0) return ''
   const [{ compile }, { readFile }] = await Promise.all([
     import('tailwindcss'),
-    import('node:fs/promises')
+    import(/* @vite-ignore */ 'node:fs/promises')
   ])
   const [themeCSS, utilitiesCSS] = await Promise.all([
     readFile(new URL(import.meta.resolve('tailwindcss/theme.css')), 'utf8'),
@@ -218,8 +240,8 @@ function fontSourceValue(asset: WebFontFaceAsset): string {
   )
 }
 
-function fontFaceCSS(asset: WebFontFaceAsset): string {
-  const rule = new CSSFontFaceRule()
+function fontFaceCSS(FontFaceRule: typeof CSSFontFaceRule, asset: WebFontFaceAsset): string {
+  const rule = new FontFaceRule()
   rule.style.setProperty('font-family', JSON.stringify(asset.family))
   rule.style.setProperty('src', fontSourceValue(asset))
   rule.style.setProperty('font-weight', serializeFontWeight(asset.weight))
@@ -239,11 +261,15 @@ async function fontFaceAssets(
   if (options.fonts === 'none' || options.assets !== 'external') return { css: '', files: [] }
   const requests = new Map<string, WebFontFaceRequest>()
   for (const child of document.children) collectFontRequests(child, requests)
-  const result = await exportWebFontFaceAssets({
-    fonts: [...requests.values()],
-    assetBasePath: `${options.assetBasePath}/fonts`
-  })
-  return { css: result.assets.map(fontFaceCSS).join(''), files: result.assets }
+  // Loaded only when fonts ship as files; the CSS object model is not bundled for browsers.
+  const [assets, cssom] = await Promise.all([
+    options.fonts([...requests.values()], `${options.assetBasePath}/fonts`),
+    import('@acemir/cssom')
+  ])
+  return {
+    css: assets.map((asset) => fontFaceCSS(cssom.CSSFontFaceRule, asset)).join(''),
+    files: assets
+  }
 }
 
 function dataImageParts(value: string): { mime: string; base64: string } | undefined {
@@ -251,10 +277,10 @@ function dataImageParts(value: string): { mime: string; base64: string } | undef
   const marker = ';base64,'
   const markerIndex = value.indexOf(marker)
   if (markerIndex === -1) return undefined
-  return {
-    mime: value.slice('data:'.length, markerIndex),
-    base64: value.slice(markerIndex + marker.length)
-  }
+  const base64 = value.slice(markerIndex + marker.length)
+  // Documents can come from parsed HTML; an invalid payload stays inline rather than decoding to other bytes.
+  if (!isValid(base64)) return undefined
+  return { mime: value.slice('data:'.length, markerIndex), base64 }
 }
 
 function extensionForMime(mime: string): string {
@@ -284,7 +310,7 @@ function extractImageAssets(
     }
     const path = `${assetBasePath}/images/image-${sources.size + 1}.${extensionForMime(parts.mime)}`
     sources.set(src.value, path)
-    files.push({ path, content: decodeBase64(parts.base64) })
+    files.push({ path, content: toUint8Array(parts.base64) })
     src.value = path
   })
   return { html: serialize(fragment), files }

@@ -14,7 +14,7 @@ const show = !IS_TAURI && !supportsFileSystemAccess()
 </script>
 
 <template>
-  <AppBanner v-if="show" test-id="safari-banner" storage-key="safari-banner-dismissed">
+  <AppBanner v-if="show" storage-key="safari-banner-dismissed">
     {{ files.browserFileAPINotSupported }}
     <ExternalLink :href="supportURL" class="ml-1">{{ common.browserSupport }}</ExternalLink>
     <template #dismiss>{{ common.dismiss }}</template>

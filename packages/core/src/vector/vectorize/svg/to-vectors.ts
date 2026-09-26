@@ -9,11 +9,11 @@ import svgpath from 'svgpath'
 
 import type { Fill, Stroke, VectorNetwork, WindingRule } from '@open-pencil/scene-graph'
 import { mergeVectorNetworks } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 import { computeBounds } from '@open-pencil/scene-graph/geometry'
 import { parseSVGPath } from '@open-pencil/scene-graph/parse-path'
 import type { Rect, Size } from '@open-pencil/scene-graph/primitives'
 
-import { parseColor } from '#core/color'
 import { createPathStroke } from '#core/icons/path-style'
 import { extractPaths } from '#core/icons/svg'
 import type { IconPathInfo } from '#core/icons/types'

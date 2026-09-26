@@ -1,7 +1,7 @@
 import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { normalizeColor } from '@open-pencil/scene-graph/color'
 import { copyEffects, copyFills, copyStrokes } from '@open-pencil/scene-graph/copy'
 
-import { normalizeColor } from '#core/color'
 import {
   raw,
   updateNode,

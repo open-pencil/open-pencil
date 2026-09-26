@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 import { useI18n } from '@open-pencil/vue'
 
 import { useColorPickerPanelContext } from '@/components/color-picker-panel/context'

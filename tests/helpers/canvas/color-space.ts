@@ -12,11 +12,16 @@ export async function emulateWideGamutDisplay(page: Page) {
   })
 }
 
+/** The wide-gamut notice is the only capability banner whose content names Display-P3. */
+export function wideGamutBanner(page: Page) {
+  return page.getByRole('status').filter({ hasText: 'Display-P3' })
+}
+
 /** Keep the wide-gamut notice from resizing the canvas in rendering-fidelity tests. */
 export async function dismissWideGamutBanner(page: Page) {
-  const banner = page.getByTestId('wide-gamut-banner')
+  const banner = wideGamutBanner(page)
   await banner.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => undefined)
-  if (await banner.isVisible()) await page.getByTestId('wide-gamut-banner-dismiss').click()
+  if (await banner.isVisible()) await banner.locator('[data-slot="banner-dismiss"]').click()
 }
 
 /** Focus the demo's paint and effects page, where blends and masks live. */

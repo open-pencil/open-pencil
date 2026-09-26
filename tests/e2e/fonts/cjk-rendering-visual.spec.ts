@@ -361,3 +361,83 @@ test('typed and tool-created text repaint with the same resolved fallbacks', asy
   expect(state).toEqual({ textsMatch: true, toolReady: true, typedReady: true, unblocked: true })
   expect(Buffer.from(image)).toMatchSnapshot('interactive-font-fallback-resolved.png')
 })
+
+test('substituted fonts still request fallbacks for CJK text', async ({ page }) => {
+  await openEditor(page)
+
+  const result = await page.evaluate(async () => {
+    const store = window.openPencil?.getStore?.()
+    if (!store?.renderer) throw new Error('OpenPencil renderer not initialized')
+    const fontModuleURL = performance
+      .getEntriesByType('resource')
+      .map((entry) => entry.name)
+      .find((url) => url.includes('/packages/core/src/text/fonts.ts'))
+    if (!fontModuleURL) throw new Error('Active font manager module not found')
+    const { fontManager } = (await import(/* @vite-ignore */ fontModuleURL)) as {
+      fontManager: FontManager
+    }
+    const cjk = await fetch('/tests/fixtures/fonts/NotoSansCJK-Test.otf').then((response) =>
+      response.arrayBuffer()
+    )
+    // Supply the fixture only when the renderer requests a CJK fallback for the substituted text.
+    const requestedScripts: string[] = []
+    fontManager.ensureFallbackPack = async (scripts = ['cjk', 'arabic']) => {
+      requestedScripts.push(...scripts)
+      fontManager.markLoaded('Noto Sans CJK SC', 'Regular', cjk, 'fallback')
+      fontManager.setCJKFallbackFamily('Noto Sans CJK SC')
+      return { cjk: ['Noto Sans CJK SC'] }
+    }
+
+    const node = store.graph.createNode('TEXT', store.state.currentPageId, {
+      name: 'Substituted CJK text',
+      x: 40,
+      y: 40,
+      width: 520,
+      height: 48,
+      text: 'Buttons 你好世界',
+      textLanguage: 'zh-Hans',
+      fontFamily: 'Unavailable Visual Test Face',
+      fontSize: 32,
+      textAutoResize: 'NONE',
+      fills: [
+        { type: 'SOLID', color: { r: 0.04, g: 0.06, b: 0.12, a: 1 }, visible: true, opacity: 1 }
+      ]
+    })
+
+    const deadline = performance.now() + 10_000
+    while (performance.now() < deadline) {
+      store.renderer.invalidateAllPictures()
+      store.requestRender()
+      store.renderer.renderFromEditorState(
+        store.state,
+        store.graph,
+        store.textEditor,
+        window.innerWidth,
+        window.innerHeight,
+        false,
+        'full'
+      )
+      if (
+        store.renderer.nodeFontReadiness(node) === 'substituted' &&
+        fontManager.getCJKFallbackFamilies().includes('Noto Sans CJK SC')
+      ) {
+        break
+      }
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 50)
+      })
+    }
+
+    const image = await store.renderExportImage([node.id], 2, 'PNG')
+    if (!image) throw new Error('Export failed')
+    return {
+      image: Array.from(image),
+      readiness: store.renderer.nodeFontReadiness(node),
+      requestedCJK: requestedScripts.some((script) => script.startsWith('cjk'))
+    }
+  })
+
+  const { image, ...state } = result
+  expect(state).toEqual({ readiness: 'substituted', requestedCJK: true })
+  expect(Buffer.from(image)).toMatchSnapshot('substituted-font-cjk-fallback.png')
+})

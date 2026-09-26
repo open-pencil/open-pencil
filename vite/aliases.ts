@@ -15,6 +15,10 @@ export function createOpenPencilAliases(rootDir: string) {
       replacement: resolve(rootDir, 'packages/dom-css/src/browser.ts')
     },
     {
+      find: /^@open-pencil\/dom-css\/export$/,
+      replacement: resolve(rootDir, 'packages/dom-css/src/export.ts')
+    },
+    {
       find: /^@open-pencil\/dom-css\/jsx-runtime$/,
       replacement: resolve(rootDir, 'packages/dom-css/src/jsx/runtime.ts')
     },

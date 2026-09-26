@@ -1,10 +1,10 @@
 import { expect, test } from 'bun:test'
 import { setImmediate } from 'node:timers/promises'
 
-import type { CommandRequest } from '@open-pencil/package-artifacts'
+import { verifyPublicImports } from '#package-quality/smoke/runtime'
+import { measurePhase } from '#package-quality/timing'
 
-import { verifyPublicImports } from '../src/smoke/runtime'
-import { measurePhase } from '../src/timing'
+import type { CommandRequest } from '@open-pencil/package-artifacts'
 
 test('public imports retain separate bounded Node and Bun invocations and the stdio exclusion', async () => {
   const requests: CommandRequest[] = []

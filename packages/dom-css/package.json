@@ -23,6 +23,12 @@
       "import": "./dist/browser.js",
       "default": "./dist/browser.js"
     },
+    "./export": {
+      "types": "./dist/export.d.ts",
+      "bun": "./src/export.ts",
+      "import": "./dist/export.js",
+      "default": "./dist/export.js"
+    },
     "./jsx-runtime": {
       "types": "./dist/jsx-runtime.d.ts",
       "bun": "./src/jsx/runtime.ts",
@@ -62,7 +68,6 @@
     "provenance": true
   },
   "peerDependencies": {
-    "@open-pencil/core": "workspace:*",
     "@open-pencil/scene-graph": "workspace:*"
   },
   "devDependencies": {
@@ -72,6 +77,8 @@
   },
   "dependencies": {
     "@acemir/cssom": "^0.9.31",
+    "esrap": "^2.3.11",
+    "js-base64": "^3.9.3",
     "parse5": "^8.0.1",
     "postcss-value-parser": "^4.2.0",
     "tailwindcss": "^4.3.3",

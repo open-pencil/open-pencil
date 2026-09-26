@@ -1,5 +1,5 @@
-import { colorToCSS } from '@open-pencil/core/color'
 import type { DesignDocument, DesignElement, DesignNode } from '@open-pencil/dom-css'
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 
 export function findTextElement(nodes: DesignNode[]): DesignElement | undefined {
   for (const node of nodes) {

@@ -6,10 +6,10 @@ import {
   type SceneGraph,
   type SceneNode
 } from '@open-pencil/scene-graph'
+import type { RenderColorSpace } from '@open-pencil/scene-graph/color'
 import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import type { SkiaRenderer } from '#core/canvas'
-import type { RenderColorSpace } from '#core/color/management'
 import { extractExportGraph, findPageId } from '#core/io/subgraph'
 
 export type RasterExportFormat = 'PNG' | 'JPG' | 'WEBP'

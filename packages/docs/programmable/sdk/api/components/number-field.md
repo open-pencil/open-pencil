@@ -4,7 +4,7 @@ description: Headless numeric field primitives with scrubbing, expressions, and 
 ---
 
 <script setup lang="ts">
-import NumberFieldDemo from '#vue/primitives/NumberField/demo/NumberFieldDemo.vue'
+import NumberFieldStates from '#vue/primitives/NumberField/examples/States.vue'
 import { data } from './number-field.data'
 </script>
 
@@ -13,7 +13,7 @@ import { data } from './number-field.data'
 The NumberField family provides a headless numeric control with pointer scrubbing, mixed values,
 keyboard stepping, safe arithmetic expressions, units, trailing actions, and binding-aware state.
 
-<NumberFieldDemo />
+<NumberFieldStates />
 
 ## Anatomy
 

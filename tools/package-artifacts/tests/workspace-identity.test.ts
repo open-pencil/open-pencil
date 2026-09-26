@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { runCommand } from '../src/process'
+import { runCommand } from '#package-artifacts/process'
 
 describe('workspace module identity', () => {
   test('Bun source exports unify imports across different tsconfig scopes', async () => {

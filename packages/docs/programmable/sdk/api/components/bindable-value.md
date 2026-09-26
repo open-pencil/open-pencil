@@ -4,7 +4,7 @@ description: Provider-driven value binding primitives for custom editor controls
 ---
 
 <script setup lang="ts">
-import BindableValueDemo from '#vue/primitives/BindableValue/demo/BindableValueDemo.vue'
+import BindableValueStates from '#vue/primitives/BindableValue/examples/States.vue'
 import { data } from './bindable-value.data'
 </script>
 
@@ -14,7 +14,7 @@ BindableValue composes variable or token binding with fields without coupling th
 specific editor store. Applications supply a `BindingProvider`; NumberField consumes the context
 automatically when nested beneath `BindableValueRoot`.
 
-<BindableValueDemo />
+<BindableValueStates />
 
 ## Anatomy
 

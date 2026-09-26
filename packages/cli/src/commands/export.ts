@@ -2,15 +2,9 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 
 import { defineCommand } from 'citty'
+import { toUint8Array } from 'js-base64'
 
-import { decodeBase64 } from '@open-pencil/core/bytes'
-import { BUILTIN_IO_FORMATS, IORegistry } from '@open-pencil/core/io'
-import type { RasterExportFormat } from '@open-pencil/core/io'
-import {
-  exportHTMLBundle,
-  sceneGraphToDesignDocument,
-  type ExportHTMLBundleOptions
-} from '@open-pencil/dom-css'
+import { BUILTIN_IO_FORMATS, IORegistry, type ExportResult } from '@open-pencil/core/io'
 
 import { isAppMode, requireFile, rpc } from '#cli/app-client'
 import { appTargetOptions, appTargetRPCArgs } from '#cli/app-target'
@@ -24,8 +18,13 @@ import {
 } from '#cli/headless'
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
-const RASTER_FORMATS = ['PNG', 'JPG', 'WEBP']
-const ALL_FORMATS = new Set([...RASTER_FORMATS, 'SVG', 'PDF', 'PPTX', 'JSX', 'FIG', 'HTML'])
+const FORMAT_IDS = io.listExportFormats('node').map((format) => format.id)
+const ALL_FORMATS = new Set(FORMAT_IDS.map((id) => id.toUpperCase()))
+const FORMAT_LIST = `${FORMAT_IDS.slice(0, -1).join(', ')}, or ${FORMAT_IDS.at(-1)}`
+
+function formatSupportsScale(format: string): boolean {
+  return io.getFormat(format.toLowerCase())?.exportOptions?.scale ?? false
+}
 const JSX_STYLES = new Set(['openpencil', 'tailwind'])
 const HTML_STYLES = new Set(['inline', 'tailwind'])
 const HTML_MODES = new Set(['fragment', 'standalone'])
@@ -85,7 +84,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
       printError('Nothing to export.')
       process.exit(1)
     }
-    const data = decodeBase64(result.base64)
+    const data = toUint8Array(result.base64)
     await writeAndLog(resolve(args.output ?? 'export.pdf'), data)
     return
   }
@@ -101,7 +100,7 @@ async function exportViaApp(format: string, args: ExportArgs) {
     scale: Number(args.scale),
     format: format.toLowerCase()
   })
-  const data = decodeBase64(result.base64)
+  const data = toUint8Array(result.base64)
   const ext = format.toLowerCase() === 'jpg' ? 'jpg' : format.toLowerCase()
   await writeAndLog(resolve(args.output ?? `export.${ext}`), data)
 }
@@ -118,47 +117,16 @@ function targetLabel(pageName?: string, nodeId?: string, wholeDocument = false):
 
 type FileExportTarget = { scope: 'node'; nodeId: string } | { scope: 'page'; pageId: string }
 
-async function writeHTMLFiles(
-  output: string,
-  bundle: Awaited<ReturnType<typeof exportHTMLBundle>>
-) {
-  const entrypoint = bundle.files.find((file) => file.path === bundle.entrypoint)
-  if (!entrypoint) {
-    printError(`HTML export did not include ${bundle.entrypoint}.`)
-    process.exit(1)
-  }
-
-  await writeAndLog(output, entrypoint.content)
-  const outputDir = dirname(output)
-  const assetFiles = bundle.files.filter((file) => file.path !== bundle.entrypoint)
-  for (const file of assetFiles) {
-    const assetPath = join(outputDir, file.path)
+/** Writes the export and the files it refers to, which sit next to it. */
+async function writeExport(output: string, result: ExportResult) {
+  await writeAndLog(output, result.data as string | Uint8Array)
+  const assets = result.assets ?? []
+  for (const asset of assets) {
+    const assetPath = join(dirname(output), asset.path)
     await mkdir(dirname(assetPath), { recursive: true })
-    await writeFile(assetPath, file.content)
+    await writeFile(assetPath, asset.content as string | Uint8Array)
   }
-  if (assetFiles.length > 0) console.log(ok(`Assets: ${assetFiles.length} files`))
-}
-
-async function exportHTMLFromFile(
-  args: ExportArgs,
-  graph: Awaited<ReturnType<typeof loadDocument>>,
-  target: FileExportTarget,
-  defaultName: string
-) {
-  const document = sceneGraphToDesignDocument(graph, {
-    rootId: target.scope === 'page' ? target.pageId : target.nodeId
-  })
-  const output = resolve(args.output ?? exportFileName(defaultName, 'html'))
-  const assetBasePath = `${basename(output, extname(output))}.assets`
-  const bundle = await exportHTMLBundle(document, {
-    html: args.html as ExportHTMLBundleOptions['html'],
-    style: args.css as ExportHTMLBundleOptions['style'],
-    assets: args.assets as ExportHTMLBundleOptions['assets'],
-    fonts: args.fonts as ExportHTMLBundleOptions['fonts'],
-    assetBasePath
-  })
-  await writeHTMLFiles(output, bundle)
-  console.log(ok(`Target: ${targetLabel(args.page, args.node)}`))
+  if (assets.length > 0) console.log(ok(`Assets: ${assets.length} files`))
 }
 
 /** What the export covers; the width of the work follows from it. */
@@ -183,16 +151,28 @@ async function executeFileExport(
   formatId: string,
   graph: Awaited<ReturnType<typeof loadDocument>>,
   target: FileExportTarget,
-  options:
-    | { format?: string; scale?: number; quality?: number; renderThumbnail?: boolean }
-    | undefined,
-  wholeDocument: boolean
+  options: unknown,
+  wholeDocument: boolean,
+  fileName: string
 ) {
   if (wholeDocument) {
     if (formatId === 'fig') return io.writeDocument(formatId, graph, options)
-    return io.exportContent(formatId, { graph, target: { scope: 'document' } }, options)
+    return io.exportContent(formatId, { graph, target: { scope: 'document' }, fileName }, options)
   }
-  return io.exportContent(formatId, { graph, target }, options)
+  return io.exportContent(formatId, { graph, target, fileName }, options)
+}
+
+function exportOptions(format: string, args: ExportArgs): unknown {
+  if (format === 'FIG') return { renderThumbnail: true }
+  if (format === 'HTML')
+    return { html: args.html, style: args.css, assets: args.assets, fonts: args.fonts }
+  if (formatSupportsScale(format))
+    return {
+      format,
+      scale: Number(args.scale),
+      quality: args.quality ? Number(args.quality) : undefined
+    }
+  return undefined
 }
 
 async function exportFromFile(format: string, args: ExportArgs) {
@@ -243,42 +223,26 @@ async function exportFromFile(format: string, args: ExportArgs) {
     process.exit(1)
   }
 
-  const formatId = format.toLowerCase()
-  let options:
-    | { format?: string; scale?: number; quality?: number; renderThumbnail?: boolean }
-    | undefined
-  if (format === 'HTML') {
-    await exportHTMLFromFile(args, graph, target, defaultName)
-    return
-  }
-
-  if (format === 'JSX') {
-    options = { format: args.style }
-  } else if (format === 'FIG') {
-    options = { renderThumbnail: true }
-  } else if (format === 'PNG' || format === 'JPG' || format === 'WEBP') {
-    options = {
-      format,
-      scale: Number(args.scale),
-      quality: args.quality ? Number(args.quality) : undefined
-    }
-  }
-
-  const result = await executeFileExport(formatId, graph, target, options, wholeDocument)
-  const output = resolve(
-    args.output ??
-      exportFileName(
-        defaultName,
-        result.extension,
-        format === 'PNG' || format === 'JPG' || format === 'WEBP' ? Number(args.scale) : undefined
-      )
+  // `--style tailwind` keeps the JSX spelling of the Tailwind JSX format.
+  const formatId =
+    format === 'JSX' && args.style === 'tailwind' ? 'tailwind-jsx' : format.toLowerCase()
+  const scale = formatSupportsScale(format) ? Number(args.scale) : undefined
+  const extension = io.getFormat(formatId)?.extensions[0] ?? formatId
+  const output = resolve(args.output ?? exportFileName(defaultName, extension, scale))
+  const result = await executeFileExport(
+    formatId,
+    graph,
+    target,
+    exportOptions(format, args),
+    wholeDocument,
+    basename(output)
   )
-  await writeAndLog(output, result.data as string | Uint8Array)
+  await writeExport(output, result)
   console.log(ok(`Target: ${targetLabel(args.page, args.node, wholeDocument)}`))
 }
 
 export default defineCommand({
-  meta: { description: 'Export a document to PNG, JPG, WEBP, SVG, PDF, PPTX, JSX, HTML, or .fig' },
+  meta: { description: `Export a document to ${FORMAT_LIST}` },
   args: {
     file: {
       type: 'positional',
@@ -294,7 +258,7 @@ export default defineCommand({
     format: {
       type: 'string',
       alias: 'f',
-      description: 'Export format: png, jpg, webp, svg, pdf, pptx, jsx, html, fig (default: png)',
+      description: `Export format: ${FORMAT_IDS.join(', ')} (default: png)`,
       default: 'png'
     },
     scale: { type: 'string', alias: 's', description: 'Export scale (default: 1)', default: '1' },
@@ -350,11 +314,9 @@ export default defineCommand({
     ...appTargetOptions
   },
   async run({ args }) {
-    const format = args.format.toUpperCase() as RasterExportFormat | 'SVG' | 'JSX' | 'FIG' | 'HTML'
+    const format = args.format.toUpperCase()
     if (!ALL_FORMATS.has(format)) {
-      printError(
-        `Invalid format "${args.format}". Use png, jpg, webp, svg, pdf, pptx, jsx, html, or fig.`
-      )
+      printError(`Invalid format "${args.format}". Use ${FORMAT_LIST}.`)
       process.exit(1)
     }
 

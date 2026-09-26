@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import NumberFieldDemo from './demo/NumberFieldDemo.vue'
+import NumberFieldStates from './examples/States.vue'
 
 const meta = {
   title: 'Vue SDK/Primitives/NumberField',
-  component: NumberFieldDemo,
+  component: NumberFieldStates,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -15,7 +15,7 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof NumberFieldDemo>
+} satisfies Meta<typeof NumberFieldStates>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -27,9 +27,7 @@ export const StateMatrix: Story = {
 
     await expect(root).toHaveStyle({ height: '26px' })
     await userEvent.click(root)
-    const input = canvasElement.querySelector<HTMLInputElement>(
-      '[data-test-id="interactive-number-input"]'
-    )
+    const input = root.querySelector('input')
     if (!input) throw new Error('Expected the editing NumberField input')
     await userEvent.clear(input)
     await userEvent.type(input, '12*8+4{Enter}')
@@ -44,9 +42,8 @@ export const StateMatrix: Story = {
 export const Editing: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    await userEvent.click(canvas.getByLabelText('Interactive number field'))
-    await expect(
-      canvasElement.querySelector('[data-test-id="interactive-number-input"]')
-    ).toBeVisible()
+    const root = canvas.getByLabelText('Interactive number field')
+    await userEvent.click(root)
+    await expect(root.querySelector('input')).toBeVisible()
   }
 }

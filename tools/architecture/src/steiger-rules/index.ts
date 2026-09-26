@@ -106,8 +106,14 @@ const strictTestFilePlacement = createFileRule(
       if (/\/visual\/[^/]+\.ts$/.test(sourceRel)) return null
       return 'Engine/unit tests must live under tests/engine/** and use *.test.ts; helpers.ts, *.bench.ts, and domain visual support scripts are allowed.'
     }
+    // Canonical unit-test homes from packages/docs/development/testing.md.
+    if (sourceRel.startsWith('tests/app/') || sourceRel.startsWith('tests/integration/')) {
+      return sourceRel.endsWith('.test.ts')
+        ? null
+        : 'App and integration unit tests must use *.test.ts under tests/app/** or tests/integration/**.'
+    }
     if (sourceRel.startsWith('tests/helpers/')) return null
-    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/engine/** (*.test.ts), or tests/helpers/**.'
+    return 'Tests must live under tests/e2e/** (*.spec.ts), tests/app/**, tests/integration/**, tests/engine/** (*.test.ts), or tests/helpers/**.'
   }
 )
 

@@ -18,6 +18,7 @@
     "@open-pencil/package-quality-tools": "workspace:*",
     "citty": "^0.1.6",
     "es-toolkit": "^1.51.0",
+    "js-base64": "^3.9.3",
     "valibot": "^1.4.2"
   }
 }
