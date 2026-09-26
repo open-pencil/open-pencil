@@ -1,17 +1,17 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { Paint } from '@open-pencil/kiwi/fig/codec'
-import type { Fill } from '@open-pencil/scene-graph'
-import { SceneGraph } from '@open-pencil/scene-graph'
-import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
-
-import { resolveDsdGeometry } from '../src/instance-overrides/derived-symbol-data/geometry'
+import { resolveDsdGeometry } from '#fig/instance-overrides/derived-symbol-data/geometry'
 import {
   resolveGeometryPaths,
   resolveStyleOverrideFills,
   sceneNodeToKiwi,
   type StyleOverride
-} from '../src/node-change'
+} from '#fig/node-change/index'
+
+import type { Paint } from '@open-pencil/kiwi/fig/codec'
+import type { Fill } from '@open-pencil/scene-graph'
+import { SceneGraph } from '@open-pencil/scene-graph'
+import { scaleGeometryPaths } from '@open-pencil/scene-graph/copy'
 
 function solidFill(r: number, g: number, b: number): Fill {
   return {

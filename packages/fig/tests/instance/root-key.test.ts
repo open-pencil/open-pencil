@@ -1,10 +1,9 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { guid } from '../helpers/guid'
 
 test('explicit swaps preserve references owned by the enclosing component', () => {
   const refs = [{ defID: guid(80), componentPropNodeField: 'VISIBLE' }]

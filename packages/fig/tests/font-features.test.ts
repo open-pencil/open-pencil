@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
+import { applyFontFeaturesToKiwi, convertFontFeatures } from '#fig/node-change/font/features'
 
-import { applyFontFeaturesToKiwi, convertFontFeatures } from '../src/node-change/font/features'
+import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
 function apply(features: { tag: string; enabled: boolean }[]) {
   const nc: NodeChange = { type: 'TEXT' }

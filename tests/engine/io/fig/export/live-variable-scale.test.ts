@@ -6,6 +6,8 @@ import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
 
+import { readFixtureArrayBuffer } from '#tests/helpers/fig/fixtures'
+
 function tagsInInput(graph: SceneGraph, rootId: string): SceneNode {
   const found: SceneNode[] = []
   const visit = (id: string) => {
@@ -20,11 +22,7 @@ function tagsInInput(graph: SceneGraph, rootId: string): SceneNode {
 }
 
 test('Gold imported binding units survive token edits and undo/redo', async () => {
-  const parsed = parseFigBuffer(
-    await Bun.file(
-      new URL('../../../../tests/fixtures/gold-preview.fig', import.meta.url)
-    ).arrayBuffer()
-  )
+  const parsed = parseFigBuffer(readFixtureArrayBuffer('gold-preview.fig'))
   const { graph, sources } = materializeDocument(parsed.nodeChanges, parsed.blobs, {
     derivedBounds: true
   })

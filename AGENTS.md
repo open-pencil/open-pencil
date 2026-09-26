@@ -166,7 +166,7 @@ Canonical brand artwork lives in `assets/brand/`: the main mark and an optical m
 
 Private tooling belongs under `tools/<domain>/{src,tests}`, with kebab-case domains and focused tests. `scripts/` may contain only tiny compatibility entrypoints; put real workflow, release, architecture, package, or visual tooling in `tools/`.
 
-- Use `@/` for app cross-directory imports. Never escape an alias root with `../` (for example `#tests/../vite`); fix module ownership instead. Package aliases are `#vue/*`, `#cli/*`, `#dom-css/*`, `#mcp/*`, and `#core/*`; prefer clear relative imports nearby.
+- Use `@/` for app cross-directory imports. Never escape an alias root with `../` (for example `#tests/../vite`); fix module ownership instead. Package aliases are `#vue/*`, `#cli/*`, `#dom-css/*`, `#mcp/*`, `#core/*`, and `#fig/*`; prefer clear relative imports nearby.
 - No `any`, non-null assertions, or `Math.random()`; use precise types, guards, and `crypto.getRandomValues()`.
 - Use the existing `dedent` package for multiline prompt composition and embedded examples instead of escaped newline strings. Keep substantial prompt prose in the owning Markdown source; compose it rather than duplicating it. Apply this convention across app, packages, and tools.
 - Tooling must resolve the workspace with `resolveWorkspaceRoot` from `@open-pencil/package-artifacts`, not parent-directory traversal. Use domain aliases for cross-directory tooling imports, including tests; keep nearby sibling imports relative.

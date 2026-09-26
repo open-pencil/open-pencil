@@ -1,8 +1,6 @@
 import { expect, test } from 'bun:test'
 
 import { materializeComponentClosure } from '#fig/instance-overrides/component-closure'
-import { interpretInstance, type InstanceOccurrence } from '#fig/instance-overrides/interpret'
-import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
 import {
   linkInstanceSourceChildren,
   mapInstanceSourceChildren
@@ -12,7 +10,14 @@ import { FigmaAPI } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { parseFigBuffer } from '@open-pencil/fig'
+import {
+  type InstanceOccurrence,
+  interpretInstance,
+  materializeInstance
+} from '@open-pencil/fig/instance-overrides'
 import { SceneGraph } from '@open-pencil/scene-graph'
+
+import { readFixtureArrayBuffer } from '#tests/helpers/fig/fixtures'
 
 function named(node: InstanceOccurrence, name: string): InstanceOccurrence {
   const child = node.children.find((candidate) => candidate.properties.name === name)
@@ -23,9 +28,7 @@ function named(node: InstanceOccurrence, name: string): InstanceOccurrence {
 // Expectations captured from gold-preview in Figma, input 1:3503.
 // Exercise the original archive: no pre-resolved SceneGraph or legacy replay.
 test('Gold Preview input resolves badge visibility and distinct avatar swaps like Figma', async () => {
-  const bytes = await Bun.file(
-    new URL('../../../../tests/fixtures/gold-preview.fig', import.meta.url)
-  ).arrayBuffer()
+  const bytes = readFixtureArrayBuffer('gold-preview.fig')
   const { nodeChanges, blobs } = parseFigBuffer(bytes)
   const diagnostics: unknown[] = []
   const input = interpretInstance(nodeChanges, '1:3503', {

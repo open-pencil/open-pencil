@@ -1,7 +1,6 @@
 import { expect, test } from 'bun:test'
 
-import { interpretComponent, interpretInstance } from '#fig/instance-overrides/interpret'
-import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
+import { interpretComponent } from '#fig/instance-overrides/interpret'
 import {
   linkInstanceSourceChildren,
   mapInstanceSourceChildren
@@ -10,10 +9,11 @@ import {
 import { FigmaAPI } from '@open-pencil/core'
 import { exportFigFile, parseFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
+import { interpretInstance, materializeInstance } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { guid } from '../helpers/guid'
+import { guid } from '#tests/helpers/fig/guid'
 
 test('derives repeated nested child correspondence from materialized component occurrences', async () => {
   const changes: NodeChange[] = [

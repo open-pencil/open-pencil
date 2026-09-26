@@ -34,6 +34,9 @@
       "#core/*": [
         "./packages/core/src/*"
       ],
+      "#fig/*": [
+        "./packages/fig/src/*"
+      ],
       "#cli/*": [
         "./packages/cli/src/*"
       ],

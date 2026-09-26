@@ -1,15 +1,15 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
-import type { GUID } from '@open-pencil/scene-graph/primitives'
-
 import {
   buildComponentPropIndex,
   fractionalPosition,
   mapToFigmaType,
   sceneNodeToKiwi,
   type FigNodeChangeExportRuntime
-} from '../src/node-change'
+} from '#fig/node-change/index'
+
+import { SceneGraph } from '@open-pencil/scene-graph'
+import type { GUID } from '@open-pencil/scene-graph/primitives'
 
 describe('@open-pencil/fig SceneGraph export policy', () => {
   test('maps node types and sibling positions deterministically', () => {

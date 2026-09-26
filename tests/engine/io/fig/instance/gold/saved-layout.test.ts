@@ -5,14 +5,12 @@ import { interpretInstance, resolveOccurrencePath } from '#fig/instance-override
 import { parseFigBuffer } from '@open-pencil/fig'
 import { nodeChangeToProps, stringToGuid } from '@open-pencil/fig/node-change'
 
-import oracle from './fixtures/gold-input-layout.json'
+import { readFixtureArrayBuffer } from '#tests/helpers/fig/fixtures'
+
+import oracle from '../fixtures/gold-input-layout.json'
 
 test('Gold saved input geometry matches the independent Figma capture before layout', async () => {
-  const { nodeChanges, blobs } = parseFigBuffer(
-    await Bun.file(
-      new URL('../../../../tests/fixtures/gold-preview.fig', import.meta.url)
-    ).arrayBuffer()
-  )
+  const { nodeChanges, blobs } = parseFigBuffer(readFixtureArrayBuffer('gold-preview.fig'))
   const input = interpretInstance(nodeChanges, '1:3503', { derivedBounds: true })
   for (const expected of oracle.nodes) {
     const path = expected.id.split(';').slice(1).map(stringToGuid)

@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
 import { planComponentConstruction } from '#fig/document/components'
 import { materializeDocument } from '#fig/document/materialize'
 import { createDocumentReader } from '#fig/document/read'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { guid } from '../helpers/guid'
 
 test('reads pages independently through one index with cross-page component expansion', () => {
   const changes: NodeChange[] = [

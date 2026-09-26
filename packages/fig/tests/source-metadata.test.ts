@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 
-import { SceneGraph } from '@open-pencil/scene-graph'
+import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '#fig/source-metadata'
 
-import { effectiveFigmaRawNodeFields, effectiveFigmaSourcePayload } from '../src/source-metadata'
+import { SceneGraph } from '@open-pencil/scene-graph'
 
 describe('@open-pencil/fig source metadata policy', () => {
   test('filters only raw fields made stale by normalized edits', () => {

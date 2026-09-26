@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
+
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { guid } from '../helpers/guid'
 
 test('instances do not duplicate component-owned property definitions', () => {
   const source = {

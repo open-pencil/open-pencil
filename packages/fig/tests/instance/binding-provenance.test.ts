@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
 import { materializeComponentClosure } from '#fig/instance-overrides/component-closure'
 import { interpretInstance } from '#fig/instance-overrides/interpret'
 import {
@@ -13,8 +14,6 @@ import { mapInstanceSourceChildren } from '#fig/instance-overrides/source-childr
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph, hasInstanceOverride } from '@open-pencil/scene-graph'
-
-import { guid } from '../helpers/guid'
 
 test('materialization preserves explicit equal-to-default text', () => {
   const changes: NodeChange[] = [

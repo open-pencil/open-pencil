@@ -5,7 +5,7 @@ import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import { guid } from '../helpers/guid'
+import { guid } from '#tests/helpers/fig/guid'
 
 test('retained implicit layout survives import but does not override an explicit sizing edit', async () => {
   await initCodec()

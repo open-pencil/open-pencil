@@ -1,13 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import { interpretInstance } from '#fig/instance-overrides/interpret'
-import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
-
 import { FigmaAPI } from '@open-pencil/core'
+import { interpretInstance, materializeInstance } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { guid } from '../helpers/guid'
+import { guid } from '#tests/helpers/fig/guid'
 
 test('text overrides discard inherited glyph data but accept occurrence-derived replacement data', () => {
   const changes = [

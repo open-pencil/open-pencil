@@ -1,10 +1,9 @@
 import { expect, test } from 'bun:test'
 
-import type { SymbolData } from '#fig/instance-overrides/types'
-
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { parseFigBuffer } from '@open-pencil/fig'
+import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import { SceneGraph, setInstanceOverride, rescaleNodeTree } from '@open-pencil/scene-graph'
 
 test('serializes self size claims against the instance main component', async () => {

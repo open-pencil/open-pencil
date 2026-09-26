@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
 
-import type { SymbolData } from '#fig/instance-overrides/types'
-
 import { createEditor } from '@open-pencil/core/editor'
 import { exportFigFile } from '@open-pencil/core/io'
 import { initCodec } from '@open-pencil/core/kiwi'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
+import type { SymbolData } from '@open-pencil/fig/instance-overrides'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { hasInstanceOverride } from '@open-pencil/scene-graph'
 

@@ -6,7 +6,7 @@ import { snapshotInstanceGeometry } from '#fig/node-change/instance-geometry'
 import { stringToGuid } from '@open-pencil/kiwi/fig/guid'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { expectDefined } from '#tests/helpers/assert'
+import { expectDefined } from '../helpers/assert'
 
 function fixture() {
   const graph = new SceneGraph()

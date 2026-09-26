@@ -5,7 +5,7 @@ import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 
-import fixture from './fixtures/export-contract.json'
+import fixture from './export-contract.json'
 
 test('Figma-authored minimal contract exports a decodable node stream', async () => {
   await initCodec()

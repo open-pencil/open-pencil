@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
 import {
   interpretComponent,
   interpretInstance,
@@ -10,7 +11,6 @@ import { materializeInstance } from '#fig/instance-overrides/materialize-instanc
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
 import { SceneGraph } from '@open-pencil/scene-graph'
 
-import { guid } from '../helpers/guid'
 import fixture from './fixtures/accordion-source-closure.json'
 
 function setup() {

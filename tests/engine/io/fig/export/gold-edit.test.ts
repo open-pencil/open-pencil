@@ -6,12 +6,10 @@ import { initCodec } from '@open-pencil/core/kiwi'
 import { materializeDocument, parseFigBuffer } from '@open-pencil/fig'
 import type { SceneNode } from '@open-pencil/scene-graph'
 
+import { readFixtureArrayBuffer } from '#tests/helpers/fig/fixtures'
+
 test('Gold document exposes effective Boolean assignments and supports editor undo/redo', async () => {
-  const parsed = parseFigBuffer(
-    await Bun.file(
-      new URL('../../../../tests/fixtures/gold-preview.fig', import.meta.url)
-    ).arrayBuffer()
-  )
+  const parsed = parseFigBuffer(readFixtureArrayBuffer('gold-preview.fig'))
   const diagnostics: unknown[] = []
   const { graph, sources } = materializeDocument(parsed.nodeChanges, parsed.blobs, {
     images: new Map(parsed.images),

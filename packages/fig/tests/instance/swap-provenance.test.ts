@@ -1,10 +1,9 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
 import { interpretInstance, resolveOccurrencePath } from '#fig/instance-overrides/interpret'
 
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { guid } from '../helpers/guid'
 
 test('a saved swap applies replacement bindings before explicit root and child claims', () => {
   const property = guid(90)

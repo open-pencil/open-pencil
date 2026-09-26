@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test'
 
-import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
-
 import {
   applyStyleRefsToFields,
   buildStyleOverrideTable,
@@ -17,7 +15,9 @@ import {
   mapTextDecoration,
   nodeChangeToProps,
   setVariableColorResolver
-} from '../src/node-change'
+} from '#fig/node-change/index'
+
+import type { NodeChange, Paint } from '@open-pencil/kiwi/fig/codec'
 
 describe('@open-pencil/fig NodeChange policy', () => {
   test('converts normalized text values', () => {

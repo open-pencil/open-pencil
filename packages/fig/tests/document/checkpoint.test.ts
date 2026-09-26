@@ -1,12 +1,11 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
 import { checkpointComponent, restoreComponentCheckpoint } from '#fig/document/component/checkpoint'
 import { interpretComponent } from '#fig/instance-overrides/interpret'
 import { materializeInstance } from '#fig/instance-overrides/materialize-instance'
 
 import { SceneGraph } from '@open-pencil/scene-graph'
-
-import { guid } from '../helpers/guid'
 
 function setup() {
   const occurrence = interpretComponent(

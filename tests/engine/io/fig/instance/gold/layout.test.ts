@@ -5,6 +5,8 @@ import { interpretInstance } from '#fig/instance-overrides/interpret'
 import { parseFigBuffer } from '@open-pencil/fig'
 import { nodeChangeToProps } from '@open-pencil/fig/node-change'
 
+import { readFixtureArrayBuffer } from '#tests/helpers/fig/fixtures'
+
 test('omitted primary sizing is Hug only for auto-layout; explicit Fixed remains Fixed', () => {
   expect(nodeChangeToProps({ type: 'FRAME', stackMode: 'HORIZONTAL' }, []).primaryAxisSizing).toBe(
     'HUG'
@@ -17,11 +19,7 @@ test('omitted primary sizing is Hug only for auto-layout; explicit Fixed remains
 })
 
 test('Gold date picker retains Figma Hug primary sizing when the saved field is omitted', async () => {
-  const { nodeChanges, blobs } = parseFigBuffer(
-    await Bun.file(
-      new URL('../../../../tests/fixtures/gold-preview.fig', import.meta.url)
-    ).arrayBuffer()
-  )
+  const { nodeChanges, blobs } = parseFigBuffer(readFixtureArrayBuffer('gold-preview.fig'))
   const diagnostics: unknown[] = []
   const root = interpretInstance(nodeChanges, '1:3516', {
     derivedBounds: true,

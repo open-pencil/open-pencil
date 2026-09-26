@@ -1,9 +1,9 @@
 import { expect, test } from 'bun:test'
 
+import { guid } from '#fig-tests/helpers/guid'
+
 import { materializeDocument } from '@open-pencil/fig'
 import type { NodeChange } from '@open-pencil/kiwi/fig/codec'
-
-import { guid } from '../helpers/guid'
 
 test('selected-page assembly excludes unrelated content but keeps cross-page components', () => {
   const changes: NodeChange[] = [
