@@ -61,4 +61,35 @@ describe('components', () => {
     expect(instance.type).toBe('INSTANCE')
     expect(expectDefined(instance.mainComponent, 'instance main component').id).toBe(comp.id)
   })
+
+  test('swapComponent points an instance at another component', () => {
+    const api = createAPI()
+    const primary = api.createComponent()
+    primary.name = 'Primary'
+    primary.appendChild(Object.assign(api.createText(), { name: 'Label', characters: 'Primary' }))
+    const secondary = api.createComponent()
+    secondary.name = 'Secondary'
+    secondary.appendChild(
+      Object.assign(api.createText(), { name: 'Icon', characters: 'Secondary' })
+    )
+    const instance = primary.createInstance()
+
+    instance.swapComponent(secondary)
+
+    expect(expectDefined(instance.mainComponent, 'swapped main component').id).toBe(secondary.id)
+    expect(instance.name).toBe('Secondary')
+    expect(instance.children.map((child) => child.name)).toEqual(['Icon'])
+  })
+
+  test('swapComponent rejects non-instances and non-components', () => {
+    const api = createAPI()
+    const component = api.createComponent()
+    const instance = component.createInstance()
+    expect(() => api.createFrame().swapComponent(component)).toThrow(
+      'swapComponent() can only be called on instances'
+    )
+    expect(() => instance.swapComponent(api.createFrame())).toThrow(
+      'swapComponent() needs a component'
+    )
+  })
 })

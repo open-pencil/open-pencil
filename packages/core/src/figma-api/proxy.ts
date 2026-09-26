@@ -222,6 +222,16 @@ export class FigmaNodeProxy {
     setPageBackgrounds(this[INTERNAL_GRAPH], this._raw(), value)
   }
 
+  /** Points this instance at another component, as Figma's swapComponent does. */
+  swapComponent(component: FigmaNodeProxy): void {
+    const n = this._raw()
+    if (n.type !== 'INSTANCE') throw new Error('swapComponent() can only be called on instances')
+    const target = this[INTERNAL_GRAPH].getNode(component[INTERNAL_ID])
+    if (target?.type !== 'COMPONENT') throw new Error('swapComponent() needs a component')
+    assertNodeEditable(this[INTERNAL_GRAPH], this[INTERNAL_ID])
+    this[INTERNAL_GRAPH].swapInstanceComponent(n.id, target.id)
+  }
+
   get mainComponent(): FigmaNodeProxy | null {
     const n = this._raw()
     if (!n.componentId) return null

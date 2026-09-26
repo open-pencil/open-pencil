@@ -8,6 +8,7 @@
 
 ### Added
 
+- Swap the component behind an instance with `instance.swapComponent(component)` in the plugin API, as in Figma.
 - Choose PPTX in the Export panel's format list, alongside PNG, JPG, WEBP, SVG, and PDF.
 
 ### Changed

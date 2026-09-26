@@ -163,6 +163,7 @@ Common node properties are readable/writable through the proxy, including:
 - `figma.loadFontAsync(fontName)` no-ops because OpenPencil does not gate text edits on plugin font loading
 - `figma.listAvailableFontsAsync()` returns host-provided fonts when available
 - `figma.notify(message)` logs a warning in headless mode
+- `instance.swapComponent(component)` points an instance at another component
 - `figma.viewport`
 
 ## Not yet Figma-compatible
