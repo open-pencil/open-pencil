@@ -111,10 +111,13 @@ function applyColorVariableBinding(
 ): Paint {
   const variableId = node.boundVariables[field]
   if (!variableId) return paint
+  // `colorVar` is the Paint field fig.kiwi defines for a bound colour, as Figma writes it.
   return {
     ...paint,
-    colorVariableBinding: {
-      variableID: context.varIdToGuid?.get(variableId) ?? stringToGuid(variableId)
+    colorVar: {
+      value: { alias: { guid: context.varIdToGuid?.get(variableId) ?? stringToGuid(variableId) } },
+      dataType: 'ALIAS',
+      resolvedDataType: 'COLOR'
     }
   }
 }
