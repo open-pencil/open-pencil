@@ -39,6 +39,18 @@ describe('Tauri font helpers', () => {
     expect(fontManager.isLoaded('System UI', 'Bold Italic')).toBe(true)
   })
 
+  test('records installed faces whose outlines cannot be drawn', async () => {
+    await mockTauriIPC((cmd) => {
+      expect(cmd).toBe('load_system_font')
+      throw { code: 'unsupported-format', message: 'Font outlines are in an unsupported format' }
+    })
+    await import('@/app/editor/fonts')
+
+    await expect(fontManager.loadLocalFont('Undrawable Sans', 'Regular')).resolves.toBeNull()
+    expect(fontManager.unavailableReason('Undrawable Sans', 'Regular')).toBe('unsupported-format')
+    expect(fontManager.unavailableReason('Undrawable Sans', 'Bold')).toBeNull()
+  })
+
   test('falls back to font manager loading when the system font command fails', async () => {
     await mockTauriIPC((cmd) => {
       expect(cmd).toBe('load_system_font')

@@ -13,7 +13,6 @@ import type {
   FigWriteOptions,
   IOContext,
   IOFormatAdapter,
-  JSXExportOptions,
   RasterExportOptions,
   SVGExportOptions
 } from './types'
@@ -350,14 +349,13 @@ export const jsxFormat: IOFormatAdapter<'jsx'> = {
     scale: false,
     quality: false
   },
-  async exportContent(request, options?: JSXExportOptions): Promise<ExportResult> {
-    const format = options?.format ?? 'openpencil'
+  async exportContent(request): Promise<ExportResult> {
     const nodeId = ensureSingleNode(request.target)
     let data = ''
     if (nodeId) {
-      data = sceneNodeToJSX(nodeId, request.graph, format)
+      data = sceneNodeToJSX(nodeId, request.graph)
     } else if (request.target.scope === 'selection') {
-      data = selectionToJSX(request.target.nodeIds, request.graph, format)
+      data = selectionToJSX(request.target.nodeIds, request.graph)
     }
     if (!data) throw new Error('Nothing to export')
     return {

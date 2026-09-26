@@ -367,8 +367,7 @@ export {
   type VarDef,
   type RenderResult,
   sceneNodeToJSX,
-  selectionToJSX,
-  type JSXFormat
+  selectionToJSX
 } from './design-jsx'
 export {
   parseFigmaClipboard,

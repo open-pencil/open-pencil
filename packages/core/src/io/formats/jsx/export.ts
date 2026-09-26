@@ -15,9 +15,6 @@ import {
   solidFillColor,
   solidStroke
 } from './helpers'
-import { collectTailwindClasses } from './tailwind-classes'
-
-export type JSXFormat = 'openpencil' | 'tailwind'
 
 const NODE_TYPE_TO_TAG: Partial<Record<NodeType, string>> = {
   FRAME: 'Frame',
@@ -34,23 +31,6 @@ const NODE_TYPE_TO_TAG: Partial<Record<NodeType, string>> = {
   COMPONENT: 'Component',
   COMPONENT_SET: 'Frame',
   INSTANCE: 'Frame'
-}
-
-const NODE_TYPE_TO_TW_TAG: Partial<Record<NodeType, string>> = {
-  FRAME: 'div',
-  RECTANGLE: 'div',
-  ROUNDED_RECTANGLE: 'div',
-  ELLIPSE: 'div',
-  TEXT: 'p',
-  LINE: 'div',
-  STAR: 'div',
-  POLYGON: 'div',
-  VECTOR: 'div',
-  GROUP: 'div',
-  SECTION: 'section',
-  COMPONENT: 'div',
-  COMPONENT_SET: 'div',
-  INSTANCE: 'div'
 }
 
 // --- OpenPencil format helpers ---
@@ -298,24 +278,14 @@ function collectProps(node: SceneNode, graph: SceneGraph): [string, unknown][] {
 
 // --- JSX rendering ---
 
-function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: JSXFormat): string {
-  const tagMap = format === 'tailwind' ? NODE_TYPE_TO_TW_TAG : NODE_TYPE_TO_TAG
-  const tag = tagMap[node.type]
+function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number): string {
+  const tag = NODE_TYPE_TO_TAG[node.type]
   if (!tag) return ''
 
   const prefix = '  '.repeat(indent)
-  let attrsStr: string
-
-  if (format === 'tailwind') {
-    const classes = collectTailwindClasses(node, graph)
-    const attrs: [string, string][] = []
-    if (node.name && node.name !== node.type) attrs.push(['data-name', node.name])
-    if (classes.length > 0) attrs.push(['className', classes.join(' ')])
-    attrsStr = attrs.map(([k, v]) => formatProp(k, v)).join(' ')
-  } else {
-    const props = collectProps(node, graph)
-    attrsStr = props.map(([k, v]) => formatProp(k, v)).join(' ')
-  }
+  const attrsStr = collectProps(node, graph)
+    .map(([k, v]) => formatProp(k, v))
+    .join(' ')
 
   const opening = attrsStr ? `<${tag} ${attrsStr}` : `<${tag}`
   const children = graph.getChildren(node.id)
@@ -338,7 +308,7 @@ function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: J
 
   const childJSX = children
     .filter((c) => c.visible)
-    .map((c) => nodeToJSX(c, graph, indent + 1, format))
+    .map((c) => nodeToJSX(c, graph, indent + 1))
     .filter(Boolean)
 
   if (childJSX.length === 0) return `${prefix}${opening} />`
@@ -346,23 +316,15 @@ function nodeToJSX(node: SceneNode, graph: SceneGraph, indent: number, format: J
   return [`${prefix}${opening}>`, ...childJSX, `${prefix}</${tag}>`].join('\n')
 }
 
-export function sceneNodeToJSX(
-  nodeId: string,
-  graph: SceneGraph,
-  format: JSXFormat = 'openpencil'
-): string {
+export function sceneNodeToJSX(nodeId: string, graph: SceneGraph): string {
   const node = graph.getNode(nodeId)
   if (!node) return ''
-  return nodeToJSX(node, graph, 0, format)
+  return nodeToJSX(node, graph, 0)
 }
 
-export function selectionToJSX(
-  nodeIds: string[],
-  graph: SceneGraph,
-  format: JSXFormat = 'openpencil'
-): string {
+export function selectionToJSX(nodeIds: string[], graph: SceneGraph): string {
   return nodeIds
-    .map((id) => sceneNodeToJSX(id, graph, format))
+    .map((id) => sceneNodeToJSX(id, graph))
     .filter(Boolean)
     .join('\n\n')
 }

@@ -1,8 +1,8 @@
 name: CI
 
 on:
+  # Every base, so stacked pull requests are checked against the PR below them.
   pull_request:
-    branches: [master]
 
 permissions:
   contents: read

@@ -1,5 +1,6 @@
 import { encodeBase64 } from '@open-pencil/core/bytes'
-import { selectionToJSX, sceneNodeToJSX, type RasterExportFormat } from '@open-pencil/core/io'
+import { selectionToJSX, type RasterExportFormat } from '@open-pencil/core/io'
+import { sceneNodesToTailwindJSX } from '@open-pencil/dom-css/browser'
 
 import type { AutomationTarget } from '@/app/automation/bridge/target'
 
@@ -24,12 +25,11 @@ export async function handleExport(target: AutomationTarget, args: unknown): Pro
 export async function handleExportJSX(target: AutomationTarget, args: unknown): Promise<unknown> {
   const store = target.store
   const jsxArgs = args as { nodeIds?: string[]; style?: string } | undefined
-  const style = (jsxArgs?.style ?? 'openpencil') as 'openpencil' | 'tailwind'
   const currentPage = store.graph.getNode(target.pageId)
   const nodeIds = jsxArgs?.nodeIds ?? currentPage?.childIds ?? []
   const jsx =
-    nodeIds.length === 1
-      ? sceneNodeToJSX(nodeIds[0], store.graph, style)
-      : selectionToJSX(nodeIds, store.graph, style)
+    jsxArgs?.style === 'tailwind'
+      ? sceneNodesToTailwindJSX(store.graph, nodeIds)
+      : selectionToJSX(nodeIds, store.graph)
   return { ok: true, result: { jsx } }
 }

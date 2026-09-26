@@ -3306,6 +3306,8 @@ dependencies = [
 name = "open_pencil"
 version = "0.15.1"
 dependencies = [
+ "core-foundation 0.9.4",
+ "core-text",
  "fix-path-env",
  "font-kit",
  "keyring",

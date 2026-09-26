@@ -2,6 +2,9 @@
   "name": "@open-pencil/package-artifacts",
   "private": true,
   "type": "module",
+  "imports": {
+    "#package-artifacts/*": "./src/*.ts"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./tarball": "./src/tarball.ts",
@@ -11,8 +14,12 @@
     "test": "bun test tests"
   },
   "dependencies": {
+    "@publint/pack": "^0.1.5",
     "pkg-types": "^2.3.1",
     "tinyexec": "^1.3.0",
     "valibot": "^1.4.2"
+  },
+  "devDependencies": {
+    "nanotar": "^0.3.0"
   }
 }

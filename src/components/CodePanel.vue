@@ -3,7 +3,7 @@ import { useClipboard, useDebounceFn } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
 import { computed, defineAsyncComponent, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 
-import { JSX_REFERENCE, selectionToJSX } from '@open-pencil/core/design-jsx'
+import { JSX_REFERENCE } from '@open-pencil/core/design-jsx'
 import { useI18n, useSceneComputed } from '@open-pencil/vue'
 
 import {
@@ -13,6 +13,7 @@ import {
   resetDOMCodePreview,
   type DOMCodeSession
 } from '@/app/code/dom-preview'
+import { generatedSourceFor } from '@/app/code/generated'
 import {
   commitDesignJSXSession,
   createDesignJSXEditSession,
@@ -51,13 +52,7 @@ let disposing = false
 const generatedJSX = useSceneComputed(() => {
   if (!editorActive.value || source.value === 'html-css' || designSession.value) return ''
   void store.state.sceneVersion
-  const ids = [...store.state.selectedIds]
-  if (ids.length === 0) return starterSourceFor(source.value)
-  return selectionToJSX(
-    ids,
-    store.graph,
-    source.value === 'tailwind-jsx' ? 'tailwind' : 'openpencil'
-  )
+  return generatedSourceFor(source.value, store.graph, [...store.state.selectedIds])
 })
 
 const sourceOptions = computed(() => [
@@ -189,9 +184,7 @@ async function changeSource(next: CodeSource): Promise<void> {
 }
 
 function generatedFor(next: Exclude<CodeSource, 'html-css'>): string {
-  const ids = [...store.state.selectedIds]
-  if (ids.length === 0) return starterSourceFor(next)
-  return selectionToJSX(ids, store.graph, next === 'tailwind-jsx' ? 'tailwind' : 'openpencil')
+  return generatedSourceFor(next, store.graph, [...store.state.selectedIds])
 }
 
 watch(

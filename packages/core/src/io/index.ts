@@ -13,7 +13,7 @@ export {
 } from './formats'
 export { exportFigFile, parseFigFile, readFigFile, type ParseFigFileOptions } from './formats/fig'
 export { parsePenFile, readPenFile } from '@open-pencil/pen'
-export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './formats/jsx'
+export { sceneNodeToJSX, selectionToJSX } from './formats/jsx'
 export {
   computeContentBounds,
   renderNodesToImage,
@@ -56,7 +56,6 @@ export type {
   FigWriteOptions,
   RasterExportOptions,
   SVGExportOptions,
-  JSXExportOptions,
   IOFormatSupport,
   IOFormatExportOptions,
   IOFormatAdapter

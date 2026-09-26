@@ -27,6 +27,8 @@
   "expandIssues": "显示字体问题",
   "collapseIssues": "隐藏字体问题",
   "noSubstitute": "没有可用的替代字体",
+  "unsupportedFormatShort": "不支持的格式",
+  "unsupportedFormat": "已安装，但 OpenPencil 暂时无法绘制这种字体格式",
   "settingsDesktopDescription": "访问系统字体、在线提供商、后备字体包和缓存下载。",
   "settingsBrowserDescription": "允许浏览器访问本地字体，并管理在线字体提供商。",
   "providerEnabled": "已启用 {provider}。",
