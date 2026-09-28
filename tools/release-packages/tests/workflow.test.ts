@@ -91,6 +91,7 @@ describe('release workflow', () => {
       JSON.stringify({ name: 'fixture', version: '1.0.0', workspaces: ['packages/example'] })
     )
     await writeFile(join(root, 'packages/example/dist/index.js'), 'export const ready = true\n')
+    await writeFile(join(root, 'LICENSE'), 'fixture license\n')
     await writeFile(
       join(root, 'packages/example/dist/index.d.ts'),
       'export declare const ready: true\n'
