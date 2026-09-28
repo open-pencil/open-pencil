@@ -20,5 +20,8 @@
     "es-toolkit": "^1.51.0",
     "js-base64": "^3.9.3",
     "valibot": "^1.4.2"
+  },
+  "devDependencies": {
+    "nanotar": "^0.3.0"
   }
 }

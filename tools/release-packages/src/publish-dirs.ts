@@ -17,11 +17,16 @@ export interface PackagePublishConfig {
   directory: string
 }
 
+/** Lists the files `npm pack` would ship from a package directory, relative to it. */
+export type PackageFileLister = (sourceDir: string) => Promise<string[]>
+
 export interface PreparePublishDirectoriesOptions {
   coreVersion: string
   packages: PackagePublishConfig[]
   root: string
   outRoot?: string
+  /** Defaults to a real `npm pack --dry-run`; tests inject a listing to stay out of npm. */
+  listPackageFiles?: PackageFileLister
   log?: (message: string) => void
 }
 
@@ -84,10 +89,21 @@ export async function discoverPublishPackages(root: string): Promise<PackagePubl
   return (await discoverPublicPackages(root)).map(packagePublishConfig)
 }
 
+export async function npmPackFileList(sourceDir: string): Promise<string[]> {
+  const listing = await runCommand({
+    command: 'npm',
+    args: ['pack', '--dry-run', '--json', '--ignore-scripts'],
+    cwd: sourceDir,
+    timeoutMs: 60_000
+  })
+  return parseNpmPack(listing.stdout).files
+}
+
 export async function preparePublishDirectories(
   options: PreparePublishDirectoriesOptions
 ): Promise<void> {
   const outRoot = options.outRoot ?? join(options.root, '.publish')
+  const listPackageFiles = options.listPackageFiles ?? npmPackFileList
   await rm(outRoot, { recursive: true, force: true })
   await mkdir(outRoot, { recursive: true })
 
@@ -103,13 +119,7 @@ export async function preparePublishDirectories(
       throw new Error(`${pkg.directory}: no LICENSE in the package or the repository root`)
     }
 
-    const listing = await runCommand({
-      command: 'npm',
-      args: ['pack', '--dry-run', '--json', '--ignore-scripts'],
-      cwd: sourceDir,
-      timeoutMs: 60_000
-    })
-    const files = parseNpmPack(listing.stdout).files
+    const files = await listPackageFiles(sourceDir)
     for (const relativePath of files) {
       const destination = join(destinationDir, relativePath)
       await mkdir(dirname(destination), { recursive: true })

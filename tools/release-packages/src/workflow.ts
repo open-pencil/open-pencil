@@ -17,7 +17,11 @@ import { inspectTarball, validatePackedTarballs } from '@open-pencil/package-art
 import { verifyArtifactConsumers } from '@open-pencil/package-quality-tools/consumer'
 
 import { NPM_RELEASE_POLICY } from './policy'
-import { discoverPublishPackages, preparePublishDirectories } from './publish-dirs'
+import {
+  discoverPublishPackages,
+  preparePublishDirectories,
+  type PackageFileLister
+} from './publish-dirs'
 
 export interface PublicationPlanEntry {
   package: WorkspacePackage
@@ -25,6 +29,18 @@ export interface PublicationPlanEntry {
 }
 
 export type PackagePublicationLookup = (pkg: WorkspacePackage) => Promise<boolean>
+
+export interface PrepareReleaseOptions {
+  listPackageFiles?: PackageFileLister
+}
+
+/** Packs a prepared package directory into `destination` and returns the tarball filename. */
+export type PackDirectory = (directory: string, destination: string) => Promise<string>
+
+export interface PackReleaseOptions {
+  /** Defaults to a real `npm pack`; tests inject an in-process packer to stay out of npm. */
+  packDirectory?: PackDirectory
+}
 
 export interface ReleasePaths {
   artifacts: string
@@ -42,7 +58,10 @@ export function releasePaths(root: string): ReleasePaths {
 
 export { buildPublicPackages as buildReleasePackages }
 
-export async function prepareReleasePackages(root: string): Promise<void> {
+export async function prepareReleasePackages(
+  root: string,
+  options: PrepareReleaseOptions = {}
+): Promise<void> {
   const packages = await discoverPublicPackages(root)
   const { version } = await readPackageManifest(join(root, 'package.json'))
   if (packages.length === 0) throw new Error('No public packages discovered')
@@ -53,8 +72,19 @@ export async function prepareReleasePackages(root: string): Promise<void> {
     coreVersion: version,
     packages: await discoverPublishPackages(root),
     root,
+    listPackageFiles: options.listPackageFiles,
     log: console.log
   })
+}
+
+async function npmPackDirectory(directory: string, destination: string): Promise<string> {
+  const result = await runCommand({
+    command: 'npm',
+    args: ['pack', '--json', '--pack-destination', destination],
+    cwd: directory,
+    timeoutMs: 60_000
+  })
+  return parseNpmPack(result.stdout).filename
 }
 
 async function packageIsPublished(pkg: WorkspacePackage, root: string): Promise<boolean> {
@@ -88,9 +118,11 @@ export async function createPublicationPlan(
 
 export async function packReleasePackages(
   root: string,
-  isPublished?: PackagePublicationLookup
+  isPublished?: PackagePublicationLookup,
+  options: PackReleaseOptions = {}
 ): Promise<PublicationPlanEntry[]> {
   const paths = releasePaths(root)
+  const packDirectory = options.packDirectory ?? npmPackDirectory
   const plan = await createPublicationPlan(root, isPublished)
   await rm(paths.artifacts, { recursive: true, force: true })
   await mkdir(paths.artifacts, { recursive: true })
@@ -98,13 +130,8 @@ export async function packReleasePackages(
   for (const entry of plan) {
     const { manifest } = entry.package
     const preparedDirectory = join(paths.prepared, basename(entry.package.directory))
-    const result = await runCommand({
-      command: 'npm',
-      args: ['pack', '--json', '--pack-destination', paths.artifacts],
-      cwd: preparedDirectory,
-      timeoutMs: 60_000
-    })
-    console.log(`Packed ${manifest.name}: ${parseNpmPack(result.stdout).filename}`)
+    const filename = await packDirectory(preparedDirectory, paths.artifacts)
+    console.log(`Packed ${manifest.name}: ${filename}`)
   }
 
   await validatePackedTarballs(paths.artifacts)

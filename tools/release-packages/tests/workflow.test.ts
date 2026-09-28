@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdir, readdir, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 
 import {
   buildReleasePackages,
@@ -11,6 +11,40 @@ import {
   releasePaths,
   validatePublicationArtifacts
 } from '#release/workflow'
+import { createTarGzip } from 'nanotar'
+
+import { readTarball } from '@open-pencil/package-artifacts/tarball'
+
+const FIXTURE_FILES = ['dist/index.js', 'dist/index.d.ts']
+
+async function listFiles(directory: string, base = directory): Promise<string[]> {
+  const entries = await readdir(directory, { withFileTypes: true })
+  const nested = await Promise.all(
+    entries.map(async (entry) => {
+      const path = join(directory, entry.name)
+      if (entry.isDirectory()) return listFiles(path, base)
+      return [relative(base, path).split(sep).join('/')]
+    })
+  )
+  return nested.flat().sort()
+}
+
+/** Packs a prepared directory the way npm lays out a tarball, without starting npm. */
+async function packInProcess(directory: string, destination: string): Promise<string> {
+  const manifest = JSON.parse(await readFile(join(directory, 'package.json'), 'utf8')) as {
+    name: string
+    version: string
+  }
+  const files = await Promise.all(
+    (await listFiles(directory)).map(async (name) => ({
+      name: `package/${name}`,
+      data: new Uint8Array(await readFile(join(directory, name)))
+    }))
+  )
+  const filename = `${manifest.name.replace(/^@/, '').replace('/', '-')}-${manifest.version}.tgz`
+  await writeFile(join(destination, filename), await createTarGzip(files))
+  return filename
+}
 
 async function createWorkspace() {
   const root = join(tmpdir(), `open-pencil-release-workflow-${crypto.randomUUID()}`)
@@ -113,14 +147,22 @@ describe('release workflow', () => {
       })
     )
 
-    await prepareReleasePackages(root)
-    const plan = await packReleasePackages(root, async () => false)
+    await prepareReleasePackages(root, { listPackageFiles: async () => FIXTURE_FILES })
+    const plan = await packReleasePackages(root, async () => false, {
+      packDirectory: packInProcess
+    })
     expect(plan.map(({ package: pkg, status }) => [pkg.manifest.name, status])).toEqual([
       ['@fixture/release-package', 'unpublished']
     ])
-    expect(
-      (await readdir(releasePaths(root).artifacts)).filter((name) => name.endsWith('.tgz'))
-    ).toHaveLength(1)
+    const artifacts = releasePaths(root).artifacts
+    const tarballs = (await readdir(artifacts)).filter((name) => name.endsWith('.tgz'))
+    expect(tarballs).toEqual(['fixture-release-package-1.0.0.tgz'])
+    expect([...(await readTarball(join(artifacts, tarballs[0]))).entries].sort()).toEqual([
+      'package/LICENSE',
+      'package/dist/index.d.ts',
+      'package/dist/index.js',
+      'package/package.json'
+    ])
   })
 
   test('builds discovered packages in dependency order', async () => {
