@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import BindingFieldDemo from './demo/BindingFieldDemo.vue'
+import BindingFieldStates from './examples/States.vue'
 
 const meta = {
   title: 'Editor/Properties/Binding Field',
-  component: BindingFieldDemo,
+  component: BindingFieldStates,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -15,7 +15,7 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof BindingFieldDemo>
+} satisfies Meta<typeof BindingFieldStates>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -26,10 +26,6 @@ export const StateMatrix: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const page = within(canvasElement.ownerDocument.body)
-    const controls = Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-story-control]'))
-
-    for (const control of controls) await expect(control).toHaveStyle({ height: '26px' })
-
     const detachField = canvas.getByLabelText('Detach bound field')
     await expect(detachField).toHaveAttribute('data-bound')
 

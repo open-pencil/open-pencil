@@ -45,7 +45,6 @@ export const UNIT_TEST_GROUPS = {
   fig: [
     'packages/fig/tests',
     'packages/kiwi/tests',
-    'tests/engine/bytes',
     'tests/engine/figma',
     'tests/engine/io',
     'tests/engine/kiwi'

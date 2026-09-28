@@ -1,6 +1,5 @@
 import type { Ref } from 'vue'
 
-import { colorToHexRaw, parseColor } from '@open-pencil/core/color'
 import { BLACK } from '@open-pencil/core/constants'
 import type { Editor } from '@open-pencil/core/editor'
 import { randomHex } from '@open-pencil/core/random'
@@ -10,6 +9,7 @@ import type {
   VariableType,
   VariableValue
 } from '@open-pencil/scene-graph'
+import { colorToHexRaw, parseColor } from '@open-pencil/scene-graph/color'
 
 export function createVariableCollectionActions(editor: Editor, activeCollectionId: Ref<string>) {
   function setActiveCollection(id: string) {

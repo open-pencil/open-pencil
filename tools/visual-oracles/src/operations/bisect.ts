@@ -6,10 +6,10 @@ import { parseArgs } from 'node:util'
 
 import { $ } from 'bun'
 
-import { parseColor } from '@open-pencil/core/color'
 import { headlessRenderNodes, initCanvasKit, parseFigFile } from '@open-pencil/core/io'
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
+import { parseColor } from '@open-pencil/scene-graph/color'
 
 interface DiffMetrics {
   mean: number

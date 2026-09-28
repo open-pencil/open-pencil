@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from '@open-pencil/vue'
 
 import { useDocumentFontStatus } from '@/app/editor/fonts/status'
+import Tip from '@/components/ui/overlay/Tip.vue'
 
 const { fonts } = useI18n()
 const expanded = ref(false)
@@ -66,6 +67,9 @@ const issues = computed(() => status.value.issues)
           <strong>{{ issue.family }} {{ issue.style }}</strong>
           <template v-if="issue.substituteFamily"> → {{ issue.substituteFamily }} </template>
           <template v-else>— {{ fonts.noSubstitute }}</template>
+          <Tip v-if="issue.reason === 'unsupported-format'" :label="fonts.unsupportedFormat">
+            <span class="ms-1 opacity-75">· {{ fonts.unsupportedFormatShort }}</span>
+          </Tip>
         </span>
         <span class="shrink-0 text-[10px] opacity-75">
           {{

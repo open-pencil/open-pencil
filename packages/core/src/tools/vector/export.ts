@@ -1,6 +1,6 @@
+import { fromUint8Array } from 'js-base64'
 import * as v from 'valibot'
 
-import { encodeBase64 } from '#core/bytes'
 import type { RasterExportFormat } from '#core/io/formats/raster'
 import { toolNumber } from '#core/tools/input'
 import { defineTool } from '#core/tools/schema'
@@ -54,7 +54,7 @@ export const exportPDF = defineTool({
       args.ids && args.ids.length > 0 ? args.ids : figma.currentPage.children.map((node) => node.id)
     const data = await renderNodesToPDF(figma.graph, pageId, ids)
     if (!data || data.length === 0) return { error: 'No visible nodes to export' }
-    const base64 = encodeBase64(data)
+    const base64 = fromUint8Array(data)
     return { mimeType: 'application/pdf', base64, byteLength: data.length }
   }
 })
@@ -135,7 +135,7 @@ export const exportImage = defineTool({
       format
     })
     if (!data || data.length === 0) return { error: 'No visible nodes to export' }
-    const base64 = encodeBase64(data)
+    const base64 = fromUint8Array(data)
     const mimeMap = { PNG: 'image/png', JPG: 'image/jpeg', WEBP: 'image/webp' } as const
     return {
       mimeType: mimeMap[format],

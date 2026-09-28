@@ -16,7 +16,7 @@
 - Prefer test-runner-owned fixtures and request/route counters over browser globals. For in-page performance instrumentation, return a scoped `JSHandle` from `evaluateHandle()`, restore patched methods and listeners, and dispose the handle in `finally`; handles do not survive navigation. Assert transient DOM state with locators before the interaction ends.
 - Do not create a catch-all test Window interface or ad-hoc counter properties on `window`. Native-test declarations live in `tests/helpers/tauri/native-global.d.ts`; never expand production Window declarations for fixtures.
 - In Bun tests prefer injected dependencies or scoped spies with explicit cleanup. `mock.restore()` restores spies but does not undo `mock.module()` overrides; do not assume module mocks are isolated by cleanup hooks. Read the installed runner's lifecycle and mocking docs before adding global or module-level instrumentation.
-- Make flaky tests deterministic; raising a timeout is not a fix.
+- Make flaky tests deterministic; raising a timeout is never the fix. Keep package-manager invocations out of `bun test` suites; their cold start is not bounded.
 
 ## Browser runs
 

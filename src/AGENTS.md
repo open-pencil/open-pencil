@@ -25,6 +25,10 @@ Root Tauri/Vite app. Services and state live under `src/app/**`, views under `sr
 - Browser-native WebMCP registration lives under `src/app/automation/webmcp/`, consumes per-tool exposure metadata, and is feature-detected through `document.modelContext`. App completion under `src/app/automation/execution/` loads fonts after commit.
 - Collaboration lives under `src/app/collab/**` on Trystero, Yjs, and awareness; preserve crypto-safe room IDs and peer cleanup.
 
+## Browser baseline
+
+The supported browser baseline lives in `src/app/shell/support/baseline.ts` and feeds the Vite `build.target`, the startup gate, and the documented system requirements; change all three together, including `desktop/tauri.conf.json` `minimumSystemVersion`. Vite lowers syntax but never polyfills APIs, so two data-driven checks enforce the baseline: the app and browser-shipped packages pin TypeScript `lib` to ES2023 (the last edition those engines implement fully), so newer built-ins fail type-checking, and `compat/compat` (`eslint-plugin-compat` under oxlint, fed the same browsers from `settings.browsers`) rejects Web APIs they lack. Do not raise the lib to `ESNext` in those tsconfigs; use `createDeferred()` from `src/app/runtime/deferred.ts` instead of `Promise.withResolvers()`. Node-only packages (`cli`, `mcp`, `harness`) are exempt from both. `tests/app/shell/support/baseline.test.ts` keeps the tsconfigs and oxlint browsers in step with the baseline. `src/main.ts` must stay a tiny gate that only dynamically imports `src/boot.ts`, so an unsupported engine can still render `src/app/shell/support/` guidance.
+
 ## Shell
 
 - Browser and native menus share `src/app/shell/menu/schema.ts`; handle IDs in `use.ts` or editor commands, and regenerate `desktop/generated/menu.json` with `bun run generate:tauri-menu`.
@@ -66,5 +70,5 @@ Root Tauri/Vite app. Services and state live under `src/app/**`, views under `sr
 
 ### Storybook
 
-- Colocate `ComponentName.stories.ts` with `ComponentName.vue`; multipart compositions may use a descriptive family name. Preserve explicit titles and exported story names during moves. Default playgrounds stay static; interaction flows get named stories. Use deterministic fixtures and colocated Vue demos for substantial markup.
+- Colocate `ComponentName.stories.ts` with `ComponentName.vue`; multipart compositions may use a descriptive family name. Preserve explicit titles and exported story names during moves. Default playgrounds stay static; interaction flows get named stories. Prefer inline story fixtures for small app-local states; use colocated `examples/<Variant>.vue` SFCs for substantial templates or fixtures that need SFC template/slot typing, including app-only fixtures (shared SDK examples follow `packages/vue/AGENTS.md`, Documentation). Story templates compile at runtime, so they must be plain JavaScript with no TypeScript syntax, and `icon-lucide-*` tags do not resolve there; import icons from `~icons/...` and register them.
 - Isolated visual states of feedback components belong in stories, not Playwright application screenshots. Do not add automated tests or snapshot baselines for CSS-only changes (spacing, sizing, colors, breakpoints); verify those visually. Settings E2E covers integration behavior: feedback appearance, validation and focus, retained drafts, successful retries.

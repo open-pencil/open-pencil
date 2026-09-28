@@ -96,6 +96,13 @@ export async function preparePublishDirectories(
     const destinationDir = join(outRoot, basename(pkg.directory))
     await mkdir(destinationDir, { recursive: true })
 
+    // npm always packs a root LICENSE, so a package without its own gets the repository's text.
+    const hasOwnLicense = existsSync(join(sourceDir, LICENSE_FILE))
+    const rootLicense = join(options.root, LICENSE_FILE)
+    if (!hasOwnLicense && !existsSync(rootLicense)) {
+      throw new Error(`${pkg.directory}: no LICENSE in the package or the repository root`)
+    }
+
     const listing = await runCommand({
       command: 'npm',
       args: ['pack', '--dry-run', '--json', '--ignore-scripts'],
@@ -109,14 +116,7 @@ export async function preparePublishDirectories(
       await cp(join(sourceDir, relativePath), destination, { dereference: false })
     }
 
-    // npm always packs a root LICENSE, so a package without its own gets the repository's text.
-    if (!files.includes(LICENSE_FILE)) {
-      const rootLicense = join(options.root, LICENSE_FILE)
-      if (!existsSync(rootLicense)) {
-        throw new Error(`${pkg.directory}: no LICENSE in the package or the repository root`)
-      }
-      await cp(rootLicense, join(destinationDir, LICENSE_FILE))
-    }
+    if (!hasOwnLicense) await cp(rootLicense, join(destinationDir, LICENSE_FILE))
 
     const packageJSON = await readPackageManifest(join(sourceDir, 'package.json'))
     const publishJSON = publishPackageJSON(packageJSON, options.coreVersion)

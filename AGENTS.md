@@ -6,31 +6,32 @@ This file holds the repository map and the rules that apply everywhere. Rules fo
 
 ## Map
 
-| Path                   | Owns                                                                                                        | Guide                             |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| `packages/scene-graph` | Framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing            | `packages/scene-graph/AGENTS.md`  |
-| `packages/pen`         | Pencil.dev `.pen` model, parser, SceneGraph adapter                                                         | —                                 |
-| `packages/kiwi`        | SceneGraph-independent Kiwi schema/runtime, codecs, containers, parse helpers                               | `packages/fig/AGENTS.md`          |
-| `packages/fig`         | `.fig` archives, SceneGraph conversion, metadata policy, component/instance interpretation, Figma clipboard | `packages/fig/AGENTS.md`          |
-| `packages/core`        | Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, document I/O; no browser DOM      | `packages/core/AGENTS.md`         |
-| `packages/dom-css`     | DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters                                          | —                                 |
-| `packages/vue`         | Headless Vue 3 SDK primitives, composables, commands, i18n, menu model                                      | `packages/vue/AGENTS.md`          |
-| `packages/cli`         | Headless `.fig` inspection, export, linting, `eval`                                                         | `packages/cli/AGENTS.md`          |
-| `packages/mcp`         | stdio and Hono HTTP MCP server reusing Core tools                                                           | `packages/mcp/AGENTS.md`          |
-| `packages/harness`     | Optional Node companion for HarnessAgent sessions                                                           | `packages/harness/AGENTS.md`      |
-| `packages/docs`        | Published VitePress site                                                                                    | `packages/docs/AGENTS.md`         |
-| `src`                  | Tauri/Vite app: services and state in `src/app/**`, views in `src/views/**`, UI in `src/components/**`      | `src/AGENTS.md`                   |
-| `desktop`              | Tauri v2 shell, capabilities, native credentials, menus                                                     | `desktop/AGENTS.md`               |
-| `tests`                | Central app, integration, E2E, native, and Figma acceptance tests                                           | `tests/AGENTS.md`                 |
-| `tools`, `.github`     | Private repo tooling, CI classification, releases, brand generation                                         | `tools/AGENTS.md`                 |
-| `skills/open-pencil`   | Installable agent skill                                                                                     | `packages/core/AGENTS.md` (Tools) |
-| `assets/brand`         | Canonical brand artwork                                                                                     | `assets/brand/README.md`          |
+| Path                   | Owns                                                                                                                                                                                              | Guide                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `packages/scene-graph` | Framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing, plus the shared primitives formats need: color conversion and management, text/layout direction | `packages/scene-graph/AGENTS.md`  |
+| `packages/pen`         | Pencil.dev `.pen` model, parser, SceneGraph adapter                                                                                                                                               | —                                 |
+| `packages/kiwi`        | SceneGraph-independent Kiwi schema/runtime, codecs, containers, parse helpers                                                                                                                     | `packages/fig/AGENTS.md`          |
+| `packages/fig`         | `.fig` archives, SceneGraph conversion, metadata policy, component/instance interpretation, Figma clipboard                                                                                       | `packages/fig/AGENTS.md`          |
+| `packages/core`        | Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, document I/O; depends on scene-graph and the format packages (pen, kiwi, fig, dom-css); no browser DOM                  | `packages/core/AGENTS.md`         |
+| `packages/dom-css`     | DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters; depends only on scene-graph and takes engine services such as web-font resolution as injected options                         | —                                 |
+| `packages/vue`         | Headless Vue 3 SDK primitives, composables, commands, i18n, menu model                                                                                                                            | `packages/vue/AGENTS.md`          |
+| `packages/cli`         | Headless `.fig` inspection, export, linting, `eval`                                                                                                                                               | `packages/cli/AGENTS.md`          |
+| `packages/mcp`         | stdio and Hono HTTP MCP server reusing Core tools                                                                                                                                                 | `packages/mcp/AGENTS.md`          |
+| `packages/harness`     | Optional Node companion for HarnessAgent sessions                                                                                                                                                 | `packages/harness/AGENTS.md`      |
+| `packages/docs`        | Published VitePress site                                                                                                                                                                          | `packages/docs/AGENTS.md`         |
+| `src`                  | Tauri/Vite app: services and state in `src/app/**`, views in `src/views/**`, UI in `src/components/**`                                                                                            | `src/AGENTS.md`                   |
+| `desktop`              | Tauri v2 shell, capabilities, native credentials, menus                                                                                                                                           | `desktop/AGENTS.md`               |
+| `tests`                | Central app, integration, E2E, native, and Figma acceptance tests                                                                                                                                 | `tests/AGENTS.md`                 |
+| `tools`, `.github`     | Private repo tooling, CI classification, releases, brand generation                                                                                                                               | `tools/AGENTS.md`                 |
+| `skills/open-pencil`   | Installable agent skill                                                                                                                                                                           | `packages/core/AGENTS.md` (Tools) |
+| `assets/brand`         | Canonical brand artwork                                                                                                                                                                           | `assets/brand/README.md`          |
 
 ## Commands
 
 - `bun run dev:portless` — preferred browser server at `https://open-pencil.localhost`; worktrees get `https://<branch>.open-pencil.localhost` and a sibling `mcp.open-pencil` URL with isolated runtime discovery.
 - `bun run dev` — fixed `http://localhost:1420`; use only for Playwright, Tauri, and Dev Containers.
 - `bun run tauri dev` — desktop app with hot reload.
+- A fresh worktree needs `bun install` and `bun run build:packages` before docs, Storybook, or any workflow that resolves workspace subpath exports; without the package builds those resolve to missing `packages/*/dist` targets.
 - `bun run check` — complete build, lint, type, architecture, docs, package, dependency, security, tooling, and duplication gate.
 - `bun run format` — format and sort imports.
 - `bun run test:unit` / `bun run test` / `bun run test:storybook` — engine/unit, app Playwright, and Storybook Playwright suites. See `tests/AGENTS.md` for server selection and worktree ports.
@@ -52,6 +53,8 @@ Before a PR run `bun run check`, `bun run format`, `bun run test:unit`, and `bun
 - No `any`, non-null assertions, or `Math.random()`; use precise types, guards, and `crypto.getRandomValues()`.
 - Valibot for first-party runtime validation. Keep Zod only where an upstream dependency requires it; never maintain parallel first-party schemas in both.
 - Use existing dependencies before writing utilities: `culori` for color conversion, `es-toolkit` for focused helpers (without replacing clear native code), VueUse for browser, event, focus, clipboard, storage, and timer behavior (one-shot rAF or service-owned timers are fine when clearer), `dedent` for multiline prompt composition and embedded examples. Keep substantial prompt prose in the owning Markdown source and compose it.
+- Use `js-base64` directly for Base64: `fromUint8Array`/`toUint8Array` for bytes, `encode`/`decode` for text, and `isValid` before decoding input from outside (clipboard, imported files, tool arguments). Do not wrap it or use `atob`, `btoa`, or `Buffer` Base64 conversions; `open-pencil/no-hand-rolled-base64` enforces this.
+- Browser-shipped code targets the supported browser baseline in `src/app/shell/support/baseline.ts`: TypeScript `lib` stays ES2023 and `compat/compat` rejects missing Web APIs; Node-only packages (`cli`, `mcp`, `harness`) are exempt. Details in `src/AGENTS.md` (Browser baseline).
 - Components must not hold module-level mutable state. Name repeated or cross-feature constants; app-wide values belong in `src/constants.ts`.
 - Window API augmentations belong to the owning compilation boundary: `src/global.d.ts` for the app, the package's `global.d.ts` for package DOM gaps, `tests/helpers/tauri/native-global.d.ts` for native tests. Never put `declare global` in specs or implementation modules; include canonical declarations through tsconfig. Keep app API contracts named and owned by their implementation domain; derive vendor API types from top-level type imports. Optional runtime globals stay optional and need a runtime guard.
 - Use `structuredClone` or typed copy helpers for nested mutable data. Self-review for duplication, named shared types, precise unions, and files approaching ~600 lines.

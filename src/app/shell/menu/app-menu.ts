@@ -15,6 +15,7 @@ import IconUndo from '~icons/lucide/undo-2'
 import IconZoomIn from '~icons/lucide/zoom-in'
 import IconZoomOut from '~icons/lucide/zoom-out'
 
+import type { BuiltinIOFormatId } from '@open-pencil/core/io'
 import type { CommandPaletteGroup, CommandPaletteItem, MenuEntry } from '@open-pencil/vue'
 import { shortcutPlatform, useEditorCommands, useI18n } from '@open-pencil/vue'
 
@@ -143,7 +144,7 @@ export function useAppMenu() {
     }))
   )
 
-  function exportSelection(format: 'png' | 'svg' | 'pptx' | 'fig') {
+  function exportSelection(format: BuiltinIOFormatId) {
     if (store.state.selectedIds.size > 0) void store.exportSelection(1, format)
   }
 

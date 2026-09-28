@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises'
 
 import type { Browser } from '@playwright/test'
+import { toUint8Array } from 'js-base64'
 
 import { expect, test } from '#tests/e2e/fixtures'
 import { CanvasHelper } from '#tests/helpers/canvas'
@@ -154,7 +155,7 @@ async function captureText(
       expect(result.ink).toBeGreaterThan(100)
       expect(result.hadBacking).toBe(backing)
       await cdp.detach()
-      return Buffer.from(result.png.split(',')[1], 'base64')
+      return Buffer.from(toUint8Array(result.png.split(',')[1]))
     } finally {
       await lease.evaluate((release) => release?.())
       await lease.dispose()

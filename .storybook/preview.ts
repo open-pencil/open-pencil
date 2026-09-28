@@ -50,7 +50,7 @@ const preview: Preview = {
             'Overlays',
             ['Dialog'],
             'Feedback',
-            ['Placeholder'],
+            ['Placeholder', 'Toast'],
             'Layout',
             ['Panel Foundation']
           ],

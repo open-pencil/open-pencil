@@ -1,8 +1,8 @@
 import { expect, test } from 'bun:test'
 
-import { parsePackageManifest } from '../src/manifest/read'
-import { isRegistryNotFound, validateRegistryVersion } from '../src/npm/registry'
-import { parseWorkspace } from '../src/workspace/schema'
+import { parsePackageManifest } from '#package-artifacts/manifest/read'
+import { isRegistryNotFound, validateRegistryVersion } from '#package-artifacts/npm/registry'
+import { parseWorkspace } from '#package-artifacts/workspace/schema'
 
 const identity = { name: 'fixture', version: '1.0.0' }
 

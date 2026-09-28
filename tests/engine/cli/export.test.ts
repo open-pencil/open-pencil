@@ -177,6 +177,29 @@ test('export CLI can write HTML styles as Tailwind classes', async () => {
   expect(html).not.toContain('style=')
 })
 
+test('export CLI writes Tailwind JSX for a page', async () => {
+  const { dir, figPath } = await createFigFixture()
+  const output = join(dir, 'card.jsx')
+
+  const { stderr, exitCode } = await runOpenPencilCLI([
+    'export',
+    figPath,
+    '--format',
+    'jsx',
+    '--style',
+    'tailwind',
+    '--output',
+    output
+  ])
+
+  expect(stderr).toBe('')
+  expect(exitCode).toBe(0)
+  const jsx = await Bun.file(output).text()
+  expect(jsx).toStartWith('<div data-name="First slide" className="')
+  expect(jsx).toContain('<div data-name="Export Card" className="flex p-4 gap-2')
+  expect(jsx).not.toContain('Second Card')
+})
+
 test('export CLI can write standalone HTML', async () => {
   const { dir, figPath } = await createFigFixture()
   const output = join(dir, 'card-standalone.html')

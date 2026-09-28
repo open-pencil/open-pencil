@@ -1,23 +1,50 @@
-import { twMerge } from 'tailwind-merge'
-import { tv } from 'tailwind-variants'
+import { tv, type VariantProps } from 'tailwind-variants'
 
+import type { ComponentUI } from '@/components/ui/types'
+import toastTheme from '@/theme/feedback/toast'
+
+export const toast = tv(toastTheme)
+export type ToastUI = ComponentUI<typeof toastTheme>
+export type ToastProgressState = VariantProps<typeof toast>['progress']
+
+/** Selects the toast treatment; non-default tones are dismissible and copyable. */
 export type ToastVariant = 'default' | 'warning' | 'error'
 
-const toast = tv({
-  base: 'motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none flex max-w-sm items-start gap-1.5 rounded-md px-2.5 py-1.5 text-xs shadow-md data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:slide-out-to-top-1 data-[state=open]:animate-in data-[state=open]:fade-in data-[state=open]:slide-in-from-top-1 data-[swipe=cancel]:translate-y-0 data-[swipe=cancel]:transition-transform data-[swipe=move]:translate-y-[var(--reka-toast-swipe-move-y)]',
-  variants: {
-    tone: {
-      default: 'bg-accent text-white',
-      warning:
-        'border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]',
-      error: 'bg-red-600 text-white'
-    }
-  },
-  defaultVariants: { tone: 'default' }
-})
+/** Progress reported by a long-running operation behind a toast. */
+export interface ToastProgress {
+  /** Completed units. */
+  value?: number
+  /** Total units; omit alongside `value` when the producer cannot measure the work. */
+  max?: number
+}
 
-export function useToastUI(options?: { tone?: ToastVariant; ui?: { base?: string } }) {
-  return {
-    base: twMerge(toast(options), options?.ui?.base)
-  }
+export function toastProgressPercent(progress?: ToastProgress | null): number | null {
+  if (progress?.value === undefined || progress.max === undefined) return null
+  if (progress.max <= 0) return null
+  return Math.min(100, Math.max(0, Math.round((progress.value / progress.max) * 100)))
+}
+
+export function toastProgressState(progress?: ToastProgress | null): ToastProgressState {
+  if (!progress) return 'none'
+  return toastProgressPercent(progress) === null ? 'indeterminate' : 'determinate'
+}
+
+export interface ToastProps {
+  message: string
+  variant?: ToastVariant
+  /** Number of times this message repeated while it stayed visible. */
+  count?: number
+  /** Present while a long-running operation reports progress. */
+  progress?: ToastProgress | null
+  /** Measurement text beside the bar, formatted by the producing domain. */
+  progressLabel?: string
+  /** Renders an inline action that emits `action` when pressed. */
+  actionLabel?: string
+  /** Milliseconds before auto-dismissal; 0 keeps a reported-progress toast open. */
+  duration?: number
+  copyable?: boolean
+  copyLabel?: string
+  copiedLabel?: string
+  closeLabel?: string
+  ui?: ToastUI
 }

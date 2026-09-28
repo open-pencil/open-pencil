@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     index: './src/index.ts',
     browser: './src/browser.ts',
+    export: './src/export.ts',
     'jsx-runtime': './src/jsx/runtime.ts',
     'jsx-dev-runtime': './src/jsx/dev-runtime.ts'
   },
@@ -18,7 +19,7 @@ export default defineConfig({
     moduleSideEffects: false
   },
   deps: {
-    neverBundle: ['@open-pencil/core', /^@open-pencil\/core\//, 'node:fs/promises'],
+    neverBundle: ['@open-pencil/scene-graph', /^@open-pencil\/scene-graph\//, 'node:fs/promises'],
     onlyBundle: false
   },
   outputOptions: {

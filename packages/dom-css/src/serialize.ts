@@ -58,7 +58,7 @@ function serializeStyle(node: DesignElement): string | undefined {
     .join('; ')
 }
 
-function serializeTailwindClasses(node: DesignElement): string | undefined {
+export function serializeTailwindClasses(node: DesignElement): string | undefined {
   const style = serializeStyle(node)
   if (!style) return undefined
   const className = twirl(style)

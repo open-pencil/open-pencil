@@ -26,7 +26,7 @@ const message = computed(() => rendering.value.wideGamutUnavailable)
 </script>
 
 <template>
-  <AppBanner v-if="show" test-id="wide-gamut-banner" storage-key="wide-gamut-banner-dismissed">
+  <AppBanner v-if="show" storage-key="wide-gamut-banner-dismissed">
     {{ message }}
     <ExternalLink :href="supportURL" class="ml-1">{{ common.browserSupport }}</ExternalLink>
     <template #dismiss>{{ common.dismiss }}</template>

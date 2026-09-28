@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, within } from 'storybook/test'
 
-import CommandPaletteDemo from './CommandPaletteDemo.vue'
+import CommandPaletteStates from './examples/States.vue'
 
 const meta = {
   title: 'Vue SDK/Primitives/Command Palette',
-  component: CommandPaletteDemo,
+  component: CommandPaletteStates,
   tags: ['autodocs'],
   parameters: {
     docs: {
@@ -14,7 +14,7 @@ const meta = {
       }
     }
   }
-} satisfies Meta<typeof CommandPaletteDemo>
+} satisfies Meta<typeof CommandPaletteStates>
 
 export default meta
 type Story = StoryObj<typeof meta>

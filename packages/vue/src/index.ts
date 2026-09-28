@@ -107,7 +107,7 @@ export type {
   UseDocumentWorkspaceOptions
 } from '#vue/document/workspace/use'
 export { useExport } from '#vue/document/export/use'
-export type { ExportFormatId, ExportSetting } from '#vue/document/export/use'
+export type { ExportFormatId, ExportFormatOption, ExportSetting } from '#vue/document/export/use'
 export { useFillControls } from '#vue/controls/fill/use'
 export { useColorVariableBinding } from '#vue/controls/color-variable-binding/use'
 export { useNumberVariableBinding } from '#vue/controls/number-variable-binding/use'

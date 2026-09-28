@@ -6,7 +6,8 @@ import {
   emulateWideGamutDisplay,
   focusPaintEffects,
   sceneBufferState,
-  waitForSettledScene
+  waitForSettledScene,
+  wideGamutBanner
 } from '#tests/helpers/canvas/color-space'
 
 test.use({ viewport: { width: 1200, height: 900 } })
@@ -56,7 +57,7 @@ test('warns when a Display-P3 document cannot be presented in wide gamut', async
   await canvas.waitForInit()
 
   // New documents are sRGB, so this notice only applies once a document declares Display P3.
-  const banner = page.getByTestId('wide-gamut-banner')
+  const banner = wideGamutBanner(page)
   await expect(banner).toBeHidden()
   expect(await sceneBufferState(page)).toMatchObject({
     colorSpace: 'srgb',

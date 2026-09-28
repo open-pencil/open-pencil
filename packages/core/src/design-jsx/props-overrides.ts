@@ -8,9 +8,9 @@ import type {
   SceneNode,
   Stroke
 } from '@open-pencil/scene-graph'
+import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
 import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
 
-import { colorToFill, parseColor } from '#core/color'
 import { TRANSPARENT } from '#core/constants'
 
 const WEIGHT_MAP: Record<string, number> = {

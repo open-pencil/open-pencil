@@ -2,7 +2,7 @@
 import { PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import { tv } from 'tailwind-variants'
 
-import { colorToCSS } from '@open-pencil/core/color'
+import { colorToCSS } from '@open-pencil/scene-graph/color'
 
 import { initials } from '@/app/shell/ui'
 import HudButton from '@/components/mobile-hud/HudButton.vue'

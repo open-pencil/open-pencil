@@ -2,6 +2,7 @@ import type { NodeChange, PluginData, PluginRelaunchData } from '@open-pencil/ki
 import { guidToString } from '@open-pencil/kiwi/fig/guid'
 import {
   clampExportScale,
+  isExportFormatId,
   type ExportFormatId,
   type ExportSetting,
   type PluginDataEntry,
@@ -133,12 +134,6 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     if (variableGuid) bindings[`strokes/${i}/color`] = guidToString(variableGuid)
   })
   return bindings
-}
-
-function isExportFormatId(value: unknown): value is ExportFormatId {
-  return (
-    value === 'png' || value === 'jpg' || value === 'webp' || value === 'svg' || value === 'pdf'
-  )
 }
 
 function parseExportSettingsPluginValue(value: string | null): ExportSetting[] | null {

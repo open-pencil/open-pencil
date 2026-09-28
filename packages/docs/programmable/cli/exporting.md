@@ -53,7 +53,7 @@ This policy does not apply to exports from the running app, or to SVG, PowerPoin
 Export as JSX with Tailwind utility classes:
 
 ```sh
-openpencil export design.fig -f jsx --style tailwind
+openpencil export design.fig -f tailwind-jsx    # or: -f jsx --style tailwind
 ```
 
 Output:

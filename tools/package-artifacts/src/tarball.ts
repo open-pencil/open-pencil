@@ -1,13 +1,11 @@
-import { execFile } from 'node:child_process'
-import { readdir } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { promisify } from 'node:util'
+
+import { unpack } from '@publint/pack'
 
 import { collectExportTargets } from './manifest/exports'
 import { parsePackageManifest } from './manifest/read'
 import type { PackageManifest } from './manifest/types'
-
-const execFileAsync = promisify(execFile)
 
 export interface TarballDiagnostic {
   field: string
@@ -32,16 +30,22 @@ export function packageExportTargetPaths(manifest: Pick<PackageManifest, 'export
   return collectExportTargets(manifest.exports).map(({ target }) => target)
 }
 
-export async function tarballEntries(tarballPath: string): Promise<Set<string>> {
-  const { stdout } = await execFileAsync('tar', ['-tf', tarballPath], { encoding: 'utf8' })
-  return new Set(stdout.trim().split('\n').filter(Boolean))
+export interface TarballContents {
+  entries: Set<string>
+  manifest: PackageManifest
 }
 
-export async function tarballPackageJSON(tarballPath: string): Promise<PackageManifest> {
-  const { stdout } = await execFileAsync('tar', ['-xOf', tarballPath, 'package/package.json'], {
-    encoding: 'utf8'
-  })
-  return parsePackageManifest(stdout, `${tarballPath}: package/package.json`)
+/** Decompress and read a package tarball in-process; no `tar` executable is involved. */
+export async function readTarball(tarballPath: string): Promise<TarballContents> {
+  const { files } = await unpack(await readFile(tarballPath))
+  const entries = new Set(files.map(({ name }) => name))
+  const manifestFile = files.find(({ name }) => name === 'package/package.json')
+  if (!manifestFile) throw new Error(`${tarballPath}: package/package.json is missing`)
+  const manifest = parsePackageManifest(
+    new TextDecoder().decode(manifestFile.data),
+    `${tarballPath}: package/package.json`
+  )
+  return { entries, manifest }
 }
 
 function exportTargetPattern(target: string): RegExp {
@@ -60,10 +64,7 @@ function targetExists(entries: Set<string>, target: string): boolean {
 }
 
 export async function inspectTarball(tarballPath: string): Promise<TarballInspection> {
-  const [entries, manifest] = await Promise.all([
-    tarballEntries(tarballPath),
-    tarballPackageJSON(tarballPath)
-  ])
+  const { entries, manifest } = await readTarball(tarballPath)
   const diagnostics: TarballDiagnostic[] = []
   const report = (field: string, message: string) =>
     diagnostics.push({ field, message, packageName: manifest.name, tarballPath })

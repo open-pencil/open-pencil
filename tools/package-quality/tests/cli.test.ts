@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 
+import { checkCommand, smokeCommand, verifyCommand } from '#package-quality/commands'
 import { renderUsage } from 'citty'
-
-import { checkCommand, smokeCommand, verifyCommand } from '../src/commands'
 
 describe('package quality commands', () => {
   test('exposes stable check, smoke, and verify workflows', async () => {

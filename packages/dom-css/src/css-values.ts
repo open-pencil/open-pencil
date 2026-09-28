@@ -1,7 +1,7 @@
 import valueParser, { type ParsedNode } from 'postcss-value-parser'
 
-import { colorToCSS, parseColor } from '@open-pencil/core/color'
 import type { Effect, Fill, SceneNode, Stroke } from '@open-pencil/scene-graph'
+import { colorToCSS, colorToHex, parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { DesignStyleDeclaration } from './types'
@@ -24,9 +24,14 @@ export function parseCSSColor(value: string | undefined): Color | null {
   return parseColor(trimmed)
 }
 
+/** Opaque colors as hex, which Tailwind matches to its palette; translucent ones as `rgba()`. */
+export function cssColor(color: Color): string {
+  return color.a >= 1 ? colorToHex(color) : colorToCSS(color)
+}
+
 export function fillToCSS(fill: Fill | undefined): string | undefined {
   if (fill?.type !== 'SOLID' || !fill.visible) return undefined
-  return colorToCSS({ ...fill.color, a: fill.opacity })
+  return cssColor({ ...fill.color, a: fill.opacity })
 }
 
 export function colorToFillFromCSS(value: string | undefined): Fill[] {
@@ -37,7 +42,7 @@ export function colorToFillFromCSS(value: string | undefined): Fill[] {
 
 export function strokeColorToCSS(stroke: Stroke | undefined): string | undefined {
   if (!stroke?.visible) return undefined
-  return colorToCSS({ ...stroke.color, a: stroke.opacity })
+  return cssColor({ ...stroke.color, a: stroke.opacity })
 }
 
 export function strokeToCSS(stroke: Stroke | undefined): string | undefined {
@@ -56,9 +61,30 @@ export function colorToStrokeFromCSS(
   return [{ color, weight, opacity: color.a, visible: true, align: 'INSIDE' }]
 }
 
+function shadowToCSS(effect: Effect): string {
+  const inset = effect.type === 'INNER_SHADOW' ? 'inset ' : ''
+  return `${inset}${effect.offset.x}px ${effect.offset.y}px ${effect.radius}px ${effect.spread}px ${cssColor(effect.color)}`
+}
+
 export function dropShadowToCSS(effect: Effect | undefined): string | undefined {
   if (effect?.type !== 'DROP_SHADOW' || !effect.visible) return undefined
-  return `${effect.offset.x}px ${effect.offset.y}px ${effect.radius}px ${effect.spread}px ${colorToCSS({ ...effect.color, a: effect.color.a })}`
+  return shadowToCSS(effect)
+}
+
+/** Every visible shadow, in order, plus layer and background blur. */
+export function effectsToCSS(effects: Effect[]): DesignStyleDeclaration {
+  const style: DesignStyleDeclaration = {}
+  const visible = effects.filter((effect) => effect.visible)
+  const shadows = visible.filter(
+    (effect) => effect.type === 'DROP_SHADOW' || effect.type === 'INNER_SHADOW'
+  )
+  if (shadows.length > 0) style['box-shadow'] = shadows.map(shadowToCSS).join(', ')
+  for (const effect of visible) {
+    if (effect.type === 'LAYER_BLUR' || effect.type === 'FOREGROUND_BLUR')
+      style.filter = `blur(${effect.radius}px)`
+    if (effect.type === 'BACKGROUND_BLUR') style['backdrop-filter'] = `blur(${effect.radius}px)`
+  }
+  return style
 }
 
 function firstShadowLayerNodes(value: string): ParsedNode[] {

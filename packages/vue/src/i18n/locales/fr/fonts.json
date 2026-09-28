@@ -27,6 +27,8 @@
   "expandIssues": "Afficher les problèmes de police",
   "collapseIssues": "Masquer les problèmes de police",
   "noSubstitute": "aucun remplacement disponible",
+  "unsupportedFormatShort": "format non pris en charge",
+  "unsupportedFormat": "Installée, mais dans un format qu’OpenPencil ne peut pas encore afficher",
   "settingsDesktopDescription": "Accédez aux polices système, aux fournisseurs en ligne, aux packs de secours et aux téléchargements en cache.",
   "settingsBrowserDescription": "Autorisez l’accès du navigateur aux polices locales et gérez les fournisseurs de polices en ligne.",
   "providerEnabled": "{provider} activé.",

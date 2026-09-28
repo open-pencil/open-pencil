@@ -49,6 +49,19 @@ describe('canvas text font variations', () => {
   test('omits font variations when no axes are set', () => {
     expect(textFontVariations([])).toBeUndefined()
     expect(textFontVariations(undefined)).toBeUndefined()
+    expect(textFontVariations(undefined, [])).toBeUndefined()
+  })
+
+  test('applies named-instance axes of a variable face under explicit axes', () => {
+    const medium = [
+      { axis: 'wdth', value: 100 },
+      { axis: 'wght', value: 510 }
+    ]
+    expect(textFontVariations(undefined, medium)).toEqual(medium)
+    expect(textFontVariations([{ axis: 'wght', value: 650 }], medium)).toEqual([
+      { axis: 'wdth', value: 100 },
+      { axis: 'wght', value: 650 }
+    ])
   })
 
   test('passes imported OpenType feature toggles to CanvasKit text styles', () => {

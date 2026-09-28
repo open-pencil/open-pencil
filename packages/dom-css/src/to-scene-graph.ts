@@ -1,4 +1,5 @@
-import { decodeBase64 } from '@open-pencil/core/bytes'
+import { isValid, toUint8Array } from 'js-base64'
+
 import {
   SceneGraph,
   type Fill,
@@ -239,8 +240,9 @@ function bytesFromDataURL(value: string | undefined): Uint8Array | null {
   if (commaIndex === -1) return null
   const metadata = value.slice(0, commaIndex)
   const body = value.slice(commaIndex + 1)
-  if (!metadata.endsWith(';base64')) return null
-  return decodeBase64(body)
+  // Invalid Base64 in imported HTML drops that image instead of the whole import.
+  if (!metadata.endsWith(';base64') || !isValid(body)) return null
+  return toUint8Array(body)
 }
 
 function applyImageFill(

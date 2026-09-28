@@ -1,7 +1,7 @@
 import type { Color as RekaColor } from 'reka-ui'
 import type { MaybeRefOrGetter } from 'vue'
 
-import type { OkHCLColor, RenderColorSpace } from '@open-pencil/core/color'
+import type { OkHCLColor, RenderColorSpace } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
 export type BuiltInColorFormat = 'hex' | 'rgb' | 'hsl' | 'hsb' | 'okhcl'

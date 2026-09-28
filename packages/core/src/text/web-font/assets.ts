@@ -1,5 +1,7 @@
 import type { RemoteFontSource, ResolveFontResult } from 'unifont'
 
+import type { WebFontFaceAsset, WebFontFaceRequest } from '@open-pencil/dom-css/export'
+
 import {
   createProviderUnifont,
   isRemoteFontSource,
@@ -10,24 +12,6 @@ import {
   type WebFontFetch,
   type WebFontProviderId
 } from '#core/text/web-fonts'
-
-export interface WebFontFaceRequest {
-  family: string
-  weight: number
-  style?: 'normal' | 'italic'
-}
-
-export interface WebFontFaceAsset {
-  family: string
-  weight: string | number | [number, number]
-  style: string
-  display?: string
-  stretch?: string
-  unicodeRange?: string[]
-  format: 'woff2' | 'woff' | 'opentype' | 'truetype'
-  path: string
-  content: Uint8Array
-}
 
 export interface ExportWebFontFaceAssetsOptions {
   fonts: WebFontFaceRequest[]
