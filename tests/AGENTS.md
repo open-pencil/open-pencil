@@ -22,7 +22,7 @@
 
 - Use the canonical `playwright.config.ts`; do not create task-specific config copies or server runners. Playwright owns Vite; the Vite automation plugin owns MCP startup and cleanup; browser fixtures own interactions, not server processes.
 - Test scripts select their server; direct Playwright commands start both servers unless `OPENPENCIL_TEST_SERVER=app|storybook|all` is set. Managed runs start the intended checkout; server reuse is opt-in for local development only, never for baseline comparisons or CI. Isolate the app URL, MCP endpoint, CORS origin, socket, and discovery path together.
-- Pixel-affecting renderer changes need committed canvas snapshots (`packages/core/src/canvas/AGENTS.md`). Update only the justified affected snapshot and rerun without update mode.
+- Pixel-affecting renderer changes need committed canvas snapshots (`packages/core/AGENTS.md`, Renderer). Update only the justified affected snapshot and rerun without update mode.
 
 ## Native WebView
 

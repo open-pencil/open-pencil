@@ -18,32 +18,32 @@ async function repo(rootGuide: string, guides: string[] = []) {
 describe('listedGuides', () => {
   test('collects unique nested guide paths written as inline code', () => {
     const markdown = [
-      '| `packages/core` | Core | `packages/core/AGENTS.md`, `packages/core/src/editor/AGENTS.md` |',
+      '| `packages/core` | Core | `packages/core/AGENTS.md`, `packages/vue/AGENTS.md` |',
       'See `packages/core/AGENTS.md` again and `AGENTS.md` at the root.',
       'Not a guide: `packages/core/README.md` or packages/vue/AGENTS.md without code spans.'
     ].join('\n')
 
-    expect(listedGuides(markdown)).toEqual([
-      'packages/core/AGENTS.md',
-      'packages/core/src/editor/AGENTS.md'
-    ])
+    expect(listedGuides(markdown)).toEqual(['packages/core/AGENTS.md', 'packages/vue/AGENTS.md'])
   })
 })
 
 describe('checkGuideMap', () => {
   test('passes when every nested guide is listed and every listed guide exists', async () => {
-    const repoRoot = await repo('| `src` | App | `src/AGENTS.md`, `src/components/AGENTS.md` |\n', [
-      'src/AGENTS.md',
-      'src/components/AGENTS.md',
-      'node_modules/dep/AGENTS.md',
-      '.claude/worktrees/other/packages/core/AGENTS.md'
-    ])
+    const repoRoot = await repo(
+      '| `src` | App | `src/AGENTS.md` |\n| `tests` | Tests | `tests/AGENTS.md` |\n',
+      [
+        'src/AGENTS.md',
+        'tests/AGENTS.md',
+        'node_modules/dep/AGENTS.md',
+        '.claude/worktrees/other/packages/core/AGENTS.md'
+      ]
+    )
 
     const result = checkGuideMap({ repoRoot })
 
     expect(result.errors).toEqual([])
-    expect(result.guides).toEqual(['src/AGENTS.md', 'src/components/AGENTS.md'])
-    expect(result.listed).toEqual(['src/AGENTS.md', 'src/components/AGENTS.md'])
+    expect(result.guides).toEqual(['src/AGENTS.md', 'tests/AGENTS.md'])
+    expect(result.listed).toEqual(['src/AGENTS.md', 'tests/AGENTS.md'])
   })
 
   test('reports unlisted guides on disk and listed guides that do not exist', async () => {

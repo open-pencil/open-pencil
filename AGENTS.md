@@ -2,29 +2,29 @@
 
 Vue 3 + CanvasKit (Skia WASM) + Yoga WASM design editor. Tauri v2 desktop, also runs in browser. Bun workspace monorepo.
 
-This file holds the repository map and the rules that apply everywhere. Rules for one folder live in that folder's `AGENTS.md`. **Before changing files under a mapped path, read every `AGENTS.md` from the repository root down to that folder.** Paths in every guide are repository-relative. Process for humans (setup, PRs, commits) is in `CONTRIBUTING.md`; product direction and Figma gaps are in `packages/docs/development/roadmap.md`.
+This file holds the repository map and the rules that apply everywhere. Rules for one folder live in that folder's `AGENTS.md`. **Before changing files under a mapped path, read this file and that path's guide.** Paths in every guide are repository-relative. Process for humans (setup, PRs, commits) is in `CONTRIBUTING.md`; product direction and Figma gaps are in `packages/docs/development/roadmap.md`.
 
 ## Map
 
-| Path                   | Owns                                                                                                        | Guide                                                                                                                                          |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/scene-graph` | Framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing            | `packages/scene-graph/AGENTS.md`                                                                                                               |
-| `packages/pen`         | Pencil.dev `.pen` model, parser, SceneGraph adapter                                                         | —                                                                                                                                              |
-| `packages/kiwi`        | SceneGraph-independent Kiwi schema/runtime, codecs, containers, parse helpers                               | `packages/fig/AGENTS.md`                                                                                                                       |
-| `packages/fig`         | `.fig` archives, SceneGraph conversion, metadata policy, component/instance interpretation, Figma clipboard | `packages/fig/AGENTS.md`                                                                                                                       |
-| `packages/core`        | Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, document I/O; no browser DOM      | `packages/core/AGENTS.md`, `packages/core/src/editor/AGENTS.md`, `packages/core/src/canvas/AGENTS.md`, `packages/core/src/figma-api/AGENTS.md` |
-| `packages/dom-css`     | DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters                                          | —                                                                                                                                              |
-| `packages/vue`         | Headless Vue 3 SDK primitives, composables, commands, i18n, menu model                                      | `packages/vue/AGENTS.md`                                                                                                                       |
-| `packages/cli`         | Headless `.fig` inspection, export, linting, `eval`                                                         | `packages/cli/AGENTS.md`                                                                                                                       |
-| `packages/mcp`         | stdio and Hono HTTP MCP server reusing Core tools                                                           | `packages/mcp/AGENTS.md`                                                                                                                       |
-| `packages/harness`     | Optional Node companion for HarnessAgent sessions                                                           | `packages/harness/AGENTS.md`                                                                                                                   |
-| `packages/docs`        | Published VitePress site                                                                                    | `packages/docs/AGENTS.md`                                                                                                                      |
-| `src`                  | Tauri/Vite app: services and state in `src/app/**`, views in `src/views/**`, UI in `src/components/**`      | `src/AGENTS.md`, `src/components/AGENTS.md`                                                                                                    |
-| `desktop`              | Tauri v2 shell, capabilities, native credentials, menus                                                     | `desktop/AGENTS.md`                                                                                                                            |
-| `tests`                | Central app, integration, E2E, native, and Figma acceptance tests                                           | `tests/AGENTS.md`                                                                                                                              |
-| `tools`, `.github`     | Private repo tooling, CI classification, releases, brand generation                                         | `tools/AGENTS.md`                                                                                                                              |
-| `skills/open-pencil`   | Installable agent skill                                                                                     | `packages/core/AGENTS.md` (Tools)                                                                                                              |
-| `assets/brand`         | Canonical brand artwork                                                                                     | `assets/brand/README.md`                                                                                                                       |
+| Path                   | Owns                                                                                                        | Guide                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `packages/scene-graph` | Framework-neutral graph, node types, geometry, copy/snap/undo, variables, instances, hit testing            | `packages/scene-graph/AGENTS.md`  |
+| `packages/pen`         | Pencil.dev `.pen` model, parser, SceneGraph adapter                                                         | —                                 |
+| `packages/kiwi`        | SceneGraph-independent Kiwi schema/runtime, codecs, containers, parse helpers                               | `packages/fig/AGENTS.md`          |
+| `packages/fig`         | `.fig` archives, SceneGraph conversion, metadata policy, component/instance interpretation, Figma clipboard | `packages/fig/AGENTS.md`          |
+| `packages/core`        | Renderer, layout, editor, Figma API, tools, clipboard, vector conversion, document I/O; no browser DOM      | `packages/core/AGENTS.md`         |
+| `packages/dom-css`     | DOM/CSS/HTML/JSX/Tailwind projection and browser/headless adapters                                          | —                                 |
+| `packages/vue`         | Headless Vue 3 SDK primitives, composables, commands, i18n, menu model                                      | `packages/vue/AGENTS.md`          |
+| `packages/cli`         | Headless `.fig` inspection, export, linting, `eval`                                                         | `packages/cli/AGENTS.md`          |
+| `packages/mcp`         | stdio and Hono HTTP MCP server reusing Core tools                                                           | `packages/mcp/AGENTS.md`          |
+| `packages/harness`     | Optional Node companion for HarnessAgent sessions                                                           | `packages/harness/AGENTS.md`      |
+| `packages/docs`        | Published VitePress site                                                                                    | `packages/docs/AGENTS.md`         |
+| `src`                  | Tauri/Vite app: services and state in `src/app/**`, views in `src/views/**`, UI in `src/components/**`      | `src/AGENTS.md`                   |
+| `desktop`              | Tauri v2 shell, capabilities, native credentials, menus                                                     | `desktop/AGENTS.md`               |
+| `tests`                | Central app, integration, E2E, native, and Figma acceptance tests                                           | `tests/AGENTS.md`                 |
+| `tools`, `.github`     | Private repo tooling, CI classification, releases, brand generation                                         | `tools/AGENTS.md`                 |
+| `skills/open-pencil`   | Installable agent skill                                                                                     | `packages/core/AGENTS.md` (Tools) |
+| `assets/brand`         | Canonical brand artwork                                                                                     | `assets/brand/README.md`          |
 
 ## Commands
 
@@ -114,4 +114,4 @@ Follow `packages/docs/development/testing.md` and `tests/AGENTS.md`. Package-loc
 
 ## Reference
 
-[`figma-use`](https://github.com/dannote/figma-use) is a historical code reference and a live-Figma oracle (`packages/core/src/figma-api/AGENTS.md`); verify current paths, types, and behavior before adapting anything from it.
+[`figma-use`](https://github.com/dannote/figma-use) is a historical code reference and a live-Figma oracle (`packages/core/AGENTS.md`, Figma API); verify current paths, types, and behavior before adapting anything from it.

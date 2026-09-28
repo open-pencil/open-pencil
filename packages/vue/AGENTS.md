@@ -1,6 +1,6 @@
 # Vue SDK
 
-Headless Vue 3 primitives and composables; the root app is one consumer. Primitives are controlled and editor-agnostic. Stories follow `src/components/AGENTS.md` (Storybook).
+Headless Vue 3 primitives and composables; the root app is one consumer. Primitives are controlled and editor-agnostic. Stories follow `src/AGENTS.md` (Storybook).
 
 ## Property primitives
 
