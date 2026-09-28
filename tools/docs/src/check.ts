@@ -28,6 +28,7 @@ import {
   userGuideSidebar
 } from '#docs-config/sidebars'
 
+import { checkGuideMap } from './guides'
 import { checkDocsIntegrity } from './integrity'
 
 interface SidebarItem {
@@ -85,11 +86,16 @@ console.log(
   `Localized page presence: ${Math.min(...translationCounts)}–${Math.max(...translationCounts)} of ${result.canonicalPageCount} canonical routes per locale; content quality is audited separately.`
 )
 
-if (result.errors.length > 0) {
+const guides = checkGuideMap({ repoRoot })
+const errors = [...result.errors, ...guides.errors]
+
+if (errors.length > 0) {
   console.error('\nDocumentation integrity check failed:')
-  for (const error of result.errors) console.error(`- ${error}`)
+  for (const error of errors) console.error(`- ${error}`)
   process.exit(1)
 }
+
+console.log(`Guide map check passed for ${guides.guides.length} AGENTS.md guides.`)
 
 console.log(
   `Documentation integrity check passed for ${result.markdownFiles.length} Markdown files.`

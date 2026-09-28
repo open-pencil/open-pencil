@@ -260,52 +260,13 @@ See the [roadmap](https://openpencil.dev/development/roadmap) for product direct
 
 ## Contributing
 
-### Setup
-
 ```sh
 bun install
 bun run dev:portless  # Web editor at https://open-pencil.localhost
-bun run dev           # Direct Vite server at http://localhost:1420
 bun run tauri dev     # Desktop app (requires Rust)
 ```
 
-The first Portless run creates and trusts a local HTTPS certificate. Linked Git worktrees automatically receive branch-prefixed URLs such as `https://fix-ui.open-pencil.localhost`, so concurrent development servers do not compete for port 1420. Their development MCP bridges are exposed through matching sibling URLs such as `https://fix-ui.mcp.open-pencil.localhost`, with isolated TCP ports and runtime socket files. Run `bunx portless doctor` if local routing or certificate trust fails.
-
-Alternatively, open the repository in any [Dev Container](https://containers.dev/)-compatible tool. The container pins Bun, installs the workspace dependencies, and forwards the direct web editor on port 1420. Start it with `bun run dev` after the container is ready.
-
-The Dev Container supports the web editor, packages, CLI, and automated checks. Native Tauri development still requires the host setup described below because desktop windows and platform WebView dependencies are not provided in the container.
-
-### Quality gates
-
-| Command                   | Description                                                 |
-| ------------------------- | ----------------------------------------------------------- |
-| `bun run check`           | Full gate: lint, typecheck, package, docs, and arch checks  |
-| `bun run test:unit:quick` | Unit tests in parallel, heavy fixtures skipped (about 15 s) |
-| `bun run test:unit`       | Every unit test, heavy fixtures included                    |
-| `bun run test`            | E2E visual regression                                       |
-| `bun run format`          | Code formatting                                             |
-
-### Project structure
-
-```
-packages/
-  scene-graph/    @open-pencil/scene-graph — nodes, primitives, hit testing, copy/snap/undo
-  pen/            @open-pencil/pen — Pencil document format helpers
-  kiwi/           @open-pencil/kiwi — Kiwi runtime and low-level .fig container parsing
-  fig/            @open-pencil/fig — .fig archives, SceneGraph conversion, instances, metadata
-  core/           @open-pencil/core — editor engine, renderer, layout, tools, RPC, document I/O
-  dom-css/        @open-pencil/dom-css — HTML/CSS/Tailwind to editable design documents
-  vue/            @open-pencil/vue — headless Vue SDK
-  cli/            @open-pencil/cli — headless CLI
-  mcp/            @open-pencil/mcp — MCP server (stdio + HTTP)
-  harness/        @open-pencil/harness — companion CLI for coding-agent Harness sessions
-  docs/           Documentation site (openpencil.dev)
-src/              Vue app (editor shell, AI, collaboration, document I/O)
-desktop/          Tauri v2 desktop app (Rust + config)
-skills/           Agent skill (npx skills add open-pencil/open-pencil)
-tools/            Repository tooling: CI, release, lint, and test infrastructure
-tests/            E2E, visual, and engine tests
-```
+[CONTRIBUTING.md](CONTRIBUTING.md) covers setup, quality gates, pull requests, and commits. [AGENTS.md](AGENTS.md) maps the repository and links the guide inside each package. Desktop builds need [Rust](https://rustup.rs/) and the [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/); run `bun run tauri build`.
 
 ### Tech stack
 
@@ -318,14 +279,6 @@ tests/            E2E, visual, and engine tests
 | Collaboration | Trystero (WebRTC P2P) + Yjs (CRDT)                                                |
 | Desktop       | Tauri v2                                                                          |
 | AI/MCP        | Vercel AI SDK (multi-provider BYOK), MCP SDK, Hono                                |
-
-### Desktop builds
-
-Requires [Rust](https://rustup.rs/) and platform-specific prerequisites ([Tauri v2 guide](https://v2.tauri.app/start/prerequisites/)).
-
-```sh
-bun run tauri build
-```
 
 ## Acknowledgments
 
