@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 
@@ -31,6 +32,7 @@ const PACKAGE_FIELDS = [
   'optionalDependencies'
 ] as const satisfies ReadonlyArray<keyof PackageManifest>
 const PUBLISH_CONFIG_FIELDS = new Set(['access', 'provenance', 'registry'])
+const LICENSE_FILE = 'LICENSE'
 
 export function publishPackageJSON(source: PackageManifest, coreVersion: string): PackageManifest {
   if (source.publishConfig) {
@@ -105,6 +107,15 @@ export async function preparePublishDirectories(
       const destination = join(destinationDir, relativePath)
       await mkdir(dirname(destination), { recursive: true })
       await cp(join(sourceDir, relativePath), destination, { dereference: false })
+    }
+
+    // npm always packs a root LICENSE, so a package without its own gets the repository's text.
+    if (!files.includes(LICENSE_FILE)) {
+      const rootLicense = join(options.root, LICENSE_FILE)
+      if (!existsSync(rootLicense)) {
+        throw new Error(`${pkg.directory}: no LICENSE in the package or the repository root`)
+      }
+      await cp(rootLicense, join(destinationDir, LICENSE_FILE))
     }
 
     const packageJSON = await readPackageManifest(join(sourceDir, 'package.json'))

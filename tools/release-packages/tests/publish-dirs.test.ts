@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -9,12 +9,13 @@ import {
   publishPackageJSON
 } from '#release/publish-dirs'
 
-async function fixtureRoot() {
+async function fixtureRoot({ packageLicense = true, rootLicense = true } = {}) {
   const root = join(tmpdir(), `open-pencil-release-packages-${crypto.randomUUID()}`)
   await mkdir(join(root, 'packages/example/dist'), { recursive: true })
   await writeFile(join(root, 'packages/example/dist/index.js'), 'export {}\n')
   await writeFile(join(root, 'packages/example/README.md'), '# Example\n')
-  await writeFile(join(root, 'packages/example/LICENSE'), 'fixture license\n')
+  if (packageLicense) await writeFile(join(root, 'packages/example/LICENSE'), 'fixture license\n')
+  if (rootLicense) await writeFile(join(root, 'LICENSE'), 'root license\n')
   await writeFile(join(root, 'package.json'), JSON.stringify({ workspaces: ['packages/example'] }))
   await writeFile(
     join(root, 'packages/example/package.json'),
@@ -125,5 +126,33 @@ describe('preparePublishDirectories', () => {
       main: './dist/index.js',
       types: './dist/index.d.ts'
     })
+  }, 30_000)
+
+  test('copies the repository LICENSE into packages that have none', async () => {
+    const root = await fixtureRoot({ packageLicense: false })
+    const outRoot = join(root, '.publish')
+
+    await preparePublishDirectories({
+      coreVersion: '0.13.2',
+      outRoot,
+      packages: await discoverPublishPackages(root),
+      root
+    })
+
+    expect(await readFile(join(outRoot, 'example/LICENSE'), 'utf8')).toBe('root license\n')
+  }, 30_000)
+
+  test('refuses to prepare a package without any license text', async () => {
+    const root = await fixtureRoot({ packageLicense: false, rootLicense: false })
+    await rm(join(root, 'LICENSE'), { force: true })
+
+    await expect(
+      preparePublishDirectories({
+        coreVersion: '0.13.2',
+        outRoot: join(root, '.publish'),
+        packages: await discoverPublishPackages(root),
+        root
+      })
+    ).rejects.toThrow('no LICENSE in the package or the repository root')
   }, 30_000)
 })

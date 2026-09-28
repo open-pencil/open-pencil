@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- Ship the MIT license text in every published npm package, and add READMEs for `@open-pencil/core`, `@open-pencil/cli`, and `@open-pencil/mcp` on npm.
+
 ## 0.15.1 — 2026-09-18
 
 ### Added
@@ -613,7 +617,6 @@
 - Fix component property override resolution through clone chains.
 - Fix text/property overrides clobbered by second transitive sync.
 
-
 - Fix text rendering with wrong fonts on file open — all font weights (including default family) are now loaded before the first render.
 - Fix `weightToStyle` mapping: weight 400 now correctly maps to "Regular" instead of "Medium".
 - Fix detached ArrayBuffer crash when switching pages after saving — export worker now copies image buffers before transferring.
@@ -736,7 +739,6 @@
 - Centralize all color utilities in `packages/core/src/color.ts` — `colorToHex8`, `colorToCSSCompact`, `normalizeColor`, `colorDistance`; remove 5 duplicate implementations across the codebase.
 - Add `geometry.ts` with shared rotation math (`degToRad`, `radToDeg`, `rotatePoint`, `rotatedCorners`, `rotatedBBox`).
 - Extract `isArrayMixed()` helper for multi-selection property panels.
-
 
 - Add `motion-v` for declarative animations — used in mobile drawer (spring-animated height with pan gestures) and toolbar (layout-animated category switching with directional slide transitions).
 - Mobile drawer: replace `useSwipe` + manual rAF animation with `motion.div` `:animate` + `@pan`/`@panEnd`; always-on tab state (no more null `activeRibbonTab`); content stays rendered when closed.
@@ -888,17 +890,14 @@
 - Fix font picker dropdown truncating long font names.
 - Show explanation in font picker when Local Font Access API unavailable (Safari/Firefox).
 
-
 - Auto-populate GitHub Release notes from CHANGELOG.md via `ffurrer2/extract-release-notes@v2`.
 - Skip already-published npm versions on CI re-runs instead of failing.
 - Exclude non-app directories from Vite file watcher.
-
 
 - Extract shared color constants (`BLACK`, `TRANSPARENT`, `DEFAULT_SHADOW_COLOR`) — replaces 8 inline literals across core.
 - Extract shared `NodeContextMenuContent` component to avoid menu duplication.
 - Fix `@open-pencil/core` dep in MCP package: `workspace:*` for local dev (pnpm resolves at publish time).
 - Replace store thunks with a late-binding proxy.
-
 
 - Clipboard roundtrip tests: encode to Figma Kiwi binary → decode → verify.
 - 9 visual regression snapshot tests for effects rendering.
@@ -930,7 +929,6 @@
 
 - Import additional properties from Figma clipboard: `layoutAlignSelf`, `clipsContent`, `fontWeight`, `italic`, `letterSpacing`, `lineHeight`.
 - Convert `letterSpacing` PERCENT units to pixels based on font size.
-
 
 - 7 new clipboard import unit tests (14 total).
 
@@ -1071,12 +1069,10 @@ First public alpha. The editor is functional but not production-ready.
 - ScrubInput drag-to-change number controls.
 - Resizable side panels via reka-ui Splitter.
 
-
 - .fig file import via Kiwi binary codec (194 definitions, ~390 fields).
 - .fig file export with Kiwi encoding, Zstd compression, thumbnail generation.
 - Figma clipboard: copy/paste between OpenPencil and Figma.
 - Round-trip fidelity for supported node types.
-
 
 - Built-in AI chat in properties panel (⌘J).
 - Direct browser → OpenRouter communication, no backend.
@@ -1085,11 +1081,9 @@ First public alpha. The editor is functional but not production-ready.
 - Streaming markdown responses (vue-stream-markdown).
 - Tool call timeline with collapsible details.
 
-
 - JSX export of selected nodes with Tailwind-like shorthand props.
 - Syntax highlighting via Prism.js.
 - Copy to clipboard.
-
 
 - `info` — document stats, node types, fonts.
 - `tree` — visual node tree.
@@ -1105,13 +1099,11 @@ First public alpha. The editor is functional but not production-ready.
 - `analyze clusters` — repeated patterns.
 - All commands support `--json`.
 
-
 - Scene graph with flat Map storage and parentIndex tree.
 - FigmaAPI with ~65% Figma plugin API compatibility.
 - JSX renderer (TreeNode builder functions with shorthand props).
 - Kiwi binary codec (encode/decode).
 - Vector network blob encoder/decoder.
-
 
 - Tauri v2 (~5 MB).
 - Native menu bar, save/open dialogs.
@@ -1119,11 +1111,9 @@ First public alpha. The editor is functional but not production-ready.
 - Zstd compression in Rust.
 - macOS and Windows builds via GitHub Actions.
 
-
 - Runs at [app.openpencil.dev](https://app.openpencil.dev).
 - No installation required.
 - File System Access API for save/open (Chrome/Edge), download fallback elsewhere.
-
 
 - [openpencil.dev](https://openpencil.dev) — VitePress site with user guide, reference, and development docs.
 - Deployed via Cloudflare Pages.
