@@ -30,6 +30,8 @@
   "version": "Version",
   "authentication": "Authentifizierung erforderlich",
   "authenticationDescription": "Den lokalen MCP-Endpunkt mit einem Bearer-Token schützen. Nur auf vertrauenswürdigen Geräten deaktivieren. Server neu starten, um Änderungen anzuwenden.",
+  "followAgent": "Agent folgen",
+  "followAgentDescription": "Die Arbeitsfläche auf die von MCP-Werkzeugen verwendete Seite oder Ebenen fokussieren, damit du die Arbeit des Agenten verfolgen kannst.",
   "rootDirectory": "MCP-Stammverzeichnis",
   "rootDirectoryDefault": "Standardverzeichnis des Servers",
   "chooseRootDirectory": "Ordner auswählen",

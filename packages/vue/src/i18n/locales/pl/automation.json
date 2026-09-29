@@ -30,6 +30,8 @@
   "version": "Wersja",
   "authentication": "Wymagaj uwierzytelnienia",
   "authenticationDescription": "Chroń lokalny punkt MCP tokenem Bearer. Wyłączaj tylko na zaufanym urządzeniu. Uruchom serwer ponownie, aby zastosować zmiany.",
+  "followAgent": "Śledź agenta",
+  "followAgentDescription": "Utrzymuj obszar roboczy na stronie lub warstwach używanych przez narzędzia MCP, aby śledzić pracę agenta.",
   "rootDirectory": "Katalog główny MCP",
   "rootDirectoryDefault": "Domyślny katalog serwera",
   "chooseRootDirectory": "Wybierz folder",

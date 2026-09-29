@@ -153,6 +153,8 @@ Endpoints are available over both active transports:
 
 Most tools accept optional `document_id` and `page_id` fields. Pass them explicitly for agent workflows instead of relying on the visible active tab/page. `create_page` only creates a page; call `switch_page` separately when the workflow should change the active page.
 
+When the local server runs through the OpenPencil app, **Follow agent** is enabled by default in MCP settings. It focuses the canvas on the page or layers used by each MCP tool, including inspections, selections, and exports. Disable it when agent activity should not move your viewport.
+
 ## AI Agent Skill
 
 Teach your AI coding agent to use OpenPencil tools:

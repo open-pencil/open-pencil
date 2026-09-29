@@ -30,6 +30,8 @@
   "version": "Versión",
   "authentication": "Requerir autenticación",
   "authenticationDescription": "Protege el endpoint MCP local con un token Bearer. Desactívalo solo en un equipo de confianza. Reinicia el servidor para aplicar los cambios.",
+  "followAgent": "Seguir al agente",
+  "followAgentDescription": "Mantén el lienzo enfocado en la página o las capas utilizadas por las herramientas MCP para que puedas seguir el trabajo del agente.",
   "rootDirectory": "Directorio raíz MCP",
   "rootDirectoryDefault": "Carpeta predeterminada del servidor",
   "chooseRootDirectory": "Elegir carpeta",
