@@ -15,5 +15,6 @@
   "noSelection": "Selecciona una capa para ver su código",
   "noSelectionDesignJSX": "O escribe Design JSX para añadir capas nuevas a la página.",
   "noSelectionTailwindJSX": "Tailwind JSX se genera para las capas seleccionadas.",
-  "writeJSX": "Escribir JSX"
+  "writeJSX": "Escribir JSX",
+  "canvasChangedExpression": "El lienzo tiene ahora {value}; la expresión se mantiene tal como está escrita."
 }

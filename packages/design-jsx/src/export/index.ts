@@ -74,6 +74,41 @@ export function sceneNodeAttributes(
   }))
 }
 
+/**
+ * One layer as Design JSX writes it, so an editor can patch the code a person has edited
+ * instead of writing it again.
+ */
+export interface DesignJSXElement {
+  tag: string
+  /** Each attribute as `sceneNodeAttributes` prints it, keyed by name: `w={320}`. */
+  attributes: Record<string, string>
+  /** Text content of a text layer as JSX writes it, else `null`. */
+  text: string | null
+  /** The layers written as child elements, in order. */
+  childIds: string[]
+}
+
+export function designJSXElement(nodeId: string, graph: SceneGraph): DesignJSXElement | null {
+  const node = graph.getNode(nodeId)
+  const tag = node && NODE_TYPE_TO_TAG[node.type]
+  const printed = sceneNodeAttributes(nodeId, graph)
+  if (!node || !tag || !printed) return null
+  // A text layer's content is written as its children, not as the `text` attribute.
+  const isText = node.type === 'TEXT'
+  const attributes = Object.fromEntries(
+    printed.filter(({ name }) => !isText || name !== 'text').map(({ name, source }) => [name, source])
+  )
+  if (isText) {
+    const text = node.text ? jsx.printJSX(jsx.text(node.text)) : null
+    return { tag, attributes, text, childIds: [] }
+  }
+  const childIds = graph
+    .getChildren(node.id)
+    .filter((child) => NODE_TYPE_TO_TAG[child.type])
+    .map((child) => child.id)
+  return { tag, attributes, text: null, childIds }
+}
+
 export function sceneNodeToJSX(nodeId: string, graph: SceneGraph): string {
   const node = graph.getNode(nodeId)
   const syntax = node ? nodeToJSX(node, graph, 0) : null

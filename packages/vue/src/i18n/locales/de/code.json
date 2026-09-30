@@ -15,5 +15,6 @@
   "noSelection": "Wähle eine Ebene aus, um ihren Code zu sehen",
   "noSelectionDesignJSX": "Oder schreibe Design JSX, um der Seite neue Ebenen hinzuzufügen.",
   "noSelectionTailwindJSX": "Tailwind JSX wird für die ausgewählten Ebenen erzeugt.",
-  "writeJSX": "JSX schreiben"
+  "writeJSX": "JSX schreiben",
+  "canvasChangedExpression": "Auf der Arbeitsfläche jetzt {value}; der Ausdruck bleibt, wie er geschrieben ist."
 }
