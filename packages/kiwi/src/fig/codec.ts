@@ -258,6 +258,12 @@ export interface VariableAnyValue {
   colorValue?: Color
   alias?: { guid?: GUID; assetRef?: { key: string; version?: string } }
   symbolIdValue?: { guid?: GUID }
+  // fig.kiwi PropRefValue: the component property a parameter entry points at.
+  propRefValue?: { defId?: GUID }
+  expressionValue?: {
+    expressionFunction?: string
+    expressionArguments?: VariableDataEntry[]
+  }
 }
 
 export interface VariableDataEntry {
@@ -456,6 +462,8 @@ export interface NodeChange {
   // Variables
   variableData?: VariableDataEntry
   variableConsumptionMap?: { entries?: VariableConsumptionEntry[] }
+  // fig.kiwi declares this as the same VariableDataMap as variableConsumptionMap.
+  parameterConsumptionMap?: { entries?: VariableConsumptionEntry[] }
   variableSetModes?: Array<{ id: GUID; name: string; sortPosition?: string }>
   variableSetID?: { guid?: GUID; assetRef?: { key: string; version?: string } }
   variableResolvedType?: string
