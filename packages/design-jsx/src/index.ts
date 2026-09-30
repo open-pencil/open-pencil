@@ -74,12 +74,19 @@ export {
   type DesignJSXHelperDefinition,
   type DesignJSXPropertyDefinition
 } from './schema'
-export { transformDesignJSXExpression } from './transform'
+export {
+  transformDesignJSXExpression,
+  transformDesignJSXProgram,
+  type DesignJSXChunk,
+  type DesignJSXProgram
+} from './transform'
 
 export {
   sceneNodeAttributes,
   sceneNodeToJSX,
   selectionToJSX,
+  selectionToJSXWithLayers,
+  type DesignJSXWithLayers,
   type JSXAttributeSource
 } from './export'
 export { parseJSXAttributes } from './attributes'

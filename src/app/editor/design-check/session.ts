@@ -4,7 +4,6 @@ import { computed, effectScope, ref, shallowRef, watch } from 'vue'
 import type { Editor } from '@open-pencil/core/editor'
 import { isFigPagePending } from '@open-pencil/core/io/formats/fig'
 import { createLinter, type LintConfig, type LintFixRequest } from '@open-pencil/core/lint'
-import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 import type { AppEditorState } from '@/app/editor/session/types'
 import { appPreferences, type DesignCheckPreset } from '@/app/settings/preferences/store'
@@ -20,8 +19,6 @@ import { createPageChecks, pageOf } from './pages'
 
 /** Quiet period after an edit before the page is checked again. */
 const CHECK_DELAY_MS = 180
-/** Margin kept between a revealed layer and the viewport edge. */
-const REVEAL_MARGIN = 48
 
 export interface DesignCheckSnapshot {
   pageId: string
@@ -41,11 +38,7 @@ function linterConfig(preset: DesignCheckPreset, disabledRules: readonly string[
  * Checks run once edits settle and wait out interactive property edits, so a burst of changes
  * costs one check. Nothing runs while both surfaces are off.
  */
-export function createDesignCheck(
-  editor: Editor,
-  state: AppEditorState,
-  getViewportSize: () => { width: number; height: number }
-) {
+export function createDesignCheck(editor: Editor, state: AppEditorState) {
   const scope = effectScope(true)
   const snapshot = shallowRef<DesignCheckSnapshot | null>(null)
   const panelVisible = ref(false)
@@ -198,33 +191,6 @@ export function createDesignCheck(
     focusedIssueId.value = mostSevereIssue(issuesOn(present))?.id ?? null
   }
 
-  /** Brings a layer into view without changing zoom when it already fits. */
-  function revealNode(nodeId: string) {
-    const node = editor.graph.getNode(nodeId)
-    if (!node) return
-    const bounds = getAxisAlignedWorldBounds(node, editor.graph)
-    const { width, height } = getViewportSize()
-    const zoom = state.zoom
-    const fits =
-      bounds.width * zoom <= width - REVEAL_MARGIN * 2 &&
-      bounds.height * zoom <= height - REVEAL_MARGIN * 2
-    if (!fits) {
-      editor.zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height)
-      return
-    }
-    const left = bounds.x * zoom + state.panX
-    const top = bounds.y * zoom + state.panY
-    const right = left + bounds.width * zoom
-    const bottom = top + bounds.height * zoom
-    const visible =
-      left >= REVEAL_MARGIN &&
-      top >= REVEAL_MARGIN &&
-      right <= width - REVEAL_MARGIN &&
-      bottom <= height - REVEAL_MARGIN
-    if (visible) return
-    editor.pan(width / 2 - (left + right) / 2, height / 2 - (top + bottom) / 2)
-  }
-
   /** Selects the issue's layer, on its page, keeps it in view and marks the row as focused. */
   async function openIssue(issue: DesignIssue) {
     // A page switch clears the focused issue, so focus follows the switch.
@@ -234,7 +200,7 @@ export function createDesignCheck(
     focusedIssueId.value = issue.id
     if (!editor.graph.getNode(issue.nodeId)) return
     editor.select([issue.nodeId])
-    revealNode(issue.nodeId)
+    editor.revealNodes([issue.nodeId])
   }
 
   /** Applies fixes as one undo step and re-checks right away, so fixed rows leave at once. */
@@ -262,7 +228,6 @@ export function createDesignCheck(
     highlightMarker,
     openIssue,
     openMarker,
-    revealNode,
     applyFixes,
     dispose
   }

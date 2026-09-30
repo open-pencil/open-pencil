@@ -1,9 +1,13 @@
+import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 import { computeBounds, computeAbsoluteBounds } from '@open-pencil/scene-graph/geometry'
 
 import { ZOOM_DIVISOR, ZOOM_SCALE_MAX, ZOOM_SCALE_MIN } from '#core/constants'
 import { emitNavigationTrace } from '#core/profiler'
 
 import type { EditorContext } from './types'
+
+/** Space kept between revealed layers and the viewport edge. */
+const REVEAL_MARGIN = 48
 
 export function createViewportActions(ctx: EditorContext) {
   function currentViewport() {
@@ -128,7 +132,34 @@ export function createViewportActions(ctx: EditorContext) {
     zoomToBounds(b.x, b.y, b.x + b.width, b.y + b.height)
   }
 
+  /**
+   * Brings layers into view: pans to center them when they fit at the current zoom and are not
+   * already visible, and zooms out to fit them only when they do not fit.
+   */
+  function revealNodes(nodeIds: readonly string[], margin = REVEAL_MARGIN) {
+    const nodes = nodeIds.map((id) => ctx.graph.getNode(id)).filter((node) => node !== undefined)
+    if (nodes.length === 0) return
+    const bounds = computeBounds(nodes.map((node) => getAxisAlignedWorldBounds(node, ctx.graph)))
+    const { width, height } = ctx.getViewportSize()
+    const { zoom, panX, panY } = ctx.state
+    const fits =
+      bounds.width * zoom <= width - margin * 2 && bounds.height * zoom <= height - margin * 2
+    if (!fits) {
+      zoomToBounds(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height)
+      return
+    }
+    const left = bounds.x * zoom + panX
+    const top = bounds.y * zoom + panY
+    const right = left + bounds.width * zoom
+    const bottom = top + bounds.height * zoom
+    const visible =
+      left >= margin && top >= margin && right <= width - margin && bottom <= height - margin
+    if (visible) return
+    pan(width / 2 - (left + right) / 2, height / 2 - (top + bottom) / 2)
+  }
+
   return {
+    revealNodes,
     screenToCanvas,
     setZoomAroundPoint,
     applyZoom,

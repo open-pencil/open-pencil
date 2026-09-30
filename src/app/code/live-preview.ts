@@ -7,7 +7,12 @@ import { convertDesignJSXRoots } from '@/app/code/sandbox/convert'
 import { evaluateDesignJSX } from '@/app/code/sandbox/evaluate'
 import type { EditorStore } from '@/app/editor/active-store'
 
-export type ApplyDesignJSXResult = { ok: true; nodeIds: string[] } | { ok: false; error: string }
+/** A layer rendered from an element written on `line`, with the element's runtime type. */
+export type DesignJSXLayerLine = { line: number; type: string; nodeId: string }
+
+export type ApplyDesignJSXResult =
+  | { ok: true; nodeIds: string[]; layers: DesignJSXLayerLine[] }
+  | { ok: false; error: string }
 export type DesignJSXEditSession = {
   originalSnapshot: ReturnType<EditorStore['snapshotPage']>
   originalSelectionIds: string[]
@@ -80,7 +85,7 @@ export async function previewDesignJSX(
 
   let roots: TreeNode[]
   try {
-    roots = convertDesignJSXRoots(evaluated.roots)
+    roots = convertDesignJSXRoots(evaluated.roots, evaluated.lineOffsets)
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) }
   }
@@ -89,6 +94,10 @@ export async function previewDesignJSX(
   try {
     for (const id of session.originalSelectionIds) store.graph.deleteNode(id)
     const results = []
+    const layers: DesignJSXLayerLine[] = []
+    const onNode = (tree: TreeNode, node: { id: string }) => {
+      if (tree.source) layers.push({ line: tree.source.line, type: tree.type, nodeId: node.id })
+    }
     for (const [index, root] of roots.entries()) {
       const origin = session.origins.at(index) ?? {
         x: session.fallbackOrigin.x + index * 24,
@@ -97,7 +106,8 @@ export async function previewDesignJSX(
       const result = await renderTree(store.graph, root, {
         parentId: session.targetParentId,
         x: origin.x,
-        y: origin.y
+        y: origin.y,
+        onNode
       })
       results.push(result)
       if (session.targetIndex >= 0) {
@@ -110,7 +120,7 @@ export async function previewDesignJSX(
     store.requestRender()
     session.previewSnapshot = store.snapshotPage()
     session.previewNodeIds = nodeIds
-    return { ok: true, nodeIds }
+    return { ok: true, nodeIds, layers }
   } catch (error) {
     store.restorePageFromSnapshot(session.previewSnapshot ?? session.originalSnapshot)
     store.select(
