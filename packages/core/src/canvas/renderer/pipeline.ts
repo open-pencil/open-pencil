@@ -79,6 +79,7 @@ export function renderFromEditorState(
         : null,
       nodeEditState: state.nodeEditState ?? null,
       presenceCursors: state.presenceCursors,
+      designIssues: state.designIssues,
       autoLayoutHover: state.autoLayoutHover
     },
     state.sceneVersion,
@@ -281,7 +282,7 @@ export function render(
     canvas.save()
     canvas.scale(r.dpr, r.dpr)
 
-    drawOverlayPass(r, canvas, graph, selectedIds, overlays)
+    drawOverlayPass(r, canvas, graph, selectedIds, overlays, interactive)
     drawChromePass(r, canvas, graph, selectedIds, overlays)
 
     canvas.restore()

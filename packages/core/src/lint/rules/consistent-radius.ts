@@ -12,7 +12,8 @@ export default defineRule({
       context.report({
         node,
         message: `Corner radius ${node.cornerRadius}px is not in scale`,
-        suggest: 'Use a radius token or a scale value'
+        suggest: 'Use a radius token or a scale value',
+        data: { radius: node.cornerRadius }
       })
   }
 })

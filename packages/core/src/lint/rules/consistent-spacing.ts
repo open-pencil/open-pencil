@@ -11,7 +11,7 @@ export default defineRule({
   check(node, context) {
     if (node.layoutMode === 'NONE') return
     const config = context.getConfig() as { base?: number } | undefined
-    const base = config?.base ?? 8
+    const base = config?.base ?? 4
     const valid = (value: number) => SPACING_SCALE.includes(value) || isMultipleOf(value, base)
     const values = [
       ['gap', node.itemSpacing],
@@ -25,7 +25,8 @@ export default defineRule({
         context.report({
           node,
           message: `${name} ${value}px is not in spacing scale`,
-          suggest: 'Use a spacing token or 8pt-grid multiple'
+          suggest: `Use a spacing token or a multiple of ${base}px`,
+          data: { property: name, value, base }
         })
       }
     }

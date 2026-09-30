@@ -8,6 +8,7 @@ export type {
   RuleContext,
   LintNode,
   LintMessage,
+  LintMessageData,
   LintResult,
   LintConfig,
   Severity,

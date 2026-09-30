@@ -56,6 +56,12 @@ describe('bindVariable emits node:updated event', () => {
 
 // ─── no-hardcoded-colors lint checks indexed bindings ──────────────────────
 
+/** Variables whose only color matches the tests' 50% gray paint. */
+const GRAY_VARIABLES = {
+  counts: { COLOR: 1, FLOAT: 0, STRING: 0, BOOLEAN: 0 },
+  colorsByHex: new Map([['#808080', { id: 'v1', name: 'Gray' }]])
+}
+
 describe('no-hardcoded-colors lint checks indexed bindings', () => {
   test('node with fills/0/color binding passes lint (no false positive)', () => {
     const node = {
@@ -88,6 +94,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
 
     const messages: Array<{ message: string }> = []
     const context = {
+      variables: GRAY_VARIABLES,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
       getParent: () => null,
@@ -130,6 +137,7 @@ describe('no-hardcoded-colors lint checks indexed bindings', () => {
 
     const messages: Array<{ message: string }> = []
     const context = {
+      variables: GRAY_VARIABLES,
       report: (issue: { message: string }) => messages.push(issue),
       getConfig: () => ({}),
       getParent: () => null,
