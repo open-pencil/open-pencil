@@ -43,16 +43,11 @@ function suppressedIssueIds(overlays: RenderOverlays): Set<string> {
 
 /**
  * Lays out markers for this frame and keeps them for hit testing, so the pointer always targets
- * what is drawn. Markers step aside while a layer is being dragged, resized or rotated.
+ * what is drawn. Markers stay attached to their layers through edits and hide while drawing a path.
  */
-function updateIssueMarkers(
-  r: SkiaRenderer,
-  graph: SceneGraph,
-  overlays: RenderOverlays,
-  interactive: boolean
-): void {
+function updateIssueMarkers(r: SkiaRenderer, graph: SceneGraph, overlays: RenderOverlays): void {
   const markers = overlays.designIssues?.markers
-  if (!markers || markers.length === 0 || interactive || overlays.penState) {
+  if (!markers || markers.length === 0 || overlays.penState) {
     r.issueMarkers = []
     return
   }
@@ -86,8 +81,7 @@ export function drawOverlayPass(
   canvas: Canvas,
   graph: SceneGraph,
   selectedIds: Set<string>,
-  overlays: RenderOverlays,
-  interactive = false
+  overlays: RenderOverlays
 ): void {
   const measuring = measurementVisible(overlays)
   const hoveredNodeId =
@@ -95,9 +89,7 @@ export function drawOverlayPass(
       ? null
       : overlays.hoveredNodeId
   r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
-  if (!interactive) {
-    drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
-  }
+  drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
   r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   r.profiler.beginPhase('render:selection')
   r.drawSelection(canvas, graph, selectedIds, overlays)
@@ -113,7 +105,7 @@ export function drawOverlayPass(
   if (!measuring) r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
   r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
   r.drawPenOverlay(canvas, overlays.penState)
-  updateIssueMarkers(r, graph, overlays, interactive)
+  updateIssueMarkers(r, graph, overlays)
   drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)
   r.drawPresenceCursors(canvas, graph, overlays.presenceCursors)
 }
