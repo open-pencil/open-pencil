@@ -1,14 +1,14 @@
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
-import { mergeCSSText } from './css-text'
-import { jsxToDesignDocumentCore, type JSXChild } from './jsx/core'
+import { mergeCSSText } from './import/css-text'
+import { jsxToDesignDocumentCore, type JSXChild } from './import/jsx/core'
+import { designDocumentToSceneGraph, type ToSceneGraphOptions } from './import/scene-graph'
+import type { CompileTailwindCSSOptions } from './import/tailwind'
 import { createBrowserCSSRuntime, type BrowserCSSRuntimeOptions } from './runtime/browser'
-import type { CompileTailwindCSSOptions } from './tailwind'
-import { designDocumentToSceneGraph, type ToSceneGraphOptions } from './to-scene-graph'
 import type { CSSComputeOptions, DesignDocument } from './types'
 
-export { Fragment, jsx, jsxs } from './jsx/core'
-export type { JSXChild, JSXElementProps, JSXStyleInput, JSXTag } from './jsx/core'
+export { Fragment, jsx, jsxs } from './import/jsx/core'
+export type { JSXChild, JSXElementProps, JSXStyleInput, JSXTag } from './import/jsx/core'
 
 export interface BrowserToDesignDocumentOptions extends BrowserCSSRuntimeOptions {
   cssText?: string
@@ -44,7 +44,7 @@ async function compileBrowserTailwindCSS(
   candidates: string | Iterable<string>,
   options: CompileTailwindCSSOptions
 ): Promise<string> {
-  const { compileTailwindCSS } = await import('./tailwind')
+  const { compileTailwindCSS } = await import('./import/tailwind')
   return compileTailwindCSS(candidates, options)
 }
 

@@ -5,6 +5,8 @@ import { populateAllLazyFigImportRoots, populateLazyFigImportRoots } from '@open
 import { computeAllLayouts } from '@open-pencil/core/layout'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
+import { printError } from '#cli/format'
+
 export { initCanvasKit }
 
 const io = new IORegistry(BUILTIN_IO_FORMATS)
@@ -53,4 +55,19 @@ export function prepareDocumentForRPC(graph: SceneGraph, command: string, args?:
     return
   }
   populateWholeDocument(graph)
+}
+
+export function requirePage(graph: SceneGraph, pageName?: string) {
+  const pages = graph.getPages()
+  const page = pageName ? pages.find((p) => p.name === pageName) : pages[0]
+  if (!page) {
+    const available = pages.map((p) => `"${p.name}"`).join(', ')
+    printError(
+      pageName
+        ? `Page "${pageName}" not found. Available pages: ${available || 'none'}.`
+        : 'Document has no pages.'
+    )
+    process.exit(1)
+  }
+  return page
 }

@@ -1,0 +1,14 @@
+{
+  "name": "@open-pencil/visual-oracles-tools",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#visual/manifest": "./src/document/manifest.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "citty": "^0.1.6"
+  }
+}

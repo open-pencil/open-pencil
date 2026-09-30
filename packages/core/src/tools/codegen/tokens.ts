@@ -1,9 +1,9 @@
 import * as v from 'valibot'
 
 import type { Variable, VariableCollection, VariableValue } from '@open-pencil/scene-graph'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { colorToHex } from '#core/color'
 import { defineTool } from '#core/tools/schema'
 
 function slugify(name: string): string {

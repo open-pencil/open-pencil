@@ -1,6 +1,5 @@
 import type { SceneGraph, Variable } from '@open-pencil/scene-graph'
-
-import { colorToHex } from '#core/color'
+import { colorToHex } from '@open-pencil/scene-graph/color'
 
 import type { RPCCommand } from './types'
 

@@ -49,7 +49,7 @@ storybook-static/
 /desktop/*.key
 !/desktop/*.key.pub
 
-# Generated from assets/brand by tools/brand (never hand-edit these outputs)
+# Generated from assets/brand by tools/generate/brand (never hand-edit these outputs)
 /.cache/brand/
 /.cache/brand.lock/
 /public/brand/

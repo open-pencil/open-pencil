@@ -1,14 +1,15 @@
 import type { Fill, SceneGraph, SceneNode, Stroke } from '@open-pencil/scene-graph'
-import type { Color } from '@open-pencil/scene-graph/primitives'
-
 import {
   resolveNodeFillColor,
   resolveNodeStrokeColor,
-  resolveRGBAForPreview
-} from '#core/color/management'
-import type { RenderColorSpace, ResolvedRenderColor } from '#core/color/management'
-import { normalizeColor } from '#core/color/normalize'
-import { getFillOkHCL, getStrokeOkHCL } from '#core/color/okhcl'
+  resolveRGBAForPreview,
+  type RenderColorSpace,
+  type ResolvedRenderColor,
+  normalizeColor,
+  getFillOkHCL,
+  getStrokeOkHCL
+} from '@open-pencil/scene-graph/color'
+import type { Color } from '@open-pencil/scene-graph/primitives'
 
 function resolvedVariableColor(
   color: Color,

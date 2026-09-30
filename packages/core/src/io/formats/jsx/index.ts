@@ -1,1 +1,1 @@
-export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from './export'
+export { sceneNodeToJSX, selectionToJSX } from './export'

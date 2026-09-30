@@ -44,7 +44,7 @@ exportState.addSetting()
 
 ```ts
 exportState.updateScale(0, 2)
-exportState.updateFormat(0, 'WEBP')
+exportState.updateFormat(0, 'webp')
 ```
 
 ## Zobacz też

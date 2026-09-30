@@ -9,6 +9,5 @@ export type BannerUI = ComponentUI<typeof bannerTheme>
 export interface BannerProps {
   /** Persist dismissal under this key; omit to keep the banner permanently visible. */
   storageKey?: string
-  testId?: string
   ui?: BannerUI
 }

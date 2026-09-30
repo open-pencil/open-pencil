@@ -3,7 +3,6 @@ import { tryOnScopeDispose, useObjectUrl } from '@vueuse/core'
 import { computed, onActivated, onDeactivated, ref, shallowRef, watch } from 'vue'
 
 import { useExport, useI18n, useRetainedActivity } from '@open-pencil/vue'
-import type { ExportFormatId } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import ExportScaleInput from '@/components/properties/ExportScaleInput.vue'
@@ -28,17 +27,10 @@ const {
   updateScale,
   updateFormat,
   formatSupportsScale,
+  formatOptions,
   scales,
   clampExportScale
 } = useExport()
-
-const FORMAT_OPTIONS: { value: ExportFormatId; label: string }[] = [
-  { value: 'png', label: 'PNG' },
-  { value: 'jpg', label: 'JPG' },
-  { value: 'webp', label: 'WEBP' },
-  { value: 'svg', label: 'SVG' },
-  { value: 'pdf', label: 'PDF' }
-]
 
 const previewBlob = shallowRef<Blob | null>(null)
 const previewURL = useObjectUrl(previewBlob)
@@ -155,11 +147,11 @@ watch(previewKey, updatePreview, { flush: 'post' })
       </div>
       <AppSelect
         :model-value="setting.format"
-        :options="FORMAT_OPTIONS"
+        :options="formatOptions"
         :label="panels.exportFormat"
         :ui="{ trigger: 'w-auto flex-1' }"
         data-property="export-format"
-        @update:model-value="updateFormat(index, $event as ExportFormatId)"
+        @update:model-value="updateFormat(index, $event)"
       />
       <template #rail="{ removeClass }">
         <IconButton

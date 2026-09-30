@@ -1,5 +1,6 @@
+import { contrastRatio } from '@open-pencil/scene-graph/color'
+
 import { defineRule } from '#core/lint/rule'
-import { contrastRatio } from '#core/lint/utils'
 
 export default defineRule({
   meta: {

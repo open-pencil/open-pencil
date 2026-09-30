@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 
+import { SceneGraph } from '@open-pencil/scene-graph'
 import {
   colorDistance,
   getFillOkHCL,
@@ -7,8 +8,7 @@ import {
   rgbaToOkHCL,
   setNodeFillOkHCL,
   setNodeStrokeOkHCL
-} from '@open-pencil/core/color'
-import { SceneGraph } from '@open-pencil/scene-graph'
+} from '@open-pencil/scene-graph/color'
 
 const SATURATED = { l: 0.6, c: 0.3, h: 20, a: 1 }
 

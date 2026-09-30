@@ -27,7 +27,9 @@ export default defineConfig({
     guides: './src/guides.ts',
     'layout-guides': './src/layout-guides.ts',
     resize: './src/resize.ts',
-    'parse-path': './src/parse-path.ts'
+    'parse-path': './src/parse-path.ts',
+    color: './src/color/index.ts',
+    'text-direction': './src/text-direction.ts'
   },
   platform: 'neutral',
   format: ['esm'],

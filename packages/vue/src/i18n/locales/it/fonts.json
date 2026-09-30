@@ -27,6 +27,8 @@
   "expandIssues": "Mostra problemi dei font",
   "collapseIssues": "Nascondi problemi dei font",
   "noSubstitute": "nessun sostituto disponibile",
+  "unsupportedFormatShort": "formato non supportato",
+  "unsupportedFormat": "Installato, ma in un formato che OpenPencil non può ancora disegnare",
   "settingsDesktopDescription": "Accedi ai font di sistema, ai provider online, ai pacchetti di fallback e ai download nella cache.",
   "settingsBrowserDescription": "Consenti al browser di accedere ai font locali e gestisci i provider di font online.",
   "providerEnabled": "{provider} abilitato.",

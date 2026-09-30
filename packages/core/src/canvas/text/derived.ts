@@ -1,4 +1,5 @@
 import type { Canvas, Paint, Path } from 'canvaskit-wasm'
+import { fromUint8Array } from 'js-base64'
 
 import type {
   Color,
@@ -10,7 +11,6 @@ import type {
   TextDecorationStyle
 } from '@open-pencil/scene-graph'
 
-import { encodeBase64 } from '#core/bytes'
 import { ResourceCache } from '#core/cache/resource'
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import { geometryBlobToPath } from '#core/vector'
@@ -277,7 +277,7 @@ function getGlyphSilhouette(
 ): GlyphSilhouette {
   const blob = glyph.commandsBlob
   const relativeWeight = stroke.weight / glyph.fontSize
-  const key = `${encodeBase64(blob)}:${relativeWeight.toFixed(5)}`
+  const key = `${fromUint8Array(blob)}:${relativeWeight.toFixed(5)}`
   const cached = r.glyphSilhouetteCache.peek(key)
   if (cached) return { path: cached, cached: true }
 

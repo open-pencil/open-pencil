@@ -74,5 +74,5 @@ export {
 } from './schema'
 export { transformDesignJSXExpression } from './transform'
 
-export { sceneNodeToJSX, selectionToJSX, type JSXFormat } from '#core/io/formats/jsx'
+export { sceneNodeToJSX, selectionToJSX } from '#core/io/formats/jsx'
 export { JSX_REFERENCE, AUTHORING_EXAMPLES, type AuthoringExample } from './reference'

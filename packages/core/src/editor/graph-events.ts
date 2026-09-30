@@ -4,9 +4,17 @@ import type { SkiaRenderer } from '#core/canvas/renderer'
 
 type EmittedGraphEventName = keyof SceneGraphEvents
 
+/** The renderer surface graph events invalidate; tests provide a double of just this. */
+export type GraphEventRenderer = Pick<
+  SkiaRenderer,
+  'invalidateVectorPath' | 'invalidateNodePicture'
+> & {
+  tiledScene: Pick<SkiaRenderer['tiledScene'], 'invalidateNode' | 'invalidateStructure'>
+}
+
 type GraphEventOptions = {
   getGraph: () => SceneGraph
-  getRenderers: () => Iterable<SkiaRenderer>
+  getRenderers: () => Iterable<GraphEventRenderer>
   scheduleComponentSync: (nodeId: string) => void
   requestRender: () => void
   emitEditorEvent: <K extends EmittedGraphEventName>(
@@ -56,7 +64,7 @@ export function rendererInvalidationForChanges(
 
 function invalidateRenderersForChange(
   graph: SceneGraph,
-  renderers: Iterable<SkiaRenderer>,
+  renderers: Iterable<GraphEventRenderer>,
   id: string,
   changes: Partial<SceneNode>,
   invalidateNodePicture: boolean

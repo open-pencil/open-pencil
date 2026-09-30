@@ -50,11 +50,11 @@ export function createStructureActions(ctx: EditorContext) {
     selectedNodes: SceneNode[],
     extraProps?: Partial<SceneNode>
   ) {
-    return wrapSelectionInContainerImpl(ctx, isTopLevel, containerType, selectedNodes, extraProps)
+    return wrapSelectionInContainerImpl(ctx, containerType, selectedNodes, extraProps)
   }
 
   function wrapInAutoLayout(selectedNodes: SceneNode[]) {
-    wrapInAutoLayoutImpl(ctx, isTopLevel, selectedNodes)
+    wrapInAutoLayoutImpl(ctx, selectedNodes)
   }
 
   function groupSelected(selectedNodes: SceneNode[]) {
@@ -68,7 +68,7 @@ export function createStructureActions(ctx: EditorContext) {
   }
 
   function booleanOperationSelected(selectedNodes: SceneNode[], operation: BooleanOperation) {
-    return booleanOperationSelectedImpl(ctx, isTopLevel, selectedNodes, operation)
+    return booleanOperationSelectedImpl(ctx, selectedNodes, operation)
   }
 
   function ungroupSelected(selectedNode: SceneNode | undefined) {

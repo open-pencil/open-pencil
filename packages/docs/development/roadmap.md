@@ -37,7 +37,7 @@ See [canvas navigation](../user-guide/canvas-navigation), [components and librar
 ### Figma fidelity
 
 - Preserve and round-trip more Figma metadata safely.
-- Add visual regression coverage for full multi-page `.fig` documents. `bun tools/visual-oracles/src/cli.ts export-fixtures` exports current smoke fixture pages to `/tmp` for manual comparison without committing large images; `tests/fixtures/figma-oracles/visual-comparison-report.json` records the current Figma-vs-OpenPencil oracle diff findings.
+- Add visual regression coverage for full multi-page `.fig` documents. `bun tools/generate/visual-oracles/src/cli.ts export-fixtures` exports current smoke fixture pages to `/tmp` for manual comparison without committing large images; `tests/fixtures/figma-oracles/visual-comparison-report.json` records the current Figma-vs-OpenPencil oracle diff findings.
 - Close high-impact renderer gaps: remaining mask edge cases, blend isolation, pattern fills, and broader variable-font fixtures.
 - Improve boolean operation editing/export now that imported Figma `BOOLEAN_OPERATION` nodes remain boolean operations.
 

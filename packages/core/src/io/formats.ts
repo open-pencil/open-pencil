@@ -11,12 +11,25 @@ import type {
   ExportRequest,
   ExportResult,
   FigWriteOptions,
+  HTMLExportOptions,
   IOContext,
   IOFormatAdapter,
-  JSXExportOptions,
+  IOFormatExportOptions,
+  IOFormatSupport,
   RasterExportOptions,
   SVGExportOptions
 } from './types'
+
+/** Formats that export a document, page, selection, or single node alike. */
+const EXPORT_EVERY_TARGET: IOFormatSupport = {
+  exportDocument: true,
+  exportPage: true,
+  exportSelection: true,
+  exportNode: true
+}
+
+/** Formats with a size of their own, so no export scale or quality. */
+const FIXED_SIZE_EXPORT: IOFormatExportOptions = { scale: false, quality: false }
 
 function lowerExt(name: string): string {
   const match = /\.([^.]+)$/.exec(name.toLowerCase())
@@ -93,8 +106,8 @@ async function renderRaster(
   })
 }
 
-function rasterFormat(format: RasterExportFormat): IOFormatAdapter {
-  const extension = format === 'JPG' ? 'jpg' : format.toLowerCase()
+function rasterFormat<F extends RasterExportFormat>(format: F): IOFormatAdapter<Lowercase<F>> {
+  const extension = format.toLowerCase() as Lowercase<F>
   let mimeType = 'image/png'
   if (format === 'JPG') mimeType = 'image/jpeg'
   else if (format === 'WEBP') mimeType = 'image/webp'
@@ -138,7 +151,7 @@ function rasterFormat(format: RasterExportFormat): IOFormatAdapter {
   }
 }
 
-export const figFormat: IOFormatAdapter = {
+export const figFormat: IOFormatAdapter<'fig'> = {
   id: 'fig',
   label: 'OpenPencil Document',
   role: 'native-document',
@@ -153,10 +166,7 @@ export const figFormat: IOFormatAdapter = {
     exportSelection: true,
     exportNode: true
   },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  exportOptions: FIXED_SIZE_EXPORT,
   matchesFile(fileName) {
     return lowerExt(fileName) === 'fig'
   },
@@ -198,7 +208,7 @@ export const figFormat: IOFormatAdapter = {
   }
 }
 
-export const penFormat: IOFormatAdapter = {
+export const penFormat: IOFormatAdapter<'pen'> = {
   id: 'pen',
   label: 'Pencil Document',
   role: 'interchange-document',
@@ -222,24 +232,15 @@ export const pngFormat = rasterFormat('PNG')
 export const jpgFormat = rasterFormat('JPG')
 export const webpFormat = rasterFormat('WEBP')
 
-export const svgFormat: IOFormatAdapter = {
+export const svgFormat: IOFormatAdapter<'svg'> = {
   id: 'svg',
   label: 'SVG',
   role: 'derived-export',
   category: 'vector',
   extensions: ['svg'],
   mimeTypes: ['image/svg+xml'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false,
-    colorSpace: true
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: { ...FIXED_SIZE_EXPORT, colorSpace: true },
   async exportContent(request, options?: SVGExportOptions) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -255,23 +256,15 @@ export const svgFormat: IOFormatAdapter = {
   }
 }
 
-export const pdfFormat: IOFormatAdapter = {
+export const pdfFormat: IOFormatAdapter<'pdf'> = {
   id: 'pdf',
   label: 'PDF',
   role: 'derived-export',
   category: 'vector',
   extensions: ['pdf'],
   mimeTypes: ['application/pdf'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request) {
     const target = resolveExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -300,23 +293,15 @@ function resolvePPTXExportNodes(
   return { pageId: pages[0].id, nodeIds: pages.flatMap((page) => page.childIds) }
 }
 
-export const pptxFormat: IOFormatAdapter = {
+export const pptxFormat: IOFormatAdapter<'pptx'> = {
   id: 'pptx',
   label: 'PowerPoint',
   role: 'derived-export',
   category: 'print',
   extensions: ['pptx'],
   mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
-  support: {
-    exportDocument: true,
-    exportPage: true,
-    exportSelection: true,
-    exportNode: true
-  },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
   async exportContent(request, options?: PPTXExportOptions, context?: IOContext) {
     const target = resolvePPTXExportNodes(request)
     if (!target) throw new Error('Nothing to export')
@@ -335,7 +320,7 @@ export const pptxFormat: IOFormatAdapter = {
   }
 }
 
-export const jsxFormat: IOFormatAdapter = {
+export const jsxFormat: IOFormatAdapter<'jsx'> = {
   id: 'jsx',
   label: 'JSX',
   role: 'derived-export',
@@ -346,18 +331,14 @@ export const jsxFormat: IOFormatAdapter = {
     exportSelection: true,
     exportNode: true
   },
-  exportOptions: {
-    scale: false,
-    quality: false
-  },
-  async exportContent(request, options?: JSXExportOptions): Promise<ExportResult> {
-    const format = options?.format ?? 'openpencil'
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request): Promise<ExportResult> {
     const nodeId = ensureSingleNode(request.target)
     let data = ''
     if (nodeId) {
-      data = sceneNodeToJSX(nodeId, request.graph, format)
+      data = sceneNodeToJSX(nodeId, request.graph)
     } else if (request.target.scope === 'selection') {
-      data = selectionToJSX(request.target.nodeIds, request.graph, format)
+      data = selectionToJSX(request.target.nodeIds, request.graph)
     }
     if (!data) throw new Error('Nothing to export')
     return {
@@ -370,7 +351,62 @@ export const jsxFormat: IOFormatAdapter = {
   }
 }
 
-export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
+export const htmlFormat: IOFormatAdapter<'html'> = {
+  id: 'html',
+  label: 'HTML',
+  role: 'derived-export',
+  category: 'code',
+  extensions: ['html'],
+  mimeTypes: ['text/html'],
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request, options?: HTMLExportOptions) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const { renderNodesToHTML } = await import('./formats/html')
+    const { html, assets } = await renderNodesToHTML(
+      request.graph,
+      target.nodeIds,
+      options,
+      request.fileName
+    )
+    return {
+      format: 'html',
+      mimeType: 'text/html',
+      extension: 'html',
+      data: html,
+      encoding: 'utf8',
+      assets
+    }
+  }
+}
+
+export const tailwindJSXFormat: IOFormatAdapter<'tailwind-jsx'> = {
+  id: 'tailwind-jsx',
+  label: 'Tailwind JSX',
+  role: 'derived-export',
+  category: 'code',
+  extensions: ['jsx'],
+  mimeTypes: ['text/plain', 'text/jsx'],
+  support: EXPORT_EVERY_TARGET,
+  exportOptions: FIXED_SIZE_EXPORT,
+  async exportContent(request) {
+    const target = resolveExportNodes(request)
+    if (!target) throw new Error('Nothing to export')
+    const { sceneNodesToTailwindJSX } = await import('@open-pencil/dom-css/export')
+    const data = sceneNodesToTailwindJSX(request.graph, target.nodeIds)
+    if (!data) throw new Error('Nothing to export')
+    return {
+      format: 'tailwind-jsx',
+      mimeType: 'text/plain',
+      extension: 'jsx',
+      data,
+      encoding: 'utf8'
+    }
+  }
+}
+
+export const BUILTIN_IO_FORMATS = [
   figFormat,
   penFormat,
   pngFormat,
@@ -379,5 +415,9 @@ export const BUILTIN_IO_FORMATS: IOFormatAdapter[] = [
   svgFormat,
   pdfFormat,
   pptxFormat,
-  jsxFormat
-]
+  jsxFormat,
+  tailwindJSXFormat,
+  htmlFormat
+] as const satisfies readonly IOFormatAdapter[]
+
+export type BuiltinIOFormatId = (typeof BUILTIN_IO_FORMATS)[number]['id']

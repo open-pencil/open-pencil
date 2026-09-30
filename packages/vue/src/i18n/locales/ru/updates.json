@@ -4,6 +4,8 @@
   "available": "Доступен OpenPencil {version}.",
   "installPrompt": "Скачать и установить сейчас? После установки обновления приложение перезапустится.",
   "downloading": "Загрузка OpenPencil {version}",
+  "downloadProgress": "{percent}% · {downloaded} из {total}",
+  "downloadProgressUnknown": "Загружено {downloaded}",
   "installedTitle": "Обновление установлено",
   "installed": "OpenPencil {version} установлен{size}. Перезапуск.",
   "unavailable": "Обновления пока недоступны. Сначала опубликуйте подписанный релиз с latest.json.",

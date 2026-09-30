@@ -1,0 +1,14 @@
+{
+  "name": "@open-pencil/unit-tests-tools",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./shards": "./src/shards.ts"
+  },
+  "scripts": {
+    "test": "bun test tests"
+  },
+  "dependencies": {
+    "@open-pencil/package-artifacts-tools": "workspace:*"
+  }
+}

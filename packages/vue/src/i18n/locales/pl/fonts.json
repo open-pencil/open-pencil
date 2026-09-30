@@ -27,6 +27,8 @@
   "expandIssues": "Pokaż problemy z czcionkami",
   "collapseIssues": "Ukryj problemy z czcionkami",
   "noSubstitute": "brak dostępnego zamiennika",
+  "unsupportedFormatShort": "nieobsługiwany format",
+  "unsupportedFormat": "Zainstalowany, ale w formacie, którego OpenPencil jeszcze nie obsługuje",
   "settingsDesktopDescription": "Uzyskaj dostęp do czcionek systemowych, dostawców online, pakietów zapasowych i pobranych plików w pamięci podręcznej.",
   "settingsBrowserDescription": "Zezwól przeglądarce na dostęp do lokalnych czcionek i zarządzaj dostawcami czcionek online.",
   "providerEnabled": "Włączono {provider}.",

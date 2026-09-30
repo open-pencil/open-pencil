@@ -34,8 +34,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          if [ ! -f tools/pr-review-guidance/src/index.ts ]; then
+          if [ ! -f tools/ci/pr-review-guidance/src/index.ts ]; then
             echo "Trusted PR review guidance helper is not present on the default branch yet."
             exit 0
           fi
-          node --experimental-strip-types tools/pr-review-guidance/src/index.ts
+          node --experimental-strip-types tools/ci/pr-review-guidance/src/index.ts

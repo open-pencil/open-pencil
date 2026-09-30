@@ -1,8 +1,8 @@
 name: PR title
 
 on:
+  # Every base, so stacked pull requests are checked against the PR below them.
   pull_request:
-    branches: [master]
     types: [opened, synchronize, reopened, edited]
 
 permissions:

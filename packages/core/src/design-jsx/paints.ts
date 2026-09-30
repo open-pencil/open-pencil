@@ -5,9 +5,9 @@ import type {
   GradientStop,
   GradientTransform
 } from '@open-pencil/scene-graph'
+import { colorToFill, parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
-import { colorToFill, parseColor } from '#core/color'
 import { TRANSPARENT } from '#core/constants'
 
 export type PaintColor = string | Color

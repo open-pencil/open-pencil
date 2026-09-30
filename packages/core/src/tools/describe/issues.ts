@@ -1,6 +1,5 @@
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
-
-import { colorDistance, colorToHex } from '#core/color'
+import { colorDistance, colorToHex } from '@open-pencil/scene-graph/color'
 
 import { detectLayoutIssues } from './layout-issues'
 import { CONTAINER_TYPES, findAncestorBackground, looksLikeButton } from './shared'
@@ -403,7 +402,7 @@ const ERROR_PATTERNS = [
   /no color/i,
   /collapses/i,
   /no fill and no stroke/i,
-  /dark on dark/i,
+  /below WCAG AA/i,
   /Touch target too small/i,
   /Nested Text/i
 ]
