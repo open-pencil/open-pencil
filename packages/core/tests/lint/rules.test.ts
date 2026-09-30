@@ -121,6 +121,18 @@ describe('touch-target-size', () => {
     expect(messages[0]?.data).toEqual({ width: 60, height: 24, minSize: 44 })
   })
 
+  test('matches control names as whole words', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    graph.createNode('RECTANGLE', pageId, { name: 'Rectangle', width: 1, height: 80 })
+    graph.createNode('FRAME', pageId, { name: 'Tablet preview', width: 20, height: 20 })
+    const iconButton = graph.createNode('FRAME', pageId, { name: 'IconButton2', width: 32, height: 32 })
+
+    expect(lint(graph, 'touch-target-size').map((message) => message.nodeId)).toEqual([
+      iconButton.id
+    ])
+  })
+
   test('does not treat icons as touch targets on their own', () => {
     const graph = new SceneGraph()
     graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Icon', width: 16, height: 16 })

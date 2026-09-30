@@ -1,27 +1,34 @@
 import { defineRule } from '#core/lint/rule'
+import { nameWords } from '#core/lint/utils'
+
 const MIN_SIZE = 44
-const PATTERNS = [
-  /button/i,
-  /btn/i,
-  /link/i,
-  /cta/i,
-  /checkbox/i,
-  /radio/i,
-  /switch/i,
-  /toggle/i,
-  /input/i,
-  /select/i,
-  /dropdown/i,
-  /menu/i,
-  /tab/i,
-  /chip/i,
-  /tag/i,
-  /close/i,
-  /dismiss/i,
-  /action/i
-]
+/** Words that name a control; a trailing plural `s` also matches ("Tabs", "Actions"). */
+const CONTROL_WORDS = new Set([
+  'button',
+  'btn',
+  'link',
+  'cta',
+  'checkbox',
+  'radio',
+  'switch',
+  'toggle',
+  'input',
+  'select',
+  'dropdown',
+  'menu',
+  'tab',
+  'chip',
+  'tag',
+  'close',
+  'dismiss',
+  'action'
+])
+
 function isInteractive(name: string): boolean {
-  return PATTERNS.some((pattern) => pattern.test(name))
+  return nameWords(name).some(
+    (word) =>
+      CONTROL_WORDS.has(word) || (word.endsWith('s') && CONTROL_WORDS.has(word.slice(0, -1)))
+  )
 }
 
 export default defineRule({
