@@ -12,7 +12,7 @@ export interface LayerIssue {
 }
 
 const PADDING_PROPS: Record<string, readonly string[]> = {
-  gap: ['gap'],
+  itemSpacing: ['gap'],
   paddingTop: ['pt', 'py', 'p'],
   paddingRight: ['pr', 'px', 'p'],
   paddingBottom: ['pb', 'py', 'p'],
