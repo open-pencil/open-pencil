@@ -208,7 +208,8 @@ test('Tailwind JSX is generated read-only in the same editor', async () => {
   await openCodePanel()
   await selectSource('Tailwind JSX')
   await expect(editor.page.getByTestId('code-panel-status')).toContainText('Generated, read only')
-  await expect(codeEditor()).toHaveAttribute('contenteditable', 'false')
+  // It still takes a cursor, which marks the layer of the element around it.
+  await expect(codeEditor()).toHaveAttribute('aria-readonly', 'true')
 })
 
 test('copy button works and shows confirmation', async () => {
