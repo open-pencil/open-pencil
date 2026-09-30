@@ -2,7 +2,7 @@ import { syntaxTree } from '@codemirror/language'
 import { linter, type Diagnostic } from '@codemirror/lint'
 import { StateEffect, StateField, type EditorState, type Extension } from '@codemirror/state'
 
-import type { LayerIssue } from '@/app/code/layer-issues'
+import type { LayerIssue } from '@/app/code/layers/issues'
 
 import { linkedElements, setLayerLinks, type LinkedElement } from './layer-links'
 
