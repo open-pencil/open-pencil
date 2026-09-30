@@ -1,5 +1,10 @@
 import { computed, shallowRef, type Ref } from 'vue'
 
+import {
+  designJSXElement,
+  selectionToJSXWithLayers,
+  type DesignJSXElement
+} from '@open-pencil/design-jsx'
 import { useDesignCheckMessages } from '@open-pencil/vue'
 
 import type { GeneratedCode } from '@/app/code/generated'
@@ -18,8 +23,6 @@ export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
   const store = useEditorStore()
   const messages = useDesignCheckMessages()
   const links = shallowRef<LayerLinkSource | null>(null)
-  /** Links of the generated code, restored when an edit is reset. */
-  let generatedLinks: LayerLinkSource | null = null
 
   const issues = computed(() => {
     const snapshot = store.designCheck.snapshot.value
@@ -29,17 +32,12 @@ export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
 
   /** Generated code lists its layers in element order. */
   function showGenerated(generated: GeneratedCode | null) {
-    generatedLinks = generated ? { kind: 'order', layerIds: generated.layerIds } : null
-    links.value = generatedLinks
+    links.value = generated ? { kind: 'order', layerIds: generated.layerIds } : null
   }
 
   /** A live preview reports the line each rendered layer came from. */
   function showPreview(layers: readonly DesignJSXLayerLine[]) {
     links.value = { kind: 'lines', layers }
-  }
-
-  function restoreGenerated() {
-    links.value = generatedLinks
   }
 
   /** The layer this panel marked, so clearing never removes a hover the canvas set since. */
@@ -53,5 +51,24 @@ export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
     marked = nodeId
   }
 
-  return { links, issues, showGenerated, showPreview, restoreGenerated, markActive }
+  /** A linked layer as Design JSX writes it, the unit code is patched in. */
+  function describe(nodeId: string): DesignJSXElement | null {
+    return designJSXElement(nodeId, store.graph)
+  }
+
+  /** Design JSX for a layer added on the canvas, with the layer of each of its elements. */
+  function snippet(nodeId: string): { code: string; layerIds: string[] } | null {
+    const { code, layerIds } = selectionToJSXWithLayers([nodeId], store.graph)
+    return code ? { code, layerIds } : null
+  }
+
+  return {
+    links,
+    issues,
+    showGenerated,
+    showPreview,
+    markActive,
+    describe,
+    snippet
+  }
 }

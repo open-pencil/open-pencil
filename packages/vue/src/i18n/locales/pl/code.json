@@ -15,5 +15,6 @@
   "noSelection": "Zaznacz warstwę, aby zobaczyć jej kod",
   "noSelectionDesignJSX": "Albo napisz Design JSX, aby dodać nowe warstwy do strony.",
   "noSelectionTailwindJSX": "Tailwind JSX jest generowany dla zaznaczonych warstw.",
-  "writeJSX": "Napisz JSX"
+  "writeJSX": "Napisz JSX",
+  "canvasChangedExpression": "Na płótnie jest teraz {value}; wyrażenie pozostaje bez zmian."
 }

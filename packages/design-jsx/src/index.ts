@@ -82,15 +82,18 @@ export {
 } from './transform'
 
 export {
+  designJSXElement,
   sceneNodeAttributes,
   sceneNodeToJSX,
   selectionToJSX,
   selectionToJSXWithLayers,
+  type DesignJSXElement,
   type DesignJSXWithLayers,
   type JSXAttributeSource
 } from './export'
 export { parseJSXAttributes } from './attributes'
 export { jsxNodeFields, type JSXNodeFields } from './fields'
+export { reconcileRenderedLayers } from './reconcile'
 export { JSX_REFERENCE, AUTHORING_EXAMPLES, type AuthoringExample } from './reference'
 export {
   createStreamingJSXParser,

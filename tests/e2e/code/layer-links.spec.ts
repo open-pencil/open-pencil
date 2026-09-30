@@ -122,25 +122,120 @@ test('links follow the code after a live edit', async () => {
   )
 })
 
-test('canvas edits after a code edit flow back into the code and undo in order', async () => {
+/** Runs a canvas edit through the store, as a Design panel or canvas gesture commits it. */
+function editLayer(page: Page, name: string, changes: Record<string, unknown>) {
+  return page.evaluate(
+    ({ name, changes }) => {
+      const store = window.openPencil?.getStore?.()
+      const node = [...(store?.graph.getAllNodes() ?? [])].find((n) => n.name === name)
+      if (!store || !node) throw new Error(`${name} not found`)
+      store.updateNodeWithUndo(node.id, changes, 'Edit')
+    },
+    { name, changes }
+  )
+}
+
+function layerId(page: Page, name: string) {
+  return page.evaluate((name) => {
+    const store = window.openPencil?.getStore?.()
+    return [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === name)?.id ?? null
+  }, name)
+}
+
+function codeText(page: Page) {
+  return page.locator('[data-slot="code-editor"] .cm-content').innerText()
+}
+
+/** Writes like a person: a comment above the card and an expression for the swatch width. */
+async function personalizeCode(page: Page) {
+  await codeLine(page, 'name="Card"').click()
+  await page.keyboard.press('ControlOrMeta+Home')
+  await page.keyboard.type('// Pricing card')
+  await page.keyboard.press('Enter')
+  await codeLine(page, 'name="Swatch"').locator('span', { hasText: /^80$/ }).dblclick()
+  await page.keyboard.type('40 * 2')
+  await expect(page.getByTestId('code-panel-status')).toHaveText('Updated live')
+}
+
+test('code edits update the layers in place', async () => {
   await buildScene(editor.page)
   await openCode(editor.page)
-  await codeLine(editor.page, 'name="Card"').click()
-  await editor.page.keyboard.press('End')
-  await editor.page.keyboard.type(' ')
-  await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Updated live')
+  const swatchId = await layerId(editor.page, 'Swatch')
 
-  await leaveCode(editor.page)
-  await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Up to date')
+  await codeLine(editor.page, 'name="Swatch"').locator('span', { hasText: /^80$/ }).dblclick()
+  await editor.page.keyboard.type('120')
+
+  await expect
+    .poll(() =>
+      editor.page.evaluate(
+        (id) => (id ? window.openPencil?.getStore?.().graph.getNode(id)?.width : null),
+        swatchId
+      )
+    )
+    .toBe(120)
+})
+
+test('canvas edits patch code a person wrote and keep the rest as written', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  await personalizeCode(editor.page)
+
+  await editLayer(editor.page, 'Card', { width: 400 })
+  await editLayer(editor.page, 'Swatch', { width: 100 })
+
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={400}')
+  const text = await codeText(editor.page)
+  expect(text).toContain('// Pricing card')
+  // The width the person wrote as an expression is theirs; the canvas does not overwrite it,
+  // and the code says the canvas now differs.
+  expect(text).toContain('w={40 * 2}')
+  await expect(editor.page.locator('[data-slot="code-editor"] .cm-lintRange-info')).toHaveText(
+    'w={40 * 2}'
+  )
+})
+
+test('layers added or deleted on the canvas are written into the code', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  await personalizeCode(editor.page)
+
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
-    if (!store || !card) throw new Error('Card not found')
-    store.updateNodeWithUndo(card.id, { width: 400 }, 'Resize')
+    const note = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Fine print')
+    if (!store || !card || !note) throw new Error('scene not found')
+    store.graph.createNode('ELLIPSE', card.id, {
+      name: 'Dot',
+      x: 200,
+      y: 60,
+      width: 24,
+      height: 24
+    })
+    store.graph.deleteNode(note.id)
+    store.requestRender()
   })
-  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={400}')
 
-  await editor.page.keyboard.press('ControlOrMeta+z')
+  await expect(codeLine(editor.page, 'name="Dot"')).toBeVisible()
+  await expect(codeLine(editor.page, 'name="Fine print"')).toHaveCount(0)
+  expect(await codeText(editor.page)).toContain('// Pricing card')
+
+  await codeLine(editor.page, 'name="Dot"').click({ position: { x: 24, y: 8 } })
+  await expect.poll(() => hoveredLayer(editor.page)).toBe('Dot')
+})
+
+test('undo reverts a code edit on the canvas and in the code', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  await codeLine(editor.page, 'name="Card"').locator('span', { hasText: /^320$/ }).dblclick()
+  await editor.page.keyboard.type('360')
+  await expect.poll(() => cardSize(editor.page)).toBe('360x160')
+
+  await editLayer(editor.page, 'Card', { height: 200 })
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('h={200}')
+
+  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('h={160}')
+  await editor.page.evaluate(() => window.openPencil?.getStore?.().undoAction())
   await expect.poll(() => cardSize(editor.page)).toBe('320x160')
   await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={320}')
 })

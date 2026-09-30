@@ -15,5 +15,6 @@
   "noSelection": "Sélectionnez un calque pour voir son code",
   "noSelectionDesignJSX": "Ou écrivez du Design JSX pour ajouter de nouveaux calques à la page.",
   "noSelectionTailwindJSX": "Le Tailwind JSX est généré pour les calques sélectionnés.",
-  "writeJSX": "Écrire du JSX"
+  "writeJSX": "Écrire du JSX",
+  "canvasChangedExpression": "Le canevas indique maintenant {value} ; l’expression reste telle qu’écrite."
 }
