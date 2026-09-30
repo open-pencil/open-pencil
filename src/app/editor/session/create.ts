@@ -12,6 +12,7 @@ import {
 } from '@/app/editor/active-store'
 import { resolveFigmaClipboardImages } from '@/app/editor/clipboard/figma-images'
 import { bindClipboardNotifications } from '@/app/editor/clipboard/notifications'
+import { createDesignCheck } from '@/app/editor/design-check/session'
 import { loadFont } from '@/app/editor/fonts'
 import { createRecentPages } from '@/app/editor/pages/recent'
 import { createCanvasPaneRegistry } from '@/app/editor/panes/registry'
@@ -133,6 +134,7 @@ export function createEditorStore(initialGraph?: SceneGraph) {
   // Spread all core Editor methods, then override getters and add app-specific.
 
   const panes = createCanvasPaneRegistry(state)
+  const designCheck = createDesignCheck(editor, state, () => viewportSize)
 
   function progressUnit(phase: string): 'fonts' | 'pages' | undefined {
     if (phase === 'resolving-fonts') return 'fonts'
@@ -236,12 +238,14 @@ export function createEditorStore(initialGraph?: SceneGraph) {
     closePane: panes.closePane,
     resizePane: panes.resizePane,
     setSplitSizes: panes.setSplitSizes,
+    designCheck,
 
     // App-specific overrides and additions
     ...modules,
     dispose() {
       stopColorSpaceSync()
       recentPages.dispose()
+      designCheck.dispose()
       disposeSelection()
       modules.dispose()
     }

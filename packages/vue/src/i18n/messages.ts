@@ -8,6 +8,7 @@ import {
 import { commandMessageDefaults, commandMessages } from '#vue/i18n/messages/commands'
 import { commonMessageDefaults, commonMessages } from '#vue/i18n/messages/common'
 import { credentialsMessageDefaults, credentialsMessages } from '#vue/i18n/messages/credentials'
+import { designCheckMessageDefaults, designCheckMessages } from '#vue/i18n/messages/design-check'
 import { diagnosticsMessageDefaults, diagnosticsMessages } from '#vue/i18n/messages/diagnostics'
 import { editorMessageDefaults, editorMessages } from '#vue/i18n/messages/editor'
 import { filesMessageDefaults, filesMessages } from '#vue/i18n/messages/files'
@@ -37,6 +38,7 @@ export {
   commandMessages,
   commonMessages,
   credentialsMessages,
+  designCheckMessages,
   diagnosticsMessages,
   editorMessages,
   filesMessages,
@@ -64,6 +66,7 @@ export const messageDefaults = {
   commands: commandMessageDefaults,
   common: commonMessageDefaults,
   credentials: credentialsMessageDefaults,
+  designCheck: designCheckMessageDefaults,
   diagnostics: diagnosticsMessageDefaults,
   editor: editorMessageDefaults,
   files: filesMessageDefaults,

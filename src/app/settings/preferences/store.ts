@@ -10,6 +10,17 @@ export type ReasoningDisplay = 'collapsed' | 'while-thinking' | 'expanded'
 
 export type CanvasRenderingMode = 'retained' | 'tiled'
 
+export const DESIGN_CHECK_PRESETS = ['recommended', 'strict', 'accessibility'] as const
+export type DesignCheckPreset = (typeof DESIGN_CHECK_PRESETS)[number]
+
+export interface DesignCheckPreferences {
+  /** Marks layers with errors and warnings on the canvas. */
+  showOnCanvas: boolean
+  preset: DesignCheckPreset
+  /** Rules turned off on top of the preset. */
+  disabledRules: string[]
+}
+
 export interface AppPreferences {
   appearance: { animations: AnimationPreference }
   chat: { reasoningDisplay: ReasoningDisplay; maxAgentSteps: number }
@@ -23,6 +34,7 @@ export interface AppPreferences {
   rendering: {
     canvasMode: CanvasRenderingMode
   }
+  designCheck: DesignCheckPreferences
 }
 
 export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
@@ -33,7 +45,8 @@ export const DEFAULT_APP_PREFERENCES: Readonly<AppPreferences> = {
   editing: {
     snapping: { ...DEFAULT_SNAPPING_PREFERENCES }
   },
-  rendering: { canvasMode: 'retained' }
+  rendering: { canvasMode: 'retained' },
+  designCheck: { showOnCanvas: true, preset: 'recommended', disabledRules: [] }
 }
 
 const STORAGE_KEY = 'open-pencil:preferences:v1'
@@ -54,6 +67,7 @@ interface StoredAppPreferences {
   recovery?: { enabled?: unknown }
   editing?: { snapping?: StoredSnappingPreferences }
   rendering?: { canvasMode?: unknown }
+  designCheck?: { showOnCanvas?: unknown; preset?: unknown; disabledRules?: unknown }
 }
 
 function isStoredAppPreferences(value: unknown): value is StoredAppPreferences {
@@ -71,6 +85,23 @@ function normalizeChatPreferences(chat: StoredAppPreferences['chat']): AppPrefer
       chat?.reasoningDisplay === 'expanded' || chat?.reasoningDisplay === 'while-thinking'
         ? chat.reasoningDisplay
         : 'collapsed'
+  }
+}
+
+function normalizeDesignCheckPreferences(
+  designCheck: StoredAppPreferences['designCheck']
+): DesignCheckPreferences {
+  const preset = DESIGN_CHECK_PRESETS.find((candidate) => candidate === designCheck?.preset)
+  const disabledRules = Array.isArray(designCheck?.disabledRules)
+    ? designCheck.disabledRules.filter((rule): rule is string => typeof rule === 'string')
+    : []
+  return {
+    showOnCanvas: booleanOrDefault(
+      designCheck?.showOnCanvas,
+      DEFAULT_APP_PREFERENCES.designCheck.showOnCanvas
+    ),
+    preset: preset ?? DEFAULT_APP_PREFERENCES.designCheck.preset,
+    disabledRules: [...new Set(disabledRules)]
   }
 }
 
@@ -103,7 +134,8 @@ function normalizePreferences(value: unknown): AppPreferences {
     },
     rendering: {
       canvasMode: stored?.rendering?.canvasMode === 'tiled' ? 'tiled' : 'retained'
-    }
+    },
+    designCheck: normalizeDesignCheckPreferences(stored?.designCheck)
   }
 }
 
@@ -140,5 +172,12 @@ export function updateSnappingPreferences(changes: Partial<SnappingPreferences>)
         ...changes
       }
     }
+  }
+}
+
+export function updateDesignCheckPreferences(changes: Partial<DesignCheckPreferences>): void {
+  appPreferences.value = {
+    ...appPreferences.value,
+    designCheck: { ...appPreferences.value.designCheck, ...changes }
   }
 }

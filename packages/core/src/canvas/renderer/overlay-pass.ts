@@ -3,8 +3,11 @@ import type { Canvas } from 'canvaskit-wasm'
 import type { SceneGraph } from '@open-pencil/scene-graph'
 
 import { drawGuides } from '#core/canvas/guides/draw'
+import { drawIssueHighlight, drawIssueMarkers } from '#core/canvas/issues/draw'
+import { layoutIssueMarkers } from '#core/canvas/issues/layout'
 import { drawMeasurementSegment } from '#core/canvas/overlays/measurement'
 import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
+import { RULER_SIZE } from '#core/constants'
 
 function measurementVisible(overlays: RenderOverlays): boolean {
   return (
@@ -31,12 +34,60 @@ export function drawLabelPass(
   profiler.endPhase('render:componentLabels')
 }
 
+function suppressedIssueIds(overlays: RenderOverlays): Set<string> {
+  const ids = new Set<string>()
+  if (overlays.editingTextId) ids.add(overlays.editingTextId)
+  if (overlays.nodeEditState) ids.add(overlays.nodeEditState.nodeId)
+  return ids
+}
+
+/**
+ * Lays out markers for this frame and keeps them for hit testing, so the pointer always targets
+ * what is drawn. Markers step aside while a layer is being dragged, resized or rotated.
+ */
+function updateIssueMarkers(
+  r: SkiaRenderer,
+  graph: SceneGraph,
+  overlays: RenderOverlays,
+  interactive: boolean
+): void {
+  const markers = overlays.designIssues?.markers
+  if (!markers || markers.length === 0 || interactive || overlays.penState) {
+    r.issueMarkers = []
+    return
+  }
+  const measureText = (text: string) => {
+    const font = r.sizeFont
+    if (!font) return 0
+    let width = 0
+    for (const glyph of font.getGlyphWidths(font.getGlyphIDs(text))) width += glyph
+    return width
+  }
+  const inset = r.showRulers ? RULER_SIZE : 0
+  r.issueMarkers = layoutIssueMarkers(graph, markers, {
+    pageId: r.pageId ?? '',
+    view: {
+      panX: r.panX,
+      panY: r.panY,
+      zoom: r.zoom,
+      width: r.viewportWidth,
+      height: r.viewportHeight,
+      insetTop: inset,
+      insetLeft: inset
+    },
+    suppressedIds: suppressedIssueIds(overlays),
+    preview: overlays.rotationPreview,
+    measureText
+  })
+}
+
 export function drawOverlayPass(
   r: SkiaRenderer,
   canvas: Canvas,
   graph: SceneGraph,
   selectedIds: Set<string>,
-  overlays: RenderOverlays
+  overlays: RenderOverlays,
+  interactive = false
 ): void {
   const measuring = measurementVisible(overlays)
   const hoveredNodeId =
@@ -44,6 +95,9 @@ export function drawOverlayPass(
       ? null
       : overlays.hoveredNodeId
   r.drawHoverHighlight(canvas, graph, hoveredNodeId, overlays.rotationPreview)
+  if (!interactive) {
+    drawIssueHighlight(r, canvas, graph, overlays.designIssues?.highlight, overlays.rotationPreview)
+  }
   r.drawEnteredContainer(canvas, graph, overlays.enteredContainerId, overlays.rotationPreview)
   r.profiler.beginPhase('render:selection')
   r.drawSelection(canvas, graph, selectedIds, overlays)
@@ -59,6 +113,8 @@ export function drawOverlayPass(
   if (!measuring) r.drawAutoLayoutHover(canvas, graph, overlays.autoLayoutHover)
   r.drawNodeEditOverlay(canvas, graph, overlays.nodeEditState)
   r.drawPenOverlay(canvas, overlays.penState)
+  updateIssueMarkers(r, graph, overlays, interactive)
+  drawIssueMarkers(r, canvas, r.issueMarkers, overlays.designIssues?.hoveredMarkerKey)
   r.drawPresenceCursors(canvas, graph, overlays.presenceCursors)
 }
 
