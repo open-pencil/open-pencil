@@ -11,5 +11,9 @@
   "updatedLive": "Aggiornato in tempo reale",
   "previewFailed": "Anteprima non riuscita",
   "generatedReadOnly": "Generato, in sola lettura",
-  "reset": "Reimposta"
+  "reset": "Reimposta",
+  "noSelection": "Seleziona un livello per vederne il codice",
+  "noSelectionDesignJSX": "Oppure scrivi Design JSX per aggiungere nuovi livelli alla pagina.",
+  "noSelectionTailwindJSX": "Il Tailwind JSX viene generato per i livelli selezionati.",
+  "writeJSX": "Scrivi JSX"
 }

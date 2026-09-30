@@ -11,5 +11,9 @@
   "updatedLive": "Zaktualizowano na żywo",
   "previewFailed": "Podgląd nie powiódł się",
   "generatedReadOnly": "Wygenerowany, tylko do odczytu",
-  "reset": "Resetuj"
+  "reset": "Resetuj",
+  "noSelection": "Zaznacz warstwę, aby zobaczyć jej kod",
+  "noSelectionDesignJSX": "Albo napisz Design JSX, aby dodać nowe warstwy do strony.",
+  "noSelectionTailwindJSX": "Tailwind JSX jest generowany dla zaznaczonych warstw.",
+  "writeJSX": "Napisz JSX"
 }

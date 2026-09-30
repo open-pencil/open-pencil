@@ -11,5 +11,9 @@
   "updatedLive": "リアルタイム更新済み",
   "previewFailed": "プレビューに失敗しました",
   "generatedReadOnly": "生成済み、読み取り専用",
-  "reset": "リセット"
+  "reset": "リセット",
+  "noSelection": "レイヤーを選択するとコードが表示されます",
+  "noSelectionDesignJSX": "または Design JSX を書いて、ページに新しいレイヤーを追加できます。",
+  "noSelectionTailwindJSX": "Tailwind JSX は選択したレイヤーから生成されます。",
+  "writeJSX": "JSX を書く"
 }

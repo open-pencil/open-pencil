@@ -11,5 +11,9 @@
   "updatedLive": "已实时更新",
   "previewFailed": "预览失败",
   "generatedReadOnly": "已生成，只读",
-  "reset": "重置"
+  "reset": "重置",
+  "noSelection": "选择图层以查看其代码",
+  "noSelectionDesignJSX": "也可以编写 Design JSX，向页面添加新图层。",
+  "noSelectionTailwindJSX": "Tailwind JSX 会为所选图层生成。",
+  "writeJSX": "编写 JSX"
 }

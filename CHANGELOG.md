@@ -38,6 +38,7 @@
 
 ### Changed
 
+- With nothing selected, the Code tab explains that it shows the selection's code and offers Write JSX for new layers, instead of showing a template frame that looked like a real layer.
 - Design lint reports far fewer false positives in `openpencil lint` and the app: `no-hardcoded-colors` flags only colors that match a color variable and names it, `no-deeply-nested` flags only the layer that crosses the depth limit, `touch-target-size` checks the WCAG 2.2 AA minimum of 24 × 24 in the Recommended preset (Strict and Accessibility keep 44 × 44), matches control names as whole words (a layer named "Rectangle" is no longer a call to action) and ignores icons and controls inside other controls, `consistent-spacing` accepts multiples of 4, `color-contrast` checks text bound to color variables, and layers inside instances are checked once through their main component. The Recommended preset reports unbound colors, deep nesting, mixed text styles, and off-scale spacing as suggestions instead of warnings. Lint messages carry the measured values in `data`.
 - Show Flatten, Outline text, and Outline stroke in the canvas context menu without icons, like every other item there.
 - Keep an AI chat working on the page where it started when you switch to another page, instead of sending its next edits to whichever page is on screen. When the AI switches pages itself, your view follows.
