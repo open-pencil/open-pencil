@@ -5,6 +5,7 @@ export const menu = tv({
     content: 'z-50 rounded-xl bg-panel p-1 shadow-[0_8px_30px_rgb(0_0_0/0.4)]',
     item: 'flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[11px] outline-none select-none data-[disabled]:cursor-default data-[disabled]:text-muted/50 data-[highlighted]:bg-hover',
     separator: 'mx-1 my-1 h-px bg-border',
+    label: 'px-2 pt-1.5 pb-1 text-[11px] text-muted select-none',
     shortcut: 'text-[11px] text-muted',
     icon: 'size-3 text-muted',
     subTrigger:
@@ -41,6 +42,7 @@ interface MenuUI {
   content?: string
   item?: string
   separator?: string
+  label?: string
   shortcut?: string
   icon?: string
   subTrigger?: string
@@ -52,6 +54,7 @@ export function useMenuUI(ui?: MenuUI) {
     content: cls.content({ class: ui?.content }),
     item: cls.item({ class: ui?.item }),
     separator: cls.separator({ class: ui?.separator }),
+    label: cls.label({ class: ui?.label }),
     shortcut: cls.shortcut({ class: ui?.shortcut }),
     icon: cls.icon({ class: ui?.icon }),
     subTrigger: cls.subTrigger({ class: ui?.subTrigger })

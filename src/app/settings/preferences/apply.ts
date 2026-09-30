@@ -3,7 +3,12 @@ import type { SnappingPreferences } from '@open-pencil/core/editor'
 import { getTabsSnapshot } from '@/app/tabs'
 
 import { syncNativeDesignIssuesMenu, syncNativeSnappingMenu } from './native-menu'
-import { appPreferences, updateDesignCheckPreferences, updateSnappingPreferences } from './store'
+import {
+  appPreferences,
+  updateDesignCheckPreferences,
+  updateSnappingPreferences,
+  type DesignCheckPreset
+} from './store'
 
 export function setSnappingPreference(
   preference: keyof SnappingPreferences,
@@ -24,4 +29,18 @@ export function setDesignIssuesOnCanvas(showOnCanvas: boolean): void {
   void syncNativeDesignIssuesMenu(showOnCanvas).catch((error: unknown) => {
     console.error('[Settings] Failed to synchronize the native design issues menu:', error)
   })
+}
+
+export function setDesignCheckPreset(preset: DesignCheckPreset): void {
+  updateDesignCheckPreferences({ preset })
+}
+
+export function turnOffDesignCheckRule(ruleId: string): void {
+  const disabledRules = new Set(appPreferences.value.designCheck.disabledRules)
+  disabledRules.add(ruleId)
+  updateDesignCheckPreferences({ disabledRules: [...disabledRules] })
+}
+
+export function turnOnDesignCheckRules(): void {
+  updateDesignCheckPreferences({ disabledRules: [] })
 }
