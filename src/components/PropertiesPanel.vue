@@ -53,7 +53,7 @@ const problemCount = computed(() => {
           class="relative flex items-center gap-1 rounded px-2.5 py-1 text-[11px] text-muted hover:text-surface data-[state=active]:font-semibold data-[state=active]:text-surface after:absolute after:inset-x-2 after:-bottom-[9px] after:h-0.5 after:rounded-full after:bg-transparent data-[state=active]:after:bg-accent"
         >
           <icon-lucide-code class="size-3" aria-hidden="true" />
-          <span class="sr-only @[16.5rem]/tabs:not-sr-only">{{ panels.code }}</span>
+          <span class="sr-only @[242px]/tabs:not-sr-only">{{ panels.code }}</span>
         </TabsTrigger>
         <TabsTrigger
           value="ai"
@@ -61,7 +61,7 @@ const problemCount = computed(() => {
           class="relative flex items-center gap-1 rounded px-2.5 py-1 text-[11px] text-muted hover:text-surface data-[state=active]:font-semibold data-[state=active]:text-surface after:absolute after:inset-x-2 after:-bottom-[9px] after:h-0.5 after:rounded-full after:bg-transparent data-[state=active]:after:bg-accent"
         >
           <icon-lucide-sparkles class="size-3" aria-hidden="true" />
-          <span class="sr-only @[16.5rem]/tabs:not-sr-only">{{ panels.ai }}</span>
+          <span class="sr-only @[242px]/tabs:not-sr-only">{{ panels.ai }}</span>
         </TabsTrigger>
         <Tip :label="checkMessages.tab" side="bottom">
           <TabsTrigger
