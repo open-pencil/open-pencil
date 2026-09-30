@@ -66,7 +66,7 @@ export function createEditorStoreModules(
   const documentExport = createDocumentExportActions(editor, state, io, documentIO.downloadBlob)
   const mobileClipboard = createMobileClipboardActions(editor)
   const profiler = createProfilerActions(editor)
-  const designCheck = createDesignCheck(editor, state, () => viewportSize)
+  const designCheck = createDesignCheck(editor, state)
 
   return {
     ...flash,

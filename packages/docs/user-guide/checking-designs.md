@@ -44,6 +44,10 @@ Pages with errors or warnings show their count in the page list, checked in the 
 
 Turn markers and Layers panel marks on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu.
 
+## In the Code Panel
+
+The Code tab underlines errors and warnings on the Design JSX or Tailwind JSX of their layers, on the property that causes the issue when there is one, such as `size={10}` for small text. Hover the underline to read the issue. The underlines follow your edits while you change the code live.
+
 ## Rules
 
 The settings menu in the Lint panel switches between rule presets:
