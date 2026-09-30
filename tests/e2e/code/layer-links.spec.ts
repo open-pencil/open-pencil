@@ -4,12 +4,7 @@ import { expect, test, useEditorSetup } from '#tests/e2e/fixtures'
 
 const editor = useEditorSetup('/?test&no-rulers')
 
-interface Scene {
-  cardId: string
-  swatchId: string
-}
-
-function buildScene(page: Page): Promise<Scene> {
+function buildScene(page: Page): Promise<void> {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
     if (!store) throw new Error('OpenPencil store not initialized')
@@ -32,7 +27,7 @@ function buildScene(page: Page): Promise<Scene> {
       fontSize: 10,
       fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
     })
-    const swatch = store.graph.createNode('RECTANGLE', card.id, {
+    store.graph.createNode('RECTANGLE', card.id, {
       name: 'Swatch',
       x: 16,
       y: 60,
@@ -42,7 +37,6 @@ function buildScene(page: Page): Promise<Scene> {
     })
     store.select([card.id])
     store.requestRender()
-    return { cardId: card.id, swatchId: swatch.id }
   })
 }
 
@@ -58,18 +52,6 @@ function hoveredLayer(page: Page) {
   })
 }
 
-function viewport(page: Page) {
-  return page.evaluate(() => {
-    const store = window.openPencil?.getStore?.()
-    if (!store) throw new Error('OpenPencil store not initialized')
-    return {
-      panX: store.state.panX,
-      panY: store.state.panY,
-      selected: [...store.state.selectedIds]
-    }
-  })
-}
-
 test.beforeEach(async () => {
   await editor.page.reload()
   await editor.canvas.waitForInit()
@@ -80,30 +62,39 @@ async function openCode(page: Page) {
   await expect(codeLine(page, 'name="Swatch"')).toBeVisible()
 }
 
-test('hovering an element in generated code highlights its layer', async () => {
+function activeTags(page: Page) {
+  return page.locator('[data-slot="code-editor"] .cm-layer-tag')
+}
+
+/** Moves focus out of the code, as clicking anywhere else in the app does. */
+async function leaveCode(page: Page) {
+  await page.getByTestId('code-panel-copy').focus()
+}
+
+function cardSize(page: Page) {
+  return page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
+    return card ? `${card.width}x${card.height}` : null
+  })
+}
+
+test('the element around the cursor marks its tags and its layer', async () => {
   await buildScene(editor.page)
   await openCode(editor.page)
 
-  await codeLine(editor.page, 'name="Swatch"').hover({ position: { x: 24, y: 8 } })
+  await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
+  await expect(activeTags(editor.page)).toHaveText(['Rectangle'])
   await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
 
-  await editor.page.getByTestId('code-panel-copy').hover()
+  await codeLine(editor.page, 'name="Fine print"').click({ position: { x: 24, y: 8 } })
+  // Both the opening and the closing tag name are marked.
+  await expect(activeTags(editor.page)).toHaveText(['Text', 'Text'])
+  await expect.poll(() => hoveredLayer(editor.page)).toBe('Fine print')
+
+  await leaveCode(editor.page)
+  await expect(activeTags(editor.page)).toHaveCount(0)
   await expect.poll(() => hoveredLayer(editor.page)).toBeNull()
-})
-
-test('⌘-click brings a layer into view without changing the selection', async () => {
-  const scene = await buildScene(editor.page)
-  await openCode(editor.page)
-  await editor.page.evaluate(() => window.openPencil?.getStore?.().pan(-2000, -1500))
-  const before = await viewport(editor.page)
-
-  await codeLine(editor.page, 'name="Swatch"').click({
-    position: { x: 24, y: 8 },
-    modifiers: ['ControlOrMeta']
-  })
-
-  await expect.poll(async () => (await viewport(editor.page)).panX).not.toBe(before.panX)
-  expect((await viewport(editor.page)).selected).toEqual([scene.cardId])
 })
 
 test('design issues are underlined on the property that causes them', async () => {
@@ -123,10 +114,33 @@ test('links follow the code after a live edit', async () => {
   await editor.page.keyboard.type(' ')
   await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Updated live')
 
-  // The preview replaced the layers; hovering must resolve to a layer that still exists.
-  await codeLine(editor.page, 'name="Swatch"').hover({ position: { x: 24, y: 8 } })
+  // The preview replaced the layers; the cursor must resolve to a layer that still exists.
+  await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
   await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
   await expect(editor.page.locator('[data-slot="code-editor"] .cm-lintRange-warning')).toHaveText(
     'size={10}'
   )
+})
+
+test('canvas edits after a code edit flow back into the code and undo in order', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  await codeLine(editor.page, 'name="Card"').click()
+  await editor.page.keyboard.press('End')
+  await editor.page.keyboard.type(' ')
+  await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Updated live')
+
+  await leaveCode(editor.page)
+  await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Up to date')
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const card = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Card')
+    if (!store || !card) throw new Error('Card not found')
+    store.updateNodeWithUndo(card.id, { width: 400 }, 'Resize')
+  })
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={400}')
+
+  await editor.page.keyboard.press('ControlOrMeta+z')
+  await expect.poll(() => cardSize(editor.page)).toBe('320x160')
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={320}')
 })

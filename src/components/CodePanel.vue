@@ -221,6 +221,29 @@ async function changeSource(next: CodeSource): Promise<void> {
   status.value = 'idle'
 }
 
+/**
+ * Scene and selection at which an edit settled. The code stays as written until either changes;
+ * then the canvas is the newer intent and the code is generated from it again.
+ */
+let settledAt: string | null = null
+
+function sceneKey(): string {
+  return `${store.state.sceneVersion}:${[...store.state.selectedIds].join(',')}`
+}
+
+/**
+ * Leaving the editor ends a live edit, as leaving a text field does: the preview becomes one
+ * undo step, so canvas edits that follow are recorded after it and flow back into the code.
+ */
+async function settleEdit(): Promise<void> {
+  // A keystroke just before leaving has a preview scheduled that has not opened a session yet.
+  await pendingPreview
+  if (!designSession.value && !domSession) return
+  await commitCurrentSession()
+  baseline.value = draft.value
+  settledAt = sceneKey()
+}
+
 function generatedFor(next: Exclude<CodeSource, 'html-css'>): GeneratedCode {
   return generatedCodeFor(next, store.graph, [...store.state.selectedIds])
 }
@@ -229,6 +252,8 @@ watch(
   generatedJSX,
   (generated) => {
     if (!generated || source.value === 'html-css' || designSession.value || dirty.value) return
+    if (settledAt === sceneKey()) return
+    settledAt = null
     codeLayers.showGenerated(generated)
     baseline.value = generated.code
     draft.value = generated.code
@@ -244,7 +269,7 @@ onBeforeUnmount(() => {
 watch(
   () => editorActive.value,
   (value) => {
-    if (!value && !disposing) void commitCurrentSession()
+    if (!value && !disposing) void settleEdit()
   }
 )
 </script>
@@ -306,8 +331,8 @@ watch(
         :layer-links="codeLayers.links.value"
         :layer-issues="codeLayers.issues.value"
         @update:model-value="updateDraft"
-        @hover-layers="codeLayers.hover"
-        @reveal-layers="codeLayers.reveal"
+        @active-layers="codeLayers.markActive"
+        @blur="settleEdit"
       />
     </div>
 

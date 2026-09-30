@@ -12,7 +12,7 @@ import type { LayerLinkSource } from './links'
 
 /**
  * Connects the code in the Code tab to canvas layers: which layer each element produced, the
- * design issues to underline, and what hovering or ⌘-clicking an element does on the canvas.
+ * design issues to underline, and the layer marked for the element around the cursor.
  */
 export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
   const store = useEditorStore()
@@ -42,17 +42,16 @@ export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
     links.value = generatedLinks
   }
 
-  function hover(nodeIds: readonly string[] | null) {
-    store.setHoveredNode(nodeIds?.at(0) ?? null)
+  /** The layer this panel marked, so clearing never removes a hover the canvas set since. */
+  let marked: string | null = null
+
+  /** Marks the layer of the element around the cursor with the canvas hover outline. */
+  function markActive(nodeIds: readonly string[] | null) {
+    const nodeId = nodeIds?.find((id) => store.graph.getNode(id)) ?? null
+    if (nodeId) store.setHoveredNode(nodeId)
+    else if (marked && store.state.hoveredNodeId === marked) store.setHoveredNode(null)
+    marked = nodeId
   }
 
-  /** Brings the layers into view and flashes them without changing the selection the code shows. */
-  function reveal(nodeIds: readonly string[]) {
-    const present = nodeIds.filter((id) => store.graph.getNode(id))
-    if (present.length === 0) return
-    store.revealNodes(present)
-    store.flashNodes(present)
-  }
-
-  return { links, issues, showGenerated, showPreview, restoreGenerated, hover, reveal }
+  return { links, issues, showGenerated, showPreview, restoreGenerated, markActive }
 }
