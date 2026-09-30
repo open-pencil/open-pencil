@@ -6,7 +6,7 @@ import { useDesignCheckMessages } from '@open-pencil/vue'
 import { useEditorStore } from '@/app/editor/active-store'
 import {
   issueDetail,
-  issueFix,
+  issueAction,
   issueSwatch,
   ruleHelp,
   ruleTitle
@@ -84,7 +84,7 @@ export function useDesignCheckPanel(options: {
       layerIcon: nodeIcon(node ?? { type: 'FRAME', layoutMode: 'NONE' }),
       detail: issueDetail(issue, messages.value),
       swatch: issueSwatch(issue),
-      fix: node ? issueFix(issue) : null,
+      action: node ? issueAction(issue, messages.value) : null,
       hidden: node ? isHidden(store.graph, node.id) : false,
       missing: !node,
       selected: selectedIds.value.has(issue.nodeId)
@@ -96,13 +96,17 @@ export function useDesignCheckPanel(options: {
       scopedIssues.value.filter((issue) => visibleSeverities.value.includes(issue.severity))
     ).map((group) => {
       const rows = group.issues.map(rowView)
+      const fixes = rows.flatMap(({ issue, missing }) =>
+        issue.fix && !missing ? [{ nodeId: issue.nodeId, fix: issue.fix }] : []
+      )
       return {
         ruleId: group.ruleId,
         severity: group.severity,
         title: ruleTitle(group.ruleId, messages.value),
         help: ruleHelp(group.ruleId, messages.value),
         rows,
-        fixes: rows.flatMap((row) => (row.fix ? [row.fix] : []))
+        fixes,
+        bindsOnly: fixes.every(({ fix }) => fix.kind === 'bind-variable')
       }
     })
   )

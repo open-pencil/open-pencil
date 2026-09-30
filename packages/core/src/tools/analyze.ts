@@ -3,6 +3,7 @@ export { analyzeColors } from './analyze/colors'
 export { diffApply, diffCreate, diffDocuments, diffShow, diffVisual } from './analyze/diff'
 export type { DocumentDiff, DocumentDiffOptions } from './analyze/diff'
 export { evalCode } from './analyze/eval'
+export { lint, lintFix } from './analyze/lint'
 export { wrapEvalCode } from './analyze/eval/wrap'
 export { analyzeOverlaps, computeOverlaps } from './analyze/overlaps'
 export type {

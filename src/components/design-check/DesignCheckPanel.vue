@@ -88,7 +88,7 @@ const scopeModel = computed({
         @update:open="(open) => setGroupOpen(group.ruleId, open)"
         @open-row="(row) => check.openIssue(row.issue)"
         @hover-row="hoverRow"
-        @fix="(row) => row.fix && check.applyFixes([row.fix])"
+        @fix="(row) => row.action && check.applyFixes([row.action.request])"
         @fix-all="check.applyFixes(group.fixes)"
         @turn-off="turnOffDesignCheckRule(group.ruleId)"
       />

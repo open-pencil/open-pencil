@@ -68,7 +68,11 @@ const hiddenCount = computed(() => group.rows.length - visibleRows.value.length)
     </template>
     <template #actions>
       <AppButton v-if="group.fixes.length > 1" color="primary" size="xs" @click="emit('fixAll')">
-        {{ messages.bindAll({ count: group.fixes.length }) }}
+        {{
+          group.bindsOnly
+            ? messages.bindAll({ count: group.fixes.length })
+            : messages.fixAll({ count: group.fixes.length })
+        }}
       </AppButton>
       <DropdownMenuRoot v-model:open="menuOpen" :modal="false">
         <DropdownMenuTrigger as-child>

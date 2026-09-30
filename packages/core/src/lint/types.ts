@@ -19,6 +19,28 @@ export interface RuleMeta {
 /** Structured values behind a message, so interfaces can present it without parsing text. */
 export type LintMessageData = Readonly<Record<string, string | number>>
 
+/** Numeric layer properties a lint fix may set. */
+export type LintFixProperty =
+  | 'x'
+  | 'y'
+  | 'width'
+  | 'height'
+  | 'cornerRadius'
+  | 'itemSpacing'
+  | 'paddingTop'
+  | 'paddingRight'
+  | 'paddingBottom'
+  | 'paddingLeft'
+  | 'fontSize'
+
+/**
+ * A change that resolves a finding on the reported layer, kept as data so any interface can
+ * preview, apply or serialize it.
+ */
+export type LintFix =
+  | { kind: 'bind-variable'; path: string; variableId: string; variableName: string }
+  | { kind: 'set'; changes: Readonly<Partial<Record<LintFixProperty, number>>> }
+
 export interface LintMessage {
   ruleId: string
   severity: Exclude<Severity, 'off'>
@@ -28,6 +50,10 @@ export interface LintMessage {
   nodePath: string[]
   suggest?: string
   data?: LintMessageData
+  /** Keeps the design's intent, so it can be applied in bulk without review. */
+  fix?: LintFix
+  /** Changes the design's values; offered one finding at a time. */
+  suggestions?: LintFix[]
 }
 
 export interface LintResult {
@@ -54,6 +80,12 @@ export interface LintNode {
   visible: boolean
   locked: boolean
   layoutMode: string
+  layoutPositioning: 'AUTO' | 'ABSOLUTE'
+  layoutGrow: number
+  layoutAlignSelf: string
+  primaryAxisSizing: string
+  counterAxisSizing: string
+  textAutoResize: string
   itemSpacing: number
   paddingTop: number
   paddingRight: number
@@ -95,7 +127,14 @@ export interface LintVariables {
 
 export interface RuleContext {
   variables: LintVariables
-  report(issue: { node: LintNode; message: string; suggest?: string; data?: LintMessageData }): void
+  report(issue: {
+    node: LintNode
+    message: string
+    suggest?: string
+    data?: LintMessageData
+    fix?: LintFix
+    suggestions?: LintFix[]
+  }): void
   getConfig(): unknown
   getParent(node: LintNode): LintNode | null
   getChildren(node: LintNode): LintNode[]

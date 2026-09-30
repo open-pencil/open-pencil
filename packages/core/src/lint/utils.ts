@@ -24,6 +24,18 @@ export function isMultipleOf(value: number, base: number, tolerance = 0.01): boo
   return remainder < tolerance || base - remainder < tolerance
 }
 
+/** The candidate closest to `value`; a tie goes to the larger candidate. */
+export function nearestValue(value: number, candidates: Iterable<number>): number | null {
+  let best: number | null = null
+  for (const candidate of candidates) {
+    if (best === null) best = candidate
+    const distance = Math.abs(candidate - value)
+    const bestDistance = Math.abs(best - value)
+    if (distance < bestDistance || (distance === bestDistance && candidate > best)) best = candidate
+  }
+  return best
+}
+
 interface LintPathNode {
   name: string
   parent?: LintPathNode

@@ -50,6 +50,12 @@ export default defineRule({
             color,
             variableId: variable.id,
             variableName: variable.name
+          },
+          fix: {
+            kind: 'bind-variable',
+            path: `${field}/${i}/color`,
+            variableId: variable.id,
+            variableName: variable.name
           }
         })
       }
