@@ -26,6 +26,7 @@ import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
 import type { LayerLinkSource } from '@/components/code-editor/layer-links'
 import AppButton from '@/components/ui/button/AppButton.vue'
+import AppPlaceholder from '@/components/ui/feedback/AppPlaceholder.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
 import statusTheme from '@/theme/feedback/status'
@@ -52,6 +53,32 @@ let updateVersion = 0
 let disposing = false
 
 const checkMessages = useDesignCheckMessages()
+/** Set by "Write JSX": the editor stays open for new layers until something is selected. */
+const composing = ref(false)
+
+/**
+ * Generated code needs a selection; without one the panel says so instead of showing a
+ * template that looks like a real layer. Writing new Design JSX is an explicit action.
+ */
+const showEmptyState = computed(
+  () =>
+    source.value !== 'html-css' &&
+    store.state.selectedIds.size === 0 &&
+    !composing.value &&
+    !designSession.value &&
+    !dirty.value
+)
+
+watch(
+  () => store.state.selectedIds.size,
+  (size) => {
+    if (size > 0) composing.value = false
+  }
+)
+
+function writeJSX() {
+  composing.value = true
+}
 /** How the shown code maps to layers; generated code by element order, previews by line. */
 const layerLinks = shallowRef<LayerLinkSource | null>(null)
 let baselineLinks: LayerLinkSource | null = null
@@ -275,8 +302,30 @@ watch(
       </Tip>
     </header>
 
-    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <AppPlaceholder
+      v-if="showEmptyState"
+      :label="code.noSelection"
+      :description="
+        source === 'design-jsx' ? code.noSelectionDesignJSX : code.noSelectionTailwindJSX
+      "
+      :fill="false"
+      :ui="{ root: 'pt-10' }"
+      data-test-id="code-panel-empty"
+    >
+      <template #icon>
+        <icon-lucide-code class="size-4" />
+      </template>
+      <template v-if="source === 'design-jsx'" #action>
+        <AppButton color="neutral" variant="soft" size="xs" @click="writeJSX">
+          <icon-lucide-pencil class="size-3" />
+          {{ code.writeJSX }}
+        </AppButton>
+      </template>
+    </AppPlaceholder>
+
+    <div v-else class="flex min-h-0 flex-1 flex-col overflow-hidden">
       <CodeEditor
+        :autofocus="composing"
         :model-value="draft"
         :language="source"
         :read-only="readOnly"
@@ -299,6 +348,7 @@ watch(
     </div>
 
     <footer
+      v-if="!showEmptyState"
       class="flex shrink-0 items-center justify-between gap-2 border-t border-border px-3 py-2"
     >
       <span

@@ -11,5 +11,9 @@
   "updatedLive": "Live aktualisiert",
   "previewFailed": "Vorschau fehlgeschlagen",
   "generatedReadOnly": "Generiert, schreibgeschützt",
-  "reset": "Zurücksetzen"
+  "reset": "Zurücksetzen",
+  "noSelection": "Wähle eine Ebene aus, um ihren Code zu sehen",
+  "noSelectionDesignJSX": "Oder schreibe Design JSX, um der Seite neue Ebenen hinzuzufügen.",
+  "noSelectionTailwindJSX": "Tailwind JSX wird für die ausgewählten Ebenen erzeugt.",
+  "writeJSX": "JSX schreiben"
 }

@@ -11,5 +11,9 @@
   "updatedLive": "Actualizado en vivo",
   "previewFailed": "Error de vista previa",
   "generatedReadOnly": "Generado, solo lectura",
-  "reset": "Restablecer"
+  "reset": "Restablecer",
+  "noSelection": "Selecciona una capa para ver su código",
+  "noSelectionDesignJSX": "O escribe Design JSX para añadir capas nuevas a la página.",
+  "noSelectionTailwindJSX": "Tailwind JSX se genera para las capas seleccionadas.",
+  "writeJSX": "Escribir JSX"
 }
