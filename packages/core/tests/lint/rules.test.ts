@@ -133,6 +133,20 @@ describe('touch-target-size', () => {
     ])
   })
 
+  test('checks the WCAG AA minimum in Recommended and the AAA size in Strict', () => {
+    const graph = new SceneGraph()
+    const pageId = graph.getPages()[0].id
+    const input = graph.createNode('FRAME', pageId, { name: 'Input', width: 320, height: 40 })
+    const chip = graph.createNode('FRAME', pageId, { name: 'Chip', width: 60, height: 20 })
+    const flagged = (preset: string) =>
+      createLinter({ preset, rules: ['touch-target-size'] })
+        .lintGraph(graph, [pageId])
+        .messages.map((message) => message.nodeId)
+
+    expect(flagged('recommended')).toEqual([chip.id])
+    expect(flagged('strict')).toEqual([input.id, chip.id])
+  })
+
   test('does not treat icons as touch targets on their own', () => {
     const graph = new SceneGraph()
     graph.createNode('FRAME', graph.getPages()[0].id, { name: 'Icon', width: 16, height: 16 })

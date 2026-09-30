@@ -73,6 +73,7 @@ ja:credentials.getAPIKey
 ja:credentials.rememberDevice
 ja:designCheck.ruleColorContrastHelp
 ja:designCheck.ruleMinTextSizeHelp
+ja:designCheck.ruleTouchTargetSizeHelp
 ja:diagnostics.acpFailed
 ja:diagnostics.chatCompleted
 ja:diagnostics.chatFailed
@@ -211,6 +212,7 @@ zh-cn:credentials.getAPIKey
 zh-cn:credentials.rememberDevice
 zh-cn:designCheck.ruleColorContrastHelp
 zh-cn:designCheck.ruleMinTextSizeHelp
+zh-cn:designCheck.ruleTouchTargetSizeHelp
 zh-cn:diagnostics.acpFailed
 zh-cn:diagnostics.chatCompleted
 zh-cn:diagnostics.chatFailed
