@@ -8,10 +8,14 @@ const editor = useEditorSetupWithClear('/?test&no-rulers')
 
 const CARD = { x: 80, y: 120, width: 320, height: 200 }
 /** Where the Close button's marker sits at zoom 1: just outside its top-right corner. */
-const CLOSE_BUTTON = { x: 340, y: 140, width: 24, height: 24 }
-const CLOSE_MARKER = { x: CARD.x + 364 + 12, y: CARD.y + 140 - 12 }
+const CLOSE_BUTTON = { x: 340, y: 140, width: 24, height: 20 }
+const CLOSE_MARKER = {
+  x: CARD.x + CLOSE_BUTTON.x + CLOSE_BUTTON.width + 12,
+  y: CARD.y + CLOSE_BUTTON.y - 12
+}
 
 interface Scene {
+  cardId: string
   captionId: string
   closeId: string
   swatchId: string
@@ -76,7 +80,12 @@ function buildScene(page: Page): Promise<Scene> {
       })
       store.clearSelection()
       store.requestRender()
-      return { captionId: caption.id, closeId: closeButton.id, swatchId: swatch.id }
+      return {
+        cardId: frame.id,
+        captionId: caption.id,
+        closeId: closeButton.id,
+        swatchId: swatch.id
+      }
     },
     { card: CARD, close: CLOSE_BUTTON }
   )
@@ -182,6 +191,42 @@ test('Binding a suggested variable resolves the issue and undoes in one step', a
 
   await editor.page.keyboard.press('ControlOrMeta+z')
   await expect(panel.getByText('Unbound color')).toBeVisible()
+})
+
+test('A suggestion applies to its row only', async () => {
+  const scene = await buildScene(editor.page)
+  const noteId = await editor.page.evaluate((cardId) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    return store.graph.createNode('TEXT', cardId, {
+      name: 'Footnote',
+      x: 24,
+      y: 160,
+      width: 200,
+      height: 14,
+      text: 'Small print',
+      fontSize: 10,
+      fills: [{ type: 'SOLID', color: { r: 0, g: 0, b: 0, a: 1 }, visible: true, opacity: 1 }]
+    }).id
+  }, scene.cardId)
+  await openLint(editor.page)
+  const panel = lintPanel(editor.page)
+  const noteItem = panel
+    .getByRole('listitem')
+    .filter({ has: editor.page.locator(`[data-node-id="${noteId}"]`) })
+
+  await noteItem.hover()
+  await noteItem.getByRole('button', { name: 'Change to 12 px' }).click()
+
+  await expect(panel.getByText('Small text')).toHaveCount(0)
+  await expect
+    .poll(() =>
+      editor.page.evaluate(
+        (id) => window.openPencil?.getStore?.().graph.getNode(id)?.fontSize,
+        noteId
+      )
+    )
+    .toBe(12)
 })
 
 test('A rule can be turned off from its group and turned back on from the rules menu', async () => {

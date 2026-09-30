@@ -20,9 +20,15 @@ Hover an issue to highlight its layer on the canvas. Click it to select the laye
 
 ## Fixing Issues
 
-When a hardcoded color matches one of the document's color variables, its row names the variable. Hover the row and click the link button to bind the color, or use **Bind all** on the group to bind every match at once. Each is a single undo step.
+Rows that can be fixed in one step show a button on hover:
 
-Other issues show the value that needs attention, such as a contrast ratio, a text size, or a gap, so you can fix them in the Design panel.
+- A hardcoded color that matches one of the document's color variables binds to it (link button). The row names the variable.
+- Subpixel positions and sizes round to whole pixels. Values that auto layout or text resizing sets, and vector artwork and the parts of groups, are left alone.
+- Off-scale corner radius and spacing change to the nearest scale value, and text below the minimum size grows to it (wand button). These change the design, so they apply one row at a time.
+
+Binding colors and rounding pixels keep the design as it looks, so their groups also offer **Bind all** or **Fix all**. Every fix is a single undo step.
+
+Other issues show the value that needs attention, such as a contrast ratio or a touch target size, so you can fix them in the Design panel.
 
 ## Canvas Markers
 

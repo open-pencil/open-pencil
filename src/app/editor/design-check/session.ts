@@ -2,13 +2,12 @@ import { useTimeoutFn } from '@vueuse/core'
 import { computed, effectScope, ref, shallowRef, watch } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
-import { createLinter, type LintConfig } from '@open-pencil/core/lint'
+import { createLinter, type LintConfig, type LintFixRequest } from '@open-pencil/core/lint'
 import { getAxisAlignedWorldBounds } from '@open-pencil/scene-graph/coordinate'
 
 import type { AppEditorState } from '@/app/editor/session/types'
 import { appPreferences, type DesignCheckPreset } from '@/app/settings/preferences/store'
 
-import type { IssueFix } from './format'
 import {
   highlightForIssue,
   markersForIssues,
@@ -187,15 +186,9 @@ export function createDesignCheck(
   }
 
   /** Binds suggested variables in one undoable step and re-checks immediately. */
-  function applyFixes(fixes: readonly IssueFix[]) {
-    const applicable = fixes.filter(
-      (fix) => editor.graph.getNode(fix.nodeId) && editor.graph.variables.has(fix.variableId)
-    )
-    if (applicable.length === 0) return
-    editor.undo.runBatch('Bind variables', () => {
-      for (const fix of applicable) editor.bindVariable(fix.nodeId, fix.path, fix.variableId)
-    })
-    run()
+  /** Applies fixes as one undo step and re-checks right away, so fixed rows leave at once. */
+  function applyFixes(requests: readonly LintFixRequest[]) {
+    if (editor.applyLintFixes(requests) > 0) run()
   }
 
   function dispose() {
