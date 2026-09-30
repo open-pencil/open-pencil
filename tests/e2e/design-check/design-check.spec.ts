@@ -82,13 +82,13 @@ function buildScene(page: Page): Promise<Scene> {
   )
 }
 
-function checkPanel(page: Page) {
-  return page.getByRole('region', { name: 'Check' })
+function lintPanel(page: Page) {
+  return page.getByRole('region', { name: 'Lint' })
 }
 
-async function openCheck(page: Page) {
-  await page.getByRole('tab', { name: /^Check/ }).click()
-  await expect(checkPanel(page).getByText('Low text contrast')).toBeVisible()
+async function openLint(page: Page) {
+  await page.getByRole('tab', { name: /^Lint/ }).click()
+  await expect(lintPanel(page).getByText('Low text contrast')).toBeVisible()
 }
 
 function highlightedNode(page: Page) {
@@ -132,10 +132,10 @@ test.afterEach(async () => {
   await editor.page.getByRole('tab', { name: 'Design' }).click()
 })
 
-test('Check lists issues by rule and connects rows to the canvas', async () => {
+test('Lint lists issues by rule and connects rows to the canvas', async () => {
   const scene = await buildScene(editor.page)
-  await openCheck(editor.page)
-  const panel = checkPanel(editor.page)
+  await openLint(editor.page)
+  const panel = lintPanel(editor.page)
 
   await expect(panel.getByText('Small touch target')).toBeVisible()
   await expect(panel.getByText('Unbound color')).toBeVisible()
@@ -156,8 +156,8 @@ test('Check lists issues by rule and connects rows to the canvas', async () => {
 
 test('Binding a suggested variable resolves the issue and undoes in one step', async () => {
   const scene = await buildScene(editor.page)
-  await openCheck(editor.page)
-  const panel = checkPanel(editor.page)
+  await openLint(editor.page)
+  const panel = lintPanel(editor.page)
   // Suggestions start collapsed; binding tokens is one of them.
   await panel.getByText('Unbound color').click()
   const swatchRow = panel.locator(`[data-node-id="${scene.swatchId}"]`)
@@ -182,8 +182,8 @@ test('Binding a suggested variable resolves the issue and undoes in one step', a
 
 test('A rule can be turned off from its group and turned back on from the rules menu', async () => {
   await buildScene(editor.page)
-  await openCheck(editor.page)
-  const panel = checkPanel(editor.page)
+  await openLint(editor.page)
+  const panel = lintPanel(editor.page)
   const group = panel.locator('[data-rule-id="touch-target-size"]')
 
   await group.getByText('Small touch target').hover()
@@ -196,7 +196,7 @@ test('A rule can be turned off from its group and turned back on from the rules 
   await expect(panel.getByText('Small touch target')).toBeVisible()
 })
 
-test('Canvas markers explain themselves on hover and open Check on click', async () => {
+test('Canvas markers explain themselves on hover and open Lint on click', async () => {
   const scene = await buildScene(editor.page)
   await waitForMarkers(editor.page)
 
@@ -217,11 +217,11 @@ test('Canvas markers explain themselves on hover and open Check on click', async
   await editor.canvas.click(CLOSE_MARKER.x, CLOSE_MARKER.y)
   await expect(tooltip).toHaveCount(0)
   await expect.poll(() => selectedIds(editor.page)).toEqual([scene.closeId])
-  await expect(editor.page.getByRole('tab', { name: /^Check/ })).toHaveAttribute(
+  await expect(editor.page.getByRole('tab', { name: /^Lint/ })).toHaveAttribute(
     'aria-selected',
     'true'
   )
-  await expect(checkPanel(editor.page).locator(`[data-node-id="${scene.closeId}"]`)).toBeVisible()
+  await expect(lintPanel(editor.page).locator(`[data-node-id="${scene.closeId}"]`)).toBeVisible()
 })
 
 test('Canvas markers can be turned off from the View menu', async () => {

@@ -33,7 +33,7 @@ import {
   setRememberCredentials
 } from '@/app/settings/credentials/media'
 
-export type PropertiesTab = 'design' | 'code' | 'ai' | 'check'
+export type PropertiesTab = 'design' | 'code' | 'ai' | 'lint'
 
 const activeTab = ref<PropertiesTab>('design')
 

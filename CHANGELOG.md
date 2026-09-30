@@ -10,8 +10,8 @@
 
 ### Added
 
-- Check designs from the new Check tab in the right panel: issues on the page or in the selection are grouped by rule, hovering one highlights its layer on the canvas, clicking selects it and brings it into view, and colors that match a color variable bind in one click or all at once. Rules can be turned off individually or switched between the Recommended, Strict, and Accessibility presets.
-- Mark layers with errors and warnings on the canvas while you work; hover a marker for its issues or click it to open them in Check, and turn markers on or off with View → Design issues.
+- Check designs from the new Lint tab in the right panel: issues on the page or in the selection are grouped by rule, hovering one highlights its layer on the canvas, clicking selects it and brings it into view, and colors that match a color variable bind in one click or all at once. Rules can be turned off individually or switched between the Recommended, Strict, and Accessibility presets.
+- Mark layers with errors and warnings on the canvas while you work; hover a marker for its issues or click it to open them in Lint, and turn markers on or off with View → Design issues.
 - Swap the component behind an instance with `instance.swapComponent(component)` in the plugin API, as in Figma.
 - Detach an instance from its component with `detachInstance()` in the plugin API, as in Figma, from scripts run through `eval`.
 - Run scripts written for Figma's dynamic-page mode that call `figma.getNodeByIdAsync()` or `getMainComponentAsync()`; both resolve to the same nodes as their synchronous forms.
