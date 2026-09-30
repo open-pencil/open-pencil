@@ -4,7 +4,7 @@ import { tv } from 'tailwind-variants'
 import { computed, defineAsyncComponent, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 
 import { JSX_REFERENCE } from '@open-pencil/design-jsx'
-import { useI18n, useSceneComputed } from '@open-pencil/vue'
+import { useDesignCheckMessages, useI18n, useSceneComputed } from '@open-pencil/vue'
 
 import {
   commitDOMCodeSession,
@@ -13,7 +13,8 @@ import {
   resetDOMCodePreview,
   type DOMCodeSession
 } from '@/app/code/dom-preview'
-import { generatedSourceFor } from '@/app/code/generated'
+import { generatedCodeFor, type GeneratedCode } from '@/app/code/generated'
+import { codeLayerIssues } from '@/app/code/layer-issues'
 import {
   commitDesignJSXSession,
   createDesignJSXEditSession,
@@ -23,6 +24,7 @@ import {
 } from '@/app/code/live-preview'
 import { starterSourceFor, type CodeSource } from '@/app/code/templates'
 import { useEditorStore } from '@/app/editor/active-store'
+import type { LayerLinkSource } from '@/components/code-editor/layer-links'
 import AppButton from '@/components/ui/button/AppButton.vue'
 import Tip from '@/components/ui/overlay/Tip.vue'
 import AppSelect from '@/components/ui/select/AppSelect.vue'
@@ -49,11 +51,38 @@ let commitPromise: Promise<void> | undefined
 let updateVersion = 0
 let disposing = false
 
-const generatedJSX = useSceneComputed(() => {
-  if (!editorActive.value || source.value === 'html-css' || designSession.value) return ''
+const checkMessages = useDesignCheckMessages()
+/** How the shown code maps to layers; generated code by element order, previews by line. */
+const layerLinks = shallowRef<LayerLinkSource | null>(null)
+let baselineLinks: LayerLinkSource | null = null
+
+const generatedJSX = useSceneComputed((): GeneratedCode | null => {
+  if (!editorActive.value || source.value === 'html-css' || designSession.value) return null
   void store.state.sceneVersion
-  return generatedSourceFor(source.value, store.graph, [...store.state.selectedIds])
+  return generatedCodeFor(source.value, store.graph, [...store.state.selectedIds])
 })
+
+const layerIssues = computed(() => {
+  const snapshot = store.designCheck.snapshot.value
+  if (!snapshot || snapshot.pageId !== store.state.currentPageId) return []
+  return codeLayerIssues(snapshot.issues, source.value, checkMessages.value)
+})
+
+function orderLinks(generated: GeneratedCode): LayerLinkSource {
+  return { kind: 'order', layerIds: generated.layerIds }
+}
+
+function hoverLayers(nodeIds: readonly string[] | null) {
+  store.setHoveredNode(nodeIds?.at(0) ?? null)
+}
+
+/** Brings the layers into view and flashes them without changing the selection the code shows. */
+function revealLayers(nodeIds: readonly string[]) {
+  const present = nodeIds.filter((id) => store.graph.getNode(id))
+  if (present.length === 0) return
+  store.revealNodes(present)
+  store.flashNodes(present)
+}
 
 const sourceOptions = computed(() => [
   { value: 'design-jsx' as const, label: code.value.sourceDesignJSX },
@@ -123,15 +152,19 @@ async function runPreview(version: number): Promise<void> {
   status.value = 'updating'
   error.value = ''
   let result: { ok: true } | { ok: false; error: string }
+  let links: LayerLinkSource | null = null
   if (source.value === 'html-css') {
     result = await previewDOMCode(store, beginDOMSession(), draft.value)
   } else {
     const session = beginDesignSession()
-    result = session
+    const preview = session
       ? await previewDesignJSX(store, session, draft.value)
-      : { ok: false, error: error.value }
+      : ({ ok: false, error: error.value } as const)
+    if (preview.ok) links = { kind: 'lines', layers: preview.layers }
+    result = preview
   }
   if (version !== updateVersion) return
+  if (links) layerLinks.value = links
   if (!result.ok) {
     status.value = 'error'
     error.value = result.error
@@ -168,6 +201,7 @@ async function resetDraft(): Promise<void> {
   if (dom) resetDOMCodePreview(store, dom)
   pendingPreview = undefined
   draft.value = baseline.value
+  layerLinks.value = baselineLinks
   error.value = ''
   status.value = 'idle'
 }
@@ -176,23 +210,28 @@ async function changeSource(next: CodeSource): Promise<void> {
   if (next === source.value) return
   await commitCurrentSession()
   source.value = next
-  const initial = next === 'html-css' ? starterSourceFor(next) : generatedFor(next)
+  const generated = next === 'html-css' ? null : generatedFor(next)
+  const initial = generated?.code ?? starterSourceFor(next)
+  baselineLinks = generated ? orderLinks(generated) : null
+  layerLinks.value = baselineLinks
   baseline.value = initial
   draft.value = initial
   error.value = ''
   status.value = 'idle'
 }
 
-function generatedFor(next: Exclude<CodeSource, 'html-css'>): string {
-  return generatedSourceFor(next, store.graph, [...store.state.selectedIds])
+function generatedFor(next: Exclude<CodeSource, 'html-css'>): GeneratedCode {
+  return generatedCodeFor(next, store.graph, [...store.state.selectedIds])
 }
 
 watch(
   generatedJSX,
-  (value) => {
-    if (source.value === 'html-css' || designSession.value || dirty.value) return
-    baseline.value = value
-    draft.value = value
+  (generated) => {
+    if (!generated || source.value === 'html-css' || designSession.value || dirty.value) return
+    baselineLinks = orderLinks(generated)
+    layerLinks.value = baselineLinks
+    baseline.value = generated.code
+    draft.value = generated.code
   },
   { immediate: true }
 )
@@ -242,7 +281,11 @@ watch(
         :language="source"
         :read-only="readOnly"
         :label="editorLabel"
+        :layer-links="layerLinks"
+        :layer-issues="layerIssues"
         @update:model-value="updateDraft"
+        @hover-layers="hoverLayers"
+        @reveal-layers="revealLayers"
       />
     </div>
 
