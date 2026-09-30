@@ -96,6 +96,8 @@ fr:code.sourceDesignJSX
 fr:code.sourceHTMLCSS
 fr:code.sourceTailwindJSX
 fr:common.ok
+fr:designCheck.scopePage
+fr:designCheck.suggestions
 fr:diagnostics.title
 fr:pages.pageName
 fr:pages.pages

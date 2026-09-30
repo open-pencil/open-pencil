@@ -18,7 +18,8 @@ export default defineRule({
     context.report({
       node,
       message: `Subpixel values: ${subpixel.map(([k, v]) => `${k}: ${v}`).join(', ')}`,
-      suggest: 'Round to whole pixels for crisp rendering'
+      suggest: 'Round to whole pixels for crisp rendering',
+      data: Object.fromEntries(subpixel)
     })
   }
 })

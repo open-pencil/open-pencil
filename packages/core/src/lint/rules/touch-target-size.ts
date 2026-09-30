@@ -1,10 +1,10 @@
 import { defineRule } from '#core/lint/rule'
+const MIN_SIZE = 44
 const PATTERNS = [
   /button/i,
   /btn/i,
   /link/i,
   /cta/i,
-  /icon/i,
   /checkbox/i,
   /radio/i,
   /switch/i,
@@ -20,20 +20,29 @@ const PATTERNS = [
   /dismiss/i,
   /action/i
 ]
+function isInteractive(name: string): boolean {
+  return PATTERNS.some((pattern) => pattern.test(name))
+}
+
 export default defineRule({
   meta: {
     id: 'touch-target-size',
     category: 'accessibility',
-    description: 'Interactive elements should be at least 44x44px'
+    description: `Interactive elements should be at least ${MIN_SIZE}×${MIN_SIZE}px`
   },
   match: ['FRAME', 'COMPONENT', 'INSTANCE', 'RECTANGLE', 'ELLIPSE'],
   check(node, context) {
-    if (!PATTERNS.some((p) => p.test(node.name))) return
-    if (node.width >= 44 && node.height >= 44) return
+    if (!isInteractive(node.name)) return
+    if (node.width >= MIN_SIZE && node.height >= MIN_SIZE) return
+    // A control nested in another control (the icon of a button) is not its own target.
+    for (let parent = context.getParent(node); parent; parent = context.getParent(parent)) {
+      if (isInteractive(parent.name)) return
+    }
     context.report({
       node,
       message: `Touch target too small: ${node.width}×${node.height}px`,
-      suggest: 'Resize to at least 44×44px or add padding'
+      suggest: `Resize to at least ${MIN_SIZE}×${MIN_SIZE}px or add padding`,
+      data: { width: node.width, height: node.height, minSize: MIN_SIZE }
     })
   }
 })

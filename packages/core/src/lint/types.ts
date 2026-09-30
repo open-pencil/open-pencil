@@ -16,6 +16,9 @@ export interface RuleMeta {
   description: string
 }
 
+/** Structured values behind a message, so interfaces can present it without parsing text. */
+export type LintMessageData = Readonly<Record<string, string | number>>
+
 export interface LintMessage {
   ruleId: string
   severity: Exclude<Severity, 'off'>
@@ -24,6 +27,7 @@ export interface LintMessage {
   nodeName: string
   nodePath: string[]
   suggest?: string
+  data?: LintMessageData
 }
 
 export interface LintResult {
@@ -81,8 +85,17 @@ export interface LintNode {
   parent?: LintNode
 }
 
+/** The document's variables, which decide whether a rule suggesting a binding is actionable. */
+export interface LintVariables {
+  /** Number of local variables by type; a rule suggesting a binding needs a candidate to bind. */
+  counts: Readonly<Record<'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN', number>>
+  /** Color variables by their resolved `#RRGGBB` value, for suggesting an exact match. */
+  colorsByHex: ReadonlyMap<string, { id: string; name: string }>
+}
+
 export interface RuleContext {
-  report(issue: { node: LintNode; message: string; suggest?: string }): void
+  variables: LintVariables
+  report(issue: { node: LintNode; message: string; suggest?: string; data?: LintMessageData }): void
   getConfig(): unknown
   getParent(node: LintNode): LintNode | null
   getChildren(node: LintNode): LintNode[]
