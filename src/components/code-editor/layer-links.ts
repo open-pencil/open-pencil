@@ -14,20 +14,21 @@ import type { LayerLinkSource } from '@/app/code/layers/links'
 export interface LinkedElement {
   from: number
   to: number
-  /** End of the opening tag, which is what hover highlights. */
+  /** End of the opening tag, where issues on the element's attributes are underlined. */
   openTo: number
   nameFrom: number
   nameTo: number
+  /** The closing tag's name; an empty range for a self-closing element. */
+  closeNameFrom: number
+  closeNameTo: number
   nodeIds: string[]
 }
 
 export interface LayerLinkConfig {
   /** Runtime type of a tag name, to tell elements on the same line apart. */
   typeOf?: (tagName: string) => string | undefined
-  /** Modifier that turns hover into a link: ⌘ on macOS, Ctrl elsewhere. */
-  isLinkModifier: (event: MouseEvent | KeyboardEvent) => boolean
-  onHover: (nodeIds: readonly string[] | null) => void
-  onReveal: (nodeIds: readonly string[]) => void
+  /** The layers of the element around the cursor while the editor has focus, else `null`. */
+  onActive: (nodeIds: readonly string[] | null) => void
 }
 
 type SyntaxNode = ReturnType<typeof syntaxTree>['topNode']
@@ -51,6 +52,8 @@ interface ParsedElement {
   openTo: number
   nameFrom: number
   nameTo: number
+  closeNameFrom: number
+  closeNameTo: number
   name: string
   line: number
 }
@@ -76,12 +79,16 @@ function parseElements(state: EditorState): ParsedElement[] {
       const tag = openingTag(node.node)
       const name = tag && tagName(tag)
       if (!tag || !name) return
+      const closeTag = node.node.getChild('JSXCloseTag')
+      const closeName = closeTag && tagName(closeTag)
       elements.push({
         from: node.from,
         to: node.to,
         openTo: tag.to,
         nameFrom: name.from,
         nameTo: name.to,
+        closeNameFrom: closeName?.from ?? name.to,
+        closeNameTo: closeName?.to ?? name.to,
         name: state.doc.sliceString(name.from, name.to),
         line: state.doc.lineAt(node.from).number
       })
@@ -144,7 +151,9 @@ export const linkedElements = StateField.define<LinkedElement[]>({
           to,
           openTo: changes.mapPos(element.openTo, -1),
           nameFrom: changes.mapPos(element.nameFrom, 1),
-          nameTo: changes.mapPos(element.nameTo, -1)
+          nameTo: changes.mapPos(element.nameTo, -1),
+          closeNameFrom: changes.mapPos(element.closeNameFrom, 1),
+          closeNameTo: changes.mapPos(element.closeNameTo, -1)
         }
       ]
     })
@@ -161,102 +170,59 @@ export function linkedElementAt(state: EditorState, pos: number): LinkedElement 
   return best
 }
 
-const hoverTheme = EditorView.baseTheme({
-  '.cm-layer-hover': { backgroundColor: 'rgb(59 130 246 / 0.14)', borderRadius: '2px' },
-  '.cm-layer-link': { textDecoration: 'underline', textUnderlineOffset: '2px' },
-  '&.cm-layer-link-active .cm-content': { cursor: 'pointer' }
+const activeTheme = EditorView.baseTheme({
+  '.cm-layer-tag': { backgroundColor: 'rgb(59 130 246 / 0.22)', borderRadius: '2px' }
 })
 
-function hoverDecorations(element: LinkedElement | null, linkMode: boolean): DecorationSet {
+/** Marks the tag names of the element, opening and closing, like an editor's matching tag. */
+function tagDecorations(element: LinkedElement | null): DecorationSet {
   if (!element) return Decoration.none
-  const ranges = [Decoration.mark({ class: 'cm-layer-hover' }).range(element.from, element.openTo)]
-  if (linkMode) {
-    ranges.push(Decoration.mark({ class: 'cm-layer-link' }).range(element.nameFrom, element.nameTo))
+  const mark = Decoration.mark({ class: 'cm-layer-tag' })
+  const ranges = [mark.range(element.nameFrom, element.nameTo)]
+  if (element.closeNameTo > element.closeNameFrom) {
+    ranges.push(mark.range(element.closeNameFrom, element.closeNameTo))
   }
-  return Decoration.set(ranges, true)
+  return Decoration.set(ranges)
 }
 
-const layerHover = ViewPlugin.fromClass(
+function sameElement(a: LinkedElement | null, b: LinkedElement | null): boolean {
+  return a?.from === b?.from && a?.nodeIds.join(',') === b?.nodeIds.join(',')
+}
+
+/** Follows the cursor: the element it is in while the editor has focus is the active one. */
+const activeElement = ViewPlugin.fromClass(
   class {
-    hovered: LinkedElement | null = null
-    linkMode = false
+    active: LinkedElement | null = null
     decorations: DecorationSet = Decoration.none
-    readonly onKey = (event: KeyboardEvent) => {
-      const config = this.config()
-      if (!config || !this.hovered) return
-      this.show(this.hovered, config.isLinkModifier(event))
-      this.view.dispatch({})
-    }
 
     constructor(readonly view: EditorView) {
-      // The pointer can rest on code without focusing it, so modifiers are watched globally.
-      window.addEventListener('keydown', this.onKey)
-      window.addEventListener('keyup', this.onKey)
+      this.refresh()
     }
 
     update(update: ViewUpdate) {
       const replaced = update.transactions.some((tr) => tr.effects.some((e) => e.is(setLayerLinks)))
-      // The hovered element moved or its layers changed; forget it until the pointer moves.
-      if (update.docChanged || replaced) this.show(null, false)
+      if (update.docChanged || update.selectionSet || update.focusChanged || replaced) {
+        this.refresh()
+      }
     }
 
     destroy() {
-      window.removeEventListener('keydown', this.onKey)
-      window.removeEventListener('keyup', this.onKey)
-      if (this.hovered) this.config()?.onHover(null)
+      if (this.active) this.view.state.facet(layerLinkConfig)?.onActive(null)
     }
 
-    config() {
-      return this.view.state.facet(layerLinkConfig)
-    }
-
-    /** Updates hover state and decorations; the caller redraws when outside an update. */
-    show(element: LinkedElement | null, linkMode: boolean): boolean {
-      const nextLinkMode = linkMode && element !== null
-      const changed =
-        element?.from !== this.hovered?.from ||
-        element?.nodeIds.join(',') !== this.hovered?.nodeIds.join(',')
-      if (!changed && nextLinkMode === this.linkMode) return false
-      this.hovered = element
-      this.linkMode = nextLinkMode
-      if (changed) this.config()?.onHover(element?.nodeIds ?? null)
-      this.view.dom.classList.toggle('cm-layer-link-active', nextLinkMode)
-      this.decorations = hoverDecorations(element, nextLinkMode)
-      return true
-    }
-
-    elementAtPointer(event: MouseEvent) {
-      const pos = this.view.posAtCoords({ x: event.clientX, y: event.clientY }, false)
-      return linkedElementAt(this.view.state, pos)
+    refresh() {
+      const { state } = this.view
+      const element = this.view.hasFocus ? linkedElementAt(state, state.selection.main.head) : null
+      const changed = !sameElement(element, this.active)
+      this.active = element
+      this.decorations = tagDecorations(element)
+      if (changed) state.facet(layerLinkConfig)?.onActive(element?.nodeIds ?? null)
     }
   },
-  {
-    decorations: (plugin) => plugin.decorations,
-    eventHandlers: {
-      mousemove(event) {
-        const config = this.config()
-        if (!config) return
-        if (this.show(this.elementAtPointer(event), config.isLinkModifier(event))) {
-          this.view.dispatch({})
-        }
-      },
-      mouseleave() {
-        if (this.show(null, false)) this.view.dispatch({})
-      },
-      mousedown(event) {
-        const config = this.config()
-        if (!config || event.button !== 0 || !config.isLinkModifier(event)) return false
-        const element = this.elementAtPointer(event)
-        if (!element) return false
-        event.preventDefault()
-        config.onReveal(element.nodeIds)
-        return true
-      }
-    }
-  }
+  { decorations: (plugin) => plugin.decorations }
 )
 
-/** Links JSX elements to canvas layers: hover highlights a layer, ⌘/Ctrl-click reveals it. */
+/** Links JSX elements to canvas layers: the element around the cursor marks its layer. */
 export function layerLinks(config: LayerLinkConfig): Extension {
-  return [layerLinkConfig.of(config), linkedElements, layerHover, hoverTheme]
+  return [layerLinkConfig.of(config), linkedElements, activeElement, activeTheme]
 }
