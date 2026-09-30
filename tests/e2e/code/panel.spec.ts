@@ -32,8 +32,12 @@ function codeEditor() {
   return editor.page.locator('[data-slot="code-editor"] .cm-content')
 }
 
+/** Opens the editor; with nothing selected that means choosing to write new Design JSX. */
 async function openCodePanel() {
   await codeTab().click()
+  const writeJSX = codePanel().getByRole('button', { name: 'Write JSX' })
+  await expect(codeEditor().or(writeJSX)).toBeVisible()
+  if (await writeJSX.isVisible()) await writeJSX.click()
   await expect(codeEditor()).toBeVisible()
 }
 
