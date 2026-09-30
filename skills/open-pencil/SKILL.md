@@ -124,7 +124,10 @@ openpencil analyze spacing design.fig --grid 8
 openpencil analyze clusters design.fig --min-count 3
 openpencil lint design.fig
 openpencil lint design.fig --json
+openpencil lint design.fig --fix -o fixed.fig     # bind matching color variables, round to whole pixels
 ```
+
+In MCP and AI chat, `lint` lists findings with their `fix` and `suggestions`; `lint_fix` applies the safe fixes, and the first suggestion of each finding with `suggestions: true`.
 
 ### Eval (Figma Plugin API)
 

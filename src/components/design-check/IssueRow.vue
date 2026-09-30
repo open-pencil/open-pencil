@@ -59,18 +59,19 @@ const styles = designCheck()
         <span :class="styles.rowDetailText()">{{ row.detail }}</span>
       </span>
     </button>
-    <Tip
-      v-if="row.fix && !row.missing"
-      as-child
-      :label="messages.bindVariable({ variable: row.fix.variableName })"
-    >
+    <Tip v-if="row.action" as-child :label="row.action.label">
       <button
         type="button"
-        :aria-label="messages.bindVariable({ variable: row.fix.variableName })"
+        :aria-label="row.action.label"
         :class="styles.rowAction()"
         @click="emit('fix')"
       >
-        <icon-lucide-link class="size-3" aria-hidden="true" />
+        <icon-lucide-link
+          v-if="row.action.kind === 'bind-variable'"
+          class="size-3"
+          aria-hidden="true"
+        />
+        <icon-lucide-wand-sparkles v-else class="size-3" aria-hidden="true" />
       </button>
     </Tip>
   </li>

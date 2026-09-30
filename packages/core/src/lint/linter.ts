@@ -95,6 +95,12 @@ export class Linter {
       visible: raw.visible,
       locked: raw.locked,
       layoutMode: raw.layoutMode,
+      layoutPositioning: raw.layoutPositioning,
+      layoutGrow: raw.layoutGrow,
+      layoutAlignSelf: raw.layoutAlignSelf,
+      primaryAxisSizing: raw.primaryAxisSizing,
+      counterAxisSizing: raw.counterAxisSizing,
+      textAutoResize: raw.textAutoResize,
       itemSpacing: raw.itemSpacing,
       paddingTop: raw.paddingTop,
       paddingRight: raw.paddingRight,
@@ -135,7 +141,7 @@ export class Linter {
       if (!config || config.severity === 'off') continue
       const context: RuleContext = {
         variables: this.variables,
-        report: ({ node, message, suggest, data }) => {
+        report: ({ node, message, suggest, data, fix, suggestions }) => {
           this.messages.push({
             ruleId,
             severity: config.severity as Exclude<Severity, 'off'>,
@@ -144,7 +150,9 @@ export class Linter {
             nodeName: node.name,
             nodePath: getNodePath(this.nodes.get(node.id) ?? node),
             suggest,
-            data
+            data,
+            fix,
+            suggestions
           })
         },
         getConfig: () => config.options,

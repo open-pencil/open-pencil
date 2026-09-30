@@ -1,3 +1,4 @@
+import type { LintFix, LintFixRequest } from '@open-pencil/core/lint'
 import { locale, type useDesignCheckMessages } from '@open-pencil/vue'
 
 import type { DesignIssue } from './issues'
@@ -41,7 +42,7 @@ const RULE_COPY: Partial<Record<string, RuleCopy>> = {
 }
 
 const SPACING_DETAIL = {
-  gap: 'detailSpacingGap',
+  itemSpacing: 'detailSpacingGap',
   paddingTop: 'detailSpacingTop',
   paddingRight: 'detailSpacingRight',
   paddingBottom: 'detailSpacingBottom',
@@ -170,20 +171,32 @@ export function issueSwatch(issue: DesignIssue): IssueSwatch | null {
   return null
 }
 
-/** A variable binding that resolves the finding in one step. */
-export interface IssueFix {
-  nodeId: string
-  path: string
-  variableId: string
-  variableName: string
+/** Full radius, the pill shape Figma writes for a corner radius larger than the layer. */
+const FULL_RADIUS = 9999
+
+/** The one-step fix a row offers: the rule's safe fix, or else its first suggestion. */
+export interface IssueAction {
+  request: LintFixRequest
+  label: string
+  kind: LintFix['kind']
 }
 
-export function issueFix(issue: DesignIssue): IssueFix | null {
-  if (issue.ruleId !== 'no-hardcoded-colors') return null
-  const variableId = stringAt(issue, 'variableId')
-  const variableName = stringAt(issue, 'variableName')
-  const index = numberAt(issue, 'index')
-  if (!variableId || !variableName || index === undefined) return null
-  const field = stringAt(issue, 'paint') === 'stroke' ? 'strokes' : 'fills'
-  return { nodeId: issue.nodeId, path: `${field}/${index}/color`, variableId, variableName }
+function fixLabel(fix: LintFix, messages: Messages): string {
+  if (fix.kind === 'bind-variable') {
+    return messages.bindVariable({ variable: fix.variableName })
+  }
+  const changes = Object.entries(fix.changes)
+  // Geometry changes only come from rounding to whole pixels.
+  if (changes.length !== 1 || changes.some(([property]) => property in GEOMETRY_LABELS)) {
+    return messages.fixRoundPixels
+  }
+  const [property, value] = changes[0]
+  if (property === 'cornerRadius' && value === FULL_RADIUS) return messages.fixFullRadius
+  return messages.fixUseValue({ value: `${formatNumber(value)} px` })
+}
+
+export function issueAction(issue: DesignIssue, messages: Messages): IssueAction | null {
+  const fix = issue.fix ?? issue.suggestions?.[0]
+  if (!fix) return null
+  return { request: { nodeId: issue.nodeId, fix }, label: fixLabel(fix, messages), kind: fix.kind }
 }
