@@ -1,5 +1,12 @@
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
-import { Facet, StateEffect, StateField, type EditorState, type Extension } from '@codemirror/state'
+import {
+  Facet,
+  StateEffect,
+  StateField,
+  type ChangeDesc,
+  type EditorState,
+  type Extension
+} from '@codemirror/state'
 import {
   Decoration,
   EditorView,
@@ -7,6 +14,8 @@ import {
   type DecorationSet,
   type ViewUpdate
 } from '@codemirror/view'
+
+import type { DesignJSXElement } from '@open-pencil/design-jsx'
 
 import type { LayerLinkSource } from '@/app/code/layers/links'
 
@@ -22,6 +31,11 @@ export interface LinkedElement {
   closeNameFrom: number
   closeNameTo: number
   nodeIds: string[]
+  /**
+   * The layer as Design JSX wrote it when the code was last in sync with it; a canvas change
+   * patches the code where the layer's description differs from this base.
+   */
+  base: DesignJSXElement | null
 }
 
 export interface LayerLinkConfig {
@@ -29,13 +43,27 @@ export interface LayerLinkConfig {
   typeOf?: (tagName: string) => string | undefined
   /** The layers of the element around the cursor while the editor has focus, else `null`. */
   onActive: (nodeIds: readonly string[] | null) => void
+  /** The layer as Design JSX writes it now, or `null` when it cannot be patched. */
+  describe?: (nodeId: string) => DesignJSXElement | null
+  /** Explains an expression attribute the canvas has changed since, given its canvas value. */
+  staleMessage?: (value: string) => string
 }
 
 type SyntaxNode = ReturnType<typeof syntaxTree>['topNode']
 
 export const setLayerLinks = StateEffect.define<LayerLinkSource | null>()
 
-const layerLinkConfig = Facet.define<LayerLinkConfig, LayerLinkConfig | null>({
+/** The code now matches these layers as described: the new base of each. */
+export const setLayerBases = StateEffect.define<ReadonlyMap<string, DesignJSXElement | null>>()
+
+/** Links elements written into `from`..`to` of the new document to layers, in element order. */
+export const linkInsertedElements = StateEffect.define<{
+  from: number
+  to: number
+  layerIds: readonly string[]
+}>()
+
+export const layerLinkConfig = Facet.define<LayerLinkConfig, LayerLinkConfig | null>({
   combine: (values) => values.at(-1) ?? null
 })
 
@@ -70,11 +98,14 @@ function tagName(tag: SyntaxNode): SyntaxNode | null {
 }
 
 /** JSX elements in pre-order, the order in which exporters write layers. */
-function parseElements(state: EditorState): ParsedElement[] {
+function parseElements(state: EditorState, from = 0, to = state.doc.length): ParsedElement[] {
   const tree = ensureSyntaxTree(state, state.doc.length, 250) ?? syntaxTree(state)
   const elements: ParsedElement[] = []
   tree.iterate({
+    from,
+    to,
     enter(node) {
+      if (node.from < from || node.to > to) return
       if (node.name !== 'JSXElement') return
       const tag = openingTag(node.node)
       const name = tag && tagName(tag)
@@ -97,11 +128,14 @@ function parseElements(state: EditorState): ParsedElement[] {
   return elements
 }
 
-function linkByOrder(elements: ParsedElement[], layerIds: ReadonlyArray<string | null>) {
+function linkByOrder(
+  elements: ParsedElement[],
+  layerIds: ReadonlyArray<string | null>
+): LinkedElement[] {
   const linked: LinkedElement[] = []
   for (const [index, element] of elements.entries()) {
     const nodeId = layerIds[index]
-    if (nodeId) linked.push({ ...element, nodeIds: [nodeId] })
+    if (nodeId) linked.push({ ...element, nodeIds: [nodeId], base: null })
   }
   return linked
 }
@@ -121,14 +155,44 @@ function linkByLines(
     ids.push(layer.nodeId)
     byElement.set(element, ids)
   }
-  return [...byElement].map(([element, nodeIds]) => ({ ...element, nodeIds }))
+  return [...byElement].map(([element, nodeIds]): LinkedElement => ({
+    ...element,
+    nodeIds,
+    base: null
+  }))
+}
+
+/** Records what each layer looks like now, which is what the code was linked against. */
+function withBases(state: EditorState, elements: LinkedElement[]): LinkedElement[] {
+  const describe = state.facet(layerLinkConfig)?.describe
+  if (!describe) return elements
+  return elements.map((element) => ({ ...element, base: describe(element.nodeIds[0]) }))
 }
 
 function resolveLinks(state: EditorState, source: LayerLinkSource | null): LinkedElement[] {
   if (!source) return []
   const elements = parseElements(state)
-  if (source.kind === 'order') return linkByOrder(elements, source.layerIds)
-  return linkByLines(elements, source.layers, state.facet(layerLinkConfig)?.typeOf)
+  const linked =
+    source.kind === 'order'
+      ? linkByOrder(elements, source.layerIds)
+      : linkByLines(elements, source.layers, state.facet(layerLinkConfig)?.typeOf)
+  return withBases(state, linked)
+}
+
+function mapElement(element: LinkedElement, changes: ChangeDesc): LinkedElement | null {
+  const from = changes.mapPos(element.from, 1)
+  const to = changes.mapPos(element.to, -1)
+  if (to <= from) return null
+  return {
+    ...element,
+    from,
+    to,
+    openTo: changes.mapPos(element.openTo, -1),
+    nameFrom: changes.mapPos(element.nameFrom, 1),
+    nameTo: changes.mapPos(element.nameTo, -1),
+    closeNameFrom: changes.mapPos(element.closeNameFrom, 1),
+    closeNameTo: changes.mapPos(element.closeNameTo, -1)
+  }
 }
 
 /** Linked elements, kept in place through edits until the next source replaces them. */
@@ -138,25 +202,25 @@ export const linkedElements = StateField.define<LinkedElement[]>({
     for (const effect of transaction.effects) {
       if (effect.is(setLayerLinks)) return resolveLinks(transaction.state, effect.value)
     }
-    if (!transaction.docChanged) return value
-    const { changes } = transaction
-    return value.flatMap((element) => {
-      const from = changes.mapPos(element.from, 1)
-      const to = changes.mapPos(element.to, -1)
-      if (to <= from) return []
-      return [
-        {
-          ...element,
-          from,
-          to,
-          openTo: changes.mapPos(element.openTo, -1),
-          nameFrom: changes.mapPos(element.nameFrom, 1),
-          nameTo: changes.mapPos(element.nameTo, -1),
-          closeNameFrom: changes.mapPos(element.closeNameFrom, 1),
-          closeNameTo: changes.mapPos(element.closeNameTo, -1)
-        }
-      ]
-    })
+    let next = value
+    if (transaction.docChanged) {
+      next = next.flatMap((element) => mapElement(element, transaction.changes) ?? [])
+    }
+    for (const effect of transaction.effects) {
+      if (effect.is(setLayerBases)) {
+        const bases = effect.value
+        next = next.map((element) => {
+          const id = element.nodeIds[0]
+          return bases.has(id) ? { ...element, base: bases.get(id) ?? null } : element
+        })
+      }
+      if (effect.is(linkInsertedElements)) {
+        const { from, to, layerIds } = effect.value
+        const inserted = linkByOrder(parseElements(transaction.state, from, to), layerIds)
+        next = [...next, ...withBases(transaction.state, inserted)].sort((a, b) => a.from - b.from)
+      }
+    }
+    return next
   }
 })
 

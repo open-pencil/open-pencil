@@ -4,7 +4,8 @@ import { StateEffect, StateField, type EditorState, type Extension } from '@code
 
 import type { LayerIssue } from '@/app/code/layers/issues'
 
-import { linkedElements, setLayerLinks, type LinkedElement } from './layer-links'
+import { layerLinkConfig, linkedElements, setLayerLinks, type LinkedElement } from './links'
+import { staleAttributes } from './patch'
 
 export const setLayerIssues = StateEffect.define<readonly LayerIssue[]>()
 
@@ -48,7 +49,6 @@ function attributeRange(
 
 function diagnosticsFor(state: EditorState): Diagnostic[] {
   const issues = state.field(layerIssues)
-  if (issues.length === 0) return []
   const byNode = new Map<string, LayerIssue[]>()
   for (const issue of issues) byNode.set(issue.nodeId, [...(byNode.get(issue.nodeId) ?? []), issue])
   const diagnostics: Diagnostic[] = []
@@ -68,10 +68,17 @@ function diagnosticsFor(state: EditorState): Diagnostic[] {
       }
     }
   }
+  for (const range of state.field(staleAttributes, false) ?? []) {
+    const message = state.facet(layerLinkConfig)?.staleMessage?.(range.value)
+    if (message) diagnostics.push({ from: range.from, to: range.to, severity: 'info', message })
+  }
   return diagnostics
 }
 
-/** Underlines code whose layers have design issues, on the attribute that causes them. */
+/**
+ * Underlines code whose layers have design issues, on the attribute that causes them, and
+ * expression attributes whose layers changed on the canvas since.
+ */
 export function layerIssueDiagnostics(): Extension {
   return [
     layerIssues,
@@ -82,7 +89,9 @@ export function layerIssueDiagnostics(): Extension {
           transaction.effects.some(
             (effect) => effect.is(setLayerIssues) || effect.is(setLayerLinks)
           )
-        )
+        ) ||
+        update.startState.field(staleAttributes, false) !==
+          update.state.field(staleAttributes, false)
     })
   ]
 }

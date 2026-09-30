@@ -1,10 +1,18 @@
 <script setup lang="ts">
 import { useClipboard, useDebounceFn } from '@vueuse/core'
 import { tv } from 'tailwind-variants'
-import { computed, defineAsyncComponent, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import {
+  computed,
+  defineAsyncComponent,
+  onBeforeUnmount,
+  ref,
+  shallowRef,
+  useTemplateRef,
+  watch
+} from 'vue'
 
 import { JSX_REFERENCE } from '@open-pencil/design-jsx'
-import { useI18n, useSceneComputed } from '@open-pencil/vue'
+import { useI18n } from '@open-pencil/vue'
 
 import {
   commitDOMCodeSession,
@@ -16,7 +24,6 @@ import {
 import { generatedCodeFor, type GeneratedCode } from '@/app/code/generated'
 import { useCodeLayers } from '@/app/code/layers/use'
 import {
-  commitDesignJSXSession,
   createDesignJSXEditSession,
   previewDesignJSX,
   resetDesignJSXPreview,
@@ -41,16 +48,23 @@ const { copy, copied } = useClipboard({ copiedDuring: 2000 })
 const { copy: copyReference, copied: copiedReference } = useClipboard({ copiedDuring: 2000 })
 const source = ref<CodeSource>('design-jsx')
 const draft = ref('')
-const baseline = ref('')
+/** The person has written in the code since it was generated for the current selection. */
+const edited = ref(false)
 const status = ref<'idle' | 'updating' | 'updated' | 'error'>('idle')
 const error = ref('')
 const designSession = shallowRef<DesignJSXEditSession | null>(null)
+const codeEditor = useTemplateRef<InstanceType<typeof CodeEditor>>('codeEditor')
 let domSession: DOMCodeSession | null = null
 let previewQueue = Promise.resolve()
 let pendingPreview: Promise<void> | undefined
 let commitPromise: Promise<void> | undefined
 let updateVersion = 0
-let disposing = false
+/** Previews in flight; their canvas changes come from the code, not onto it. */
+let previewing = 0
+/** Scene version a preview left the canvas at, which the code already describes. */
+let previewedVersion: number | null = null
+/** The selection the code was generated for. */
+let followedSelection: string | null = null
 
 /** Set by "Write JSX": the editor stays open for new layers until something is selected. */
 const composing = ref(false)
@@ -65,7 +79,7 @@ const showEmptyState = computed(
     store.state.selectedIds.size === 0 &&
     !composing.value &&
     !designSession.value &&
-    !dirty.value
+    !edited.value
 )
 
 watch(
@@ -80,19 +94,12 @@ function writeJSX() {
 }
 const codeLayers = useCodeLayers(source)
 
-const generatedJSX = useSceneComputed((): GeneratedCode | null => {
-  if (!editorActive.value || source.value === 'html-css' || designSession.value) return null
-  void store.state.sceneVersion
-  return generatedCodeFor(source.value, store.graph, [...store.state.selectedIds])
-})
-
 const sourceOptions = computed(() => [
   { value: 'design-jsx' as const, label: code.value.sourceDesignJSX },
   { value: 'tailwind-jsx' as const, label: code.value.sourceTailwindJSX },
   { value: 'html-css' as const, label: code.value.sourceHTMLCSS }
 ])
 const readOnly = computed(() => source.value === 'tailwind-jsx')
-const dirty = computed(() => draft.value !== baseline.value)
 const editorLabel = computed(() =>
   source.value === 'html-css' ? code.value.editorHTMLCSSLabel : code.value.editorDesignLabel
 )
@@ -106,7 +113,7 @@ const statusStyles = computed(() => tv(statusTheme)({ tone: statusTone.value }))
 const statusText = computed(() => {
   if (status.value === 'updating') return code.value.updating
   if (status.value === 'error') return code.value.previewFailed
-  if (dirty.value) return code.value.updatedLive
+  if (edited.value) return code.value.updatedLive
   return code.value.jsxUpToDate
 })
 
@@ -127,17 +134,16 @@ function beginDOMSession(): DOMCodeSession {
   return domSession
 }
 
+/** Design JSX previews are recorded as they apply; an HTML/CSS preview is committed here. */
 async function commitCurrentSession(): Promise<void> {
   if (commitPromise) return commitPromise
   const operation = (async () => {
     await pendingPreview
     await previewQueue
     updateVersion += 1
-    const design = designSession.value
     const dom = domSession
     designSession.value = null
     domSession = null
-    if (design) commitDesignJSXSession(store, design)
     if (dom) commitDOMCodeSession(store, dom)
     pendingPreview = undefined
   })()
@@ -153,17 +159,24 @@ async function runPreview(version: number): Promise<void> {
   if (version !== updateVersion || readOnly.value || !draft.value.trim()) return
   status.value = 'updating'
   error.value = ''
+  previewing += 1
   let result: { ok: true } | { ok: false; error: string }
   let previewLayers: DesignJSXLayerLine[] | null = null
-  if (source.value === 'html-css') {
-    result = await previewDOMCode(store, beginDOMSession(), draft.value)
-  } else {
-    const session = beginDesignSession()
-    const preview = session
-      ? await previewDesignJSX(store, session, draft.value)
-      : ({ ok: false, error: error.value } as const)
-    if (preview.ok) previewLayers = preview.layers
-    result = preview
+  try {
+    if (source.value === 'html-css') {
+      result = await previewDOMCode(store, beginDOMSession(), draft.value)
+    } else {
+      const session = beginDesignSession()
+      const preview = session
+        ? await previewDesignJSX(store, session, draft.value)
+        : ({ ok: false, error: error.value } as const)
+      if (preview.ok) previewLayers = preview.layers
+      result = preview
+    }
+  } finally {
+    previewing -= 1
+    previewedVersion = store.state.sceneVersion
+    followedSelection = selectionKey.value
   }
   if (version !== updateVersion) return
   if (previewLayers) codeLayers.showPreview(previewLayers)
@@ -184,8 +197,11 @@ const schedulePreview = useDebounceFn(
   { maxWait: 1_000 }
 )
 
-function updateDraft(value: string): void {
+function updateDraft(value: string, origin: 'user' | 'layers'): void {
   draft.value = value
+  // Patches from the canvas already match it; only the person's typing renders.
+  if (origin === 'layers') return
+  edited.value = true
   error.value = ''
   updateVersion += 1
   pendingPreview = schedulePreview(updateVersion)
@@ -202,74 +218,70 @@ async function resetDraft(): Promise<void> {
   if (design) resetDesignJSXPreview(store, design)
   if (dom) resetDOMCodePreview(store, dom)
   pendingPreview = undefined
-  draft.value = baseline.value
-  codeLayers.restoreGenerated()
   error.value = ''
   status.value = 'idle'
+  edited.value = false
+  if (source.value === 'html-css') draft.value = starterSourceFor('html-css')
+  else showCanvas(source.value)
 }
 
 async function changeSource(next: CodeSource): Promise<void> {
   if (next === source.value) return
   await commitCurrentSession()
   source.value = next
-  const generated = next === 'html-css' ? null : generatedFor(next)
-  const initial = generated?.code ?? starterSourceFor(next)
-  codeLayers.showGenerated(generated)
-  baseline.value = initial
-  draft.value = initial
+  edited.value = false
   error.value = ''
   status.value = 'idle'
+  if (next === 'html-css') {
+    codeLayers.showGenerated(null)
+    draft.value = starterSourceFor(next)
+  } else {
+    showCanvas(next)
+  }
+}
+
+const selectionKey = computed(() => [...store.state.selectedIds].join(','))
+
+/** Shows the code generated for the selection, replacing whatever the editor held. */
+function showCanvas(next: Exclude<CodeSource, 'html-css'>) {
+  const generated: GeneratedCode = generatedCodeFor(next, store.graph, [...store.state.selectedIds])
+  followedSelection = selectionKey.value
+  codeLayers.showGenerated(generated)
+  draft.value = generated.code
 }
 
 /**
- * Scene and selection at which an edit settled. The code stays as written until either changes;
- * then the canvas is the newer intent and the code is generated from it again.
+ * Keeps the code in step with the canvas, like the Design panel. Code nobody has written in is
+ * generated again; code the person wrote is patched where layers changed, keeping the rest as
+ * written. Another selection starts over with its generated code.
  */
-let settledAt: string | null = null
-
-function sceneKey(): string {
-  return `${store.state.sceneVersion}:${[...store.state.selectedIds].join(',')}`
+function followCanvas() {
+  const current = source.value
+  if (!editorActive.value || current === 'html-css' || previewing > 0) return
+  if (selectionKey.value !== followedSelection) {
+    if (designSession.value) designSession.value = null
+    edited.value = false
+  }
+  if (!edited.value) {
+    showCanvas(current)
+    return
+  }
+  if (store.state.sceneVersion === previewedVersion) return
+  codeEditor.value?.patchFromLayers()
 }
 
-/**
- * Leaving the editor ends a live edit, as leaving a text field does: the preview becomes one
- * undo step, so canvas edits that follow are recorded after it and flow back into the code.
- */
-async function settleEdit(): Promise<void> {
-  // A keystroke just before leaving has a preview scheduled that has not opened a session yet.
-  await pendingPreview
-  if (!designSession.value && !domSession) return
-  await commitCurrentSession()
-  baseline.value = draft.value
-  settledAt = sceneKey()
-}
-
-function generatedFor(next: Exclude<CodeSource, 'html-css'>): GeneratedCode {
-  return generatedCodeFor(next, store.graph, [...store.state.selectedIds])
-}
-
-watch(
-  generatedJSX,
-  (generated) => {
-    if (!generated || source.value === 'html-css' || designSession.value || dirty.value) return
-    if (settledAt === sceneKey()) return
-    settledAt = null
-    codeLayers.showGenerated(generated)
-    baseline.value = generated.code
-    draft.value = generated.code
-  },
-  { immediate: true }
-)
+watch([() => store.state.sceneVersion, selectionKey, source, editorActive], followCanvas, {
+  immediate: true
+})
 
 onBeforeUnmount(() => {
-  disposing = true
   void commitCurrentSession()
 })
 
 watch(
   () => editorActive.value,
   (value) => {
-    if (!value && !disposing) void settleEdit()
+    if (!value) void commitCurrentSession()
   }
 )
 </script>
@@ -323,6 +335,7 @@ watch(
 
     <div v-else class="flex min-h-0 flex-1 flex-col overflow-hidden">
       <CodeEditor
+        ref="codeEditor"
         :autofocus="composing"
         :model-value="draft"
         :language="source"
@@ -331,8 +344,9 @@ watch(
         :layer-links="codeLayers.links.value"
         :layer-issues="codeLayers.issues.value"
         @update:model-value="updateDraft"
+        :describe-layer="source === 'design-jsx' ? codeLayers.describe : undefined"
+        :layer-snippet="source === 'design-jsx' ? codeLayers.snippet : undefined"
         @active-layers="codeLayers.markActive"
-        @blur="settleEdit"
       />
     </div>
 
@@ -359,7 +373,7 @@ watch(
       </span>
       <div class="flex items-center gap-1">
         <AppButton
-          v-if="dirty && !readOnly"
+          v-if="edited && !readOnly"
           color="neutral"
           variant="ghost"
           size="xs"
