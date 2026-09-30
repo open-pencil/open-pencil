@@ -1,15 +1,15 @@
 ---
 title: Checking Designs
-description: Find accessibility, consistency, and structure issues with the Check panel and canvas issue markers.
+description: Find accessibility, consistency, and structure issues with the Lint panel and canvas issue markers.
 ---
 
 # Checking Designs
 
 OpenPencil checks the current page as you work and points out layers that break common design rules: text that is hard to read, controls that are too small to tap, colors that should use a variable, and spacing off the scale.
 
-## Check Panel
+## Lint Panel
 
-Open the **Check** tab in the right panel. Its badge shows how many errors and warnings the page has.
+Open the **Lint** tab in the right panel. Its badge shows how many errors and warnings the page has.
 
 - **Page** lists every issue on the current page; **Selection** narrows the list to the selected layers and everything inside them.
 - Issues are grouped by rule, most severe first. Errors and warnings start expanded; suggestions start collapsed.
@@ -26,18 +26,18 @@ Other issues show the value that needs attention, such as a contrast ratio, a te
 
 ## Canvas Markers
 
-Layers with errors and warnings carry a marker at their top-right corner: red for errors, amber for warnings. Suggestions appear only in the Check panel.
+Layers with errors and warnings carry a marker at their top-right corner: red for errors, amber for warnings. Suggestions appear only in the Lint panel.
 
-- Hover a marker to see its issues. Click it to select the layer and open its issues in the Check panel.
+- Hover a marker to see its issues. Click it to select the layer and open its issues in the Lint panel.
 - Markers that would overlap merge into one showing their combined count.
 - When a layer is too small to see at the current zoom, its marker moves to the nearest enclosing layer large enough to point at.
 - Hidden layers and layers clipped out of view by a frame keep their issues in the panel but get no marker.
 
-Turn markers on or off with **View → Design issues**, or with **Show issues on canvas** in the Check panel's settings menu.
+Turn markers on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu.
 
 ## Rules
 
-The settings menu in the Check panel switches between rule presets:
+The settings menu in the Lint panel switches between rule presets:
 
 - **Recommended** — balanced defaults for everyday work.
 - **Strict** — every rule as a warning or error.
