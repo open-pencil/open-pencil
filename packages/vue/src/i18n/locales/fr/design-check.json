@@ -34,7 +34,7 @@
   "ruleColorContrast": "Contraste du texte faible",
   "ruleColorContrastHelp": "Le texte doit avoir un rapport de contraste d’au moins 4,5:1 avec son arrière-plan pour respecter WCAG AA.",
   "ruleTouchTargetSize": "Zone tactile trop petite",
-  "ruleTouchTargetSizeHelp": "Les boutons, liens et autres contrôles doivent mesurer au moins 44 × 44 pour être faciles à toucher.",
+  "ruleTouchTargetSizeHelp": "Les boutons, liens et autres contrôles doivent être faciles à toucher : au moins 24 × 24 pour WCAG AA, 44 × 44 pour AAA.",
   "ruleMinTextSize": "Texte trop petit",
   "ruleMinTextSizeHelp": "Un texte de moins de 12 px est difficile à lire sur la plupart des écrans.",
   "ruleConsistentSpacing": "Espacement hors échelle",

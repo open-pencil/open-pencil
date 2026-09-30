@@ -34,7 +34,7 @@
   "ruleColorContrast": "文字对比度过低",
   "ruleColorContrastHelp": "文字与背景的对比度至少需要 4.5:1 才能符合 WCAG AA。",
   "ruleTouchTargetSize": "触控区域过小",
-  "ruleTouchTargetSizeHelp": "按钮、链接和其他控件至少应为 44 × 44，以便轻松点按。",
+  "ruleTouchTargetSizeHelp": "按钮、链接和其他控件需要足够的点按区域：WCAG AA 至少 24 × 24，AAA 至少 44 × 44。",
   "ruleMinTextSize": "文字过小",
   "ruleMinTextSizeHelp": "小于 12 px 的文字在大多数屏幕上难以阅读。",
   "ruleConsistentSpacing": "间距不在规范内",

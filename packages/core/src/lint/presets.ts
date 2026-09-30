@@ -18,7 +18,8 @@ export const recommended: Preset = {
     'consistent-spacing': 'info',
     'consistent-radius': 'info',
     'color-contrast': 'error',
-    'touch-target-size': 'warning',
+    // WCAG 2.2 AA minimum; Strict and Accessibility keep the rule's 44×44 (AAA).
+    'touch-target-size': { severity: 'warning', options: { minSize: 24 } },
     'text-style-required': 'info',
     'min-text-size': 'warning',
     'no-hidden-layers': 'info',

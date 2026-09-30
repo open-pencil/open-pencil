@@ -34,7 +34,7 @@
   "ruleColorContrast": "Geringer Textkontrast",
   "ruleColorContrastHelp": "Text braucht ein Kontrastverhältnis von mindestens 4,5:1 zum Hintergrund, um WCAG AA zu erfüllen.",
   "ruleTouchTargetSize": "Kleine Touch-Fläche",
-  "ruleTouchTargetSizeHelp": "Schaltflächen, Links und andere Bedienelemente sollten mindestens 44 × 44 groß sein, damit sie sich leicht antippen lassen.",
+  "ruleTouchTargetSizeHelp": "Schaltflächen, Links und andere Bedienelemente brauchen Platz zum Antippen: mindestens 24 × 24 für WCAG AA, 44 × 44 für AAA.",
   "ruleMinTextSize": "Kleiner Text",
   "ruleMinTextSizeHelp": "Text unter 12 px ist auf den meisten Bildschirmen schwer lesbar.",
   "ruleConsistentSpacing": "Abstand außerhalb der Skala",
