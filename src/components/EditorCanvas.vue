@@ -137,7 +137,7 @@ const { detailMarker: hoveredIssueMarker, cursor: issueMarkerCursor } = useCanva
     onHover: (marker) => store.designCheck.highlightMarker(marker?.nodeIds ?? null),
     onActivate: (marker) => {
       activatePane()
-      propertiesTab.value = 'check'
+      propertiesTab.value = 'lint'
       store.designCheck.openMarker(marker.nodeIds)
     }
   }

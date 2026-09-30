@@ -3,8 +3,8 @@ import { params } from '@nanostores/i18n'
 import { i18n } from '#vue/i18n/create'
 
 export const designCheckMessageDefaults = {
-  tab: 'Check',
-  tabCount: params('{count} errors and warnings'),
+  tab: 'Lint',
+  tabCount: params('errors and warnings: {count}'),
   scope: 'Scope',
   scopePage: 'Page',
   scopeSelection: 'Selection',
