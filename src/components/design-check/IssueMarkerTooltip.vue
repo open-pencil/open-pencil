@@ -13,7 +13,7 @@ import { useDesignCheckMessages } from '@open-pencil/vue'
 
 import { useEditorStore } from '@/app/editor/active-store'
 import { issueDetail, ruleTitle } from '@/app/editor/design-check/format'
-import type { DesignIssue } from '@/app/editor/design-check/issues'
+import { compareIssueSeverity, type DesignIssue } from '@/app/editor/design-check/issues'
 import { nodeIcon } from '@/app/editor/icons'
 import { issueTooltip } from '@/theme/design-check'
 
@@ -21,7 +21,6 @@ import SeverityIcon from './SeverityIcon.vue'
 
 /** Issues listed before the tooltip summarizes the rest. */
 const MAX_ITEMS = 4
-const SEVERITY_ORDER = { error: 0, warning: 1, info: 2 } as const
 
 const { marker, canvas } = defineProps<{
   marker: PlacedIssueMarker | null
@@ -54,7 +53,7 @@ const issues = computed<DesignIssue[]>(() => {
     all
       // Suggestions do not earn a marker, so the tooltip lists what the marker counts.
       .filter((issue) => nodeIds.has(issue.nodeId) && issue.severity !== 'info')
-      .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity])
+      .toSorted(compareIssueSeverity)
   )
 })
 

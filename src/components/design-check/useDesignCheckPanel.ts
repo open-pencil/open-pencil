@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch, type Ref } from 'vue'
 
 import type { SceneGraph } from '@open-pencil/scene-graph'
 import { useDesignCheckMessages } from '@open-pencil/vue'
@@ -9,8 +9,7 @@ import {
   issueFix,
   issueSwatch,
   ruleHelp,
-  ruleTitle,
-  type IssueFix
+  ruleTitle
 } from '@/app/editor/design-check/format'
 import {
   countIssues,
@@ -21,10 +20,17 @@ import {
   type DesignIssueSeverity
 } from '@/app/editor/design-check/issues'
 import { nodeIcon } from '@/app/editor/icons'
+import { appPreferences } from '@/app/settings/preferences/store'
 
 import type { IssueGroupView, IssueRowView } from './types'
+import { usePresetLabels } from './usePresetLabels'
 
 export type DesignCheckScope = 'page' | 'selection'
+
+export type DesignCheckEmptyState =
+  | { kind: 'no-selection'; label: string; description: string }
+  | { kind: 'filtered'; label: string }
+  | { kind: 'clean'; label: string; description: string }
 
 function isHidden(graph: SceneGraph, nodeId: string): boolean {
   let node = graph.getNode(nodeId)
@@ -35,17 +41,21 @@ function isHidden(graph: SceneGraph, nodeId: string): boolean {
   return false
 }
 
-export function useDesignCheckPanel() {
+/**
+ * State of the Lint panel: scope, filters, grouped rows and empty states. While the panel is
+ * shown it keeps the design check running and brings focused issues into view in `list`.
+ */
+export function useDesignCheckPanel(options: {
+  active: () => boolean
+  list: Readonly<Ref<HTMLElement | null>>
+}) {
   const store = useEditorStore()
   const messages = useDesignCheckMessages()
+  const presetLabels = usePresetLabels()
   const check = store.designCheck
 
   const scope = ref<DesignCheckScope>('page')
-  const filters = reactive<Record<DesignIssueSeverity, boolean>>({
-    error: true,
-    warning: true,
-    info: true
-  })
+  const visibleSeverities = ref<DesignIssueSeverity[]>([...DESIGN_ISSUE_SEVERITIES])
   /** Explicit open state per rule; suggestions start collapsed, problems start open. */
   const openGroups = reactive(new Map<string, boolean>())
 
@@ -54,7 +64,6 @@ export function useDesignCheckPanel() {
     return current?.pageId === store.state.currentPageId ? current : null
   })
   const selectedIds = computed(() => store.state.selectedIds)
-  const hasSelection = computed(() => selectedIds.value.size > 0)
 
   const scopedIssues = computed<DesignIssue[]>(() => {
     const issues = snapshot.value?.issues ?? []
@@ -62,11 +71,8 @@ export function useDesignCheckPanel() {
     return issuesWithin(issues, store.graph, selectedIds.value)
   })
   const counts = computed(() => countIssues(scopedIssues.value))
-  const visibleIssues = computed(() =>
-    scopedIssues.value.filter((issue) => filters[issue.severity])
-  )
-  const filtersActive = computed(() =>
-    DESIGN_ISSUE_SEVERITIES.some((severity) => !filters[severity])
+  const filtersActive = computed(
+    () => visibleSeverities.value.length < DESIGN_ISSUE_SEVERITIES.length
   )
 
   function rowView(issue: DesignIssue): IssueRowView {
@@ -86,7 +92,9 @@ export function useDesignCheckPanel() {
   }
 
   const groups = computed<IssueGroupView[]>(() =>
-    groupIssuesByRule(visibleIssues.value).map((group) => {
+    groupIssuesByRule(
+      scopedIssues.value.filter((issue) => visibleSeverities.value.includes(issue.severity))
+    ).map((group) => {
       const rows = group.issues.map(rowView)
       return {
         ruleId: group.ruleId,
@@ -99,6 +107,28 @@ export function useDesignCheckPanel() {
     })
   )
 
+  const emptyState = computed<DesignCheckEmptyState | null>(() => {
+    if (!snapshot.value) return null
+    if (scope.value === 'selection' && selectedIds.value.size === 0) {
+      return {
+        kind: 'no-selection',
+        label: messages.value.noSelection,
+        description: messages.value.noSelectionDescription
+      }
+    }
+    if (groups.value.length > 0) return null
+    if (filtersActive.value && scopedIssues.value.length > 0) {
+      return { kind: 'filtered', label: messages.value.noFilteredIssues }
+    }
+    return {
+      kind: 'clean',
+      label: scope.value === 'page' ? messages.value.emptyPage : messages.value.emptySelection,
+      description: messages.value.emptyDescription({
+        preset: presetLabels.value[appPreferences.value.designCheck.preset]
+      })
+    }
+  })
+
   function isGroupOpen(group: IssueGroupView): boolean {
     return openGroups.get(group.ruleId) ?? group.severity !== 'info'
   }
@@ -107,38 +137,58 @@ export function useDesignCheckPanel() {
     openGroups.set(ruleId, open)
   }
 
-  function toggleFilter(severity: DesignIssueSeverity) {
-    filters[severity] = !filters[severity]
-  }
-
   function clearFilters() {
-    for (const severity of DESIGN_ISSUE_SEVERITIES) filters[severity] = true
+    visibleSeverities.value = [...DESIGN_ISSUE_SEVERITIES]
   }
 
-  /** Makes sure the row for an issue is rendered: in scope, not filtered, group open. */
-  function revealIssueRow(issue: DesignIssue) {
-    filters[issue.severity] = true
-    openGroups.set(issue.ruleId, true)
+  function hoverRow(row: IssueRowView | null) {
+    check.highlightIssue(row && !row.missing ? row.issue : null)
   }
 
-  function applyFixes(fixes: readonly IssueFix[]) {
-    check.applyFixes(fixes)
-  }
+  watch(
+    options.active,
+    (visible) => {
+      check.panelVisible.value = visible
+      if (!visible) check.highlightIssue(null)
+    },
+    { immediate: true }
+  )
+
+  onBeforeUnmount(() => {
+    check.panelVisible.value = false
+    check.highlightIssue(null)
+  })
+
+  /** Shows the focused issue's row, e.g. after a canvas marker click: unfiltered, open, in view. */
+  watch(
+    [check.focusedIssueId, groups],
+    async ([issueId], [previousId]) => {
+      if (!issueId || issueId === previousId) return
+      const issue = check.snapshot.value?.issues.find((candidate) => candidate.id === issueId)
+      if (!issue) return
+      if (!visibleSeverities.value.includes(issue.severity)) {
+        visibleSeverities.value = [...visibleSeverities.value, issue.severity]
+      }
+      openGroups.set(issue.ruleId, true)
+      await nextTick()
+      options.list.value
+        ?.querySelector(`[data-issue-id="${CSS.escape(issueId)}"]`)
+        ?.scrollIntoView({ block: 'center' })
+    },
+    { flush: 'post' }
+  )
 
   return {
     check,
     scope,
-    filters,
-    hasSelection,
+    visibleSeverities,
     counts,
     groups,
-    filtersActive,
+    emptyState,
     loading: computed(() => snapshot.value === null),
     isGroupOpen,
     setGroupOpen,
-    toggleFilter,
     clearFilters,
-    revealIssueRow,
-    applyFixes
+    hoverRow
   }
 }
