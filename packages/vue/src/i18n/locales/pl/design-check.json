@@ -34,7 +34,7 @@
   "ruleColorContrast": "Niski kontrast tekstu",
   "ruleColorContrastHelp": "Aby spełnić WCAG AA, tekst musi mieć współczynnik kontrastu z tłem co najmniej 4,5:1.",
   "ruleTouchTargetSize": "Mały obszar dotyku",
-  "ruleTouchTargetSizeHelp": "Przyciski, linki i inne kontrolki powinny mieć co najmniej 44 × 44, aby łatwo je dotknąć.",
+  "ruleTouchTargetSizeHelp": "Przyciski, linki i inne kontrolki potrzebują miejsca na dotknięcie: co najmniej 24 × 24 dla WCAG AA i 44 × 44 dla AAA.",
   "ruleMinTextSize": "Mały tekst",
   "ruleMinTextSizeHelp": "Tekst mniejszy niż 12 px jest trudny do odczytania na większości ekranów.",
   "ruleConsistentSpacing": "Odstęp spoza skali",

@@ -34,7 +34,7 @@
   "ruleColorContrast": "テキストのコントラスト不足",
   "ruleColorContrastHelp": "WCAG AA を満たすには、テキストと背景のコントラスト比が 4.5:1 以上必要です。",
   "ruleTouchTargetSize": "タッチ領域が小さい",
-  "ruleTouchTargetSizeHelp": "ボタンやリンクなどの操作要素は、タップしやすいよう 44 × 44 以上にしてください。",
+  "ruleTouchTargetSizeHelp": "ボタンやリンクなどの操作要素は、タップしやすい大きさが必要です。WCAG AA では 24 × 24 以上、AAA では 44 × 44 以上です。",
   "ruleMinTextSize": "文字が小さい",
   "ruleMinTextSizeHelp": "12 px 未満の文字は多くの画面で読みにくくなります。",
   "ruleConsistentSpacing": "スケール外の間隔",

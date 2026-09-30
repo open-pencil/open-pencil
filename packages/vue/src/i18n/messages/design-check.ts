@@ -40,7 +40,7 @@ export const designCheckMessageDefaults = {
     'Text needs a contrast ratio of at least 4.5:1 with its background to meet WCAG AA.',
   ruleTouchTargetSize: 'Small touch target',
   ruleTouchTargetSizeHelp:
-    'Buttons, links and other controls should be at least 44 × 44 so they are easy to tap.',
+    'Buttons, links and other controls need room to tap: at least 24 × 24 for WCAG AA, 44 × 44 for AAA.',
   ruleMinTextSize: 'Small text',
   ruleMinTextSizeHelp: 'Text smaller than 12 px is hard to read on most screens.',
   ruleConsistentSpacing: 'Off-scale spacing',

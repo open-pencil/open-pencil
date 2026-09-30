@@ -34,7 +34,7 @@
   "ruleColorContrast": "Contrasto del testo basso",
   "ruleColorContrastHelp": "Il testo richiede un rapporto di contrasto di almeno 4,5:1 con lo sfondo per rispettare WCAG AA.",
   "ruleTouchTargetSize": "Area di tocco piccola",
-  "ruleTouchTargetSizeHelp": "Pulsanti, link e altri controlli dovrebbero misurare almeno 44 × 44 per essere facili da toccare.",
+  "ruleTouchTargetSizeHelp": "Pulsanti, link e altri controlli devono essere facili da toccare: almeno 24 × 24 per WCAG AA, 44 × 44 per AAA.",
   "ruleMinTextSize": "Testo piccolo",
   "ruleMinTextSizeHelp": "Il testo sotto i 12 px è difficile da leggere sulla maggior parte degli schermi.",
   "ruleConsistentSpacing": "Spaziatura fuori scala",
