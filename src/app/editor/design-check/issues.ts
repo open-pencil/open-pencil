@@ -1,7 +1,8 @@
-import type {
-  DesignIssueHighlight,
-  DesignIssueMarker,
-  DesignIssueSeverity
+import {
+  issueSeverityRank,
+  type DesignIssueHighlight,
+  type DesignIssueMarker,
+  type DesignIssueSeverity
 } from '@open-pencil/core/canvas'
 import type { LintMessage } from '@open-pencil/core/lint'
 import type { SceneGraph } from '@open-pencil/scene-graph'
@@ -23,7 +24,13 @@ export type DesignIssueCounts = Record<DesignIssueSeverity, number>
 
 export const DESIGN_ISSUE_SEVERITIES: readonly DesignIssueSeverity[] = ['error', 'warning', 'info']
 
-const SEVERITY_RANK: Record<DesignIssueSeverity, number> = { error: 0, warning: 1, info: 2 }
+/** Sorts the most severe first. */
+export function compareIssueSeverity(
+  a: { severity: DesignIssueSeverity },
+  b: { severity: DesignIssueSeverity }
+): number {
+  return issueSeverityRank(b.severity) - issueSeverityRank(a.severity)
+}
 
 /**
  * Identifies each finding by rule, layer and its position among that rule's findings on the
@@ -59,7 +66,7 @@ export function markersForIssues(issues: readonly DesignIssue[]): DesignIssueMar
       continue
     }
     marker.count++
-    if (SEVERITY_RANK[issue.severity] < SEVERITY_RANK[marker.severity]) {
+    if (compareIssueSeverity(issue, marker) < 0) {
       marker.severity = issue.severity
     }
   }
@@ -77,7 +84,7 @@ export function groupIssuesByRule(issues: readonly DesignIssue[]): DesignIssueGr
   }
   return [...groups.values()].sort(
     (a, b) =>
-      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
+      compareIssueSeverity(a, b) ||
       b.issues.length - a.issues.length ||
       a.ruleId.localeCompare(b.ruleId)
   )
@@ -119,7 +126,7 @@ export function highlightForIssue(issue: DesignIssue): DesignIssueHighlight {
 export function mostSevereIssue(issues: readonly DesignIssue[]): DesignIssue | undefined {
   let result: DesignIssue | undefined
   for (const issue of issues) {
-    if (!result || SEVERITY_RANK[issue.severity] < SEVERITY_RANK[result.severity]) result = issue
+    if (!result || compareIssueSeverity(issue, result) < 0) result = issue
   }
   return result
 }

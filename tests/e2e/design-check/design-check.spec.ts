@@ -163,8 +163,12 @@ test('Binding a suggested variable resolves the issue and undoes in one step', a
   const swatchRow = panel.locator(`[data-node-id="${scene.swatchId}"]`)
   await expect(swatchRow).toContainText('Brand/500')
 
-  await swatchRow.hover()
-  await swatchRow.getByRole('button', { name: 'Bind to Colors/Brand/500' }).click()
+  // The fix is a sibling of the row button, in the same list item.
+  const swatchItem = panel
+    .getByRole('listitem')
+    .filter({ has: editor.page.locator(`[data-node-id="${scene.swatchId}"]`) })
+  await swatchItem.hover()
+  await swatchItem.getByRole('button', { name: 'Bind to Colors/Brand/500' }).click()
 
   await expect(panel.getByText('Unbound color')).toHaveCount(0)
   await expect
@@ -187,7 +191,7 @@ test('A rule can be turned off from its group and turned back on from the rules 
   const group = panel.locator('[data-rule-id="touch-target-size"]')
 
   await group.getByText('Small touch target').hover()
-  await group.getByRole('button', { name: 'Rules' }).click()
+  await group.getByRole('button', { name: 'Rule actions' }).click()
   await editor.page.getByRole('menuitem', { name: 'Turn off rule' }).click()
   await expect(panel.getByText('Small touch target')).toHaveCount(0)
 

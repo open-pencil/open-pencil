@@ -1,3 +1,4 @@
+import { useTimeoutFn } from '@vueuse/core'
 import { computed, effectScope, ref, shallowRef, watch } from 'vue'
 
 import type { Editor } from '@open-pencil/core/editor'
@@ -48,7 +49,6 @@ export function createDesignCheck(
   const snapshot = shallowRef<DesignCheckSnapshot | null>(null)
   const panelVisible = ref(false)
   const focusedIssueId = ref<string | null>(null)
-  let timer: ReturnType<typeof setTimeout> | null = null
 
   const preferences = computed(() => appPreferences.value.designCheck)
   const enabled = computed(() => panelVisible.value || preferences.value.showOnCanvas)
@@ -61,14 +61,15 @@ export function createDesignCheck(
     })
   )
 
+  const delay = ref(CHECK_DELAY_MS)
+  const timer = scope.run(() => useTimeoutFn(() => run(), delay, { immediate: false }))
+
   function cancel() {
-    if (timer === null) return
-    clearTimeout(timer)
-    timer = null
+    timer?.stop()
   }
 
   function run() {
-    timer = null
+    cancel()
     if (!enabled.value) return
     if (editor.isInteractiveEditing()) {
       schedule()
@@ -79,9 +80,9 @@ export function createDesignCheck(
     snapshot.value = { pageId, issues: toDesignIssues(result.messages) }
   }
 
-  function schedule(delay = CHECK_DELAY_MS) {
-    cancel()
-    timer = setTimeout(run, delay)
+  function schedule(wait = CHECK_DELAY_MS) {
+    delay.value = wait
+    timer?.start()
   }
 
   function publishMarkers() {
