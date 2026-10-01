@@ -84,6 +84,8 @@ export const SIZE_PILL_TEXT_OFFSET_Y = 13
 
 export const MARQUEE_FILL_ALPHA = 0.08
 export const SELECTION_DASH_ALPHA = 0.6
+/** Tint inside the layer of the code element around the cursor, under its hover outline. */
+export const CODE_FOCUS_FILL_ALPHA = 0.1
 export const DROP_HIGHLIGHT_ALPHA = 0.8
 export const DROP_HIGHLIGHT_STROKE = 2
 
