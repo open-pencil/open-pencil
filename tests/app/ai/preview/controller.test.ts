@@ -151,10 +151,12 @@ describe('JSX tool preview controller', () => {
     }
   })
 
-  it('does not publish stale revisions or render concurrently for one call', async () => {
+  it('shows a slow build, then renders the newer revision, one build at a time', async () => {
     const pending = Promise.withResolvers<PreviewArtifact>()
-    const resource = artifact()
-    const { controller, trees } = fixture(async () => pending.promise)
+    const slow = artifact()
+    const next = artifact()
+    const results = [pending.promise, Promise.resolve(next)]
+    const { controller, trees } = fixture(async () => results.shift() ?? null)
     try {
       controller.start('call')
       controller.delta('call', opening)
@@ -162,10 +164,32 @@ describe('JSX tool preview controller', () => {
       controller.delta('call', '<Rect/>')
       await controller.flush('call')
       expect(trees).toHaveLength(1)
-      pending.resolve(resource)
+      pending.resolve(slow)
       await rendering
-      expect(resource.shown).toBe(0)
-      expect(resource.disposed).toBe(1)
+      expect(slow.shown).toBe(1)
+      await controller.flush('call')
+      expect(trees).toHaveLength(2)
+      expect(slow.disposed).toBe(1)
+      expect(next.shown).toBe(1)
+    } finally {
+      controller.clear()
+    }
+  })
+
+  it('rebuilds after a document edit and keeps following the call', async () => {
+    const { controller, artifacts, trees } = fixture()
+    try {
+      controller.start('call')
+      controller.delta('call', opening)
+      await controller.flush('call')
+      controller.invalidate()
+      expect(artifacts[0]?.disposed).toBe(1)
+      await controller.flush('call')
+      expect(trees).toHaveLength(2)
+      expect(artifacts[1]?.shown).toBe(1)
+      controller.delta('call', '<Rect/>')
+      await controller.flush('call')
+      expect(trees).toHaveLength(3)
     } finally {
       controller.clear()
     }

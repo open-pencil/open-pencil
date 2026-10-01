@@ -56,11 +56,12 @@ export function createCanvasJSXPreview(store: EditorStore, pageId: () => string)
     if (subscriptions.length === 0) {
       subscriptions = [
         store.onEditorEvent('graph:replaced', () => controller.clear()),
-        store.onEditorEvent('node:created', () => controller.clear()),
-        store.onEditorEvent('node:updated', () => controller.clear()),
-        store.onEditorEvent('node:deleted', () => controller.clear()),
-        store.onEditorEvent('node:reparented', () => controller.clear()),
-        store.onEditorEvent('node:reordered', () => controller.clear()),
+        // Edits, including an earlier render call committing, restage previews on the new document.
+        store.onEditorEvent('node:created', () => controller.invalidate()),
+        store.onEditorEvent('node:updated', () => controller.invalidate()),
+        store.onEditorEvent('node:deleted', () => controller.invalidate()),
+        store.onEditorEvent('node:reparented', () => controller.invalidate()),
+        store.onEditorEvent('node:reordered', () => controller.invalidate()),
         watch(
           useActiveEditorStoreRef(),
           (active) => {

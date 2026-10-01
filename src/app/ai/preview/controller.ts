@@ -57,6 +57,16 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
     for (const id of calls.keys()) finish(id)
   }
 
+  /** The document changed under the previews: drop what they show and rebuild, keeping the calls. */
+  function invalidate(): void {
+    for (const call of calls.values()) {
+      call.artifact?.dispose()
+      call.artifact = undefined
+      call.revision++
+      if (!call.busy) call.schedule()
+    }
+  }
+
   function start(id: string, signal?: AbortSignal): void {
     finish(id)
     if (signal?.aborted || calls.size >= MAX_PREVIEW_CALLS) return
@@ -115,12 +125,8 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
       if (!snapshot.tree) return
       const artifact = await deps.build(call.target, snapshot.tree, input, call.abort.signal)
       if (!artifact) return
-      if (
-        calls.get(id) !== call ||
-        call.abort.signal.aborted ||
-        !deps.isCurrent(call.target) ||
-        revision !== call.revision
-      ) {
+      // A newer revision still shows this artifact; `finally` renders the newer one next.
+      if (calls.get(id) !== call || call.abort.signal.aborted || !deps.isCurrent(call.target)) {
         artifact.dispose()
         return
       }
@@ -136,5 +142,5 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
     }
   }
 
-  return { start, delta, finish, clear, flush }
+  return { start, delta, finish, clear, invalidate, flush }
 }
