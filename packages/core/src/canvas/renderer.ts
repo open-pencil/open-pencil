@@ -177,6 +177,8 @@ export class SkiaRenderer {
   pageId: string | null = null
   /** Issue markers placed in the last overlay pass; hit testing reads the same layout. */
   issueMarkers: PlacedIssueMarker[] = []
+  /** Screen rectangles of UI floating over this canvas, which overlays such as edge pins avoid. */
+  overlayObstacles: readonly Rect[] = []
 
   boundEffectLayersToViewport = false
   worldViewport = { x: 0, y: 0, w: 0, h: 0 }

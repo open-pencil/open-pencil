@@ -5,6 +5,7 @@ import type { Color } from '@open-pencil/scene-graph/primitives'
 
 import type { SkiaRenderer } from '#core/canvas/renderer'
 import {
+  ISSUE_EDGE_ARROW,
   ISSUE_ERROR_COLOR,
   ISSUE_HIGHLIGHT_FILL_ALPHA,
   ISSUE_HIGHLIGHT_STROKE_WIDTH,
@@ -18,6 +19,8 @@ import { issueMarkerLabel } from './layout'
 import type { DesignIssueHighlight, DesignIssueSeverity, PlacedIssueMarker } from './types'
 
 const MARKER_SHADOW_SIGMA = 1.5
+/** Half the base of an edge pin's chevron. */
+const EDGE_ARROW_HALF_WIDTH = 4
 const MARKER_SHADOW_OFFSET_Y = 1
 const MARKER_SHADOW_ALPHA = 0.3
 const MARKER_HOVER_HALO = 3
@@ -81,6 +84,52 @@ export function drawIssueHighlight(
   }
 }
 
+/**
+ * The chevron an edge pin points with: a triangle from the pill's border toward the issues,
+ * outlined in white like the pill so it reads on any canvas.
+ */
+function drawEdgeArrow(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  marker: PlacedIssueMarker,
+  color: Color,
+  ring: number
+): void {
+  const { rect, direction } = marker
+  if (!direction) return
+  const center = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }
+  const tx = direction.x === 0 ? Infinity : rect.width / 2 / Math.abs(direction.x)
+  const ty = direction.y === 0 ? Infinity : rect.height / 2 / Math.abs(direction.y)
+  const border = Math.min(tx, ty)
+  const normal = { x: -direction.y, y: direction.x }
+  const triangle = (reach: number, half: number) => {
+    const path = new r.ck.PathBuilder()
+    const base = border - 1
+    path.moveTo(
+      center.x + direction.x * (border + reach),
+      center.y + direction.y * (border + reach)
+    )
+    path.lineTo(
+      center.x + direction.x * base + normal.x * half,
+      center.y + direction.y * base + normal.y * half
+    )
+    path.lineTo(
+      center.x + direction.x * base - normal.x * half,
+      center.y + direction.y * base - normal.y * half
+    )
+    path.close()
+    return path.detachAndDelete()
+  }
+  const outline = triangle(ISSUE_EDGE_ARROW + ring * 2, EDGE_ARROW_HALF_WIDTH + ring)
+  const fill = triangle(ISSUE_EDGE_ARROW, EDGE_ARROW_HALF_WIDTH)
+  r.auxFill.setColor(r.ck.WHITE)
+  canvas.drawPath(outline, r.auxFill)
+  r.auxFill.setColor(color4f(r, color))
+  canvas.drawPath(fill, r.auxFill)
+  outline.delete()
+  fill.delete()
+}
+
 function drawMarker(
   r: SkiaRenderer,
   canvas: Canvas,
@@ -124,6 +173,8 @@ function drawMarker(
       r.auxFill
     )
   }
+
+  if (marker.direction) drawEdgeArrow(r, canvas, marker, color, ring)
 
   r.auxFill.setColor(r.ck.WHITE)
   canvas.drawRRect(
