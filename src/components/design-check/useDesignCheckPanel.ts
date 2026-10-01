@@ -25,7 +25,7 @@ import { appPreferences } from '@/app/settings/preferences/store'
 import type { IssueGroupView, IssueRowView } from './types'
 import { usePresetLabels } from './usePresetLabels'
 
-export type DesignCheckScope = 'page' | 'selection'
+export type DesignCheckScope = 'page' | 'selection' | 'document'
 
 export type DesignCheckEmptyState =
   | { kind: 'no-selection'; label: string; description: string }
@@ -65,9 +65,22 @@ export function useDesignCheckPanel(options: {
   })
   const selectedIds = computed(() => store.state.selectedIds)
 
+  /** Every checked page's issues, in page order, the current page from its live check. */
+  const documentIssues = computed<DesignIssue[]>(() => {
+    const results = check.pages.results.value
+    return store.graph
+      .getPages()
+      .flatMap((page) =>
+        page.id === store.state.currentPageId
+          ? (snapshot.value?.issues ?? [])
+          : (results.get(page.id) ?? [])
+      )
+  })
+
   const scopedIssues = computed<DesignIssue[]>(() => {
     const issues = snapshot.value?.issues ?? []
     if (scope.value === 'page') return issues
+    if (scope.value === 'document') return documentIssues.value
     return issuesWithin(issues, store.graph, selectedIds.value)
   })
   const counts = computed(() => countIssues(scopedIssues.value))
@@ -87,7 +100,11 @@ export function useDesignCheckPanel(options: {
       action: node ? issueAction(issue, messages.value) : null,
       hidden: node ? isHidden(store.graph, node.id) : false,
       missing: !node,
-      selected: selectedIds.value.has(issue.nodeId)
+      selected: selectedIds.value.has(issue.nodeId),
+      pageLabel:
+        issue.pageId === store.state.currentPageId
+          ? null
+          : messages.value.onPage({ page: store.graph.getNode(issue.pageId)?.name ?? '' })
     }
   }
 
@@ -111,8 +128,22 @@ export function useDesignCheckPanel(options: {
     })
   )
 
+  /** Pages still waiting for their background check, while the document is listed. */
+  const checkingDocument = computed(
+    () => scope.value === 'document' && check.pages.queued.value.length > 0
+  )
+
+  /** Pages a large file has not loaded yet, which the document list cannot include. */
+  const documentNote = computed(() => {
+    const count = check.pages.notLoaded.value.length
+    return scope.value === 'document' && count > 0
+      ? messages.value.documentUnchecked({ count })
+      : null
+  })
+
   const emptyState = computed<DesignCheckEmptyState | null>(() => {
     if (!snapshot.value) return null
+    if (checkingDocument.value && groups.value.length === 0) return null
     if (scope.value === 'selection' && selectedIds.value.size === 0) {
       return {
         kind: 'no-selection',
@@ -124,9 +155,14 @@ export function useDesignCheckPanel(options: {
     if (filtersActive.value && scopedIssues.value.length > 0) {
       return { kind: 'filtered', label: messages.value.noFilteredIssues }
     }
+    const emptyLabels: Record<DesignCheckScope, string> = {
+      page: messages.value.emptyPage,
+      selection: messages.value.emptySelection,
+      document: messages.value.emptyDocument
+    }
     return {
       kind: 'clean',
-      label: scope.value === 'page' ? messages.value.emptyPage : messages.value.emptySelection,
+      label: emptyLabels[scope.value],
       description: messages.value.emptyDescription({
         preset: presetLabels.value[appPreferences.value.designCheck.preset]
       })
@@ -145,8 +181,10 @@ export function useDesignCheckPanel(options: {
     visibleSeverities.value = [...DESIGN_ISSUE_SEVERITIES]
   }
 
+  /** Highlights a row's layer on the canvas; layers on other pages are not on screen. */
   function hoverRow(row: IssueRowView | null) {
-    check.highlightIssue(row && !row.missing ? row.issue : null)
+    const onCanvas = row && !row.missing && row.issue.pageId === store.state.currentPageId
+    check.highlightIssue(onCanvas ? row.issue : null)
   }
 
   watch(
@@ -158,8 +196,17 @@ export function useDesignCheckPanel(options: {
     { immediate: true }
   )
 
+  watch(
+    () => options.active() && scope.value === 'document',
+    (listing) => {
+      check.documentScope.value = listing
+    },
+    { immediate: true }
+  )
+
   onBeforeUnmount(() => {
     check.panelVisible.value = false
+    check.documentScope.value = false
     check.highlightIssue(null)
   })
 
@@ -189,7 +236,10 @@ export function useDesignCheckPanel(options: {
     counts,
     groups,
     emptyState,
-    loading: computed(() => snapshot.value === null),
+    documentNote,
+    loading: computed(
+      () => snapshot.value === null || (checkingDocument.value && groups.value.length === 0)
+    ),
     isGroupOpen,
     setGroupOpen,
     clearFilters,

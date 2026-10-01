@@ -335,6 +335,57 @@ test('Issues off screen are pinned to the canvas edge and lead to the nearest mo
   await expect(lintPanel(editor.page).locator(`[data-node-id="${scene.captionId}"]`)).toBeVisible()
 })
 
+test('Other pages are checked for the page list and the Document scope', async () => {
+  await buildScene(editor.page)
+  const cartCaptionId = await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    const checkout = store.graph.addPage('Checkout')
+    const cart = store.graph.createNode('FRAME', checkout.id, {
+      name: 'Cart',
+      width: 300,
+      height: 160,
+      fills: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1, a: 1 }, visible: true, opacity: 1 }]
+    })
+    return store.graph.createNode('TEXT', cart.id, {
+      name: 'Cart caption',
+      x: 20,
+      y: 20,
+      width: 200,
+      height: 24,
+      text: 'Pale',
+      fontSize: 16,
+      fills: [
+        { type: 'SOLID', color: { r: 0.85, g: 0.85, b: 0.85, a: 1 }, visible: true, opacity: 1 }
+      ]
+    }).id
+  })
+
+  const checkoutBadge = editor.page
+    .getByTestId('pages-item')
+    .filter({ hasText: 'Checkout' })
+    .locator('[data-issue-severity="error"]')
+  await expect(checkoutBadge).toHaveText('1')
+  await expect(checkoutBadge).toHaveAccessibleName('Errors: 1')
+
+  await openLint(editor.page)
+  const panel = lintPanel(editor.page)
+  await panel.getByRole('button', { name: 'Document' }).click()
+  const cartRow = panel.locator(`[data-node-id="${cartCaptionId}"]`)
+  await expect(cartRow).toContainText('On Checkout')
+
+  await cartRow.click()
+  await expect
+    .poll(() =>
+      editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        return store ? store.graph.getNode(store.state.currentPageId)?.name : null
+      })
+    )
+    .toBe('Checkout')
+  await expect.poll(() => selectedIds(editor.page)).toEqual([cartCaptionId])
+})
+
 test('Canvas markers and Layers panel marks can be turned off from the View menu', async () => {
   await buildScene(editor.page)
   await waitForMarkers(editor.page)

@@ -41,6 +41,9 @@ const styles = designCheck()
         row.missing ? messages.missingLayer : row.layerName
       }}</span>
       <span v-if="row.hidden" :class="styles.rowTag()">{{ messages.hiddenLayer }}</span>
+      <span v-if="row.pageLabel" :class="styles.rowTag()" data-slot="page">{{
+        row.pageLabel
+      }}</span>
       <span v-if="row.detail" :class="styles.rowDetail()">
         <span
           v-if="row.swatch?.kind === 'color'"

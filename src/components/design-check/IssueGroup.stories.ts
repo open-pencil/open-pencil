@@ -20,7 +20,8 @@ function issue(ruleId: string, nodeId: string, severity: DesignIssue['severity']
     severity,
     message: ruleId,
     nodeName: nodeId,
-    nodePath: [nodeId]
+    nodePath: [nodeId],
+    pageId: 'page'
   }
 }
 
@@ -33,6 +34,7 @@ function row(overrides: Partial<IssueRowView> & Pick<IssueRowView, 'issue' | 'la
     hidden: false,
     missing: false,
     selected: false,
+    pageLabel: null,
     ...overrides
   } satisfies IssueRowView
 }
