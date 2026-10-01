@@ -88,6 +88,7 @@ describe('streaming Design JSX', () => {
     '<Frame><Text>\n  hello\n  world\n</Text></Frame>',
     '<Frame name="hello &quot;world&quot;" />',
     '<><Text>One</Text><Text>Two</Text></>',
+    '<Frame><><Text>One</Text><Text>Two</Text></></Frame>',
     '<svg viewBox="0 0 24 24"><path d="M0 0L2 2" /></svg>'
   ]
 

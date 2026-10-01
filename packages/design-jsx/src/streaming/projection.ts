@@ -2,7 +2,7 @@ import type { SyntaxNode } from '@lezer/common'
 import { decodeHTML } from 'entities'
 
 import { DESIGN_JSX_ELEMENTS } from '../schema'
-import type { TreeNode } from '../tree'
+import { FRAGMENT, type TreeNode } from '../tree'
 import { readLiteral } from './literals'
 
 const ELEMENT_TYPES = new Map(
@@ -138,7 +138,7 @@ export function projectPreview(root: SyntaxNode, source: string): JSXPreviewSnap
     const fragment = raw(opening) === '<>'
     const name = tagName ? raw(tagName) : ''
     const type = fragment
-      ? ''
+      ? FRAGMENT
       : (ELEMENT_TYPES.get(name) ?? (/^[a-z][\w-]*$/.test(name) ? name : null))
     if (type === null) {
       defer(opening, 'unsupported')
@@ -155,7 +155,9 @@ export function projectPreview(root: SyntaxNode, source: string): JSXPreviewSnap
     for (const child of children(node).slice(1)) {
       if (child.name === 'JSXElement') {
         const projected = element(child, depth + 1)
-        if (projected) result.children.push(projected)
+        // A nested fragment adds its children, as it does in rendered trees.
+        if (projected?.type === FRAGMENT) result.children.push(...projected.children)
+        else if (projected) result.children.push(projected)
       } else if (child.name === 'JSXText') {
         let value = raw(child)
         if (child.to === source.length) {
