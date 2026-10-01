@@ -16,5 +16,6 @@
   "noSelectionDesignJSX": "Или напишите Design JSX, чтобы добавить на страницу новые слои.",
   "noSelectionTailwindJSX": "Tailwind JSX создаётся для выделенных слоёв.",
   "writeJSX": "Написать JSX",
-  "canvasChangedExpression": "На холсте теперь {value}; выражение оставлено как написано."
+  "canvasChangedExpression": "На холсте теперь {value}; выражение оставлено как написано.",
+  "canvasChangedOrder": "На холсте эти слои теперь в другом порядке; код оставлен как написан."
 }
