@@ -30,8 +30,8 @@ describe('design issues', () => {
       message('no-groups', 'card', 'info')
     ]
 
-    const first = toDesignIssues(messages).map((issue) => issue.id)
-    const second = toDesignIssues(messages).map((issue) => issue.id)
+    const first = toDesignIssues(messages, 'page').map((issue) => issue.id)
+    const second = toDesignIssues(messages, 'page').map((issue) => issue.id)
 
     expect(first).toEqual([
       'consistent-spacing:card:0',
@@ -42,11 +42,14 @@ describe('design issues', () => {
   })
 
   test('mark each layer once, by its most severe problem, and leave suggestions to the panel', () => {
-    const issues = toDesignIssues([
-      message('consistent-spacing', 'card', 'warning'),
-      message('color-contrast', 'card', 'error'),
-      message('no-groups', 'group', 'info')
-    ])
+    const issues = toDesignIssues(
+      [
+        message('consistent-spacing', 'card', 'warning'),
+        message('color-contrast', 'card', 'error'),
+        message('no-groups', 'group', 'info')
+      ],
+      'page'
+    )
 
     expect(markersForIssues(issues)).toEqual([{ nodeId: 'card', severity: 'error', count: 2 }])
     expect(countIssues(issues)).toEqual({ error: 1, warning: 1, info: 1 })
@@ -54,13 +57,16 @@ describe('design issues', () => {
   })
 
   test('group by rule, most severe and most frequent first', () => {
-    const issues = toDesignIssues([
-      message('no-default-names', 'a', 'info'),
-      message('consistent-spacing', 'a', 'warning'),
-      message('no-hardcoded-colors', 'b', 'warning'),
-      message('no-hardcoded-colors', 'c', 'warning'),
-      message('color-contrast', 'd', 'error')
-    ])
+    const issues = toDesignIssues(
+      [
+        message('no-default-names', 'a', 'info'),
+        message('consistent-spacing', 'a', 'warning'),
+        message('no-hardcoded-colors', 'b', 'warning'),
+        message('no-hardcoded-colors', 'c', 'warning'),
+        message('color-contrast', 'd', 'error')
+      ],
+      'page'
+    )
 
     expect(groupIssuesByRule(issues).map((group) => [group.ruleId, group.issues.length])).toEqual([
       ['color-contrast', 1],
@@ -76,11 +82,14 @@ describe('design issues', () => {
     const card = graph.createNode('FRAME', pageId, { name: 'Card' })
     const label = graph.createNode('TEXT', card.id, { name: 'Label' })
     const other = graph.createNode('FRAME', pageId, { name: 'Other' })
-    const issues = toDesignIssues([
-      message('color-contrast', label.id, 'error'),
-      message('no-groups', other.id, 'info'),
-      message('consistent-spacing', card.id, 'warning')
-    ])
+    const issues = toDesignIssues(
+      [
+        message('color-contrast', label.id, 'error'),
+        message('no-groups', other.id, 'info'),
+        message('consistent-spacing', card.id, 'warning')
+      ],
+      'page'
+    )
 
     const inside = issuesWithin(issues, graph, new Set([card.id]))
 
@@ -89,10 +98,13 @@ describe('design issues', () => {
   })
 
   test('highlight touch targets with the size they should reach', () => {
-    const [target, text] = toDesignIssues([
-      message('touch-target-size', 'chip', 'warning', { width: 60, height: 24, minSize: 44 }),
-      message('min-text-size', 'caption', 'warning', { fontSize: 10, minSize: 12 })
-    ])
+    const [target, text] = toDesignIssues(
+      [
+        message('touch-target-size', 'chip', 'warning', { width: 60, height: 24, minSize: 44 }),
+        message('min-text-size', 'caption', 'warning', { fontSize: 10, minSize: 12 })
+      ],
+      'page'
+    )
 
     expect(highlightForIssue(target)).toEqual({
       nodeId: 'chip',
