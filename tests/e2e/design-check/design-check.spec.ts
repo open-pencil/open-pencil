@@ -335,9 +335,16 @@ test('Issues off screen are pinned to the canvas edge and lead to the nearest mo
   await expect(lintPanel(editor.page).locator(`[data-node-id="${scene.captionId}"]`)).toBeVisible()
 })
 
-test('Canvas markers can be turned off from the View menu', async () => {
+test('Canvas markers and Layers panel marks can be turned off from the View menu', async () => {
   await buildScene(editor.page)
   await waitForMarkers(editor.page)
+  // The card is collapsed in the Layers panel, so it shows the error inside it as a dot.
+  const cardMark = editor.page
+    .getByTestId('layers-item')
+    .filter({ hasText: 'Card' })
+    .locator('[data-issue-severity="error"]')
+  await expect(cardMark).toBeVisible()
+  await expect(cardMark).toHaveAccessibleName('Contains errors or warnings')
   const markerCount = () =>
     editor.page.evaluate(
       () => window.openPencil?.getStore?.().state.designIssues?.markers.length ?? 0
@@ -348,6 +355,7 @@ test('Canvas markers can be turned off from the View menu', async () => {
   await expect(toggle).toHaveAttribute('aria-checked', 'true')
   await toggle.click()
   await expect.poll(markerCount).toBe(0)
+  await expect(cardMark).toHaveCount(0)
 
   await editor.canvas.hover(CLOSE_MARKER.x + 1, CLOSE_MARKER.y)
   await expect(editor.page.getByTestId('issue-marker-tooltip')).toHaveCount(0)

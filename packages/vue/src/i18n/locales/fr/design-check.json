@@ -36,6 +36,8 @@
   "edgeAbove": "Hors écran, en haut",
   "edgeBelow": "Hors écran, en bas",
   "edgeHint": "Cliquer pour aller au plus proche",
+  "layerIssues": "Erreurs et avertissements : {count}",
+  "layerContainsIssues": "Contient des erreurs ou des avertissements",
   "ruleColorContrast": "Contraste du texte faible",
   "ruleColorContrastHelp": "Le texte doit avoir un rapport de contraste d’au moins 4,5:1 avec son arrière-plan pour respecter WCAG AA.",
   "ruleTouchTargetSize": "Zone tactile trop petite",

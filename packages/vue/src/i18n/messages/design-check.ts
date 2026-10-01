@@ -40,6 +40,8 @@ export const designCheckMessageDefaults = {
   edgeAbove: 'Off screen above',
   edgeBelow: 'Off screen below',
   edgeHint: 'Click to go to the nearest',
+  layerIssues: params('Errors and warnings: {count}'),
+  layerContainsIssues: 'Contains errors or warnings',
   ruleColorContrast: 'Low text contrast',
   ruleColorContrastHelp:
     'Text needs a contrast ratio of at least 4.5:1 with its background to meet WCAG AA.',
