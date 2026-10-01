@@ -35,6 +35,11 @@ export const designCheckMessageDefaults = {
   markerMore: params('+{count} more'),
   markerLayers: params('{count} layers'),
   markerHint: 'Click to review',
+  edgeLeft: 'Off screen to the left',
+  edgeRight: 'Off screen to the right',
+  edgeAbove: 'Off screen above',
+  edgeBelow: 'Off screen below',
+  edgeHint: 'Click to go to the nearest',
   ruleColorContrast: 'Low text contrast',
   ruleColorContrastHelp:
     'Text needs a contrast ratio of at least 4.5:1 with its background to meet WCAG AA.',

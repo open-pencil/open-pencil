@@ -131,6 +131,61 @@ describe('issue marker layout', () => {
   })
 })
 
+describe('issue edge pins', () => {
+  test('pins an issue outside the viewport to the edge in its direction', () => {
+    const { graph, pageId, options } = setup()
+    const left = graph.createNode('FRAME', pageId, { x: -500, y: 250, width: 100, height: 100 })
+
+    const [pin] = layoutIssueMarkers(graph, [warning(left.id)], options)
+
+    expect(pin).toMatchObject({
+      key: `edge:${left.id}`,
+      direction: { x: -1, y: 0 },
+      rect: { x: 12, y: 292, width: 16, height: 16 }
+    })
+  })
+
+  test('places an issue off a corner in that corner', () => {
+    const { graph, pageId, options } = setup()
+    const far = graph.createNode('FRAME', pageId, { x: 4380, y: -2720, width: 40, height: 40 })
+
+    const [pin] = layoutIssueMarkers(graph, [warning(far.id)], options)
+
+    expect(pin?.rect).toEqual({ x: 772, y: 12, width: 16, height: 16 })
+    expect(pin?.direction?.x).toBeGreaterThan(0)
+    expect(pin?.direction?.y).toBeLessThan(0)
+  })
+
+  test('merges pins in one direction and leads with the most severe, then nearest, layer', () => {
+    const { graph, pageId, options } = setup()
+    const near = graph.createNode('FRAME', pageId, { x: 900, y: 280, width: 40, height: 40 })
+    const far = graph.createNode('FRAME', pageId, { x: 2000, y: 300, width: 40, height: 40 })
+
+    const [pin, ...rest] = layoutIssueMarkers(
+      graph,
+      [warning(near.id), { nodeId: far.id, severity: 'error', count: 1 }],
+      options
+    )
+
+    expect(rest).toEqual([])
+    // The error is farther than the warning, but the pin shows an error, so it leads there.
+    expect(pin).toMatchObject({ severity: 'error', count: 2, nodeIds: [far.id, near.id] })
+  })
+
+  test('slides a pin along its edge out from under floating UI', () => {
+    const { graph, pageId, options } = setup()
+    const below = graph.createNode('FRAME', pageId, { x: 380, y: 1200, width: 40, height: 40 })
+    const toolbar = { x: 350, y: 560, width: 100, height: 40 }
+
+    const [pin] = layoutIssueMarkers(graph, [warning(below.id)], {
+      ...options,
+      obstacles: [toolbar]
+    })
+
+    expect(pin?.rect).toEqual({ x: 332, y: 572, width: 16, height: 16 })
+  })
+})
+
 describe('issue marker hit testing', () => {
   test('returns the topmost marker under the point', () => {
     const { graph, pageId, options } = setup()

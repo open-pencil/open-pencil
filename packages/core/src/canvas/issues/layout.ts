@@ -3,12 +3,15 @@ import Matrix from '@open-pencil/scene-graph/matrix'
 import type { Rect, Vector } from '@open-pencil/scene-graph/primitives'
 
 import {
+  ISSUE_EDGE_ARROW,
+  ISSUE_EDGE_MERGE_GAP,
   ISSUE_MARKER_GAP,
   ISSUE_MARKER_HEIGHT,
   ISSUE_MARKER_MAX_COUNT,
   ISSUE_MARKER_MIN_TARGET,
   ISSUE_MARKER_OFFSET,
   ISSUE_MARKER_PADDING_X,
+  ISSUE_MARKER_RING_WIDTH,
   ISSUE_MARKER_VIEWPORT_INSET
 } from '#core/constants'
 import { createSceneGeometry, type RotationPreview, type ViewportTransform } from '#core/geometry'
@@ -30,6 +33,8 @@ export interface IssueMarkerLayoutOptions {
   suppressedIds?: ReadonlySet<string>
   preview?: RotationPreview | null
   measureText: (text: string) => number
+  /** Screen rectangles of UI floating over the canvas, such as a toolbar, to keep pins clear of. */
+  obstacles?: readonly Rect[]
 }
 
 const SEVERITY_RANK: Record<DesignIssueSeverity, number> = { error: 3, warning: 2, info: 1 }
@@ -148,6 +153,125 @@ interface Candidate {
   anchor: Vector
 }
 
+interface EdgeCandidate {
+  marker: DesignIssueMarker
+  /** Where the ray toward the layer leaves the viewport. */
+  point: Vector
+  direction: Vector
+  distance: number
+}
+
+/**
+ * Where the ray from the viewport center toward a layer leaves `area`, so an off-screen issue
+ * is pinned in its own direction, on a side or in a corner.
+ */
+function edgePoint(
+  area: Rect,
+  target: Vector
+): { point: Vector; direction: Vector; distance: number } {
+  const center = { x: area.x + area.width / 2, y: area.y + area.height / 2 }
+  const dx = target.x - center.x
+  const dy = target.y - center.y
+  const distance = Math.hypot(dx, dy) || 1
+  const direction = { x: dx / distance, y: dy / distance }
+  const tx = direction.x === 0 ? Infinity : area.width / 2 / Math.abs(direction.x)
+  const ty = direction.y === 0 ? Infinity : area.height / 2 / Math.abs(direction.y)
+  const t = Math.min(tx, ty)
+  return {
+    point: { x: center.x + direction.x * t, y: center.y + direction.y * t },
+    direction,
+    distance
+  }
+}
+
+/** Slides a pin along the edge it sits on until it no longer covers floating UI. */
+function avoidObstacles(rect: Rect, area: Rect, obstacles: readonly Rect[]): Rect {
+  let placed = rect
+  for (const obstacle of obstacles) {
+    if (!overlaps(placed, obstacle, ISSUE_MARKER_GAP)) continue
+    const onHorizontalEdge =
+      placed.y <= area.y + 1 || placed.y + placed.height >= area.y + area.height - 1
+    if (onHorizontalEdge) {
+      const left = obstacle.x - ISSUE_MARKER_GAP - placed.width
+      const right = obstacle.x + obstacle.width + ISSUE_MARKER_GAP
+      const x =
+        Math.abs(left - placed.x) <= Math.abs(right - placed.x) && left >= area.x
+          ? left
+          : Math.min(right, area.x + area.width - placed.width)
+      placed = { ...placed, x }
+    } else {
+      const above = obstacle.y - ISSUE_MARKER_GAP - placed.height
+      const below = obstacle.y + obstacle.height + ISSUE_MARKER_GAP
+      const y =
+        Math.abs(above - placed.y) <= Math.abs(below - placed.y) && above >= area.y
+          ? above
+          : Math.min(below, area.y + area.height - placed.height)
+      placed = { ...placed, y }
+    }
+  }
+  return placed
+}
+
+/**
+ * Pins issues outside the viewport to its edge, in their direction. Pins near each other along
+ * the edge merge, keeping the most severe; each lists its layers most severe first, then
+ * nearest, so following a pin reaches the closest issue of the severity it shows.
+ */
+function layoutEdgePins(
+  candidates: EdgeCandidate[],
+  area: Rect,
+  obstacles: readonly Rect[],
+  measureText: (text: string) => number
+): PlacedIssueMarker[] {
+  candidates.sort(
+    (a, b) =>
+      SEVERITY_RANK[b.marker.severity] - SEVERITY_RANK[a.marker.severity] || a.distance - b.distance
+  )
+  const rectAt = (point: Vector, count: number): Rect => {
+    const width = issueMarkerWidth(count, measureText)
+    const x = Math.min(Math.max(point.x - width / 2, area.x), area.x + area.width - width)
+    const y = Math.min(
+      Math.max(point.y - ISSUE_MARKER_HEIGHT / 2, area.y),
+      area.y + area.height - ISSUE_MARKER_HEIGHT
+    )
+    const rect = { x: Math.round(x), y: Math.round(y), width, height: ISSUE_MARKER_HEIGHT }
+    return avoidObstacles(rect, area, obstacles)
+  }
+  type Pin = PlacedIssueMarker & { point: Vector; order: Map<string, [number, number]> }
+  const pins: Pin[] = []
+  for (const { marker, point, direction, distance } of candidates) {
+    const rect = rectAt(point, marker.count)
+    const pin = pins.find((existing) => overlaps(existing.rect, rect, ISSUE_EDGE_MERGE_GAP))
+    if (pin) {
+      pin.nodeIds.push(marker.nodeId)
+      pin.order.set(marker.nodeId, [SEVERITY_RANK[marker.severity], distance])
+      pin.count += marker.count
+      pin.rect = rectAt(pin.point, pin.count)
+      continue
+    }
+    pins.push({
+      key: `edge:${marker.nodeId}`,
+      nodeIds: [marker.nodeId],
+      severity: marker.severity,
+      count: marker.count,
+      rect,
+      anchor: point,
+      direction,
+      point,
+      order: new Map([[marker.nodeId, [SEVERITY_RANK[marker.severity], distance]]])
+    })
+  }
+  const rank = (order: Pin['order'], id: string) => order.get(id) ?? [0, 0]
+  return pins.map(({ point: _point, order, ...pin }) => ({
+    ...pin,
+    nodeIds: pin.nodeIds.toSorted((a, b) => {
+      const [severityA, distanceA] = rank(order, a)
+      const [severityB, distanceB] = rank(order, b)
+      return severityB - severityA || distanceA - distanceB
+    })
+  }))
+}
+
 /**
  * Places one marker at the outer top-right corner of each marked layer, then merges markers that
  * would overlap. Merging keeps the position of the most severe marker, so the canvas never shows
@@ -168,13 +292,27 @@ export function layoutIssueMarkers(
   }
 
   const candidates: Candidate[] = []
+  const edgeCandidates: EdgeCandidate[] = []
+  // Edge pins keep room between themselves and the edge for the chevron they point with.
+  const edgeInset = ISSUE_MARKER_VIEWPORT_INSET + ISSUE_EDGE_ARROW + ISSUE_MARKER_RING_WIDTH * 2
+  const edgeArea: Rect = {
+    x: viewport.x + edgeInset,
+    y: viewport.y + edgeInset,
+    width: Math.max(0, viewport.width - edgeInset * 2),
+    height: Math.max(0, viewport.height - edgeInset * 2)
+  }
   for (const marker of markers) {
     if (marker.count <= 0 || suppressedIds?.has(marker.nodeId)) continue
     const node = graph.getNode(marker.nodeId)
     if (!node) continue
     const bounds = markerTarget(graph, node, pageId, geometry, view)
-    if (!bounds || !intersect(bounds, viewport)) continue
-    candidates.push({ marker, anchor: { x: bounds.x + bounds.width, y: bounds.y } })
+    if (!bounds) continue
+    if (intersect(bounds, viewport)) {
+      candidates.push({ marker, anchor: { x: bounds.x + bounds.width, y: bounds.y } })
+      continue
+    }
+    const center = { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 }
+    edgeCandidates.push({ marker, ...edgePoint(edgeArea, center) })
   }
 
   candidates.sort(
@@ -218,7 +356,8 @@ export function layoutIssueMarkers(
       anchor
     })
   }
-  return placed
+  const edgePins = layoutEdgePins(edgeCandidates, edgeArea, options.obstacles ?? [], measureText)
+  return [...placed, ...edgePins]
 }
 
 /** Topmost marker under a screen point; markers placed first are drawn on top. */

@@ -148,6 +148,10 @@ export const ISSUE_MARKER_VIEWPORT_INSET = 4
 /** Layers smaller than this on screen pass their marker to an ancestor. */
 export const ISSUE_MARKER_MIN_TARGET = 24
 export const ISSUE_MARKER_MAX_COUNT = 99
+/** Edge pins closer than this along the viewport edge merge into one. */
+export const ISSUE_EDGE_MERGE_GAP = 24
+/** Length of the chevron an edge pin points with, beyond its ring. */
+export const ISSUE_EDGE_ARROW = 5
 export const ISSUE_MARKER_RING_WIDTH = 1.5
 export const ISSUE_HIGHLIGHT_STROKE_WIDTH = 1.5
 export const ISSUE_HIGHLIGHT_FILL_ALPHA = 0.08
