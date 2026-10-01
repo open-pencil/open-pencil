@@ -2,6 +2,8 @@ import type { SceneNode, Stroke, StrokeCap, StrokeJoin } from '@open-pencil/scen
 import { parseColor } from '@open-pencil/scene-graph/color'
 import type { Color } from '@open-pencil/scene-graph/primitives'
 
+import { designJSXProp } from '#design-jsx/schema'
+
 const ALIGN_VALUES: Record<string, Stroke['align']> = {
   inside: 'INSIDE',
   center: 'CENTER',
@@ -115,7 +117,7 @@ export function applyStrokeOverrides(props: Record<string, unknown>, o: Partial<
     return
   }
 
-  const color = props.stroke ?? props.border ?? props.borderColor
+  const color = designJSXProp(props, 'stroke')
   if (typeof color !== 'string' && !isColor(color)) return
   o.strokes = [
     toStroke({

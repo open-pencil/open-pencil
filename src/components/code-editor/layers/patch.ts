@@ -8,7 +8,11 @@ import {
   type TransactionSpec
 } from '@codemirror/state'
 
-import type { DesignJSXElement } from '@open-pencil/design-jsx'
+import {
+  DESIGN_JSX_PROPERTY_ALIASES,
+  designJSXPropertyNames,
+  type DesignJSXElement
+} from '@open-pencil/design-jsx'
 
 import {
   layerLinkConfig,
@@ -24,13 +28,13 @@ type SyntaxNode = ReturnType<typeof syntaxTree>['topNode']
 /** Marks changes written from the canvas, so they are not rendered back onto it. */
 export const fromLayers = Annotation.define<boolean>()
 
-/** An attribute written as an expression whose layer changed on the canvas since. */
-export interface StaleAttribute {
-  from: number
-  to: number
-  /** The attribute as the canvas has it now, e.g. `w={100}`. */
-  value: string
-}
+/**
+ * Code the canvas could not patch since its layer changed: an attribute written as an
+ * expression (`value`), or children that could not be moved into the new layer order.
+ */
+export type StaleAttribute =
+  | { kind: 'value'; from: number; to: number; /** e.g. `w={100}` */ value: string }
+  | { kind: 'order'; from: number; to: number }
 
 const markStaleAttributes = StateEffect.define<readonly StaleAttribute[]>()
 
@@ -139,13 +143,48 @@ function removal(state: EditorState, from: number, to: number): ChangeSpec {
   return { from: first.from, to: Math.min(last.to + 1, state.doc.length) }
 }
 
+/** Text replacing a range, with the elements in it to link, by offset into the text. */
+interface Rewrite {
+  from: number
+  to: number
+  text: string
+  links: Array<{ offset: number; length: number; layerIds: Array<string | null> }>
+}
+
 interface PatchContext {
   state: EditorState
   changes: ChangeSpec[]
   stale: StaleAttribute[]
+  rewrites: Rewrite[]
   insertions: Array<{ at: number; text: string; offset: number; layerIds: string[] }>
   removed: Array<{ from: number; to: number }>
   snippet: LayerSnippet
+}
+
+/** Alias → the name Design JSX writes, e.g. `width` → `w`. */
+const CANONICAL_NAMES = new Map(
+  Object.entries(DESIGN_JSX_PROPERTY_ALIASES).flatMap(([name, aliases]) =>
+    aliases.map((alias) => [alias, name] as const)
+  )
+)
+
+/**
+ * The attributes of a tag by the name Design JSX writes, so `width={320}` answers for `w`. When
+ * several names of one property are written, the one the renderer reads wins.
+ */
+function writtenAttributes(
+  state: EditorState,
+  tag: SyntaxNode
+): Map<string, { attribute: SyntaxNode; name: string }> {
+  const written = new Map<string, { attribute: SyntaxNode; name: string; rank: number }>()
+  for (const attribute of tag.getChildren('JSXAttribute')) {
+    const name = attributeName(state, attribute)
+    const canonical = CANONICAL_NAMES.get(name) ?? name
+    const rank = designJSXPropertyNames(canonical).indexOf(name)
+    const current = written.get(canonical)
+    if (!current || rank < current.rank) written.set(canonical, { attribute, name, rank })
+  }
+  return written
 }
 
 function patchAttributes(
@@ -155,25 +194,25 @@ function patchAttributes(
   next: DesignJSXElement
 ) {
   const { state } = ctx
-  const written = new Map(
-    tag.getChildren('JSXAttribute').map((attribute) => [attributeName(state, attribute), attribute])
-  )
+  const written = writtenAttributes(state, tag)
   const names = new Set([...Object.keys(base.attributes), ...Object.keys(next.attributes)])
   const additions: string[] = []
   for (const name of names) {
     const value = next.attributes[name]
     if (base.attributes[name] === value) continue
-    const attribute = written.get(name)
-    if (!attribute) {
+    const { attribute, name: writtenName } = written.get(name) ?? {}
+    if (!attribute || !writtenName) {
       if (value) additions.push(value)
       continue
     }
     if (!isLiteralAttribute(attribute)) {
-      if (value) ctx.stale.push({ from: attribute.from, to: attribute.to, value })
+      if (value) ctx.stale.push({ kind: 'value', from: attribute.from, to: attribute.to, value })
       continue
     }
     if (value) {
-      ctx.changes.push({ from: attribute.from, to: attribute.to, insert: value })
+      // The value changes; the name stays the one the person wrote, such as `width`.
+      const insert = writtenName + value.slice(name.length)
+      ctx.changes.push({ from: attribute.from, to: attribute.to, insert })
       continue
     }
     const before = state.doc.sliceString(0, attribute.from)
@@ -287,6 +326,131 @@ function insertChild(
   ctx.insertions.push({ at: end.to, text, offset: 2 + indent.length, layerIds: snippet.layerIds })
 }
 
+/** A blank line or a JSX comment, which travels with the element below it. */
+const TRIVIA_LINE = /^\s*(\{\s*\/\*.*\*\/\s*\})?\s*$/
+
+/** Layer ids of the elements in a range, in pre-order, `null` for unlinked ones. */
+function layerIdsWithin(
+  state: EditorState,
+  elements: readonly LinkedElement[],
+  from: number,
+  to: number
+): Array<string | null> {
+  const ids: Array<string | null> = []
+  const tree = ensureSyntaxTree(state, state.doc.length, 250) ?? syntaxTree(state)
+  tree.iterate({
+    from,
+    to,
+    enter(node) {
+      if (node.name !== 'JSXElement' || node.from < from || node.to > to) return
+      const linked = elements.find((e) => e.from === node.from && e.to === node.to)
+      ids.push(linked?.nodeIds[0] ?? null)
+    }
+  })
+  return ids
+}
+
+/** A child element with the blank lines and comments above it, kept exactly as written. */
+interface Block {
+  text: string
+  /** Where the element starts in the block's text, and its length. */
+  offset: number
+  length: number
+  /** Where the element starts in the document. */
+  from: number
+}
+
+/** Whether only blank lines and JSX comments sit between two child elements. */
+function isTrivia(text: string): boolean {
+  return (
+    !text ||
+    text
+      .slice(0, -1)
+      .split('\n')
+      .every((line) => TRIVIA_LINE.test(line))
+  )
+}
+
+/**
+ * Splits the children span into blocks, or returns `null` when a child shares its lines with
+ * other code or something other than comments sits between children.
+ */
+function childBlocks(
+  state: EditorState,
+  start: number,
+  children: ReadonlyArray<{ id: string; child: LinkedElement }>
+): Map<string, Block> | null {
+  const { doc } = state
+  const blocks = new Map<string, Block>()
+  let leadFrom = start
+  for (const { id, child } of children) {
+    const first = doc.lineAt(child.from)
+    const last = doc.lineAt(child.to)
+    const aloneOnLines =
+      !doc.sliceString(first.from, child.from).trim() && !doc.sliceString(child.to, last.to).trim()
+    if (!aloneOnLines || leadFrom > first.from) return null
+    if (!isTrivia(doc.sliceString(leadFrom, first.from))) return null
+    blocks.set(id, {
+      text: doc.sliceString(leadFrom, last.to),
+      offset: child.from - leadFrom,
+      length: child.to - child.from,
+      from: child.from
+    })
+    leadFrom = last.to + 1
+  }
+  return blocks
+}
+
+/**
+ * Moves child elements into the canvas order: each child, with the blank lines and comments
+ * above it, is a block kept exactly as written, and the span of all blocks is written again in
+ * the new order, with added layers generated and removed ones left out. Returns `false` when
+ * the children cannot be moved safely, such as code between them that is not a layer.
+ */
+function reorderChildren(
+  ctx: PatchContext,
+  node: SyntaxNode,
+  elements: readonly LinkedElement[],
+  written: Map<string, LinkedElement>,
+  base: DesignJSXElement,
+  next: DesignJSXElement
+): boolean {
+  const { doc } = ctx.state
+  const open = node.getChild('JSXOpenTag')
+  const children = base.childIds.flatMap((id) => {
+    const child = written.get(id)
+    return child ? [{ id, child }] : []
+  })
+  const last = children.at(-1)
+  if (!open || !last || doc.sliceString(open.to, doc.lineAt(open.to).to).trim()) return false
+  const from = doc.lineAt(open.to).to + 1
+  const blocks = childBlocks(ctx.state, from, children)
+  if (!blocks) return false
+  const indent = indentAt(ctx.state, children[0].child.from)
+  const rewrite: Rewrite = { from, to: doc.lineAt(last.child.to).to, text: '', links: [] }
+  const parts: string[] = []
+  let offset = 0
+  for (const id of next.childIds) {
+    const block = blocks.get(id)
+    const snippet = block ? null : ctx.snippet(id)
+    const text = block?.text ?? (snippet && `${indent}${reindent(snippet.code, indent)}`)
+    if (!text) continue
+    rewrite.links.push({
+      offset: offset + (block?.offset ?? indent.length),
+      length: block?.length ?? text.length - indent.length,
+      layerIds: block
+        ? layerIdsWithin(ctx.state, elements, block.from, block.from + block.length)
+        : (snippet?.layerIds ?? [])
+    })
+    parts.push(text)
+    offset += text.length + 1
+  }
+  rewrite.text = parts.join('\n')
+  ctx.rewrites.push(rewrite)
+  ctx.removed.push({ from: rewrite.from, to: rewrite.to })
+  return true
+}
+
 function patchChildren(
   ctx: PatchContext,
   node: SyntaxNode,
@@ -296,6 +460,15 @@ function patchChildren(
   next: DesignJSXElement
 ) {
   const written = linkedChildren(elements, element)
+  const survivors = new Set(next.childIds.filter((id) => base.childIds.includes(id)))
+  const before = base.childIds.filter((id) => survivors.has(id) && written.has(id))
+  const after = next.childIds.filter((id) => survivors.has(id) && written.has(id))
+  if (before.some((id, index) => id !== after[index])) {
+    if (!reorderChildren(ctx, node, elements, written, base, next)) {
+      ctx.stale.push({ kind: 'order', from: element.nameFrom, to: element.nameTo })
+    }
+    return
+  }
   const kept = new Set(next.childIds)
   for (const id of base.childIds) {
     const child = written.get(id)
@@ -323,7 +496,15 @@ export function layerPatch(state: EditorState, snippet: LayerSnippet): Transacti
   const describe = state.facet(layerLinkConfig)?.describe
   if (!describe) return null
   const elements = state.field(linkedElements)
-  const ctx: PatchContext = { state, changes: [], stale: [], insertions: [], removed: [], snippet }
+  const ctx: PatchContext = {
+    state,
+    changes: [],
+    stale: [],
+    rewrites: [],
+    insertions: [],
+    removed: [],
+    snippet
+  }
   const bases = new Map<string, DesignJSXElement | null>()
   for (const element of elements) {
     const nodeId = element.nodeIds[0]
@@ -345,6 +526,7 @@ export function layerPatch(state: EditorState, snippet: LayerSnippet): Transacti
   if (bases.size === 0) return null
   const specs: ChangeSpec[] = [
     ...ctx.changes,
+    ...ctx.rewrites.map(({ from, to, text }) => ({ from, to, insert: text })),
     ...ctx.insertions.map(({ at, text }) => ({ from: at, insert: text }))
   ]
   const changes = state.changes(specs)
@@ -359,6 +541,14 @@ export function layerPatch(state: EditorState, snippet: LayerSnippet): Transacti
         }))
       )
     )
+  }
+  for (const rewrite of ctx.rewrites) {
+    const start = changes.mapPos(rewrite.from, -1)
+    for (const { offset, length, layerIds } of rewrite.links) {
+      effects.push(
+        linkInsertedElements.of({ from: start + offset, to: start + offset + length, layerIds })
+      )
+    }
   }
   for (const { at, text, offset, layerIds } of ctx.insertions) {
     const from = changes.mapPos(at, -1) + offset
