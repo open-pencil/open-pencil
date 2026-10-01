@@ -1,5 +1,5 @@
 import { existsSync, watch } from 'node:fs'
-import { lstat, mkdir, mkdtemp, rename, rm, rmdir, writeFile } from 'node:fs/promises'
+import { glob, lstat, mkdir, mkdtemp, rename, rm, rmdir, writeFile } from 'node:fs/promises'
 import {
   basename,
   dirname,
@@ -29,7 +29,10 @@ import { readManifest, writeManifest, type StoryManifest, type StoryOwner } from
 
 interface StorybookArgs {
   file?: string
+  /** Every positional argument: a shell-expanded glob arrives as several files. */
+  _?: string[]
   output?: string
+  beside?: boolean
   page?: string
   node?: string
   framework: string
@@ -189,22 +192,77 @@ async function writeStories(
   return files.filter((story) => story.path.endsWith('.stories.ts')).length
 }
 
-/** Re-exports on every save; editors that save by rename are why the folder is watched. */
-function watchDocument(file: string, onChange: () => Promise<void>): void {
-  let timer: ReturnType<typeof setTimeout> | undefined
+/**
+ * Re-exports a document on every save. One folder watch covers all its documents, since
+ * editors that save by rename replace the file, and every export runs through one queue:
+ * documents in a folder share its manifest, so two exports must never overlap.
+ */
+function watchDocuments(files: string[], onChange: (file: string) => Promise<void>): void {
+  const timers = new Map<string, ReturnType<typeof setTimeout>>()
   let running = Promise.resolve()
-  watch(dirname(resolve(file)), (_event, name) => {
-    if (name !== basename(file)) return
-    clearTimeout(timer)
-    timer = setTimeout(() => {
-      running = running.then(onChange)
-    }, 200)
-  })
+  const enqueue = (file: string) => {
+    running = running.then(() => onChange(file))
+  }
+  const folders = new Map<string, string[]>()
+  for (const file of files) {
+    const folder = dirname(resolve(file))
+    folders.set(folder, [...(folders.get(folder) ?? []), file])
+  }
+  for (const [folder, documents] of folders) {
+    watch(folder, (_event, name) => {
+      const file = documents.find((document) => basename(document) === name)
+      if (!file) return
+      clearTimeout(timers.get(file))
+      timers.set(
+        file,
+        setTimeout(() => enqueue(file), 200)
+      )
+    })
+  }
+}
+
+/**
+ * The documents to export: each argument is a file, or a quoted glob pattern
+ * for many.
+ *
+ * An existing path is that file, so a name containing glob syntax still opens
+ * directly. Anything else goes to `glob()`, which matches a plain path to
+ * itself and expands every pattern it supports, including the extglobs and
+ * escapes that inspecting the string for glob characters gets wrong.
+ */
+async function resolveDocuments(args: StorybookArgs): Promise<string[]> {
+  const patterns = args._?.length ? args._ : [requireFile(args.file)]
+  const documents: string[] = []
+  for (const pattern of patterns) {
+    if (existsSync(pattern)) {
+      documents.push(pattern)
+      continue
+    }
+    if (typeof glob !== 'function') throw new Error('Glob patterns need Node.js 22 or later.')
+    const matches: string[] = []
+    for await (const match of glob(pattern)) matches.push(match)
+    if (matches.length === 0) throw new Error(`No documents match ${pattern}.`)
+    documents.push(...matches.sort())
+  }
+  return [...new Set(documents)]
+}
+
+function outputFor(args: StorybookArgs, file: string): string {
+  if (args.beside) return dirname(resolve(file))
+  return resolve(args.output ?? `${basename(file, extname(file))}-stories`)
+}
+
+function message(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 export async function exportStorybookFromFile(args: StorybookArgs): Promise<void> {
   if (args.node) {
     printError('--node is not supported for Storybook export. Use --page to limit it to one page.')
+    process.exit(1)
+  }
+  if (args.beside && args.output) {
+    printError('--beside and --output cannot be used together.')
     process.exit(1)
   }
   const framework = args.framework
@@ -214,26 +272,52 @@ export async function exportStorybookFromFile(args: StorybookArgs): Promise<void
     )
     process.exit(1)
   }
-  const file = requireFile(args.file)
-  const outputDir = resolve(args.output ?? `${basename(file, extname(file))}-stories`)
-  const run = async () => {
-    const count = await writeStories(args, file, framework, outputDir)
-    console.log(ok(`Exported ${count} story files to ${outputDir}`))
-  }
-
+  let documents: string[]
   try {
-    await run()
+    documents = await resolveDocuments(args)
   } catch (error) {
-    printError(error instanceof Error ? error.message : String(error))
+    printError(message(error))
     process.exit(1)
   }
-  if (!args.watch) return
+  if (documents.length > 1 && !args.beside && !args.output) {
+    printError(
+      `${documents.length} documents need --beside, to write stories next to each, or --output.`
+    )
+    process.exit(1)
+  }
+  if (documents.length > 1 && args.page) {
+    printError('--page names a page of one document; export a single document with it.')
+    process.exit(1)
+  }
+
+  const run = async (file: string) => {
+    const outputDir = outputFor(args, file)
+    const count = await writeStories(args, file, framework, outputDir)
+    console.log(ok(`Exported ${count} story files from ${file} to ${outputDir}`))
+  }
+
+  // One after another: documents that share an output folder share its manifest.
+  const failed: string[] = []
+  for (const file of documents) {
+    try {
+      await run(file)
+    } catch (error) {
+      printError(`${file}: ${message(error)}`)
+      failed.push(file)
+    }
+  }
+  if (!args.watch) {
+    if (failed.length > 0) process.exit(1)
+    return
+  }
 
   // A save can land mid-write or break the document; report it and keep watching.
-  watchDocument(file, () =>
-    run().catch((error: unknown) =>
-      printError(error instanceof Error ? error.message : String(error))
+  watchDocuments(documents, (file) =>
+    run(file).catch((error: unknown) => printError(`${file}: ${message(error)}`))
+  )
+  console.log(
+    ok(
+      `Watching ${documents.length === 1 ? documents[0] : `${documents.length} documents`} for changes`
     )
   )
-  console.log(ok(`Watching ${file} for changes`))
 }

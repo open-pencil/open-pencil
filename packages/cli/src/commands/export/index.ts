@@ -239,7 +239,8 @@ export default defineCommand({
   args: {
     file: {
       type: 'positional',
-      description: 'Document file path (omit to connect to running app)',
+      description:
+        'Document file path (omit to connect to running app); for storybook, several files or a quoted glob',
       required: false
     },
     output: {
@@ -311,6 +312,10 @@ export default defineCommand({
     watch: {
       type: 'boolean',
       description: 'Storybook: re-export whenever the document changes'
+    },
+    beside: {
+      type: 'boolean',
+      description: "Storybook: write each document's stories into the document's own folder"
     },
     'font-policy': {
       type: 'string',

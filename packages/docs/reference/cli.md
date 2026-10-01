@@ -112,6 +112,7 @@ openpencil export [file] [options]
 | `--framework` | | Storybook framework: `react` (default), `vue`, `html` |
 | `--design-images` | | Storybook: render a PNG per variant for the Design panel (default: on; `--no-design-images` to skip) |
 | `--watch` | | Storybook: re-export whenever the document is saved |
+| `--beside` | | Storybook: write each document's stories into the document's own folder; the file argument can then be several files or a quoted glob |
 | `--thumbnail` | | Export page thumbnail instead of full render |
 | `--width` | | Thumbnail width (default: 1920) |
 | `--height` | | Thumbnail height (default: 1080) |

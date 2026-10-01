@@ -97,7 +97,14 @@ openpencil export design.fig -f storybook                      # React stories i
 openpencil export design.fig -f storybook --framework vue -o src/stories
 openpencil export design.fig -f storybook --framework html --page "Components"
 openpencil export design.pen -f storybook -o src/stories --watch  # re-export on every save
+openpencil export 'src/**/*.pen' -f storybook --beside --watch    # stories next to each design
 ```
+
+### Designs next to their stories
+
+Keep each component's design file in the component's folder and export with `--beside`: each document's stories, design images, and `.openpencil-stories.json` manifest go into that document's own folder, next to the component's code. A Storybook `stories` glob such as `../src/**/*.stories.ts` in `.storybook/main.ts` then picks them up without further configuration.
+
+Pass several documents, or a quoted glob such as `'src/**/*.pen'` that OpenPencil expands itself (Node.js 22 or later). Several documents need `--beside` or `--output`; `--page` works with one document only. Documents are exported one after another, and when one fails the rest are still exported before the command exits with an error. `--watch` watches every matched document; a document created after the watch started needs another run.
 
 Each variant of a component set becomes a story, and its variant properties become `select` controls, so switching a control shows the matching variant. Standalone components named with slashes, such as `Button/Primary` and `Button/Secondary`, are grouped into one `Button` file with a `Variant` control. A combination the design has no variant for throws a named error in Storybook rather than showing a different variant.
 
