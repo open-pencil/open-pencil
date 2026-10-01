@@ -36,6 +36,8 @@
   "edgeAbove": "Außerhalb oben",
   "edgeBelow": "Außerhalb unten",
   "edgeHint": "Klicken, um zum nächsten zu springen",
+  "layerIssues": "Fehler und Warnungen: {count}",
+  "layerContainsIssues": "Enthält Fehler oder Warnungen",
   "ruleColorContrast": "Geringer Textkontrast",
   "ruleColorContrastHelp": "Text braucht ein Kontrastverhältnis von mindestens 4,5:1 zum Hintergrund, um WCAG AA zu erfüllen.",
   "ruleTouchTargetSize": "Kleine Touch-Fläche",

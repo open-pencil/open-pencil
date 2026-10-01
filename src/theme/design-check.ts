@@ -50,6 +50,21 @@ export const severityIcon = tv({
   }
 })
 
+/** The Layers panel mark: a severity icon on a layer, a dot on a collapsed layer holding issues. */
+export const layerIssueMark = tv({
+  slots: {
+    root: 'flex size-4 shrink-0 items-center justify-center',
+    dot: 'size-1.5 rounded-full'
+  },
+  variants: {
+    severity: {
+      error: { dot: 'bg-issue-error' },
+      warning: { dot: 'bg-issue-warning' },
+      info: { dot: 'bg-issue-info' }
+    }
+  }
+})
+
 export const issueTooltip = tv({
   slots: {
     content:

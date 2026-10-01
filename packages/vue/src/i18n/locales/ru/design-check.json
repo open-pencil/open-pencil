@@ -36,6 +36,8 @@
   "edgeAbove": "За экраном сверху",
   "edgeBelow": "За экраном снизу",
   "edgeHint": "Нажмите, чтобы перейти к ближайшему",
+  "layerIssues": "Ошибки и предупреждения: {count}",
+  "layerContainsIssues": "Содержит ошибки или предупреждения",
   "ruleColorContrast": "Низкий контраст текста",
   "ruleColorContrastHelp": "Для соответствия WCAG AA контраст текста с фоном должен быть не ниже 4,5:1.",
   "ruleTouchTargetSize": "Маленькая область нажатия",

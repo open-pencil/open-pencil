@@ -36,6 +36,8 @@
   "edgeAbove": "画面外（上）",
   "edgeBelow": "画面外（下）",
   "edgeHint": "クリックして最も近いものへ移動",
+  "layerIssues": "エラーと警告: {count}",
+  "layerContainsIssues": "エラーまたは警告を含みます",
   "ruleColorContrast": "テキストのコントラスト不足",
   "ruleColorContrastHelp": "WCAG AA を満たすには、テキストと背景のコントラスト比が 4.5:1 以上必要です。",
   "ruleTouchTargetSize": "タッチ領域が小さい",
