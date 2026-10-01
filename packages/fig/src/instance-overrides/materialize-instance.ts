@@ -185,7 +185,7 @@ function recordPaintBindingClaims(
   if (!Array.isArray(paints)) return
   let declared = false
   for (const [index, paint] of paints.entries()) {
-    const alias = (paint as Paint).colorVar?.value?.alias ?? (paint as Paint).colorVariableBinding
+    const alias = (paint as Paint).colorVar?.value?.alias
     if (!alias) continue
     const field = `boundVariables/${scene}/${index}/color`
     setInstanceOverride(

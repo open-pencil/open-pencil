@@ -105,10 +105,6 @@ export interface ParentIndex {
   position: string
 }
 
-export interface VariableBinding {
-  variableID: GUID
-}
-
 export interface ImageSource {
   hash: string | Uint8Array
   name?: string
@@ -150,7 +146,6 @@ export interface Paint {
   density?: number
   noiseSize?: Vector
   customEffectId?: { guid?: GUID }
-  colorVariableBinding?: VariableBinding
   colorVar?: {
     value?: {
       alias?: {

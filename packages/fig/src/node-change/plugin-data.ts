@@ -141,13 +141,11 @@ export function extractBoundVariables(nc: NodeChange): Record<string, string> {
     }
   }
   nc.fillPaints?.forEach((paint, i) => {
-    const variableGuid =
-      paint.colorVariableBinding?.variableID ?? paint.colorVar?.value?.alias?.guid
+    const variableGuid = paint.colorVar?.value?.alias?.guid
     if (variableGuid) bindings[`fills/${i}/color`] = guidToString(variableGuid)
   })
   nc.strokePaints?.forEach((paint, i) => {
-    const variableGuid =
-      paint.colorVariableBinding?.variableID ?? paint.colorVar?.value?.alias?.guid
+    const variableGuid = paint.colorVar?.value?.alias?.guid
     if (variableGuid) bindings[`strokes/${i}/color`] = guidToString(variableGuid)
   })
   return bindings

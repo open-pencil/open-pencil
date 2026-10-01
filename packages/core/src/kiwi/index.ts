@@ -19,7 +19,6 @@ export {
   type Color,
   type Paint,
   type Effect,
-  type VariableBinding,
   type VariableAnyValue,
   type VariableDataEntry,
   type VariableConsumptionEntry,

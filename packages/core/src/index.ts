@@ -341,7 +341,6 @@ export {
   type Color as KiwiColor,
   type Paint as KiwiPaint,
   type Effect as KiwiEffect,
-  type VariableBinding,
   type ParentIndex,
   type FigmaMessage,
   MESSAGE_TYPES,

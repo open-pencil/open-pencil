@@ -89,8 +89,9 @@ export function createViewportActions(ctx: EditorContext) {
 
     const previous = currentViewport()
     ctx.state.zoom = Math.max(0.02, Math.min(256, level))
-    ctx.state.panX = viewW / 2 - centerX
-    ctx.state.panY = viewH / 2 - centerY
+    // Keep the world point at the center of the viewport where it was.
+    ctx.state.panX = viewW / 2 - centerX * ctx.state.zoom
+    ctx.state.panY = viewH / 2 - centerY * ctx.state.zoom
     ctx.requestRepaint()
     emitViewportChanged(previous)
   }

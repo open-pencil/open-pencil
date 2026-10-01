@@ -207,6 +207,8 @@ export function drawRemoteCursors(
   const LABEL_FONT_SIZE = 10
   const LABEL_OFFSET_X = 12
   const LABEL_OFFSET_Y = 20
+  /** Longer names end with an ellipsis. */
+  const LABEL_MAX_WIDTH = 160
 
   for (const cursor of cursors) {
     const screenX = cursor.x * r.zoom + r.panX
@@ -267,33 +269,35 @@ export function drawRemoteCursors(
     canvas.drawPath(immutablePath, r.auxFill)
     immutablePath.delete()
 
-    if (cursor.name) {
-      const font = r.labelFont
-      if (font) {
-        font.setSize(LABEL_FONT_SIZE)
-        const labelX = screenX + LABEL_OFFSET_X
-        const labelY = screenY + LABEL_OFFSET_Y
-        const glyphIds = font.getGlyphIDs(cursor.name)
-        const widths = font.getGlyphWidths(glyphIds)
-        let textWidth = 0
-        for (const w of widths) textWidth += w
-
-        r.auxFill.setColor(r.ck.Color4f(cr, g, b, 1))
-        const bgRect = r.ck.RRectXY(
-          r.ck.XYWHRect(
-            labelX - LABEL_PADDING_X,
-            labelY - LABEL_FONT_SIZE - LABEL_PADDING_Y + 2,
-            textWidth + LABEL_PADDING_X * 2,
-            LABEL_FONT_SIZE + LABEL_PADDING_Y * 2
-          ),
-          4,
-          4
-        )
-        canvas.drawRRect(bgRect, r.auxFill)
-
-        r.auxFill.setColor(r.ck.Color4f(1, 1, 1, 1))
-        canvas.drawText(cursor.name, labelX, labelY, r.auxFill, font)
-      }
+    const provider = r.fontProvider
+    if (cursor.name && provider) {
+      const pillX = screenX + LABEL_OFFSET_X - LABEL_PADDING_X
+      const pillY = screenY + LABEL_OFFSET_Y - LABEL_FONT_SIZE - LABEL_PADDING_Y + 2
+      const pillHeight = LABEL_FONT_SIZE + LABEL_PADDING_Y * 2
+      // Shaped like other canvas labels: kerning, fallback fonts, and RTL names.
+      r.labelParagraphCache.use(
+        r.ck,
+        provider,
+        cursor.name,
+        LABEL_FONT_SIZE,
+        LABEL_MAX_WIDTH,
+        r.ck.WHITE,
+        r.fontGeneration,
+        ({ paragraph, metrics }) => {
+          r.auxFill.setColor(r.ck.Color4f(cr, g, b, 1))
+          const pill = r.ck.RRectXY(
+            r.ck.XYWHRect(pillX, pillY, metrics.width + LABEL_PADDING_X * 2, pillHeight),
+            4,
+            4
+          )
+          canvas.drawRRect(pill, r.auxFill)
+          canvas.drawParagraph(
+            paragraph,
+            pillX + LABEL_PADDING_X,
+            pillY + (pillHeight - metrics.height) / 2
+          )
+        }
+      )
     }
   }
 }
