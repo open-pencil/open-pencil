@@ -36,6 +36,8 @@
   "edgeAbove": "屏幕外上方",
   "edgeBelow": "屏幕外下方",
   "edgeHint": "点击前往最近的一处",
+  "layerIssues": "错误和警告：{count}",
+  "layerContainsIssues": "包含错误或警告",
   "ruleColorContrast": "文字对比度过低",
   "ruleColorContrastHelp": "文字与背景的对比度至少需要 4.5:1 才能符合 WCAG AA。",
   "ruleTouchTargetSize": "触控区域过小",

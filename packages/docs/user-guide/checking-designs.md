@@ -40,7 +40,9 @@ Layers with errors and warnings carry a marker at their top-right corner: red fo
 - Errors and warnings outside the visible canvas are pinned to its edge, pointing toward them. Hover a pin to see them; click it to bring the nearest of the most severe into view and open it in Lint.
 - Hidden layers and layers clipped out of view by a frame keep their issues in the panel but get no marker.
 
-Turn markers on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu.
+The Layers panel marks the same layers: a layer with errors or warnings shows the most severe as an icon, and a collapsed layer with issues inside it shows a dot.
+
+Turn markers and Layers panel marks on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu.
 
 ## Rules
 
