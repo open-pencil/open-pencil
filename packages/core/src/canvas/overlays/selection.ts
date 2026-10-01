@@ -9,6 +9,7 @@ import type { RenderOverlays, SkiaRenderer } from '#core/canvas/renderer'
 import {
   HANDLE_HALF_SIZE,
   ROTATION_HANDLE_DISTANCE,
+  CODE_FOCUS_FILL_ALPHA,
   SELECTION_DASH_ALPHA,
   SECTION_HOVER_STROKE_WIDTH
 } from '#core/constants'
@@ -36,6 +37,33 @@ export function drawHoverHighlight(
   r.auxStroke.setPathEffect(null)
   canvas.save()
   canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
+  r.strokeNodeShape(canvas, node, r.auxStroke)
+  canvas.restore()
+}
+
+/**
+ * The layer of the code element around the cursor: the hover outline over a light tint, so it
+ * reads apart from canvas hover (outline only) and selection (outline and handles).
+ */
+export function drawCodeFocus(
+  r: SkiaRenderer,
+  canvas: Canvas,
+  graph: SceneGraph,
+  nodeId?: string | null,
+  preview?: RotationPreview | null
+): void {
+  const node = nodeId ? graph.getNode(nodeId) : undefined
+  if (!node) return
+  const component = r.isComponentType(node.type)
+  r.auxFill.setColor(
+    component ? r.compColor(CODE_FOCUS_FILL_ALPHA) : r.selColor(CODE_FOCUS_FILL_ALPHA)
+  )
+  r.auxStroke.setStrokeWidth(1 / r.zoom)
+  r.auxStroke.setColor(component ? r.compColor() : r.selColor())
+  r.auxStroke.setPathEffect(null)
+  canvas.save()
+  canvas.concat(createSceneGeometry(graph, preview).screenMatrix(node, r))
+  r.strokeNodeShape(canvas, node, r.auxFill)
   r.strokeNodeShape(canvas, node, r.auxStroke)
   canvas.restore()
 }

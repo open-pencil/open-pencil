@@ -40,15 +40,9 @@ export function useCodeLayers(source: Readonly<Ref<CodeSource>>) {
     links.value = { kind: 'lines', layers }
   }
 
-  /** The layer this panel marked, so clearing never removes a hover the canvas set since. */
-  let marked: string | null = null
-
-  /** Marks the layer of the element around the cursor with the canvas hover outline. */
+  /** Marks the layer of the element around the cursor on the canvas, apart from hover. */
   function markActive(nodeIds: readonly string[] | null) {
-    const nodeId = nodeIds?.find((id) => store.graph.getNode(id)) ?? null
-    if (nodeId) store.setHoveredNode(nodeId)
-    else if (marked && store.state.hoveredNodeId === marked) store.setHoveredNode(null)
-    marked = nodeId
+    store.setCodeFocusNode(nodeIds?.find((id) => store.graph.getNode(id)) ?? null)
   }
 
   /** A linked layer as Design JSX writes it, the unit code is patched in. */
