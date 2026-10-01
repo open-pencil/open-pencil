@@ -81,4 +81,5 @@ export interface RenderOverlays {
   } | null
   presenceCursors?: PresenceCursor[]
   designIssues?: DesignIssueOverlay | null
+  codeFocusNodeId?: string | null
 }

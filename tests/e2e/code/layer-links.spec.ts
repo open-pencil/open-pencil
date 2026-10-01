@@ -44,10 +44,10 @@ function codeLine(page: Page, text: string) {
   return page.locator('[data-slot="code-editor"] .cm-line', { hasText: text })
 }
 
-function hoveredLayer(page: Page) {
+function focusedLayer(page: Page) {
   return page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
-    const id = store?.state.hoveredNodeId
+    const id = store?.state.codeFocusNodeId
     return id ? (store.graph.getNode(id)?.name ?? null) : null
   })
 }
@@ -85,16 +85,37 @@ test('the element around the cursor marks its tags and its layer', async () => {
 
   await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
   await expect(activeTags(editor.page)).toHaveText(['Rectangle'])
-  await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
+  await expect.poll(() => focusedLayer(editor.page)).toBe('Swatch')
 
   await codeLine(editor.page, 'name="Fine print"').click({ position: { x: 24, y: 8 } })
   // Both the opening and the closing tag name are marked.
   await expect(activeTags(editor.page)).toHaveText(['Text', 'Text'])
-  await expect.poll(() => hoveredLayer(editor.page)).toBe('Fine print')
+  await expect.poll(() => focusedLayer(editor.page)).toBe('Fine print')
+
+  // Canvas hover is a separate mark: hovering another layer keeps the code's layer marked.
+  await editor.canvas.hover(130, 170)
+  await expect
+    .poll(() =>
+      editor.page.evaluate(() => {
+        const store = window.openPencil?.getStore?.()
+        const id = store?.state.hoveredNodeId
+        return id ? (store.graph.getNode(id)?.name ?? null) : null
+      })
+    )
+    .toBe('Swatch')
+  expect(await focusedLayer(editor.page)).toBe('Fine print')
+  await editor.canvas.waitForRender()
+  const canvas = await editor.canvas.canvas.boundingBox()
+  if (!canvas) throw new Error('Canvas has no bounding box')
+  expect(
+    await editor.page.screenshot({
+      clip: { x: canvas.x + 60, y: canvas.y + 60, width: 360, height: 200 }
+    })
+  ).toMatchSnapshot('code-focus-and-hover.png')
 
   await leaveCode(editor.page)
   await expect(activeTags(editor.page)).toHaveCount(0)
-  await expect.poll(() => hoveredLayer(editor.page)).toBeNull()
+  await expect.poll(() => focusedLayer(editor.page)).toBeNull()
 })
 
 test('design issues are underlined on the property that causes them', async () => {
@@ -116,7 +137,7 @@ test('links follow the code after a live edit', async () => {
 
   // The preview replaced the layers; the cursor must resolve to a layer that still exists.
   await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
-  await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
+  await expect.poll(() => focusedLayer(editor.page)).toBe('Swatch')
   await expect(editor.page.locator('[data-slot="code-editor"] .cm-lintRange-warning')).toHaveText(
     'size={10}'
   )
@@ -220,7 +241,7 @@ test('layers added or deleted on the canvas are written into the code', async ()
   expect(await codeText(editor.page)).toContain('// Pricing card')
 
   await codeLine(editor.page, 'name="Dot"').click({ position: { x: 24, y: 8 } })
-  await expect.poll(() => hoveredLayer(editor.page)).toBe('Dot')
+  await expect.poll(() => focusedLayer(editor.page)).toBe('Dot')
 })
 
 test('undo reverts a code edit on the canvas and in the code', async () => {
@@ -283,7 +304,7 @@ test('reordering layers on the canvas moves their elements and keeps them linked
   await expect(editor.page.locator('[data-slot="code-editor"] .cm-activeLine')).toContainText(
     'name="Swatch"'
   )
-  await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
+  await expect.poll(() => focusedLayer(editor.page)).toBe('Swatch')
 })
 
 test('a value written inside style is patched there in its own format', async () => {

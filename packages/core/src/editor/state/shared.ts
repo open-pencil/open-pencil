@@ -8,6 +8,7 @@ export function createDefaultEditorSharedState(): EditorSharedState {
     presenceCursors: [],
     documentName: 'Untitled',
     designIssues: null,
+    codeFocusNodeId: null,
     rulerTheme: undefined,
     sceneVersion: 0
   }
