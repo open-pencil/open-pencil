@@ -70,6 +70,9 @@ export {
   DESIGN_JSX_PROPERTIES,
   DESIGN_JSX_SUPPORTED_PROPERTIES,
   DESIGN_JSX_SUPPORTED_PROPERTY_NAMES,
+  DESIGN_JSX_PROPERTY_ALIASES,
+  designJSXProp,
+  designJSXPropertyNames,
   type DesignJSXElementDefinition,
   type DesignJSXHelperDefinition,
   type DesignJSXPropertyDefinition

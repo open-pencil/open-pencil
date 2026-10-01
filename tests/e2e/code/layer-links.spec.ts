@@ -239,3 +239,44 @@ test('undo reverts a code edit on the canvas and in the code', async () => {
   await expect.poll(() => cardSize(editor.page)).toBe('320x160')
   await expect(codeLine(editor.page, 'name="Card"')).toContainText('w={320}')
 })
+
+test('a value written under another name is patched under that name', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  // The person renames `w` to `width`, which Design JSX also accepts.
+  await codeLine(editor.page, 'name="Card"').locator('span', { hasText: /^w$/ }).dblclick()
+  await editor.page.keyboard.type('width')
+  await expect(editor.page.getByTestId('code-panel-status')).toHaveText('Updated live')
+
+  await editLayer(editor.page, 'Card', { width: 400 })
+
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText('width={400}')
+  await expect(codeLine(editor.page, 'name="Card"')).not.toContainText(' w={')
+})
+
+test('reordering layers on the canvas moves their elements and keeps them linked', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  await personalizeCode(editor.page)
+
+  await editor.page.evaluate(() => {
+    const store = window.openPencil?.getStore?.()
+    const swatch = [...(store?.graph.getAllNodes() ?? [])].find((node) => node.name === 'Swatch')
+    if (!store || !swatch?.parentId) throw new Error('Swatch not found')
+    store.graph.reorderChild(swatch.id, swatch.parentId, 0)
+    store.requestRender()
+  })
+
+  await expect
+    .poll(async () => {
+      const text = await codeText(editor.page)
+      return text.indexOf('name="Swatch"') < text.indexOf('name="Fine print"')
+    })
+    .toBe(true)
+  const text = await codeText(editor.page)
+  expect(text).toContain('// Pricing card')
+  expect(text).toContain('w={40 * 2}')
+
+  await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
+  await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
+})

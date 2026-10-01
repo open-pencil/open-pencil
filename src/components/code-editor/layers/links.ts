@@ -19,6 +19,8 @@ import type { DesignJSXElement } from '@open-pencil/design-jsx'
 
 import type { LayerLinkSource } from '@/app/code/layers/links'
 
+import type { StaleAttribute } from './patch'
+
 /** A JSX element in the document and the layers it produced. */
 export interface LinkedElement {
   from: number
@@ -45,8 +47,8 @@ export interface LayerLinkConfig {
   onActive: (nodeIds: readonly string[] | null) => void
   /** The layer as Design JSX writes it now, or `null` when it cannot be patched. */
   describe?: (nodeId: string) => DesignJSXElement | null
-  /** Explains an expression attribute the canvas has changed since, given its canvas value. */
-  staleMessage?: (value: string) => string
+  /** Explains code the canvas has changed since but could not patch. */
+  staleMessage?: (stale: StaleAttribute) => string
 }
 
 type SyntaxNode = ReturnType<typeof syntaxTree>['topNode']
@@ -60,7 +62,7 @@ export const setLayerBases = StateEffect.define<ReadonlyMap<string, DesignJSXEle
 export const linkInsertedElements = StateEffect.define<{
   from: number
   to: number
-  layerIds: readonly string[]
+  layerIds: ReadonlyArray<string | null>
 }>()
 
 export const layerLinkConfig = Facet.define<LayerLinkConfig, LayerLinkConfig | null>({

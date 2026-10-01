@@ -2,6 +2,8 @@ import { syntaxTree } from '@codemirror/language'
 import { linter, type Diagnostic } from '@codemirror/lint'
 import { StateEffect, StateField, type EditorState, type Extension } from '@codemirror/state'
 
+import { designJSXPropertyNames } from '@open-pencil/design-jsx'
+
 import type { LayerIssue } from '@/app/code/layers/issues'
 
 import { layerLinkConfig, linkedElements, setLayerLinks, type LinkedElement } from './links'
@@ -29,6 +31,8 @@ function attributeRange(
   props: readonly string[]
 ): TextRange | null {
   if (props.length === 0) return null
+  // A property written under an alias, such as `width` for `w`, is the same property.
+  const names = props.flatMap((name) => designJSXPropertyNames(name))
   const matches: Array<TextRange & { rank: number }> = []
   syntaxTree(state).iterate({
     from: element.from,
@@ -38,7 +42,7 @@ function attributeRange(
       if (node.name === 'JSXElement' && node.from > element.from) return false
       if (node.name !== 'JSXAttribute') return undefined
       const name = node.node.firstChild
-      const rank = name ? props.indexOf(state.doc.sliceString(name.from, name.to)) : -1
+      const rank = name ? names.indexOf(state.doc.sliceString(name.from, name.to)) : -1
       if (rank !== -1) matches.push({ from: node.from, to: node.to, rank })
       return false
     }
@@ -69,7 +73,7 @@ function diagnosticsFor(state: EditorState): Diagnostic[] {
     }
   }
   for (const range of state.field(staleAttributes, false) ?? []) {
-    const message = state.facet(layerLinkConfig)?.staleMessage?.(range.value)
+    const message = state.facet(layerLinkConfig)?.staleMessage?.(range)
     if (message) diagnostics.push({ from: range.from, to: range.to, severity: 'info', message })
   }
   return diagnostics
