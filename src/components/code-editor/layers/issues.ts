@@ -7,7 +7,7 @@ import { designJSXPropertyNames } from '@open-pencil/design-jsx'
 import type { LayerIssue } from '@/app/code/layers/issues'
 
 import { layerLinkConfig, linkedElements, setLayerLinks, type LinkedElement } from './links'
-import { staleAttributes } from './patch'
+import { staleAttributes } from './stale'
 
 export const setLayerIssues = StateEffect.define<readonly LayerIssue[]>()
 
