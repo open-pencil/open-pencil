@@ -64,9 +64,11 @@ const singleNode = computed(() =>
 const items = computed(() =>
   issues.value.slice(0, MAX_ITEMS).map((issue) => {
     const detail = issueDetail(issue, messages.value)
-    const layer = singleNode.value
-      ? null
-      : (store.graph.getNode(issue.nodeId)?.name ?? issue.nodeName)
+    // The header names a single layer, except on an edge pin, where it names the direction.
+    const layer =
+      singleNode.value && !marker?.direction
+        ? null
+        : (store.graph.getNode(issue.nodeId)?.name ?? issue.nodeName)
     return {
       id: issue.id,
       severity: issue.severity,
@@ -77,6 +79,30 @@ const items = computed(() =>
 )
 
 const remaining = computed(() => issues.value.length - items.value.length)
+
+type Side = 'top' | 'right' | 'bottom' | 'left'
+
+/** The side an edge pin points to, by its stronger axis; the tooltip opens the other way. */
+const edgeSide = computed<Side | null>(() => {
+  const direction = marker?.direction
+  if (!direction) return null
+  if (Math.abs(direction.x) >= Math.abs(direction.y)) return direction.x < 0 ? 'left' : 'right'
+  return direction.y < 0 ? 'top' : 'bottom'
+})
+
+const OPPOSITE: Record<Side, Side> = { top: 'bottom', right: 'left', bottom: 'top', left: 'right' }
+
+const edgeHeading = computed(() => {
+  const side = edgeSide.value
+  if (!side) return null
+  const headings = {
+    left: messages.value.edgeLeft,
+    right: messages.value.edgeRight,
+    top: messages.value.edgeAbove,
+    bottom: messages.value.edgeBelow
+  }
+  return headings[side]
+})
 </script>
 
 <template>
@@ -87,7 +113,7 @@ const remaining = computed(() => issues.value.length - items.value.length)
       </TooltipTrigger>
       <TooltipPortal>
         <TooltipContent
-          side="right"
+          :side="edgeSide ? OPPOSITE[edgeSide] : 'right'"
           align="start"
           :side-offset="8"
           :collision-padding="8"
@@ -95,7 +121,8 @@ const remaining = computed(() => issues.value.length - items.value.length)
           data-test-id="issue-marker-tooltip"
         >
           <div :class="styles.header()">
-            <template v-if="singleNode">
+            <span v-if="edgeHeading" :class="styles.headerText()">{{ edgeHeading }}</span>
+            <template v-else-if="singleNode">
               <component
                 :is="nodeIcon(singleNode)"
                 :class="styles.headerIcon()"
@@ -117,7 +144,9 @@ const remaining = computed(() => issues.value.length - items.value.length)
           <div v-if="remaining > 0" :class="styles.more()">
             {{ messages.markerMore({ count: remaining }) }}
           </div>
-          <div :class="styles.hint()">{{ messages.markerHint }}</div>
+          <div :class="styles.hint()">
+            {{ edgeSide ? messages.edgeHint : messages.markerHint }}
+          </div>
         </TooltipContent>
       </TooltipPortal>
     </TooltipRoot>

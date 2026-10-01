@@ -36,4 +36,9 @@ export interface PlacedIssueMarker {
   rect: Rect
   /** Screen-space corner of the layer the marker is attached to. */
   anchor: Vector
+  /**
+   * Set for an edge pin: issues outside the viewport, pinned to its edge. A unit vector from the
+   * viewport center toward them; `nodeIds` are ordered most severe first, then nearest.
+   */
+  direction?: Vector
 }

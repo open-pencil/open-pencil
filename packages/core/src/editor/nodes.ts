@@ -9,7 +9,6 @@ import {
 } from '@open-pencil/scene-graph'
 
 import { reconcileVariableLayouts } from '#core/layout/variables'
-
 import { applyLintFixes as applyFixes, type LintFixRequest } from '#core/lint/fixes'
 
 import { createLayoutModeActions } from './layout-mode'

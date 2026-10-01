@@ -273,6 +273,68 @@ test('Canvas markers explain themselves on hover and open Lint on click', async 
   await expect(lintPanel(editor.page).locator(`[data-node-id="${scene.closeId}"]`)).toBeVisible()
 })
 
+/** Edge pins sit this far inside the canvas, leaving room for the chevron they point with. */
+const EDGE_PIN_INSET = 12
+
+/**
+ * Where the edge pin for a layer off screen sits, following the canvas: the ray from the
+ * viewport center toward the layer, where it leaves the inset viewport.
+ */
+function edgePinCenter(width: number, height: number, target: Vector): Vector {
+  const center = { x: width / 2, y: height / 2 }
+  const dx = target.x - center.x
+  const dy = target.y - center.y
+  const length = Math.hypot(dx, dy)
+  const halfWidth = width / 2 - EDGE_PIN_INSET
+  const halfHeight = height / 2 - EDGE_PIN_INSET
+  const t = Math.min(
+    dx === 0 ? Infinity : (halfWidth * length) / Math.abs(dx),
+    dy === 0 ? Infinity : (halfHeight * length) / Math.abs(dy)
+  )
+  const point = { x: center.x + (dx / length) * t, y: center.y + (dy / length) * t }
+  // The pill is 16px wide and stays inside the inset viewport.
+  return {
+    x: Math.min(Math.max(point.x, EDGE_PIN_INSET + 8), width - EDGE_PIN_INSET - 8),
+    y: Math.min(Math.max(point.y, EDGE_PIN_INSET + 8), height - EDGE_PIN_INSET - 8)
+  }
+}
+
+test('Issues off screen are pinned to the canvas edge and lead to the nearest most severe one', async () => {
+  const scene = await buildScene(editor.page)
+  await openLint(editor.page)
+  const canvas = await editor.canvas.canvas.boundingBox()
+  if (!canvas) throw new Error('Canvas has no bounding box')
+  // Pan the card off the left edge; the caption's contrast error is the most severe issue.
+  const panX = -1000
+  await editor.page.evaluate((x) => {
+    const store = window.openPencil?.getStore?.()
+    if (!store) throw new Error('OpenPencil store not initialized')
+    store.state.panX = x
+    store.requestRender()
+  }, panX)
+  await waitForMarkers(editor.page)
+  const caption = { x: CARD.x + 24 + 100 + panX, y: CARD.y + 24 + 12 }
+  const pin = edgePinCenter(canvas.width, canvas.height, caption)
+
+  await hoverMarker(pin)
+  const tooltip = editor.page.getByTestId('issue-marker-tooltip')
+  await expect(tooltip).toContainText('Off screen to the left')
+  await expect(tooltip).toContainText('Low text contrast')
+  await editor.canvas.waitForRender()
+  expect(
+    await editor.page.screenshot({
+      clip: { x: canvas.x, y: canvas.y + pin.y - 20, width: 33, height: 40 }
+    })
+  ).toMatchSnapshot('design-check-edge-pin-hover.png')
+
+  await editor.canvas.click(pin.x, pin.y)
+  await expect.poll(() => selectedIds(editor.page)).toEqual([scene.captionId])
+  await expect
+    .poll(() => editor.page.evaluate(() => window.openPencil?.getStore?.().state.panX ?? 0))
+    .toBeGreaterThan(panX)
+  await expect(lintPanel(editor.page).locator(`[data-node-id="${scene.captionId}"]`)).toBeVisible()
+})
+
 test('Canvas markers can be turned off from the View menu', async () => {
   await buildScene(editor.page)
   await waitForMarkers(editor.page)

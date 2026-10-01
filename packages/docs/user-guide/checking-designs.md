@@ -37,6 +37,7 @@ Layers with errors and warnings carry a marker at their top-right corner: red fo
 - Hover a marker to see its issues. Click it to select the layer and open its issues in the Lint panel.
 - Markers that would overlap merge into one showing their combined count.
 - When a layer is too small to see at the current zoom, its marker moves to the nearest enclosing layer large enough to point at.
+- Errors and warnings outside the visible canvas are pinned to its edge, pointing toward them. Hover a pin to see them; click it to bring the nearest of the most severe into view and open it in Lint.
 - Hidden layers and layers clipped out of view by a frame keep their issues in the panel but get no marker.
 
 Turn markers on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu.

@@ -72,7 +72,8 @@ function updateIssueMarkers(r: SkiaRenderer, graph: SceneGraph, overlays: Render
     },
     suppressedIds: suppressedIssueIds(overlays),
     preview: overlays.rotationPreview,
-    measureText
+    measureText,
+    obstacles: r.overlayObstacles
   })
 }
 
