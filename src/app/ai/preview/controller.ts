@@ -1,3 +1,5 @@
+import { noop, useDebounceFn, useEventListener } from '@vueuse/core'
+
 import { createStreamingJSXParser, type JSXPreviewNode } from '@open-pencil/design-jsx'
 
 import { readPreviewInput, type RenderPreviewInput } from './input'
@@ -30,9 +32,10 @@ interface PreviewCall<Target> {
   parser: ReturnType<typeof createStreamingJSXParser>
   revision: number
   busy: boolean
-  timer?: ReturnType<typeof setTimeout>
+  /** Coalesces deltas into at most one preview per interval. */
+  schedule(): void
   abort: AbortController
-  removeAbortListener(): void
+  stopAbortListener(): void
   artifact?: PreviewArtifact
 }
 
@@ -44,9 +47,8 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
     const call = calls.get(id)
     if (!call) return
     calls.delete(id)
-    clearTimeout(call.timer)
     call.abort.abort()
-    call.removeAbortListener()
+    call.stopAbortListener()
     call.artifact?.dispose()
     if (calls.size === 0) deps.onIdle?.()
   }
@@ -60,8 +62,10 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
     if (signal?.aborted || calls.size >= MAX_PREVIEW_CALLS) return
     const target = deps.capture()
     if (!target) return
-    const onAbort = () => finish(id)
-    signal?.addEventListener('abort', onAbort, { once: true })
+    // Trailing with a cap: a lone delta still flushes, and a burst flushes once per interval.
+    const scheduledFlush = useDebounceFn(() => flush(id), PREVIEW_INTERVAL_MS, {
+      maxWait: PREVIEW_INTERVAL_MS
+    })
     calls.set(id, {
       target,
       input: '',
@@ -69,16 +73,12 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
       parser: createStreamingJSXParser(),
       revision: 0,
       busy: false,
+      schedule: () => void scheduledFlush(),
       abort: new AbortController(),
-      removeAbortListener: () => signal?.removeEventListener('abort', onAbort)
+      stopAbortListener: signal
+        ? useEventListener(signal, 'abort', () => finish(id), { once: true })
+        : noop
     })
-  }
-
-  function schedule(id: string, call: PreviewCall<Target>): void {
-    if (call.busy || call.timer !== undefined) return
-    call.timer = setTimeout(() => {
-      void flush(id)
-    }, PREVIEW_INTERVAL_MS)
   }
 
   function delta(id: string, chunk: string): void {
@@ -90,14 +90,12 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
     }
     call.input += chunk
     call.revision++
-    schedule(id, call)
+    if (!call.busy) call.schedule()
   }
 
   async function flush(id: string): Promise<void> {
     const call = calls.get(id)
     if (!call || call.busy) return
-    clearTimeout(call.timer)
-    call.timer = undefined
     if (!deps.isCurrent(call.target)) {
       finish(id)
       return
@@ -134,7 +132,7 @@ export function createJSXPreviewController<Target>(deps: PreviewDependencies<Tar
       finish(id)
     } finally {
       call.busy = false
-      if (calls.get(id) === call && revision !== call.revision) schedule(id, call)
+      if (calls.get(id) === call && revision !== call.revision) call.schedule()
     }
   }
 

@@ -3,6 +3,7 @@ import { MockLanguageModelV4, mockValues } from 'ai/test'
 
 import type { RenderPlacementInput } from '@open-pencil/core/design-jsx'
 
+import { MOCK_USAGE } from '../usage'
 import { createStreamGate } from './gate'
 
 type ModelStream = Awaited<ReturnType<MockLanguageModelV4['doStream']>>
@@ -31,11 +32,6 @@ function argumentChunks(input: string, markers: string[]): string[] {
   return chunks
 }
 
-const usage = {
-  inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
-  outputTokens: { total: 1, text: 1, reasoning: 0 }
-}
-
 /** SDK-owned provider behavior with one test-owned pause gate around argument chunks. */
 export function createRenderStreamModel(scenario: RenderStreamScenario) {
   const input = JSON.stringify({ ...scenario.placement, jsx: scenario.jsx })
@@ -46,7 +42,11 @@ export function createRenderStreamModel(scenario: RenderStreamScenario) {
       : [
           { type: 'tool-input-end', id: 'preview-call' },
           { type: 'tool-call', toolCallId: 'preview-call', toolName: 'render', input },
-          { type: 'finish', usage, finishReason: { unified: 'tool-calls', raw: 'tool_calls' } }
+          {
+            type: 'finish',
+            usage: MOCK_USAGE,
+            finishReason: { unified: 'tool-calls', raw: 'tool_calls' }
+          }
         ]
   const chunks: ModelChunk[] = [
     { type: 'stream-start', warnings: [] },
@@ -63,7 +63,7 @@ export function createRenderStreamModel(scenario: RenderStreamScenario) {
     { type: 'text-start', id: 'done' },
     { type: 'text-delta', id: 'done', delta: 'Rendered.' },
     { type: 'text-end', id: 'done' },
-    { type: 'finish', usage, finishReason: { unified: 'stop', raw: 'stop' } }
+    { type: 'finish', usage: MOCK_USAGE, finishReason: { unified: 'stop', raw: 'stop' } }
   ]
   const nextResponse = mockValues<ModelStream>(
     {

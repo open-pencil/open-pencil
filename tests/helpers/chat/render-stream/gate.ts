@@ -1,62 +1,50 @@
+import { until, useEventListener } from '@vueuse/core'
+import { effectScope, ref, shallowRef } from 'vue'
+
 /** Explicit checkpoints for visual assertions; no timing assumptions or private SDK hooks. */
 export function createStreamGate<Chunk>(isCheckpoint: (chunk: Chunk) => boolean) {
-  let permits = 0
-  let opened = false
-  let closed = false
-  let failure: Error | undefined
-  let resume: (() => void) | undefined
-  const signals = new Set<AbortSignal>()
-
-  function detach() {
-    for (const signal of signals) signal.removeEventListener('abort', close)
-    signals.clear()
-  }
+  const permits = ref(0)
+  const opened = ref(false)
+  const closed = ref(false)
+  const failure = shallowRef<Error>()
+  // Owns the abort listeners of the requests this gate follows.
+  const listeners = effectScope(true)
 
   function close() {
-    closed = true
-    detach()
-    resume?.()
+    closed.value = true
+    listeners.stop()
   }
 
   const transform = new TransformStream<Chunk, Chunk>({
     async transform(chunk, controller) {
       if (isCheckpoint(chunk)) {
-        if (!opened && permits === 0 && !closed && !failure) {
-          await new Promise<void>((resolve) => {
-            resume = resolve
-          })
-        }
-        if (permits > 0) permits--
+        await until(
+          () => opened.value || permits.value > 0 || closed.value || failure.value !== undefined
+        ).toBe(true)
+        if (permits.value > 0) permits.value--
       }
-      if (failure) throw failure
-      if (!closed) controller.enqueue(chunk)
+      if (failure.value) throw failure.value
+      if (!closed.value) controller.enqueue(chunk)
     },
-    flush: detach
+    flush: () => listeners.stop()
   })
 
   return {
     transform,
     follow(signal?: AbortSignal) {
-      if (!signal || closed) return
-      if (signal.aborted) {
-        close()
-        return
-      }
-      signal.addEventListener('abort', close, { once: true })
-      signals.add(signal)
+      if (!signal || closed.value) return
+      if (signal.aborted) close()
+      else listeners.run(() => useEventListener(signal, 'abort', close, { once: true }))
     },
     advance() {
-      permits++
-      resume?.()
+      permits.value++
     },
     open() {
-      opened = true
-      resume?.()
+      opened.value = true
     },
     fail() {
-      failure = new Error('Provider disconnected')
-      detach()
-      resume?.()
+      failure.value = new Error('Provider disconnected')
+      listeners.stop()
     },
     close
   }

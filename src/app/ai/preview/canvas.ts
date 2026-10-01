@@ -31,7 +31,6 @@ function countNodes(tree: JSXPreviewNode): number {
   )
 }
 
-/** Bind speculative pictures to this editor only; document data is never mutated. */
 /**
  * Bind speculative pictures to this editor. Previews belong to `pageId()`, the run's page:
  * the renderer shows them only while that page is on screen, so page switches hide them.

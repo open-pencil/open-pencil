@@ -4,8 +4,8 @@ import type {
   ChatTransport,
   FinishReason,
   LanguageModel,
-  UIMessage,
-  ToolExecutionOptions
+  ToolExecutionOptions,
+  UIMessage
 } from 'ai'
 import type { ComputedRef, Ref } from 'vue'
 import { ref } from 'vue'

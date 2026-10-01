@@ -14,13 +14,10 @@ import * as figmaFactory from '@/app/automation/bridge/figma-factory'
 import { createEditorStore } from '@/app/editor/session/create'
 import { appPreferences } from '@/app/settings/preferences/store'
 
+import { MOCK_USAGE } from '#tests/helpers/chat/usage'
+
 type EditorStore = ReturnType<typeof createEditorStore>
 type Step = { toolName: string; input: unknown } | ((store: EditorStore) => Promise<void>)
-
-const usage = {
-  inputTokens: { total: 1, noCache: 1, cacheRead: undefined, cacheWrite: undefined },
-  outputTokens: { total: 1, text: 1, reasoning: undefined }
-}
 
 /** Run one message whose model calls `steps` in order: a tool call, or a user action first. */
 async function runMessage(store: EditorStore, steps: Step[]) {
@@ -43,14 +40,14 @@ async function runMessage(store: EditorStore, steps: Step[]) {
             {
               type: 'finish' as const,
               finishReason: { unified: 'tool-calls' as const, raw: undefined },
-              usage
+              usage: MOCK_USAGE
             }
           ]
         : [
             {
               type: 'finish' as const,
               finishReason: { unified: 'stop' as const, raw: undefined },
-              usage
+              usage: MOCK_USAGE
             }
           ]
       return {

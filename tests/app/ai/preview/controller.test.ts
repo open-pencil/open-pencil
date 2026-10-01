@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it, jest } from 'bun:test'
+
+import { noop } from '@vueuse/core'
 
 import type { JSXPreviewNode } from '@open-pencil/design-jsx'
 
@@ -77,6 +79,26 @@ describe('JSX tool preview controller', () => {
       expect(artifacts[1]?.disposed).toBe(1)
     } finally {
       controller.clear()
+    }
+  })
+
+  it('previews a lone delta once the interval passes, without an explicit flush', async () => {
+    jest.useFakeTimers()
+    try {
+      const shown = Promise.withResolvers<boolean>()
+      const { controller, trees } = fixture(async () => ({
+        show: () => shown.resolve(true),
+        dispose: noop
+      }))
+      controller.start('call')
+      controller.delta('call', opening)
+      jest.advanceTimersByTime(119)
+      expect(trees).toHaveLength(0)
+      jest.advanceTimersByTime(1)
+      expect(trees).toHaveLength(1)
+      await shown.promise
+    } finally {
+      jest.useRealTimers()
     }
   })
 
