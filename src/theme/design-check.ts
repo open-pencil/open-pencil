@@ -65,6 +65,17 @@ export const layerIssueMark = tv({
   }
 })
 
+/** The page list badge: the count of errors and warnings, in the most severe color. */
+export const pageIssueBadge = tv({
+  base: 'ml-auto flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full px-1 text-[9px] leading-none font-semibold tabular-nums',
+  variants: {
+    severity: {
+      error: 'bg-issue-error text-white',
+      warning: 'bg-issue-warning text-black'
+    }
+  }
+})
+
 export const issueTooltip = tv({
   slots: {
     content:

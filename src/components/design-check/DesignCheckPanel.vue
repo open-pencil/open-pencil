@@ -27,6 +27,7 @@ const {
   counts,
   groups,
   emptyState,
+  documentNote,
   loading,
   isGroupOpen,
   setGroupOpen,
@@ -36,13 +37,14 @@ const {
 
 const scopeOptions = computed(() => [
   { value: 'page' satisfies DesignCheckScope, label: messages.value.scopePage },
-  { value: 'selection' satisfies DesignCheckScope, label: messages.value.scopeSelection }
+  { value: 'selection' satisfies DesignCheckScope, label: messages.value.scopeSelection },
+  { value: 'document' satisfies DesignCheckScope, label: messages.value.scopeDocument }
 ])
 
 const scopeModel = computed({
   get: () => scope.value,
   set: (value: string) => {
-    if (value === 'page' || value === 'selection') scope.value = value
+    if (value === 'page' || value === 'selection' || value === 'document') scope.value = value
   }
 })
 </script>
@@ -57,6 +59,9 @@ const scopeModel = computed({
       </div>
     </div>
 
+    <p v-if="documentNote" :class="styles.status()" data-test-id="design-check-document-note">
+      {{ documentNote }}
+    </p>
     <p v-if="loading" :class="styles.status()" role="status">{{ messages.checking }}</p>
 
     <AppPlaceholder
@@ -86,7 +91,7 @@ const scopeModel = computed({
         :group="group"
         :open="isGroupOpen(group)"
         @update:open="(open) => setGroupOpen(group.ruleId, open)"
-        @open-row="(row) => check.openIssue(row.issue)"
+        @open-row="(row) => void check.openIssue(row.issue)"
         @hover-row="hoverRow"
         @fix="(row) => row.action && check.applyFixes([row.action.request])"
         @fix-all="check.applyFixes(group.fixes)"

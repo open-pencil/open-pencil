@@ -13,6 +13,9 @@ import { ref, watch, type ComponentPublicInstance } from 'vue'
 import type { SceneNode } from '@open-pencil/scene-graph'
 import { PageListRoot, useFlatReorderDrag, useI18n, useInlineRename } from '@open-pencil/vue'
 
+import { useEditorStore } from '@/app/editor/active-store'
+import { appPreferences } from '@/app/settings/preferences/store'
+import PageIssueBadge from '@/components/design-check/PageIssueBadge.vue'
 import IconButton from '@/components/ui/button/IconButton.vue'
 import { useMenuUI } from '@/components/ui/menu/menu'
 import pageListTheme from '@/theme/page-list'
@@ -34,6 +37,14 @@ const menuCls = useMenuUI({
 })
 const pageListStyles = tv(pageListTheme)
 const baseStyles = pageListStyles()
+
+const store = useEditorStore()
+
+/** Errors and warnings per page, following the View → Design issues toggle like the markers. */
+function pageIssues(pageId: string) {
+  if (!appPreferences.value.designCheck.showOnCanvas) return null
+  return store.designCheck.pages.counts.value.get(pageId) ?? null
+}
 
 const pageActions = ref<Pick<PageActions, 'rename'> | null>(null)
 const currentPages = ref<readonly PageItem[]>([])
@@ -141,6 +152,7 @@ function setupPageRowRef(
                 >
                   <icon-lucide-file :class="pageStyles(pg, currentPageId).icon()" />
                   <span :class="pageStyles(pg, currentPageId).label()">{{ pg.name }}</span>
+                  <PageIssueBadge :counts="pageIssues(pg.id)" />
                 </button>
                 <div
                   v-if="pageDropPosition(pg) === 'after'"

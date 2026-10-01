@@ -20,12 +20,15 @@ describe('layer issue marks', () => {
     const icon = graph.createNode('VECTOR', card.id, { name: 'Icon' })
 
     const marks = layerIssueMarks(
-      toDesignIssues([
-        message('color-contrast', label.id, 'error'),
-        message('touch-target-size', icon.id, 'warning'),
-        message('min-text-size', label.id, 'warning'),
-        message('no-groups', card.id, 'info')
-      ]),
+      toDesignIssues(
+        [
+          message('color-contrast', label.id, 'error'),
+          message('touch-target-size', icon.id, 'warning'),
+          message('min-text-size', label.id, 'warning'),
+          message('no-groups', card.id, 'info')
+        ],
+        'page'
+      ),
       graph
     )
 

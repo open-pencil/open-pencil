@@ -11,7 +11,7 @@ OpenPencil checks the current page as you work and points out layers that break 
 
 Open the **Lint** tab in the right panel. Its badge shows how many errors and warnings the page has.
 
-- **Page** lists every issue on the current page; **Selection** narrows the list to the selected layers and everything inside them.
+- **Page** lists every issue on the current page; **Selection** narrows the list to the selected layers and everything inside them; **Document** lists every page's issues, tagging the ones on other pages. Clicking one of those switches to its page. Pages of a large `.fig` file that have not been opened yet are checked once you open them.
 - Issues are grouped by rule, most severe first. Errors and warnings start expanded; suggestions start collapsed.
 - The severity buttons under the scope switch filter errors, warnings, and suggestions on and off.
 - Hover a group title to read what the rule checks and why.
@@ -40,7 +40,7 @@ Layers with errors and warnings carry a marker at their top-right corner: red fo
 - Errors and warnings outside the visible canvas are pinned to its edge, pointing toward them. Hover a pin to see them; click it to bring the nearest of the most severe into view and open it in Lint.
 - Hidden layers and layers clipped out of view by a frame keep their issues in the panel but get no marker.
 
-The Layers panel marks the same layers: a layer with errors or warnings shows the most severe as an icon, and a collapsed layer with issues inside it shows a dot.
+Pages with errors or warnings show their count in the page list, checked in the background while you work. The Layers panel marks the same layers: a layer with errors or warnings shows the most severe as an icon, and a collapsed layer with issues inside it shows a dot.
 
 Turn markers and Layers panel marks on or off with **View → Design issues**, or with **Show issues on canvas** in the Lint panel's settings menu.
 

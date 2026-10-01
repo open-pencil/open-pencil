@@ -15,6 +15,8 @@ export interface IssueRowView {
   hidden: boolean
   missing: boolean
   selected: boolean
+  /** The page the layer is on, shown when it is not the current page. */
+  pageLabel: string | null
 }
 
 export interface IssueGroupView {

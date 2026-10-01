@@ -12,6 +12,8 @@ export type { DesignIssueSeverity }
 /** A lint message with an identity that survives re-checks while the finding persists. */
 export interface DesignIssue extends LintMessage {
   id: string
+  /** The page the layer is on. */
+  pageId: string
 }
 
 export interface DesignIssueGroup {
@@ -36,13 +38,13 @@ export function compareIssueSeverity(
  * Identifies each finding by rule, layer and its position among that rule's findings on the
  * layer, so a row keeps its hover and focus state when an unrelated edit re-runs the check.
  */
-export function toDesignIssues(messages: readonly LintMessage[]): DesignIssue[] {
+export function toDesignIssues(messages: readonly LintMessage[], pageId: string): DesignIssue[] {
   const seen = new Map<string, number>()
   return messages.map((message) => {
     const base = `${message.ruleId}:${message.nodeId}`
     const index = seen.get(base) ?? 0
     seen.set(base, index + 1)
-    return { ...message, id: `${base}:${index}` }
+    return { ...message, id: `${base}:${index}`, pageId }
   })
 }
 
