@@ -19,7 +19,7 @@ import type { DesignJSXElement } from '@open-pencil/design-jsx'
 
 import type { LayerLinkSource } from '@/app/code/layers/links'
 
-import type { StaleAttribute } from './patch'
+import type { StaleAttribute } from './stale'
 
 /** A JSX element in the document and the layers it produced. */
 export interface LinkedElement {

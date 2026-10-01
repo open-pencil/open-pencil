@@ -5,7 +5,7 @@ import type { Color, JSONObject } from '@open-pencil/scene-graph/primitives'
 import { applyEffectOverrides } from './overrides/effects'
 import { applyStateOverrides } from './overrides/state'
 import { applyStrokeOverrides } from './overrides/strokes'
-import { designJSXProp } from './schema'
+import { DESIGN_JSX_STYLE_KEYS, designJSXProp } from './schema'
 
 const WEIGHT_MAP: Record<string, number> = {
   normal: 400,
@@ -80,22 +80,11 @@ function normalizeStyleProps(props: Record<string, unknown>): Record<string, unk
 
   const source = style as JSONObject
   const normalized = { ...props }
-  const copyIfUnset = (from: string, to: string, convert?: (value: unknown) => unknown): void => {
-    if (normalized[to] !== undefined || source[from] === undefined) return
-    normalized[to] = convert ? convert(source[from]) : source[from]
+  for (const [name, keys] of Object.entries(DESIGN_JSX_STYLE_KEYS)) {
+    if (designJSXProp(normalized, name) !== undefined) continue
+    const found = keys.find(({ key }) => source[key] !== undefined)
+    if (found) normalized[name] = found.px ? numberFromPx(source[found.key]) : source[found.key]
   }
-
-  copyIfUnset('background', 'bg')
-  copyIfUnset('backgroundColor', 'bg')
-  copyIfUnset('color', 'color')
-  copyIfUnset('borderColor', 'stroke')
-  copyIfUnset('borderWidth', 'strokeWidth', numberFromPx)
-  copyIfUnset('borderRadius', 'rounded', numberFromPx)
-  copyIfUnset('fontSize', 'fontSize', numberFromPx)
-  copyIfUnset('fontWeight', 'fontWeight')
-  copyIfUnset('width', 'width', numberFromPx)
-  copyIfUnset('height', 'height', numberFromPx)
-  copyIfUnset('opacity', 'opacity')
   return normalized
 }
 

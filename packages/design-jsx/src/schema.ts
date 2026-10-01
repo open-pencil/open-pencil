@@ -178,6 +178,29 @@ export const DESIGN_JSX_PROPERTY_ALIASES: Readonly<Record<string, readonly strin
   textAlignVertical: ['textVerticalAlignment']
 }
 
+/** A CSS-style key read from the `style` prop; `px` values like `'320px'` become numbers. */
+export interface DesignJSXStyleKey {
+  key: string
+  px?: boolean
+}
+
+/**
+ * Properties also read from `style={{ … }}`, keyed by the name Design JSX writes, in the order
+ * the renderer reads them. An attribute under any of the property's names wins over `style`.
+ */
+export const DESIGN_JSX_STYLE_KEYS: Readonly<Record<string, readonly DesignJSXStyleKey[]>> = {
+  bg: [{ key: 'background' }, { key: 'backgroundColor' }],
+  color: [{ key: 'color' }],
+  stroke: [{ key: 'borderColor' }],
+  strokeWidth: [{ key: 'borderWidth', px: true }],
+  rounded: [{ key: 'borderRadius', px: true }],
+  size: [{ key: 'fontSize', px: true }],
+  weight: [{ key: 'fontWeight' }],
+  w: [{ key: 'width', px: true }],
+  h: [{ key: 'height', px: true }],
+  opacity: [{ key: 'opacity' }]
+}
+
 /** Every name a property is accepted under, the written name first. */
 export function designJSXPropertyNames(name: string): readonly string[] {
   return [name, ...(DESIGN_JSX_PROPERTY_ALIASES[name] ?? [])]

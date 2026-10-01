@@ -258,6 +258,8 @@ test('reordering layers on the canvas moves their elements and keeps them linked
   await buildScene(editor.page)
   await openCode(editor.page)
   await personalizeCode(editor.page)
+  // The cursor sits in the swatch element, which the reorder is about to move.
+  await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
 
   await editor.page.evaluate(() => {
     const store = window.openPencil?.getStore?.()
@@ -277,6 +279,27 @@ test('reordering layers on the canvas moves their elements and keeps them linked
   expect(text).toContain('// Pricing card')
   expect(text).toContain('w={40 * 2}')
 
-  await codeLine(editor.page, 'name="Swatch"').click({ position: { x: 24, y: 8 } })
+  // The cursor moved with its element and still marks the swatch.
+  await expect(editor.page.locator('[data-slot="code-editor"] .cm-activeLine')).toContainText(
+    'name="Swatch"'
+  )
   await expect.poll(() => hoveredLayer(editor.page)).toBe('Swatch')
+})
+
+test('a value written inside style is patched there in its own format', async () => {
+  await buildScene(editor.page)
+  await openCode(editor.page)
+  const code = (await codeText(editor.page))
+    .replace(/(name="Card"[^>]*?) w=\{320\}/, "$1 style={{ width: '320px' }}")
+    .replace(/(name="Card"[^>]*?) h=\{160\}/, '$1 h={170}')
+  await codeLine(editor.page, 'name="Card"').click()
+  await editor.page.keyboard.press('ControlOrMeta+a')
+  await editor.page.keyboard.insertText(code)
+  // Replacing all the code links it again once its preview applies, shown by the new height.
+  await expect.poll(() => cardSize(editor.page)).toBe('320x170')
+
+  await editLayer(editor.page, 'Card', { width: 400 })
+
+  await expect(codeLine(editor.page, 'name="Card"')).toContainText("style={{ width: '400px' }}")
+  await expect(codeLine(editor.page, 'name="Card"')).not.toContainText(' w={')
 })
