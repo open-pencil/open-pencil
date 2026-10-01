@@ -468,11 +468,7 @@ export class SkiaRenderer {
     return RendererFonts.isTextPictureCurrent(this, node)
   }
 
-  async prepareForExport(
-    graph: SceneGraph,
-    pageId: string,
-    nodeIds: string[]
-  ): Promise<() => void> {
+  async prepareForExport(graph: SceneGraph, pageId: string, nodeIds: string[]): Promise<void> {
     return RendererFonts.prepareForExport(this, graph, pageId, nodeIds)
   }
 

@@ -7,7 +7,7 @@ import {
   type RenderPlacementInput
 } from '#core/design-jsx/placement'
 import { renderTree } from '#core/design-jsx/renderer'
-import { extractExportGraph } from '#core/io/subgraph'
+import { extractPageContext, findPageChildId } from '#core/io/subgraph'
 
 const MAX_PREVIEW_CONTEXT_NODES = 1000
 
@@ -19,13 +19,6 @@ export interface StagedJSXPreview {
   replaceId?: string
   /** Page insertion slot when the preview adds new top-level nodes. */
   insertIndex?: number
-}
-
-function topLevelOwner(graph: SceneGraph, id: string, pageId: string): string {
-  let node = graph.getNode(id)
-  while (node?.parentId && node.parentId !== pageId) node = graph.getNode(node.parentId)
-  if (!node) throw new Error('Preview owner does not exist')
-  return node.id
 }
 
 function contextFits(graph: SceneGraph, rootId: string): boolean {
@@ -54,18 +47,9 @@ export async function stageJSXPreview(
   const owner =
     placement.parentId === pageId
       ? placement.replaceId
-      : topLevelOwner(source, placement.parentId, pageId)
+      : (findPageChildId(source, placement.parentId) ?? undefined)
   if (owner && !contextFits(source, owner)) return null
-  const { graph } = extractExportGraph(source, {
-    scope: 'selection',
-    nodeIds: owner ? [owner] : []
-  })
-  if (!graph.getNode(pageId)) {
-    const page = source.getNode(pageId)
-    if (!page) return null
-    graph.nodes.set(pageId, { ...structuredClone(page), childIds: [] })
-    graph.getNode(graph.rootId)?.childIds.push(pageId)
-  }
+  const graph = extractPageContext(source, pageId, owner ? [owner] : [])
   // Preview props can introduce bindings/images not referenced by the old subtree.
   graph.images = new Map(source.images)
   graph.variables = structuredClone(source.variables)

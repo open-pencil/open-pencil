@@ -1,14 +1,46 @@
 import type { CanvasKit, SkPicture } from 'canvaskit-wasm'
 
-import { computeDescendantVisualBounds } from '@open-pencil/scene-graph/geometry'
+import { computeDescendantVisualBounds, type VisualBounds } from '@open-pencil/scene-graph/geometry'
 
 import { SkiaRenderer } from '#core/canvas/renderer'
-import { computeAllLayouts, getTextMeasurer, setTextMeasurer } from '#core/layout'
-import { prepareGraphFonts } from '#core/text/prepare'
+import { recordWorldPicture } from '#core/canvas/renderer/picture'
 
 import type { StagedJSXPreview } from './stage'
 
 const MAX_PREVIEW_DIMENSION = 8192
+
+function fitsPreview({ minX, minY, maxX, maxY }: VisualBounds): boolean {
+  const width = maxX - minX
+  const height = maxY - minY
+  return (
+    Number.isFinite(width + height) &&
+    width > 0 &&
+    height > 0 &&
+    width <= MAX_PREVIEW_DIMENSION &&
+    height <= MAX_PREVIEW_DIMENSION
+  )
+}
+
+async function recordStaged(
+  renderer: SkiaRenderer,
+  { graph, pageId, nodeIds }: StagedJSXPreview,
+  signal: AbortSignal
+): Promise<SkPicture | null> {
+  renderer.pageId = pageId
+  await renderer.loadFonts()
+  signal.throwIfAborted()
+  await renderer.prepareForExport(graph, pageId, nodeIds)
+  signal.throwIfAborted()
+  const bounds = computeDescendantVisualBounds(
+    nodeIds,
+    (id) => graph.getNode(id),
+    (id) => graph.getAbsolutePosition(id)
+  )
+  if (!bounds || !fitsPreview(bounds)) return null
+  return recordWorldPicture(renderer, bounds, (canvas) => {
+    for (const id of nodeIds) renderer.renderNode(canvas, graph, id, {})
+  })
+}
 
 /**
  * Record a disposable vector picture using a private graph and renderer.
@@ -25,48 +57,7 @@ export async function recordJSXPreview(
   if (!surface) return null
   const renderer = new SkiaRenderer(ck, surface)
   try {
-    const { graph, pageId, nodeIds } = staged
-    renderer.pageId = pageId
-    await renderer.loadFonts()
-    signal.throwIfAborted()
-    await prepareGraphFonts(graph, nodeIds)
-    signal.throwIfAborted()
-    // Layout's measurer is shared. Override only synchronously, never across an await.
-    const previous = getTextMeasurer()
-    setTextMeasurer((node, width) => renderer.measureTextNode(node, width))
-    try {
-      computeAllLayouts(graph, pageId)
-    } finally {
-      setTextMeasurer(previous)
-    }
-    const bounds = computeDescendantVisualBounds(
-      nodeIds,
-      (id) => graph.getNode(id),
-      (id) => graph.getAbsolutePosition(id)
-    )
-    if (!bounds) return null
-    const width = bounds.maxX - bounds.minX
-    const height = bounds.maxY - bounds.minY
-    if (
-      !Number.isFinite(width + height) ||
-      width <= 0 ||
-      height <= 0 ||
-      width > MAX_PREVIEW_DIMENSION ||
-      height > MAX_PREVIEW_DIMENSION
-    )
-      return null
-    const recorder = new ck.PictureRecorder()
-    try {
-      const canvas = recorder.beginRecording(
-        ck.LTRBRect(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY)
-      )
-      renderer.worldViewport = { x: bounds.minX, y: bounds.minY, w: width, h: height }
-      renderer.syncFontGeneration()
-      for (const id of nodeIds) renderer.renderNode(canvas, graph, id, {})
-      return recorder.finishRecordingAsPicture()
-    } finally {
-      recorder.delete()
-    }
+    return await recordStaged(renderer, staged, signal)
   } finally {
     renderer.destroy()
   }
