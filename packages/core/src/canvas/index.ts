@@ -5,6 +5,11 @@ export {
   nodeHasVisibleStroke
 } from './boolean'
 export {
+  flattenNodesToVectorProps,
+  outlineStrokeNodesToVectorProps,
+  type VectorFlattenProps
+} from './flatten'
+export {
   distanceToGuideSegment,
   getGuideScreenSegment,
   type GuideScreenSegment,
