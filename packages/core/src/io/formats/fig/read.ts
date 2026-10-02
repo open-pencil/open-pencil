@@ -52,14 +52,16 @@ function parseViaWorker(buffer: ArrayBuffer, options: ParseFigFileOptions): Prom
     options.signal?.addEventListener('abort', abort, { once: true })
     const cleanupAbort = () => options.signal?.removeEventListener('abort', abort)
 
+    // A listener of its own: registerFigPopulationWorker takes over port1.onmessage
+    // once the graph arrives, and archive requests are made after that.
+    channel.port1.addEventListener('message', (e: MessageEvent<FigSessionResponse>) => {
+      if (e.data.type !== 'original-archive-result') return
+      const resolveArchive = pendingArchives.get(e.data.requestId)
+      if (!resolveArchive) return
+      pendingArchives.delete(e.data.requestId)
+      resolveArchive(e.data.bytes)
+    })
     channel.port1.onmessage = (e: MessageEvent<FigSessionResponse>) => {
-      if (e.data.type === 'original-archive-result') {
-        const resolveArchive = pendingArchives.get(e.data.requestId)
-        if (!resolveArchive) return
-        pendingArchives.delete(e.data.requestId)
-        resolveArchive(e.data.bytes)
-        return
-      }
       if (e.data.type === 'page-manifest') {
         options.onPages?.(e.data.pages)
         return

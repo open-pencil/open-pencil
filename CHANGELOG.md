@@ -34,6 +34,7 @@
 
 ### Fixed
 
+- Save a `.fig` file that was opened and not edited yet. In the app the save never finished, and MCP `save_file` timed out without writing the file.
 - Render the canvas with the Vue SDK's `CanvasRoot` and `CanvasSurface`; CanvasKit never started there and the canvas stayed blank.
 - Keep the view centered on what you were looking at when zooming to 100% or another fixed level, instead of jumping elsewhere whenever the zoom changes.
 - Draw collaborators' names on their cursors with proper letter spacing and fallback fonts, and end long names with an ellipsis.
