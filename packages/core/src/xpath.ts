@@ -1,3 +1,4 @@
+import type * as FontoxpathModule from 'fontoxpath'
 import type { IDomFacade } from 'fontoxpath'
 
 import type { SceneGraph, SceneNode } from '@open-pencil/scene-graph'
@@ -214,6 +215,17 @@ function createDomFacade(graph: SceneGraph) {
   }
 }
 
+type Fontoxpath = typeof FontoxpathModule
+
+// fontoxpath is CommonJS. Bundlers and Bun hand its exports out as named
+// exports, but Node's ESM loader exposes them only on `default`.
+async function loadFontoxpath(): Promise<Fontoxpath> {
+  const mod: Partial<Fontoxpath> & { default?: Fontoxpath } = await import('fontoxpath')
+  if (mod.evaluateXPathToNodes && mod.evaluateXPathToBoolean) return mod as Fontoxpath
+  if (mod.default) return mod.default
+  throw new Error('fontoxpath exports not found')
+}
+
 export interface XPathQueryOptions {
   limit?: number
   page?: string
@@ -230,7 +242,7 @@ export async function queryByXPath(
 
   if (targetPages.length === 0) return []
 
-  const { evaluateXPathToNodes } = await import('fontoxpath')
+  const { evaluateXPathToNodes } = await loadFontoxpath()
   const domFacade = createDomFacade(graph) as IDomFacade
   const results: SceneNode[] = []
 
@@ -309,7 +321,7 @@ export async function matchByXPath(
   selector: string,
   node: SceneNode
 ): Promise<boolean> {
-  const { evaluateXPathToBoolean } = await import('fontoxpath')
+  const { evaluateXPathToBoolean } = await loadFontoxpath()
   const domFacade = createDomFacade(graph) as IDomFacade
   const wrapped = wrapNode(graph, node)
   try {
