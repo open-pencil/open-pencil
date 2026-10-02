@@ -53,6 +53,14 @@ export function createPageActions(ctx: EditorContext) {
   let populationWorkerInstance: ReturnType<typeof createFigPopulationWorker> | undefined
   let populationWorkerGeneration = 0
   let pageSwitchGeneration = 0
+  // Pages whose fonts and layout are done, per graph, so replacing the document forgets them.
+  const readyPages = new WeakMap<object, Set<string>>()
+
+  function markPageReady(pageId: string) {
+    const ready = readyPages.get(ctx.graph) ?? new Set<string>()
+    ready.add(pageId)
+    readyPages.set(ctx.graph, ready)
+  }
 
   function populationWorker() {
     if (!canUseFigPopulationWorker(ctx.graph)) return null
@@ -171,7 +179,9 @@ export function createPageActions(ctx: EditorContext) {
       computeAllLayouts(ctx.graph, pageId)
     }
     throwIfAborted(options.signal)
-    return generation === pageSwitchGeneration ? { pageId, generation } : null
+    if (generation !== pageSwitchGeneration) return null
+    markPageReady(pageId)
+    return { pageId, generation }
   }
 
   function commitPageSwitch(prepared: PreparedPage): boolean {
@@ -198,6 +208,25 @@ export function createPageActions(ctx: EditorContext) {
    */
   async function loadPageNodes(pageId: string): Promise<void> {
     if (ctx.graph.getNode(pageId)?.type === 'CANVAS') await populatePage(pageId, null)
+  }
+
+  /**
+   * Loads a page's layers with their fonts and layout, ready to render, without switching to
+   * it or superseding a page switch in progress. Each page is prepared once per document;
+   * the page on screen already was, when it was shown.
+   */
+  async function preparePageNodes(pageId: string, options: PreparePageOptions = {}) {
+    const page = ctx.graph.getNode(pageId)
+    if (page?.type !== 'CANVAS' || pageId === ctx.state.currentPageId) return
+    if (readyPages.get(ctx.graph)?.has(pageId)) return
+    const graph = ctx.graph
+    const populated = await populatePage(pageId, null, options.signal)
+    if (populated === null || graph !== ctx.graph) return
+    await resolvePageFonts(pageId, page.name, options)
+    throwIfAborted(options.signal)
+    if (graph !== ctx.graph) return
+    computeAllLayouts(graph, pageId)
+    markPageReady(pageId)
   }
 
   async function switchPage(pageId: string, options: SwitchPageOptions = {}): Promise<void> {
@@ -266,6 +295,7 @@ export function createPageActions(ctx: EditorContext) {
 
   return {
     loadPageNodes,
+    preparePageNodes,
     pageSwitchCount,
     preparePage,
     commitPageSwitch,

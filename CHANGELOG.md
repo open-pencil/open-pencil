@@ -34,6 +34,7 @@
 
 ### Fixed
 
+- Run MCP tools against the layers of a `.fig` page that has not been shown yet. Tools aimed at such a page with `page_id` found nothing on it, `export_image` reported "No visible nodes to export", and a shape created there sat alone on the page until it was shown. The page now gets its fonts and layout too, so tools measure it as on screen.
 - Render the canvas with the Vue SDK's `CanvasRoot` and `CanvasSurface`; CanvasKit never started there and the canvas stayed blank.
 - Keep the view centered on what you were looking at when zooming to 100% or another fixed level, instead of jumping elsewhere whenever the zoom changes.
 - Draw collaborators' names on their cursors with proper letter spacing and fallback fonts, and end long names with an ellipsis.
@@ -67,6 +68,8 @@
 - Load the Bold, Medium, and other styles of macOS system fonts packaged as font collections, such as Menlo, Helvetica Neue, and Avenir Next, instead of reporting them as substituted or drawing a different style (#746).
 - Load the Medium, Semibold, Bold, and other styles of installed variable fonts such as SF Pro on macOS instead of reporting them as substituted (#752).
 - Ship the MIT license text in every published npm package, and add READMEs for `@open-pencil/core`, `@open-pencil/cli`, and `@open-pencil/mcp` on npm.
+- Export layers from a page other than the one on screen with the MCP `export_image` tool and with `openpencil export --node` against the running app, which failed with "Raster export selection must stay on a single page".
+- Export the requested page with `openpencil export --page` or `--page-id` against the running app, which ignored the page and exported the selection on screen. A page that has not been shown yet gets its layers, fonts and layout for the export without switching to it.
 
 ### Performance
 

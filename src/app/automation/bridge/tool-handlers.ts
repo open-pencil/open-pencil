@@ -47,6 +47,11 @@ export function createAutomationToolHandler(makeFigma: FigmaFactory) {
     const toolArgs = (args as { args?: Record<string, unknown> }).args ?? {}
     if (!toolName) throw new Error('Missing "name" in args')
 
+    // A `.fig` page gets its layers, fonts and layout when first shown. Prepare the target
+    // page first, so a tool aimed at a page nobody has opened sees and measures its layers
+    // as on screen, without switching to it.
+    await target.store.preparePageNodes(target.pageId)
+
     if (toolName === 'render' && toolArgs.tree) {
       return handleToolRender(target, toolArgs)
     }
